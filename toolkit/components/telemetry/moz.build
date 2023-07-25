@@ -8,9 +8,11 @@ include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
 
-DIRS = [
-    "pingsender",
-]
+if CONFIG["MOZ_CRASHREPORTER"]:
+    DIRS = [
+        "pingsender",
+    ]
+
 
 if CONFIG["COMPILE_ENVIRONMENT"]:
     EXPORTS.mozilla += ["!dap_ffi_generated.h"]

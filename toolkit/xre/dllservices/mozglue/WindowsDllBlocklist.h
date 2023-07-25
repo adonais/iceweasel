@@ -10,7 +10,9 @@
     (defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64))
 
 #  include <windows.h>
+#ifdef MOZ_CRASHREPORTER
 #  include "CrashAnnotations.h"
+#endif
 #  include "mozilla/Attributes.h"
 #  include "mozilla/ProcessType.h"
 #  include "mozilla/Types.h"
@@ -47,7 +49,9 @@ extern uint32_t gBlocklistInitFlags;
 
 MFBT_API void DllBlocklist_Initialize(
     uint32_t aInitFlags = eDllBlocklistInitFlagDefault);
+#ifdef MOZ_CRASHREPORTER
 MFBT_API void DllBlocklist_WriteNotes(CrashReporter::AnnotationWriter& aWriter);
+#endif
 MFBT_API bool DllBlocklist_CheckStatus();
 
 // This export intends to clean up after DllBlocklist_Initialize().

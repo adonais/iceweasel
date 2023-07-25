@@ -4,6 +4,7 @@
 *~
 *.pyc
 *.pyo
+__pycache__/
 TAGS
 tags
 compile_commands.json

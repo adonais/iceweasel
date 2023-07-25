@@ -135,6 +135,7 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (aWhy == AbnormalShutdown) {
     nsAutoString dumpID;
 
+#ifdef MOZ_CRASHREPORTER
     if (mCrashReporter) {
 #if defined(MOZ_SANDBOX)
       RefPtr<mozilla::ipc::UtilityProcessManager> upm =
@@ -155,7 +156,7 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
     }
 
     GenerateCrashReport(OtherPid(), &dumpID);
-
+#endif
     // It's okay for dumpID to be empty if there was no minidump generated
     // tests like ipc/glue/test/browser/browser_utility_crashReporter.js are
     // there to verify this

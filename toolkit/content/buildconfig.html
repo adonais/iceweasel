@@ -19,9 +19,11 @@
     <div class="container">
       <h1>Build Configuration</h1>
       <p>Please be aware that this page doesn't reflect all the options used to build @MOZ_APP_DISPLAYNAME@.</p>
-      #ifdef MOZ_SOURCE_URL
       <h2>Source</h2>
+      #ifdef MOZ_SOURCE_URL
       <p>Built from <a href="@MOZ_SOURCE_URL@">@MOZ_SOURCE_URL@</a></p>
+      #else
+      <p>Built from <a href="https://github.com/adonais">https://github.com/adonais</a></p>
       #endif
       <h2>Build platform</h2>
       <table class="build-platform-table">

@@ -14,6 +14,12 @@ stage-package:
 install::
 	@$(MAKE) -C browser/installer install
 
+clean::
+	@$(MAKE) -C browser/installer clean
+
+distclean::
+	@$(MAKE) -C browser/installer distclean
+
 source-package::
 	@$(MAKE) -C browser/installer source-package
 

@@ -78,6 +78,7 @@ ifneq (,$(GENERATED_DIRS))
   GENERATED_DIRS := $(strip $(sort $(GENERATED_DIRS)))
   tmpauto :=$(call mkdir_deps,GENERATED_DIRS)
   GENERATED_DIRS_DEPS +=$(tmpauto)
+  GARBAGE_DIRS        +=$(GENERATED_DIRS)
 endif
 
 #################################################################

@@ -174,6 +174,11 @@ MOZ_LTO_CFLAGS :=
 MOZ_LTO_LDFLAGS :=
 endif
 
+ifdef MOZ_PROFILE_GENERATE
+MOZ_LTO_CFLAGS :=
+MOZ_LTO_LDFLAGS :=
+endif
+
 LDFLAGS		= $(MOZ_LTO_LDFLAGS) $(COMPUTED_LDFLAGS) $(PGO_LDFLAGS)
 
 COMPILE_CFLAGS	= $(MOZ_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
@@ -321,6 +326,8 @@ endif
 -include $(topsrcdir)/$(MOZ_BUILD_APP)/app-config.mk
 
 ######################################################################
+
+GARBAGE		+= $(DEPENDENCIES) core $(wildcard core.[0-9]*) $(wildcard *.err) $(wildcard *.pure) $(wildcard *_pure_*.o) Templates.DB
 
 ifeq ($(OS_ARCH),Darwin)
 ifndef NSDISTMODE

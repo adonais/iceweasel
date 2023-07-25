@@ -48,6 +48,8 @@ libs::
 endif
 endif
 
+GARBAGE += $(addprefix $(FINAL_TARGET)/defaults/pref/, firefox.js)
+
 endif
 
 # channel-prefs.js is handled separate from other prefs due to bug 756325
@@ -74,7 +76,7 @@ LPROJ_ROOT := $(firstword $(subst -, ,$(AB_CD)))
 endif
 LPROJ := Contents/Resources/$(LPROJ_ROOT).lproj
 
-repackage::
+clean clobber repackage::
 	$(RM) -r $(dist_dest)
 
 MAC_BUNDLE_VERSION = $(shell $(PYTHON3) $(srcdir)/macversion.py --version=$(MOZ_APP_VERSION) --buildid=$(DEPTH)/buildid.h)

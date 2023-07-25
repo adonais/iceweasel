@@ -264,7 +264,10 @@ void Factory::ShutDown() {
 #endif
 }
 
-bool Factory::HasSSE2() {
+#if !defined(MOZILLA_MAY_SUPPORT_SSE2)
+bool
+Factory::HasSSE2()
+{
 #if defined(__SSE2__) || defined(_M_X64) || \
     (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
   // gcc with -msse2 (default on OSX and x86-64)
@@ -285,8 +288,11 @@ bool Factory::HasSSE2() {
   return false;
 #endif
 }
+#endif
 
-bool Factory::HasSSE4() {
+#if !defined(MOZILLA_MAY_SUPPORT_SSE4_1)
+bool
+Factory::HasSSE4()
 #if defined(__SSE4__)
   // gcc with -msse2 (default on OSX and x86-64)
   // cl.exe with -arch:SSE2 (default on x64 compiler)
@@ -306,6 +312,7 @@ bool Factory::HasSSE4() {
   return false;
 #endif
 }
+#endif
 
 // If the size is "reasonable", we want gfxCriticalError to assert, so
 // this is the option set up for it.

@@ -585,6 +585,11 @@ class nsContextMenu {
       "context-savelink",
       this.onSaveableLink || this.onPlainTextLink
     );
+    // hack by adonais
+    this.showItem(
+      "context-downloadlink",
+      this.onSaveableLink || this.onPlainTextLink
+    );
     if (
       (this.onSaveableLink || this.onPlainTextLink) &&
       Services.policies.status === Services.policies.ACTIVE
@@ -2024,6 +2029,21 @@ class nsContextMenu {
     );
   }
 
+  downloadLink() {
+    if (AppConstants.platform === "win") {
+	  const exeName = "upcheck.exe";
+	  let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+	  let cfile = Services.dirsvc.get("ProfD", Ci.nsIFile);
+	  exe.append(exeName);
+	  cfile.append("cookies.sqlite");
+	  let process = Cc["@mozilla.org/process/util;1"]
+                    .createInstance(Ci.nsIProcess);
+	  process.init(exe);
+	  process.startHidden = true;
+	  process.noShell = true;
+	  process.run(false, ["-i", this.linkURL, "-b", encodeURIComponent(cfile.path), "-m", "1"], 6);
+    }
+  }
   // Backwards-compatibility wrapper
   saveImage() {
     if (this.onCanvas || this.onImage) {

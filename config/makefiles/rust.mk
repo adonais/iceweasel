@@ -90,7 +90,7 @@ ifndef MOZ_LTO_RUST_CROSS
 # Never enable when sancov is enabled to work around https://github.com/rust-lang/rust/issues/90300.
 ifndef rustflags_sancov
 # Never enable when coverage is enabled to work around https://github.com/rust-lang/rust/issues/90045.
-ifndef MOZ_CODE_COVERAGE
+ifndef MOZ_PGO
 ifeq (,$(findstring gkrust_gtest,$(RUST_LIBRARY_FILE)))
 cargo_rustc_flags += -Clto$(if $(filter full,$(MOZ_LTO_RUST_CROSS)),=fat)
 endif
@@ -527,6 +527,7 @@ endif # HOST_RUST_LIBRARY_FILE
 
 ifdef RUST_PROGRAMS
 
+GARBAGE_DIRS += $(RUST_TARGET)
 force-cargo-program-build: $(call resfile,module)
 	$(REPORT_BUILD)
 	$(call CARGO_BUILD) $(addprefix --bin ,$(RUST_CARGO_PROGRAMS)) $(cargo_target_flag) -- $(addprefix -C link-arg=$(CURDIR)/,$(call resfile,module)) $(CARGO_RUSTCFLAGS)
@@ -568,6 +569,7 @@ force-cargo-program-%:
 endif # RUST_PROGRAMS
 ifdef HOST_RUST_PROGRAMS
 
+GARBAGE_DIRS += $(RUST_HOST_TARGET)
 force-cargo-host-program-build:
 	$(REPORT_BUILD)
 	$(call CARGO_BUILD) $(addprefix --bin ,$(HOST_RUST_CARGO_PROGRAMS)) $(cargo_host_flag)

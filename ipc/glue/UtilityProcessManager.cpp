@@ -209,10 +209,10 @@ RefPtr<GenericNonExclusivePromise> UtilityProcessManager::LaunchProcess(
           Unused << NS_WARN_IF(!p->mProcessParent->SendPreferenceUpdate(pref));
         }
         p->mQueuedPrefs.Clear();
-
+      #ifdef MOZ_CRASHREPORTER
         CrashReporter::AnnotateCrashReport(
             CrashReporter::Annotation::UtilityProcessStatus, "Running"_ns);
-
+      #endif
         return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
       },
       [self, p, aSandbox](nsresult aError) {
@@ -547,8 +547,10 @@ void UtilityProcessManager::DestroyProcess(SandboxingKind aSandbox) {
 
   mProcesses[aSandbox] = nullptr;
 
+#ifdef MOZ_CRASHREPORTER
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::UtilityProcessStatus, "Destroyed"_ns);
+#endif
 
   if (NoMoreProcesses()) {
     sSingleton = nullptr;

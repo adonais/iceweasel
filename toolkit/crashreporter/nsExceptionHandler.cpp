@@ -1384,7 +1384,7 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
     writer.Write(Annotation::EventLoopNestingLevel, eventloopNestingLevel);
   }
 
-#if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)
+#if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST) && defined(MOZ_CRASHREPORTER)
   // HACK: The DLL blocklist code will manually write its annotations as JSON
   DllBlocklist_WriteNotes(writer);
 #endif  // defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)

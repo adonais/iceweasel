@@ -11,6 +11,12 @@
 
 #include "mozilla/Compiler.h"
 
+#if defined(WIN32) || defined(__SYMBIAN32__)
+#  define TT_RESTRICTED_PTR     __restrict
+#else
+#  define TT_RESTRICTED_PTR     __restrict__
+#endif
+
 /*
  * MOZ_ALWAYS_INLINE is a macro which expands to tell the compiler that the
  * method decorated with it must be inlined, even if the compiler thinks

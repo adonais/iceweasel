@@ -11,7 +11,9 @@
 #include "mozilla/Types.h"
 #include "mozilla/WindowsDllBlocklist.h"
 
+#ifdef MOZ_CRASHREPORTER
 #include "CrashAnnotations.h"
+#endif
 #include "DllBlocklist.h"
 #include "LoaderPrivateAPI.h"
 #include "ModuleLoadFrame.h"
@@ -136,6 +138,7 @@ void NativeNtBlockSet::Write(WritableBuffer& aBuffer) {
 
 static NativeNtBlockSet gBlockSet;
 
+#ifdef MOZ_CRASHREPORTER
 extern "C" void MOZ_EXPORT
 NativeNtBlockSet_Write(CrashReporter::AnnotationWriter& aWriter) {
   WritableBuffer buffer;
@@ -143,6 +146,7 @@ NativeNtBlockSet_Write(CrashReporter::AnnotationWriter& aWriter) {
   aWriter.Write(CrashReporter::Annotation::BlockedDllList, buffer.Data(),
                 buffer.Length());
 }
+#endif
 
 enum class BlockAction {
   // Allow the DLL to be loaded.
