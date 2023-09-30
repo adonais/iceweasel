@@ -1,1 +1,102 @@
+name: Windows environment
+on: 
+  push:
+    branches: 
+      - esr1152
+env:
+  SOURCE_DIR: d:\works\3rdparty
+  APP_NAME: Iceweasel
 
+jobs:
+  fx_build:
+    name: Iceweasel build
+    runs-on: windows-2019
+    timeout-minutes: 480
+    steps:        
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    
+    - name: Set variable
+      id: set_var
+      run: |
+        cd /d %GITHUB_WORKSPACE%
+        if exist mozconfig32 echo MY_BITS=win32>>%GITHUB_ENV%&echo MY_OBJ=obju32-release>>%GITHUB_ENV%&call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32"
+        if exist mozconfig64 MY_BITS=win64>>%GITHUB_ENV%&echo MY_OBJ=obju64-release>>%GITHUB_ENV%&call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64"
+        if not exist "%APPDATA%\mozillabuild" mkdir "%APPDATA%\mozillabuild"
+        set /p m_ver=<browser\config\version_display.txt
+        echo MY_VER=%m_ver%>>%GITHUB_ENV%
+        echo BUID_DIR=%APPDATA%>>%GITHUB_ENV%
+        echo LIBPORTABLE_PATH=%APPDATA%\mozillabuild\clang>>%GITHUB_ENV%
+        echo VC_REDISTDIR=%VCToolsRedistDir%>>%GITHUB_ENV%
+        echo UCRT_REDISTDIR=%UniversalCRTSdkDir%>>%GITHUB_ENV%
+      shell: cmd
+
+    - name: Add env to path
+      id: env_path
+      run: |
+        echo "$env:BUID_DIR\mozillabuild" >> $env:GITHUB_PATH
+      shell: pwsh
+                      
+    - name: Show envs
+      id: show_env
+      run: |
+        .\taskcluster\dothing.bat "%SOURCE_DIR%"
+      shell: cmd
+     
+    - name: Start msys2-shell
+      timeout-minutes: 420
+      id: msys_shell
+      run: |
+        cd /d %GITHUB_WORKSPACE%
+        if exist .mozconfig  del /f .mozconfig
+        if "%MY_BITS%" == "win32" echo we build Iceweasel %MY_BITS%&msysdo mv mozconfig32 .mozconfig
+        if "%MY_BITS%" == "win64" echo we build Iceweasel %MY_BITS%&msysdo mv mozconfig64 .mozconfig
+        if exist .mozconfig msysdo ./fx_build.sh
+      shell: cmd
+      
+    - name: Upload
+      uses: actions/upload-artifact@v1
+      with:
+        path: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+
+    - name: Current time
+      uses: yxl0756/get-time-action@v1.0
+      id: current-time
+      with:
+        timeZone: 8
+        format: YYYYMMDDHHmmss
+ 
+    - name: Create Release
+      id: create_release
+      uses: yxl0756/create-release@1a72e235c178bf2ae6c51a8ae36febc24568c5fe
+      env:
+        GITHUB_TOKEN: ${{ secrets.ADONAIS_RELEASE_TOKEN }}
+      with:
+        tag_name: ${{ steps.current-time.outputs.time }}
+        release_name: Release ${{ steps.current-time.outputs.time }}
+        commitish: esr115
+        draft: false
+        prerelease: false
+        
+    - name: Store Release url
+      run: |
+        echo "${{ steps.create_release.outputs.upload_url }}" > ./upload_url
+        
+    - uses: actions/upload-artifact@v1
+      with:
+        path: ./upload_url
+        name: upload_url
+                
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.ADONAIS_RELEASE_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+        asset_name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+        asset_content_type: application/x-gtar
+        
