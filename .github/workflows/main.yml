@@ -2,7 +2,7 @@ name: Windows environment
 on: 
   push:
     branches: 
-      - esr1152
+      - esr115
 env:
   SOURCE_DIR: d:\works\3rdparty
   APP_NAME: Iceweasel
