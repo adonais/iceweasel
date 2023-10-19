@@ -469,6 +469,7 @@ MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
   if (::RtlCompareUnicodeString(&k32Name, &leafOnStack, TRUE) == 0) {
     blockAction = BlockAction::Allow;
   } else {
+    auto noSharedSectionReset{SharedSection::AutoNoReset()};
     k32Exports = gSharedSection.GetKernel32Exports();
     // Small optimization: Since loading a dependent module does not involve
     // LdrLoadDll, we know isInjectedDependent is false if we hold a top frame.
@@ -580,6 +581,24 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     SIZE_T aCommitSize, PLARGE_INTEGER aSectionOffset, PSIZE_T aViewSize,
     SECTION_INHERIT aInheritDisposition, ULONG aAllocationType,
     ULONG aProtectionFlags) {
+  // Save off the values currently in the out-pointers for later restoration if
+  // we decide not to permit this mapping.
+  auto const rollback =
+      [
+          // Avoid taking a reference to the stack frame, mostly out of
+          // paranoia. (The values of `aBaseAddress` et al. may have been
+          // crafted to point to our return address anyway...)
+          =,
+          // `NtMapViewOfSection` itself is mildly robust to invalid pointers;
+          // we can't easily do that, but we can at least check for `nullptr`.
+          baseAddress = aBaseAddress ? *aBaseAddress : nullptr,
+          sectionOffset = aSectionOffset ? *aSectionOffset : LARGE_INTEGER{},
+          viewSize = aViewSize ? *aViewSize : 0]() {
+        if (aBaseAddress) *aBaseAddress = baseAddress;
+        if (aSectionOffset) *aSectionOffset = sectionOffset;
+        if (aViewSize) *aViewSize = viewSize;
+      };
+
   // We always map first, then we check for additional info after.
   NTSTATUS stubStatus = stub_NtMapViewOfSection(
       aSection, aProcess, aBaseAddress, aZeroBits, aCommitSize, aSectionOffset,
@@ -598,6 +617,7 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
                                       sizeof(obi), nullptr);
   if (!NT_SUCCESS(ntStatus)) {
     ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
+    rollback();
     return STATUS_ACCESS_DENIED;
   }
 
@@ -613,7 +633,12 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  return AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
+  NTSTATUS rv =
+      AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
+  if (FAILED(rv)) {
+    rollback();
+  }
+  return rv;
 }
 
 }  // namespace freestanding

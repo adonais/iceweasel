@@ -50,11 +50,11 @@ class CharMapHashKey : public PLDHashEntryHdr {
   }
   MOZ_COUNTED_DTOR(CharMapHashKey)
 
-  gfxCharacterMap* GetKey() const { return mCharMap; }
+  gfxCharacterMap* GetKey() const { return mCharMap.get(); }
 
   bool KeyEquals(const gfxCharacterMap* aCharMap) const {
-    NS_ASSERTION(!aCharMap->mBuildOnTheFly && !mCharMap->mBuildOnTheFly,
-                 "custom cmap used in shared cmap hashtable");
+    MOZ_ASSERT(!aCharMap->mBuildOnTheFly && !mCharMap->mBuildOnTheFly,
+               "custom cmap used in shared cmap hashtable");
     // cmaps built on the fly never match
     if (aCharMap->mHash != mCharMap->mHash) {
       return false;
@@ -72,9 +72,13 @@ class CharMapHashKey : public PLDHashEntryHdr {
   enum { ALLOW_MEMMOVE = true };
 
  protected:
-  // charMaps are not owned by the shared cmap cache, but it will be notified
-  // by gfxCharacterMap::Release() when an entry is about to be deleted
-  gfxCharacterMap* MOZ_NON_OWNING_REF mCharMap;
+  friend class gfxPlatformFontList;
+
+  // gfxCharacterMap::Release() will notify us when the refcount of a
+  // charmap drops to 1; at that point, we'll lock the cache, check if
+  // the charmap is owned by the cache and this is still the only ref,
+  // and if so, delete it.
+  RefPtr<gfxCharacterMap> mCharMap;
 };
 
 /**
@@ -499,8 +503,9 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   // match is found.
   already_AddRefed<gfxCharacterMap> FindCharMap(gfxCharacterMap* aCmap);
 
-  // Remove the cmap from the shared cmap set.
-  void RemoveCmap(const gfxCharacterMap* aCharMap);
+  // Remove the cmap from the shared cmap set if it holds the only remaining
+  // reference to the object.
+  void MaybeRemoveCmap(gfxCharacterMap* aCharMap);
 
   // Keep track of userfont sets to notify when global fontlist changes occur.
   void AddUserFontSet(gfxUserFontSet* aUserFontSet) {
@@ -1017,9 +1022,9 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   nsTHashtable<ShmemCharMapHashEntry> mShmemCharMaps MOZ_GUARDED_BY(mLock);
 
   // data used as part of the font cmap loading process
-  nsTArray<RefPtr<gfxFontFamily>> mFontFamiliesToLoad;
-  uint32_t mStartIndex = 0;
-  uint32_t mNumFamilies = 0;
+  nsTArray<RefPtr<gfxFontFamily>> mFontFamiliesToLoad MOZ_GUARDED_BY(mLock);
+  uint32_t mStartIndex MOZ_GUARDED_BY(mLock) = 0;
+  uint32_t mNumFamilies MOZ_GUARDED_BY(mLock) = 0;
 
   // xxx - info for diagnosing no default font aborts
   // see bugs 636957, 1070983, 1189129
@@ -1050,7 +1055,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   RefPtr<gfxFontEntry> mDefaultFontEntry MOZ_GUARDED_BY(mLock);
 
   RefPtr<mozilla::CancelableRunnable> mLoadCmapsRunnable;
-  uint32_t mStartedLoadingCmapsFrom = 0xffffffffu;
+  uint32_t mStartedLoadingCmapsFrom MOZ_GUARDED_BY(mLock) = 0xffffffffu;
 
   bool mFontFamilyWhitelistActive = false;
 

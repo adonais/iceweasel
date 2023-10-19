@@ -112,6 +112,8 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
       // CompositableHandle managed inside the compositor process. There is
       // nothing to paint until the owner attaches it.
 
+      element->FlushOffscreenCanvas();
+
       nsHTMLCanvasFrame* canvasFrame = static_cast<nsHTMLCanvasFrame*>(mFrame);
       nsIntSize canvasSizeInPx = canvasFrame->GetCanvasSize();
       IntrinsicSize intrinsicSize = IntrinsicSizeFromCanvasSize(canvasSizeInPx);
@@ -344,12 +346,11 @@ NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 NS_IMPL_FRAMEARENA_HELPERS(nsHTMLCanvasFrame)
 
-void nsHTMLCanvasFrame::DestroyFrom(nsIFrame* aDestroyRoot,
-                                    PostDestroyData& aPostDestroyData) {
+void nsHTMLCanvasFrame::Destroy(DestroyContext& aContext) {
   if (IsPrimaryFrame()) {
     HTMLCanvasElement::FromNode(*mContent)->ResetPrintCallback();
   }
-  nsContainerFrame::DestroyFrom(aDestroyRoot, aPostDestroyData);
+  nsContainerFrame::Destroy(aContext);
 }
 
 nsHTMLCanvasFrame::~nsHTMLCanvasFrame() = default;

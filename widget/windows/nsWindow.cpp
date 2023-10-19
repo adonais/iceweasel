@@ -272,6 +272,66 @@ bool nsWindow::sJustGotDeactivate = false;
 bool nsWindow::sJustGotActivate = false;
 bool nsWindow::sIsInMouseCapture = false;
 
+// Urgent-message reentrancy depth for the static `WindowProc` callback.
+//
+// Three unfortunate facts collide:
+//
+// 𝛼) Some messages must be processed promptly. If not, Windows will leave the
+//    receiving window in an intermediate, and potentially unusable, state until
+//    the WindowProc invocation that is handling it returns.
+//
+// 𝛽) Some messages have indefinitely long processing time. These are mostly
+//    messages which may cause us to enter a nested modal loop (via
+//    `SpinEventLoopUntil` or similar).
+//
+// 𝛾) Sometimes, messages skip the queue entirely. Our `WindowProc` may be
+//    reentrantly reinvoked from the kernel while we're blocking _on_ the
+//    kernel, even briefly, during processing of other messages. (Relevant
+//    search term: `KeUserModeCallback`.)
+//
+// The nightmare scenario, then, is that during processing of an 𝛼-message, we
+// briefly become blocked (e.g., by calling `::SendMessageW()`), and the kernel
+// takes that opportunity to use 𝛾 to hand us a 𝛽-message. (Concretely, see
+// bug 1842170.)
+//
+// There is little we can do to prevent the first half of this scenario. 𝛼) and
+// 𝛾) are effectively immutable facts of Windows, and we sometimes legitimately
+// need to make blocking calls to process 𝛼-messages. (We may not even be aware
+// that we're making such calls, if they're undocumented implementation details
+// of another API.)
+//
+// In an ideal world, WindowProc would always return promptly (or at least in
+// bounded time), and 𝛽-messages would not _per se_ exist; long-running modal
+// states would instead be implemented in async fashion. In practice, that's far
+// easier said than done -- replacing existing uses of `SpinEventLoopUntil` _et
+// al._ with asynchronous mechanisms is a collection of mostly-unrelated cross-
+// cutting architectural tasks, each of potentially unbounded scope. For now,
+// and for the foreseeable future, we're stuck with them.
+//
+// We therefore simply punt. More specifically: if a known 𝛽-message jumps the
+// queue to come in while we're in the middle of processing a known 𝛼-message,
+// we:
+//  * properly queue the message for processing later;
+//  * respond to the 𝛽-message as though we actually had processed it; and
+//  * just hope that it can wait until we get around to it.
+//
+// The word "known" requires a bit of justification. There is no canonical set
+// of 𝛼-messages, nor is the set of 𝛽-messages fixed (or even demarcable). We
+// can't safely assume that all messages are 𝛼-messages, as that could cause
+// 𝛽-messages to be arbitrarily and surprisingly delayed whenever any nested
+// event loop is active. We also can't assume all messages are 𝛽-messages,
+// since one 𝛼-message jumping the queue while processing another 𝛼-message is
+// part of normal and required operation for windowed Windows applications.
+//
+// So we simply add messages to those sets as we identify them. (Or, preferably,
+// rework the 𝛽-message's handling to make it no longer 𝛽. But see above.)
+//
+// ---
+//
+// The actual value of `sDepth` is the number of active invocations of
+// `WindowProc` that are processing known 𝛼-messages.
+size_t nsWindow::WndProcUrgentInvocation::sDepth = 0;
+
 // Hook Data Members for Dropdowns. sProcessHook Tells the
 // hook methods whether they should be processing the hook
 // messages.
@@ -4012,15 +4072,11 @@ void nsWindow::EnableDragDrop(bool aEnable) {
     if (!mNativeDragTarget) {
       mNativeDragTarget = new nsNativeDragTarget(this);
       mNativeDragTarget->AddRef();
-      if (SUCCEEDED(::CoLockObjectExternal((LPUNKNOWN)mNativeDragTarget, TRUE,
-                                           FALSE))) {
-        ::RegisterDragDrop(mWnd, (LPDROPTARGET)mNativeDragTarget);
-      }
+      ::RegisterDragDrop(mWnd, (LPDROPTARGET)mNativeDragTarget);
     }
   } else {
     if (mWnd && mNativeDragTarget) {
       ::RevokeDragDrop(mWnd);
-      ::CoLockObjectExternal((LPUNKNOWN)mNativeDragTarget, FALSE, TRUE);
       mNativeDragTarget->DragCancel();
       NS_RELEASE(mNativeDragTarget);
     }
@@ -6238,7 +6294,13 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     } break;
 
     case WM_ACTIVATEAPP: {
-      GPUProcessManager::Get()->SetAppInForeground(wParam);
+      // Bug 1851991: Sometimes this can be called before gfxPlatform::Init
+      // when a window is created very early. In that case we just forego
+      // setting this and accept the GPU process might briefly run at a lower
+      // priority.
+      if (GPUProcessManager::Get()) {
+        GPUProcessManager::Get()->SetAppInForeground(wParam);
+      }
     } break;
 
     case WM_MOUSEACTIVATE:
@@ -6276,7 +6338,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
                                        mSizeConstraints.mMaxSize.height);
     } break;
 
-    case WM_SETFOCUS:
+    case WM_SETFOCUS: {
+      WndProcUrgentInvocation::Marker _marker;
+
       // If previous focused window isn't ours, it must have received the
       // redirected message.  So, we should forget it.
       if (!WinUtils::IsOurProcessWindow(HWND(wParam))) {
@@ -6286,7 +6350,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         DispatchFocusToTopLevelWindow(true);
       }
       TaskbarConcealer::OnFocusAcquired(this);
-      break;
+    } break;
 
     case WM_KILLFOCUS:
       if (sJustGotDeactivate) {
@@ -6343,7 +6407,16 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 #endif
 
     case WM_SYSCOMMAND: {
-      WPARAM filteredWParam = (wParam & 0xFFF0);
+      WPARAM const filteredWParam = (wParam & 0xFFF0);
+
+      // SC_CLOSE may trigger a synchronous confirmation prompt. If we're in the
+      // middle of something important, put off responding to it.
+      if (filteredWParam == SC_CLOSE && WndProcUrgentInvocation::IsActive()) {
+        ::PostMessageW(mWnd, msg, wParam, lParam);
+        result = true;
+        break;
+      }
+
       if (mFrameState->GetSizeMode() == nsSizeMode_Fullscreen &&
           filteredWParam == SC_RESTORE &&
           GetCurrentShowCmd(mWnd) != SW_SHOWMINIMIZED) {
@@ -8401,7 +8474,9 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       allowAnimations = nsIRollupListener::AllowAnimations::No;
       break;
 
-    case WM_ACTIVATE:
+    case WM_ACTIVATE: {
+      WndProcUrgentInvocation::Marker _marker;
+
       // NOTE: Don't handle WA_INACTIVE for preventing popup taking focus
       // because we cannot distinguish it's caused by mouse or not.
       if (LOWORD(aWParam) == WA_ACTIVE && aLParam) {
@@ -8463,7 +8538,7 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
         }
       }
       allowAnimations = nsIRollupListener::AllowAnimations::No;
-      break;
+    } break;
 
     case MOZ_WM_REACTIVATE:
       // The previous active window should take back focus.

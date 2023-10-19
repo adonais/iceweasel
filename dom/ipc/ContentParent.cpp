@@ -1699,7 +1699,9 @@ void ContentParent::Init() {
 
   RefPtr<GeckoMediaPluginServiceParent> gmps(
       GeckoMediaPluginServiceParent::GetSingleton());
-  gmps->UpdateContentProcessGMPCapabilities(this);
+  if (gmps) {
+    gmps->UpdateContentProcessGMPCapabilities(this);
+  }
 
   // Flush any pref updates that happened during launch and weren't
   // included in the blobs set up in BeginSubprocessLaunch.
@@ -6719,15 +6721,6 @@ bool ContentParent::DeallocPSessionStorageObserverParent(
   MOZ_ASSERT(aActor);
 
   return mozilla::dom::DeallocPSessionStorageObserverParent(aActor);
-}
-
-mozilla::ipc::IPCResult ContentParent::RecvDeviceReset() {
-  GPUProcessManager* pm = GPUProcessManager::Get();
-  if (pm) {
-    pm->SimulateDeviceReset();
-  }
-
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvBHRThreadHang(

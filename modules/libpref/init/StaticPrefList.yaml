@@ -1350,6 +1350,12 @@
   value: false
   mirror: always
 
+# See bug 1811830
+- name: browser.download.force_save_internally_handled_attachments
+  type: bool
+  value: false
+  mirror: always
+
 - name: browser.download.sanitize_non_media_extensions
   type: bool
   value: true
@@ -2850,6 +2856,27 @@
 
 # Whether we allow BrowsingContextGroup to suspend input events
 - name: dom.input_events.canSuspendInBCG.enabled
+  type: bool
+  value: false
+  mirror: always
+
+# The minimum number of ticks after page navigation
+# that need to occur before user input events are allowed to be handled.
+- name: dom.input_events.security.minNumTicks
+  type: uint32_t
+  value: 3
+  mirror: always
+
+# The minimum elapsed time (in milliseconds) after page navigation
+# for user input events are allowed to be handled.
+- name: dom.input_events.security.minTimeElapsedInMS
+  type: uint32_t
+  value: 100
+  mirror: always
+
+# By default user input handling delay is disabled (mostly) for testing ,
+# this is used for forcefully enable it for certain tests.
+- name: dom.input_events.security.isUserInputHandlingDelayTest
   type: bool
   value: false
   mirror: always
@@ -15091,6 +15118,11 @@
 - name: webgl.max-size-per-texture-mib
   type: RelaxedAtomicUint32
   value: 1024
+  mirror: always
+
+- name: webgl.max-vert-ids-per-draw
+  type: RelaxedAtomicUint32
+  value: 30*1000*1000
   mirror: always
 
 - name: webgl.max-warnings-per-context
