@@ -829,7 +829,7 @@ pref("browser.tabs.tooltipsShowPidAndActiveness", true);
 pref("browser.tabs.tooltipsShowPidAndActiveness", false);
 #endif
 
-pref("browser.tabs.firefox-view", true);
+pref("browser.tabs.firefox-view", false);
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 pref("browser.tabs.firefox-view.notify-for-tabs", false);
 
