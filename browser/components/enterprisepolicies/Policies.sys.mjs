@@ -1695,6 +1695,7 @@ export var Policies = {
     onBeforeAddons(manager, param) {
       let allowedPrefixes = [
         "accessibility.",
+        "alerts.",
         "app.update.",
         "browser.",
         "datareporting.policy.",
@@ -1727,6 +1728,8 @@ export var Policies = {
       const allowedSecurityPrefs = [
         "security.block_fileuri_script_with_wrong_mime",
         "security.default_personal_cert",
+        "security.disable_button.openCertManager",
+        "security.disable_button.openDeviceManager",
         "security.insecure_connection_text.enabled",
         "security.insecure_connection_text.pbmode.enabled",
         "security.mixed_content.block_active_content",
