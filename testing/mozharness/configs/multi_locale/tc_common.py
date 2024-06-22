@@ -12,12 +12,7 @@ external_tools_path = os.path.join(
 )
 
 config = {
-    "simple_name_move": True,
-    "vcs_share_base": "/builds/hg-shared",
     "exes": {
         "gittool.py": [os.path.join(external_tools_path, "gittool.py")],
-    },
-    "upload_env": {
-        "UPLOAD_PATH": "/builds/worker/artifacts/",
     },
 }

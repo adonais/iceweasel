@@ -675,7 +675,6 @@ mil.by
 // second-level domain, but it's being used as one (see www.google.com.by and
 // www.yahoo.com.by, for example), so we list it here for safety's sake.
 com.by
-
 // http://hoster.by/
 of.by
 
@@ -6710,7 +6709,7 @@ org.zw
 
 // newGTLDs
 
-// List of new gTLDs imported from https://www.icann.org/resources/registries/gtlds/v2/gtlds.json on 2024-05-31T15:16:08Z
+// List of new gTLDs imported from https://www.icann.org/resources/registries/gtlds/v2/gtlds.json on 2024-06-13T15:15:16Z
 // This list is auto-generated, don't edit it manually.
 // aaa : American Automobile Association, Inc.
 // https://www.iana.org/domains/root/db/aaa.html
@@ -9227,10 +9226,6 @@ nab
 // nagoya : GMO Registry, Inc.
 // https://www.iana.org/domains/root/db/nagoya.html
 nagoya
-
-// natura : NATURA COSMÉTICOS S.A.
-// https://www.iana.org/domains/root/db/natura.html
-natura
 
 // navy : Dog Beach, LLC
 // https://www.iana.org/domains/root/db/navy.html
@@ -12416,6 +12411,11 @@ trycloudflare.com
 pages.dev
 r2.dev
 workers.dev
+cdn.cloudflareanycast.net
+cdn.cloudflarecn.net
+cdn.cloudflareglobal.net
+cloudflare.net
+cdn.cloudflare.net
 
 // cloudscale.ch AG : https://www.cloudscale.ch/
 // Submitted by Gaudenz Steinlin <support@cloudscale.ch>
@@ -13046,6 +13046,14 @@ easypanel.host
 // Submitted by <infracloudteam@namecheap.com>
 *.ewp.live
 
+// eDirect Corp. : https://hosting.url.com.tw/
+// Submitted by C.S. chang <cschang@corp.url.com.tw>
+twmail.cc
+twmail.net
+twmail.org
+mymailer.com.tw
+url.tw
+
 // Electromagnetic Field : https://www.emfcamp.org
 // Submitted by <noc@emfcamp.org>
 at.emf.camp
@@ -13064,7 +13072,7 @@ elementor.cool
 en-root.fr
 
 // Enalean SAS: https://www.enalean.com
-// Submitted by Thomas Cottier <thomas.cottier@enalean.com>
+// Submitted by Enalean Security Team <security@enalean.com>
 mytuleap.com
 tuleap-partners.com
 
@@ -13156,18 +13164,15 @@ us-2.evennode.com
 us-3.evennode.com
 us-4.evennode.com
 
+// Evervault : https://evervault.com
+// Submitted by Hannah Neary <engineering@evervault.com>
+relay.evervault.app
+relay.evervault.dev
+
 // Expo : https://expo.dev/
 // Submitted by James Ide <psl@expo.dev>
 expo.app
 staging.expo.app
-
-// eDirect Corp. : https://hosting.url.com.tw/
-// Submitted by C.S. chang <cschang@corp.url.com.tw>
-twmail.cc
-twmail.net
-twmail.org
-mymailer.com.tw
-url.tw
 
 // Fabrica Technologies, Inc. : https://www.fabrica.dev/
 // Submitted by Eric Jiang <eric@fabrica.dev>
@@ -13392,7 +13397,7 @@ freemyip.com
 // Submitted by Daniel A. Maierhofer <vorstand@funkfeuer.at>
 wien.funkfeuer.at
 
-// Future Versatile Group. ：https://www.fvg-on.net/
+// Future Versatile Group. : https://www.fvg-on.net/
 // T.Kabu <webmaster@fvg-on.net>
 daemon.asia
 dix.asia
@@ -13614,10 +13619,6 @@ london.cloudapps.digital
 // Submitted by Richard Baker <richard.baker@digital.cabinet-office.gov.uk>
 pymnt.uk
 
-// GlobeHosting, Inc.
-// Submitted by Zoltan Egresi <egresi@globehosting.com>
-ro.im
-
 // GoIP DNS Services : http://www.goip.de
 // Submitted by Christian Poulter <milchstrasse@goip.de>
 goip.de
@@ -13767,6 +13768,10 @@ pages.it.hs-heilbronn.de
 // Submitted by Ben Frede <admin@heliohost.org>
 helioho.st
 heliohost.us
+
+// HeiyuSpace: https://lazycat.cloud
+// Submitted by Xia Bin <admin@lazycat.cloud>
+heiyu.space
 
 // Hepforge : https://www.hepforge.org
 // Submitted by David Grellscheid <admin@hepforge.org>
@@ -14194,12 +14199,15 @@ barsy.club
 barsycenter.com
 barsyonline.com
 barsy.de
+barsy.dev
 barsy.eu
+barsy.gr
 barsy.in
 barsy.info
 barsy.io
 barsy.me
 barsy.menu
+barsyonline.menu
 barsy.mobi
 barsy.net
 barsy.online
@@ -14207,8 +14215,11 @@ barsy.org
 barsy.pro
 barsy.pub
 barsy.ro
+barsy.rs
 barsy.shop
+barsyonline.shop
 barsy.site
+barsy.store
 barsy.support
 barsy.uk
 barsy.co.uk
@@ -14226,10 +14237,6 @@ mayfirst.org
 // Mail.Ru Group : https://hb.cldmail.ru
 // Submitted by Ilya Zaretskiy <zaretskiy@corp.mail.ru>
 hb.cldmail.ru
-
-// Mail Transfer Platform : https://www.neupeer.com
-// Submitted by Li Hui <lihui@neupeer.com>
-cn.vu
 
 // Maze Play: https://www.mazeplay.com
 // Submitted by Adam Humpherys <adam@mws.dev>
@@ -14703,6 +14710,7 @@ pagexl.com
 // Submitted by Pierre Carrier <pc@rrier.ca>
 *.xmit.co
 xmit.dev
+madethis.site
 srv.us
 gh.srv.us
 gl.srv.us
@@ -14781,8 +14789,8 @@ pstmn.io
 mock.pstmn.io
 httpbin.org
 
-//prequalifyme.today : https://prequalifyme.today
-//Submitted by DeepakTiwari deepak@ivylead.io
+// prequalifyme.today : https://prequalifyme.today
+// Submitted by DeepakTiwari deepak@ivylead.io
 prequalifyme.today
 
 // prgmr.com : https://prgmr.com/
@@ -15137,6 +15145,10 @@ biz.ua
 co.ua
 pp.ua
 
+// Shanghai Accounting Society : https://www.sasf.org.cn
+// Submitted by Information Administration <info@sasf.org.cn>
+as.sh.cn
+
 // Sheezy.Art : https://sheezy.art
 // Submitted by Nyoom <admin@sheezy.art>
 sheezy.games
@@ -15225,6 +15237,10 @@ try-snowplow.com
 // Submitted by Drew DeVault <sir@cmpwn.com>
 srht.site
 
+// SparrowHost : https://sparrowhost.in/
+// Submitted by Anant Pandey <info@sparrowhost.in>
+ind.mom
+
 // StackBlitz : https://stackblitz.com
 // Submitted by Dominic Elm <hello@stackblitz.com>
 w-corp-staticblitz.com
@@ -15258,6 +15274,11 @@ sites.static.land
 // Storebase : https://www.storebase.io
 // Submitted by Tony Schirmer <tony@storebase.io>
 storebase.store
+
+// Strapi : https://strapi.io/
+// Submitted by Florent Baldino <security@strapi.io>
+strapiapp.com
+media.strapiapp.com
 
 // Strategic System Consulting (eApps Hosting): https://www.eapps.com/
 // Submitted by Alex Oancea <aoancea@cloudscale365.com>
