@@ -19,7 +19,7 @@ if [ ! -f "$FIND_FILE" ]; then
   echo $FIND_FILE not exist!
   exit 1;
 fi
-FIND_STR="ac_add_options --target=i686-pc-mingw32"
+FIND_STR="ac_add_options --target=i686-pc-windows-msvc"
 if [ "$OS" != "Windows_NT" ]; then
   PATH=$PATH:~/.cargo/bin
   MYOBJ_DIR="obju-linux64"
@@ -98,6 +98,9 @@ if [ "$?" != "0" ]; then
   exit 1;
 fi
 $MAKE package
+
+echo Clean python cache!
+find "$ICEWEASEL_TREE" \( -path "$ICEWEASEL_TREE/.git" -prune \) -o -name "__pycache__" -type d -print | xargs -I {} rm -rf "{}"
 echo Compile completed!
 rm -f $ICEWEASEL_TREE/$FIND_FILE>/dev/null 2>&1
 rm -f $ICEWEASEL_TREE/configure.old >/dev/null 2>&1
