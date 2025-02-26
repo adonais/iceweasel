@@ -206,6 +206,14 @@ export class BaseContent extends React.PureComponent {
     }
 
     const prefs = this.props.Prefs.values;
+    const { showSearch } = prefs;
+
+    if (!showSearch) {
+      // Bug 1944718: Only apply fixed-search logic
+      // if search is visible.
+      return;
+    }
+
     const logoAlwaysVisible = prefs["logowordmark.alwaysVisible"];
     const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
     const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
@@ -374,13 +382,48 @@ export class BaseContent extends React.PureComponent {
     const prefs = this.props.Prefs.values;
     const wallpaperLight = prefs["newtabWallpapers.wallpaper-light"];
     const wallpaperDark = prefs["newtabWallpapers.wallpaper-dark"];
+    // selected wallpaper is used for v2 of wallpapers
+    const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
     const { wallpaperList } = this.props.Wallpapers;
 
     if (wallpaperList) {
-      const lightWallpaper =
-        wallpaperList.find(wp => wp.title === wallpaperLight) || "";
-      const darkWallpaper =
-        wallpaperList.find(wp => wp.title === wallpaperDark) || "";
+      let lightWallpaper;
+      let darkWallpaper;
+      if (selectedWallpaper) {
+        // if selectedWallpaper exists - we override what light and dark prefs are to match that
+        const wallpaper = wallpaperList.find(
+          wp => wp.title === selectedWallpaper
+        );
+        lightWallpaper = wallpaper;
+        darkWallpaper = wallpaper;
+      } else {
+        lightWallpaper =
+          wallpaperList.find(wp => wp.title === wallpaperLight) || "";
+        darkWallpaper =
+          wallpaperList.find(wp => wp.title === wallpaperDark) || "";
+      }
+
+      // solid-color-picker-#00d100
+      const regexRGB = /#([a-fA-F0-9]{6})/;
+
+      // Override Remote Settings to set custom HEX bg color
+      if (wallpaperLight.includes("solid-color-picker")) {
+        lightWallpaper = {
+          theme: "light",
+          title: "solid-color-picker",
+          category: "solid-colors",
+          solid_color: wallpaperLight.match(regexRGB)[0],
+        };
+      }
+
+      if (wallpaperDark.includes("solid-color-picker")) {
+        darkWallpaper = {
+          theme: "dark",
+          title: "solid-color-picker",
+          category: "solid-colors",
+          solid_color: wallpaperDark.match(regexRGB)[0],
+        };
+      }
 
       const wallpaperColor =
         darkWallpaper?.solid_color || lightWallpaper?.solid_color || "";
@@ -539,6 +582,7 @@ export class BaseContent extends React.PureComponent {
 
     const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
     const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
+    const shortcutsRefresh = prefs["newtabShortcuts.refresh"];
     const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
 
     const activeWallpaper =
@@ -594,12 +638,22 @@ export class BaseContent extends React.PureComponent {
       prefs["discoverystream.thumbsUpDown.searchTopsitesCompact"];
     const hasThumbsUpDown = prefs["discoverystream.thumbsUpDown.enabled"];
     const sectionsEnabled = prefs["discoverystream.sections.enabled"];
+    const topicLabelsEnabled = prefs["discoverystream.topicLabels.enabled"];
+    const sectionsCustomizeMenuPanelEnabled =
+      prefs["discoverystream.sections.customizeMenuPanel.enabled"];
+    // Logic to show follow/block topic mgmt panel in Customize panel
+    const mayHaveTopicSections =
+      topicLabelsEnabled &&
+      sectionsEnabled &&
+      sectionsCustomizeMenuPanelEnabled &&
+      DiscoveryStream.feeds.loaded;
 
     const featureClassName = [
       weatherEnabled && mayHaveWeather && "has-weather", // Show is weather is enabled/visible
       prefs.showSearch ? "has-search" : "no-search",
       layoutsVariantAEnabled ? "layout-variant-a" : "", // Layout experiment variant A
       layoutsVariantBEnabled ? "layout-variant-b" : "", // Layout experiment variant B
+      shortcutsRefresh ? "shortcuts-refresh" : "", // Shortcuts refresh experiment
       pocketEnabled ? "has-recommended-stories" : "no-recommended-stories",
       sectionsEnabled ? "has-sections-grid" : "",
     ]
@@ -643,6 +697,7 @@ export class BaseContent extends React.PureComponent {
             wallpapersV2Enabled={wallpapersV2Enabled}
             activeWallpaper={activeWallpaper}
             pocketRegion={pocketRegion}
+            mayHaveTopicSections={mayHaveTopicSections}
             mayHaveSponsoredTopSites={mayHaveSponsoredTopSites}
             mayHaveSponsoredStories={mayHaveSponsoredStories}
             mayHaveWeather={mayHaveWeather}
@@ -681,7 +736,11 @@ export class BaseContent extends React.PureComponent {
             )}
             {/* Bug 1914055: Show logo regardless if search is enabled */}
             {!prefs.showSearch && layoutsVariantAorB && !noSectionsEnabled && (
-              <Logo />
+              <Logo
+                isAprilFoolsLogo={
+                  this.props.Prefs.values["newtabLogo.aprilfools"]
+                }
+              />
             )}
             <div className={`body-wrapper${initialized ? " on" : ""}`}>
               {isDiscoveryStream ? (

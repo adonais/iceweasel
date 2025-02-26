@@ -179,6 +179,7 @@ class GeckoEngineSession(
         parent: EngineSession?,
         flags: LoadUrlFlags,
         additionalHeaders: Map<String, String>?,
+        originalInput: String?,
     ) {
         notifyObservers { onLoadUrl() }
 
@@ -195,6 +196,7 @@ class GeckoEngineSession(
         val loader = GeckoSession.Loader()
             .uri(url)
             .flags(flags.getGeckoFlags())
+            .originalInput(originalInput)
 
         if (additionalHeaders != null) {
             val headerFilter = if (flags.contains(ALLOW_ADDITIONAL_HEADERS)) {
@@ -1810,7 +1812,6 @@ class GeckoEngineSession(
         this.geckoSession = geckoSessionProvider()
 
         defaultSettings?.trackingProtectionPolicy?.let { updateTrackingProtection(it) }
-        defaultSettings?.desktopModeEnabled?.let { toggleDesktopMode(enable = it, reload = false) }
         defaultSettings?.requestInterceptor?.let { settings.requestInterceptor = it }
         defaultSettings?.historyTrackingDelegate?.let { settings.historyTrackingDelegate = it }
         defaultSettings?.testingModeEnabled?.let {
@@ -1846,7 +1847,7 @@ class GeckoEngineSession(
         internal const val ABOUT_BLANK = "about:blank"
         internal const val JS_SCHEME = "javascript"
         internal val BLOCKED_SCHEMES =
-            listOf("file", "resource", JS_SCHEME) // See 1684761 and 1684947
+            listOf("file", "resource", "fido", JS_SCHEME) // See 1684761 and 1684947
 
         /**
          * Provides an ErrorType corresponding to the error code provided.

@@ -8,7 +8,7 @@ package mozilla.components.service.mars
  * Configuration for the top sites tile request.
  *
  * @property contextId An UUID that represents the user's context.
- * @property userAgent TODO
+ * @property userAgent The user agent to be used for the request.
  * @property placements List of [Placement]s to request.
  */
 data class MarsTopSitesRequestConfig(

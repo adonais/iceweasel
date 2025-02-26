@@ -11,6 +11,10 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 
+const { ActionsProviderQuickActions } = ChromeUtils.importESModule(
+  "resource:///modules/ActionsProviderQuickActions.sys.mjs"
+);
+
 const CONFIG = [
   {
     identifier: "default-engine",
@@ -82,6 +86,57 @@ add_task(async function test_no_engine() {
   );
 });
 
+add_task(async function test_engine_match() {
+  await updateConfig(CONFIG);
+  await loadUri("https://example.org/");
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "example.net",
+  });
+
+  let onLoad = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    "https://example.net/?q=test"
+  );
+
+  let btn = window.document.querySelector(".urlbarView-action-btn");
+  EventUtils.synthesizeMouseAtCenter(btn, {}, window);
+  EventUtils.sendString("test");
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  await onLoad;
+  await updateConfig(null);
+});
+
+add_task(async function test_actions() {
+  let testActionCalled = 0;
+  await updateConfig(CONFIG);
+  await loadUri("https://example.net/");
+
+  ActionsProviderQuickActions.addAction("testaction", {
+    commands: ["example"],
+    label: "quickactions-downloads2",
+    onPick: () => testActionCalled++,
+  });
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "example.net",
+  });
+
+  EventUtils.synthesizeKey("KEY_Tab");
+  EventUtils.synthesizeKey("KEY_Tab");
+  EventUtils.synthesizeKey("KEY_Enter");
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  Assert.equal(testActionCalled, 1, "Test action was called");
+
+  await updateConfig(null);
+  ActionsProviderQuickActions.removeAction("testaction");
+});
+
 add_task(async function test_selectContextualSearchResult_already_installed() {
   let ext = await SearchTestUtils.installSearchExtension({
     name: "Contextual",
@@ -127,7 +182,11 @@ add_task(async function test_selectContextualSearchResult_already_installed() {
     false,
     expectedUrl
   );
-  EventUtils.sendString(query);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: query,
+  });
   EventUtils.synthesizeKey("KEY_Enter");
   await onLoad;
 

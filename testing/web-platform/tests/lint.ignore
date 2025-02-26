@@ -123,6 +123,7 @@ CONSOLE: webaudio/resources/audit.js:41
 
 # Intentional use of console.*
 CONSOLE: infrastructure/webdriver/bidi/subscription.html
+CONSOLE: infrastructure/webdriver/bidi/subscription.window.js
 
 # use of console in a public library - annotation-model ensures
 # it is not actually used
@@ -469,8 +470,7 @@ CONSOLE: css/css-shapes/shape-outside/supported-shapes/support/test-utils.js
 CONSOLE: css/css-values/viewport-units-css2-001.html
 CONSOLE: css/css-writing-modes/orthogonal-parent-shrink-to-fit-001*.html
 CONSOLE: css/css-writing-modes/tools/generators/template.html
-CONSOLE: bluetooth/characteristic/readValue/characteristic-is-removed.https.window.js
-CONSOLE: bluetooth/resources/bluetooth-test.js
+CONSOLE: bluetooth/legacy/characteristic/readValue/characteristic-is-removed.https.window.js
 
 TRAILING WHITESPACE: css/css-fonts/support/fonts/gsubtest-lookup3.ufo/features.fea
 
@@ -655,6 +655,9 @@ AHEM SYSTEM FONT: css/css-fonts/font-size-adjust-metrics-override-ref.html
 AHEM SYSTEM FONT: css/css-fonts/line-gap-override.html
 AHEM SYSTEM FONT: css/css-fonts/parsing/font-size-adjust-computed.html
 AHEM SYSTEM FONT: css/css-fonts/size-adjust-unicode-range-system-fallback.html
+AHEM SYSTEM FONT: css/css-overflow/line-clamp/block-ellipsis-010.html
+AHEM SYSTEM FONT: css/css-overflow/line-clamp/reference/block-ellipsis-010-ref.html
+AHEM SYSTEM FONT: css/css-overflow/line-clamp/reference/block-ellipsis-010-alt-ref.html
 AHEM SYSTEM FONT: html/dom/render-blocking/remove-attr-unblocks-rendering.optional.html
 AHEM SYSTEM FONT: html/dom/render-blocking/remove-element-unblocks-rendering.optional.html
 
@@ -805,3 +808,9 @@ TESTDRIVER-IN-UNSUPPORTED-TYPE: payment-handler/change-shipping-address-manual.h
 TESTDRIVER-IN-UNSUPPORTED-TYPE: payment-handler/change-shipping-option-manual.https.html
 TESTDRIVER-IN-UNSUPPORTED-TYPE: payment-handler/payment-request-event-manual.https.html
 TESTDRIVER-IN-UNSUPPORTED-TYPE: payment-handler/supports-shipping-contact-delegation-manual.https.html
+
+# Tests automatically imported from the WebAssembly/spec repository that should be removed after getting fixed upstream.
+SET TIMEOUT: wasm/core/js/harness/testharness.js
+ASSERT_THROWS: wasm/core/js/harness/testharness.js
+GENERATE_TESTS: wasm/core/js/harness/testharness.js
+PROMISE_REJECTS: wasm/core/js/harness/testharness.js

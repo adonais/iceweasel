@@ -2256,12 +2256,11 @@ inline already_AddRefed<nsICookieJarSettings> GetCookieJarSettings(
   return cookieJarSettings.forget();
 }
 
-bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
-                                          nsILoadInfo* aLoadInfo) {
+bool nsContentUtils::ETPSaysShouldNotResistFingerprinting(
+    nsICookieJarSettings* aCookieJarSettings, bool aIsPBM) {
   // A positive return from this function should always be obeyed.
   // A negative return means we should keep checking things.
 
-  bool isPBM = NS_UsePrivateBrowsing(aChannel);
   // We do not want this check to apply to RFP, only to FPP
   // There is one problematic combination of prefs; however:
   // If RFP is enabled in PBMode only and FPP is enabled globally
@@ -2271,12 +2270,12 @@ bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
   if (StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly() &&
       !StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
       StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
-    if (isPBM) {
+    if (aIsPBM) {
       // In PBM (where RFP is enabled) do not exempt based on the ETP toggle
       return false;
     }
   } else if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
-             (isPBM &&
+             (aIsPBM &&
               StaticPrefs::
                   privacy_resistFingerprinting_pbmode_DoNotUseDirectly())) {
     // In RFP, never use the ETP toggle to exempt.
@@ -2286,13 +2285,20 @@ bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
     return false;
   }
 
+  return ContentBlockingAllowList::Check(aCookieJarSettings);
+}
+
+bool nsContentUtils::ETPSaysShouldNotResistFingerprinting(
+    nsIChannel* aChannel, nsILoadInfo* aLoadInfo) {
+  bool isPBM = NS_UsePrivateBrowsing(aChannel);
+
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
       GetCookieJarSettings(aLoadInfo);
   if (!cookieJarSettings) {
     return false;
   }
 
-  return ContentBlockingAllowList::Check(cookieJarSettings);
+  return ETPSaysShouldNotResistFingerprinting(cookieJarSettings, isPBM);
 }
 
 inline bool CookieJarSettingsSaysShouldResistFingerprinting(
@@ -4821,14 +4827,14 @@ nsresult nsContentUtils::DispatchInputEvent(
   bool useInputEvent = false;
   if (aEditorBase) {
     useInputEvent = true;
-  } else if (HTMLTextAreaElement* textAreaElement =
+  } else if (const HTMLTextAreaElement* const textAreaElement =
                  HTMLTextAreaElement::FromNode(aEventTargetElement)) {
-    aEditorBase = textAreaElement->GetTextEditorWithoutCreation();
+    aEditorBase = textAreaElement->GetExtantTextEditor();
     useInputEvent = true;
-  } else if (HTMLInputElement* inputElement =
+  } else if (const HTMLInputElement* const inputElement =
                  HTMLInputElement::FromNode(aEventTargetElement)) {
     if (inputElement->IsInputEventTarget()) {
-      aEditorBase = inputElement->GetTextEditorWithoutCreation();
+      aEditorBase = inputElement->GetExtantTextEditor();
       useInputEvent = true;
     }
   }
@@ -5840,8 +5846,11 @@ nsresult nsContentUtils::SetNodeTextContent(nsIContent* aContent,
       NS_ENSURE_SUCCESS(rv, rv);
 
       // All the following nodes, if they exist, must be deleted.
-      while (nsIContent* nextChild = child->GetNextSibling()) {
-        aContent->RemoveChildNode(nextChild, true);
+      while (nsIContent* lastChild = aContent->GetLastChild()) {
+        if (lastChild == child) {
+          break;
+        }
+        aContent->RemoveChildNode(lastChild, true);
       }
     }
 
@@ -5850,9 +5859,7 @@ nsresult nsContentUtils::SetNodeTextContent(nsIContent* aContent,
     }
   } else {
     mb.Init(aContent, true, false);
-    while (aContent->HasChildren()) {
-      aContent->RemoveChildNode(aContent->GetFirstChild(), true);
-    }
+    aContent->RemoveAllChildren(true);
   }
   mb.RemovalDone();
 
@@ -7584,7 +7591,7 @@ EditorBase* nsContentUtils::GetActiveEditor(nsPIDOMWindowOuter* aWindow) {
 }
 
 // static
-TextEditor* nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
+TextEditor* nsContentUtils::GetExtantTextEditorFromAnonymousNode(
     const nsIContent* aAnonymousContent) {
   if (!aAnonymousContent) {
     return nullptr;
@@ -7593,13 +7600,13 @@ TextEditor* nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
   if (!parent || parent == aAnonymousContent) {
     return nullptr;
   }
-  if (HTMLInputElement* inputElement =
+  if (const HTMLInputElement* const inputElement =
           HTMLInputElement::FromNodeOrNull(parent)) {
-    return inputElement->GetTextEditorWithoutCreation();
+    return inputElement->GetExtantTextEditor();
   }
-  if (HTMLTextAreaElement* textareaElement =
+  if (const HTMLTextAreaElement* const textareaElement =
           HTMLTextAreaElement::FromNodeOrNull(parent)) {
-    return textareaElement->GetTextEditorWithoutCreation();
+    return textareaElement->GetExtantTextEditor();
   }
   return nullptr;
 }
@@ -8739,7 +8746,7 @@ nsresult nsContentUtils::SendMouseEvent(
     int32_t aButton, int32_t aButtons, int32_t aClickCount, int32_t aModifiers,
     bool aIgnoreRootScrollFrame, float aPressure,
     unsigned short aInputSourceArg, uint32_t aIdentifier, bool aToWindow,
-    PreventDefaultResult* aPreventDefault, bool aIsDOMEventSynthesized,
+    bool* aPreventDefault, bool aIsDOMEventSynthesized,
     bool aIsWidgetEventSynthesized) {
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(aPresShell, &offset);
@@ -8842,15 +8849,7 @@ nsresult nsContentUtils::SendMouseEvent(
     NS_ENSURE_SUCCESS(rv, rv);
   }
   if (aPreventDefault) {
-    if (status == nsEventStatus_eConsumeNoDefault) {
-      if (mouseOrPointerEvent.mFlags.mDefaultPreventedByContent) {
-        *aPreventDefault = PreventDefaultResult::ByContent;
-      } else {
-        *aPreventDefault = PreventDefaultResult::ByChrome;
-      }
-    } else {
-      *aPreventDefault = PreventDefaultResult::No;
-    }
+    *aPreventDefault = (status == nsEventStatus_eConsumeNoDefault);
   }
 
   return NS_OK;
@@ -11621,21 +11620,3 @@ template int32_t nsContentUtils::CompareTreePosition<TreeKind::DOM>(
     const nsINode*, const nsINode*, const nsINode*);
 template int32_t nsContentUtils::CompareTreePosition<TreeKind::Flat>(
     const nsINode*, const nsINode*, const nsINode*);
-
-namespace mozilla {
-std::ostream& operator<<(std::ostream& aOut,
-                         const PreventDefaultResult aPreventDefaultResult) {
-  switch (aPreventDefaultResult) {
-    case PreventDefaultResult::No:
-      aOut << "unhandled";
-      break;
-    case PreventDefaultResult::ByContent:
-      aOut << "handled-by-content";
-      break;
-    case PreventDefaultResult::ByChrome:
-      aOut << "handled-by-chrome";
-      break;
-  }
-  return aOut;
-}
-}  // namespace mozilla

@@ -183,10 +183,18 @@
     <string name="browser_menu_stop">Спыніць</string>
     <!-- Browser menu button that opens the extensions manager -->
     <string name="browser_menu_extensions">Пашырэнні</string>
+    <!-- Browser menu banner header text for extensions onboarding.
+        The first parameter is the name of the app defined in app_name (for example: Fenix). -->
+    <string name="browser_menu_extensions_banner_onboarding_header">Зрабіце %s сваім</string>
     <!-- Browser menu banner link text for learning more about extensions -->
     <string name="browser_menu_extensions_banner_learn_more">Даведацца больш</string>
     <!-- Browser menu button that opens the extensions manager -->
     <string name="browser_menu_manage_extensions">Кіраваць пашырэннямі</string>
+    <!-- Content description (not visible, for screen readers etc.): Section heading for recommended extensions.-->
+    <string name="browser_menu_recommended_section_content_description">Рэкамендаваныя пашырэнні</string>
+    <!-- Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
+      The first parameter is the name of the extension (for example: ClearURLs). -->
+    <string name="browser_menu_extension_plus_icon_content_description_2">Дадаць %1$s</string>
     <!-- Browser menu button that opens AMO in a tab -->
     <string name="browser_menu_discover_more_extensions">Адкрыйце для сябе іншыя пашырэнні</string>
     <!-- Browser menu description that is shown when one or more extensions are disabled due to extension errors -->
@@ -245,6 +253,8 @@
 
     <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
     <string name="browser_menu_customize_reader_view">Уладкаваць рэжым чытання</string>
+    <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
+    <string name="browser_menu_customize_reader_view_2">Уладкаваць рэжым чытання</string>
     <!-- Browser menu label for adding a bookmark -->
     <string name="browser_menu_add">Дадаць</string>
 
@@ -292,6 +302,8 @@
     <string name="browser_menu_turn_off_reader_view">Выключыць рэжым чытання</string>
     <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
     <string name="browser_menu_translate_page">Перакласці старонку…</string>
+    <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
+    <string name="browser_menu_webcompat_reporter">Паведаміць пра пашкоджаны сайт…</string>
     <!-- Browser menu label that is displayed when the current page has been translated by the translation feature.
          The first parameter is the name of the language that page was translated to (e.g. English). -->
     <string name="browser_menu_translated_to">Перакладзена на %1$s</string>
@@ -329,6 +341,9 @@
     <!-- Placeholder text shown in the search bar before a user enters text -->
     <string name="locale_search_hint">Пошук мовы</string>
 
+    <!-- Search Fragment -->
+    <!-- Button in the search view that lets a user search by scanning a QR code -->
+    <string name="search_scan_button_2">Сканаваць QR-код</string>
     <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
     <string name="search_shortcuts_engine_settings">Налады пошукавых сістэм</string>
     <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
@@ -352,6 +367,10 @@
 
     <!-- Header text for the search selector menu -->
     <string name="search_header_menu_item_2">Гэтым разам шукаць у:</string>
+
+    <!-- Content description (not visible, for screen readers etc.): Search engine icon.
+    The parameter is the search engine name (for example: DuckDuckGo). -->
+    <string name="search_engine_icon_content_description_1">Пошукавая сістэма: %s</string>
 
     <!-- Home onboarding -->
     <!-- Home onboarding dialog welcome screen title text. -->
@@ -431,14 +450,29 @@
     <string name="onboarding_add_on_start_browsing_button_2">Пачаць агляданне</string>
     <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
     <string name="onboarding_add_on_ublock_name" tools:ignore="UnusedResources">uBlock Origin</string>
+    <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
+    <string name="onboarding_add_on_privacy_badger_name" tools:ignore="UnusedResources">Privacy Badger</string>
     <!-- Label for the number of reviews for an add-on. The parameter is for the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
     <string name="onboarding_add_on_reviews_label">Водгукі: %1$s</string>
+    <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+    <string name="onboarding_preferences_dialog_crash_reporting_title">Аўтаматычна адпраўляць справаздачы аб збоях</string>
+    <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+    <string name="onboarding_preferences_dialog_crash_reporting_description">Справаздачы аб збоях дазваляюць нам дыягнаставаць і выпраўляць праблемы з браўзерам. Справаздачы могуць уключаць асабістыя або канфідэнцыяльныя звесткі.</string>
+    <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Падрабязней</string>
+    <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Падрабязней</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Гатова</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Скасаваць</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Скасаваць</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Калі ласка да Firefox</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
+    <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Умовы абслугоўвання</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
+    <string name="onboarding_term_of_service_line_two_link_text">Паведамленнем аб прыватнасці</string>
+    <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
+    <string name="onboarding_save_and_continue_button">Захаваць і працягваць</string>
     <!-- Onboarding toolbar selection card label for 'skip' button, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_skip_button" moz:removedIn="135" tools:ignore="UnusedResources">Прапусціць</string>
     <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
@@ -842,14 +876,13 @@
     <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
     <string name="exceptions_empty_message_learn_more_link">Даведацца больш</string>
 
-    <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Выкарыстанне і тэхнічныя дадзеныя</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Дзяліцца звесткамі пра прадукцыйнасць, выкарыстанне, апаратнае забеспячэнне і налады вашага браўзера з Mozilla, каб дапамагчы ўдасканаліць %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Дзяліцца звесткамі пра прадукцыйнасць, выкарыстанне, апаратнае забеспячэнне і налады вашага браўзера з Mozilla, каб дапамагчы ўдасканаліць %1$s</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Маркетынгавыя дадзеныя</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Дзеліцца асноўнымі звесткамі аб выкарыстанні з Adjust, нашым пастаўшчыком мабільнага маркетынгу</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Маркетынгавыя дадзеныя</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Падрабязней пра справаздачы аб збоях</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Даследаванні</string>
@@ -1009,7 +1042,7 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Актыўнае</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s можа ўсталёўваць і выконваць даследаванні час ад часу.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s можа ўсталёўваць і выконваць даследаванні час ад часу.</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Даведацца больш</string>
     <!-- Dialog message shown after removing a study -->
@@ -1198,6 +1231,8 @@
     <string name="bookmark_saved_in_folder_snackbar">Захавана ў “%s”</string>
     <!-- Snackbar edit button shown after a bookmark has been created. -->
     <string name="edit_bookmark_snackbar_action">ЗМЯНІЦЬ</string>
+    <!-- Bookmark menu move button -->
+    <string name="bookmark_menu_move_button">Перанесці</string>
     <!-- Bookmark overflow menu edit button -->
     <string name="bookmark_menu_edit_button">Змяніць</string>
     <!-- Bookmark overflow menu copy button -->
@@ -1232,6 +1267,8 @@
     <string name="bookmark_folder_label">ПАПКА</string>
     <!-- Bookmark NAME editing field label -->
     <string name="bookmark_name_label">НАЗВА</string>
+    <!-- Label for a text input field for a bookmark or folder name -->
+    <string name="bookmark_name_label_normal_case">Назва</string>
     <!-- Bookmark add folder screen title -->
     <string name="bookmark_add_folder_fragment_label">Дадаць папку</string>
     <!-- Bookmark select folder screen title -->
@@ -2719,4 +2756,5 @@
     <string name="certificate_warning_homepage_card_hca1_title" tools:ignore="BrandUsage,UnusedResources">Абнавіце свой браўзер Firefox</string>
     <!-- Push notification title about old Firefox version. "Update" is a noun. -->
     <string name="certificate_warning_push_notification_update_recommended_title" tools:ignore="UnusedResources">Рэкамендуецца абнавіць</string>
+
     </resources>

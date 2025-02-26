@@ -4,7 +4,7 @@
 
 const path = require("path");
 const webpack = require("webpack");
-const { ResourceUriPlugin } = require("./tools/resourceUriPlugin");
+const { ResourceUriPlugin } = require("../../tools/resourceUriPlugin");
 
 const absolute = relPath => path.join(__dirname, relPath);
 
@@ -16,7 +16,6 @@ module.exports = (env = {}) => ({
     filename: "activity-stream.bundle.js",
     library: "NewtabRenderUtils",
   },
-  // TODO: switch to eval-source-map for faster builds. Requires CSP changes
   devtool: env.development ? "inline-source-map" : false,
   plugins: [
     // The ResourceUriPlugin handles translating resource URIs in import
@@ -26,6 +25,14 @@ module.exports = (env = {}) => ({
         [
           new RegExp("^resource://activity-stream/"),
           path.join(__dirname, "./"),
+        ],
+        [
+          new RegExp("^resource:///modules/topsites/"),
+          path.join(__dirname, "../topsites/"),
+        ],
+        [
+          new RegExp("^resource:///modules/Dedupe.sys.mjs"),
+          path.join(__dirname, "../../modules/Dedupe.sys.mjs"),
         ],
       ],
     }),

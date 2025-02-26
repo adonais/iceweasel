@@ -1215,11 +1215,12 @@ async function cancelScrollAnimation(aElement, aWindow = window) {
   await aWindow.promiseApzFlushedRepaints();
 }
 
-function collectSampledScrollOffsets(aElement) {
-  let data = SpecialPowers.DOMWindowUtils.getCompositorAPZTestData();
+function collectSampledScrollOffsets(aElement, aPopupElement = null) {
+  let data =
+    SpecialPowers.DOMWindowUtils.getCompositorAPZTestData(aPopupElement);
   let sampledResults = data.sampledResults;
 
-  const layersId = SpecialPowers.DOMWindowUtils.getLayersId();
+  const layersId = SpecialPowers.DOMWindowUtils.getLayersId(aPopupElement);
   const scrollId = SpecialPowers.DOMWindowUtils.getViewId(aElement);
 
   return sampledResults.filter(
@@ -1265,23 +1266,27 @@ function compareVisualViewport(
 }
 
 // Loads a URL in an iframe and waits until APZ is stable
-async function setupIframe(aIFrame, aURL) {
+async function setupIframe(aIFrame, aURL, aIsOffScreen = false) {
   const iframeLoadPromise = promiseOneEvent(aIFrame, "load", null);
   aIFrame.src = aURL;
   await iframeLoadPromise;
 
-  await SpecialPowers.spawn(aIFrame, [], async () => {
-    await content.wrappedJSObject.waitUntilApzStable();
-  });
+  if (!aIsOffScreen) {
+    await SpecialPowers.spawn(aIFrame, [], async () => {
+      await content.wrappedJSObject.waitUntilApzStable();
+    });
+  }
 }
 
 // Loads a URL in an iframe and replaces its origin to
 // create an out-of-process iframe
-async function setupCrossOriginIFrame(aIFrame, aUrl) {
+async function setupCrossOriginIFrame(aIFrame, aUrl, aIsOffScreen = false) {
   let iframeURL = SimpleTest.getTestFileURL(aUrl);
   iframeURL = iframeURL.replace(window.location.origin, "https://example.com");
-  await setupIframe(aIFrame, iframeURL);
-  await SpecialPowers.spawn(aIFrame, [], async () => {
-    await SpecialPowers.contentTransformsReceived(content);
-  });
+  await setupIframe(aIFrame, iframeURL, aIsOffScreen);
+  if (!aIsOffScreen) {
+    await SpecialPowers.spawn(aIFrame, [], async () => {
+      await SpecialPowers.contentTransformsReceived(content);
+    });
+  }
 }

@@ -30,6 +30,7 @@
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/Services.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -1159,8 +1160,9 @@ bool CacheStorageService::IsForcedValidEntry(
   mForcedValidEntries.Remove(aContextEntryKey);
 
   if (!data.viewed) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::WaitedTooLong);
+    glean::predictor::prefetch_use_status
+        .EnumGet(glean::predictor::PrefetchUseStatusLabel::eWaitedtoolong)
+        .Add();
   }
   return false;
 }
@@ -1205,8 +1207,9 @@ void CacheStorageService::RemoveEntryForceValid(nsACString const& aContextKey,
   ForcedValidData data;
   bool ok = mForcedValidEntries.Get(aContextKey + aEntryKey, &data);
   if (ok && !data.viewed) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::WaitedTooLong);
+    glean::predictor::prefetch_use_status
+        .EnumGet(glean::predictor::PrefetchUseStatusLabel::eWaitedtoolong)
+        .Add();
   }
   mForcedValidEntries.Remove(aContextKey + aEntryKey);
 }
@@ -1220,8 +1223,9 @@ void CacheStorageService::ForcedValidEntriesPrune(TimeStamp& now) {
   for (auto iter = mForcedValidEntries.Iter(); !iter.Done(); iter.Next()) {
     if (iter.Data().validUntil < now) {
       if (!iter.Data().viewed) {
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::WaitedTooLong);
+        glean::predictor::prefetch_use_status
+            .EnumGet(glean::predictor::PrefetchUseStatusLabel::eWaitedtoolong)
+            .Add();
       }
       iter.Remove();
     }
@@ -1246,8 +1250,8 @@ void CacheStorageService::OnMemoryConsumptionChange(
 
   if (!overLimit) return;
 
-    // It's likely the timer has already been set when we get here,
-    // check outside the lock to save resources.
+  // It's likely the timer has already been set when we get here,
+  // check outside the lock to save resources.
 #ifdef MOZ_TSAN
   if (mPurgeTimerActive) {
 #else
@@ -1383,6 +1387,16 @@ void CacheStorageService::MemoryPool::PurgeExpiredOrOverMemoryLimit() {
     // deliver entries.
     if (minprogress == 0 && CacheIOThread::YieldAndRerun()) {
       return;
+    }
+
+    if (mType == EType::DISK) {
+      mozilla::glean::networking::cache_purge_due_to_memory_limit
+          .Get("meta_data_file_size_limit"_ns)
+          .Add(1);
+    } else if (mType == EType::MEMORY) {
+      mozilla::glean::networking::cache_purge_due_to_memory_limit
+          .Get("cache_memory_limit"_ns)
+          .Add(1);
     }
 
     auto r = PurgeByFrecency(minprogress);

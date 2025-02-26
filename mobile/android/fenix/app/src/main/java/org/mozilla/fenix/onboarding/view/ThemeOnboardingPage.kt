@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.onboarding.view
 
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,11 +37,13 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.button.PrimaryButton
 import org.mozilla.fenix.onboarding.store.OnboardingStore
+import org.mozilla.fenix.onboarding.store.applyThemeIfRequired
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -103,7 +104,11 @@ fun ThemeOnboardingPage(
 
                 val state by onboardingStore.observeAsState(initialValue = onboardingStore.state) { state -> state }
 
-                applyThemeIfRequired(state.themeOptionSelected)
+                if (!inComposePreview) {
+                    LaunchedEffect(onboardingStore.state.themeOptionSelected) {
+                        applyThemeIfRequired(onboardingStore.state.themeOptionSelected)
+                    }
+                }
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     themeOptions?.let {
@@ -131,29 +136,6 @@ fun ThemeOnboardingPage(
     LaunchedEffect(pageState) {
         pageState.onRecordImpressionEvent()
     }
-}
-
-/**
- * Applies the selected theme to the application if different to the current theme.
- *
- * This function uses [AppCompatDelegate] to change the application's theme
- * based on the user's selection. It supports the following themes:
- *
- * - Dark Theme: Forces the application into dark mode.
- * - Light Theme: Forces the application into light mode.
- * - System Theme: Adapts to the device's current system theme.
- *
- * @param selectedTheme The [ThemeOptionType] selected by the user.
- * This determines which theme to apply.
- */
-fun applyThemeIfRequired(selectedTheme: ThemeOptionType) {
-    AppCompatDelegate.setDefaultNightMode(
-        when (selectedTheme) {
-            ThemeOptionType.THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
-            ThemeOptionType.THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
-            ThemeOptionType.THEME_SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-        },
-    )
 }
 
 @Composable

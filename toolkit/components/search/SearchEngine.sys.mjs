@@ -65,8 +65,7 @@ const USER_ATTRIBUTES = ["alias", "order", "hideOneOffButton"];
  * @returns {string}
  *   The shortend string.
  */
-function limitURILength(str, len) {
-  len = len || 140;
+function limitURILength(str, len = 140) {
   if (str.length > len) {
     return str.slice(0, len) + "...";
   }
@@ -126,7 +125,7 @@ export class QueryParameter {
  *   An updated parameter string.
  */
 function ParamSubstitution(paramValue, searchTerms, queryCharset) {
-  const PARAM_REGEXP = /\{((?:\w+:)?\w+)(\??)\}/g;
+  const PARAM_REGEXP = /\{(\w+)(\??)\}/g;
   return paramValue.replace(PARAM_REGEXP, function (match, name, optional) {
     // {searchTerms} is by far the most common param so handle it first.
     if (name == "searchTerms") {
@@ -815,7 +814,7 @@ export class SearchEngine {
    * third party modifications and means that we can verify the WebExtension is
    * still in the allow list.
    *
-   * @param {string} options
+   * @param {object} options
    *   The options for this function.
    * @param {AddonSearchEngine|OpenSearchEngine} [options.engine]
    *   The search engine to override with this engine. If not specified, `manifest`

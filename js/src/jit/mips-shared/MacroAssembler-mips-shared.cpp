@@ -633,8 +633,11 @@ void MacroAssemblerMIPSShared::ma_load_unaligned(
   }
 
   BufferOffset load;
+  unsigned byteSize = access.byteSize();
   switch (size) {
     case SizeHalfWord:
+      // begins with 1-byte load
+      byteSize = 1;
       if (extension == ZeroExtend) {
         load = as_lbu(temp, base, hiOffset);
       } else {
@@ -662,7 +665,7 @@ void MacroAssemblerMIPSShared::ma_load_unaligned(
       MOZ_CRASH("Invalid argument for ma_load");
   }
 
-  append(access, wasm::TrapMachineInsnForLoad(Scalar::byteSize(access.type())),
+  append(access, wasm::TrapMachineInsnForLoad(byteSize),
          FaultingCodeOffset(load.getOffset()));
 }
 
@@ -876,8 +879,11 @@ void MacroAssemblerMIPSShared::ma_store_unaligned(
   }
 
   BufferOffset store;
+  unsigned byteSize = access.byteSize();
   switch (size) {
     case SizeHalfWord:
+      // begins with 1-byte store
+      byteSize = 1;
       ma_ext(temp, data, 8, 8);
       store = as_sb(temp, base, hiOffset);
       as_sb(data, base, lowOffset);
@@ -895,7 +901,7 @@ void MacroAssemblerMIPSShared::ma_store_unaligned(
     default:
       MOZ_CRASH("Invalid argument for ma_store");
   }
-  append(access, wasm::TrapMachineInsnForStore(Scalar::byteSize(access.type())),
+  append(access, wasm::TrapMachineInsnForStore(byteSize),
          FaultingCodeOffset(store.getOffset()));
 }
 
@@ -2134,20 +2140,22 @@ void MacroAssemblerMIPSShared::wasmLoadImpl(
   }
 
   asMasm().memoryBarrierBefore(access.sync());
-  asMasm().append(access,
-                  wasm::TrapMachineInsnForLoad(Scalar::byteSize(access.type())),
-                  FaultingCodeOffset(currentOffset()));
+  FaultingCodeOffset fco;
   if (isFloat) {
     if (byteSize == 4) {
-      asMasm().ma_ls(output.fpu(), address);
+      fco = asMasm().ma_ls(output.fpu(), address);
     } else {
-      asMasm().ma_ld(output.fpu(), address);
+      fco = asMasm().ma_ld(output.fpu(), address);
     }
   } else {
-    asMasm().ma_load(output.gpr(), address,
-                     static_cast<LoadStoreSize>(8 * byteSize),
-                     isSigned ? SignExtend : ZeroExtend);
+    fco = asMasm().ma_load(output.gpr(), address,
+                           static_cast<LoadStoreSize>(8 * byteSize),
+                           isSigned ? SignExtend : ZeroExtend);
   }
+  asMasm().append(access,
+                  wasm::TrapMachineInsnForLoad(Scalar::byteSize(access.type())),
+                  fco);
+
   asMasm().memoryBarrierAfter(access.sync());
 }
 
@@ -2187,20 +2195,21 @@ void MacroAssemblerMIPSShared::wasmStoreImpl(
 
   asMasm().memoryBarrierBefore(access.sync());
   // Only the last emitted instruction is a memory access.
-  asMasm().append(
-      access, wasm::TrapMachineInsnForStore(Scalar::byteSize(access.type())),
-      FaultingCodeOffset(currentOffset()));
+  FaultingCodeOffset fco;
   if (isFloat) {
     if (byteSize == 4) {
-      asMasm().ma_ss(value.fpu(), address);
+      fco = asMasm().ma_ss(value.fpu(), address);
     } else {
-      asMasm().ma_sd(value.fpu(), address);
+      fco = asMasm().ma_sd(value.fpu(), address);
     }
   } else {
-    asMasm().ma_store(value.gpr(), address,
-                      static_cast<LoadStoreSize>(8 * byteSize),
-                      isSigned ? SignExtend : ZeroExtend);
+    fco = asMasm().ma_store(value.gpr(), address,
+                            static_cast<LoadStoreSize>(8 * byteSize),
+                            isSigned ? SignExtend : ZeroExtend);
   }
+  asMasm().append(
+      access, wasm::TrapMachineInsnForStore(Scalar::byteSize(access.type())),
+      fco);
   asMasm().memoryBarrierAfter(access.sync());
 }
 
@@ -2211,12 +2220,32 @@ void MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch,
 
 CodeOffset MacroAssembler::sub32FromMemAndBranchIfNegativeWithPatch(
     Address address, Label* label) {
-  MOZ_CRASH("needs to be implemented on this platform");
+  ScratchRegisterScope scratch(asMasm());
+  MOZ_ASSERT(scratch != address.base);
+  ma_load(scratch, address);
+  // mips doesn't have imm subtract insn, instead we use addiu rs, rt, -imm.
+  // 128 is arbitrary, but makes `*address` count upwards, which may help
+  // to identify cases where the subsequent ::patch..() call was forgotten.
+  as_addiu(scratch, scratch, 128);
+  // Points immediately after the insn to patch
+  CodeOffset patchPoint = CodeOffset(currentOffset());
+  ma_store(scratch, address);
+  ma_b(scratch, scratch, label, Assembler::Signed);
+  return patchPoint;
 }
 
 void MacroAssembler::patchSub32FromMemAndBranchIfNegative(CodeOffset offset,
                                                           Imm32 imm) {
-  MOZ_CRASH("needs to be implemented on this platform");
+  int32_t val = imm.value;
+  // Patching it to zero would make the insn pointless
+  MOZ_RELEASE_ASSERT(val >= 1 && val <= 127);
+  InstImm* inst = (InstImm*)m_buffer.getInst(BufferOffset(offset.offset() - 4));
+  // mips doesn't have imm subtract insn, instead we use addiu rs, rt, -imm.
+  // 31     25 20 15
+  // |      |  |  |
+  // 001001 rs rt imm = addiu rs, rt, imm
+  MOZ_ASSERT(inst->extractOpcode() == ((uint32_t)op_addiu >> OpcodeShift));
+  inst->setImm16(-val & 0xffff);
 }
 
 // ========================================================================
@@ -3262,35 +3291,40 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
 void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
   Label notZero;
+  // Perform trunc.w.s
   as_truncws(ScratchFloat32Reg, src);
+  // Bail if NaN, Infinity, or int32 overflow.
   as_cfc1(ScratchRegister, Assembler::FCSR);
-  moveFromFloat32(ScratchFloat32Reg, dest);
   ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseV, 1);
+  branch32(Assembler::NotEqual, ScratchRegister, Imm32(0), fail);
 
+  moveFromFloat32(ScratchFloat32Reg, dest);
   ma_b(dest, Imm32(0), &notZero, Assembler::NotEqual, ShortJump);
   moveFromFloat32(src, ScratchRegister);
   // Check if src is in ]-1; -0] range by checking the sign bit.
   as_slt(ScratchRegister, ScratchRegister, zero);
-  bind(&notZero);
-
   branch32(Assembler::NotEqual, ScratchRegister, Imm32(0), fail);
+  bind(&notZero);
 }
 
 void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
   Label notZero;
+  // Perform trunc.w.d
   as_truncwd(ScratchFloat32Reg, src);
+  // Bail if NaN, Infinity, or int32 overflow.
   as_cfc1(ScratchRegister, Assembler::FCSR);
-  moveFromFloat32(ScratchFloat32Reg, dest);
   ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseV, 1);
+  branch32(Assembler::NotEqual, ScratchRegister, Imm32(0), fail);
 
+  // Skip the negative zero check if nonzero
+  moveFromFloat32(ScratchFloat32Reg, dest);
   ma_b(dest, Imm32(0), &notZero, Assembler::NotEqual, ShortJump);
   moveFromDoubleHi(src, ScratchRegister);
   // Check if src is in ]-1; -0] range by checking the sign bit.
   as_slt(ScratchRegister, ScratchRegister, zero);
-  bind(&notZero);
-
   branch32(Assembler::NotEqual, ScratchRegister, Imm32(0), fail);
+  bind(&notZero);
 }
 
 void MacroAssembler::nearbyIntDouble(RoundingMode mode, FloatRegister src,

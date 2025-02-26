@@ -156,6 +156,12 @@
         "browser.tabs.unloadTabInContextMenu",
         false
       );
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_notificationEnableDelay",
+        "security.notification_enable_delay",
+        500
+      );
 
       if (AppConstants.MOZ_CRASHREPORTER) {
         ChromeUtils.defineESModuleGetters(this, {
@@ -805,6 +811,7 @@
       }
 
       this.showTab(aTab);
+      this.ungroupTab(aTab);
       if (this.tabContainer.verticalMode) {
         this._handleTabMove(aTab, () =>
           this.verticalPinnedTabsContainer.appendChild(aTab)
@@ -853,50 +860,6 @@
         this.selectedTab = currentTab;
         this._previewMode = false;
       }
-    }
-
-    syncThrobberAnimations(aTab) {
-      aTab.ownerGlobal.promiseDocumentFlushed(() => {
-        if (!aTab.container) {
-          return;
-        }
-
-        const animations = Array.from(
-          aTab.container.getElementsByTagName("tab")
-        )
-          .filter(tab => tab.hasAttribute("busy"))
-          .flatMap(tab => tab.throbber?.getAnimations({ subtree: true }) ?? [])
-          .filter(
-            anim =>
-              CSSAnimation.isInstance(anim) &&
-              (anim.animationName === "tab-throbber-animation" ||
-                anim.animationName === "tab-throbber-animation-rtl") &&
-              anim.playState === "running"
-          );
-
-        // Synchronize with the oldest running animation, if any.
-        const firstStartTime = Math.min(
-          ...animations.map(anim =>
-            anim.startTime === null ? Infinity : anim.startTime
-          )
-        );
-        if (firstStartTime === Infinity) {
-          return;
-        }
-        requestAnimationFrame(() => {
-          for (let animation of animations) {
-            // If |animation| has been cancelled since this rAF callback
-            // was scheduled we don't want to set its startTime since
-            // that would restart it. We check for a cancelled animation
-            // by looking for a null currentTime rather than checking
-            // the playState, since reading the playState of
-            // a CSSAnimation object will flush style.
-            if (animation.currentTime !== null) {
-              animation.startTime = firstStartTime;
-            }
-          }
-        });
-      });
     }
 
     getBrowserAtIndex(aIndex) {
@@ -952,7 +915,7 @@
           if (browser == this.selectedBrowser) {
             this._updateVisibleNotificationBox(browser);
           }
-        });
+        }, this._notificationEnableDelay);
       }
       return browser._notificationBox;
     }
@@ -2093,9 +2056,6 @@
         // process so the browser can no longer be considered to be
         // crashed.
         tab.removeAttribute("crashed");
-        // we call updatetabIndicatorAttr here, rather than _tabAttrModified, so as
-        // to be consistent with how "crashed" attribute changes are handled elsewhere
-        this.tabContainer.updateTabIndicatorAttr(tab);
       }
 
       // If the findbar has been initialised, reset its browser reference.
@@ -3034,7 +2994,11 @@
         newTabs.push(this.adoptTab(tab, index));
       }
 
-      this.addTabGroup(newTabs, { label: group.label, color: group.color });
+      this.addTabGroup(newTabs, {
+        id: group.id,
+        label: group.label,
+        color: group.color,
+      });
     }
 
     getAllTabGroups() {
@@ -4163,7 +4127,7 @@
 
       for (let tab of tabs) {
         if (!skipRemoves) {
-          tab._closedInGroup = true;
+          tab._closedInMultiselection = true;
         }
         if (!skipRemoves && !skipSessionStore) {
           if (tab.group) {
@@ -4395,7 +4359,7 @@
           this.removeTab(tab, aParams);
           if (!tab.closing) {
             // If we abort the closing of the tab.
-            tab._closedInGroup = false;
+            tab._closedInMultiselection = false;
           }
         }
 
@@ -4945,12 +4909,17 @@
       if (tabs.some(tab => tab.selected)) {
         // Unloading the currently selected tab.
         // Need to select a different one before unloading.
+        // Avoid selecting any tab we're unloading now or
+        // any tab that is already unloaded.
         unloadSelectedTab = true;
-        let newTab = this._findTabToBlurTo(this.selectedTab, tabs);
+        const tabsToExclude = tabs.concat(
+          this.tabContainer.allTabs.filter(tab => !tab.linkedPanel)
+        );
+        let newTab = this._findTabToBlurTo(this.selectedTab, tabsToExclude);
         if (newTab) {
           this.selectedTab = newTab;
-        } else if (FirefoxViewHandler.tab) {
-          // probably unloading all tabs - show Firefox View
+        } else {
+          // all tabs are unloaded - show Firefox View
           FirefoxViewHandler.openTab("opentabs");
           allTabsUnloaded = true;
         }
@@ -5714,8 +5683,6 @@
         return;
       }
 
-      this._lastRelatedTabMap = new WeakMap();
-
       this._handleTabMove(aTab, () => {
         let neighbor = this.tabs[aIndex];
         if (forceStandaloneTab && neighbor.group) {
@@ -5757,6 +5724,8 @@
       // Clear tabs cache after moving nodes because the order of tabs may have
       // changed.
       this.tabContainer._invalidateCachedTabs();
+
+      this._lastRelatedTabMap = new WeakMap();
 
       this._updateTabsAfterInsert();
 
@@ -6415,13 +6384,13 @@
 
         case ShortcutUtils.NEXT_TAB:
           if (AppConstants.platform == "macosx") {
-            this.tabContainer.advanceSelectedTab(1, true);
+            this.tabContainer.advanceSelectedTab(DIRECTION_FORWARD, true);
             aEvent.preventDefault();
           }
           break;
         case ShortcutUtils.PREVIOUS_TAB:
           if (AppConstants.platform == "macosx") {
-            this.tabContainer.advanceSelectedTab(-1, true);
+            this.tabContainer.advanceSelectedTab(DIRECTION_BACKWARD, true);
             aEvent.preventDefault();
           }
           break;
@@ -6484,8 +6453,13 @@
       event.stopPropagation();
       let tab = event.target.triggerNode?.closest("tab");
       if (!tab) {
-        event.preventDefault();
-        return;
+        if (event.target.triggerNode?.getRootNode()?.host?.closest("tab")) {
+          // Check if triggerNode is within shadowRoot of moz-button
+          tab = event.target.triggerNode?.getRootNode().host.closest("tab");
+        } else {
+          event.preventDefault();
+          return;
+        }
       }
 
       const tooltip = event.target;
@@ -6494,7 +6468,7 @@
       const tabCount = this.selectedTabs.includes(tab)
         ? this.selectedTabs.length
         : 1;
-      if (tab._overPlayingIcon) {
+      if (tab._overPlayingIcon || tab._overAudioButton) {
         let l10nId;
         const l10nArgs = { tabCount };
         if (tab.selected) {
@@ -7108,7 +7082,6 @@
             // process so the browser can no longer be considered to be
             // crashed.
             tab.removeAttribute("crashed");
-            gBrowser.tabContainer.updateTabIndicatorAttr(tab);
           }
 
           if (this.isFindBarInitialized(tab)) {
@@ -7433,7 +7406,6 @@
           delete this.mBrowser.initialPageLoadedFromUserAction;
           // If the browser is loading it must not be crashed anymore
           this.mTab.removeAttribute("crashed");
-          gBrowser.tabContainer.updateTabIndicatorAttr(this.mTab);
         }
 
         if (this._shouldShowProgress(aRequest)) {
@@ -7445,7 +7417,6 @@
             this.mTab.setAttribute("busy", "true");
             gBrowser._tabAttrModified(this.mTab, ["busy"]);
             this.mTab._notselectedsinceload = !this.mTab.selected;
-            gBrowser.syncThrobberAnimations(this.mTab);
           }
 
           if (this.mTab.selected) {
@@ -8164,8 +8135,7 @@ var TabBarVisibility = {
     if (nonPopupWithVerticalTabs) {
       // CustomTitlebar decides if we can draw within the titlebar area.
       // In vertical tabs mode, the toolbar with the horizontal tabstrip gets hidden
-      // and the navbar becomes a titlebar. This makes CustomTitlebar a bit of a misnomer.
-      // We'll fix this in Bug 1921034.
+      // and the navbar becomes a titlebar.
       hideTabstrip = true;
       CustomTitlebar.allowedBy("tabs-visible", true);
     } else {
@@ -8694,12 +8664,18 @@ var TabContextMenu = {
       this.contextTab.multiselected ? gBrowser.selectedTabs : [this.contextTab],
       { insertBefore: this.contextTab, showCreateUI: true }
     );
+
+    // When using the tab context menu to create a group from the all tabs
+    // panel, make sure we close that panel so that it doesn't obscure the tab
+    // group creation panel.
+    gTabsPanel.hideAllTabsPanel();
   },
 
   moveTabsToGroup(group) {
     group.addTabs(
       this.contextTab.multiselected ? gBrowser.selectedTabs : [this.contextTab]
     );
+    group.ownerGlobal.focus();
   },
 
   ungroupTabs() {

@@ -2119,33 +2119,6 @@ void MacroAssembler::callWithABINoProfiler(const Address& fun, ABIType result) {
 // ===============================================================
 // Move instructions
 
-void MacroAssembler::moveValue(const TypedOrValueRegister& src,
-                               const ValueOperand& dest) {
-  if (src.hasValue()) {
-    moveValue(src.valueReg(), dest);
-    return;
-  }
-
-  MIRType type = src.type();
-  AnyRegister reg = src.typedReg();
-
-  if (!IsFloatingPointType(type)) {
-    if (reg.gpr() != dest.payloadReg()) {
-      move32(reg.gpr(), dest.payloadReg());
-    }
-    mov(ImmWord(MIRTypeToTag(type)), dest.typeReg());
-    return;
-  }
-
-  ScratchDoubleScope scratch(*this);
-  FloatRegister freg = reg.fpu();
-  if (type == MIRType::Float32) {
-    convertFloat32ToDouble(freg, scratch);
-    freg = scratch;
-  }
-  boxDouble(freg, dest, scratch);
-}
-
 void MacroAssembler::moveValue(const ValueOperand& src,
                                const ValueOperand& dest) {
   Register s0 = src.typeReg();
@@ -2230,7 +2203,9 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
   if (cond == Equal) {
     Label done;
     ma_b(lhs.payloadReg(), scratch, &done, NotEqual, ShortJump);
-    { ma_b(lhs.typeReg(), Imm32(getType(rhs)), label, Equal); }
+    {
+      ma_b(lhs.typeReg(), Imm32(getType(rhs)), label, Equal);
+    }
     bind(&done);
   } else {
     ma_b(lhs.payloadReg(), scratch, label, NotEqual);
@@ -2497,7 +2472,7 @@ static void EnterAtomic64Region(MacroAssembler& masm,
 
   Label tryLock;
 
-  masm.memoryBarrier(MembarFull);
+  masm.memoryBarrier(MemoryBarrier::Full());
 
   masm.bind(&tryLock);
 
@@ -2507,13 +2482,13 @@ static void EnterAtomic64Region(MacroAssembler& masm,
   masm.as_sc(scratch, spinlock, 0);
   masm.ma_b(scratch, scratch, &tryLock, Assembler::Zero, ShortJump);
 
-  masm.memoryBarrier(MembarFull);
+  masm.memoryBarrier(MemoryBarrier::Full());
 }
 
 static void ExitAtomic64Region(MacroAssembler& masm, Register spinlock) {
-  masm.memoryBarrier(MembarFull);
+  masm.memoryBarrier(MemoryBarrier::Full());
   masm.as_sw(zero, spinlock, 0);
-  masm.memoryBarrier(MembarFull);
+  masm.memoryBarrier(MemoryBarrier::Full());
 }
 
 template <typename T>

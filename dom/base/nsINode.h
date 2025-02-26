@@ -240,6 +240,15 @@ enum class NodeSelectorFlags : uint32_t {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(NodeSelectorFlags);
 
+enum class BatchRemovalOrder {
+  FrontToBack,
+  BackToFront,
+};
+
+struct BatchRemovalState {
+  bool mIsFirst = true;
+};
+
 // Make sure we have space for our bits
 #define ASSERT_NODE_FLAGS_SPACE(n)                         \
   static_assert(WRAPPER_CACHE_FLAGS_BITS_USED + (n) <=     \
@@ -315,12 +324,8 @@ class nsNodeWeakReference final : public nsIWeakReference {
 
 // IID for the nsINode interface
 // Must be kept in sync with xpcom/rust/xpcom/src/interfaces/nonidl.rs
-#define NS_INODE_IID                                 \
-  {                                                  \
-    0x70ba4547, 0x7699, 0x44fc, {                    \
-      0xb3, 0x20, 0x52, 0xdb, 0xe3, 0xd1, 0xf9, 0x0a \
-    }                                                \
-  }
+#define NS_INODE_IID \
+  {0x70ba4547, 0x7699, 0x44fc, {0xb3, 0x20, 0x52, 0xdb, 0xe3, 0xd1, 0xf9, 0x0a}}
 
 /**
  * An internal interface that abstracts some DOMNode-related parts that both
@@ -994,6 +999,21 @@ class nsINode : public mozilla::dom::EventTarget {
     InsertChildBefore(aKid, nullptr, aNotify, aRv);
   }
 
+  template <BatchRemovalOrder aOrder = BatchRemovalOrder::FrontToBack>
+  void RemoveAllChildren(bool aNotify) {
+    if (!HasChildren()) {
+      return;
+    }
+    BatchRemovalState state{};
+    do {
+      nsIContent* nodeToRemove = aOrder == BatchRemovalOrder::FrontToBack
+                                     ? GetFirstChild()
+                                     : GetLastChild();
+      RemoveChildNode(nodeToRemove, aNotify, &state);
+      state.mIsFirst = false;
+    } while (HasChildren());
+  }
+
   /**
    * Remove a child from this node.  This method handles calling UnbindFromTree
    * on the child appropriately.
@@ -1001,8 +1021,10 @@ class nsINode : public mozilla::dom::EventTarget {
    * @param aKid the content to remove
    * @param aNotify whether to notify the document (current document for
    *        nsIContent, and |this| for Document) that the remove has occurred
+   * @param BatchRemovalState The current state of our batch removal.
    */
-  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify);
+  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify,
+                               const BatchRemovalState* = nullptr);
 
   /**
    * Get a property associated with this node.
@@ -1591,6 +1613,12 @@ class nsINode : public mozilla::dom::EventTarget {
   // True for native anonymous content and for content in UA widgets.
   // Only nsIContent can fulfill this condition.
   bool ChromeOnlyAccess() const { return IsInNativeAnonymousSubtree(); }
+
+  // Whether we're chrome-only for event targeting. UA widgets can use regular
+  // shadow DOM retargeting for these.
+  bool ChromeOnlyAccessForEvents() const {
+    return ChromeOnlyAccess() && !HasBeenInUAWidget();
+  }
 
   const nsIContent* GetChromeOnlyAccessSubtreeRootParent() const {
     return GetClosestNativeAnonymousSubtreeRootParentOrHost();
@@ -2564,34 +2592,34 @@ inline nsISupports* ToSupports(nsINode* aPointer) { return aPointer; }
 
 // Some checks are faster to do on nsIContent or Element than on
 // nsINode, so spit out FromNode versions taking those types too.
-#define NS_IMPL_FROMNODE_GENERIC(_class, _check, _const)                  \
-  template <typename T>                                                   \
-  static auto FromNode(                                                   \
-      _const T& aNode) -> decltype(static_cast<_const _class*>(&aNode)) { \
-    return aNode._check ? static_cast<_const _class*>(&aNode) : nullptr;  \
-  }                                                                       \
-  template <typename T>                                                   \
-  static _const _class* FromNode(_const T* aNode) {                       \
-    return FromNode(*aNode);                                              \
-  }                                                                       \
-  template <typename T>                                                   \
-  static _const _class* FromNodeOrNull(_const T* aNode) {                 \
-    return aNode ? FromNode(*aNode) : nullptr;                            \
-  }                                                                       \
-  template <typename T>                                                   \
-  static auto FromEventTarget(_const T& aEventTarget)                     \
-      -> decltype(static_cast<_const _class*>(&aEventTarget)) {           \
-    return aEventTarget.IsNode() && aEventTarget.AsNode()->_check         \
-               ? static_cast<_const _class*>(&aEventTarget)               \
-               : nullptr;                                                 \
-  }                                                                       \
-  template <typename T>                                                   \
-  static _const _class* FromEventTarget(_const T* aEventTarget) {         \
-    return FromEventTarget(*aEventTarget);                                \
-  }                                                                       \
-  template <typename T>                                                   \
-  static _const _class* FromEventTargetOrNull(_const T* aEventTarget) {   \
-    return aEventTarget ? FromEventTarget(*aEventTarget) : nullptr;       \
+#define NS_IMPL_FROMNODE_GENERIC(_class, _check, _const)                 \
+  template <typename T>                                                  \
+  static auto FromNode(_const T& aNode)                                  \
+      -> decltype(static_cast<_const _class*>(&aNode)) {                 \
+    return aNode._check ? static_cast<_const _class*>(&aNode) : nullptr; \
+  }                                                                      \
+  template <typename T>                                                  \
+  static _const _class* FromNode(_const T* aNode) {                      \
+    return FromNode(*aNode);                                             \
+  }                                                                      \
+  template <typename T>                                                  \
+  static _const _class* FromNodeOrNull(_const T* aNode) {                \
+    return aNode ? FromNode(*aNode) : nullptr;                           \
+  }                                                                      \
+  template <typename T>                                                  \
+  static auto FromEventTarget(_const T& aEventTarget)                    \
+      -> decltype(static_cast<_const _class*>(&aEventTarget)) {          \
+    return aEventTarget.IsNode() && aEventTarget.AsNode()->_check        \
+               ? static_cast<_const _class*>(&aEventTarget)              \
+               : nullptr;                                                \
+  }                                                                      \
+  template <typename T>                                                  \
+  static _const _class* FromEventTarget(_const T* aEventTarget) {        \
+    return FromEventTarget(*aEventTarget);                               \
+  }                                                                      \
+  template <typename T>                                                  \
+  static _const _class* FromEventTargetOrNull(_const T* aEventTarget) {  \
+    return aEventTarget ? FromEventTarget(*aEventTarget) : nullptr;      \
   }
 
 #define NS_IMPL_FROMNODE_HELPER(_class, _check)                                \

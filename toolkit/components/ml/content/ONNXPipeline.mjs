@@ -290,22 +290,7 @@ export class Pipeline {
     transformers.env.customCache = this.#mlEngineWorker;
     // using `NO_LOCAL` so when the custom cache is used, we don't try to fetch it (see MLEngineWorker.match)
     transformers.env.localModelPath = "NO_LOCAL";
-
-    // numThreads can be set in Remote Settings for the model and we also have a theorical
-    // best number of threads based on navigator.hardwareConcurrency and a max of 4.
-    // ONNX will take at most 4 threads
-    let numThreads = config.numThreads || 0;
-    const hardwareConcurrency = navigator.hardwareConcurrency || 1;
-
-    if (numThreads == 0) {
-      numThreads = Math.min(4, Math.ceil(hardwareConcurrency / 2));
-    } else if (numThreads > hardwareConcurrency) {
-      numThreads = hardwareConcurrency;
-      lazy.console.warn(
-        `numThreads was set equal or higher than hardwareConcurrency, lowering it to ${numThreads}`
-      );
-    }
-    transformers.env.backends.onnx.wasm.numThreads = numThreads;
+    transformers.env.backends.onnx.wasm.numThreads = config.numThreads;
 
     // ONNX runtime - we set up the wasm runtime we got from RS for the ONNX backend to pick
     transformers.env.backends.onnx.wasm.wasmPaths = {};
@@ -364,6 +349,7 @@ export class Pipeline {
             revision: config.modelRevision,
             device,
             dtype,
+            use_external_data_format: config.useExternalDataFormat,
           }
         );
       }
@@ -391,7 +377,12 @@ export class Pipeline {
         this.#genericPipelineFunction = transformers.pipeline(
           config.taskName,
           config.modelId,
-          { revision: config.modelRevision, device, dtype }
+          {
+            revision: config.modelRevision,
+            device,
+            dtype,
+            use_external_data_format: config.useExternalDataFormat,
+          }
         );
       } else {
         this.#genericPipelineFunction = async () => {};
@@ -448,6 +439,7 @@ export class Pipeline {
         modelRevision: options.modelRevision || "default",
         dtype: options.dtype || "fp16",
         device: options.device || "wasm",
+        useExternalDataFormat: options.useExternalDataFormat ?? false,
       };
     } else {
       // Loading the config defaults for the task

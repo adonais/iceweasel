@@ -336,7 +336,6 @@ class MOZ_STACK_CLASS JSONReviveHandler : public JSONFullParseHandler<CharT> {
 
  public:
   using SourceT = mozilla::Span<const CharT>;
-  using ParseRecordEntry = ParseRecordObject::EntryMap;
 
   using JSONStringBuilder = typename Base::JSONStringBuilder;
   using StackEntry = typename Base::StackEntry;
@@ -409,13 +408,14 @@ class MOZ_STACK_CLASS JSONReviveHandler : public JSONFullParseHandler<CharT> {
   void trace(JSTracer* trc);
 
  private:
-  inline bool finishMemberParseRecord(Handle<JS::PropertyKey> key,
-                                      Handle<ParseRecordEntry*> parseEntry);
-  inline bool finishCompoundParseRecord(const Value& value,
-                                        Handle<ParseRecordEntry*> parseEntry);
+  inline bool finishMemberParseRecord(
+      Handle<JS::PropertyKey> key,
+      Handle<ParseRecordObject::EntryMap*> parseEntry);
+  inline bool finishCompoundParseRecord(
+      const Value& value, Handle<ParseRecordObject::EntryMap*> parseEntry);
   inline bool finishPrimitiveParseRecord(const Value& value, SourceT source);
 
-  GCVector<ParseRecordEntry*, 10> parseRecordStack;
+  GCVector<ParseRecordObject::EntryMap*, 10> parseRecordStack;
 
  public:
   ParseRecordObject* parseRecord = nullptr;

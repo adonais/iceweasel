@@ -47,7 +47,7 @@
 #include "mozilla/dom/UIEventBinding.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WheelEventBinding.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/ProcesstoolsMetrics.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -227,6 +227,53 @@ static nsINode* GetCommonAncestorForMouseUp(
   }
 
   return parent;
+}
+
+static bool HasNativeKeyBindings(nsIContent* aContent,
+                                 WidgetKeyboardEvent* aEvent) {
+  MOZ_ASSERT(aEvent->mMessage == eKeyPress);
+
+  if (!aContent) {
+    return false;
+  }
+
+  const RefPtr<dom::Element> targetElement = aContent->AsElement();
+  if (!targetElement) {
+    return false;
+  }
+
+  const auto type = [&]() -> Maybe<NativeKeyBindingsType> {
+    if (BrowserParent::GetFrom(targetElement)) {
+      const nsCOMPtr<nsIWidget> widget = aEvent->mWidget;
+      if (MOZ_UNLIKELY(!widget)) {
+        return Nothing();
+      }
+      widget::InputContext context = widget->GetInputContext();
+      return context.mIMEState.IsEditable()
+                 ? Some(context.GetNativeKeyBindingsType())
+                 : Nothing();
+    }
+
+    const auto* const textControlElement =
+        TextControlElement::FromNode(targetElement);
+    if (textControlElement &&
+        textControlElement->IsSingleLineTextControlOrTextArea() &&
+        !textControlElement->IsInDesignMode()) {
+      return textControlElement->IsTextArea()
+                 ? Some(NativeKeyBindingsType::MultiLineEditor)
+                 : Some(NativeKeyBindingsType::SingleLineEditor);
+    }
+    return targetElement->IsEditable()
+               ? Some(NativeKeyBindingsType::RichTextEditor)
+               : Nothing();
+  }();
+  if (type.isNothing()) {
+    return false;
+  }
+
+  const nsTArray<CommandInt>& commands =
+      aEvent->EditCommandsConstRef(type.value());
+  return !commands.IsEmpty();
 }
 
 LazyLogModule sMouseBoundaryLog("MouseBoundaryEvents");
@@ -1179,8 +1226,11 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
     case eKeyPress: {
       WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
-      if (keyEvent->ModifiersMatchWithAccessKey(AccessKeyType::eChrome) ||
-          keyEvent->ModifiersMatchWithAccessKey(AccessKeyType::eContent)) {
+      if ((keyEvent->ModifiersMatchWithAccessKey(AccessKeyType::eChrome) ||
+           keyEvent->ModifiersMatchWithAccessKey(AccessKeyType::eContent)) &&
+          // If the key binding of this event is a native key binding, we
+          // prioritize it.
+          !HasNativeKeyBindings(aTargetContent, keyEvent)) {
         // If the eKeyPress event will be sent to a remote process, this
         // process needs to wait reply from the remote process for checking if
         // preceding eKeyDown event is consumed.  If preceding eKeyDown event
@@ -2665,9 +2715,8 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
       // to use drag and drop rather than copy and paste when web apps
       // request to input password twice for conforming new password but
       // they used password generator.
-      TextEditor* textEditor =
-          nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
-              eventContent);
+      const TextEditor* const textEditor =
+          nsContentUtils::GetExtantTextEditorFromAnonymousNode(eventContent);
       if (!textEditor || !textEditor->IsCopyToClipboardAllowed()) {
         StopTrackingDragGesture(true);
         return;
@@ -4698,8 +4747,15 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
                                      WidgetMouseEvent* aEvent,
                                      nsIFrame* aTargetFrame,
                                      nsEventStatus* aStatus) {
-  if (aTargetFrame && IsRemoteTarget(aTargetFrame->GetContent())) {
-    return;
+  // XXX This is still not entirely correct, e.g. when mouse hover over the
+  // broder of a cross-origin iframe, we should show the cursor specified on the
+  // iframe (see bug 1943530).
+  if (nsSubDocumentFrame* f = do_QueryFrame(aTargetFrame)) {
+    if (auto* fl = f->FrameLoader();
+        fl && fl->IsRemoteFrame() && f->ContentReactsToPointerEvents()) {
+      // The sub-frame will update the cursor if needed.
+      return;
+    }
   }
 
   auto cursor = StyleCursorKind::Default;
@@ -5377,7 +5433,7 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   // do? At least, dispatching `mouseover` on it is odd.
   MOZ_LOG(logModule, LogLevel::Info,
           ("Dispatching %s event to %s (%p)",
-           isPointer ? "ePointerOver" : "eMoustOver",
+           isPointer ? "ePointerOver" : "eMouseOver",
            aContent ? ToString(*aContent).c_str() : "nullptr", aContent));
   nsCOMPtr<nsIWidget> targetWidget = DispatchMouseOrPointerBoundaryEvent(
       aMouseEvent, isPointer ? ePointerOver : eMouseOver, aContent,

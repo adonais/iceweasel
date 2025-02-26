@@ -67,6 +67,16 @@ tabbrowser-unblock-tab-audio-tooltip =
            *[other] Play { $tabCount } tabs
         }
 
+## Tooltips for tab audio control
+
+tabbrowser-unmute-tab-audio-aria-label =
+    .aria-label = Unmute tab
+tabbrowser-mute-tab-audio-aria-label =
+    .aria-label = Mute tab
+# Used to unblock a tab with audio from autoplaying
+tabbrowser-unblock-tab-audio-aria-label =
+    .aria-label = Play tab
+
 ## Confirmation dialog when closing a window with more than one tab open,
 ## or when quitting when only one window is open.
 
@@ -181,6 +191,9 @@ tabbrowser-ctrl-tab-list-all-tabs =
         }
 
 ## Tab manager menu buttons
+## Variables:
+##  $tabGroupName (String): The name of the tab group. See also tab-group-name-default, which will be
+##                          used when the group's name is empty.
 
 tabbrowser-manager-mute-tab =
   .tooltiptext = Mute tab
@@ -188,8 +201,22 @@ tabbrowser-manager-unmute-tab =
   .tooltiptext = Unmute tab
 tabbrowser-manager-close-tab =
   .tooltiptext = Close tab
+# This is for tab groups that have been "saved and closed" (see tab-group-editor-action-save). It does
+# not include "deleted" tab groups (see tab-group-editor-action-delete).
+tabbrowser-manager-closed-tab-group =
+  .label = { $tabGroupName }
+  .tooltiptext = { $tabGroupName } — Closed
+tabbrowser-manager-current-window-tab-group =
+  .label = { $tabGroupName }
+  .tooltiptext = { $tabGroupName } — Current window
+# "Show more" is for showing all open groups from other windows, as well as saved groups. Initially,
+# we only show up to six of these groups.
+tabbrowser-manager-tab-groups-show-more =
+  .label = Show more
 
 ## Tab Groups
+
+tab-group-menu-header = Tab groups
 
 tab-group-name-default = Unnamed Group
 tab-group-editor-title-create = Create tab group
@@ -201,7 +228,31 @@ tab-group-editor-cancel =
   .label = Cancel
   .accesskey = C
 
-tab-group-menu-header = Tab groups
+tab-group-editor-color-selector =
+  .aria-label = Tab group color
+tab-group-editor-color-selector2-blue = Blue
+  .title = Blue
+tab-group-editor-color-selector2-purple = Purple
+  .title = Purple
+tab-group-editor-color-selector2-cyan = Cyan
+  .title = Cyan
+tab-group-editor-color-selector2-orange = Orange
+  .title = Orange
+tab-group-editor-color-selector2-yellow = Yellow
+  .title = Yellow
+tab-group-editor-color-selector2-pink = Pink
+  .title = Pink
+tab-group-editor-color-selector2-green = Green
+  .title = Green
+tab-group-editor-color-selector2-gray = Gray
+  .title = Gray
+tab-group-editor-color-selector2-red = Red
+  .title = Red
+
+# Variables:
+#  $tabGroupName (String): The name of the tab group. Defaults to the value
+#                          of tab-group-name-default.
+tab-group-description = { $tabGroupName } — Tab Group
 
 tab-context-unnamed-group =
     .label = Unnamed group
@@ -250,3 +301,36 @@ tab-context-ungroup-tab =
            *[other] Remove from Groups
         }
     .accesskey = R
+
+## Open/saved tab group context menu
+
+# For right-click context menu use in the "all tabs"/"tab overflow menu" when
+# right-clicking on a tab group that is currently open in one of the user's
+# windows.
+
+# For a tab group open in any window, clicking this will create a new
+# window and move this tab group to that new window.
+tab-group-context-move-to-new-window =
+    .label = Move Group to New Window
+
+# For a tab group open in a different window from the one that the
+# user is using to access the tab group menu, move that tab group into the
+# user's current window.
+tab-group-context-move-to-this-window =
+    .label = Move Group to This Window
+
+# For a tab group that is open in any window, close the tab group and
+# do not save it. For a tab group that is closed but saved by the user, clicking
+# this will forget the saved tab group.
+tab-group-context-delete =
+    .label = Delete Group
+
+# For a saved tab group that is not open in any window, open the tab group
+# in the user's current window.
+tab-group-context-open-saved-group-in-this-window =
+    .label = Open Group in This Window
+
+# For a saved tab group that is not open in any window, create a new window and
+# open the tab group in that window.
+tab-group-context-open-saved-group-in-new-window =
+    .label = Open Group in New Window

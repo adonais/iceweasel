@@ -18,6 +18,8 @@ namespace js {
 
 namespace jit {
 
+class BaselineSnapshot;
+
 enum class ScriptGCThingType {
   Atom,
   String,
@@ -304,12 +306,13 @@ class BaselineCompilerHandler {
   bool compileDebugInstrumentation_;
   bool ionCompileable_;
 
+  bool compilingOffThread_ = false;
+
  public:
   using FrameInfoT = CompilerFrameInfo;
 
   BaselineCompilerHandler(MacroAssembler& masm, TempAllocator& alloc,
-                          JSScript* script, JSObject* globalLexical,
-                          JSObject* globalThis, uint32_t baseWarmUpThreshold);
+                          BaselineSnapshot* snapshot);
 
   [[nodiscard]] bool init();
 
@@ -338,7 +341,6 @@ class BaselineCompilerHandler {
 
   ModuleObject* module() const { return script_->module(); }
 
-  void setCompileDebugInstrumentation() { compileDebugInstrumentation_ = true; }
   bool compileDebugInstrumentation() const {
     return compileDebugInstrumentation_;
   }
@@ -379,6 +381,9 @@ class BaselineCompilerHandler {
     return allocSiteIndices_.append(entryIndex);
   }
   void createAllocSites();
+
+  bool compilingOffThread() const { return compilingOffThread_; }
+  void setCompilingOffThread() { compilingOffThread_ = true; }
 };
 
 using BaselineCompilerCodeGen = BaselineCodeGen<BaselineCompilerHandler>;
@@ -398,24 +403,21 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
   BaselinePerfSpewer perfSpewer_;
 
  public:
-  BaselineCompiler(JSContext* cx, TempAllocator& alloc, MacroAssembler& masm,
-                   JSScript* script, JSObject* globalLexical,
-                   JSObject* globalThis, uint32_t baseWarmUpThreshold);
+  BaselineCompiler(TempAllocator& alloc, CompileRuntime* runtime,
+                   MacroAssembler& masm, BaselineSnapshot* snapshot);
   [[nodiscard]] bool init();
 
-  static bool prepareToCompile(JSContext* cx, Handle<JSScript*> script,
+  static bool PrepareToCompile(JSContext* cx, Handle<JSScript*> script,
                                bool compileDebugInstrumentation);
+
   MethodStatus compile(JSContext* cx);
+  MethodStatus compileOffThread();
 
   bool finishCompile(JSContext* cx);
 
   bool compileDebugInstrumentation() const {
     return handler.compileDebugInstrumentation();
   }
-  void setCompileDebugInstrumentation() {
-    handler.setCompileDebugInstrumentation();
-  }
-  void setIonCompileable(bool value) { handler.setIonCompileable(value); }
 
  private:
   bool compileImpl();

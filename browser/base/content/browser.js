@@ -410,13 +410,17 @@ ChromeUtils.defineLazyGetter(this, "ReferrerInfo", () =>
 
 // High priority notification bars shown at the top of the window.
 ChromeUtils.defineLazyGetter(this, "gNotificationBox", () => {
+  let securityDelayMS = Services.prefs.getIntPref(
+    "security.notification_enable_delay"
+  );
+
   return new MozElements.NotificationBox(element => {
     element.classList.add("global-notificationbox");
     element.setAttribute("notificationside", "top");
     element.setAttribute("prepend-notifications", true);
-    const tabNotifications = document.getElementById("tab-notification-deck");
-    gNavToolbox.insertBefore(element, tabNotifications);
-  });
+    // We want this before the tab notifications.
+    document.getElementById("notifications-toolbar").prepend(element);
+  }, securityDelayMS);
 });
 
 ChromeUtils.defineLazyGetter(this, "InlineSpellCheckerUI", () => {
@@ -6029,18 +6033,38 @@ function undoCloseTab(aIndex, sourceWindowSSId) {
     blankTabToRemove = targetWindow.gBrowser.selectedTab;
   }
 
-  // We are specifically interested in the lastClosedTabCount for the source window.
-  // When aIndex is undefined, we restore all the lastClosedTabCount tabs.
-  let lastClosedTabCount = SessionStore.getLastClosedTabCount(sourceWindow);
-  let tab = null;
-  // aIndex is undefined if the function is called without a specific tab to restore.
-  let tabsToRemove =
-    aIndex !== undefined ? [aIndex] : new Array(lastClosedTabCount).fill(0);
   let tabsRemoved = false;
-  for (let index of tabsToRemove) {
-    if (SessionStore.getClosedTabCountForWindow(sourceWindow) > index) {
-      tab = SessionStore.undoCloseTab(sourceWindow, index, targetWindow);
-      tabsRemoved = true;
+  let tab = null;
+  const lastClosedTabGroupId =
+    SessionStore.getLastClosedTabGroupId(sourceWindow);
+  if (aIndex === undefined && lastClosedTabGroupId) {
+    let group;
+    if (SessionStore.getSavedTabGroup(lastClosedTabGroupId)) {
+      group = SessionStore.openSavedTabGroup(
+        lastClosedTabGroupId,
+        targetWindow
+      );
+    } else {
+      group = SessionStore.undoCloseTabGroup(
+        window,
+        lastClosedTabGroupId,
+        targetWindow
+      );
+    }
+    tabsRemoved = true;
+    tab = group.tabs.at(-1);
+  } else {
+    // We are specifically interested in the lastClosedTabCount for the source window.
+    // When aIndex is undefined, we restore all the lastClosedTabCount tabs.
+    let lastClosedTabCount = SessionStore.getLastClosedTabCount(sourceWindow);
+    // aIndex is undefined if the function is called without a specific tab to restore.
+    let tabsToRemove =
+      aIndex !== undefined ? [aIndex] : new Array(lastClosedTabCount).fill(0);
+    for (let index of tabsToRemove) {
+      if (SessionStore.getClosedTabCountForWindow(sourceWindow) > index) {
+        tab = SessionStore.undoCloseTab(sourceWindow, index, targetWindow);
+        tabsRemoved = true;
+      }
     }
   }
 
@@ -7220,6 +7244,13 @@ var gDialogBox = {
     window.focus();
 
     try {
+      // Prevent URL bar from showing on top of modal
+      gURLBar.incrementBreakoutBlockerCount();
+    } catch (ex) {
+      console.error(ex);
+    }
+
+    try {
       await this._open(uri, args);
     } catch (ex) {
       console.error(ex);
@@ -7242,6 +7273,8 @@ var gDialogBox = {
       this._updateMenuAndCommandState(true /* to enable */);
       this._dialog = null;
       UpdatePopupNotificationsVisibility();
+      // Restores URL bar breakout if needed
+      gURLBar.decrementBreakoutBlockerCount();
     }
     if (this._queued.length) {
       setTimeout(() => this._openNextDialog(), 0);

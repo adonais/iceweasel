@@ -17,6 +17,7 @@
 #include "NamespaceImports.h"
 
 #include "gc/Barrier.h"
+#include "gc/BufferAllocator.h"
 #include "gc/MaybeRooted.h"
 #include "gc/ZoneAllocator.h"
 #include "js/shadow/Object.h"  // JS::shadow::Object
@@ -502,8 +503,8 @@ class alignas(HeapSlot) ObjectSlots {
   }
   static constexpr size_t offsetOfSlots() { return sizeof(ObjectSlots); }
 
-  constexpr explicit ObjectSlots(uint32_t capacity, uint32_t dictionarySlotSpan,
-                                 uint64_t maybeUniqueId);
+  constexpr ObjectSlots(uint32_t capacity, uint32_t dictionarySlotSpan,
+                        uint64_t maybeUniqueId);
 
   constexpr uint32_t capacity() const { return capacity_; }
 
@@ -851,7 +852,7 @@ class NativeObject : public JSObject {
   }
 
 #ifdef DEBUG
-  enum SentinelAllowed{SENTINEL_NOT_ALLOWED, SENTINEL_ALLOWED};
+  enum SentinelAllowed { SENTINEL_NOT_ALLOWED, SENTINEL_ALLOWED };
 
   /*
    * Check that slot is in range for the object's allocated slots.
@@ -876,13 +877,12 @@ class NativeObject : public JSObject {
    * ArrayObjects don't use this limit and can have a lower slot capacity,
    * since they normally don't have a lot of slots.
    */
-  static const uint32_t SLOT_CAPACITY_MIN = 8 - ObjectSlots::VALUES_PER_HEADER;
+  static const uint32_t SLOT_CAPACITY_MIN = 5;
 
   /*
    * Minimum size for dynamically allocated elements in normal Objects.
    */
-  static const uint32_t ELEMENT_CAPACITY_MIN =
-      8 - ObjectElements::VALUES_PER_HEADER;
+  static const uint32_t ELEMENT_CAPACITY_MIN = 5;
 
   HeapSlot* fixedSlots() const {
     return reinterpret_cast<HeapSlot*>(uintptr_t(this) + sizeof(NativeObject));
@@ -1119,7 +1119,7 @@ class NativeObject : public JSObject {
                                            uint32_t nfixed);
 
   // For use from JSObject::swap.
-  [[nodiscard]] bool prepareForSwap(JSContext* cx,
+  [[nodiscard]] bool prepareForSwap(JSContext* cx, JSObject* other,
                                     MutableHandleValueVector slotValuesOut);
   [[nodiscard]] static bool fixupAfterSwap(JSContext* cx,
                                            Handle<NativeObject*> obj,
@@ -1417,7 +1417,8 @@ class NativeObject : public JSObject {
 
   // The maximum number of usable dense elements in an object.
   static const uint32_t MAX_DENSE_ELEMENTS_COUNT =
-      MAX_DENSE_ELEMENTS_ALLOCATION - ObjectElements::VALUES_PER_HEADER;
+      MAX_DENSE_ELEMENTS_ALLOCATION - ObjectElements::VALUES_PER_HEADER -
+      gc::LargeBufferHeaderSize / sizeof(Value);
 
   static void elementsSizeMustNotOverflow() {
     static_assert(
@@ -1663,13 +1664,6 @@ class NativeObject : public JSObject {
   }
 
   inline bool hasDynamicElements() const {
-    /*
-     * Note: for objects with zero fixed slots this could potentially give
-     * a spurious 'true' result, if the end of this object is exactly
-     * aligned with the end of its arena and dynamic slots are allocated
-     * immediately afterwards. Such cases cannot occur for dense arrays
-     * (which have at least two fixed slots) and can only result in a leak.
-     */
     return !hasEmptyElements() && !hasFixedElements();
   }
 

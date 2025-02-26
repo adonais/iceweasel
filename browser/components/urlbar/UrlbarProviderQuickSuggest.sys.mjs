@@ -12,8 +12,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ContentRelevancyManager:
     "resource://gre/modules/ContentRelevancyManager.sys.mjs",
-  CONTEXTUAL_SERVICES_PING_TYPES:
-    "resource:///modules/PartnerLinkAttribution.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
@@ -21,17 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/UrlbarProviderSearchSuggestions.sys.mjs",
   UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-});
-
-// `contextId` is a unique identifier used by Contextual Services
-const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
-ChromeUtils.defineLazyGetter(lazy, "contextId", () => {
-  let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
-  if (!_contextId) {
-    _contextId = String(Services.uuid.generateUUID());
-    Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
-  }
-  return _contextId;
 });
 
 // Used for suggestions that don't otherwise have a score.
@@ -148,16 +135,16 @@ class ProviderQuickSuggest extends UrlbarProvider {
         break;
       }
 
-      let canAdd = await this.#canAddSuggestion(suggestion);
+      let result = await this.#makeResult(queryContext, suggestion);
       if (instance != this.queryInstance) {
         return;
       }
-      if (canAdd) {
-        let result = await this.#makeResult(queryContext, suggestion);
+      if (result) {
+        let canAdd = await this.#canAddResult(result);
         if (instance != this.queryInstance) {
           return;
         }
-        if (result) {
+        if (canAdd) {
           addCallback(this, result);
           if (!result.isHiddenExposure) {
             remainingCount--;
@@ -176,8 +163,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     for (let i = 0; i < suggestions.length; i++) {
       let suggestion = suggestions[i];
 
-      // Discard suggestions that don't have the required keys, which are used
-      // to look up their features. Normally this shouldn't ever happen.
+      // Discard the suggestion if it doesn't have the properties required to
+      // get the feature that manages it. Each backend should set these, so this
+      // should never happen.
       if (!requiredKeys.every(key => suggestion[key])) {
         this.logger.error("Suggestion is missing one or more required keys", {
           requiredKeys,
@@ -186,12 +174,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
         continue;
       }
 
-      // Set `is_sponsored` before continuing because
-      // `#getSuggestionTelemetryType()` and other things depend on it.
-      let feature = this.#getFeature(suggestion);
-      suggestion.is_sponsored = !!feature?.isSuggestionSponsored(suggestion);
-
-      // Ensure all suggestions have scores.
+      // Ensure the suggestion has a score.
       //
       // Step 1: Set a default score if the suggestion doesn't have one.
       if (typeof suggestion.score != "number" || isNaN(suggestion.score)) {
@@ -217,6 +200,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
       }
 
       // Save some state used below to build the final list of suggestions.
+      // `feature` will be null if the suggestion isn't managed by one.
+      let feature = lazy.QuickSuggest.getFeatureBySource(suggestion);
       let featureSuggestions = suggestionsByFeature.get(feature);
       if (!featureSuggestions) {
         featureSuggestions = [];
@@ -227,7 +212,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     }
 
     // Let each feature filter its suggestions.
-    suggestions = (
+    let filteredSuggestions = (
       await Promise.all(
         [...suggestionsByFeature].map(([feature, featureSuggestions]) =>
           feature
@@ -239,56 +224,71 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
     // Sort the suggestions. When scores are equal, sort by original index to
     // ensure a stable sort.
-    suggestions.sort((a, b) => {
+    filteredSuggestions.sort((a, b) => {
       return (
         b.score - a.score ||
         indexesBySuggestion.get(a) - indexesBySuggestion.get(b)
       );
     });
 
-    return suggestions;
+    return filteredSuggestions;
   }
 
-  onImpression(state, queryContext, controller, providerVisibleResults) {
-    // Legacy Suggest telemetry should be recorded when a Suggest result is
-    // visible at the end of an engagement on any result.
-    this.#sessionResult =
-      state == "engagement" ? providerVisibleResults[0].result : null;
+  onImpression(state, queryContext, controller, resultsAndIndexes, details) {
+    // Build a map from each feature to its results in `resultsAndIndexes`.
+    let resultsByFeature = resultsAndIndexes.reduce((memo, { result }) => {
+      let feature = lazy.QuickSuggest.getFeatureByResult(result);
+      if (feature) {
+        let featureResults = memo.get(feature);
+        if (!featureResults) {
+          featureResults = [];
+          memo.set(feature, featureResults);
+        }
+        featureResults.push(result);
+      }
+      return memo;
+    }, new Map());
+
+    // Notify each feature with its results.
+    for (let [feature, featureResults] of resultsByFeature) {
+      feature.onImpression(
+        state,
+        queryContext,
+        controller,
+        featureResults,
+        details
+      );
+    }
   }
 
   onEngagement(queryContext, controller, details) {
-    if (details.isSessionOngoing) {
-      // When the session remains ongoing -- e.g., a result is dismissed --
-      // tests expect legacy telemetry to be recorded immediately on engagement,
-      // not deferred until the session ends, so record it now.
-      this.#recordEngagement(queryContext, details.result, details);
-    }
+    let { result } = details;
 
-    let feature = this.#getFeatureByResult(details.result);
-    if (feature?.handleCommand) {
-      feature.handleCommand(
-        controller.view,
-        details.result,
-        details.selType,
+    // Delegate to the result's feature if there is one.
+    let feature = lazy.QuickSuggest.getFeatureByResult(details.result);
+    if (feature) {
+      feature.onEngagement(
+        queryContext,
+        controller,
+        details,
         this._trimmedSearchString
       );
-    } else if (details.selType == "dismiss") {
-      // Handle dismissals.
-      this.#dismissResult(controller, details.result);
+      return;
     }
 
-    feature?.onEngagement?.(queryContext, controller, details);
+    // Otherwise, handle commands. The dismiss, manage, and help commands are
+    // supported for results without features. Dismissal is the only one we need
+    // to handle here since urlbar handles the others.
+    if (details.selType == "dismiss" && result.payload.isBlockable) {
+      lazy.QuickSuggest.blockedSuggestions.add(result.payload.url);
+      controller.removeResult(result);
+    }
   }
 
   onSearchSessionEnd(queryContext, controller, details) {
     for (let backend of lazy.QuickSuggest.enabledBackends) {
       backend.onSearchSessionEnd(queryContext, controller, details);
     }
-
-    // Record legacy Suggest telemetry.
-    this.#recordEngagement(queryContext, this.#sessionResult, details);
-
-    this.#sessionResult = null;
   }
 
   /**
@@ -300,48 +300,15 @@ class ProviderQuickSuggest extends UrlbarProvider {
    * @returns {object} An object describing the view update.
    */
   getViewUpdate(result) {
-    return this.#getFeatureByResult(result)?.getViewUpdate?.(result);
+    return lazy.QuickSuggest.getFeatureByResult(result)?.getViewUpdate?.(
+      result
+    );
   }
 
   getResultCommands(result) {
-    return this.#getFeatureByResult(result)?.getResultCommands?.(result);
-  }
-
-  /**
-   * Gets the `BaseFeature` instance that implements suggestions for a source
-   * and provider name. The source and provider name can be supplied from either
-   * a suggestion object or the payload of a `UrlbarResult` object.
-   *
-   * @param {object} options
-   *   Options object.
-   * @param {string} options.source
-   *   The suggestion source, one of: "merino", "ml", "rust"
-   * @param {string} options.provider
-   *   This value depends on `source`. The possible values per source are:
-   *
-   *   merino:
-   *     The name of the Merino provider that serves the suggestion type
-   *   ml:
-   *     The name of the intent as determined by `MLSuggest`
-   *   rust:
-   *     The name of the suggestion type as defined in Rust
-   * @returns {BaseFeature}
-   *   The feature instance or null if no feature was found.
-   */
-  #getFeature({ source, provider }) {
-    switch (source) {
-      case "merino":
-        return lazy.QuickSuggest.getFeatureByMerinoProvider(provider);
-      case "rust":
-        return lazy.QuickSuggest.getFeatureByRustSuggestionType(provider);
-      case "ml":
-        return lazy.QuickSuggest.getFeatureByMlIntent(provider);
-    }
-    return null;
-  }
-
-  #getFeatureByResult(result) {
-    return this.#getFeature(result.payload);
+    return lazy.QuickSuggest.getFeatureByResult(result)?.getResultCommands?.(
+      result
+    );
   }
 
   /**
@@ -352,13 +319,13 @@ class ProviderQuickSuggest extends UrlbarProvider {
    * @param {object} suggestion
    *   A suggestion from a Suggest backend.
    * @returns {string}
-   *   The telemetry type. If the suggestion type is managed by a `BaseFeature`
-   *   instance, the telemetry type is retrieved from it. Otherwise the
-   *   suggestion type is assumed to come from Merino, and `suggestion.provider`
-   *   (the Merino provider name) is returned.
+   *   The telemetry type. If the suggestion type is managed by a feature, the
+   *   telemetry type is retrieved from it. Otherwise the suggestion type is
+   *   assumed to come from Merino, and `suggestion.provider` (the Merino
+   *   provider name) is returned.
    */
   #getSuggestionTelemetryType(suggestion) {
-    let feature = this.#getFeature(suggestion);
+    let feature = lazy.QuickSuggest.getFeatureBySource(suggestion);
     if (feature) {
       return feature.getSuggestionTelemetryType(suggestion);
     }
@@ -366,35 +333,32 @@ class ProviderQuickSuggest extends UrlbarProvider {
   }
 
   async #makeResult(queryContext, suggestion) {
-    let result;
-    let feature = this.#getFeature(suggestion);
+    let result = null;
+    let feature = lazy.QuickSuggest.getFeatureBySource(suggestion);
     if (!feature) {
-      // We specifically allow Merino to serve suggestion types that Firefox
-      // doesn't know about so that we can experiment with new types without
-      // requiring changes in Firefox. No other source should return unknown
-      // suggestion types with the possible exception of the ML backend: Its
-      // models are stored in remote settings and it may return newer intents
-      // that aren't recognized by older Firefoxes.
-      if (suggestion.source != "merino") {
-        return null;
-      }
-      result = this.#makeDefaultResult(queryContext, suggestion);
-    } else {
+      result = this.#makeUnmanagedResult(queryContext, suggestion);
+    } else if (feature.isEnabled) {
       result = await feature.makeResult(
         queryContext,
         suggestion,
         this._trimmedSearchString
       );
-      if (!result) {
-        // Feature might return null, if the feature is disabled and so on.
-        return null;
-      }
     }
 
-    // See `#getFeature()` for possible values of `source` and `provider`.
+    if (!result) {
+      return null;
+    }
+
+    // Set important properties that every Suggest result should have. See
+    // `QuickSuggest.getFeatureBySource()` for `source` and `provider` values.
+    // If the suggestion isn't managed by a feature, then it's from Merino and
+    // `is_sponsored` is true if it's sponsored. (Merino uses snake_case.)
     result.payload.source = suggestion.source;
     result.payload.provider = suggestion.provider;
     result.payload.telemetryType = this.#getSuggestionTelemetryType(suggestion);
+    result.payload.isSponsored = feature
+      ? feature.isSuggestionSponsored(suggestion)
+      : !!suggestion.is_sponsored;
 
     // Handle icons here so each feature doesn't have to do it, but use `||=` to
     // let them do it if they need to.
@@ -416,7 +380,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
         result.suggestedIndex = suggestion.position;
       } else {
         result.isSuggestedIndexRelativeToGroup = true;
-        if (!suggestion.is_sponsored) {
+        if (!result.payload.isSponsored) {
           result.suggestedIndex = lazy.UrlbarPrefs.get(
             "quickSuggestNonSponsoredIndex"
           );
@@ -427,11 +391,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
             queryContext.isPrivate
           ).supportsResponseType(lazy.SearchUtils.URL_TYPE.SUGGEST_JSON)
         ) {
-          // Show sponsored suggestions somewhere other than the bottom of the
-          // Suggest section only if search suggestions are shown first, the
-          // search suggestions provider is active for the current context (it
-          // will not be active if search suggestions are disabled, among other
-          // reasons), and the default engine supports suggestions.
+          // Allow sponsored suggestions to be shown somewhere other than the
+          // bottom of the Suggest section (-1, the `else` branch below) only if
+          // search suggestions are shown first, the search suggestions provider
+          // is active for the current context (it will not be active if search
+          // suggestions are disabled, among other reasons), and the default
+          // engine supports suggestions.
           result.suggestedIndex = lazy.UrlbarPrefs.get(
             "quickSuggestSponsoredIndex"
           );
@@ -444,10 +409,32 @@ class ProviderQuickSuggest extends UrlbarProvider {
     return result;
   }
 
-  #makeDefaultResult(queryContext, suggestion) {
+  /**
+   * Returns a new result for an unmanaged suggestion. An "unmanaged" suggestion
+   * is a suggestion without a feature.
+   *
+   * Merino is the only backend allowed to serve unmanaged suggestions, for a
+   * couple of reasons: (1) Some suggestion types aren't that complicated and
+   * can be handled in a default manner, for example dynamic Wikipedia
+   * suggestions. (2) It allows us to experiment with new suggestion types
+   * without requiring any changes to Firefox.
+   *
+   * @param {UrlbarQueryContext} queryContext
+   *   The query context.
+   * @param {object} suggestion
+   *   The suggestion.
+   * @returns {UrlbarResult|null}
+   *   A new result for the suggestion or null if the suggestion is not from
+   *   Merino.
+   */
+  #makeUnmanagedResult(queryContext, suggestion) {
+    if (suggestion.source != "merino") {
+      return null;
+    }
+
+    // Note that Merino uses snake_case keys.
     let payload = {
       url: suggestion.url,
-      isSponsored: suggestion.is_sponsored,
       isBlockable: true,
       blockL10n: {
         id: "urlbar-result-menu-dismiss-firefox-suggest",
@@ -474,149 +461,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
         payload
       )
     );
-  }
-
-  #dismissResult(controller, result) {
-    if (!result.payload.isBlockable) {
-      this.logger.info("Dismissals disabled, ignoring dismissal");
-      return;
-    }
-
-    this.logger.info("Dismissing result", result);
-    lazy.QuickSuggest.blockedSuggestions.add(
-      // adM results have `originalUrl`, which contains timestamp templates.
-      result.payload.originalUrl ?? result.payload.url
-    );
-    controller.removeResult(result);
-  }
-
-  /**
-   * Records engagement telemetry. This should be called only at the end of an
-   * engagement when a quick suggest result is present or when a quick suggest
-   * result is dismissed.
-   *
-   * @param {UrlbarQueryContext} queryContext
-   *   The query context.
-   * @param {UrlbarResult} result
-   *   The quick suggest result that was present (and possibly picked) at the
-   *   end of the engagement or that was dismissed. Null if no quick suggest
-   *   result was present.
-   * @param {object} details
-   *   The `details` object that was passed to `onEngagement()` or
-   *   `onSearchSessionEnd()`.
-   */
-  #recordEngagement(queryContext, result, details) {
-    let resultSelType = "";
-    let resultClicked = false;
-    if (result && details.result == result) {
-      resultSelType = details.selType;
-      resultClicked =
-        details.element?.tagName != "menuitem" &&
-        !details.element?.classList.contains("urlbarView-button") &&
-        details.selType != "dismiss";
-    }
-
-    if (result) {
-      // Update impression stats.
-      lazy.QuickSuggest.impressionCaps.updateStats(
-        result.payload.isSponsored ? "sponsored" : "nonsponsored"
-      );
-
-      // Record engagement pings.
-      if (!queryContext.isPrivate) {
-        this.#recordEngagementPings({ result, resultSelType, resultClicked });
-      }
-    }
-  }
-
-  /**
-   * Helper for engagement telemetry that records custom contextual services
-   * pings.
-   *
-   * @param {object} options
-   *   Options object
-   * @param {UrlbarResult} options.result
-   *   The quick suggest result related to the engagement. Must not be null.
-   * @param {string} options.resultSelType
-   *   If an element in the result's row was clicked, this should be its
-   *   `selType`. Otherwise it should be an empty string.
-   * @param {boolean} options.resultClicked
-   *   True if the main part of the result's row was clicked; false if a button
-   *   like help or dismiss was clicked or if no part of the row was clicked.
-   */
-  #recordEngagementPings({ result, resultSelType, resultClicked }) {
-    if (
-      result.payload.telemetryType != "adm_sponsored" &&
-      result.payload.telemetryType != "adm_nonsponsored"
-    ) {
-      return;
-    }
-
-    // Contextual services ping paylod
-    let payload = {
-      match_type: result.isBestMatch ? "best-match" : "firefox-suggest",
-      // Always use lowercase to make the reporting consistent
-      advertiser: result.payload.sponsoredAdvertiser.toLocaleLowerCase(),
-      block_id: result.payload.sponsoredBlockId,
-      improve_suggest_experience_checked: lazy.UrlbarPrefs.get(
-        "quicksuggest.dataCollection.enabled"
-      ),
-      // Quick suggest telemetry indexes are 1-based but `rowIndex` is 0-based
-      position: result.rowIndex + 1,
-      suggested_index: result.suggestedIndex,
-      suggested_index_relative_to_group:
-        !!result.isSuggestedIndexRelativeToGroup,
-      request_id: result.payload.requestId,
-      source: result.payload.source,
-    };
-
-    // Glean ping key -> value
-    let defaultValuesByGleanKey = {
-      matchType: payload.match_type,
-      advertiser: payload.advertiser,
-      blockId: payload.block_id,
-      improveSuggestExperience: payload.improve_suggest_experience_checked,
-      position: payload.position,
-      suggestedIndex: payload.suggested_index.toString(),
-      suggestedIndexRelativeToGroup: payload.suggested_index_relative_to_group,
-      requestId: payload.request_id,
-      source: payload.source,
-      contextId: lazy.contextId,
-    };
-
-    let sendGleanPing = valuesByGleanKey => {
-      valuesByGleanKey = { ...defaultValuesByGleanKey, ...valuesByGleanKey };
-      for (let [gleanKey, value] of Object.entries(valuesByGleanKey)) {
-        let glean = Glean.quickSuggest[gleanKey];
-        if (value !== undefined && value !== "") {
-          glean.set(value);
-        }
-      }
-      GleanPings.quickSuggest.submit();
-    };
-
-    // impression
-    sendGleanPing({
-      pingType: lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
-      isClicked: resultClicked,
-      reportingUrl: result.payload.sponsoredImpressionUrl,
-    });
-
-    // click
-    if (resultClicked) {
-      sendGleanPing({
-        pingType: lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
-        reportingUrl: result.payload.sponsoredClickUrl,
-      });
-    }
-
-    // dismiss
-    if (resultSelType == "dismiss") {
-      sendGleanPing({
-        pingType: lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
-        iabCategory: result.payload.sponsoredIabCategory,
-      });
-    }
   }
 
   /**
@@ -693,72 +537,50 @@ class ProviderQuickSuggest extends UrlbarProvider {
   }
 
   /**
-   * Returns whether a given suggestion can be added for a query, assuming the
+   * Returns whether a given result can be added for a query, assuming the
    * provider itself should be active.
    *
-   * @param {object} suggestion
-   *   The suggestion to check.
+   * @param {UrlbarResult} result
+   *   The result to check.
    * @returns {boolean}
-   *   Whether the suggestion can be added.
+   *   Whether the result can be added.
    */
-  async #canAddSuggestion(suggestion) {
-    this.logger.debug("Checking if suggestion can be added", suggestion);
-
-    // Return false if suggestions are disabled. Always allow Rust exposure
-    // suggestions.
+  async #canAddResult(result) {
+    // Discard the result if it's not managed by a feature and its sponsored
+    // state isn't allowed.
+    //
+    // This isn't necessary when the result is managed because in that case: If
+    // its feature is disabled, we didn't create a result in the first place; if
+    // its feature is enabled, we delegate responsibility to it for either
+    // creating or not creating its results.
+    //
+    // Also note that it's possible for suggestion types to be considered
+    // neither sponsored nor nonsponsored. In other words, the decision to add
+    // them or not does not depend on the prefs in this conditional. Such types
+    // should always be managed. Exposure suggestions are an example.
+    let feature = lazy.QuickSuggest.getFeatureByResult(result);
     if (
-      ((suggestion.is_sponsored &&
+      !feature &&
+      ((result.payload.isSponsored &&
         !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
-        (!suggestion.is_sponsored &&
-          !lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"))) &&
-      (suggestion.source != "rust" || suggestion.provider != "Exposure")
+        (!result.payload.isSponsored &&
+          !lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored")))
     ) {
-      this.logger.debug("Suggestions disabled, not adding suggestion");
       return false;
     }
 
-    // Return false if an impression cap has been hit.
-    if (
-      (suggestion.is_sponsored &&
-        lazy.UrlbarPrefs.get("quickSuggestImpressionCapsSponsoredEnabled")) ||
-      (!suggestion.is_sponsored &&
-        lazy.UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
-    ) {
-      let type = suggestion.is_sponsored ? "sponsored" : "nonsponsored";
-      let hitStats = lazy.QuickSuggest.impressionCaps.getHitStats(type);
-      if (hitStats) {
-        this.logger.debug("Impression cap(s) hit, not adding suggestion", {
-          type,
-          hitStats,
-        });
-        return false;
-      }
-    }
-
-    // Return false if the suggestion is blocked based on its URL. Suggestions
-    // from the JS backend define a single `url` property. Suggestions from the
-    // Rust backend are more complicated: Sponsored suggestions define `rawUrl`,
-    // which may contain timestamp templates, while non-sponsored suggestions
-    // define only `url`. Blocking should always be based on URLs with timestamp
-    // templates, where applicable, so check `rawUrl` and then `url`, in that
-    // order.
-    let { blockedSuggestions } = lazy.QuickSuggest;
-    if (await blockedSuggestions.has(suggestion.rawUrl ?? suggestion.url)) {
+    // Discard the result if its URL is blocked.
+    if (await lazy.QuickSuggest.blockedSuggestions.isResultBlocked(result)) {
       this.logger.debug("Suggestion blocked, not adding suggestion");
       return false;
     }
 
-    this.logger.debug("Suggestion can be added");
     return true;
   }
 
   async _test_applyRanking(suggestion) {
     await this.#applyRanking(suggestion);
   }
-
-  // The result from this provider that was visible at the end of the current
-  // search session, if the session ended in an engagement.
-  #sessionResult;
 }
 
 export var UrlbarProviderQuickSuggest = new ProviderQuickSuggest();

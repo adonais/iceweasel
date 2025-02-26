@@ -60,7 +60,6 @@ __webpack_require__.d(__webpack_exports__, {
   GlobalWorkerOptions: () => (/* reexport */ GlobalWorkerOptions),
   ImageKind: () => (/* reexport */ util_ImageKind),
   InvalidPDFException: () => (/* reexport */ InvalidPDFException),
-  MissingPDFException: () => (/* reexport */ MissingPDFException),
   OPS: () => (/* reexport */ OPS),
   OutputScale: () => (/* reexport */ OutputScale),
   PDFDataRangeTransport: () => (/* reexport */ PDFDataRangeTransport),
@@ -70,9 +69,9 @@ __webpack_require__.d(__webpack_exports__, {
   PermissionFlag: () => (/* reexport */ PermissionFlag),
   PixelsPerInch: () => (/* reexport */ PixelsPerInch),
   RenderingCancelledException: () => (/* reexport */ RenderingCancelledException),
+  ResponseException: () => (/* reexport */ ResponseException),
   TextLayer: () => (/* reexport */ TextLayer),
   TouchManager: () => (/* reexport */ TouchManager),
-  UnexpectedResponseException: () => (/* reexport */ UnexpectedResponseException),
   Util: () => (/* reexport */ Util),
   VerbosityLevel: () => (/* reexport */ VerbosityLevel),
   XfaLayer: () => (/* reexport */ XfaLayer),
@@ -469,15 +468,11 @@ class InvalidPDFException extends BaseException {
     super(msg, "InvalidPDFException");
   }
 }
-class MissingPDFException extends BaseException {
-  constructor(msg) {
-    super(msg, "MissingPDFException");
-  }
-}
-class UnexpectedResponseException extends BaseException {
-  constructor(msg, status) {
-    super(msg, "UnexpectedResponseException");
+class ResponseException extends BaseException {
+  constructor(msg, status, missing) {
+    super(msg, "ResponseException");
     this.status = status;
+    this.missing = missing;
   }
 }
 class FormatError extends BaseException {
@@ -926,11 +921,7 @@ class PageViewport {
     this.height = height;
   }
   get rawDims() {
-    const {
-      userUnit,
-      viewBox
-    } = this;
-    const dims = viewBox.map(x => x * userUnit);
+    const dims = this.viewBox;
     return shadow(this, "rawDims", {
       pageWidth: dims[2] - dims[0],
       pageHeight: dims[3] - dims[1],
@@ -1171,10 +1162,10 @@ function setLayerDimensions(div, viewport, mustFlip = false, mustRotate = true) 
       style
     } = div;
     const useRound = util_FeatureTest.isCSSRoundSupported;
-    const w = `var(--scale-factor) * ${pageWidth}px`,
-      h = `var(--scale-factor) * ${pageHeight}px`;
-    const widthStr = useRound ? `round(down, ${w}, var(--scale-round-x, 1px))` : `calc(${w})`,
-      heightStr = useRound ? `round(down, ${h}, var(--scale-round-y, 1px))` : `calc(${h})`;
+    const w = `var(--total-scale-factor) * ${pageWidth}px`,
+      h = `var(--total-scale-factor) * ${pageHeight}px`;
+    const widthStr = useRound ? `round(down, ${w}, var(--scale-round-x))` : `calc(${w})`,
+      heightStr = useRound ? `round(down, ${h}, var(--scale-round-y))` : `calc(${h})`;
     if (!mustFlip || viewport.rotation % 180 === 0) {
       style.width = widthStr;
       style.height = heightStr;
@@ -1819,6 +1810,7 @@ class AnnotationEditorUIManager {
   #keyboardManagerAC = null;
   #lastActiveElement = null;
   #mainHighlightColorPicker = null;
+  #missingCanvases = null;
   #mlManager = null;
   #mode = AnnotationEditorType.NONE;
   #selectedEditors = new Set();
@@ -1953,12 +1945,15 @@ class AnnotationEditorUIManager {
     this.#allLayers.clear();
     this.#allEditors.clear();
     this.#editorsToRescale.clear();
+    this.#missingCanvases?.clear();
     this.#activeEditor = null;
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
     this.#highlightToolbar?.hide();
     this.#highlightToolbar = null;
+    this.#mainHighlightColorPicker?.destroy();
+    this.#mainHighlightColorPicker = null;
     if (this.#focusMainContainerTimeoutId) {
       clearTimeout(this.#focusMainContainerTimeoutId);
       this.#focusMainContainerTimeoutId = null;
@@ -2593,6 +2588,9 @@ class AnnotationEditorUIManager {
     }
     this.#updateModeCapability.resolve();
   }
+  isInEditingMode() {
+    return this.#mode !== AnnotationEditorType.NONE;
+  }
   addNewEditorFromKeyboard() {
     if (this.currentLayer.canCreateNewEmptyEditor()) {
       this.currentLayer.addNewEditor();
@@ -2716,6 +2714,9 @@ class AnnotationEditorUIManager {
       }, 0);
     }
     this.#allEditors.delete(editor.id);
+    if (editor.annotationElementId) {
+      this.#missingCanvases?.delete(editor.annotationElementId);
+    }
     this.unselect(editor);
     if (!editor.annotationElementId || !this.#deletedAnnotationsElementIds.has(editor.annotationElementId)) {
       this.#annotationStorage?.remove(editor.id);
@@ -3174,6 +3175,17 @@ class AnnotationEditorUIManager {
     }
     editor.renderAnnotationElement(annotation);
   }
+  setMissingCanvas(annotationId, annotationElementId, canvas) {
+    const editor = this.#missingCanvases?.get(annotationId);
+    if (!editor) {
+      return;
+    }
+    editor.setCanvas(annotationElementId, canvas);
+    this.#missingCanvases.delete(annotationId);
+  }
+  addMissingCanvas(annotationId, editor) {
+    (this.#missingCanvases ||= new Map()).set(annotationId, editor);
+  }
 }
 
 ;// ./src/display/editor/alt_text.js
@@ -3452,6 +3464,7 @@ class TouchManager {
   #onPinchStart;
   #onPinching;
   #onPinchEnd;
+  #pointerDownAC = null;
   #signal;
   #touchInfo = null;
   #touchManagerAC;
@@ -3482,7 +3495,35 @@ class TouchManager {
     return shadow(this, "MIN_TOUCH_DISTANCE_TO_PINCH", 35 / (window.devicePixelRatio || 1));
   }
   #onTouchStart(evt) {
-    if (this.#isPinchingDisabled?.() || evt.touches.length < 2) {
+    if (this.#isPinchingDisabled?.()) {
+      return;
+    }
+    if (evt.touches.length === 1) {
+      if (this.#pointerDownAC) {
+        return;
+      }
+      const pointerDownAC = this.#pointerDownAC = new AbortController();
+      const signal = AbortSignal.any([this.#signal, pointerDownAC.signal]);
+      const container = this.#container;
+      const opts = {
+        capture: true,
+        signal,
+        passive: false
+      };
+      const cancelPointerDown = e => {
+        if (e.pointerType === "touch") {
+          this.#pointerDownAC?.abort();
+          this.#pointerDownAC = null;
+        }
+      };
+      container.addEventListener("pointerdown", e => {
+        if (e.pointerType === "touch") {
+          stopEvent(e);
+          cancelPointerDown(e);
+        }
+      }, opts);
+      container.addEventListener("pointerup", cancelPointerDown, opts);
+      container.addEventListener("pointercancel", cancelPointerDown, opts);
       return;
     }
     if (!this.#touchMoveAC) {
@@ -3491,11 +3532,18 @@ class TouchManager {
       const container = this.#container;
       const opt = {
         signal,
+        capture: false,
         passive: false
       };
       container.addEventListener("touchmove", this.#onTouchMove.bind(this), opt);
-      container.addEventListener("touchend", this.#onTouchEnd.bind(this), opt);
-      container.addEventListener("touchcancel", this.#onTouchEnd.bind(this), opt);
+      const onTouchEnd = this.#onTouchEnd.bind(this);
+      container.addEventListener("touchend", onTouchEnd, opt);
+      container.addEventListener("touchcancel", onTouchEnd, opt);
+      opt.capture = true;
+      container.addEventListener("pointerdown", stopEvent, opt);
+      container.addEventListener("pointermove", stopEvent, opt);
+      container.addEventListener("pointercancel", stopEvent, opt);
+      container.addEventListener("pointerup", stopEvent, opt);
       this.#onPinchStart?.();
     }
     stopEvent(evt);
@@ -3518,6 +3566,7 @@ class TouchManager {
     if (!this.#touchInfo || evt.touches.length !== 2) {
       return;
     }
+    stopEvent(evt);
     let [touch0, touch1] = evt.touches;
     if (touch0.identifier > touch1.identifier) {
       [touch0, touch1] = [touch1, touch0];
@@ -3550,7 +3599,6 @@ class TouchManager {
     touchInfo.touch0Y = screen0Y;
     touchInfo.touch1X = screen1X;
     touchInfo.touch1Y = screen1Y;
-    evt.preventDefault();
     if (!this.#isPinching) {
       this.#isPinching = true;
       return;
@@ -3559,19 +3607,24 @@ class TouchManager {
     this.#onPinching?.(origin, pDistance, distance);
   }
   #onTouchEnd(evt) {
+    if (evt.touches.length >= 2) {
+      return;
+    }
     this.#touchMoveAC.abort();
     this.#touchMoveAC = null;
     this.#onPinchEnd?.();
     if (!this.#touchInfo) {
       return;
     }
-    evt.preventDefault();
+    stopEvent(evt);
     this.#touchInfo = null;
     this.#isPinching = false;
   }
   destroy() {
     this.#touchManagerAC?.abort();
     this.#touchManagerAC = null;
+    this.#pointerDownAC?.abort();
+    this.#pointerDownAC = null;
   }
 }
 
@@ -5425,6 +5478,409 @@ class FontFaceObject {
   }
 }
 
+;// ./src/shared/message_handler.js
+
+const CallbackKind = {
+  DATA: 1,
+  ERROR: 2
+};
+const StreamKind = {
+  CANCEL: 1,
+  CANCEL_COMPLETE: 2,
+  CLOSE: 3,
+  ENQUEUE: 4,
+  ERROR: 5,
+  PULL: 6,
+  PULL_COMPLETE: 7,
+  START_COMPLETE: 8
+};
+function onFn() {}
+function wrapReason(ex) {
+  if (ex instanceof AbortException || ex instanceof InvalidPDFException || ex instanceof PasswordException || ex instanceof ResponseException || ex instanceof UnknownErrorException) {
+    return ex;
+  }
+  if (!(ex instanceof Error || typeof ex === "object" && ex !== null)) {
+    unreachable('wrapReason: Expected "reason" to be a (possibly cloned) Error.');
+  }
+  switch (ex.name) {
+    case "AbortException":
+      return new AbortException(ex.message);
+    case "InvalidPDFException":
+      return new InvalidPDFException(ex.message);
+    case "PasswordException":
+      return new PasswordException(ex.message, ex.code);
+    case "ResponseException":
+      return new ResponseException(ex.message, ex.status, ex.missing);
+    case "UnknownErrorException":
+      return new UnknownErrorException(ex.message, ex.details);
+  }
+  return new UnknownErrorException(ex.message, ex.toString());
+}
+class MessageHandler {
+  #messageAC = new AbortController();
+  constructor(sourceName, targetName, comObj) {
+    this.sourceName = sourceName;
+    this.targetName = targetName;
+    this.comObj = comObj;
+    this.callbackId = 1;
+    this.streamId = 1;
+    this.streamSinks = Object.create(null);
+    this.streamControllers = Object.create(null);
+    this.callbackCapabilities = Object.create(null);
+    this.actionHandler = Object.create(null);
+    comObj.addEventListener("message", this.#onMessage.bind(this), {
+      signal: this.#messageAC.signal
+    });
+  }
+  #onMessage({
+    data
+  }) {
+    if (data.targetName !== this.sourceName) {
+      return;
+    }
+    if (data.stream) {
+      this.#processStreamMessage(data);
+      return;
+    }
+    if (data.callback) {
+      const callbackId = data.callbackId;
+      const capability = this.callbackCapabilities[callbackId];
+      if (!capability) {
+        throw new Error(`Cannot resolve callback ${callbackId}`);
+      }
+      delete this.callbackCapabilities[callbackId];
+      if (data.callback === CallbackKind.DATA) {
+        capability.resolve(data.data);
+      } else if (data.callback === CallbackKind.ERROR) {
+        capability.reject(wrapReason(data.reason));
+      } else {
+        throw new Error("Unexpected callback case");
+      }
+      return;
+    }
+    const action = this.actionHandler[data.action];
+    if (!action) {
+      throw new Error(`Unknown action from worker: ${data.action}`);
+    }
+    if (data.callbackId) {
+      const sourceName = this.sourceName,
+        targetName = data.sourceName,
+        comObj = this.comObj;
+      Promise.try(action, data.data).then(function (result) {
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          callback: CallbackKind.DATA,
+          callbackId: data.callbackId,
+          data: result
+        });
+      }, function (reason) {
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          callback: CallbackKind.ERROR,
+          callbackId: data.callbackId,
+          reason: wrapReason(reason)
+        });
+      });
+      return;
+    }
+    if (data.streamId) {
+      this.#createStreamSink(data);
+      return;
+    }
+    action(data.data);
+  }
+  on(actionName, handler) {
+    const ah = this.actionHandler;
+    if (ah[actionName]) {
+      throw new Error(`There is already an actionName called "${actionName}"`);
+    }
+    ah[actionName] = handler;
+  }
+  send(actionName, data, transfers) {
+    this.comObj.postMessage({
+      sourceName: this.sourceName,
+      targetName: this.targetName,
+      action: actionName,
+      data
+    }, transfers);
+  }
+  sendWithPromise(actionName, data, transfers) {
+    const callbackId = this.callbackId++;
+    const capability = Promise.withResolvers();
+    this.callbackCapabilities[callbackId] = capability;
+    try {
+      this.comObj.postMessage({
+        sourceName: this.sourceName,
+        targetName: this.targetName,
+        action: actionName,
+        callbackId,
+        data
+      }, transfers);
+    } catch (ex) {
+      capability.reject(ex);
+    }
+    return capability.promise;
+  }
+  sendWithStream(actionName, data, queueingStrategy, transfers) {
+    const streamId = this.streamId++,
+      sourceName = this.sourceName,
+      targetName = this.targetName,
+      comObj = this.comObj;
+    return new ReadableStream({
+      start: controller => {
+        const startCapability = Promise.withResolvers();
+        this.streamControllers[streamId] = {
+          controller,
+          startCall: startCapability,
+          pullCall: null,
+          cancelCall: null,
+          isClosed: false
+        };
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          action: actionName,
+          streamId,
+          data,
+          desiredSize: controller.desiredSize
+        }, transfers);
+        return startCapability.promise;
+      },
+      pull: controller => {
+        const pullCapability = Promise.withResolvers();
+        this.streamControllers[streamId].pullCall = pullCapability;
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: StreamKind.PULL,
+          streamId,
+          desiredSize: controller.desiredSize
+        });
+        return pullCapability.promise;
+      },
+      cancel: reason => {
+        assert(reason instanceof Error, "cancel must have a valid reason");
+        const cancelCapability = Promise.withResolvers();
+        this.streamControllers[streamId].cancelCall = cancelCapability;
+        this.streamControllers[streamId].isClosed = true;
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: StreamKind.CANCEL,
+          streamId,
+          reason: wrapReason(reason)
+        });
+        return cancelCapability.promise;
+      }
+    }, queueingStrategy);
+  }
+  #createStreamSink(data) {
+    const streamId = data.streamId,
+      sourceName = this.sourceName,
+      targetName = data.sourceName,
+      comObj = this.comObj;
+    const self = this,
+      action = this.actionHandler[data.action];
+    const streamSink = {
+      enqueue(chunk, size = 1, transfers) {
+        if (this.isCancelled) {
+          return;
+        }
+        const lastDesiredSize = this.desiredSize;
+        this.desiredSize -= size;
+        if (lastDesiredSize > 0 && this.desiredSize <= 0) {
+          this.sinkCapability = Promise.withResolvers();
+          this.ready = this.sinkCapability.promise;
+        }
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: StreamKind.ENQUEUE,
+          streamId,
+          chunk
+        }, transfers);
+      },
+      close() {
+        if (this.isCancelled) {
+          return;
+        }
+        this.isCancelled = true;
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: StreamKind.CLOSE,
+          streamId
+        });
+        delete self.streamSinks[streamId];
+      },
+      error(reason) {
+        assert(reason instanceof Error, "error must have a valid reason");
+        if (this.isCancelled) {
+          return;
+        }
+        this.isCancelled = true;
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: StreamKind.ERROR,
+          streamId,
+          reason: wrapReason(reason)
+        });
+      },
+      sinkCapability: Promise.withResolvers(),
+      onPull: null,
+      onCancel: null,
+      isCancelled: false,
+      desiredSize: data.desiredSize,
+      ready: null
+    };
+    streamSink.sinkCapability.resolve();
+    streamSink.ready = streamSink.sinkCapability.promise;
+    this.streamSinks[streamId] = streamSink;
+    Promise.try(action, data.data, streamSink).then(function () {
+      comObj.postMessage({
+        sourceName,
+        targetName,
+        stream: StreamKind.START_COMPLETE,
+        streamId,
+        success: true
+      });
+    }, function (reason) {
+      comObj.postMessage({
+        sourceName,
+        targetName,
+        stream: StreamKind.START_COMPLETE,
+        streamId,
+        reason: wrapReason(reason)
+      });
+    });
+  }
+  #processStreamMessage(data) {
+    const streamId = data.streamId,
+      sourceName = this.sourceName,
+      targetName = data.sourceName,
+      comObj = this.comObj;
+    const streamController = this.streamControllers[streamId],
+      streamSink = this.streamSinks[streamId];
+    switch (data.stream) {
+      case StreamKind.START_COMPLETE:
+        if (data.success) {
+          streamController.startCall.resolve();
+        } else {
+          streamController.startCall.reject(wrapReason(data.reason));
+        }
+        break;
+      case StreamKind.PULL_COMPLETE:
+        if (data.success) {
+          streamController.pullCall.resolve();
+        } else {
+          streamController.pullCall.reject(wrapReason(data.reason));
+        }
+        break;
+      case StreamKind.PULL:
+        if (!streamSink) {
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: StreamKind.PULL_COMPLETE,
+            streamId,
+            success: true
+          });
+          break;
+        }
+        if (streamSink.desiredSize <= 0 && data.desiredSize > 0) {
+          streamSink.sinkCapability.resolve();
+        }
+        streamSink.desiredSize = data.desiredSize;
+        Promise.try(streamSink.onPull || onFn).then(function () {
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: StreamKind.PULL_COMPLETE,
+            streamId,
+            success: true
+          });
+        }, function (reason) {
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: StreamKind.PULL_COMPLETE,
+            streamId,
+            reason: wrapReason(reason)
+          });
+        });
+        break;
+      case StreamKind.ENQUEUE:
+        assert(streamController, "enqueue should have stream controller");
+        if (streamController.isClosed) {
+          break;
+        }
+        streamController.controller.enqueue(data.chunk);
+        break;
+      case StreamKind.CLOSE:
+        assert(streamController, "close should have stream controller");
+        if (streamController.isClosed) {
+          break;
+        }
+        streamController.isClosed = true;
+        streamController.controller.close();
+        this.#deleteStreamController(streamController, streamId);
+        break;
+      case StreamKind.ERROR:
+        assert(streamController, "error should have stream controller");
+        streamController.controller.error(wrapReason(data.reason));
+        this.#deleteStreamController(streamController, streamId);
+        break;
+      case StreamKind.CANCEL_COMPLETE:
+        if (data.success) {
+          streamController.cancelCall.resolve();
+        } else {
+          streamController.cancelCall.reject(wrapReason(data.reason));
+        }
+        this.#deleteStreamController(streamController, streamId);
+        break;
+      case StreamKind.CANCEL:
+        if (!streamSink) {
+          break;
+        }
+        const dataReason = wrapReason(data.reason);
+        Promise.try(streamSink.onCancel || onFn, dataReason).then(function () {
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: StreamKind.CANCEL_COMPLETE,
+            streamId,
+            success: true
+          });
+        }, function (reason) {
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: StreamKind.CANCEL_COMPLETE,
+            streamId,
+            reason: wrapReason(reason)
+          });
+        });
+        streamSink.sinkCapability.reject(dataReason);
+        streamSink.isCancelled = true;
+        delete this.streamSinks[streamId];
+        break;
+      default:
+        throw new Error("Unexpected stream case");
+    }
+  }
+  async #deleteStreamController(streamController, streamId) {
+    await Promise.allSettled([streamController.startCall?.promise, streamController.pullCall?.promise, streamController.cancelCall?.promise]);
+    delete this.streamControllers[streamId];
+  }
+  destroy() {
+    this.#messageAC?.abort();
+    this.#messageAC = null;
+  }
+}
+
 ;// ./src/display/pattern_helper.js
 
 
@@ -5637,8 +6093,8 @@ class MeshShadingPattern extends BaseShadingPattern {
     this._colors = IR[3];
     this._figures = IR[4];
     this._bounds = IR[5];
-    this._bbox = IR[7];
-    this._background = IR[8];
+    this._bbox = IR[6];
+    this._background = IR[7];
     this.matrix = null;
   }
   _createMeshCanvas(combinedScale, backgroundColor, cachedCanvases) {
@@ -7364,9 +7820,10 @@ class CanvasGraphics {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);
+      let currentTransform;
       if (fillStrokeMode === TextRenderingMode.FILL || fillStrokeMode === TextRenderingMode.FILL_STROKE) {
         if (patternFillTransform) {
-          const currentTransform = ctx.getTransform();
+          currentTransform = ctx.getTransform();
           ctx.setTransform(...patternFillTransform);
           ctx.fill(this.#getScaledPath(path, currentTransform, patternFillTransform));
         } else {
@@ -7375,8 +7832,18 @@ class CanvasGraphics {
       }
       if (fillStrokeMode === TextRenderingMode.STROKE || fillStrokeMode === TextRenderingMode.FILL_STROKE) {
         if (patternStrokeTransform) {
-          const currentTransform = ctx.getTransform();
+          currentTransform ||= ctx.getTransform();
           ctx.setTransform(...patternStrokeTransform);
+          const {
+            a,
+            b,
+            c,
+            d
+          } = currentTransform;
+          const invPatternTransform = Util.inverseTransform(patternStrokeTransform);
+          const transf = Util.transform([a, b, c, d, 0, 0], invPatternTransform);
+          const [sx, sy] = Util.singularValueDecompose2dScale(transf);
+          ctx.lineWidth *= Math.max(sx, sy) / fontSize;
           ctx.stroke(this.#getScaledPath(path, currentTransform, patternStrokeTransform));
         } else {
           ctx.lineWidth /= fontSize;
@@ -8280,10 +8747,12 @@ class DOMCanvasFactory extends BaseCanvasFactory {
 
 ;// ./src/display/stubs.js
 const DOMCMapReaderFactory = null;
+const DOMWasmFactory = null;
 const DOMStandardFontDataFactory = null;
 const NodeCanvasFactory = null;
 const NodeCMapReaderFactory = null;
 const NodeFilterFactory = null;
+const NodeWasmFactory = null;
 const NodeStandardFontDataFactory = null;
 const PDFFetchStream = null;
 const PDFNetworkStream = null;
@@ -8646,409 +9115,6 @@ class GlobalWorkerOptions {
       throw new Error("Invalid `workerSrc` type.");
     }
     this.#src = val;
-  }
-}
-
-;// ./src/shared/message_handler.js
-
-const CallbackKind = {
-  UNKNOWN: 0,
-  DATA: 1,
-  ERROR: 2
-};
-const StreamKind = {
-  UNKNOWN: 0,
-  CANCEL: 1,
-  CANCEL_COMPLETE: 2,
-  CLOSE: 3,
-  ENQUEUE: 4,
-  ERROR: 5,
-  PULL: 6,
-  PULL_COMPLETE: 7,
-  START_COMPLETE: 8
-};
-function onFn() {}
-function wrapReason(reason) {
-  if (!(reason instanceof Error || typeof reason === "object" && reason !== null)) {
-    unreachable('wrapReason: Expected "reason" to be a (possibly cloned) Error.');
-  }
-  switch (reason.name) {
-    case "AbortException":
-      return new AbortException(reason.message);
-    case "MissingPDFException":
-      return new MissingPDFException(reason.message);
-    case "PasswordException":
-      return new PasswordException(reason.message, reason.code);
-    case "UnexpectedResponseException":
-      return new UnexpectedResponseException(reason.message, reason.status);
-    case "UnknownErrorException":
-      return new UnknownErrorException(reason.message, reason.details);
-    default:
-      return new UnknownErrorException(reason.message, reason.toString());
-  }
-}
-class MessageHandler {
-  #messageAC = new AbortController();
-  constructor(sourceName, targetName, comObj) {
-    this.sourceName = sourceName;
-    this.targetName = targetName;
-    this.comObj = comObj;
-    this.callbackId = 1;
-    this.streamId = 1;
-    this.streamSinks = Object.create(null);
-    this.streamControllers = Object.create(null);
-    this.callbackCapabilities = Object.create(null);
-    this.actionHandler = Object.create(null);
-    comObj.addEventListener("message", this.#onMessage.bind(this), {
-      signal: this.#messageAC.signal
-    });
-  }
-  #onMessage({
-    data
-  }) {
-    if (data.targetName !== this.sourceName) {
-      return;
-    }
-    if (data.stream) {
-      this.#processStreamMessage(data);
-      return;
-    }
-    if (data.callback) {
-      const callbackId = data.callbackId;
-      const capability = this.callbackCapabilities[callbackId];
-      if (!capability) {
-        throw new Error(`Cannot resolve callback ${callbackId}`);
-      }
-      delete this.callbackCapabilities[callbackId];
-      if (data.callback === CallbackKind.DATA) {
-        capability.resolve(data.data);
-      } else if (data.callback === CallbackKind.ERROR) {
-        capability.reject(wrapReason(data.reason));
-      } else {
-        throw new Error("Unexpected callback case");
-      }
-      return;
-    }
-    const action = this.actionHandler[data.action];
-    if (!action) {
-      throw new Error(`Unknown action from worker: ${data.action}`);
-    }
-    if (data.callbackId) {
-      const sourceName = this.sourceName,
-        targetName = data.sourceName,
-        comObj = this.comObj;
-      Promise.try(action, data.data).then(function (result) {
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          callback: CallbackKind.DATA,
-          callbackId: data.callbackId,
-          data: result
-        });
-      }, function (reason) {
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          callback: CallbackKind.ERROR,
-          callbackId: data.callbackId,
-          reason: wrapReason(reason)
-        });
-      });
-      return;
-    }
-    if (data.streamId) {
-      this.#createStreamSink(data);
-      return;
-    }
-    action(data.data);
-  }
-  on(actionName, handler) {
-    const ah = this.actionHandler;
-    if (ah[actionName]) {
-      throw new Error(`There is already an actionName called "${actionName}"`);
-    }
-    ah[actionName] = handler;
-  }
-  send(actionName, data, transfers) {
-    this.comObj.postMessage({
-      sourceName: this.sourceName,
-      targetName: this.targetName,
-      action: actionName,
-      data
-    }, transfers);
-  }
-  sendWithPromise(actionName, data, transfers) {
-    const callbackId = this.callbackId++;
-    const capability = Promise.withResolvers();
-    this.callbackCapabilities[callbackId] = capability;
-    try {
-      this.comObj.postMessage({
-        sourceName: this.sourceName,
-        targetName: this.targetName,
-        action: actionName,
-        callbackId,
-        data
-      }, transfers);
-    } catch (ex) {
-      capability.reject(ex);
-    }
-    return capability.promise;
-  }
-  sendWithStream(actionName, data, queueingStrategy, transfers) {
-    const streamId = this.streamId++,
-      sourceName = this.sourceName,
-      targetName = this.targetName,
-      comObj = this.comObj;
-    return new ReadableStream({
-      start: controller => {
-        const startCapability = Promise.withResolvers();
-        this.streamControllers[streamId] = {
-          controller,
-          startCall: startCapability,
-          pullCall: null,
-          cancelCall: null,
-          isClosed: false
-        };
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          action: actionName,
-          streamId,
-          data,
-          desiredSize: controller.desiredSize
-        }, transfers);
-        return startCapability.promise;
-      },
-      pull: controller => {
-        const pullCapability = Promise.withResolvers();
-        this.streamControllers[streamId].pullCall = pullCapability;
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.PULL,
-          streamId,
-          desiredSize: controller.desiredSize
-        });
-        return pullCapability.promise;
-      },
-      cancel: reason => {
-        assert(reason instanceof Error, "cancel must have a valid reason");
-        const cancelCapability = Promise.withResolvers();
-        this.streamControllers[streamId].cancelCall = cancelCapability;
-        this.streamControllers[streamId].isClosed = true;
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.CANCEL,
-          streamId,
-          reason: wrapReason(reason)
-        });
-        return cancelCapability.promise;
-      }
-    }, queueingStrategy);
-  }
-  #createStreamSink(data) {
-    const streamId = data.streamId,
-      sourceName = this.sourceName,
-      targetName = data.sourceName,
-      comObj = this.comObj;
-    const self = this,
-      action = this.actionHandler[data.action];
-    const streamSink = {
-      enqueue(chunk, size = 1, transfers) {
-        if (this.isCancelled) {
-          return;
-        }
-        const lastDesiredSize = this.desiredSize;
-        this.desiredSize -= size;
-        if (lastDesiredSize > 0 && this.desiredSize <= 0) {
-          this.sinkCapability = Promise.withResolvers();
-          this.ready = this.sinkCapability.promise;
-        }
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.ENQUEUE,
-          streamId,
-          chunk
-        }, transfers);
-      },
-      close() {
-        if (this.isCancelled) {
-          return;
-        }
-        this.isCancelled = true;
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.CLOSE,
-          streamId
-        });
-        delete self.streamSinks[streamId];
-      },
-      error(reason) {
-        assert(reason instanceof Error, "error must have a valid reason");
-        if (this.isCancelled) {
-          return;
-        }
-        this.isCancelled = true;
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.ERROR,
-          streamId,
-          reason: wrapReason(reason)
-        });
-      },
-      sinkCapability: Promise.withResolvers(),
-      onPull: null,
-      onCancel: null,
-      isCancelled: false,
-      desiredSize: data.desiredSize,
-      ready: null
-    };
-    streamSink.sinkCapability.resolve();
-    streamSink.ready = streamSink.sinkCapability.promise;
-    this.streamSinks[streamId] = streamSink;
-    Promise.try(action, data.data, streamSink).then(function () {
-      comObj.postMessage({
-        sourceName,
-        targetName,
-        stream: StreamKind.START_COMPLETE,
-        streamId,
-        success: true
-      });
-    }, function (reason) {
-      comObj.postMessage({
-        sourceName,
-        targetName,
-        stream: StreamKind.START_COMPLETE,
-        streamId,
-        reason: wrapReason(reason)
-      });
-    });
-  }
-  #processStreamMessage(data) {
-    const streamId = data.streamId,
-      sourceName = this.sourceName,
-      targetName = data.sourceName,
-      comObj = this.comObj;
-    const streamController = this.streamControllers[streamId],
-      streamSink = this.streamSinks[streamId];
-    switch (data.stream) {
-      case StreamKind.START_COMPLETE:
-        if (data.success) {
-          streamController.startCall.resolve();
-        } else {
-          streamController.startCall.reject(wrapReason(data.reason));
-        }
-        break;
-      case StreamKind.PULL_COMPLETE:
-        if (data.success) {
-          streamController.pullCall.resolve();
-        } else {
-          streamController.pullCall.reject(wrapReason(data.reason));
-        }
-        break;
-      case StreamKind.PULL:
-        if (!streamSink) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.PULL_COMPLETE,
-            streamId,
-            success: true
-          });
-          break;
-        }
-        if (streamSink.desiredSize <= 0 && data.desiredSize > 0) {
-          streamSink.sinkCapability.resolve();
-        }
-        streamSink.desiredSize = data.desiredSize;
-        Promise.try(streamSink.onPull || onFn).then(function () {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.PULL_COMPLETE,
-            streamId,
-            success: true
-          });
-        }, function (reason) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.PULL_COMPLETE,
-            streamId,
-            reason: wrapReason(reason)
-          });
-        });
-        break;
-      case StreamKind.ENQUEUE:
-        assert(streamController, "enqueue should have stream controller");
-        if (streamController.isClosed) {
-          break;
-        }
-        streamController.controller.enqueue(data.chunk);
-        break;
-      case StreamKind.CLOSE:
-        assert(streamController, "close should have stream controller");
-        if (streamController.isClosed) {
-          break;
-        }
-        streamController.isClosed = true;
-        streamController.controller.close();
-        this.#deleteStreamController(streamController, streamId);
-        break;
-      case StreamKind.ERROR:
-        assert(streamController, "error should have stream controller");
-        streamController.controller.error(wrapReason(data.reason));
-        this.#deleteStreamController(streamController, streamId);
-        break;
-      case StreamKind.CANCEL_COMPLETE:
-        if (data.success) {
-          streamController.cancelCall.resolve();
-        } else {
-          streamController.cancelCall.reject(wrapReason(data.reason));
-        }
-        this.#deleteStreamController(streamController, streamId);
-        break;
-      case StreamKind.CANCEL:
-        if (!streamSink) {
-          break;
-        }
-        const dataReason = wrapReason(data.reason);
-        Promise.try(streamSink.onCancel || onFn, dataReason).then(function () {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.CANCEL_COMPLETE,
-            streamId,
-            success: true
-          });
-        }, function (reason) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.CANCEL_COMPLETE,
-            streamId,
-            reason: wrapReason(reason)
-          });
-        });
-        streamSink.sinkCapability.reject(dataReason);
-        streamSink.isCancelled = true;
-        delete this.streamSinks[streamId];
-        break;
-      default:
-        throw new Error("Unexpected stream case");
-    }
-  }
-  async #deleteStreamController(streamController, streamId) {
-    await Promise.allSettled([streamController.startCall?.promise, streamController.pullCall?.promise, streamController.cancelCall?.promise]);
-    delete this.streamControllers[streamId];
-  }
-  destroy() {
-    this.#messageAC?.abort();
-    this.#messageAC = null;
   }
 }
 
@@ -9801,7 +9867,7 @@ class TextLayer {
       left = tx[4] + fontAscent * Math.sin(angle);
       top = tx[5] - fontAscent * Math.cos(angle);
     }
-    const scaleFactorStr = "calc(var(--scale-factor)*";
+    const scaleFactorStr = "calc(var(--total-scale-factor) *";
     const divStyle = textDiv.style;
     if (this.#container === this.#rootContainer) {
       divStyle.left = `${(100 * left / this.#pageWidth).toFixed(2)}%`;
@@ -10047,13 +10113,10 @@ class XfaText {
 
 
 
+
 const DEFAULT_RANGE_CHUNK_SIZE = 65536;
 const RENDERING_CANCELLED_TIMEOUT = 100;
 const DELAYED_CLEANUP_TIMEOUT = 5000;
-const DefaultCanvasFactory = DOMCanvasFactory;
-const DefaultCMapReaderFactory = DOMCMapReaderFactory;
-const DefaultFilterFactory = DOMFilterFactory;
-const DefaultStandardFontDataFactory = DOMStandardFontDataFactory;
 function getDocument(src = {}) {
   const task = new PDFDocumentLoadingTask();
   const {
@@ -10071,9 +10134,11 @@ function getDocument(src = {}) {
   const docBaseUrl = typeof src.docBaseUrl === "string" && !isDataScheme(src.docBaseUrl) ? src.docBaseUrl : null;
   const cMapUrl = typeof src.cMapUrl === "string" ? src.cMapUrl : null;
   const cMapPacked = src.cMapPacked !== false;
-  const CMapReaderFactory = src.CMapReaderFactory || DefaultCMapReaderFactory;
+  const CMapReaderFactory = src.CMapReaderFactory || DOMCMapReaderFactory;
   const standardFontDataUrl = typeof src.standardFontDataUrl === "string" ? src.standardFontDataUrl : null;
-  const StandardFontDataFactory = src.StandardFontDataFactory || DefaultStandardFontDataFactory;
+  const StandardFontDataFactory = src.StandardFontDataFactory || DOMStandardFontDataFactory;
+  const wasmUrl = typeof src.wasmUrl === "string" ? src.wasmUrl : null;
+  const WasmFactory = src.WasmFactory || DOMWasmFactory;
   const ignoreErrors = src.stopAtErrors !== true;
   const maxImageSize = Number.isInteger(src.maxImageSize) && src.maxImageSize > -1 ? src.maxImageSize : -1;
   const isEvalSupported = src.isEvalSupported !== false;
@@ -10088,8 +10153,8 @@ function getDocument(src = {}) {
   const disableStream = src.disableStream === true;
   const disableAutoFetch = src.disableAutoFetch === true;
   const pdfBug = src.pdfBug === true;
-  const CanvasFactory = src.CanvasFactory || DefaultCanvasFactory;
-  const FilterFactory = src.FilterFactory || DefaultFilterFactory;
+  const CanvasFactory = src.CanvasFactory || DOMCanvasFactory;
+  const FilterFactory = src.FilterFactory || DOMFilterFactory;
   const enableHWA = src.enableHWA === true;
   const length = rangeTransport ? rangeTransport.length : src.length ?? NaN;
   const useSystemFonts = typeof src.useSystemFonts === "boolean" ? src.useSystemFonts : !isNodeJS && !disableFontFace;
@@ -10106,7 +10171,8 @@ function getDocument(src = {}) {
       ownerDocument
     }),
     cMapReaderFactory: null,
-    standardFontDataFactory: null
+    standardFontDataFactory: null,
+    wasmFactory: null
   };
   if (!worker) {
     const workerParams = {
@@ -10118,7 +10184,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "4.10.22",
+    apiVersion: "5.0.44",
     data,
     password,
     disableAutoFetch,
@@ -10137,7 +10203,8 @@ function getDocument(src = {}) {
       fontExtraProperties,
       useSystemFonts,
       cMapUrl: useWorkerFetch ? cMapUrl : null,
-      standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null
+      standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null,
+      wasmUrl: useWorkerFetch ? wasmUrl : null
     }
   };
   const transportParams = {
@@ -11032,6 +11099,7 @@ class WorkerTransport {
     this.filterFactory = factory.filterFactory;
     this.cMapReaderFactory = factory.cMapReaderFactory;
     this.standardFontDataFactory = factory.standardFontDataFactory;
+    this.wasmFactory = factory.wasmFactory;
     this.destroyed = false;
     this.destroyCapability = null;
     this._networkStream = networkStream;
@@ -11237,32 +11305,15 @@ class WorkerTransport {
       delete pdfInfo.htmlForXfa;
       loadingTask._capability.resolve(new PDFDocumentProxy(pdfInfo, this));
     });
-    messageHandler.on("DocException", function (ex) {
-      let reason;
-      switch (ex.name) {
-        case "PasswordException":
-          reason = new PasswordException(ex.message, ex.code);
-          break;
-        case "InvalidPDFException":
-          reason = new InvalidPDFException(ex.message);
-          break;
-        case "MissingPDFException":
-          reason = new MissingPDFException(ex.message);
-          break;
-        case "UnexpectedResponseException":
-          reason = new UnexpectedResponseException(ex.message, ex.status);
-          break;
-        case "UnknownErrorException":
-          reason = new UnknownErrorException(ex.message, ex.details);
-          break;
-        default:
-          unreachable("DocException - expected a valid Error.");
-      }
-      loadingTask._capability.reject(reason);
+    messageHandler.on("DocException", ex => {
+      loadingTask._capability.reject(wrapReason(ex));
     });
-    messageHandler.on("PasswordRequest", exception => {
+    messageHandler.on("PasswordRequest", ex => {
       this.#passwordCapability = Promise.withResolvers();
-      if (loadingTask.onPassword) {
+      try {
+        if (!loadingTask.onPassword) {
+          throw wrapReason(ex);
+        }
         const updatePassword = password => {
           if (password instanceof Error) {
             this.#passwordCapability.reject(password);
@@ -11272,13 +11323,9 @@ class WorkerTransport {
             });
           }
         };
-        try {
-          loadingTask.onPassword(updatePassword, exception.code);
-        } catch (ex) {
-          this.#passwordCapability.reject(ex);
-        }
-      } else {
-        this.#passwordCapability.reject(new PasswordException(exception.message, exception.code));
+        loadingTask.onPassword(updatePassword, ex.code);
+      } catch (err) {
+        this.#passwordCapability.reject(err);
       }
       return this.#passwordCapability.promise;
     });
@@ -11399,6 +11446,9 @@ class WorkerTransport {
     });
     messageHandler.on("FetchStandardFontData", async data => {
       throw new Error("Not implemented: FetchStandardFontData");
+    });
+    messageHandler.on("FetchWasm", async data => {
+      throw new Error("Not implemented: FetchWasm");
     });
   }
   getData() {
@@ -11790,8 +11840,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "4.10.22";
-const build = "4547f230b";
+const version = "5.0.44";
+const build = "e0873f575";
 
 ;// ./src/shared/scripting_utils.js
 function makeColorComp(n) {
@@ -12314,10 +12364,10 @@ class AnnotationElement {
       const horizontalRadius = data.borderStyle.horizontalCornerRadius;
       const verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
-        const radius = `calc(${horizontalRadius}px * var(--scale-factor)) / calc(${verticalRadius}px * var(--scale-factor))`;
+        const radius = `calc(${horizontalRadius}px * var(--total-scale-factor)) / calc(${verticalRadius}px * var(--total-scale-factor))`;
         style.borderRadius = radius;
       } else if (this instanceof RadioButtonWidgetAnnotationElement) {
-        const radius = `calc(${width}px * var(--scale-factor)) / calc(${height}px * var(--scale-factor))`;
+        const radius = `calc(${width}px * var(--total-scale-factor)) / calc(${height}px * var(--total-scale-factor))`;
         style.borderRadius = radius;
       }
       switch (data.borderStyle.style) {
@@ -13024,7 +13074,7 @@ class WidgetAnnotationElement extends AnnotationElement {
       const height = Math.abs(this.data.rect[3] - this.data.rect[1] - BORDER_SIZE);
       computedFontSize = Math.min(fontSize, roundToOneDecimal(height / LINE_FACTOR));
     }
-    style.fontSize = `calc(${computedFontSize}px * var(--scale-factor))`;
+    style.fontSize = `calc(${computedFontSize}px * var(--total-scale-factor))`;
     style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
     if (this.data.textAlignment !== null) {
       style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
@@ -13339,7 +13389,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         const fieldWidth = this.data.rect[2] - this.data.rect[0];
         const combWidth = fieldWidth / maxLen;
         element.classList.add("comb");
-        element.style.letterSpacing = `calc(${combWidth}px * var(--scale-factor) - 1ch)`;
+        element.style.letterSpacing = `calc(${combWidth}px * var(--total-scale-factor) - 1ch)`;
       }
     } else {
       element = document.createElement("div");
@@ -13932,7 +13982,7 @@ class PopupElement {
     const lineAttributes = {
       style: {
         color: this.#fontColor,
-        fontSize: this.#fontSize ? `calc(${this.#fontSize}px * var(--scale-factor))` : ""
+        fontSize: this.#fontSize ? `calc(${this.#fontSize}px * var(--total-scale-factor))` : ""
       }
     };
     for (const line of text.split("\n")) {
@@ -14709,6 +14759,16 @@ class AnnotationLayer {
       } else {
         firstChild.after(canvas);
       }
+      const editableAnnotation = this.#editableAnnotations.get(id);
+      if (!editableAnnotation) {
+        continue;
+      }
+      if (editableAnnotation._hasNoCanvas) {
+        this._annotationEditorUIManager?.setMissingCanvas(id, element.id, canvas);
+        editableAnnotation._hasNoCanvas = false;
+      } else {
+        editableAnnotation.canvas = canvas;
+      }
     }
     this.#annotationCanvasMap.clear();
   }
@@ -14812,7 +14872,7 @@ class FreeTextEditor extends AnnotationEditor {
   }
   #updateFontSize(fontSize) {
     const setFontsize = size => {
-      this.editorDiv.style.fontSize = `calc(${size}px * var(--scale-factor))`;
+      this.editorDiv.style.fontSize = `calc(${size}px * var(--total-scale-factor))`;
       this.translate(0, -(size - this.#fontSize) * this.parentScale);
       this.#fontSize = size;
       this.#setEditorDimensions();
@@ -15072,7 +15132,7 @@ class FreeTextEditor extends AnnotationEditor {
     const {
       style
     } = this.editorDiv;
-    style.fontSize = `calc(${this.#fontSize}px * var(--scale-factor))`;
+    style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
     style.color = this.#color;
     this.div.append(this.editorDiv);
     this.overlayDiv = document.createElement("div");
@@ -15316,7 +15376,7 @@ class FreeTextEditor extends AnnotationEditor {
     const {
       style
     } = content;
-    style.fontSize = `calc(${this.#fontSize}px * var(--scale-factor))`;
+    style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
     style.color = this.#color;
     content.replaceChildren();
     for (const line of this.#content.split("\n")) {
@@ -17604,7 +17664,7 @@ class DrawingEditor extends AnnotationEditor {
     }
     parent.toggleDrawing(true);
     this._cleanup(false);
-    if (event) {
+    if (event?.target === parent.div) {
       parent.drawLayer.updateProperties(this._currentDrawId, DrawingEditor.#currentDraw.end(event.offsetX, event.offsetY));
     }
     if (this.supportMultipleDrawings) {
@@ -18576,6 +18636,7 @@ class StampEditor extends AnnotationEditor {
   #bitmapFile = null;
   #bitmapFileName = "";
   #canvas = null;
+  #missingCanvas = false;
   #resizeTimeoutId = null;
   #isSvg = false;
   #hasBeenAddedInUndoStack = false;
@@ -18805,7 +18866,7 @@ class StampEditor extends AnnotationEditor {
     }
   }
   isEmpty() {
-    return !(this.#bitmapPromise || this.#bitmap || this.#bitmapUrl || this.#bitmapFile || this.#bitmapId);
+    return !(this.#bitmapPromise || this.#bitmap || this.#bitmapUrl || this.#bitmapFile || this.#bitmapId || this.#missingCanvas);
   }
   get isResizable() {
     return true;
@@ -18823,10 +18884,12 @@ class StampEditor extends AnnotationEditor {
     this.div.hidden = true;
     this.div.setAttribute("role", "figure");
     this.addAltTextButton();
-    if (this.#bitmap) {
-      this.#createCanvas();
-    } else {
-      this.#getBitmap();
+    if (!this.#missingCanvas) {
+      if (this.#bitmap) {
+        this.#createCanvas();
+      } else {
+        this.#getBitmap();
+      }
     }
     if (this.width && !this.annotationElementId) {
       const [parentWidth, parentHeight] = this.parentDimensions;
@@ -18834,6 +18897,21 @@ class StampEditor extends AnnotationEditor {
     }
     this._uiManager.addShouldRescale(this);
     return this.div;
+  }
+  setCanvas(annotationElementId, canvas) {
+    const {
+      id: bitmapId,
+      bitmap
+    } = this._uiManager.imageManager.getFromCanvas(annotationElementId, canvas);
+    canvas.remove();
+    if (bitmapId && this._uiManager.imageManager.isValidId(bitmapId)) {
+      this.#bitmapId = bitmapId;
+      if (bitmap) {
+        this.#bitmap = bitmap;
+      }
+      this.#missingCanvas = false;
+      this.#createCanvas();
+    }
   }
   _onResized() {
     this.onScaleChanging();
@@ -19059,6 +19137,7 @@ class StampEditor extends AnnotationEditor {
   }
   static async deserialize(data, parent, uiManager) {
     let initialData = null;
+    let missingCanvas = false;
     if (data instanceof StampAnnotationElement) {
       const {
         data: {
@@ -19073,16 +19152,26 @@ class StampEditor extends AnnotationEditor {
           page: {
             pageNumber
           }
-        }
+        },
+        canvas
       } = data;
-      const canvas = container.querySelector("canvas");
-      const imageData = uiManager.imageManager.getFromCanvas(container.id, canvas);
-      canvas.remove();
+      let bitmapId, bitmap;
+      if (canvas) {
+        delete data.canvas;
+        ({
+          id: bitmapId,
+          bitmap
+        } = uiManager.imageManager.getFromCanvas(container.id, canvas));
+        canvas.remove();
+      } else {
+        missingCanvas = true;
+        data._hasNoCanvas = true;
+      }
       const altText = (await parent._structTree.getAriaAttributes(`${AnnotationPrefix}${id}`))?.get("aria-label") || "";
       initialData = data = {
         annotationType: AnnotationEditorType.STAMP,
-        bitmapId: imageData.id,
-        bitmap: imageData.bitmap,
+        bitmapId,
+        bitmap,
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
@@ -19106,7 +19195,10 @@ class StampEditor extends AnnotationEditor {
       isSvg,
       accessibilityData
     } = data;
-    if (bitmapId && uiManager.imageManager.isValidId(bitmapId)) {
+    if (missingCanvas) {
+      uiManager.addMissingCanvas(data.id, editor);
+      editor.#missingCanvas = true;
+    } else if (bitmapId && uiManager.imageManager.isValidId(bitmapId)) {
       editor.#bitmapId = bitmapId;
       if (bitmap) {
         editor.#bitmap = bitmap;
@@ -19748,7 +19840,9 @@ class AnnotationEditorLayer {
     this.#allowClick = !editor || editor.isEmpty();
   }
   startDrawingSession(event) {
-    this.div.focus();
+    this.div.focus({
+      preventScroll: true
+    });
     if (this.#drawingAC) {
       this.#currentEditorType.startDrawing(this, this.#uiManager, false, event);
       return;
@@ -19888,9 +19982,9 @@ class AnnotationEditorLayer {
 
 class DrawLayer {
   #parent = null;
-  #id = 0;
   #mapping = new Map();
   #toUpdate = new Map();
+  static #id = 0;
   constructor({
     pageIndex
   }) {
@@ -19951,7 +20045,7 @@ class DrawLayer {
     }
   }
   draw(properties, isPathUpdatable = false, hasClip = false) {
-    const id = this.#id++;
+    const id = DrawLayer.#id++;
     const root = this.#createSVG();
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
@@ -19975,7 +20069,7 @@ class DrawLayer {
     };
   }
   drawOutline(properties, mustRemoveSelfIntersections) {
-    const id = this.#id++;
+    const id = DrawLayer.#id++;
     const root = this.#createSVG();
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
@@ -20101,8 +20195,8 @@ class DrawLayer {
 
 
 
-const pdfjsVersion = "4.10.22";
-const pdfjsBuild = "4547f230b";
+const pdfjsVersion = "5.0.44";
+const pdfjsBuild = "e0873f575";
 
 var __webpack_exports__AbortException = __webpack_exports__.AbortException;
 var __webpack_exports__AnnotationEditorLayer = __webpack_exports__.AnnotationEditorLayer;
@@ -20118,7 +20212,6 @@ var __webpack_exports__FeatureTest = __webpack_exports__.FeatureTest;
 var __webpack_exports__GlobalWorkerOptions = __webpack_exports__.GlobalWorkerOptions;
 var __webpack_exports__ImageKind = __webpack_exports__.ImageKind;
 var __webpack_exports__InvalidPDFException = __webpack_exports__.InvalidPDFException;
-var __webpack_exports__MissingPDFException = __webpack_exports__.MissingPDFException;
 var __webpack_exports__OPS = __webpack_exports__.OPS;
 var __webpack_exports__OutputScale = __webpack_exports__.OutputScale;
 var __webpack_exports__PDFDataRangeTransport = __webpack_exports__.PDFDataRangeTransport;
@@ -20128,9 +20221,9 @@ var __webpack_exports__PasswordResponses = __webpack_exports__.PasswordResponses
 var __webpack_exports__PermissionFlag = __webpack_exports__.PermissionFlag;
 var __webpack_exports__PixelsPerInch = __webpack_exports__.PixelsPerInch;
 var __webpack_exports__RenderingCancelledException = __webpack_exports__.RenderingCancelledException;
+var __webpack_exports__ResponseException = __webpack_exports__.ResponseException;
 var __webpack_exports__TextLayer = __webpack_exports__.TextLayer;
 var __webpack_exports__TouchManager = __webpack_exports__.TouchManager;
-var __webpack_exports__UnexpectedResponseException = __webpack_exports__.UnexpectedResponseException;
 var __webpack_exports__Util = __webpack_exports__.Util;
 var __webpack_exports__VerbosityLevel = __webpack_exports__.VerbosityLevel;
 var __webpack_exports__XfaLayer = __webpack_exports__.XfaLayer;
@@ -20149,4 +20242,4 @@ var __webpack_exports__setLayerDimensions = __webpack_exports__.setLayerDimensio
 var __webpack_exports__shadow = __webpack_exports__.shadow;
 var __webpack_exports__stopEvent = __webpack_exports__.stopEvent;
 var __webpack_exports__version = __webpack_exports__.version;
-export { __webpack_exports__AbortException as AbortException, __webpack_exports__AnnotationEditorLayer as AnnotationEditorLayer, __webpack_exports__AnnotationEditorParamsType as AnnotationEditorParamsType, __webpack_exports__AnnotationEditorType as AnnotationEditorType, __webpack_exports__AnnotationEditorUIManager as AnnotationEditorUIManager, __webpack_exports__AnnotationLayer as AnnotationLayer, __webpack_exports__AnnotationMode as AnnotationMode, __webpack_exports__ColorPicker as ColorPicker, __webpack_exports__DOMSVGFactory as DOMSVGFactory, __webpack_exports__DrawLayer as DrawLayer, __webpack_exports__FeatureTest as FeatureTest, __webpack_exports__GlobalWorkerOptions as GlobalWorkerOptions, __webpack_exports__ImageKind as ImageKind, __webpack_exports__InvalidPDFException as InvalidPDFException, __webpack_exports__MissingPDFException as MissingPDFException, __webpack_exports__OPS as OPS, __webpack_exports__OutputScale as OutputScale, __webpack_exports__PDFDataRangeTransport as PDFDataRangeTransport, __webpack_exports__PDFDateString as PDFDateString, __webpack_exports__PDFWorker as PDFWorker, __webpack_exports__PasswordResponses as PasswordResponses, __webpack_exports__PermissionFlag as PermissionFlag, __webpack_exports__PixelsPerInch as PixelsPerInch, __webpack_exports__RenderingCancelledException as RenderingCancelledException, __webpack_exports__TextLayer as TextLayer, __webpack_exports__TouchManager as TouchManager, __webpack_exports__UnexpectedResponseException as UnexpectedResponseException, __webpack_exports__Util as Util, __webpack_exports__VerbosityLevel as VerbosityLevel, __webpack_exports__XfaLayer as XfaLayer, __webpack_exports__build as build, __webpack_exports__createValidAbsoluteUrl as createValidAbsoluteUrl, __webpack_exports__fetchData as fetchData, __webpack_exports__getDocument as getDocument, __webpack_exports__getFilenameFromUrl as getFilenameFromUrl, __webpack_exports__getPdfFilenameFromUrl as getPdfFilenameFromUrl, __webpack_exports__getXfaPageViewport as getXfaPageViewport, __webpack_exports__isDataScheme as isDataScheme, __webpack_exports__isPdfFile as isPdfFile, __webpack_exports__noContextMenu as noContextMenu, __webpack_exports__normalizeUnicode as normalizeUnicode, __webpack_exports__setLayerDimensions as setLayerDimensions, __webpack_exports__shadow as shadow, __webpack_exports__stopEvent as stopEvent, __webpack_exports__version as version };
+export { __webpack_exports__AbortException as AbortException, __webpack_exports__AnnotationEditorLayer as AnnotationEditorLayer, __webpack_exports__AnnotationEditorParamsType as AnnotationEditorParamsType, __webpack_exports__AnnotationEditorType as AnnotationEditorType, __webpack_exports__AnnotationEditorUIManager as AnnotationEditorUIManager, __webpack_exports__AnnotationLayer as AnnotationLayer, __webpack_exports__AnnotationMode as AnnotationMode, __webpack_exports__ColorPicker as ColorPicker, __webpack_exports__DOMSVGFactory as DOMSVGFactory, __webpack_exports__DrawLayer as DrawLayer, __webpack_exports__FeatureTest as FeatureTest, __webpack_exports__GlobalWorkerOptions as GlobalWorkerOptions, __webpack_exports__ImageKind as ImageKind, __webpack_exports__InvalidPDFException as InvalidPDFException, __webpack_exports__OPS as OPS, __webpack_exports__OutputScale as OutputScale, __webpack_exports__PDFDataRangeTransport as PDFDataRangeTransport, __webpack_exports__PDFDateString as PDFDateString, __webpack_exports__PDFWorker as PDFWorker, __webpack_exports__PasswordResponses as PasswordResponses, __webpack_exports__PermissionFlag as PermissionFlag, __webpack_exports__PixelsPerInch as PixelsPerInch, __webpack_exports__RenderingCancelledException as RenderingCancelledException, __webpack_exports__ResponseException as ResponseException, __webpack_exports__TextLayer as TextLayer, __webpack_exports__TouchManager as TouchManager, __webpack_exports__Util as Util, __webpack_exports__VerbosityLevel as VerbosityLevel, __webpack_exports__XfaLayer as XfaLayer, __webpack_exports__build as build, __webpack_exports__createValidAbsoluteUrl as createValidAbsoluteUrl, __webpack_exports__fetchData as fetchData, __webpack_exports__getDocument as getDocument, __webpack_exports__getFilenameFromUrl as getFilenameFromUrl, __webpack_exports__getPdfFilenameFromUrl as getPdfFilenameFromUrl, __webpack_exports__getXfaPageViewport as getXfaPageViewport, __webpack_exports__isDataScheme as isDataScheme, __webpack_exports__isPdfFile as isPdfFile, __webpack_exports__noContextMenu as noContextMenu, __webpack_exports__normalizeUnicode as normalizeUnicode, __webpack_exports__setLayerDimensions as setLayerDimensions, __webpack_exports__shadow as shadow, __webpack_exports__stopEvent as stopEvent, __webpack_exports__version as version };

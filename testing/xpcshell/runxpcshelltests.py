@@ -1588,6 +1588,10 @@ class XPCShellTests(object):
             "network.http.network_access_on_socket_process.enabled", False
         )
 
+        self.mozInfo["inc_origin_init"] = (
+            os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1"
+        )
+
         self.mozInfo["condprof"] = options.get("conditionedProfile", False)
         self.mozInfo["msix"] = options.get("variant", "") == "msix"
 
@@ -1911,6 +1915,33 @@ class XPCShellTests(object):
             random.shuffle(self.alltests)
 
         self.cleanup_dir_list = []
+
+        # If any of the tests that are about to be run uses npm packages
+        # we should install them now. It would also be possible for tests
+        # to define the location where they want the npm modules to be
+        # installed, but for now only netwerk xpcshell tests use it.
+        installNPM = False
+        for test in self.alltests:
+            if "usesNPM" in test:
+                installNPM = True
+                break
+
+        if installNPM:
+            command = "npm ci"
+            working_directory = os.path.join(SCRIPT_DIR, "moz-http2")
+            result = subprocess.run(
+                command,
+                shell=True,
+                cwd=working_directory,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            # Print the output
+            self.log.info("npm output: " + result.stdout)
+            self.log.info("npm error: " + result.stderr)
+            self.log.info("npm return code: " + str(result.returncode))
 
         kwargs = {
             "appPath": self.appPath,

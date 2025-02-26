@@ -10,9 +10,14 @@
 namespace mozilla::dom {
 
 /* static */
-bool Nyx::IsEnabled(const GlobalObject&, const nsAString& aFuzzerName) {
+void Nyx::Log(const GlobalObject&, const nsACString& aMsg) {
+  MOZ_FUZZING_NYX_PRINTF("%s\n", PromiseFlatCString(aMsg).get());
+}
+
+/* static */
+bool Nyx::IsEnabled(const GlobalObject&, const nsACString& aFuzzerName) {
   return fuzzing::Nyx::instance().is_enabled(
-      NS_ConvertUTF16toUTF8(aFuzzerName).get());
+      PromiseFlatCString(aFuzzerName).get());
 }
 
 /* static */
@@ -36,7 +41,7 @@ void Nyx::Start(const GlobalObject&) {
 
 /* static */
 void Nyx::Release(const GlobalObject&, uint32_t aIterations) {
-  MOZ_FUZZING_NYX_PRINT("INFO: Performing snapshot...\n");
+  MOZ_FUZZING_NYX_PRINT("INFO: Reverting snapshot...\n");
   fuzzing::Nyx::instance().release(aIterations);
 }
 

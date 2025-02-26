@@ -17,7 +17,8 @@
 #include "NSSErrorsService.h"
 #include "TLSTransportLayer.h"
 #include "mozilla/ChaosMode.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Telemetry.h"
 #include "mozpkix/pkixnss.h"
@@ -2425,6 +2426,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
        transactionNPN.get()));
   if (!transactionNPN.IsEmpty() && negotiatedNPN != transactionNPN) {
     LOG(("Resetting connection due to mismatched NPN token"));
+    mozilla::glean::network::alpn_mismatch_count.Get(negotiatedNPN).Add();
     DontReuse();
     if (mTransaction) {
       mTransaction->Close(NS_ERROR_NET_RESET);

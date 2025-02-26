@@ -36,6 +36,38 @@ function pathHandler(metadata, response) {
   response.bodyOutputStream.write(body, body.length);
 }
 
+// Helper-method to validate that the "Idempotency-Key" value that we
+// generate matches the expected format and is the same in the response.
+// Meant to be called inside of a test that's been added via add_task.
+function validateAutomaticallyAddedHeaderVal(chan) {
+  let valueFromRequest = chan.getRequestHeader("Idempotency-Key");
+  let valueFromResponse = chan.getResponseHeader("Idempotency-Key");
+
+  // Validate that the header's got a nonempty value, and that the
+  // response matches the request:
+  Assert.notEqual(valueFromRequest, "");
+  Assert.notEqual(valueFromResponse, "");
+  Assert.equal(valueFromRequest, valueFromResponse);
+
+  // Further validation on the value (just focusing on valueFromRequest,
+  // since at this point we know that valueFromResponse is equal to it):
+  // * We expect the value to be formatted as a nonempy double-quoted string,
+  // (i.e. length must be at least 3), as part of the "sf-string" syntax:
+  Assert.greaterOrEqual(valueFromRequest.length, 3);
+  Assert.ok(valueFromRequest.startsWith('"'));
+  Assert.ok(valueFromRequest.endsWith('"'));
+
+  // * Inside the double-quotes, we expect the value to be formatted as an
+  // unsigned integer. The spec doesn't require this, but that's the
+  // representation we use for now, so let's be sure we don't inadvertently
+  // stray from that format (except as a deliberate choice, which would
+  // involve an update to this test's expectations).
+  let quotedPortion = valueFromRequest.slice(1, -1);
+  let parsedInteger = Number.parseInt(quotedPortion);
+  Assert.ok(!Number.isNaN(parsedInteger));
+  Assert.greaterOrEqual(parsedInteger, 0);
+}
+
 add_setup(async () => {
   httpServer = new HttpServer();
   httpServer.registerPathHandler("/test_bug1830022", pathHandler);
@@ -50,12 +82,7 @@ add_task(async function idempotency_key_addition_for_post() {
   await new Promise(resolve => {
     chan.asyncOpen(new ChannelListener(resolve));
   });
-  Assert.notEqual(chan.getResponseHeader("Idempotency-Key"), "");
-  Assert.notEqual(chan.getRequestHeader("Idempotency-Key"), "");
-  Assert.equal(
-    chan.getResponseHeader("Idempotency-Key"),
-    chan.getRequestHeader("Idempotency-Key")
-  );
+  validateAutomaticallyAddedHeaderVal(chan);
 });
 
 // tests if we add the header for the PATCH request
@@ -65,12 +92,7 @@ add_task(async function idempotency_key_addition_for_patch() {
   await new Promise(resolve => {
     chan.asyncOpen(new ChannelListener(resolve));
   });
-  Assert.notEqual(chan.getResponseHeader("Idempotency-Key"), "");
-  Assert.notEqual(chan.getRequestHeader("Idempotency-Key"), "");
-  Assert.equal(
-    chan.getResponseHeader("Idempotency-Key"),
-    chan.getRequestHeader("Idempotency-Key")
-  );
+  validateAutomaticallyAddedHeaderVal(chan);
 });
 
 // tests Idempotency key's uniqueness

@@ -24,7 +24,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material.SnackbarDuration
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -158,9 +157,9 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.readermode.DefaultReaderModeController
 import org.mozilla.fenix.browser.tabstrip.TabStrip
 import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
+import org.mozilla.fenix.components.AutofillBarsIntegration
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.FindInPageIntegration
-import org.mozilla.fenix.components.LoginBarsIntegration
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.accounts.FxaWebChannelIntegration
 import org.mozilla.fenix.components.appstate.AppAction
@@ -299,7 +298,7 @@ abstract class BaseBrowserFragment :
     private val shareDownloadsFeature = ViewBoundFeatureWrapper<ShareDownloadFeature>()
     private val copyDownloadsFeature = ViewBoundFeatureWrapper<CopyDownloadFeature>()
     private val promptsFeature = ViewBoundFeatureWrapper<PromptFeature>()
-    private lateinit var loginBarsIntegration: LoginBarsIntegration
+    private lateinit var autofillBarsIntegration: AutofillBarsIntegration
 
     @VisibleForTesting
     internal val findInPageIntegration = ViewBoundFeatureWrapper<FindInPageIntegration>()
@@ -435,7 +434,10 @@ abstract class BaseBrowserFragment :
             observeRestoreComplete(requireComponents.core.store, findNavController())
         }
 
-        observeTabSelection(requireComponents.core.store)
+        observeTabSelection(
+            requireComponents.core.store,
+            isCustomTabSession = customTabSessionId != null,
+        )
 
         if (!requireComponents.fenixOnboarding.userHasBeenOnboarded()) {
             observeTabSource(requireComponents.core.store)
@@ -592,15 +594,17 @@ abstract class BaseBrowserFragment :
             },
         )
 
-        loginBarsIntegration = LoginBarsIntegration(
+        autofillBarsIntegration = AutofillBarsIntegration(
             loginsBar = binding.loginSelectBar,
             passwordBar = binding.suggestStrongPasswordBar,
+            addressBar = binding.addressSelectBar,
+            creditCardBar = binding.creditCardSelectBar,
             settings = requireContext().settings(),
-            onLoginsBarShown = {
+            onAutofillBarShown = {
                 removeBottomToolbarDivider(browserToolbarView.view)
                 updateNavbarDivider()
             },
-            onLoginsBarHidden = {
+            onAutofillBarHidden = {
                 restoreBottomToolbarDivider(browserToolbarView.view)
                 updateNavbarDivider()
             },
@@ -1405,7 +1409,7 @@ abstract class BaseBrowserFragment :
 
     @VisibleForTesting
     internal fun shouldPullToRefreshBeEnabled(inFullScreen: Boolean): Boolean {
-        return FeatureFlags.pullToRefreshEnabled &&
+        return FeatureFlags.PULL_TO_REFRESH_ENABLED &&
             requireContext().settings().isPullToRefreshEnabledInBrowser &&
             !inFullScreen
     }
@@ -1494,7 +1498,7 @@ abstract class BaseBrowserFragment :
             parent = binding.browserLayout,
             hideOnScroll = isToolbarDynamic(context),
             content = {
-                val areLoginBarsShown by remember { mutableStateOf(loginBarsIntegration.isVisible) }
+                val areAutofillBarsShown by remember { mutableStateOf(autofillBarsIntegration.isVisible) }
 
                 FirefoxTheme {
                     Column(
@@ -1545,7 +1549,7 @@ abstract class BaseBrowserFragment :
                         NavigationButtonsCFR(
                             context = context,
                             activity = activity,
-                            showDivider = !isToolbarAtBottom && !areLoginBarsShown &&
+                            showDivider = !isToolbarAtBottom && !areAutofillBarsShown &&
                                 (currentMicrosurvey == null || activity.isMicrosurveyPromptDismissed.value),
                         )
                     }
@@ -1950,7 +1954,7 @@ abstract class BaseBrowserFragment :
     }
 
     @VisibleForTesting
-    internal fun observeTabSelection(store: BrowserStore) {
+    internal fun observeTabSelection(store: BrowserStore, isCustomTabSession: Boolean) {
         consumeFlow(store) { flow ->
             flow.distinctUntilChangedBy {
                 it.selectedTabId
@@ -1960,7 +1964,7 @@ abstract class BaseBrowserFragment :
                 }
                 .collect {
                     currentStartDownloadDialog?.dismiss()
-                    handleTabSelected(it)
+                    handleTabSelected(it, isCustomTabSession)
                 }
         }
     }
@@ -1984,8 +1988,8 @@ abstract class BaseBrowserFragment :
         }
     }
 
-    private fun handleTabSelected(selectedTab: TabSessionState) {
-        if (!this.isRemoving) {
+    private fun handleTabSelected(selectedTab: TabSessionState, isCustomTabSession: Boolean) {
+        if (!this.isRemoving && !isCustomTabSession) {
             updateThemeForSession(selectedTab)
         }
 
@@ -2342,7 +2346,7 @@ abstract class BaseBrowserFragment :
                             snackBarParentView = binding.dynamicSnackbarContainer,
                             snackbarState = SnackbarState(
                                 message = getString(R.string.bookmark_invalid_url_error),
-                                duration = SnackbarDuration.Long,
+                                duration = SnackbarState.Duration.Preset.Long,
                             ),
                         ).show()
                     }
@@ -2356,7 +2360,7 @@ abstract class BaseBrowserFragment :
             snackBarParentView = binding.dynamicSnackbarContainer,
             snackbarState = SnackbarState(
                 message = message,
-                duration = SnackbarDuration.Long,
+                duration = SnackbarState.Duration.Preset.Long,
                 action = Action(
                     label = getString(R.string.edit_bookmark_snackbar_action),
                     onClick = onClick,

@@ -280,15 +280,16 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
   info.mOriginAttributes =
       BasePrincipal::Cast(principal)->OriginAttributesRef();
   info.mShouldResistFingerprinting = aData.shouldResistFingerprinting();
-  Maybe<RFPTarget> overriddenFingerprintingSettings;
+  Maybe<RFPTargetSet> overriddenFingerprintingSettings;
   if (aData.overriddenFingerprintingSettings().isSome()) {
     overriddenFingerprintingSettings.emplace(
-        RFPTarget(aData.overriddenFingerprintingSettings().ref()));
+        aData.overriddenFingerprintingSettings().ref());
   }
   info.mOverriddenFingerprintingSettings = overriddenFingerprintingSettings;
   net::CookieJarSettings::Deserialize(aData.cookieJarSettings(),
                                       getter_AddRefs(info.mCookieJarSettings));
   info.mCookieJarSettingsArgs = aData.cookieJarSettings();
+  info.mIsOn3PCBExceptionList = aData.isOn3PCBExceptionList();
 
   // Default CSP permissions for now.  These will be overrided if necessary
   // based on the script CSP headers during load in ScriptLoader.

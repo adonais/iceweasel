@@ -7,10 +7,9 @@
 #include "HTMLEditor.h"
 #include "HTMLEditorNestedClasses.h"
 
-#include <algorithm>
 #include <utility>
 
-#include "AutoRangeArray.h"
+#include "AutoClonedRangeArray.h"
 #include "CSSEditUtils.h"
 #include "EditAction.h"
 #include "EditorDOMPoint.h"
@@ -19,16 +18,12 @@
 #include "HTMLEditHelpers.h"
 #include "HTMLEditorInlines.h"
 #include "HTMLEditUtils.h"
-#include "WSRunObject.h"
+#include "WhiteSpaceVisibilityKeeper.h"
+#include "WSRunScanner.h"
 
 #include "ErrorList.h"
-#include "js/ErrorReport.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/ComputedStyle.h"  // for ComputedStyle
 #include "mozilla/ContentIterator.h"
-#include "mozilla/EditorDOMPoint.h"
-#include "mozilla/EditorForwards.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
@@ -41,8 +36,6 @@
 #include "mozilla/dom/ElementInlines.h"  // for Element::IsContentEditablePlainTextOnly
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"
-#include "mozilla/mozalloc.h"
-#include "nsAString.h"
 #include "nsAtom.h"
 #include "nsComputedDOMStyle.h"  // for nsComputedDOMStyle
 #include "nsContentUtils.h"
@@ -84,46 +77,6 @@ HTMLEditor::DeleteTextAndTextNodesWithTransaction(
     TreatEmptyTextNodes aTreatEmptyTextNodes);
 
 /*****************************************************************************
- * AutoSetTemporaryAncestorLimiter
- ****************************************************************************/
-
-class MOZ_RAII AutoSetTemporaryAncestorLimiter final {
- public:
-  AutoSetTemporaryAncestorLimiter(const HTMLEditor& aHTMLEditor,
-                                  Selection& aSelection,
-                                  nsINode& aStartPointNode,
-                                  AutoRangeArray* aRanges = nullptr) {
-    MOZ_ASSERT(aSelection.GetType() == SelectionType::eNormal);
-
-    if (aSelection.GetAncestorLimiter()) {
-      return;
-    }
-
-    Element* selectionRootElement =
-        aHTMLEditor.FindSelectionRoot(aStartPointNode);
-    if (!selectionRootElement) {
-      return;
-    }
-    aHTMLEditor.InitializeSelectionAncestorLimit(*selectionRootElement);
-    mSelection = &aSelection;
-    // Setting ancestor limiter may change ranges which were outer of
-    // the new limiter.  Therefore, we need to reinitialize aRanges.
-    if (aRanges) {
-      aRanges->Initialize(aSelection);
-    }
-  }
-
-  ~AutoSetTemporaryAncestorLimiter() {
-    if (mSelection) {
-      mSelection->SetAncestorLimiter(nullptr);
-    }
-  }
-
- private:
-  RefPtr<Selection> mSelection;
-};
-
-/*****************************************************************************
  * AutoDeleteRangesHandler
  ****************************************************************************/
 
@@ -140,7 +93,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ComputeRangesToDelete(
       const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      AutoRangeArray& aRangesToDelete, const Element& aEditingHost);
+      AutoClonedSelectionRangeArray& aRangesToDelete,
+      const Element& aEditingHost);
 
   /**
    * Deletes content in or around aRangesToDelete.
@@ -150,7 +104,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run(
       HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers, AutoRangeArray& aRangesToDelete,
+      nsIEditor::EStripWrappers aStripWrappers,
+      AutoClonedSelectionRangeArray& aRangesToDelete,
       const Element& aEditingHost);
 
  private:
@@ -168,7 +123,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   }
 
   [[nodiscard]] bool CanFallbackToDeleteRangesWithTransaction(
-      const AutoRangeArray& aRangesToDelete) const {
+      const AutoClonedSelectionRangeArray& aRangesToDelete) const {
     return !IsHandlingRecursively() && !aRangesToDelete.Ranges().IsEmpty() &&
            (!aRangesToDelete.IsCollapsed() ||
             EditorBase::HowToHandleCollapsedRangeFor(
@@ -194,13 +149,15 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   HandleDeleteAroundCollapsedRanges(
       HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers, AutoRangeArray& aRangesToDelete,
+      nsIEditor::EStripWrappers aStripWrappers,
+      AutoClonedSelectionRangeArray& aRangesToDelete,
       const WSRunScanner& aWSRunScannerAtCaret,
       const WSScanResult& aScanFromCaretPointResult,
       const Element& aEditingHost);
   nsresult ComputeRangesToDeleteAroundCollapsedRanges(
       const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      AutoRangeArray& aRangesToDelete, const WSRunScanner& aWSRunScannerAtCaret,
+      AutoClonedSelectionRangeArray& aRangesToDelete,
+      const WSRunScanner& aWSRunScannerAtCaret,
       const WSScanResult& aScanFromCaretPointResult,
       const Element& aEditingHost) const;
 
@@ -224,12 +181,12 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   HandleDeleteNonCollapsedRanges(HTMLEditor& aHTMLEditor,
                                  nsIEditor::EDirection aDirectionAndAmount,
                                  nsIEditor::EStripWrappers aStripWrappers,
-                                 AutoRangeArray& aRangesToDelete,
+                                 AutoClonedSelectionRangeArray& aRangesToDelete,
                                  SelectionWasCollapsed aSelectionWasCollapsed,
                                  const Element& aEditingHost);
   nsresult ComputeRangesToDeleteNonCollapsedRanges(
       const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      AutoRangeArray& aRangesToDelete,
+      AutoClonedSelectionRangeArray& aRangesToDelete,
       SelectionWasCollapsed aSelectionWasCollapsed,
       const Element& aEditingHost) const;
 
@@ -244,10 +201,11 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   HandleDeleteTextAroundCollapsedRanges(
       HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      AutoRangeArray& aRangesToDelete, const Element& aEditingHost);
+      AutoClonedSelectionRangeArray& aRangesToDelete,
+      const Element& aEditingHost);
   nsresult ComputeRangesToDeleteTextAroundCollapsedRanges(
       nsIEditor::EDirection aDirectionAndAmount,
-      AutoRangeArray& aRangesToDelete, const Element& aEditingHost) const;
+      AutoClonedSelectionRangeArray& aRangesToDelete) const;
 
   /**
    * Handles deletion of collapsed selection at white-spaces in a text node.
@@ -274,7 +232,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   HandleDeleteCollapsedSelectionAtVisibleChar(
       HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      AutoRangeArray& aRangesToDelete,
+      AutoClonedSelectionRangeArray& aRangesToDelete,
       const EditorDOMPoint& aPointAtDeletingChar, const Element& aEditingHost);
 
   /**
@@ -295,8 +253,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
                             const WSRunScanner& aWSRunScannerAtCaret,
                             const Element& aEditingHost);
   nsresult ComputeRangesToDeleteAtomicContent(
-      Element* aEditingHost, const nsIContent& aAtomicContent,
-      AutoRangeArray& aRangesToDelete) const;
+      const nsIContent& aAtomicContent,
+      AutoClonedSelectionRangeArray& aRangesToDelete) const;
 
   /**
    * GetAtomicContnetToDelete() returns better content that is deletion of
@@ -338,20 +296,21 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
       nsIEditor::EStripWrappers aStripWrappers, Element& aOtherBlockElement,
       const EditorDOMPoint& aCaretPoint, WSRunScanner& aWSRunScannerAtCaret,
-      AutoRangeArray& aRangesToDelete, const Element& aEditingHost);
+      AutoClonedSelectionRangeArray& aRangesToDelete,
+      const Element& aEditingHost);
 
   /**
    * ExtendOrShrinkRangeToDelete() extends aRangeToDelete if there are
    * an invisible <br> element and/or some parent empty elements.
    *
-   * @param aFrameSelection     If the caller wants range in selection limiter,
-   *                            set this to non-nullptr which knows the limiter.
+   * @param aLimitersAndCaretData The frame selection data.
    * @param aRangeToDelete       The range to be extended for deletion.  This
    *                            must not be collapsed, must be positioned.
    */
   template <typename EditorDOMRangeType>
   Result<EditorRawDOMRange, nsresult> ExtendOrShrinkRangeToDelete(
-      const HTMLEditor& aHTMLEditor, const nsFrameSelection* aFrameSelection,
+      const HTMLEditor& aHTMLEditor,
+      const LimitersAndCaretData& aLimitersAndCaretData,
       const EditorDOMRangeType& aRangeToDelete) const;
 
   /**
@@ -433,8 +392,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   }
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  FallbackToDeleteRangesWithTransaction(HTMLEditor& aHTMLEditor,
-                                        AutoRangeArray& aRangesToDelete) const {
+  FallbackToDeleteRangesWithTransaction(
+      HTMLEditor& aHTMLEditor,
+      AutoClonedSelectionRangeArray& aRangesToDelete) const {
     MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
     MOZ_ASSERT(CanFallbackToDeleteRangesWithTransaction(aRangesToDelete));
     Result<CaretPoint, nsresult> caretPointOrError =
@@ -458,7 +418,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       nsRange& aRange, const Element& aEditingHost) const;
   nsresult ComputeRangesToDeleteRangesWithTransaction(
       const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      AutoRangeArray& aRangesToDelete, const Element& aEditingHost) const {
+      AutoClonedSelectionRangeArray& aRangesToDelete,
+      const Element& aEditingHost) const {
     MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
     const EditorBase::HowToHandleCollapsedRange howToHandleCollapsedRange =
         EditorBase::HowToHandleCollapsedRangeFor(aDirectionAndAmount);
@@ -497,7 +458,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     return rv;
   }
   nsresult FallbackToComputeRangesToDeleteRangesWithTransaction(
-      const HTMLEditor& aHTMLEditor, AutoRangeArray& aRangesToDelete,
+      const HTMLEditor& aHTMLEditor,
+      AutoClonedSelectionRangeArray& aRangesToDelete,
       const Element& aEditingHost) const {
     MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
     MOZ_ASSERT(CanFallbackToDeleteRangesWithTransaction(aRangesToDelete));
@@ -693,6 +655,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
      * Run() executes the joining.
      *
      * @param aHTMLEditor               The HTML editor.
+     * @param aLimitersAndCaretData     The data copied from nsFrameSelection.
      * @param aDirectionAndAmount       Direction of the deletion.
      * @param aStripWrappers            Whether delete or keep new empty
      *                                  ancestor elements.
@@ -703,7 +666,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
      *                                  deletion.
      */
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+        HTMLEditor& aHTMLEditor,
+        const LimitersAndCaretData& aLimitersAndCaretData,
+        nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
         AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
         const Element& aEditingHost) {
@@ -719,8 +684,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         case Mode::JoinBlocksInSameParent: {
           Result<EditActionResult, nsresult> result =
               JoinBlockElementsInSameParent(
-                  aHTMLEditor, aDirectionAndAmount, aStripWrappers,
-                  aRangeToDelete, aSelectionWasCollapsed, aEditingHost);
+                  aHTMLEditor, aLimitersAndCaretData, aDirectionAndAmount,
+                  aStripWrappers, aRangeToDelete, aSelectionWasCollapsed,
+                  aEditingHost);
           NS_WARNING_ASSERTION(result.isOk(),
                                "AutoBlockElementsJoiner::"
                                "JoinBlockElementsInSameParent() failed");
@@ -728,8 +694,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         }
         case Mode::DeleteContentInRange: {
           Result<EditActionResult, nsresult> result = DeleteContentInRange(
-              aHTMLEditor, aDirectionAndAmount, aStripWrappers, aRangeToDelete,
-              aEditingHost);
+              aHTMLEditor, aLimitersAndCaretData, aDirectionAndAmount,
+              aStripWrappers, aRangeToDelete, aEditingHost);
           NS_WARNING_ASSERTION(
               result.isOk(),
               "AutoBlockElementsJoiner::DeleteContentInRange() failed");
@@ -756,6 +722,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
     nsresult ComputeRangeToDelete(
         const HTMLEditor& aHTMLEditor,
+        const AutoClonedSelectionRangeArray& aRangesToDelete,
         nsIEditor::EDirection aDirectionAndAmount, nsRange& aRangeToDelete,
         AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
         const Element& aEditingHost) const {
@@ -838,7 +805,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         const Element& aEditingHost) const;
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
     JoinBlockElementsInSameParent(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+        HTMLEditor& aHTMLEditor,
+        const LimitersAndCaretData& aLimitersAndCaretData,
+        nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
         AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
         const Element& aEditingHost);
@@ -857,6 +826,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         const Element& aEditingHost, ComputeRangeFor aComputeRangeFor) const;
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
     DeleteContentInRange(HTMLEditor& aHTMLEditor,
+                         const LimitersAndCaretData& aLimitersAndCaretData,
                          nsIEditor::EDirection aDirectionAndAmount,
                          nsIEditor::EStripWrappers aStripWrappers,
                          nsRange& aRangeToDelete, const Element& aEditingHost);
@@ -1116,10 +1086,10 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
      * ComputeTargetRanges() computes "target ranges" for deleting
      * `mEmptyInclusiveAncestorBlockElement`.
      */
-    nsresult ComputeTargetRanges(const HTMLEditor& aHTMLEditor,
-                                 nsIEditor::EDirection aDirectionAndAmount,
-                                 const Element& aEditingHost,
-                                 AutoRangeArray& aRangesToDelete) const;
+    nsresult ComputeTargetRanges(
+        const HTMLEditor& aHTMLEditor,
+        nsIEditor::EDirection aDirectionAndAmount, const Element& aEditingHost,
+        AutoClonedSelectionRangeArray& aRangesToDelete) const;
 
     /**
      * Deletes found empty block element by `ScanEmptyBlockInclusiveAncestor()`.
@@ -1187,7 +1157,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 nsresult HTMLEditor::ComputeTargetRanges(
     nsIEditor::EDirection aDirectionAndAmount,
-    AutoRangeArray& aRangesToDelete) const {
+    AutoClonedSelectionRangeArray& aRangesToDelete) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   Element* editingHost = ComputeEditingHost();
@@ -1245,7 +1215,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
     return Err(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);
   }
 
-  RefPtr<Element> editingHost = ComputeEditingHost();
+  const RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(!editingHost)) {
     return Err(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);
   }
@@ -1271,8 +1241,15 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
     return EditActionResult::HandledResult();
   }
 
-  AutoRangeArray rangesToDelete(SelectionRef());
+  AutoClonedSelectionRangeArray rangesToDelete(SelectionRef());
   rangesToDelete.EnsureOnlyEditableRanges(*editingHost);
+  // AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() need to use
+  // NodeIsInLimiters() to extend the range for deletion.  But if focus event
+  // doesn't receive yet, ancestor hasn't been set yet.  So we need to set
+  // ancestor limiter to editing host, <body> or something else in such case.
+  if (!rangesToDelete.GetAncestorLimiter()) {
+    rangesToDelete.SetAncestorLimiter(FindSelectionRoot(*editingHost));
+  }
   if (MOZ_UNLIKELY(rangesToDelete.Ranges().IsEmpty())) {
     NS_WARNING(
         "There is no range which we can delete entire the ranges or around the "
@@ -1345,7 +1322,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::DeleteLineBreakWithTransaction(
 Result<CaretPoint, nsresult> HTMLEditor::DeleteRangesWithTransaction(
     nsIEditor::EDirection aDirectionAndAmount,
     nsIEditor::EStripWrappers aStripWrappers,
-    const AutoRangeArray& aRangesToDelete) {
+    const AutoClonedRangeArray& aRangesToDelete) {
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
   if (NS_WARN_IF(!editingHost)) {
@@ -1436,7 +1413,8 @@ Result<CaretPoint, nsresult> HTMLEditor::DeleteRangesWithTransaction(
 
 nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
     const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    AutoRangeArray& aRangesToDelete, const Element& aEditingHost) {
+    AutoClonedSelectionRangeArray& aRangesToDelete,
+    const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
 
@@ -1446,7 +1424,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
   if (aHTMLEditor.mPaddingBRElementForEmptyEditor) {
     nsresult rv = aRangesToDelete.Collapse(
         EditorRawDOMPoint(aHTMLEditor.mPaddingBRElementForEmptyEditor));
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::Collapse() failed");
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "AutoClonedRangeArray::Collapse() failed");
     return rv;
   }
 
@@ -1459,16 +1438,12 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
     if (NS_WARN_IF(!startPoint.IsSet())) {
       return NS_ERROR_FAILURE;
     }
-    RefPtr<Element> editingHost = aHTMLEditor.ComputeEditingHost();
-    if (NS_WARN_IF(!editingHost)) {
-      return NS_ERROR_FAILURE;
-    }
     if (startPoint.IsInContentNode()) {
       AutoEmptyBlockAncestorDeleter deleter;
       if (deleter.ScanEmptyBlockInclusiveAncestor(
               aHTMLEditor, *startPoint.ContainerAs<nsIContent>())) {
         nsresult rv = deleter.ComputeTargetRanges(
-            aHTMLEditor, aDirectionAndAmount, *editingHost, aRangesToDelete);
+            aHTMLEditor, aDirectionAndAmount, aEditingHost, aRangesToDelete);
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rv),
             "AutoEmptyBlockAncestorDeleter::ComputeTargetRanges() failed");
@@ -1489,19 +1464,12 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
       return NS_SUCCESS_DOM_NO_OPERATION;
     }
 
-    // AutoRangeArray::ExtendAnchorFocusRangeFor() will use `nsFrameSelection`
-    // to extend the range for deletion.  But if focus event doesn't receive
-    // yet, ancestor isn't set.  So we must set root element of editor to
-    // ancestor temporarily.
-    AutoSetTemporaryAncestorLimiter autoSetter(
-        aHTMLEditor, aHTMLEditor.SelectionRef(), *startPoint.GetContainer(),
-        &aRangesToDelete);
-
     Result<nsIEditor::EDirection, nsresult> extendResult =
         aRangesToDelete.ExtendAnchorFocusRangeFor(aHTMLEditor,
                                                   aDirectionAndAmount);
     if (extendResult.isErr()) {
-      NS_WARNING("AutoRangeArray::ExtendAnchorFocusRangeFor() failed");
+      NS_WARNING(
+          "AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() failed");
       return extendResult.unwrapErr();
     }
 
@@ -1511,11 +1479,11 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
     Result<bool, nsresult> shrunkenResult =
         aRangesToDelete.ShrinkRangesIfStartFromOrEndAfterAtomicContent(
             aHTMLEditor, aDirectionAndAmount,
-            AutoRangeArray::IfSelectingOnlyOneAtomicContent::Collapse,
-            editingHost);
+            AutoClonedRangeArray::IfSelectingOnlyOneAtomicContent::Collapse);
     if (shrunkenResult.isErr()) {
       NS_WARNING(
-          "AutoRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent() "
+          "AutoClonedRangeArray::"
+          "ShrinkRangesIfStartFromOrEndAfterAtomicContent() "
           "failed");
       return shrunkenResult.unwrapErr();
     }
@@ -1531,7 +1499,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
         return NS_SUCCESS_DOM_NO_OPERATION;
       }
       nsresult rv = FallbackToComputeRangesToDeleteRangesWithTransaction(
-          aHTMLEditor, aRangesToDelete, *editingHost);
+          aHTMLEditor, aRangesToDelete, aEditingHost);
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rv),
           "AutoDeleteRangesHandler::"
@@ -1549,8 +1517,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
                                           EditorType::HTML)) {
         return NS_SUCCESS_DOM_NO_OPERATION;
       }
-      WSRunScanner wsRunScannerAtCaret(
-          editingHost, caretPoint,
+      const WSRunScanner wsRunScannerAtCaret(
+          WSRunScanner::Scan::EditableNodes, caretPoint,
           BlockInlineCheck::UseComputedDisplayOutsideStyle);
       const WSScanResult scanFromCaretPointResult =
           aDirectionAndAmount == nsIEditor::eNext
@@ -1567,8 +1535,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
       MOZ_ASSERT(scanFromCaretPointResult.GetContent());
 
       if (scanFromCaretPointResult.ReachedBRElement()) {
-        if (scanFromCaretPointResult.BRElementPtr() ==
-            wsRunScannerAtCaret.GetEditingHost()) {
+        if (scanFromCaretPointResult.BRElementPtr() == &aEditingHost) {
           return NS_OK;
         }
         if (!scanFromCaretPointResult.IsContentEditable()) {
@@ -1622,7 +1589,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
             nsresult rv = aRangesToDelete.SelectNode(
                 *scanFromCaretPointResult.BRElementPtr());
             NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                 "AutoRangeArray::SelectNode() failed");
+                                 "AutoClonedRangeArray::SelectNode() failed");
             return rv;
           }
 
@@ -1681,7 +1648,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
 
 Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    nsIEditor::EStripWrappers aStripWrappers, AutoRangeArray& aRangesToDelete,
+    nsIEditor::EStripWrappers aStripWrappers,
+    AutoClonedSelectionRangeArray& aRangesToDelete,
     const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(aStripWrappers == nsIEditor::eStrip ||
@@ -1698,12 +1666,12 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
   // selectionWasCollapsed is used later to determine whether we should join
   // blocks in HandleDeleteNonCollapsedRanges(). We don't really care about
   // collapsed because it will be modified by
-  // AutoRangeArray::ExtendAnchorFocusRangeFor() later.
+  // AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() later.
   // AutoBlockElementsJoiner::AutoInclusiveAncestorBlockElementsJoiner should
   // happen if the original selection is collapsed and the cursor is at the end
   // of a block element, in which case
-  // AutoRangeArray::ExtendAnchorFocusRangeFor() would always make the selection
-  // not collapsed.
+  // AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() would always
+  // make the selection not collapsed.
   SelectionWasCollapsed selectionWasCollapsed = aRangesToDelete.IsCollapsed()
                                                     ? SelectionWasCollapsed::Yes
                                                     : SelectionWasCollapsed::No;
@@ -1746,12 +1714,6 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
     }
 
     // Test for distance between caret and text that will be deleted.
-    // Note that this call modifies `nsFrameSelection` without modifying
-    // `Selection`.  However, it does not have problem for now because
-    // it'll be referred by `AutoRangeArray::ExtendAnchorFocusRangeFor()`
-    // before modifying `Selection`.
-    // XXX This looks odd.  `ExtendAnchorFocusRangeFor()` will extend
-    //     anchor-focus range, but here refers the first range.
     AutoCaretBidiLevelManager bidiLevelManager(aHTMLEditor, aDirectionAndAmount,
                                                startPoint);
     if (MOZ_UNLIKELY(bidiLevelManager.Failed())) {
@@ -1763,14 +1725,6 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
     if (bidiLevelManager.Canceled()) {
       return EditActionResult::CanceledResult();
     }
-
-    // AutoRangeArray::ExtendAnchorFocusRangeFor() will use `nsFrameSelection`
-    // to extend the range for deletion.  But if focus event doesn't receive
-    // yet, ancestor isn't set.  So we must set root element of editor to
-    // ancestor temporarily.
-    AutoSetTemporaryAncestorLimiter autoSetter(
-        aHTMLEditor, aHTMLEditor.SelectionRef(), *startPoint.GetContainer(),
-        &aRangesToDelete);
 
     // Calling `ExtendAnchorFocusRangeFor()` and
     // `ShrinkRangesIfStartFromOrEndAfterAtomicContent()` may move caret to
@@ -1791,7 +1745,8 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
         aRangesToDelete.ExtendAnchorFocusRangeFor(aHTMLEditor,
                                                   aDirectionAndAmount);
     if (MOZ_UNLIKELY(extendResult.isErr())) {
-      NS_WARNING("AutoRangeArray::ExtendAnchorFocusRangeFor() failed");
+      NS_WARNING(
+          "AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() failed");
       return extendResult.propagateErr();
     }
     if (caretPoint.isSome() &&
@@ -1807,11 +1762,11 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
     Result<bool, nsresult> shrunkenResult =
         aRangesToDelete.ShrinkRangesIfStartFromOrEndAfterAtomicContent(
             aHTMLEditor, aDirectionAndAmount,
-            AutoRangeArray::IfSelectingOnlyOneAtomicContent::Collapse,
-            &aEditingHost);
+            AutoClonedRangeArray::IfSelectingOnlyOneAtomicContent::Collapse);
     if (MOZ_UNLIKELY(shrunkenResult.isErr())) {
       NS_WARNING(
-          "AutoRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent() "
+          "AutoClonedRangeArray::"
+          "ShrinkRangesIfStartFromOrEndAfterAtomicContent() "
           "failed");
       return shrunkenResult.propagateErr();
     }
@@ -1856,8 +1811,8 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
               *caretPoint.ref().ContainerAs<nsIContent>(), EditorType::HTML)) {
         return EditActionResult::CanceledResult();
       }
-      WSRunScanner wsRunScannerAtCaret(
-          &aEditingHost, caretPoint.ref(),
+      const WSRunScanner wsRunScannerAtCaret(
+          WSRunScanner::Scan::EditableNodes, caretPoint.ref(),
           BlockInlineCheck::UseComputedDisplayOutsideStyle);
       const WSScanResult scanFromCaretPointResult =
           aDirectionAndAmount == nsIEditor::eNext
@@ -1905,15 +1860,19 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
           if (NS_WARN_IF(!caretPoint->IsSetAndValid())) {
             return Err(NS_ERROR_FAILURE);
           }
-          AutoRangeArray rangesToDelete(caretPoint.ref());
+          AutoClonedSelectionRangeArray rangesToDelete(
+              caretPoint.ref(), aRangesToDelete.LimitersAndCaretDataRef());
+          if (NS_WARN_IF(rangesToDelete.Ranges().IsEmpty())) {
+            return Err(NS_ERROR_FAILURE);
+          }
           if (aHTMLEditor.MayHaveMutationEventListeners(
                   NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED |
                   NS_EVENT_BITS_MUTATION_NODEREMOVED |
                   NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT)) {
             // Let's check whether there is new invisible `<br>` element
             // for avoiding infinite recursive calls.
-            WSRunScanner wsRunScannerAtCaret(
-                &aEditingHost, caretPoint.ref(),
+            const WSRunScanner wsRunScannerAtCaret(
+                WSRunScanner::Scan::EditableNodes, caretPoint.ref(),
                 BlockInlineCheck::UseComputedDisplayOutsideStyle);
             const WSScanResult scanFromCaretPointResult =
                 aDirectionAndAmount == nsIEditor::eNext
@@ -1967,7 +1926,8 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
 nsresult
 HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    AutoRangeArray& aRangesToDelete, const WSRunScanner& aWSRunScannerAtCaret,
+    AutoClonedSelectionRangeArray& aRangesToDelete,
+    const WSRunScanner& aWSRunScannerAtCaret,
     const WSScanResult& aScanFromCaretPointResult,
     const Element& aEditingHost) const {
   if (aScanFromCaretPointResult.InCollapsibleWhiteSpaces() ||
@@ -1979,11 +1939,11 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     nsresult rv = aRangesToDelete.Collapse(
         aScanFromCaretPointResult.Point_Deprecated<EditorRawDOMPoint>());
     if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-      NS_WARNING("AutoRangeArray::Collapse() failed");
+      NS_WARNING("AutoClonedRangeArray::Collapse() failed");
       return NS_ERROR_FAILURE;
     }
-    rv = ComputeRangesToDeleteTextAroundCollapsedRanges(
-        aDirectionAndAmount, aRangesToDelete, aEditingHost);
+    rv = ComputeRangesToDeleteTextAroundCollapsedRanges(aDirectionAndAmount,
+                                                        aRangesToDelete);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
         "AutoDeleteRangesHandler::"
@@ -1995,8 +1955,7 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
       aScanFromCaretPointResult.ReachedBRElement() ||
       aScanFromCaretPointResult.ReachedHRElement() ||
       aScanFromCaretPointResult.ReachedNonEditableOtherBlockElement()) {
-    if (aScanFromCaretPointResult.GetContent() ==
-        aWSRunScannerAtCaret.GetEditingHost()) {
+    if (aScanFromCaretPointResult.GetContent() == &aEditingHost) {
       return NS_OK;
     }
     nsIContent* atomicContent = GetAtomicContentToDelete(
@@ -2007,8 +1966,8 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
           "removable atomic content");
       return NS_ERROR_FAILURE;
     }
-    nsresult rv = ComputeRangesToDeleteAtomicContent(
-        aWSRunScannerAtCaret.GetEditingHost(), *atomicContent, aRangesToDelete);
+    nsresult rv =
+        ComputeRangesToDeleteAtomicContent(*atomicContent, aRangesToDelete);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
         "AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent() failed");
@@ -2077,7 +2036,8 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
 Result<EditActionResult, nsresult>
 HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    nsIEditor::EStripWrappers aStripWrappers, AutoRangeArray& aRangesToDelete,
+    nsIEditor::EStripWrappers aStripWrappers,
+    AutoClonedSelectionRangeArray& aRangesToDelete,
     const WSRunScanner& aWSRunScannerAtCaret,
     const WSScanResult& aScanFromCaretPointResult,
     const Element& aEditingHost) {
@@ -2099,7 +2059,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
       nsresult rv = aRangesToDelete.Collapse(
           aScanFromCaretPointResult.Point_Deprecated<EditorRawDOMPoint>());
       if (NS_FAILED(rv)) {
-        NS_WARNING("AutoRangeArray::Collapse() failed");
+        NS_WARNING("AutoClonedRangeArray::Collapse() failed");
         return Err(NS_ERROR_FAILURE);
       }
       Result<CaretPoint, nsresult> caretPointOrError =
@@ -2281,7 +2241,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
 nsresult HTMLEditor::AutoDeleteRangesHandler::
     ComputeRangesToDeleteTextAroundCollapsedRanges(
         nsIEditor::EDirection aDirectionAndAmount,
-        AutoRangeArray& aRangesToDelete, const Element& aEditingHost) const {
+        AutoClonedSelectionRangeArray& aRangesToDelete) const {
   MOZ_ASSERT(aDirectionAndAmount == nsIEditor::eNext ||
              aDirectionAndAmount == nsIEditor::ePrevious);
 
@@ -2295,8 +2255,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::
   EditorDOMRangeInTexts rangeToDelete;
   if (aDirectionAndAmount == nsIEditor::eNext) {
     Result<EditorDOMRangeInTexts, nsresult> result =
-        WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(caretPosition,
-                                                             aEditingHost);
+        WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
+            WSRunScanner::Scan::EditableNodes, caretPosition);
     if (result.isErr()) {
       NS_WARNING(
           "WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom() failed");
@@ -2308,8 +2268,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::
     }
   } else {
     Result<EditorDOMRangeInTexts, nsresult> result =
-        WSRunScanner::GetRangeInTextNodesToBackspaceFrom(caretPosition,
-                                                         aEditingHost);
+        WSRunScanner::GetRangeInTextNodesToBackspaceFrom(
+            WSRunScanner::Scan::EditableNodes, caretPosition);
     if (result.isErr()) {
       NS_WARNING("WSRunScanner::GetRangeInTextNodesToBackspaceFrom() failed");
       return result.unwrapErr();
@@ -2333,13 +2293,14 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::
 Result<CaretPoint, nsresult>
 HTMLEditor::AutoDeleteRangesHandler::HandleDeleteTextAroundCollapsedRanges(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    AutoRangeArray& aRangesToDelete, const Element& aEditingHost) {
+    AutoClonedSelectionRangeArray& aRangesToDelete,
+    const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(aDirectionAndAmount == nsIEditor::eNext ||
              aDirectionAndAmount == nsIEditor::ePrevious);
 
   nsresult rv = ComputeRangesToDeleteTextAroundCollapsedRanges(
-      aDirectionAndAmount, aRangesToDelete, aEditingHost);
+      aDirectionAndAmount, aRangesToDelete);
   if (NS_FAILED(rv)) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -2412,8 +2373,8 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   if (MOZ_LIKELY(pointToPutCaret.IsInContentNode())) {
     AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
                                            &pointToPutCaret);
-    nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-        pointToPutCaret, aEditingHost);
+    nsresult rv =
+        aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(pointToPutCaret);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);
@@ -2497,7 +2458,7 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoDeleteRangesHandler::
 Result<CaretPoint, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     HandleDeleteCollapsedSelectionAtVisibleChar(
         HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-        AutoRangeArray& aRangesToDelete,
+        AutoClonedSelectionRangeArray& aRangesToDelete,
         const EditorDOMPoint& aPointAtDeletingChar,
         const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsTopLevelEditSubActionDataAvailable());
@@ -2620,8 +2581,8 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   if (MOZ_LIKELY(pointToPutCaret.IsInContentNode())) {
     AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
                                            &pointToPutCaret);
-    nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-        pointToPutCaret, aEditingHost);
+    nsresult rv =
+        aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(pointToPutCaret);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);
@@ -2740,11 +2701,11 @@ nsIContent* HTMLEditor::AutoDeleteRangesHandler::GetAtomicContentToDelete(
 
 nsresult
 HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent(
-    Element* aEditingHost, const nsIContent& aAtomicContent,
-    AutoRangeArray& aRangesToDelete) const {
+    const nsIContent& aAtomicContent,
+    AutoClonedSelectionRangeArray& aRangesToDelete) const {
   EditorDOMRange rangeToDelete =
-      WSRunScanner::GetRangesForDeletingAtomicContent(aEditingHost,
-                                                      aAtomicContent);
+      WSRunScanner::GetRangesForDeletingAtomicContent(
+          WSRunScanner::Scan::EditableNodes, aAtomicContent);
   if (!rangeToDelete.IsPositioned()) {
     NS_WARNING("WSRunScanner::GetRangeForDeleteAContentNode() failed");
     return NS_ERROR_FAILURE;
@@ -2756,7 +2717,7 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent(
   nsresult rv = aRangesToDelete.SetStartAndEnd(rangeToDelete.StartRef(),
                                                rangeToDelete.EndRef());
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "AutoRangeArray::SetStartAndEnd() failed");
+                       "AutoClonedRangeArray::SetStartAndEnd() failed");
   return rv;
 }
 
@@ -2767,7 +2728,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAtomicContent(
     const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(!HTMLEditUtils::IsInvisibleBRElement(aAtomicContent));
-  MOZ_ASSERT(&aAtomicContent != aWSRunScannerAtCaret.GetEditingHost());
+  MOZ_ASSERT(!aAtomicContent.IsEditingHost());
 
   EditorDOMPoint pointToPutCaret = aCaretPoint;
   {
@@ -2795,8 +2756,8 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAtomicContent(
   if (MOZ_LIKELY(pointToPutCaret.IsInContentNode())) {
     AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
                                            &pointToPutCaret);
-    nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-        pointToPutCaret, aEditingHost);
+    nsresult rv =
+        aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(pointToPutCaret);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);
@@ -3124,8 +3085,9 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
             aHTMLEditor.GetEditAction())) {
       return EditorDOMPoint();
     }
-    WSRunScanner scanner(&aEditingHost, EditorRawDOMPoint(mBRElement),
-                         BlockInlineCheck::UseComputedDisplayOutsideStyle);
+    const WSRunScanner scanner(
+        WSRunScanner::Scan::EditableNodes, EditorRawDOMPoint(mBRElement),
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
     const WSScanResult maybePreviousText =
         scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
             EditorRawDOMPoint(mBRElement));
@@ -3299,7 +3261,11 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::CollapseSelectionTo() failed");
   if (NS_SUCCEEDED(rv)) {
-    AutoRangeArray rangeArray(aHTMLEditor.SelectionRef());
+    AutoClonedSelectionRangeArray rangeArray(aHTMLEditor.SelectionRef());
+    if (!rangeArray.GetAncestorLimiter()) {
+      rangeArray.SetAncestorLimiter(
+          aHTMLEditor.FindSelectionRoot(aEditingHost));
+    }
     AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandlerConst);
     rv = anotherHandler.ComputeRangesToDelete(aHTMLEditor, aDirectionAndAmount,
                                               rangeArray, aEditingHost);
@@ -3481,7 +3447,11 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       NS_WARNING("EditorBase::CollapseSelectionTo() failed");
       return Err(rv);
     }
-    AutoRangeArray rangesToDelete(aHTMLEditor.SelectionRef());
+    AutoClonedSelectionRangeArray rangesToDelete(aHTMLEditor.SelectionRef());
+    if (!rangesToDelete.GetAncestorLimiter()) {
+      rangesToDelete.SetAncestorLimiter(
+          aHTMLEditor.FindSelectionRoot(aEditingHost));
+    }
     AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandler);
     Result<EditActionResult, nsresult> fallbackResult =
         anotherHandler.Run(aHTMLEditor, aDirectionAndAmount, aStripWrappers,
@@ -3616,7 +3586,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       }
       const WSScanResult prevVisibleThingBeforeCurrentBlock =
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-              &aEditingHost,
+              WSRunScanner::Scan::EditableNodes,
               EditorRawDOMPoint(
                   inclusiveAncestorOfRightChildBlockOrError.inspect()),
               BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -3635,7 +3605,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       MOZ_ASSERT(atPrecedingLineBreak.IsSet());
       const WSScanResult prevVisibleThingBeforeLineBreak =
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-              &aEditingHost, atPrecedingLineBreak,
+              WSRunScanner::Scan::EditableNodes, atPrecedingLineBreak,
               BlockInlineCheck::UseComputedDisplayOutsideStyle);
       if (prevVisibleThingBeforeLineBreak.ReachedBRElement() ||
           prevVisibleThingBeforeLineBreak.ReachedPreformattedLineBreak() ||
@@ -3889,7 +3859,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
 nsresult
 HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
     const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    AutoRangeArray& aRangesToDelete,
+    AutoClonedSelectionRangeArray& aRangesToDelete,
     AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
     const Element& aEditingHost) const {
   MOZ_ASSERT(!aRangesToDelete.IsCollapsed());
@@ -3900,13 +3870,8 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
   }
 
   if (aRangesToDelete.Ranges().Length() == 1) {
-    nsFrameSelection* frameSelection =
-        aHTMLEditor.SelectionRef().GetFrameSelection();
-    if (NS_WARN_IF(!frameSelection)) {
-      return NS_ERROR_FAILURE;
-    }
     Result<EditorRawDOMRange, nsresult> result = ExtendOrShrinkRangeToDelete(
-        aHTMLEditor, frameSelection,
+        aHTMLEditor, aRangesToDelete.LimitersAndCaretDataRef(),
         EditorRawDOMRange(aRangesToDelete.FirstRangeRef()));
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING(
@@ -3933,7 +3898,7 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
     EditorDOMRange firstRange(aRangesToDelete.FirstRangeRef());
     EditorDOMRange extendedRange =
         WSRunScanner::GetRangeContainingInvisibleWhiteSpacesAtRangeBoundaries(
-            aHTMLEditor.ComputeEditingHost(),
+            WSRunScanner::Scan::EditableNodes,
             EditorDOMRange(aRangesToDelete.FirstRangeRef()));
     if (firstRange != extendedRange) {
       nsresult rv = aRangesToDelete.FirstRangeRef()->SetStartAndEnd(
@@ -3983,9 +3948,9 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
                                                  aEditingHost)) {
       return NS_ERROR_FAILURE;
     }
-    nsresult rv =
-        joiner.ComputeRangeToDelete(aHTMLEditor, aDirectionAndAmount, range,
-                                    aSelectionWasCollapsed, aEditingHost);
+    nsresult rv = joiner.ComputeRangeToDelete(
+        aHTMLEditor, aRangesToDelete, aDirectionAndAmount, range,
+        aSelectionWasCollapsed, aEditingHost);
     if (NS_FAILED(rv)) {
       NS_WARNING("AutoBlockElementsJoiner::ComputeRangeToDelete() failed");
       return rv;
@@ -3997,7 +3962,8 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
 Result<EditActionResult, nsresult>
 HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    nsIEditor::EStripWrappers aStripWrappers, AutoRangeArray& aRangesToDelete,
+    nsIEditor::EStripWrappers aStripWrappers,
+    AutoClonedSelectionRangeArray& aRangesToDelete,
     SelectionWasCollapsed aSelectionWasCollapsed, const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(!aRangesToDelete.IsCollapsed());
@@ -4013,13 +3979,8 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
   // Else we have a non-collapsed selection.  First adjust the selection.
   // XXX Why do we extend selection only when there is only one range?
   if (aRangesToDelete.Ranges().Length() == 1) {
-    nsFrameSelection* frameSelection =
-        aHTMLEditor.SelectionRef().GetFrameSelection();
-    if (NS_WARN_IF(!frameSelection)) {
-      return Err(NS_ERROR_FAILURE);
-    }
     Result<EditorRawDOMRange, nsresult> result = ExtendOrShrinkRangeToDelete(
-        aHTMLEditor, frameSelection,
+        aHTMLEditor, aRangesToDelete.LimitersAndCaretDataRef(),
         EditorRawDOMRange(aRangesToDelete.FirstRangeRef()));
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING(
@@ -4191,8 +4152,9 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
       return Err(NS_ERROR_FAILURE);
     }
     Result<EditActionResult, nsresult> result =
-        joiner.Run(aHTMLEditor, aDirectionAndAmount, aStripWrappers,
-                   MOZ_KnownLive(range), aSelectionWasCollapsed, aEditingHost);
+        joiner.Run(aHTMLEditor, aRangesToDelete.LimitersAndCaretDataRef(),
+                   aDirectionAndAmount, aStripWrappers, MOZ_KnownLive(range),
+                   aSelectionWasCollapsed, aEditingHost);
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING("AutoBlockElementsJoiner::Run() failed");
       return result;
@@ -4252,7 +4214,8 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     // rough check.
     const WSScanResult nextVisibleThingOfEndBoundary =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            &aEditingHost, EditorRawDOMPoint(aRangeToDelete.EndRef()),
+            WSRunScanner::Scan::EditableNodes,
+            EditorRawDOMPoint(aRangeToDelete.EndRef()),
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (!nextVisibleThingOfEndBoundary.ReachedCurrentBlockBoundary()) {
       MOZ_ASSERT(mLeftContent->IsElement());
@@ -4265,7 +4228,8 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       if (MOZ_LIKELY(mostDistantBlockOrError.inspect())) {
         const WSScanResult prevVisibleThingOfStartBoundary =
             WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-                &aEditingHost, EditorRawDOMPoint(aRangeToDelete.StartRef()),
+                WSRunScanner::Scan::EditableNodes,
+                EditorRawDOMPoint(aRangeToDelete.StartRef()),
                 BlockInlineCheck::UseComputedDisplayOutsideStyle);
         if (prevVisibleThingOfStartBoundary.ReachedBRElement()) {
           // If the range start after a <br> followed by the block boundary,
@@ -4273,7 +4237,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
           // not a part of empty line like `<div>abc<br>{<div>]def`.
           const WSScanResult nextVisibleThingOfBR =
               WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  &aEditingHost,
+                  WSRunScanner::Scan::EditableNodes,
                   EditorRawDOMPoint::After(
                       *prevVisibleThingOfStartBoundary.GetContent()),
                   BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -4287,7 +4251,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
           }
           const WSScanResult prevVisibleThingOfBR =
               WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-                  &aEditingHost,
+                  WSRunScanner::Scan::EditableNodes,
                   EditorRawDOMPoint(
                       prevVisibleThingOfStartBoundary.GetContent()),
                   BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -4302,7 +4266,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
                        .ReachedPreformattedLineBreak()) {
           const WSScanResult nextVisibleThingOfLineBreak =
               WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  &aEditingHost,
+                  WSRunScanner::Scan::EditableNodes,
                   prevVisibleThingOfStartBoundary
                       .PointAfterReachedContent<EditorRawDOMPoint>(),
                   BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -4317,7 +4281,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
           }
           const WSScanResult prevVisibleThingOfLineBreak =
               WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-                  &aEditingHost,
+                  WSRunScanner::Scan::EditableNodes,
                   prevVisibleThingOfStartBoundary
                       .PointAtReachedContent<EditorRawDOMPoint>(),
                   BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -4334,7 +4298,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
                      mLeftContent);
           const WSScanResult firstVisibleThingInBlock =
               WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  &aEditingHost,
+                  WSRunScanner::Scan::EditableNodes,
                   EditorRawDOMPoint(
                       prevVisibleThingOfStartBoundary.ElementPtr(), 0),
                   BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -4347,7 +4311,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
         } else if (prevVisibleThingOfStartBoundary.ReachedOtherBlockElement()) {
           const WSScanResult firstVisibleThingAfterBlock =
               WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  &aEditingHost,
+                  WSRunScanner::Scan::EditableNodes,
                   EditorRawDOMPoint::After(
                       *prevVisibleThingOfStartBoundary.ElementPtr()),
                   BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -4404,7 +4368,9 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 
 Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     AutoBlockElementsJoiner::DeleteContentInRange(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+        HTMLEditor& aHTMLEditor,
+        const LimitersAndCaretData& aLimitersAndCaretData,
+        nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
         const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
@@ -4429,10 +4395,12 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
           *aRangeToDelete.GetStartContainer()->AsContent()->GetEditingHost(),
           BlockInlineCheck::UseComputedDisplayOutsideStyle));
 
+  RefPtr<nsRange> rangeToDelete(&aRangeToDelete);
   {
-    AutoRangeArray rangesToDelete(aRangeToDelete);
-    AutoTrackDOMRange firstRangeTracker(aHTMLEditor.RangeUpdaterRef(),
-                                        &rangesToDelete.FirstRangeRef());
+    AutoClonedSelectionRangeArray rangesToDelete(*rangeToDelete,
+                                                 aLimitersAndCaretData);
+    AutoTrackDOMRange trackRangeToDelete(aHTMLEditor.RangeUpdaterRef(),
+                                         &rangeToDelete);
     Result<CaretPoint, nsresult> caretPointOrError =
         aHTMLEditor.DeleteRangesWithTransaction(aDirectionAndAmount,
                                                 aStripWrappers, rangesToDelete);
@@ -4458,11 +4426,11 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     }
   }
 
-  if (NS_WARN_IF(!aRangeToDelete.IsPositioned())) {
+  if (NS_WARN_IF(!rangeToDelete->IsPositioned())) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
-  EditorDOMRange rangeToCleanUp(aRangeToDelete);
+  EditorDOMRange rangeToCleanUp(*rangeToDelete);
   AutoTrackDOMRange trackRangeToCleanUp(aHTMLEditor.RangeUpdaterRef(),
                                         &rangeToCleanUp);
   nsresult rv = mDeleteRangesHandler->DeleteUnnecessaryNodes(
@@ -4516,7 +4484,9 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 
 Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     AutoBlockElementsJoiner::JoinBlockElementsInSameParent(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+        HTMLEditor& aHTMLEditor,
+        const LimitersAndCaretData& aLimitersAndCaretData,
+        nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
         SelectionWasCollapsed aSelectionWasCollapsed,
         const Element& aEditingHost) {
@@ -4537,7 +4507,8 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       aSelectionWasCollapsed == SelectionWasCollapsed::Yes &&
       nsIEditor::DirectionIsBackspace(aDirectionAndAmount);
 
-  AutoRangeArray rangesToDelete(aRangeToDelete);
+  AutoClonedSelectionRangeArray rangesToDelete(aRangeToDelete,
+                                               aLimitersAndCaretData);
   Result<CaretPoint, nsresult> caretPointOrError =
       aHTMLEditor.DeleteRangesWithTransaction(aDirectionAndAmount,
                                               aStripWrappers, rangesToDelete);
@@ -4588,8 +4559,9 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   // node because the other browsers insert following inputs into there.
   if (MayEditActionDeleteAroundCollapsedSelection(
           aHTMLEditor.GetEditAction())) {
-    WSRunScanner scanner(&aEditingHost, startOfRightContent,
-                         BlockInlineCheck::UseComputedDisplayOutsideStyle);
+    const WSRunScanner scanner(
+        WSRunScanner::Scan::EditableNodes, startOfRightContent,
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
     const WSScanResult maybePreviousText =
         scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(startOfRightContent);
     if (maybePreviousText.IsContentEditable() &&
@@ -4933,8 +4905,8 @@ Result<Element*, nsresult> HTMLEditor::AutoDeleteRangesHandler::
 
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          aAncestorLimiter, aPoint,
-          BlockInlineCheck::UseComputedDisplayOutsideStyle);
+          WSRunScanner::Scan::EditableNodes, aPoint,
+          BlockInlineCheck::UseComputedDisplayOutsideStyle, aAncestorLimiter);
   if (!ReachedCurrentBlockBoundaryWhichWeCanCross(prevVisibleThing)) {
     return nullptr;
   }
@@ -4944,8 +4916,8 @@ Result<Element*, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   for (Element* ancestorBlock = prevVisibleThing.ElementPtr(); ancestorBlock;) {
     const WSScanResult prevVisibleThing =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            aAncestorLimiter, EditorRawDOMPoint(ancestorBlock),
-            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+            WSRunScanner::Scan::EditableNodes, EditorRawDOMPoint(ancestorBlock),
+            BlockInlineCheck::UseComputedDisplayOutsideStyle, aAncestorLimiter);
     if (!ReachedCurrentBlockBoundaryWhichWeCanCross(prevVisibleThing)) {
       return ancestorBlock;
     }
@@ -5011,7 +4983,8 @@ void HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 
   const WSScanResult prevVisibleThingOfStartBoundary =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          &aEditingHost, EditorRawDOMPoint(aRangeToDelete.StartRef()),
+          WSRunScanner::Scan::EditableNodes,
+          EditorRawDOMPoint(aRangeToDelete.StartRef()),
           BlockInlineCheck::UseComputedDisplayOutsideStyle);
   // If the range starts after an invisible <br> of empty line immediately
   // before the most distant inclusive ancestor of the right block like
@@ -5021,13 +4994,13 @@ void HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       prevVisibleThingOfStartBoundary.ReachedPreformattedLineBreak()) {
     const WSScanResult prevVisibleThingOfPreviousLineBreak =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            &aEditingHost,
+            WSRunScanner::Scan::EditableNodes,
             prevVisibleThingOfStartBoundary
                 .PointAtReachedContent<EditorRawDOMPoint>(),
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     const WSScanResult nextVisibleThingOfPreviousBR =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            &aEditingHost,
+            WSRunScanner::Scan::EditableNodes,
             prevVisibleThingOfStartBoundary
                 .PointAfterReachedContent<EditorRawDOMPoint>(),
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -5058,8 +5031,9 @@ void HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       while (true) {
         WSScanResult scanResult =
             WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                mLeftContent->AsElement(), scanStartPoint,
-                BlockInlineCheck::UseComputedDisplayOutsideStyle);
+                WSRunScanner::Scan::EditableNodes, scanStartPoint,
+                BlockInlineCheck::UseComputedDisplayOutsideStyle,
+                mLeftContent->AsElement());
         if (scanResult.ReachedBlockBoundary() ||
             scanResult.ReachedInlineEditingHostBoundary()) {
           return lastScanResult;
@@ -5211,7 +5185,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       mMode != Mode::DeletePrecedingLinesAndContentInRange &&
       HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
           EditorRawDOMPoint(aRangeToDelete.StartRef()),
-          HTMLEditUtils::IgnoreInvisibleLineBreak::Yes, aEditingHost);
+          HTMLEditUtils::IgnoreInvisibleLineBreak::Yes);
   const PutCaretTo putCaretTo = [&]() {
     // When we delete only preceding lines of the right child block, we should
     // put caret into start of the right block.
@@ -5435,8 +5409,8 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
                 aHTMLEditor.RangeUpdaterRef(), &moveFirstLineResult);
             AutoTrackDOMPoint trackPointToPutCaret(
                 aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
-            nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-                aPoint, aEditingHost);
+            nsresult rv =
+                aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(aPoint);
             NS_WARNING_ASSERTION(
                 NS_SUCCEEDED(rv),
                 "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -5526,7 +5500,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
             }
             WSScanResult nextThing =
                 WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                    &aEditingHost,
+                    WSRunScanner::Scan::EditableNodes,
                     deleteContentResult.DeleteRangeRef().EndRef(),
                     BlockInlineCheck::UseComputedDisplayOutsideStyle);
             return nextThing.ReachedBRElement() ||
@@ -5675,8 +5649,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::DeleteUnnecessaryNodes(
 
   if (MOZ_LIKELY(range.EndRef().IsInContentNode())) {
     AutoTrackDOMRange trackRange(aHTMLEditor.RangeUpdaterRef(), &range);
-    nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-        range.EndRef(), aEditingHost);
+    nsresult rv =
+        aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(range.EndRef());
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);
@@ -5718,8 +5692,9 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
 
   // First, check there is visible contents before the point in current block.
   RefPtr<Element> editingHost = aHTMLEditor.ComputeEditingHost();
-  WSRunScanner wsScannerForPoint(
-      editingHost, aPoint, BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  const WSRunScanner wsScannerForPoint(
+      WSRunScanner::Scan::EditableNodes, aPoint,
+      BlockInlineCheck::UseComputedDisplayOutsideStyle);
   if (!wsScannerForPoint.StartsFromCurrentBlockBoundary() &&
       !wsScannerForPoint.StartsFromInlineEditingHostBoundary()) {
     // If there is visible node before the point, we shouldn't remove the
@@ -5766,7 +5741,7 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
     if (wsScannerForPoint.GetEndReasonContent()->GetNextSibling()) {
       const WSScanResult scanResult =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              editingHost,
+              WSRunScanner::Scan::EditableNodes,
               EditorRawDOMPoint::After(
                   *wsScannerForPoint.GetEndReasonContent()),
               BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -6318,7 +6293,7 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       mRightBlockElement) {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-            aHTMLEditor.ComputeEditingHost(),
+            WSRunScanner::Scan::EditableNodes,
             EditorDOMPoint::AtEndOf(mLeftBlockElement),
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     // `WhiteSpaceVisibilityKeeper::
@@ -6349,7 +6324,7 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
              mLeftBlockElement) {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-            aHTMLEditor.ComputeEditingHost(),
+            WSRunScanner::Scan::EditableNodes,
             mPointContainingTheOtherBlockElement,
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     // `WhiteSpaceVisibilityKeeper::
@@ -6385,7 +6360,7 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   } else {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-            aHTMLEditor.ComputeEditingHost(),
+            WSRunScanner::Scan::EditableNodes,
             EditorDOMPoint::AtEndOf(mLeftBlockElement),
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     // `WhiteSpaceVisibilityKeeper::
@@ -6422,8 +6397,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   }
   EditorDOMRange range =
       WSRunScanner::GetRangeForDeletingBlockElementBoundaries(
-          aHTMLEditor, *mLeftBlockElement, *mRightBlockElement,
-          pointContainingTheOtherBlock);
+          WSRunScanner::Scan::EditableNodes, *mLeftBlockElement,
+          *mRightBlockElement, pointContainingTheOtherBlock);
   if (!range.IsPositioned()) {
     NS_WARNING(
         "WSRunScanner::GetRangeForDeletingBlockElementBoundaries() failed");
@@ -6466,7 +6441,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       aRangeToDelete.SetStartAndEnd(range.StartRef().ToRawRangeBoundary(),
                                     range.EndRef().ToRawRangeBoundary());
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "AutoRangeArray::SetStartAndEnd() failed");
+                       "AutoClonedRangeArray::SetStartAndEnd() failed");
   return rv;
 }
 
@@ -6511,8 +6486,9 @@ Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     // We should put caret to end of preceding text node if there is.
     // Then, users can type text into it like the other browsers.
     auto pointToPutCaret = [&]() -> EditorDOMPoint {
-      WSRunScanner scanner(&aEditingHost, maybeDeepStartOfRightContent,
-                           BlockInlineCheck::UseComputedDisplayStyle);
+      const WSRunScanner scanner(WSRunScanner::Scan::EditableNodes,
+                                 maybeDeepStartOfRightContent,
+                                 BlockInlineCheck::UseComputedDisplayStyle);
       const WSScanResult maybePreviousText =
           scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
               maybeDeepStartOfRightContent);
@@ -6633,8 +6609,8 @@ HTMLEditor::AutoMoveOneLineHandler::CanMoveOrDeleteSomethingInLine(
     return Err(NS_ERROR_INVALID_ARG);
   }
 
-  RefPtr<nsRange> oneLineRange =
-      AutoRangeArray::CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+  RefPtr<nsRange> oneLineRange = AutoClonedRangeArray::
+      CreateRangeWrappingStartAndEndLinesContainingBoundaries(
           aPointInHardLine, aPointInHardLine,
           EditSubAction::eMergeBlockContents,
           BlockInlineCheck::UseComputedDisplayOutsideStyle, aEditingHost);
@@ -6767,7 +6743,7 @@ nsresult HTMLEditor::AutoMoveOneLineHandler::Prepare(
           aPointInHardLine.GetContainerAs<nsIContent>(),
           mDestInclusiveAncestorBlock);
 
-  AutoRangeArray rangesToWrapTheLine(aPointInHardLine);
+  AutoClonedRangeArray rangesToWrapTheLine(aPointInHardLine);
   rangesToWrapTheLine.ExtendRangesToWrapLines(
       EditSubAction::eMergeBlockContents,
       BlockInlineCheck::UseComputedDisplayOutsideStyle,
@@ -6801,7 +6777,7 @@ HTMLEditor::AutoMoveOneLineHandler::SplitToMakeTheLineIsolated(
     HTMLEditor& aHTMLEditor, const nsIContent& aNewContainer,
     const Element& aEditingHost,
     nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents) const {
-  AutoRangeArray rangesToWrapTheLine(mLineRange);
+  AutoClonedRangeArray rangesToWrapTheLine(mLineRange);
   Result<EditorDOMPoint, nsresult> splitResult =
       rangesToWrapTheLine
           .SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
@@ -6809,7 +6785,7 @@ HTMLEditor::AutoMoveOneLineHandler::SplitToMakeTheLineIsolated(
               aEditingHost, &aNewContainer);
   if (MOZ_UNLIKELY(splitResult.isErr())) {
     NS_WARNING(
-        "AutoRangeArray::"
+        "AutoClonedRangeArray::"
         "SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries() failed");
     return Err(splitResult.unwrapErr());
   }
@@ -6819,10 +6795,10 @@ HTMLEditor::AutoMoveOneLineHandler::SplitToMakeTheLineIsolated(
   }
   nsresult rv = rangesToWrapTheLine.CollectEditTargetNodes(
       aHTMLEditor, aOutArrayOfContents, EditSubAction::eMergeBlockContents,
-      AutoRangeArray::CollectNonEditableNodes::Yes);
+      AutoClonedRangeArray::CollectNonEditableNodes::Yes);
   if (NS_FAILED(rv)) {
     NS_WARNING(
-        "AutoRangeArray::CollectEditTargetNodes(EditSubAction::"
+        "AutoClonedRangeArray::CollectEditTargetNodes(EditSubAction::"
         "eMergeBlockContents, CollectNonEditableNodes::Yes) failed");
     return Err(rv);
   }
@@ -7642,6 +7618,7 @@ nsresult HTMLEditor::MoveChildrenBetween(
       }
     }
     if (NS_WARN_IF(
+            newContainer->IsInComposedDoc() &&
             !EditorUtils::IsEditableContent(*newContainer, EditorType::HTML))) {
       return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
     }
@@ -7896,7 +7873,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
     ComputeTargetRanges(const HTMLEditor& aHTMLEditor,
                         nsIEditor::EDirection aDirectionAndAmount,
                         const Element& aEditingHost,
-                        AutoRangeArray& aRangesToDelete) const {
+                        AutoClonedSelectionRangeArray& aRangesToDelete) const {
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement);
 
   // We'll delete `mEmptyInclusiveAncestorBlockElement` node from the tree, but
@@ -7928,7 +7905,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
           startPoint,
           EditorRawDOMPoint::AtEndOf(mEmptyInclusiveAncestorBlockElement));
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "AutoRangeArray::SetStartAndEnd() failed");
+                           "AutoClonedRangeArray::SetStartAndEnd() failed");
       return rv;
     }
     case nsIEditor::eNext:
@@ -7953,7 +7930,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
       nsresult rv = aRangesToDelete.SetStartAndEnd(
           EditorRawDOMPoint(mEmptyInclusiveAncestorBlockElement, 0), endPoint);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "AutoRangeArray::SetStartAndEnd() failed");
+                           "AutoClonedRangeArray::SetStartAndEnd() failed");
       return rv;
     }
     default:
@@ -7963,7 +7940,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
   // No direction, let's select the element to be deleted.
   nsresult rv =
       aRangesToDelete.SelectNode(*mEmptyInclusiveAncestorBlockElement);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::SelectNode() failed");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "AutoClonedRangeArray::SelectNode() failed");
   return rv;
 }
 
@@ -8301,7 +8279,8 @@ Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
 template <typename EditorDOMRangeType>
 Result<EditorRawDOMRange, nsresult>
 HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
-    const HTMLEditor& aHTMLEditor, const nsFrameSelection* aFrameSelection,
+    const HTMLEditor& aHTMLEditor,
+    const LimitersAndCaretData& aLimitersAndCaretData,
     const EditorDOMRangeType& aRangeToDelete) const {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(!aRangeToDelete.Collapsed());
@@ -8374,14 +8353,15 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
     for (;;) {
       const WSScanResult backwardScanFromStartResult =
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-              closestEditingHost, rangeToDelete.StartRef(),
+              WSRunScanner::Scan::EditableNodes, rangeToDelete.StartRef(),
               BlockInlineCheck::UseComputedDisplayOutsideStyle);
       if (!backwardScanFromStartResult.ReachedCurrentBlockBoundary() &&
           !backwardScanFromStartResult.ReachedInlineEditingHostBoundary()) {
         break;
       }
       MOZ_ASSERT(backwardScanFromStartResult.GetContent() ==
-                 WSRunScanner(closestEditingHost, rangeToDelete.StartRef(),
+                 WSRunScanner(WSRunScanner::Scan::EditableNodes,
+                              rangeToDelete.StartRef(),
                               BlockInlineCheck::UseComputedDisplayOutsideStyle)
                      .GetStartReasonContent());
       // We want to keep looking up.  But stop if we are crossing table
@@ -8411,8 +8391,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
       rangeToDelete.SetStart(backwardScanFromStartResult
                                  .PointAtReachedContent<EditorRawDOMPoint>());
     }
-    if (aFrameSelection && !aFrameSelection->IsValidSelectionPoint(
-                               rangeToDelete.StartRef().GetContainer())) {
+    if (!aLimitersAndCaretData.NodeIsInLimiters(
+            rangeToDelete.StartRef().GetContainer())) {
       NS_WARNING("Computed start container was out of selection limiter");
       return Err(NS_ERROR_FAILURE);
     }
@@ -8427,8 +8407,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
   if (rangeToDelete.EndRef().GetContainer() !=
       closestBlockAncestorOrInlineEditingHost) {
     for (;;) {
-      WSRunScanner wsScannerAtEnd(
-          closestEditingHost, rangeToDelete.EndRef(),
+      const WSRunScanner wsScannerAtEnd(
+          WSRunScanner::Scan::EditableNodes, rangeToDelete.EndRef(),
           BlockInlineCheck::UseComputedDisplayOutsideStyle);
       const WSScanResult forwardScanFromEndResult =
           wsScannerAtEnd.ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
@@ -8483,8 +8463,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
       break;
     }
 
-    if (aFrameSelection && !aFrameSelection->IsValidSelectionPoint(
-                               rangeToDelete.EndRef().GetContainer())) {
+    if (!aLimitersAndCaretData.NodeIsInLimiters(
+            rangeToDelete.EndRef().GetContainer())) {
       NS_WARNING("Computed end container was out of selection limiter");
       return Err(NS_ERROR_FAILURE);
     }
@@ -8515,8 +8495,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
         return rangeToDelete;
       }
       // Otherwise, the new range should end at the invisible `<br>`.
-      if (aFrameSelection && !aFrameSelection->IsValidSelectionPoint(
-                                 atFirstInvisibleBRElement.GetContainer())) {
+      if (!aLimitersAndCaretData.NodeIsInLimiters(
+              atFirstInvisibleBRElement.GetContainer())) {
         NS_WARNING(
             "Computed end container (`<br>` element) was out of selection "
             "limiter");

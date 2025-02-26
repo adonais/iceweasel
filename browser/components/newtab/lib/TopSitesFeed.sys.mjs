@@ -6,17 +6,10 @@ import {
   actionCreators as ac,
   actionTypes as at,
 } from "resource://activity-stream/common/Actions.mjs";
-import { TippyTopProvider } from "resource://activity-stream/lib/TippyTopProvider.sys.mjs";
-import {
-  insertPinned,
-  TOP_SITES_MAX_SITES_PER_ROW,
-} from "resource://activity-stream/common/Reducers.sys.mjs";
-import { Dedupe } from "resource://activity-stream/common/Dedupe.sys.mjs";
-import {
-  shortURL,
-  shortHostname,
-} from "resource://activity-stream/lib/ShortURL.sys.mjs";
-import { getDefaultOptions } from "resource://activity-stream/lib/ActivityStreamStorage.sys.mjs";
+import { TippyTopProvider } from "resource:///modules/topsites/TippyTopProvider.sys.mjs";
+import { insertPinned } from "resource:///modules/topsites/TopSites.sys.mjs";
+import { TOP_SITES_MAX_SITES_PER_ROW } from "resource:///modules/topsites/constants.mjs";
+import { Dedupe } from "resource:///modules/Dedupe.sys.mjs";
 
 import {
   CUSTOM_SEARCH_SHORTCUTS,
@@ -25,13 +18,13 @@ import {
   SEARCH_SHORTCUTS_HAVE_PINNED_PREF,
   checkHasSearchEngine,
   getSearchProvider,
-} from "resource://activity-stream/lib/SearchShortcuts.sys.mjs";
+} from "resource://gre/modules/SearchShortcuts.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  FilterAdult: "resource://activity-stream/lib/FilterAdult.sys.mjs",
-  LinksCache: "resource://activity-stream/lib/LinksCache.sys.mjs",
+  FilterAdult: "resource:///modules/FilterAdult.sys.mjs",
+  LinksCache: "resource:///modules/LinksCache.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
@@ -71,7 +64,7 @@ const PINNED_FAVICON_PROPS_TO_MIGRATE = [
   "faviconRef",
   "faviconSize",
 ];
-const SECTION_ID = "topsites";
+
 const CACHE_KEY = "contile";
 const ROWS_PREF = "topSitesRows";
 const SHOW_SPONSORED_PREF = "showSponsoredTopSites";
@@ -97,6 +90,9 @@ const PREF_UNIFIED_ADS_ENDPOINT = "unifiedAds.endpoint";
 const PREF_UNIFIED_ADS_PLACEMENTS = "discoverystream.placements.tiles";
 const PREF_UNIFIED_ADS_COUNTS = "discoverystream.placements.tiles.counts";
 const PREF_UNIFIED_ADS_BLOCKED_LIST = "unifiedAds.blockedAds";
+const PREF_UNIFIED_ADS_ADSFEED_ENABLED = "unifiedAds.adsFeed.enabled";
+const PREF_UNIFIED_ADS_ADSFEED_TILES_ENABLED =
+  "unifiedAds.adsFeed.tiles.enabled";
 
 // Search experiment stuff
 const FILTER_DEFAULT_SEARCH_PREF = "improvesearch.noDefaultSearchTile";
@@ -141,7 +137,9 @@ const DISPLAY_FAIL_REASON_DISMISSED = "dismissed";
 const DISPLAY_FAIL_REASON_UNRESOLVED = "unresolved";
 
 function getShortHostnameForCurrentSearch() {
-  return shortHostname(Services.search.defaultEngine.searchUrlDomain);
+  return lazy.NewTabUtils.shortHostname(
+    Services.search.defaultEngine.searchUrlDomain
+  );
 }
 
 class TopSitesTelemetry {
@@ -161,7 +159,7 @@ class TopSitesTelemetry {
 
   _buildPropertyKey(tile) {
     let provider = this._tileProvider(tile);
-    return provider + shortURL(tile);
+    return provider + lazy.NewTabUtils.shortURL(tile);
   }
 
   // Returns an array of strings indicating the property name (based on the
@@ -213,7 +211,7 @@ class TopSitesTelemetry {
     let label = tile.label || null;
     let title = tile.title || null;
 
-    return label ?? title ?? shortURL(tile);
+    return label ?? title ?? lazy.NewTabUtils.shortURL(tile);
   }
 
   setTiles(tiles) {
@@ -385,7 +383,9 @@ export class ContileIntegration {
     const blocklist = JSON.parse(
       Services.prefs.getStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "[]")
     );
-    return tiles.filter(tile => !blocklist.includes(shortURL(tile)));
+    return tiles.filter(
+      tile => !blocklist.includes(lazy.NewTabUtils.shortURL(tile))
+    );
   }
 
   /**
@@ -506,101 +506,126 @@ export class ContileIntegration {
     }
 
     let response;
+    let body;
+
     const state = this._topSitesFeed.store.getState();
 
     const unifiedAdsTilesEnabled =
       state.Prefs.values[PREF_UNIFIED_ADS_TILES_ENABLED];
 
-    const serviceName = unifiedAdsTilesEnabled ? "MARS" : "Contile";
+    const adsFeedEnabled = state.Prefs.values[PREF_UNIFIED_ADS_ADSFEED_ENABLED];
+
+    const adsFeedTilesEnabled =
+      state.Prefs.values[PREF_UNIFIED_ADS_ADSFEED_TILES_ENABLED];
+
+    const debugServiceName = unifiedAdsTilesEnabled ? "MARS" : "Contile";
 
     try {
-      // Fetch tiles via MARS unified ads service
-      if (unifiedAdsTilesEnabled) {
-        const headers = new Headers();
-        headers.append("content-type", "application/json");
+      // Fetch Data via TopSitesFeed.sys.mjs
+      if (!adsFeedEnabled || !adsFeedTilesEnabled) {
+        // Fetch tiles via UAPI service directly from TopSitesFeed.sys.mjs
+        if (unifiedAdsTilesEnabled) {
+          const headers = new Headers();
+          headers.append("content-type", "application/json");
 
-        const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
+          const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
 
-        let blockedSponsors =
-          this._topSitesFeed.store.getState().Prefs.values[
-            PREF_UNIFIED_ADS_BLOCKED_LIST
-          ];
+          let blockedSponsors =
+            this._topSitesFeed.store.getState().Prefs.values[
+              PREF_UNIFIED_ADS_BLOCKED_LIST
+            ];
 
-        // Overwrite URL to Unified Ads endpoint
-        const fetchUrl = `${endpointBaseUrl}v1/ads`;
+          // Overwrite URL to Unified Ads endpoint
+          const fetchUrl = `${endpointBaseUrl}v1/ads`;
 
-        const placementsArray = state.Prefs.values[
-          PREF_UNIFIED_ADS_PLACEMENTS
-        ]?.split(`,`)
-          .map(s => s.trim())
-          .filter(item => item);
-        const countsArray = state.Prefs.values[PREF_UNIFIED_ADS_COUNTS]?.split(
-          `,`
-        )
-          .map(s => s.trim())
-          .filter(item => item)
-          .map(item => parseInt(item, 10));
+          const placementsArray = state.Prefs.values[
+            PREF_UNIFIED_ADS_PLACEMENTS
+          ]?.split(`,`)
+            .map(s => s.trim())
+            .filter(item => item);
+          const countsArray = state.Prefs.values[
+            PREF_UNIFIED_ADS_COUNTS
+          ]?.split(`,`)
+            .map(s => s.trim())
+            .filter(item => item)
+            .map(item => parseInt(item, 10));
 
-        response = await this._topSitesFeed.fetch(fetchUrl, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            context_id: lazy.contextId,
-            placements: placementsArray.map((placement, index) => ({
-              placement,
-              count: countsArray[index],
-            })),
-            blocks: blockedSponsors.split(","),
-          }),
-        });
-      } else {
-        // (Default) Fetch tiles via Contile service
-        const fetchUrl = Services.prefs.getStringPref(CONTILE_ENDPOINT_PREF);
+          response = await this._topSitesFeed.fetch(fetchUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              context_id: lazy.contextId,
+              placements: placementsArray.map((placement, index) => ({
+                placement,
+                count: countsArray[index],
+              })),
+              blocks: blockedSponsors.split(","),
+            }),
+          });
+        } else {
+          // (Default) Fetch tiles via Contile service from TopSitesFeed.sys.mjs
+          const fetchUrl = Services.prefs.getStringPref(CONTILE_ENDPOINT_PREF);
 
-        let options = {
-          credentials: "omit",
-        };
+          let options = {
+            credentials: "omit",
+          };
 
-        response = await this._topSitesFeed.fetch(fetchUrl, options);
-      }
+          response = await this._topSitesFeed.fetch(fetchUrl, options);
+        }
 
-      if (!response.ok) {
-        lazy.log.warn(
-          `${serviceName} endpoint returned unexpected status: ${response.status}`
-        );
-        if (response.status === 304 || response.status >= 500) {
-          return await this._loadTilesFromCache();
+        // Catch Response Error
+        if (response && !response.ok) {
+          lazy.log.warn(
+            `${debugServiceName} endpoint returned unexpected status: ${response.status}`
+          );
+          if (response.status === 304 || response.status >= 500) {
+            return await this._loadTilesFromCache();
+          }
+        }
+
+        // Set Cache Prefs
+        const lastFetch = Math.round(Date.now() / 1000);
+        Services.prefs.setIntPref(CONTILE_CACHE_LAST_FETCH_PREF, lastFetch);
+        this._topSitesFeed._telemetryUtility.setSponsoredTilesConfigured();
+
+        // Contile returns 204 indicating there is no content at the moment.
+        // If this happens, it will clear `this._sites` reset the cached tiles
+        // to an empty array.
+        if (response && response.status === 204) {
+          this._topSitesFeed._telemetryUtility.clearTilesForProvider(
+            SPONSORED_TILE_PARTNER_AMP
+          );
+          if (this._sites.length) {
+            this._sites = [];
+            await this.cache.set("contile", this._sites);
+            return true;
+          }
+          return false;
         }
       }
 
-      const lastFetch = Math.round(Date.now() / 1000);
-      Services.prefs.setIntPref(CONTILE_CACHE_LAST_FETCH_PREF, lastFetch);
-      this._topSitesFeed._telemetryUtility.setSponsoredTilesConfigured();
-
-      // Contile returns 204 indicating there is no content at the moment.
-      // If this happens, it will clear `this._sites` reset the cached tiles
-      // to an empty array.
-      if (response.status === 204) {
-        this._topSitesFeed._telemetryUtility.clearTilesForProvider(
-          SPONSORED_TILE_PARTNER_AMP
-        );
-        if (this._sites.length) {
-          this._sites = [];
-          await this.cache.set("contile", this._sites);
-          return true;
-        }
-        return false;
+      // Default behavior when ads fetched via TopSitesFeed
+      if (response && response.status === 200) {
+        body = await response.json();
       }
-      let body = await response.json();
 
+      // If using UAPI, normalize the data
       if (unifiedAdsTilesEnabled) {
-        // Converts response into normalized tiles[] array
-        body = this._normalizeTileData(body);
+        if (adsFeedEnabled && adsFeedTilesEnabled) {
+          // IMPORTANT: Ignore all previous fetch logic and get ads data from AdsFeed
+          const { tiles } = state.Ads.topsites;
+          body = { tiles };
+        } else {
+          // Converts UAPI response into normalized tiles[] array
+          body = this._normalizeTileData(body);
+        }
       }
 
+      // Logic below runs the same regardless of ad source
       if (body?.sov) {
         this._sov = JSON.parse(atob(body.sov));
       }
+
       if (body?.tiles && Array.isArray(body.tiles)) {
         const useAdditionalTiles = lazy.NimbusFeatures.newtab.getVariable(
           NIMBUS_VARIABLE_ADDITIONAL_TILES
@@ -625,7 +650,7 @@ export class ContileIntegration {
           tiles
         );
         if (tiles.length > maxNumFromContile) {
-          lazy.log.info(`Remove unused links from ${serviceName}`);
+          lazy.log.info(`Remove unused links from ${debugServiceName}`);
           tiles.length = maxNumFromContile;
           this._topSitesFeed._telemetryUtility.determineFilteredTilesAndSetToOversold(
             tiles
@@ -654,7 +679,7 @@ export class ContileIntegration {
       }
     } catch (error) {
       lazy.log.warn(
-        `Failed to fetch data from ${serviceName} server: ${error.message}`
+        `Failed to fetch data from ${debugServiceName} server: ${error.message}`
       );
       return await this._loadTilesFromCache();
     }
@@ -718,7 +743,6 @@ export class TopSitesFeed {
   init() {
     // If the feed was previously disabled PREFS_INITIAL_VALUES was never received
     this._readDefaults({ isStartup: true });
-    this._storage = this.store.dbStorage.getDbTable("sectionPrefs");
     this._contile.refresh();
     Services.obs.addObserver(this, "browser-search-engine-modified");
     Services.obs.addObserver(this, "browser-region-updated");
@@ -832,7 +856,7 @@ export class TopSitesFeed {
       // Loop until we run out of spocs or positions.
       for (let i = 0; i < minLength; i++) {
         let site = this._contile.sites[i];
-        let hostname = shortURL(site);
+        let hostname = lazy.NewTabUtils.shortURL(site);
         let link = {
           isDefault: true,
           url: site.url,
@@ -871,7 +895,7 @@ export class TopSitesFeed {
     );
 
     for (let siteData of remoteSettingData) {
-      let hostname = shortURL(siteData);
+      let hostname = lazy.NewTabUtils.shortURL(siteData);
       // Drop default sites when Contile already provided a sponsored one with
       // the same host name.
       if (
@@ -940,7 +964,7 @@ export class TopSitesFeed {
           isDefault: true,
           url,
         };
-        site.hostname = shortURL(site);
+        site.hostname = lazy.NewTabUtils.shortURL(site);
         DEFAULT_TOP_SITES.push(site);
       }
     }
@@ -1115,7 +1139,9 @@ export class TopSitesFeed {
         // haven't previously inserted it, there's space to pin it, and the
         // search engine is available in Firefox
         if (
-          !pinnedSites.find(s => s && shortURL(s) === shortcut.shortURL) &&
+          !pinnedSites.find(
+            s => s && lazy.NewTabUtils.shortURL(s) === shortcut.shortURL
+          ) &&
           !prevInsertedShortcuts.includes(shortcut.shortURL) &&
           nextAvailable > -1 &&
           (await checkHasSearchEngine(shortcut.keyword))
@@ -1221,7 +1247,7 @@ export class TopSitesFeed {
             // See Bug 1822027. Note that `sponsored_position` is 1-based.
             sponsored_position: positionIndex + 1,
             // This is used for topsites deduping.
-            hostname: shortURL({ url: spoc.url }),
+            hostname: lazy.NewTabUtils.shortURL({ url: spoc.url }),
             partner: SPONSORED_TILE_PARTNER_MOZ_SALES,
           };
           sponsored.push(link);
@@ -1254,7 +1280,7 @@ export class TopSitesFeed {
       topsiteFrecency: FRECENCY_THRESHOLD,
     });
     for (let link of cache) {
-      const hostname = shortURL(link);
+      const hostname = lazy.NewTabUtils.shortURL(link);
       if (!this.shouldFilterSearchTile(hostname)) {
         frecent.push({
           ...(searchShortcutsExperiment
@@ -1288,7 +1314,7 @@ export class TopSitesFeed {
       }
       // If we've previously blocked a search shortcut, remove the default top site
       // that matches the hostname
-      const searchProvider = getSearchProvider(shortURL(link));
+      const searchProvider = getSearchProvider(lazy.NewTabUtils.shortURL(link));
       if (
         searchProvider &&
         lazy.NewTabUtils.blockedLinks.isBlocked({ url: searchProvider.url })
@@ -1348,7 +1374,9 @@ export class TopSitesFeed {
 
         // Drop pinned search shortcuts when their engine has been removed / hidden.
         if (link.searchTopSite) {
-          const searchProvider = getSearchProvider(shortURL(link));
+          const searchProvider = getSearchProvider(
+            lazy.NewTabUtils.shortURL(link)
+          );
           if (
             !searchProvider ||
             !(await checkHasSearchEngine(searchProvider.keyword))
@@ -1371,7 +1399,7 @@ export class TopSitesFeed {
           {},
           frecentSite || { isDefault: !!notBlockedDefaultSites.find(finder) },
           link,
-          { hostname: shortURL(link) },
+          { hostname: lazy.NewTabUtils.shortURL(link) },
           { searchTopSite: !!link.searchTopSite }
         );
 
@@ -1581,14 +1609,6 @@ export class TopSitesFeed {
       isStartup: options.isStartup,
     });
     const newAction = { type: at.TOP_SITES_UPDATED, data: { links } };
-    let storedPrefs;
-    try {
-      storedPrefs = (await this._storage.get(SECTION_ID)) || {};
-    } catch (e) {
-      storedPrefs = {};
-      console.error("Problem getting stored prefs for TopSites");
-    }
-    newAction.data.pref = getDefaultOptions(storedPrefs);
 
     if (options.isStartup) {
       newAction.meta = {
@@ -1674,7 +1694,7 @@ export class TopSitesFeed {
   }
 
   async topSiteToSearchTopSite(site) {
-    const searchProvider = getSearchProvider(shortURL(site));
+    const searchProvider = getSearchProvider(lazy.NewTabUtils.shortURL(site));
     if (
       !searchProvider ||
       !(await checkHasSearchEngine(searchProvider.keyword))
@@ -1764,15 +1784,6 @@ export class TopSitesFeed {
       type: at.RICH_ICON_MISSING,
       data: { url },
     });
-  }
-
-  updateSectionPrefs(collapsed) {
-    this.store.dispatch(
-      ac.BroadcastToContent({
-        type: at.TOP_SITES_PREFS_UPDATED,
-        data: { pref: collapsed },
-      })
-    );
   }
 
   /**
@@ -1866,7 +1877,7 @@ export class TopSitesFeed {
       if (
         pinnedLink &&
         pinnedLink.searchTopSite &&
-        shortURL(pinnedLink) === vendor
+        lazy.NewTabUtils.shortURL(pinnedLink) === vendor
       ) {
         lazy.NewTabUtils.pinnedLinks.unpin(pinnedLink);
         this.pinnedCache.expire();
@@ -2073,11 +2084,10 @@ export class TopSitesFeed {
               this.unpinAllSearchShortcuts();
             }
             this.refresh({ broadcast: true });
-        }
-        break;
-      case at.UPDATE_SECTION_PREFS:
-        if (action.data.id === SECTION_ID) {
-          this.updateSectionPrefs(action.data.value);
+            break;
+          case PREF_UNIFIED_ADS_ADSFEED_ENABLED:
+            this._contile.refresh();
+            break;
         }
         break;
       case at.PREFS_INITIAL_VALUES:
@@ -2099,6 +2109,9 @@ export class TopSitesFeed {
         break;
       case at.UPDATE_PINNED_SEARCH_SHORTCUTS:
         this.updatePinnedSearchShortcuts(action.data);
+        break;
+      case at.ADS_UPDATE_DATA:
+        this._contile.refresh();
         break;
       case at.DISCOVERY_STREAM_SPOCS_UPDATE:
         // Refresh to update sponsored topsites.

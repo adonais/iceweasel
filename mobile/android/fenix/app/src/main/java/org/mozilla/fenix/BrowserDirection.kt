@@ -37,10 +37,10 @@ enum class BrowserDirection(@IdRes val fragmentId: Int) {
     FromLoginDetailFragment(R.id.loginDetailFragment),
     FromTabsTray(R.id.tabsTrayFragment),
     FromRecentlyClosed(R.id.recentlyClosedFragment),
-    FromReviewQualityCheck(R.id.reviewQualityCheckFragment),
     FromAddonsManagementFragment(R.id.addonsManagementFragment),
     FromTranslationsDialogFragment(R.id.translationsDialogFragment),
     FromDownloadLanguagesPreferenceFragment(R.id.downloadLanguagesPreferenceFragment),
     FromMenuDialogFragment(R.id.menuDialogFragment),
     FromWebCompatReporterFragment(R.id.webCompatReporterFragment),
+    FromGleanDebugToolsFragment(R.id.gleanDebugToolsFragment),
 }

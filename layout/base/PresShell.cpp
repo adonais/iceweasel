@@ -939,7 +939,7 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
     mAccessibleCaretEventHub->Init();
   }
 
-  mSelection = new nsFrameSelection(this, nullptr, accessibleCaretEnabled);
+  mSelection = new nsFrameSelection(this, accessibleCaretEnabled);
 
   // Important: this has to happen after the selection has been set up
 #ifdef SHOW_CARET
@@ -1616,15 +1616,13 @@ void PresShell::FrameSelectionWillTakeFocus(nsFrameSelection& aFrameSelection) {
 
 NS_IMETHODIMP
 PresShell::SetDisplaySelection(int16_t aToggle) {
-  RefPtr<nsFrameSelection> frameSelection = mSelection;
-  frameSelection->SetDisplaySelection(aToggle);
+  mSelection->SetDisplaySelection(aToggle);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 PresShell::GetDisplaySelection(int16_t* aToggle) {
-  RefPtr<nsFrameSelection> frameSelection = mSelection;
-  *aToggle = frameSelection->GetDisplaySelection();
+  *aToggle = mSelection->GetDisplaySelection();
   return NS_OK;
 }
 
@@ -1635,9 +1633,8 @@ PresShell::GetSelectionFromScript(RawSelectionType aRawSelectionType,
     return NS_ERROR_NULL_POINTER;
   }
 
-  RefPtr<nsFrameSelection> frameSelection = mSelection;
   RefPtr<Selection> selection =
-      frameSelection->GetSelection(ToSelectionType(aRawSelectionType));
+      mSelection->GetSelection(ToSelectionType(aRawSelectionType));
 
   if (!selection) {
     return NS_ERROR_INVALID_ARG;
@@ -1652,8 +1649,7 @@ Selection* PresShell::GetSelection(RawSelectionType aRawSelectionType) {
     return nullptr;
   }
 
-  RefPtr<nsFrameSelection> frameSelection = mSelection;
-  return frameSelection->GetSelection(ToSelectionType(aRawSelectionType));
+  return mSelection->GetSelection(ToSelectionType(aRawSelectionType));
 }
 
 Selection* PresShell::GetCurrentSelection(SelectionType aSelectionType) {
@@ -1661,8 +1657,7 @@ Selection* PresShell::GetCurrentSelection(SelectionType aSelectionType) {
     return nullptr;
   }
 
-  RefPtr<nsFrameSelection> frameSelection = mSelection;
-  return frameSelection->GetSelection(aSelectionType);
+  return mSelection->GetSelection(aSelectionType);
 }
 
 nsFrameSelection* PresShell::GetLastFocusedFrameSelection() {
@@ -2462,7 +2457,7 @@ PresShell::CompleteMove(bool aForward, bool aExtend) {
   // Beware! This may flush notifications via synchronous
   // ScrollSelectionIntoView.
   RefPtr<nsFrameSelection> frameSelection = mSelection;
-  nsIContent* limiter = frameSelection->GetAncestorLimiter();
+  Element* const limiter = frameSelection->GetAncestorLimiter();
   nsIFrame* frame = limiter ? limiter->GetPrimaryFrame()
                             : FrameConstructor()->GetRootElementFrame();
   if (!frame) {
@@ -3793,8 +3788,10 @@ bool PresShell::ScrollFrameIntoView(
     // If we're targetting a sticky element, make sure not to apply
     // scroll-padding on the direction we're stuck.
     const auto* stylePosition = aFrame->StylePosition();
+    const auto positionProperty = aFrame->StyleDisplay()->mPosition;
     for (auto side : AllPhysicalSides()) {
-      if (stylePosition->GetInset(side).IsAuto()) {
+      if (stylePosition->GetAnchorResolvedInset(side, positionProperty)
+              .IsAuto()) {
         continue;
       }
       // See if this axis is stuck.
@@ -4622,7 +4619,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentInserted(
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
-    nsIContent* aChild) {
+    nsIContent* aChild, const BatchRemovalState*) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentRemoved");
   MOZ_ASSERT(aChild->OwnerDoc() == mDocument, "Unexpected document");
@@ -7331,10 +7328,6 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
        !eventTargetData.GetFrameContent() ||
        !nsContentUtils::ContentIsCrossDocDescendantOf(
            eventTargetData.GetFrameContent(), capturingContent))) {
-    // A check was already done above to ensure that capturingContent is
-    // in this presshell.
-    NS_ASSERTION(capturingContent->OwnerDoc() == GetDocument(),
-                 "Unexpected document");
     nsIFrame* capturingFrame = capturingContent->GetPrimaryFrame();
     if (capturingFrame) {
       eventTargetData.SetFrameAndComputePresShell(capturingFrame);
@@ -8234,10 +8227,6 @@ PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
     return aRootFrameToHandleEvent;
   }
 
-  // A check was already done above to ensure that aCapturingContent is
-  // in this presshell.
-  NS_ASSERTION(aCapturingContent->OwnerDoc() == GetDocument(),
-               "Unexpected document");
   nsIFrame* captureFrame = aCapturingContent->GetPrimaryFrame();
   if (!captureFrame) {
     return aRootFrameToHandleEvent;
@@ -11285,6 +11274,12 @@ bool PresShell::ComputeActiveness() const {
   MOZ_LOG(gLog, LogLevel::Debug,
           (" > BrowsingContext %p  active: %d", bc, inActiveTab));
 
+  if (StaticPrefs::layout_testing_top_level_always_active() && bc &&
+      bc->IsTop()) {
+    MOZ_LOG(gLog, LogLevel::Debug, (" > Activeness overridden by pref"));
+    return true;
+  }
+
   Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
   if (auto* browserChild = BrowserChild::GetFrom(root->GetDocShell())) {
     // We might want to activate a tab even though the browsing-context is not
@@ -11377,7 +11372,7 @@ void PresShell::SetIsActive(bool aIsActive) {
   }
 }
 
-RefPtr<MobileViewportManager> PresShell::GetMobileViewportManager() const {
+MobileViewportManager* PresShell::GetMobileViewportManager() const {
   return mMobileViewportManager;
 }
 
@@ -11449,7 +11444,12 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
           ("Created MVM %p (type %d) for URI %s", mMobileViewportManager.get(),
            (int)*mvmType, uri ? uri->GetSpecOrDefault().get() : "(null)"));
     }
+    if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
+      mMobileViewportManager->UpdateKeyboardHeight(
+          browserChild->GetKeyboardHeight());
+    }
   }
+
   if (aAfterInitialization) {
     // Setting the initial viewport will trigger a reflow.
     if (mMobileViewportManager) {

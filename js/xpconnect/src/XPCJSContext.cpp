@@ -23,6 +23,7 @@
 #include "nsIDebug2.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/MemoryTelemetry.h"
@@ -34,6 +35,7 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/glean/JsXpconnectMetrics.h"
 
 #include "nsContentUtils.h"
 #include "nsCCUncollectableMarker.h"
@@ -884,6 +886,12 @@ static void LoadStartupJSPrefs(XPCJSContext* xpccx) {
         javascript_options_self_hosted_use_shared_memory_DoNotUseDirectly();
   }
 
+#ifdef NIGHTLY_BUILD
+  JS_SetOffthreadBaselineCompilationEnabled(
+      cx,
+      StaticPrefs::
+          javascript_options_experimental_baselinejit_offthread_compilation_DoNotUseDirectly());
+#endif
   JS_SetOffthreadIonCompilationEnabled(
       cx, StaticPrefs::
               javascript_options_ion_offthread_compilation_DoNotUseDirectly());

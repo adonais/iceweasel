@@ -12,7 +12,7 @@
  */
 
 const { execFileSync } = require("child_process");
-const { readFileSync, writeFileSync } = require("fs");
+const { readFileSync } = require("fs");
 const path = require("path");
 const { pathToFileURL } = require("url");
 const chalk = require("chalk");
@@ -77,43 +77,6 @@ const tests = {
       "activity-stream.css": {
         path: path.join("css", "activity-stream.css"),
       },
-      // These should get split out to their own try-runner eventually (bug 1866170).
-      "about:welcome bundle": {
-        path: path.join(
-          "../",
-          "aboutwelcome",
-          "content",
-          "aboutwelcome.bundle.js"
-        ),
-      },
-      "aboutwelcome.css": {
-        path: path.join("../", "aboutwelcome", "content", "aboutwelcome.css"),
-        extraCheck: content => {
-          if (content.match(/^\s*@import/m)) {
-            return "aboutwelcome.css contains an @import statement. We should not import styles through the stylesheet, because it is loaded in multiple environments, including the browser chrome for feature callouts. To add other stylesheets to about:welcome or spotlight, add them to aboutwelcome.html or spotlight.html instead.";
-          }
-          return null;
-        },
-      },
-      // These should get split out to their own try-runner eventually (bug 1866170).
-      "about:asrouter bundle": {
-        path: path.join(
-          "../",
-          "asrouter",
-          "content",
-          "asrouter-admin.bundle.js"
-        ),
-      },
-      "ASRouterAdmin.css": {
-        path: path.join(
-          "../",
-          "asrouter",
-          "content",
-          "components",
-          "ASRouterAdmin",
-          "ASRouterAdmin.css"
-        ),
-      },
     };
     const errors = [];
 
@@ -123,21 +86,6 @@ const tests = {
     }
 
     let newtabBundleExitCode = execOut(npmCommand, ["run", "bundle"]).exitCode;
-
-    // Until we split out the try runner for about:welcome out into its own
-    // script, we manually run its bundle script.
-    let cwd = process.cwd();
-    process.chdir("../aboutwelcome");
-    let welcomeBundleExitCode = execOut(npmCommand, ["run", "bundle"]).exitCode;
-    process.chdir(cwd);
-
-    // Same thing for about:asrouter
-    process.chdir("../asrouter");
-    let asrouterBundleExitCode = execOut(npmCommand, [
-      "run",
-      "bundle",
-    ]).exitCode;
-    process.chdir(cwd);
 
     for (const name of Object.keys(items)) {
       const item = items[name];
@@ -157,14 +105,6 @@ const tests = {
 
     if (newtabBundleExitCode !== 0) {
       errors.push("newtab npm:bundle did not run successfully");
-    }
-
-    if (welcomeBundleExitCode !== 0) {
-      errors.push("about:welcome npm:bundle did not run successfully");
-    }
-
-    if (asrouterBundleExitCode !== 0) {
-      errors.push("about:asrouter npm:bundle did not run successfully");
     }
 
     logErrors("bundles", errors);
@@ -228,35 +168,8 @@ const tests = {
     return errors.length === 0 && !exitCode;
   },
 
-  welcomekarma() {
-    let cwd = process.cwd();
-    process.chdir("../aboutwelcome");
-    const result = this.karma();
-    process.chdir(cwd);
-    return result;
-  },
-
-  asrouterkarma() {
-    let cwd = process.cwd();
-    process.chdir("../asrouter");
-    const result = this.karma();
-    process.chdir(cwd);
-    return result;
-  },
-
   zipCodeCoverage() {
     logStart("zipCodeCoverage");
-
-    const newtabCoveragePath = "logs/coverage/lcov.info";
-    const welcomeCoveragePath = "../aboutwelcome/logs/coverage/lcov.info";
-    const asrouterCoveragePath = "../asrouter/logs/coverage/lcov.info";
-
-    let newtabCoverage = readFileSync(newtabCoveragePath, "utf8");
-    const welcomeCoverage = readFileSync(welcomeCoveragePath, "utf8");
-    const asrouterCoverage = readFileSync(asrouterCoveragePath, "utf8");
-
-    newtabCoverage = `${newtabCoverage}${welcomeCoverage}${asrouterCoverage}`;
-    writeFileSync(newtabCoveragePath, newtabCoverage, "utf8");
 
     const { exitCode, out } = execOut("zip", [
       "-j",
@@ -321,10 +234,6 @@ async function main() {
     coverage: "karma",
     cov: "karma",
     zip: "zipCodeCoverage",
-    welcomecoverage: "welcomekarma",
-    welcomecov: "welcomekarma",
-    asroutercoverage: "asrouterkarma",
-    asroutercov: "asrouterkarma",
   };
 
   const inputs = [...cli.input, ...cli.flags.test].map(input =>

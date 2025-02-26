@@ -334,10 +334,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Menublêd Ekstra slute</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Menublêd Ljepblêd oanpasse slute</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Lêzerwerjefte, Oersette, Ofdrukke, Diele, App iepenje</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Lêzerwerjefte, Ofdrukke, Diele, App iepenje</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Lêzerwerjefte, Oersette, %s, Ofdrukke, Diele, App iepenje</string>
@@ -577,34 +573,56 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Mei ûngelokrapporten kinne wy problemen mei de browser analysearje en oplosse. Rapporten kinne persoanlike of gefoelige gegevens befetsje.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Mear ynfo oer ûngelokrapporten</string>
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Mear ynfo</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Technyske en ynteraksjegegevens nei Mozilla ferstjoere</string>
     <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Gegevens oer jo apparaat, hardwarekonfiguraasje, en hoe’t jo Firefox brûke, helpe by it ferbetterjen fan funksjes, prestaasjes en stabiliteit foar brûkers oeral.</string>
+    <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Gegevens oer jo apparaat, hardwarekonfiguraasje, en hoe’t jo Firefox brûke, helpe by it ferbetterjen fan funksjes, prestaasjes en stabiliteit foar elkenien.</string>
     <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Mear ynfo oer gebrûksgegevens</string>
+    <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Mear ynfo</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Dien</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Annulearje</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Annulearje</string>
 
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Wolkom by Firefox</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Fluch en feilich sneupe op it web.</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header_2">Fluch en feilich sneupe op it web</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Akkoard en trochgean</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Troch fierder te gean, geane jo akkoard mei de %1$s fan Firefox.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+    <string name="onboarding_term_of_service_line_one_2">Troch fierder te gean, geane jo akkoard mei de %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Tsjinstbetingsten</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Gebrûksbetingsten fan Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox jout om jo privacy. Lês mear yn ús %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox jout om jo privacy. Mear ynfo yn ús %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Privacyferklearring</string>
     <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$S is replaced by an active link, using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Om de browser te helpen ferbetterjen, ferstjoert Firefox diagnostyske en ynteraksjegegevens nei Mozilla. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Beheare</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Help ús Firefox groeie te litten</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">As jo diele hoe’t jo Firefox ûntdutsen hawwe en dat jo it brûke, helpe jo ús ús browser oan mear minsken te yntrodusearjen.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Diel minimale gegevens mei Mozilla’s marketingtechnologypartners. Dizze gegevens wurde nea ferkocht of brûkt om jo advertinsjes te toanen.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Hoe’t wy gegevens brûke</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Befêstigje en begjinne mei sneupen</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Kies in arkbalkepleatsing</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -1042,19 +1060,24 @@
     <string name="exceptions_empty_message_learn_more_link">Mear ynfo</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Gebrûks- en technyske gegevens</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Technyske en ynteraksjegegevens</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Technyske en ynteraksjegegevens ferstjoere</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Mear ynfo</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Dielt gegevens oer prestaasjes, gebrûk, hardware en oanpassingen fan jo browser mei Mozilla om %1$s te helpen ferbetterjen</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Dielt gegevens oer prestaasjes, gebrûk, hardware en oanpassingen fan jo browser mei Mozilla om %1$s te helpen ferbetterjen</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Gegevens oer jo apparaat, hardwarekonfiguraasje en gebrûk helpt ús de funksjes, prestaasjes en stabiliteit fan Firefox te ferbetterjen.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Marketinggegevens</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Dielt basale gebrûksgegevens mei Adjust, ús leveransier fan mobile marketing</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Marketinggegevens</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Mjitgegevens fan kampanje</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Diel ynformaasje oer hoe’t jo Firefox ûntdutsen hawwe mei de marketingpartners fan Mozilla. Dit helpt ús Firefox groeie te litten en in better ynternet te bouwen</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Diel ynformaasje oer hoe’t jo Firefox ûntdutsen hawwe mei de marketingpartners fan Mozilla. Dit helpt ús Firefox groeie te litten en in better ynternet te bouwen</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Diel mei Mozilla\'s marketingtechnologypartners hoe’t jo Firefox ûntdutsen hawwe en dat jo it brûke.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Mear ynfo oer marketinggegevens</string>
 
@@ -1069,6 +1092,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Dit helpt ús problemen mei de browser analysearjen en op te lossen. Rapporten kinne persoanlike of gefoelige gegevens befetsje.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Dielt by opstarten ûngelok gegevens automatysk mei Mozilla neidat ûngelokken plakfûn hawwe</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Mear ynfo oer ûngelokrapporten</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Undersiken</string>
@@ -1230,7 +1256,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Aktyf</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s kin sa no en dan ûndersiken ynstallearje en útfiere.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s kin sa no en dan ûndersiken ynstallearje en útfiere.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Probearje funksjes en ideeën eardat se foar elkenien beskikber binne.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Undersiken ynstallearje en útfiere</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Mear ynfo</string>
     <!-- Dialog message shown after removing a study -->
@@ -1368,8 +1398,12 @@
     <string name="webcompat_reporter_url_error_invalid">Fier in jildige URL yn</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Wat wurket net? (opsjoneel)</string>
+    <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_label_whats_broken_2">Wat wurket net?</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason">Kies reden</string>
+    <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_choose_reason_error">Kies in reden</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
     <string name="webcompat_reporter_label_description">Beskriuw it probleem (opsjoneel)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
@@ -2043,6 +2077,8 @@
     <string name="about_privacy_notice">Privacyferklearring</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Ken jo rjochten</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Brûkersbetingsten</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Lisinsje-ynformaasje</string>
 
@@ -2945,7 +2981,6 @@ Dizze analyze sil jo allinnich helpe om de beoardielingskwaliteit te beoardielen
     <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
     <string name="download_language_file_dialog_negative_button_text">Annulearje</string>
 
-    <!-- Unified Trust Panel -->
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Wês foarsichtich op dizze website</string>
 
@@ -3087,6 +3122,13 @@ Dizze analyze sil jo allinnich helpe om de beoardielingskwaliteit te beoardielen
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Yn te skeakeljen debugging-locales</string>
 
+    <!-- The title of the header for the section for managing addresses. -->
+    <string name="debug_drawer_addresses_management_header">Adressen beheare</string>
+    <!-- The title of the button in the debug drawer for adding a new address. -->
+    <string name="debug_drawer_add_new_address">Nij adres foar selektearre locale tafoegje</string>
+    <!-- The title of the button for deleting in the debug drawer all addresses. -->
+    <string name="debug_drawer_delete_all_addresses">Alle adressen fuortsmite</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The title of the CFR Tools feature in the Debug Drawer -->
     <string name="debug_drawer_cfr_tools_title">CFR-ark</string>
@@ -3139,4 +3181,10 @@ Dizze analyze sil jo allinnich helpe om de beoardielingskwaliteit te beoardielen
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Wurkje by foar 14 maart om add-ons en oare funksjes brûke te bliuwen.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Guon funksjes sille moarn net mear wurkje.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Ferburgen tekst toane</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Tekst wiskje</string>
 </resources>

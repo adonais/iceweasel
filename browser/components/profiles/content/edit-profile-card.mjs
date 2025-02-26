@@ -79,6 +79,9 @@ export class EditProfileCard extends MozLitElement {
     nameInput: "#profile-name",
     errorMessage: "#error-message",
     savedMessage: "#saved-message",
+    deleteButton: "#delete-button",
+    doneButton: "#done-button",
+    moreThemesLink: "#more-themes",
     avatars: { all: "profiles-avatar" },
     headerAvatar: "#header-avatar",
     themeCards: { all: "profiles-theme-card" },
@@ -105,8 +108,9 @@ export class EditProfileCard extends MozLitElement {
     super.connectedCallback();
 
     window.addEventListener("beforeunload", this);
+    window.addEventListener("pagehide", this);
 
-    this.init();
+    this.init().then(() => (this.initialized = true));
   }
 
   async init() {
@@ -126,8 +130,7 @@ export class EditProfileCard extends MozLitElement {
     this.themes = themes;
 
     this.setFavicon();
-
-    this.initialized = true;
+    this.focusInput();
   }
 
   async getUpdateComplete() {
@@ -136,7 +139,17 @@ export class EditProfileCard extends MozLitElement {
     await Promise.all(
       Array.from(this.themeCards).map(card => card.updateComplete)
     );
+
+    await this.mozCard.updateComplete;
+
     return result;
+  }
+
+  async focusInput() {
+    await this.getUpdateComplete();
+    this.nameInput.focus();
+    this.nameInput.value = "";
+    this.nameInput.value = this.profile.name;
   }
 
   setFavicon() {
@@ -155,6 +168,9 @@ export class EditProfileCard extends MozLitElement {
           this.updateNameDebouncer.finalize();
         }
         break;
+      }
+      case "pagehide": {
+        RPMSendAsyncMessage("Profiles:PageHide");
       }
     }
   }
@@ -237,10 +253,12 @@ export class EditProfileCard extends MozLitElement {
     this.updateNameDebouncer.disarm();
     document.l10n.setAttributes(this.errorMessage, l10nId);
     this.errorMessage.parentElement.hidden = false;
+    this.nameInput.setCustomValidity("invalid");
   }
 
   hideErrorMessage() {
     this.errorMessage.parentElement.hidden = true;
+    this.nameInput.setCustomValidity("");
   }
 
   showSavedMessage() {
@@ -325,6 +343,7 @@ export class EditProfileCard extends MozLitElement {
       avatar =>
         html`<profiles-avatar
           @click=${this.handleAvatarClick}
+          @keydown=${this.handleAvatarKeyDown}
           value=${avatar}
           ?selected=${avatar === this.profile.avatar}
         ></profiles-avatar>`
@@ -342,7 +361,36 @@ export class EditProfileCard extends MozLitElement {
     this.updateAvatar(selectedAvatar.value);
   }
 
+  /*
+   * Implements radiogroup arrow key behavior for the avatar picker.
+   *
+   * The Enter or Space keys are handled by handleAvatarClick.
+   */
+  handleAvatarKeyDown(event) {
+    let currentAvatar = event.target;
+
+    // Wrap around the ends of the list.
+    let nextAvatar = currentAvatar.nextElementSibling || this.avatars[0];
+    let previousAvatar =
+      currentAvatar.previousElementSibling ||
+      this.avatars[this.avatars.length - 1];
+
+    // To correctly style the button to match tab focus, we have to focus the
+    // button inside each profiles-avatar component's shadow DOM.
+    let nextButton = nextAvatar.shadowRoot.querySelector("button");
+    let previousButton = previousAvatar.shadowRoot.querySelector("button");
+
+    if (event.code == "ArrowUp" || event.code == "ArrowLeft") {
+      event.preventDefault();
+      previousButton.focus();
+    } else if (event.code == "ArrowDown" || event.code == "ArrowRight") {
+      event.preventDefault();
+      nextButton.focus();
+    }
+  }
+
   onDeleteClick() {
+    window.removeEventListener("beforeunload", this);
     RPMSendAsyncMessage("Profiles:OpenDeletePage");
   }
 
@@ -354,16 +402,29 @@ export class EditProfileCard extends MozLitElement {
       this.showErrorMessage("edit-profile-page-duplicate-name");
     } else {
       this.updateNameDebouncer.finalize();
+      // Remove the pagehide listener early to prevent double-counting the
+      // profiles.existing.closed Glean event.
+      window.removeEventListener("pagehide", this);
       RPMSendAsyncMessage("Profiles:CloseProfileTab");
     }
   }
 
+  onMoreThemesClick() {
+    // Include the starting URI because the page will navigate before the
+    // event is asynchronously handled by Glean code in the parent actor.
+    RPMSendAsyncMessage("Profiles:MoreThemes", {
+      source: window.location.href,
+    });
+  }
+
   buttonsTemplate() {
     return html`<moz-button
+        id="delete-button"
         data-l10n-id="edit-profile-page-delete-button"
         @click=${this.onDeleteClick}
       ></moz-button>
       <moz-button
+        id="done-button"
         data-l10n-id="new-profile-page-done-button"
         @click=${this.onDoneClick}
         type="primary"
@@ -387,6 +448,7 @@ export class EditProfileCard extends MozLitElement {
         ><div id="edit-profile-card">
           <img
             id="header-avatar"
+            data-l10n-id=${this.profile.avatarL10nId}
             src="chrome://browser/content/profiles/assets/80_${this.profile
               .avatar}.svg"
           />
@@ -396,13 +458,21 @@ export class EditProfileCard extends MozLitElement {
             <h3 data-l10n-id="edit-profile-page-theme-header"></h3>
             <div id="themes">${this.themesTemplate()}</div>
             <a
+              id="more-themes"
               href="https://addons.mozilla.org/firefox/themes/"
               target="_blank"
+              @click=${this.onMoreThemesClick}
               data-l10n-id="edit-profile-page-explore-themes"
             ></a>
 
             <h3 data-l10n-id="edit-profile-page-avatar-header"></h3>
-            <div id="avatars">${this.avatarsTemplate()}</div>
+            <div
+              id="avatars"
+              role="radiogroup"
+              aria-labelledby="edit-profile-page-avatar-header"
+            >
+              ${this.avatarsTemplate()}
+            </div>
 
             <moz-button-group>${this.buttonsTemplate()}</moz-button-group>
           </div>

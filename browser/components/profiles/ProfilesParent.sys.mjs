@@ -176,9 +176,28 @@ export class ProfilesParent extends JSWindowActorParent {
     favicon.classList.remove("profiles-tab");
   }
 
+  async #getProfileContent() {
+    // Make sure SelectableProfileService is initialized
+    await SelectableProfileService.init();
+    let currentProfile = SelectableProfileService.currentProfile;
+    let profiles = await SelectableProfileService.getAllProfiles();
+    let themes = await this.getSafeForContentThemes();
+    return {
+      currentProfile: currentProfile.toObject(),
+      profiles: profiles.map(p => p.toObject()),
+      themes,
+      isInAutomation: Cu.isInAutomation,
+    };
+  }
+
   async receiveMessage(message) {
+    let gBrowser = this.browsingContext.topChromeWindow?.gBrowser;
+    let source = this.browsingContext.embedderElement?.currentURI.displaySpec;
     switch (message.name) {
       case "Profiles:DeleteProfile": {
+        if (source === "about:newprofile") {
+          Glean.profilesNew.closed.record({ value: "delete" });
+        }
         let profiles = await SelectableProfileService.getAllProfiles();
 
         if (profiles.length <= 1) {
@@ -196,35 +215,40 @@ export class ProfilesParent extends JSWindowActorParent {
           return null;
         }
 
-        await SelectableProfileService.deleteCurrentProfile();
+        try {
+          await SelectableProfileService.deleteCurrentProfile();
 
-        // Finally, exit.
-        Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
+          // Finally, exit.
+          Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
+        } catch (e) {
+          // This is expected in tests.
+          console.error(e);
+        }
         break;
       }
       case "Profiles:CancelDelete": {
-        let gBrowser = this.browsingContext.topChromeWindow.gBrowser;
         gBrowser.removeTab(this.tab);
         break;
       }
-      // Intentional fallthrough
-      case "Profiles:GetNewProfileContent":
+      case "Profiles:GetNewProfileContent": {
+        Glean.profilesNew.displayed.record();
+        return this.#getProfileContent();
+      }
       case "Profiles:GetEditProfileContent": {
-        // Make sure SelectableProfileService is initialized
-        await SelectableProfileService.init();
-        let currentProfile = SelectableProfileService.currentProfile;
-        let profiles = await SelectableProfileService.getAllProfiles();
-        let themes = await this.getSafeForContentThemes();
-        return {
-          currentProfile: currentProfile.toObject(),
-          profiles: profiles.map(p => p.toObject()),
-          themes,
-          isInAutomation: Cu.isInAutomation,
-        };
+        Glean.profilesExisting.displayed.record();
+        return this.#getProfileContent();
+      }
+      case "Profiles:MoreThemes": {
+        if (message.data.source === "about:editprofile") {
+          Glean.profilesExisting.learnMore.record();
+        } else if (message.data.source === "about:newprofile") {
+          Glean.profilesNew.learnMore.record();
+        }
+        break;
       }
       case "Profiles:OpenDeletePage": {
-        let gBrowser = this.browsingContext.topChromeWindow.gBrowser;
-        gBrowser.selectedBrowser.loadURI(
+        Glean.profilesExisting.deleted.record();
+        this.browsingContext.embedderElement.loadURI(
           Services.io.newURI("about:deleteprofile"),
           {
             triggeringPrincipal:
@@ -233,7 +257,20 @@ export class ProfilesParent extends JSWindowActorParent {
         );
         break;
       }
+      case "Profiles:PageHide": {
+        if (source === "about:editprofile") {
+          Glean.profilesExisting.closed.record({ value: "pagehide" });
+        } else if (source === "about:newprofile") {
+          Glean.profilesNew.closed.record({ value: "pagehide" });
+        }
+        break;
+      }
       case "Profiles:UpdateProfileName": {
+        if (source === "about:editprofile") {
+          Glean.profilesExisting.name.record();
+        } else if (source === "about:newprofile") {
+          Glean.profilesNew.name.record();
+        }
         let profileObj = message.data;
         SelectableProfileService.currentProfile.name = profileObj.name;
         break;
@@ -285,31 +322,40 @@ export class ProfilesParent extends JSWindowActorParent {
         };
       }
       case "Profiles:UpdateProfileAvatar": {
-        let profileObj = message.data;
-        SelectableProfileService.currentProfile.avatar = profileObj.avatar;
+        let avatar = message.data.avatar;
+        SelectableProfileService.currentProfile.avatar = avatar;
+        if (source === "about:editprofile") {
+          Glean.profilesExisting.avatar.record({ value: avatar });
+        } else if (source === "about:newprofile") {
+          Glean.profilesNew.avatar.record({ value: avatar });
+        }
         break;
       }
       case "Profiles:UpdateProfileTheme": {
         let themeId = message.data;
-        let gBrowser = this.browsingContext.topChromeWindow.gBrowser;
         // Where the theme was installed from
         let telemetryInfo = {
-          source: gBrowser.selectedBrowser.currentURI.displaySpec,
           method: "url",
+          source,
         };
         await this.enableTheme(themeId, telemetryInfo);
+        if (source === "about:editprofile") {
+          Glean.profilesExisting.theme.record({ value: themeId });
+        } else if (source === "about:newprofile") {
+          Glean.profilesNew.theme.record({ value: themeId });
+        }
+
         // The enable theme promise resolves after the
         // "lightweight-theme-styling-update" observer so we know the profile
         // theme is up to date at this point.
         return SelectableProfileService.currentProfile.theme;
       }
-      case "Profiles:DeleteNewProfile": {
-        // TODO: Bug 1925096 actually delete the newly created profile.
-        Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
-        break;
-      }
       case "Profiles:CloseProfileTab": {
-        let gBrowser = this.browsingContext.topChromeWindow.gBrowser;
+        if (source === "about:editprofile") {
+          Glean.profilesExisting.closed.record({ value: "done_editing" });
+        } else if (source === "about:newprofile") {
+          Glean.profilesNew.closed.record({ value: "done_editing" });
+        }
         gBrowser.removeTab(this.tab);
         break;
       }

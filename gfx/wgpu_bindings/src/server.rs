@@ -37,7 +37,7 @@ use windows::Win32::{Foundation, Graphics::Direct3D12};
 use ash::{khr, vk};
 
 #[cfg(target_os = "macos")]
-use objc::{msg_send, sel, sel_impl};
+use objc::{class, msg_send, sel, sel_impl};
 
 // The seemingly redundant u64 suffixes help cbindgen with generating the right C++ code.
 // See https://github.com/mozilla/cbindgen/issues/849.
@@ -144,7 +144,7 @@ pub extern "C" fn wgpu_server_new(owner: *mut c_void, use_dxc: bool) -> *mut Glo
 
     let global = wgc::global::Global::new(
         "wgpu",
-        wgt::InstanceDescriptor {
+        &wgt::InstanceDescriptor {
             backends,
             flags: instance_flags,
             dx12_shader_compiler,
@@ -242,6 +242,33 @@ pub unsafe extern "C" fn wgpu_server_instance_request_adapter(
     }
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[allow(clippy::upper_case_acronyms)]
+#[cfg(target_os = "macos")]
+struct NSOperatingSystemVersion {
+    major: usize,
+    minor: usize,
+    patch: usize,
+}
+
+#[cfg(target_os = "macos")]
+impl NSOperatingSystemVersion {
+    fn at_least(
+        &self,
+        mac_version: (usize, usize),
+        ios_version: (usize, usize),
+        is_mac: bool,
+    ) -> bool {
+        let version = if is_mac { mac_version } else { ios_version };
+
+        self.major
+            .cmp(&version.0)
+            .then_with(|| self.minor.cmp(&version.1))
+            .is_ge()
+    }
+}
+
 #[allow(unreachable_code)]
 #[allow(unused_variables)]
 fn support_use_external_texture_in_swap_chain(
@@ -286,7 +313,19 @@ fn support_use_external_texture_in_swap_chain(
 
     #[cfg(target_os = "macos")]
     {
-        return backend == wgt::Backend::Metal && is_hardware;
+        if backend != wgt::Backend::Metal || !is_hardware {
+            return false;
+        }
+
+        let version: NSOperatingSystemVersion = unsafe {
+            let process_info: *mut objc::runtime::Object =
+                msg_send![class!(NSProcessInfo), processInfo];
+            msg_send![process_info, operatingSystemVersion]
+        };
+
+        let supports_shared_event = version.at_least((10, 14), (12, 0), /* os_is_mac */ true);
+
+        return supports_shared_event;
     }
 
     false
@@ -664,7 +703,7 @@ pub extern "C" fn wgpu_server_device_create_shader_module(
 
     let desc = wgc::pipeline::ShaderModuleDescriptor {
         label,
-        shader_bound_checks: wgt::ShaderBoundChecks::new(),
+        runtime_checks: Default::default(),
     };
 
     let (_, error) = global.device_create_shader_module(self_id, &desc, source, Some(module_id));
@@ -949,8 +988,6 @@ pub struct VkImageHandle {
     pub device: vk::Device,
     pub image: vk::Image,
     pub memory: vk::DeviceMemory,
-    pub fn_destroy_image: vk::PFN_vkDestroyImage,
-    pub fn_free_memory: vk::PFN_vkFreeMemory,
     pub memory_size: u64,
     pub memory_type_index: u32,
     pub modifier: u64,
@@ -959,11 +996,21 @@ pub struct VkImageHandle {
 
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
 impl VkImageHandle {
-    fn destroy(&self) {
+    fn destroy(&self, global: &Global, device_id: id::DeviceId) {
         unsafe {
-            (self.fn_destroy_image)(self.device, self.image, ptr::null());
-            (self.fn_free_memory)(self.device, self.memory, ptr::null());
-        }
+            global.device_as_hal::<wgc::api::Vulkan, _, ()>(device_id, |hal_device| {
+                let hal_device = match hal_device {
+                    None => {
+                        return;
+                    }
+                    Some(hal_device) => hal_device,
+                };
+                let device = hal_device.raw_device();
+
+                (device.fp_v1_0().destroy_image)(self.device, self.image, ptr::null());
+                (device.fp_v1_0().free_memory)(self.device, self.memory, ptr::null());
+            })
+        };
     }
 }
 
@@ -1201,8 +1248,6 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
                     device: device.handle(),
                     image: image,
                     memory: memory,
-                    fn_destroy_image: device.fp_v1_0().destroy_image,
-                    fn_free_memory: device.fp_v1_0().free_memory,
                     memory_size: memory_req.size,
                     memory_type_index: index as u32,
                     modifier: image_modifier_properties.drm_format_modifier,
@@ -1224,9 +1269,13 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
 #[no_mangle]
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
-pub unsafe extern "C" fn wgpu_vkimage_delete(handle: *mut VkImageHandle) {
+pub unsafe extern "C" fn wgpu_vkimage_delete(
+    global: &Global,
+    device_id: id::DeviceId,
+    handle: *mut VkImageHandle,
+) {
     let handle = Box::from_raw(handle);
-    handle.destroy();
+    handle.destroy(global, device_id);
 }
 
 #[no_mangle]
@@ -1365,6 +1414,17 @@ extern "C" {
         usage: wgt::TextureUsages,
     ) -> bool;
     #[allow(dead_code)]
+    fn wgpu_server_ensure_external_texture_for_readback(
+        param: *mut c_void,
+        swap_chain_id: SwapChainId,
+        device_id: id::DeviceId,
+        texture_id: id::TextureId,
+        width: u32,
+        height: u32,
+        format: wgt::TextureFormat,
+        usage: wgt::TextureUsages,
+    );
+    #[allow(dead_code)]
     fn wgpu_server_get_external_texture_handle(
         param: *mut c_void,
         id: id::TextureId,
@@ -1375,7 +1435,7 @@ extern "C" {
     fn wgpu_server_get_vk_image_handle(
         param: *mut c_void,
         texture_id: id::TextureId,
-    ) -> *mut VkImageHandle;
+    ) -> *const VkImageHandle;
     #[allow(dead_code)]
     fn wgpu_server_get_dma_buf_fd(param: *mut c_void, id: id::TextureId) -> i32;
     #[allow(dead_code)]
@@ -1918,8 +1978,22 @@ impl Global {
                     if desc.size.width > limits.max_texture_dimension_2d
                         || desc.size.height > limits.max_texture_dimension_2d
                     {
+                        self.create_texture_error(Some(id), &desc);
                         error_buf.init(ErrMsg {
                             message: "size exceeds limits.max_texture_dimension_2d",
+                            r#type: ErrorBufferType::Validation,
+                        });
+                        return;
+                    }
+
+                    let features = self.device_features(self_id);
+                    if desc.format == wgt::TextureFormat::Bgra8Unorm
+                        && desc.usage.contains(wgt::TextureUsages::STORAGE_BINDING)
+                        && !features.contains(wgt::Features::BGRA8UNORM_STORAGE)
+                    {
+                        self.create_texture_error(Some(id), &desc);
+                        error_buf.init(ErrMsg {
+                            message: "Bgra8Unorm with GPUStorageBinding usage with BGRA8UNORM_STORAGE disabled",
                             r#type: ErrorBufferType::Validation,
                         });
                         return;
@@ -1968,6 +2042,21 @@ impl Global {
                         wgpu_server_disable_external_texture_for_swap_chain(
                             self.owner,
                             swap_chain_id.unwrap(),
+                        )
+                    };
+                }
+
+                if let Some(swap_chain_id) = swap_chain_id {
+                    unsafe {
+                        wgpu_server_ensure_external_texture_for_readback(
+                            self.owner,
+                            swap_chain_id,
+                            self_id,
+                            id,
+                            desc.size.width,
+                            desc.size.height,
+                            desc.format,
+                            desc.usage,
                         )
                     };
                 }

@@ -132,6 +132,7 @@
         }],
       ], #conditions
       'defines': [
+        'LIBYUV_DISABLE_SME',
         # Enable the following 3 macros to turn off assembly for specified CPU.
         # 'LIBYUV_DISABLE_X86',
         # 'LIBYUV_DISABLE_NEON',

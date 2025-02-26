@@ -39,6 +39,7 @@ const CUSTOM_INTENT_OPTIONS = {
   dtype: "q8",
   modelRevision: "main",
   numThreads: 2,
+  timeoutMS: -1,
 };
 
 const CUSTOM_NER_OPTIONS = {
@@ -50,6 +51,7 @@ const CUSTOM_NER_OPTIONS = {
   dtype: "q8",
   modelRevision: "main",
   numThreads: 2,
+  timeoutMS: -1,
 };
 const journal = {};
 const runInference2 = async () => {
@@ -60,12 +62,12 @@ const runInference2 = async () => {
   // Override INTENT and NER options within MLSuggest
   MLSuggest.INTENT_OPTIONS = CUSTOM_INTENT_OPTIONS;
   MLSuggest.NER_OPTIONS = CUSTOM_NER_OPTIONS;
-
-  const modelDirectory = normalizePathForOS(
-    `${Services.env.get("MOZ_FETCHES_DIR")}/onnx-models`
-  );
-  info(`Model Directory: ${modelDirectory}`);
-  const { baseUrl: modelHubRootUrl } = startHttpServer(modelDirectory);
+  const modelHubRootUrl = Services.env.get("MOZ_MODELS_HUB");
+  if (!modelHubRootUrl) {
+    throw new Error(
+      "MOZ_MODELS_HUB is not set, you need to run with --hooks toolkit/components/ml/tests/tools/hook_local_hub.py"
+    );
+  }
   info(`ModelHubRootUrl: ${modelHubRootUrl}`);
   const { cleanup } = await perfSetup({
     prefs: [

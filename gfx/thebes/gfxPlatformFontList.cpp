@@ -32,7 +32,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/ContentChild.h"
@@ -204,7 +204,10 @@ gfxFontListPrefObserver::Observe(nsISupports* aSubject, const char* aTopic,
   FontListPrefChanged(nullptr);
 
   if (XRE_IsParentProcess()) {
-    gfxPlatform::ForceGlobalReflow(gfxPlatform::NeedsReframe::No);
+    gfxPlatform::GlobalReflowFlags flags =
+        gfxPlatform::GlobalReflowFlags::BroadcastToChildren |
+        gfxPlatform::GlobalReflowFlags::FontsChanged;
+    gfxPlatform::ForceGlobalReflow(flags);
   }
   return NS_OK;
 }
@@ -584,8 +587,10 @@ bool gfxPlatformFontList::InitFontList() {
     // There's no need to broadcast this reflow request to child processes, as
     // ContentParent::NotifyUpdatedFonts deals with it by re-entering into this
     // function on child processes.
-    ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::Yes,
-                            gfxPlatform::BroadcastToChildren::No);
+    gfxPlatform::GlobalReflowFlags flags =
+        gfxPlatform::GlobalReflowFlags::NeedsReframe |
+        gfxPlatform::GlobalReflowFlags::FontsChanged;
+    ForceGlobalReflowLocked(flags);
 
     mAliasTable.Clear();
     mLocalNameTable.Clear();
@@ -719,19 +724,6 @@ void gfxPlatformFontList::InitializeCodepointsWithNoFonts() {
   }
 }
 
-void gfxPlatformFontList::FontListChanged() {
-  MOZ_ASSERT(!XRE_IsParentProcess());
-  AutoLock lock(mLock);
-  InitializeCodepointsWithNoFonts();
-  if (SharedFontList()) {
-    // If we're using a shared local face-name list, this may have changed
-    // such that existing font entries held by user font sets are no longer
-    // safe to use: ensure they all get flushed.
-    RebuildLocalFonts(/*aForgetLocalFaces*/ true);
-  }
-  ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::Yes);
-}
-
 void gfxPlatformFontList::GenerateFontListKey(const nsACString& aKeyName,
                                               nsACString& aResult) {
   aResult = aKeyName;
@@ -845,11 +837,9 @@ gfxFontEntry* gfxPlatformFontList::SearchFamiliesForFaceName(
 
   lookup = FindFaceName(aFaceName);
 
-  TimeStamp end = TimeStamp::Now();
-  Telemetry::AccumulateTimeDelta(Telemetry::FONTLIST_INITFACENAMELISTS, start,
-                                 end);
+  TimeDuration elapsed = TimeStamp::Now() - start;
+  glean::fontlist::initfacenamelists.AccumulateRawDuration(elapsed);
   if (LOG_FONTINIT_ENABLED()) {
-    TimeDuration elapsed = end - start;
     LOG_FONTINIT(("(fontinit) SearchFamiliesForFaceName took %8.2f ms %s %s",
                   elapsed.ToMilliseconds(), (lookup ? "found name" : ""),
                   (timedOut ? "timeout" : "")));
@@ -1008,7 +998,10 @@ void gfxPlatformFontList::UpdateFontList(bool aFullRebuild) {
     if (mStartedLoadingCmapsFrom != 0xffffffffu) {
       InitializeCodepointsWithNoFonts();
       mStartedLoadingCmapsFrom = 0xffffffffu;
-      ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::No);
+      gfxPlatform::GlobalReflowFlags flags =
+          gfxPlatform::GlobalReflowFlags::FontsChanged |
+          gfxPlatform::GlobalReflowFlags::BroadcastToChildren;
+      ForceGlobalReflowLocked(flags);
     }
   }
 }
@@ -1173,17 +1166,11 @@ already_AddRefed<gfxFont> gfxPlatformFontList::SystemFindFontForChar(
 
   // track system fallback time
   static bool first = true;
-  int32_t intElapsed =
-      int32_t(first ? elapsed.ToMilliseconds() : elapsed.ToMicroseconds());
-  Telemetry::Accumulate((first ? Telemetry::SYSTEM_FONT_FALLBACK_FIRST
-                               : Telemetry::SYSTEM_FONT_FALLBACK),
-                        intElapsed);
+  if (first)
+    glean::fontlist::system_font_fallback_first.AccumulateRawDuration(elapsed);
+  else
+    glean::fontlist::system_font_fallback.AccumulateRawDuration(elapsed);
   first = false;
-
-  // track the script for which fallback occurred (incremented one make it
-  // 1-based)
-  Telemetry::Accumulate(Telemetry::SYSTEM_FONT_FALLBACK_SCRIPT,
-                        int(aRunScript) + 1);
 
   return font.forget();
 }
@@ -2798,7 +2785,9 @@ void gfxPlatformFontList::CleanupLoader() {
                FindFamiliesFlags::eNoAddToNamesMissedWhenSearching));
         });
     if (forceReflow) {
-      ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::No);
+      gfxPlatform::GlobalReflowFlags flags =
+          gfxPlatform::GlobalReflowFlags::FontsChanged;
+      ForceGlobalReflowLocked(flags);
     }
 
     mOtherNamesMissed = nullptr;
@@ -2819,20 +2808,47 @@ void gfxPlatformFontList::CleanupLoader() {
   gfxFontInfoLoader::CleanupLoader();
 }
 
-void gfxPlatformFontList::ForceGlobalReflowLocked(
-    gfxPlatform::NeedsReframe aNeedsReframe,
-    gfxPlatform::BroadcastToChildren aBroadcastToChildren) {
+void gfxPlatformFontList::ForceGlobalReflow(
+    gfxPlatform::GlobalReflowFlags aFlags) {
   if (!NS_IsMainThread()) {
     NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "gfxPlatformFontList::ForceGlobalReflowLocked",
-        [aNeedsReframe, aBroadcastToChildren] {
-          gfxPlatform::ForceGlobalReflow(aNeedsReframe, aBroadcastToChildren);
-        }));
+        "gfxPlatformFontList::ForceGlobalReflow",
+        [this, aFlags] { this->ForceGlobalReflow(aFlags); }));
     return;
   }
 
+  if (aFlags & gfxPlatform::GlobalReflowFlags::FontsChanged) {
+    AutoLock lock(mLock);
+    InitializeCodepointsWithNoFonts();
+    if (SharedFontList()) {
+      // If we're using a shared local face-name list, this may have changed
+      // such that existing font entries held by user font sets are no longer
+      // safe to use: ensure they all get flushed.
+      RebuildLocalFonts(/*aForgetLocalFaces*/ true);
+    }
+  }
+
+  gfxPlatform::ForceGlobalReflow(aFlags);
+}
+
+void gfxPlatformFontList::ForceGlobalReflowLocked(
+    gfxPlatform::GlobalReflowFlags aFlags) {
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "gfxPlatformFontList::ForceGlobalReflow",
+        [this, aFlags] { this->ForceGlobalReflow(aFlags); }));
+    return;
+  }
+
+  if (aFlags & gfxPlatform::GlobalReflowFlags::FontsChanged) {
+    InitializeCodepointsWithNoFonts();
+    if (SharedFontList()) {
+      RebuildLocalFonts(/*aForgetLocalFaces*/ true);
+    }
+  }
+
   AutoUnlock unlock(mLock);
-  gfxPlatform::ForceGlobalReflow(aNeedsReframe, aBroadcastToChildren);
+  gfxPlatform::ForceGlobalReflow(aFlags);
 }
 
 void gfxPlatformFontList::GetPrefsAndStartLoader() {
@@ -2855,7 +2871,16 @@ void gfxPlatformFontList::GetPrefsAndStartLoader() {
 }
 
 void gfxPlatformFontList::RebuildLocalFonts(bool aForgetLocalFaces) {
+  // Make a local copy of the list of font sets we need to process.
+  AutoTArray<RefPtr<gfxUserFontSet>, 16> fontSets;
+  fontSets.SetCapacity(mUserFontSetList.Count());
   for (auto* fontset : mUserFontSetList) {
+    fontSets.AppendElement(fontset);
+  }
+  // Drop our lock before calling ForgetLocalFaces and RebuildLocalRules
+  // for each set, to avoid possible deadlocks.
+  AutoUnlock unlock(mLock);
+  for (auto fontset : fontSets) {
     if (aForgetLocalFaces) {
       fontset->ForgetLocalFaces();
     }
@@ -3017,12 +3042,10 @@ void gfxPlatformFontList::InitOtherFamilyNamesInternal(
       mOtherFamilyNamesInitialized = true;
       CancelInitOtherFamilyNamesTask();
     }
-    TimeStamp end = TimeStamp::Now();
-    Telemetry::AccumulateTimeDelta(Telemetry::FONTLIST_INITOTHERFAMILYNAMES,
-                                   start, end);
+    TimeDuration elapsed = TimeStamp::Now() - start;
+    glean::fontlist::initotherfamilynames.AccumulateRawDuration(elapsed);
 
     if (LOG_FONTINIT_ENABLED()) {
-      TimeDuration elapsed = end - start;
       LOG_FONTINIT(("(fontinit) InitOtherFamilyNames took %8.2f ms %s",
                     elapsed.ToMilliseconds(), (timedOut ? "timeout" : "")));
     }
@@ -3044,12 +3067,11 @@ void gfxPlatformFontList::InitOtherFamilyNamesInternal(
     mOtherFamilyNamesInitialized = true;
     CancelInitOtherFamilyNamesTask();
 
-    TimeStamp end = TimeStamp::Now();
-    Telemetry::AccumulateTimeDelta(
-        Telemetry::FONTLIST_INITOTHERFAMILYNAMES_NO_DEFERRING, start, end);
+    TimeDuration elapsed = TimeStamp::Now() - start;
+    glean::fontlist::initotherfamilynames_no_deferring.AccumulateRawDuration(
+        elapsed);
 
     if (LOG_FONTINIT_ENABLED()) {
-      TimeDuration elapsed = end - start;
       LOG_FONTINIT(
           ("(fontinit) InitOtherFamilyNames without deferring took %8.2f ms",
            elapsed.ToMilliseconds()));
@@ -3075,8 +3097,14 @@ void gfxPlatformFontList::CancelInitOtherFamilyNamesTask() {
       mLocalNameTable.Clear();
       forceReflow = true;
     }
-    if (forceReflow) {
-      dom::ContentParent::BroadcastFontListChanged();
+    // If there's a LoadCmapsRunnable alive, we ignore forceReflow because the
+    // runnable will trigger a reflow when it completes, and we don't want to
+    // reflow more times than necessary.
+    if (forceReflow && !mLoadCmapsRunnable) {
+      gfxPlatform::GlobalReflowFlags flags =
+          gfxPlatform::GlobalReflowFlags::BroadcastToChildren |
+          gfxPlatform::GlobalReflowFlags::FontsChanged;
+      gfxPlatform::ForceGlobalReflow(flags);
     }
   }
 }

@@ -341,10 +341,14 @@ ChunkPool GCRuntime::expireEmptyChunkPool(const AutoLockGC& lock) {
   MOZ_ASSERT(emptyChunks(lock).verify());
 
   ChunkPool expired;
-  while (tooManyEmptyChunks(lock)) {
-    ArenaChunk* chunk = emptyChunks(lock).pop();
-    prepareToFreeChunk(chunk->info);
-    expired.push(chunk);
+  if (isShrinkingGC()) {
+    std::swap(expired, emptyChunks(lock));
+  } else {
+    while (tooManyEmptyChunks(lock)) {
+      ArenaChunk* chunk = emptyChunks(lock).pop();
+      prepareToFreeChunk(chunk->info);
+      expired.push(chunk);
+    }
   }
 
   MOZ_ASSERT(expired.verify());
@@ -395,7 +399,12 @@ void GCRuntime::releaseArena(Arena* arena, const AutoLockGC& lock) {
   MOZ_ASSERT(!arena->onDelayedMarkingList());
   MOZ_ASSERT(TlsGCContext.get()->isFinalizing());
 
-  arena->zone()->gcHeapSize.removeGCArena(heapSize);
+  if (IsBufferAllocKind(arena->getAllocKind())) {
+    size_t usableBytes = ArenaSize - arena->getFirstThingOffset();
+    arena->zone()->mallocHeapSize.removeBytes(usableBytes, true);
+  } else {
+    arena->zone()->gcHeapSize.removeBytes(ArenaSize, true, heapSize);
+  }
   arena->release(this, &lock);
   arena->chunk()->releaseArena(this, arena, lock);
 }
@@ -424,7 +433,6 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       incrementalGCEnabled(TuningDefaults::IncrementalGCEnabled),
       perZoneGCEnabled(TuningDefaults::PerZoneGCEnabled),
       numActiveZoneIters(0),
-      cleanUpEverything(false),
       grayBitsValid(true),
       majorGCTriggerReason(JS::GCReason::NO_REASON),
       minorGCNumber(0),
@@ -488,6 +496,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       lock(mutexid::GCLock),
       storeBufferLock(mutexid::StoreBuffer),
       delayedMarkingLock(mutexid::GCDelayedMarkingLock),
+      bufferAllocatorLock(mutexid::BufferAllocator),
       allocTask(this, emptyChunks_.ref()),
       unmarkTask(this),
       markTask(this),
@@ -2254,11 +2263,13 @@ void GCRuntime::queueAllLifoBlocksForFreeAfterMinorGC(LifoAlloc* lifo) {
 }
 
 void GCRuntime::queueBuffersForFreeAfterMinorGC(
-    Nursery::BufferSet& buffers, Nursery::StringBufferVector& stringBuffers) {
+    Nursery::BufferSet& buffers, Nursery::StringBufferVector& stringBuffers,
+    Nursery::LargeAllocList& largeAllocs) {
   AutoLockHelperThreadState lock;
 
   if (!buffersToFreeAfterMinorGC.ref().empty() ||
-      !stringBuffersToReleaseAfterMinorGC.ref().empty()) {
+      !stringBuffersToReleaseAfterMinorGC.ref().empty() ||
+      !largeBuffersToFreeAfterMinorGC.ref().isEmpty()) {
     // In the rare case that this hasn't processed the buffers from a previous
     // minor GC we have to wait here.
     MOZ_ASSERT(!freeTask.isIdle(lock));
@@ -2270,6 +2281,9 @@ void GCRuntime::queueBuffersForFreeAfterMinorGC(
 
   MOZ_ASSERT(stringBuffersToReleaseAfterMinorGC.ref().empty());
   std::swap(stringBuffersToReleaseAfterMinorGC.ref(), stringBuffers);
+
+  MOZ_ASSERT(largeBuffersToFreeAfterMinorGC.ref().isEmpty());
+  std::swap(largeBuffersToFreeAfterMinorGC.ref(), largeAllocs);
 }
 
 void Realm::destroy(JS::GCContext* gcx) {
@@ -2397,8 +2411,9 @@ void GCRuntime::sweepZones(JS::GCContext* gcx, bool destroyingRuntime) {
     if (zone->wasGCStarted()) {
       MOZ_ASSERT(!zone->isQueuedForBackgroundSweep());
       AutoSetThreadIsSweeping threadIsSweeping(zone);
-      const bool zoneIsDead =
-          zone->arenas.arenaListsAreEmpty() && !zone->hasMarkedRealms();
+      const bool zoneIsDead = zone->arenas.arenaListsAreEmpty() &&
+                              zone->bufferAllocator.isEmpty() &&
+                              !zone->hasMarkedRealms();
       MOZ_ASSERT_IF(destroyingRuntime, zoneIsDead);
       if (zoneIsDead) {
         zone->arenas.checkEmptyFreeLists();
@@ -2460,26 +2475,48 @@ bool GCRuntime::shouldPreserveJITCode(Realm* realm,
                                       JS::GCReason reason,
                                       bool canAllocateMoreCode,
                                       bool isActiveCompartment) {
-  if (cleanUpEverything) {
+  // During shutdown, we must clean everything up, for the sake of leak
+  // detection.
+  if (isShutdownGC()) {
     return false;
   }
+
+  // A shrinking GC is trying to clear out as much as it can, and so we should
+  // not preserve JIT code here!
+  if (isShrinkingGC()) {
+    return false;
+  }
+
+  // We are close to our allocatable code limit, so let's try to clean it out.
   if (!canAllocateMoreCode) {
     return false;
   }
 
+  // The topmost frame of JIT code is in this compartment, and so we should
+  // try to preserve this zone's code.
   if (isActiveCompartment) {
     return true;
   }
+
+  // The gcPreserveJitCode testing function was used.
   if (alwaysPreserveCode) {
     return true;
   }
+
+  // This realm explicitly requested we try to preserve its JIT code.
   if (realm->preserveJitCode()) {
     return true;
   }
+
+  // If we're currently animating, and we've already discarded code recently
+  // we can preserve jit code; however we shouldn't hold onto JIT code forever
+  // during animation.
   if (IsCurrentlyAnimating(realm->lastAnimationTime, currentTime) &&
       DiscardedCodeRecently(realm->zone(), currentTime)) {
     return true;
   }
+
+  // GC Invoked via a testing function.
   if (reason == JS::GCReason::DEBUG_GC) {
     return true;
   }
@@ -2566,13 +2603,6 @@ void GCRuntime::checkForCompartmentMismatches() {
 }
 #endif
 
-static bool ShouldCleanUpEverything(JS::GCOptions options) {
-  // During shutdown, we must clean everything up, for the sake of leak
-  // detection. When a runtime has no contexts, or we're doing a GC before a
-  // shutdown CC, those are strong indications that we're shutting down.
-  return options == JS::GCOptions::Shutdown || options == JS::GCOptions::Shrink;
-}
-
 static bool ShouldUseBackgroundThreads(bool isIncremental,
                                        JS::GCReason reason) {
   bool shouldUse = isIncremental && CanUseExtraThreads();
@@ -2588,7 +2618,6 @@ void GCRuntime::startCollection(JS::GCReason reason) {
           reason == JS::GCReason::XPCONNECT_SHUTDOWN /* Bug 1650075 */);
 
   initialReason = reason;
-  cleanUpEverything = ShouldCleanUpEverything(gcOptions());
   isCompacting = shouldCompact();
   rootsRemoved = false;
   sweepGroupIndex = 0;
@@ -2676,11 +2705,13 @@ bool GCRuntime::prepareZonesForCollection(JS::GCReason reason,
   return any;
 }
 
-void GCRuntime::discardJITCodeForGC() {
+// Update JIT Code state for GC: A few different actions are combined here to
+// minimize the number of iterations over zones & scripts that required.
+void GCRuntime::maybeDiscardJitCodeForGC() {
   size_t nurserySiteResetCount = 0;
   size_t pretenuredSiteResetCount = 0;
 
-  js::CancelOffThreadIonCompile(rt, JS::Zone::Prepare);
+  js::CancelOffThreadCompile(rt, JS::Zone::Prepare);
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_DISCARD_CODE);
 
@@ -2691,11 +2722,11 @@ void GCRuntime::discardJITCodeForGC() {
     bool resetPretenuredSites = pz.shouldResetPretenuredAllocSites();
 
     if (!zone->isPreservingCode()) {
-      Zone::DiscardOptions options;
+      Zone::JitDiscardOptions options;
       options.discardJitScripts = true;
       options.resetNurseryAllocSites = resetNurserySites;
       options.resetPretenuredAllocSites = resetPretenuredSites;
-      zone->discardJitCode(rt->gcContext(), options);
+      zone->forceDiscardJitCode(rt->gcContext(), options);
     } else if (resetNurserySites || resetPretenuredSites) {
       zone->resetAllocSitesAndInvalidate(resetNurserySites,
                                          resetPretenuredSites);
@@ -2919,10 +2950,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
 
     AutoUnlockHelperThreadState unlock(helperLock);
 
-    // Discard JIT code. For incremental collections, the sweep phase may
-    // also discard JIT code.
-    discardJITCodeForGC();
-    haveDiscardedJITCodeThisSlice = true;
+    maybeDiscardJitCodeForGC();
 
     /*
      * We must purge the runtime at the beginning of an incremental GC. The
@@ -2937,8 +2965,11 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
   }
 
   // This will start background free for lifo blocks queued by purgeRuntime,
-  // even if there's nothing in the nursery.
+  // even if there's nothing in the nursery. Record the number of the minor GC
+  // so we can check whether we need to wait for it to finish or whether a
+  // subsequent minor GC already did this.
   collectNurseryFromMajorGC(reason);
+  initialMinorGCNumber = minorGCNumber;
 
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::PREPARE);
@@ -3013,32 +3044,38 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
   queueMarkColor.reset();
 #endif
 
-  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    // In an incremental GC, clear the arena free lists to ensure that
-    // subsequent allocations refill them and end up marking new cells black.
-    // See arenaAllocatedDuringGC().
-    zone->arenas.clearFreeLists();
+  {
+    BufferAllocator::MaybeLock lock;
+    for (GCZonesIter zone(this); !zone.done(); zone.next()) {
+      // In an incremental GC, clear the arena free lists to ensure that
+      // subsequent allocations refill them and end up marking new cells black.
+      // See arenaAllocatedDuringGC().
+      zone->arenas.clearFreeLists();
 
 #ifdef JS_GC_ZEAL
-    if (hasZealMode(ZealMode::YieldBeforeRootMarking)) {
-      for (auto kind : AllAllocKinds()) {
-        for (ArenaIter arena(zone, kind); !arena.done(); arena.next()) {
-          arena->checkNoMarkedCells();
+      if (hasZealMode(ZealMode::YieldBeforeRootMarking)) {
+        for (auto kind : AllAllocKinds()) {
+          for (ArenaIter arena(zone, kind); !arena.done(); arena.next()) {
+            arena->checkNoMarkedCells();
+          }
         }
       }
-    }
 #endif
 
-    // Incremental marking barriers are enabled at this point.
-    zone->changeGCState(Zone::Prepare, zone->initialMarkingState());
+      // Incremental marking barriers are enabled at this point.
+      zone->changeGCState(Zone::Prepare, zone->initialMarkingState());
 
-    // Merge arenas allocated during the prepare phase, then move all arenas to
-    // the collecting arena lists.
-    zone->arenas.mergeArenasFromCollectingLists();
-    zone->arenas.moveArenasToCollectingLists();
+      // Merge arenas allocated during the prepare phase, then move all arenas
+      // to the collecting arena lists.
+      zone->arenas.mergeArenasFromCollectingLists();
+      zone->arenas.moveArenasToCollectingLists();
 
-    for (RealmsInZoneIter realm(zone); !realm.done(); realm.next()) {
-      realm->clearAllocatedDuringGC();
+      // Prepare sized allocator for major GC.
+      zone->bufferAllocator.startMajorCollection(lock);
+
+      for (RealmsInZoneIter realm(zone); !realm.done(); realm.next()) {
+        realm->clearAllocatedDuringGC();
+      }
     }
   }
 
@@ -3455,6 +3492,7 @@ void GCRuntime::checkGCStateNotInUse() {
     MOZ_ASSERT(!zone->isOnList());
     MOZ_ASSERT(!zone->gcNextGraphNode);
     MOZ_ASSERT(!zone->gcNextGraphComponent);
+    zone->bufferAllocator.checkGCStateNotInUse();
   }
 
   MOZ_ASSERT(zonesToMaybeCompact.ref().isEmpty());
@@ -3676,11 +3714,20 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
         resetGrayList(c);
       }
 
-      for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-        zone->changeGCState(zone->initialMarkingState(), Zone::NoGC);
-        zone->clearGCSliceThresholds();
-        zone->arenas.unmarkPreMarkedFreeCells();
-        zone->arenas.mergeArenasFromCollectingLists();
+      // Wait for sweeping of nursery owned sized allocations to finish.
+      nursery().joinSweepTask();
+
+      {
+        BufferAllocator::AutoLock lock(this);
+        for (GCZonesIter zone(this); !zone.done(); zone.next()) {
+          zone->changeGCState(zone->initialMarkingState(), Zone::NoGC);
+          zone->clearGCSliceThresholds();
+          zone->arenas.unmarkPreMarkedFreeCells();
+          zone->arenas.mergeArenasFromCollectingLists();
+
+          // Merge sized alloc data structures back without sweeping them.
+          zone->bufferAllocator.finishMajorCollection(lock);
+        }
       }
 
       {
@@ -3797,7 +3844,6 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
   initialState = incrementalState;
   isIncremental = !budget.isUnlimited();
   useBackgroundThreads = ShouldUseBackgroundThreads(isIncremental, reason);
-  haveDiscardedJITCodeThisSlice = false;
 
 #ifdef JS_GC_ZEAL
   // Do the incremental collection type specified by zeal mode if the collection
@@ -3952,7 +3998,22 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         break;
       }
 
+      {
+        BufferAllocator::AutoLock lock(this);
+        for (GCZonesIter zone(this); !zone.done(); zone.next()) {
+          zone->bufferAllocator.finishMajorCollection(lock);
+        }
+      }
+
       assertBackgroundSweepingFinished();
+
+      // Ensure freeing of nursery owned sized allocations from the initial
+      // minor GC has finished.
+      MOZ_ASSERT(minorGCNumber >= initialMinorGCNumber);
+      if (minorGCNumber == initialMinorGCNumber) {
+        MOZ_ASSERT(nursery().sweepTaskIsIdle());
+        waitBackgroundFreeEnd();
+      }
 
       {
         // Sweep the zones list now that background finalization is finished to
@@ -4902,6 +4963,14 @@ void GCRuntime::collectNursery(JS::GCOptions options, JS::GCReason reason,
       MOZ_ASSERT(nursery().isEmpty());
       startBackgroundFreeAfterMinorGC();
     }
+
+    // Disabling the nursery triggers pre-barriers when we discard JIT
+    // code. Normally we don't allow any barriers in a major GC and there is an
+    // assertion to check this in PreWriteBarrier. For the case where we disable
+    // the nursery during a major GC, set up a minor GC session to silence the
+    // assertion.
+    AutoGCSession session(this, JS::HeapState::MinorCollecting);
+
     nursery().disable();
   }
 }

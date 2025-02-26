@@ -25,6 +25,7 @@ import mozilla.components.service.nimbus.evalJexlSafe
 import mozilla.components.service.nimbus.messaging.use
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.BrowsersCache
+import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.initializeGlean
@@ -67,18 +68,20 @@ class OnboardingFragment : Fragment() {
     private val termsOfServiceEventHandler by lazy {
         DefaultOnboardingTermsOfServiceEventHandler(
             telemetryRecorder = telemetryRecorder,
-            this::launchSandboxCustomTab,
-            this::showPrivacyPreferencesDialog,
+            openLink = this::launchSandboxCustomTab,
+            showManagePrivacyPreferencesDialog = this::showPrivacyPreferencesDialog,
+            settings = requireContext().settings(),
         )
     }
 
     private val pagesToDisplay by lazy {
-        pagesToDisplay(
-            isNotDefaultBrowser(requireContext()) &&
-                activity?.isDefaultBrowserPromptSupported() == false,
-            canShowNotificationPage(),
-            canShowAddSearchWidgetPrompt(),
-        )
+        with(requireContext()) {
+            pagesToDisplay(
+                showDefaultBrowserPage = isNotDefaultBrowser(this) && !isDefaultBrowserPromptSupported(),
+                showNotificationPage = canShowNotificationPage(),
+                showAddWidgetPage = canShowAddSearchWidgetPrompt(),
+            )
+        }
     }
     private val telemetryRecorder by lazy { OnboardingTelemetryRecorder() }
 
@@ -96,6 +99,17 @@ class OnboardingFragment : Fragment() {
     }
 
     private val pinAppWidgetReceiver = WidgetPinnedReceiver()
+    private val defaultBrowserPromptStorage by lazy { DefaultDefaultBrowserPromptStorage(requireContext()) }
+    private val defaultBrowserPromptManager by lazy {
+        DefaultBrowserPromptManager(
+            storage = defaultBrowserPromptStorage,
+            promptToSetAsDefaultBrowser = {
+                requireContext().components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+                    promptToSetAsDefaultBrowser()
+                }
+            },
+        )
+    }
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,13 +127,10 @@ class OnboardingFragment : Fragment() {
         LocalBroadcastManager.getInstance(context)
             .registerReceiver(pinAppWidgetReceiver, filter)
 
-        if (isNotDefaultBrowser(context) &&
-            activity?.isDefaultBrowserPromptSupported() == true &&
-            !requireContext().settings().promptToSetAsDefaultBrowserDisplayedInOnboarding
-        ) {
-            requireComponents.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
-                promptToSetAsDefaultBrowser()
-            }
+        // We want the prompt to be displayed once per onboarding opening.
+        // In case the host got recreated, we don't reset the flag.
+        if (savedInstanceState == null) {
+            defaultBrowserPromptStorage.promptToSetAsDefaultBrowserDisplayedInOnboarding = false
         }
 
         telemetryRecorder.onOnboardingStarted()
@@ -136,8 +147,6 @@ class OnboardingFragment : Fragment() {
                 ScreenContent()
             }
         }
-
-        requireContext().settings().promptToSetAsDefaultBrowserDisplayedInOnboarding = false
     }
 
     override fun onResume() {
@@ -155,7 +164,7 @@ class OnboardingFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @Composable
-    @Suppress("LongMethod", "ThrowsCount")
+    @Suppress("LongMethod")
     private fun ScreenContent() {
         OnboardingScreen(
             pagesToDisplay = pagesToDisplay,
@@ -223,12 +232,18 @@ class OnboardingFragment : Fragment() {
             onFinish = {
                 onFinish(it)
                 disableNavBarCFRForNewUser()
+                enableSearchBarCFRForNewUser()
             },
             onImpression = {
                 telemetryRecorder.onImpression(
                     sequenceId = pagesToDisplay.telemetrySequenceId(),
                     pageType = it.type,
                     sequencePosition = pagesToDisplay.sequencePosition(it.type),
+                )
+
+                defaultBrowserPromptManager.maybePromptToSetAsDefaultBrowser(
+                    pagesToDisplay = pagesToDisplay,
+                    currentCard = it,
                 )
             },
             onboardingStore = onboardingStore,
@@ -240,6 +255,25 @@ class OnboardingFragment : Fragment() {
                     pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.TOOLBAR_PLACEMENT),
                     onboardingStore.state.toolbarOptionSelected.id,
                 )
+            },
+            onMarketingDataLearnMoreClick = {
+                telemetryRecorder.onMarketingDataLearnMoreClick()
+
+                val url = SupportUtils.getSumoURLForTopic(
+                    requireContext(),
+                    SupportUtils.SumoTopic.MARKETING_DATA,
+                )
+                launchSandboxCustomTab(url)
+            },
+            onMarketingOptInToggle = { optIn ->
+                telemetryRecorder.onMarketingDataOptInToggled(optIn)
+            },
+            onMarketingDataContinueClick = { allowMarketingDataCollection ->
+                with(requireContext().settings()) {
+                    isMarketingTelemetryEnabled = allowMarketingDataCollection
+                    hasMadeMarketingTelemetrySelection = true
+                }
+                telemetryRecorder.onMarketingDataContinueClicked(allowMarketingDataCollection)
             },
             onCustomizeThemeClick = {
                 telemetryRecorder.onSelectThemeClick(
@@ -304,12 +338,17 @@ class OnboardingFragment : Fragment() {
             settings.isTelemetryEnabled,
             requireComponents.core.client,
         )
+        if (!settings.isTelemetryEnabled) {
+            Pings.onboardingOptOut.setEnabled(true)
+            Pings.onboardingOptOut.submit()
+        }
 
         startMetricsIfEnabled(
             logger = logger,
             analytics = requireComponents.analytics,
             isTelemetryEnabled = settings.isTelemetryEnabled,
             isMarketingTelemetryEnabled = settings.isMarketingTelemetryEnabled,
+            isDailyUsagePingEnabled = settings.isDailyUsagePingEnabled,
         )
 
         findNavController().nav(
@@ -322,8 +361,11 @@ class OnboardingFragment : Fragment() {
         requireContext().settings().shouldShowNavigationBarCFR = false
     }
 
-    // Marked as internal since it is used in unit tests
-    internal fun isNotDefaultBrowser(context: Context) =
+    private fun enableSearchBarCFRForNewUser() {
+        requireContext().settings().shouldShowSearchBarCFR = FxNimbus.features.encourageSearchCfr.value().enabled
+    }
+
+    private fun isNotDefaultBrowser(context: Context) =
         !BrowsersCache.all(context.applicationContext).isDefaultBrowser
 
     private fun canShowNotificationPage() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -342,11 +384,9 @@ class OnboardingFragment : Fragment() {
                 text = getString(R.string.juno_onboarding_privacy_notice_text),
                 url = SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE),
                 onClick = {
-                    startActivity(
-                        SupportUtils.createSandboxCustomTabIntent(
-                            context = requireContext(),
-                            url = it,
-                        ),
+                    SupportUtils.launchSandboxCustomTab(
+                        context = requireContext(),
+                        url = it,
                     )
                     telemetryRecorder.onPrivacyPolicyClick(
                         pagesToDisplay.telemetrySequenceId(),
@@ -376,18 +416,11 @@ class OnboardingFragment : Fragment() {
         )
     }
 
-    private fun launchSandboxCustomTab(url: String) {
-        val intent = SupportUtils.createSandboxCustomTabIntent(
-            context = requireContext(),
-            url = url,
-        )
-        requireContext().startActivity(intent)
-    }
+    private fun launchSandboxCustomTab(url: String) =
+        SupportUtils.launchSandboxCustomTab(requireContext(), url)
 
     private fun showPrivacyPreferencesDialog() {
-        ManagePrivacyPreferencesDialogFragment(
-            onCrashReportingLinkClick = {},
-            onUsageDataLinkClick = {},
-        ).show(parentFragmentManager, ManagePrivacyPreferencesDialogFragment.TAG)
+        ManagePrivacyPreferencesDialogFragment()
+            .show(parentFragmentManager, ManagePrivacyPreferencesDialogFragment.TAG)
     }
 }

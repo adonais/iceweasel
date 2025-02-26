@@ -111,6 +111,7 @@ browsertime:
     - browsertime-indexeddb
     - browsertime-video-playback-latency
     - browsertime-network-bench
+    - browsertime-webcodecs
 
 browsertime-clang:
     - browsertime-tp6
@@ -235,7 +236,7 @@ linux2204-wayland-tests:
     - xpcshell
 
 # Windows
-windows32-2009-tests:
+windows32-tests:
     - cppunittest
     - crashtest
     - gtest
@@ -247,19 +248,16 @@ windows32-2009-tests:
     - mochitest-browser-a11y
     - mochitest-browser-chrome
     - mochitest-browser-media
-    - mochitest-browser-translations
     - mochitest-chrome
-    - mochitest-chrome-gpu
     - mochitest-media
-    - mochitest-plain
-    - mochitest-plain-gpu
-    - mochitest-remote
     - reftest
-    - telemetry-tests-client
     - test-verify
     - test-verify-gpu
     - test-verify-wpt
     - xpcshell
+    - web-platform-tests
+    - web-platform-tests-crashtest
+    - web-platform-tests-privatebrowsing
 
 windows10-2009-tests:
     - cppunittest
@@ -281,7 +279,14 @@ windows11-64-2009-ccov-tests:
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
 
+# this remains as we have an issue on msix(mda) tasks
+# as well as reftest-nogpu
 windows11-2009-tests:
+    - mochitest-browser-chrome
+    - mochitest-media
+    - telemetry-tests-client
+
+windows11-24h2-tests:
     - cppunittest
     - crashtest
     - firefox-ui-functional
@@ -291,13 +296,11 @@ windows11-2009-tests:
     - marionette-unittest
     - mochitest-a11y
     - mochitest-browser-a11y
-    - mochitest-browser-chrome
     - mochitest-browser-media
     - mochitest-browser-translations
     - mochitest-chrome
     - mochitest-chrome-gpu
     - mochitest-devtools-chrome
-    - mochitest-media
     - mochitest-plain
     - mochitest-plain-gpu
     - mochitest-remote
@@ -306,7 +309,6 @@ windows11-2009-tests:
     - mochitest-webgl2-core
     - mochitest-webgl2-ext
     - reftest
-    - telemetry-tests-client
     - test-verify
     - test-verify-gpu
     - test-verify-wpt
@@ -322,8 +324,8 @@ mingwclang-tests-debug:
     - mochitest-webgl1-ext
     - mochitest-webgl2-core
     - mochitest-webgl2-ext
-    - reftest
     - telemetry-tests-client
+    - reftest
 
 # The following is the same as the above block, minus reftests.
 # Reftests were disabled due to frequent hangs; see bug 1642719
@@ -401,9 +403,6 @@ macosx1100-aarch64-qr-tests:
     - cppunittest
     - mochitest-media
 
-web-platform-tests-1015:
-    - web-platform-tests-reftest
-
 macosx1470-64-tests:
     - cppunittest
     - crashtest
@@ -420,9 +419,14 @@ macosx1470-64-tests:
     - mochitest-chrome
     - mochitest-chrome-gpu
     - mochitest-devtools-chrome
+    - mochitest-media
     - mochitest-plain
     - mochitest-plain-gpu
     - mochitest-remote
+    - mochitest-webgl1-core
+    - mochitest-webgl1-ext
+    - mochitest-webgl2-core
+    - mochitest-webgl2-ext
     - reftest
     - telemetry-tests-client
     - test-verify

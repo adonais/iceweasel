@@ -24,24 +24,20 @@ const RESULT_MENU_COMMAND = {
  * A feature that manages Pocket suggestions in remote settings.
  */
 export class PocketSuggestions extends SuggestProvider {
-  get shouldEnable() {
-    return (
-      lazy.UrlbarPrefs.get("pocketFeatureGate") &&
-      lazy.UrlbarPrefs.get("suggest.pocket") &&
-      lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored")
-    );
-  }
-
   get enablingPreferences() {
-    return ["suggest.pocket", "suggest.quicksuggest.nonsponsored"];
+    return [
+      "pocketFeatureGate",
+      "suggest.pocket",
+      "suggest.quicksuggest.nonsponsored",
+    ];
   }
 
   get merinoProvider() {
     return "pocket";
   }
 
-  get rustSuggestionTypes() {
-    return ["Pocket"];
+  get rustSuggestionType() {
+    return "Pocket";
   }
 
   get showLessFrequentlyCount() {
@@ -142,37 +138,33 @@ export class PocketSuggestions extends SuggestProvider {
     );
   }
 
-  handleCommand(view, result, selType) {
-    switch (selType) {
+  onEngagement(queryContext, controller, details, _searchString) {
+    let { result } = details;
+    switch (details.selType) {
       case RESULT_MENU_COMMAND.HELP:
         // "help" is handled by UrlbarInput, no need to do anything here.
         break;
       // selType == "dismiss" when the user presses the dismiss key shortcut.
       case "dismiss":
       case RESULT_MENU_COMMAND.NOT_RELEVANT:
-        // PocketSuggestions adds the UTM parameters to the original URL and
-        // returns it as payload.url in the result. However, as
-        // UrlbarProviderQuickSuggest filters suggestions with original URL of
-        // provided suggestions, need to use the original URL when adding to the
-        // block list.
-        lazy.QuickSuggest.blockedSuggestions.add(result.payload.originalUrl);
+        lazy.QuickSuggest.blockedSuggestions.blockResult(result);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-one",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.NOT_INTERESTED:
         lazy.UrlbarPrefs.set("suggest.pocket", false);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-all",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY:
-        view.acknowledgeFeedback(result);
+        controller.view.acknowledgeFeedback(result);
         this.incrementShowLessFrequentlyCount();
         if (!this.canShowLessFrequently) {
-          view.invalidateResultMenuCommands();
+          controller.view.invalidateResultMenuCommands();
         }
         break;
     }

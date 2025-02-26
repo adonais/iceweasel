@@ -9,6 +9,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
+  AccountsGlue: "resource:///modules/AccountsGlue.sys.mjs",
   AWToolbarButton: "resource:///modules/aboutwelcome/AWToolbarUtils.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   ASRouterDefaultConfig:
@@ -16,22 +17,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ASRouterNewTabHook: "resource:///modules/asrouter/ASRouterNewTabHook.sys.mjs",
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   BackupService: "resource:///modules/backup/BackupService.sys.mjs",
   Blocklist: "resource://gre/modules/Blocklist.sys.mjs",
   BookmarkHTMLUtils: "resource://gre/modules/BookmarkHTMLUtils.sys.mjs",
   BookmarkJSONUtils: "resource://gre/modules/BookmarkJSONUtils.sys.mjs",
   BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.sys.mjs",
-  BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   CaptchaDetectionPingUtils:
     "resource://gre/modules/CaptchaDetectionPingUtils.sys.mjs",
-  ClientID: "resource://gre/modules/ClientID.sys.mjs",
-  CloseRemoteTab: "resource://gre/modules/FxAccountsCommands.sys.mjs",
   CommonDialog: "resource://gre/modules/CommonDialog.sys.mjs",
   ContentRelevancyManager:
     "resource://gre/modules/ContentRelevancyManager.sys.mjs",
@@ -52,7 +49,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   // eslint-disable-next-line mozilla/valid-lazy
   FilePickerCrashed: "resource:///modules/FilePickerCrashed.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
-  FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   GenAI: "resource:///modules/GenAI.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   Integration: "resource://gre/modules/Integration.sys.mjs",
@@ -81,8 +77,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PluginManager: "resource:///actors/PluginParent.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.sys.mjs",
-  PublicSuffixList:
-    "resource://gre/modules/netwerk-dns/PublicSuffixList.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
   RFPHelper: "resource://gre/modules/RFPHelper.sys.mjs",
   RemoteSecuritySettings:
@@ -105,14 +99,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ShoppingUtils: "resource:///modules/ShoppingUtils.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
+  TelemetryReportingPolicy:
+    "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
   TRRRacer: "resource:///modules/TRRPerformance.sys.mjs",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
   TabUnloader: "resource:///modules/TabUnloader.sys.mjs",
-  TelemetryUtils: "resource://gre/modules/TelemetryUtils.sys.mjs",
-  UIState: "resource://services-sync/UIState.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarSearchTermsPersistence:
     "resource:///modules/UrlbarSearchTermsPersistence.sys.mjs",
+  UsageReporting: "resource://gre/modules/UsageReporting.sys.mjs",
   WebChannel: "resource://gre/modules/WebChannel.sys.mjs",
   WebProtocolHandlerRegistrar:
     "resource:///modules/WebProtocolHandlerRegistrar.sys.mjs",
@@ -146,12 +141,6 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   PushService: ["@mozilla.org/push/Service;1", "nsIPushService"],
 });
 
-ChromeUtils.defineLazyGetter(
-  lazy,
-  "accountsL10n",
-  () => new Localization(["browser/accounts.ftl", "branding/brand.ftl"], true)
-);
-
 if (AppConstants.ENABLE_WEBDRIVER) {
   XPCOMUtils.defineLazyServiceGetter(
     lazy,
@@ -170,13 +159,6 @@ if (AppConstants.ENABLE_WEBDRIVER) {
   lazy.Marionette = { running: false };
   lazy.RemoteAgent = { running: false };
 }
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "CLIENT_ASSOCIATION_PING_ENABLED",
-  "identity.fxaccounts.telemetry.clientAssociationPing.enabled",
-  false
-);
 
 const PREF_PDFJS_ISDEFAULT_CACHE_STATE = "pdfjs.enabledCache.state";
 
@@ -310,31 +292,6 @@ let JSWINDOWACTORS = {
       },
     },
     matches: ["about:messagepreview", "about:messagepreview?*"],
-  },
-
-  AboutNewTab: {
-    parent: {
-      esModuleURI: "resource:///actors/AboutNewTabParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource:///actors/AboutNewTabChild.sys.mjs",
-      events: {
-        DOMDocElementInserted: {},
-        DOMContentLoaded: {},
-        load: { capture: true },
-        unload: { capture: true },
-        pageshow: {},
-        visibilitychange: {},
-      },
-    },
-    // The wildcard on about:newtab is for the # parameter
-    // that is used for the newtab devtools. The wildcard for about:home
-    // is similar, and also allows for falling back to loading the
-    // about:home document dynamically if an attempt is made to load
-    // about:home?jscache from the AboutHomeStartupCache as a top-level
-    // load.
-    matches: ["about:home*", "about:welcome", "about:newtab*"],
-    remoteTypes: ["privilegedabout"],
   },
 
   AboutPocket: {
@@ -652,7 +609,28 @@ let JSWINDOWACTORS = {
       },
     },
     allFrames: true,
-    enablePreference: "browser.ml.chat.enabled",
+    onAddActor(register, unregister) {
+      // Register the actor if we have a provider set and not yet registered
+      const maybeRegister = (val, prev) => {
+        if (val) {
+          if (!prev) {
+            register();
+          }
+        } else {
+          unregister();
+        }
+      };
+
+      // Detect pref changes and handle initial value
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_pref",
+        "browser.ml.chat.provider",
+        "",
+        (_pref, prev, val) => maybeRegister(val, prev)
+      );
+      maybeRegister(this._pref);
+    },
   },
 
   LightweightTheme: {
@@ -1083,13 +1061,6 @@ export function BrowserGlue() {
     return new DistributionCustomizer();
   });
 
-  XPCOMUtils.defineLazyServiceGetter(
-    this,
-    "AlertsService",
-    "@mozilla.org/alerts-service;1",
-    "nsIAlertsService"
-  );
-
   this._init();
 }
 
@@ -1231,27 +1202,6 @@ BrowserGlue.prototype = {
           this._setPrefToSaveSession();
         }
         break;
-      case "fxaccounts:onverified":
-        this._onThisDeviceConnected();
-        break;
-      case "fxaccounts:device_connected":
-        this._onDeviceConnected(data);
-        break;
-      case "fxaccounts:verify_login":
-        this._onVerifyLoginNotification(JSON.parse(data));
-        break;
-      case "fxaccounts:device_disconnected":
-        data = JSON.parse(data);
-        if (data.isLocalDevice) {
-          this._onDeviceDisconnected();
-        }
-        break;
-      case "fxaccounts:commands:open-uri":
-        this._onDisplaySyncURIs(subject);
-        break;
-      case "fxaccounts:commands:close-uri":
-        this._onIncomingCloseTabCommand(subject);
-        break;
       case "session-save":
         this._setPrefToSaveSession(true);
         subject.QueryInterface(Ci.nsISupportsPRBool);
@@ -1283,10 +1233,6 @@ BrowserGlue.prototype = {
         } else if (data == "test-force-places-init") {
           this._placesInitialized = false;
           this._initPlaces(false);
-        } else if (data == "mock-alerts-service") {
-          Object.defineProperty(this, "AlertsService", {
-            value: subject.wrappedJSObject,
-          });
         } else if (data == "places-browser-init-complete") {
           if (this._placesBrowserInitComplete) {
             Services.obs.notifyObservers(null, "places-browser-init-complete");
@@ -1352,20 +1298,6 @@ BrowserGlue.prototype = {
         }
         break;
       }
-      case "sync-ui-state:update": {
-        this._updateFxaBadges(lazy.BrowserWindowTracker.getTopWindow());
-
-        if (lazy.CLIENT_ASSOCIATION_PING_ENABLED) {
-          let fxaState = lazy.UIState.get();
-          if (fxaState.status == lazy.UIState.STATUS_SIGNED_IN) {
-            Glean.clientAssociation.uid.set(fxaState.uid);
-            Glean.clientAssociation.legacyClientId.set(
-              lazy.ClientID.getCachedClientID()
-            );
-          }
-        }
-        break;
-      }
       case "handlersvc-store-initialized":
         // Initialize PdfJs when running in-process and remote. This only
         // happens once since PdfJs registers global hooks. If the PdfJs
@@ -1428,12 +1360,6 @@ BrowserGlue.prototype = {
       "browser:purge-session-history",
       "quit-application-requested",
       "quit-application-granted",
-      "fxaccounts:onverified",
-      "fxaccounts:device_connected",
-      "fxaccounts:verify_login",
-      "fxaccounts:device_disconnected",
-      "fxaccounts:commands:open-uri",
-      "fxaccounts:commands:close-uri",
       "session-save",
       "places-init-complete",
       "distribution-customization-complete",
@@ -1442,7 +1368,6 @@ BrowserGlue.prototype = {
       "keyword-search",
       "restart-in-safe-mode",
       "xpi-signature-changed",
-      "sync-ui-state:update",
       "handlersvc-store-initialized",
     ].forEach(topic => os.addObserver(this, topic, true));
     if (OBSERVE_LASTWINDOW_CLOSE_TOPICS) {
@@ -1590,6 +1515,8 @@ BrowserGlue.prototype = {
     lazy.ResetPBMPanel.init();
 
     AboutHomeStartupCache.init();
+
+    lazy.AccountsGlue.init();
 
     Services.obs.notifyObservers(null, "browser-ui-startup-complete");
   },
@@ -1790,7 +1717,7 @@ BrowserGlue.prototype = {
   _earlyBlankFirstPaint(cmdLine) {
     let startTime = Cu.now();
 
-    let shouldCreateWindow = () => {
+    let shouldCreateWindow = isPrivateWindow => {
       if (cmdLine.findFlag("wait-for-jsdebugger", false) != -1) {
         return true;
       }
@@ -1815,6 +1742,25 @@ BrowserGlue.prototype = {
         return false;
       }
 
+      // Bug 1448423: Skip the blank window if the user is resisting fingerprinting
+      if (
+        Services.prefs.getBoolPref(
+          "privacy.resistFingerprinting.skipEarlyBlankFirstPaint",
+          true
+        ) &&
+        ChromeUtils.shouldResistFingerprinting(
+          "RoundWindowSize",
+          null,
+          isPrivateWindow ||
+            Services.prefs.getBoolPref(
+              "browser.privatebrowsing.autostart",
+              false
+            )
+        )
+      ) {
+        return false;
+      }
+
       let width = getValue("width");
       let height = getValue("height");
 
@@ -1826,7 +1772,10 @@ BrowserGlue.prototype = {
       return true;
     };
 
-    if (!shouldCreateWindow()) {
+    let makeWindowPrivate =
+      cmdLine.findFlag("private-window", false) != -1 &&
+      isPrivateBrowsingAllowedInRegistry();
+    if (!shouldCreateWindow(makeWindowPrivate)) {
       return;
     }
 
@@ -1837,10 +1786,8 @@ BrowserGlue.prototype = {
     // is set correctly on Windows. Without it, initial launches with `-private-window`
     // will show up under the regular Firefox taskbar icon first, and then switch
     // to the Private Browsing icon shortly thereafter.
-    if (cmdLine.findFlag("private-window", false) != -1) {
-      if (isPrivateBrowsingAllowedInRegistry()) {
-        browserWindowFeatures += ",private";
-      }
+    if (makeWindowPrivate) {
+      browserWindowFeatures += ",private";
     }
     let win = Services.ww.openWindow(
       null,
@@ -2136,21 +2083,21 @@ BrowserGlue.prototype = {
     let tpEnabled = Services.prefs.getBoolPref(
       "privacy.trackingprotection.enabled"
     );
-    Services.telemetry
-      .getHistogramById("TRACKING_PROTECTION_ENABLED")
-      .add(tpEnabled);
+    Glean.contentblocking.trackingProtectionEnabled[
+      tpEnabled ? "true" : "false"
+    ].add();
 
-    let tpPBDisabled = Services.prefs.getBoolPref(
+    let tpPBEnabled = Services.prefs.getBoolPref(
       "privacy.trackingprotection.pbmode.enabled"
     );
-    Services.telemetry
-      .getHistogramById("TRACKING_PROTECTION_PBM_DISABLED")
-      .add(!tpPBDisabled);
+    Glean.contentblocking.trackingProtectionPbmDisabled[
+      !tpPBEnabled ? "true" : "false"
+    ].add();
 
     let cookieBehavior = Services.prefs.getIntPref(
       "network.cookie.cookieBehavior"
     );
-    Services.telemetry.getHistogramById("COOKIE_BEHAVIOR").add(cookieBehavior);
+    Glean.contentblocking.cookieBehavior.accumulateSingleSample(cookieBehavior);
 
     let fpEnabled = Services.prefs.getBoolPref(
       "privacy.trackingprotection.fingerprinting.enabled"
@@ -2983,24 +2930,15 @@ BrowserGlue.prototype = {
       {
         name: "initializeFOG",
         task: async () => {
-          // Handle Usage Profile ID.
-          // Similar logic to what's happening in `TelemetryControllerParent` for the client ID.
-          let profileID = await lazy.ClientID.getUsageProfileID();
-          const uploadEnabled = Services.prefs.getBoolPref(
-            lazy.TelemetryUtils.Preferences.FhrUploadEnabled,
-            false
-          );
-          if (
-            uploadEnabled &&
-            profileID == lazy.TelemetryUtils.knownUsageProfileID
-          ) {
-            await lazy.ClientID.resetUsageProfileIdentifier();
-          } else if (
-            !uploadEnabled &&
-            profileID != lazy.TelemetryUtils.knownUsageProfileID
-          ) {
-            await lazy.ClientID.setCanaryUsageProfileIdentifier();
-          }
+          // Handle Usage Profile ID.  Similar logic to what's happening in
+          // `TelemetryControllerParent` for the client ID.  Must be done before
+          // initializing FOG so that ping enabled/disabled states are correct
+          // before Glean takes actions.
+          await lazy.UsageReporting.ensureInitialized();
+
+          // If needed, delay initializing FOG until policy interaction is
+          // completed.  See comments in `TelemetryReportingPolicy`.
+          await lazy.TelemetryReportingPolicy.ensureUserIsNotified();
 
           Services.fog.initializeFOG();
 
@@ -3229,6 +3167,21 @@ BrowserGlue.prototype = {
       },
 
       {
+        name: "OS Authentication telemetry",
+        task: () => {
+          const osAuthForCc = lazy.FormAutofillUtils.getOSAuthEnabled(
+            lazy.FormAutofillUtils.AUTOFILL_CREDITCARDS_REAUTH_PREF
+          );
+          const osAuthForPw = lazy.LoginHelper.getOSAuthEnabled(
+            lazy.LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF
+          );
+
+          Glean.formautofill.osAuthEnabled.set(osAuthForCc);
+          Glean.pwmgr.osAuthEnabled.set(osAuthForPw);
+        },
+      },
+
+      {
         name: "browser-startup-idle-tasks-finished",
         task: () => {
           // Use idleDispatch a second time to run this after the per-window
@@ -3311,10 +3264,6 @@ BrowserGlue.prototype = {
         lazy.RemoteSettings.init();
         this._addBreachesSyncHandler();
       }.bind(this),
-
-      function PublicSuffixListInit() {
-        lazy.PublicSuffixList.init();
-      },
 
       function RemoteSecuritySettingsInit() {
         lazy.RemoteSecuritySettings.init();
@@ -3851,28 +3800,6 @@ BrowserGlue.prototype = {
       notification.persistence = -1; // Until user closes it
     },
 
-  _onThisDeviceConnected() {
-    const [title, body] = lazy.accountsL10n.formatValuesSync([
-      "account-connection-title-2",
-      "account-connection-connected",
-    ]);
-
-    let clickCallback = (subject, topic) => {
-      if (topic != "alertclickcallback") {
-        return;
-      }
-      this._openPreferences("sync");
-    };
-    this.AlertsService.showAlertNotification(
-      null,
-      title,
-      body,
-      true,
-      null,
-      clickCallback
-    );
-  },
-
   _migrateXULStoreForDocument(fromURL, toURL) {
     Array.from(Services.xulStore.getIDsEnumerator(fromURL)).forEach(id => {
       Array.from(Services.xulStore.getAttributeEnumerator(fromURL, id)).forEach(
@@ -3898,7 +3825,7 @@ BrowserGlue.prototype = {
   _migrateUI() {
     // Use an increasing number to keep track of the current migration state.
     // Completely unrelated to the current Firefox release number.
-    const UI_VERSION = 150;
+    const UI_VERSION = 152;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -4684,6 +4611,27 @@ BrowserGlue.prototype = {
       Services.prefs.clearUserPref("toolkit.telemetry.pioneerId");
     }
 
+    if (currentUIVersion < 151) {
+      // Existing Firefox users should have the usage reporting upload
+      // preference "inherit" the general data reporting preference.
+      lazy.UsageReporting.adoptDataReportingPreference();
+    }
+
+    if (
+      currentUIVersion < 152 &&
+      Services.prefs.getBoolPref("sidebar.revamp") &&
+      !Services.prefs.getBoolPref("browser.ml.chat.enabled")
+    ) {
+      let tools = Services.prefs.getCharPref("sidebar.main.tools");
+      if (tools?.includes("aichat")) {
+        let updatedTools = tools
+          .split(",")
+          .filter(t => t != "aichat")
+          .join(",");
+        Services.prefs.setCharPref("sidebar.main.tools", updatedTools);
+      }
+    }
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   },
@@ -4725,18 +4673,18 @@ BrowserGlue.prototype = {
     gBrowser.selectedTab = tab;
   },
 
-  async _showAboutWelcomeModal() {
+  async _showPreOnboardingModal() {
     const { gBrowser } = lazy.BrowserWindowTracker.getTopWindow();
-    const data = await lazy.NimbusFeatures.aboutwelcome.getAllVariables();
+    const data = await lazy.NimbusFeatures.preonboarding.getAllVariables();
 
     const config = {
       type: "SHOW_SPOTLIGHT",
       data: {
         content: {
           template: "multistage",
-          id: data?.id || "ABOUT_WELCOME_MODAL",
+          id: data?.id || "PRE_ONBOARDING_MODAL",
           backdrop: data?.backdrop,
-          screens: data?.modalScreens || data?.screens,
+          screens: data?.screens,
           UTMTerm: data?.UTMTerm,
           disableEscClose: data?.requireAction,
           // displayed as a window modal by default
@@ -4761,16 +4709,12 @@ BrowserGlue.prototype = {
   },
 
   async _maybeShowDefaultBrowserPrompt() {
-    // Highest priority is about:welcome window modal experiment
-    // Second highest priority is the upgrade dialog, which can include a "primary
-    // browser" request and is limited in various ways, e.g., major upgrades.
-    if (
-      lazy.BrowserHandler.firstRunProfile &&
-      lazy.NimbusFeatures.aboutwelcome.getVariable("showModal")
-    ) {
-      this._showAboutWelcomeModal();
-      return;
-    }
+    // Ensuring the user is notified arranges the following ordering.  Highest
+    // priority is datareporting policy modal, if present.  Second highest
+    // priority is the upgrade dialog, which can include a "primary browser"
+    // request and is limited in various ways, e.g., major upgrades.
+    await lazy.TelemetryReportingPolicy.ensureUserIsNotified();
+
     const dialogVersion = 106;
     const dialogVersionPref = "browser.startup.upgradeDialog.version";
     const dialogReason = await (async () => {
@@ -4934,347 +4878,6 @@ BrowserGlue.prototype = {
 
     if (AppConstants.platform == "macosx") {
       Services.appShell.hiddenDOMWindow.openPreferences(...args);
-    }
-  },
-
-  _openURLInNewWindow(url) {
-    let urlString = Cc["@mozilla.org/supports-string;1"].createInstance(
-      Ci.nsISupportsString
-    );
-    urlString.data = url;
-    return new Promise(resolve => {
-      let win = Services.ww.openWindow(
-        null,
-        AppConstants.BROWSER_CHROME_URL,
-        "_blank",
-        "chrome,all,dialog=no",
-        urlString
-      );
-      win.addEventListener(
-        "load",
-        () => {
-          resolve(win);
-        },
-        { once: true }
-      );
-    });
-  },
-
-  /**
-   * Called as an observer when Sync's "display URIs" notification is fired.
-   *
-   * We open the received URIs in background tabs.
-   */
-  async _onDisplaySyncURIs(data) {
-    try {
-      // The payload is wrapped weirdly because of how Sync does notifications.
-      const URIs = data.wrappedJSObject.object;
-
-      // win can be null, but it's ok, we'll assign it later in openTab()
-      let win = lazy.BrowserWindowTracker.getTopWindow({ private: false });
-
-      const openTab = async URI => {
-        let tab;
-        if (!win) {
-          win = await this._openURLInNewWindow(URI.uri);
-          let tabs = win.gBrowser.tabs;
-          tab = tabs[tabs.length - 1];
-        } else {
-          tab = win.gBrowser.addWebTab(URI.uri);
-        }
-        tab.attention = true;
-        return tab;
-      };
-
-      const firstTab = await openTab(URIs[0]);
-      await Promise.all(URIs.slice(1).map(URI => openTab(URI)));
-
-      const deviceName = URIs[0].sender && URIs[0].sender.name;
-      let titleL10nId, body;
-      if (URIs.length == 1) {
-        // Due to bug 1305895, tabs from iOS may not have device information, so
-        // we have separate strings to handle those cases. (See Also
-        // unnamedTabsArrivingNotificationNoDevice.body below)
-        titleL10nId = deviceName
-          ? {
-              id: "account-single-tab-arriving-from-device-title",
-              args: { deviceName },
-            }
-          : { id: "account-single-tab-arriving-title" };
-        // Use the page URL as the body. We strip the fragment and query (after
-        // the `?` and `#` respectively) to reduce size, and also format it the
-        // same way that the url bar would.
-        let url = URIs[0].uri.replace(/([?#]).*$/, "$1");
-        const wasTruncated = url.length < URIs[0].uri.length;
-        url = lazy.BrowserUIUtils.trimURL(url);
-        if (wasTruncated) {
-          body = await lazy.accountsL10n.formatValue(
-            "account-single-tab-arriving-truncated-url",
-            { url }
-          );
-        } else {
-          body = url;
-        }
-      } else {
-        titleL10nId = { id: "account-multiple-tabs-arriving-title" };
-        const allKnownSender = URIs.every(URI => URI.sender != null);
-        const allSameDevice =
-          allKnownSender &&
-          URIs.every(URI => URI.sender.id == URIs[0].sender.id);
-        let bodyL10nId;
-        if (allSameDevice) {
-          bodyL10nId = deviceName
-            ? "account-multiple-tabs-arriving-from-single-device"
-            : "account-multiple-tabs-arriving-from-unknown-device";
-        } else {
-          bodyL10nId = "account-multiple-tabs-arriving-from-multiple-devices";
-        }
-
-        body = await lazy.accountsL10n.formatValue(bodyL10nId, {
-          deviceName,
-          tabCount: URIs.length,
-        });
-      }
-      const title = await lazy.accountsL10n.formatValue(titleL10nId);
-
-      const clickCallback = (obsSubject, obsTopic) => {
-        if (obsTopic == "alertclickcallback") {
-          win.gBrowser.selectedTab = firstTab;
-        }
-      };
-
-      // Specify an icon because on Windows no icon is shown at the moment
-      let imageURL;
-      if (AppConstants.platform == "win") {
-        imageURL = "chrome://branding/content/icon64.png";
-      }
-      this.AlertsService.showAlertNotification(
-        imageURL,
-        title,
-        body,
-        true,
-        null,
-        clickCallback
-      );
-    } catch (ex) {
-      console.error("Error displaying tab(s) received by Sync: ", ex);
-    }
-  },
-
-  async _onIncomingCloseTabCommand(data) {
-    // The payload is wrapped weirdly because of how Sync does notifications.
-    const wrappedObj = data.wrappedJSObject.object;
-    let { urls } = wrappedObj[0];
-    let urisToClose = [];
-    urls.forEach(urlString => {
-      try {
-        urisToClose.push(Services.io.newURI(urlString));
-      } catch (ex) {
-        // The url was invalid so we ignore
-        console.error(ex);
-      }
-    });
-    // We want to keep track of the tabs we closed for the notification
-    // given that there could be duplicates we also closed
-    let totalClosedTabs = 0;
-    const windows = lazy.BrowserWindowTracker.orderedWindows;
-
-    async function closeTabsInWindows() {
-      for (const win of windows) {
-        if (!win.gBrowser) {
-          continue;
-        }
-        try {
-          const closedInWindow = await win.gBrowser.closeTabsByURI(urisToClose);
-          totalClosedTabs += closedInWindow;
-        } catch (ex) {
-          this.log.error("Error closing tabs in window:", ex);
-        }
-      }
-    }
-
-    await closeTabsInWindows();
-
-    let clickCallback = async (subject, topic) => {
-      if (topic == "alertshow") {
-        // Keep track of the fact that we showed the notification to
-        // the user at least once
-        lazy.CloseRemoteTab.hasPendingCloseTabNotification = true;
-      }
-
-      // The notification is either turned off or dismissed by user
-      if (topic == "alertfinished") {
-        // Reset the notification pending flag
-        lazy.CloseRemoteTab.hasPendingCloseTabNotification = false;
-      }
-
-      if (topic != "alertclickcallback") {
-        return;
-      }
-      let win =
-        lazy.BrowserWindowTracker.getTopWindow({ private: false }) ??
-        (await lazy.BrowserWindowTracker.promiseOpenWindow());
-      // We don't want to open a new tab, instead use the handler
-      // to switch to the existing view
-      if (win) {
-        win.FirefoxViewHandler.openTab("recentlyclosed");
-      }
-    };
-
-    let imageURL;
-    if (AppConstants.platform == "win") {
-      imageURL = "chrome://branding/content/icon64.png";
-    }
-
-    // Reset the count only if there are no pending notifications
-    if (!lazy.CloseRemoteTab.hasPendingCloseTabNotification) {
-      lazy.CloseRemoteTab.closeTabNotificationCount = 0;
-    }
-    lazy.CloseRemoteTab.closeTabNotificationCount += totalClosedTabs;
-    const [title, body] = await lazy.accountsL10n.formatValues([
-      {
-        id: "account-tabs-closed-remotely",
-        args: { closedCount: lazy.CloseRemoteTab.closeTabNotificationCount },
-      },
-      { id: "account-view-recently-closed-tabs" },
-    ]);
-
-    try {
-      this.AlertsService.showAlertNotification(
-        imageURL,
-        title,
-        body,
-        true,
-        null,
-        clickCallback,
-        "closed-tab-notification"
-      );
-    } catch (ex) {
-      console.error("Error notifying user of closed tab(s) ", ex);
-    }
-  },
-
-  async _onVerifyLoginNotification({ body, title, url }) {
-    let tab;
-    let imageURL;
-    if (AppConstants.platform == "win") {
-      imageURL = "chrome://branding/content/icon64.png";
-    }
-    let win = lazy.BrowserWindowTracker.getTopWindow({ private: false });
-    if (!win) {
-      win = await this._openURLInNewWindow(url);
-      let tabs = win.gBrowser.tabs;
-      tab = tabs[tabs.length - 1];
-    } else {
-      tab = win.gBrowser.addWebTab(url);
-    }
-    tab.attention = true;
-    let clickCallback = (subject, topic) => {
-      if (topic != "alertclickcallback") {
-        return;
-      }
-      win.gBrowser.selectedTab = tab;
-    };
-
-    try {
-      this.AlertsService.showAlertNotification(
-        imageURL,
-        title,
-        body,
-        true,
-        null,
-        clickCallback
-      );
-    } catch (ex) {
-      console.error("Error notifying of a verify login event: ", ex);
-    }
-  },
-
-  _onDeviceConnected(deviceName) {
-    const [title, body] = lazy.accountsL10n.formatValuesSync([
-      { id: "account-connection-title-2" },
-      deviceName
-        ? { id: "account-connection-connected-with", args: { deviceName } }
-        : { id: "account-connection-connected-with-noname" },
-    ]);
-
-    let clickCallback = async (subject, topic) => {
-      if (topic != "alertclickcallback") {
-        return;
-      }
-      let url = await lazy.FxAccounts.config.promiseManageDevicesURI(
-        "device-connected-notification"
-      );
-      let win = lazy.BrowserWindowTracker.getTopWindow({ private: false });
-      if (!win) {
-        this._openURLInNewWindow(url);
-      } else {
-        win.gBrowser.addWebTab(url);
-      }
-    };
-
-    try {
-      this.AlertsService.showAlertNotification(
-        null,
-        title,
-        body,
-        true,
-        null,
-        clickCallback
-      );
-    } catch (ex) {
-      console.error("Error notifying of a new Sync device: ", ex);
-    }
-  },
-
-  _onDeviceDisconnected() {
-    const [title, body] = lazy.accountsL10n.formatValuesSync([
-      "account-connection-title-2",
-      "account-connection-disconnected",
-    ]);
-
-    let clickCallback = (subject, topic) => {
-      if (topic != "alertclickcallback") {
-        return;
-      }
-      this._openPreferences("sync");
-    };
-    this.AlertsService.showAlertNotification(
-      null,
-      title,
-      body,
-      true,
-      null,
-      clickCallback
-    );
-  },
-
-  _updateFxaBadges(win) {
-    let fxaButton = win.document.getElementById("fxa-toolbar-menu-button");
-    let badge = fxaButton?.querySelector(".toolbarbutton-badge");
-
-    let state = lazy.UIState.get();
-    if (
-      state.status == lazy.UIState.STATUS_LOGIN_FAILED ||
-      state.status == lazy.UIState.STATUS_NOT_VERIFIED
-    ) {
-      // If the fxa toolbar button is in the toolbox, we display the notification
-      // on the fxa button instead of the app menu.
-      let navToolbox = win.document.getElementById("navigator-toolbox");
-      let isFxAButtonShown = navToolbox.contains(fxaButton);
-      if (isFxAButtonShown) {
-        state.status == lazy.UIState.STATUS_LOGIN_FAILED
-          ? fxaButton?.setAttribute("badge-status", state.status)
-          : badge?.classList.add("feature-callout");
-      } else {
-        lazy.AppMenuNotifications.showBadgeOnlyNotification(
-          "fxa-needs-authentication"
-        );
-      }
-    } else {
-      fxaButton?.removeAttribute("badge-status");
-      badge?.classList.remove("feature-callout");
-      lazy.AppMenuNotifications.removeNotification("fxa-needs-authentication");
     }
   },
 

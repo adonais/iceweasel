@@ -84,20 +84,16 @@ export class FakespotSuggestions extends SuggestProvider {
     lazy.UrlbarView.addDynamicViewTemplate("fakespot", VIEW_TEMPLATE);
   }
 
-  get shouldEnable() {
-    return (
-      lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored") &&
-      lazy.UrlbarPrefs.get("fakespotFeatureGate") &&
-      lazy.UrlbarPrefs.get("suggest.fakespot")
-    );
-  }
-
   get enablingPreferences() {
-    return ["suggest.quicksuggest.sponsored", "suggest.fakespot"];
+    return [
+      "fakespotFeatureGate",
+      "suggest.fakespot",
+      "suggest.quicksuggest.sponsored",
+    ];
   }
 
-  get rustSuggestionTypes() {
-    return ["Fakespot"];
+  get rustSuggestionType() {
+    return "Fakespot";
   }
 
   get showLessFrequentlyCount() {
@@ -253,8 +249,9 @@ export class FakespotSuggestions extends SuggestProvider {
     return commands;
   }
 
-  handleCommand(view, result, selType, searchString) {
-    switch (selType) {
+  onEngagement(queryContext, controller, details, searchString) {
+    let { result } = details;
+    switch (details.selType) {
       case RESULT_MENU_COMMAND.HELP:
       case RESULT_MENU_COMMAND.MANAGE:
         // "help" and "manage" are handled by UrlbarInput, no need to do
@@ -263,24 +260,24 @@ export class FakespotSuggestions extends SuggestProvider {
       // selType == "dismiss" when the user presses the dismiss key shortcut.
       case "dismiss":
       case RESULT_MENU_COMMAND.NOT_RELEVANT:
-        lazy.QuickSuggest.blockedSuggestions.add(result.payload.originalUrl);
+        lazy.QuickSuggest.blockedSuggestions.blockResult(result);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-one-fakespot",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.NOT_INTERESTED:
         lazy.UrlbarPrefs.set("suggest.fakespot", false);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-all-fakespot",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY:
-        view.acknowledgeFeedback(result);
+        controller.view.acknowledgeFeedback(result);
         this.incrementShowLessFrequentlyCount();
         if (!this.canShowLessFrequently) {
-          view.invalidateResultMenuCommands();
+          controller.view.invalidateResultMenuCommands();
         }
         lazy.UrlbarPrefs.set(
           "fakespot.minKeywordLength",
@@ -288,6 +285,12 @@ export class FakespotSuggestions extends SuggestProvider {
         );
         break;
     }
+
+    Glean.urlbar.fakespotEngagement.record({
+      grade: result.payload.fakespotGrade,
+      rating: String(result.payload.rating),
+      provider: result.payload.fakespotProvider,
+    });
   }
 
   incrementShowLessFrequentlyCount() {
@@ -297,15 +300,6 @@ export class FakespotSuggestions extends SuggestProvider {
         this.showLessFrequentlyCount + 1
       );
     }
-  }
-
-  onEngagement(queryContext, controller, details) {
-    let { result } = details;
-    Glean.urlbar.fakespotEngagement.record({
-      grade: result.payload.fakespotGrade,
-      rating: String(result.payload.rating),
-      provider: result.payload.fakespotProvider,
-    });
   }
 
   get #minKeywordLength() {

@@ -24,6 +24,7 @@
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsProxyRelease.h"
+#include "ThirdPartyUtil.h"
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -42,7 +43,7 @@
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/URLSearchParams.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/CookieJarSettings.h"
 
 #include "BodyExtractor.h"
@@ -667,7 +668,18 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
       }
       principal = doc->NodePrincipal();
       cookieJarSettings = doc->CookieJarSettings();
+      // fetch the thirdparty context from the document
 
+      ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
+      if (!thirdPartyUtil) {
+        return nullptr;
+      }
+      if (thirdPartyUtil) {
+        bool thirdParty = false;
+        Unused << thirdPartyUtil->IsThirdPartyWindow(window->GetOuterWindow(),
+                                                     nullptr, &thirdParty);
+        ipcArgs.isThirdPartyContext() = thirdParty;
+      }
     } else {
       principal = aGlobal->PrincipalOrNull();
       if (NS_WARN_IF(!principal)) {
@@ -774,6 +786,8 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
       }
 
       ipcArgs.isThirdPartyContext() = worker->IsThirdPartyContext();
+
+      ipcArgs.isOn3PCBExceptionList() = worker->IsOn3PCBExceptionList();
 
       ipcArgs.isWorkerRequest() = true;
 

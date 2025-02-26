@@ -21,6 +21,7 @@
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/branding/brandings.ftl" />
     <link rel="localization" href="browser/newtab/newtab.ftl" />
+    <link rel="localization" href="toolkit/global/mozMessageBar.ftl" />
     <link
       rel="stylesheet"
       href="chrome://global/skin/design-system/tokens-brand.css"
@@ -39,12 +40,12 @@
     <script src="chrome://browser/content/contentSearchUI.js"></script>
     <script src="chrome://browser/content/contentSearchHandoffUI.js"></script>
     <script src="chrome://browser/content/contentTheme.js"></script>
-    <script src="resource://activity-stream/vendor/react.js"></script>
-    <script src="resource://activity-stream/vendor/react-dom.js"></script>
-    <script src="resource://activity-stream/vendor/prop-types.js"></script>
-    <script src="resource://activity-stream/vendor/redux.js"></script>
-    <script src="resource://activity-stream/vendor/react-redux.js"></script>
-    <script src="resource://activity-stream/vendor/react-transition-group.js"></script>
+    <script src="chrome://global/content/vendor/react.js"></script>
+    <script src="chrome://global/content/vendor/react-dom.js"></script>
+    <script src="chrome://global/content/vendor/prop-types.js"></script>
+    <script src="chrome://global/content/vendor/redux.js"></script>
+    <script src="chrome://global/content/vendor/react-redux.js"></script>
+    <script src="chrome://global/content/vendor/react-transition-group.js"></script>
     <script src="resource://activity-stream/data/content/activity-stream.bundle.js"></script>
     <script src="resource://activity-stream/data/content/newtab-render.js"></script>
     <script
@@ -61,6 +62,16 @@
       async
       type="module"
       src="chrome://global/content/elements/moz-button-group.mjs"
+    ></script>
+    <script
+      async
+      type="module"
+      src="chrome://global/content/elements/moz-box-button.mjs"
+    ></script>
+    <script
+      async
+      type="module"
+      src="chrome://global/content/elements/moz-message-bar.mjs"
     ></script>
   </body>
 </html>

@@ -995,6 +995,20 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "2.3.3 -> 2.4.0"
 
+[[audits.bitflags]]
+who = [
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
+]
+criteria = "safe-to-deploy"
+delta = "2.6.0 -> 2.7.0"
+
+[[audits.bitreader]]
+who = "Bobby Holley <bobbyholley@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.7 -> 0.3.6"
+notes = "No material changes."
+
 [[audits.block-buffer]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -1056,6 +1070,12 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.1.1 -> 1.1.2"
 
+[[audits.camino]]
+who = "Bobby Holley <bobbyholley@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.1.4 -> 1.1.2"
+notes = "Older version, just lacks a few APIs and tests from the newer version."
+
 [[audits.cargo_metadata]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -1071,6 +1091,11 @@ delta = "0.15.2 -> 0.15.3"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.73 -> 1.0.78"
+
+[[audits.cc]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.89 -> 1.2.10"
 
 [[audits.cfg_aliases]]
 who = "Alex Franchuk <afranchuk@mozilla.com>"
@@ -2510,6 +2535,11 @@ criteria = "safe-to-deploy"
 delta = "0.8.1 -> 0.9.1"
 notes = "New CursorMut struct and other relatively straight-forward changes."
 
+[[audits.hashlink]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.9.1 -> 0.10.0"
+
 [[audits.headers]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-run"
@@ -2813,6 +2843,11 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.9.1 -> 1.9.2"
 
+[[audits.indexmap]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "2.2.6 -> 2.7.1"
+
 [[audits.inherent]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -2943,6 +2978,11 @@ delta = "0.26.0 -> 0.27.0"
 who = "Mark Hammond <mhammond@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.27.0 -> 0.28.0"
+
+[[audits.libsqlite3-sys]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.28.0 -> 0.31.0"
 
 [[audits.libz-rs-sys]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -3133,6 +3173,16 @@ delta = "0.28.0 -> 0.29.0"
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.29.0 -> 0.30.0"
+
+[[audits.metal]]
+who = "Teodor Tanasoaia <ttanasoaia@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.30.0 -> 0.30.0@git:ef768ff9d742ae6a0f4e83ddc8031264e7d460c4"
+
+[[audits.metal]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.30.0 -> 0.31.0"
 
 [[audits.midir]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
@@ -3398,12 +3448,22 @@ delta = "22.0.0 -> 23.0.0"
 [[audits.naga]]
 who = [
     "Jim Blandy <jimb@red-bean.com>",
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "23.0.0 -> 23.0.0@git:5543961a71cc8e5399b696fae3f6aae82c019717"
+delta = "23.0.0 -> 23.0.0@git:aa7bec65b90028e4db6ec8def8589b52097d92f9"
 importable = false
+
+[[audits.naga]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "23.0.0 -> 23.1.0"
+
+[[audits.naga]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "23.1.0 -> 24.0.0"
 
 [[audits.net2]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -3561,6 +3621,12 @@ delta = "1.13.1 -> 1.14.0"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.14.0 -> 1.15.0"
+
+[[audits.objc]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "0.2.7 -> 0.2.7@git:4de89f5aa9851ceca4d40e7ac1e2759410c04324"
+importable = false
 
 [[audits.object]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -4196,6 +4262,11 @@ criteria = "safe-to-deploy"
 delta = "0.30.0 -> 0.31.0"
 notes = "Mostly build and dependency related changes, and bump to sqlite version"
 
+[[audits.rusqlite]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.31.0 -> 0.33.0"
+
 [[audits.rust_cascade]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -4592,6 +4663,16 @@ notes = "This crate doesn't use unsafe block, network access and filesystem acce
 who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.10.0 -> 0.11.1"
+
+[[audits.strum]]
+who = "Teodor Tanasoaia <ttanasoaia@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.25.0 -> 0.26.3"
+
+[[audits.strum_macros]]
+who = "Teodor Tanasoaia <ttanasoaia@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.25.3 -> 0.26.4"
 
 [[audits.subtle]]
 who = "Simon Friedberger <simon@mozilla.com>"
@@ -5542,12 +5623,17 @@ delta = "23.0.0 -> 23.0.1"
 [[audits.wgpu-core]]
 who = [
     "Jim Blandy <jimb@red-bean.com>",
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "23.0.1 -> 23.0.1@git:5543961a71cc8e5399b696fae3f6aae82c019717"
+delta = "23.0.1 -> 23.0.1@git:aa7bec65b90028e4db6ec8def8589b52097d92f9"
 importable = false
+
+[[audits.wgpu-core]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "23.0.1 -> 24.0.0"
 
 [[audits.wgpu-hal]]
 who = "Dzmitry Malyshau <kvark@fastmail.com>"
@@ -5625,12 +5711,17 @@ delta = "23.0.0 -> 23.0.1"
 [[audits.wgpu-hal]]
 who = [
     "Jim Blandy <jimb@red-bean.com>",
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "23.0.1 -> 23.0.1@git:5543961a71cc8e5399b696fae3f6aae82c019717"
+delta = "23.0.1 -> 23.0.1@git:aa7bec65b90028e4db6ec8def8589b52097d92f9"
 importable = false
+
+[[audits.wgpu-hal]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "23.0.1 -> 24.0.0"
 
 [[audits.wgpu-types]]
 who = "Dzmitry Malyshau <kvark@fastmail.com>"
@@ -5703,12 +5794,17 @@ delta = "22.0.0 -> 23.0.0"
 [[audits.wgpu-types]]
 who = [
     "Jim Blandy <jimb@red-bean.com>",
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "23.0.0 -> 23.0.0@git:5543961a71cc8e5399b696fae3f6aae82c019717"
+delta = "23.0.0 -> 23.0.0@git:aa7bec65b90028e4db6ec8def8589b52097d92f9"
 importable = false
+
+[[audits.wgpu-types]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "23.0.0 -> 24.0.0"
 
 [[audits.whatsys]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
@@ -6158,6 +6254,36 @@ criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-03-19"
 end = "2024-04-25"
+
+[[trusted.phf]]
+criteria = "safe-to-deploy"
+user-id = 51017 # Yuki Okushi (JohnTitor)
+start = "2021-06-17"
+end = "2026-01-03"
+
+[[trusted.phf_codegen]]
+criteria = "safe-to-deploy"
+user-id = 51017 # Yuki Okushi (JohnTitor)
+start = "2021-06-17"
+end = "2026-01-03"
+
+[[trusted.phf_generator]]
+criteria = "safe-to-deploy"
+user-id = 51017 # Yuki Okushi (JohnTitor)
+start = "2021-06-17"
+end = "2026-01-03"
+
+[[trusted.phf_macros]]
+criteria = "safe-to-deploy"
+user-id = 51017 # Yuki Okushi (JohnTitor)
+start = "2021-06-17"
+end = "2026-01-03"
+
+[[trusted.phf_shared]]
+criteria = "safe-to-deploy"
+user-id = 51017 # Yuki Okushi (JohnTitor)
+start = "2021-06-17"
+end = "2026-01-03"
 
 [[trusted.proc-macro-hack]]
 criteria = "safe-to-deploy"

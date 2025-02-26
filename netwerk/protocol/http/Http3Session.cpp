@@ -20,7 +20,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/net/DNS.h"
 #include "nsHttpHandler.h"
 #include "nsIHttpActivityObserver.h"
@@ -388,15 +388,6 @@ Http3Session::~Http3Session() {
       mTransactionsSenderBlockedByFlowControlCount);
 
   Shutdown();
-
-  // We only record the average interval for performance reason.
-  if (mTotelReadInterval) {
-    nsAutoCString key(mServer.EqualsLiteral("cloudflare") ? "cloudflare"_ns
-                                                          : "others"_ns);
-    glean::network::http3_avg_read_interval.Get(key).AccumulateRawDuration(
-        TimeDuration::FromMilliseconds(
-            static_cast<double>(mTotelReadInterval / mTotelReadIntervalCount)));
-  }
 }
 
 // This function may return a socket error.
@@ -412,15 +403,6 @@ nsresult Http3Session::ProcessInput(nsIUDPSocket* socket) {
   LOG(("Http3Session::ProcessInput writer=%p [this=%p state=%d]",
        mUdpConn.get(), this, mState));
 
-  PRIntervalTime now = PR_IntervalNow();
-  if (!mLastReadTime) {
-    mLastReadTime = now;
-  } else {
-    mTotelReadInterval +=
-        PR_IntervalToMilliseconds(PR_IntervalNow() - mLastReadTime);
-    mTotelReadIntervalCount++;
-    mLastReadTime = now;
-  }
   if (mUseNSPRForIO) {
     while (true) {
       nsTArray<uint8_t> data;
@@ -1030,8 +1012,14 @@ nsresult Http3Session::ProcessOutputAndEvents(nsIUDPSocket* socket) {
 
   MOZ_ASSERT(mTimerShouldTrigger);
 
-  Telemetry::AccumulateTimeDelta(Telemetry::HTTP3_TIMER_DELAYED,
-                                 mTimerShouldTrigger, TimeStamp::Now());
+  auto now = TimeStamp::Now();
+  if (mTimerShouldTrigger > now) {
+    // See bug 1935459
+    Telemetry::Accumulate(Telemetry::HTTP3_TIMER_DELAYED, 0);
+  } else {
+    Telemetry::AccumulateTimeDelta(Telemetry::HTTP3_TIMER_DELAYED,
+                                   mTimerShouldTrigger, now);
+  }
 
   mTimerShouldTrigger = TimeStamp();
 
@@ -2251,7 +2239,7 @@ void Http3Session::CallCertVerification(Maybe<nsCString> aEchPublicName) {
         return;
       }
       // ok, we succeded
-      Authenticated(0);
+      Authenticated(0, true);
       return;
     }
   }
@@ -2289,7 +2277,8 @@ void Http3Session::CallCertVerification(Maybe<nsCString> aEchPublicName) {
   }
 }
 
-void Http3Session::Authenticated(int32_t aError) {
+void Http3Session::Authenticated(int32_t aError,
+                                 bool aServCertHashesSucceeded) {
   LOG(("Http3Session::Authenticated error=0x%" PRIx32 " [this=%p].", aError,
        this));
   if ((mState == INITIALIZING) || (mState == ZERORTT)) {
@@ -2306,9 +2295,12 @@ void Http3Session::Authenticated(int32_t aError) {
               ? StaticPrefs::
                     network_http_http3_has_third_party_roots_found_in_automation()
               : !mSocketControl->IsBuiltCertChainRootBuiltInRoot();
-      LOG(("Http3Session::Authenticated [this=%p, hasThirdPartyRoots=%d]", this,
-           hasThirdPartyRoots));
-      if (hasThirdPartyRoots) {
+      LOG(
+          ("Http3Session::Authenticated [this=%p, hasThirdPartyRoots=%d, "
+           "servCertHashesSucceeded=%d]",
+           this, hasThirdPartyRoots, aServCertHashesSucceeded));
+      // If serverCertificateHashes is used a thirdPartyRoot is legal
+      if (hasThirdPartyRoots && !aServCertHashesSucceeded) {
         if (mFirstHttpTransaction) {
           mFirstHttpTransaction->DisableHttp3(false);
         }

@@ -26,6 +26,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager.LayoutParams.FLAG_SECURE
+import androidx.activity.BackEventCompat
 import androidx.annotation.CallSuper
 import androidx.annotation.IdRes
 import androidx.annotation.RequiresApi
@@ -65,6 +66,7 @@ import mozilla.components.feature.media.ext.findActiveMediaTab
 import mozilla.components.feature.privatemode.notification.PrivateNotificationFeature
 import mozilla.components.feature.search.BrowserStoreSearchAdapter
 import mozilla.components.service.fxa.sync.SyncReason
+import mozilla.components.service.pocket.PocketStoriesService
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.UserInteractionOnBackPressedCallback
@@ -266,10 +268,43 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     private val startupPathProvider = StartupPathProvider()
     private lateinit var startupTypeTelemetry: StartupTypeTelemetry
 
-    private val onBackPressedCallback = UserInteractionOnBackPressedCallback(
+    private val onBackPressedCallback = object : UserInteractionOnBackPressedCallback(
         fragmentManager = supportFragmentManager,
         dispatcher = onBackPressedDispatcher,
-    )
+    ) {
+        override fun handleOnBackPressed() {
+            if (shouldUsePredictiveBackLongPress()) {
+                backLongPressJob?.cancel()
+            }
+            super.handleOnBackPressed()
+        }
+
+        private fun isButtonPress(backEvent: BackEventCompat): Boolean {
+            return (
+                // Both touchX and touchY being 0 means this is a back button press and not a back gesture.
+                // Android 16+ will introduce a better way of checking for this.
+                // See https://bugzilla.mozilla.org/show_bug.cgi?id=1944282
+                (backEvent.touchX == 0.0f && backEvent.touchY == 0.0f) ||
+                    // touchX and touchY are also documented to return NaN for button presses
+                    (backEvent.touchX.isNaN() && backEvent.touchY.isNaN())
+                )
+        }
+
+        override fun handleOnBackStarted(backEvent: BackEventCompat) {
+            if (shouldUsePredictiveBackLongPress() && isButtonPress(backEvent)) {
+                backLongPressJob = lifecycleScope.launch {
+                    delay(ViewConfiguration.getLongPressTimeout().toLong())
+                    handleBackLongPress()
+                }
+            }
+        }
+
+        override fun handleOnBackCancelled() {
+            if (shouldUsePredictiveBackLongPress()) {
+                backLongPressJob?.cancel()
+            }
+        }
+    }
 
     @Suppress("ComplexMethod")
     final override fun onCreate(savedInstanceState: Bundle?) {
@@ -491,12 +526,20 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 components.core.pocketStoriesService.startPeriodicStoriesRefresh()
             }
 
+            if (settings().marsAPIEnabled && !settings().hasPocketSponsoredStoriesProfileMigrated) {
+                migratePocketSponsoredStoriesProfile(components.core.pocketStoriesService)
+            }
+
             if (settings().showPocketSponsoredStories) {
-                components.core.pocketStoriesService.startPeriodicSponsoredStoriesRefresh()
-                // If the secret setting for sponsored stories parameters is set,
-                // force refresh the sponsored Pocket stories.
-                if (settings().useCustomConfigurationForSponsoredStories) {
-                    components.core.pocketStoriesService.refreshSponsoredStories()
+                if (settings().marsAPIEnabled) {
+                    components.core.pocketStoriesService.startPeriodicSponsoredContentsRefresh()
+                } else {
+                    components.core.pocketStoriesService.startPeriodicSponsoredStoriesRefresh()
+                    // If the secret setting for sponsored stories parameters is set,
+                    // force refresh the sponsored Pocket stories.
+                    if (settings().useCustomConfigurationForSponsoredStories) {
+                        components.core.pocketStoriesService.refreshSponsoredStories()
+                    }
                 }
             }
 
@@ -536,6 +579,16 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         )
 
         StartupTimeline.onActivityCreateEndHome(this) // DO NOT MOVE ANYTHING BELOW HERE.
+    }
+
+    /**
+     * Deletes the user's existing sponsored stories profile as part of the migration to the
+     * MARS API.
+     */
+    @VisibleForTesting
+    internal fun migratePocketSponsoredStoriesProfile(pocketStoriesService: PocketStoriesService) {
+        pocketStoriesService.deleteProfile()
+        settings().hasPocketSponsoredStoriesProfileMigrated = true
     }
 
     private fun checkAndExitPiP() {
@@ -640,6 +693,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
         if (FxNimbus.features.alternativeAppLauncherIcon.value().enabled) {
             // User has been enrolled in alternative app icon experiment.
+            // Note: Updating the icon will subsequently trigger a call to onDestroy().
             with(applicationContext) {
                 changeAppLauncherIcon(
                     context = this,
@@ -711,6 +765,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         components.core.pocketStoriesService.stopPeriodicStoriesRefresh()
         components.core.pocketStoriesService.stopPeriodicSponsoredStoriesRefresh()
         components.core.pocketStoriesService.stopPeriodicContentRecommendationsRefresh()
+        components.core.pocketStoriesService.stopPeriodicSponsoredContentsRefresh()
         privateNotificationObserver?.stop()
         components.notificationsDelegate.unBindActivity(this)
 
@@ -744,8 +799,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         )
 
         super.recreate()
-
-        this@HomeActivity.settings().promptToSetAsDefaultBrowserDisplayedInOnboarding = true
     }
 
     /**
@@ -875,6 +928,21 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         return isAndroidN || ManufacturerCodes.isHuawei
     }
 
+    /**
+     * Get whether to use [OnBackPressedDispatcher] listeners for back button long presses
+     * instead of deprecated `onKey` callbacks.
+     * Requires `enableOnBackInvokedCallback` feature.
+     */
+    private fun shouldUsePredictiveBackLongPress(): Boolean {
+        // When predictive back handlers are enabled (android:enableOnBackInvokedCallback),
+        // legacy onKeyDown etc do not trigger
+        // See https://bugzilla.mozilla.org/show_bug.cgi?id=1932300
+        // While the bug impacts Android 13, the new handlers are only available from Android 14+
+        // It's possible that some devices (Pixel) still fire the old handlers in Android 13+,
+        // so we don't enable the new handlers for that version
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    }
+
     private fun handleBackLongPress(): Boolean {
         supportFragmentManager.primaryNavigationFragment?.childFragmentManager?.fragments?.forEach {
             if (it is OnLongPressedListener && it.onBackLongPressed()) {
@@ -893,7 +961,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         return false
     }
 
-    final override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ProfilerMarkers.addForDispatchTouchEvent(components.core.engine.profiler, ev)
         return super.dispatchTouchEvent(ev)
     }
@@ -905,7 +973,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         // - For short presses, we cancel the callback in onKeyUp
         // - For long presses, the normal keypress is marked as cancelled, hence won't be handled elsewhere
         //   (but Android still provides the haptic feedback), and the long press action is run
-        if (shouldUseCustomBackLongPress() && keyCode == KeyEvent.KEYCODE_BACK) {
+        if (shouldUseCustomBackLongPress() && keyCode == KeyEvent.KEYCODE_BACK &&
+            !shouldUsePredictiveBackLongPress()
+        ) {
             backLongPressJob = lifecycleScope.launch {
                 delay(ViewConfiguration.getLongPressTimeout().toLong())
                 handleBackLongPress()
@@ -922,7 +992,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
     @Suppress("ReturnCount")
     final override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        if (shouldUseCustomBackLongPress() && keyCode == KeyEvent.KEYCODE_BACK) {
+        if (shouldUseCustomBackLongPress() && keyCode == KeyEvent.KEYCODE_BACK &&
+            !shouldUsePredictiveBackLongPress()
+        ) {
             backLongPressJob?.cancel()
 
             // check if the key has been pressed for longer than the time needed for a press to turn into a long press
@@ -954,7 +1026,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     final override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
         // onKeyLongPress is broken in Android N so we don't handle back button long presses here
         // for N. The version check ensures we don't handle back button long presses twice.
-        if (!shouldUseCustomBackLongPress() && keyCode == KeyEvent.KEYCODE_BACK) {
+        if (!shouldUseCustomBackLongPress() && keyCode == KeyEvent.KEYCODE_BACK &&
+            !shouldUsePredictiveBackLongPress()
+        ) {
             return handleBackLongPress()
         }
 
@@ -1157,11 +1231,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                     flags = flags,
                     private = private,
                     historyMetadata = historyMetadata,
+                    originalInput = searchTermOrURL,
                 )
             } else {
                 components.useCases.sessionUseCases.loadUrl(
                     url = searchTermOrURL.toNormalizedUrl(),
                     flags = flags,
+                    originalInput = searchTermOrURL,
                 )
             }
         } else {

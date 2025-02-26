@@ -24,33 +24,45 @@ export class SuggestFeature {
   // Methods designed for overriding below
 
   /**
-   * {boolean}
-   *   Whether the feature should be enabled. Typically the subclass will check
-   *   the values of one or more Nimbus variables or preferences. `QuickSuggest`
-   *   will access this getter only when Suggest is enabled. When Suggest is
-   *   disabled, the feature will be disabled automatically.
+   * @returns {Array}
+   *   If the feature is conditioned on any prefs or Nimbus variables, the
+   *   subclass should override this getter and return their names in this array
+   *   so that `update()` and `enable()` can be called when they change. Names
+   *   should be recognized by `UrlbarPrefs`, i.e., pref names should be
+   *   relative to the `browser.urlbar.` branch. For Nimbus variables with
+   *   fallback prefs, include only the variable name.
+   *
+   *   When Suggest determines whether the feature should be enabled, it will
+   *   call `UrlbarPrefs.get()` on each name in this array and disable the
+   *   feature if any are falsey. If any of the prefs or variables are not
+   *   booleans, the subclass may also need to override
+   *   `additionalEnablingPredicate` to perform additional checks on them.
    */
-  get shouldEnable() {
-    throw new Error("`shouldEnable` must be overridden");
+  get enablingPreferences() {
+    return [];
   }
 
   /**
-   * @returns {Array}
-   *   If the subclass's `shouldEnable` implementation depends on any prefs that
-   *   are not fallbacks for Nimbus variables, the subclass should override this
-   *   getter and return their names in this array so that `update()` can be
-   *   called when they change. Names should be recognized by `UrlbarPrefs`. It
-   *   doesn't hurt to include prefs that are fallbacks for Nimbus variables,
-   *   it's just not necessary because `QuickSuggest` will update all features
-   *   whenever a `urlbar` Nimbus variable or its fallback pref changes.
+   * @returns {boolean}
+   *   If the feature is conditioned on any predicate other than the prefs and
+   *   Nimbus variables in `enablingPreferences`, the subclass should override
+   *   this getter and return whether the feature should be enabled. It may also
+   *   need to override this getter if any of the prefs or variables in
+   *   `enablingPreferences` are not booleans so that it can perform additional
+   *   checks on them. (The predicate does not need to check prefs and variables
+   *   in `enablingPreferences` that are booleans.)
+   *
+   *   This getter will be called only when Suggest is enabled and all prefs and
+   *   variables in `enablingPreferences` are truthy.
    */
-  get enablingPreferences() {
-    return null;
+  get additionalEnablingPredicate() {
+    return true;
   }
 
   /**
    * This method should initialize or uninitialize any state related to the
-   * feature.
+   * feature. It will only be called when the enabled status changes, i.e., when
+   * it goes from false to true or true to false.
    *
    * @param {boolean} enabled
    *   Whether the feature should be enabled or not.
@@ -58,6 +70,17 @@ export class SuggestFeature {
   enable(enabled) {}
 
   // Methods not designed for overriding below
+
+  /**
+   * @returns {boolean}
+   *   Whether the feature should be enabled, assuming Suggest is enabled.
+   */
+  get shouldEnable() {
+    return (
+      this.enablingPreferences.every(p => lazy.UrlbarPrefs.get(p)) &&
+      this.additionalEnablingPredicate
+    );
+  }
 
   /**
    * @returns {Logger}
@@ -92,9 +115,7 @@ export class SuggestFeature {
   /**
    * Enables or disables the feature according to `shouldEnable` and whether
    * Suggest is enabled. If the feature's enabled status changes, `enable()` is
-   * called with the new status; otherwise `enable()` is not called. If the
-   * feature manages any Rust suggestion types that become enabled as a result,
-   * they will be ingested.
+   * called with the new status; otherwise `enable()` is not called.
    */
   update() {
     let enable =
@@ -112,15 +133,7 @@ export class SuggestFeature {
 }
 
 /**
- * Base class for Suggest features that manage one or more suggestion types.
- * Typically a feature should manage only one type, but it's possible to manage
- * more for any reason, usually in these cases:
- *
- * - When a single suggestion type served by a backend maps to more than one
- *   kind of `UrlbarResult`, for example when a Merino provider serves a single
- *   type that maps to many types on the client
- * - For historical reasons features can manage more than one Rust suggestion
- *   type by returning multiple values in the `rustSuggestionTypes` array
+ * Base class for Suggest features that manage a suggestion type [1].
  *
  * The same suggestion type can be served by multiple backends, and a single
  * `SuggestProvider` subclass can manage the type regardless of backend by
@@ -128,6 +141,10 @@ export class SuggestFeature {
  *
  * Subclasses should be registered with `QuickSuggest` by adding them to the
  * `FEATURES` const in `QuickSuggest.sys.mjs`.
+ *
+ * [1] Typically a feature should manage only one type. In rare cases, it might
+ * make sense to manage multiple types, for example when a single Merino
+ * provider serves more than one type of suggestion.
  */
 export class SuggestProvider extends SuggestFeature {
   // Methods designed for overriding below
@@ -143,14 +160,26 @@ export class SuggestProvider extends SuggestFeature {
   }
 
   /**
-   * @returns {Array}
+   * @returns {string}
    *   If the feature's suggestions are served by the Rust component, the
-   *   subclass should override this getter and return an array of their type
-   *   names as defined by the `Suggestion` enum in the component. e.g., "Amp",
+   *   subclass should override this getter and return their type name as
+   *   defined by the `Suggestion` enum in the component. e.g., "Amp",
    *   "Wikipedia", "Mdn", etc.
    */
-  get rustSuggestionTypes() {
-    return [];
+  get rustSuggestionType() {
+    return "";
+  }
+
+  /**
+   * @returns {object|null}
+   *   If the feature manages suggestions served by the Rust component that
+   *   require provider constraints, the subclass should override this getter
+   *   and return a plain JS object that can be passed to
+   *   `SuggestionProviderConstraints()`. This getter will only be called if the
+   *   feature is enabled.
+   */
+  get rustProviderConstraints() {
+    return null;
   }
 
   /**
@@ -189,47 +218,6 @@ export class SuggestProvider extends SuggestFeature {
    */
   getSuggestionTelemetryType(suggestion) {
     return this.merinoProvider;
-  }
-
-  /**
-   * If the feature manages one or more suggestion types served by the Suggest
-   * Rust component, this method should return true if the given suggestion type
-   * is enabled and false otherwise. Many features do nothing but manage a
-   * single Rust suggestion type, and the suggestion type should be enabled iff
-   * the feature itself is enabled. Those features can rely on the default
-   * implementation here since a feature's Rust suggestions will not be fetched
-   * if the feature is disabled. Other features either manage multiple
-   * suggestion types or have functionality beyond their Rust suggestions and
-   * need to remain enabled even when their suggestions are not. Those features
-   * should override this method.
-   *
-   * @param {string} type
-   *   A suggestion type name as defined by the `Suggestion` enum in the Rust
-   *   component, e.g., "Amp", "Wikipedia", "Mdn", etc.
-   * @returns {boolean}
-   *   Whether the suggestion type is enabled.
-   */
-  isRustSuggestionTypeEnabled(type) {
-    return true;
-  }
-
-  /**
-   * If the feature manages suggestions served by the Suggest Rust component and
-   * at least one of its suggestion providers requires constraints, the subclass
-   * should override this method and return a plain JS object that can be passed
-   * to `SuggestionProviderConstraints()`. This method will only be called if
-   * the feature and suggestion type are enabled.
-   *
-   * @param {string} type
-   *   A suggestion type name as defined by the `Suggestion` enum in the Rust
-   *   component, e.g., "Amp", "Wikipedia", "Mdn", etc.
-   * @returns {object|null}
-   *   If the given type's provider requires constraints, this should return a
-   *   plain JS object that can be passed to `SuggestionProviderConstraints()`.
-   *   Otherwise it should return null.
-   */
-  getRustProviderConstraints(type) {
-    return null;
   }
 
   /**
@@ -285,6 +273,63 @@ export class SuggestProvider extends SuggestFeature {
    */
   async makeResult(queryContext, suggestion, searchString) {
     return null;
+  }
+
+  /**
+   * The subclass may override this method as necessary. It's analogous to
+   * `UrlbarProvider.onImpression()` and will be called when one or more of the
+   * feature's results were visible at the end of a urlbar session.
+   *
+   * @param {string} state
+   *   The user-interaction state. See `UrlbarProvider.onImpression()`.
+   * @param {UrlbarQueryContext} queryContext
+   *   The urlbar session's query context.
+   * @param {UrlbarController} controller
+   *   The controller.
+   * @param {Array} featureResults
+   *   The feature's results that were visible at the end of the session. This
+   *   will always be non-empty and will only contain results from the feature.
+   * @param {object|null} details
+   *   Details about the engagement. See `UrlbarProvider.onImpression()`.
+   */
+  onImpression(state, queryContext, controller, featureResults, details) {}
+
+  /**
+   * The subclass may override this method as necessary. It's analogous to
+   * `UrlbarProvider.onEngagement()` and will be called when the user engages
+   * with a result from the feature.
+   *
+   * @param {UrlbarQueryContext} queryContext
+   *   The urlbar session's query context.
+   * @param {UrlbarController} controller
+   *   The controller.
+   * @param {object|null} details
+   *   See `UrlbarProvider.onEngagement()`.
+   * @param {string} searchString
+   *   The actual search string used to fetch Suggest results. It might be
+   *   slightly different from `queryContext.searchString`. e.g., it might be
+   *   trimmed differently.
+   */
+  onEngagement(queryContext, controller, details, searchString) {}
+
+  /**
+   * Some features may create result URLs that are potentially unique per query.
+   * Typically this is done by modifying an original suggestion URL at query
+   * time, for example by adding timestamps or query-specific search params. In
+   * that case, a single original suggestion URL will map to many result URLs.
+   * If this is true for the subclass, it should override this method and return
+   * whether the given URL and result URL both map back to the same original
+   * suggestion URL.
+   *
+   * @param {string} url
+   *   The URL to check, typically from the user's history.
+   * @param {UrlbarResult} result
+   *   The Suggest result.
+   * @returns {boolean}
+   *   Whether `url` is equivalent to the result's URL.
+   */
+  isUrlEquivalentToResultUrl(url, result) {
+    return url == result.payload.url;
   }
 
   // Methods not designed for overriding below

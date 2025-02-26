@@ -48,7 +48,6 @@ class nsTArray;
 namespace mozilla {
 class AlignStateAtSelection;
 class AutoSelectionSetterAfterTableEdit;
-class AutoSetTemporaryAncestorLimiter;
 class EmptyEditableFunctor;
 class ListElementSelectionState;
 class ListItemElementSelectionState;
@@ -1214,14 +1213,12 @@ class HTMLEditor final : public EditorBase,
    *
    * @param aMailCiteElement    The mail-cite element which should be split.
    * @param aPointToSplit       The point to split.
-   * @param aEditingHost        The editing host.
    * @return                    Candidate caret position where is at inserted
    *                            <br> element into the split point.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   HandleInsertParagraphInMailCiteElement(Element& aMailCiteElement,
-                                         const EditorDOMPoint& aPointToSplit,
-                                         const Element& aEditingHost);
+                                         const EditorDOMPoint& aPointToSplit);
 
   /**
    * HandleInsertBRElement() inserts a <br> element into aPointToBreak.
@@ -1637,10 +1634,10 @@ class HTMLEditor final : public EditorBase,
    *                            created block element, this returns the element.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-  FormatBlockContainerWithTransaction(AutoRangeArray& aSelectionRanges,
-                                      const nsStaticAtom& aNewFormatTagName,
-                                      FormatBlockMode aFormatBlockMode,
-                                      const Element& aEditingHost);
+  FormatBlockContainerWithTransaction(
+      AutoClonedSelectionRangeArray& aSelectionRanges,
+      const nsStaticAtom& aNewFormatTagName, FormatBlockMode aFormatBlockMode,
+      const Element& aEditingHost);
 
   /**
    * Retrun true if the specified line break can be inserted around aContent.
@@ -1658,7 +1655,7 @@ class HTMLEditor final : public EditorBase,
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
   InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
-      const EditorDOMPoint& aPointToInsert, const Element& aEditingHost);
+      const EditorDOMPoint& aPointToInsert);
 
   /**
    * Insert a padding <br> if aPoint is in an empty block.
@@ -1690,9 +1687,10 @@ class HTMLEditor final : public EditorBase,
                                  const Element& aEditingHost);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
-                              nsIEditor::EStripWrappers aStripWrappers,
-                              const AutoRangeArray& aRangesToDelete) override;
+  DeleteRangesWithTransaction(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers,
+      const AutoClonedRangeArray& aRangesToDelete) override;
 
   /**
    * SplitParagraphWithTransaction() splits the parent block, aParentDivOrP, at
@@ -2347,7 +2345,7 @@ class HTMLEditor final : public EditorBase,
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   ComputeTargetRanges(nsIEditor::EDirection aDirectionAndAmount,
-                      AutoRangeArray& aRangesToDelete) const;
+                      AutoClonedSelectionRangeArray& aRangesToDelete) const;
 
   /**
    * This method handles "delete selection" commands.
@@ -2447,7 +2445,7 @@ class HTMLEditor final : public EditorBase,
    * @param aEditingHost        The editing host.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleCSSIndentAroundRanges(
-      AutoRangeArray& aRanges, const Element& aEditingHost);
+      AutoClonedSelectionRangeArray& aRanges, const Element& aEditingHost);
 
   /**
    * HandleCSSIndentAroundRanges() indents around aRanges with HTML.
@@ -2456,14 +2454,15 @@ class HTMLEditor final : public EditorBase,
    * @param aEditingHost        The editing host.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleHTMLIndentAroundRanges(
-      AutoRangeArray& aRanges, const Element& aEditingHost);
+      AutoClonedSelectionRangeArray& aRanges, const Element& aEditingHost);
 
   /**
    * HandleIndentAtSelection() indents around Selection with HTML or CSS.
    *
    * @param aEditingHost        The editing host.
    */
-  // TODO: Make this take AutoRangeArray instead of retrieving `Selection`
+  // TODO: Make this take AutoClonedSelectionRangeArray instead of retrieving
+  // `Selection`
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   HandleIndentAtSelection(const Element& aEditingHost);
 
@@ -2671,9 +2670,9 @@ class HTMLEditor final : public EditorBase,
    *                            should be aligned to.
    * @param aEditingHost        The editing host.
    */
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  AlignContentsAtRanges(AutoRangeArray& aRanges, const nsAString& aAlignType,
-                        const Element& aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AlignContentsAtRanges(
+      AutoClonedSelectionRangeArray& aRanges, const nsAString& aAlignType,
+      const Element& aEditingHost);
 
   /**
    * AlignAsSubAction() handles "align" command with `Selection`.
@@ -3399,12 +3398,10 @@ class HTMLEditor final : public EditorBase,
    *                                    content.
    *                                    If you deleted something, this should be
    *                                    end of the deleted range.
-   * @param aEditingHost                The editing host.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsureNoFollowingUnnecessaryLineBreak(
-      const EditorDOMPoint& aNextOrAfterModifiedPoint,
-      const Element& aEditingHost);
+      const EditorDOMPoint& aNextOrAfterModifiedPoint);
 
   /**
    * IndentAsSubAction() indents the content around Selection.
@@ -3453,9 +3450,8 @@ class HTMLEditor final : public EditorBase,
    */
   template <size_t N>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAroundRanges(
-      AutoRangeArray& aRanges,
-      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
-      const Element& aEditingHost);
+      AutoClonedRangeArray& aRanges,
+      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet);
 
   /**
    * RemoveInlinePropertiesAsSubAction() removes specified styles from
@@ -3504,7 +3500,7 @@ class HTMLEditor final : public EditorBase,
   SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void InitializeSelectionAncestorLimit(
-      nsIContent& aAncestorLimit) const final;
+      Element& aAncestorLimit) const final;
 
   /**
    * Make the given selection span the entire document.
@@ -4388,19 +4384,19 @@ class HTMLEditor final : public EditorBase,
   /**
    * Returns an anonymous Element of type aTag,
    * child of aParentContent. If aIsCreatedHidden is true, the class
-   * "hidden" is added to the created element. If aAnonClass is not
-   * the empty string, it becomes the value of the attribute "_moz_anonclass"
+   * "hidden" is added to the created element. If aClass is not the empty
+   * string, it becomes the value of the class attribute
    * @return a Element
    * @param aTag             [IN] desired type of the element to create
    * @param aParentContent   [IN] the parent node of the created anonymous
    *                              element
-   * @param aAnonClass       [IN] contents of the _moz_anonclass attribute
+   * @param aClass       [IN] contents of the _moz_anonclass attribute
    * @param aIsCreatedHidden [IN] a boolean specifying if the class "hidden"
    *                              is to be added to the created anonymous
    *                              element
    */
   ManualNACPtr CreateAnonymousElement(nsAtom* aTag, nsIContent& aParentContent,
-                                      const nsAString& aAnonClass,
+                                      const nsAString& aClass,
                                       bool aIsCreatedHidden);
 
   /**
@@ -4641,22 +4637,22 @@ class HTMLEditor final : public EditorBase,
 
   friend class AlignStateAtSelection;  // CollectEditableTargetNodes,
                                        // CollectNonEditableNodes
-  friend class AutoRangeArray;  // RangeUpdaterRef, SplitNodeWithTransaction,
-                                // SplitInlineAncestorsAtRangeBoundaries
+  friend class AutoClonedRangeArray;   // RangeUpdaterRef,
+                                       // SplitNodeWithTransaction,
+                                       // SplitInlineAncestorsAtRangeBoundaries
+  friend class AutoClonedSelectionRangeArray;  // RangeUpdaterRef,
   friend class AutoSelectionRestore;
   friend class AutoSelectionSetterAfterTableEdit;  // SetSelectionAfterEdit
-  friend class
-      AutoSetTemporaryAncestorLimiter;  // InitializeSelectionAncestorLimit
-  friend class CSSEditUtils;            // DoTransactionInternal, HasAttributes,
-                                        // RemoveContainerWithTransaction
-  friend class EditorBase;              // ComputeTargetRanges,
-                            // GetChangedRangeForTopLevelEditSubAction,
-                            // GetSelectedRangeItemForTopLevelEditSubAction,
-                            // MaybeCreatePaddingBRElementForEmptyEditor,
-                            // PrepareToInsertBRElement,
-                            // ReflectPaddingBRElementForEmptyEditor,
-                            // RefreshEditingUI,
-                            // mComposerUpdater, mHasBeforeInputBeenCanceled
+  friend class CSSEditUtils;  // DoTransactionInternal, HasAttributes,
+                              // RemoveContainerWithTransaction
+  friend class EditorBase;    // ComputeTargetRanges,
+                              // GetChangedRangeForTopLevelEditSubAction,
+                              // GetSelectedRangeItemForTopLevelEditSubAction,
+                              // MaybeCreatePaddingBRElementForEmptyEditor,
+                              // PrepareToInsertBRElement,
+                              // ReflectPaddingBRElementForEmptyEditor,
+                              // RefreshEditingUI,
+                              // mComposerUpdater, mHasBeforeInputBeenCanceled
   friend class JoinNodesTransaction;  // DidJoinNodesTransaction, DoJoinNodes,
                                       // DoSplitNode, // RangeUpdaterRef
   friend class ListElementSelectionState;      // CollectEditTargetNodes,
@@ -4817,10 +4813,11 @@ class MOZ_STACK_CLASS ParagraphStateAtSelection final {
 
   /**
    * CollectEditableFormatNodesInSelection() collects only editable nodes
-   * around selection ranges (with `AutoRangeArray::ExtendRangesToWrapLines()`
-   * and `HTMLEditor::CollectEditTargetNodes()`, see its document for the
-   * detail). If it includes list, list item or table related elements, they
-   * will be replaced their children.
+   * around selection ranges (with
+   * AutoClonedRangeArray::ExtendRangesToWrapLines() and
+   * HTMLEditor::CollectEditTargetNodes(), see its document for the detail).
+   * If it includes list, list item or table related elements, they will be
+   * replaced their children.
    *
    * @param aFormatBlockMode            Whether HTML formatBlock command or XUL
    *                                    paragraphState command.

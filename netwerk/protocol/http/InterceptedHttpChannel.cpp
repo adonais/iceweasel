@@ -111,7 +111,7 @@ void InterceptedHttpChannel::AsyncOpenInternal() {
         mChannelCreationTimestamp, mLastStatusReported, 0, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags());
+        mClassOfService.Flags());
   }
 
   // If an error occurs in this file we must ensure mListener callbacks are
@@ -550,8 +550,7 @@ InterceptedHttpChannel::Cancel(nsresult aStatus) {
         mLastStatusReported, TimeStamp::Now(), size, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags(), &mTransactionTimings,
-        std::move(mSource));
+        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource));
   }
 
   MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(aStatus));
@@ -768,8 +767,12 @@ InterceptedHttpChannel::ResetInterception(bool aBypass) {
     GetEncodedBodySize(&size);
 
     nsAutoCString contentType;
+    mozilla::Maybe<mozilla::net::HttpVersion> httpVersion = Nothing();
+    mozilla::Maybe<uint32_t> responseStatus = Nothing();
     if (mResponseHead) {
       mResponseHead->ContentType(contentType);
+      httpVersion = Some(mResponseHead->Version());
+      responseStatus = Some(mResponseHead->Status());
     }
 
     RefPtr<HttpBaseChannel> newBaseChannel = do_QueryObject(newChannel);
@@ -780,9 +783,10 @@ InterceptedHttpChannel::ResetInterception(bool aBypass) {
         NetworkLoadType::LOAD_REDIRECT, mLastStatusReported, TimeStamp::Now(),
         size, kCacheUnknown, mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags(), &mTransactionTimings,
-        std::move(mSource), Some(nsDependentCString(contentType.get())), mURI,
-        flags, newBaseChannel->ChannelId());
+        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource),
+        httpVersion, responseStatus,
+        Some(nsDependentCString(contentType.get())), mURI, flags,
+        newBaseChannel->ChannelId());
   }
 
   rv = SetupReplacementChannel(mURI, newChannel, true, flags);
@@ -1217,16 +1221,21 @@ InterceptedHttpChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     GetEncodedBodySize(&size);
 
     nsAutoCString contentType;
+    mozilla::Maybe<mozilla::net::HttpVersion> httpVersion = Nothing();
+    mozilla::Maybe<uint32_t> responseStatus = Nothing();
     if (mResponseHead) {
       mResponseHead->ContentType(contentType);
+      httpVersion = Some(mResponseHead->Version());
+      responseStatus = Some(mResponseHead->Status());
     }
     profiler_add_network_marker(
         mURI, requestMethod, priority, mChannelId, NetworkLoadType::LOAD_STOP,
         mLastStatusReported, TimeStamp::Now(), size, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags(), &mTransactionTimings,
-        std::move(mSource), Some(nsDependentCString(contentType.get())));
+        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource),
+        httpVersion, responseStatus,
+        Some(nsDependentCString(contentType.get())));
   }
 
   nsresult rv = NS_OK;

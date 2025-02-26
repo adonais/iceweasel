@@ -288,10 +288,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Serra su pannellu de menù de ainas</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Serra su pannellu de menù de ischedas personalizadas</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Visualizatzione de letura, Tradue, Imprenta, Cumpartzi, Aberi s’aplicatzione</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Visualizatzione de letura, Imprenta, Cumpartzi, Aberi s’aplicatzione</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Visualizatzione de letura, Tradue, %s, Imprenta, Cumpartzi, Aberi s’aplicatzione</string>
@@ -870,9 +866,6 @@
     <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
     <string name="exceptions_empty_message_learn_more_link">Àteras informatziones</string>
 
-    <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Impreu e datos tècnicos</string>
-
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Istùdios</string>
 
@@ -1033,7 +1026,7 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Ativos</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s podet installare e aviare istùdios ònnia tantu.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s podet installare e aviare istùdios ònnia tantu.</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Àteras informatziones</string>
     <!-- Dialog message shown after removing a study -->
@@ -2595,4 +2588,5 @@
     <string name="certificate_warning_homepage_card_hcw2_title" tools:ignore="UnusedResources">Abarrant prus pagu de 7 dies pro atualizare</string>
     <!-- Homepage card message about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
     <string name="certificate_warning_homepage_card_hcw2_message" tools:ignore="BrandUsage,UnusedResources">Dae su 14 de martzu, is cumplementos e àteras caraterìsticas de Firefox no ant a funtzionare prus, ca unu tzertificadu printzipale at a iscadire.</string>
+
     </resources>

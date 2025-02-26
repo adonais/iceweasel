@@ -28,6 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -37,12 +40,16 @@ import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Dropdown
-import org.mozilla.fenix.compose.TextField
-import org.mozilla.fenix.compose.TextFieldColors
 import org.mozilla.fenix.compose.button.PrimaryButton
+import org.mozilla.fenix.compose.ext.thenConditional
+import org.mozilla.fenix.compose.menu.MenuItem
+import org.mozilla.fenix.compose.text.Text.Resource
+import org.mozilla.fenix.compose.textfield.TextField
+import org.mozilla.fenix.compose.textfield.TextFieldColors
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
 import org.mozilla.fenix.webcompat.store.WebCompatReporterState
+import org.mozilla.fenix.webcompat.store.WebCompatReporterState.BrokenSiteReason
 import org.mozilla.fenix.webcompat.store.WebCompatReporterStore
 
 private const val PROBLEM_DESCRIPTION_MAX_LINES = 6
@@ -103,15 +110,32 @@ fun WebCompatReporter(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val reasonErrorText = stringResource(R.string.webcompat_reporter_choose_reason_error)
+
             Dropdown(
-                label = stringResource(id = R.string.webcompat_reporter_label_whats_broken),
+                label = stringResource(id = R.string.webcompat_reporter_label_whats_broken_2),
                 placeholder = stringResource(id = R.string.webcompat_reporter_choose_reason),
                 dropdownItems = state.toDropdownItems(
                     onDropdownItemClick = {
                         store.dispatch(WebCompatReporterAction.ReasonChanged(newReason = it))
                     },
                 ),
+                modifier = Modifier.thenConditional(
+                    modifier = Modifier.semantics { error(reasonErrorText) },
+                ) { state.hasReasonDropdownError },
             )
+
+            if (state.hasReasonDropdownError) {
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = reasonErrorText,
+                    // The a11y for this is handled via the `Dropdown` modifier
+                    modifier = Modifier.clearAndSetSemantics {},
+                    style = FirefoxTheme.typography.caption,
+                    color = FirefoxTheme.colors.textCritical,
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -158,12 +182,32 @@ fun WebCompatReporter(
                 PrimaryButton(
                     text = stringResource(id = R.string.webcompat_reporter_send),
                     modifier = Modifier.wrapContentSize(),
-                    enabled = !state.hasUrlTextError,
+                    enabled = state.isSubmitEnabled,
                 ) {
                     store.dispatch(WebCompatReporterAction.SendReportClicked)
                 }
             }
         }
+    }
+}
+
+/**
+ * Helper function used to obtain the list of dropdown menu items derived from [BrokenSiteReason].
+ *
+ * @param onDropdownItemClick Callback invoked when the particular dropdown item is selected.
+ * @return The list of [MenuItem.CheckableItem] to display in the dropdown.
+ */
+private fun WebCompatReporterState.toDropdownItems(
+    onDropdownItemClick: (BrokenSiteReason) -> Unit,
+): List<MenuItem.CheckableItem> {
+    return BrokenSiteReason.entries.map { reason ->
+        MenuItem.CheckableItem(
+            text = Resource(reason.displayStringId),
+            isChecked = this.reason == reason,
+            onClick = {
+                onDropdownItemClick(reason)
+            },
+        )
     }
 }
 

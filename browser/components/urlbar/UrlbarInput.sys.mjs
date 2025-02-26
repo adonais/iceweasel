@@ -81,6 +81,7 @@ let px = number => number.toFixed(2) + "px";
  */
 export class UrlbarInput {
   #allowBreakout = false;
+  #breakoutBlockerCount = 0;
 
   /**
    * @param {object} options
@@ -1023,6 +1024,16 @@ export class UrlbarInput {
       return;
     }
 
+    if (
+      result.providerName == lazy.UrlbarProviderGlobalActions.name &&
+      this.#providesSearchMode(result)
+    ) {
+      this.maybeConfirmSearchModeFromResult({
+        result,
+        checkValue: false,
+      });
+      return;
+    }
     // When a one-off is selected, we restyle heuristic results to look like
     // search results. In the unlikely event that they are clicked, instead of
     // picking the results as usual, we confirm search mode, same as if the user
@@ -1086,7 +1097,7 @@ export class UrlbarInput {
       where = "tab";
     }
 
-    if (!result.payload.providesSearchMode) {
+    if (!this.#providesSearchMode(result)) {
       this.view.close({ elementPicked: true });
     }
 
@@ -1453,7 +1464,7 @@ export class UrlbarInput {
     // we might stay in a search mode of some kind, exit it now.
     if (
       this.searchMode?.isPreview &&
-      !result?.payload.providesSearchMode &&
+      !this.#providesSearchMode(result) &&
       !this.view.oneOffSearchButtons.selectedButton
     ) {
       this.searchMode = null;
@@ -1480,8 +1491,10 @@ export class UrlbarInput {
     // like transforming a url into a search.
     // This choice also makes it easier to copy the full url of a result.
 
-    // For autofilled results, the value that should be canonized is not the
-    // autofilled value but the value that the user typed.
+    // We are supporting canonization of any result, in particular this allows
+    // for single word search suggestions to be converted to a .com URL.
+    // For autofilled results, the value to canonize is the user typed string,
+    // not the autofilled value.
     let canonizedUrl = this._maybeCanonizeURL(
       event,
       result.autofill ? this._lastSearchString : this.value
@@ -1497,7 +1510,7 @@ export class UrlbarInput {
       this._autofillValue(result.autofill);
     }
 
-    if (result.payload.providesSearchMode) {
+    if (this.#providesSearchMode(result)) {
       let enteredSearchMode;
       // Only preview search mode if the result is selected.
       if (this.view.resultIsSelected(result)) {
@@ -1628,7 +1641,7 @@ export class UrlbarInput {
     if (
       firstResult.heuristic &&
       firstResult.payload.keyword &&
-      !firstResult.payload.providesSearchMode &&
+      !this.#providesSearchMode(firstResult) &&
       this.maybeConfirmSearchModeFromResult({
         result: firstResult,
         entry: "typed",
@@ -2321,6 +2334,24 @@ export class UrlbarInput {
 
   // Private methods below.
 
+  /*
+   * Actions can have several buttons in the same result where not all
+   * will provide a searchMode so check the currently selected button
+   * in that case.
+   */
+  #providesSearchMode(result) {
+    if (!result) {
+      return false;
+    }
+    if (
+      this.view.selectedElement &&
+      result.providerName == lazy.UrlbarProviderGlobalActions.name
+    ) {
+      return this.view.selectedElement.dataset.providesSearchmode == "true";
+    }
+    return result.payload.providesSearchMode;
+  }
+
   _addObservers() {
     Services.obs.addObserver(
       this,
@@ -2378,7 +2409,8 @@ export class UrlbarInput {
       return;
     }
     // The input may retain focus when switching tabs in which case we
-    // need to close the view explicitly.
+    // need to close the view and search mode switcher popup explicitly.
+    this.searchModeSwitcher.closePanel();
     this.view.close();
   }
 
@@ -2420,6 +2452,22 @@ export class UrlbarInput {
     this._layoutBreakoutUpdateKey = {};
   }
 
+  incrementBreakoutBlockerCount() {
+    this.#breakoutBlockerCount++;
+    if (this.#breakoutBlockerCount == 1) {
+      this.#stopBreakout();
+    }
+  }
+
+  decrementBreakoutBlockerCount() {
+    if (this.#breakoutBlockerCount > 0) {
+      this.#breakoutBlockerCount--;
+    }
+    if (this.#breakoutBlockerCount === 0) {
+      this.updateLayoutBreakout();
+    }
+  }
+
   async #updateLayoutBreakoutDimensions() {
     this.#stopBreakout();
 
@@ -2443,6 +2491,10 @@ export class UrlbarInput {
           "--urlbar-height",
           px(getBoundsWithoutFlushing(this.textbox).height)
         );
+
+        if (this.#breakoutBlockerCount) {
+          return;
+        }
 
         this.setAttribute("breakout", "true");
         this.textbox.parentNode.setAttribute("breakout", "true");
@@ -2957,6 +3009,22 @@ export class UrlbarInput {
   }
 
   /**
+   * Returns whether the passed-in event may represents a canonization request.
+   *
+   * @param {DOMEvent} event a KeyboardEvent to examine.
+   * @returns {boolean} Whether the event is a canonization one.
+   */
+  #isCanonizeKeyboardEvent(event) {
+    return (
+      KeyboardEvent.isInstance(event) &&
+      event.keyCode == KeyEvent.DOM_VK_RETURN &&
+      (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey) &&
+      !event._disableCanonization &&
+      lazy.UrlbarPrefs.get("ctrlCanonizesURLs")
+    );
+  }
+
+  /**
    * If appropriate, this prefixes a search string with 'www.' and suffixes it
    * with browser.fixup.alternate.suffix prior to navigating.
    *
@@ -2971,10 +3039,7 @@ export class UrlbarInput {
     // Only add the suffix when the URL bar value isn't already "URL-like",
     // and only if we get a keyboard event, to match user expectations.
     if (
-      !KeyboardEvent.isInstance(event) ||
-      event._disableCanonization ||
-      !event.ctrlKey ||
-      !lazy.UrlbarPrefs.get("ctrlCanonizesURLs") ||
+      !this.#isCanonizeKeyboardEvent(event) ||
       !/^\s*[^.:\/\s]+(?:\/.*|\s*)$/i.test(value)
     ) {
       return null;
@@ -3168,8 +3233,7 @@ export class UrlbarInput {
       } catch {}
 
       this.value =
-        lazy.UrlbarPrefs.get("showSearchTermsFeatureGate") &&
-        lazy.UrlbarPrefs.get("showSearchTerms.enabled") &&
+        lazy.UrlbarPrefs.isPersistedSearchTermsEnabled() &&
         resultDetails?.searchTerm
           ? resultDetails.searchTerm
           : formattedURL;
@@ -3294,13 +3358,9 @@ export class UrlbarInput {
       // We support using 'alt' to open in a tab, because ctrl/shift
       // might be used for canonizing URLs:
       where = event.shiftKey ? "tabshifted" : "tab";
-    } else if (
-      isKeyboardEvent &&
-      event.ctrlKey &&
-      lazy.UrlbarPrefs.get("ctrlCanonizesURLs")
-    ) {
-      // If we're allowing canonization, and this is a key event with ctrl
-      // pressed, open in current tab to allow ctrl-enter to canonize URL.
+    } else if (this.#isCanonizeKeyboardEvent(event)) {
+      // If we're allowing canonization, and this is a canonization key event,
+      // open in current tab to avoid handling as new tab modifier.
       where = "current";
     } else {
       where = lazy.BrowserUtils.whereToOpenLink(event, false, false);
@@ -3854,6 +3914,8 @@ export class UrlbarInput {
       this._keyDownEnterDeferred = null;
     }
     this._isKeyDownWithCtrl = false;
+    this._isKeyDownWithMeta = false;
+    this._isKeyDownWithMetaAndLeft = false;
 
     Services.obs.notifyObservers(null, "urlbar-blur");
   }
@@ -4407,20 +4469,32 @@ export class UrlbarInput {
     if (!event.repeat) {
       this.#allTextSelectedOnKeyDown = this.#allTextSelected;
 
-      this._isKeyDownWithMetaAndLeft =
-        event.keyCode == KeyEvent.DOM_VK_LEFT &&
-        event.metaKey &&
-        !event.shiftKey;
-
       if (event.keyCode === KeyEvent.DOM_VK_RETURN) {
         if (this._keyDownEnterDeferred) {
           this._keyDownEnterDeferred.reject();
         }
         this._keyDownEnterDeferred = Promise.withResolvers();
-        event._disableCanonization = this._isKeyDownWithCtrl;
-      } else if (event.keyCode !== KeyEvent.DOM_VK_CONTROL && event.ctrlKey) {
+        event._disableCanonization =
+          AppConstants.platform == "macosx"
+            ? this._isKeyDownWithMeta
+            : this._isKeyDownWithCtrl;
+      }
+
+      // Now set the keydown trackers for the current event, anything that wants
+      // to check the previous events should have happened before this point.
+      // The previously value is persisted until keyup, as we check if the
+      // modifiers were down, even if other keys are pressed in the meanwhile.
+      if (event.ctrlKey && event.keyCode != KeyEvent.DOM_VK_CONTROL) {
         this._isKeyDownWithCtrl = true;
       }
+      if (event.metaKey && event.keyCode != KeyEvent.DOM_VK_META) {
+        this._isKeyDownWithMeta = true;
+      }
+      // This is used in keyup, so it can be set every time.
+      this._isKeyDownWithMetaAndLeft =
+        this._isKeyDownWithMeta &&
+        !event.shiftKey &&
+        event.keyCode == KeyEvent.DOM_VK_LEFT;
 
       this._toggleActionOverride(event);
     }
@@ -4457,6 +4531,7 @@ export class UrlbarInput {
       this.#maybeUntrimUrl({ moveCursorToStart });
     }
     if (event.keyCode === KeyEvent.DOM_VK_META) {
+      this._isKeyDownWithMeta = false;
       this._isKeyDownWithMetaAndLeft = false;
     }
     if (event.keyCode === KeyEvent.DOM_VK_CONTROL) {
@@ -4612,8 +4687,8 @@ export class UrlbarInput {
   }
 
   _on_customizationstarting() {
+    this.incrementBreakoutBlockerCount();
     this.blur();
-    this.#stopBreakout();
 
     this.inputField.controllers.removeController(this._copyCutController);
     delete this._copyCutController;
@@ -4622,10 +4697,18 @@ export class UrlbarInput {
   // TODO(emilio, bug 1927942): Consider removing this listener and using
   // onCustomizeEnd.
   _on_aftercustomization() {
+    this.decrementBreakoutBlockerCount();
     this.updateLayoutBreakout();
     this._initCopyCutController();
     this._initPasteAndGo();
     this._initStripOnShare();
+  }
+
+  uiDensityChanged() {
+    if (this.#breakoutBlockerCount) {
+      return;
+    }
+    this.updateLayoutBreakout();
   }
 
   // CustomizableUI might unbind and bind us again, which makes us lose the

@@ -783,6 +783,36 @@ newtab:
     send_in_pings:
       - newtab
 
+  sections_unblock_section:
+    type: event
+    description: >
+      Recorded when a section is unblocked
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1940566
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1940566
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      section:
+        description: >
+          section that had unblock event
+        type: string
+      section_position:
+        description: >
+          position of section on newtab
+        type: string
+      event_source:
+        description: >
+          Where the source of the event originated ("button", "context menu", etc.)
+        type: string
+    send_in_pings:
+      - newtab
+
 newtab.search:
   enabled:
     lifetime: application
@@ -819,12 +849,15 @@ newtab.handoff_preference:
       enabled or disabled
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1864496
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1892148
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1940643
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1864496
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892148
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1940643
     data_sensitivity:
       - interaction
-    expires: 137
+    expires: 144
     notification_emails:
       - fx-search-telemetry@mozilla.com
 

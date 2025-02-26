@@ -288,12 +288,14 @@
             android:defaultValue="@null"
             app:argType="string"
             app:nullable="true" />
+        <action
+            android:id="@+id/action_gleanDebugToolsFragment"
+            app:destination="@id/gleanDebugToolsFragment" />
     </dialog>
 
     <fragment
         android:id="@+id/recentlyClosedFragment"
-        android:name="org.mozilla.fenix.library.recentlyclosed.RecentlyClosedFragment"
-        android:label="@string/library_recently_closed_tabs" />
+        android:name="org.mozilla.fenix.library.recentlyclosed.RecentlyClosedFragment" />
 
     <fragment
         android:id="@+id/SitePermissionsManagePhoneFeature"
@@ -345,6 +347,9 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_browserFragment_to_webCompatReporterFragment"
+            app:destination="@id/webCompatReporterFragment" />
     </fragment>
 
     <fragment
@@ -1156,6 +1161,10 @@
             android:name="addon"
             app:argType="mozilla.components.feature.addons.Addon" />
     </fragment>
+
+    <fragment
+        android:id="@+id/gleanDebugToolsFragment"
+        android:name="org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsFragment" />
 
     <navigation
         android:id="@+id/site_permissions_exceptions_graph"

@@ -12,7 +12,9 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/dom/nsCSPContext.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/AntitrackingMetrics.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/StoragePrincipalHelper.h"
 
 #include "nsCOMPtr.h"
@@ -72,6 +74,7 @@
 #include "nsContentUtils.h"
 #include "nsContentSecurityManager.h"
 #include "nsIClassOfService.h"
+#include "CookieService.h"
 #include "nsIPrincipal.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
@@ -2997,7 +3000,9 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
         if (mTransaction && mTransaction->ProxyConnectFailed()) {
           return ProcessFailedProxyConnect(httpStatus);
         }
-        if (!mAuthRetryPending) {
+        if (rv == NS_ERROR_BASIC_HTTP_AUTH_DISABLED) {
+          mStatus = rv;
+        } else if (!mAuthRetryPending) {
           MOZ_DIAGNOSTIC_ASSERT(mAuthProvider);
           rv = mAuthProvider ? mAuthProvider->CheckForSuperfluousAuth()
                              : NS_ERROR_UNEXPECTED;
@@ -4559,7 +4564,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
 
   bool isForcedValid = false;
   entry->GetIsForcedValid(&isForcedValid);
-  auto prefetchStatus = Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::Used;
+  auto prefetchStatus = glean::predictor::PrefetchUseStatusLabel::eUsed;
 
   bool weaklyFramed, isImmutable;
   nsHttp::DetermineFramingAndImmutability(entry, mCachedResponseHead.get(),
@@ -4570,11 +4575,11 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     LOG(("Validating based on Vary headers returning TRUE\n"));
     canAddImsHeader = false;
     doValidation = true;
-    prefetchStatus = Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::WouldVary;
+    prefetchStatus = glean::predictor::PrefetchUseStatusLabel::eWouldvary;
   } else {
     if (mCachedResponseHead->ExpiresInPast() ||
         mCachedResponseHead->MustValidateIfExpired()) {
-      prefetchStatus = Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::Expired;
+      prefetchStatus = glean::predictor::PrefetchUseStatusLabel::eExpired;
     }
     doValidation = nsHttp::ValidationRequired(
         isForcedValid, mCachedResponseHead.get(), mLoadFlags,
@@ -4618,7 +4623,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
         (fromPreviousSession && !buf.IsEmpty()) ||
         (buf.IsEmpty() && mRequestHead.HasHeader(nsHttp::Authorization));
     if (doValidation) {
-      prefetchStatus = Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::Auth;
+      prefetchStatus = glean::predictor::PrefetchUseStatusLabel::eAuth;
     }
   }
 
@@ -4648,8 +4653,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     if (!doValidation) {
       ref->AppendElement(cacheKey);
     } else {
-      prefetchStatus =
-          Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::Redirect;
+      prefetchStatus = glean::predictor::PrefetchUseStatusLabel::eRedirect;
     }
   }
 
@@ -4661,11 +4665,11 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     if (!doValidation) {
       // Could have gotten to a funky state with some of the if chain above
       // and in nsHttp::ValidationRequired. Make sure we get it right here.
-      prefetchStatus = Telemetry::LABELS_PREDICTOR_PREFETCH_USE_STATUS::Used;
+      prefetchStatus = glean::predictor::PrefetchUseStatusLabel::eUsed;
 
       entry->MarkForcedValidUse();
     }
-    Telemetry::AccumulateCategorical(prefetchStatus);
+    glean::predictor::prefetch_use_status.EnumGet(prefetchStatus).Add();
   }
 
   if (doValidation) {
@@ -5783,8 +5787,12 @@ nsresult nsHttpChannel::SetupReplacementChannel(nsIURI* newURI,
     GetEncodedBodySize(&size);
 
     nsAutoCString contentType;
+    mozilla::Maybe<mozilla::net::HttpVersion> httpVersion = Nothing();
+    mozilla::Maybe<uint32_t> responseStatus = Nothing();
     if (mResponseHead) {
       mResponseHead->ContentType(contentType);
+      httpVersion = Some(mResponseHead->Version());
+      responseStatus = Some(mResponseHead->Status());
     }
 
     RefPtr<nsIIdentChannel> newIdentChannel = do_QueryObject(newChannel);
@@ -5797,8 +5805,8 @@ nsresult nsHttpChannel::SetupReplacementChannel(nsIURI* newURI,
         NetworkLoadType::LOAD_REDIRECT, mLastStatusReported, TimeStamp::Now(),
         size, mCacheDisposition, mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags(), &timings,
-        std::move(mSource), Some(nsDependentCString(contentType.get())), newURI,
+        mClassOfService.Flags(), &timings, std::move(mSource), httpVersion,
+        responseStatus, Some(nsDependentCString(contentType.get())), newURI,
         redirectFlags, channelId);
   }
 
@@ -5973,8 +5981,8 @@ nsresult nsHttpChannel::AsyncProcessRedirection(uint32_t redirectType) {
           // Record telemetry, but only if we stripped any query params.
           Telemetry::AccumulateCategorical(
               Telemetry::LABELS_QUERY_STRIPPING_COUNT::StripForRedirect);
-          Telemetry::Accumulate(Telemetry::QUERY_STRIPPING_PARAM_COUNT,
-                                numStripped);
+          glean::contentblocking::query_stripping_param_count
+              .AccumulateSingleSample(numStripped);
         }
       }
     }
@@ -6416,8 +6424,7 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
         mLastStatusReported, TimeStamp::Now(), size, mCacheDisposition,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags(), &mTransactionTimings,
-        std::move(mSource));
+        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource));
   }
 
   // If we don't have mTransactionPump and mCachePump, we need to call
@@ -6766,7 +6773,7 @@ void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
         mChannelCreationTimestamp, mLastStatusReported, 0, mCacheDisposition,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags());
+        mClassOfService.Flags());
   }
 
   // Added due to PauseTask/DelayHttpChannel
@@ -7172,6 +7179,10 @@ nsresult nsHttpChannel::BeginConnect() {
   }
 
   MaybeStartDNSPrefetch();
+
+  // Update whether the channel is on the third-party cookie blocking exception
+  // list.
+  CookieService::Update3PCBExceptionInfo(this);
 
   rv = CallOrWaitForResume(
       [](nsHttpChannel* self) { return self->PrepareToConnect(); });
@@ -8919,16 +8930,22 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     GetEncodedBodySize(&size);
 
     nsAutoCString contentType;
+    mozilla::Maybe<mozilla::net::HttpVersion> httpVersion = Nothing();
+    mozilla::Maybe<uint32_t> responseStatus = Nothing();
     if (mResponseHead) {
       mResponseHead->ContentType(contentType);
+      httpVersion = Some(mResponseHead->Version());
+      responseStatus = Some(mResponseHead->Status());
     }
+
     profiler_add_network_marker(
         mURI, requestMethod, priority, mChannelId, NetworkLoadType::LOAD_STOP,
         mLastStatusReported, TimeStamp::Now(), size, mCacheDisposition,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mRequestHead.Version(), mClassOfService.Flags(), &mTransactionTimings,
-        std::move(mSource), Some(nsDependentCString(contentType.get())));
+        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource),
+        httpVersion, responseStatus,
+        Some(nsDependentCString(contentType.get())));
   }
 
   if (mAuthRetryPending &&
@@ -9007,6 +9024,9 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
   CleanRedirectCacheChainIfNecessary();
 
   ReleaseListeners();
+
+  // Release mUploadStream to free some memory sooner.
+  mUploadStream = nullptr;
 
   return NS_OK;
 }
@@ -10895,7 +10915,7 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
           // Step 8.1
           BlockOpaqueResponseAfterSniff(
               u"media request after sniffing, but not initial request"_ns,
-              OpaqueResponseBlockedTelemetryReason::MEDIA_NOT_INITIAL);
+              OpaqueResponseBlockedTelemetryReason::eMediaNotInitial);
           return;
         }
 
@@ -10903,7 +10923,7 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
           // Step 8.2
           BlockOpaqueResponseAfterSniff(
               u"media request's response status is neither 200 nor 206"_ns,
-              OpaqueResponseBlockedTelemetryReason::MEDIA_INCORRECT_RESP);
+              OpaqueResponseBlockedTelemetryReason::eMediaIncorrectResp);
           return;
         }
       }

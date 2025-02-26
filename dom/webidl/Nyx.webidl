@@ -16,9 +16,14 @@
  Exposed=Window]
 namespace Nyx {
   /**
+   * Use nyx_put for logging during Nyx fuzzing.
+   */
+  undefined log(UTF8String aMsg);
+
+  /**
    * Determine if Nyx is enabled for the specified fuzzer.
    */
-  boolean isEnabled(DOMString aFuzzerName);
+  boolean isEnabled(UTF8String aFuzzerName);
 
 
   /**

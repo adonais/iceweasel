@@ -288,6 +288,30 @@ history:
       version:
         type: string
         description: The active version of sidebar (either "old" or "new").
+shopping:
+  sidebar_toggle:
+    type: event
+    description: >
+      The Review Checker sidebar panel was loaded or unloaded.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1941047
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D235052
+    data_sensitivity:
+      - interaction
+    expires: 147
+    notification_emails:
+      - betling@mozilla.com
+      - fx-desktop-shopping-eng@mozilla.com
+    send_in_pings:
+      - events
+    extra_keys:
+      opened:
+        type: boolean
+        description: New/current state of sidebar is open.
+      version:
+        type: string
+        description: The active version of sidebar (either "old" or "new").
 synced_tabs:
   sidebar_toggle:
     type: event
@@ -471,6 +495,26 @@ sidebar.customize:
     expires: never
     notification_emails:
       - vsabino@mozilla.com
+    send_in_pings:
+      - events
+    extra_keys:
+      checked:
+        type: boolean
+        description: Whether the box was checked.
+  shopping_review_checker_enabled:
+    type: event
+    description: >
+      User clicked on the checkbox corresponding to Review Checker on sidebar customization settings.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938428
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D235053
+    data_sensitivity:
+      - interaction
+    expires: 147
+    notification_emails:
+      - betling@mozilla.com
+      - fx-desktop-shopping-eng@mozilla.com
     send_in_pings:
       - events
     extra_keys:

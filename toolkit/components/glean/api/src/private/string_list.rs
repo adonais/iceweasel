@@ -16,9 +16,10 @@ use crate::ipc::{need_ipc, with_ipc_payload};
 #[derive(Clone)]
 pub enum StringListMetric {
     Parent {
-        /// The metric's ID.
-        ///
-        /// **TEST-ONLY** - Do not use unless gated with `#[cfg(test)]`.
+        /// The metric's ID. Used for testing and profiler markers. String
+        /// list metrics canot be labeled, so we only store a MetricId. If
+        /// this changes, this should be changed to a MetricGetter to
+        /// distinguish between metrics and sub-metrics.
         id: MetricId,
         inner: glean::private::StringListMetric,
     },
@@ -70,7 +71,7 @@ impl StringList for StringListMetric {
                 gecko_profiler::lazy_add_marker!(
                     "StringList::add",
                     super::profiler_utils::TelemetryProfilerCategory,
-                    super::profiler_utils::StringLikeMetricMarker::new(*id, &value)
+                    super::profiler_utils::StringLikeMetricMarker::new((*id).into(), &value)
                 );
                 inner.add(value);
             }
@@ -107,7 +108,7 @@ impl StringList for StringListMetric {
                     "StringList::set",
                     super::profiler_utils::TelemetryProfilerCategory,
                     super::profiler_utils::StringLikeMetricMarker::new_owned(
-                        *id,
+                        (*id).into(),
                         format!("[{}]", value.clone().join(","))
                     )
                 );

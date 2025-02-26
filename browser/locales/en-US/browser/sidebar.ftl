@@ -48,24 +48,16 @@ sidebar-customize-extensions-header = Sidebar extensions
 sidebar-customize-firefox-tools-header =
   .label = { -brand-product-name } tools
 sidebar-customize-firefox-settings = Manage { -brand-short-name } settings
-sidebar-position-left =
-  .label = Show on the left
-sidebar-position-right =
-  .label = Show on the right
 sidebar-vertical-tabs =
   .label = Vertical tabs
-sidebar-horizontal-tabs =
-  .label = Horizontal tabs
-sidebar-customize-tabs-header =
-  .label = Tab settings
-sidebar-customize-button-header =
-  .label = Sidebar button
-sidebar-customize-position-header =
-  .label = Sidebar position
-sidebar-visibility-setting-always-show =
-  .label = Expand and collapse sidebar
-sidebar-visibility-setting-hide-sidebar =
-  .label = Show and hide sidebar
+sidebar-settings =
+  .label = Sidebar settings
+sidebar-hide-tabs-and-sidebar =
+  .label = Hide tabs and sidebar
+sidebar-show-on-the-right =
+  .label = Move sidebar to the right
+sidebar-show-on-the-left =
+  .label = Move sidebar to the left
 
 ## Labels for sidebar context menu items
 
@@ -130,8 +122,16 @@ sidebar-menu-open-bookmarks-tooltip = Open bookmarks ({ $shortcut })
 #   $shortcut (String) - The OS specific keyboard shortcut.
 sidebar-menu-close-bookmarks-tooltip = Close bookmarks ({ $shortcut })
 
-sidebar-menu-open-ai-chatbot-tooltip = Open AI chatbot
-sidebar-menu-close-ai-chatbot-tooltip = Close AI chatbot
+## Tooltips displayed over the AI chatbot icon.
+## Variables:
+##   $shortcut (String) - The OS specific keyboard shortcut.
+##   $provider (String) - The name of the AI chatbot provider (if available).
+
+sidebar-menu-open-ai-chatbot-tooltip-generic = Open AI chatbot ({ $shortcut })
+sidebar-menu-open-ai-chatbot-provider-tooltip = Open { $provider } ({ $shortcut })
+
+sidebar-menu-close-ai-chatbot-tooltip-generic = Close AI chatbot ({ $shortcut })
+sidebar-menu-close-ai-chatbot-provider-tooltip = Close { $provider } ({ $shortcut })
 
 ## Headings for sidebar menu panels.
 
@@ -143,6 +143,8 @@ sidebar-menu-history-header =
   .heading = History
 sidebar-menu-syncedtabs-header =
   .heading = Tabs from other devices
+sidebar-menu-bookmarks-header =
+  .heading = Bookmarks
 
 ## Titles for sidebar menu panels.
 

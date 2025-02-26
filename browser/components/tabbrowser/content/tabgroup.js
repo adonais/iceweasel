@@ -33,7 +33,7 @@
 
     static get inheritedAttributes() {
       return {
-        ".tab-group-label": "text=label,tooltiptext=label",
+        ".tab-group-label": "text=label,tooltiptext=data-tooltip",
       };
     }
 
@@ -145,9 +145,11 @@
     set label(val) {
       this.#label = val;
 
-      // Add a zero width space so we always create a text node and get
-      // consistent layout even if the group name is empty.
-      this.setAttribute("label", "\u200b" + val);
+      // If the group name is empty, use a zero width space so we
+      // always create a text node and get consistent layout.
+      this.setAttribute("label", val || "\u200b");
+
+      this.dataset.tooltip = val;
 
       this.#updateLabelAriaAttributes();
     }
@@ -175,11 +177,26 @@
       this.dispatchEvent(new CustomEvent(eventName, { bubbles: true }));
     }
 
-    #updateLabelAriaAttributes() {
-      const ariaLabel = this.#label || "unnamed";
-      const ariaDescription = `${ariaLabel} tab group`;
-      this.#labelElement?.setAttribute("aria-label", ariaLabel);
-      this.#labelElement?.setAttribute("aria-description", ariaDescription);
+    get lastSeenActive() {
+      return Math.max(...this.tabs.map(t => t.lastSeenActive));
+    }
+
+    async #updateLabelAriaAttributes() {
+      let tabGroupName = this.#label;
+      if (!tabGroupName) {
+        tabGroupName = await gBrowser.tabLocalization.formatValue(
+          "tab-group-name-default"
+        );
+      }
+
+      let tabGroupDescription = await gBrowser.tabLocalization.formatValue(
+        "tab-group-description",
+        {
+          tabGroupName,
+        }
+      );
+      this.#labelElement?.setAttribute("aria-label", tabGroupName);
+      this.#labelElement?.setAttribute("aria-description", tabGroupDescription);
     }
 
     #updateCollapsedAriaAttributes() {

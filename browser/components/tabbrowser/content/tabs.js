@@ -55,8 +55,6 @@
       this.addEventListener("TabAttrModified", this);
       this.addEventListener("TabHide", this);
       this.addEventListener("TabShow", this);
-      this.addEventListener("TabPinned", this);
-      this.addEventListener("TabUnpinned", this);
       this.addEventListener("TabHoverStart", this);
       this.addEventListener("TabHoverEnd", this);
       this.addEventListener("TabGroupExpand", this);
@@ -65,6 +63,7 @@
       this.addEventListener("dblclick", this);
       this.addEventListener("click", this);
       this.addEventListener("click", this, true);
+      this.addEventListener("keydown", this, { mozSystemGroup: true });
       this.addEventListener("dragstart", this);
       this.addEventListener("dragover", this);
       this.addEventListener("drop", this);
@@ -73,6 +72,7 @@
       this.addEventListener("mouseleave", this);
       this.addEventListener("focusin", this);
       this.addEventListener("focusout", this);
+      this.addEventListener("contextmenu", this);
     }
 
     init() {
@@ -226,17 +226,6 @@
       this.#updateTabMinWidth();
       this.#updateTabMinHeight();
 
-      let indicatorTabs = gBrowser.visibleTabs.filter(tab => {
-        return (
-          tab.hasAttribute("soundplaying") ||
-          tab.hasAttribute("muted") ||
-          tab.hasAttribute("activemedia-blocked")
-        );
-      });
-      for (const indicatorTab of indicatorTabs) {
-        this.updateTabIndicatorAttr(indicatorTab);
-      }
-
       super.attributeChangedCallback(name, oldValue, newValue);
     }
 
@@ -250,18 +239,17 @@
 
     on_TabAttrModified(event) {
       if (
-        ["soundplaying", "muted", "activemedia-blocked", "sharing"].some(attr =>
-          event.detail.changed.includes(attr)
-        )
-      ) {
-        this.updateTabIndicatorAttr(event.target);
-      }
-
-      if (
         event.detail.changed.includes("soundplaying") &&
         !event.target.visible
       ) {
         this._hiddenSoundPlayingStatusChanged(event.target);
+      }
+      if (
+        event.detail.changed.includes("soundplaying") ||
+        event.detail.changed.includes("muted") ||
+        event.detail.changed.includes("activemedia-blocked")
+      ) {
+        this.updateTabSoundLabel(event.target);
       }
     }
 
@@ -275,14 +263,6 @@
       if (event.target.soundPlaying) {
         this._hiddenSoundPlayingStatusChanged(event.target);
       }
-    }
-
-    on_TabPinned(event) {
-      this.updateTabIndicatorAttr(event.target);
-    }
-
-    on_TabUnpinned(event) {
-      this.updateTabIndicatorAttr(event.target);
     }
 
     on_TabHoverStart(event) {
@@ -336,9 +316,6 @@
       if (tab.hasAttribute("fadein")) {
         if (tab._fullyOpen) {
           this._updateCloseButtons();
-          if (tab.group && tab == tab.group.lastChild) {
-            this._notifyBackgroundTab(tab);
-          }
         } else {
           this._handleNewTab(tab);
         }
@@ -500,12 +477,9 @@
             case KeyEvent.DOM_VK_RETURN: {
               ariaFocusedItem.click();
               event.preventDefault();
-              return;
             }
           }
         }
-        // defer to the parent `on_keydown` handler
-        MozElements.TabsBase.prototype.on_keydown.call(this, event);
       } else if (keyComboForMove) {
         switch (event.keyCode) {
           case KeyEvent.DOM_VK_UP:
@@ -616,7 +590,7 @@
     }
 
     /**
-     * Moves the focus in the tab strip left or right, as appropriate, to
+     * Moves the ARIA focus in the tab strip left or right, as appropriate, to
      * the next tab or tab group label.
      *
      * @param {-1|1} direction
@@ -633,6 +607,56 @@
 
       let itemToFocus = this.ariaFocusableItems[newIndex];
       this.ariaFocusedItem = itemToFocus;
+    }
+
+    /**
+     * Changes the selected tab or tab group label on the tab strip
+     * relative to the ARIA-focused tab strip element or the active tab. This
+     * is intended for traversing the tab strip visually, e.g by using keyboard
+     * arrows. For cases where keyboard shortcuts or other logic should only
+     * select tabs (and never tab group labels), see `advanceSelectedTab`.
+     *
+     * @override
+     * @param {-1|1} direction
+     * @param {boolean} shouldWrap
+     */
+    advanceSelectedItem(aDir, aWrap) {
+      let { ariaFocusableItems, ariaFocusedIndex } = this;
+
+      // Advance relative to the ARIA-focused item if set, otherwise advance
+      // relative to the active tab.
+      let currentItemIndex =
+        ariaFocusedIndex >= 0
+          ? ariaFocusedIndex
+          : ariaFocusableItems.indexOf(this.selectedItem);
+
+      let newItemIndex = currentItemIndex + aDir;
+
+      if (aWrap) {
+        if (newItemIndex >= ariaFocusableItems.length) {
+          newItemIndex = 0;
+        } else if (newItemIndex < 0) {
+          newItemIndex = ariaFocusableItems.length - 1;
+        }
+      } else {
+        newItemIndex = Math.min(
+          ariaFocusableItems.length - 1,
+          Math.max(0, newItemIndex)
+        );
+      }
+
+      if (currentItemIndex == newItemIndex) {
+        return;
+      }
+
+      // If the next item is a tab, select it. If the next item is a tab group
+      // label, keep the active tab selected and just set ARIA focus on the tab
+      // group label.
+      let newItem = ariaFocusableItems[newItemIndex];
+      if (isTab(newItem)) {
+        this._selectNewTab(newItem, aDir, aWrap);
+      }
+      this.ariaFocusedItem = newItem;
     }
 
     on_keypress(event) {
@@ -1097,8 +1121,6 @@
                     dropIndex++;
                   }
                 }
-
-                gBrowser.syncThrobberAnimations(tab);
               };
               if (gReduceMotion) {
                 postTransitionCleanup();
@@ -1461,6 +1483,23 @@
       document
         .getElementById("tab-preview-panel")
         ?.removeAttribute("rolluponmousewheel");
+    }
+
+    on_contextmenu(event) {
+      // When pressing the context menu key (as opposed to right-clicking)
+      // while a tab group label has aria focus (as opposed to DOM focus),
+      // open the tab group context menu as if the label had DOM focus.
+      // The button property is used to differentiate between key and mouse.
+      if (
+        event.button == 0 &&
+        this.ariaFocusedItem &&
+        isTabGroupLabel(this.ariaFocusedItem)
+      ) {
+        gBrowser.tabGroupMenu.openEditModal(
+          this.ariaFocusedItem.closest("tab-group")
+        );
+        event.preventDefault();
+      }
     }
 
     get emptyTabTitle() {
@@ -2591,7 +2630,7 @@
         let higherIndex = Math.max(movingTabOldIndex, draggedTabPos);
 
         for (let i = lowerIndex + 1; i < higherIndex; i++) {
-          let middleTab = gBrowser.visibleTabs[i];
+          let middleTab = gBrowser.tabs[i];
 
           if (middleTab.pinned != movingTab.pinned) {
             // Don't mix pinned and unpinned tabs
@@ -2772,12 +2811,14 @@
               selectedTab = {
                 left: selectedTab.left,
                 right: selectedTab.right,
+                top: selectedTab.top,
+                bottom: selectedTab.bottom,
               };
             }
             return [
               this._lastTabToScrollIntoView,
               this.arrowScrollbox.scrollClientRect,
-              { left: lastTabRect.left, right: lastTabRect.right },
+              lastTabRect,
               selectedTab,
             ];
           })
@@ -2794,8 +2835,11 @@
             delete this._lastTabToScrollIntoView;
             // Is the new tab already completely visible?
             if (
-              scrollRect.left <= tabRect.left &&
-              tabRect.right <= scrollRect.right
+              this.verticalMode
+                ? scrollRect.top <= tabRect.top &&
+                  tabRect.bottom <= scrollRect.bottom
+                : scrollRect.left <= tabRect.left &&
+                  tabRect.right <= scrollRect.right
             ) {
               return;
             }
@@ -2804,20 +2848,29 @@
               // Can we make both the new tab and the selected tab completely visible?
               if (
                 !selectedRect ||
-                Math.max(
-                  tabRect.right - selectedRect.left,
-                  selectedRect.right - tabRect.left
-                ) <= scrollRect.width
+                (this.verticalMode
+                  ? Math.max(
+                      tabRect.bottom - selectedRect.top,
+                      selectedRect.bottom - tabRect.top
+                    ) <= scrollRect.height
+                  : Math.max(
+                      tabRect.right - selectedRect.left,
+                      selectedRect.right - tabRect.left
+                    ) <= scrollRect.width)
               ) {
                 this.arrowScrollbox.ensureElementIsVisible(tabToScrollIntoView);
                 return;
               }
 
-              this.arrowScrollbox.scrollByPixels(
-                this.#rtlMode
-                  ? selectedRect.right - scrollRect.right
-                  : selectedRect.left - scrollRect.left
-              );
+              let scrollPixels;
+              if (this.verticalMode) {
+                scrollPixels = tabRect.top - selectedRect.top;
+              } else if (this.#rtlMode) {
+                scrollPixels = selectedRect.right - scrollRect.right;
+              } else {
+                scrollPixels = selectedRect.left - scrollRect.left;
+              }
+              this.arrowScrollbox.scrollByPixels(scrollPixels);
             }
 
             if (!this._animateElement.hasAttribute("highlight")) {
@@ -3064,22 +3117,28 @@
       CustomizableUI.removeListener(this);
     }
 
-    updateTabIndicatorAttr(tab) {
-      const theseAttributes = ["soundplaying", "muted", "activemedia-blocked"];
-      const notTheseAttributes = ["pinned", "sharing", "crashed"];
-
-      if (
-        this.verticalMode ||
-        notTheseAttributes.some(attr => tab.hasAttribute(attr))
-      ) {
-        tab.removeAttribute("indicator-replaces-favicon");
-        return;
+    updateTabSoundLabel(tab) {
+      // Add aria-label for inline audio button
+      const [unmute, mute, unblock] =
+        gBrowser.tabLocalization.formatMessagesSync([
+          "tabbrowser-unmute-tab-audio-aria-label",
+          "tabbrowser-mute-tab-audio-aria-label",
+          "tabbrowser-unblock-tab-audio-aria-label",
+        ]);
+      if (tab.audioButton) {
+        if (tab.hasAttribute("muted") || tab.hasAttribute("soundplaying")) {
+          let ariaLabel;
+          tab.linkedBrowser.audioMuted
+            ? (ariaLabel = unmute.attributes[0].value)
+            : (ariaLabel = mute.attributes[0].value);
+          tab.audioButton.setAttribute("aria-label", ariaLabel);
+        } else if (tab.hasAttribute("activemedia-blocked")) {
+          tab.audioButton.setAttribute(
+            "aria-label",
+            unblock.attributes[0].value
+          );
+        }
       }
-
-      tab.toggleAttribute(
-        "indicator-replaces-favicon",
-        theseAttributes.some(attr => tab.hasAttribute(attr))
-      );
     }
   }
 

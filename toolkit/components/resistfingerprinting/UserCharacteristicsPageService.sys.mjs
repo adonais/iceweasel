@@ -166,13 +166,23 @@ export class UserCharacteristicsPageService {
       [this.populateWindowInfo, []],
       [
         this.populateWebGlInfo,
-        [browser.ownerGlobal, browser.ownerDocument, false],
+        [browser.ownerGlobal, browser.ownerDocument, 1, false],
       ],
       [
         this.populateWebGlInfo,
-        [browser.ownerGlobal, browser.ownerDocument, true],
+        [browser.ownerGlobal, browser.ownerDocument, 1, true],
+      ],
+      [
+        this.populateWebGlInfo,
+        [browser.ownerGlobal, browser.ownerDocument, 2, false],
+      ],
+      [
+        this.populateWebGlInfo,
+        [browser.ownerGlobal, browser.ownerDocument, 2, true],
       ],
       [this.populateCanvasData, []],
+      [this.populateWebGPUProperties, [browser.ownerGlobal]],
+      [this.populateUserAgent, [browser.ownerGlobal]],
     ];
     // Bind them to the class and run them in parallel.
     // Timeout if any of them takes too long (5 minutes).
@@ -501,6 +511,110 @@ export class UserCharacteristicsPageService {
     }
   }
 
+  async populateWebGPUProperties(window) {
+    const adapter = await window.navigator.gpu?.requestAdapter();
+    if (!adapter) {
+      return;
+    }
+
+    Glean.characteristics.wgpuMissingFeatures.set(
+      adapter.missingFeatures.toString()
+    );
+    Glean.characteristics.wgpuMaxtexturedimension1d.set(
+      adapter.limits.maxTextureDimension1D
+    );
+    Glean.characteristics.wgpuMaxtexturedimension2d.set(
+      adapter.limits.maxTextureDimension2D
+    );
+    Glean.characteristics.wgpuMaxtexturedimension3d.set(
+      adapter.limits.maxTextureDimension3D
+    );
+    Glean.characteristics.wgpuMaxtexturearraylayers.set(
+      adapter.limits.maxTextureArrayLayers
+    );
+    Glean.characteristics.wgpuMaxbindgroups.set(adapter.limits.maxBindGroups);
+    Glean.characteristics.wgpuMaxbindgroupsplusvertexbuffers.set(
+      adapter.limits.maxBindGroupsPlusVertexBuffers
+    );
+    Glean.characteristics.wgpuMaxbindingsperbindgroup.set(
+      adapter.limits.maxBindingsPerBindGroup
+    );
+    Glean.characteristics.wgpuMaxdynamicuniformbuffersperpipelinelayout.set(
+      adapter.limits.maxDynamicUniformBuffersPerPipelineLayout
+    );
+    Glean.characteristics.wgpuMaxdynamicstoragebuffersperpipelinelayout.set(
+      adapter.limits.maxDynamicStorageBuffersPerPipelineLayout
+    );
+    Glean.characteristics.wgpuMaxsampledtexturespershaderstage.set(
+      adapter.limits.maxSampledTexturesPerShaderStage
+    );
+    Glean.characteristics.wgpuMaxsamplerspershaderstage.set(
+      adapter.limits.maxSamplersPerShaderStage
+    );
+    Glean.characteristics.wgpuMaxstoragebufferspershaderstage.set(
+      adapter.limits.maxStorageBuffersPerShaderStage
+    );
+    Glean.characteristics.wgpuMaxstoragetexturespershaderstage.set(
+      adapter.limits.maxStorageTexturesPerShaderStage
+    );
+    Glean.characteristics.wgpuMaxuniformbufferspershaderstage.set(
+      adapter.limits.maxUniformBuffersPerShaderStage
+    );
+    Glean.characteristics.wgpuMaxuniformbufferbindingsize.set(
+      adapter.limits.maxUniformBufferBindingSize
+    );
+    Glean.characteristics.wgpuMaxstoragebufferbindingsize.set(
+      adapter.limits.maxStorageBufferBindingSize
+    );
+    Glean.characteristics.wgpuMinuniformbufferoffsetalignment.set(
+      adapter.limits.minUniformBufferOffsetAlignment
+    );
+    Glean.characteristics.wgpuMinstoragebufferoffsetalignment.set(
+      adapter.limits.minStorageBufferOffsetAlignment
+    );
+    Glean.characteristics.wgpuMaxvertexbuffers.set(
+      adapter.limits.maxVertexBuffers
+    );
+    Glean.characteristics.wgpuMaxbuffersize.set(adapter.limits.maxBufferSize);
+    Glean.characteristics.wgpuMaxvertexattributes.set(
+      adapter.limits.maxVertexAttributes
+    );
+    Glean.characteristics.wgpuMaxvertexbufferarraystride.set(
+      adapter.limits.maxVertexBufferArrayStride
+    );
+    Glean.characteristics.wgpuMaxinterstageshadervariables.set(
+      adapter.limits.maxInterStageShaderVariables
+    );
+    Glean.characteristics.wgpuMaxcolorattachments.set(
+      adapter.limits.maxColorAttachments
+    );
+    Glean.characteristics.wgpuMaxcolorattachmentbytespersample.set(
+      adapter.limits.maxColorAttachmentBytesPerSample
+    );
+    Glean.characteristics.wgpuMaxcomputeworkgroupstoragesize.set(
+      adapter.limits.maxComputeWorkgroupStorageSize
+    );
+    Glean.characteristics.wgpuMaxcomputeinvocationsperworkgroup.set(
+      adapter.limits.maxComputeInvocationsPerWorkgroup
+    );
+    Glean.characteristics.wgpuMaxcomputeworkgroupsizex.set(
+      adapter.limits.maxComputeWorkgroupSizeX
+    );
+    Glean.characteristics.wgpuMaxcomputeworkgroupsizey.set(
+      adapter.limits.maxComputeWorkgroupSizeY
+    );
+    Glean.characteristics.wgpuMaxcomputeworkgroupsizez.set(
+      adapter.limits.maxComputeWorkgroupSizeZ
+    );
+    Glean.characteristics.wgpuMaxcomputeworkgroupsperdimension.set(
+      adapter.limits.maxComputeWorkgroupsPerDimension
+    );
+  }
+
+  async populateUserAgent(window) {
+    Glean.characteristics.userAgent.set(window.navigator.userAgent);
+  }
+
   async populateMappableData(data) {
     // We set data from usercharacteristics.js
     // We could do Object.keys(data), but this
@@ -566,38 +680,48 @@ export class UserCharacteristicsPageService {
   async populateMathOps() {
     // Taken from https://github.com/fingerprintjs/fingerprintjs/blob/da64ad07a9c1728af595068e4a306a4151c5d503/src/sources/math.ts
     // At the time, fingerprintjs was licensed under MIT. Slightly modified to reduce payload size.
-    const ops = [
-      // Native
-      [Math.acos, 0.123124234234234242],
-      [Math.acosh, 1e308],
-      [Math.asin, 0.123124234234234242],
-      [Math.asinh, 1],
-      [Math.atanh, 0.5],
-      [Math.atan, 0.5],
-      [Math.sin, -1e300],
-      [Math.sinh, 1],
-      [Math.cos, 10.000000000123],
-      [Math.cosh, 1],
-      [Math.tan, -1e300],
-      [Math.tanh, 1],
-      [Math.exp, 1],
-      [Math.expm1, 1],
-      [Math.log1p, 10],
-      // Polyfills (I'm not sure if we need polyfills since firefox seem to have all of these operations, but I'll leave it here just in case they yield different values due to chaining)
-      [value => Math.pow(Math.PI, value), -100],
-      [value => Math.log(value + Math.sqrt(value * value - 1)), 1e154],
-      [value => Math.log(value + Math.sqrt(value * value + 1)), 1],
-      [value => Math.log((1 + value) / (1 - value)) / 2, 0.5],
-      [value => Math.exp(value) - 1 / Math.exp(value) / 2, 1],
-      [value => (Math.exp(value) + 1 / Math.exp(value)) / 2, 1],
-      [value => Math.exp(value) - 1, 1],
-      [value => (Math.exp(2 * value) - 1) / (Math.exp(2 * value) + 1), 1],
-      [value => Math.log(1 + value), 10],
-    ].map(([op, value]) => [op || (() => 0), value]);
+    const getResults = () =>
+      (() =>
+        [
+          // Native
+          [Math.acos, 0.123124234234234242],
+          [Math.acosh, 1e308],
+          [Math.asin, 0.123124234234234242],
+          [Math.asinh, 1],
+          [Math.atanh, 0.5],
+          [Math.atan, 0.5],
+          [Math.sin, -1e300],
+          [Math.sinh, 1],
+          [Math.cos, 10.000000000123],
+          [Math.cosh, 1],
+          [Math.tan, -1e300],
+          [Math.tanh, 1],
+          [Math.exp, 1],
+          [Math.expm1, 1],
+          [Math.log1p, 10],
+          // Polyfills (I'm not sure if we need polyfills since firefox seem to have all of these operations, but I'll leave it here just in case they yield different values due to chaining)
+          [value => Math.pow(Math.PI, value), -100],
+          [value => Math.log(value + Math.sqrt(value * value - 1)), 1e154],
+          [value => Math.log(value + Math.sqrt(value * value + 1)), 1],
+          [value => Math.log((1 + value) / (1 - value)) / 2, 0.5],
+          [value => Math.exp(value) - 1 / Math.exp(value) / 2, 1],
+          [value => (Math.exp(value) + 1 / Math.exp(value)) / 2, 1],
+          [value => Math.exp(value) - 1, 1],
+          [value => (Math.exp(2 * value) - 1) / (Math.exp(2 * value) + 1), 1],
+          [value => Math.log(1 + value), 10],
+        ].map(([op, value]) => [op || (() => 0), value]))().map(([op, value]) =>
+        op(value)
+      );
 
-    Glean.characteristics.mathOps.set(
-      JSON.stringify(ops.map(([op, value]) => op(value)))
-    );
+    Glean.characteristics.mathOps.set(JSON.stringify(getResults()));
+
+    if (AppConstants.platform === "win") {
+      const sandbox = Cu.Sandbox(null, {
+        alwaysUseFdlibm: true,
+      });
+      const results = Cu.evalInSandbox(`(${getResults.toString()})()`, sandbox);
+      Glean.characteristics.mathOpsFdlibm.set(JSON.stringify(results));
+    }
   }
 
   async populateClientInfo() {
@@ -625,14 +749,13 @@ export class UserCharacteristicsPageService {
     Glean.characteristics.cpuModel.set(
       await Services.sysinfo.processInfo.then(r => r.name)
     );
+    Glean.characteristics.cpuArch.set(Services.sysinfo.get("arch"));
   }
 
-  async populateWebGlInfo(window, document, forceSoftwareRendering) {
+  async populateWebGlInfo(window, document, version, forceSoftwareRendering) {
     const results = {
-      glVersion: 2,
       parameters: {
-        v1: [],
-        v2: [],
+        params: [],
         extensions: [],
       },
       shaderPrecision: {
@@ -644,16 +767,13 @@ export class UserCharacteristicsPageService {
     };
 
     const canvas = document.createElement("canvas");
-    let gl = canvas.getContext("webgl2", { forceSoftwareRendering });
-    if (!gl) {
-      gl = canvas.getContext("webgl", { forceSoftwareRendering });
-      results.glVersion = 1;
-    }
+    const gl = canvas.getContext(version === 2 ? "webgl2" : "webgl", {
+      forceSoftwareRendering,
+    });
     if (!gl) {
       lazy.console.error(
         "Unable to initialize WebGL. Your browser or machine may not support it."
       );
-      Glean.characteristics.glVersion.set(results.glVersion);
       return;
     }
 
@@ -732,16 +852,16 @@ export class UserCharacteristicsPageService {
     }
 
     // Get all parameters available in WebGL1
-    if (results.glVersion >= 1) {
+    if (version >= 1) {
       for (const parameter of PARAMS.v1) {
-        results.parameters.v1.push(getParam(parameter));
+        results.parameters.params.push(getParam(parameter));
       }
     }
 
     // Get all parameters available in WebGL2
-    if (results.glVersion === 2) {
+    if (version === 2) {
       for (const parameter of PARAMS.v2) {
-        results.parameters.v2.push(getParam(parameter));
+        results.parameters.params.push(getParam(parameter));
       }
     }
 
@@ -855,33 +975,31 @@ export class UserCharacteristicsPageService {
     }
 
     const map = {
-      // General
-      glVersion: results.glVersion,
       // Debug Params
-      glExtensions: results.debugParams.extensions,
-      glExtensionsRaw: results.debugParams.extensionsRaw,
-      glRenderer: results.debugParams.rendererDebugInfo,
-      glRendererRaw: results.debugParams.rendererRaw,
-      glVendor: results.debugParams.vendorDebugInfo,
-      glVendorRaw: results.debugParams.vendorRaw,
-      glVersionRaw: results.debugParams.versionRaw,
-      glContextType: results.debugParams.contextType,
+      Extensions: results.debugParams.extensions,
+      ExtensionsRaw: results.debugParams.extensionsRaw,
+      Renderer: results.debugParams.rendererDebugInfo,
+      RendererRaw: results.debugParams.rendererRaw,
+      Vendor: results.debugParams.vendorDebugInfo,
+      VendorRaw: results.debugParams.vendorRaw,
+      VersionRaw: results.debugParams.versionRaw,
+      ContextType: results.debugParams.contextType,
       // Debug Shaders
-      glFragmentShader: results.debugShaders.fs,
-      glVertexShader: results.debugShaders.vs,
-      glMinimalSource: results.debugShaders.ms,
+      FragmentShader: results.debugShaders.fs,
+      VertexShader: results.debugShaders.vs,
+      MinimalSource: results.debugShaders.ms,
       // Parameters
-      glParamsExtensions: JSON.stringify(results.parameters.extensions),
-      glParamsV1: JSON.stringify(results.parameters.v1),
-      glParamsV2: JSON.stringify(results.parameters.v2),
+      ParamsExtensions: JSON.stringify(results.parameters.extensions),
+      Params: JSON.stringify(results.parameters.params),
       // Shader Precision
-      glPrecisionFragment: JSON.stringify(
+      PrecisionFragment: JSON.stringify(
         results.shaderPrecision.FRAGMENT_SHADER
       ),
-      glPrecisionVertex: JSON.stringify(results.shaderPrecision.VERTEX_SHADER),
+      PrecisionVertex: JSON.stringify(results.shaderPrecision.VERTEX_SHADER),
     };
 
     this.collectGleanMetricsFromMap(map, {
+      prefix: version === 2 ? "gl2" : "gl",
       suffix: forceSoftwareRendering ? "Software" : "",
     });
   }

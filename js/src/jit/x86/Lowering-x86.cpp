@@ -94,8 +94,8 @@ void LIRGenerator::visitUnbox(MUnbox* unbox) {
   ensureDefined(inner);
 
   if (IsFloatingPointType(unbox->type())) {
-    LUnboxFloatingPoint* lir =
-        new (alloc()) LUnboxFloatingPoint(useBox(inner), unbox->type());
+    MOZ_ASSERT(unbox->type() == MIRType::Double);
+    auto* lir = new (alloc()) LUnboxFloatingPoint(useBox(inner));
     if (unbox->fallible()) {
       assignSnapshot(lir, unbox->bailoutKind());
     }
@@ -215,11 +215,10 @@ void LIRGeneratorX86::lowerForMulInt64(LMulI64* ins, MMul* mir,
   }
 
   // MulI64 on x86 needs output to be in edx, eax;
-  ins->setInt64Operand(
-      0, useInt64Fixed(lhs, Register64(edx, eax), /*useAtStart = */ true));
-  ins->setInt64Operand(INT64_PIECES, useInt64OrConstant(rhs));
+  ins->setLhs(useInt64Fixed(lhs, Register64(edx, eax), /*useAtStart = */ true));
+  ins->setRhs(useInt64OrConstant(rhs));
   if (needsTemp) {
-    ins->setTemp(0, temp());
+    ins->setTemp0(temp());
   }
 
   defineInt64Fixed(ins, mir,
@@ -381,7 +380,7 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   if (ins->access().type() == Scalar::Int64 && ins->access().isAtomic()) {
     auto* lir = new (alloc())
         LWasmAtomicLoadI64(useRegister(memoryBase), useRegister(base),
-                           tempFixed(ecx), tempFixed(ebx));
+                           tempInt64Fixed(Register64(ecx, ebx)));
     defineInt64Fixed(lir, ins,
                      LInt64Allocation(LAllocation(AnyRegister(edx)),
                                       LAllocation(AnyRegister(eax))));
@@ -431,7 +430,7 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
     auto* lir = new (alloc())
         LWasmAtomicStoreI64(useRegister(memoryBase), useRegister(base),
                             useInt64Fixed(ins->value(), Register64(ecx, ebx)),
-                            tempFixed(edx), tempFixed(eax));
+                            tempInt64Fixed(Register64(edx, eax)));
     add(lir, ins);
     return;
   }
@@ -524,10 +523,8 @@ void LIRGenerator::visitWasmCompareExchangeHeap(MWasmCompareExchangeHeap* ins) {
   const LAllocation newval =
       byteArray ? useFixed(ins->newValue(), ebx) : useRegister(ins->newValue());
 
-  LWasmCompareExchangeHeap* lir = new (alloc()) LWasmCompareExchangeHeap(
-      useRegister(base), oldval, newval, useRegister(memoryBase));
-
-  lir->setAddrTemp(temp());
+  auto* lir = new (alloc()) LWasmCompareExchangeHeap(
+      useRegister(base), oldval, newval, useRegister(memoryBase), temp());
   defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
 }
 
@@ -549,10 +546,9 @@ void LIRGenerator::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins) {
   const LAllocation base = useRegister(ins->base());
   const LAllocation value = useRegister(ins->value());
 
-  LWasmAtomicExchangeHeap* lir = new (alloc())
-      LWasmAtomicExchangeHeap(base, value, useRegister(memoryBase));
+  auto* lir = new (alloc())
+      LWasmAtomicExchangeHeap(base, value, useRegister(memoryBase), temp());
 
-  lir->setAddrTemp(temp());
   if (byteSize(ins->access().type()) == 1) {
     defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
   } else {
@@ -594,11 +590,8 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
     } else {
       value = useRegisterOrConstant(ins->value());
     }
-    LWasmAtomicBinopHeapForEffect* lir =
-        new (alloc()) LWasmAtomicBinopHeapForEffect(useRegister(base), value,
-                                                    LDefinition::BogusTemp(),
-                                                    useRegister(memoryBase));
-    lir->setAddrTemp(temp());
+    auto* lir = new (alloc()) LWasmAtomicBinopHeapForEffect(
+        useRegister(base), value, useRegister(memoryBase), temp());
     add(lir, ins);
     return;
   }
@@ -655,17 +648,14 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
     value = useRegisterAtStart(ins->value());
   }
 
-  LWasmAtomicBinopHeap* lir = new (alloc())
-      LWasmAtomicBinopHeap(useRegister(base), value, tempDef,
-                           LDefinition::BogusTemp(), useRegister(memoryBase));
-
-  lir->setAddrTemp(temp());
+  auto* lir = new (alloc()) LWasmAtomicBinopHeap(
+      useRegister(base), value, useRegister(memoryBase), tempDef, temp());
   if (byteArray || bitOp) {
     defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
   } else if (ins->value()->isConstant()) {
     define(lir, ins);
   } else {
-    defineReuseInput(lir, ins, LWasmAtomicBinopHeap::valueOp);
+    defineReuseInput(lir, ins, LWasmAtomicBinopHeap::ValueIndex);
   }
 }
 
@@ -750,6 +740,24 @@ void LIRGeneratorX86::lowerBigIntPtrMod(MBigIntPtrMod* ins) {
   defineFixed(lir, ins, LAllocation(AnyRegister(edx)));
 }
 
+void LIRGeneratorX86::lowerTruncateDToInt32(MTruncateToInt32* ins) {
+  MDefinition* opd = ins->input();
+  MOZ_ASSERT(opd->type() == MIRType::Double);
+
+  LDefinition maybeTemp =
+      Assembler::HasSSE3() ? LDefinition::BogusTemp() : tempDouble();
+  define(new (alloc()) LTruncateDToInt32(useRegister(opd), maybeTemp), ins);
+}
+
+void LIRGeneratorX86::lowerTruncateFToInt32(MTruncateToInt32* ins) {
+  MDefinition* opd = ins->input();
+  MOZ_ASSERT(opd->type() == MIRType::Float32);
+
+  LDefinition maybeTemp =
+      Assembler::HasSSE3() ? LDefinition::BogusTemp() : tempFloat32();
+  define(new (alloc()) LTruncateFToInt32(useRegister(opd), maybeTemp), ins);
+}
+
 void LIRGenerator::visitSubstr(MSubstr* ins) {
   // Due to lack of registers on x86, we reuse the string register as
   // temporary. As a result we only need two temporary registers and take a
@@ -760,6 +768,27 @@ void LIRGenerator::visitSubstr(MSubstr* ins) {
               tempByteOpRegister());
   define(lir, ins);
   assignSafepoint(lir, ins);
+}
+
+void LIRGeneratorX86::lowerWasmBuiltinTruncateToInt32(
+    MWasmBuiltinTruncateToInt32* ins) {
+  MDefinition* opd = ins->input();
+  MOZ_ASSERT(opd->type() == MIRType::Double || opd->type() == MIRType::Float32);
+
+  LDefinition maybeTemp =
+      Assembler::HasSSE3() ? LDefinition::BogusTemp() : tempDouble();
+  if (opd->type() == MIRType::Double) {
+    define(new (alloc()) LWasmBuiltinTruncateDToInt32(
+               useRegister(opd), useFixed(ins->instance(), InstanceReg),
+               maybeTemp),
+           ins);
+    return;
+  }
+
+  define(
+      new (alloc()) LWasmBuiltinTruncateFToInt32(
+          useRegister(opd), useFixed(ins->instance(), InstanceReg), maybeTemp),
+      ins);
 }
 
 void LIRGenerator::visitWasmTruncateToInt64(MWasmTruncateToInt64* ins) {
@@ -834,7 +863,7 @@ void LIRGeneratorShared::lowerWasmCompareAndSelect(MWasmSelect* ins,
                                                    JSOp jsop) {
   MOZ_ASSERT(canSpecializeWasmCompareAndSelect(compTy, ins->type()));
   auto* lir = new (alloc()) LWasmCompareAndSelect(
-      useRegister(lhs), useAny(rhs), compTy, jsop,
-      useRegisterAtStart(ins->trueExpr()), useAny(ins->falseExpr()));
+      useRegister(lhs), useAny(rhs), useRegisterAtStart(ins->trueExpr()),
+      useAny(ins->falseExpr()), compTy, jsop);
   defineReuseInput(lir, ins, LWasmCompareAndSelect::IfTrueExprIndex);
 }

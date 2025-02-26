@@ -1,13 +1,10 @@
 import {
-  EventEmitter,
-  FakePrefs,
   FakensIPrefService,
   GlobalOverrider,
   FakeConsoleAPI,
   FakeLogger,
-} from "newtab/test/unit/utils";
+} from "asrouter/tests/unit/utils";
 import Adapter from "enzyme-adapter-react-16";
-import { chaiAssertions } from "newtab/test/schemas/pings";
 import enzyme from "enzyme";
 
 enzyme.configure({ adapter: new Adapter() });
@@ -31,8 +28,6 @@ const files = req.keys();
 
 // This exposes sinon assertions to chai.assert
 sinon.assert.expose(assert, { prefix: "" });
-
-chai.use(chaiAssertions);
 
 const overrider = new GlobalOverrider();
 
@@ -154,13 +149,9 @@ const TEST_GLOBAL = {
     defineLazyGetter(object, name, f) {
       updateGlobalOrObject(object)[name] = f();
     },
-    defineModuleGetter: updateGlobalOrObject,
     defineESModuleGetters: updateGlobalOrObject,
     generateQI() {
       return {};
-    },
-    import() {
-      return global;
     },
     importESModule() {
       return global;
@@ -185,7 +176,6 @@ const TEST_GLOBAL = {
     },
     isSuccessCode: () => true,
   },
-  ConsoleAPI: FakeConsoleAPI,
   // NB: These are functions/constructors
   // eslint-disable-next-line object-shorthand
   ContentSearchUIController: function () {},
@@ -216,17 +206,6 @@ const TEST_GLOBAL = {
     "@mozilla.org/io/string-input-stream;1": {
       createInstance() {
         return {};
-      },
-    },
-    "@mozilla.org/security/hash;1": {
-      createInstance() {
-        return {
-          init() {},
-          updateFromStream() {},
-          finish() {
-            return "0";
-          },
-        };
       },
     },
     "@mozilla.org/updates/update-checker;1": { createInstance() {} },
@@ -369,7 +348,6 @@ const TEST_GLOBAL = {
       removeListener() {},
     },
   },
-  Preferences: FakePrefs,
   PrivateBrowsingUtils: {
     isBrowserPrivate: () => false,
     isWindowPrivate: () => false,
@@ -490,7 +468,6 @@ const TEST_GLOBAL = {
   },
   XPCOMUtils: {
     defineLazyGlobalGetters: updateGlobalOrObject,
-    defineLazyModuleGetters: updateGlobalOrObject,
     defineLazyServiceGetter: updateGlobalOrObject,
     defineLazyServiceGetters: updateGlobalOrObject,
     defineLazyPreferenceGetter(object, name) {
@@ -500,7 +477,6 @@ const TEST_GLOBAL = {
       return {};
     },
   },
-  EventEmitter,
   ShellService: {
     doesAppNeedPin: () => false,
     isDefaultBrowser: () => true,

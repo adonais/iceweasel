@@ -10,11 +10,12 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
-import org.mozilla.fenix.webcompat.retrievalservice.DefaultWebCompatReporterRetrievalService
-import org.mozilla.fenix.webcompat.store.WebCompatInfoDeserializer
-import org.mozilla.fenix.webcompat.store.WebCompatReporterNavigationMiddleware
-import org.mozilla.fenix.webcompat.store.WebCompatReporterStorageMiddleware
-import org.mozilla.fenix.webcompat.store.WebCompatReporterSubmissionMiddleware
+import org.mozilla.fenix.webcompat.middleware.DefaultWebCompatReporterRetrievalService
+import org.mozilla.fenix.webcompat.middleware.WebCompatInfoDeserializer
+import org.mozilla.fenix.webcompat.middleware.WebCompatReporterNavigationMiddleware
+import org.mozilla.fenix.webcompat.middleware.WebCompatReporterStorageMiddleware
+import org.mozilla.fenix.webcompat.middleware.WebCompatReporterSubmissionMiddleware
+import org.mozilla.fenix.webcompat.middleware.WebCompatReporterTelemetryMiddleware
 
 /**
  * Provides middleware for the WebCompat Reporter store.
@@ -35,11 +36,13 @@ object WebCompatReporterMiddlewareProvider {
     ) = listOf(
         provideStorageMiddleware(appStore),
         provideSubmissionMiddleware(
+            appStore = appStore,
             browserStore = browserStore,
             webCompatInfoDeserializer = provideWebCompatInfoDeserializer(),
             scope = scope,
         ),
         provideNavigationMiddleware(),
+        provideTelemetryMiddleware(),
     )
 
     private fun provideStorageMiddleware(
@@ -49,10 +52,12 @@ object WebCompatReporterMiddlewareProvider {
     )
 
     private fun provideSubmissionMiddleware(
+        appStore: AppStore,
         browserStore: BrowserStore,
         webCompatInfoDeserializer: WebCompatInfoDeserializer,
         scope: CoroutineScope,
     ) = WebCompatReporterSubmissionMiddleware(
+        appStore = appStore,
         webCompatReporterRetrievalService = DefaultWebCompatReporterRetrievalService(
             browserStore = browserStore,
             webCompatInfoDeserializer = webCompatInfoDeserializer,
@@ -62,6 +67,9 @@ object WebCompatReporterMiddlewareProvider {
 
     private fun provideNavigationMiddleware() =
         WebCompatReporterNavigationMiddleware()
+
+    private fun provideTelemetryMiddleware() =
+        WebCompatReporterTelemetryMiddleware()
 
     private val json by lazy {
         Json {

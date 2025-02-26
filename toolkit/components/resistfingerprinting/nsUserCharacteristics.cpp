@@ -13,7 +13,7 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/glean/GleanPings.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/ResistfingerprintingMetrics.h"
 
 #include "jsapi.h"
 #include "mozilla/Components.h"
@@ -26,6 +26,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/StaticPrefs_privacy.h"
 
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/PreferenceSheet.h"
@@ -93,7 +94,7 @@ using PopulatePromise = PopulatePromiseBase::Private;
 
 // ==================================================================
 // ==================================================================
-RefPtr<PopulatePromise> ContentPageStuff() {
+already_AddRefed<PopulatePromise> ContentPageStuff() {
   nsCOMPtr<nsIUserCharacteristicsPageService> ucp =
       do_GetService("@mozilla.org/user-characteristics-page;1");
   MOZ_ASSERT(ucp);
@@ -108,7 +109,7 @@ RefPtr<PopulatePromise> ContentPageStuff() {
             ("Could not create Content Page"));
     populatePromise->Reject(
         std::pair(__func__, "CREATION_FAILED"_ns.AsString()), __func__);
-    return populatePromise;
+    return populatePromise.forget();
   }
   MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Debug,
           ("Created Content Page"));
@@ -136,7 +137,7 @@ RefPtr<PopulatePromise> ContentPageStuff() {
                             __func__);
   }
 
-  return populatePromise;
+  return populatePromise.forget();
 }
 
 void PopulateCSSProperties() {
@@ -436,7 +437,7 @@ void PopulateScaling() {
   glean::characteristics::scalings.Set(output);
 }
 
-RefPtr<PopulatePromise> PopulateMediaDevices() {
+already_AddRefed<PopulatePromise> PopulateMediaDevices() {
   RefPtr<PopulatePromise> populatePromise = new PopulatePromise(__func__);
   MediaManager::Get()->GetPhysicalDevices()->Then(
       GetCurrentSerialEventTarget(), __func__,
@@ -480,7 +481,7 @@ RefPtr<PopulatePromise> PopulateMediaDevices() {
         populatePromise->Reject(
             std::pair("PopulateMediaDevices"_ns, reason->mMessage), __func__);
       });
-  return populatePromise;
+  return populatePromise.forget();
 }
 
 void PopulateLanguages() {
@@ -631,7 +632,7 @@ void PopulateMisc(bool worksInGtest) {
   }
 }
 
-RefPtr<PopulatePromise> PopulateTimeZone() {
+already_AddRefed<PopulatePromise> PopulateTimeZone() {
   RefPtr<PopulatePromise> populatePromise = new PopulatePromise(__func__);
 
   AutoTArray<char16_t, 128> tzBuffer;
@@ -646,7 +647,7 @@ RefPtr<PopulatePromise> PopulateTimeZone() {
                             __func__);
   }
 
-  return populatePromise;
+  return populatePromise.forget();
 }
 
 const RefPtr<PopulatePromise>& TimoutPromise(
@@ -656,10 +657,8 @@ const RefPtr<PopulatePromise>& TimoutPromise(
   nsresult rv = NS_NewTimerWithCallback(
       getter_AddRefs(timeout),
       [=](auto) {
-        if (!promise->IsResolved()) {
-          promise->Reject(std::pair(funcName, "TIMEOUT"_ns.AsString()),
-                          __func__);
-        }
+        // NOTE: has no effect if `promise` has already been resolved.
+        promise->Reject(std::pair(funcName, "TIMEOUT"_ns.AsString()), __func__);
       },
       delay, nsITimer::TYPE_ONE_SHOT, "UserCharacteristicsPromiseTimeout");
   if (NS_FAILED(rv)) {
@@ -682,7 +681,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 // metric is set, this variable should be incremented. It'll be a lot. It's
 // okay. We're going to need it to know (including during development) what is
 // the source of the data we are looking at.
-const int kSubmissionSchema = 14;
+const int kSubmissionSchema = 20;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -695,6 +694,10 @@ const auto* const kOptOutPref =
     "toolkit.telemetry.user_characteristics_ping.opt-out";
 const auto* const kSendOncePref =
     "toolkit.telemetry.user_characteristics_ping.send-once";
+const auto* const kCanvasRandomizationPrincipalCheckPref =
+    "privacy.resistFingerprinting.randomization.canvas.disable_for_chrome";
+const auto* const kFingerprintingProtectionOverridesPref =
+    "privacy.fingerprintingProtection.overrides";
 
 namespace {
 
@@ -748,6 +751,7 @@ void AfterPingSentSteps(bool aUpdatePref) {
       Preferences::SetBool(kSendOncePref, false);
     }
   }
+  Preferences::SetBool(kCanvasRandomizationPrincipalCheckPref, false);
 }
 
 /*
@@ -773,6 +777,22 @@ bool nsUserCharacteristics::ShouldSubmit() {
   }
 
   if (optOut) {
+    return false;
+  }
+
+  if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
+      StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
+    // If resistFingerprinting is enabled, we don't want to send the ping
+    // as it will mess up data.
+    return false;
+  }
+
+  nsAutoString fppOverrides;
+  nsresult rv = Preferences::GetString(kFingerprintingProtectionOverridesPref,
+                                       fppOverrides);
+  if (NS_FAILED(rv) || !fppOverrides.IsEmpty()) {
+    // If there are any overrides, we don't want to send the ping
+    // as it will mess up data.
     return false;
   }
 
@@ -834,6 +854,9 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
 ) {
   MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning, ("Populating Data"));
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  // Enable canvas principal check for randomization
+  Preferences::SetBool(kCanvasRandomizationPrincipalCheckPref, true);
 
   if (NS_FAILED(PopulateEssentials())) {
     // We couldn't populate important metrics. Don't submit a ping.

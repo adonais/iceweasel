@@ -441,9 +441,10 @@ class LiveBundle : public TempObject {
     ranges_.removeAndIncrement(iter);
   }
   void removeAllRangesFromVirtualRegisters();
-  void addRange(LiveRange* range);
-  [[nodiscard]] bool addRange(TempAllocator& alloc, VirtualRegister* vreg,
-                              CodePosition from, CodePosition to);
+  void addRange(LiveRange* range, LiveRange* startAt = nullptr);
+  void addRangeAtEnd(LiveRange* range);
+  [[nodiscard]] bool addRangeAtEnd(TempAllocator& alloc, VirtualRegister* vreg,
+                                   CodePosition from, CodePosition to);
   [[nodiscard]] bool addRangeAndDistributeUses(TempAllocator& alloc,
                                                LiveRange* oldRange,
                                                CodePosition from,
@@ -897,8 +898,9 @@ class BacktrackingAllocator : protected RegisterAllocator {
       const VirtualRegister& reg, const ControlFlowEdgeVector& edges);
   [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool
   createMoveGroupsFromLiveRangeTransitions();
-  size_t findFirstNonCallSafepoint(CodePosition from);
-  void addLiveRegistersForRange(VirtualRegister& reg, LiveRange* range);
+  size_t findFirstNonCallSafepoint(CodePosition pos, size_t startFrom);
+  void addLiveRegistersForRange(VirtualRegister& reg, LiveRange* range,
+                                size_t* firstNonCallSafepoint);
   [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool installAllocationsInLIR();
   size_t findFirstSafepoint(CodePosition pos, size_t startFrom);
   [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool populateSafepoints();

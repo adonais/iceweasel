@@ -285,6 +285,11 @@ class EditorDOMPointBase final {
   bool IsContainerElement() const { return mParent && mParent->IsElement(); }
 
   /**
+   * Returns true if the container node is an editing host.
+   */
+  [[nodiscard]] bool IsContainerEditableRoot() const;
+
+  /**
    * IsContainerHTMLElement() returns true if the container node is an HTML
    * element node and its node name is aTag.
    */
@@ -879,12 +884,20 @@ class EditorDOMPointBase final {
     return true;
   }
 
+  [[nodiscard]] bool IsInContentNodeAndValid() const {
+    return IsInContentNode() && IsSetAndValid();
+  }
+
   [[nodiscard]] bool IsInComposedDoc() const {
     return IsSet() && mParent->IsInComposedDoc();
   }
 
   [[nodiscard]] bool IsSetAndValidInComposedDoc() const {
     return IsInComposedDoc() && IsSetAndValid();
+  }
+
+  [[nodiscard]] bool IsInContentNodeAndValidInComposedDoc() const {
+    return IsInContentNode() && IsSetAndValidInComposedDoc();
   }
 
   bool IsStartOfContainer() const {

@@ -102,6 +102,18 @@
               data-lazy-l10n-id="full-screen-exit"/>
   </menupopup>
 
+  <menupopup id="open-tab-group-context-menu">
+    <menuitem id="open-tab-group-context-menu_moveToNewWindow" data-l10n-id="tab-group-context-move-to-new-window"/>
+    <menuitem id="open-tab-group-context-menu_moveToThisWindow" data-l10n-id="tab-group-context-move-to-this-window"/>
+    <menuitem id="open-tab-group-context-menu_delete" data-l10n-id="tab-group-context-delete"/>
+  </menupopup>
+
+  <menupopup id="saved-tab-group-context-menu">
+    <menuitem id="saved-tab-group-context-menu_openInThisWindow" data-l10n-id="tab-group-context-open-saved-group-in-this-window"/>
+    <menuitem id="saved-tab-group-context-menu_openInNewWindow" data-l10n-id="tab-group-context-open-saved-group-in-new-window"/>
+    <menuitem id="saved-tab-group-context-menu_delete" data-l10n-id="tab-group-context-delete"/>
+  </menupopup>
+
   <!-- This node can be cloned by SetClickAndHoldHandlers. -->
   <menupopup id="backForwardMenu"/>
   <tooltip id="aHTMLTooltip" page="true"/>
@@ -152,8 +164,21 @@
     </toolbarbutton>
   </panel>
 
+  <!-- Starting point for selection actions -->
   <panel class="panel-no-padding"
-         id="ask-chat-shortcuts"
+         id="selection-shortcut-action-panel"
+         noautofocus="true"
+         consumeoutsideclicks="never"
+         type="arrow">
+    <hbox class="panel-subview-body">
+      <html:moz-button id="ai-action-button"/>
+    </hbox>
+  </panel>
+
+
+  <!-- Shortcut options for Gen AI action -->
+  <panel class="panel-no-padding"
+         id="chat-shortcuts-options-panel"
          noautofocus="true"
          type="arrow">
     <vbox class="panel-subview-body"/>
@@ -401,6 +426,11 @@
               observes="cmd_CustomizeToolbars"
               class="viewCustomizeToolbar"
               data-lazy-l10n-id="toolbar-context-menu-view-customize-toolbar-2"/>
+    <menuseparator id="sidebarRevampSeparator"/>
+    <menuitem id="toolbar-context-toggle-vertical-tabs"
+              data-lazy-l10n-id="toolbar-context-turn-on-vertical-tabs"/>
+    <menuitem id="toolbar-context-customize-sidebar"
+              data-lazy-l10n-id="toolbar-context-customize-sidebar"/>
     <menuseparator contexttype="fullscreen"/>
     <menuitem id="toolbar-context-full-screen-autohide"
               class="fullscreen-context-autohide"

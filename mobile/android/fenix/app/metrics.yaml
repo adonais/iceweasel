@@ -1086,17 +1086,13 @@ onboarding:
     metadata:
       tags:
         - Onboarding
-  privacy_preferences_modal_crash_reporting_checked:
+  privacy_preferences_modal_crash_reporting_learn_more:
     type: event
-    description: The privacy preferences model crash reporting option checked state.
-    extra_keys:
-      checked:
-        type: boolean
-        description: Whether the crash reporting option is checked.
+    description: The privacy preferences model usage data "learn more" link used".
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1933175
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943588
     data_reviews:
-      - https://phabricator.services.mozilla.com/D230103
+      - https://phabricator.services.mozilla.com/D235440
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1105,17 +1101,13 @@ onboarding:
     metadata:
       tags:
         - Onboarding
-  privacy_preferences_modal_usage_data_checked:
+  privacy_preferences_modal_usage_data_learn_more:
     type: event
-    description: The privacy preferences model usage data option checked state.
-    extra_keys:
-      checked:
-        type: boolean
-        description: Whether the usage data option is checked.
+    description: The privacy preferences model crash reporting "learn more" link used".
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1933175
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943588
     data_reviews:
-      - https://phabricator.services.mozilla.com/D230103
+      - https://phabricator.services.mozilla.com/D235440
     data_sensitivity:
       - interaction
     notification_emails:
@@ -2124,6 +2116,88 @@ onboarding:
     metadata:
       tags:
         - Onboarding
+  marketing_data_continue_clicked:
+    type: event
+    description:
+      The user clicked continue on the marketing data opt out screen
+    extra_keys:
+      opt_in:
+        type: boolean
+        description: |
+          Whether the user chose to opt in to marketing data collection.  True if the user opts in.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1930758
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D228921
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Onboarding
+  marketing_data_card_viewed:
+    type: event
+    description:
+      The user viewed the marketing data opt in card.
+    extra_keys:
+      element_type:
+        type: string
+        description: |
+          Type of element that was viewed.
+      action:
+        type: string
+        description: |
+          Type of action taken by the user.
+      sequence_position:
+        type: string
+        description: |
+          Position of the onboarding card in the onboarding flow.
+      sequence_id:
+        type: string
+        description: |
+          Identifier for the sequence.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1930758
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D228921
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Onboarding
+  marketing_data_opt_in_toggled:
+    type: event
+    description: The user toggled the marketing data checkbox.
+    extra_keys:
+      opt_in:
+        type: boolean
+        description: Whether the user chose to opt in to marketing data collection.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1930758
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D235446
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Onboarding
+  marketing_data_learn_more:
+    type: event
+    description: The marketing data "learn more" link used".
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943588
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D235446
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Onboarding
 
 search_shortcuts:
   selected:
@@ -2386,6 +2460,7 @@ metrics:
       Is Fenix the default browser?
     send_in_pings:
       - metrics
+      - usage-reporting
     bugs:
       - https://github.com/mozilla-mobile/fenix/issues/960
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1923842
@@ -11400,586 +11475,6 @@ sync:
       - android-probes@mozilla.com
     expires: never
 
-shopping:
-  address_bar_icon_displayed:
-    type: event
-    description: |
-      The shopping icon was displayed in the address bar.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  address_bar_icon_clicked:
-    type: event
-    description: |
-      The shopping icon from the address bar was clicked.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_closed:
-    type: event
-    description: |
-      The shopping bottom sheet was closed.
-    extra_keys:
-      source:
-        description: |
-          The method used to close the bottom sheet. Possible values are: `sheet_slide`,
-          `link_opened`, `click_outside`, `back_pressed`, `handle_clicked`, `not_now`
-          or `opt_out`.
-        type: string
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1855150
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4060
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_displayed:
-    type: event
-    description: |
-      The shopping bottom sheet was displayed.
-    extra_keys:
-      view:
-        description: |
-          State of the bottom sheet. Possible values are: `half` or `full`.
-        type: string
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1855150
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-      - https://github.com/mozilla-mobile/firefox-android/pull/4060
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_onboarding_displayed:
-    type: event
-    description: |
-      The shopping contextual onboarding card was displayed.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_review_quality_explainer_url_clicked:
-    type: event
-    description: |
-      User interacted with the learn more link from the shopping explanation card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_show_terms_clicked:
-    type: event
-    description: |
-      User interacted with the terms and conditions link from the shopping contextual onboarding card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_show_privacy_policy_clicked:
-    type: event
-    description: |
-      User interacted with the privacy policy link from the shopping contextual onboarding card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_not_now_clicked:
-    type: event
-    description: |
-      User interacted with the opt out button from the shopping contextual onboarding card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_opt_in_accepted:
-    type: event
-    description: |
-      User interacted with the opt in button from the shopping contextual onboarding card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_show_more_recent_reviews_clicked:
-    type: event
-    description: |
-      User interacted with the expand "show more" button from the shopping highlights card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_learn_more_clicked:
-    type: event
-    description: |
-      The user clicked on learn more link from the onboarding card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_expand_settings:
-    type: event
-    description: |
-      Settings card from the bottom sheet was expanded.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_no_review_reliability_available:
-    type: event
-    description: |
-      No analysis card was displayed to the user.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_analyze_reviews_none_available_clicked:
-    type: event
-    description: |
-      User clicked on the launch analyzer link from the no analysis card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_reanalyze_clicked:
-    type: event
-    description: |
-      User interacted with the launch analyzer link from the "New info to check" warning card.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_reactivated_button_clicked:
-    type: event
-    description: |
-      User interacted with the button to report a product is back in stock.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  product_page_visits:
-    type: counter
-    description: |
-      Counts number of visits to a supported retailer product page
-      while enrolled in either the control or treatment branches
-      of the shopping experiment.
-    send_in_pings:
-      - metrics
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1854501
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4120#issuecomment-1768423370
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_powered_by_fakespot_link_clicked:
-    type: event
-    description: |
-      The user clicked the "Fakespot by Mozilla" link at the bottom of review checker
-      sheet.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862775
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4354#issuecomment-1794341141
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_stale_analysis_shown:
-    type: event
-    description: |
-      Records an event when the "New info to check" card is shown.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862776
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4379#issuecomment-1794925138
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_ads_impression:
-    type: event
-    description: |
-      The user viewed an ad in review checker for at least 1.5 seconds.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865854
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4604#issuecomment-1827890623
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_ads_clicked:
-    type: event
-    description: |
-      The user clicked an ad in review checker.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865854
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4604#issuecomment-1827890623
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_ads_setting_toggled:
-    type: event
-    description: |
-      The user toggled the ads display setting.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865854
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4604#issuecomment-1827890623
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    extra_keys:
-      action:
-        type: string
-        description: |
-          Whether the toggle was used to enable or disable ads. Possible values
-          are `enabled` and `disabled`.
-    metadata:
-      tags:
-        - Shopping
-  ads_exposure:
-    type: event
-    description: |
-      On a supported product page, the review checker showed analysis,
-      and the ads exposure pref was enabled, or review checker ads were enabled,
-      and when we tried to fetch an ad from the ad server, an ad was available.
-      Does not indicate whether the ad was actually shown.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1866992
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4622#issuecomment-1829905076
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  surface_no_ads_available:
-    type: event
-    description: |
-      On a supported product page, the review checker
-      showed analysis, and review checker ads were enabled,
-      but when we tried to fetch an ad from the ad server,
-      no ad was available.
-    send_in_pings:
-      - events
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1866992
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4622#issuecomment-1829905076
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-       tags:
-        - Shopping
-
-shopping.settings:
-  component_opted_out:
-    type: boolean
-    lifetime: application
-    description: |
-      Whether or not the user opted out of review quality check feature.
-    send_in_pings:
-      - metrics
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  nimbus_disabled_shopping:
-    type: boolean
-    lifetime: application
-    description: |
-      Whether or not Nimbus has disabled the use of the shopping component.
-    send_in_pings:
-      - metrics
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  user_has_onboarded:
-    type: boolean
-    lifetime: application
-    description: |
-      Whether or the user has completed the review quality check onboarding.
-    send_in_pings:
-      - metrics
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1843508
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/3619
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
-  disabled_ads:
-    type: boolean
-    lifetime: application
-    description: |
-      Indicates if the user has disabled ads.
-    send_in_pings:
-      - metrics
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865854
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/4604#issuecomment-1827890623
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Shopping
 fx_suggest:
   ping_type:
     type: string
@@ -12711,6 +12206,7 @@ usage:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1921220
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1926829
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1928975
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1921220
     data_sensitivity:
@@ -12723,6 +12219,171 @@ usage:
     expires: never
     send_in_pings:
       - usage-reporting
+      - usage-deletion-request
+
+  duration:
+    type: timespan
+    description: |
+      The duration of the last foreground session.
+    time_unit: second
+    send_in_pings:
+      - usage-reporting
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1512938#c3
+    data_sensitivity:
+      - technical
+      - interaction
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
+
+  reason:
+    type: string
+    lifetime: ping
+    send_in_pings:
+      - usage-reporting
+    description: |
+      The optional reason the ping was submitted.
+      The specific values for reason are specific to each ping, and are
+      documented in the ping's pings.yaml file.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1609218#c4
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
+
+  os:
+    type: string
+    lifetime: application
+    send_in_pings:
+      - usage-reporting
+    description: |
+      The name of the operating system.
+      Possible values:
+      Android, iOS, Linux, Darwin, Windows,
+      FreeBSD, NetBSD, OpenBSD, Solaris, Unknown
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1512938#c3
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
+
+  os_version:
+    type: string
+    lifetime: application
+    send_in_pings:
+      - usage-reporting
+    description: |
+      The user-visible version of the operating system (e.g. "1.2.3").
+      If the version detection fails, this metric gets set to `Unknown`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1512938#c3
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
+
+  app_display_version:
+    type: string
+    lifetime: application
+    send_in_pings:
+      - usage-reporting
+    description: |
+      The user visible version string (e.g. "1.0.3").
+      If the value was not provided through configuration,
+      this metric gets set to `Unknown`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1508305#c9
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
+
+  app_channel:
+    type: string
+    lifetime: application
+    send_in_pings:
+      - usage-reporting
+    description: |
+      The channel the application is being distributed on.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1520741#c18
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
+
+  first_run_date:
+    type: datetime
+    lifetime: user
+    send_in_pings:
+      - usage-reporting
+    time_unit: day
+    description: |
+      The date of the first run of the application.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1525045#c18
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
+
+  app_build:
+    type: string
+    lifetime: application
+    send_in_pings:
+      - usage-reporting
+    description: |
+      The build identifier generated by the CI system (e.g. "1234/A").
+      If the value was not provided through configuration,
+      this metric gets set to `Unknown`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938070
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1512938#c3
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+      - jrediger@mozilla.com
+      - loines@mozilla.com
+    expires: never
 
 # This was taken from: https://searchfox.org/mozilla-central/rev/d8f4a94563b0a28c485f0dbfaf56b92434242d1e/toolkit/components/reportbrokensite/metrics.yaml#13-737,
 # without the irrelevant metrics for Fenix
@@ -13221,3 +12882,128 @@ broken_site_report.browser_info.prefs:
       - webcompat-reporting-tool-telemetry@mozilla.com
     send_in_pings:
       - broken-site-report
+
+webcompatreporting:
+  reason_dropdown:
+    type: string
+    description: |
+      Record whether the user chooses an option from the dropdown.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - twisniewski@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    expires: never
+  send:
+    type: event
+    description: |
+      Recorded when a user selects the Send button to submit webcompat report data.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - twisniewski@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    expires: never
+  send_more_info:
+    type: event
+    description: |
+      Recorded when a user clicks on the Send More Info link in the reporting UI
+      The user will be redirected to webcompat.com to submit a more comprehensive report.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - twisniewski@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    expires: never
+
+home.content.article:
+  impression:
+    type: event
+    description: >
+      Recorded when a pocket tile is visible to the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1928577
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D233815
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    extra_keys:
+      is_sponsored: &is_sponsored_pocket
+        description: Whether the pocket tile was sponsored (has an ad callback).
+        type: boolean
+      position: &pocket_position
+        description: The position (0-index) of the pocket tile.
+        type: quantity
+      tile_id: &pocket_tile_id
+        description: >
+          A content identifier.
+          For organic Pocket recommendations it is an opaque id produced by
+          Pocket's recommendation systems.
+          For sponsored Pocket content it is Kevel's "ad ID".
+        type: quantity
+      scheduled_corpus_item_id: &scheduled_corpus_item_id
+        description: >
+          A content identifier.
+          For organic content recommendations it is an opaque id produced by
+          Merino's recommendation systems that corresponds uniquely to
+          a piece of content scheduled for a specific day on a specific surface.
+          This is the replacement for tile_id.
+        type: string
+      corpus_item_id: &corpus_item_id
+        description: >
+          A content identifier.
+          For organic content recommendations it is an opaque id produced by
+          Merino's recommendation systems that corresponds uniquely to the URL.
+          This is the replacement for tile_id and scheduled_corpus_item_id.
+        type: string
+      received_rank: &received_rank
+        description: The rank or order of the recommendation at the time it was sent to the client.
+        type: quantity
+      recommended_at: &recommended_at
+        description: The time in milliseconds the recommendation was recommended at.
+        type: quantity
+      topic: &topic
+        description: The topic of the recommendation. Like "entertainment".
+        type: string
+    send_in_pings:
+      - home
+
+  click:
+    type: event
+    description: >
+      Recorded when a pocket tile is clicked.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1928577
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D233815
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    extra_keys:
+      is_sponsored: *is_sponsored_pocket
+      position: *pocket_position
+      tile_id: *pocket_tile_id
+      scheduled_corpus_item_id: *scheduled_corpus_item_id
+      corpus_item_id: *corpus_item_id
+      received_rank: *received_rank
+      recommended_at: *recommended_at
+      topic: *topic
+    send_in_pings:
+      - home

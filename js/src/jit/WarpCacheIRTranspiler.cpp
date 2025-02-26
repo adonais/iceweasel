@@ -1107,6 +1107,18 @@ bool WarpCacheIRTranspiler::emitGuardSpecificInt32(Int32OperandId numId,
   return true;
 }
 
+bool WarpCacheIRTranspiler::emitGuardSpecificValue(ValOperandId valId,
+                                                   uint32_t expectedOffset) {
+  MDefinition* val = getOperand(valId);
+  Value expected = valueStubField(expectedOffset);
+
+  auto* ins = MGuardValue::New(alloc(), val, expected);
+  add(ins);
+
+  setOperand(valId, ins);
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitGuardSpecificObject(ObjOperandId objId,
                                                     uint32_t expectedOffset) {
   MDefinition* obj = getOperand(objId);
@@ -1354,13 +1366,10 @@ bool WarpCacheIRTranspiler::emitGuardBooleanToInt32(ValOperandId inputId,
 }
 
 bool WarpCacheIRTranspiler::emitGuardIsNumber(ValOperandId inputId) {
-  // Prefer MToDouble because it gets further optimizations downstream.
   MDefinition* def = getOperand(inputId);
-  if (def->type() == MIRType::Int32 || def->type() == MIRType::Float32) {
-    auto* ins = MToDouble::New(alloc(), def);
-    add(ins);
 
-    setOperand(inputId, ins);
+  // No guard needed when the input is already a number type.
+  if (IsNumberType(def->type())) {
     return true;
   }
 
@@ -1606,7 +1615,15 @@ bool WarpCacheIRTranspiler::emitLoadInt32Result(Int32OperandId valId) {
 
 bool WarpCacheIRTranspiler::emitLoadDoubleResult(NumberOperandId valId) {
   MDefinition* val = getOperand(valId);
-  MOZ_ASSERT(val->type() == MIRType::Double);
+  MOZ_ASSERT(IsNumberType(val->type()));
+
+  if (val->type() != MIRType::Double) {
+    auto* ins = MToDouble::New(alloc(), val);
+    add(ins);
+
+    val = ins;
+  }
+
   pushResult(val);
   return true;
 }
@@ -1955,6 +1972,25 @@ bool WarpCacheIRTranspiler::emitLoadBoundFunctionTarget(ObjOperandId objId,
   add(target);
 
   return defineOperand(resultId, target);
+}
+
+bool WarpCacheIRTranspiler::emitLoadBoundFunctionArgument(
+    ObjOperandId objId, uint32_t index, ValOperandId resultId) {
+  MDefinition* obj = getOperand(objId);
+
+  auto* boundArgs = MLoadFixedSlotAndUnbox::New(
+      alloc(), obj, BoundFunctionObject::firstInlineBoundArgSlot(),
+      MUnbox::Mode::Infallible, MIRType::Object);
+  add(boundArgs);
+
+  auto* elements = MElements::New(alloc(), boundArgs);
+  add(elements);
+
+  auto argIndex = constant(Int32Value(index));
+  auto* load = MLoadElement::New(alloc(), elements, argIndex);
+  add(load);
+
+  return defineOperand(resultId, load);
 }
 
 bool WarpCacheIRTranspiler::emitGuardBoundFunctionIsConstructor(

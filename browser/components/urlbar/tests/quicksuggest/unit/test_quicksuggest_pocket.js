@@ -330,18 +330,18 @@ add_task(async function uppercase() {
 add_task(async function notRelevant() {
   let result = makeExpectedResult({ searchString: LOW_KEYWORD });
 
-  info("Triggering the 'Not relevant' command");
-  QuickSuggest.getFeature("PocketSuggestions").handleCommand(
-    {
-      controller: { removeResult() {} },
-    },
+  triggerCommand({
     result,
-    "not_relevant"
-  );
+    command: "not_relevant",
+    feature: QuickSuggest.getFeature("PocketSuggestions"),
+    expectedCountsByCall: {
+      removeResult: 1,
+    },
+  });
   await QuickSuggest.blockedSuggestions._test_readyPromise;
 
   Assert.ok(
-    await QuickSuggest.blockedSuggestions.has(result.payload.originalUrl),
+    await QuickSuggest.blockedSuggestions.isResultBlocked(result),
     "The result's URL should be blocked"
   );
 
@@ -395,14 +395,14 @@ add_task(async function notRelevant() {
 add_task(async function notInterested() {
   let result = makeExpectedResult({ searchString: LOW_KEYWORD });
 
-  info("Triggering the 'Not interested' command");
-  QuickSuggest.getFeature("PocketSuggestions").handleCommand(
-    {
-      controller: { removeResult() {} },
-    },
+  triggerCommand({
     result,
-    "not_interested"
-  );
+    command: "not_interested",
+    feature: QuickSuggest.getFeature("PocketSuggestions"),
+    expectedCountsByCall: {
+      removeResult: 1,
+    },
+  });
 
   Assert.ok(
     !UrlbarPrefs.get("suggest.pocket"),
@@ -529,6 +529,7 @@ function makeExpectedResult({
       icon: isTopPick
         ? "chrome://global/skin/icons/pocket.svg"
         : "chrome://global/skin/icons/pocket-favicon.ico",
+      isSponsored: false,
       helpUrl: QuickSuggest.HELP_URL,
       shouldShowUrl: true,
       bottomTextL10n: {

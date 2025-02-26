@@ -1733,6 +1733,30 @@ void BuildTextRunsScanner::AccumulateRunInfo(nsTextFrame* aFrame) {
     mLineBreakBeforeFrames.AppendElement(aFrame);
     mStartOfLine = false;
   }
+
+  // Default limits used by `hyphenate-limit-chars` for `auto` components, as
+  // suggested by the CSS Text spec.
+  // TODO: consider making these sensitive to the context, e.g. increasing the
+  // values for long line lengths to reduce the tendency to hyphenate too much.
+  const uint32_t kDefaultHyphenateTotalWordLength = 5;
+  const uint32_t kDefaultHyphenatePreBreakLength = 2;
+  const uint32_t kDefaultHyphenatePostBreakLength = 2;
+
+  const auto& hyphenateLimitChars = aFrame->StyleText()->mHyphenateLimitChars;
+  uint32_t pre =
+      hyphenateLimitChars.pre_hyphen_length.IsAuto()
+          ? kDefaultHyphenatePreBreakLength
+          : std::max(0, hyphenateLimitChars.pre_hyphen_length.AsNumber());
+  uint32_t post =
+      hyphenateLimitChars.post_hyphen_length.IsAuto()
+          ? kDefaultHyphenatePostBreakLength
+          : std::max(0, hyphenateLimitChars.post_hyphen_length.AsNumber());
+  uint32_t total =
+      hyphenateLimitChars.total_word_length.IsAuto()
+          ? kDefaultHyphenateTotalWordLength
+          : std::max(0, hyphenateLimitChars.total_word_length.AsNumber());
+  total = std::max(total, pre + post);
+  mLineBreaker.SetHyphenateLimitChars(total, pre, post);
 }
 
 static bool HasTerminalNewline(const nsTextFrame* aFrame) {
@@ -2463,8 +2487,8 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
     uint32_t unmaskStart = 0, unmaskEnd = UINT32_MAX;
     if (needsToMaskPassword) {
       unmaskStart = unmaskEnd = UINT32_MAX;
-      TextEditor* passwordEditor =
-          nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
+      const TextEditor* const passwordEditor =
+          nsContentUtils::GetExtantTextEditorFromAnonymousNode(
               firstFrame->GetContent());
       if (passwordEditor && !passwordEditor->IsAllMasked()) {
         unmaskStart = passwordEditor->UnmaskedStart();
@@ -8413,6 +8437,19 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   i = FindEndOfPunctuationRun(
       aFrag, aTextRun, &iter, aOffset,
       GetTrimmableWhitespaceCount(aFrag, aOffset, length, 1), endOffset);
+  if (i == length) {
+    return false;
+  }
+
+  // skip space/no-break-space after punctuation
+  while (i < length) {
+    char16_t ch = aFrag->CharAt(AssertedCast<uint32_t>(aOffset + i));
+    if (ch == ' ' || ch == CH_NBSP) {
+      ++i;
+    } else {
+      break;
+    }
+  }
   if (i == length) {
     return false;
   }

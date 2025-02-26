@@ -768,6 +768,7 @@ nsresult HTMLInputElement::InitColorPicker() {
   rv = colorPicker->Open(callback);
   if (NS_SUCCEEDED(rv)) {
     mPickerRunning = true;
+    SetStates(ElementState::OPEN, true);
   }
 
   return rv;
@@ -876,6 +877,7 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
     rv = filePicker->Open(callback);
     if (NS_SUCCEEDED(rv)) {
       mPickerRunning = true;
+      SetStates(ElementState::OPEN, true);
     }
 
     return rv;
@@ -884,6 +886,7 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
   HTMLInputElement::gUploadLastDir->FetchDirectoryAndDisplayPicker(
       doc, filePicker, callback);
   mPickerRunning = true;
+  SetStates(ElementState::OPEN, true);
   return NS_OK;
 }
 
@@ -2280,6 +2283,10 @@ void HTMLInputElement::CloseDateTimePicker() {
                                       CanBubble::eYes, Cancelable::eYes);
 }
 
+void HTMLInputElement::SetDateTimePickerState(bool aIsOpen) {
+  SetStates(ElementState::OPEN, aIsOpen);
+}
+
 void HTMLInputElement::SetFocusState(bool aIsFocused) {
   if (NS_WARN_IF(!IsDateTimeInputType(mType))) {
     return;
@@ -2361,9 +2368,7 @@ nsIEditor* HTMLInputElement::GetEditorForBindings() {
   return GetTextEditorFromState();
 }
 
-bool HTMLInputElement::HasEditor() const {
-  return !!GetTextEditorWithoutCreation();
-}
+bool HTMLInputElement::HasEditor() const { return !!GetExtantTextEditor(); }
 
 TextEditor* HTMLInputElement::GetTextEditorFromState() {
   TextControlState* state = GetEditorState();
@@ -2377,12 +2382,12 @@ TextEditor* HTMLInputElement::GetTextEditor() {
   return GetTextEditorFromState();
 }
 
-TextEditor* HTMLInputElement::GetTextEditorWithoutCreation() const {
-  TextControlState* state = GetEditorState();
+TextEditor* HTMLInputElement::GetExtantTextEditor() const {
+  const TextControlState* const state = GetEditorState();
   if (!state) {
     return nullptr;
   }
-  return state->GetTextEditorWithoutCreation();
+  return state->GetExtantTextEditor();
 }
 
 nsISelectionController* HTMLInputElement::GetSelectionController() {
@@ -3269,30 +3274,6 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   }
 
   nsGenericHTMLFormControlElementWithState::GetEventTargetParent(aVisitor);
-
-  // Stop the event if the related target's first non-native ancestor is the
-  // same as the original target's first non-native ancestor (we are moving
-  // inside of the same element).
-  //
-  // FIXME(emilio): This seems like it shouldn't be needed now that we use
-  // Shadow DOM for this, but test_input_datetime_focus_blur_events.html fails
-  // without this.
-  if (CreatesDateTimeWidget() && aVisitor.mEvent->IsTrusted() &&
-      (aVisitor.mEvent->mMessage == eFocus ||
-       aVisitor.mEvent->mMessage == eFocusIn ||
-       aVisitor.mEvent->mMessage == eFocusOut ||
-       aVisitor.mEvent->mMessage == eBlur)) {
-    nsIContent* originalTarget = nsIContent::FromEventTargetOrNull(
-        aVisitor.mEvent->AsFocusEvent()->mOriginalTarget);
-    nsIContent* relatedTarget = nsIContent::FromEventTargetOrNull(
-        aVisitor.mEvent->AsFocusEvent()->mRelatedTarget);
-
-    if (originalTarget && relatedTarget &&
-        originalTarget->FindFirstNonChromeOnlyAccessContent() ==
-            relatedTarget->FindFirstNonChromeOnlyAccessContent()) {
-      aVisitor.mCanHandle = false;
-    }
-  }
 }
 
 void HTMLInputElement::LegacyPreActivationBehavior(
@@ -5706,7 +5687,7 @@ nsIControllers* HTMLInputElement::GetControllers(ErrorResult& aRv) {
     }
   }
 
-  return mControllers;
+  return GetExtantControllers();
 }
 
 nsresult HTMLInputElement::GetControllers(nsIControllers** aResult) {
@@ -7440,7 +7421,10 @@ void HTMLInputElement::UpdateHasRange(bool aNotify) {
   UpdateInRange(aNotify);
 }
 
-void HTMLInputElement::PickerClosed() { mPickerRunning = false; }
+void HTMLInputElement::PickerClosed() {
+  mPickerRunning = false;
+  SetStates(ElementState::OPEN, false);
+}
 
 JSObject* HTMLInputElement::WrapNode(JSContext* aCx,
                                      JS::Handle<JSObject*> aGivenProto) {

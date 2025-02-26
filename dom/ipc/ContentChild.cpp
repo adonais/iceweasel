@@ -2388,16 +2388,9 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateSharedData(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvFontListChanged() {
-  gfxPlatformFontList::PlatformFontList()->FontListChanged();
-
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentChild::RecvForceGlobalReflow(
-    bool aNeedsReframe) {
-  gfxPlatform::ForceGlobalReflow(aNeedsReframe ? gfxPlatform::NeedsReframe::Yes
-                                               : gfxPlatform::NeedsReframe::No);
+    const gfxPlatform::GlobalReflowFlags& aFlags) {
+  gfxPlatform::ForceGlobalReflow(aFlags);
 
   return IPC_OK();
 }
@@ -2477,10 +2470,8 @@ mozilla::ipc::IPCResult ContentChild::RecvSystemTimezoneChanged() {
 
 mozilla::ipc::IPCResult ContentChild::RecvAddPermission(
     const IPC::Permission& permission) {
-  nsCOMPtr<nsIPermissionManager> permissionManagerIface =
-      components::PermissionManager::Service();
-  PermissionManager* permissionManager =
-      static_cast<PermissionManager*>(permissionManagerIface.get());
+  RefPtr<PermissionManager> permissionManager =
+      PermissionManager::GetInstance();
   MOZ_ASSERT(permissionManager,
              "We have no permissionManager in the Content process !");
 
@@ -2510,10 +2501,8 @@ mozilla::ipc::IPCResult ContentChild::RecvAddPermission(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvRemoveAllPermissions() {
-  nsCOMPtr<nsIPermissionManager> permissionManagerIface =
-      components::PermissionManager::Service();
-  PermissionManager* permissionManager =
-      static_cast<PermissionManager*>(permissionManagerIface.get());
+  RefPtr<PermissionManager> permissionManager =
+      PermissionManager::GetInstance();
   MOZ_ASSERT(permissionManager,
              "We have no permissionManager in the Content process !");
 
@@ -4658,7 +4647,7 @@ void ContentChild::ConfigureThreadPerformanceHints(
           cpu_set_t cpuset;
           CPU_ZERO(&cpuset);
           for (size_t i = 0; i < cpuInfo->mTotalNumCpus; i++) {
-            if (cpus.Test(i)) {
+            if (cpus.test(i)) {
               CPU_SET(i, &cpuset);
             }
           }

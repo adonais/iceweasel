@@ -326,10 +326,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Serrar il menu dals utensils</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Serrar il menu per la persunalisaziun da tabs</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Modus da lectura, translatar, stampar, cundivider, avrir app</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Vista da lectura, stampar, cundivider, avrir app</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Modus da lectura, translaziun, %s, stampar, cundivider, avrir app</string>
@@ -564,7 +560,6 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Rapports da collaps ans permettan da diagnostitgar e reparar problems dal navigatur. Rapports pon cuntegnair datas persunalas u sensiblas.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Ulteriuras infurmaziuns davart rapports da collaps</string>
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Ulteriuras infurmaziuns</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Trametter datas tecnicas e d’interacziun a Mozilla</string>
@@ -577,23 +572,27 @@
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Finì</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Interrumper</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Interrumper</string>
 
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Bainvegni en Firefox</string>
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Navigaziun svelta e segira en il web.</string>
+    <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">Navigaziun svelta e segira en il web</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Acceptar e cuntinuar</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Cun cuntinuar, acceptas ti las %1$s da Firefox.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one_2">Cun cuntinuar acceptas ti las %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Cundiziuns d’utilisaziun</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
     <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">cundiziuns d’utilisaziun da Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">La protecziun da tias datas stat a cor a Firefox. Ulteriuras infurmaziuns en nossa %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">La protecziun da tias datas stat a cor a Firefox. Ulteriuras infurmaziuns en nossa %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Decleraziun davart la protecziun da datas</string>
@@ -601,6 +600,16 @@
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Per meglierar il navigatur, trametta Firefox datas da diagnosa e d’interacziun a Mozilla. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Administrar</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Ans gida a far crescher Firefox</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Sche ti ans fas a savair co ti has scuvert Firefox e che ti dovras il program, ans gidas ti a mussar il navigatur ad in public pli grond.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Cundivida datas minimalas cun ils partenaris da tecnologia da marketing da Mozilla. Questas datas na vegnan mai vendidas u utilisadas per ta mussar reclamas.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Co nus utilisain las datas</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Confermar e cumenzar a navigar</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Tscherna ina posiziun per la trav d’utensils</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -1038,19 +1047,24 @@
     <string name="exceptions_empty_message_learn_more_link">Ulteriuras infurmaziuns</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Datas tecnicas e statisticas davart l\'utilisaziun</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Datas tecnicas e d’interacziun</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Trametter datas tecnicas e d’interacziun</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Ulteriuras infurmaziuns</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Cundivida datas davart prestaziun, utilisaziun, hardware e persunalisaziun da tes navigatur cun Mozilla per gidar a meglierar %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Cundivida datas davart prestaziun, utilisaziun, hardware e persunalisaziun da tes navigatur cun Mozilla per gidar a meglierar %1$s</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Datas davart tes apparat, la configuraziun da la hardware e l’utilisaziun, ans gidan a meglierar funcziuns, la prestaziun e la stabilitad da Firefox.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Datas da marketing</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Cundivida datas d\'utilisaziun da basa cun Adjust, noss purschider da marketing mobil</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Datas da marketing</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Datas statisticas da campagnas</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Fa a savair ils partenaris da marketing da Mozilla co ti has scuvert Firefox. Quai ans gida a sviluppar Firefox e crear in meglier internet</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Fa a savair ils partenaris da marketing da Mozilla co ti has scuvert Firefox. Quai ans gida a sviluppar Firefox e crear in meglier internet</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Fa a savair noss partenaris da tecnologia da marketing da Mozilla co ti has scuvert Firefox e che ti dovras il program.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Ulteriuras infurmaziuns davart datas da marketing</string>
 
@@ -1065,6 +1079,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Quai ans gida da diagnostitgar e curreger problems dal navigatur. Rapports pon cuntegnair datas persunalas u sensiblas.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Cundivida automaticamain datas da collaps cun Mozilla durant aviar en cas ch’i ha dà in collaps</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Ulteriuras infurmaziuns davart rapports da collaps</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Studis</string>
@@ -1226,7 +1243,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Activs</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s po installar ed exequir studis da temp en temp.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s po installar ed exequir studis da temp en temp.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Emprova novas funcziuns ed ideas avant ch’ellas stettian a disposiziun a mintgin.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Installar ed exequir studis</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Ulteriuras infurmaziuns</string>
     <!-- Dialog message shown after removing a study -->
@@ -2050,6 +2071,8 @@
     <string name="about_privacy_notice">Infurmaziuns davart la protecziun da datas</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Davart tes dretgs</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Cundiziuns d’utilisaziun</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Infurmaziuns davart la licenza</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2945,7 +2968,6 @@
     <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
     <string name="download_language_file_dialog_negative_button_text">Interrumper</string>
 
-    <!-- Unified Trust Panel -->
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Sajas precaut sin questa website</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -3086,7 +3108,7 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Linguas dad activar per il debugadi</string>
 
-    <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+    <!-- The title of the header for the section for managing addresses. -->
     <string name="debug_drawer_addresses_management_header">Administrar adressas</string>
     <!-- The title of the button in the debug drawer for adding a new address. -->
     <string name="debug_drawer_add_new_address">Agiuntar ina nova adressa per la lingua tschernida</string>
@@ -3145,4 +3167,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Actualisescha avant ils 14 da mars per pudair cuntinuar ad utilisar supplements ed autras funcziunalitads.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Tschertas funcziunalitads na vegnan betg pli a star a disposiziun damaun.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Mussar il text zuppà</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Stizzar il text</string>
 </resources>

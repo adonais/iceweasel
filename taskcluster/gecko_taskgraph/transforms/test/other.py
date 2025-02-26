@@ -65,6 +65,14 @@ def handle_suite_category(config, tasks):
             category_arg = f"--{category}-suite"
 
         if category_arg:
+            resolve_keyed_by(
+                task,
+                "mozharness.extra-options",
+                item_name=task["test-name"],
+                enforce_single_match=False,
+                variant=task["attributes"].get("unittest_variant"),
+            )
+
             task["mozharness"].setdefault("extra-options", [])
             extra = task["mozharness"]["extra-options"]
             if not any(arg.startswith(category_arg) for arg in extra):
@@ -90,6 +98,14 @@ def setup_talos(config, tasks):
         if task["suite"] != "talos":
             yield task
             continue
+
+        resolve_keyed_by(
+            task,
+            "mozharness.extra-options",
+            item_name=task["test-name"],
+            enforce_single_match=False,
+            variant=task["attributes"].get("unittest_variant"),
+        )
 
         extra_options = task.setdefault("mozharness", {}).setdefault(
             "extra-options", []
@@ -268,6 +284,7 @@ def handle_keyed_by(config, tasks):
         "fetches.toolchain",
         "target",
         "webrender-run-on-projects",
+        "mozharness.extra-options",
         "mozharness.requires-signed-builds",
         "build-signing-label",
         "dependencies",
@@ -399,32 +416,33 @@ def setup_browsertime(config, tasks):
 
         cd_fetches = {
             "android.*": [
-                "linux64-chromedriver-130",
-                "linux64-chromedriver-131",
+                "linux64-cft-cd-backup",
+                "linux64-cft-cd-stable",
             ],
             "linux.*": [
-                "linux64-chromedriver-130",
-                "linux64-chromedriver-131",
+                "linux64-cft-cd-backup",
+                "linux64-cft-cd-stable",
             ],
             "macosx1470.*": [
-                "mac64-chromedriver-130",
-                "mac64-chromedriver-131",
+                "mac-cft-cd-backup",
+                "mac-cft-cd-stable",
             ],
             "macosx1400.*": [
-                "mac-arm-chromedriver-130",
-                "mac-arm-chromedriver-131",
+                "mac-cft-cd-arm-backup",
+                "mac-cft-cd-arm-stable",
             ],
             "windows.*-64.*": [
-                "win64-chromedriver-130",
-                "win64-chromedriver-131",
+                "win64-cft-cd-backup",
+                "win64-cft-cd-stable",
             ],
         }
 
         chromium_fetches = {
-            "linux.*": ["linux64-cft-chromedriver"],
-            "macosx1400.*": ["mac-cft-chromedriver-arm"],
-            "windows.*-64.*": ["win64-cft-chromedriver"],
-            "android.*": ["linux64-cft-chromedriver"],
+            "linux.*": ["linux64-cft-cd-canary"],
+            "macosx1400.*": ["mac-cft-cd-arm-canary"],
+            "macosx1470.*": ["mac-cft-cd-canary"],
+            "windows.*-64.*": ["win64-cft-cd-canary"],
+            "android.*": ["linux64-cft-cd-canary"],
         }
 
         cd_extracted_name = {
@@ -542,6 +560,14 @@ def disable_wpt_timeouts_on_autoland(config, tasks):
             "web-platform-tests" in task["test-name"]
             and config.params["project"] == "autoland"
         ):
+            resolve_keyed_by(
+                task,
+                "mozharness.extra-options",
+                item_name=task["test-name"],
+                enforce_single_match=False,
+                variant=task["attributes"].get("unittest_variant"),
+            )
+
             task["mozharness"].setdefault("extra-options", []).append("--skip-timeout")
         yield task
 
@@ -831,7 +857,6 @@ test_setting_description_schema = Schema(
                 "ccov",
                 "clang-trunk",
                 "devedition",
-                "domstreams",
                 "lite",
                 "mingwclang",
                 "nightlyasrelease",
@@ -935,7 +960,7 @@ def set_test_setting(config, tasks):
 
         else:
             arch = parts.pop(0)
-            if parts and parts[0].isdigit():
+            if parts and (parts[0].isdigit() or parts[0] in ["24h2"]):
                 os_build = parts.pop(0)
 
             if parts and parts[0] == "hw-ref":

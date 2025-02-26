@@ -266,10 +266,18 @@ def cargo(
     if ret != 0:
         return ret
 
+    if command_context.substs.get("commtopsrcdir"):
+        # Thunderbird uses its own gkrust, located in its own workspace.
+        gkrust_path = "comm/rust/gkrust"
+        gtest_path = "comm/rust/gtest"
+    else:
+        gkrust_path = "toolkit/library/rust"
+        gtest_path = "toolkit/library/gtest/rust"
+
     # XXX duplication with `mach vendor rust`
     crates_and_roots = {
-        "gkrust": {"directory": "toolkit/library/rust", "library": True},
-        "gkrust-gtest": {"directory": "toolkit/library/gtest/rust", "library": True},
+        "gkrust": {"directory": gkrust_path, "library": True},
+        "gkrust-gtest": {"directory": gtest_path, "library": True},
         "geckodriver": {"directory": "testing/geckodriver", "library": False},
     }
 
@@ -872,6 +880,29 @@ def join_ensure_dir(dir1, dir2):
     dest="enable_webrender",
     help="Enable the WebRender compositor in Gecko.",
 )
+@CommandArgument(
+    "--enable-inc-origin-init",
+    action="store_true",
+    default=False,
+    dest="enable_inc_origin_init",
+    help="Enable the incremental origin initialization in Gecko.",
+)
+@CommandArgumentGroup("filter sets")
+@CommandArgument(
+    "--filter-set",
+    default=None,
+    dest="filter_set",
+    type=str,
+    group="filter sets",
+    help="Use a predefined gtest filter (this overrides the gtest_filter).",
+)
+@CommandArgument(
+    "--list-filter-sets",
+    action="store_true",
+    dest="list_filter_sets",
+    group="filter sets",
+    help="List available predefined gtest filters.",
+)
 @CommandArgumentGroup("Android")
 @CommandArgument(
     "--package",
@@ -938,6 +969,9 @@ def gtest(
     list_tests,
     tbpl_parser,
     enable_webrender,
+    enable_inc_origin_init,
+    filter_set,
+    list_filter_sets,
     package,
     adb_path,
     device_serial,
@@ -975,6 +1009,15 @@ def gtest(
     if conditions.is_android(command_context):
         if jobs != 1:
             print("--jobs is not supported on Android and will be ignored")
+        if enable_inc_origin_init:
+            print(
+                "--enable-inc-origin-init is not supported on Android and will"
+                "be ignored"
+            )
+        if filter_set:
+            print("--filter-set is not supported on Android and will be ignored")
+        if list_filter_sets:
+            print("--list-filter-sets is not supported on Android and will be ignored")
         if debug or debugger or debugger_args:
             print("--debug options are not supported on Android and will be ignored")
         from mozrunner.devices.android_device import InstallIntent
@@ -1046,6 +1089,28 @@ def gtest(
         gtest_env["MOZ_ACCELERATED"] = "1"
     else:
         gtest_env["MOZ_WEBRENDER"] = "0"
+
+    if enable_inc_origin_init:
+        gtest_env["MOZ_ENABLE_INC_ORIGIN_INIT"] = "1"
+    else:
+        gtest_env["MOZ_ENABLE_INC_ORIGIN_INIT"] = "0"
+
+    if filter_set or list_filter_sets:
+        filter_sets_mod_path = os.path.join("testing", "gtest", "gtest_filter_sets.py")
+        load_source("gtest_filter_sets", filter_sets_mod_path)
+
+        import gtest_filter_sets
+
+        if filter_set:
+            gtest_filter_for_filter_set = gtest_filter_sets.get(filter_set)
+            if gtest_filter_for_filter_set:
+                gtest_env["GTEST_FILTER"] = gtest_filter_for_filter_set
+            else:
+                print("Unknown filter set.")
+                return 1
+        else:
+            gtest_filter_sets.list()
+            return 1
 
     if jobs == 1:
         return command_context.run_process(
@@ -1255,6 +1320,7 @@ def install(command_context, **kwargs):
 def _get_android_run_parser():
     parser = argparse.ArgumentParser()
     group = parser.add_argument_group("The compiled program")
+    group.add_argument("url", nargs="?", default=None, help="URL to open")
     group.add_argument(
         "--app",
         default="org.mozilla.geckoview_example",
@@ -1280,7 +1346,6 @@ def _get_android_run_parser():
         help="Path to Gecko profile, like /path/to/host/profile "
         "or /path/to/target/profile",
     )
-    group.add_argument("--url", default=None, help="URL to open")
     group.add_argument(
         "--aab",
         action="store_true",
@@ -2916,6 +2981,12 @@ def repackage_mar(command_context, input, mar, output, arch, mar_channel_id):
     action="store_true",
     help="Prepare everything but stop before actually calling snapcraft. Useful for debugging generated YAML definition.",
 )
+@CommandArgument(
+    "--wmclass",
+    type=str,
+    required=False,
+    help="The StartupWMClass entry key for the desktop file.",
+)
 def repackage_snap(
     command_context,
     snapcraft=None,
@@ -2928,6 +2999,7 @@ def repackage_snap(
     clean=False,
     install=False,
     dry_run=False,
+    wmclass=None,
 ):
     from mozfile import which
 
@@ -3189,12 +3261,19 @@ def repackage_snap_install(command_context, snap_file, snap_name, sudo=None):
     required=True,
     help="The release being shipped. Used to disambiguate nightly/try etc.",
 )
+@CommandArgument(
+    "--wmclass",
+    type=str,
+    required=False,
+    help="The StartupWMClass entry key for the desktop file.",
+)
 def repackage_desktop_file(
     command_context,
     output,
     flavor,
     release_product,
     release_type,
+    wmclass,
 ):
     desktop = None
     if flavor == "flatpak":
@@ -3229,7 +3308,10 @@ def repackage_desktop_file(
         )
 
         desktop = SnapDesktopFile(
-            command_context.log, appname=release_product, branchname=release_type
+            command_context.log,
+            appname=release_product,
+            branchname=release_type,
+            wmclass=wmclass,
         ).repack()
 
     if desktop is None:

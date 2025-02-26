@@ -24,9 +24,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.SnackbarDuration
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -48,8 +48,10 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.setFragmentResultListener
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -142,6 +144,7 @@ import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.ext.updateMicrosurveyPromptForConfigurationChange
 import org.mozilla.fenix.home.bookmarks.BookmarksFeature
 import org.mozilla.fenix.home.bookmarks.controller.DefaultBookmarksController
+import org.mozilla.fenix.home.ext.showWallpaperOnboardingDialog
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.DefaultPocketStoriesController
 import org.mozilla.fenix.home.privatebrowsing.controller.DefaultPrivateBrowsingController
@@ -179,6 +182,7 @@ import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.utils.Settings.Companion.TOP_SITES_PROVIDER_LIMIT
 import org.mozilla.fenix.utils.Settings.Companion.TOP_SITES_PROVIDER_MAX_THRESHOLD
 import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -239,7 +243,7 @@ class HomeFragment : Fragment() {
                     snackBarParentView = binding.dynamicSnackbarContainer,
                     snackbarState = SnackbarState(
                         message = it.context.getString(message),
-                        duration = SnackbarDuration.Long,
+                        duration = SnackbarState.Duration.Preset.Long,
                     ),
                 ).show()
             }
@@ -275,6 +279,10 @@ class HomeFragment : Fragment() {
     private val searchSelectorBinding = ViewBoundFeatureWrapper<SearchSelectorBinding>()
     private val searchSelectorMenuBinding = ViewBoundFeatureWrapper<SearchSelectorMenuBinding>()
     private val homeScreenPopupManager = ViewBoundFeatureWrapper<HomeScreenPopupManager>()
+
+    // This limits feature recommendations (CFR and wallpaper onboarding dialog) so only one will
+    // show at a time.
+    private var featureRecommended = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
@@ -348,12 +356,21 @@ class HomeFragment : Fragment() {
             }
 
             if (showSponsoredStories) {
-                components.appStore.dispatch(
-                    ContentRecommendationsAction.PocketSponsoredStoriesChange(
-                        sponsoredStories = components.core.pocketStoriesService.getSponsoredStories(),
-                        showContentRecommendations = showContentRecommendations,
-                    ),
-                )
+                if (requireContext().settings().marsAPIEnabled) {
+                    components.appStore.dispatch(
+                        ContentRecommendationsAction.SponsoredContentsChange(
+                            sponsoredContents = components.core.pocketStoriesService.getSponsoredContents(),
+                            showContentRecommendations = showContentRecommendations,
+                        ),
+                    )
+                } else {
+                    components.appStore.dispatch(
+                        ContentRecommendationsAction.PocketSponsoredStoriesChange(
+                            sponsoredStories = components.core.pocketStoriesService.getSponsoredStories(),
+                            showContentRecommendations = showContentRecommendations,
+                        ),
+                    )
+                }
             }
         }
 
@@ -468,6 +485,7 @@ class HomeFragment : Fragment() {
                 selectTabUseCase = components.useCases.tabsUseCases.selectTab,
                 reloadUrlUseCase = components.useCases.sessionUseCases.reload,
                 topSitesUseCases = components.useCases.topSitesUseCase,
+                marsUseCases = components.useCases.marsUseCases,
                 appStore = components.appStore,
                 navController = findNavController(),
                 viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
@@ -506,11 +524,14 @@ class HomeFragment : Fragment() {
                 homeActivity = activity,
                 appStore = components.appStore,
                 settings = components.settings,
+                marsUseCases = components.useCases.marsUseCases,
+                viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
             ),
             privateBrowsingController = DefaultPrivateBrowsingController(
                 activity = activity,
                 appStore = components.appStore,
                 navController = findNavController(),
+                browsingModeManager = browsingModeManager,
             ),
             searchSelectorController = DefaultSearchSelectorController(
                 activity = activity,
@@ -535,8 +556,10 @@ class HomeFragment : Fragment() {
         }
 
         if (requireContext().settings().enableComposeHomepage) {
-            initHomepage()
+            initComposeHomepage()
         } else {
+            binding.homepageView.isVisible = false
+            binding.sessionControlRecyclerView.isVisible = true
             sessionControlView = SessionControlView(
                 containerView = binding.sessionControlRecyclerView,
                 viewLifecycleOwner = viewLifecycleOwner,
@@ -831,6 +854,37 @@ class HomeFragment : Fragment() {
         NavigationBar.homeInitializeTimespan.stop()
     }
 
+    private fun showEncourageSearchCfr() {
+        CFRPopup(
+            anchor = binding.toolbarWrapper,
+            properties = CFRPopupProperties(
+                popupBodyColors = listOf(
+                    getColor(requireContext(), R.color.fx_mobile_layer_color_gradient_end),
+                    getColor(requireContext(), R.color.fx_mobile_layer_color_gradient_start),
+                ),
+                popupVerticalOffset = ENCOURAGE_SEARCH_CFR_VERTICAL_OFFSET.dp,
+                dismissButtonColor = getColor(requireContext(), R.color.fx_mobile_icon_color_oncolor),
+                indicatorDirection = if (requireContext().isToolbarAtBottom()) {
+                    CFRPopup.IndicatorDirection.DOWN
+                } else {
+                    CFRPopup.IndicatorDirection.UP
+                },
+            ),
+            onDismiss = {
+                homeScreenPopupManager.get()?.onSearchBarCFRDismissed()
+            },
+            text = {
+                FirefoxTheme {
+                    Text(
+                        text = FxNimbus.features.encourageSearchCfr.value().cfrText,
+                        color = FirefoxTheme.colors.textOnColorPrimary,
+                        style = FirefoxTheme.typography.body2,
+                    )
+                }
+            },
+        ).show()
+    }
+
     @VisibleForTesting
     internal fun initializeMicrosurveyFeature(isMicrosurveyEnabled: Boolean) {
         if (isMicrosurveyEnabled) {
@@ -994,6 +1048,7 @@ class HomeFragment : Fragment() {
             ) { !Uri.parse(it.url).containsQueryParameters(settings.frecencyFilterQuery) },
             providerConfig = TopSitesProviderConfig(
                 showProviderTopSites = settings.showContileFeature,
+                limit = TOP_SITES_PROVIDER_LIMIT,
                 maxThreshold = TOP_SITES_PROVIDER_MAX_THRESHOLD,
                 providerFilter = { topSite ->
                     when (store.state.search.selectedOrDefaultSearchEngine?.name) {
@@ -1193,6 +1248,16 @@ class HomeFragment : Fragment() {
             view = view,
         )
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                homeScreenPopupManager.get()?.searchBarCFRVisibility?.collect { showSearchBarCfr ->
+                    if (showSearchBarCfr) {
+                        showEncourageSearchCfr()
+                    }
+                }
+            }
+        }
+
         // DO NOT MOVE ANYTHING BELOW THIS addMarker CALL!
         requireComponents.core.engine.profiler?.addMarker(
             MarkersFragmentLifecycleCallbacks.MARKER_NAME,
@@ -1201,8 +1266,10 @@ class HomeFragment : Fragment() {
         )
     }
 
-    private fun initHomepage() {
+    private fun initComposeHomepage() {
+        binding.sessionControlRecyclerView.isVisible = false
         binding.homepageView.isVisible = true
+        binding.homeAppBarContent.isVisible = false
 
         binding.homepageView.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -1225,9 +1292,32 @@ class HomeFragment : Fragment() {
                             StartupTimeline.onTopSitesItemBound(activity = (requireActivity() as HomeActivity))
                         },
                     )
+
+                    LaunchedEffect(Unit) {
+                        onFirstHomepageFrameDrawn()
+                    }
                 }
             }
         }
+    }
+
+    private fun onFirstHomepageFrameDrawn() {
+        with(requireContext().components.settings) {
+            if (!featureRecommended && !showHomeOnboardingDialog && showWallpaperOnboardingDialog(featureRecommended)) {
+                featureRecommended = sessionControlInteractor.showWallpapersOnboardingDialog(
+                    requireContext().components.appStore.state.wallpaperState,
+                )
+            }
+        }
+
+        // We want some parts of the home screen UI to be rendered first if they are
+        // the most prominent parts of the visible part of the screen.
+        // For this reason, we wait for the home screen recycler view to finish it's
+        // layout and post an update for when it's best for non-visible parts of the
+        // home screen to render itself.
+        requireContext().components.appStore.dispatch(
+            AppAction.UpdateFirstFrameDrawn(true),
+        )
     }
 
     private fun initTabStrip() {
@@ -1574,7 +1664,7 @@ class HomeFragment : Fragment() {
                 snackBarParentView = binding.dynamicSnackbarContainer,
                 snackbarState = SnackbarState(
                     message = view.context.getString(R.string.snackbar_collection_renamed),
-                    duration = SnackbarDuration.Long,
+                    duration = SnackbarState.Duration.Preset.Long,
                 ),
             ).show()
         }
@@ -1705,5 +1795,7 @@ class HomeFragment : Fragment() {
 
         // Elevation for undo toasts
         internal const val TOAST_ELEVATION = 80f
+
+        private const val ENCOURAGE_SEARCH_CFR_VERTICAL_OFFSET = 0
     }
 }

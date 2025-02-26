@@ -31,7 +31,6 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.onboarding.store.PrivacyPreferencesAction
-import org.mozilla.fenix.onboarding.store.PrivacyPreferencesState
 import org.mozilla.fenix.onboarding.store.PrivacyPreferencesStore
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -60,19 +59,19 @@ fun ManagePrivacyPreferencesDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                UsageDataPreference(store, state.usageDataChecked, onUsageDataLinkClick)
+                UsageDataPreference(store, state.usageDataEnabled, onUsageDataLinkClick)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 CrashReportingPreference(
                     store,
-                    state.crashReportingChecked,
+                    state.crashReportingEnabled,
                     onCrashReportingLinkClick,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Buttons(store, state, onDismissRequest)
+                PositiveButton(onDismissRequest)
             }
         }
     }
@@ -97,8 +96,13 @@ private fun CrashReportingPreference(
     SwitchWithLabel(
         label = stringResource(R.string.onboarding_preferences_dialog_crash_reporting_title),
         checked = crashReportingEnabled,
-        onCheckedChange = { store.dispatch(PrivacyPreferencesAction.CrashReportingChecked(it)) },
+        onCheckedChange = {
+            store.dispatch(
+                PrivacyPreferencesAction.CrashReportingPreferenceUpdatedTo(it),
+            )
+        },
         modifier = Modifier.wrapContentWidth(),
+        labelStyle = FirefoxTheme.typography.body2,
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -109,13 +113,13 @@ private fun CrashReportingPreference(
         style = FirefoxTheme.typography.caption,
     )
 
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(16.dp))
 
     LinkText(
-        text = stringResource(R.string.onboarding_preferences_dialog_crash_reporting_learn_more),
+        text = stringResource(R.string.onboarding_preferences_dialog_crash_reporting_learn_more_2),
         linkTextStates = listOf(
             LinkTextState(
-                text = stringResource(id = R.string.onboarding_preferences_dialog_crash_reporting_learn_more),
+                text = stringResource(id = R.string.onboarding_preferences_dialog_crash_reporting_learn_more_2),
                 url = "",
                 onClick = { onLinkClick() },
             ),
@@ -133,25 +137,30 @@ private fun UsageDataPreference(
     SwitchWithLabel(
         label = stringResource(R.string.onboarding_preferences_dialog_usage_data_title),
         checked = usageDataEnabled,
-        onCheckedChange = { store.dispatch(PrivacyPreferencesAction.UsageDataUserChecked(it)) },
+        onCheckedChange = {
+            store.dispatch(
+                PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo(it),
+            )
+        },
         modifier = Modifier.wrapContentWidth(),
+        labelStyle = FirefoxTheme.typography.body2,
     )
 
     Spacer(modifier = Modifier.height(8.dp))
 
     Text(
-        text = stringResource(R.string.onboarding_preferences_dialog_usage_data_description),
+        text = stringResource(R.string.onboarding_preferences_dialog_usage_data_description_2),
         color = FirefoxTheme.colors.textPrimary,
         style = FirefoxTheme.typography.caption,
     )
 
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(16.dp))
 
     LinkText(
-        text = stringResource(R.string.onboarding_preferences_dialog_usage_data_learn_more),
+        text = stringResource(R.string.onboarding_preferences_dialog_usage_data_learn_more_2),
         linkTextStates = listOf(
             LinkTextState(
-                text = stringResource(id = R.string.onboarding_preferences_dialog_usage_data_learn_more),
+                text = stringResource(id = R.string.onboarding_preferences_dialog_usage_data_learn_more_2),
                 url = "",
                 onClick = { onLinkClick() },
             ),
@@ -161,62 +170,19 @@ private fun UsageDataPreference(
 }
 
 @Composable
-private fun Buttons(
-    store: PrivacyPreferencesStore,
-    state: PrivacyPreferencesState,
-    onDismissRequest: () -> Unit,
-) {
+private fun PositiveButton(onDismissRequest: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight(),
         horizontalArrangement = Arrangement.End,
     ) {
-        NegativeButton(onDismissRequest)
-
-        PositiveButton(state, store, onDismissRequest)
+        DialogButton(
+            text = stringResource(R.string.onboarding_preferences_dialog_positive_button),
+            onClick = { onDismissRequest() },
+        )
     }
 }
-
-@Composable
-private fun NegativeButton(onDismissRequest: () -> Unit) {
-    DialogButton(
-        text = stringResource(R.string.onboarding_preferences_dialog_negative_button),
-        onClick = { onDismissRequest() },
-    )
-}
-
-@Composable
-private fun PositiveButton(
-    state: PrivacyPreferencesState,
-    store: PrivacyPreferencesStore,
-    onDismissRequest: () -> Unit,
-) {
-    DialogButton(
-        text = stringResource(R.string.onboarding_preferences_dialog_positive_button),
-        onClick = {
-            if (crashReportingPreferenceChanged(state)) {
-                store.dispatch(
-                    PrivacyPreferencesAction.CrashReportingPreferenceUpdatedTo(state.crashReportingChecked),
-                )
-            }
-
-            if (usageDataPreferenceChanged(state)) {
-                store.dispatch(
-                    PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo(state.usageDataChecked),
-                )
-            }
-
-            onDismissRequest()
-        },
-    )
-}
-
-private fun crashReportingPreferenceChanged(state: PrivacyPreferencesState) =
-    state.crashReportingEnabled != state.crashReportingChecked
-
-private fun usageDataPreferenceChanged(state: PrivacyPreferencesState) =
-    state.usageDataEnabled != state.usageDataChecked
 
 @Composable
 private fun DialogButton(text: String, onClick: () -> Unit) {

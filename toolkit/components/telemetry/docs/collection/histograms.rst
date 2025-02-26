@@ -277,8 +277,8 @@ For histograms measuring time, TelemetryStopwatch can be used to avoid working w
 
 .. code-block:: js
 
-  TelemetryStopwatch.start("SEARCH_SERVICE_INIT2_MS");
-  TelemetryStopwatch.finish("SEARCH_SERVICE_INIT2_MS");
+  TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_E10S_MS");
+  TelemetryStopwatch.finish("FX_TAB_SWITCH_TOTAL_E10S_MS");
 
   TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_MS");
   TelemetryStopwatch.cancel("FX_TAB_SWITCH_TOTAL_MS");
@@ -360,27 +360,3 @@ The ``Telemetry.h`` header also declares the helper classes ``AutoTimer`` and ``
     ...
     return NS_OK;
   }
-
-If the HistogramID is not known at compile time, one can use the ``RuntimeAutoTimer`` and ``RuntimeAutoCounter`` classes, which behave like the template parameterized ``AutoTimer`` and ``AutoCounter`` ones.
-
-.. code-block:: cpp
-
-  void
-  FunctionWithTiming(Telemetry::HistogramID aTelemetryID)
-  {
-    ...
-    Telemetry::RuntimeAutoTimer timer(aTelemetryID);
-    ...
-  }
-
-  int32_t
-  FunctionWithCounter(Telemetry::HistogramID aTelemetryID)
-  {
-    ...
-    Telemetry::RuntimeAutoCounter myCounter(aTelemetryID);
-    ++myCounter;
-    myCounter += 42;
-    ...
-  }
-
-Prefer using the template parameterized ``AutoTimer`` and ``AutoCounter`` on hot paths, if possible.

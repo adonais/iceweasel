@@ -40,14 +40,12 @@ import org.mozilla.focus.GleanMetrics.Pings
 import org.mozilla.focus.GleanMetrics.Preferences
 import org.mozilla.focus.GleanMetrics.Shortcuts
 import org.mozilla.focus.GleanMetrics.TrackingProtection
-import org.mozilla.focus.GleanMetrics.Usage
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.topsites.DefaultTopSitesStorage.Companion.TOP_SITES_MAX_LIMIT
 import org.mozilla.focus.utils.AppConstants
 import org.mozilla.focus.utils.Settings
-import java.util.UUID
 
 /**
  * Glean telemetry service.
@@ -57,9 +55,6 @@ import java.util.UUID
 class GleanMetricsService(context: Context) : MetricsService {
 
     private val activationPing = ActivationPing(context)
-    private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-    private val usageProfileIdPreferenceKey =
-        context.resources.getString(R.string.pref_key_glean_usage_profile_id)
 
     companion object {
         // collection name to fetch from server for SERP telemetry
@@ -80,17 +75,20 @@ class GleanMetricsService(context: Context) : MetricsService {
         }
 
         /**
-         * Glean doesn't have an API to remove a value,
-         * so we have to use this canary value.
-         * (would also allow us to notice if we ever accidentally sent data after we shouldn't).
-         */
-        private val CANARY_UUID = UUID.fromString("beefbeef-beef-beef-beef-beeefbeefbee")
-
-        /**
          * Determines whether or not telemetry is enabled.
+         * Currently, according to our lean data policy, general telemetry is disabled.
          */
         @JvmStatic
-        fun isTelemetryEnabled(context: Context): Boolean {
+        @Suppress("FunctionOnlyReturningConstant", "UNUSED_PARAMETER")
+        fun isTelemetryEnabled(context: Context? = null): Boolean = false
+
+        /**
+         * Determines whether or not daily usage telemetry should be enabled by default.
+         * This matches whether general telemetry was enabled prior to the switch being removed.
+         * Currently, according to our lean data policy, general telemetry is disabled.
+         */
+        @JvmStatic
+        fun shouldTelemetryBeEnabledByDefault(context: Context): Boolean {
             if (isDeviceWithTelemetryDisabled()) { return false }
 
             // The first access to shared preferences will require a disk read.
@@ -124,16 +122,9 @@ class GleanMetricsService(context: Context) : MetricsService {
                     client = lazy(LazyThreadSafetyMode.NONE) { components.client },
                     usePrivateRequest = true,
                 ),
-                pingSchedule = mapOf("baseline" to listOf("usage-reporting")),
             ),
             buildInfo = GleanBuildInfo.buildInfo,
         )
-
-        if (telemetryEnabled) {
-            checkAndSetUsageProfileId()
-        } else {
-            unsetUsageProfileId()
-        }
 
         Glean.registerPings(Pings)
 
@@ -169,40 +160,6 @@ class GleanMetricsService(context: Context) : MetricsService {
                 activationPing.checkAndSend()
             }
         }
-    }
-
-    /**
-     * Toggle the glean upload enabled flag on or off.
-     *
-     * @param enabled true if enabling upload, false if disabling it.
-     */
-    fun setUploadEnabled(enabled: Boolean) {
-        Glean.setCollectionEnabled(enabled)
-        if (enabled) {
-            checkAndSetUsageProfileId()
-        } else {
-            unsetUsageProfileId()
-        }
-    }
-
-    private fun checkAndSetUsageProfileId() {
-        val usageProfileIdPreferenceValue: String? = preferences.getString(
-            usageProfileIdPreferenceKey,
-            null,
-        )
-        if (usageProfileIdPreferenceValue == null) {
-            val newUsageProfileIdValue = Usage.profileId.generateAndSet().toString()
-            preferences.edit()
-                .putString(usageProfileIdPreferenceKey, newUsageProfileIdValue)
-                .apply()
-        } else {
-            Usage.profileId.set(UUID.fromString(usageProfileIdPreferenceValue))
-        }
-    }
-
-    private fun unsetUsageProfileId() {
-        preferences.edit().remove(usageProfileIdPreferenceKey).apply()
-        Usage.profileId.set(CANARY_UUID)
     }
 
     private fun collectPrefMetricsAsync(

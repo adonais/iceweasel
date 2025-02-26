@@ -4,9 +4,15 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   EngineProcess: "chrome://global/content/ml/EngineProcess.sys.mjs",
+  TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
+  TranslationsTelemetry:
+    "chrome://global/content/translations/TranslationsTelemetry.sys.mjs",
 });
+
+/**
+ * @typedef {import("../translations").LanguagePair} LanguagePair
+ */
 
 /**
  * The translations engine is in its own content process. This actor handles the
@@ -31,16 +37,30 @@ export class TranslationsEngineParent extends JSWindowActorParent {
         lazy.EngineProcess.resolveTranslationsEngineParent(this);
         return undefined;
       case "TranslationsEngine:RequestEnginePayload": {
-        const { fromLanguage, toLanguage } = data;
+        const { languagePair } = data;
         const payloadPromise =
-          lazy.TranslationsParent.getTranslationsEnginePayload(
-            fromLanguage,
-            toLanguage
-          );
+          lazy.TranslationsParent.getTranslationsEnginePayload(languagePair);
         payloadPromise.catch(error => {
           lazy.TranslationsParent.telemetry().onError(String(error));
         });
         return payloadPromise;
+      }
+      case "TranslationsEngine:ReportEnginePerformance": {
+        const {
+          sourceLanguage,
+          targetLanguage,
+          totalInferenceSeconds,
+          totalTranslatedWords,
+          totalCompletedRequests,
+        } = data;
+        lazy.TranslationsTelemetry.onReportEnginePerformance({
+          sourceLanguage,
+          targetLanguage,
+          totalInferenceSeconds,
+          totalTranslatedWords,
+          totalCompletedRequests,
+        });
+        return undefined;
       }
       case "TranslationsEngine:ReportEngineStatus": {
         const { innerWindowId, status } = data;
@@ -73,12 +93,11 @@ export class TranslationsEngineParent extends JSWindowActorParent {
   }
 
   /**
-   * @param {string} fromLanguage
-   * @param {string} toLanguage
+   * @param {LanguagePair} languagePair
    * @param {MessagePort} port
    * @param {TranslationsParent} [translationsParent]
    */
-  startTranslation(fromLanguage, toLanguage, port, translationsParent) {
+  startTranslation(languagePair, port, translationsParent) {
     const innerWindowId = translationsParent?.innerWindowId;
     if (translationsParent) {
       this.#translationsParents.set(innerWindowId, translationsParent);
@@ -90,8 +109,7 @@ export class TranslationsEngineParent extends JSWindowActorParent {
     this.sendAsyncMessage(
       "TranslationsEngine:StartTranslation",
       {
-        fromLanguage,
-        toLanguage,
+        languagePair,
         innerWindowId,
         port,
       },

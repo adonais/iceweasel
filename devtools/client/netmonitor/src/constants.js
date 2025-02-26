@@ -63,6 +63,7 @@ const actionTypes = {
   MSG_RESET_COLUMNS: "MSG_RESET_COLUMNS",
   MSG_CLOSE_CONNECTION: "MSG_CLOSE_CONNECTION",
   SET_HEADERS_URL_PREVIEW_EXPANDED: "SET_HEADERS_URL_PREVIEW_EXPANDED",
+  SET_DEFAULT_RAW_RESPONSE: "SET_DEFAULT_RAW_RESPONSE",
 
   // Search
   ADD_SEARCH_QUERY: "ADD_SEARCH_QUERY",
@@ -239,6 +240,7 @@ const UPDATE_PROPS = [
   "proxyStatusText",
   "fromCache",
   "fromServiceWorker",
+  "securityFlags",
 ];
 
 const PANELS = {
@@ -609,6 +611,9 @@ const general = {
   AUTO_EXPAND_MAX_NODES: 50,
   CHANNEL_TYPE,
   WEB_SOCKET_OPCODE,
+  // Arbitrary limit for rendering strings in the netmonitor table.
+  // Useful for instance for very big data URIs.
+  MAX_UI_STRING_LENGTH: 10000,
 };
 
 // flatten constants

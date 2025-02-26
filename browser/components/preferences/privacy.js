@@ -104,7 +104,7 @@ const SANITIZE_ON_SHUTDOWN_PREFS_ONLY = [
 ];
 
 const SANITIZE_ON_SHUTDOWN_PREFS_ONLY_V2 = [
-  "privacy.clearOnShutdown_v2.historyFormDataAndDownloads",
+  "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
   "privacy.clearOnShutdown_v2.siteSettings",
 ];
 
@@ -177,7 +177,7 @@ Preferences.addAll([
   { id: "privacy.clearOnShutdown.offlineApps", type: "bool" },
   { id: "privacy.clearOnShutdown.history", type: "bool" },
   {
-    id: "privacy.clearOnShutdown_v2.historyFormDataAndDownloads",
+    id: "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
     type: "bool",
   },
   { id: "privacy.clearOnShutdown.downloads", type: "bool" },
@@ -280,6 +280,7 @@ if (AppConstants.MOZ_DATA_REPORTING) {
     { id: PREF_OPT_OUT_STUDIES_ENABLED, type: "bool" },
     { id: PREF_ADDON_RECOMMENDATIONS_ENABLED, type: "bool" },
     { id: PREF_UPLOAD_ENABLED, type: "bool" },
+    { id: "datareporting.usage.uploadEnabled", type: "bool" },
     { id: "dom.private-attribution.submission.enabled", type: "bool" },
   ]);
 }
@@ -511,15 +512,6 @@ var gPrivacyPane = {
     let httpsOnlyExceptionButton = document.getElementById(
       "httpsOnlyExceptionButton"
     );
-    let httpsOnlyRadioEnabled = document.getElementById(
-      "httpsOnlyRadioEnabled"
-    );
-    let httpsOnlyRadioEnabledPBM = document.getElementById(
-      "httpsOnlyRadioEnabledPBM"
-    );
-    let httpsOnlyRadioDisabled = document.getElementById(
-      "httpsOnlyRadioDisabled"
-    );
 
     if (httpsOnlyOnPref) {
       httpsOnlyRadioGroup.value = "enabled";
@@ -541,23 +533,6 @@ var gPrivacyPane = {
     ) {
       httpsOnlyRadioGroup.disabled = true;
     }
-
-    document.l10n.setAttributes(
-      httpsOnlyRadioEnabled,
-      httpsFirstOnPref ? "httpsonly-radio-enabled2" : "httpsonly-radio-enabled"
-    );
-    document.l10n.setAttributes(
-      httpsOnlyRadioEnabledPBM,
-      httpsFirstOnPref
-        ? "httpsonly-radio-enabled-pbm2"
-        : "httpsonly-radio-enabled-pbm"
-    );
-    document.l10n.setAttributes(
-      httpsOnlyRadioDisabled,
-      httpsFirstOnPref
-        ? "httpsonly-radio-disabled2"
-        : "httpsonly-radio-disabled"
-    );
   },
 
   syncToHttpsOnlyPref() {
@@ -581,11 +556,7 @@ var gPrivacyPane = {
 
     // Create event listener for when the user clicks
     // on one of the radio buttons
-    setEventListener(
-      "httpsOnlyRadioGroup",
-      "command",
-      this.syncToHttpsOnlyPref
-    );
+    setEventListener("httpsOnlyRadioGroup", "change", this.syncToHttpsOnlyPref);
     // Update radio-value when the pref changes
     Preferences.get("dom.security.https_only_mode").on("change", () =>
       this.syncFromHttpsOnlyPref()
@@ -1601,7 +1572,7 @@ var gPrivacyPane = {
             document.querySelector(selector + " .cryptominers-option").hidden =
               true;
             break;
-          case "stp":
+          case "stp": {
             // Store social tracking cookies pref
             const STP_COOKIES_PREF =
               "privacy.socialtracking.block_cookies.enabled";
@@ -1612,6 +1583,7 @@ var gPrivacyPane = {
               ).hidden = false;
             }
             break;
+          }
           case "-stp":
             // Store social tracking cookies pref
             document.querySelector(selector + " .social-media-option").hidden =
@@ -2984,12 +2956,23 @@ var gPrivacyPane = {
         },
       ]);
       let win = Services.wm.getMostRecentBrowserWindow();
+
+      // Note on Glean collection: because OSKeyStore.ensureLoggedIn() is not wrapped in
+      // verifyOSAuth(), it will be documenting "success" for unsupported platforms
+      // and won't record "fail_error", only "fail_user_canceled"
       let loggedIn = await OSKeyStore.ensureLoggedIn(
         messageText.value,
         captionText.value,
         win,
         false
       );
+
+      const result = loggedIn.authenticated ? "success" : "fail_user_canceled";
+      Glean.pwmgr.promptShownOsReauth.record({
+        trigger: "toggle_pref_primary_password",
+        result,
+      });
+
       if (!loggedIn.authenticated) {
         return;
       }
@@ -3091,10 +3074,20 @@ var gPrivacyPane = {
       osReauthCheckbox.ownerGlobal.docShell.chromeEventHandler.ownerGlobal;
 
     // Calling OSKeyStore.ensureLoggedIn() instead of LoginHelper.verifyOSAuth()
-    // since we want to authenticate user each time this stting is changed.
+    // since we want to authenticate user each time this setting is changed.
+
+    // Note on Glean collection: because OSKeyStore.ensureLoggedIn() is not wrapped in
+    // verifyOSAuth(), it will be documenting "success" for unsupported platforms
+    // and won't record "fail_error", only "fail_user_canceled"
     let isAuthorized = (
       await OSKeyStore.ensureLoggedIn(messageText, captionText, win, false)
     ).authenticated;
+
+    Glean.pwmgr.promptShownOsReauth.record({
+      trigger: "toggle_pref_os_auth",
+      result: isAuthorized ? "success" : "fail_user_canceled",
+    });
+
     if (!isAuthorized) {
       osReauthCheckbox.checked = !osReauthCheckbox.checked;
       return;
@@ -3105,6 +3098,10 @@ var gPrivacyPane = {
       LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF,
       osReauthCheckbox.checked
     );
+
+    Glean.pwmgr.requireOsReauthToggle.record({
+      toggle_state: osReauthCheckbox.checked,
+    });
   },
 
   _initOSAuthentication() {

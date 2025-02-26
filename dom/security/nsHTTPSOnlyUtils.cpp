@@ -7,7 +7,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -376,8 +376,11 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   }
 
   // 3. Check for general exceptions
-  if (OnionException(aURI) || LoopbackOrLocalException(aURI) ||
-      UnknownPublicSuffixException(aURI)) {
+  if (OnionException(aURI) ||
+      (!mozilla::StaticPrefs::dom_security_https_first_for_local_addresses() &&
+       LoopbackOrLocalException(aURI)) ||
+      (!mozilla::StaticPrefs::dom_security_https_first_for_unknown_suffixes() &&
+       UnknownPublicSuffixException(aURI))) {
     return false;
   }
 
@@ -721,8 +724,9 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   bool isHttpsFirst = IsHttpsFirstModeEnabled(isPrivateWin);
   bool isSchemelessHttpsFirst =
       (loadInfo->GetSchemelessInput() ==
-           nsILoadInfo::SchemelessInputTypeSchemeless &&
-       mozilla::StaticPrefs::dom_security_https_first_schemeless());
+       nsILoadInfo::SchemelessInputTypeSchemeless) &&
+      mozilla::StaticPrefs::dom_security_https_first_schemeless() &&
+      !isHttpsOnly && !isHttpsFirst;
   if (!isHttpsOnly && !isHttpsFirst && !isSchemelessHttpsFirst) {
     return;
   }

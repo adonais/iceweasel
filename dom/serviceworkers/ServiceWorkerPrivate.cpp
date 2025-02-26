@@ -16,6 +16,7 @@
 #include "js/ErrorReport.h"
 #include "mozIThirdPartyUtil.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/CycleCollectedJSContext.h"  // for MicroTaskRunnable
 #include "mozilla/ErrorResult.h"
 #include "mozilla/JSObjectHolder.h"
@@ -49,6 +50,7 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/net/CookieService.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsError.h"
@@ -552,10 +554,11 @@ nsresult ServiceWorkerPrivate::Initialize() {
   // it's a third-party service worker. So, the cookieJarSettings can directly
   // use the partitionKey from it. For first-party case, we can populate the
   // partitionKey from the principal URI.
-  Maybe<uint64_t> overriddenFingerprintingSettingsArg;
-  Maybe<RFPTarget> overriddenFingerprintingSettings;
+  Maybe<RFPTargetSet> overriddenFingerprintingSettingsArg;
+  Maybe<RFPTargetSet> overriddenFingerprintingSettings;
   nsCOMPtr<nsIURI> firstPartyURI;
   bool foreignByAncestorContext = false;
+  bool isOn3PCBExceptionList = false;
   if (!principal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetPartitionKey(principal->OriginAttributesRef().mPartitionKey);
@@ -581,8 +584,14 @@ nsresult ServiceWorkerPrivate::Initialize() {
                 firstPartyURI, uri);
         if (overriddenFingerprintingSettings.isSome()) {
           overriddenFingerprintingSettingsArg.emplace(
-              uint64_t(overriddenFingerprintingSettings.ref()));
+              overriddenFingerprintingSettings.ref());
         }
+
+        RefPtr<net::CookieService> csSingleton =
+            net::CookieService::GetSingleton();
+        isOn3PCBExceptionList =
+            csSingleton->ThirdPartyCookieBlockingExceptionsRef()
+                .CheckExceptionForURIs(firstPartyURI, uri);
       }
     }
   } else if (!principal->OriginAttributesRef().mFirstPartyDomain.IsEmpty()) {
@@ -609,9 +618,16 @@ nsresult ServiceWorkerPrivate::Initialize() {
               : nsRFPService::GetOverriddenFingerprintingSettingsForURI(
                     uri, nullptr);
 
+      RefPtr<net::CookieService> csSingleton =
+          net::CookieService::GetSingleton();
+      isOn3PCBExceptionList =
+          isThirdParty ? csSingleton->ThirdPartyCookieBlockingExceptionsRef()
+                             .CheckExceptionForURIs(firstPartyURI, uri)
+                       : false;
+
       if (overriddenFingerprintingSettings.isSome()) {
         overriddenFingerprintingSettingsArg.emplace(
-            uint64_t(overriddenFingerprintingSettings.ref()));
+            overriddenFingerprintingSettings.ref());
       }
     }
   } else {
@@ -627,8 +643,15 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
     if (overriddenFingerprintingSettings.isSome()) {
       overriddenFingerprintingSettingsArg.emplace(
-          uint64_t(overriddenFingerprintingSettings.ref()));
+          overriddenFingerprintingSettings.ref());
     }
+  }
+
+  // Firefox doesn't support service workers in PBM.
+  bool isPBM = principal->GetIsInPrivateBrowsing();
+  if (ContentBlockingAllowList::Check(principal, isPBM)) {
+    net::CookieJarSettings::Cast(cookieJarSettings)
+        ->SetIsOnContentBlockingAllowList(true);
   }
 
   bool shouldResistFingerprinting =
@@ -636,11 +659,13 @@ nsresult ServiceWorkerPrivate::Initialize() {
           principal,
           "Service Workers exist outside a Document or Channel; as a property "
           "of the domain (and origin attributes). We don't have a "
-          "CookieJarSettings to perform the nested check, but we can rely on"
+          "CookieJarSettings to perform the *nested check*, but we can rely on"
           "the FPI/dFPI partition key check. The WorkerPrivate's "
           "ShouldResistFingerprinting function for the ServiceWorker depends "
           "on this boolean and will also consider an explicit RFPTarget.",
-          RFPTarget::IsAlwaysEnabledForPrecompute);
+          RFPTarget::IsAlwaysEnabledForPrecompute) &&
+      !nsContentUtils::ETPSaysShouldNotResistFingerprinting(cookieJarSettings,
+                                                            isPBM);
 
   if (shouldResistFingerprinting && NS_SUCCEEDED(rv) && firstPartyURI) {
     auto rfpKey = nsRFPService::GenerateKeyForServiceWorker(
@@ -726,7 +751,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
       /* referrerInfo */ nullptr,
 
       storageAccess, isThirdPartyContextToTopWindow, shouldResistFingerprinting,
-      overriddenFingerprintingSettingsArg,
+      overriddenFingerprintingSettingsArg, isOn3PCBExceptionList,
       // Origin trials are associated to a window, so it doesn't make sense on
       // service workers.
       OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),
@@ -1309,6 +1334,23 @@ void ServiceWorkerPrivate::UpdateState(ServiceWorkerState aState) {
   }
 
   mPendingFunctionalEvents.Clear();
+}
+
+void ServiceWorkerPrivate::UpdateIsOnContentBlockingAllowList(
+    bool aOnContentBlockingAllowList) {
+  AssertIsOnMainThread();
+
+  if (!mControllerChild) {
+    return;
+  }
+
+  ExecServiceWorkerOp(
+      ServiceWorkerUpdateIsOnContentBlockingAllowListOpArgs(
+          aOnContentBlockingAllowList),
+      ServiceWorkerLifetimeExtension(NoLifetimeExtension{}),
+      [](ServiceWorkerOpResult&& aResult) {
+        MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
+      });
 }
 
 nsresult ServiceWorkerPrivate::GetDebugger(nsIWorkerDebugger** aResult) {

@@ -221,6 +221,7 @@ nsIFrame* NS_NewXULImageFrame(PresShell*, ComputedStyle*);
 nsIFrame* NS_NewImageFrameForContentProperty(PresShell*, ComputedStyle*);
 nsIFrame* NS_NewImageFrameForGeneratedContentIndex(PresShell*, ComputedStyle*);
 nsIFrame* NS_NewImageFrameForListStyleImage(PresShell*, ComputedStyle*);
+nsIFrame* NS_NewImageFrameForViewTransitionOld(PresShell*, ComputedStyle*);
 
 // Returns true if aFrame is an anonymous flex/grid item.
 static inline bool IsAnonymousItem(const nsIFrame* aFrame) {
@@ -3225,6 +3226,35 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
   return fieldsetFrame;
 }
 
+// We always obey display for h1, but this is a convenient place for our
+// counters.
+const nsCSSFrameConstructor::FrameConstructionData*
+nsCSSFrameConstructor::FindH1Data(const Element& aElement,
+                                  ComputedStyle& aStyle) {
+  constexpr auto kCounter =
+      UseCounter::eUseCounter_custom_SectioningH1WithNoFontSizeOrMargins;
+  if (aStyle.HasAuthorSpecifiedMarginAndFontSize()) {
+    return nullptr;
+  }
+  auto* doc = aElement.OwnerDoc();
+  if (doc->HasUseCounter(kCounter)) {
+    return nullptr;
+  }
+  for (auto* ancestor = aElement.GetParent(); ancestor;
+       ancestor = ancestor->GetParent()) {
+    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::section, nsGkAtoms::aside,
+                                      nsGkAtoms::article, nsGkAtoms::nav)) {
+      doc->SetUseCounter(kCounter);
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::warningFlag, "DOM"_ns, doc,
+          nsContentUtils::eDOM_PROPERTIES,
+          "SectioningH1WithNoFontSizeOrMargins",
+          {u"https://developer.mozilla.org/docs/Web/HTML/Element/Heading_Elements#specify_font-size_and_margin-block_on_h1"_ns});
+    }
+  }
+  return nullptr;
+}
+
 const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindDetailsData(const Element& aElement,
                                        ComputedStyle& aStyle) {
@@ -3449,18 +3479,24 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
                    aParentFrame->GetParent()->IsFieldSetFrame(),
                "Unexpected parent for fieldset content anon box");
 
-  if (aElement.IsInNativeAnonymousSubtree() &&
-      aElement.NodeInfo()->NameAtom() == nsGkAtoms::label && aParentFrame) {
-    if (aParentFrame->IsFileControlFrame()) {
-      static constexpr FrameConstructionData sFileLabelData(
-          NS_NewFileControlLabelFrame);
-      return &sFileLabelData;
+  if (aElement.IsInNativeAnonymousSubtree()) {
+    if (aElement.NodeInfo()->NameAtom() == nsGkAtoms::label && aParentFrame) {
+      if (aParentFrame->IsFileControlFrame()) {
+        static constexpr FrameConstructionData sFileLabelData(
+            NS_NewFileControlLabelFrame);
+        return &sFileLabelData;
+      }
+      if (aParentFrame->GetParent() &&
+          aParentFrame->GetParent()->IsComboboxControlFrame()) {
+        static constexpr FrameConstructionData sComboboxLabelData(
+            NS_NewComboboxLabelFrame);
+        return &sComboboxLabelData;
+      }
     }
-    if (aParentFrame->GetParent() &&
-        aParentFrame->GetParent()->IsComboboxControlFrame()) {
-      static constexpr FrameConstructionData sComboboxLabelData(
-          NS_NewComboboxLabelFrame);
-      return &sComboboxLabelData;
+    if (aElement.GetPseudoElementType() == PseudoStyleType::viewTransitionOld) {
+      static constexpr FrameConstructionData sViewTransitionOldData(
+          NS_NewImageFrameForViewTransitionOld);
+      return &sViewTransitionOldData;
     }
   }
 
@@ -3490,6 +3526,7 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
       SIMPLE_TAG_CREATE(progress, NS_NewProgressFrame),
       SIMPLE_TAG_CREATE(meter, NS_NewMeterFrame),
       SIMPLE_TAG_CHAIN(details, nsCSSFrameConstructor::FindDetailsData),
+      SIMPLE_TAG_CHAIN(h1, nsCSSFrameConstructor::FindH1Data),
   };
 
   return FindDataByTag(aElement, aStyle, sHTMLData, std::size(sHTMLData));
@@ -4085,36 +4122,17 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
   return NS_OK;
 }
 
-// XUL frames are not allowed to be out of flow.
-#define SIMPLE_XUL_FCDATA(_func) \
-  FrameConstructionData(_func,   \
-                        FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_SKIP_ABSPOS_PUSH)
-#define SCROLLABLE_XUL_FCDATA(_func)                         \
-  FrameConstructionData(_func, FCDATA_DISALLOW_OUT_OF_FLOW | \
-                                   FCDATA_SKIP_ABSPOS_PUSH | \
-                                   FCDATA_MAY_NEED_SCROLLFRAME)
-// .. but we allow some XUL frames to be _containers_ for out-of-flow content
-// (This is the same as SCROLLABLE_XUL_FCDATA, but w/o FCDATA_SKIP_ABSPOS_PUSH)
-#define SCROLLABLE_ABSPOS_CONTAINER_XUL_FCDATA(_func) \
-  FrameConstructionData(                              \
-      _func, FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_MAY_NEED_SCROLLFRAME)
-
-#define SIMPLE_XUL_CREATE(_tag, _func) \
-  {nsGkAtoms::_tag, SIMPLE_XUL_FCDATA(_func)}
-#define SCROLLABLE_XUL_CREATE(_tag, _func) \
-  {nsGkAtoms::_tag, SCROLLABLE_XUL_FCDATA(_func)}
-
 /* static */
 const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindXULTagData(const Element& aElement,
                                       ComputedStyle& aStyle) {
   MOZ_ASSERT(aElement.IsXULElement());
-  static constexpr FrameConstructionData kPopupData(
-      NS_NewMenuPopupFrame, FCDATA_IS_POPUP | FCDATA_SKIP_ABSPOS_PUSH);
+  static constexpr FrameConstructionData kPopupData(NS_NewMenuPopupFrame,
+                                                    FCDATA_IS_POPUP);
 
   static constexpr FrameConstructionDataByTag sXULTagData[] = {
-      SIMPLE_XUL_CREATE(image, NS_NewXULImageFrame),
-      SIMPLE_XUL_CREATE(treechildren, NS_NewTreeBodyFrame),
+      SIMPLE_TAG_CREATE(image, NS_NewXULImageFrame),
+      SIMPLE_TAG_CREATE(treechildren, NS_NewTreeBodyFrame),
       SIMPLE_TAG_CHAIN(label,
                        nsCSSFrameConstructor::FindXULLabelOrDescriptionData),
       SIMPLE_TAG_CHAIN(description,
@@ -4122,16 +4140,16 @@ nsCSSFrameConstructor::FindXULTagData(const Element& aElement,
 #ifdef XP_MACOSX
       SIMPLE_TAG_CHAIN(menubar, nsCSSFrameConstructor::FindXULMenubarData),
 #endif /* XP_MACOSX */
-      SIMPLE_XUL_CREATE(iframe, NS_NewSubDocumentFrame),
-      SIMPLE_XUL_CREATE(editor, NS_NewSubDocumentFrame),
-      SIMPLE_XUL_CREATE(browser, NS_NewSubDocumentFrame),
-      SIMPLE_XUL_CREATE(splitter, NS_NewSplitterFrame),
-      SIMPLE_XUL_CREATE(scrollbar, NS_NewScrollbarFrame),
-      SIMPLE_XUL_CREATE(slider, NS_NewSliderFrame),
-      SIMPLE_XUL_CREATE(thumb, NS_NewSimpleXULLeafFrame),
-      SIMPLE_XUL_CREATE(scrollcorner, NS_NewSimpleXULLeafFrame),
-      SIMPLE_XUL_CREATE(resizer, NS_NewSimpleXULLeafFrame),
-      SIMPLE_XUL_CREATE(scrollbarbutton, NS_NewScrollbarButtonFrame),
+      SIMPLE_TAG_CREATE(iframe, NS_NewSubDocumentFrame),
+      SIMPLE_TAG_CREATE(editor, NS_NewSubDocumentFrame),
+      SIMPLE_TAG_CREATE(browser, NS_NewSubDocumentFrame),
+      SIMPLE_TAG_CREATE(splitter, NS_NewSplitterFrame),
+      SIMPLE_TAG_CREATE(scrollbar, NS_NewScrollbarFrame),
+      SIMPLE_TAG_CREATE(slider, NS_NewSliderFrame),
+      SIMPLE_TAG_CREATE(thumb, NS_NewSimpleXULLeafFrame),
+      SIMPLE_TAG_CREATE(scrollcorner, NS_NewSimpleXULLeafFrame),
+      SIMPLE_TAG_CREATE(resizer, NS_NewSimpleXULLeafFrame),
+      SIMPLE_TAG_CREATE(scrollbarbutton, NS_NewScrollbarButtonFrame),
       {nsGkAtoms::panel, kPopupData},
       {nsGkAtoms::menupopup, kPopupData},
       {nsGkAtoms::tooltip, kPopupData},
@@ -4155,8 +4173,8 @@ nsCSSFrameConstructor::FindXULLabelOrDescriptionData(const Element& aElement,
     return nullptr;
   }
 
-  static constexpr FrameConstructionData sMiddleCroppingData =
-      SIMPLE_XUL_FCDATA(NS_NewMiddleCroppingLabelFrame);
+  static constexpr FrameConstructionData sMiddleCroppingData(
+      NS_NewMiddleCroppingLabelFrame);
   return &sMiddleCroppingData;
 }
 

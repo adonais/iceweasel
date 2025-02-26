@@ -335,10 +335,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Cerrar hoja del menú herramientas</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Cerrar hoja del menú pestaña personalizada</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Vista de lectura, traducir, imprimir, compartir, abrir aplicación</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Vista de lectura, imprimir, compartir, abrir aplicación</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Vista de lectura, traducir, %s, imprimir, compartir, abrir aplicación</string>
@@ -578,7 +574,6 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Los informes de fallos nos permiten diagnosticar y solucionar problemas del navegador. Los informes pueden incluir datos personales o confidenciales.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Conocer más sobre los informes de fallos</string>
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Conocer más</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Enviar datos técnicos y de interacción a Mozilla</string>
@@ -591,23 +586,27 @@
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Listo</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Cancelar</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Cancelar</string>
 
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Bienvenido a Firefox</string>
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Navegación web rápida y segura.</string>
+    <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">Navegación web rápida y segura</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Aceptar y continuar</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Al continuar, aceptás los %1$s de Firefox.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one_2">Al continuar, aceptás los %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Términos del servicio</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
     <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Términos de uso de Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox se preocupa por tu privacidad. Lee más en nuestra %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox se preocupa por tu privacidad. Conocé más en nuestra %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Nota de privacidad</string>
@@ -615,6 +614,16 @@
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Para ayudar a mejorar el navegador, Firefox envía datos de diagnóstico e interacción a Mozilla. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Administrar</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Ayúdanos a hacer crecer a Firefox</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Cuando compartís cómo descubriste Firefox y cómo lo usás, nos ayudas a presentar nuestro navegador a más personas.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Compartí datos mínimos con los socios de tecnología de marketing de Mozilla. Estos datos nunca se venden ni se utilizan para mostrarte anuncios.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Como usamos los datos</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Confirmá y empezá a navegar</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Elegí la ubicación de la barra de herramientas</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -830,6 +839,8 @@
     <string name="preferences_show_voice_search">Mostrar búsqueda por voz</string>
     <!-- Preference title for switch preference to show search suggestions also in private mode -->
     <string name="preferences_show_search_suggestions_in_private">Mostrar en sesiones privadas</string>
+    <!-- Preference title for switch preference to show trending search suggestions -->
+    <string name="preferences_show_trending_search_suggestions">Mostrar las sugerencias más populares</string>
     <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
     <string name="preferences_show_clipboard_suggestions">Mostrar sugerencias del portapapeles</string>
     <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -1059,19 +1070,24 @@
     <string name="exceptions_empty_message_learn_more_link">Conocer más</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Uso y datos técnicos</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Datos técnicos y de interacción</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Enviar datos técnicos y de interacción</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Conocer más</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Compartí datos de rendimiento, uso, hardware y personalizaciones de tu navegador con Mozilla para ayudarnos a mejorar %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Compartí datos de rendimiento, uso, hardware y personalizaciones de tu navegador con Mozilla para ayudarnos a mejorar %1$s</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Los datos sobre tu dispositivo, la configuración del hardware y el uso nos ayudan a mejorar las características, el rendimiento y la estabilidad de Firefox.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Datos de marketing</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Compartí datos de uso básicos con Adjust, nuestro proveedor de marketing móvil</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Datos de marketing</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Datos de medición de la campaña</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Compart información sobre cómo descubriste Firefox con los socios de marketing de Mozilla. Esto nos ayuda a hacer crecer Firefox y a construir una mejor Internet</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Compart información sobre cómo descubriste Firefox con los socios de marketing de Mozilla. Esto nos ayuda a hacer crecer Firefox y a construir una mejor Internet</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Compartí con los socios de tecnología de marketing de Mozilla cómo descubriste Firefox y lo usás.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Conocer más sobre datos de marketing</string>
 
@@ -1086,6 +1102,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Esto nos ayuda a diagnosticar y solucionar problemas con el navegador. Los informes pueden incluir datos personales o confidenciales.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Compartir datos de fallos automáticamente al iniciar con Mozilla después de que ocurran</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Conocer más sobre los informes de fallos</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Estudios</string>
@@ -1252,7 +1271,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Activo</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s puede instalar y ejecutar estudios de vez en cuando.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s puede instalar y ejecutar estudios de vez en cuando.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Probá funciones e ideas antes de que estén disponibles para todos.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Instalar y ejecutar estudios</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Conocer más</string>
 
@@ -2085,6 +2108,8 @@
     <string name="about_privacy_notice">Nota de privacidad</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Conocé tus derechos</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Términos de uso</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Información de la licencia</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2554,6 +2579,8 @@
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Sugerencia de Firefox</string>
 
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Búsquedas más populares</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Búsqueda de Google</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2987,6 +3014,10 @@
     <string name="download_language_file_dialog_negative_button_text">Cancelar</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Seguro</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">No es seguro</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Tené cuidado en este sitio</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -3007,6 +3038,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Si algo parece roto en este sitio, probá desactivar las protecciones.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">Las protecciones están desactivadas. Te sugerimos que las volvás a activar.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Rastreadores bloqueados: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">No se encontraron rastreadores</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Configuración de privacidad y seguridad</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Rastreadores bloqueados: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Eliminar cookies y datos del sitio para <b>%s</b> puede cerrar sesión en los sitios web y limpiar los carritos de compras.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Limpiar</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Cancelar</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Cookies y datos del sitio eliminados</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Conexión segura</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Conexión insegura</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Verificado por %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3127,7 +3189,7 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Idiomas de depuración para habilitar</string>
 
-    <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+    <!-- The title of the header for the section for managing addresses. -->
     <string name="debug_drawer_addresses_management_header">Administrar direcciones</string>
     <!-- The title of the button in the debug drawer for adding a new address. -->
     <string name="debug_drawer_add_new_address">Agregar nueva dirección para la localización seleccionada</string>
@@ -3186,4 +3248,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Actualizá antes del 14 de marzo para seguir usando complementos y otras funciones.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Algunas características dejarán de funcionar mañana.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Mostrar texto oculto</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Borrar texto</string>
 </resources>

@@ -35,7 +35,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        BooleanMetric::new(1.into(), meta)
+        BooleanMetric::new(MetricId(1), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -53,7 +53,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        CounterMetric::new(2.into(), meta)
+        CounterMetric::new(MetricId(2), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -71,7 +71,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        CustomDistributionMetric::new(3.into(), meta, 0, 100, 100, HistogramType::Linear)
+        CustomDistributionMetric::new(MetricId(3), meta, 0, 100, 100, HistogramType::Linear)
     });
 
     #[allow(non_upper_case_globals)]
@@ -91,7 +91,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(4.into(), meta, None)
+        LabeledMetric::new(MetricId(4), meta, None)
     });
 
     #[repr(u16)]
@@ -159,7 +159,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(5.into(), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]))
+        LabeledMetric::new(MetricId(5), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -179,7 +179,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(6.into(), meta, None)
+        LabeledMetric::new(MetricId(6), meta, None)
     });
 
     #[repr(u16)]
@@ -223,7 +223,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(7.into(), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
+        LabeledMetric::new(MetricId(7), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -243,7 +243,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(8.into(), meta, None)
+        LabeledMetric::new(MetricId(8), meta, None)
     });
 
     #[repr(u16)]
@@ -287,7 +287,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(9.into(), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
+        LabeledMetric::new(MetricId(9), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -305,7 +305,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        MemoryDistributionMetric::new(10.into(), meta, MemoryUnit::Kilobyte)
+        MemoryDistributionMetric::new(MetricId(10), meta, MemoryUnit::Kilobyte)
     });
 
     #[allow(non_upper_case_globals)]
@@ -323,7 +323,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        StringListMetric::new(11.into(), meta)
+        StringListMetric::new(MetricId(11), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -341,7 +341,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        StringMetric::new(12.into(), meta)
+        StringMetric::new(MetricId(12), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -359,7 +359,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        TextMetric::new(13.into(), meta)
+        TextMetric::new(MetricId(13), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -377,7 +377,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        TimespanMetric::new(14.into(), meta, TimeUnit::Millisecond)
+        TimespanMetric::new(MetricId(14), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -395,7 +395,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        TimingDistributionMetric::new(15.into(), meta, TimeUnit::Nanosecond)
+        TimingDistributionMetric::new(MetricId(15), meta, TimeUnit::Nanosecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -413,7 +413,7 @@ pub mod test {
                 disabled: false,
                 ..Default::default()
             };
-        BooleanMetric::with_unordered_ipc(16.into(), meta)
+        BooleanMetric::with_unordered_ipc(MetricId(16), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -433,7 +433,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        LabeledMetric::with_unordered_ipc(17.into(), meta, None)
+        LabeledMetric::with_unordered_ipc(MetricId(17), meta, None)
     });
 
 }
@@ -476,7 +476,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        ObjectMetric::new(18.into(), meta)
+        ObjectMetric::new(MetricId(18), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -494,7 +494,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        DatetimeMetric::new(19.into(), meta, TimeUnit::Millisecond)
+        DatetimeMetric::new(MetricId(19), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -512,7 +512,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        EventMetric::new(20.into(), meta)
+        EventMetric::new(MetricId(20), meta)
     });
 
     #[derive(Default, Debug, Clone, Hash, Eq, PartialEq)]
@@ -547,7 +547,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        EventMetric::new(21.into(), meta)
+        EventMetric::new(MetricId(21), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -565,7 +565,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        DenominatorMetric::new(22.into(), meta, vec![CommonMetricData {name: "rate_with_external_denominator".into(), category: "test.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: false,  ..Default::default()}, CommonMetricData {name: "rate_with_external_denominator".into(), category: "test2.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: true,  ..Default::default()}])
+        DenominatorMetric::new(MetricId(22), meta, vec![CommonMetricData {name: "rate_with_external_denominator".into(), category: "test.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: false,  ..Default::default()}, CommonMetricData {name: "rate_with_external_denominator".into(), category: "test2.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: true,  ..Default::default()}])
     });
 
     #[allow(non_upper_case_globals)]
@@ -611,7 +611,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        QuantityMetric::new(25.into(), meta)
+        QuantityMetric::new(MetricId(25), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -629,7 +629,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        RateMetric::new(26.into(), meta)
+        RateMetric::new(MetricId(26), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -647,7 +647,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        NumeratorMetric::new(27.into(), meta)
+        NumeratorMetric::new(MetricId(27), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -665,7 +665,7 @@ pub mod test_nested {
                 disabled: false,
                 ..Default::default()
             };
-        UuidMetric::new(28.into(), meta)
+        UuidMetric::new(MetricId(28), meta)
     });
 
 }
@@ -695,7 +695,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        BooleanMetric::new(29.into(), meta)
+        BooleanMetric::new(MetricId(29), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -713,7 +713,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        CounterMetric::new(30.into(), meta)
+        CounterMetric::new(MetricId(30), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -731,7 +731,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        CustomDistributionMetric::new(31.into(), meta, 0, 100, 100, HistogramType::Linear)
+        CustomDistributionMetric::new(MetricId(31), meta, 0, 100, 100, HistogramType::Linear)
     });
 
     #[allow(non_upper_case_globals)]
@@ -751,7 +751,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(32.into(), meta, None)
+        LabeledMetric::new(MetricId(32), meta, None)
     });
 
     #[repr(u16)]
@@ -819,7 +819,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(33.into(), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]))
+        LabeledMetric::new(MetricId(33), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -839,7 +839,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(34.into(), meta, None)
+        LabeledMetric::new(MetricId(34), meta, None)
     });
 
     #[repr(u16)]
@@ -883,7 +883,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(35.into(), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
+        LabeledMetric::new(MetricId(35), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -903,7 +903,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(36.into(), meta, None)
+        LabeledMetric::new(MetricId(36), meta, None)
     });
 
     #[repr(u16)]
@@ -947,7 +947,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        LabeledMetric::new(37.into(), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
+        LabeledMetric::new(MetricId(37), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -965,7 +965,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        MemoryDistributionMetric::new(38.into(), meta, MemoryUnit::Kilobyte)
+        MemoryDistributionMetric::new(MetricId(38), meta, MemoryUnit::Kilobyte)
     });
 
     #[allow(non_upper_case_globals)]
@@ -983,7 +983,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        StringListMetric::new(39.into(), meta)
+        StringListMetric::new(MetricId(39), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1001,7 +1001,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        StringMetric::new(40.into(), meta)
+        StringMetric::new(MetricId(40), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1019,7 +1019,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        TextMetric::new(41.into(), meta)
+        TextMetric::new(MetricId(41), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1037,7 +1037,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        TimespanMetric::new(42.into(), meta, TimeUnit::Millisecond)
+        TimespanMetric::new(MetricId(42), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1055,7 +1055,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        TimingDistributionMetric::new(43.into(), meta, TimeUnit::Nanosecond)
+        TimingDistributionMetric::new(MetricId(43), meta, TimeUnit::Nanosecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1073,7 +1073,7 @@ pub mod test2 {
                 disabled: true,
                 ..Default::default()
             };
-        BooleanMetric::with_unordered_ipc(44.into(), meta)
+        BooleanMetric::with_unordered_ipc(MetricId(44), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1093,7 +1093,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        LabeledMetric::with_unordered_ipc(45.into(), meta, None)
+        LabeledMetric::with_unordered_ipc(MetricId(45), meta, None)
     });
 
 }
@@ -1136,7 +1136,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        ObjectMetric::new(46.into(), meta)
+        ObjectMetric::new(MetricId(46), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1154,7 +1154,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        DatetimeMetric::new(47.into(), meta, TimeUnit::Millisecond)
+        DatetimeMetric::new(MetricId(47), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1172,7 +1172,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        EventMetric::new(48.into(), meta)
+        EventMetric::new(MetricId(48), meta)
     });
 
     #[derive(Default, Debug, Clone, Hash, Eq, PartialEq)]
@@ -1207,7 +1207,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        EventMetric::new(49.into(), meta)
+        EventMetric::new(MetricId(49), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1267,7 +1267,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        QuantityMetric::new(53.into(), meta)
+        QuantityMetric::new(MetricId(53), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1285,7 +1285,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        RateMetric::new(54.into(), meta)
+        RateMetric::new(MetricId(54), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1303,7 +1303,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        NumeratorMetric::new(55.into(), meta)
+        NumeratorMetric::new(MetricId(55), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1321,7 +1321,7 @@ pub mod test2_nested {
                 disabled: true,
                 ..Default::default()
             };
-        UuidMetric::new(56.into(), meta)
+        UuidMetric::new(MetricId(56), meta)
     });
 
 }
@@ -1337,112 +1337,112 @@ pub(crate) mod __glean_metric_maps {
 
     pub static BOOLEAN_MAP: Lazy<HashMap<MetricId, &Lazy<BooleanMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(4);
-        map.insert(1.into(), &super::test::boolean_metric);
-        map.insert(16.into(), &super::test::unordered_boolean_metric);
-        map.insert(29.into(), &super::test2::boolean_metric);
-        map.insert(44.into(), &super::test2::unordered_boolean_metric);
+        map.insert(MetricId(1), &super::test::boolean_metric);
+        map.insert(MetricId(16), &super::test::unordered_boolean_metric);
+        map.insert(MetricId(29), &super::test2::boolean_metric);
+        map.insert(MetricId(44), &super::test2::unordered_boolean_metric);
         map
     });
 
     pub static COUNTER_MAP: Lazy<HashMap<MetricId, &Lazy<CounterMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(7);
-        map.insert(2.into(), &super::test::counter_metric);
-        map.insert(23.into(), &super::test_nested::optimizable_counter_metric);
-        map.insert(24.into(), &super::test_nested::optimizable_disabled_counter_metric);
-        map.insert(30.into(), &super::test2::counter_metric);
-        map.insert(50.into(), &super::test2_nested::external_denominator);
-        map.insert(51.into(), &super::test2_nested::optimizable_counter_metric);
-        map.insert(52.into(), &super::test2_nested::optimizable_disabled_counter_metric);
+        map.insert(MetricId(2), &super::test::counter_metric);
+        map.insert(MetricId(23), &super::test_nested::optimizable_counter_metric);
+        map.insert(MetricId(24), &super::test_nested::optimizable_disabled_counter_metric);
+        map.insert(MetricId(30), &super::test2::counter_metric);
+        map.insert(MetricId(50), &super::test2_nested::external_denominator);
+        map.insert(MetricId(51), &super::test2_nested::optimizable_counter_metric);
+        map.insert(MetricId(52), &super::test2_nested::optimizable_disabled_counter_metric);
         map
     });
 
     pub static CUSTOM_DISTRIBUTION_MAP: Lazy<HashMap<MetricId, &Lazy<CustomDistributionMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(3.into(), &super::test::custom_distribution_metric);
-        map.insert(31.into(), &super::test2::custom_distribution_metric);
+        map.insert(MetricId(3), &super::test::custom_distribution_metric);
+        map.insert(MetricId(31), &super::test2::custom_distribution_metric);
         map
     });
 
     pub static MEMORY_DISTRIBUTION_MAP: Lazy<HashMap<MetricId, &Lazy<MemoryDistributionMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(10.into(), &super::test::memory_distribution_metric);
-        map.insert(38.into(), &super::test2::memory_distribution_metric);
+        map.insert(MetricId(10), &super::test::memory_distribution_metric);
+        map.insert(MetricId(38), &super::test2::memory_distribution_metric);
         map
     });
 
     pub static STRING_LIST_MAP: Lazy<HashMap<MetricId, &Lazy<StringListMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(11.into(), &super::test::string_list_metric);
-        map.insert(39.into(), &super::test2::string_list_metric);
+        map.insert(MetricId(11), &super::test::string_list_metric);
+        map.insert(MetricId(39), &super::test2::string_list_metric);
         map
     });
 
     pub static STRING_MAP: Lazy<HashMap<MetricId, &Lazy<StringMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(12.into(), &super::test::string_metric);
-        map.insert(40.into(), &super::test2::string_metric);
+        map.insert(MetricId(12), &super::test::string_metric);
+        map.insert(MetricId(40), &super::test2::string_metric);
         map
     });
 
     pub static TEXT_MAP: Lazy<HashMap<MetricId, &Lazy<TextMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(13.into(), &super::test::text_metric);
-        map.insert(41.into(), &super::test2::text_metric);
+        map.insert(MetricId(13), &super::test::text_metric);
+        map.insert(MetricId(41), &super::test2::text_metric);
         map
     });
 
     pub static TIMESPAN_MAP: Lazy<HashMap<MetricId, &Lazy<TimespanMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(14.into(), &super::test::timespan_metric);
-        map.insert(42.into(), &super::test2::timespan_metric);
+        map.insert(MetricId(14), &super::test::timespan_metric);
+        map.insert(MetricId(42), &super::test2::timespan_metric);
         map
     });
 
     pub static TIMING_DISTRIBUTION_MAP: Lazy<HashMap<MetricId, &Lazy<TimingDistributionMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(15.into(), &super::test::timing_distribution_metric);
-        map.insert(43.into(), &super::test2::timing_distribution_metric);
+        map.insert(MetricId(15), &super::test::timing_distribution_metric);
+        map.insert(MetricId(43), &super::test2::timing_distribution_metric);
         map
     });
 
     pub static DATETIME_MAP: Lazy<HashMap<MetricId, &Lazy<DatetimeMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(19.into(), &super::test_nested::datetime_metric);
-        map.insert(47.into(), &super::test2_nested::datetime_metric);
+        map.insert(MetricId(19), &super::test_nested::datetime_metric);
+        map.insert(MetricId(47), &super::test2_nested::datetime_metric);
         map
     });
 
     pub static DENOMINATOR_MAP: Lazy<HashMap<MetricId, &Lazy<DenominatorMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(1);
-        map.insert(22.into(), &super::test_nested::external_denominator);
+        map.insert(MetricId(22), &super::test_nested::external_denominator);
         map
     });
 
     pub static QUANTITY_MAP: Lazy<HashMap<MetricId, &Lazy<QuantityMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(25.into(), &super::test_nested::quantity_metric);
-        map.insert(53.into(), &super::test2_nested::quantity_metric);
+        map.insert(MetricId(25), &super::test_nested::quantity_metric);
+        map.insert(MetricId(53), &super::test2_nested::quantity_metric);
         map
     });
 
     pub static RATE_MAP: Lazy<HashMap<MetricId, &Lazy<RateMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(26.into(), &super::test_nested::rate_metric);
-        map.insert(54.into(), &super::test2_nested::rate_metric);
+        map.insert(MetricId(26), &super::test_nested::rate_metric);
+        map.insert(MetricId(54), &super::test2_nested::rate_metric);
         map
     });
 
     pub static NUMERATOR_MAP: Lazy<HashMap<MetricId, &Lazy<NumeratorMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(27.into(), &super::test_nested::rate_with_external_denominator);
-        map.insert(55.into(), &super::test2_nested::rate_with_external_denominator);
+        map.insert(MetricId(27), &super::test_nested::rate_with_external_denominator);
+        map.insert(MetricId(55), &super::test2_nested::rate_with_external_denominator);
         map
     });
 
     pub static UUID_MAP: Lazy<HashMap<MetricId, &Lazy<UuidMetric>>> = Lazy::new(|| {
         let mut map = HashMap::with_capacity(2);
-        map.insert(28.into(), &super::test_nested::uuid_metric);
-        map.insert(56.into(), &super::test2_nested::uuid_metric);
+        map.insert(MetricId(28), &super::test_nested::uuid_metric);
+        map.insert(MetricId(56), &super::test2_nested::uuid_metric);
         map
     });
 
@@ -1772,32 +1772,32 @@ pub(crate) mod __glean_metric_maps {
 
         pub(crate) const SUBMETRIC_BIT: u32 = 25;
         pub(crate) static NEXT_LABELED_SUBMETRIC_ID: AtomicU32 = AtomicU32::new((1 << SUBMETRIC_BIT) + 1);
-        pub(crate) static LABELED_METRICS_TO_IDS: Lazy<RwLock<HashMap<(u32, String), u32>>> = Lazy::new(||
+        pub(crate) static LABELED_METRICS_TO_IDS: Lazy<RwLock<HashMap<(MetricId, String), SubMetricId>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
         pub(crate) static LABELED_ENUMS_TO_IDS: Lazy<RwLock<HashMap<(u32, u16), u32>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
 
-        pub static BOOLEAN_MAP: Lazy<RwLock<HashMap<MetricId, Arc<LabeledBooleanMetric>>>> = Lazy::new(||
+        pub static BOOLEAN_MAP: Lazy<RwLock<HashMap<SubMetricId, Arc<LabeledBooleanMetric>>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
-        pub static COUNTER_MAP: Lazy<RwLock<HashMap<MetricId, Arc<LabeledCounterMetric>>>> = Lazy::new(||
+        pub static COUNTER_MAP: Lazy<RwLock<HashMap<SubMetricId, Arc<LabeledCounterMetric>>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
-        pub static CUSTOM_DISTRIBUTION_MAP: Lazy<RwLock<HashMap<MetricId, Arc<LabeledCustomDistributionMetric>>>> = Lazy::new(||
+        pub static CUSTOM_DISTRIBUTION_MAP: Lazy<RwLock<HashMap<SubMetricId, Arc<LabeledCustomDistributionMetric>>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
-        pub static MEMORY_DISTRIBUTION_MAP: Lazy<RwLock<HashMap<MetricId, Arc<LabeledMemoryDistributionMetric>>>> = Lazy::new(||
+        pub static MEMORY_DISTRIBUTION_MAP: Lazy<RwLock<HashMap<SubMetricId, Arc<LabeledMemoryDistributionMetric>>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
-        pub static STRING_MAP: Lazy<RwLock<HashMap<MetricId, Arc<LabeledStringMetric>>>> = Lazy::new(||
+        pub static STRING_MAP: Lazy<RwLock<HashMap<SubMetricId, Arc<LabeledStringMetric>>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
-        pub static TIMING_DISTRIBUTION_MAP: Lazy<RwLock<HashMap<MetricId, Arc<LabeledTimingDistributionMetric>>>> = Lazy::new(||
+        pub static TIMING_DISTRIBUTION_MAP: Lazy<RwLock<HashMap<SubMetricId, Arc<LabeledTimingDistributionMetric>>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
-        pub static QUANTITY_MAP: Lazy<RwLock<HashMap<MetricId, Arc<LabeledQuantityMetric>>>> = Lazy::new(||
+        pub static QUANTITY_MAP: Lazy<RwLock<HashMap<SubMetricId, Arc<LabeledQuantityMetric>>>> = Lazy::new(||
             RwLock::new(HashMap::new())
         );
     }

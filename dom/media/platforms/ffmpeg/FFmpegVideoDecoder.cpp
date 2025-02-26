@@ -79,7 +79,9 @@ typedef int VAStatus;
 #  define VA_STATUS_SUCCESS 0x00000000
 #endif
 // Use some extra HW frames for potential rendering lags.
-#define EXTRA_HW_FRAMES 6
+// AV1 and VP9 can have maximum 8 frames for reference frames, so 1 base + 8
+// references.
+#define EXTRA_HW_FRAMES 9
 
 #if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
 #  define CUSTOMIZED_BUFFER_ALLOCATION 1
@@ -851,7 +853,7 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
 
   CheckedInt32 dataSize = mLib->av_image_get_buffer_size(
       aCodecContext->pix_fmt, aCodecContext->coded_width,
-      aCodecContext->coded_height, 16);
+      aCodecContext->coded_height, 32);
   if (!dataSize.isValid()) {
     FFMPEG_LOG("Data size overflow!");
     return AVERROR(EINVAL);
@@ -2108,8 +2110,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageD3D11(
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, msg);
   }
 
-  if (!mFrame->data[0] || !mFrame->data[1]) {
-    nsPrintfCString msg("Frame data and index shouldn't be null!");
+  if (!mFrame->data[0]) {
+    nsPrintfCString msg("Frame data shouldn't be null!");
     FFMPEG_LOG("%s", msg.get());
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, msg);
   }
@@ -2129,10 +2131,17 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageD3D11(
   UINT index = (uintptr_t)mFrame->data[1];
 
   if (CanUseZeroCopyVideoFrame()) {
-    FFMPEGV_LOG("CreateImageD3D11, zero copy, index=%u", index);
+    mNumOfHWTexturesInUse++;
+    FFMPEGV_LOG("CreateImageD3D11, zero copy, index=%u (texInUse=%u)", index,
+                mNumOfHWTexturesInUse.load());
     hr = mDXVA2Manager->WrapTextureWithImage(
-        new D3D11TextureWrapper(mFrame, mLib, texture, index), pictureRegion,
-        getter_AddRefs(image));
+        new D3D11TextureWrapper(
+            mFrame, mLib, texture, index,
+            [self = RefPtr<FFmpegVideoDecoder>(this), this]() {
+              MOZ_ASSERT(mNumOfHWTexturesInUse > 0);
+              mNumOfHWTexturesInUse--;
+            }),
+        pictureRegion, getter_AddRefs(image));
   } else {
     FFMPEGV_LOG("CreateImageD3D11, copy output to a shared texture");
     hr = mDXVA2Manager->CopyToImage(texture, index, pictureRegion,
@@ -2159,11 +2168,16 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageD3D11(
 }
 
 bool FFmpegVideoDecoder<LIBAV_VER>::CanUseZeroCopyVideoFrame() const {
+  // When zero-copy is available, we use a hybrid approach that combines
+  // zero-copy and texture copying. This prevents scenarios where all
+  // zero-copy frames remain unreleased, which could block ffmpeg from
+  // allocating new textures for subsequent frames. Zero-copy should only be
+  // used when there is sufficient space available in the texture pool.
   return gfx::gfxVars::HwDecodedVideoZeroCopy() && mImageAllocator &&
          mImageAllocator->UsingHardwareWebRender() && mDXVA2Manager &&
-         mDXVA2Manager->SupportsZeroCopyNV12Texture();
+         mDXVA2Manager->SupportsZeroCopyNV12Texture() &&
+         mNumOfHWTexturesInUse <= EXTRA_HW_FRAMES / 2;
 }
-
 #endif
 
 }  // namespace mozilla

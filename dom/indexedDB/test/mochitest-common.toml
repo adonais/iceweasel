@@ -6,6 +6,7 @@
 prefs = [
   "extensions.blocklist.enabled=false",
 ]
+tags = "inc-origin-init"
 support-files = [
   "bfcache_page1.html",
   "bfcache_page2.html",
@@ -64,6 +65,7 @@ support-files = [
   "unit/test_locale_aware_index_getAll.js",
   "unit/test_locale_aware_index_getAllObjects.js",
   "unit/test_maximal_serialized_object_size.js",
+  "unit/test_maximal_structured_clone_size.js",
   "unit/test_multientry.js",
   "unit/test_names_sorted.js",
   "unit/test_objectCursors.js",
@@ -289,6 +291,8 @@ skip-if = ["true"] # disabled for the moment
 ["test_leaving_page.html"]
 
 ["test_maximal_serialized_object_size.html"]
+
+["test_maximal_structured_clone_size.html"]
 
 ["test_message_manager_ipc.html"]
 

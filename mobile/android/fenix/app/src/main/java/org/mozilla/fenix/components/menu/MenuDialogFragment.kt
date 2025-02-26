@@ -20,6 +20,7 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -182,6 +183,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 val webAppUseCases = components.useCases.webAppUseCases
 
                 val coroutineScope = rememberCoroutineScope()
+                val scrollState = rememberScrollState()
 
                 val store = remember {
                     MenuStore(
@@ -278,10 +280,10 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                             messageRes = R.string.menu_cfr_body,
                             orientation = appStore.state.orientation,
                             onShown = {
-                                store.dispatch(MenuAction.ShowCFR)
+                                store.dispatch(MenuAction.OnCFRShown)
                             },
                             onDismiss = {
-                                store.dispatch(MenuAction.DismissCFR)
+                                store.dispatch(MenuAction.OnCFRDismiss)
                             },
                         )
                     } else {
@@ -448,6 +450,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         availableAddons = availableAddons,
                                         browserWebExtensionMenuItems = browserWebExtensionMenuItem,
                                     ),
+                                    scrollState = scrollState,
                                     onMozillaAccountButtonClick = {
                                         view?.slideDown {
                                             store.dispatch(

@@ -19,6 +19,7 @@ import mozilla.components.service.pocket.PocketStory
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
+import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
@@ -72,7 +73,7 @@ class PocketUpdatesMiddleware(
                 persistStoriesImpressions(
                     coroutineScope = coroutineScope,
                     pocketStoriesService = pocketStoriesService,
-                    updatedStories = action.storiesShown,
+                    updatedStories = action.impressions.map { it.story },
                 )
             }
             is ContentRecommendationsAction.SelectPocketStoriesCategory,
@@ -121,6 +122,10 @@ internal fun persistStoriesImpressions(
         pocketStoriesService.recordStoriesImpressions(
             updatedStories.filterIsInstance<PocketSponsoredStory>()
                 .map { it.id },
+        )
+
+        pocketStoriesService.recordSponsoredContentImpressions(
+            impressions = updatedStories.filterIsInstance<SponsoredContent>().map { it.url },
         )
     }
 }

@@ -1015,7 +1015,7 @@ bool js::ObjectMayBeSwapped(const JSObject* obj) {
   return clasp->isProxyObject() || clasp->isDOMClass();
 }
 
-bool NativeObject::prepareForSwap(JSContext* cx,
+bool NativeObject::prepareForSwap(JSContext* cx, JSObject* other,
                                   MutableHandleValueVector slotValuesOut) {
   MOZ_ASSERT(slotValuesOut.empty());
 
@@ -1026,40 +1026,30 @@ bool NativeObject::prepareForSwap(JSContext* cx,
   }
 
   if (hasDynamicSlots()) {
-    ObjectSlots* slotsHeader = getSlotsHeader();
-    size_t size = ObjectSlots::allocSize(slotsHeader->capacity());
-    RemoveCellMemory(this, size, MemoryUse::ObjectSlots);
-    if (!cx->nursery().isInside(slotsHeader)) {
-      if (!isTenured()) {
-        cx->nursery().removeMallocedBuffer(slotsHeader, size);
-      }
-      js_free(slotsHeader);
-    }
     setEmptyDynamicSlots(0);
   }
 
-  if (hasDynamicElements()) {
+  // Copy elements if we're swapping between tenured and nursery objects to
+  // prevent:
+  //  1. Tenured objects with pointers to direct nursery allocations
+  //  2. Tenured objects with pointers to buffers marked as nursery-owned
+  if (hasDynamicElements() && IsInsideNursery(this) != IsInsideNursery(other)) {
     ObjectElements* elements = getElementsHeader();
-    void* allocatedElements = getUnshiftedElementsHeader();
     size_t count = elements->numAllocatedElements();
     size_t size = count * sizeof(HeapSlot);
-
-    if (isTenured()) {
-      RemoveCellMemory(this, size, MemoryUse::ObjectElements);
-    } else if (cx->nursery().isInside(allocatedElements)) {
-      // Move nursery allocated elements in case they end up in a tenured
-      // object.
-      ObjectElements* newElements =
-          reinterpret_cast<ObjectElements*>(js_pod_malloc<HeapSlot>(count));
-      if (!newElements) {
-        return false;
-      }
-
-      memmove(newElements, elements, size);
-      elements_ = newElements->elements();
-    } else {
-      cx->nursery().removeMallocedBuffer(allocatedElements, size);
+    void* buffer = AllocBuffer(cx->zone(), size, IsInsideNursery(other));
+    if (!buffer) {
+      return false;
     }
+
+    memmove(buffer, getUnshiftedElementsHeader(), size);
+
+    uint32_t numShifted = elements->numShiftedElements();
+    auto* newElements = reinterpret_cast<ObjectElements*>(
+        reinterpret_cast<HeapSlot*>(buffer) + numShifted);
+
+    elements_ = newElements->elements();
+
     MOZ_ASSERT(hasDynamicElements());
   }
 
@@ -1107,17 +1097,14 @@ bool NativeObject::fixupAfterSwap(JSContext* cx, Handle<NativeObject*> obj,
     obj->initSlotUnchecked(i, slotValues[i]);
   }
 
-  if (obj->hasDynamicElements()) {
-    ObjectElements* elements = obj->getElementsHeader();
-    void* allocatedElements = obj->getUnshiftedElementsHeader();
-    MOZ_ASSERT(!cx->nursery().isInside(allocatedElements));
-    size_t size = elements->numAllocatedElements() * sizeof(HeapSlot);
-    if (obj->isTenured()) {
-      AddCellMemory(obj, size, MemoryUse::ObjectElements);
-    } else if (!cx->nursery().registerMallocedBuffer(allocatedElements, size)) {
-      return false;
-    }
-  }
+  MOZ_ASSERT_IF(
+      obj->hasDynamicSlots() && gc::IsBufferAlloc(obj->getSlotsHeader()),
+      gc::IsNurseryOwned(obj->getSlotsHeader()) == IsInsideNursery(obj));
+
+  MOZ_ASSERT_IF(obj->hasDynamicElements() &&
+                    gc::IsBufferAlloc(obj->getUnshiftedElementsHeader()),
+                gc::IsNurseryOwned(obj->getUnshiftedElementsHeader()) ==
+                    IsInsideNursery(obj));
 
   return true;
 }
@@ -1300,9 +1287,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
     // When both objects are the same size and in the same heap, just do a plain
     // swap of their contents.
 
-    // Swap slot associations.
-    zone->swapCellMemory(a, b, MemoryUse::ObjectSlots);
-
     size_t size = sa;
     char tmp[sizeof(JSObject_Slots16)];
     MOZ_ASSERT(size <= sizeof(tmp));
@@ -1311,7 +1295,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
     js_memcpy(a, b, size);
     js_memcpy(b, tmp, size);
 
-    zone->swapCellMemory(a, b, MemoryUse::ObjectElements);
     zone->swapCellMemory(a, b, MemoryUse::ProxyExternalValueArray);
 
     if (aIsProxyWithInlineValues) {
@@ -1327,10 +1310,10 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
     // objects.
     RootedValueVector avals(cx);
     RootedValueVector bvals(cx);
-    if (na && !na->prepareForSwap(cx, &avals)) {
+    if (na && !na->prepareForSwap(cx, b, &avals)) {
       oomUnsafe.crash("NativeObject::prepareForSwap");
     }
-    if (nb && !nb->prepareForSwap(cx, &bvals)) {
+    if (nb && !nb->prepareForSwap(cx, a, &bvals)) {
       oomUnsafe.crash("NativeObject::prepareForSwap");
     }
 
@@ -2369,7 +2352,20 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       id == NameToId(cx->names().pause)) {
     return true;
   }
+  if (key == JSProto_Map || key == JSProto_WeakMap) {
+    if (!JS::Prefs::experimental_upsert() &&
+        (id == NameToId(cx->names().getOrInsert) ||
+         id == NameToId(cx->names().getOrInsertComputed))) {
+      return true;
+    }
+  }
 #endif
+
+  if (key == JSProto_Function &&
+      !JS::Prefs::experimental_error_capture_stack_trace() &&
+      id == NameToId(cx->names().captureStackTrace)) {
+    return true;
+  }
 
   if (key == JSProto_JSON &&
       !JS::Prefs::experimental_json_parse_with_source() &&
@@ -2807,11 +2803,15 @@ JSObject* js::ToObjectSlowForPropertyAccess(JSContext* cx, JS::HandleValue val,
   return PrimitiveToObject(cx, val);
 }
 
+enum class SlotsKind { Fixed, Dynamic };
+
 class GetObjectSlotNameFunctor : public JS::TracingContext::Functor {
-  JSObject* obj;
+  NativeObject* obj;
+  SlotsKind kind;
 
  public:
-  explicit GetObjectSlotNameFunctor(JSObject* ctx) : obj(ctx) {}
+  explicit GetObjectSlotNameFunctor(NativeObject* obj, SlotsKind kind)
+      : obj(obj), kind(kind) {}
   virtual void operator()(JS::TracingContext* trc, const char* name, char* buf,
                           size_t bufsize) override;
 };
@@ -2822,15 +2822,16 @@ void GetObjectSlotNameFunctor::operator()(JS::TracingContext* tcx,
   MOZ_ASSERT(tcx->index() != JS::TracingContext::InvalidIndex);
 
   uint32_t slot = uint32_t(tcx->index());
+  if (kind == SlotsKind::Dynamic) {
+    slot += obj->numFixedSlots();
+  }
 
   Maybe<PropertyKey> key;
-  if (obj->is<NativeObject>()) {
-    NativeShape* shape = obj->as<NativeObject>().shape();
-    for (ShapePropertyIter<NoGC> iter(shape); !iter.done(); iter++) {
-      if (iter->hasSlot() && iter->slot() == slot) {
-        key.emplace(iter->key());
-        break;
-      }
+  NativeShape* shape = obj->as<NativeObject>().shape();
+  for (ShapePropertyIter<NoGC> iter(shape); !iter.done(); iter++) {
+    if (iter->hasSlot() && iter->slot() == slot) {
+      key.emplace(iter->key());
+      break;
     }
   }
 
@@ -2882,7 +2883,7 @@ void GetObjectSlotNameFunctor::operator()(JS::TracingContext* tcx,
     } else if (key->isSymbol()) {
       snprintf(buf, bufsize, "**SYMBOL KEY**");
     } else {
-      snprintf(buf, bufsize, "**FINALIZED ATOM KEY**");
+      MOZ_CRASH("Unexpected key kind");
     }
   }
 }
@@ -3326,14 +3327,16 @@ js::gc::AllocKind JSObject::allocKindForTenure(
 void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                       JS::ClassInfo* info,
                                       JS::RuntimeSizes* runtimeSizes) {
+  // TODO: These will eventually count as GC heap memory.
   if (is<NativeObject>() && as<NativeObject>().hasDynamicSlots()) {
     info->objectsMallocHeapSlots +=
-        mallocSizeOf(as<NativeObject>().getSlotsHeader());
+        gc::GetAllocSize(as<NativeObject>().getSlotsHeader());
   }
 
   if (is<NativeObject>() && as<NativeObject>().hasDynamicElements()) {
     void* allocatedElements = as<NativeObject>().getUnshiftedElementsHeader();
-    info->objectsMallocHeapElementsNormal += mallocSizeOf(allocatedElements);
+    info->objectsMallocHeapElementsNormal +=
+        gc::GetAllocSize(allocatedElements);
   }
 
   // Other things may be measured in the future if DMD indicates it is
@@ -3435,23 +3438,44 @@ void JSObject::traceChildren(JSTracer* trc) {
   if (objShape->isNative()) {
     NativeObject* nobj = &as<NativeObject>();
 
-    {
-      GetObjectSlotNameFunctor func(nobj);
-      JS::AutoTracingDetails ctx(trc, func);
-      JS::AutoTracingIndex index(trc);
-      // Tracing can mutate the target but cannot change the slot count,
-      // but the compiler has no way of knowing this.
-      const uint32_t nslots = nobj->slotSpan();
-      for (uint32_t i = 0; i < nslots; ++i) {
-        TraceEdge(trc, &nobj->getSlotRef(i), "object slot");
-        ++index;
+    if (nobj->hasDynamicSlots()) {
+      ObjectSlots* slots = nobj->getSlotsHeader();
+      MOZ_ASSERT(nobj->slots_ == slots->slots());
+      TraceBufferEdge(trc, nobj, &slots, "objectDynamicSlots buffer");
+      if (slots != nobj->getSlotsHeader()) {
+        nobj->slots_ = slots->slots();
       }
-      MOZ_ASSERT(nslots == nobj->slotSpan());
+    }
+
+    if (nobj->hasDynamicElements()) {
+      void* buffer = nobj->getUnshiftedElementsHeader();
+      uint32_t numShifted = nobj->getElementsHeader()->numShiftedElements();
+      TraceBufferEdge(trc, nobj, &buffer, "objectDynamicElements buffer");
+      if (buffer != nobj->getUnshiftedElementsHeader()) {
+        nobj->elements_ =
+            reinterpret_cast<ObjectElements*>(buffer)->elements() + numShifted;
+      }
+    }
+
+    const uint32_t nslots = nobj->slotSpan();
+    const uint32_t nfixed = nobj->numFixedSlots();
+
+    {
+      GetObjectSlotNameFunctor func(nobj, SlotsKind::Fixed);
+      JS::AutoTracingDetails ctx(trc, func);
+      TraceRange(trc, std::min(nslots, nfixed), nobj->fixedSlots(),
+                 "objectFixedSlots");
+    }
+
+    if (nslots > nfixed) {
+      MOZ_ASSERT(nobj->hasDynamicSlots());
+      GetObjectSlotNameFunctor func(nobj, SlotsKind::Dynamic);
+      JS::AutoTracingDetails ctx(trc, func);
+      TraceRange(trc, nslots - nfixed, nobj->slots_, "objectDynamicSlots");
     }
 
     TraceRange(trc, nobj->getDenseInitializedLength(),
-               static_cast<HeapSlot*>(nobj->getDenseElements()),
-               "objectElements");
+               nobj->getDenseElements().begin(), "objectElements");
   }
 
   // Call the trace hook at the end so that during a moving GC the trace hook

@@ -1540,7 +1540,7 @@ impl LayerCompositor for WrLayerCompositor {
         assert!(self.visual_tree.is_empty());
 
         for request in input.layers {
-            let size = request.rect.size();
+            let size = request.clip_rect.size();
 
             let existing_index = self.surface_pool.iter().position(|layer| {
                 layer.is_opaque == request.is_opaque &&
@@ -1914,12 +1914,7 @@ pub extern "C" fn wr_window_new(
         ColorF::new(0.0, 0.0, 0.0, 0.0)
     };
 
-    let compositor_config = if use_layer_compositor {
-        let compositor = Box::new(WrLayerCompositor::new(compositor)) as Box<dyn LayerCompositor>;
-        CompositorConfig::Layer {
-            compositor,
-        }
-    } else if software {
+    let compositor_config = if software {
         CompositorConfig::Native {
             compositor: Box::new(SwCompositor::new(
                 sw_gl.unwrap(),
@@ -1927,14 +1922,15 @@ pub extern "C" fn wr_window_new(
                     use_native_compositor,
                 )),
             }
-    } else if use_layer_compositor {
-        let compositor = Box::new(WrLayerCompositor::new(compositor)) as Box<dyn LayerCompositor>;
-        CompositorConfig::Layer {
-            compositor,
-        }
     } else if use_native_compositor {
-        CompositorConfig::Native {
-            compositor: Box::new(WrCompositor(compositor)),
+        if use_layer_compositor {
+            CompositorConfig::Layer {
+                compositor: Box::new(WrLayerCompositor::new(compositor)),
+            }
+        } else {
+            CompositorConfig::Native {
+                compositor: Box::new(WrCompositor(compositor)),
+            }
         }
     } else {
         CompositorConfig::Draw {
@@ -2250,8 +2246,8 @@ pub extern "C" fn wr_transaction_set_document_view(txn: &mut Transaction, doc_re
 }
 
 #[no_mangle]
-pub extern "C" fn wr_transaction_generate_frame(txn: &mut Transaction, id: u64, reasons: RenderReasons) {
-    txn.generate_frame(id, reasons);
+pub extern "C" fn wr_transaction_generate_frame(txn: &mut Transaction, id: u64, present: bool, reasons: RenderReasons) {
+    txn.generate_frame(id, present, reasons);
 }
 
 #[no_mangle]

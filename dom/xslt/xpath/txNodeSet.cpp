@@ -275,7 +275,7 @@ nsresult txNodeSet::add(const txNodeSet& aNodes, transferOp aTransfer,
     if (count > 0) {
       insertPos -= count;
       LOG_CHUNK_MOVE(pos, insertPos, count);
-      memmove(insertPos, pos, count * sizeof(txXPathNode));
+      memmove((void*)insertPos, pos, count * sizeof(txXPathNode));
       thisPos -= count;
     }
   }
@@ -498,7 +498,8 @@ bool txNodeSet::ensureGrowSize(int32_t aSize) {
 
   if (mStartBuffer) {
 #ifdef DEBUG
-    memset(mStartBuffer, 0, (mEndBuffer - mStartBuffer) * sizeof(txXPathNode));
+    memset((void*)mStartBuffer, 0,
+           (mEndBuffer - mStartBuffer) * sizeof(txXPathNode));
 #endif
     free(mStartBuffer);
   }

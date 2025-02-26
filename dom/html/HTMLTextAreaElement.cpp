@@ -169,9 +169,9 @@ TextEditor* HTMLTextAreaElement::GetTextEditor() {
   return mState->GetTextEditor();
 }
 
-TextEditor* HTMLTextAreaElement::GetTextEditorWithoutCreation() const {
+TextEditor* HTMLTextAreaElement::GetExtantTextEditor() const {
   MOZ_ASSERT(mState);
-  return mState->GetTextEditorWithoutCreation();
+  return mState->GetExtantTextEditor();
 }
 
 nsISelectionController* HTMLTextAreaElement::GetSelectionController() {
@@ -524,7 +524,7 @@ nsIControllers* HTMLTextAreaElement::GetControllers(ErrorResult& aError) {
     mControllers->AppendController(commandController);
   }
 
-  return mControllers;
+  return GetExtantControllers();
 }
 
 nsresult HTMLTextAreaElement::GetControllers(nsIControllers** aResult) {
@@ -791,8 +791,9 @@ void HTMLTextAreaElement::ContentInserted(nsIContent* aChild) {
   ContentChanged(aChild);
 }
 
-void HTMLTextAreaElement::ContentWillBeRemoved(nsIContent* aChild) {
-  if (mValueChanged || !mDoneAddingChildren ||
+void HTMLTextAreaElement::ContentWillBeRemoved(
+    nsIContent* aChild, const BatchRemovalState* aState) {
+  if (mValueChanged || !mDoneAddingChildren || (aState && !aState->mIsFirst) ||
       !nsContentUtils::IsInSameAnonymousTree(this, aChild)) {
     return;
   }

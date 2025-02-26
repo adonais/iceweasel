@@ -1046,6 +1046,8 @@ public class GeckoSession {
         }
       };
 
+  private CompositorScrollDelegate mCompositorScrollDelegate = null;
+
   private final GeckoSessionHandler<ContentBlocking.Delegate> mContentBlockingHandler =
       new GeckoSessionHandler<ContentBlocking.Delegate>(
           "GeckoViewContentBlocking", this, new String[] {"GeckoView:ContentBlockingEvent"}) {
@@ -2032,6 +2034,7 @@ public class GeckoSession {
     private @LoadFlags int mLoadFlags = LOAD_FLAGS_NONE;
     private boolean mIsDataUri;
     private @HeaderFilter int mHeaderFilter = HEADER_FILTER_CORS_SAFELISTED;
+    private @Nullable String mOriginalInput;
 
     private static @NonNull String createDataUri(
         @NonNull final byte[] bytes, @Nullable final String mimeType) {
@@ -2218,6 +2221,19 @@ public class GeckoSession {
       mLoadFlags = flags;
       return this;
     }
+
+    /**
+     * If this load originates from the address bar, sets the original user input before it got
+     * fixed up to a URI.
+     *
+     * @param originalInput original user address bar input.
+     * @return this {@link Loader} instance.
+     */
+    @NonNull
+    public Loader originalInput(final @Nullable String originalInput) {
+      mOriginalInput = originalInput;
+      return this;
+    }
   }
 
   /**
@@ -2297,6 +2313,10 @@ public class GeckoSession {
 
               if (request.mHeaders != null) {
                 msg.putBundle("headers", request.mHeaders);
+              }
+
+              if (request.mOriginalInput != null) {
+                msg.putString("originalInput", request.mOriginalInput);
               }
 
               mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
@@ -2807,7 +2827,15 @@ public class GeckoSession {
       final GeckoBundle formdata = updateData.getBundle("formdata");
 
       if (history != null) {
-        mState.putBundle("history", history);
+        // when full session history update received, don't bother with partial state update ops.
+        // This is due to the suboptimal array ops in the partial update logic which regresses
+        // thread cpuTime while the legacy bundle operation performs better.
+        if (history.getInt("fromIdx") == -1) {
+          mState.putBundle("history", history);
+        } else {
+          mState.putBundle(
+              "history", getPartiallyUpdatedHistoryChange(history).getBundle("history"));
+        }
       }
 
       if (scroll != null) {
@@ -2819,6 +2847,44 @@ public class GeckoSession {
       }
 
       return;
+    }
+
+    private @NonNull GeckoBundle getPartiallyUpdatedHistoryChange(
+        final @NonNull GeckoBundle update) {
+      final int kLastIndex = Integer.MAX_VALUE - 1;
+      final GeckoBundle historyBundle = new GeckoBundle();
+      final GeckoBundle[] updateHistoryEntries = update.getBundleArray("entries");
+      final int updateFromIdx = update.getInt("fromIdx");
+
+      // start off with an empty session entries array and
+      // then populate it with the updated session entries
+      update.putBundleArray("entries", new GeckoBundle[] {});
+
+      // no need to store fromIdx in the history state bundle as it has nothing to do with it
+      update.remove("fromIdx");
+
+      historyBundle.putBundle("history", update);
+
+      if (updateFromIdx != kLastIndex) {
+        final int start = updateFromIdx + 1;
+        historyBundle
+            .getBundle("history")
+            .putBundleArray("entries", spliceSessionHistory(start, updateHistoryEntries));
+      }
+      return historyBundle;
+    }
+
+    private GeckoBundle[] spliceSessionHistory(final int startIndex, final GeckoBundle[] entries) {
+      final GeckoBundle[] historyEntries = getHistoryEntries();
+      if (historyEntries != null) {
+        // when a partial history update received, delete the session entries starting from
+        // startIndex then append the new session entries to the end.
+        final GeckoBundle[] newHistoryEntries = new GeckoBundle[startIndex + entries.length];
+        System.arraycopy(historyEntries, 0, newHistoryEntries, 0, startIndex);
+        System.arraycopy(entries, 0, newHistoryEntries, startIndex, entries.length);
+        return newHistoryEntries;
+      }
+      return new GeckoBundle[] {};
     }
 
     @Override
@@ -2968,7 +3034,9 @@ public class GeckoSession {
         throw new IllegalStateException("No history state exists.");
       }
 
-      return history.getInt("index") + history.getInt("fromIdx");
+      // The index for the array of session entries is 1-based,
+      // so we subtract 1 to get the current index
+      return history.getInt("index") - 1;
     }
 
     // Some helpers for common code.
@@ -3327,11 +3395,37 @@ public class GeckoSession {
     mScrollHandler.setDelegate(delegate, this);
   }
 
+  /**
+   * Get the current scroll callback handler.
+   *
+   * @return An implementation of ScrollDelegate.
+   */
   @UiThread
-  @SuppressWarnings("checkstyle:javadocmethod")
   public @Nullable ScrollDelegate getScrollDelegate() {
     ThreadUtils.assertOnUiThread();
     return mScrollHandler.getDelegate();
+  }
+
+  /**
+   * Set the compositor scroll callback handler. This will replace the current handler.
+   *
+   * @param delegate An implementation of CompositorScrollDelegate.
+   */
+  @UiThread
+  public void setCompositorScrollDelegate(final @Nullable CompositorScrollDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mCompositorScrollDelegate = delegate;
+  }
+
+  /**
+   * Get the current compositor scroll callback handler.
+   *
+   * @return An implementation of CompositorScrollDelegate.
+   */
+  @UiThread
+  public @Nullable CompositorScrollDelegate getCompositorScrollDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mCompositorScrollDelegate;
   }
 
   /**
@@ -6330,7 +6424,9 @@ public class GeckoSession {
         for (int i = 0; i < paths.length; i++) {
           paths[i] = getFile(context, uris[i]);
           if (paths[i] == null) {
-            Log.e(LOGTAG, "Only file URIs are supported: " + uris[i]);
+            if (DEBUG) {
+              Log.e(LOGTAG, "Only file URIs are supported: " + uris[i]);
+            }
           }
         }
         ensureResult().putStringArray("files", paths);
@@ -6860,6 +6956,55 @@ public class GeckoSession {
     @UiThread
     default void onScrollChanged(
         @NonNull final GeckoSession session, final int scrollX, final int scrollY) {}
+  }
+
+  /** Information about an update to the content's scroll position. */
+  public class ScrollPositionUpdate {
+    // The scroll position changed as a direct result of user interaction.
+    public static final int SOURCE_USER_INTERACTION = 0;
+    // The scroll position changed progammatically. This can include
+    // changes caused by script on the page, and changes caused by
+    // the browser engine such as scrolling an element into view.
+    public static final int SOURCE_OTHER = 1;
+
+    // The new horizontal scroll position in CSS pixels.
+    public float scrollX;
+    // The new vertical scroll position in CSS pixels.
+    public float scrollY;
+    // The new zoom level.
+    // This is used to relate scrollX and scrollY, which are
+    // in CSS pixels, to quantities in screen pixels.
+    // Multiply scrollX/scrollY by zoom to get screen pixels.
+    public float zoom;
+    // The source of the scroll position change. One of
+    // SOURCE_USER_INTERACTION or SOURCE_OTHER.
+    public int source;
+  }
+
+  /**
+   * GeckoSession applications implement this interface to handle scroll events.
+   *
+   * <p>Differences from ScrollDelegate:
+   *
+   * <ul>
+   *   <li>onScrollChanged() is called as soon as the scroll change is composited visually. For
+   *       scrolling triggered by user interaction, this notification can have a lower latency than
+   *       ScrollDelegate.onScrollChanged().
+   *   <li>In addition to the scroll position in pixels, the notification contains auxiliary
+   *       information such as whether the scroll change was a result of user interaction. This can
+   *       be extended over time as needed.
+   * </ul>
+   */
+  public interface CompositorScrollDelegate {
+    /**
+     * The scroll position of the content has changed.
+     *
+     * @param session GeckoSession that initiated the callback.
+     * @param update Information about the scroll position change.
+     */
+    @UiThread
+    default void onScrollChanged(
+        @NonNull final GeckoSession session, @NonNull final ScrollPositionUpdate update) {}
   }
 
   /**
@@ -7867,6 +8012,18 @@ public class GeckoSession {
     mViewportLeft = scrollX;
     mViewportTop = scrollY;
     mViewportZoom = zoom;
+
+    final ScrollPositionUpdate update = new ScrollPositionUpdate();
+    // Tbe incoming scrollX and scrollY are in screen pixels.
+    // For ScrollPositionUpdate, convert them to CSS pixels.
+    update.scrollX = scrollX / zoom;
+    update.scrollY = scrollY / zoom;
+    update.zoom = zoom;
+    // TODO(bug 1940581): Plumb in an accurate source here
+    update.source = ScrollPositionUpdate.SOURCE_USER_INTERACTION;
+    if (mCompositorScrollDelegate != null) {
+      mCompositorScrollDelegate.onScrollChanged(this, update);
+    }
   }
 
   /* protected */ void onWindowBoundsChanged() {

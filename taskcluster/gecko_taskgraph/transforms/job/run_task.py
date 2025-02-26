@@ -10,6 +10,7 @@ import os
 
 from mozbuild.util import memoize
 from mozpack import path
+from taskgraph.transforms.run.common import support_caches
 from taskgraph.util.schema import Schema
 from taskgraph.util.yaml import load_yaml
 from voluptuous import Any, Optional, Required
@@ -21,12 +22,8 @@ from gecko_taskgraph.transforms.task import taskref_or_string
 run_task_schema = Schema(
     {
         Required("using"): "run-task",
-        # if true, add a cache at ~worker/.cache, which is where things like pip
-        # tend to hide their caches.  This cache is never added for level-1 jobs.
-        # TODO Once bug 1526028 is fixed, this and 'use-caches' should be merged.
-        Required("cache-dotcache"): bool,
         # Whether or not to use caches.
-        Optional("use-caches"): bool,
+        Optional("use-caches"): Any(bool, [str]),
         # if true (the default), perform a checkout of gecko on the worker
         Required("checkout"): bool,
         Optional(
@@ -65,7 +62,7 @@ run_task_schema = Schema(
 def common_setup(config, job, taskdesc, command):
     run = job["run"]
     if run["checkout"]:
-        support_vcs_checkout(config, job, taskdesc, sparse=bool(run["sparse-profile"]))
+        support_vcs_checkout(config, job, taskdesc)
         command.append(
             "--gecko-checkout={}".format(taskdesc["worker"]["env"]["GECKO_PATH"])
         )
@@ -77,11 +74,11 @@ def common_setup(config, job, taskdesc, command):
         sparse_profile_path = path.join(sparse_profile_prefix, run["sparse-profile"])
         command.append(f"--gecko-sparse-profile={sparse_profile_path}")
 
+    support_caches(config, job, taskdesc)
     taskdesc["worker"].setdefault("env", {})["MOZ_SCM_LEVEL"] = config.params["level"]
 
 
 worker_defaults = {
-    "cache-dotcache": False,
     "checkout": True,
     "comm-checkout": False,
     "sparse-profile": None,
@@ -113,16 +110,6 @@ def docker_worker_run_task(config, job, taskdesc):
     if run["tooltool-downloads"]:
         internal = run["tooltool-downloads"] == "internal"
         add_tooltool(config, job, taskdesc, internal=internal)
-
-    if run.get("cache-dotcache"):
-        worker["caches"].append(
-            {
-                "type": "persistent",
-                "name": "{project}-dotcache".format(**config.params),
-                "mount-point": "{workdir}/.cache".format(**run),
-                "skip-untrusted": True,
-            }
-        )
 
     run_command = run["command"]
 
@@ -179,13 +166,6 @@ def generic_worker_run_task(config, job, taskdesc):
     common_setup(config, job, taskdesc, command)
 
     worker.setdefault("mounts", [])
-    if run.get("cache-dotcache"):
-        worker["mounts"].append(
-            {
-                "cache-name": "{project}-dotcache".format(**config.params),
-                "directory": "{workdir}/.cache".format(**run),
-            }
-        )
     worker["mounts"].append(
         {
             "content": {

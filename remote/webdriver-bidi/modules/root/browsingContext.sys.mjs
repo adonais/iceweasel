@@ -1161,9 +1161,12 @@ class BrowsingContextModule extends RootBiDiModule {
       () => {
         context.loadURI(targetURI, {
           loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_IS_LINK,
+          // Fake user activation.
+          hasValidUserGestureActivation: true,
+          // Prevent HTTPS-First upgrades.
+          schemelessInput: Ci.nsILoadInfo.SchemelessInputTypeSchemeful,
           triggeringPrincipal:
             Services.scriptSecurityManager.getSystemPrincipal(),
-          hasValidUserGestureActivation: true,
         });
       },
       {
@@ -1814,12 +1817,7 @@ class BrowsingContextModule extends RootBiDiModule {
         return;
       }
 
-      const browsingContextInfo = this.#getBrowsingContextInfo(
-        browsingContext,
-        {
-          maxDepth: 0,
-        }
-      );
+      const browsingContextInfo = this.#getBrowsingContextInfo(browsingContext);
 
       this._emitEventForBrowsingContext(
         browsingContext.id,

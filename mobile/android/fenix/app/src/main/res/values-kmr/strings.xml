@@ -329,10 +329,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Menuya amûran bigire</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Menuya hilpekîna taybet bigire</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Xuyakirina Readerê, Wergerandin, Çapkirin, Parvekirin, Bernamokê veke</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Xuyakirina Readerê, Wergerandin, Çapkirin, Bernamokê veke</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Xuyakirina Readerê, Wergerandin, %s, Çapkirin, Parvekirin, Bernamokê veke</string>
@@ -360,6 +356,10 @@
     <string name="browser_menu_save_as_pdf"> Wekî PDF qeyd bike…</string>
     <!-- Browser menu label for turning ON reader view of the current visited page -->
     <string name="browser_menu_turn_on_reader_view">Xuyakirina Readerê veke</string>
+    <!-- Browser menu label for turning OFF reader view of the current visited page -->
+    <string name="browser_menu_turn_off_reader_view">Xuyakirina Readerê bigire</string>
+    <!-- Browser menu button that reopens a private tab as a regular tab -->
+    <string name="browser_menu_open_in_normal_tab">Biçe hilpekîna ne-taybet</string>
     <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
     <string name="browser_menu_translate_page">Rûpelê wergerîne…</string>
     <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -441,6 +441,11 @@
     The parameter is the search engine name (for example: DuckDuckGo). -->
     <string name="search_engine_icon_content_description_1">Motora lêgerînê: %s</string>
 
+    <!-- Content description (not visible, for screen readers etc.) of the search engine selector from the search toolbar.
+    The parameter is the search engine name (for example: DuckDuckGo).
+    The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button. -->
+    <string name="search_engine_selector_content_description">%s: hilbijêra motora lêgerînê</string>
+
     <!-- Home onboarding -->
     <!-- Home onboarding dialog welcome screen title text. -->
     <string name="onboarding_home_welcome_title_2">Tu bi xêr hatiyî înterneteke kesanetir</string>
@@ -472,6 +477,8 @@
     <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources">Bizane ka çima bi mîlyonan kes ji Firefoxê hez dikin</string>
     <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
     <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources">Bi vebijarkên zêdetir di ewlehiyê de bigere</string>
+    <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
+    <string name="juno_onboarding_default_browser_description_nimbus_3">Geroka me ya ne ji bo qezenckirina pereyan rê li şirketan digire ku li ser webê bi dizî we bişopînin.</string>
     <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
     <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources">Kodên şopandinê? Otomatîk hatin astengkirin. Her 700`an bi kar bîne. Lê PDF? Readera me ya têdeyî rêveberiya PDF`an hêsan dike.</string>
     <!-- Text for the button to set firefox as default browser on the device -->
@@ -505,7 +512,7 @@
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Qediya</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Betal bike</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Betal bike</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Bi xêr hatî Firefox`ê</string>
     <!-- Terms of service onboarding page continue button label. -->
@@ -805,14 +812,10 @@
     <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
     <string name="exceptions_empty_message_learn_more_link">Zêdetir bizane</string>
 
-    <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Daneyên bikaranînê û teknîkî</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Performans, bikaranîn, reqalav û daneyên taybetkirinê yên têkildarî geroka te bi Mozillayê re parve dike, ji bo ku em karibin pê %1$s’ê baştir bikin</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Performans, bikaranîn, reqalav û daneyên taybetkirinê yên têkildarî geroka te bi Mozillayê re parve dike, ji bo ku em karibin pê %1$s’ê baştir bikin</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Daneyên bazarkirinê</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Daneyên bikaranînê yên bingehîn bi hevkara me ya kar Adjustê tên parvekirin</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Daneyên bazarkirinê</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Lêkolîn</string>
@@ -973,7 +976,7 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Çalak</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s dikare carê lêkolînan bar bike û bide xebitandin.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s dikare carê lêkolînan bar bike û bide xebitandin.</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Zêdetir bizane</string>
     <!-- Dialog message shown after removing a study -->

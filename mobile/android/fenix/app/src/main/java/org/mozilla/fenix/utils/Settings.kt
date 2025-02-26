@@ -20,7 +20,7 @@ import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingMode
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
-import mozilla.components.service.mars.contile.ContileTopSitesProvider
+import mozilla.components.feature.top.sites.TopSitesProvider
 import mozilla.components.support.ktx.android.content.PreferencesHolder
 import mozilla.components.support.ktx.android.content.booleanPreference
 import mozilla.components.support.ktx.android.content.floatPreference
@@ -104,10 +104,15 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         const val TOP_SITES_MAX_COUNT = 16
 
         /**
-         * Only fetch top sites from the [ContileTopSitesProvider] when the number of default and
+         * Only fetch top sites from the [TopSitesProvider] when the number of default and
          * pinned sites are below this maximum threshold.
          */
         const val TOP_SITES_PROVIDER_MAX_THRESHOLD = 8
+
+        /**
+         * Number of top sites to take from the [TopSitesProvider].
+         */
+        const val TOP_SITES_PROVIDER_LIMIT = 2
 
         private fun Action.toInt() = when (this) {
             Action.BLOCKED -> BLOCKED_INT
@@ -302,6 +307,11 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = false,
     )
 
+    var privateBrowsingBiometricsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_private_browsing_biometrics_enabled),
+        default = false,
+    )
+
     var shouldReturnToBrowser by booleanPreference(
         appContext.getString(R.string.pref_key_return_to_browser),
         false,
@@ -347,6 +357,22 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var isMarketingTelemetryEnabled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_marketing_telemetry),
         default = false,
+    )
+
+    var hasMadeMarketingTelemetrySelection by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_marketing_telemetry_selection_made),
+        default = false,
+    )
+
+    var hasAcceptedTermsOfService by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_terms_accepted),
+        default = false,
+    )
+
+    var isDailyUsagePingEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_daily_usage_ping),
+        default = isTelemetryEnabled,
+        persistDefaultIfNotExists = true,
     )
 
     var isExperimentationEnabled by booleanPreference(
@@ -1658,11 +1684,20 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Whether or not the profile ID used in the sponsored stories communications with the Pocket
+     * endpoint has been migrated to the MARS endpoint.
+     */
+    var hasPocketSponsoredStoriesProfileMigrated by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories_profile_migrated),
+        default = false,
+    )
+
+    /**
      * Indicates if Merino content recommendations should be shown.
      */
     var showContentRecommendations by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_pocket_content_recommendations),
-        default = FeatureFlags.merinoContentRecommendations,
+        default = FeatureFlags.MERINO_CONTENT_RECOMMENDATIONS,
     )
 
     /**
@@ -1700,9 +1735,10 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Indicates if the MARS API integration is used for sponsored content.
      */
-    var marsAPIEnabled by booleanPreference(
+    var marsAPIEnabled by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_mars_api_enabled),
-        default = FeatureFlags.marsAPIEnabled,
+        default = { FxNimbus.features.mars.value().enabled },
+        featureFlag = true,
     )
 
     /**
@@ -1751,27 +1787,19 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Indicates if the review quality check feature is enabled by the user.
-     */
-    var isReviewQualityCheckEnabled by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_is_review_quality_check_enabled),
-        default = false,
-    )
-
-    /**
-     * Indicates if the review quality check product recommendations option is enabled by the user.
-     */
-    var isReviewQualityCheckProductRecommendationsEnabled by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_is_review_quality_check_product_recommendations_enabled),
-        default = false,
-    )
-
-    /**
      * Indicates if the navigation bar CFR should be displayed to the user.
      */
     var shouldShowNavigationBarCFR by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_should_navbar_cfr),
         default = true,
+    )
+
+    /**
+     * Indicates if the search bar CFR should be displayed to the user.
+     */
+    var shouldShowSearchBarCFR by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_should_searchbar_cfr),
+        default = false,
     )
 
     /**
@@ -1788,14 +1816,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var shouldShowMenuCFR by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_menu_cfr),
         default = true,
-    )
-
-    /**
-     * Time in milliseconds since the user first opted in the review quality check feature.
-     */
-    var reviewQualityCheckOptInTimeInMillis by longPreference(
-        appContext.getPreferenceKey(R.string.pref_key_should_show_review_quality_opt_in_time),
-        default = 0L,
     )
 
     /**
@@ -1876,19 +1896,11 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Indicates if the Tabs Tray to Compose changes are enabled.
-     */
-    var enableTabsTrayToCompose by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_tabs_tray_to_compose),
-        default = FeatureFlags.composeTabsTray,
-    )
-
-    /**
      * Indicates if the Compose Top Sites are enabled.
      */
     var enableComposeTopSites by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_top_sites),
-        default = FeatureFlags.composeTopSites,
+        default = FeatureFlags.COMPOSE_TOP_SITES,
     )
 
     /**
@@ -1896,7 +1908,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var enableComposeHomepage by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_homepage),
-        default = FeatureFlags.composeHomepage,
+        default = FeatureFlags.COMPOSE_HOMEPAGE,
     )
 
     /**
@@ -1913,7 +1925,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var enableHomepageAsNewTab by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_homepage_as_new_tab),
-        default = FeatureFlags.homepageAsNewTab,
+        default = FeatureFlags.HOMEPAGE_AS_NEW_TAB,
     )
 
     /**
@@ -1921,7 +1933,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var enableUnifiedTrustPanel by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_unified_trust_panel),
-        default = FeatureFlags.unifiedTrustPanel,
+        default = FeatureFlags.UNIFIED_TRUST_PANEL,
     )
 
     /**
@@ -1964,7 +1976,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Indicates if the new Search settings UI is enabled.
      */
-    var enableUnifiedSearchSettingsUI: Boolean = showUnifiedSearchFeature && FeatureFlags.unifiedSearchSettings
+    var enableUnifiedSearchSettingsUI: Boolean = showUnifiedSearchFeature && FeatureFlags.UNIFIED_SEARCH_SETTINGS
 
     /**
      * Indicates if hidden engines were restored due to migration to unified search settings UI.
@@ -1982,7 +1994,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var enableFxSuggest by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_fxsuggest),
         default = { FxNimbus.features.fxSuggest.value().enabled },
-        featureFlag = FeatureFlags.fxSuggest,
+        featureFlag = FeatureFlags.FX_SUGGEST,
     )
 
     /**
@@ -2006,7 +2018,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var showSponsoredSuggestions by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_sponsored_suggestions),
         default = { enableFxSuggest },
-        featureFlag = FeatureFlags.fxSuggest,
+        featureFlag = FeatureFlags.FX_SUGGEST,
     )
 
     /**
@@ -2017,7 +2029,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var showNonSponsoredSuggestions by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_nonsponsored_suggestions),
         default = { enableFxSuggest },
-        featureFlag = FeatureFlags.fxSuggest,
+        featureFlag = FeatureFlags.FX_SUGGEST,
     )
 
     /**

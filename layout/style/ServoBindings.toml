@@ -114,7 +114,6 @@ rusty-enums = [
     "mozilla::StyleBoxAlign",
     "mozilla::StyleImageLayerRepeat",
     "mozilla::StyleImageLayerAttachment",
-    "mozilla::StylePositionProperty",
     "mozilla::StyleBoxDecorationBreak",
     "mozilla::StyleBorderStyle",
     "mozilla::StyleRuleInclusion",
@@ -533,9 +532,7 @@ cbindgen-types = [
     { gecko = "StyleGenericCalcNode", servo = "crate::values::generics::calc::GenericCalcNode" },
     { gecko = "StyleCssUrl", servo = "crate::gecko::url::CssUrl" },
     { gecko = "StyleSpecifiedUrl", servo = "crate::gecko::url::SpecifiedUrl" },
-    { gecko = "StyleSpecifiedImageUrl", servo = "crate::gecko::url::SpecifiedImageUrl" },
     { gecko = "StyleComputedUrl", servo = "crate::gecko::url::ComputedUrl" },
-    { gecko = "StyleComputedImageUrl", servo = "crate::gecko::url::ComputedImageUrl" },
     { gecko = "StyleLoadData", servo = "crate::gecko::url::LoadData" },
     { gecko = "StyleGenericFilter", servo = "crate::values::generics::effects::Filter" },
     { gecko = "StyleGenericGradient", servo = "crate::values::generics::image::Gradient" },
@@ -592,6 +589,7 @@ cbindgen-types = [
     { gecko = "StyleForcedColors", servo = "crate::values::specified::color::ForcedColors" },
     { gecko = "StyleScrollbarGutter", servo = "crate::values::computed::ScrollbarGutter" },
     { gecko = "StyleHyphenateCharacter", servo = "crate::values::computed::HyphenateCharacter" },
+    { gecko = "StyleHyphenateLimitChars", servo = "crate::values::computed::HyphenateLimitChars" },
     { gecko = "StyleColumnCount", servo = "crate::values::computed::ColumnCount" },
     { gecko = "StyleContentVisibility", servo = "crate::values::computed::ContentVisibility" },
     { gecko = "StyleContainIntrinsicSize", servo = "crate::values::computed::ContainIntrinsicSize" },
@@ -632,6 +630,7 @@ cbindgen-types = [
     { gecko = "StyleInert", servo = "crate::values::computed::ui::Inert" },
     { gecko = "StyleMargin", servo = "crate::values::computed::length::Margin" },
     { gecko = "StyleGenericAnchorFunction", servo = "crate::values::generics::position::GenericAnchorFunction" },
+    { gecko = "StylePositionProperty", servo = "crate::values::computed::PositionProperty"},
 ]
 
 mapped-generic-types = [

@@ -195,6 +195,13 @@ mr2022-onboarding-easy-setup-import-checkbox-label = Import from previous browse
 
 ## MR2022 New User Pin Firefox screen strings
 
+# Title used on about:welcome for new users when Firefox is not pinned.
+# In this context, open up is synonymous with "Discover".
+# The metaphor is that when they open their Firefox browser, it helps them discover an amazing internet.
+# If this translation does not make sense in your language, feel free to use the word "discover."
+mr2022-onboarding-welcome-pin-header = Open up an amazing internet
+# Subtitle is used on onboarding page for new users page when Firefox is not pinned
+mr2022-onboarding-welcome-pin-subtitle = Launch { -brand-short-name } from anywhere with a single click. Every time you do, you’re choosing a more open and independent web.
 # Primary button string used on welcome page for when Firefox is not pinned.
 mr2022-onboarding-pin-primary-button-label = { PLATFORM() ->
     [macos] Keep { -brand-short-name } in Dock
@@ -435,6 +442,8 @@ onboarding-checklist-sign-up = Sign up or sign in to your account
 
 tab-groups-onboarding-feature-callout-title = Try tab groups for less clutter, more focus
 tab-groups-onboarding-feature-callout-subtitle = Get organized by dragging one tab on top of another to create your first group.
+tab-groups-onboarding-saved-groups-title = If you close a tab group, you can reopen it here anytime.
+tab-groups-onboarding-dismiss = OK
 
 ## Multi Profiles feature onboarding messages
 

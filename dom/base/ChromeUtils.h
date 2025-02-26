@@ -16,6 +16,8 @@
 #include "nsIDOMProcessChild.h"
 #include "nsIDOMProcessParent.h"
 
+class nsIRFPTargetSetIDL;
+
 namespace mozilla {
 
 class ErrorResult;
@@ -326,7 +328,12 @@ class ChromeUtils {
 
   static bool ShouldResistFingerprinting(
       GlobalObject& aGlobal, JSRFPTarget aTarget,
-      const Nullable<uint64_t>& aOverriddenFingerprintingSettings);
+      nsIRFPTargetSetIDL* aOverriddenFingerprintingSettings,
+      const Optional<bool>& aIsPBM);
+
+  static void SanitizeTelemetryFileURL(GlobalObject& aGlobal,
+                                       const nsACString& aURL,
+                                       FileNameTypeDetails& aFileTypeDetails);
 
 #ifdef MOZ_WMF_CDM
   static already_AddRefed<Promise> GetWMFContentDecryptionModuleInformation(

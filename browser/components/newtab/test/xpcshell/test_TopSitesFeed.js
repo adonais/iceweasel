@@ -13,18 +13,16 @@ const { actionCreators: ac, actionTypes: at } = ChromeUtils.importESModule(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
-  FilterAdult: "resource://activity-stream/lib/FilterAdult.sys.mjs",
+  FilterAdult: "resource:///modules/FilterAdult.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
-  shortURL: "resource://activity-stream/lib/ShortURL.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   Screenshots: "resource://activity-stream/lib/Screenshots.sys.mjs",
   Sampling: "resource://gre/modules/components-utils/Sampling.sys.mjs",
   SearchService: "resource://gre/modules/SearchService.sys.mjs",
-  TOP_SITES_DEFAULT_ROWS: "resource://activity-stream/common/Reducers.sys.mjs",
-  TOP_SITES_MAX_SITES_PER_ROW:
-    "resource://activity-stream/common/Reducers.sys.mjs",
+  TOP_SITES_DEFAULT_ROWS: "resource:///modules/topsites/constants.mjs",
+  TOP_SITES_MAX_SITES_PER_ROW: "resource:///modules/topsites/constants.mjs",
 });
 
 const FAKE_FAVICON = "data987";
@@ -73,14 +71,7 @@ function getTopSitesFeedForTest(sandbox) {
   });
 
   let feed = new TopSitesFeed();
-  const storage = {
-    init: sandbox.stub().resolves(),
-    get: sandbox.stub().resolves(),
-    set: sandbox.stub().resolves(),
-  };
 
-  // Setup for tests that don't call `init` but require feed.storage
-  feed._storage = storage;
   feed.store = {
     dispatch: sinon.spy(),
     getState() {
@@ -90,7 +81,6 @@ function getTopSitesFeedForTest(sandbox) {
       Prefs: { values: { topSitesRows: 2 } },
       TopSites: { rows: Array(12).fill("site") },
     },
-    dbStorage: { getDbTable: sandbox.stub().returns(storage) },
   };
 
   return feed;
@@ -221,7 +211,7 @@ add_task(async function test_refreshDefaults() {
   let [site] = DEFAULT_TOP_SITES;
   Assert.equal(
     site.hostname,
-    shortURL(site),
+    NewTabUtils.shortURL(site),
     "Lone top site should have the right hostname."
   );
 
@@ -300,7 +290,7 @@ add_task(async function test_getLinksWithDefaults() {
 
   const reference = FAKE_LINKS.map(site =>
     Object.assign({}, site, {
-      hostname: shortURL(site),
+      hostname: NewTabUtils.shortURL(site),
       typedBonus: true,
     })
   );
@@ -343,7 +333,7 @@ add_task(async function test_getLinksWithDefaults_caching() {
   const url = "www.myonlytopsite.com";
   const topsite = {
     frecency: FAKE_FRECENCY,
-    hostname: shortURL({ url }),
+    hostname: NewTabUtils.shortURL({ url }),
     typedBonus: true,
     url,
   };
@@ -411,7 +401,7 @@ add_task(async function test_getLinksWithDefaults_adds_defaults() {
 
   let reference = [...TEST_LINKS, ...DEFAULT_TOP_SITES].map(s =>
     Object.assign({}, s, {
-      hostname: shortURL(s),
+      hostname: NewTabUtils.shortURL(s),
       typedBonus: true,
     })
   );
@@ -443,7 +433,7 @@ add_task(
 
     let reference = [...testLinks, DEFAULT_TOP_SITES[0]].map(s =>
       Object.assign({}, s, {
-        hostname: shortURL(s),
+        hostname: NewTabUtils.shortURL(s),
         typedBonus: true,
       })
     );
@@ -1026,13 +1016,6 @@ add_task(async function test_init() {
     })
   );
 
-  info("TopSitesFeed.init should initialise the storage");
-  Assert.ok(
-    feed.store.dbStorage.getDbTable.calledOnce,
-    "getDbTable called once"
-  );
-  Assert.ok(feed.store.dbStorage.getDbTable.calledWithExactly("sectionPrefs"));
-
   info(
     "TopSitesFeed.init should call onUpdate to set up Nimbus update listener"
   );
@@ -1089,7 +1072,7 @@ add_task(async function test_refresh() {
     feed.store.dispatch.calledWithExactly(
       ac.BroadcastToContent({
         type: at.TOP_SITES_UPDATED,
-        data: { links: [], pref: { collapsed: false } },
+        data: { links: [] },
       })
     )
   );
@@ -1111,7 +1094,7 @@ add_task(async function test_refresh_dispatch() {
   await feed.refresh({ broadcast: true });
   let reference = FAKE_LINKS.map(site =>
     Object.assign({}, site, {
-      hostname: shortURL(site),
+      hostname: NewTabUtils.shortURL(site),
       typedBonus: true,
     })
   );
@@ -1179,30 +1162,11 @@ add_task(async function test_refresh_to_preloaded() {
     feed.store.dispatch.calledWithExactly(
       ac.AlsoToPreloaded({
         type: at.TOP_SITES_UPDATED,
-        data: { links: [], pref: { collapsed: false } },
+        data: { links: [] },
       })
     )
   );
   gGetTopSitesStub.resolves(FAKE_LINKS);
-  sandbox.restore();
-});
-
-add_task(async function test_refresh_init_storage() {
-  let sandbox = sinon.createSandbox();
-
-  info(
-    "TopSitesFeed.refresh should not init storage of it's already initialized"
-  );
-
-  let feed = getTopSitesFeedForTest(sandbox);
-  sandbox.stub(feed, "_fetchIcon");
-  feed._startedUp = true;
-
-  feed._storage.initialized = true;
-
-  await feed.refresh({ broadcast: false });
-
-  Assert.ok(feed._storage.init.notCalled, "feed._storage.init was not called.");
   sandbox.restore();
 });
 
@@ -1217,8 +1181,6 @@ add_task(async function test_refresh_handles_indexedDB_errors() {
   sandbox.stub(feed, "_fetchIcon");
   feed._startedUp = true;
 
-  feed._storage.get.throws(new Error());
-
   try {
     await feed.refresh({ broadcast: false });
     Assert.ok(true, "refresh should have succeeded");
@@ -1228,51 +1190,6 @@ add_task(async function test_refresh_handles_indexedDB_errors() {
 
   sandbox.restore();
 });
-
-add_task(async function test_updateSectionPrefs_on_UPDATE_SECTION_PREFS() {
-  let sandbox = sinon.createSandbox();
-
-  info(
-    "TopSitesFeed.onAction should call updateSectionPrefs on UPDATE_SECTION_PREFS"
-  );
-
-  let feed = getTopSitesFeedForTest(sandbox);
-  sandbox.stub(feed, "updateSectionPrefs");
-  feed.onAction({
-    type: at.UPDATE_SECTION_PREFS,
-    data: { id: "topsites" },
-  });
-
-  Assert.ok(
-    feed.updateSectionPrefs.calledOnce,
-    "feed.updateSectionPrefs called once"
-  );
-
-  sandbox.restore();
-});
-
-add_task(
-  async function test_updateSectionPrefs_dispatch_TOP_SITES_PREFS_UPDATED() {
-    let sandbox = sinon.createSandbox();
-
-    info(
-      "TopSitesFeed.updateSectionPrefs should dispatch TOP_SITES_PREFS_UPDATED"
-    );
-
-    let feed = getTopSitesFeedForTest(sandbox);
-    await feed.updateSectionPrefs({ collapsed: true });
-    Assert.ok(
-      feed.store.dispatch.calledWithExactly(
-        ac.BroadcastToContent({
-          type: at.TOP_SITES_PREFS_UPDATED,
-          data: { pref: { collapsed: true } },
-        })
-      )
-    );
-
-    sandbox.restore();
-  }
-);
 
 add_task(async function test_allocatePositions() {
   let sandbox = sinon.createSandbox();

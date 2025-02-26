@@ -4,9 +4,8 @@
 
 package org.mozilla.fenix.webcompat.store
 
+import android.webkit.URLUtil
 import androidx.annotation.StringRes
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -15,14 +14,13 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.UiStore
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.MenuItem
 
 /**
  * Value type that represents the state of the WebCompat Reporter.
  *
  * @property tabUrl The URL of the current tab when the reporter was opened.
  * @property enteredUrl The URL that is being reported as broken.
- * @property reason Optional param specifying the reason that [enteredUrl] is broken.
+ * @property reason Specifies the reason that [enteredUrl] is broken.
  * @property problemDescription Description of the encountered problem.
  */
 data class WebCompatReporterState(
@@ -59,31 +57,22 @@ data class WebCompatReporterState(
     }
 
     /**
-     * Helper function used to obtain the list of dropdown menu items derived from [BrokenSiteReason].
-     *
-     * @param onDropdownItemClick Callback invoked when the particular dropdown item is selected.
-     * @return The list of [MenuItem] to display in the dropdown.
-     */
-    @Composable
-    fun toDropdownItems(
-        onDropdownItemClick: (BrokenSiteReason) -> Unit,
-    ): List<MenuItem> {
-        return BrokenSiteReason.entries.map { reason ->
-            MenuItem(
-                title = stringResource(id = reason.displayStringId),
-                isChecked = this.reason == reason,
-                onClick = {
-                    onDropdownItemClick(reason)
-                },
-            )
-        }
-    }
-
-    /**
      * Whether the URL text field has an error.
      */
     val hasUrlTextError: Boolean
-        get() = enteredUrl.isEmpty()
+        get() = !URLUtil.isNetworkUrl(enteredUrl)
+
+    /**
+     * Whether the reason dropdown has an error.
+     */
+    val hasReasonDropdownError: Boolean
+        get() = reason == null
+
+    /**
+     * Whether the submit button is enabled.
+     */
+    val isSubmitEnabled: Boolean
+        get() = !hasUrlTextError && !hasReasonDropdownError
 }
 
 /**

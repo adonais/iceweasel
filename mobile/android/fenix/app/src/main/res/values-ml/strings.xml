@@ -321,10 +321,6 @@
     <string name="browser_tools_menu_handlebar_content_description">കരുക്കുറിപ്പടി കടലാസു് അടയ്ക്കുക</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">ഇഷ്ടാനുസൃത ടാബുകുറിപ്പടി താളു് അടയ്ക്കുക</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">വായന കാഴ്ച, വിവർത്തനം, അച്ചടിപ്പു്, പങ്കിയൽ, പ്രയോഗം തുറക്കുക </string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">വായന കാഴ്ച, അച്ചടിപ്പു്, പങ്കിയൽ, പ്രയോഗം തുറക്കുക </string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">വായന കാഴ്ച, വിവർത്തനം, %s, അച്ചടിപ്പു്, പങ്കിയൽ, പ്രയോഗം തുറക്കുക </string>
@@ -543,7 +539,6 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">തകർച്ച റിപ്പോർട്ടുകൾ ഞങ്ങൾക്കു് അന്വേഷിയന്ത്രത്തിന്റെ കൂടെയുള്ള എല്ലാ പ്രശ്നങ്ങളെ കണ്ടുപ്പിടിക്കാനും പരിഹരിക്കാനും സഹായിക്കുന്നു. റിപ്പോർട്ടുകളിൽ തനതായ അല്ലെങ്കിൽ സൂക്ഷിച്ചുവയ്ക്കാനുള്ള ദത്തയും ഉൾപ്പെടാം.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">തകർച്ചവിവരങ്ങളെ കുറിച്ചു് അറിയുക</string>
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">കൂടുതല്‍ അറിയുക</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">സാങ്കേതികയും ഇടപാടുനീയ ദത്ത മോസില്ലയ്ക്കു അയക്കുക</string>
@@ -553,22 +548,26 @@
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">ചെയ്തു</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">റദ്ദാക്കുക</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">റദ്ദാക്കുക</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">ഫയര്‍ഫോക്സിലേക്കു് സ്വാഗതം</string>
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">വേഗതയേറിയതും സുരക്ഷിതവുമായ വെബ് തിരയൽ.</string>
+    <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">വേഗതയേറിയതും സുരക്ഷിതവുമായ വെബ് തിരയൽ</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">സമ്മതിച്ച് തുടരുക</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">തുടരുന്നതിലൂടെ, താങ്ങൾ ഫയർഫോക്സ് %1$s അംഗീകരിക്കുന്നു.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one_2">തുടരുന്നതിലൂടെ, താങ്ങൾ %1$s അംഗീകരിക്കുന്നു.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">സേവന നിബന്ധനകള്‍</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
     <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefox ഉപയോഗനിബന്ധനകൾ</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">താങ്ങളുടെ സ്വകാര്യതക്കു് ഫയർഫോക്സു് ശ്രദ്ധിക്കാരുണ്ടു്. ഞങ്ങളുടെ %1$s-ൽ കൂടുതൽ വായക്കുക.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">താങ്ങളുടെ സ്വകാര്യതക്കു് ഫയർഫോക്സു് ശ്രദ്ധിക്കാരുണ്ടു്. ഞങ്ങളുടെ %1$s-ൽ കൂടുതൽ അറിയുക.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">സ്വകാര്യതാ അറിയിപ്പ്</string>
@@ -576,6 +575,12 @@
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">അന്വേഷിയന്ത്രത്തിനെ മെച്ചപ്പെുടത്താൻ ഫയർഫോക്സു് മോസില്ലക്കു് നിദാനനിർണയനീയും ഇടപാടുനീയ ദത്ത അയയ്ക്കാരുണ്ടു്. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">കൈകാര്യം ചെയ്യുക</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">ഫയൎഫോക്സിനെ ഉയൎത്താൻ ഞങ്ങൾ സഹായിക്കുക</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">എങ്ങനെയാണു് ഞങ്ങൾ ദത്തയെ ഉപയോഗിക്കുന്നതു്</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">ഉറപ്പിച്ചു് തിരയാൻ തുടങ്ങുക</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">കരുപ്പട്ട സ്ഥാനം തിരഞ്ഞെടുക്കുക</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -669,7 +674,7 @@
         The first parameter is the name of the app defined in app_name (for example: Fenix) -->
     <string name="preferences_about">%1$s നെ കുറിച്ച്</string>
     <!-- Preference for settings related to changing the default browser -->
-    <string name="preferences_set_as_default_browser">സ്വതേയുള്ള അന്വേഷിയന്ത്രം ആക്കുക</string>
+    <string name="preferences_set_as_default_browser">തനതായ അന്വേഷിയന്ത്രം ആക്കുക</string>
     <!-- Preference category for advanced settings -->
     <string name="preferences_category_advanced">സങ്കീര്‍ണ്ണമായവ</string>
     <!-- Preference category for privacy and security settings -->
@@ -986,15 +991,15 @@
     <string name="exceptions_empty_message_learn_more_link">കൂടുതല്‍ അറിയുക</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">ഉപയോഗവും സാങ്കേതിക ഡാറ്റയും</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">സാങ്കേതിയും ഇടപാടുനീയ ദത്ത</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">സാങ്കേതിയും ഇടപാടുനീയ ദത്ത അയയ്ക്കുക</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">കൂടുതലറിയുക</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">പ്രകടനം, ഉപയോഗം, ഹാർഡ്‌വെയർ തുടങ്ങിയ വിവരങ്ങൾ മോഡില്ലയുമായിമായി പങ്കു വെച്ച്  %1$s മെച്ചപ്പെടുത്തുവാൻ സഹായിക്കുക</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">പ്രകടനം, ഉപയോഗം, ഹാർഡ്‌വെയർ തുടങ്ങിയ വിവരങ്ങൾ മോഡില്ലയുമായിമായി പങ്കു വെച്ച്  %1$s മെച്ചപ്പെടുത്തുവാൻ സഹായിക്കുക</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">വിപണനത്തിനായുള്ള ഡാറ്റ</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">വിപണനത്തിനായുള്ള ഡാറ്റ</string>
 
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">വില്പനദത്തയെ കുറിച്ചു് കൂടുതൽ അറിയുക</string>
@@ -1004,6 +1009,9 @@
     <string name="preferences_automatically_submit_crashes_title" moz:removedIn="136" tools:ignore="UnusedResources">തകർച്ച വിവരങ്ങൾ തന്നെതാന്നെ അയയ്ക്കുക</string>
 
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">തകർച്ച സംഭവിച്ചു് ശേഷം വീണ്ടും പ്രയോഗം തുടങ്ങുമ്പോഴു് തകർച്ചദത്ത തന്നെതാനെ മോസ്സില്ലയ്ക്കു് പങ്കിടുന്നു</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">തകർച്ചവിവരങ്ങളെ കുറിച്ചു് അറിയുക</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">പഠനങ്ങൾ</string>
@@ -1017,7 +1025,7 @@
     <!-- Preference for reconnecting to FxA sync -->
     <string name="preferences_sync_sign_in_to_reconnect">വീണ്ടും ബന്ധിപ്പിക്കുന്നതിന് പ്രവേശിക്കുക</string>
     <!-- Preference for removing FxA account -->
-    <string name="preferences_sync_remove_account">അക്കൗണ്ട് നീക്കം ചെയ്യുക</string>
+    <string name="preferences_sync_remove_account">അക്കൗണ്ട് മായ്ക്കുക</string>
 
     <!-- Pairing Feature strings -->
     <!-- Instructions on how to access pairing -->
@@ -1169,7 +1177,9 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">സജീവം</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s ചിലപ്പോൾ പഠനങ്ങൾ വല്ലപ്പോഴു് സ്ഥാപിച്ചുനടത്തും.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s ചിലപ്പോൾ പഠനങ്ങൾ വല്ലപ്പോഴു് സ്ഥാപിച്ചുനടത്തും.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">പാഠനങ്ങൾ സ്ഥാപിച്ചിട്ടു് അവയെ നടത്തുക</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">കൂടുതലറിയുക</string>
     <!-- Dialog message shown after removing a study -->
@@ -1343,7 +1353,7 @@
 
     <!-- Crashes -->
     <!-- Title text displayed on the tab crash page. This first parameter is the name of the application (For example: Fenix) -->
-    <string name="tab_crash_title_2">ക്ഷമിക്കണം. %1$s ന് ആ പേജ് ലഭ്യമാക്കാൻ കഴിഞ്ഞില്ല.</string>
+    <string name="tab_crash_title_2">പൊറുക്കണം. %1$s ന് ആ താൾ ലഭ്യമാക്കാൻ കഴിഞ്ഞില്ല.</string>
     <!-- Send crash report checkbox text on the tab crash page -->
     <string name="tab_crash_send_report">തകരാർ റിപ്പോ‍ർട്ട് മോസില്ലയിലേക്ക് അയയ്ക്കുക</string>
     <!-- Close tab button text on the tab crash page -->
@@ -1900,6 +1910,8 @@
     <string name="preference_enhanced_tracking_protection_custom_tracking_content_2">സ്വകാര്യ ടാബുകളിൽ മാത്രം</string>
     <!-- Preference for enhanced tracking protection for the custom protection settings -->
     <string name="preference_enhanced_tracking_protection_custom_cryptominers">ക്രിപ്റ്റോമൈനേഴ്സ്</string>
+    <!-- Preference for enhanced tracking protection for the custom protection settings -->
+    <string name="preference_enhanced_tracking_protection_custom_known_fingerprinters">അറിയപ്പെട്ട വിരലടയാളപ്പിന്തുടൎച്ചയന്ത്രം</string>
     <!-- Button label for navigating to the Enhanced Tracking Protection details -->
     <string name="enhanced_tracking_protection_details">വിശദാംശങ്ങള്‍</string>
     <!-- Header for categories that are being being blocked by current Enhanced Tracking Protection settings -->
@@ -1941,6 +1953,10 @@
     <string name="etp_redirect_trackers_title">പിന്തുടർച്ചായന്ത്രം വഴിതിരിച്ചുവിടുക</string>
     <!-- Description of redirect tracker cookies that can be blocked by Enhanced Tracking Protection -->
     <string name="etp_redirect_trackers_description">അറിയപ്പെടുന്ന ദത്താപിന്തുടർച്ച വെബ്‌സൈറ്റുകളിലേക്ക് വഴിതിരിച്ചിടുകൾ സജ്ജമാക്കിയ കുക്കികൾ മായ്ക്കുന്നു.</string>
+    <!-- Preference for fingerprinting protection for the custom protection settings -->
+    <string name="etp_suspected_fingerprinters_title">സംശയിക്കപ്പെട്ട വിരലടയാളപ്പിന്തുടൎച്ചയന്ത്രങ്ങൾ</string>
+    <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
+    <string name="etp_known_fingerprinters_title">അറിയപ്പെട്ട വിരലടയാളപ്പിന്തുടൎച്ചയന്ത്രം</string>
     <!-- Text displayed that links to website about enhanced tracking protection SmartBlock -->
     <string name="preference_etp_smartblock_learn_more">കൂടുതലറിയുക</string>
 
@@ -1952,6 +1968,8 @@
     <string name="about_privacy_notice">സ്വകാര്യതാ അറിയിപ്പ്</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">നിങ്ങളുടെ അവകാശങ്ങള്‍ അറിയുക</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">ഉപയോഗനിബന്ധനകള്‍</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">ലൈസന്‍സ് വിവരം</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2469,10 +2487,14 @@
     <string name="review_quality_check_analysis_updated_confirmation_action" moz:removedIn="136" tools:ignore="UnusedResources">മനസ്സിലായി</string>
     <!-- Title for error card displayed to the user when an error occurred. -->
     <string name="review_quality_check_generic_error_title" moz:removedIn="136" tools:ignore="UnusedResources">ഇപ്പോൾ വിവരങ്ങളൊന്നും ലഭ്യമല്ല</string>
+    <!-- Text for body of error card displayed to the user when an error occurred. -->
+    <string name="review_quality_check_generic_error_body" moz:removedIn="136" tools:ignore="UnusedResources">കുഴപ്പം പരിഹരിക്കാൻ ഞങ്ങൾ ശ്രമിക്കുന്നു. ദയവായി ഇച്ചിരി നേരം കഴിഞ്ഞു് വീണ്ടും നോക്കുക.</string>
     <!-- Title for error card displayed to the user when the device is disconnected from the network. -->
     <string name="review_quality_check_no_connection_title" moz:removedIn="136" tools:ignore="UnusedResources">ഗോളാന്തരവല സമ്പർക്കമില്ല</string>
     <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
     <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">കൂടുതലറിയുക</string>
+    <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. First parameter is Firefox app name, third parameter is the Fakespot product name. Second & fourth are for clickable texts defined in review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use. -->
+    <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">&quot;അതെ, ഇതു് പരീക്ഷിച്ചു് നോക്കാം&quot; തിരഞ്ഞെടുക്കുന്നതിലൂടെ താങ്ങൾ %1$s-ന്റെ %2$s, %3$s-ന്റെ %4$s എന്നിവ അംഗീകരിക്കുന്നു.</string>
     <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
     <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">സ്വകാര്യത അറിയിപ്പ്</string>
     <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
@@ -2565,7 +2587,7 @@
     <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
     <string name="translation_error_could_not_load_languages_warning_text">ഭാഷാകൾ ലഭ്യമാക്കാൻ കഴിഞ്ഞില്ല. താങ്ങളുടെ ഗോളാന്തരവല സമ്പർക്കം പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.</string>
     <!-- The title of the warning card informs the user that a language is not supported. The first parameter is the name of the language that is not supported. -->
-    <string name="translation_error_language_not_supported_warning_text">ക്ഷമിക്കണം, ഞങ്ങൾ ഇതുവരെ %1$s-നെ പിന്തുണയ്ക്കുന്നില്ല.</string>
+    <string name="translation_error_language_not_supported_warning_text">പൊറുക്കണം, ഞങ്ങൾ ഇതുവരെ %1$s-നെ പിന്തുണയ്ക്കുന്നില്ല.</string>
     <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
     <string name="translation_in_progress_snackbar">വിവർത്തനം ചെയ്യുന്നു…</string>
 
@@ -2729,6 +2751,10 @@
     <string name="download_language_file_dialog_negative_button_text">റദ്ദാക്കുക</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">സുരക്ഷിതം</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">സുരക്ഷിതമല്ല</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">ഈ വെബ്സ്ഥാനത്തിൽ ശ്രദ്ധത്തോളം ഇരിക്കുക</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2750,6 +2776,34 @@
     <string name="protection_panel_etp_toggle_enabled_description">ഈ വെബ്സ്ഥാനത്തിൽ എന്തെങ്കിലും തകരാറുണ്ടെന്നു് തോന്നുന്നുണ്ടെങ്കിൽ പരിരക്ഷകളെ അണച്ചു് നോക്കൂ.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">സംരക്ഷണങ്ങൾ അണച്ചിരിക്കുന്നു. അവയെ വീണ്ടും തുടങ്ങിവയ്ക്കുന്നതിലാണു് ബുദ്ധി.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">തടഞ്ഞിരിക്കുന്ന പിന്തുടർച്ചായന്ത്രങ്ങൾ: %d </string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">പിന്തുടർച്ചയന്ത്രങ്ങൾ കണ്ടെത്താൻ കഴിഞ്ഞില്ല</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">സ്വകാര്യതയും സുരക്ഷ ക്രമീകരണങ്ങൾ</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">തടഞ്ഞിരിക്കുന്ന പിന്തുടർച്ചായന്ത്രങ്ങൾ: %d </string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">മായ്ക്കുക</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">റദ്ദാക്കുക</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">കുക്കികളും വെബുസ്ഥാന ദത്തയും മായച്ചു</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">സുരക്ഷിതമായ സമ്പൎക്കം</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">സമ്പൎക്കം സുരക്ഷിതമല്ല</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">ഉറപ്പാക്കിയതു്: %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -2867,7 +2921,7 @@
     <!-- The title of the Addresses feature in the Debug Drawer. -->
     <string name="debug_drawer_addresses_title">വിലാസങ്ങള്‍</string>
 
-    <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+    <!-- The title of the header for the section for managing addresses. -->
     <string name="debug_drawer_addresses_management_header">വിലാസങ്ങളെ കൈകാര്യം ചെയ്യുക</string>
     <!-- The title of the button in the debug drawer for adding a new address. -->
     <string name="debug_drawer_add_new_address">തിരഞ്ഞെടുത്ത ഭാഷയ്ക്കായി പുതിയ വിലാസം ചേൎക്കുക</string>
@@ -2926,4 +2980,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">ആഡ് ഓണുകളും മറ്റു് സവിശേഷതളും ഉപയോഗിച്ചതിരിക്കാൻ 14-൹ മാർച്ചിന്റെ മുമ്പു് പുതുക്കൽ ചെയ്യുക</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">ചില സവിശേഷതകൾ നാളെ പ്രവർത്തിക്കാൻ നിർത്തും.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">മറഞ്ഞിരിക്കുന്ന വാചകം കാണിക്കുക</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">പാഠം വേൎപ്പെടുത്തുക</string>
 </resources>

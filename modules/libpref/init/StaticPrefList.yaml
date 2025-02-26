@@ -244,7 +244,7 @@
 
 - name: accessibility.ARIAElementReflection.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether to enable all accessibility cache domains on startup.
@@ -711,7 +711,7 @@
 
 - name: apz.mousemove_hittest_optimization.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 - name: apz.one_touch_pinch.enabled
@@ -795,7 +795,7 @@
 
 - name: apz.popups_without_remote.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Whether to print the APZC tree for debugging.
@@ -1048,7 +1048,11 @@
 # Limit of recent metadata we keep in memory for faster access, in KB.
 - name: browser.cache.disk.metadata_memory_limit
   type: RelaxedAtomicUint32
-  value: 250   # 0.25 MB
+#ifdef NIGHTLY_BUILD
+  value: 1024   # 1 MB
+#else
+  value: 250    # 0.25 MB
+#endif
   mirror: always
 
 # Does the user want smart-sizing?
@@ -1580,6 +1584,15 @@
   value: false
   mirror: always
 
+# If false, show internal error page for HTTP responses with error
+# codes (4xx, 5xx) and "Content-Length": 0 instead of blank page
+# See https://bugzilla.mozilla.org/show_bug.cgi?id=1325876#c32 for why this
+# is disabled on Android.
+- name: browser.http.blank_page_with_error_response.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # The minimum area for a rect to be included in a wireframe, in CSS pixels.
 #
 # The current value of 50 is pretty arbitrary, and will be tuned as we refine
@@ -1976,6 +1989,19 @@
   value: @IS_NOT_ANDROID@
   mirror: always
 
+# Whether we block opening pickers from background tabs.
+- name: browser.disable_pickers_background_tabs
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
+# Whether we block opening pickers from hidden extension pages in WebExtensions.
+# This includes background pages and devtools pages, but not background tabs.
+- name: browser.disable_pickers_in_hidden_extension_pages
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "channelclassifier."
 #---------------------------------------------------------------------------
@@ -2011,6 +2037,21 @@
 -   name: clipboard.imageAsFile.enabled
     type: bool
     value: @IS_NOT_EARLY_BETA_OR_EARLIER@
+    mirror: always
+
+  # On Windows, whether to add PNG before BMP (CF_DIB) in the list of supported
+  # formats when copying an image to the clipboard.
+-   name: clipboard.copy_image.as_png
+    type: RelaxedAtomicBool
+    value: true
+    mirror: always
+
+  # On Windows, whether we encode an image as PNG (instead of the previous
+  # default of BMP) when an application to which we are copying an image
+  # requests that it be provided as a temporary file (CF_HDROP).
+-   name: clipboard.copy_image_file.as_png
+    type: RelaxedAtomicBool
+    value: true
     mirror: always
 #endif
 
@@ -2424,7 +2465,7 @@
 # Disable cookie-store API
 - name: dom.cookieStore.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Is support for CSSPseudoElement enabled?
@@ -2495,7 +2536,7 @@
 # Enable/disable contenteditable="plaintext-only".
 - name: dom.element.contenteditable.plaintext-only.enabled
   type: bool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: true
   mirror: always
 
 # Whether Dialog elements emit beforetoggle and toggle events during opening and closing.
@@ -2840,7 +2881,7 @@
 # Is support for HTMLElement.autocorrect enabled?
 - name: dom.forms.autocorrect
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Only trusted submit event could trigger form submission.
@@ -3018,6 +3059,15 @@
 - name: dom.input_events.canSuspendInBCG.enabled
   type: bool
   value: false
+  mirror: always
+
+# Whether dispatch a redundant `input` event before `compositionend`.
+# Its `.isComposing` is `true`, but it might be useful to store the latest
+# composition string before `compositionend` event listeners (although,
+# `.data` of `compositionend` event contains the value.
+- name: dom.input_events.dispatch_before_compositionend
+  type: bool
+  value: true
   mirror: always
 
 # The minimum number of ticks after page navigation
@@ -3465,6 +3515,13 @@
 #endif
   mirror: always
 
+# Origin trial state for MLS
+# 0: normal, 1: always-enabled, 2: always-disabled
+- name: dom.origin-trials.mls.state
+  type: RelaxedAtomicInt32
+  value: 0
+  mirror: always
+
 # User pref to control whether Private Attribution
 # information should be collected / submitted.
 - name: dom.private-attribution.submission.enabled
@@ -3648,10 +3705,15 @@
 # If there are other origins in the group, they are initialized all together.
 # This feature is currently still in development and experimental, not
 # recommended for normal use yet.
+#
+# Note: If dom.quotaManager.temporaryStorage.incrementalOriginInitialization
+# is set to true, this preference will be overridden, and the individual
+# setting will no longer take effect, regardless of its value.
 - name: dom.quotaManager.temporaryStorage.lazyOriginInitialization
   type: RelaxedAtomicBool
   value: false
   mirror: always
+  do_not_use_directly: true
 
 # Should we trigger initialization of all temporary origins in the background?
 # When enabled, temporary origins collected during temporary storage
@@ -3660,10 +3722,41 @@
 # origins to preserve consistency of quota checks related to the group limit.
 # This feature is currently still in development and experimental, not
 # recommended for normal use yet.
+#
+# Note: If dom.quotaManager.temporaryStorage.incrementalOriginInitialization
+# is set to true, this preference will be overridden, and the individual
+# setting will no longer take effect, regardless of its value.
 - name: dom.quotaManager.temporaryStorage.triggerOriginInitializationInBackground
   type: RelaxedAtomicBool
   value: false
   mirror: always
+  do_not_use_directly: true
+
+# Should we enable incremental initialization of origins? (also known as
+# asynchronous temporary storage initialization)
+# When enabled, this preference acts as an override for the following
+# preferences:
+# - dom.quotaManager.temporaryStorage.lazyOriginInitialization
+# - dom.quotaManager.temporaryStorage.triggerOriginInitializationInBackground
+#
+# Enabling this preference ensures that:
+# 1. Origins for temporary storage are not initialized during temporary storage
+#    initialization but are instead initialized incrementally, either lazily or
+#    in the background, depending on which occurs first.
+# 2. Background initialization of temporary origins is triggered after the
+#    temporary storage initialization. The process is carried out in steps,
+#    with each step being responsible for initializing a group of origins.
+#
+# See also the documentation for those two preferences for more details on
+# their individual behaviors.
+#
+# This feature is currently in development and experimental, not recommended
+# for normal use yet.
+- name: dom.quotaManager.temporaryStorage.incrementalOriginInitialization
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  do_not_use_directly: true
 
 # A pref that is used to slow down origin operations for testing purposes.
 - name: dom.quotaManager.originOperations.pauseOnIOThreadMs
@@ -4049,7 +4142,7 @@
 # request for HTTPS-Only and HTTPS-First
 - name: dom.security.https_only_fire_http_request_background_timer_ms
   type: RelaxedAtomicUint32
-  value: 3000
+  value: 1500
   mirror: always
 
 # If true, tries to break upgrade downgrade cycles where https-only tries
@@ -4100,13 +4193,25 @@
 # downgraded again if the request failed.
 - name: dom.security.https_first
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: true
   mirror: always
 
 # If true, HTTPS-First will upgrade non-default ports
 - name: dom.security.https_first_for_custom_ports
   type: RelaxedAtomicBool
-  value: true
+  value: false
+  mirror: always
+
+# If true, HTTPS-First will upgrade local addresses
+- name: dom.security.https_first_for_local_addresses
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+# If true, HTTPS-First will upgrade unknown suffixes
+- name: dom.security.https_first_for_unknown_suffixes
+  type: RelaxedAtomicBool
+  value: false
   mirror: always
 
 # If true, top-level requests in Private Browsing Mode will get
@@ -4139,7 +4244,7 @@
 
 - name: dom.security.unexpected_system_load_telemetry_enabled
   type: bool
-  value: true
+  value: @IS_EARLY_BETA_OR_EARLIER@
   mirror: always
 
 # pref controls `Sanitizer` API being exposed
@@ -4318,6 +4423,11 @@
   mirror: always
 
 - name: dom.workers.throttling.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+- name: dom.workers.timeoutmanager
   type: RelaxedAtomicBool
   value: false
   mirror: always
@@ -4519,6 +4629,12 @@
   value: 0
   mirror: always
 
+# This enables the SVGPathSegment APIs
+- name: dom.svg.pathSegment.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # For area and anchor elements with target=_blank and no rel set to
 # opener/noopener.
 - name: dom.targetBlankNoOpener.enabled
@@ -4548,6 +4664,11 @@
   value: true
   mirror: always
   rust: true
+
+- name: dom.text_fragments.create_text_fragment.enabled
+  type: bool
+  value: false
+  mirror: always
 
 - name: dom.textMetrics.actualBoundingBox.enabled
   type: RelaxedAtomicBool
@@ -5032,6 +5153,13 @@
   value: true
   mirror: always
 
+# Is the constructed flag error check disabled during adoptedStyleSheets setter?
+# https://github.com/w3c/csswg-drafts/issues/10013
+- name: dom.webcomponents.lift-adoptedstylesheets-restriction.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Is support for the Web GPU API enabled?
 - name: dom.webgpu.enabled
   type: RelaxedAtomicBool
@@ -5041,7 +5169,7 @@
 # Is support for the Web GPU API enabled on DOM workers?
 - name: dom.webgpu.workers.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Are WebGPU indirect draws enabled?
@@ -5070,7 +5198,7 @@
 
 - name: dom.webgpu.allow-present-without-readback
   type: RelaxedAtomicBool
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)
   value: true
 #else
   value: false
@@ -7612,12 +7740,6 @@
   value: true
   mirror: always
 
-# Whether we use EXIF metadata for image density.
-- name: image.exif-density-correction.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 # Whether EXIF density metadata is sanity checked against PixelXDimension and PixelYDimension
 - name: image.exif-density-correction.sanity-check.enabled
   type: RelaxedAtomicBool
@@ -8095,6 +8217,15 @@
   mirror: always  # LoadStartupJSPrefs
   do_not_use_directly: true
 
+#ifdef NIGHTLY_BUILD
+# Experimental support for off-main-thread baseline compilation.
+- name: javascript.options.experimental.baselinejit.offthread_compilation
+  type: bool
+  value: false
+  mirror: always  # LoadStartupJSPrefs
+  do_not_use_directly: true
+#endif
+
 # Enable off-main-thread Warp compilation.
 - name: javascript.options.ion.offthread_compilation
   type: bool
@@ -8311,7 +8442,7 @@
     type: bool
     value: false
     mirror: always
-    set_spidermonkey_pref: startup
+    set_spidermonkey_pref: always
 
   # Experimental support for Math.sumPrecise in JavaScript.
 -   name: javascript.options.experimental.math_sumprecise
@@ -8348,6 +8479,13 @@
     mirror: always
     set_spidermonkey_pref: startup
 
+  # Experimental support for upsert in JavaScript.
+-   name: javascript.options.experimental.upsert
+    type: bool
+    value: false
+    mirror: always
+    set_spidermonkey_pref: startup
+
 #endif  // NIGHTLY_BUILD
 
 #ifdef JS_HAS_TEMPORAL_API
@@ -8368,11 +8506,17 @@
     set_spidermonkey_pref: always
 #endif  // ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 
--   name: javascript.options.experimental.json_parse_with_source
-    type: bool
-    value: true
-    mirror: always
-    set_spidermonkey_pref: always
+- name: javascript.options.experimental.error_capture_stack_trace
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: always
+
+- name: javascript.options.experimental.json_parse_with_source
+  type: bool
+  value: true
+  mirror: always
+  set_spidermonkey_pref: always
 
 - name: javascript.options.wasm_caching
   type: bool
@@ -9266,16 +9410,6 @@
   value: true
   mirror: always
 
-# Whether computed local-fragment-only image urls serialize using the same
-# rules as filter/mask/etc (not resolving the URL for local refs).
-#
-# See https://github.com/w3c/csswg-drafts/issues/3195
-- name: layout.css.computed-style.dont-resolve-image-local-refs
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # Are implicit tracks in computed grid templates serialized?
 - name: layout.css.serialize-grid-implicit-tracks
   type: RelaxedAtomicBool
@@ -9469,6 +9603,13 @@
   mirror: always
   rust: true
 
+# Perform intrinsic sizing of flexible grid tracks based on grid items that
+# span more than one track.
+- name: layout.css.grid-flex-spanning-items-intrinsic-sizing.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Is support for :has() enabled?
 - name: layout.css.has-selector.enabled
   type: RelaxedAtomicBool
@@ -9479,9 +9620,15 @@
 # Whether the `:has-slotted` pseudo class is enabled
 - name: layout.css.has-slotted-selector.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
   rust: true
+
+# Is support for CSS hyphenate-limit-chars enabled?
+- name: layout.css.hyphenate-limit-chars.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
 
 # Is support for CSS initial-letter property enabled?
 - name: layout.css.initial-letter.enabled
@@ -9683,7 +9830,7 @@
 # also include animation-timeline property.
 - name: layout.css.scroll-driven-animations.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
@@ -10034,6 +10181,25 @@
   value: true
   mirror: always
 
+# This will automatically enable inline spellchecking (if it is available) for
+# editable elements in HTML.
+# 0 = spellcheck nothing
+# 1 = check multi-line controls [default]
+# 2 = check multi/single line controls
+- name: layout.spellcheckDefault
+  type: int32_t
+  value: 1
+  mirror: always
+
+# Treat top level pages as always-active for the purpose of refresh driver
+# throttling and such.
+#
+# Intended for testing automation and so forth.
+- name: layout.testing.top-level-always-active
+  type: bool
+  value: false
+  mirror: always
+
 # Pref to stop overlay scrollbars from fading out, for testing purposes.
 - name: layout.testing.overlay-scrollbars.always-visible
   type: bool
@@ -10331,9 +10497,11 @@
   mirror: always
 
 # Whether <details> is forced to be a block, see bug 1856374
+# The legacy behavior is 'true', i.e. forcing it to be a block.
+# The modern behavior is 'false', i.e. not forcing it to be a block.
 - name: layout.details.force-block-layout
   type: bool
-  value: true
+  value: @IS_NOT_NIGHTLY_BUILD@
   mirror: always
 
 # Whether table cells can generate scroll boxes.
@@ -12094,9 +12262,7 @@
 - name: media.webrtc.codec.video.av1.enabled
   type: RelaxedAtomicBool
 #if defined(MOZ_AV1)
-  value: @IS_NIGHTLY_BUILD@
-#else
-  value: false
+  value: true
 #endif
   mirror: always
 
@@ -12107,9 +12273,24 @@
   value: false
   mirror: always
 
+- name: media.webrtc.simulcast.av1.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
+- name: media.webrtc.simulcast.h264.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 - name: media.webrtc.simulcast.vp9.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_EARLY_BETA_OR_EARLIER@
+  mirror: always
+
+- name: media.peerconnection.video.use_dd
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 - name: media.webrtc.tls_tunnel_for_all_proxy
@@ -12268,6 +12449,25 @@
   type: uint32_t
   value: 262144
   mirror: always
+
+# Tell mozjemalloc and the TaskController to use lazy purge.
+- name: memory.lazypurge.enable
+  type: bool
+  value: true
+  mirror: always
+
+# If lazy purge is enabled, the maximum delay we wait for idle time in MS.
+- name: memory.lazypurge.maximum_delay
+  type: uint32_t
+  value: 5000
+  mirror: always
+
+# If lazy purge is enabled, the minimum idle budget we wait for in MS.
+- name: memory.lazypurge.minimum_idle_budget
+  type: uint32_t
+  value: 5
+  mirror: always
+
 
 #---------------------------------------------------------------------------
 # Prefs starting with "middlemouse."
@@ -12674,7 +12874,7 @@
   # in response to a Refresh header.
 - name: network.http.referer.sendFromRefresh
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # false=real referer, true=spoof referer (use target URI as referer).
@@ -13506,11 +13706,7 @@
 # every page reload.
 - name: network.dns.only_refresh_on_fresh_connection
   type: RelaxedAtomicBool
-#ifdef EARLY_BETA_OR_EARLIER
-  value: false
-#else
   value: true
-#endif
   mirror: always
 
 # When true, DNS resolutions will downgrade DNS
@@ -14106,17 +14302,11 @@
   value: ""
   mirror: never
 
-# The maximum allowed length for a URL - 32MB default.
+# The maximum allowed length for a URL - 512MB default.
 # If 0 that means no limit.
 - name: network.url.max-length
   type: RelaxedAtomicUint32
-  value: 32 * 1024 * 1024
-  mirror: always
-
-  # If true, will be more strict with status code parsing
-- name: network.url.strict_data_url_base64_placement
-  type: RelaxedAtomicBool
-  value: true
+  value: 512 * 1024 * 1024
   mirror: always
 
 # When true, if all the cyrillic characters in a label
@@ -14264,7 +14454,7 @@
   value: false
   mirror: always
 
-- name: network.http.http2.move_to_pending_list_after_network_change
+- name: network.http.move_to_pending_list_after_network_change
   type: RelaxedAtomicBool
   value: true
   mirror: always
@@ -14284,19 +14474,14 @@
 # Use NSPR for HTTP3 UDP IO
 - name: network.http.http3.use_nspr_for_io
   type: RelaxedAtomicBool
-  value: @IS_NOT_NIGHTLY_BUILD@
+  value: @IS_NOT_EARLY_BETA_OR_EARLIER@
   mirror: always
 
 # Send and receive IP ECN marks. Noop if network.http.http3.use_nspr_for_io is
 # true.
 - name: network.http.http3.ecn
   type: RelaxedAtomicBool
-# See network.http.http3.use_nspr_for_io above.
-#if defined(ANDROID) && !defined(HAVE_64BIT_BUILD)
-  value: false
-#else
   value: @IS_NIGHTLY_BUILD@
-#endif
   mirror: always
   rust: true
 
@@ -14503,7 +14688,7 @@
 # If not, the record will not be used.
 - name: network.dns.https_rr.check_record_with_cname
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: true
   mirror: always
 
 # This preference can be used to turn off IPv6 name lookups. See bug 68796.
@@ -14646,6 +14831,11 @@
 - name: network.http.retry_with_another_half_open
   type: RelaxedAtomicBool
   value: @IS_EARLY_BETA_OR_EARLIER@
+  mirror: always
+
+- name: network.http.basic_http_auth.enabled
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
   # If true, HTTP response content-type headers will be parsed using the standards-compliant MimeType parser
@@ -14828,7 +15018,7 @@
 # addition to importing them from browser/app/permissions.
 - name: permissions.manager.remote.enabled
   type: bool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: true
   mirror: always
 
 #---------------------------------------------------------------------------
@@ -15031,6 +15221,13 @@
   value: true
   mirror: always
 
+# Enable the clearing of cache data using the clear-site-data header. If enabled,
+# header values of "cache" and "*" will clear cached data from the site
+- name: privacy.clearSiteDataHeader.cache.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # First Party Isolation (double keying), disabled by default.
 - name: privacy.firstparty.isolate
   type: RelaxedAtomicBool
@@ -15221,7 +15418,7 @@
 
 - name: privacy.fingerprintingProtection.pbmode
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
   do_not_use_directly: true
 
@@ -15283,6 +15480,12 @@
   value: false
   mirror: always
 
+# Check if the caller is system. Only used during user char data collection.
+- name:  privacy.resistFingerprinting.randomization.canvas.disable_for_chrome
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Anti-tracking permission expiration.
 - name: privacy.restrict3rdpartystorage.expiration
   type: uint32_t
@@ -15311,6 +15514,16 @@
 - name: privacy.restrict3rdpartystorage.heuristic.redirect
   type: bool
   value: false
+  mirror: always
+
+# Enable the heuristic to allow storage access for extended navigations with interaction
+- name: privacy.restrict3rdpartystorage.heuristic.navigation
+  type: bool
+#if defined(ANDROID)
+  value: false
+#else
+  value: @IS_NIGHTLY_BUILD@
+#endif
   mirror: always
 
 # Anti-tracking permission expiration.
@@ -15354,13 +15567,23 @@
 # Enable the heuristic to allow storage access for recent visited pages
 - name: privacy.restrict3rdpartystorage.heuristic.recently_visited
   type: bool
+#if defined(ANDROID)
   value: true
+#else
+  value: @IS_NOT_NIGHTLY_BUILD@
+#endif
   mirror: always
 
 # Valid time gap since last visit
 - name: privacy.restrict3rdpartystorage.heuristic.recently_visited_time
   type: uint32_t
   value: 600    # 10 minutes
+  mirror: always
+
+# Whether to exclude third-party trackers from the storage accessheuristic.
+- name: privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Recent visited pages redirection permission expiration.
@@ -15627,6 +15850,12 @@
 # Please note that manually entering a data: URI in the
 # URL-Bar will not be blocked when flipping this pref.
 - name: security.data_uri.block_toplevel_data_uri_navigations
+  type: bool
+  value: true
+  mirror: always
+
+# Whether to apply the <meta http="Content-Security-Policy"> to browser.xhtml
+- name: security.browser_xhtml_csp.enabled
   type: bool
   value: true
   mirror: always
@@ -16079,6 +16308,7 @@
   type: RelaxedAtomicBool
   value: true
   mirror: always
+  rust: true
 
 - name: security.pki.cert_short_lifetime_in_days
   type: RelaxedAtomicUint32
@@ -16424,12 +16654,6 @@
   value: true
   mirror: always
 
-# MLS
-- name: security.mls.enabled
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
 #---------------------------------------------------------------------------
 # Prefs starting with "signon."
 #---------------------------------------------------------------------------
@@ -16536,6 +16760,12 @@
   value: false
   mirror: always
 
+# This enables discard processing
+- name: svg.discard.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # Tweak which elements are allowed in <svg:use> subtrees, and in which
 # circumstances. See RemoveForbiddenNodes in SVGUseElement.cpp for the spec
 # text.
@@ -16638,7 +16868,11 @@
 # If the service is available, set threads to low-power mode when in the background.
 - name: threads.use_low_power.enabled
   type: RelaxedAtomicBool
+#ifdef XP_MACOSX
+  value: true
+#else
   value: @IS_NIGHTLY_BUILD@
+#endif
   mirror: always
 
 
@@ -16646,7 +16880,11 @@
 # Currently off by default.
 - name: threads.lower_mainthread_priority_in_background.enabled
   type: bool
+#ifdef XP_MACOSX
+  value: true
+#else
   value: @IS_NIGHTLY_BUILD@
+#endif
   mirror: always
 
 #---------------------------------------------------------------------------

@@ -1919,7 +1919,8 @@ void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
   ma_b(scratch, ImmWord(magic), label, cond);
 }
 
-void MacroAssembler::branchTestValue(Condition cond, const BaseIndex& lhs,
+template <typename T>
+void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {
   MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
   branchPtr(cond, lhs, rhs.valueReg(), label);
@@ -2157,8 +2158,8 @@ FaultingCodeOffset MacroAssembler::storeUncanonicalizedFloat16(
   MOZ_CRASH("Not supported for this target");
 }
 
-void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
-  if (barrier) {
+void MacroAssembler::memoryBarrier(MemoryBarrier barrier) {
+  if (!barrier.isNone()) {
     as_dbar(0);
   }
 }
@@ -2190,7 +2191,7 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
   // Note: src and dest can be the same register
   ScratchRegisterScope scratch(asMasm());
   MOZ_ASSERT(src.valueReg() != scratch);
-  mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
+  mov(ImmShiftedTag(type), scratch);
   as_xor(dest, src.valueReg(), scratch);
   as_srli_d(scratch, dest, JSVAL_TAG_SHIFT);
   ma_b(scratch, Imm32(0), fail, Assembler::NotEqual);

@@ -60,6 +60,8 @@
 #include "mozilla/RemoteDecoderManagerChild.h"
 #include "mozilla/KeySystemConfig.h"
 #include "mozilla/WheelHandlingHelper.h"
+#include "nsIRFPTargetSetIDL.h"
+#include "nsContentSecurityUtils.h"
 #include "nsString.h"
 #include "nsNativeTheme.h"
 #include "nsThreadUtils.h"
@@ -564,49 +566,6 @@ void ChromeUtils::IdleDispatch(const GlobalObject& aGlobal,
   }
 }
 
-/* static */
-void ChromeUtils::Import(const GlobalObject& aGlobal,
-                         const nsACString& aResourceURI,
-                         const Optional<JS::Handle<JSObject*>>& aTargetObj,
-                         JS::MutableHandle<JSObject*> aRetval,
-                         ErrorResult& aRv) {
-  RefPtr moduleloader = mozJSModuleLoader::Get();
-  MOZ_ASSERT(moduleloader);
-
-  AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_NONSENSITIVE("ChromeUtils::Import",
-                                                     OTHER, aResourceURI);
-
-  JSContext* cx = aGlobal.Context();
-
-  JS::Rooted<JSObject*> global(cx);
-  JS::Rooted<JSObject*> exports(cx);
-  nsresult rv = moduleloader->Import(cx, aResourceURI, &global, &exports);
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
-    return;
-  }
-
-  // Import() on the component loader can return NS_OK while leaving an
-  // exception on the JSContext.  Check for that case.
-  if (JS_IsExceptionPending(cx)) {
-    aRv.NoteJSContextException(cx);
-    return;
-  }
-
-  if (aTargetObj.WasPassed()) {
-    if (!JS_AssignObject(cx, aTargetObj.Value(), exports)) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return;
-    }
-  }
-
-  if (!JS_WrapObject(cx, &exports)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-  aRetval.set(exports);
-}
-
 static mozJSModuleLoader* GetModuleLoaderForCurrentGlobal(
     JSContext* aCx, const GlobalObject& aGlobal,
     Maybe<loader::NonSharedGlobalSyncModuleLoaderScope>&
@@ -813,7 +772,7 @@ namespace lazy_getter {
 static const size_t SLOT_ID = 0;
 
 // The URI of the module to import.
-// Used by ChromeUtils.defineModuleGetter and ChromeUtils.defineESModuleGetters.
+// Used by ChromeUtils.defineESModuleGetters.
 static const size_t SLOT_URI = 1;
 
 // An array object that contians values for PARAM_INDEX_TARGET and
@@ -941,10 +900,7 @@ static bool DefineLazyGetter(JSContext* aCx, JS::Handle<JSObject*> aTarget,
                                JSPROP_ENUMERATE);
 }
 
-enum class ModuleType { JSM, ESM };
-
-static bool ModuleGetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
-                             ModuleType aType) {
+static bool ESModuleGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   JS::CallArgs args = JS::CallArgsFromVp(aArgc, aVp);
 
   JS::Rooted<JSObject*> callee(aCx);
@@ -963,59 +919,41 @@ static bool ModuleGetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   nsDependentCString uri(bytes.get());
 
   JS::Rooted<JS::Value> value(aCx);
-  if (aType == ModuleType::JSM) {
-    RefPtr moduleloader = mozJSModuleLoader::Get();
-    MOZ_ASSERT(moduleloader);
+  EncodedOptions encodedOptions(
+      js::GetFunctionNativeReserved(callee, SLOT_OPTIONS).toInt32());
 
-    JS::Rooted<JSObject*> moduleGlobal(aCx);
-    JS::Rooted<JSObject*> moduleExports(aCx);
-    nsresult rv = moduleloader->Import(aCx, uri, &moduleGlobal, &moduleExports);
-    if (NS_FAILED(rv)) {
-      Throw(aCx, rv);
+  ImportESModuleOptionsDictionary options;
+  encodedOptions.DecodeInto(options);
+
+  GlobalObject global(aCx, callee);
+
+  Maybe<loader::NonSharedGlobalSyncModuleLoaderScope> maybeSyncLoaderScope;
+  RefPtr<mozJSModuleLoader> moduleloader =
+      GetModuleLoaderForOptions(aCx, global, options, maybeSyncLoaderScope);
+  if (!moduleloader) {
+    return false;
+  }
+
+  JS::Rooted<JSObject*> moduleNamespace(aCx);
+  nsresult rv = moduleloader->ImportESModule(aCx, uri, &moduleNamespace);
+  if (NS_FAILED(rv)) {
+    Throw(aCx, rv);
+    return false;
+  }
+
+  // ESM's namespace is from the module's realm.
+  {
+    JSAutoRealm ar(aCx, moduleNamespace);
+    if (!JS_GetPropertyById(aCx, moduleNamespace, id, &value)) {
       return false;
     }
+  }
+  if (!JS_WrapValue(aCx, &value)) {
+    return false;
+  }
 
-    // JSM's exports is from the same realm.
-    if (!JS_GetPropertyById(aCx, moduleExports, id, &value)) {
-      return false;
-    }
-  } else {
-    EncodedOptions encodedOptions(
-        js::GetFunctionNativeReserved(callee, SLOT_OPTIONS).toInt32());
-
-    ImportESModuleOptionsDictionary options;
-    encodedOptions.DecodeInto(options);
-
-    GlobalObject global(aCx, callee);
-
-    Maybe<loader::NonSharedGlobalSyncModuleLoaderScope> maybeSyncLoaderScope;
-    RefPtr<mozJSModuleLoader> moduleloader =
-        GetModuleLoaderForOptions(aCx, global, options, maybeSyncLoaderScope);
-    if (!moduleloader) {
-      return false;
-    }
-
-    JS::Rooted<JSObject*> moduleNamespace(aCx);
-    nsresult rv = moduleloader->ImportESModule(aCx, uri, &moduleNamespace);
-    if (NS_FAILED(rv)) {
-      Throw(aCx, rv);
-      return false;
-    }
-
-    // ESM's namespace is from the module's realm.
-    {
-      JSAutoRealm ar(aCx, moduleNamespace);
-      if (!JS_GetPropertyById(aCx, moduleNamespace, id, &value)) {
-        return false;
-      }
-    }
-    if (!JS_WrapValue(aCx, &value)) {
-      return false;
-    }
-
-    if (maybeSyncLoaderScope) {
-      maybeSyncLoaderScope->Finish();
-    }
+  if (maybeSyncLoaderScope) {
+    maybeSyncLoaderScope->Finish();
   }
 
   if (!JS_DefinePropertyById(aCx, thisObj, id, value, JSPROP_ENUMERATE)) {
@@ -1026,15 +964,7 @@ static bool ModuleGetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   return true;
 }
 
-static bool JSModuleGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleGetterImpl(aCx, aArgc, aVp, ModuleType::JSM);
-}
-
-static bool ESModuleGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleGetterImpl(aCx, aArgc, aVp, ModuleType::ESM);
-}
-
-static bool ModuleSetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
+static bool ESModuleSetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   JS::CallArgs args = JS::CallArgsFromVp(aArgc, aVp);
 
   JS::Rooted<JSObject*> callee(aCx);
@@ -1045,49 +975,6 @@ static bool ModuleSetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   }
 
   return JS_DefinePropertyById(aCx, thisObj, id, args.get(0), JSPROP_ENUMERATE);
-}
-
-static bool JSModuleSetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleSetterImpl(aCx, aArgc, aVp);
-}
-
-static bool ESModuleSetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleSetterImpl(aCx, aArgc, aVp);
-}
-
-static bool DefineJSModuleGetter(JSContext* aCx, JS::Handle<JSObject*> aTarget,
-                                 const nsAString& aId,
-                                 const nsAString& aResourceURI) {
-  JS::Rooted<JS::Value> uri(aCx);
-  JS::Rooted<JS::Value> idValue(aCx);
-  JS::Rooted<jsid> id(aCx);
-  if (!xpc::NonVoidStringToJsval(aCx, aResourceURI, &uri) ||
-      !xpc::NonVoidStringToJsval(aCx, aId, &idValue) ||
-      !JS_ValueToId(aCx, idValue, &id)) {
-    return false;
-  }
-  idValue = js::IdToValue(id);
-
-  JS::Rooted<JSObject*> getter(
-      aCx, JS_GetFunctionObject(
-               js::NewFunctionByIdWithReserved(aCx, JSModuleGetter, 0, 0, id)));
-
-  JS::Rooted<JSObject*> setter(
-      aCx, JS_GetFunctionObject(
-               js::NewFunctionByIdWithReserved(aCx, JSModuleSetter, 0, 0, id)));
-
-  if (!getter || !setter) {
-    JS_ReportOutOfMemory(aCx);
-    return false;
-  }
-
-  js::SetFunctionNativeReserved(getter, SLOT_ID, idValue);
-  js::SetFunctionNativeReserved(setter, SLOT_ID, idValue);
-
-  js::SetFunctionNativeReserved(getter, SLOT_URI, uri);
-
-  return JS_DefinePropertyById(aCx, aTarget, id, getter, setter,
-                               JSPROP_ENUMERATE);
 }
 
 static bool DefineESModuleGetter(JSContext* aCx, JS::Handle<JSObject*> aTarget,
@@ -1135,18 +1022,6 @@ void ChromeUtils::DefineLazyGetter(const GlobalObject& aGlobal,
   if (!lazy_getter::DefineLazyGetter(cx, aTarget, aName, aLambda)) {
     aRv.NoteJSContextException(cx);
     return;
-  }
-}
-
-/* static */
-void ChromeUtils::DefineModuleGetter(const GlobalObject& global,
-                                     JS::Handle<JSObject*> target,
-                                     const nsAString& id,
-                                     const nsAString& resourceURI,
-                                     ErrorResult& aRv) {
-  if (!lazy_getter::DefineJSModuleGetter(global.Context(), target, id,
-                                         resourceURI)) {
-    aRv.NoteJSContextException(global.Context());
   }
 }
 
@@ -2443,7 +2318,8 @@ void ChromeUtils::GetAllPossibleUtilityActorNames(GlobalObject& aGlobal,
 /* static */
 bool ChromeUtils::ShouldResistFingerprinting(
     GlobalObject& aGlobal, JSRFPTarget aTarget,
-    const Nullable<uint64_t>& aOverriddenFingerprintingSettings) {
+    nsIRFPTargetSetIDL* aOverriddenFingerprintingSettings,
+    const Optional<bool>& aIsPBM) {
   RFPTarget target;
   switch (aTarget) {
     case JSRFPTarget::RoundWindowSize:
@@ -2460,21 +2336,32 @@ bool ChromeUtils::ShouldResistFingerprinting(
   }
 
   bool isPBM = false;
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  if (global) {
-    nsPIDOMWindowInner* win = global->GetAsInnerWindow();
-    if (win) {
-      nsIDocShell* docshell = win->GetDocShell();
-      if (docshell) {
-        nsDocShell::Cast(docshell)->GetUsePrivateBrowsing(&isPBM);
+  if (aIsPBM.WasPassed()) {
+    isPBM = aIsPBM.Value();
+  } else {
+    nsCOMPtr<nsIGlobalObject> global =
+        do_QueryInterface(aGlobal.GetAsSupports());
+    if (global) {
+      nsPIDOMWindowInner* win = global->GetAsInnerWindow();
+      if (win) {
+        nsIDocShell* docshell = win->GetDocShell();
+        if (docshell) {
+          nsDocShell::Cast(docshell)->GetUsePrivateBrowsing(&isPBM);
+        }
       }
     }
   }
 
-  Maybe<RFPTarget> overriddenFingerprintingSettings;
-  if (!aOverriddenFingerprintingSettings.IsNull()) {
-    overriddenFingerprintingSettings.emplace(
-        RFPTarget(aOverriddenFingerprintingSettings.Value()));
+  Maybe<RFPTargetSet> overriddenFingerprintingSettings;
+  if (aOverriddenFingerprintingSettings) {
+    uint64_t low, hi;
+    aOverriddenFingerprintingSettings->GetLow(&low);
+    aOverriddenFingerprintingSettings->GetHigh(&hi);
+    std::bitset<128> bitset;
+    bitset |= hi;
+    bitset <<= 64;
+    bitset |= low;
+    overriddenFingerprintingSettings.emplace(RFPTargetSet(bitset));
   }
 
   // This global object appears to be the global window, not for individual
@@ -2482,6 +2369,19 @@ bool ChromeUtils::ShouldResistFingerprinting(
   // more work would be needed to get the correct context.
   return nsRFPService::IsRFPEnabledFor(isPBM, target,
                                        overriddenFingerprintingSettings);
+}
+
+/* static */
+void ChromeUtils::SanitizeTelemetryFileURL(
+    GlobalObject& aGlobal, const nsACString& aURL,
+    FileNameTypeDetails& aFileTypeDetails) {
+  FilenameTypeAndDetails result =
+      nsContentSecurityUtils::FilenameToFilenameType(aURL, true);
+
+  aFileTypeDetails.mFileNameType = result.first;
+  if (result.second.isSome()) {
+    aFileTypeDetails.mFileNameDetails.Construct(*result.second);
+  }
 }
 
 std::atomic<uint32_t> ChromeUtils::sDevToolsOpenedCount = 0;

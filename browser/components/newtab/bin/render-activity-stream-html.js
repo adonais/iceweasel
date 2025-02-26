@@ -16,6 +16,7 @@ const DEFAULT_OPTIONS = {
   addonPath: "..",
   // depends on the registration in browser/components/newtab/jar.mn
   baseUrl: "resource://activity-stream/",
+  baseVendorUrl: "chrome://global/content/",
 };
 
 /**
@@ -24,6 +25,7 @@ const DEFAULT_OPTIONS = {
  *
  * @param  {obj} options
  *         {str} options.baseUrl        The base URL for all local assets
+ *  *      {str} options.baseVendorUrl  The base URL for all vendor dependencies
  *         {bool} options.debug         Should we use dev versions of JS libraries?
  *         {bool} options.noscripts     Should we include scripts in the prerendered files?
  * @return {str}         An HTML document as a string
@@ -35,12 +37,12 @@ function templateHTML(options) {
     "chrome://browser/content/contentSearchUI.js",
     "chrome://browser/content/contentSearchHandoffUI.js",
     "chrome://browser/content/contentTheme.js",
-    `${options.baseUrl}vendor/react${debugString}.js`,
-    `${options.baseUrl}vendor/react-dom${debugString}.js`,
-    `${options.baseUrl}vendor/prop-types.js`,
-    `${options.baseUrl}vendor/redux.js`,
-    `${options.baseUrl}vendor/react-redux.js`,
-    `${options.baseUrl}vendor/react-transition-group.js`,
+    `${options.baseVendorUrl}vendor/react${debugString}.js`,
+    `${options.baseVendorUrl}vendor/react-dom${debugString}.js`,
+    `${options.baseVendorUrl}vendor/prop-types.js`,
+    `${options.baseVendorUrl}vendor/redux.js`,
+    `${options.baseVendorUrl}vendor/react-redux.js`,
+    `${options.baseVendorUrl}vendor/react-transition-group.js`,
     `${options.baseUrl}data/content/activity-stream.bundle.js`,
     `${options.baseUrl}data/content/newtab-render.js`,
   ];
@@ -76,6 +78,7 @@ function templateHTML(options) {
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/branding/brandings.ftl" />
     <link rel="localization" href="browser/newtab/newtab.ftl" />
+    <link rel="localization" href="toolkit/global/mozMessageBar.ftl" />
     <link
       rel="stylesheet"
       href="chrome://global/skin/design-system/tokens-brand.css"
@@ -105,6 +108,16 @@ function templateHTML(options) {
       async
       type="module"
       src="chrome://global/content/elements/moz-button-group.mjs"
+    ></script>
+    <script
+      async
+      type="module"
+      src="chrome://global/content/elements/moz-box-button.mjs"
+    ></script>
+    <script
+      async
+      type="module"
+      src="chrome://global/content/elements/moz-message-bar.mjs"
     ></script>
   </body>
 </html>
@@ -182,6 +195,11 @@ async function main() {
           type: "string",
           shortFlag: "b",
           default: DEFAULT_OPTIONS.baseUrl,
+        },
+        baseVendorUrl: {
+          type: "string",
+          shortFlag: "v",
+          default: DEFAULT_OPTIONS.baseVendorUrl,
         },
       },
     }

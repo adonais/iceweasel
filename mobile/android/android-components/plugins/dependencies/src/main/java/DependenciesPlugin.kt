@@ -24,14 +24,14 @@ object Versions {
     const val maven_ant_tasks = "2.1.3"
     const val jacoco = "0.8.12"
     const val okhttp = "4.12.0"
-    const val okio = "3.9.0"
+    const val okio = "3.10.1"
     const val androidsvg = "1.4"
 
-    const val android_gradle_plugin = "8.7.3"
+    const val android_gradle_plugin = "8.8.0"
 
     // This has to be synced to the gradlew plugin version. See
     // http://googlesamples.github.io/android-custom-lint-rules/api-guide/example.md.html#example:samplelintcheckgithubproject/lintversion?
-    const val lint = "31.7.3"
+    const val lint = "31.8.0-rc02"
     const val detekt = "1.23.7"
     const val ktlint = "0.49.1"
 
@@ -48,7 +48,7 @@ object Versions {
     const val compose_compiler = "1.5.14"
 
     object AndroidX {
-        const val activity = "1.9.3"
+        const val activity = "1.10.0"
         const val annotation = "1.9.1"
         const val appcompat = "1.7.0"
         const val arch = "2.2.0"
@@ -58,14 +58,14 @@ object Versions {
         const val browser = "1.8.0"
         const val cardview = "1.0.0"
         const val collection = "1.4.5"
-        const val compose_bom = "2024.12.01"
+        const val compose_bom = "2025.01.01"
         const val concurrent = "1.2.0"
         const val constraintlayout = "2.2.0"
         const val constraintlayout_compose = "1.1.0"
         const val coordinatorlayout = "1.2.0"
         const val core = "1.15.0"
         const val core_splashscreen = "1.0.1"
-        const val datastore="1.1.1"
+        const val datastore="1.1.2"
         const val drawerlayout = "1.2.0"
         const val fragment = "1.8.5"
         const val lifecycle = "2.8.7"
@@ -76,7 +76,7 @@ object Versions {
         const val palette = "1.0.0"
         const val preferences = "1.2.1"
         const val profileinstaller = "1.4.0"
-        const val recyclerview = "1.3.2"
+        const val recyclerview = "1.4.0"
         const val room = "2.6.1"
         const val savedstate = "1.2.1"
         const val swiperefreshlayout = "1.1.0"
@@ -109,9 +109,9 @@ object Versions {
         const val androidx_test_uiautomator = "2.3.0"
         const val falcon = "2.2.0"
         const val fastlane = "2.1.1"
-        const val junit = "5.11.3"
-        const val mockito = "5.14.2"
-        const val mockk = "1.13.13"
+        const val junit = "5.11.4"
+        const val mockito = "5.15.2"
+        const val mockk = "1.13.16"
         const val robolectric = "4.14.1"
     }
 

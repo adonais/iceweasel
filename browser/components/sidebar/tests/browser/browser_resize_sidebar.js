@@ -8,9 +8,17 @@ add_setup(async () => {
     set: [
       ["sidebar.visibility", "always-show"],
       ["sidebar.position_start", true],
+      ["sidebar.verticalTabs", true],
     ],
   });
-  await SidebarController.setUIState({ expanded: false, hidden: false });
+  await SidebarController.initializeUIState({
+    launcherExpanded: false,
+    launcherVisible: true,
+  });
+});
+
+registerCleanupFunction(async () => {
+  await SpecialPowers.popPrefEnv();
 });
 
 async function dragLauncher(deltaX, shouldExpand) {
@@ -56,7 +64,10 @@ add_task(async function test_drag_show_and_hide() {
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.visibility", "hide-sidebar"]],
   });
-  await SidebarController.setUIState({ expanded: true, hidden: false });
+  await SidebarController.initializeUIState({
+    launcherExpanded: true,
+    launcherVisible: true,
+  });
 
   await dragLauncher(-200, false);
   ok(SidebarController.sidebarContainer.hidden, "Sidebar is hidden.");
@@ -65,7 +76,10 @@ add_task(async function test_drag_show_and_hide() {
 });
 
 add_task(async function test_custom_width_persists() {
-  await SidebarController.setUIState({ expanded: false, hidden: false });
+  await SidebarController.initializeUIState({
+    launcherExpanded: false,
+    launcherVisible: true,
+  });
   await dragLauncher(200, true);
   const customWidth = getLauncherWidth();
 
@@ -91,4 +105,15 @@ add_task(async function test_custom_width_persists() {
     "Sidebar expands to the custom width set from the original window."
   );
   await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_drag_show_and_hide_for_horizontal_tabs() {
+  await SidebarController.initializeUIState({
+    launcherExpanded: false,
+    launcherVisible: true,
+  });
+
+  await dragLauncher(-200, false);
+  ok(!SidebarController.sidebarContainer.hidden, "Sidebar is not hidden.");
+  ok(!SidebarController.sidebarContainer.expanded, "Sidebar is not expanded.");
 });

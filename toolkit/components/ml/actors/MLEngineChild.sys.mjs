@@ -231,10 +231,10 @@ export class MLEngineChild extends JSWindowActorChild {
   }
 
   /**
-   * Retrieves a model file as an ArrayBuffer and headers by communicating with the parent actor.
+   * Retrieves a model file and headers by communicating with the parent actor.
    *
    * @param {object} config - The configuration accepted by the parent function.
-   * @returns {Promise<[ArrayBuffer, object]>} The file content and headers
+   * @returns {Promise<[string, object]>} The file local path and headers
    */
   getModelFile(config) {
     return this.sendQuery("MLEngine:GetModelFile", config);
@@ -443,8 +443,9 @@ class EngineDispatcher {
       pipelineOptions
     );
 
-    // In unit tests, maintain the current behavior of resolving during execution instead of initialization.
-    if (!Cu.isInAutomation) {
+    // When the pipeline is mocked typically in unit tests, the WASM files are mocked.
+    // In these cases, the pipeline is not resolved during initialization to allow the test to work.
+    if (!lazy.PipelineOptions.isMocked(pipelineOptions)) {
       await dispatcher.ensureInferenceEngineIsReady();
     }
 
@@ -462,14 +463,13 @@ class EngineDispatcher {
    * The worker will be shutdown automatically after some amount of time of not being used, unless:
    *
    * - timeoutMS is set to -1
-   * - we are running a test
    */
   keepAlive() {
     if (this.#keepAliveTimeout) {
       // Clear any previous timeout.
       lazy.clearTimeout(this.#keepAliveTimeout);
     }
-    if (!Cu.isInAutomation && this.timeoutMS >= 0) {
+    if (this.timeoutMS >= 0) {
       this.#keepAliveTimeout = lazy.setTimeout(
         this.terminate.bind(
           this,
@@ -615,7 +615,7 @@ class EngineDispatcher {
 }
 
 /**
- * Wrapper for a function that fetches a model file as an ArrayBuffer from a specified URL and task name.
+ * Wrapper for a function that fetches a model file from a specified URL and task name.
  *
  * @param {object} config
  * @param {string} config.engineId - The engine id - defaults to "default-engine".
@@ -624,9 +624,9 @@ class EngineDispatcher {
  * the model hub root or an absolute URL.
  * @param {string} config.modelHubRootUrl - root url of the model hub. When not provided, uses the default from prefs.
  * @param {string} config.modelHubUrlTemplate - url template of the model hub. When not provided, uses the default from prefs.
- * @param {?function(object):Promise<[ArrayBuffer, object]>} config.getModelFileFn - A function that actually retrieves the model data and headers.
+ * @param {?function(object):Promise<[string, object]>} config.getModelFileFn - A function that actually retrieves the model and headers.
  * @returns {Promise} A promise that resolves to a Meta object containing the URL, response headers,
- * and data as an ArrayBuffer. The data is marked for transfer to avoid cloning.
+ * and model path.
  */
 async function getModelFile({
   engineId,
@@ -643,9 +643,7 @@ async function getModelFile({
     rootUrl: modelHubRootUrl || lazy.MODEL_HUB_ROOT_URL,
     urlTemplate: modelHubUrlTemplate || lazy.MODEL_HUB_URL_TEMPLATE,
   });
-  return new lazy.BasePromiseWorker.Meta([url, headers, data], {
-    transfers: [data],
-  });
+  return new lazy.BasePromiseWorker.Meta([url, headers, data], {});
 }
 
 /**
@@ -752,7 +750,7 @@ class InferenceEngine {
    * @param {ArrayBuffer} config.wasm
    * @param {PipelineOptions} config.pipelineOptions
    * @param {?function(ProgressAndStatusCallbackParams):void} config.notificationsCallback The callback to call for updating about notifications such as dowload progress status.
-   * @param {?function(object):Promise<[ArrayBuffer, object]>} config.getModelFileFn - A function that actually retrieves the model data and headers.
+   * @param {?function(object):Promise<[string, object]>} config.getModelFileFn - A function that actually retrieves the model and headers.
    * @param {?function(object):Promise<object>} config.getInferenceProcessInfoFn - A function to get inference process info
    * @returns {InferenceEngine}
    */
@@ -763,6 +761,12 @@ class InferenceEngine {
     getModelFileFn,
     getInferenceProcessInfoFn,
   }) {
+    // Check for the numThreads value. If it's not set, use the best value for the platform, which is the number of physical cores
+    // However ONNX sets the maximum concurrency to 4 so we limit it to 4 here as well.
+    pipelineOptions.numThreads =
+      pipelineOptions.numThreads ||
+      Math.min(4, lazy.mlUtils.getNumPhysicalCores());
+
     // Before we start the worker, we want to make sure we have the resources to run it.
     if (lazy.CHECK_FOR_MEMORY) {
       try {

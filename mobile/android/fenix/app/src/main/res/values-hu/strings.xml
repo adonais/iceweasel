@@ -332,10 +332,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Eszközök menülap bezárása</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Egyéni lap menülap bezárása</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Olvasó nézet, fordítás, nyomtatás, megosztás, alkalmazás megnyitása</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Olvasó nézet, nyomtatás, megosztás, alkalmazás megnyitása</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Olvasó nézet, fordítás, %s, nyomtatás, megosztás, alkalmazás megnyitása</string>
@@ -575,33 +571,55 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Az összeomlás-jelentések lehetővé teszik számunkra, hogy diagnosztizáljuk és megoldjuk a böngészőhibákat. A jelentések személyes vagy bizalmas adatokat tartalmazhatnak.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Tudjon meg többet a összeomlás-jelentésekről</string>
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">További tudnivalók</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Műszaki és interakciós adatok küldése a Mozillának</string>
     <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Az eszközre, a hardverbeállításokra és a Firefox használatára vonatkozó adatok segítenek abban, hogy a funkciók, a teljesítmény és a stabilitás minden felhasználó számára jobb legyen.</string>
+    <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Az eszközre, a hardverbeállításokra és a Firefox használatára vonatkozó adatok segítenek abban, hogy a funkciók, a teljesítmény és a stabilitás mindenki számára jobb legyen.</string>
     <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Tudjon meg többet a használati adatokról</string>
+    <string name="onboarding_preferences_dialog_usage_data_learn_more_2">További tudnivalók</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Kész</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Mégse</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Mégse</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Üdvözli a Firefox</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Gyors és biztonságos webböngészés.</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header_2">Gyors és biztonságos webböngészés</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Elfogadás és folytatás</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">A folytatással elfogadja a Firefox ezen dokumentumát: %1$s.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+    <string name="onboarding_term_of_service_line_one_2">A folytatással elfogadja a %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Szolgáltatás feltételei</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefox felhasználási feltételeit</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">A Firefox vigyáz az Ön adatvédelmére. További információk az %1$sban.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">A Firefox vigyáz az Ön adatvédelmére. További információk az %1$sunkban.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Adatvédelmi nyilatkozat</string>
     <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$S is replaced by an active link, using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">A böngésző fejlesztése érdekében, a Firefox diagnosztikai és interakciós adatokat küld a Mozillának. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Kezelés</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Segítsen a Firefox növekedésében</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Ha megosztja hogyan fedezte fel a Firefoxot, és hogy használja, akkor segít abban, hogy még több emberrel megismertessük a böngészőnket.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Osszon meg minimális mennyiségű adatot a Mozilla marketingtechnológiai partnereivel. Ezek az adatok sosem kerülnek eladásra, és sosem használják fel hirdetések megjelenítésére.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Hogyan használjuk az adatokat</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Megerősítés, és a böngészés megkezdése</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Válassza ki az eszköztár elhelyezését</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -815,6 +833,8 @@
     <string name="preferences_show_voice_search">Hangalapú keresés megjelenítése</string>
     <!-- Preference title for switch preference to show search suggestions also in private mode -->
     <string name="preferences_show_search_suggestions_in_private">Megjelenítés privát munkamenetekben</string>
+    <!-- Preference title for switch preference to show trending search suggestions -->
+    <string name="preferences_show_trending_search_suggestions">Felkapott javaslatok megjelenítése</string>
     <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
     <string name="preferences_show_clipboard_suggestions">Vágólap javaslatok megjelenítése</string>
     <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -1043,19 +1063,24 @@
     <string name="exceptions_empty_message_learn_more_link">További tudnivalók</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Használati és műszaki adatok</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Műszaki és interakciós adatok</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Műszaki és interakciós adatok küldése</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">További tudnivalók</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Adatokat küld a Mozillának a böngésző teljesítményéről, a hardverről, a felhasználásról és az egyéni beállításokról, hogy a %1$s jobb lehessen</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Adatokat küld a Mozillának a böngésző teljesítményéről, a hardverről, a felhasználásról és az egyéni beállításokról, hogy a %1$s jobb lehessen</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Az eszközre, hardverkonfigurációra és a használatra vonatkozó adatok segítenek minket a Firefox funkcióinak, teljesítményének és stabilitásának javításában.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Marketing adatok</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Megosztja az alapvető használati adatokat az Adjusttal, a mobilos marketing szolgáltatónkkal</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Marketing adatok</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Kampány mérési adatai</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Osszon meg információkat a Mozilla marketinges partnereivel arról, hogyan fedezte fel a Firefoxot. Ez segít a Firefox fejlesztésében és egy jobb internet építésében</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Osszon meg információkat a Mozilla marketinges partnereivel arról, hogyan fedezte fel a Firefoxot. Ez segít a Firefox fejlesztésében és egy jobb internet építésében</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Ossza meg a Mozilla marketingtechnológiai partnereivel, hogy miként fedezte fel, és hogyan használja a Firefoxot.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Tudjon meg többet a marketingadatokról</string>
 
@@ -1070,6 +1095,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Ez segít diagnosztizálni és megoldani a böngésző problémáit. A jelentések személyes vagy bizalmas adatokat tartalmazhatnak.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Összeomlás után indításkor automatikusan megosztja az összeomlási adatokat a Mozillával</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Tudjon meg többet a összeomlás-jelentésekről</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Tanulmányok</string>
@@ -1235,7 +1263,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Aktív</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">A %1$s időről időre tanulmányokat telepíthet és futtathat.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">A %1$s időről időre tanulmányokat telepíthet és futtathat.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Próbálja ki a funkciókat és az ötleteket, mielőtt mindenki számára hozzáférhetővé válnak.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Tanulmányok telepítése és futtatása</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">További tudnivalók</string>
 
@@ -1376,8 +1408,12 @@
     <string name="webcompat_reporter_url_error_invalid">Adjon meg egy érvényes webcímet</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Mi hibás? (nem kötelező)</string>
+    <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_label_whats_broken_2">Mi hibás?</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason">Válasszon okot</string>
+    <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_choose_reason_error">Válasszon egy okot</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
     <string name="webcompat_reporter_label_description">Írja le a problémát (nem kötelező)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
@@ -2058,6 +2094,8 @@
     <string name="about_privacy_notice">Adatvédelmi nyilatkozat</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Ismerje meg a jogait</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Felhasználási feltételek</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Licencinformációk</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2524,6 +2562,8 @@
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
 
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Felkapott keresések</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Google keresés</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2689,7 +2729,7 @@
     <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. First parameter is Firefox app name, third parameter is the Fakespot product name. Second & fourth are for clickable texts defined in review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use. -->
     <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">Az „Igen, kipróbálom” kiválasztásával elfogadja a következőket: a %1$s %2$s és a %3$s %4$s.</string>
     <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
-    <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">adatvédelmi nyilatkozatota</string>
+    <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">adatvédelmi nyilatkozat</string>
     <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
     <string name="review_quality_check_contextual_onboarding_terms_use" moz:removedIn="136" tools:ignore="UnusedResources">felhasználási feltételei</string>
     <!-- Text for opt-in button from the review quality check contextual onboarding card. -->
@@ -2964,6 +3004,10 @@
     <string name="download_language_file_dialog_negative_button_text">Mégse</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Biztonságos</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">Nem biztonságos</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Legyen óvatos ezen az oldalon</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2984,6 +3028,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Ha valami nem működik ezen az oldalon, próbálja meg kikapcsolni.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">A védelem KI van kapcsolva. Javasoljuk, hogy kapcsolja be újra.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Blokkolt követők: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">Nem találhatóak nyomkövetők</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Adatvédelmi és biztonsági beállítások</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Blokkolt követők: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[A sütik és oldaladatok eltávolítása a(z) <b>%s</b> webhelyről kijelentkeztetheti a webhelyekről, és törölheti a kosarait.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Törlés</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Mégse</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Sütik és oldaladatok eltávolítva</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Biztonságos kapcsolat</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">A kapcsolat nem biztonságos</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Ellenőrizte: %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3105,6 +3180,13 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Engedélyezendő hibakeresési területi beállítások</string>
 
+    <!-- The title of the header for the section for managing addresses. -->
+    <string name="debug_drawer_addresses_management_header">Címek kezelése</string>
+    <!-- The title of the button in the debug drawer for adding a new address. -->
+    <string name="debug_drawer_add_new_address">Új cím hozzáadása a kijelölt területi beállításhoz</string>
+    <!-- The title of the button for deleting in the debug drawer all addresses. -->
+    <string name="debug_drawer_delete_all_addresses">Összes cím törlése</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The title of the CFR Tools feature in the Debug Drawer -->
     <string name="debug_drawer_cfr_tools_title">CFR eszközök</string>
@@ -3157,4 +3239,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Frissítsen március 14. előtt, hogy továbbra is használhassa a kiegészítőket és az egyéb funkciókat.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Néhány funkció holnaptól nem fog működni.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Rejtett szöveg megjelenítése</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Szöveg törlése</string>
 </resources>

@@ -641,6 +641,9 @@ class CodeBlock {
     return pc >= base() && pc < (base() + length());
   }
 
+  const CodeRange& codeRange(uint32_t funcIndex) const {
+    return codeRanges[funcToCodeRange[funcIndex]];
+  }
   const CodeRange& codeRange(const FuncExport& funcExport) const {
     return codeRanges[funcToCodeRange[funcExport.funcIndex()]];
   }
@@ -892,7 +895,7 @@ class JumpTables {
     // Make sure that write is atomic; see comment in wasm::Module::finishTier2
     // to that effect.
     MOZ_ASSERT(i < numFuncs_);
-    jit_.get()[i] = target;
+    __atomic_store_n(&jit_.get()[i], target, __ATOMIC_RELAXED);
   }
   void setJitEntryIfNull(size_t i, void* target) const {
     // Make sure that compare-and-write is atomic; see comment in
@@ -900,18 +903,21 @@ class JumpTables {
     MOZ_ASSERT(i < numFuncs_);
     void* expected = nullptr;
     (void)__atomic_compare_exchange_n(&jit_.get()[i], &expected, target,
-                                      /*weak=*/false, __ATOMIC_RELAXED,
-                                      __ATOMIC_RELAXED);
+                                      /*weak=*/false,
+                                      /*success_memorder=*/__ATOMIC_RELAXED,
+                                      /*failure_memorder=*/__ATOMIC_RELAXED);
   }
   void** getAddressOfJitEntry(size_t i) const {
     MOZ_ASSERT(i < numFuncs_);
     MOZ_ASSERT(jit_.get()[i]);
     return &jit_.get()[i];
   }
-  size_t funcIndexFromJitEntry(void** target) const {
+  uint32_t funcIndexFromJitEntry(void** target) const {
     MOZ_ASSERT(target >= &jit_.get()[0]);
     MOZ_ASSERT(target <= &(jit_.get()[numFuncs_ - 1]));
-    return (intptr_t*)target - (intptr_t*)&jit_.get()[0];
+    size_t index = (intptr_t*)target - (intptr_t*)&jit_.get()[0];
+    MOZ_ASSERT(index < wasm::MaxFuncs);
+    return (uint32_t)index;
   }
 
   void setTieringEntry(size_t i, void* target) const {
@@ -1090,7 +1096,9 @@ class Code : public ShareableBase<Code> {
   void** getAddressOfJitEntry(size_t i) const {
     return jumpTables_.getAddressOfJitEntry(i);
   }
-  uint32_t getFuncIndex(JSFunction* fun) const;
+  uint32_t funcIndexFromJitEntry(void** jitEntry) const {
+    return jumpTables_.funcIndexFromJitEntry(jitEntry);
+  }
 
   uint8_t* trapCode() const { return trapCode_; }
 
@@ -1144,10 +1152,20 @@ class Code : public ShareableBase<Code> {
     return completeTierCodeBlock(bestCompleteTier());
   }
   bool funcHasTier(uint32_t funcIndex, Tier tier) const {
+    if (funcIndex < funcImports_.length()) {
+      return false;
+    }
     return funcCodeBlock(funcIndex).tier() == tier;
   }
   Tier funcTier(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= funcImports_.length());
     return funcCodeBlock(funcIndex).tier();
+  }
+  void funcCodeRange(uint32_t funcIndex, const wasm::CodeRange** range,
+                     uint8_t** codeBase) const {
+    const CodeBlock& codeBlock = funcCodeBlock(funcIndex);
+    *range = &codeBlock.codeRanges[codeBlock.funcToCodeRange[funcIndex]];
+    *codeBase = codeBlock.segment->base();
   }
 
   const LinkData* codeBlockLinkData(const CodeBlock& block) const;
@@ -1200,9 +1218,6 @@ class Code : public ShareableBase<Code> {
     }
     return block->lookupUnwindInfo(pc);
   }
-  // Search through this code to find which tier a code range is from. Returns
-  // false if this code range was not found.
-  bool lookupFunctionTier(const CodeRange* codeRange, Tier* tier) const;
 
   // To save memory, profilingLabels_ are generated lazily when profiling mode
   // is enabled.

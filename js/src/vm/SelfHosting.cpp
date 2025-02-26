@@ -46,6 +46,7 @@
 #include "builtin/RegExp.h"
 #include "builtin/SelfHostingDefines.h"
 #include "builtin/String.h"
+#include "builtin/WeakMapObject.h"
 #ifdef ENABLE_RECORD_TUPLE
 #  include "builtin/TupleObject.h"
 #endif
@@ -87,6 +88,7 @@
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
+#include "vm/Logging.h"
 #include "vm/PIC.h"
 #include "vm/PlainObject.h"  // js::PlainObject
 #include "vm/Realm.h"
@@ -1017,44 +1019,6 @@ static bool intrinsic_SharedArrayBuffersMemorySame(JSContext* cx, unsigned argc,
   }
 
   args.rval().setBoolean(lhs->rawBufferObject() == rhs->rawBufferObject());
-  return true;
-}
-
-static bool intrinsic_GetTypedArrayKind(JSContext* cx, unsigned argc,
-                                        Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 1);
-  MOZ_ASSERT(args[0].isObject());
-
-  static_assert(TYPEDARRAY_KIND_INT8 == Scalar::Type::Int8,
-                "TYPEDARRAY_KIND_INT8 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_UINT8 == Scalar::Type::Uint8,
-                "TYPEDARRAY_KIND_UINT8 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_INT16 == Scalar::Type::Int16,
-                "TYPEDARRAY_KIND_INT16 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_UINT16 == Scalar::Type::Uint16,
-                "TYPEDARRAY_KIND_UINT16 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_INT32 == Scalar::Type::Int32,
-                "TYPEDARRAY_KIND_INT32 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_UINT32 == Scalar::Type::Uint32,
-                "TYPEDARRAY_KIND_UINT32 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_FLOAT32 == Scalar::Type::Float32,
-                "TYPEDARRAY_KIND_FLOAT32 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_FLOAT64 == Scalar::Type::Float64,
-                "TYPEDARRAY_KIND_FLOAT64 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_UINT8CLAMPED == Scalar::Type::Uint8Clamped,
-                "TYPEDARRAY_KIND_UINT8CLAMPED doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_BIGINT64 == Scalar::Type::BigInt64,
-                "TYPEDARRAY_KIND_BIGINT64 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_BIGUINT64 == Scalar::Type::BigUint64,
-                "TYPEDARRAY_KIND_BIGUINT64 doesn't match the scalar type");
-  static_assert(TYPEDARRAY_KIND_FLOAT16 == Scalar::Type::Float16,
-                "TYPEDARRAY_KIND_FLOAT16 doesn't match the scalar type");
-
-  JSObject* obj = &args[0].toObject();
-  Scalar::Type type = JS_GetArrayBufferViewType(obj);
-
-  args.rval().setInt32(static_cast<int32_t>(type));
   return true;
 }
 
@@ -2012,6 +1976,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
           CallNonGenericSelfhostedMethod<Is<StringIteratorObject>>, 2, 0),
     JS_FN("CallTypedArrayMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<TypedArrayObject>>, 2, 0),
+    JS_FN("CallWeakMapMethodIfWrapped",
+          CallNonGenericSelfhostedMethod<Is<WeakMapObject>>, 2, 0),
     JS_FN("CallWrapForValidIteratorMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<WrapForValidIteratorObject>>, 2, 0),
     JS_FN("ConstructFunction", intrinsic_ConstructFunction, 2, 0),
@@ -2047,7 +2013,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("GetOwnPropertyDescriptorToArray", GetOwnPropertyDescriptorToArray, 2,
           0),
     JS_FN("GetStringDataProperty", intrinsic_GetStringDataProperty, 2, 0),
-    JS_FN("GetTypedArrayKind", intrinsic_GetTypedArrayKind, 1, 0),
     JS_INLINABLE_FN("GuardToArrayBuffer",
                     intrinsic_GuardToBuiltin<ArrayBufferObject>, 1, 0,
                     IntrinsicGuardToArrayBuffer),
@@ -2089,6 +2054,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("GuardToStringIterator",
                     intrinsic_GuardToBuiltin<StringIteratorObject>, 1, 0,
                     IntrinsicGuardToStringIterator),
+    JS_FN("GuardToWeakMapObject", intrinsic_GuardToBuiltin<WeakMapObject>, 1,
+          0),
     JS_INLINABLE_FN("GuardToWrapForValidIterator",
                     intrinsic_GuardToBuiltin<WrapForValidIteratorObject>, 1, 0,
                     IntrinsicGuardToWrapForValidIterator),
@@ -2381,6 +2348,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("std_Function_apply", fun_apply, 2, 0),
     JS_FN("std_Map_entries", MapObject::entries, 0, 0),
     JS_FN("std_Map_get", MapObject::get, 1, 0),
+    JS_FN("std_Map_has", MapObject::has, 1, 0),
     JS_FN("std_Map_set", MapObject::set, 2, 0),
     JS_INLINABLE_FN("std_Math_abs", math_abs, 1, 0, MathAbs),
     JS_INLINABLE_FN("std_Math_floor", math_floor, 1, 0, MathFloor),
@@ -2421,6 +2389,9 @@ static const JSFunctionSpec intrinsic_functions[] = {
 #endif
     JS_TRAMPOLINE_FN("std_TypedArray_sort", TypedArrayObject::sort, 1, 0,
                      TypedArraySort),
+    JS_FN("std_WeakMap_get", WeakMapObject::get, 1, 0),
+    JS_FN("std_WeakMap_has", WeakMapObject::has, 1, 0),
+    JS_FN("std_WeakMap_set", WeakMapObject::set, 2, 0),
 
     JS_FS_END,
 };
@@ -2648,6 +2619,7 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
     selfHostStencil_ = parentRuntime->selfHostStencil_;
     return true;
   }
+  auto start = mozilla::TimeStamp::Now();
 
   // Variables used to instantiate scripts.
   CompileOptions options(cx);
@@ -2685,6 +2657,10 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
       // Move it to the runtime.
       setSelfHostingStencil(&input, std::move(stencil));
 
+      auto end = mozilla::TimeStamp::Now();
+      JS_LOG(startup, Info,
+             "Used XDR for process self-hosted startup. Took %f us",
+             (end - start).ToMicroseconds());
       return true;
     }
   }
@@ -2722,8 +2698,10 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
     return false;
   }
 
+  mozilla::TimeDuration xdrDuration;
   // Serialize the stencil to XDR.
   if (xdrWriter) {
+    auto encodeStart = mozilla::TimeStamp::Now();
     JS::TranscodeBuffer xdrBuffer;
     JS::TranscodeResult result = js::EncodeStencil(cx, stencil, xdrBuffer);
     if (result != JS::TranscodeResult::Ok) {
@@ -2734,6 +2712,10 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
     if (!xdrWriter(cx, xdrBuffer)) {
       return false;
     }
+    auto encodeEnd = mozilla::TimeStamp::Now();
+    xdrDuration = (encodeEnd - encodeStart);
+    JS_LOG(startup, Info, "Saved XDR Buffer. Took %f us",
+           xdrDuration.ToMicroseconds());
   }
 
   MOZ_ASSERT(input->atomCache.empty());
@@ -2743,6 +2725,11 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
   // Move it to the runtime.
   setSelfHostingStencil(&input, std::move(stencil));
 
+  auto end = mozilla::TimeStamp::Now();
+  JS_LOG(startup, Info,
+         "Used source text for process self-hosted startup. Took %f us (%f us "
+         "XDR encode)",
+         (end - start).ToMicroseconds(), xdrDuration.ToMicroseconds());
   return true;
 }
 

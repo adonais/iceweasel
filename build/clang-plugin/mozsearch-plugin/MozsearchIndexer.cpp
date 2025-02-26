@@ -1271,6 +1271,7 @@ public:
     const ASTRecordLayout &Layout = C.getASTRecordLayout(decl);
 
     J.attribute("sizeBytes", Layout.getSize().getQuantity());
+    J.attribute("alignmentBytes", Layout.getAlignment().getQuantity());
 
     emitBindingAttributes(J, *decl);
 
@@ -1410,7 +1411,11 @@ public:
 
         J.attribute("begin",
                     unsigned(localOffsetBits - C.toBits(localOffsetBytes)));
+#if CLANG_VERSION_MAJOR < 20
         J.attribute("width", Field.getBitWidthValue(C));
+#else
+        J.attribute("width", Field.getBitWidthValue());
+#endif
 
         J.objectEnd();
         J.attributeEnd();

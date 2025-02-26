@@ -299,7 +299,6 @@ const rollouts = [
     // Bug 877389 - Gradually migrate from Cu.reportError to console.error.
     // Enable these as we fix more areas.
     files: [
-      "dom/push/test/mockpushserviceparent.js",
       "browser/components/extensions/**",
       "toolkit/components/extensions/**",
       "toolkit/mozapps/extensions/**",
@@ -319,7 +318,6 @@ const rollouts = [
       "browser/components/aboutwelcome/**",
       "browser/components/asrouter/**",
       "browser/components/attribution/**",
-      "browser/components/customizableui/**",
       "browser/components/downloads/**",
       "browser/components/newtab/**",
       "browser/components/originattributes/test/browser/**",
@@ -1897,25 +1895,6 @@ const rollouts = [
     ],
     rules: {
       "@microsoft/sdl/no-insecure-url": "off",
-    },
-  },
-  {
-    files: [
-      // Tests specific to JSM
-      "dom/encoding/test/test_stringencoding.xhtml",
-      "dom/url/tests/test_bug883784.xhtml",
-      "dom/url/tests/test_url.xhtml",
-      "dom/url/tests/test_worker_url.xhtml",
-      "dom/workers/test/test_chromeWorkerJSM.xhtml",
-      "js/xpconnect/tests/browser/browser_import_mapped_jsm.js",
-      "js/xpconnect/tests/chrome/test_chrometoSource.xhtml",
-      "js/xpconnect/tests/chrome/test_expandosharing.xhtml",
-      "js/xpconnect/tests/chrome/test_xrayic.xhtml",
-      // Code that can't be cleaned until we're ready to remove the old loader.
-      "js/xpconnect/loader/XPCOMUtils.sys.mjs",
-    ],
-    rules: {
-      "mozilla/reject-chromeutils-import": "off",
     },
   },
   {

@@ -24,6 +24,7 @@ export default {
 panel-list-item-one = Item One
 panel-list-item-two = Item Two
 panel-list-item-three = Item Three
+panel-list-disabled = Disabled
 panel-list-checked = Checked
 panel-list-badged = Badged, look at me
 panel-list-passwords = Passwords
@@ -60,11 +61,13 @@ const Template = ({
     panel-item[icon="settings"]::part(button) {
       background-image: url("chrome://global/skin/icons/settings.svg");
     }
-    button {
+    moz-button {
       position: absolute;
+    }
+    moz-button::part(button) {
       background-image: url("chrome://global/skin/icons/more.svg");
     }
-    button[wide] {
+    moz-button[wide] {
       width: 400px !important;
     }
     .end {
@@ -78,30 +81,33 @@ const Template = ({
   ${isOpen
     ? ""
     : html`
-        <button
-          class="ghost-button icon-button"
+        <moz-button
+          type="icon ghost"
           @click=${openMenu}
           @mousedown=${openMenu}
           ?wide="${wideAnchor}"
-        ></button>
-        <button
-          class="ghost-button icon-button end"
+        ></moz-button>
+        <moz-button
+          type="icon ghost"
+          class="end"
           @click=${openMenu}
           @mousedown=${openMenu}
           ?wide="${wideAnchor}"
-        ></button>
-        <button
-          class="ghost-button icon-button bottom"
+        ></moz-button>
+        <moz-button
+          type="icon ghost"
+          class="bottom"
           @click=${openMenu}
           @mousedown=${openMenu}
           ?wide="${wideAnchor}"
-        ></button>
-        <button
-          class="ghost-button icon-button bottom end"
+        ></moz-button>
+        <moz-button
+          type="icon ghost"
+          class="bottom end"
           @click=${openMenu}
           @mousedown=${openMenu}
           ?wide="${wideAnchor}"
-        ></button>
+        ></moz-button>
       `}
   <panel-list
     ?stay-open=${isOpen}
@@ -118,6 +124,7 @@ const Template = ({
             <panel-item
               icon=${item.icon ?? ""}
               ?checked=${item.checked}
+              ?disabled=${item.disabled}
               type=${ifDefined(item.checked ? "checkbox" : undefined)}
               ?badged=${item.badged}
               data-l10n-id=${item.l10nId ?? item}
@@ -148,6 +155,7 @@ Simple.args = {
     { l10nId: "panel-list-item-two" },
     "panel-list-item-three",
     "<hr>",
+    { l10nId: "panel-list-disabled", disabled: true },
     { l10nId: "panel-list-checked", checked: true },
     { l10nId: "panel-list-badged", badged: true, icon: "settings" },
   ],

@@ -16,7 +16,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IgnoreLists: "resource://gre/modules/IgnoreLists.sys.mjs",
   loadAndParseOpenSearchEngine:
     "resource://gre/modules/OpenSearchLoader.sys.mjs",
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OpenSearchEngine: "resource://gre/modules/OpenSearchEngine.sys.mjs",
   PolicySearchEngine: "resource://gre/modules/PolicySearchEngine.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -46,7 +45,9 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 /**
+ * @typedef {import("SearchEngine.sys.mjs").SearchEngine} SearchEngine
  * @typedef {import("SearchEngineSelector.sys.mjs").RefinedConfig} RefinedConfig
+ * @typedef {import("SearchEngineSelector.sys.mjs").SearchEngineSelector} SearchEngineSelector
  */
 
 /**
@@ -119,13 +120,19 @@ const REASON_CHANGE_MAP = new Map([
   [Ci.nsISearchService.CHANGE_REASON_UITOUR, "uitour"],
   // The engine updated.
   [Ci.nsISearchService.CHANGE_REASON_ENGINE_UPDATE, "engine-update"],
+  // When the private default UI is enabled (e.g. via toggling the preference
+  // when an experiment is run).
+  [
+    Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_PREF_ENABLED,
+    "user_private_pref_enabled",
+  ],
 ]);
 
 /**
  * The ParseSubmissionResult contains getter methods that return attributes
  * about the parsed submission url.
  *
- * @implements {nsIParseSubmissionResult}
+ * @implements {nsISearchParseSubmissionResult}
  */
 class ParseSubmissionResult {
   constructor(engine, terms, termsParameterName) {
@@ -398,7 +405,7 @@ export class SearchService {
   }
 
   async getVisibleEngines() {
-    await this.init(true);
+    await this.init();
     lazy.logConsole.debug("getVisibleEngines: getting all visible engines");
     return this.#sortedVisibleEngines;
   }
@@ -515,7 +522,7 @@ export class SearchService {
    * Test only variable to indicate an error should occur during
    * search service initialization.
    *
-   * @type {string}
+   * @type {{type : string, message: string}}
    */
   errorToThrowInTest = { type: null, message: null };
 
@@ -1327,6 +1334,19 @@ export class SearchService {
       lazy.SearchUtils.BROWSER_SEARCH_PREF +
         "separatePrivateDefault.urlbarResult.enabled",
       false
+      // No need to reload engines, as this only affects the Urlbar result list.
+    );
+
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_experimentPrefValue",
+      lazy.SearchUtils.BROWSER_SEARCH_PREF + "experiment",
+      "",
+      () => {
+        Services.search.wrappedJSObject._maybeReloadEngines(
+          Ci.nsISearchService.CHANGE_REASON_EXPERIMENT
+        );
+      }
     );
   }
 
@@ -1448,13 +1468,6 @@ export class SearchService {
    *
    */
   #doPostInitWork() {
-    // It is possible that Nimbus could have called onUpdate before
-    // we started listening, so do a check on startup.
-    Services.tm.dispatchToMainThread(async () => {
-      await lazy.NimbusFeatures.searchConfiguration.ready();
-      this.#checkNimbusPrefs(true);
-    });
-
     this.#maybeStartOpenSearchUpdateTimer();
 
     if (this.#startupRemovedExtensions.size) {
@@ -1551,7 +1564,7 @@ export class SearchService {
   /**
    * Determines if a given engine matches the ignorelists or not.
    *
-   * @param {Engine} engine
+   * @param {SearchEngine} engine
    *   The engine to check against the ignorelists.
    * @returns {boolean}
    *   Returns true if the engine matches a ignorelists entry.
@@ -1867,7 +1880,7 @@ export class SearchService {
    *
    * @param {object} settings
    *   The loaded settings for the user.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *   Returns true if the default engine was changed.
    */
   async #checkOpenSearchOverrides(settings) {
@@ -1936,7 +1949,7 @@ export class SearchService {
    * This is prefixed with _ rather than # because it is
    * called in test_reload_engines.js
    *
-   * @param {integer} changeReason
+   * @param {number} changeReason
    *   The reason reload engines is being called, one of
    *   Ci.nsISearchService.CHANGE_REASON*
    */
@@ -1999,7 +2012,7 @@ export class SearchService {
    *
    * @param {object} settings
    *   The user's current saved settings.
-   * @param {integer} changeReason
+   * @param {number} changeReason
    *   The reason reload engines is being called, one of
    *   Ci.nsISearchService.CHANGE_REASON*
    */
@@ -2241,7 +2254,7 @@ export class SearchService {
    *
    * @param {SearchEngine} prevCurrentEngine
    *   The previous current engine to check for override.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *   True if an engine was restored.
    */
   async #maybeRestoreEngineFromOverride(prevCurrentEngine) {
@@ -2290,7 +2303,7 @@ export class SearchService {
   /**
    * Remove any engines that have been flagged for removal during reloadEngines.
    *
-   * @param {SearchEngine[]} engines
+   * @param {Map<string, object>|null} engines
    *   The list of engines to check.
    */
   async #maybeRemoveEnginesAfterReload(engines) {
@@ -2371,7 +2384,7 @@ export class SearchService {
    *
    * @param {object} [settings]
    *   The saved settings for the user.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *   Returns true if the default engine was changed.
    */
   async #loadEnginesFromSettings(settings) {
@@ -2500,7 +2513,7 @@ export class SearchService {
    *
    * @param {SearchEngine} engine
    *   The search engine to check to see if it should override an existing engine.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *  True if the default engine was changed.
    */
   async #maybeApplyOverride(engine) {
@@ -2540,8 +2553,7 @@ export class SearchService {
       locale: Services.locale.appLocaleAsBCP47,
       region: lazy.Region.home || "unknown",
       channel: lazy.SearchUtils.MODIFIED_APP_CHANNEL,
-      experiment:
-        lazy.NimbusFeatures.searchConfiguration.getVariable("experiment") ?? "",
+      experiment: this._experimentPrefValue,
       distroID: lazy.SearchUtils.distroID ?? "",
     };
 
@@ -2949,7 +2961,9 @@ export class SearchService {
    * - If the default from the configuration is the one being removed, unhide
    *   the first general search engine, or first visible engine.
    *
-   * @param {boolean} privateMode
+   * @param {object} options
+   *   The options object.
+   * @param {boolean} options.privateMode
    *   If true, returns the default engine for private browsing mode, otherwise
    *   the default engine for the normal mode. Note, this function does not
    *   check the "separatePrivateDefault" preference - that is up to the caller.
@@ -3095,10 +3109,7 @@ export class SearchService {
     const appDefaultEngine = privateMode
       ? this.appPrivateDefaultEngine
       : this.appDefaultEngine;
-    if (
-      newCurrentEngine == appDefaultEngine &&
-      !lazy.NimbusFeatures.searchConfiguration.getVariable("experiment")
-    ) {
+    if (newCurrentEngine == appDefaultEngine && !this._experimentPrefValue) {
       newId = "";
     }
 
@@ -3148,27 +3159,24 @@ export class SearchService {
         lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
     }
-    // Always notify about the change of status of private default if the user
-    // toggled the UI.
-    if (
-      prefName ==
-      lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault"
-    ) {
-      if (!previousValue && currentValue) {
-        this.#recordDefaultChangedEvent(
-          true,
-          null,
-          this._getEngineDefault(true),
-          Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_SPLIT
-        );
-      } else {
-        this.#recordDefaultChangedEvent(
-          true,
-          this._getEngineDefault(true),
-          null,
-          Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_SPLIT
-        );
-      }
+
+    let eventReason = prefName.endsWith("separatePrivateDefault.ui.enabled")
+      ? Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_PREF_ENABLED
+      : Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_SPLIT;
+    if (!previousValue && currentValue) {
+      this.#recordDefaultChangedEvent(
+        true,
+        null,
+        this._getEngineDefault(true),
+        eventReason
+      );
+    } else {
+      this.#recordDefaultChangedEvent(
+        true,
+        this._getEngineDefault(true),
+        null,
+        eventReason
+      );
     }
     // Update the telemetry data.
     this.#recordTelemetryData();
@@ -3257,7 +3265,7 @@ export class SearchService {
    *   The previously default search engine.
    * @param {SearchEngine} [newEngine]
    *   The new default search engine.
-   * @param {string} changeSource
+   * @param {number} changeSource
    *   The source of the change of default.
    */
   #recordDefaultChangedEvent(
@@ -3415,80 +3423,6 @@ export class SearchService {
     }
   }
 
-  #nimbusSearchUpdatedFun = null;
-
-  async #nimbusSearchUpdated() {
-    this.#checkNimbusPrefs();
-    Services.search.wrappedJSObject._maybeReloadEngines(
-      Ci.nsISearchService.CHANGE_REASON_EXPERIMENT
-    );
-  }
-
-  /**
-   * Check the prefs are correctly updated for users enrolled in a Nimbus experiment.
-   *
-   * @param {boolean} isStartup
-   *   Whether this function was called as part of the startup flow.
-   */
-  #checkNimbusPrefs(isStartup = false) {
-    // If we are in an experiment we may need to check the status on startup, otherwise
-    // ignore the call to check on startup so we do not reset users prefs when they are
-    // not an experiment.
-    if (
-      isStartup &&
-      !lazy.NimbusFeatures.searchConfiguration.getVariable("experiment")
-    ) {
-      return;
-    }
-    let nimbusPrivateDefaultUIEnabled =
-      lazy.NimbusFeatures.searchConfiguration.getVariable(
-        "seperatePrivateDefaultUIEnabled"
-      );
-    let nimbusPrivateDefaultUrlbarResultEnabled =
-      lazy.NimbusFeatures.searchConfiguration.getVariable(
-        "seperatePrivateDefaultUrlbarResultEnabled"
-      );
-
-    let previousPrivateDefault = this.defaultPrivateEngine;
-    let uiWasEnabled = this._separatePrivateDefaultEnabledPrefValue;
-    if (
-      this._separatePrivateDefaultEnabledPrefValue !=
-      nimbusPrivateDefaultUIEnabled
-    ) {
-      Services.prefs.setBoolPref(
-        `${lazy.SearchUtils.BROWSER_SEARCH_PREF}separatePrivateDefault.ui.enabled`,
-        nimbusPrivateDefaultUIEnabled
-      );
-      let newPrivateDefault = this.defaultPrivateEngine;
-      if (previousPrivateDefault != newPrivateDefault) {
-        if (!uiWasEnabled) {
-          this.#recordDefaultChangedEvent(
-            true,
-            null,
-            newPrivateDefault,
-            Ci.nsISearchService.CHANGE_REASON_EXPERIMENT
-          );
-        } else {
-          this.#recordDefaultChangedEvent(
-            true,
-            previousPrivateDefault,
-            null,
-            Ci.nsISearchService.CHANGE_REASON_EXPERIMENT
-          );
-        }
-      }
-    }
-    if (
-      this.separatePrivateDefaultUrlbarResultEnabled !=
-      nimbusPrivateDefaultUrlbarResultEnabled
-    ) {
-      Services.prefs.setBoolPref(
-        `${lazy.SearchUtils.BROWSER_SEARCH_PREF}separatePrivateDefault.urlbarResult.enabled`,
-        nimbusPrivateDefaultUrlbarResultEnabled
-      );
-    }
-  }
-
   #addObservers() {
     if (this.#observersAdded) {
       // There might be a race between synchronous and asynchronous
@@ -3496,11 +3430,6 @@ export class SearchService {
       return;
     }
     this.#observersAdded = true;
-
-    this.#nimbusSearchUpdatedFun = this.#nimbusSearchUpdated.bind(this);
-    lazy.NimbusFeatures.searchConfiguration.onUpdate(
-      this.#nimbusSearchUpdatedFun
-    );
 
     Services.obs.addObserver(this, lazy.SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.addObserver(this, QUIT_APPLICATION_TOPIC);
@@ -3562,10 +3491,6 @@ export class SearchService {
     }
 
     this._settings.removeObservers();
-
-    lazy.NimbusFeatures.searchConfiguration.offUpdate(
-      this.#nimbusSearchUpdatedFun
-    );
 
     Services.obs.removeObserver(this, lazy.SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);
@@ -3756,7 +3681,7 @@ class SearchDefaultOverrideAllowlistHandler {
    *   app provided search engine.
    * @param {string} appProvidedEngineId
    *   The id of the search engine that will be overriden.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *   Returns true if the search engine extension may override the app provided
    *   instance.
    */
@@ -3791,7 +3716,7 @@ class SearchDefaultOverrideAllowlistHandler {
    *   The existing search engine.
    * @param {string} appProvidedEngineId
    *   The id of the search engine that will be overriden.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *   Returns true if the existing search engine is allowed to override the
    *   app provided instance.
    */
@@ -3832,7 +3757,7 @@ class SearchDefaultOverrideAllowlistHandler {
    * Note that this may cause a network check of the certificate, but that
    * should generally be quick.
    *
-   * @returns {Array}
+   * @returns {Promise<object[]>}
    *   An array of objects in the database, or an empty array if none
    *   could be obtained.
    */

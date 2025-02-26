@@ -9,6 +9,7 @@
 #include "mozilla/Casting.h"
 
 #include "gc/GC.h"
+#include "jit/BaselineCompileTask.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CacheIRCompiler.h"
@@ -66,23 +67,23 @@ class PlainObject;
 
 namespace jit {
 
-BaselineCompilerHandler::BaselineCompilerHandler(
-    MacroAssembler& masm, TempAllocator& alloc, JSScript* script,
-    JSObject* globalLexical, JSObject* globalThis, uint32_t baseWarmUpThreshold)
-    : frame_(script, masm),
+BaselineCompilerHandler::BaselineCompilerHandler(MacroAssembler& masm,
+                                                 TempAllocator& alloc,
+                                                 BaselineSnapshot* snapshot)
+    : frame_(snapshot->script(), masm),
       alloc_(alloc),
-      analysis_(alloc, script),
+      analysis_(alloc, snapshot->script()),
 #ifdef DEBUG
       masm_(masm),
 #endif
-      script_(script),
-      pc_(script->code()),
-      globalLexicalEnvironment_(globalLexical),
-      globalThis_(globalThis),
+      script_(snapshot->script()),
+      pc_(snapshot->script()->code()),
+      globalLexicalEnvironment_(snapshot->globalLexical()),
+      globalThis_(snapshot->globalThis()),
       icEntryIndex_(0),
-      baseWarmUpThreshold_(baseWarmUpThreshold),
-      compileDebugInstrumentation_(script->isDebuggee()),
-      ionCompileable_(true) {
+      baseWarmUpThreshold_(snapshot->baseWarmUpThreshold()),
+      compileDebugInstrumentation_(snapshot->compileDebugInstrumentation()),
+      ionCompileable_(snapshot->isIonCompileable()) {
 }
 
 BaselineInterpreterHandler::BaselineInterpreterHandler(MacroAssembler& masm)
@@ -99,14 +100,12 @@ BaselineCodeGen<Handler>::BaselineCodeGen(TempAllocator& alloc,
       masm(masmArg),
       frame(handler.frame()) {}
 
-BaselineCompiler::BaselineCompiler(JSContext* cx, TempAllocator& alloc,
-                                   MacroAssembler& masm, JSScript* script,
-                                   JSObject* globalLexical,
-                                   JSObject* globalThis,
-                                   uint32_t baseWarmUpThreshold)
-    : BaselineCodeGen(alloc, masm, CompileRuntime::get(cx->runtime()),
-                      /* HandlerArgs = */ alloc, script, globalLexical,
-                      globalThis, baseWarmUpThreshold) {
+BaselineCompiler::BaselineCompiler(TempAllocator& alloc,
+                                   CompileRuntime* runtime,
+                                   MacroAssembler& masm,
+                                   BaselineSnapshot* snapshot)
+    : BaselineCodeGen(alloc, masm, runtime,
+                      /* HandlerArgs = */ alloc, snapshot) {
 #ifdef JS_CODEGEN_NONE
   MOZ_CRASH();
 #endif
@@ -200,7 +199,7 @@ bool BaselineInterpreterHandler::addDebugInstrumentationOffset(
 }
 
 /*static*/
-bool BaselineCompiler::prepareToCompile(JSContext* cx, Handle<JSScript*> script,
+bool BaselineCompiler::PrepareToCompile(JSContext* cx, Handle<JSScript*> script,
                                         bool compileDebugInstrumentation) {
   JitSpew(JitSpew_BaselineScripts, "Baseline compiling script %s:%u:%u (%p)",
           script->filename(), script->lineno(),
@@ -239,13 +238,7 @@ bool BaselineCompiler::prepareToCompile(JSContext* cx, Handle<JSScript*> script,
 }
 
 MethodStatus BaselineCompiler::compile(JSContext* cx) {
-  // Suppress GC during compilation.
-  gc::AutoSuppressGC suppressGC(cx);
-
   Rooted<JSScript*> script(cx, handler.script());
-  if (!prepareToCompile(cx, script, compileDebugInstrumentation())) {
-    return Method_Error;
-  }
 
   JitSpew(JitSpew_Codegen, "# Emitting baseline code for script %s:%u:%u",
           script->filename(), script->lineno(),
@@ -264,6 +257,14 @@ MethodStatus BaselineCompiler::compile(JSContext* cx) {
     return Method_Error;
   }
 
+  return Method_Compiled;
+}
+
+MethodStatus BaselineCompiler::compileOffThread() {
+  handler.setCompilingOffThread();
+  if (!compileImpl()) {
+    return Method_Error;
+  }
   return Method_Compiled;
 }
 
@@ -923,6 +924,12 @@ static void MaybeIncrementCodeCoverageCounter(MacroAssembler& masm,
 
 template <>
 bool BaselineCompilerCodeGen::emitHandleCodeCoverageAtPrologue() {
+  // TSAN disapproves of accessing scriptCounts off-thread.
+  // We don't compile off-thread if the script has scriptCounts.
+  if (handler.compilingOffThread()) {
+    return true;
+  }
+
   // If the main instruction is not a jump target, then we emit the
   // corresponding code coverage counter.
   JSScript* script = handler.script();
@@ -1541,10 +1548,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
   // Do nothing if Ion is already compiling this script off-thread or if Ion has
   // been disabled for this script.
-  masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonCompilingScriptPtr),
-                 &done);
-  masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonDisabledScriptPtr),
-                 &done);
+  masm.branchTestPtr(Assembler::NonZero, scriptReg,
+                     Imm32(CompilingOrDisabledBit), &done);
 
   // Try to compile and/or finish a compilation.
   if (JSOp(*pc) == JSOp::LoopHead) {
@@ -1659,9 +1664,10 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
   Label done;
   masm.branch32(Assembler::BelowOrEqual, countReg,
                 Imm32(JitOptions.baselineJitWarmUpThreshold), &done);
-  masm.branchPtr(Assembler::Equal,
-                 Address(scriptReg, JitScript::offsetOfBaselineScript()),
-                 ImmPtr(BaselineDisabledScriptPtr), &done);
+
+  masm.branchTestPtr(Assembler::NonZero,
+                     Address(scriptReg, JitScript::offsetOfBaselineScript()),
+                     Imm32(CompilingOrDisabledBit), &done);
   {
     prepareVMCall();
 
@@ -3289,6 +3295,10 @@ bool BaselineCompilerCodeGen::tryOptimizeBindUnqualifiedGlobalName() {
   JSScript* script = handler.script();
   MOZ_ASSERT(!script->hasNonSyntacticScope());
 
+  if (handler.compilingOffThread()) {
+    return false;
+  }
+
   GlobalObject* global = &script->global();
   PropertyName* name = script->getName(handler.pc());
   if (JSObject* binding =
@@ -3797,59 +3807,11 @@ bool BaselineCodeGen<Handler>::emit_DelName() {
   return true;
 }
 
-template <>
-bool BaselineCompilerCodeGen::emit_GetImport() {
-  JSScript* script = handler.script();
-  ModuleEnvironmentObject* env = GetModuleEnvironmentForScript(script);
-  MOZ_ASSERT(env);
-
-  jsid id = NameToId(script->getName(handler.pc()));
-  ModuleEnvironmentObject* targetEnv;
-  Maybe<PropertyInfo> prop;
-  MOZ_ALWAYS_TRUE(env->lookupImport(id, &targetEnv, &prop));
-
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_GetImport() {
   frame.syncStack(0);
 
-  uint32_t slot = prop->slot();
-  Register scratch = R0.scratchReg();
-  masm.movePtr(ImmGCPtr(targetEnv), scratch);
-  if (slot < targetEnv->numFixedSlots()) {
-    masm.loadValue(Address(scratch, NativeObject::getFixedSlotOffset(slot)),
-                   R0);
-  } else {
-    masm.loadPtr(Address(scratch, NativeObject::offsetOfSlots()), scratch);
-    masm.loadValue(
-        Address(scratch, (slot - targetEnv->numFixedSlots()) * sizeof(Value)),
-        R0);
-  }
-
-  // Imports are initialized by this point except in rare circumstances, so
-  // don't emit a check unless we have to.
-  if (targetEnv->getSlot(slot).isMagic(JS_UNINITIALIZED_LEXICAL)) {
-    if (!emitUninitializedLexicalCheck(R0)) {
-      return false;
-    }
-  }
-
-  frame.push(R0);
-  return true;
-}
-
-template <>
-bool BaselineInterpreterCodeGen::emit_GetImport() {
-  frame.syncStack(0);
-
-  masm.loadPtr(frame.addressOfEnvironmentChain(), R0.scratchReg());
-
-  prepareVMCall();
-
-  pushBytecodePCArg();
-  pushScriptArg();
-  pushArg(R0.scratchReg());
-
-  using Fn = bool (*)(JSContext*, HandleObject, HandleScript, jsbytecode*,
-                      MutableHandleValue);
-  if (!callVM<Fn, GetImportOperation>()) {
+  if (!emitNextIC()) {
     return false;
   }
 
@@ -5975,7 +5937,7 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
                                                       Register scratch) {
   // Resume in either the BaselineScript (if present) or Baseline Interpreter.
 
-  static_assert(BaselineDisabledScript == 0x1,
+  static_assert(CompilingScript == 0x3,
                 "Comparison below requires specific sentinel encoding");
 
   // Initialize the icScript slot in the baseline frame.
@@ -5989,7 +5951,7 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
   masm.loadJitScript(script, scratch);
   masm.loadPtr(Address(scratch, JitScript::offsetOfBaselineScript()), scratch);
   masm.branchPtr(Assembler::BelowOrEqual, scratch,
-                 ImmPtr(BaselineDisabledScriptPtr), &noBaselineScript);
+                 ImmPtr(BaselineCompilingScriptPtr), &noBaselineScript);
 
   masm.load32(Address(scratch, BaselineScript::offsetOfResumeEntriesOffset()),
               script);
@@ -6342,7 +6304,9 @@ bool BaselineCodeGen<Handler>::emit_IsConstructing() {
 
 template <>
 bool BaselineCompilerCodeGen::emit_JumpTarget() {
-  MaybeIncrementCodeCoverageCounter(masm, handler.script(), handler.pc());
+  if (!handler.compilingOffThread()) {
+    MaybeIncrementCodeCoverageCounter(masm, handler.script(), handler.pc());
+  }
   return true;
 }
 

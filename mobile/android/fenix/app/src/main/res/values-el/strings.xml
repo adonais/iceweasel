@@ -339,10 +339,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Κλείσιμο φύλλου μενού εργαλείων</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Κλείσιμο φύλλου μενού προσαρμοσμένων καρτελών</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Προβολή ανάγνωσης, μετάφραση, εκτύπωση, κοινή χρήση, άνοιγμα εφαρμογής</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Προβολή ανάγνωσης, εκτύπωση, κοινή χρήση, άνοιγμα εφαρμογής</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Προβολή ανάγνωσης, μετάφραση, %s, εκτύπωση, κοινή χρήση, άνοιγμα εφαρμογής</string>
@@ -580,28 +576,40 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Οι αναφορές κατάρρευσης μάς επιτρέπουν να διαγνώσουμε και να διορθώσουμε προβλήματα του προγράμματος περιήγησης. Οι αναφορές ενδέχεται να περιλαμβάνουν προσωπικά ή ευαίσθητα δεδομένα.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Μάθετε περισσότερα σχετικά με τις αναφορές καταρρεύσεων</string>
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Μάθετε περισσότερα</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Αποστολή τεχνικών δεδομένων και δεδομένων αλληλεπίδρασης στη Mozilla</string>
     <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Τα δεδομένα σχετικά με τη συσκευή σας, τη διαμόρφωση του υλικού της και τον τρόπο με τον οποίο χρησιμοποιείτε το Firefox συμβάλλουν στη βελτίωση των λειτουργιών, των επιδόσεων και της σταθερότητας για τους χρήστες σε όλο τον κόσμο.</string>
+    <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Τα δεδομένα σχετικά με τη συσκευή σας, τη διαμόρφωση του υλικού της και τον τρόπο με τον οποίο χρησιμοποιείτε το Firefox συμβάλλουν στη βελτίωση των λειτουργιών, των επιδόσεων και της σταθερότητας για όλους.</string>
     <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Μάθετε περισσότερα σχετικά με τη χρήση δεδομένων</string>
+    <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Μάθετε περισσότερα</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Τέλος</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Ακύρωση</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Ακύρωση</string>
 
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Καλώς ορίσατε στο Firefox</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Γρήγορη και ασφαλής περιήγηση στον ιστό.</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header_2">Γρήγορη και ασφαλής περιήγηση στον ιστό</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Αποδοχή και συνέχεια</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Συνεχίζοντας, αποδέχεστε τους %1$s του Firefox.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+    <string name="onboarding_term_of_service_line_one_2">Συνεχίζοντας, συμφωνείτε με τους %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Όρους υπηρεσίας</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Όρους χρήσης του Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Το Firefox νοιάζεται για το απόρρητό σας. Διαβάστε περισσότερα στη %1$s μας.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Το Firefox νοιάζεται για το απόρρητό σας. Μάθετε περισσότερα στη %1$s μας.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Σημείωση απορρήτου</string>
     <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$S is replaced by an active link, using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
@@ -609,6 +617,16 @@
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Διαχείριση</string>
 
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Βοηθήστε μας να αναπτύξουμε το Firefox</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Όταν μοιράζεστε πώς ανακαλύψατε το Firefox και ότι το χρησιμοποιείτε, μας βοηθάτε να γνωρίσουμε το πρόγραμμα περιήγησής μας σε περισσότερους χρήστες.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Μοιραστείτε ελάχιστα δεδομένα με τους συνεργάτες μάρκετινγκ της Mozilla. Αυτά τα δεδομένα δεν πωλούνται ούτε χρησιμοποιούνται για την εμφάνιση διαφημίσεων.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Πώς χρησιμοποιούμε τα δεδομένα</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Επιβεβαίωση και έναρξη περιήγησης</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Επιλογή τοποθεσίας γραμμής εργαλείων</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -1052,24 +1070,29 @@
     <string name="exceptions_empty_message_learn_more_link">Μάθετε περισσότερα</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Δεδομένα χρήσης και τεχνικά δεδομένα</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Τεχνικά δεδομένα και δεδομένα αλληλεπίδρασης</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Αποστολή τεχνικών δεδομένων και δεδομένων αλληλεπίδρασης</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Μάθετε περισσότερα</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Αποστέλλει πληροφορίες επιδόσεων, χρήσης, υλικού συσκευής και εξατομίκευσης του προγράμματος περιήγησης στη Mozilla για βελτίωση του %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Αποστέλλει πληροφορίες επιδόσεων, χρήσης, υλικού συσκευής και εξατομίκευσης του προγράμματος περιήγησης στη Mozilla για βελτίωση του %1$s</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Τα δεδομένα της συσκευής, των ρυθμίσεων υλικού και της χρήσης σας, μάς βοηθούν να βελτιώσουμε τις λειτουργίες, τις επιδόσεις και τη σταθερότητα του Firefox.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Δεδομένα μάρκετινγκ</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Κοινή χρήση βασικών δεδομένων χρήσης με το Adjust, την υπηρεσία μας για μάρκετινγκ κινητών</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Δεδομένα μάρκετινγκ</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Δεδομένα μέτρησης καμπάνιας</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Μοιραστείτε πληροφορίες σχετικά με το πώς ανακαλύψατε το Firefox με τους συνεργάτες μάρκετινγκ της Mozilla. Αυτό μας βοηθά να αναπτύξουμε το Firefox και να δημιουργήσουμε ένα καλύτερο διαδίκτυο.</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Μοιραστείτε πληροφορίες σχετικά με το πώς ανακαλύψατε το Firefox με τους συνεργάτες μάρκετινγκ της Mozilla. Αυτό μας βοηθά να αναπτύξουμε το Firefox και να δημιουργήσουμε ένα καλύτερο διαδίκτυο.</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Μοιραστείτε πώς ανακαλύψατε το Firefox και δηλώστε ότι το χρησιμοποιείτε στους συνεργάτες μάρκετινγκ της Mozilla.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Μάθετε περισσότερα σχετικά με τα δεδομένα μάρκετινγκ</string>
 
     <!-- Preference switch for daily usage ping data collection -->
-    <string name="preferences_daily_usage_ping_title">Ενημέρωση ημερήσιας χρήσης</string>
+    <string name="preferences_daily_usage_ping_title">Ping ημερήσιας χρήσης</string>
     <string name="preferences_daily_usage_ping_description">Αυτό βοηθά τη Mozilla να εκτιμήσει τους ενεργούς χρήστες.</string>
     <string name="preferences_daily_usage_ping_learn_more">Μάθετε περισσότερα για την ενημέρωση ημερήσιας χρήσης</string>
     <!-- Preference switch title for automatically submitting crash reports -->
@@ -1079,6 +1102,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Αυτό μας βοηθάει να διαγνώσουμε και να επιλύσουμε προβλήματα με το πρόγραμμα περιήγησης. Οι αναφορές ενδέχεται να περιέχουν προσωπικά ή ευαίσθητα δεδομένα.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Αυτόματη κοινοποίηση δεδομένων καταρρεύσεων με τη Mozilla κατά την εκκίνηση, μετά από καταρρεύσεις</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Μάθετε περισσότερα σχετικά με τις αναφορές καταρρεύσεων</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Μελέτες</string>
@@ -1243,7 +1269,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Ενεργές</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">Το %1$s ενδέχεται να εγκαθιστά και να εκτελεί περιστασιακά μελέτες.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">Το %1$s ενδέχεται να εγκαθιστά και να εκτελεί περιστασιακά μελέτες.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Δοκιμάστε λειτουργίες και ιδέες πριν διατεθούν σε όλους.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Εγκατάσταση και εκτέλεση μελετών</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Μάθετε περισσότερα</string>
 
@@ -1383,8 +1413,12 @@
     <string name="webcompat_reporter_url_error_invalid">Εισαγάγετε ένα έγκυρο URL</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Τι δεν λειτουργεί; (προαιρετικό)</string>
+    <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_label_whats_broken_2">Τι δεν λειτουργεί;</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason">Επιλέξτε λόγο</string>
+    <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_choose_reason_error">Επιλέξτε έναν λόγο</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
     <string name="webcompat_reporter_label_description">Περιγράψτε το πρόβλημα (προαιρετικό)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
@@ -2067,6 +2101,8 @@
 
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Μάθετε τα δικαιώματά σας</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Όροι χρήσης</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Πληροφορίες άδειας</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2538,6 +2574,8 @@
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Προτάσεις Firefox</string>
 
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Δημοφιλείς αναζητήσεις</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Αναζήτηση Google</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2603,7 +2641,7 @@
     <!-- Title for section explaining how we analyze the reliability of a product's reviews. -->
     <string name="review_quality_check_explanation_title" moz:removedIn="136" tools:ignore="UnusedResources">Πώς προσδιορίζουμε την ποιότητα των κριτικών</string>
     <!-- Paragraph explaining how we analyze the reliability of a product's reviews. First parameter is the Fakespot product name. In the phrase "Fakespot by Mozilla", "by" can be localized. Does not need to stay by. -->
-    <string name="review_quality_check_explanation_body_reliability" moz:removedIn="136" tools:ignore="UnusedResources">Χρησιμοποιούμε τεχνολογία AI από το %s της Mozilla για να ελέγξουμε την αξιοπιστία των κριτικών προϊόντων. Αυτό θα σας βοηθήσει να αξιολογήσετε μόνο την ποιότητα των κριτικών, όχι την ποιότητα των προϊόντων. </string>
+    <string name="review_quality_check_explanation_body_reliability" moz:removedIn="136" tools:ignore="UnusedResources">Χρησιμοποιούμε τεχνολογία τεχνητής νοημοσύνης από το %s της Mozilla για να ελέγξουμε την αξιοπιστία των κριτικών προϊόντων. Αυτό θα σας βοηθήσει να αξιολογήσετε μόνο την ποιότητα των κριτικών, όχι την ποιότητα των προϊόντων. </string>
     <!-- Paragraph explaining the grading system we use to classify the reliability of a product's reviews. -->
     <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Αναθέτουμε στις κριτικές κάθε προϊόντος έναν <b>βαθμό</b>, από A έως F.]]></string>
     <!-- Description explaining grades A and B for review quality check adjusted grading. -->
@@ -2693,7 +2731,7 @@
     <!-- Description for review quality check contextual onboarding card. The first parameters is for retailer name (e.g. Amazon). The second parameter is for the name of the application (e.g. Firefox). -->
     <string name="review_quality_check_contextual_onboarding_description_one_vendor" moz:removedIn="136" tools:ignore="UnusedResources">Δείτε πόσο αξιόπιστες είναι οι κριτικές των προϊόντων στο %1$s πριν αγοράσετε. Ο έλεγχος κριτικών, μια πειραματική δυνατότητα από τo %2$s, ενσωματώνεται στο πρόγραμμα περιήγησης.</string>
     <!-- Paragraph presenting review quality check feature. First parameter is the Fakespot product name. Second parameter is for clickable text defined in review_quality_check_contextual_onboarding_learn_more_link. In the phrase "Fakespot by Mozilla", "by" can be localized. Does not need to stay by. -->
-    <string name="review_quality_check_contextual_onboarding_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Με την υποστήριξη του %1$s της Mozilla, σας βοηθάμε να αποφύγετε τις μεροληπτικές και ψευδείς κριτικές. Το μοντέλο AI μας βελτιώνεται συνεχώς για να σας προστατεύει όσο κάνετε τις αγορές σας. %2$s</string>
+    <string name="review_quality_check_contextual_onboarding_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Με την υποστήριξη του %1$s της Mozilla, σας βοηθάμε να αποφύγετε τις μεροληπτικές και ψευδείς κριτικές. Το μοντέλο τεχνητής νοημοσύνης μας βελτιώνεται συνεχώς για να σας προστατεύει όσο κάνετε τις αγορές σας. %2$s</string>
     <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
     <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">Μάθετε περισσότερα</string>
     <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. First parameter is Firefox app name, third parameter is the Fakespot product name. Second & fourth are for clickable texts defined in review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use. -->
@@ -2971,6 +3009,10 @@
     <string name="download_language_file_dialog_negative_button_text">Ακύρωση</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Ασφαλής</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">Μη ασφαλής</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Να προσέχετε σε αυτόν τον ιστότοπο</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2992,6 +3034,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Αν κάτι δεν λειτουργεί σωστά σε αυτόν τον ιστότοπο, δοκιμάστε να απενεργοποιήσετε την προστασία.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">Η προστασία είναι ΑΝΕΝΕΡΓΗ. Προτείνουμε να την ενεργοποιήσετε ξανά.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Αποκλεισμένοι ιχνηλάτες: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">Δεν βρέθηκαν ιχνηλάτες</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Ρυθμίσεις απορρήτου και ασφάλειας</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Αποκλεισμένοι ιχνηλάτες: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Η διαγραφή των cookie και των δεδομένων ιστοτόπων του <b>%s</b> ενδέχεται να σας αποσυνδέσει από ιστοτόπους και να αδειάσει τα καλάθια αγορών.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Απαλοιφή</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Ακύρωση</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Τα cookie και τα δεδομένα ιστοτόπων αφαιρέθηκαν</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Ασφαλής σύνδεση</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Μη ασφαλής σύνδεση</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Επαλήθευση από %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3114,6 +3187,13 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Γλώσσες ελέγχου σφαλμάτων προς ενεργοποίηση</string>
 
+    <!-- The title of the header for the section for managing addresses. -->
+    <string name="debug_drawer_addresses_management_header">Διαχείριση διευθύνσεων</string>
+    <!-- The title of the button in the debug drawer for adding a new address. -->
+    <string name="debug_drawer_add_new_address">Προσθήκη νέας διεύθυνσης για την επιλεγμένη γλώσσα</string>
+    <!-- The title of the button for deleting in the debug drawer all addresses. -->
+    <string name="debug_drawer_delete_all_addresses">Διαγραφή όλων των διευθύνσεων</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The title of the CFR Tools feature in the Debug Drawer -->
     <string name="debug_drawer_cfr_tools_title">Εργαλεία CFR</string>
@@ -3166,4 +3246,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Κάντε ενημέρωση πριν τις 14 Μαρτίου για να συνεχίσετε να χρησιμοποιείτε τα πρόσθετα και άλλες λειτουργίες.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Ορισμένες λειτουργίες θα σταματήσουν να λειτουργούν αύριο.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Εμφάνιση κρυφού κειμένου</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Απαλοιφή κειμένου</string>
 </resources>

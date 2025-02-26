@@ -846,13 +846,15 @@ html {
       .multi-select-container {
         margin-inline: 0 10px;
 
-        .multi-select-item {
-          display: block;
+        .checkbox-container {
+          display: grid;
+
+          label, p {
+            grid-column: 2;
+          }
 
           p {
             margin-block: 0.5em 0;
-            margin-inline-start: calc(16px + var(--checkbox-margin-inline)); // width of checkbox and its inline margin
-            font-size: 12px;
           }
         }
 
@@ -865,10 +867,6 @@ html {
           padding: 0 30px;
           margin-inline: 0;
           box-sizing: content-box;
-
-          .multi-select-item p {
-            margin-inline-start: 0;
-          }
         }
 
         @media only screen and (width <= 800px) {
@@ -1961,6 +1959,158 @@ html {
 
       &:not(:first-child) {
         margin-inline: 5px 0;
+      }
+    }
+  }
+
+  .onboardingContainer .main-content.no-steps:has(button.content-tiles-header[aria-expanded='false']) {
+    padding-bottom: 0;
+  }
+
+  #content-tiles-container button.tile-header,
+  button.content-tiles-header {
+    width: 100%;
+    margin: 0;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-width: 1px;
+    border-radius: 0;
+
+    @media (prefers-contrast: no-preference) {
+      background-color: var(--in-content-page-background);
+      border-color: var(--in-content-border-color);
+    }
+
+    cursor: pointer;
+    // ensures focus ring is fully visible
+    outline-offset: -12px;
+
+    .arrow-icon {
+      width: 1em;
+      height: 1.5em;
+      -moz-context-properties: fill;
+      fill: currentColor;
+      background: url('chrome://global/skin/icons/arrow-down.svg') center center / 100% no-repeat;
+    }
+
+    &[aria-expanded='true'] {
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+
+      .arrow-icon {
+        background: url('chrome://global/skin/icons/arrow-up.svg') center center / 100% no-repeat;
+      }
+    }
+  }
+
+  button.content-tiles-header {
+    margin: 0.5em 0 0;
+    font-size: 11px;
+    font-weight: 400;
+    justify-content: center;
+    border-width: 1px 0;
+
+    @media (prefers-contrast: no-preference) {
+      color: #5B5B66;
+    }
+
+    @media (prefers-contrast: no-preference) and (prefers-color-scheme: dark) {
+      color: #CFCFD8;
+    }
+
+    @media (prefers-contrast) {
+      color: var(--in-content-page-color);
+    }
+
+    .arrow-icon {
+      margin-inline: 1em
+    }
+  }
+
+  #content-tiles-container {
+    --tiles-container-border-radius: 8px;
+
+    margin: 24px 48px;
+
+    .content-tile {
+      display: flex;
+      flex-direction: column;
+
+      &.has-header:first-of-type button.tile-header,
+      &:not(.has-header) + .content-tile.has-header button.tile-header {
+        border-start-start-radius: var(--tiles-container-border-radius);
+        border-start-end-radius: var(--tiles-container-border-radius);
+      }
+
+      &.has-header {
+        &:not(:has(+ .content-tile.has-header)) {
+          button.tile-header {
+            border-end-start-radius: var(--tiles-container-border-radius);
+            border-end-end-radius: var(--tiles-container-border-radius);
+
+            &[aria-expanded='true'] {
+              border-end-start-radius: 0;
+              border-end-end-radius: 0;
+
+              & + .tile-content {
+                border: 1px solid var(--in-content-border-color);
+                border-top: none;
+                border-radius: 0 0 var(--tiles-container-border-radius) var(--tiles-container-border-radius);
+              }
+            }
+          }
+        }
+
+        &:has(+ .content-tile.has-header) {
+          button.tile-header[aria-expanded='false'] {
+            border-bottom: none;
+          }
+        }
+      }
+
+      button.tile-header {
+        font-size: 13px;
+        justify-content: space-between;
+
+        & + .tile-content {
+          border-inline-start: 1px solid var(--in-content-border-color);
+          border-inline-end: 1px solid var(--in-content-border-color);
+        }
+
+        .header-text-container {
+          display: flex;
+          flex-direction: column;
+
+          .header-title {
+            font-weight: 590;
+            line-height: 1.5;
+          }
+
+          .header-subtitle {
+            font-weight: 400;
+            line-height: 1.5;
+          }
+        }
+      }
+
+      .multi-select-container {
+        padding: 24px;
+        margin: 0;
+
+        .checkbox-container {
+          display: grid;
+
+          label,
+          p {
+            grid-column: 2;
+          }
+
+          p {
+            margin-block: 0.5em 0;
+          }
+        }
       }
     }
   }

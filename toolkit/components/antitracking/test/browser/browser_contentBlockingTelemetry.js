@@ -13,6 +13,8 @@ const LABEL_STORAGE_ACCESS_API = 1;
 const LABEL_OPENER_AFTER_UI = 2;
 const LABEL_OPENER = 3;
 const LABEL_REDIRECT = 4;
+const LABEL_REDIRECT_TRACKER = 5;
+const LABEL_NAVIGATION = 6;
 
 function clearTelemetry() {
   Services.telemetry.getSnapshotForHistograms("main", true /* clear */);
@@ -140,11 +142,11 @@ add_task(async function testTelemetryForStorageAccessAPI() {
   Services.perms.removeAll();
 
   info("Creating a new tab");
-  let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);
-  gBrowser.selectedTab = tab;
-
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TOP_PAGE
+  );
   let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
 
   info("Loading the tracking iframe and call the RequestStorageAccess.");
   await SpecialPowers.spawn(
@@ -213,11 +215,11 @@ add_task(async function testTelemetryForWindowOpenHeuristic() {
   Services.perms.removeAll();
 
   info("Creating a new tab");
-  let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);
-  gBrowser.selectedTab = tab;
-
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TOP_PAGE
+  );
   let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
 
   info("Loading the tracking iframe and trigger the heuristic");
   await SpecialPowers.spawn(
@@ -294,11 +296,11 @@ add_task(async function testTelemetryForUserInteractionHeuristic() {
   Services.perms.removeAll();
 
   info("Creating a new tab");
-  let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);
-  gBrowser.selectedTab = tab;
-
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TOP_PAGE
+  );
   let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
 
   info("Interact with the tracker in top-level.");
   await AntiTracking.interactWithTracker();
@@ -384,11 +386,11 @@ add_task(async function testTelemetryForRedirectHeuristic() {
   Services.perms.removeAll();
 
   info("Creating a new tab");
-  let tab = BrowserTestUtils.addTab(gBrowser, TEST_TRACKING_PAGE);
-  gBrowser.selectedTab = tab;
-
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TRACKING_PAGE
+  );
   let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
 
   info("Loading the tracking page and trigger the redirect.");
   SpecialPowers.spawn(browser, [TEST_REDIRECT_PAGE], async url => {
@@ -412,5 +414,10 @@ add_task(async function testTelemetryForRedirectHeuristic() {
 
   // We would only grant the storage permission for 29 days for the redirect
   // heuristic, so the expected index in the telemetry probe would be 29.
-  await testTelemetry(true, 1, LABEL_REDIRECT, expectedExpiredDaysRedirect);
+  await testTelemetry(
+    true,
+    1,
+    LABEL_REDIRECT_TRACKER,
+    expectedExpiredDaysRedirect
+  );
 });

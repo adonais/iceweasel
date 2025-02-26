@@ -827,7 +827,8 @@ const char* shell::selfHostedXDRPath = nullptr;
 bool shell::encodeSelfHostedCode = false;
 bool shell::enableCodeCoverage = false;
 bool shell::enableDisassemblyDumps = false;
-bool shell::offthreadCompilation = false;
+bool shell::offthreadBaselineCompilation = false;
+bool shell::offthreadIonCompilation = false;
 JS::DelazificationOption shell::defaultDelazificationMode =
     JS::DelazificationOption::OnDemandOnly;
 bool shell::enableAsmJS = false;
@@ -3762,7 +3763,7 @@ static bool DisassFile(JSContext* cx, unsigned argc, Value* vp) {
   if (!sprinter.init()) {
     return false;
   }
-  if (JSScript::dump(cx, script, p.options, &sprinter)) {
+  if (!JSScript::dump(cx, script, p.options, &sprinter)) {
     return false;
   }
 
@@ -9239,10 +9240,14 @@ static bool CompressLZ4(JSContext* cx, unsigned argc, Value* vp) {
   JS::Rooted<ArrayBufferObject*> bytes(
       cx, &args.get(0).toObject().as<ArrayBufferObject>());
   size_t byteLength = bytes->byteLength();
+#ifdef JS_64BIT
   if (byteLength > LZ4MaxSize) {
     ReportOutOfMemory(cx);
     return false;
   }
+#else
+  static_assert(LZ4MaxSize == UINT32_MAX, "don't need to check max on 32-bit");
+#endif
 
   // Create a buffer big enough for the header and the max amount of compressed
   // bytes.
@@ -11376,6 +11381,8 @@ static bool InstanceClassHasProtoAtDepth(const JSClass* clasp, uint32_t protoID,
   return clasp == GetDomClass();
 }
 
+static bool InstanceClassIsError(const JSClass* clasp) { return false; }
+
 static bool ShellBuildId(JS::BuildIdCharVector* buildId) {
   // The browser embeds the date into the buildid and the buildid is embedded
   // in the binary, so every 'make' necessarily builds a new firefox binary.
@@ -11514,7 +11521,8 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
     }
 
     /* Initialize FakeDOMObject. */
-    static const js::DOMCallbacks DOMcallbacks = {InstanceClassHasProtoAtDepth};
+    static const js::DOMCallbacks DOMcallbacks = {InstanceClassHasProtoAtDepth,
+                                                  InstanceClassIsError};
     SetDOMCallbacks(cx, &DOMcallbacks);
 
     RootedObject domProto(
@@ -11767,7 +11775,9 @@ static void SetWorkerContextOptions(JSContext* cx) {
       .setTestWasmAwaitTier2(enableTestWasmAwaitTier2)
       .setSourcePragmas(enableSourcePragmas);
 
-  cx->runtime()->setOffthreadIonCompilationEnabled(offthreadCompilation);
+  cx->runtime()->setOffthreadBaselineCompilationEnabled(
+      offthreadBaselineCompilation);
+  cx->runtime()->setOffthreadIonCompilationEnabled(offthreadIonCompilation);
   cx->runtime()->profilingScripts =
       enableCodeCoverage || enableDisassemblyDumps;
 
@@ -12654,11 +12664,17 @@ bool InitOptionParser(OptionParser& op) {
           "Always ion-compile methods (implies --baseline-eager)") ||
       !op.addBoolOption('\0', "fast-warmup",
                         "Reduce warmup thresholds for each tier.") ||
+      !op.addStringOption(
+          '\0', "baseline-offthread-compile", "on/off",
+          "Compile baseline scripts offthread (default: off)") ||
       !op.addStringOption('\0', "ion-offthread-compile", "on/off",
-                          "Compile scripts off thread (default: on)") ||
+                          "Compile Ion scripts offthread (default: on)") ||
       !op.addStringOption('\0', "ion-parallel-compile", "on/off",
                           "--ion-parallel compile is deprecated. Use "
                           "--ion-offthread-compile.") ||
+      !op.addBoolOption('\0', "disable-main-thread-denormals",
+                        "Disable Denormals on the main thread only, to "
+                        "emulate WebAudio worklets.") ||
       !op.addBoolOption('\0', "baseline",
                         "Enable baseline compiler (default)") ||
       !op.addBoolOption('\0', "no-baseline", "Disable baseline compiler") ||
@@ -12778,6 +12794,8 @@ bool InitOptionParser(OptionParser& op) {
       !op.addIntOption('\0', "available-memory", "SIZE",
                        "Select GC settings based on available memory (MB)",
                        0) ||
+      !op.addBoolOption('\0', "disable-decommit",
+                        "Disable decommitting unsued GC memory") ||
       !op.addStringOption('\0', "arm-hwcap", "[features]",
                           "Specify ARM code generation features, or 'help' to "
                           "list all features.") ||
@@ -12906,7 +12924,8 @@ bool InitOptionParser(OptionParser& op) {
                         "Enable Explicit Resource Management") ||
       !op.addBoolOption('\0', "disable-explicit-resource-management",
                         "Disable Explicit Resource Management") ||
-      !op.addBoolOption('\0', "enable-temporal", "Enable Temporal")) {
+      !op.addBoolOption('\0', "enable-temporal", "Enable Temporal") ||
+      !op.addBoolOption('\0', "enable-upsert", "Enable Upsert proposal")) {
     return false;
   }
 
@@ -12983,7 +13002,7 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
   }
   if (op.getBoolOption("enable-error-iserror")) {
-    JS::Prefs::setAtStartup_experimental_error_iserror(true);
+    JS::Prefs::set_experimental_error_iserror(true);
   }
   if (op.getBoolOption("enable-iterator-sequencing")) {
     JS::Prefs::setAtStartup_experimental_iterator_sequencing(true);
@@ -12999,6 +13018,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-atomics-pause")) {
     JS::Prefs::setAtStartup_experimental_atomics_pause(true);
+  }
+  if (op.getBoolOption("enable-upsert")) {
+    JS::Prefs::setAtStartup_experimental_upsert(true);
   }
 #endif
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -13133,6 +13155,10 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     }
   }
 #endif
+
+  if (op.getBoolOption("disable-decommit")) {
+    gc::DisableDecommit();
+  }
 
   return true;
 }
@@ -13594,6 +13620,35 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
     }
   }
 
+  if (op.getBoolOption("disable-main-thread-denormals")) {
+    // This is a simplified version of WebAudio code, which is good enough for
+    // fuzzing purposes.
+    //
+    // See dom/media/webaudio/blink/DenormalDisabler.h#124
+#if defined(__GNUC__) && defined(__SSE__) && defined(__x86_64__)
+    int savedCSR;
+    asm volatile("stmxcsr %0" : "=m"(savedCSR));
+    int newCSR = savedCSR | 0x8040;
+    asm volatile("ldmxcsr %0" : : "m"(newCSR));
+#elif defined(__arm__)
+    int savedCSR;
+    asm volatile("vmrs %[result], FPSCR" : [result] "=r"(savedCSR));
+    // Bit 24 is the flush-to-zero mode control bit. Setting it to 1 flushes
+    // denormals to 0.
+    int newCSR = savedCSR | (1 << 24);
+    asm volatile("vmsr FPSCR, %[src]" : : [src] "r"(newCSR));
+#elif defined(__aarch64__)
+    int savedCSR;
+    asm volatile("mrs %x[result], FPCR" : [result] "=r"(savedCSR));
+    // Bit 24 is the flush-to-zero mode control bit. Setting it to 1 flushes
+    // denormals to 0.
+    int newCSR = savedCSR | (1 << 24);
+    asm volatile("msr FPCR, %x[src]" : : [src] "r"(newCSR));
+#else
+    // Do nothing on other architecture.
+#endif
+  }
+
   int32_t warmUpThreshold = op.getIntOption("ion-warmup-threshold");
   if (warmUpThreshold >= 0) {
     jit::JitOptions.setNormalIonWarmUpThreshold(warmUpThreshold);
@@ -13718,15 +13773,26 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
     jit::JitOptions.setEagerIonCompilation();
   }
 
-  offthreadCompilation = true;
+  offthreadBaselineCompilation = false;
+  if (const char* str = op.getStringOption("baseline-offthread-compile")) {
+    if (strcmp(str, "on") == 0) {
+      offthreadBaselineCompilation = true;
+    } else if (strcmp(str, "off") != 0) {
+      return OptionFailure("baseline-offthread-compile", str);
+    }
+  }
+  cx->runtime()->setOffthreadBaselineCompilationEnabled(
+      offthreadBaselineCompilation);
+
+  offthreadIonCompilation = true;
   if (const char* str = op.getStringOption("ion-offthread-compile")) {
     if (strcmp(str, "off") == 0) {
-      offthreadCompilation = false;
+      offthreadIonCompilation = false;
     } else if (strcmp(str, "on") != 0) {
       return OptionFailure("ion-offthread-compile", str);
     }
   }
-  cx->runtime()->setOffthreadIonCompilationEnabled(offthreadCompilation);
+  cx->runtime()->setOffthreadIonCompilationEnabled(offthreadIonCompilation);
 
   if (op.getStringOption("ion-parallel-compile")) {
     fprintf(stderr,

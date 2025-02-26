@@ -85,7 +85,6 @@ export let RemotePageAccessManager = {
         "Browser:SSLErrorGoBack",
         "Browser:PrimeMitm",
         "Browser:ResetEnterpriseRootsPref",
-        "ReportBlockingError",
         "DisplayOfflineSupportPage",
         "OpenTRRPreferences",
       ],
@@ -99,16 +98,10 @@ export let RemotePageAccessManager = {
       ],
       RPMGetBoolPref: [
         "security.certerror.hideAddException",
-        "security.xfocsp.errorReporting.automatic",
-        "security.xfocsp.errorReporting.enabled",
-        "security.xfocsp.hideOpenInNewWindow",
         "network.trr.display_fallback_warning",
         "security.certerrors.felt-privacy-v1",
       ],
-      RPMSetPref: [
-        "security.xfocsp.errorReporting.automatic",
-        "network.trr.display_fallback_warning",
-      ],
+      RPMSetPref: ["network.trr.display_fallback_warning"],
       RPMAddToHistogram: ["*"],
       RPMGetInnerMostURI: ["*"],
       RPMGetHttpResponseHeader: ["*"],
@@ -186,6 +179,8 @@ export let RemotePageAccessManager = {
         "Profiles:UpdateProfileAvatar",
         "Profiles:OpenDeletePage",
         "Profiles:CloseProfileTab",
+        "Profiles:MoreThemes",
+        "Profiles:PageHide",
       ],
     },
     "about:newprofile": {
@@ -196,8 +191,10 @@ export let RemotePageAccessManager = {
       RPMSendAsyncMessage: [
         "Profiles:UpdateProfileName",
         "Profiles:UpdateProfileAvatar",
-        "Profiles:DeleteNewProfile",
+        "Profiles:DeleteProfile",
         "Profiles:CloseProfileTab",
+        "Profiles:MoreThemes",
+        "Profiles:PageHide",
       ],
       RPMGetBoolPref: ["browser.profiles.profile-name.updated"],
       RPMGetFormatURLPref: ["app.support.baseURL"],
@@ -282,6 +279,8 @@ export let RemotePageAccessManager = {
       RPMGetIntPref: ["browser.shopping.experience2023.sidebarClosedCount"],
       RPMGetBoolPref: [
         "browser.shopping.experience2023.showKeepSidebarClosedMessage",
+        "sidebar.revamp",
+        "browser.shopping.experience2023.integratedSidebar",
       ],
     },
     "about:tabcrashed": {

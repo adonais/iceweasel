@@ -574,21 +574,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "GPU Device Reset Reason (ok, hung, removed, reset, internal error, invalid call, out of memory)"
   },
-  "FINGERPRINTING_PROTECTION_CANVAS_NOISE_CALCULATE_TIME_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "tihuang@mozilla.com",
-      "tom@mozilla.com",
-      "tschuster@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "bug_numbers": [1838856],
-    "kind": "exponential",
-    "high": 600000,
-    "n_buckets": 100,
-    "description": "Counts how long to generate canvas random noises."
-  },
   "FIREFOX_VIEW_CUMULATIVE_SEARCHES": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
@@ -1298,34 +1283,6 @@
     "n_buckets": 100,
     "description": "Time spent deserializing structured data",
     "alert_emails": ["sfink@mozilla.com"]
-  },
-  "GEOLOCATION_ACCURACY_EXPONENTIAL": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "145",
-    "kind": "exponential",
-    "releaseChannelCollection": "opt-out",
-    "bug_numbers": [1507925],
-    "high": 100000,
-    "n_buckets": 50,
-    "description": "Geolocation results' accuracy radius in meters. Smaller radius is more accurate.",
-    "alert_emails": ["shong@mozilla.com"]
-  },
-  "GEOLOCATION_WIN8_SOURCE_IS_MLS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "145",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Geolocation on Win8 is either MLS or native"
-  },
-  "GEOLOCATION_OSX_SOURCE_IS_MLS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "145",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Geolocation on OS X is either MLS or CoreLocation"
   },
   "GPU_PROCESS_LAUNCH_TIME_MS_2": {
     "record_in_processes": ["main", "content"],
@@ -4730,19 +4687,6 @@
     "high": 1000,
     "n_buckets": 50
   },
-  "PAINT_BUILD_DISPLAYLIST_TIME": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": [
-      "gfx-telemetry-alerts@mozilla.com",
-      "mwoodrow@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "description": "Time spent in building displaylists in milliseconds",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50
-  },
   "PAINT_RASTERIZE_TIME": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -7743,19 +7687,6 @@
     "bug_numbers": [1334615],
     "description": "The input method the user used to select a result in the searchbar. 'enter' => The user hit the Enter key without choosing a result in the popup. 'enterSelection' => The user chose a result and then hit the Enter key. 'click' => The user clicked a result with the mouse."
   },
-  "FX_URLBAR_PROVIDER_CLIPBOARD_READ_TIME_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "137",
-    "kind": "exponential",
-    "low": 16,
-    "high": 5000,
-    "n_buckets": 8,
-    "bug_numbers": [1866710],
-    "releaseChannelCollection": "opt-out",
-    "description": "Time taken to read data from the clipboard (ms)"
-  },
   "INNERWINDOWS_WITH_MUTATION_LISTENERS": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -8839,18 +8770,6 @@
     "description": "Records search counts for search access points. The format is: <engine-name>.<search-access-point>. For the urlbar when in search mode, the format is <engine name>.urlbar-searchmode. For the urlbar when an internal @engine shortcut is used, the format is: <engine-name>.alias.",
     "record_into_store": ["main", "account-ecosystem"]
   },
-  "SEARCH_SERVICE_INIT2_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "high": 10000,
-    "n_buckets": 50,
-    "bug_numbers": [1832509],
-    "description": "Time (ms) it takes to initialize the search service"
-  },
   "SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec", "thunderbird"],
@@ -9078,43 +8997,6 @@
     "kind": "enumerated",
     "n_values": 5,
     "description": "Counts the number of entries in the sample description box (stsd) for a track in an mp4. Recorded each time we process a track's metadata while parsing mp4s."
-  },
-  "MEDIA_AUDIO_INIT_FAILURE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": ["media-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "categorical",
-    "labels": ["first", "other"],
-    "description": "Failure occurs when initializing the audio stream",
-    "bug_numbers": [1671714]
-  },
-  "MEDIA_AUDIO_BACKEND": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": ["media-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "categorical",
-    "labels": [
-      "unknown",
-      "audiounit",
-      "audiounit_rust",
-      "aaudio",
-      "opensl",
-      "wasapi",
-      "winmm",
-      "alsa",
-      "jack",
-      "oss",
-      "pulse",
-      "pulse_rust",
-      "sndio",
-      "sunaudio"
-    ],
-    "description": "The operating system audio backend",
-    "bug_numbers": [1671714, 1679745]
   },
   "MEDIA_SNIFFER_MP4_BRAND_PATTERN": {
     "record_in_processes": ["main", "content"],
@@ -11287,16 +11169,13 @@
       "StorageAccessAPI",
       "OpenerAfterUI",
       "Opener",
-      "Redirect"
+      "Redirect",
+      "RedirectTracker",
+      "Navigation"
     ],
-    "description": "A count of the granted storage access. ('StorageGranted' = There was a storage access granted, 'StorageAccessAPI' = the storage access was granted by the storage access API, 'OpenerAfterUserInteraction' = the storage access was granted due to the heuristic 'OpenerAfterUserInteraction', 'Opener' = the storage access was granted due to the heuristic 'Opener', 'Redirect' = the storage access was granted due to the heuristic 'Redirect'.) Note, StorageGranted is used as a baseline measurement.",
-    "alert_emails": [
-      "tihuang@mozilla.com",
-      "aedelstein@mozilla.com",
-      "senglehardt@mozilla.com",
-      "seceng-telemetry@mozilla.com"
-    ],
-    "bug_numbers": [1668199]
+    "description": "A count of the granted storage access. ('StorageGranted' = There was a storage access granted, 'StorageAccessAPI' = the storage access was granted by the storage access API, 'OpenerAfterUserInteraction' = the storage access was granted due to the heuristic 'OpenerAfterUserInteraction', 'Opener' = the storage access was granted due to the heuristic 'Opener', 'Redirect' = the storage access was granted due to the heuristic 'Redirect', 'RedirectTracker' = the storage access was granted due to the heuristic 'RedirectTracker'.) Note, StorageGranted is used as a baseline measurement, which should be the sum of all other measurements.",
+    "alert_emails": ["tihuang@mozilla.com", "seceng-telemetry@mozilla.com"],
+    "bug_numbers": [1668199, 1918127]
   },
   "STORAGE_ACCESS_REMAINING_DAYS": {
     "record_in_processes": ["main"],
@@ -13572,141 +13451,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Whether bfcache is used when loading a page from session history"
   },
-  "WR_GPU_WAIT_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1772216],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "The time spent waiting for the GPU to complete previously issued drawing commands in milliseconds"
-  },
-  "WR_RENDERER_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1772223],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "releaseChannelCollection": "opt-out",
-    "n_buckets": 50,
-    "description": "The time spent by WebRender in the Renderer in milliseconds."
-  },
-  "WR_RENDERER_TIME_NO_SC_MS": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1784286],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "releaseChannelCollection": "opt-out",
-    "n_buckets": 50,
-    "description": "The time spent by WebRender in the Renderer in milliseconds for frames with no shader compilation."
-  },
-  "WR_SCENEBUILD_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "gfx-telemetry-alerts@mozilla.com",
-      "jmuizelaar@mozilla.com"
-    ],
-    "bug_numbers": [1470901, 1584109],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "WebRender scene build time in milliseconds"
-  },
-  "WR_SCENESWAP_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "gfx-telemetry-alerts@mozilla.com",
-      "jmuizelaar@mozilla.com"
-    ],
-    "bug_numbers": [1470901, 1584109],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "WebRender scene swap time in miliseconds"
-  },
-  "WR_FRAMEBUILD_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "gfx-telemetry-alerts@mozilla.com",
-      "jmuizelaar@mozilla.com"
-    ],
-    "bug_numbers": [1470901, 1584109],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "WebRender render time in milliseconds"
-  },
-  "WR_RASTERIZE_GLYPHS_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "gfx-telemetry-alerts@mozilla.com",
-      "jmuizelaar@mozilla.com"
-    ],
-    "bug_numbers": [],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 500,
-    "n_buckets": 50,
-    "description": "Time taken by WebRender to rasterize a set of glyphs"
-  },
-  "WR_RASTERIZE_BLOBS_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1770974],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 500,
-    "n_buckets": 50,
-    "description": "Time taken by WebRender to rasterize blobs"
-  },
-  "WR_TEXTURE_CACHE_UPDATE_TIME": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1772223],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "Time taken by WebRender to update the texture cache in milliseconds."
-  },
-  "WR_TIME_TO_FRAME_BUILD_MS": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1778395],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "Time elapsed (in milliseconds) between the construction of a transaction and the associated frame build beginning."
-  },
-  "WR_TIME_TO_RENDER_START_MS": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1778395],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "Time elapsed (in milliseconds) between the construction of a frame and the start of rendering."
-  },
   "QM_QUOTA_INFO_LOAD_TIME_V0": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
@@ -14277,6 +14021,7 @@
       "OTHER",
       "FILTERED_FETCH",
       "BLOCKED_FETCH",
+      "JSON",
       "SCRIPT",
       "IMAGE",
       "STYLESHEET",

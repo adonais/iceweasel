@@ -2125,12 +2125,13 @@ export var Policies = {
         setAndLockPref("privacy.clearOnShutdown.siteSettings", param);
         setAndLockPref("privacy.clearOnShutdown.offlineApps", param);
         setAndLockPref(
-          "privacy.clearOnShutdown_v2.historyFormDataAndDownloads",
+          "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
           param
         );
         setAndLockPref("privacy.clearOnShutdown_v2.cookiesAndStorage", param);
         setAndLockPref("privacy.clearOnShutdown_v2.cache", param);
         setAndLockPref("privacy.clearOnShutdown_v2.siteSettings", param);
+        setAndLockPref("privacy.clearOnShutdown_v2.formdata", param);
       } else {
         let locked = true;
         // Needed to preserve original behavior in perpetuity.
@@ -2213,9 +2214,21 @@ export var Policies = {
             param.FormData,
             locked
           );
+
+          PoliciesUtils.setDefaultPref(
+            "privacy.clearOnShutdown_v2.formdata",
+            param.FormData,
+            locked
+          );
         } else {
           PoliciesUtils.setDefaultPref(
             "privacy.clearOnShutdown.formdata",
+            false,
+            lockDefaultPrefs
+          );
+
+          PoliciesUtils.setDefaultPref(
+            "privacy.clearOnShutdown_v2.formdata",
             false,
             lockDefaultPrefs
           );
@@ -2227,11 +2240,11 @@ export var Policies = {
             locked
           );
 
-          // We set historyFormDataAndDownloads to follow lock and pref
-          // settings for history, and deprecate formdata and downloads
+          // We set browsingHistoryAndDownloads to follow lock and pref
+          // settings for history, and deprecate downloads
           // in the new clear on shutdown dialog - Bug 1853996
           PoliciesUtils.setDefaultPref(
-            "privacy.clearOnShutdown_v2.historyFormDataAndDownloads",
+            "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
             param.History,
             locked
           );
@@ -2242,7 +2255,7 @@ export var Policies = {
             lockDefaultPrefs
           );
           PoliciesUtils.setDefaultPref(
-            "privacy.clearOnShutdown_v2.historyFormDataAndDownloads",
+            "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
             false,
             lockDefaultPrefs
           );

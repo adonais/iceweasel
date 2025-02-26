@@ -136,14 +136,19 @@ async function handleInitializationMessage({ data }) {
   }
 
   try {
-    const { fromLanguage, toLanguage, enginePayload, logLevel, innerWindowId } =
-      data;
+    const {
+      sourceLanguage,
+      targetLanguage,
+      enginePayload,
+      logLevel,
+      innerWindowId,
+    } = data;
 
-    if (!fromLanguage) {
-      throw new Error('Worker initialization missing "fromLanguage"');
+    if (!sourceLanguage) {
+      throw new Error('Worker initialization missing "sourceLanguage"');
     }
-    if (!toLanguage) {
-      throw new Error('Worker initialization missing "toLanguage"');
+    if (!targetLanguage) {
+      throw new Error('Worker initialization missing "targetLanguage"');
     }
 
     if (logLevel) {
@@ -154,7 +159,7 @@ async function handleInitializationMessage({ data }) {
     let engine;
     if (enginePayload.isMocked) {
       // The engine is testing mode, and no Bergamot wasm is available.
-      engine = new MockedEngine(fromLanguage, toLanguage);
+      engine = new MockedEngine(sourceLanguage, targetLanguage);
     } else {
       const { bergamotWasmArrayBuffer, translationModelPayloads } =
         enginePayload;
@@ -162,8 +167,8 @@ async function handleInitializationMessage({ data }) {
         bergamotWasmArrayBuffer
       );
       engine = new Engine(
-        fromLanguage,
-        toLanguage,
+        sourceLanguage,
+        targetLanguage,
         bergamot,
         translationModelPayloads
       );
@@ -220,13 +225,13 @@ function handleMessages(engine) {
           }
           try {
             const { whitespaceBefore, whitespaceAfter, cleanedSourceText } =
-              cleanText(engine.fromLanguage, sourceText);
+              cleanText(engine.sourceLanguage, sourceText);
 
             // Add a translation to the work queue, and when it returns, post the message
             // back. The translation may never return if the translations are discarded
             // before it have time to be run. In this case this await is just never
             // resolved, and the postMessage is never run.
-            let targetText = await engine.translate(
+            let { targetText, inferenceMilliseconds } = await engine.translate(
               cleanedSourceText,
               isHTML,
               innerWindowId,
@@ -249,6 +254,7 @@ function handleMessages(engine) {
             postMessage({
               type: "translation-response",
               targetText,
+              inferenceMilliseconds,
               translationId,
               messageId,
             });
@@ -318,16 +324,21 @@ function handleMessages(engine) {
  */
 class Engine {
   /**
-   * @param {string} fromLanguage
-   * @param {string} toLanguage
+   * @param {string} sourceLanguage
+   * @param {string} targetLanguage
    * @param {Bergamot} bergamot
    * @param {Array<TranslationModelPayload>} translationModelPayloads
    */
-  constructor(fromLanguage, toLanguage, bergamot, translationModelPayloads) {
+  constructor(
+    sourceLanguage,
+    targetLanguage,
+    bergamot,
+    translationModelPayloads
+  ) {
     /** @type {string} */
-    this.fromLanguage = fromLanguage;
+    this.sourceLanguage = sourceLanguage;
     /** @type {string} */
-    this.toLanguage = toLanguage;
+    this.targetLanguage = targetLanguage;
     /** @type {Bergamot} */
     this.bergamot = bergamot;
     /** @type {Bergamot["TranslationModel"][]} */
@@ -358,7 +369,8 @@ class Engine {
    * @param {number} innerWindowId - This is required
    * @param {number} translationId
    *
-   * @returns {Promise<string>}sourceText
+   * @returns {Promise<{ targetText: string, inferenceMilliseconds: number }>}
+   *   Resolves with an object containing the translated text and the inference time in ms.
    */
   translate(sourceText, isHTML, innerWindowId, translationId) {
     return this.#getWorkQueue(innerWindowId).runTask(translationId, () =>
@@ -424,7 +436,8 @@ class Engine {
    * @param {string} sourceText
    * @param {boolean} isHTML
    * @param {number} innerWindowId
-   * @returns {string}
+   * @returns {{ targetText: string, inferenceMilliseconds: number }}
+   *   An object containing the translated text and the inference time (in ms).
    */
   #syncTranslate(sourceText, isHTML, innerWindowId) {
     const startTime = performance.now();
@@ -468,8 +481,9 @@ class Engine {
         `Translated ${sourceText.length} code units.`
       );
 
+      const endTime = performance.now();
       const targetText = responses.get(0).getTranslatedText();
-      return targetText;
+      return { targetText, inferenceMilliseconds: endTime - startTime };
     } finally {
       // Free up any memory that was allocated. This will always run.
       messages?.delete();
@@ -669,6 +683,7 @@ class BergamotUtils {
    *
    * @param {Bergamot} bergamot
    * @param {string} sourceText
+   * @param {boolean} isHTML
    * @returns {{ messages: Bergamot["VectorString"], options: Bergamot["VectorResponseOptions"] }}
    */
   static getTranslationArgs(bergamot, sourceText, isHTML) {
@@ -696,28 +711,34 @@ class BergamotUtils {
  */
 class MockedEngine {
   /**
-   * @param {string} fromLanguage
-   * @param {string} toLanguage
+   * @param {string} sourceLanguage
+   * @param {string} targetLanguage
    */
-  constructor(fromLanguage, toLanguage) {
+  constructor(sourceLanguage, targetLanguage) {
     /** @type {string} */
-    this.fromLanguage = fromLanguage;
+    this.sourceLanguage = sourceLanguage;
     /** @type {string} */
-    this.toLanguage = toLanguage;
+    this.targetLanguage = targetLanguage;
   }
 
   /**
-   * Create a fake translation of the text.
+   * Create a fake translation of the text, returning a mock object
+   * with both the translated text and time spent.
    *
    * @param {string} sourceText
-   * @param {bool} isHTML
-   * @returns {string}
+   * @param {boolean} isHTML
+   * @returns {{ targetText: string, inferenceMilliseconds: number }}
+   *   An object containing the "translated" text and a mock inference time in ms.
    */
   translate(sourceText, isHTML) {
-    // Note when an HTML translations is requested.
+    const startTime = performance.now();
+
+    // Note when an HTML translation is requested.
     let html = isHTML ? ", html" : "";
-    const targetText = sourceText.toUpperCase();
-    return `${targetText} [${this.fromLanguage} to ${this.toLanguage}${html}]`;
+    const targetText = `${sourceText.toUpperCase()} [${this.sourceLanguage} to ${this.targetLanguage}${html}]`;
+    const endTime = performance.now();
+
+    return { targetText, inferenceMilliseconds: endTime - startTime };
   }
 
   discardTranslations() {}

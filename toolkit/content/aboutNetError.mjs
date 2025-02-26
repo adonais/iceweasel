@@ -46,6 +46,7 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
   "unsafeContentType-title",
   "netReset-title",
   "netTimeout-title",
+  "httpErrorPage-title",
   "serverError-title",
   "unknownProtocolFound-title",
   "proxyConnectFailure-title",
@@ -58,17 +59,24 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
   "sslv3Used-title",
   "inadequateSecurityError-title",
   "blockedByPolicy-title",
+  "blocked-by-corp-headers-title",
   "clockSkewError-title",
   "networkProtocolError-title",
   "nssBadCert-title",
   "nssBadCert-sts-title",
   "certerror-mitm-title",
+  "general-body-title",
 ]);
 
 /* The error message IDs from nsserror.ftl get processed into
  * aboutNetErrorCodes.js which is loaded before we are: */
 /* global KNOWN_ERROR_MESSAGE_IDS */
 const ERROR_MESSAGES_FTL = "toolkit/neterror/nsserrors.ftl";
+
+const MDN_DOCS_HEADERS = "https://developer.mozilla.org/docs/Web/HTTP/Headers/";
+const COOP_MDN_DOCS = MDN_DOCS_HEADERS + "Cross-Origin-Opener-Policy";
+const COEP_MDN_DOCS = MDN_DOCS_HEADERS + "Cross-Origin-Embedder-Policy";
+const HTTPS_UPGRADES_MDN_DOCS = "https://support.mozilla.org/kb/https-upgrades";
 
 // If the location of the favicon changes, FAVICON_CERTERRORPAGE_URL and/or
 // FAVICON_ERRORPAGE_URL in toolkit/components/places/nsFaviconService.idl
@@ -291,75 +299,9 @@ function setResponseStatus(shortDesc) {
   }
 }
 
-function initPage() {
-  // We show an offline support page in case of a system-wide error,
-  // when a user cannot connect to the internet and access the SUMO website.
-  // For example, clock error, which causes certerrors across the web or
-  // a security software conflict where the user is unable to connect
-  // to the internet.
-  // The URL that prompts us to show an offline support page should have the following
-  // format: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/supportPageSlug",
-  // so we can extract the support page slug.
-  let baseURL = RPMGetFormatURLPref("app.support.baseURL");
-  if (document.location.href.startsWith(baseURL)) {
-    let supportPageSlug = document.location.pathname.split("/").pop();
-    RPMSendAsyncMessage("DisplayOfflineSupportPage", {
-      supportPageSlug,
-    });
-  }
-
-  const className = getCSSClass();
-  if (className) {
-    document.body.classList.add(className);
-  }
-
-  const isTRROnlyFailure = gErrorCode == "dnsNotFound" && RPMIsTRROnlyFailure();
-
-  let isNativeFallbackWarning = false;
-  if (RPMGetBoolPref("network.trr.display_fallback_warning")) {
-    isNativeFallbackWarning =
-      gErrorCode == "dnsNotFound" && RPMIsNativeFallbackFailure();
-  }
-
-  const docTitle = document.querySelector("title");
-  const bodyTitle = document.querySelector(".title-text");
-  const shortDesc = document.getElementById("errorShortDesc");
-
-  if (gIsCertError) {
-    const isStsError = window !== window.top || gHasSts;
-    const errArgs = { hostname: HOST_NAME };
-    if (isCaptive()) {
-      document.l10n.setAttributes(
-        docTitle,
-        "neterror-captive-portal-page-title"
-      );
-      document.l10n.setAttributes(bodyTitle, "captivePortal-title");
-      document.l10n.setAttributes(
-        shortDesc,
-        "neterror-captive-portal",
-        errArgs
-      );
-      initPageCaptivePortal();
-    } else {
-      if (isStsError) {
-        document.l10n.setAttributes(docTitle, "certerror-sts-page-title");
-        document.l10n.setAttributes(bodyTitle, "nssBadCert-sts-title");
-        document.l10n.setAttributes(shortDesc, "certerror-sts-intro", errArgs);
-      } else {
-        document.l10n.setAttributes(docTitle, "certerror-page-title");
-        document.l10n.setAttributes(bodyTitle, "nssBadCert-title");
-        document.l10n.setAttributes(shortDesc, "certerror-intro", errArgs);
-      }
-      initPageCertError();
-    }
-
-    initCertErrorPageActions();
-    setTechnicalDetailsOnCertError();
-    return;
-  }
-
-  document.body.classList.add("neterror");
-
+// Returns pageTitleId, bodyTitle, bodyTitleId, and longDesc as an object
+function initTitleAndBodyIds(baseURL, isTRROnlyFailure) {
+  let bodyTitle = document.querySelector(".title-text");
   let longDesc = document.getElementById("errorLongDesc");
   const tryAgain = document.getElementById("netErrorButtonContainer");
   tryAgain.hidden = false;
@@ -371,6 +313,10 @@ function initPage() {
   let bodyTitleId = gErrorCode + "-title";
 
   switch (gErrorCode) {
+    case "basicHttpAuthDisabled":
+      bodyTitleId = "general-body-title";
+      tryAgain.hidden = true;
+      break;
     case "blockedByPolicy":
       pageTitleId = "neterror-blocked-by-policy-page-title";
       document.body.classList.add("blocked");
@@ -379,7 +325,13 @@ function initPage() {
       // For pages blocked by policy, trying again won't help.
       tryAgain.hidden = true;
       break;
-
+    case "blockedByCOOP":
+    case "blockedByCOEP": {
+      bodyTitleId = "general-body-title";
+      document.body.classList.add("blocked");
+      tryAgain.hidden = true;
+      break;
+    }
     case "cspBlocked":
     case "xfoBlocked": {
       bodyTitleId = "csp-xfo-error-title";
@@ -397,22 +349,9 @@ function initPage() {
       });
       longDesc = null;
 
-      document.getElementById("openInNewWindowContainer").hidden =
-        RPMGetBoolPref("security.xfocsp.hideOpenInNewWindow");
-
-      const openInNewWindowButton = document.getElementById(
-        "openInNewWindowButton"
-      );
-      openInNewWindowButton.addEventListener("click", function () {
-        const url = document.location.href;
-        window.open(url, "_blank", "noopener,noreferrer");
-      });
-
       // Add a learn more link
       learnMore.hidden = false;
       learnMoreLink.setAttribute("href", baseURL + "xframe-neterror-page");
-
-      setupBlockingReportingUI();
       break;
     }
 
@@ -477,6 +416,88 @@ function initPage() {
       break;
   }
 
+  return { pageTitleId, bodyTitle, bodyTitleId, longDesc };
+}
+
+function initPage() {
+  // We show an offline support page in case of a system-wide error,
+  // when a user cannot connect to the internet and access the SUMO website.
+  // For example, clock error, which causes certerrors across the web or
+  // a security software conflict where the user is unable to connect
+  // to the internet.
+  // The URL that prompts us to show an offline support page should have the following
+  // format: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/supportPageSlug",
+  // so we can extract the support page slug.
+  let baseURL = RPMGetFormatURLPref("app.support.baseURL");
+  if (document.location.href.startsWith(baseURL)) {
+    let supportPageSlug = document.location.pathname.split("/").pop();
+    RPMSendAsyncMessage("DisplayOfflineSupportPage", {
+      supportPageSlug,
+    });
+  }
+
+  const className = getCSSClass();
+  if (className) {
+    document.body.classList.add(className);
+  }
+
+  const isTRROnlyFailure = gErrorCode == "dnsNotFound" && RPMIsTRROnlyFailure();
+
+  let isNativeFallbackWarning = false;
+  if (RPMGetBoolPref("network.trr.display_fallback_warning")) {
+    isNativeFallbackWarning =
+      gErrorCode == "dnsNotFound" && RPMIsNativeFallbackFailure();
+  }
+
+  const docTitle = document.querySelector("title");
+  const shortDesc = document.getElementById("errorShortDesc");
+
+  if (gIsCertError) {
+    const bodyTitle = document.querySelector(".title-text");
+    const isStsError = window !== window.top || gHasSts;
+    const errArgs = { hostname: HOST_NAME };
+    if (isCaptive()) {
+      document.l10n.setAttributes(
+        docTitle,
+        "neterror-captive-portal-page-title"
+      );
+      document.l10n.setAttributes(bodyTitle, "captivePortal-title");
+      document.l10n.setAttributes(
+        shortDesc,
+        "neterror-captive-portal",
+        errArgs
+      );
+      initPageCaptivePortal();
+    } else {
+      if (isStsError) {
+        document.l10n.setAttributes(docTitle, "certerror-sts-page-title");
+        document.l10n.setAttributes(bodyTitle, "nssBadCert-sts-title");
+        document.l10n.setAttributes(shortDesc, "certerror-sts-intro", errArgs);
+      } else {
+        document.l10n.setAttributes(docTitle, "certerror-page-title");
+        document.l10n.setAttributes(bodyTitle, "nssBadCert-title");
+        document.l10n.setAttributes(shortDesc, "certerror-intro", errArgs);
+      }
+      initPageCertError();
+    }
+
+    initCertErrorPageActions();
+    setTechnicalDetailsOnCertError();
+    return;
+  }
+
+  document.body.classList.add("neterror");
+
+  const tryAgain = document.getElementById("netErrorButtonContainer");
+  tryAgain.hidden = false;
+  const learnMoreLink = document.getElementById("learnMoreLink");
+  learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
+  let { pageTitleId, bodyTitle, bodyTitleId, longDesc } = initTitleAndBodyIds(
+    baseURL,
+    isTRROnlyFailure
+  );
+
+  // bodyTitle is set to null if it has already been set in initTitleAndBodyIds
   if (!KNOWN_ERROR_TITLE_IDS.has(bodyTitleId)) {
     console.error("No strings exist for error:", gErrorCode);
     bodyTitleId = "generic-title";
@@ -488,8 +509,10 @@ function initPage() {
       document.body.className = "certerror"; // Shows warning icon
       pageTitleId = "dns-not-found-trr-only-title2";
       document.l10n.setAttributes(docTitle, pageTitleId);
-      bodyTitleId = "dns-not-found-trr-only-title2";
-      document.l10n.setAttributes(bodyTitle, bodyTitleId);
+      if (bodyTitle) {
+        bodyTitleId = "dns-not-found-trr-only-title2";
+        document.l10n.setAttributes(bodyTitle, bodyTitleId);
+      }
 
       shortDesc.textContent = "";
       let skipReason = RPMGetTRRSkipReason();
@@ -611,7 +634,9 @@ function initPage() {
   }
 
   document.l10n.setAttributes(docTitle, pageTitleId);
-  document.l10n.setAttributes(bodyTitle, bodyTitleId);
+  if (bodyTitle) {
+    document.l10n.setAttributes(bodyTitle, bodyTitleId);
+  }
 
   shortDesc.textContent = getDescription();
   setFocus("#netErrorButtonContainer > .try-again");
@@ -704,16 +729,20 @@ function showNativeFallbackWarning() {
  * Builds HTML elements from `parts` and appends them to `parentElement`.
  *
  * @param {HTMLElement} parentElement
- * @param {Array<["li" | "p" | "span", string, Record<string, string> | undefined]>} parts
+ * @param {Array<["li" | "p" | "span" | "a", string, Record<string, string> | undefined]>} parts
  */
 function setNetErrorMessageFromParts(parentElement, parts) {
   let list = null;
 
-  for (let [tag, l10nId, l10nArgs] of parts) {
+  for (let [tag, l10nId, l10nArgsOrHref] of parts) {
     const elem = document.createElement(tag);
     elem.dataset.l10nId = l10nId;
-    if (l10nArgs) {
-      elem.dataset.l10nArgs = JSON.stringify(l10nArgs);
+    if (l10nArgsOrHref) {
+      if (tag === "a") {
+        elem.href = l10nArgsOrHref;
+      } else {
+        elem.dataset.l10nArgs = JSON.stringify(l10nArgsOrHref);
+      }
     }
 
     if (tag === "li") {
@@ -735,17 +764,17 @@ function setNetErrorMessageFromParts(parentElement, parts) {
  * Returns an array of tuples determining the parts of an error message:
  * - HTML tag name
  * - l10n id
- * - l10n args (optional)
+ * - l10n args (if the tag is not "a", optional)
+ * - href (if the tag is "a", optional)
  *
- * @returns { Array<["li" | "p" | "span", string, Record<string, string> | undefined]> }
+ * @returns { Array<["li" | "p" | "span" | "a", string, Record<string, string> | undefined]> }
  */
 function getNetErrorDescParts() {
   switch (gErrorCode) {
     case "connectionFailure":
     case "netInterrupt":
     case "netReset":
-    case "netTimeout":
-    case "serverError": {
+    case "netTimeout": {
       let errorTags = [
         ["li", "neterror-load-error-try-again"],
         ["li", "neterror-load-error-connection"],
@@ -757,6 +786,22 @@ function getNetErrorDescParts() {
       return errorTags;
     }
 
+    case "httpErrorPage": // 4xx
+      return [["li", "neterror-http-error-page"]];
+    case "serverError": // 5xx
+      return [["li", "neterror-load-error-try-again"]];
+    case "blockedByCOOP": {
+      return [
+        ["p", "certerror-blocked-by-corp-headers-description"],
+        ["a", "certerror-coop-learn-more", COOP_MDN_DOCS],
+      ];
+    }
+    case "blockedByCOEP": {
+      return [
+        ["p", "certerror-blocked-by-corp-headers-description"],
+        ["a", "certerror-coep-learn-more", COEP_MDN_DOCS],
+      ];
+    }
     case "blockedByPolicy":
     case "deniedPortAccess":
     case "malformedURI":
@@ -840,7 +885,11 @@ function getNetErrorDescParts() {
       ];
     case "unsafeContentType":
       return [["li", "neterror-unsafe-content-type"]];
-
+    case "basicHttpAuthDisabled":
+      return [
+        ["li", "neterror-basic-http-auth", { hostname: HOST_NAME }],
+        ["a", "neterror-learn-more-link", HTTPS_UPGRADES_MDN_DOCS],
+      ];
     default:
       return [["p", "neterror-generic-error"]];
   }
@@ -884,82 +933,6 @@ function setNetErrorMessageFromCode() {
   document.l10n.setAttributes(shortDesc, "cert-error-ssl-connection-error", {
     errorMessage: errorMessage ?? errorCode ?? "",
     hostname,
-  });
-}
-
-function setupBlockingReportingUI() {
-  let checkbox = document.getElementById("automaticallyReportBlockingInFuture");
-
-  let reportingAutomatic = RPMGetBoolPref(
-    "security.xfocsp.errorReporting.automatic"
-  );
-  checkbox.checked = !!reportingAutomatic;
-
-  checkbox.addEventListener("change", function ({ target: { checked } }) {
-    RPMSetPref("security.xfocsp.errorReporting.automatic", checked);
-
-    // If we're enabling reports, send a report for this failure.
-    if (checked) {
-      reportBlockingError();
-    }
-  });
-
-  let reportingEnabled = RPMGetBoolPref(
-    "security.xfocsp.errorReporting.enabled"
-  );
-
-  if (reportingEnabled) {
-    // Display blocking error reporting UI for XFO error and CSP error.
-    document.getElementById("blockingErrorReporting").hidden = false;
-
-    if (reportingAutomatic) {
-      reportBlockingError();
-    }
-  }
-}
-
-function reportBlockingError() {
-  // We only report if we are in a frame.
-  if (window === window.top) {
-    return;
-  }
-
-  let err = gErrorCode;
-  // Ensure we only deal with XFO and CSP here.
-  if (!["xfoBlocked", "cspBlocked"].includes(err)) {
-    return;
-  }
-
-  let xfo_header = RPMGetHttpResponseHeader("X-Frame-Options");
-  let csp_header = RPMGetHttpResponseHeader("Content-Security-Policy");
-
-  // Extract the 'CSP: frame-ancestors' from the CSP header.
-  let reg = /(?:^|\s)frame-ancestors\s([^;]*)[$]*/i;
-  let match = reg.exec(csp_header);
-  csp_header = match ? match[1] : "";
-
-  // If it's the csp error page without the CSP: frame-ancestors, this means
-  // this error page is not triggered by CSP: frame-ancestors. So, we bail out
-  // early.
-  if (err === "cspBlocked" && !csp_header) {
-    return;
-  }
-
-  let xfoAndCspInfo = {
-    error_type: err === "xfoBlocked" ? "xfo" : "csp",
-    xfo_header,
-    csp_header,
-  };
-
-  // Trimming the tail colon symbol.
-  let scheme = document.location.protocol.slice(0, -1);
-
-  RPMSendAsyncMessage("ReportBlockingError", {
-    scheme,
-    host: document.location.host,
-    port: parseInt(document.location.port) || -1,
-    path: document.location.pathname,
-    xfoAndCspInfo,
   });
 }
 

@@ -1211,7 +1211,8 @@ void MacroAssembler::branchTestUndefined(Condition cond, Register tag,
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   ma_b(tag, ImmTag(JSVAL_TAG_UNDEFINED), label, cond);
 }
-void MacroAssembler::branchTestValue(Condition cond, const BaseIndex& lhs,
+template <typename T>
+void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {
   MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
   branchPtr(cond, lhs, rhs.valueReg(), label);
@@ -1518,7 +1519,7 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   MOZ_ASSERT(src.valueReg() != scratch);
-  mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
+  mov(ImmShiftedTag(type), scratch);
   xor_(dest, src.valueReg(), scratch);
   srli(scratch, dest, JSVAL_TAG_SHIFT);
   ma_b(scratch, Imm32(0), fail, Assembler::NotEqual);
@@ -1595,8 +1596,8 @@ void MacroAssembler::maxFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
   Float32Max(srcDest, srcDest, other);
 }
-void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
-  if (barrier) {
+void MacroAssembler::memoryBarrier(MemoryBarrier barrier) {
+  if (!barrier.isNone()) {
     sync();
   }
 }

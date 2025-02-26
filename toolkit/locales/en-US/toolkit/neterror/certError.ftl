@@ -96,8 +96,6 @@ cert-error-details-key-pinning-label = HTTP Public Key Pinning: { $hasHPKP }
 
 cert-error-details-cert-chain-label = Certificate chain:
 
-open-in-new-window-for-csp-or-xfo-error = Open Site in New Window
-
 # Variables:
 #   $hostname (string) - Hostname of the website blocked by csp or xfo error.
 csp-xfo-blocked-long-desc = To protect your security, { $hostname } will not allow { -brand-short-name } to display the page if another site has embedded it. To see this page, you need to open it in a new window.
@@ -129,6 +127,7 @@ contentEncodingError-title = Content Encoding Error
 unsafeContentType-title = Unsafe File Type
 netReset-title = The connection was reset
 netTimeout-title = The connection has timed out
+httpErrorPage-title = Looks like there’s a problem with this site
 serverError-title = Looks like there’s a problem with this site
 unknownProtocolFound-title = The address wasn’t understood
 proxyConnectFailure-title = The proxy server is refusing connections

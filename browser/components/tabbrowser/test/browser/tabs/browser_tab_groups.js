@@ -17,13 +17,13 @@ function createManyTabs(number) {
 }
 
 async function waitForAndAcceptGroupPanel(actionCallback) {
-  let tabgroupPanel = document.getElementById("tab-group-editor").panel;
-  let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
-  let panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
+  let editor = document.getElementById("tab-group-editor");
+  let panelShown = BrowserTestUtils.waitForPopupEvent(editor.panel, "shown");
+  let done = BrowserTestUtils.waitForEvent(editor, "TabGroupCreateDone");
   await actionCallback();
   await panelShown;
   EventUtils.synthesizeKey("VK_RETURN");
-  await panelHidden;
+  await done;
 }
 
 add_task(async function test_tabGroupCreateAndAddTab() {
@@ -1068,10 +1068,18 @@ add_task(
       skipAnimation: true,
     });
     let group = otherWindow.gBrowser.addTabGroup([otherTab]);
-
     let tab = await addTab("about:blank", {
       skipAnimation: true,
     });
+
+    let windowActivated = BrowserTestUtils.waitForEvent(window, "activate");
+    window.focus();
+    await windowActivated;
+    Assert.equal(
+      BrowserWindowTracker.getTopWindow(),
+      window,
+      "current window is active before moving group to another window"
+    );
 
     let tabGrouped = BrowserTestUtils.waitForEvent(otherWindow, "TabGrouped");
     await withTabMenu(tab, async (_, moveTabToGroupItem) => {
@@ -1079,6 +1087,11 @@ add_task(
     });
     await tabGrouped;
     Assert.equal(group.tabs.length, 2, "group has 2 tabs");
+    Assert.equal(
+      BrowserWindowTracker.getTopWindow(),
+      otherWindow,
+      "moving group activates target window"
+    );
 
     await BrowserTestUtils.closeWindow(otherWindow);
   }
@@ -1545,14 +1558,19 @@ add_task(async function test_tabGroupCreatePanel() {
   let tabgroupPanel = tabgroupEditor.panel;
   let nameField = tabgroupPanel.querySelector("#tab-group-name");
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let group;
 
-  let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
-  let group = gBrowser.addTabGroup([tab], {
-    color: "cyan",
-    label: "Food",
-    showCreateUI: true,
-  });
-  await panelShown;
+  let openCreatePanel = async () => {
+    let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
+    group = gBrowser.addTabGroup([tab], {
+      color: "cyan",
+      label: "Food",
+      showCreateUI: true,
+    });
+    await panelShown;
+  };
+
+  await openCreatePanel();
   Assert.equal(tabgroupPanel.state, "open", "Create panel is visible");
   Assert.ok(tabgroupEditor.createMode, "Group editor is in create mode");
   // Edit panel should be populated with correct group details
@@ -1572,27 +1590,31 @@ add_task(async function test_tabGroupCreatePanel() {
     "Create panel's colorpicker has correct color pre-selected"
   );
 
-  // Group should be removed after hitting Cancel
+  info("New group should be removed after hitting Cancel");
   let panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
   tabgroupPanel.querySelector("#tab-group-editor-button-cancel").click();
   await panelHidden;
   Assert.ok(!tab.group, "Tab is ungrouped after hitting Cancel");
 
-  // Group should be removed after hitting Esc
+  info("New group should be removed after hitting Esc");
+  await openCreatePanel();
   panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
   EventUtils.synthesizeKey("KEY_Escape");
   await panelHidden;
   Assert.ok(!tab.group, "Tab is ungrouped after hitting Esc");
 
-  panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
-  group = gBrowser.addTabGroup([tab], {
-    color: "cyan",
-    label: "Food",
-    showCreateUI: true,
-  });
-  await panelShown;
+  info("New group should remain when dismissing panel");
+  await openCreatePanel();
+  panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
+  tabgroupPanel.hidePopup();
+  await panelHidden;
+  Assert.equal(tabgroupPanel.state, "closed", "Tabgroup edit panel is closed");
+  Assert.equal(group.label, "Food");
+  Assert.equal(group.color, "cyan");
+  group.ungroupTabs();
 
-  // Panel inputs should work correctly
+  info("Panel inputs should work correctly");
+  await openCreatePanel();
   nameField.focus();
   nameField.value = "";
   EventUtils.sendString("Shopping");
@@ -1613,7 +1635,9 @@ add_task(async function test_tabGroupCreatePanel() {
     "Red swatch radio selected after clicking red swatch"
   );
 
-  // Panel dismissed after clicking Create and group remains
+  info(
+    "Panel should be dismissed after clicking Create and new group should remain"
+  );
   panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
   tabgroupPanel.querySelector("#tab-group-editor-button-create").click();
   await panelHidden;
@@ -1622,8 +1646,8 @@ add_task(async function test_tabGroupCreatePanel() {
   Assert.equal(group.color, "red");
 
   let rightClickGroupLabel = async () => {
-    // right-clicking on the group label reopens the panel in edit mode
-    panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
+    info("right-clicking on the group label should reopen panel in edit mode");
+    let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
     EventUtils.synthesizeMouseAtCenter(
       group.querySelector(".tab-group-label"),
       { type: "contextmenu", button: 2 },
@@ -1634,7 +1658,7 @@ add_task(async function test_tabGroupCreatePanel() {
     Assert.ok(!tabgroupEditor.createMode, "Group editor is not in create mode");
   };
 
-  // Panel dismissed after hitting Enter and group remains
+  info("Panel should be dismissed after hitting Enter and group should remain");
   await rightClickGroupLabel();
   panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
   EventUtils.synthesizeKey("VK_RETURN");
@@ -1809,8 +1833,32 @@ add_task(async function test_moveGroupToNewWindow() {
   await BrowserTestUtils.closeWindow(newWin, { animate: false });
 });
 
-add_task(async function test_saveAndCloseGroup() {
+/**
+ * The "save & close" button in the tabgroup menu should be disabled if the
+ * group is not saveable.
+ */
+add_task(async function test_saveDisabledForUnimportantGroup() {
   let { tabgroupEditor, group } = await createTabGroupAndOpenEditPanel();
+  let saveAndCloseGroupButton = tabgroupEditor.panel.querySelector(
+    "#tabGroupEditor_saveAndCloseGroup"
+  );
+  Assert.ok(
+    saveAndCloseGroupButton.disabled,
+    "Save button is disabled for newtab-only group"
+  );
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(
+    tabgroupEditor.panel,
+    "hidden"
+  );
+  tabgroupEditor.panel.hidePopup();
+  await panelHidden;
+  gBrowser.removeTabGroup(group);
+});
+
+add_task(async function test_saveAndCloseGroup() {
+  let { tabgroupEditor, group } = await createTabGroupAndOpenEditPanel([
+    await addTab("about:mozilla"),
+  ]);
   let tabgroupPanel = tabgroupEditor.panel;
   let tab = group.tabs[0];
   let saveAndCloseGroupButton = tabgroupPanel.querySelector(
@@ -1822,6 +1870,7 @@ add_task(async function test_saveAndCloseGroup() {
 
   let events = [
     BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden"),
+    BrowserTestUtils.waitForEvent(group, "TabGroupSaved"),
     BrowserTestUtils.waitForEvent(group, "TabGroupRemoved"),
   ];
   saveAndCloseGroupButton.click();
@@ -1880,6 +1929,17 @@ add_task(async function test_pinningInteractionsWithTabGroups() {
   );
 
   moreTabs.concat(tabs).forEach(tab => BrowserTestUtils.removeTab(tab));
+});
+
+add_task(async function test_pinFirstGroupedTab() {
+  let tabs = [gBrowser.selectedTab, ...createManyTabs(1)];
+  let group = gBrowser.addTabGroup(tabs);
+
+  gBrowser.pinTab(tabs[0]);
+  Assert.ok(tabs[0].pinned, "pinned first tab of group");
+  Assert.ok(!tabs[0].group, "pinning first tab ungroups it");
+
+  await removeTabGroup(group);
 });
 
 add_task(async function test_bug1936015() {

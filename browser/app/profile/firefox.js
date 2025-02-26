@@ -458,9 +458,9 @@ pref("browser.urlbar.suggest.recentsearches",       true);
 pref("browser.urlbar.suggest.quickactions",         true);
 
 pref("browser.urlbar.deduplication.enabled", false);
-pref("browser.urlbar.deduplication.thresholdDays", 7);
+pref("browser.urlbar.deduplication.thresholdDays", 0);
 
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
 #else
 pref("browser.urlbar.scotchBonnet.enableOverride", false);
@@ -583,6 +583,13 @@ pref("browser.urlbar.quicksuggest.impressionCaps.sponsoredEnabled", false);
 // characters than this threshold.
 pref("browser.urlbar.quicksuggest.ampTopPickCharThreshold", 0);
 
+// The matching strategy for AMP suggestions. Zero is the usual default
+// exact-keyword strategy. Other values are the integers defined on
+// `AmpMatchingStrategy` in `RustSuggest.sys.mjs` (corresponding to the
+// `AmpMatchingStrategy` enum in the Rust component coerced to a 1-based integer
+// value).
+pref("browser.urlbar.quicksuggest.ampMatchingStrategy", 0);
+
 // Comma-separated list of Suggest exposure suggestion types to enable.
 pref("browser.urlbar.quicksuggest.exposureSuggestionTypes", "");
 
@@ -605,14 +612,8 @@ pref("browser.urlbar.showSearchSuggestionsFirst", true);
 pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
 
 pref("browser.urlbar.trimURLs", true);
-
-#ifdef NIGHTLY_BUILD
-pref("browser.urlbar.trimHttps", true);
-pref("browser.urlbar.untrimOnUserInteraction.featureGate", true);
-#else
 pref("browser.urlbar.trimHttps", false);
 pref("browser.urlbar.untrimOnUserInteraction.featureGate", false);
-#endif
 
 // If changed to true, copying the entire URL from the location bar will put the
 // human readable (percent-decoded) URL on the clipboard.
@@ -641,11 +642,7 @@ pref("browser.urlbar.sponsoredTopSites", false);
 
 // Global toggle for whether the show search terms feature
 // can be used at all, and enabled/disabled by the user.
-#if defined(EARLY_BETA_OR_EARLIER)
-pref("browser.urlbar.showSearchTerms.featureGate", true);
-#else
 pref("browser.urlbar.showSearchTerms.featureGate", false);
-#endif
 
 // If true, show the search term in the Urlbar while on
 // a default search engine results page.
@@ -1057,7 +1054,7 @@ pref("browser.tabs.groups.enabled", true);
 pref("browser.tabs.groups.enabled", false);
 #endif
 pref("browser.tabs.groups.dragOverThresholdPercent", 20);
-pref("browser.tabs.groups.dragOverDelayMS", 30);
+pref("browser.tabs.groups.dragOverDelayMS", 120);
 pref("browser.tabs.dragdrop.moveOverThresholdPercent", 70);
 
 pref("browser.tabs.firefox-view.logLevel", "Warn");
@@ -1169,10 +1166,16 @@ pref("privacy.clearOnShutdown.offlineApps", false);
 pref("privacy.clearOnShutdown.siteSettings", false);
 pref("privacy.clearOnShutdown.openWindows", false);
 // Clear on shutdown prefs used in the new dialog
+
+// We can't remove the old pref yet since we need to use it to migrate the old
+// pref values to the new pref values.
 pref("privacy.clearOnShutdown_v2.historyFormDataAndDownloads", true);
+
+pref("privacy.clearOnShutdown_v2.browsingHistoryAndDownloads", true);
 pref("privacy.clearOnShutdown_v2.cookiesAndStorage", true);
 pref("privacy.clearOnShutdown_v2.cache", true);
 pref("privacy.clearOnShutdown_v2.siteSettings", false);
+pref("privacy.clearOnShutdown_v2.formdata", false);
 
 pref("privacy.cpd.history",                 true);
 pref("privacy.cpd.formdata",                true);
@@ -1188,13 +1191,17 @@ pref("privacy.cpd.openWindows",             false);
 // clearHistory and clearSiteData pref branches are used to
 // remember user pref options based on the two different entry points
 pref("privacy.clearHistory.historyFormDataAndDownloads", true);
+pref("privacy.clearHistory.browsingHistoryAndDownloads", true);
 pref("privacy.clearHistory.cookiesAndStorage", true);
 pref("privacy.clearHistory.cache", true);
 pref("privacy.clearHistory.siteSettings", false);
+pref("privacy.clearHistory.formdata", false);
 pref("privacy.clearSiteData.historyFormDataAndDownloads", false);
+pref("privacy.clearSiteData.browsingHistoryAndDownloads", false);
 pref("privacy.clearSiteData.cookiesAndStorage", true);
 pref("privacy.clearSiteData.cache", true);
 pref("privacy.clearSiteData.siteSettings", false);
+pref("privacy.clearSiteData.formdata", false);
 
 pref("privacy.history.custom",              false);
 
@@ -1211,9 +1218,11 @@ pref("privacy.sanitize.timeSpan", 1);
 pref("privacy.sanitize.useOldClearHistoryDialog", false);
 
 pref("privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs2", false);
-// flag to track migration of clear history dialog prefs, where cpd stands for
+pref("privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs3", false);
+// flags to track migration of clear history dialog prefs, where cpd stands for
 // clear private data
 pref("privacy.sanitize.cpd.hasMigratedToNewPrefs2", false);
+pref("privacy.sanitize.cpd.hasMigratedToNewPrefs3", false);
 
 pref("privacy.panicButton.enabled",         true);
 
@@ -1344,13 +1353,6 @@ pref("browser.proton.toolbar.version", 0);
 pref("browser.backspace_action", 2);
 
 pref("intl.regional_prefs.use_os_locales", false);
-
-// this will automatically enable inline spellchecking (if it is available) for
-// editable elements in HTML
-// 0 = spellcheck nothing
-// 1 = check multi-line controls [default]
-// 2 = check multi/single line controls
-pref("layout.spellcheckDefault", 1);
 
 pref("browser.send_pings", false);
 
@@ -1717,8 +1719,12 @@ pref("services.sync.prefs.sync.privacy.clearOnShutdown_v2.cookiesAndStorage", tr
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.downloads", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown_v2.downloads", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.formdata", true);
+pref("services.sync.prefs.sync.privacy.clearOnShutdown_v2.formdata", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.history", true);
+// We can't clear the old history pref until we're sure all clients have
+// migrated to the new pref.
 pref("services.sync.prefs.sync.privacy.clearOnShutdown_v2.historyFormDataAndDownloads", true);
+pref("services.sync.prefs.sync.privacy.clearOnShutdown_v2.browsingHistoryAndDownloads", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.offlineApps", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.sessions", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.siteSettings", true);
@@ -1799,6 +1805,8 @@ pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", false);
 pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", false);
 #endif
 pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://ads.mozilla.org/");
+pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.enabled", false);
+pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.tiles.enabled", false);
 
 // Weather widget for newtab
 pref("browser.newtabpage.activity-stream.showWeather", true);
@@ -1817,6 +1825,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config",
 // Preference to enable wallpaper selection in the Customize Menu of new tab page
 pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", true);
+pref("browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled", false);
 
 // Current new tab page background images.
 pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper-light", "");
@@ -1831,15 +1840,21 @@ pref("browser.newtabpage.activity-stream.newtabWallpapers.highlightHeaderText", 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.highlightContentText", "");
 pref("browser.newtabpage.activity-stream.newtabWallpapers.highlightCtaText", "");
 
-pref("browser.newtabpage.activity-stream.newNewtabExperience.colors", "#0090ED,#FF4F5F,#2AC3A2,#FF7139,#A172FF,#FFA437,#FF2A8A");
+pref("browser.newtabpage.activity-stream.newNewtabExperience.colors", "#004CA4,#009E97,#7550C2,#B63B39,#C96A00,#CA9600,#CC527F");
 
 // Default layout experimentation
 pref("browser.newtabpage.activity-stream.newtabLayouts.variant-a", false);
-pref("browser.newtabpage.activity-stream.newtabLayouts.variant-b", false);
+pref("browser.newtabpage.activity-stream.newtabLayouts.variant-b", true);
+
+// Shortcuts experiment
+pref("browser.newtabpage.activity-stream.newtabShortcuts.refresh", false);
 
 // Discovery stream ad size experiment
 pref("browser.newtabpage.activity-stream.newtabAdSize.variant-a", false);
 pref("browser.newtabpage.activity-stream.newtabAdSize.variant-b", false);
+
+// April Fools experiment
+pref("browser.newtabpage.activity-stream.newtabLogo.aprilfools", false);
 
 // Activity Stream prefs that control to which page to redirect
 #ifndef RELEASE_OR_BETA
@@ -1952,6 +1967,8 @@ pref("browser.newtabpage.activity-stream.discoverystream.sections.locale-content
 // List of regions that get section layout by default
 pref("browser.newtabpage.activity-stream.discoverystream.sections.region-content-config", "");
 
+pref("browser.newtabpage.activity-stream.discoverystream.sections.cards.enabled", true);
+
 
 pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.endpoint", "merino.services.mozilla.com");
 // List of regions that get spocs by default.
@@ -2010,8 +2027,6 @@ pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=a
 pref("browser.aboutwelcome.enabled", true);
 // Used to set multistage welcome UX
 pref("browser.aboutwelcome.screens", "");
-// Used to enable window modal onboarding
-pref("browser.aboutwelcome.showModal", false);
 
 // Experiment Manager
 // See Console.sys.mjs LOG_LEVELS for all possible values
@@ -2073,7 +2088,7 @@ pref("sidebar.visibility", "always-show");
 // or has history cleared on browser close.
 pref("sidebar.backupState", "{}");
 
-pref("browser.ml.chat.enabled", false);
+pref("browser.ml.chat.enabled", true);
 pref("browser.ml.chat.hideLocalhost", true);
 pref("browser.ml.chat.prompt.prefix", '{"l10nId":"genai-prompt-prefix-selection"}');
 pref("browser.ml.chat.prompts.0", '{"id":"summarize","l10nId":"genai-prompts-summarize"}');
@@ -2090,14 +2105,9 @@ pref("browser.ml.chat.sidebar", true);
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);
 
-// Show "Not Secure" text for http pages; disabled for now
-#ifdef NIGHTLY_BUILD
+// Show "Not Secure" text for http pages.
 pref("security.insecure_connection_text.enabled", true);
 pref("security.insecure_connection_text.pbmode.enabled", true);
-#else
-pref("security.insecure_connection_text.enabled", false);
-pref("security.insecure_connection_text.pbmode.enabled", false);
-#endif
 
 // If this turns true, Moz*Gesture events are not called stopPropagation()
 // before content.
@@ -2260,6 +2270,9 @@ pref("privacy.trackingprotection.fingerprinting.enabled", true);
 
 // Enable cryptomining blocking by default for all channels, only on desktop.
 pref("privacy.trackingprotection.cryptomining.enabled", true);
+
+// Skip earlyBlankFirstPaint by default if resistFingerprinting is enabled.
+pref("privacy.resistFingerprinting.skipEarlyBlankFirstPaint", true);
 
 pref("browser.contentblocking.database.enabled", true);
 
@@ -2462,15 +2475,8 @@ pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 // the pref to hide the icons
 pref("privacy.webrtc.showIndicatorsOnMacos14AndAbove", true);
 
-// Enable Fingerprinting Protection in private windows..
-pref("privacy.fingerprintingProtection.pbmode", true);
-
 // Enable Smartblock embed placeholders
-#ifdef NIGHTLY_BUILD
-  pref("extensions.webcompat.smartblockEmbeds.enabled", true);
-#else
-  pref("extensions.webcompat.smartblockEmbeds.enabled", false);
-#endif
+pref("extensions.webcompat.smartblockEmbeds.enabled", true);
 
 // Enable including the content in the window title.
 // PBM users might want to disable this to avoid a possible source of disk
@@ -2945,6 +2951,7 @@ pref("devtools.netmonitor.msg.visibleColumns",
 pref("devtools.netmonitor.msg.displayed-messages.limit", 500);
 
 pref("devtools.netmonitor.response.ui.limit", 10240);
+pref("devtools.netmonitor.ui.default-raw-response", false);
 
 // Save request/response bodies yes/no.
 pref("devtools.netmonitor.saveRequestAndResponseBodies", true);
@@ -3141,11 +3148,11 @@ pref("devtools.debugger.features.async-live-stacks", false);
 pref("devtools.debugger.show-content-scripts", false);
 
 pref("devtools.debugger.hide-ignored-sources", false);
-#if defined(NIGHTLY_BUILD)
-  pref("devtools.debugger.features.codemirror-next", true);
-#else
-  pref("devtools.debugger.features.codemirror-next", false);
-#endif
+
+// When `true` the debugger editor uses Codemirror v6
+// and when `false` the debugger editor uses Codemirror v5
+// This should be removed once the CM5 code is cleaned up. See Bug 1943909
+pref("devtools.debugger.features.codemirror-next", true);
 
 // Disable autohide for DevTools popups and tooltips.
 // This is currently not exposed by any UI to avoid making
@@ -3224,18 +3231,8 @@ pref("browser.firefox-view.virtual-list.enabled", true);
 // message id, the id of the last screen they saw, and whether they completed the tour
 pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
 
-// Enables cookie banner handling in Nightly in Private Browsing Mode. See
-// StaticPrefList.yaml for a description of the prefs.
-#ifdef NIGHTLY_BUILD
-  pref("cookiebanners.service.mode.privateBrowsing", 1);
-#endif
 
-#if defined(EARLY_BETA_OR_EARLIER)
-  // Enables the cookie banner desktop UI.
-  pref("cookiebanners.ui.desktop.enabled", true);
-#else
-  pref("cookiebanners.ui.desktop.enabled", false);
-#endif
+pref("cookiebanners.ui.desktop.enabled", false);
 
 // When true, shows a one-time feature callout for cookie banner blocking.
 pref("cookiebanners.ui.desktop.showCallout", false);
@@ -3328,8 +3325,12 @@ pref("browser.backup.template.fallback-download.aurora", "https://www.mozilla.or
 pref("browser.backup.template.fallback-download.nightly", "https://www.mozilla.org/firefox/channel/desktop/?utm_medium=firefox-desktop&utm_source=backup&utm_campaign=firefox-backup-2024&utm_content=control#nightly");
 pref("browser.backup.template.fallback-download.esr", "https://www.mozilla.org/firefox/enterprise/?utm_medium=firefox-desktop&utm_source=backup&utm_campaign=firefox-backup-2024&utm_content=control#download");
 
-// Pref to enable the new profiles
-pref("browser.profiles.enabled", false);
+#ifdef NIGHTLY_BUILD
+  // Pref to enable the new profiles
+  pref("browser.profiles.enabled", true);
+#else
+  pref("browser.profiles.enabled", false);
+#endif
 pref("browser.profiles.profile-name.updated", false);
 // Whether to allow the user to merge profile data
 pref("browser.profiles.sync.allow-danger-merge", false);

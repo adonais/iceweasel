@@ -17,12 +17,6 @@ toolkit.jar:
    content/global/aboutProfiles.js
    content/global/aboutProfiles.xhtml
 #endif
-   content/global/aboutRights.js
-#ifdef MOZILLA_OFFICIAL
-   content/global/aboutRights.xhtml
-#else
-   content/global/aboutRights.xhtml           (aboutRights-unbranded.xhtml)
-#endif
    content/global/aboutServiceWorkers.js
    content/global/aboutServiceWorkers.xhtml
    content/global/aboutwebrtc/aboutWebrtc.css   (aboutwebrtc/aboutWebrtc.css)
@@ -91,6 +85,8 @@ toolkit.jar:
    content/global/elements/general.js          (widgets/general.js)
    content/global/elements/menu.js             (widgets/menu.js)
    content/global/elements/menupopup.js        (widgets/menupopup.js)
+   content/global/elements/moz-box-button.css    (widgets/moz-box-button/moz-box-button.css)
+   content/global/elements/moz-box-button.mjs    (widgets/moz-box-button/moz-box-button.mjs)
    content/global/elements/moz-button.css    (widgets/moz-button/moz-button.css)
    content/global/elements/moz-button.mjs    (widgets/moz-button/moz-button.mjs)
    content/global/elements/moz-button-group.css    (widgets/moz-button-group/moz-button-group.css)
@@ -101,6 +97,7 @@ toolkit.jar:
    content/global/elements/moz-fieldset.css    (widgets/moz-fieldset/moz-fieldset.css)
    content/global/elements/moz-fieldset.mjs    (widgets/moz-fieldset/moz-fieldset.mjs)
    content/global/elements/moz-input-common.css       (widgets/moz-input-common.css)
+   content/global/elements/moz-input-search.mjs    (widgets/moz-input-search/moz-input-search.mjs)
    content/global/elements/moz-input-text.css    (widgets/moz-input-text/moz-input-text.css)
    content/global/elements/moz-input-text.mjs    (widgets/moz-input-text/moz-input-text.mjs)
    content/global/elements/moz-page-nav.css    (widgets/moz-page-nav/moz-page-nav.css)
@@ -156,3 +153,17 @@ toolkit.jar:
 # Third party files
    content/global/third_party/d3/d3.js                (/third_party/js/d3/d3.js)
    content/global/third_party/cfworker/json-schema.js (/third_party/js/cfworker/json-schema.js)
+
+# React and Redux vendor libraries
+   content/global/vendor/Redux.sys.mjs (vendor/react/Redux.sys.mjs)
+   content/global/vendor/react.js (vendor/react/react.js)
+   content/global/vendor/react-dom.js (vendor/react/react-dom.js)
+   content/global/vendor/react-dom-server.js (vendor/react/react-dom-server.js)
+#ifndef RELEASE_OR_BETA
+   content/global/vendor/react-dev.js (vendor/react/react-dev.js)
+   content/global/vendor/react-dom-dev.js (vendor/react/react-dom-dev.js)
+#endif
+   content/global/vendor/prop-types.js (vendor/react/prop-types.js)
+   content/global/vendor/react-transition-group.js (vendor/react/react-transition-group.js)
+   content/global/vendor/redux.js (vendor/react/redux.js)
+   content/global/vendor/react-redux.js (vendor/react/react-redux.js)

@@ -336,10 +336,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Sulje työkaluvalikko</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Sulje mukautetun välilehden valikko</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Lukunäkymä, käännä, tulosta, jaa, avaa sovellus</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Lukunäkymä, tulosta, jaa, avaa sovellus</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Lukunäkymä, käännä, %s, tulosta, jaa, avaa sovellus</string>
@@ -576,35 +572,57 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Kaatumisilmoitusten avulla voimme diagnosoida ja korjata selaimen ongelmia. Ilmoitukset voivat sisältää henkilökohtaisia tai arkaluonteisia tietoja.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Lue lisää kaatumisilmoituksista</string>
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Lue lisää</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Lähetä teknistä ja vuorovaikutustietoa Mozillalle</string>
     <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Tiedot laitteestasi, laitteistokokoonpanosta ja Firefoxin käytöstä auttavat parantamaan ominaisuuksia, suorituskykyä ja vakautta käyttäjille kaikkialla.</string>
+    <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Tiedot laitteestasi, laitteistokokoonpanosta ja Firefoxin käytöstä auttavat parantamaan ominaisuuksia, suorituskykyä ja vakautta kaikille.</string>
     <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Lue lisää tietojen käytöstä</string>
+    <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Lue lisää</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Valmis</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Peruuta</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Peruuta</string>
 
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Tervetuloa Firefoxiin</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Nopeaa ja turvallista verkkoselailua.</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header_2">Nopeaa ja turvallista verkkoselailua</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Hyväksy ja jatka</string>
 
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Jatkamalla hyväksyt Firefox-%1$s.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+    <string name="onboarding_term_of_service_line_one_2">Jatkamalla hyväksyt %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">käyttöehdot</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefoxin käyttöehdot</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox välittää yksityisyydestäsi. Lue lisää: %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox välittää yksityisyydestäsi. Lue lisää: %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Tietosuojakäytäntö</string>
     <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$S is replaced by an active link, using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Selaimen parantamiseksi Firefox lähettää diagnostiikka- ja vuorovaikutustietoja Mozillalle. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Hallitse</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Auta meitä kasvattamaan Firefoxia</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Kun kerrot kuinka löysit Firefoxin ja miten käytät sitä, autat meitä esittelemään selaimemme entistä useammalle ihmiselle.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Jaa mahdollisimman vähän tietoa Mozillan markkinointiteknologiakumppaneiden kanssa. Näitä tietoja ei koskaan myydä tai käytetä mainosten esittämiseen sinulle.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Kuinka käytämme tietoja</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Vahvista ja aloita selaaminen</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Valitse työkalupalkin sijoitus</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -619,6 +637,8 @@
     <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_bottom_option">Alhaalla</string>
 
+    <!-- Onboarding toolbar selection card content description for the main image. -->
+    <string name="onboarding_customize_toolbar_main_image_content_description">Työkalupalkin valintanäkymän suuri otsikkokuva, jossa näkyy kuvitettu työkalupalkki.</string>
     <!-- Onboarding toolbar selection card content description for the toolbar placement image. %1$s is placeholder for either 'top' or 'bottom'. -->
     <string name="onboarding_customize_toolbar_placement_content_description" moz:removedIn="135" tools:ignore="UnusedResources">%1$s olevan työkalupalkin kuva</string>
 
@@ -642,6 +662,8 @@
     <string name="onboarding_customize_theme_light_option">Vaalea</string>
     <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
     <string name="onboarding_customize_theme_system_option">Järjestelmän teema</string>
+    <!-- Onboarding theme selection card content description for the main image. -->
+    <string name="onboarding_customize_theme_main_image_content_description">Suuri otsikkokuva teemavalintanäkymästä, jossa näkyy kuvitetut taiteilija- ja rakentajatyökalut.</string>
     <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
     <string name="onboarding_customize_theme_content_description">%1$sn teeman kuva</string>
 
@@ -1044,19 +1066,24 @@
     <string name="exceptions_empty_message_learn_more_link">Lue lisää</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Käyttö- ja tekniset tiedot</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Tekniset ja vuorovaikutustiedot</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Lähetä teknisiä tietoja ja vuorovaikutustietoja</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Lue lisää</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Jakaa selaimen suorituskykyyn, käyttöön, laitteistoon ja mukauttamiseen liittyviä tietoja Mozillan kanssa, jotta %1$sia voidaan parantaa</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Jakaa selaimen suorituskykyyn, käyttöön, laitteistoon ja mukauttamiseen liittyviä tietoja Mozillan kanssa, jotta %1$sia voidaan parantaa</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Tiedot laitteestasi, laitekokoonpanosta ja käytöstä auttavat meitä parantamaan Firefoxin ominaisuuksia, suorituskykyä ja vakautta.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Markkinointitiedot</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Jakaa perustiedot käytöstä mobiilimarkkinointitoimittajamme Adjustin kanssa</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Markkinointitiedot</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Kampanjan mittaustiedot</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Jaa Mozillan markkinointikumppaneiden kanssa tietoja siitä, kuinka löysit Firefoxin. Tämä auttaa meitä kasvattamaan Firefoxia ja rakentamaan parempaa Internetiä</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Jaa Mozillan markkinointikumppaneiden kanssa tietoja siitä, kuinka löysit Firefoxin. Tämä auttaa meitä kasvattamaan Firefoxia ja rakentamaan parempaa Internetiä</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Kerro Mozillan markkinointiteknologiakumppaneille, miten löysit Firefoxin ja käytät sitä.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Lue lisää markkinointitiedoista</string>
 
@@ -1071,6 +1098,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Tämä auttaa meitä diagnosoimaan ja korjaamaan selaimen ongelmia. Ilmoitukset voivat sisältää henkilökohtaisia tai arkaluonteisia tietoja.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Jakaa kaatumistiedot automaattisesti Mozillan kanssa kaatumisen jälkeen käynnistettäessä</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Lue lisää kaatumisilmoituksista</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Tutkimukset</string>
@@ -1234,7 +1264,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Käynnissä</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s saattaa asentaa ja suorittaa tutkimuksia silloin tällöin.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s saattaa asentaa ja suorittaa tutkimuksia silloin tällöin.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Kokeile ominaisuuksia ja ideoita, ennen kuin ne julkaistaan kaikille.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Asenna ja suorita tutkimuksia</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Lue lisää</string>
 
@@ -1376,8 +1410,12 @@
     <string name="webcompat_reporter_url_error_invalid">Kirjoita kelvollinen URL-osoite</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Mikä on rikki? (valinnainen)</string>
+    <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_label_whats_broken_2">Mikä on rikki?</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason">Valitse syy</string>
+    <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_choose_reason_error">Valitse syy</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
     <string name="webcompat_reporter_label_description">Kuvaa ongelma (valinnainen)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
@@ -2060,6 +2098,8 @@
     <string name="about_privacy_notice">Tietosuojakäytäntö</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Tunne oikeutesi</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Käyttöehdot</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Lisenssitiedot</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2529,6 +2569,8 @@
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox-ehdotukset</string>
 
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Nousussa olevat haut</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Google-haku</string>
 
@@ -2680,6 +2722,8 @@
     <string name="review_quality_check_no_analysis_link" moz:removedIn="136" tools:ignore="UnusedResources">Tarkista arvostelun laatu</string>
     <!-- Headline for review quality check contextual onboarding card. -->
     <string name="review_quality_check_contextual_onboarding_title" moz:removedIn="136" tools:ignore="UnusedResources">Kokeile luotettavaa tuotearvosteluopastamme</string>
+    <!-- Description for review quality check contextual onboarding card. The first and last two parameters are for retailer names (e.g. Amazon, Walmart). The second parameter is for the name of the application (e.g. Firefox). -->
+    <string name="review_quality_check_contextual_onboarding_description" moz:removedIn="136" tools:ignore="UnusedResources">Katso, kuinka luotettavia palvelun %1$s tuotearvostelut ovat, ennen kuin ostat. Arvostelujen tarkistin, kokeellinen ominaisuus %2$slta, on sisäänrakennettu suoraan selaimeen. Se toimii myös selaimilla %3$s ja %4$s.</string>
     <!-- Description for review quality check contextual onboarding card. The first parameters is for retailer name (e.g. Amazon). The second parameter is for the name of the application (e.g. Firefox). -->
     <string name="review_quality_check_contextual_onboarding_description_one_vendor" moz:removedIn="136" tools:ignore="UnusedResources">Katso, kuinka luotettavia tuotearvostelut ovat palvelussa %1$s, ennen kuin ostat. Arvostelujen tarkistin, %2$sin kokeellinen ominaisuus, on sisäänrakennettu suoraan selaimeen.</string>
     <!-- Paragraph presenting review quality check feature. First parameter is the Fakespot product name. Second parameter is for clickable text defined in review_quality_check_contextual_onboarding_learn_more_link. In the phrase "Fakespot by Mozilla", "by" can be localized. Does not need to stay by. -->
@@ -2963,6 +3007,10 @@
     <string name="download_language_file_dialog_negative_button_text">Peruuta</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Suojattu</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">Ei suojattu</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Ole varovainen tällä sivustolla</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2983,6 +3031,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Jos jokin näyttää olevan rikki tällä sivustolla, yritä poistaa suojaukset käytöstä.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">Suojaukset ovat POIS PÄÄLTÄ. Suosittelemme kytkemään ne takaisin päälle.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Seuraimia estetty: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">Seuraimia ei löytynyt</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Tietosuoja- ja turvallisuusasetukset</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Seuraimia estetty: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Evästeiden ja sivustotietojen poistaminen sivustolta <b>%s</b> saattaa kirjata sinut ulos verkkosivustoilta ja tyhjentää ostoskorit.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Tyhjennä</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Peruuta</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Evästeet ja sivustotiedot poistettu</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Suojattu yhteys</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Yhteys ei ole suojattu</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Varmistanut %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3104,6 +3183,13 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Maa-asetustot käyttöönotettavaksi vianjäljitystä varten</string>
 
+    <!-- The title of the header for the section for managing addresses. -->
+    <string name="debug_drawer_addresses_management_header">Hallitse osoitteita</string>
+    <!-- The title of the button in the debug drawer for adding a new address. -->
+    <string name="debug_drawer_add_new_address">Lisää uusi osoite valitulle maa-asetustolle</string>
+    <!-- The title of the button for deleting in the debug drawer all addresses. -->
+    <string name="debug_drawer_delete_all_addresses">Poista kaikki osoitteet</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The title of the CFR Tools feature in the Debug Drawer -->
     <string name="debug_drawer_cfr_tools_title">CFR-työkalut</string>
@@ -3121,6 +3207,10 @@
     <!-- Message shown to explain how to exit fullscreen mode when using back button navigation. -->
     <!-- Localisation note: this text should be as short as possible, max 68 chars -->
     <string name="exit_fullscreen_with_back_button_short">Vedä ylhäältä ja paina takaisin poistuaksesi</string>
+
+    <!-- Beta Label Component !-->
+    <!-- Text shown as a label or tag to indicate a feature or area is still undergoing active development. Note that here "Beta" should not be translated, as it is used as an icon styled element. -->
+    <string name="beta_feature">BETA</string>
 
     <!-- Root certificate expiration warnings -->
     <!-- These strings for homepage cards and push notifications to be pushed to users running outdated versions of Firefox. We want to encourage these users to update to the latest version so their extensions and other features don't stop working when Firefox's old root certificate expires on 2025-03-14. For more information, see this SUMO article: https://support.mozilla.org/kb/root-certificate-expiration !-->
@@ -3152,4 +3242,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Päivitä ennen 14. maaliskuuta, jotta voit jatkaa lisäosien ja muiden ominaisuuksien käyttöä.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Jotkut ominaisuudet lakkaavat toimimasta huomenna.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Näytä piilotettu teksti</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Tyhjennä teksti</string>
 </resources>

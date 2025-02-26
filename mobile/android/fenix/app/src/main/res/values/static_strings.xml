@@ -26,8 +26,6 @@
     <string name="app_services_abbreviation" translatable="false">AS</string>
     <!-- Name for the Pocket product -->
     <string name="pocket_product_name" translatable="false">Pocket</string>
-    <!-- Name for the Fakespot product -->
-    <string name="shopping_product_name" translatable="false">Fakespot</string>
 
     <!-- App preference label for keeping the debug menu (secret settings, secret debug info, nimbus experiments, etc.) permanently revealed -->
     <string name="preferences_persistent_debug_menu" translatable="false">Keep Debug Menu revealed</string>
@@ -75,8 +73,6 @@
     <string name="preferences_sync_debug_temporary_auth_error_button_title">Simulate temporary account auth error</string>
     <!-- Button title for simulating an FxA permanent auth error inside the Sync Debug menu -->
     <string name="preferences_sync_debug_permanent_auth_error_button_title">Simulate permanent account auth error</string>
-    <!-- Label for enabling the Tabs Tray to Compose changes -->
-    <string name="preferences_debug_settings_tabs_tray_to_compose" translatable="false">Enable Tabs Tray to Compose rewrite</string>
     <!-- Label for enabling the Compose Top Sites -->
     <string name="preferences_debug_settings_compose_top_sites" translatable="false">Enable Compose Top Sites</string>
     <!-- Label for enabling the Compose Homepage -->
@@ -149,10 +145,6 @@
 
     <string name="profiler_uploaded_url_to_clipboard">URL copied to clipboard successfully</string>
 
-    <string name="review_quality_check_retailer_name_amazon">Amazon</string>
-    <string name="review_quality_check_retailer_name_bestbuy">Best Buy</string>
-    <string name="review_quality_check_retailer_name_walmart">Walmart</string>
-
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
     <string name="debug_drawer_cfr_tools_reset_cfr_description">Toggle off a CFR to reset it. Toggle on a CFR to mark it as shown.</string>
@@ -174,6 +166,10 @@
     <string name="debug_drawer_cfr_tools_homepage_nav_toolbar_title">Homepage Navigation Toolbar</string>
     <!-- The homepage nav toolbar CFR description in CFR Tools -->
     <string name="debug_drawer_cfr_tools_homepage_nav_toolbar_description">Displayed when the user is on the homepage and sees the new navigation bar for the first time. Note that this CFR must be displayed in order for the Homepage Sync CFR to be shown.</string>
+    <!-- The homepage search bar CFR title in CFR Tools -->
+    <string name="debug_drawer_cfr_tools_homepage_searchbar_title">Homepage Searchbar</string>
+    <!-- The homepage searchbar CFR description in CFR Tools -->
+    <string name="debug_drawer_cfr_tools_homepage_searchbar_description">Displayed when a new user sees the homepage for the first time.</string>
     <!-- The homepage sync CFR title in CFR Tools -->
     <string name="debug_drawer_cfr_tools_homepage_sync_title">Homepage Sync</string>
     <!-- The homepage sync CFR description in CFR Tools -->
@@ -217,16 +213,8 @@
     <string name="glean_debug_tools_open_debug_view">Open debug view (in default browser)</string>
     <!-- The copy debug view link button text in Glean debug tools -->
     <string name="glean_debug_tools_copy_debug_view_link">Copy debug view link</string>
-    <!-- The send pending event pings button text in Glean debug tools -->
-    <string name="glean_debug_tools_send_pending_event_pings_button_text">Send pending event pings</string>
-    <!-- The send baseline event pings button text in Glean debug tools -->
-    <string name="glean_debug_tools_send_baseline_pings_button_text">Send baseline pings</string>
-    <!-- The send metrics event pings button text in Glean debug tools -->
-    <string name="glean_debug_tools_send_metrics_pings_button_text">Send metrics pings</string>
-    <!-- The send pending event pings toast message -->
-    <string name="glean_debug_tools_send_pending_event_ping_toast_message">Sent pending event ping</string>
-    <!-- The send baseline pings toast message -->
-    <string name="glean_debug_tools_send_baseline_ping_toast_message">Sent baseline ping</string>
-    <!-- The send metrics pings toast message -->
-    <string name="glean_debug_tools_send_metrics_ping_toast_message">Sent metrics ping</string>
+    <!-- The send ping button text in Glean debug tools -->
+    <string name="glean_debug_tools_send_ping_button_text">Send Ping</string>
+    <!-- The send pings toast message. The first parameter is the type of ping -->
+    <string name="glean_debug_tools_send_ping_toast_message">Sent %1$s ping</string>
 </resources>

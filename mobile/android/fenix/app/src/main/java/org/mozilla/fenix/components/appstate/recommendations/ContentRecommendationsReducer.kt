@@ -8,6 +8,7 @@ import androidx.annotation.VisibleForTesting
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
+import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.ext.recordNewImpression
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
 import org.mozilla.fenix.components.appstate.AppState
@@ -106,6 +107,7 @@ internal object ContentRecommendationsReducer {
                     pocketStories = emptyList(),
                     pocketSponsoredStories = emptyList(),
                     contentRecommendations = emptyList(),
+                    sponsoredContents = emptyList(),
                 )
             }
 
@@ -127,10 +129,31 @@ internal object ContentRecommendationsReducer {
                 }
             }
 
+            is ContentRecommendationsAction.SponsoredContentsChange -> {
+                val updatedSponsoredContentsState = state.copyWithRecommendationsState {
+                    it.copy(
+                        sponsoredContents = action.sponsoredContents,
+                    )
+                }
+
+                updatedSponsoredContentsState.copyWithRecommendationsState {
+                    it.copy(
+                        pocketStories = if (action.showContentRecommendations) {
+                            updatedSponsoredContentsState.getStories(useSponsoredStoriesState = false)
+                        } else {
+                            updatedSponsoredContentsState.getFilteredStories(
+                                useSponsoredStoriesState = false,
+                            )
+                        },
+                    )
+                }
+            }
+
             is ContentRecommendationsAction.PocketStoriesShown -> {
+                val stories = action.impressions.map { it.story }
                 var updatedCategories = state.recommendationState.pocketStoriesCategories
 
-                action.storiesShown.filterIsInstance<PocketRecommendedStory>()
+                stories.filterIsInstance<PocketRecommendedStory>()
                     .forEach { shownStory ->
                         updatedCategories = updatedCategories.map { category ->
                             when (category.name == shownStory.category) {
@@ -150,7 +173,7 @@ internal object ContentRecommendationsReducer {
                         }
                     }
 
-                val recommendationsShown = action.storiesShown.filterIsInstance<ContentRecommendation>()
+                val recommendationsShown = stories.filterIsInstance<ContentRecommendation>()
                 val updatedRecommendations = state.recommendationState.contentRecommendations.map { recommendation ->
                     if (recommendationsShown.contains(recommendation)) {
                         recommendation.copy(
@@ -162,7 +185,7 @@ internal object ContentRecommendationsReducer {
                 }
 
                 var updatedSponsoredStories = state.recommendationState.pocketSponsoredStories
-                action.storiesShown.filterIsInstance<PocketSponsoredStory>().forEach { shownStory ->
+                stories.filterIsInstance<PocketSponsoredStory>().forEach { shownStory ->
                     updatedSponsoredStories = updatedSponsoredStories.map { story ->
                         when (story.id == shownStory.id) {
                             true -> story.recordNewImpression()
@@ -171,14 +194,27 @@ internal object ContentRecommendationsReducer {
                     }
                 }
 
+                val sponsoredContentShown = stories.filterIsInstance<SponsoredContent>()
+                val updatedSponsoredContents = state.recommendationState.sponsoredContents.map { spoc ->
+                    if (sponsoredContentShown.contains(spoc)) {
+                        spoc.recordNewImpression()
+                    } else {
+                        spoc
+                    }
+                }
+
                 state.copyWithRecommendationsState {
                     it.copy(
                         pocketStoriesCategories = updatedCategories,
                         pocketSponsoredStories = updatedSponsoredStories,
                         contentRecommendations = updatedRecommendations,
+                        sponsoredContents = updatedSponsoredContents,
                     )
                 }
             }
+
+            is ContentRecommendationsAction.ContentRecommendationClicked,
+            -> state
         }
     }
 }

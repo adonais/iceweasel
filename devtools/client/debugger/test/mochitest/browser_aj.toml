@@ -154,6 +154,8 @@ skip-if = [
   "os == 'linux' && os_version == '18.04' && debug'", # Bug 1831904
   "os == 'linux' && os_version == '18.04' && tsan'", # Bug 1831904
   "win11_2009 && debug", # Bug 1831904
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug", # Bug 1831904
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov", # Bug 1831904
 ]
 
 ["browser_dbg-debug-line.js"]
@@ -193,6 +195,7 @@ skip-if = ["debug"] # Window leaks: bug 1575332
 
 ["browser_dbg-event-breakpoints.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+skip-if = ["os == 'mac'"] # Frequent failures on macos only: bug 1830888
 
 ["browser_dbg-event-handler.js"]
 
@@ -280,7 +283,6 @@ skip-if = ["ccov && os == 'win'"] # Bug 1443132
 ["browser_dbg-inline-exceptions.js"]
 
 ["browser_dbg-inline-preview.js"]
-skip-if = ["true"] # bug 1607636
 
 ["browser_dbg-inline-script-offset.js"]
 
@@ -320,6 +322,12 @@ skip-if = [
 ["browser_dbg-javascript-tracer-values.js"]
 skip-if = [
   "tsan", # Bug 1832135
+]
+
+["browser_dbg-javascript-tracer-values-preview.js"]
+skip-if = [
+  "tsan", # Bug 1832135
+  "a11y_checks", # The tracer tree isn't yet accessible
 ]
 
 ["browser_dbg-javascript-tracer-worker.js"]

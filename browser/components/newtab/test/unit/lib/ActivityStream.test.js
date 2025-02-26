@@ -22,7 +22,6 @@ import { TopStoriesFeed } from "lib/TopStoriesFeed.sys.mjs";
 import { HighlightsFeed } from "lib/HighlightsFeed.sys.mjs";
 import { DiscoveryStreamFeed } from "lib/DiscoveryStreamFeed.sys.mjs";
 
-import { LinksCache } from "lib/LinksCache.sys.mjs";
 import { PersistentCache } from "lib/PersistentCache.sys.mjs";
 import { DownloadsManager } from "lib/DownloadsManager.sys.mjs";
 
@@ -55,7 +54,6 @@ describe("ActivityStream", () => {
       HighlightsFeed,
       DiscoveryStreamFeed,
 
-      LinksCache,
       PersistentCache,
       DownloadsManager,
     });
@@ -904,19 +902,6 @@ describe("ActivityStream", () => {
       assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
     });
   });
-  describe("telemetry reporting on init failure", () => {
-    it("should send a ping on init error", () => {
-      as = new ActivityStream();
-      const telemetry = { handleUndesiredEvent: sandbox.spy() };
-      sandbox.stub(as.store, "init").throws();
-      sandbox.stub(as.store.feeds, "get").returns(telemetry);
-      try {
-        as.init();
-      } catch (e) {}
-      assert.calledOnce(telemetry.handleUndesiredEvent);
-    });
-  });
-
   describe("searchs shortcuts shouldPin pref", () => {
     const SEARCH_SHORTCUTS_SEARCH_ENGINES_PREF =
       "improvesearch.topSiteSearchShortcuts.searchEngines";

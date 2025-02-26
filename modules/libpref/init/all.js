@@ -39,7 +39,6 @@ pref("security.signed_app_signatures.policy", 2);
 
 pref("security.xfocsp.errorReporting.enabled", true);
 pref("security.xfocsp.errorReporting.automatic", false);
-pref("security.xfocsp.hideOpenInNewWindow", true);
 
 // Issuer we use to detect MitM proxies. Set to the issuer of the cert of the
 // Firefox update service. The string format is whatever NSS uses to print a DN.
@@ -1236,7 +1235,7 @@ pref("network.http.http3.default-max-stream-blocked", 20);
 
 // This is only for testing!
 // This adds alt-svc mapping and it has a form of <host-name>;<alt-svc-header>
-// Example: example1.com;h3-29=":443",example2.com;h3-29=":443"
+// Example: example1.com;h3=":443",example2.com;h3=":443"
 pref("network.http.http3.alt-svc-mapping-for-testing", "");
 
 // alt-svc allows separation of transport routing from
@@ -2719,7 +2718,7 @@ pref("font.size.monospace.x-math", 13);
 
   // fontconfig doesn't support emoji yet
   // https://lists.freedesktop.org/archives/fontconfig/2016-October/005842.html
-  pref("font.name-list.emoji", "Twemoji Mozilla");
+  pref("font.name-list.emoji", "Noto Color Emoji, Twemoji Mozilla");
 
   pref("font.name-list.serif.ar", "serif");
   pref("font.name-list.sans-serif.ar", "sans-serif");
@@ -3004,7 +3003,6 @@ pref("font.size.monospace.x-math", 13);
 
 // Login Manager prefs
 pref("signon.rememberSignons",              true);
-pref("signon.rememberSignons.visibilityToggle", true);
 pref("signon.autofillForms",                true);
 pref("signon.autofillForms.autocompleteOff", true);
 pref("signon.autofillForms.http",           false);
@@ -3084,12 +3082,6 @@ pref("network.tcp.keepalive.idle_time", 600); // seconds; 10 mins
   pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-// This pref controls if we send the "public-suffix-list-updated" notification
-// from PublicSuffixList.onUpdate() - Doing so would cause the PSL graph to
-// be updated while Firefox is running which may cause principals to have an
-// inconsistent state. See bug 1582647 comment 30
-pref("network.psl.onUpdate_notify", false);
-
 #ifdef MOZ_WIDGET_GTK
   pref("widget.disable-workspace-management", false);
 #endif
@@ -3152,6 +3144,7 @@ pref("extensions.webextensions.protocol.remote", true);
 
 // Enable userScripts API by default.
 pref("extensions.webextensions.userScripts.enabled", true);
+pref("extensions.userScripts.mv3.enabled", true);
 
 // Whether or not the installed extensions should be migrated to the storage.local IndexedDB backend.
 pref("extensions.webextensions.ExtensionStorageIDB.enabled", true);
@@ -3766,6 +3759,7 @@ pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
     // Health Report is enabled by default on all channels.
     // Do note that the toggle on Fenix and Focus does NOT reflect to this pref.
     pref("datareporting.healthreport.uploadEnabled", true);
+    pref("datareporting.usage.uploadEnabled", true);
   #endif
 #endif
 
@@ -3954,8 +3948,8 @@ pref("devtools.errorconsole.deprecation_warnings", true);
   pref("devtools.debugger.remote-enabled", true, sticky);
 #endif
 
-// Disable service worker debugging on all channels (see Bug 1651605).
-pref("devtools.debugger.features.windowless-service-workers", false);
+// Enable service worker debugging on all channels.
+pref("devtools.debugger.features.windowless-service-workers", true);
 
 // Disable remote debugging protocol logging.
 pref("devtools.debugger.log", false);
@@ -4057,6 +4051,7 @@ pref("extensions.formautofill.heuristics.autofillSameOriginWithTop", true);
 
 #ifdef NIGHTLY_BUILD
   pref("extensions.formautofill.ml.experiment.enabled", true);
+  pref("extensions.formautofill.ml.experiment.modelRevision", "v0.1.3");
 #endif
 
 pref("toolkit.osKeyStore.loglevel", "Warn");
@@ -4126,8 +4121,4 @@ pref("privacy.query_stripping.strip_on_share.canDisable", true);
 
 // Captcha Detection
 pref("captchadetection.loglevel", "Warn");
-#if defined(NIGHTLY_BUILD)
 pref("captchadetection.actor.enabled", true);
-#else
-pref("captchadetection.actor.enabled", false);
-#endif

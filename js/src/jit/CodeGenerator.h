@@ -49,10 +49,6 @@ class WarpSnapshot;
 template <typename Fn, Fn fn, class ArgSeq, class StoreOutputTo>
 class OutOfLineCallVM;
 
-enum class SwitchTableType { Inline, OutOfLine };
-
-template <SwitchTableType tableType>
-class OutOfLineSwitch;
 class OutOfLineTestObject;
 class OutOfLineNewArray;
 class OutOfLineNewObject;
@@ -163,9 +159,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void visitOutOfLineTypeOfV(OutOfLineTypeOfV* ool);
   void visitOutOfLineTypeOfIsNonPrimitiveV(OutOfLineTypeOfIsNonPrimitiveV* ool);
   void visitOutOfLineTypeOfIsNonPrimitiveO(OutOfLineTypeOfIsNonPrimitiveO* ool);
-
-  template <SwitchTableType tableType>
-  void visitOutOfLineSwitch(OutOfLineSwitch<tableType>* ool);
 
   void visitOutOfLineIsCallable(OutOfLineIsCallable* ool);
   void visitOutOfLineIsConstructor(OutOfLineIsConstructor* ool);
@@ -322,9 +315,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   void emitInstanceOf(LInstruction* ins, Register protoReg);
 
-  void loadJSScriptForBlock(MBasicBlock* block, Register reg);
-  void loadOutermostJSScript(Register reg);
-
 #ifdef DEBUG
   void emitAssertResultV(const ValueOperand output, const MDefinition* mir);
   void emitAssertGCThingResult(Register input, const MDefinition* mir);
@@ -367,8 +357,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir);
 
   IonScriptCounts* maybeCreateScriptCounts();
-
-  void emitWasmCompareAndSelect(LWasmCompareAndSelect* ins);
 
   template <typename InstructionWithMaybeTrapSite, class AddressOrBaseIndex>
   void emitWasmValueLoad(InstructionWithMaybeTrapSite* ins, MIRType type,

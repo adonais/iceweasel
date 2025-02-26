@@ -595,19 +595,39 @@ export class WelcomeScreen extends React.PureComponent {
     // 2. checkbox action 2
     // 3. radio action
     // 4. CTA action (which perhaps depends on the radio action)
+    // Note, this order is only guaranteed if action.data has the
+    // `orderedExecution` flag set to true.
     let multiSelectActions = [];
-    for (const checkbox of props.content?.tiles?.data ?? []) {
-      let checkboxAction;
-      if (props.activeMultiSelect?.includes(checkbox.id)) {
-        checkboxAction = checkbox.checkedAction ?? checkbox.action;
-      } else {
-        checkboxAction = checkbox.uncheckedAction;
-      }
 
-      if (checkboxAction) {
-        multiSelectActions.push(checkboxAction);
+    const processTile = tile => {
+      if (tile?.type === "multiselect" && Array.isArray(tile.data)) {
+        for (const checkbox of tile.data) {
+          let checkboxAction;
+          if (props.activeMultiSelect?.includes(checkbox.id)) {
+            checkboxAction = checkbox.checkedAction ?? checkbox.action;
+          } else {
+            checkboxAction = checkbox.uncheckedAction;
+          }
+
+          if (checkboxAction) {
+            multiSelectActions.push(checkboxAction);
+          }
+        }
+      }
+    };
+
+    // Process tiles (this may be a single tile object or an array consisting of
+    // tile objects)
+    if (props.content?.tiles) {
+      if (Array.isArray(props.content.tiles)) {
+        props.content.tiles.forEach(processTile);
+      } else {
+        // Handle case where tiles is a single tile object
+        processTile(props.content.tiles);
       }
     }
+
+    // Prepend the collected multi-select actions to the CTA's actions array
     action.data.actions.unshift(...multiSelectActions);
 
     // Send telemetry with selected checkbox ids

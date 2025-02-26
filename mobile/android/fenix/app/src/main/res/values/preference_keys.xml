@@ -83,12 +83,18 @@
     <string name="pref_key_enable_debug_drawer" translatable="false">pref_key_enable_debug_drawer</string>
     <string name="pref_key_show_first_time_translation" translatable="false">pref_key_show_first_time_translation</string>
     <string name="pref_key_translations_offer" translatable="false">pref_key_translations_offer</string>
+    <string name="pref_key_terms_accepted" translatable="false">pref_key_terms_accepted</string>
 
     <!-- Data Choices -->
     <string name="pref_key_telemetry" translatable="false">pref_key_telemetry</string>
+    <string name="pref_key_learn_about_telemetry" translatable="false">pref_key_learn_about_telemetry</string>
     <string name="pref_key_marketing_telemetry" translatable="false">pref_key_marketing_telemetry</string>
+    <string name="pref_key_marketing_telemetry_selection_made" translatable="false">pref_key_marketing_telemetry_selection_made</string>
     <string name="pref_key_learn_about_marketing_telemetry" translatable="false">pref_key_learn_about_marketing_telemetry</string>
+    <string name="pref_key_daily_usage_ping" translatable="false">pref_key_daily_usage_ping</string>
+    <string name="pref_key_learn_about_daily_usage_ping" translatable="false">pref_key_learn_about_daily_usage_ping</string>
     <string name="pref_key_crash_reporter" translatable="false">pref_key_crash_reporter</string>
+    <string name="pref_key_learn_about_crash_reporting" translatable="false">pref_key_learn_about_crash_reporting</string>
 
     <!-- Account Settings -->
     <string name="pref_key_account_category" translatable="false">pref_key_account_category</string>
@@ -126,6 +132,9 @@
     <string name="pref_key_show_sponsored_suggestions" translatable="false">pref_key_show_sponsored_suggestions</string>
     <string name="pref_key_show_nonsponsored_suggestions" translatable="false">pref_key_show_nonsponsored_suggestions</string>
     <string name="pref_key_learn_about_fx_suggest" translatable="false">pref_key_learn_about_fx_suggest</string>
+
+    <!-- Searchbar Settings -->
+    <string name="pref_key_should_searchbar_cfr">pref_key_should_show_searchbar_cfr</string>
 
     <!-- Site Permissions Settings -->
     <string name="pref_key_site_permissions_description" translatable="false">pref_key_site_permissions_description</string>
@@ -238,6 +247,7 @@
     <string name="pref_key_open_links_in_apps_never" translatable="false">pref_key_open_links_in_apps_never</string>
     <string name="pref_key_external_download_manager" translatable="false">pref_key_external_download_manager</string>
     <string name="pref_key_allow_screenshots_in_private_mode" translatable="false">pref_key_allow_screenshots_in_private_mode</string>
+    <string name="pref_key_private_browsing_biometrics_enabled" translatable="false">pref_key_private_browsing_biometrics_enabled</string>
     <string name="pref_key_privacy_enable_global_privacy_control" translatable="false">pref_key_privacy_enable_global_privacy_control</string>
 
     <string name="pref_key_adjust_campaign" translatable="false">pref_key_adjust_campaign</string>
@@ -353,8 +363,6 @@
     <string name="pref_key_camera_permissions_needed" translatable="false">pref_key_camera_permissions_needed</string>
     <string name="pref_key_inactive_tabs_category" translatable="false">pref_key_inactive_tabs_category</string>
     <string name="pref_key_inactive_tabs" translatable="false">pref_key_inactive_tabs</string>
-    <!-- Whether or not the Tabs Tray to Compose changes are shown -->
-    <string name="pref_key_enable_tabs_tray_to_compose" translatable="false">pref_key_enable_tabs_tray_to_compose</string>
 
     <string name="pref_key_return_to_browser" translatable="false">pref_key_return_to_browser</string>
 
@@ -362,6 +370,7 @@
     <string name="pref_key_pocket_homescreen_recommendations" translatable="false">pref_key_pocket_homescreen_recommendations</string>
     <string name="pref_key_pocket_sponsored_stories" translatable="false">pref_key_pocket_sponsored_stories</string>
     <string name="pref_key_pocket_sponsored_stories_profile" translatable="false">pref_key_pocket_sponsored_stories_profile</string>
+    <string name="pref_key_pocket_sponsored_stories_profile_migrated" translatable="false">pref_key_pocket_sponsored_stories_profile_migrated</string>
     <string name="pref_key_pocket_content_recommendations" translatable="false">pref_key_pocket_content_recommendations</string>
 
     <!-- Secret Info Setting Keys -->
@@ -395,11 +404,6 @@
     <string name="pref_key_growth_usage_time_sent" translatable="false">pref_key_growth_usage_time_sent</string>
     <string name="pref_key_growth_resume_last_sent" translatable="false">pref_key_growth_last_resumed</string>
     <string name="pref_key_growth_uri_load_last_sent" translatable="false">pref_key_growth_uri_load_last_sent</string>
-
-    <!--Shopping -->
-    <string name="pref_key_is_review_quality_check_enabled">pref_key_is_review_quality_check_enabled</string>
-    <string name="pref_key_is_review_quality_check_product_recommendations_enabled">pref_key_is_review_quality_check_product_recommendations_enabled</string>
-    <string name="pref_key_should_show_review_quality_opt_in_time">pref_key_should_show_review_quality_opt_in_time</string>
 
     <!--Translations -->
     <string name="pref_key_ignore_translations_data_saver_warning" translatable="false">pref_key_ignore_translations_data_saver_warning</string>

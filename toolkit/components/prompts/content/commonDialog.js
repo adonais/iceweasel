@@ -26,7 +26,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 // imported by adjustableTitle.js loaded in the same context:
-/* globals PromptUtils */
+/* globals PromptUtils, goDoCommand, goUpdateCommand */
 
 var propBag, args, Dialog;
 
@@ -139,6 +139,22 @@ function commonDialogOnLoad() {
     Dialog.setDefaultFocus(isInitialFocus);
   Dialog.onLoad(dialog);
 
+  document.addEventListener("command", event => {
+    switch (event.target.id) {
+      case "cmd_copy":
+      case "cmd_selectAll":
+        goDoCommand(event.target.id);
+        break;
+      case "checkbox":
+        Dialog.onCheckbox();
+        break;
+    }
+  });
+
+  document
+    .getElementById("contentAreaContextMenu")
+    .addEventListener("popupshowing", () => goUpdateCommand("cmd_copy"));
+
   // resize the window to the content
   window.sizeToContent();
 
@@ -210,3 +226,6 @@ function commonDialogOnUnload() {
     propBag.setProperty(propName, args[propName]);
   }
 }
+
+document.addEventListener("DOMContentLoaded", commonDialogOnLoad);
+window.addEventListener("unload", commonDialogOnUnload);

@@ -29,20 +29,16 @@ const RESULT_MENU_COMMAND = {
  * A feature for Yelp suggestions.
  */
 export class YelpSuggestions extends SuggestProvider {
-  get shouldEnable() {
-    return (
-      lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored") &&
-      lazy.UrlbarPrefs.get("yelpFeatureGate") &&
-      lazy.UrlbarPrefs.get("suggest.yelp")
-    );
-  }
-
   get enablingPreferences() {
-    return ["suggest.quicksuggest.sponsored", "suggest.yelp"];
+    return [
+      "yelpFeatureGate",
+      "suggest.yelp",
+      "suggest.quicksuggest.sponsored",
+    ];
   }
 
-  get rustSuggestionTypes() {
-    return ["Yelp"];
+  get rustSuggestionType() {
+    return "Yelp";
   }
 
   get mlIntent() {
@@ -254,8 +250,9 @@ export class YelpSuggestions extends SuggestProvider {
     return commands;
   }
 
-  handleCommand(view, result, selType, searchString) {
-    switch (selType) {
+  onEngagement(queryContext, controller, details, searchString) {
+    let { result } = details;
+    switch (details.selType) {
       case RESULT_MENU_COMMAND.MANAGE:
         // "manage" is handled by UrlbarInput, no need to do anything here.
         break;
@@ -264,29 +261,29 @@ export class YelpSuggestions extends SuggestProvider {
         // engagement event. As with all commands, it will be recorded with an
         // `engagement_type` value that is the command's name, in this case
         // `inaccurate_location`.
-        view.acknowledgeFeedback(result);
+        controller.view.acknowledgeFeedback(result);
         break;
       // selType == "dismiss" when the user presses the dismiss key shortcut.
       case "dismiss":
       case RESULT_MENU_COMMAND.NOT_RELEVANT:
-        lazy.QuickSuggest.blockedSuggestions.add(result.payload.originalUrl);
+        lazy.QuickSuggest.blockedSuggestions.blockResult(result);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-one-yelp",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.NOT_INTERESTED:
         lazy.UrlbarPrefs.set("suggest.yelp", false);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-all-yelp",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY:
-        view.acknowledgeFeedback(result);
+        controller.view.acknowledgeFeedback(result);
         this.incrementShowLessFrequentlyCount();
         if (!this.canShowLessFrequently) {
-          view.invalidateResultMenuCommands();
+          controller.view.invalidateResultMenuCommands();
         }
         lazy.UrlbarPrefs.set("yelp.minKeywordLength", searchString.length + 1);
         break;

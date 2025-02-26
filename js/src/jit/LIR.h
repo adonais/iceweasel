@@ -880,6 +880,15 @@ class LInstruction : public LNode,
     *getOperand(index) = a;
   }
 
+  LBoxAllocation getBoxOperand(size_t index) const {
+#ifdef JS_NUNBOX32
+    return LBoxAllocation(*getOperand(index + TYPE_INDEX),
+                          *getOperand(index + PAYLOAD_INDEX));
+#else
+    return LBoxAllocation(*getOperand(index));
+#endif
+  }
+
   void initOperandsOffset(size_t offset) {
     MOZ_ASSERT(nonPhiOperandsOffset_ == 0);
     MOZ_ASSERT(offset >= sizeof(LInstruction));
@@ -1103,11 +1112,7 @@ class LInstructionFixedDefsTempsHelper : public LInstruction {
 #endif
   }
 
-  // Default accessors, assuming a single input and output, respectively.
-  const LAllocation* input() {
-    MOZ_ASSERT(numOperands() == 1);
-    return getOperand(0);
-  }
+  // Default accessor, assuming a single output.
   const LDefinition* output() {
     MOZ_ASSERT(numDefs() == 1);
     return getDef(0);
@@ -1160,7 +1165,18 @@ class LInstructionHelper
   // Override the methods in LInstruction with more optimized versions
   // for when we know the exact instruction type.
   LAllocation* getOperand(size_t index) { return &operands_[index]; }
+  const LAllocation* getOperand(size_t index) const {
+    return &operands_[index];
+  }
   void setOperand(size_t index, const LAllocation& a) { operands_[index] = a; }
+  LBoxAllocation getBoxOperand(size_t index) const {
+#ifdef JS_NUNBOX32
+    return LBoxAllocation(operands_[index + TYPE_INDEX],
+                          operands_[index + PAYLOAD_INDEX]);
+#else
+    return LBoxAllocation(operands_[index]);
+#endif
+  }
   void setBoxOperand(size_t index, const LBoxAllocation& alloc) {
 #ifdef JS_NUNBOX32
     operands_[index + TYPE_INDEX] = alloc.type();
@@ -1216,16 +1232,23 @@ class LCallInstructionHelper
   }
 };
 
-template <size_t Defs, size_t Temps>
-class LBinaryCallInstructionHelper
-    : public LCallInstructionHelper<Defs, 2, Temps> {
+// Base class for control instructions (goto, branch, etc.)
+template <size_t Succs, size_t Operands, size_t Temps>
+class LControlInstructionHelper
+    : public LInstructionHelper<0, Operands, Temps> {
+  mozilla::Array<MBasicBlock*, Succs> successors_;
+
  protected:
-  explicit LBinaryCallInstructionHelper(LNode::Opcode opcode)
-      : LCallInstructionHelper<Defs, 2, Temps>(opcode) {}
+  explicit LControlInstructionHelper(LNode::Opcode opcode)
+      : LInstructionHelper<0, Operands, Temps>(opcode) {}
 
  public:
-  const LAllocation* lhs() { return this->getOperand(0); }
-  const LAllocation* rhs() { return this->getOperand(1); }
+  size_t numSuccessors() const { return Succs; }
+  MBasicBlock* getSuccessor(size_t i) const { return successors_[i]; }
+
+  void setSuccessor(size_t i, MBasicBlock* successor) {
+    successors_[i] = successor;
+  }
 };
 
 class LRecoverInfo : public TempObject {

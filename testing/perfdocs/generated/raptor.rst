@@ -649,7 +649,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
       * - **browsertime-benchmark-firefox-jetstream2**
         - ✅
-        - ✅
+        - ❌
         - ❌
         - ❌
       * - **browsertime-benchmark-safari-jetstream2**
@@ -958,7 +958,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
       * - **browsertime-benchmark-firefox-jetstream2**
         - ✅
-        - ✅
+        - ❌
         - ❌
         - ❌
       * - **browsertime-benchmark-safari-jetstream2**
@@ -1491,7 +1491,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
       * - **browsertime-benchmark-firefox-motionmark-1-3**
         - ✅
-        - ✅
+        - ❌
         - ❌
         - ❌
       * - **browsertime-benchmark-safari-motionmark-1-3**
@@ -1817,7 +1817,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
       * - **browsertime-benchmark-firefox-motionmark-1-3**
         - ✅
-        - ✅
+        - ❌
         - ❌
         - ❌
       * - **browsertime-benchmark-safari-motionmark-1-3**
@@ -2154,7 +2154,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
       * - **browsertime-benchmark-firefox-motionmark-htmlsuite-1-3**
         - ✅
-        - ✅
+        - ❌
         - ❌
         - ❌
       * - **browsertime-benchmark-safari-motionmark-htmlsuite-1-3**
@@ -2480,7 +2480,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
       * - **browsertime-benchmark-firefox-motionmark-htmlsuite-1-3**
         - ✅
-        - ✅
+        - ❌
         - ❌
         - ❌
       * - **browsertime-benchmark-safari-motionmark-htmlsuite-1-3**
@@ -16136,6 +16136,1764 @@ Browsertime tests that use a custom pageload test script. These use the pageload
         - ❌
         - ❌
       * - **browsertime-upload-firefox-upload-h3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-av1-q
+   :class-container: anchor-id-ve-av1-q-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-av1-q
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures AV1 encoding performance for 1080p video in quality mode.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#21>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=av01.0.04M.08&latencyModes=quality&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-linux1804-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-av1-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-av1-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-av1-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-av1-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-av1-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-av1-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-av1-rt
+   :class-container: anchor-id-ve-av1-rt-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-av1-rt
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures AV1 encoding performance for 1080p video in real-time mode.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#18>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=av01.0.04M.08&latencyModes=realtime&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-linux1804-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-av1-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-av1-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-av1-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-av1-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-av1-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-av1-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-h264-q
+   :class-container: anchor-id-ve-h264-q-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-h264-q
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures H264-baseline encoding performance for 1080p video in quality mode using AVC format.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#27>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=avc1.42001E:avc&latencyModes=quality&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-h264-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-h264-q-sd
+   :class-container: anchor-id-ve-h264-q-sd-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-h264-q-sd
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures H264-baseline encoding performance for 480p video in quality mode using AVC format.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#33>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=avc1.42001E:avc&latencyModes=quality&width=640&height=480&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-h264-q-sd**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-q-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-h264-q-sd**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-h264-q-sd**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-h264-q-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-h264-rt
+   :class-container: anchor-id-ve-h264-rt-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-h264-rt
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures H264-baseline encoding performance for 1080p video in real-time mode using Annex B format.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#24>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=avc1.42001E:annexb&latencyModes=realtime&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-h264-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-h264-rt-sd
+   :class-container: anchor-id-ve-h264-rt-sd-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-h264-rt-sd
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures H264-baseline encoding performance for 480p video in real-time mode using Annex B format.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#30>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=avc1.42001E:annexb&latencyModes=realtime&width=640&height=480&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-h264-rt-sd**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-h264-rt-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-h264-rt-sd**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-h264-rt-sd**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-h264-rt-sd**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-vp8-q
+   :class-container: anchor-id-ve-vp8-q-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-vp8-q
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures VP8 encoding performance for 1080p video in quality mode.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#39>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=vp8&latencyModes=quality&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-linux1804-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp8-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp8-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-vp8-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp8-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp8-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp8-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-vp8-rt
+   :class-container: anchor-id-ve-vp8-rt-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-vp8-rt
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures VP8 encoding performance for 1080p video in real-time mode.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#36>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=vp8&latencyModes=realtime&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-linux1804-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp8-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp8-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-vp8-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp8-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp8-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp8-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-vp9-q
+   :class-container: anchor-id-ve-vp9-q-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-vp9-q
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures VP9 encoding performance for 1080p video in quality mode.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#45>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=vp09.00.10.08&latencyModes=quality&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-linux1804-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp9-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp9-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-vp9-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp9-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp9-q**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp9-q**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+
+.. dropdown:: ve-vp9-rt
+   :class-container: anchor-id-ve-vp9-rt-c
+
+   * Command to Run Locally
+
+   .. code-block::
+
+      ./mach raptor -t ve-vp9-rt
+
+   **Owner**: :chunmin and Media Team
+
+   **Description**: Measures VP9 encoding performance for 1080p video in real-time mode.
+
+   * **alert threshold**: 2.0
+   * **apps**: firefox, chrome, safari, custom-car
+   * **expected**: pass
+   * **expose browser profiler**: true
+   * **gecko profile interval**: 1
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/custom/browsertime-webcodecs.toml#42>`__
+   * **lower is better**: true
+   * **page cycles**: 3
+   * **page timeout**: 360000
+   * **repository**: https://github.com/mozilla/perf-automation
+   * **repository path**: benchmarks/webcodecs
+   * **repository revision**: d34775ba6b6cef6068005c05b570d6c79eb0f7d8
+   * **support class**: browsertime_benchmark.py
+   * **test url**: `<http://\<host\>:\<port\>/index.html?raptor&codecs=vp09.00.10.08&latencyModes=realtime&width=1920&height=1080&framerate=30>`__
+   * **type**: benchmark
+   * **unit**: score
+   * **Test Task**:
+
+   .. list-table:: **test-linux1804-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-linux1804-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp9-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp9-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64-shippable/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-safari-ve-vp9-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-macosx1470-64/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-nightlyasrelease-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-shippable-qr/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **browsertime-webcodecs-chrome-ve-vp9-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-custom-car-ve-vp9-rt**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-webcodecs-firefox-ve-vp9-rt**
         - ✅
         - ✅
         - ❌

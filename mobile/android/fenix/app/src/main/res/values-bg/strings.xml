@@ -335,10 +335,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Затваряне на менюто с инструменти</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Затваряне на менюто с раздел по избор</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Изглед за четене, превод, отпечатване, споделяне, отваряне на приложение</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Изглед за четене, отпечатване, споделяне, отваряне на приложение</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Изглед за четене, Превод, %s, Отпечатване, Споделяне, Отваряне на приложение</string>
@@ -574,7 +570,6 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Докладите за сривове ни позволяват да откриваме и отстраняваме проблеми с браузъра. Докладите може да включват лични или чувствителни данни.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Научете повече за докладите за сривове</string>
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Научете повече</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Изпраща технически данни и данни за взаимодействие към Mozilla</string>
@@ -587,23 +582,27 @@
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Готово</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Отказ</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Отказ</string>
 
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Добре дошли при Firefox</string>
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Бързо и сигурно сърфиране в мрежата.</string>
+    <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">Бързо и сигурно сърфиране в мрежата</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Приемане и продължаване</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Продължавайки, вие се съгласявате с %1$s на Firefox.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one_2">Продължавайки, вие се съгласявате с %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Условия на услугата</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
     <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Условия за ползване на Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox се грижи за вашата поверителност. Прочетете повече в %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox се грижи за вашата поверителност. Научете повече в нашия %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Политика на поверителност</string>
@@ -611,6 +610,16 @@
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">С цел подобряване на четеца, Firefox изпраща диагностични данни и данни за взаимодействието с потребителя към Mozilla. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Управление</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Помогнете ни да подобрим Firefox</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Когато споделяте как сте открили Firefox и как го използвате, вие ни помагате да представим браузъра ни на повече хора.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Споделяйте минимални данни с партньорите на Mozilla в областта на маркетинговите технологии. Тези данни никога не се продават или използват за показване на реклами.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Как използваме данните</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Потвърдете и започнете да сърфирате</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Изберете място на лентата с инструменти</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -824,6 +833,8 @@
     <string name="preferences_show_voice_search">Показване на гласово търсене</string>
     <!-- Preference title for switch preference to show search suggestions also in private mode -->
     <string name="preferences_show_search_suggestions_in_private">В поверителен режим също</string>
+    <!-- Preference title for switch preference to show trending search suggestions -->
+    <string name="preferences_show_trending_search_suggestions">Показване на набиращи популярност предложения</string>
     <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
     <string name="preferences_show_clipboard_suggestions">Предложения от буфера</string>
     <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -1048,19 +1059,24 @@
     <string name="exceptions_empty_message_learn_more_link">Научете повече</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Употреба и технически данни</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Технически данни и данни за взаимодействие</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Изпращане на технически данни и данни за взаимодействие</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Научете повече</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Споделя данни за използването, производителността, хардуера, настройките на четеца с Mozilla, за да ни помогне да направим %1$s по-добър</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Споделя данни за използването, производителността, хардуера, настройките на четеца с Mozilla, за да ни помогне да направим %1$s по-добър</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Данните за вашето устройство, хардуерна конфигурация и използване ни помагат да подобрим възможностите, производителността и стабилността на Firefox.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Маркетингови данни</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Споделя данни за употребата с Adjust, нашия доставчик на мобилен маркетинг</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Маркетингови данни</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Данни от измерване на кампания</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Споделете информация за това как сте открили Firefox с маркетинговите партньори на Mozilla. Това ни помага да развием Firefox и да изградим по-добър интернет</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Споделете информация за това как сте открили Firefox с маркетинговите партньори на Mozilla. Това ни помага да развием Firefox и да изградим по-добър интернет</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Споделете как сте открили Firefox и че го използвате с партньорите в маркетинговите технологии на Mozilla.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Научете повече за маркетинговите данни</string>
 
@@ -1075,6 +1091,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Това ни помага да откриваме и отстраняваме проблеми с браузъра. Докладите може да включват лични или чувствителни данни.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Автоматично споделя данни за сривове при стартиране с Mozilla, след като са възникнали</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Научете повече за докладите за сривове</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Проучвания</string>
@@ -1239,7 +1258,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Активни</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s може от време на време да инсталира и извършва проучвания.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s може от време на време да инсталира и извършва проучвания.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Изпробвайте функциите и идеите, преди да са пуснати за всички.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Инсталирайте и стартирайте проучвания</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Научете повече</string>
     <!-- Dialog message shown after removing a study -->
@@ -2073,6 +2096,8 @@
     <string name="about_privacy_notice">Политика на поверителност</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Знайте правата си</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Условия за употреба</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Лицензна информация</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2537,6 +2562,8 @@
     <!-- Awesome bar suggestion's headers -->
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Предложение от Firefox</string>
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Популярни търсения</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Търсене в Гугъл</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2967,6 +2994,10 @@
     <string name="download_language_file_dialog_negative_button_text">Отказ</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Защитен</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">Не е защитено</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Бъдете внимателни в този сайт</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2987,6 +3018,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Ако нещо на този сайт изглежда повредено, опитайте да изключите защитите.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">Защитите са ИЗКЛЮЧЕНИ. Препоръчваме ви да ги включите отново.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Спирани проследявания: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">Не са намерени тракери</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Настройки за поверителност и сигурност</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Спирани проследявания: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Премахването на бисквитки и данни на страници от <b>%s</b> може да ви накарат да напуснете уебсайтовете и да изчистите пазарските колички.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Изчистване</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Отказ</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Бисквитките и данните на сайта са премахнати</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Защитена връзка</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Връзката не е защитена</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Потвърдено от %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3107,7 +3169,7 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Дебъгване на локали, за да активирате</string>
 
-    <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+    <!-- The title of the header for the section for managing addresses. -->
     <string name="debug_drawer_addresses_management_header">Управление на адреси</string>
     <!-- The title of the button in the debug drawer for adding a new address. -->
     <string name="debug_drawer_add_new_address">Добавяне на нов адрес за избрания език</string>
@@ -3166,4 +3228,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Обновете преди 14 март, за да продължите да използвате добавки и други възможности.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Някои възможности ще спрат да работят утре.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Показване на скрит текст</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Изчистване на текста</string>
 </resources>

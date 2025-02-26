@@ -26,6 +26,8 @@ skip-if = [
 
 ["test_moz_base_input_element.html"]
 
+["test_moz_box_button.html"]
+
 ["test_moz_button.html"]
 
 ["test_moz_button_group.html"]
@@ -37,6 +39,8 @@ skip-if = [
 ["test_moz_fieldset.html"]
 
 ["test_moz_five_star.html"]
+
+["test_moz_input_search.html"]
 
 ["test_moz_input_text.html"]
 
@@ -61,6 +65,8 @@ skip-if = [
 ["test_panel_item_accesskey.html"]
 
 ["test_panel_item_checkbox.html"]
+
+["test_panel_item_disabled.html"]
 
 ["test_panel_list_accessibility.html"]
 

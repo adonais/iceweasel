@@ -595,9 +595,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void freeStackTo(uint32_t framePushed)
       DEFINED_ON(x86_shared, arm, arm64, loong64, mips64, riscv64);
 
-  // Warning: This method does not update the framePushed() counter.
-  void freeStack(Register amount);
-
  private:
   // ===============================================================
   // Register allocation fields.
@@ -1035,8 +1032,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // destination.
   inline void moveValue(const ConstantOrRegister& src,
                         const ValueOperand& dest);
-  void moveValue(const TypedOrValueRegister& src,
-                 const ValueOperand& dest) PER_ARCH;
+  void moveValue(const TypedOrValueRegister& src, const ValueOperand& dest);
   void moveValue(const ValueOperand& src, const ValueOperand& dest) PER_ARCH;
   void moveValue(const Value& src, const ValueOperand& dest) PER_ARCH;
 
@@ -1652,8 +1648,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   // Truncate a double/float32 to int32 and when it doesn't fit an int32 it will
   // jump to the failure label. This particular variant is allowed to return the
-  // value module 2**32, which isn't implemented on all architectures. E.g. the
-  // x64 variants will do this only in the int64_t range.
+  // value module 2**32, which isn't implemented on all architectures.
   inline void branchTruncateFloat32MaybeModUint32(FloatRegister src,
                                                   Register dest, Label* fail)
       DEFINED_ON(arm, arm64, mips_shared, x86, x64, loong64, riscv64, wasm32);
@@ -2075,7 +2070,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void branchTestValue(Condition cond, const ValueOperand& lhs,
                        const Value& rhs, Label* label) PER_ARCH;
 
-  inline void branchTestValue(Condition cond, const BaseIndex& lhs,
+  template <typename T>
+  inline void branchTestValue(Condition cond, const T& lhs,
                               const ValueOperand& rhs, Label* label) PER_ARCH;
 
   // Checks if given Value is evaluated to true or false in a condition.
@@ -2349,7 +2345,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void storeUnboxedValue(const ConstantOrRegister& value, MIRType valueType,
                          const T& dest) PER_ARCH;
 
-  inline void memoryBarrier(MemoryBarrierBits barrier) PER_SHARED_ARCH;
+  inline void memoryBarrier(MemoryBarrier barrier) PER_SHARED_ARCH;
 
  public:
   // ========================================================================
@@ -5334,15 +5330,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
                           AnyRegister dest, Register temp1, Register temp2,
                           Label* fail, LiveRegisterSet volatileLiveReg);
 
-  template <typename T>
-  void loadFromTypedArray(Scalar::Type arrayType, const T& src,
+  void loadFromTypedArray(Scalar::Type arrayType, const BaseIndex& src,
                           const ValueOperand& dest, Uint32Mode uint32Mode,
                           Register temp, Label* fail,
                           LiveRegisterSet volatileLiveReg);
 
-  template <typename T>
-  void loadFromTypedBigIntArray(Scalar::Type arrayType, const T& src,
-                                Register bigInt, Register64 temp);
+  void loadFromTypedBigIntArray(Scalar::Type arrayType, const BaseIndex& src,
+                                const ValueOperand& dest, Register bigInt,
+                                Register64 temp);
 
   template <typename S, typename T>
   void storeToTypedIntArray(Scalar::Type arrayType, const S& value,
@@ -5373,10 +5368,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
                               const Address& dest, Register temp,
                               LiveRegisterSet volatileLiveRegs);
 
-  void storeToTypedBigIntArray(Scalar::Type arrayType, Register64 value,
-                               const BaseIndex& dest);
-  void storeToTypedBigIntArray(Scalar::Type arrayType, Register64 value,
-                               const Address& dest);
+  template <typename S, typename T>
+  void storeToTypedBigIntArray(const S& value, const T& dest) {
+    store64(value, dest);
+  }
 
   void memoryBarrierBefore(Synchronization sync);
   void memoryBarrierAfter(Synchronization sync);
@@ -6064,43 +6059,23 @@ class MacroAssembler : public MacroAssemblerSpecific {
   //
   // Functions for converting values to int.
   //
-  void convertDoubleToInt(FloatRegister src, Register output,
-                          FloatRegister temp, Label* truncateFail, Label* fail,
-                          IntConversionBehavior behavior);
-
-  // Strings may be handled by providing labels to jump to when the behavior
-  // is truncation or clamping. The subroutine, usually an OOL call, is
-  // passed the unboxed string in |stringReg| and should convert it to a
-  // double store into |temp|.
-  void convertValueToInt(
-      ValueOperand value, Label* handleStringEntry, Label* handleStringRejoin,
-      Label* truncateDoubleSlow, Register stringReg, FloatRegister temp,
-      Register output, Label* fail, IntConversionBehavior behavior,
-      IntConversionInputKind conversion = IntConversionInputKind::Any);
 
   // This carries over the MToNumberInt32 operation on the ValueOperand
   // input; see comment at the top of this class.
-  void convertValueToInt32(
-      ValueOperand value, FloatRegister temp, Register output, Label* fail,
-      bool negativeZeroCheck,
-      IntConversionInputKind conversion = IntConversionInputKind::Any) {
-    convertValueToInt(
-        value, nullptr, nullptr, nullptr, InvalidReg, temp, output, fail,
-        negativeZeroCheck ? IntConversionBehavior::NegativeZeroCheck
-                          : IntConversionBehavior::Normal,
-        conversion);
-  }
+  void convertValueToInt32(ValueOperand value, FloatRegister temp,
+                           Register output, Label* fail, bool negativeZeroCheck,
+                           IntConversionInputKind conversion);
 
   // This carries over the MTruncateToInt32 operation on the ValueOperand
   // input; see the comment at the top of this class.
+  //
+  // Strings may be handled by providing labels to jump to. The subroutine,
+  // usually an OOL call, is passed the unboxed string in |stringReg| and should
+  // convert it to a double store into |temp|.
   void truncateValueToInt32(ValueOperand value, Label* handleStringEntry,
                             Label* handleStringRejoin,
                             Label* truncateDoubleSlow, Register stringReg,
-                            FloatRegister temp, Register output, Label* fail) {
-    convertValueToInt(value, handleStringEntry, handleStringRejoin,
-                      truncateDoubleSlow, stringReg, temp, output, fail,
-                      IntConversionBehavior::Truncate);
-  }
+                            FloatRegister temp, Register output, Label* fail);
 
   void truncateValueToInt32(ValueOperand value, FloatRegister temp,
                             Register output, Label* fail) {
@@ -6109,13 +6084,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
   }
 
   // Convenience functions for clamping values to uint8.
+  //
+  // Strings are handled by providing labels to jump to. The subroutine, usually
+  // an OOL call, is passed the unboxed string in |stringReg| and should convert
+  // it to a double store into |temp|.
   void clampValueToUint8(ValueOperand value, Label* handleStringEntry,
                          Label* handleStringRejoin, Register stringReg,
-                         FloatRegister temp, Register output, Label* fail) {
-    convertValueToInt(value, handleStringEntry, handleStringRejoin, nullptr,
-                      stringReg, temp, output, fail,
-                      IntConversionBehavior::ClampToUint8);
-  }
+                         FloatRegister temp, Register output, Label* fail);
 
   [[nodiscard]] bool icBuildOOLFakeExitFrame(void* fakeReturnAddr,
                                              AutoSaveLiveRegisters& save);
@@ -6161,11 +6136,11 @@ class MOZ_RAII WasmMacroAssembler : public MacroAssembler {
   ~WasmMacroAssembler() { assertNoGCThings(); }
 };
 
-// Heap-allocated MacroAssembler used for Ion off-thread code generation.
+// Heap-allocated MacroAssembler used for off-thread code generation.
 // GC cancels off-thread compilations.
-class IonHeapMacroAssembler : public MacroAssembler {
+class OffThreadMacroAssembler : public MacroAssembler {
  public:
-  IonHeapMacroAssembler(TempAllocator& alloc, CompileRealm* realm);
+  OffThreadMacroAssembler(TempAllocator& alloc, CompileRealm* realm);
 };
 
 //{{{ check_macroassembler_style

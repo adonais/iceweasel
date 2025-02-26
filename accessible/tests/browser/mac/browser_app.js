@@ -145,9 +145,10 @@ add_task(async () => {
       // With no popups, the root accessible has 5 visible children:
       // 1. Tab bar (#TabsToolbar)
       // 2. Navigation bar (#nav-bar)
-      // 3. Content area (#tabbrowser-tabpanels)
-      // 4. Accessibility announcements dialog (#a11y-announcement)
-      let baseRootChildCount = 4;
+      // 3. Notifications toolbar (#notifications-toolbar)
+      // 4. Content area (#tabbrowser-tabpanels)
+      // 5. Accessibility announcements dialog (#a11y-announcement)
+      let baseRootChildCount = 5;
       is(
         rootChildCount(),
         baseRootChildCount,

@@ -11,7 +11,7 @@ if CONFIG["OS_TARGET"] != "WINNT":
 
     FORCE_STATIC_LIB = True
 
-    USE_STATIC_LIBS = True
+    USE_STATIC_MSVCRT = True
 
     # Build a real library so that the linker can remove it if the symbol
     # is never used.

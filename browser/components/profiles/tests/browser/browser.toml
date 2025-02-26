@@ -12,10 +12,17 @@ run-if = [
 head = "../unit/head.js head.js"
 
 ["browser_create_profile_page_test.js"]
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1942961
+  "os == 'win' && os_version == '11.26100' && debug", # Bug 1942961
+  "os == 'win' && os_version == '11.2009' && debug", # Bug 1942961
+]
 
 ["browser_delete_profile_page_test.js"]
 
 ["browser_edit_profile_test.js"]
+
+["browser_empty_name_beforeunload_test.js"]
 
 ["browser_menubar_profiles.js"]
 head = "../unit/head.js head.js"

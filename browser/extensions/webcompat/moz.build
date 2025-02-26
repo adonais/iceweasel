@@ -23,8 +23,12 @@ FINAL_TARGET_FILES.features["webcompat@mozilla.org"]["about-compat"] += [
 ]
 
 FINAL_TARGET_FILES.features["webcompat@mozilla.org"]["data"] += [
-    "data/injections.js",
+    "data/interventions.json",
     "data/shims.js",
+]
+
+FINAL_TARGET_PP_FILES.features["webcompat@mozilla.org"]["data"] += [
+    "data/injections.js",
     "data/ua_overrides.js",
 ]
 
@@ -138,6 +142,7 @@ FINAL_TARGET_FILES.features["webcompat@mozilla.org"]["shims"] += [
     "shims/cxense.js",
     "shims/doubleverify.js",
     "shims/eluminate.js",
+    "shims/embed-test-shim.js",
     "shims/empty-script.js",
     "shims/empty-shim.txt",
     "shims/everest.js",

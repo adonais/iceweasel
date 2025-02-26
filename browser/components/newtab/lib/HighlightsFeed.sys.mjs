@@ -4,19 +4,18 @@
 
 import { actionTypes as at } from "resource://activity-stream/common/Actions.mjs";
 
-import { shortURL } from "resource://activity-stream/lib/ShortURL.sys.mjs";
 import {
   TOP_SITES_DEFAULT_ROWS,
   TOP_SITES_MAX_SITES_PER_ROW,
-} from "resource://activity-stream/common/Reducers.sys.mjs";
-import { Dedupe } from "resource://activity-stream/common/Dedupe.sys.mjs";
+} from "resource:///modules/topsites/constants.mjs";
+import { Dedupe } from "resource:///modules/Dedupe.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   DownloadsManager: "resource://activity-stream/lib/DownloadsManager.sys.mjs",
-  FilterAdult: "resource://activity-stream/lib/FilterAdult.sys.mjs",
-  LinksCache: "resource://activity-stream/lib/LinksCache.sys.mjs",
+  FilterAdult: "resource:///modules/FilterAdult.sys.mjs",
+  LinksCache: "resource:///modules/LinksCache.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
   Screenshots: "resource://activity-stream/lib/Screenshots.sys.mjs",
@@ -201,7 +200,7 @@ export class HighlightsFeed {
     const highlights = [];
     const hosts = new Set();
     for (const page of deduped) {
-      const hostname = shortURL(page);
+      const hostname = lazy.NewTabUtils.shortURL(page);
       // Skip this history page if we already something from the same host
       if (page.type === "history" && hosts.has(hostname)) {
         continue;

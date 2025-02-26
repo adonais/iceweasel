@@ -1271,14 +1271,6 @@ bool Code::initialize(FuncImportVector&& funcImports,
   return true;
 }
 
-uint32_t Code::getFuncIndex(JSFunction* fun) const {
-  MOZ_ASSERT(fun->isWasm() || fun->isAsmJSNative());
-  if (!fun->isWasmWithJitEntry()) {
-    return fun->wasmFuncIndex();
-  }
-  return jumpTables_.funcIndexFromJitEntry(fun->wasmJitEntry());
-}
-
 Tiers Code::completeTiers() const {
   if (hasCompleteTier2_) {
     return Tiers(completeTier1_->tier(), completeTier2_->tier());
@@ -1337,22 +1329,6 @@ void Code::clearLinkData() const {
   for (UniqueLinkData& linkData : guard->blocksLinkData) {
     linkData = nullptr;
   }
-}
-
-bool Code::lookupFunctionTier(const CodeRange* codeRange, Tier* tier) const {
-  // This logic only works if the codeRange is a function, and therefore only
-  // exists in metadata and not a lazy stub tier. Generalizing to access lazy
-  // stubs would require taking a lock, which is undesirable for the profiler.
-  MOZ_ASSERT(codeRange->isFunction());
-  for (Tier t : completeTiers()) {
-    const CodeBlock& code = completeTierCodeBlock(t);
-    if (codeRange >= code.codeRanges.begin() &&
-        codeRange < code.codeRanges.end()) {
-      *tier = t;
-      return true;
-    }
-  }
-  return false;
 }
 
 // When enabled, generate profiling labels for every name in funcNames_ that is

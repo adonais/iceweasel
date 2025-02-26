@@ -135,7 +135,8 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   ipc::IPCResult GetFrontBufferSnapshot(
       IProtocol* aProtocol, const layers::RemoteTextureOwnerId& aOwnerId,
-      Maybe<Shmem>& aShmem, gfx::IntSize& aSize);
+      const RawId& aCommandEncoderId, Maybe<Shmem>& aShmem,
+      gfx::IntSize& aSize);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -161,9 +162,14 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
                                          struct ffi::WGPUTextureFormat aFormat,
                                          ffi::WGPUTextureUsages aUsage);
 
+  void EnsureExternalTextureForReadBackPresent(
+      ffi::WGPUSwapChainId aSwapChainId, ffi::WGPUDeviceId aDeviceId,
+      ffi::WGPUTextureId aTextureId, uint32_t aWidth, uint32_t aHeight,
+      struct ffi::WGPUTextureFormat aFormat, ffi::WGPUTextureUsages aUsage);
+
   std::shared_ptr<ExternalTexture> CreateExternalTexture(
-      ffi::WGPUDeviceId aDeviceId, ffi::WGPUTextureId aTextureId,
-      uint32_t aWidth, uint32_t aHeight,
+      const layers::RemoteTextureOwnerId& aOwnerId, ffi::WGPUDeviceId aDeviceId,
+      ffi::WGPUTextureId aTextureId, uint32_t aWidth, uint32_t aHeight,
       const struct ffi::WGPUTextureFormat aFormat,
       ffi::WGPUTextureUsages aUsage);
 
@@ -229,6 +235,27 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   // Shared handle of wgpu device's fence.
   std::unordered_map<RawId, RefPtr<gfx::FileHandleWrapper>> mDeviceFenceHandles;
 };
+
+#if !defined(XP_MACOSX)
+class VkImageHandle {
+ public:
+  explicit VkImageHandle(WebGPUParent* aParent,
+                         const ffi::WGPUDeviceId aDeviceId,
+                         const ffi::WGPUVkImageHandle* aVkImageHandle)
+      : mParent(aParent),
+        mDeviceId(aDeviceId),
+        mVkImageHandle(aVkImageHandle) {}
+
+  const ffi::WGPUVkImageHandle* Get() { return mVkImageHandle; }
+
+  ~VkImageHandle();
+
+ protected:
+  const WeakPtr<WebGPUParent> mParent;
+  const RawId mDeviceId;
+  const ffi::WGPUVkImageHandle* mVkImageHandle;
+};
+#endif
 
 }  // namespace webgpu
 }  // namespace mozilla

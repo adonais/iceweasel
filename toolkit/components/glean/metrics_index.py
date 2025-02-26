@@ -24,11 +24,14 @@ gecko_metrics = [
     "devtools/client/shared/metrics.yaml",
     "docshell/base/metrics.yaml",
     "dom/base/use_counter_metrics.yaml",
+    "dom/canvas/metrics.yaml",
+    "dom/crypto/metrics.yaml",
     "dom/geolocation/metrics.yaml",
     "dom/localstorage/metrics.yaml",
     "dom/media/eme/metrics.yaml",
     "dom/media/hls/metrics.yaml",
     "dom/media/metrics.yaml",
+    "dom/media/mp4/metrics.yaml",
     "dom/media/webrtc/metrics.yaml",
     "dom/metrics.yaml",
     "dom/notification/metrics.yaml",
@@ -41,7 +44,6 @@ gecko_metrics = [
     "image/decoders/metrics.yaml",
     "js/xpconnect/metrics.yaml",
     "layout/base/metrics.yaml",
-    "mobile/shared/actors/metrics.yaml",
     "mobile/shared/modules/geckoview/metrics.yaml",
     "modules/libjar/metrics.yaml",
     "modules/libpref/metrics.yaml",
@@ -71,10 +73,12 @@ gecko_metrics = [
     "toolkit/components/printing/metrics.yaml",
     "toolkit/components/processtools/metrics.yaml",
     "toolkit/components/reader/metrics.yaml",
-    "toolkit/components/reportbrokensite/metrics.yaml",
+    "toolkit/components/reputationservice/metrics.yaml",
     "toolkit/components/resistfingerprinting/metrics.yaml",
     "toolkit/components/startup/metrics.yaml",
+    "toolkit/components/thumbnails/metrics.yaml",
     "toolkit/components/translations/metrics.yaml",
+    "toolkit/components/url-classifier/metrics.yaml",
     "toolkit/content/metrics.yaml",
     "toolkit/content/widgets/metrics.yaml",
     "toolkit/mozapps/extensions/metrics.yaml",
@@ -121,10 +125,12 @@ firefox_desktop_metrics = [
     "toolkit/components/nimbus/metrics.yaml",
     "toolkit/components/pictureinpicture/metrics.yaml",
     "toolkit/components/places/metrics.yaml",
+    "toolkit/components/reportbrokensite/metrics.yaml",
     "toolkit/components/search/metrics.yaml",
     "toolkit/components/shopping/metrics.yaml",
     "toolkit/components/telemetry/metrics.yaml",
     "toolkit/modules/metrics.yaml",
+    "toolkit/mozapps/update/shared_metrics.yaml",
     "widget/cocoa/metrics.yaml",
     "widget/gtk/metrics.yaml",
     "widget/windows/metrics.yaml",
@@ -134,7 +140,8 @@ firefox_desktop_metrics = [
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 background_update_metrics = [
     "toolkit/components/crashes/metrics.yaml",
-    "toolkit/mozapps/update/metrics.yaml",
+    "toolkit/mozapps/update/background_task_metrics.yaml",
+    "toolkit/mozapps/update/shared_metrics.yaml",
 ]
 
 # Metrics that are sent by the Firefox Desktop Background Tasks
@@ -173,7 +180,6 @@ gecko_pings = [
     "toolkit/components/antitracking/bouncetrackingprotection/pings.yaml",
     "toolkit/components/captchadetection/pings.yaml",
     "toolkit/components/glean/pings.yaml",
-    "toolkit/components/reportbrokensite/pings.yaml",
     "toolkit/components/resistfingerprinting/pings.yaml",
 ]
 
@@ -188,6 +194,7 @@ firefox_desktop_pings = [
     "services/fxaccounts/pings.yaml",
     "toolkit/components/crashes/pings.yaml",
     "toolkit/components/nimbus/pings.yaml",
+    "toolkit/components/reportbrokensite/pings.yaml",
     "toolkit/components/telemetry/pings.yaml",
     "toolkit/modules/pings.yaml",
 ]

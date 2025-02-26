@@ -1,7 +1,6 @@
 # Exclude everything by default, then include all the formats we support.
 *.*
 !*.js
-!*.jsm
 !*.json
 !*.jsx
 !*.mjs
@@ -199,6 +198,8 @@ browser/components/textrecognition/textrecognition.html
 browser/components/urlbar/content/quicksuggestOnboarding.html
 browser/components/urlbar/tests/browser/dummy_page.html
 browser/components/urlbar/tests/browser/file_urlbar_edit_dos.html
+browser/extensions/webcompat/data/injections.js
+browser/extensions/webcompat/data/ua_overrides.js
 browser/tools/mozscreenshots/mozscreenshots/extension/lib/controlCenter/mixed.html
 browser/tools/mozscreenshots/mozscreenshots/extension/lib/controlCenter/mixed_passive.html
 devtools/client/aboutdebugging/test/browser/test-tab-favicons.html
@@ -1027,7 +1028,7 @@ browser/components/aboutwelcome/logs/
 # The only file in browser/locales/ is pre-processed.
 browser/locales/
 # Generated data files
-browser/extensions/formautofill/phonenumberutils/PhoneNumberMetaData.jsm
+browser/extensions/formautofill/phonenumberutils/PhoneNumberMetaData.sys.mjs
 
 # Ignore devtools debugger files which aren't intended for linting.
 devtools/client/debugger/bin/
@@ -1242,7 +1243,6 @@ toolkit/components/uniffi-bindgen-gecko-js/components/generated/*
 # When this is implemented, we'll update the configuration below (bug 1825508)
 ##############################################################################
 
-browser/components/newtab/vendor/
 browser/components/pocket/content/panels/css/normalize.scss
 browser/components/pocket/content/panels/js/vendor/
 browser/components/storybook/node_modules/
@@ -1275,7 +1275,6 @@ dom/media/gmp/rlz/
 dom/media/gmp/widevine-adapter/content_decryption_module_export.h
 dom/media/gmp/widevine-adapter/content_decryption_module_ext.h
 dom/media/gmp/widevine-adapter/content_decryption_module.h
-dom/media/gmp/widevine-adapter/content_decryption_module_proxy.h
 dom/media/platforms/ffmpeg/ffmpeg57/
 dom/media/platforms/ffmpeg/ffmpeg58/
 dom/media/platforms/ffmpeg/ffmpeg59/
@@ -1438,6 +1437,7 @@ toolkit/components/url-classifier/chromium/
 toolkit/components/utils/mozjexl.sys.mjs
 toolkit/components/viaduct/fetch_msg_types.pb.cc
 toolkit/components/viaduct/fetch_msg_types.pb.h
+toolkit/content/vendor/react/
 toolkit/content/widgets/vendor/lit.all.mjs
 toolkit/crashreporter/breakpad-client/
 toolkit/crashreporter/google-breakpad/

@@ -14,14 +14,10 @@ import mozilla.components.lib.state.UiStore
  *
  * @property crashReportingEnabled Whether automatic crash reporting is enabled.
  * @property usageDataEnabled Whether usage data collection is enabled.
- * @property crashReportingChecked Whether the crash reporting option is checked.
- * @property usageDataChecked Whether the usage data option is checked.
  */
 data class PrivacyPreferencesState(
     val crashReportingEnabled: Boolean = false,
     val usageDataEnabled: Boolean = true,
-    val crashReportingChecked: Boolean = crashReportingEnabled,
-    val usageDataChecked: Boolean = usageDataEnabled,
 ) : State
 
 /**
@@ -48,18 +44,14 @@ sealed class PrivacyPreferencesAction : Action {
     data class UsageDataPreferenceUpdatedTo(val enabled: Boolean) : PrivacyPreferencesAction()
 
     /**
-     * [PrivacyPreferencesAction] to update the checked state of the crash reporting option.
-     *
-     * @property checked Flag to indicate whether the option is checked.
+     * [PrivacyPreferencesAction] indicates the crash reporting option "learn more" link was used.
      */
-    data class CrashReportingChecked(val checked: Boolean) : PrivacyPreferencesAction()
+    data object CrashReportingLearnMore : PrivacyPreferencesAction()
 
     /**
-     * [PrivacyPreferencesAction] to update the checked state of the usage data option.
-     *
-     * @property checked Flag to indicate whether the option is checked.
+     * [PrivacyPreferencesAction] indicates the usage data option "learn more" link was used.
      */
-    data class UsageDataUserChecked(val checked: Boolean) : PrivacyPreferencesAction()
+    data object UsageDataUserLearnMore : PrivacyPreferencesAction()
 }
 
 /**
@@ -71,22 +63,16 @@ internal object PrivacyPreferencesReducer {
         action: PrivacyPreferencesAction,
     ): PrivacyPreferencesState {
         return when (action) {
-            is PrivacyPreferencesAction.Init -> state
+            is PrivacyPreferencesAction.Init,
+            is PrivacyPreferencesAction.CrashReportingLearnMore,
+            is PrivacyPreferencesAction.UsageDataUserLearnMore,
+            -> state
 
             is PrivacyPreferencesAction.CrashReportingPreferenceUpdatedTo ->
-                state.copy(
-                    crashReportingEnabled = action.enabled,
-                    crashReportingChecked = action.enabled,
-                )
+                state.copy(crashReportingEnabled = action.enabled)
 
             is PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo ->
-                state.copy(usageDataEnabled = action.enabled, usageDataChecked = action.enabled)
-
-            is PrivacyPreferencesAction.CrashReportingChecked ->
-                state.copy(crashReportingChecked = action.checked)
-
-            is PrivacyPreferencesAction.UsageDataUserChecked ->
-                state.copy(usageDataChecked = action.checked)
+                state.copy(usageDataEnabled = action.enabled)
         }
     }
 }

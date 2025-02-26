@@ -546,16 +546,10 @@
     <string name="exceptions_empty_message_learn_more_link">Przewiydz sie wiyncyj</string>
 
 
-    <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Dane techniczne i ô używaniu</string>
-
-
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Udostympnio Mozilli dane ô przeglōndarce: sprowności, używaniu, sprzyńcie i sztalōnkach, coby my mogli polepszać aplikacyjo %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Udostympnio Mozilli dane ô przeglōndarce: sprowności, używaniu, sprzyńcie i sztalōnkach, coby my mogli polepszać aplikacyjo %1$s</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Marketingowe dane</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Udostympnio bazowe dane ô używaniu firmie Leanplum (naszymu dostowcy mobilnego marketingu)</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Marketingowe dane</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Badania</string>
@@ -710,7 +704,7 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Aktywne</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s może roz za czas insztalować i kludzić podszukōnki.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s może roz za czas insztalować i kludzić podszukōnki.</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Przewiydz sie wiyncyj</string>
 

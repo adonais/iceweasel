@@ -65,6 +65,8 @@ SearchTestUtils.init(this);
 const SUGGESTIONS_ENGINE_NAME = "Suggestions";
 const TAIL_SUGGESTIONS_ENGINE_NAME = "Tail Suggestions";
 
+const SEARCH_GLASS_ICON = "chrome://global/skin/icons/search-glass.svg";
+
 /**
  * Gets the database connection.  If the Places connection is invalid it will
  * try to create a new connection.
@@ -1031,6 +1033,28 @@ async function check_results({
           map(expected[key]),
           `result.${key} at result index ${i}`
         );
+      }
+    }
+
+    if (
+      actual.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      actual.source == UrlbarUtils.RESULT_SOURCE.SEARCH &&
+      actual.providerName == "HeuristicFallback"
+    ) {
+      expected.payload.icon = SEARCH_GLASS_ICON;
+    }
+
+    if (actual.payload?.url) {
+      try {
+        const payloadUrlProtocol = new URL(actual.payload.url).protocol;
+        if (
+          !UrlbarUtils.PROTOCOLS_WITH_ICONS.includes(payloadUrlProtocol) &&
+          actual.source != UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL
+        ) {
+          expected.payload.icon = UrlbarUtils.ICON.DEFAULT;
+        }
+      } catch (e) {
+        console.error(e);
       }
     }
 

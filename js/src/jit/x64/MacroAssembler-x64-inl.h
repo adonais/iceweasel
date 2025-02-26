@@ -779,8 +779,8 @@ void MacroAssembler::branchTruncateFloat32ToPtr(FloatRegister src,
 void MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src,
                                                          Register dest,
                                                          Label* fail) {
-  branchTruncateFloat32ToPtr(src, dest, fail);
-  movl(dest, dest);  // Zero upper 32-bits.
+  // Infallible operation on x64.
+  truncateFloat32ModUint32(src, dest);
 }
 
 void MacroAssembler::branchTruncateFloat32ToInt32(FloatRegister src,
@@ -789,7 +789,7 @@ void MacroAssembler::branchTruncateFloat32ToInt32(FloatRegister src,
 
   // Check that the result is in the int32_t range.
   ScratchRegisterScope scratch(*this);
-  move32To64SignExtend(dest, Register64(scratch));
+  move32SignExtendToPtr(dest, scratch);
   cmpPtr(dest, scratch);
   j(Assembler::NotEqual, fail);
 
@@ -820,7 +820,7 @@ void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
 
   // Check that the result is in the int32_t range.
   ScratchRegisterScope scratch(*this);
-  move32To64SignExtend(dest, Register64(scratch));
+  move32SignExtendToPtr(dest, scratch);
   cmpPtr(dest, scratch);
   j(Assembler::NotEqual, fail);
 
@@ -884,7 +884,8 @@ void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
   j(cond, label);
 }
 
-void MacroAssembler::branchTestValue(Condition cond, const BaseIndex& lhs,
+template <typename T>
+void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {
   MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
   branchPtr(cond, lhs, rhs.valueReg(), label);
@@ -1149,7 +1150,7 @@ void MacroAssemblerX64::fallibleUnboxPtrImpl(const Operand& src, Register dest,
   //
   // Note: src and dest can be the same register.
   ScratchRegisterScope scratch(asMasm());
-  mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
+  mov(ImmShiftedTag(type), scratch);
   xorq(src, scratch);
   mov(scratch, dest);
   shrq(Imm32(JSVAL_TAG_SHIFT), scratch);

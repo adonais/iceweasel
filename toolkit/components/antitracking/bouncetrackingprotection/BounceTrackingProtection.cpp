@@ -34,7 +34,7 @@
 #include "prtime.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "xpcpublic.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/AntitrackingBouncetrackingprotectionMetrics.h"
 #include "mozilla/ContentBlockingLog.h"
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/dom/WindowContext.h"
@@ -42,6 +42,7 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIConsoleService.h"
 #include "mozilla/intl/Localization.h"
+#include "mozilla/browser/NimbusFeatures.h"
 
 #define TEST_OBSERVER_MSG_RECORD_BOUNCES_FINISHED "test-record-bounces-finished"
 
@@ -402,9 +403,12 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
 }
 
 nsresult BounceTrackingProtection::RecordUserActivation(
-    nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime) {
+    nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime,
+    dom::CanonicalBrowsingContext* aTopBrowsingContext) {
   MOZ_ASSERT(XRE_IsParentProcess());
   NS_ENSURE_ARG_POINTER(aPrincipal);
+  NS_ENSURE_TRUE(!aTopBrowsingContext || aTopBrowsingContext->IsTop(),
+                 NS_ERROR_INVALID_ARG);
 
   RefPtr<BounceTrackingProtection> btp = GetSingleton();
   // May be nullptr if feature is disabled.
@@ -428,8 +432,26 @@ nsresult BounceTrackingProtection::RecordUserActivation(
   MOZ_ASSERT(globalState);
 
   // aActivationTime defaults to current time if no value is provided.
-  return globalState->RecordUserActivation(siteHost,
-                                           aActivationTime.valueOr(PR_Now()));
+  rv = globalState->RecordUserActivation(siteHost,
+                                         aActivationTime.valueOr(PR_Now()));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (aTopBrowsingContext) {
+    MOZ_ASSERT(aTopBrowsingContext->IsTop());
+    dom::BrowsingContextWebProgress* webProgress =
+        aTopBrowsingContext->GetWebProgress();
+    NS_ENSURE_TRUE(webProgress, NS_ERROR_FAILURE);
+
+    RefPtr<BounceTrackingState> bounceTrackingState =
+        webProgress->GetBounceTrackingState();
+    // We may not always get a BounceTrackingState, e.g the feature is disabled,
+    // if the user has opted into all cookies, no cookies, or some other case.
+    // If we don't have it, just return OK here.
+    NS_ENSURE_TRUE(bounceTrackingState, NS_OK);
+
+    return bounceTrackingState->OnUserActivation(siteHost);
+  }
+  return NS_OK;
 }
 
 nsresult BounceTrackingProtection::RecordUserActivation(
@@ -989,10 +1011,19 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                           "Failed to record purged tracker in log.");
                     }
 
-                    // Record successful purges via nsITrackingDBService for
-                    // tracker stats.
                     if (purgedSites.Length() > 0) {
+                      // Record successful purges via nsITrackingDBService for
+                      // tracker stats.
                       ReportPurgedTrackersToAntiTrackingDB(purgedSites);
+
+                      // Record exposure of the feature for Nimbus
+                      // experimentation.
+                      // The error result returned by this method isn't very
+                      // useful, so we ignore it. Thee method will also return
+                      // errors if the client is not enrolled in an experiment
+                      // involving BTP which we don't consider a failure state.
+                      Unused << NimbusFeatures::RecordExposureEvent(
+                          "bounceTrackingProtection"_ns, false);
                     }
                   }
 

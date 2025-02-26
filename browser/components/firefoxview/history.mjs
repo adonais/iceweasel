@@ -142,17 +142,16 @@ class HistoryInView extends ViewPage {
     Glean.firefoxviewNext.historyVisits.record();
 
     if (this.controller.searchQuery) {
-      const searchesHistogram = Services.telemetry.getKeyedHistogramById(
-        "FIREFOX_VIEW_CUMULATIVE_SEARCHES"
-      );
-      searchesHistogram.add("history", this.cumulativeSearches);
+      Services.telemetry
+        .getKeyedHistogramById("FIREFOX_VIEW_CUMULATIVE_SEARCHES")
+        .add("history", this.cumulativeSearches);
       this.cumulativeSearches = 0;
     }
   }
 
   onSecondaryAction(e) {
     this.triggerNode = e.originalTarget;
-    e.target.querySelector("panel-list").toggle(e.detail.originalEvent);
+    this.panelList.toggle(e.detail.originalEvent);
   }
 
   deleteFromHistory(e) {
@@ -295,7 +294,6 @@ class HistoryInView extends ViewPage {
               @fxview-tab-list-primary-action=${this.onPrimaryAction}
               @fxview-tab-list-secondary-action=${this.onSecondaryAction}
             >
-              ${this.panelListTemplate()}
             </fxview-tab-list>
           </card-container>`;
         });
@@ -316,7 +314,6 @@ class HistoryInView extends ViewPage {
               @fxview-tab-list-primary-action=${this.onPrimaryAction}
               @fxview-tab-list-secondary-action=${this.onSecondaryAction}
             >
-              ${this.panelListTemplate()}
             </fxview-tab-list>
           </card-container>`;
         });
@@ -394,7 +391,6 @@ class HistoryInView extends ViewPage {
         @fxview-tab-list-primary-action=${this.onPrimaryAction}
         @fxview-tab-list-secondary-action=${this.onSecondaryAction}
       >
-        ${this.panelListTemplate()}
       </fxview-tab-list>
     </card-container>`;
   }
@@ -413,6 +409,7 @@ class HistoryInView extends ViewPage {
         href="chrome://browser/content/firefoxview/history.css"
       />
       <dialog id="migrationWizardDialog"></dialog>
+      ${this.panelListTemplate()}
       <div class="sticky-container bottom-fade">
         <h2 class="page-header" data-l10n-id="firefoxview-history-header"></h2>
         <div class="history-sort-options">

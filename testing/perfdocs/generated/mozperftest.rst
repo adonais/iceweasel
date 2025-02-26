@@ -29,26 +29,27 @@ perftest_browser_xhtml_dom.js
 **Measures the size of the DOM**
 
 
-dom/media/webcodecs/test/performance
-------------------------------------
-Performance tests running through Mochitest for WebCodecs
+browser/components/translations/tests/browser
+---------------------------------------------
+Performance tests for Translations models on Firefox Desktop
 
-test_encode_from_canvas.html
-============================
+browser_translations_perf_es_en.js
+==================================
 
-:owner: Media Team
-:name: WebCodecs Video Encoding
+:owner: Translations Team
+:name: Full-Page Translation (Spanish to English)
 :Default options:
 
 ::
 
  --perfherder
- --perfherder-metrics name:realtime - frame-to-frame mean (key),unit:ms,shouldAlert:True, name:realtime - frame-to-frame stddev (key),unit:ms,shouldAlert:True, name:realtime - frame-dropping rate (key),unit:ratio,shouldAlert:True, name:realtime - frame-to-frame mean (non key),unit:ms,shouldAlert:True, name:realtime - frame-to-frame stddev (non key),unit:ms,shouldAlert:True, name:realtime - frame-dropping rate (non key),unit:ratio,shouldAlert:True, name:quality - first encode to last output,unit:ms,shouldAlert:True
+ --perfherder-metrics name:engine-init-time,unit:ms,shouldAlert:True,lowerIsBetter:True, name:words-per-second,unit:WPS,shouldAlert:True,lowerIsBetter:False, name:tokens-per-second,unit:TPS,shouldAlert:True,lowerIsBetter:False, name:total-memory-usage,unit:MiB,shouldAlert:True,lowerIsBetter:True, name:total-translation-time,unit:s,shouldAlert:True,lowerIsBetter:True
  --verbose
  --manifest perftest.toml
- --manifest-flavor plain
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
 
-**Test WebCodecs video encoding performance**
+**Tests the speed of Full Page Translations using the Spanish-to-English model.**
 
 
 dom/serviceworkers/test/performance
@@ -338,16 +339,6 @@ perftest_youtube_link.js
 
 **Measures time to load YouTube video**
 
-perftest_android_startup.js
-===========================
-
-:owner: Performance Team
-:name: android-startup
-
-**Measures android startup times**
-
-This test consists of 2 main tests, cold main first frame(cmff) and cold view nav start(cvns). cold main first frame is the measurement from when you click the app icon & get duration to first frame from 'am start -W'. cold view nav start is the measurement from when you send a VIEW intent & get duration from logcat: START proc to PageStart.
-
 perftest_pageload.js
 ====================
 
@@ -408,6 +399,24 @@ browser_ml_autofill_perf.js
  --try-platform linux, mac, win
 
 **Template test for latency for ML Autofill model**
+
+browser_ml_smart_tab_perf.js
+============================
+
+:owner: GenAI Team
+:name: ML Smart Tab Model
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MB,shouldAlert:True
+ --verbose
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**Testing Smart Tab Models**
 
 browser_ml_suggest_feature_perf.js
 ==================================

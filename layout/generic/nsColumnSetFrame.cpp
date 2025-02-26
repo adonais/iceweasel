@@ -302,6 +302,7 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
     if (balancingDepth == kMaxNestedColumnBalancingDepth) {
       isBalancing = false;
       numColumns = 1;
+      aForceAuto = true;
     }
   }
 

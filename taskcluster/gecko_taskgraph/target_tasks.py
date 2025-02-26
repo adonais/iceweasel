@@ -149,6 +149,7 @@ def filter_release_tasks(task, parameters):
     if platform in (
         "linux",
         "linux64",
+        "linux64-aarch64",
         "macosx64",
         "win32",
         "win64",
@@ -752,8 +753,8 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                     return False
                 if "jetstream2" in try_name:
                     return True
-                # Bug 1898514: avoid tp6m or non-essential tp6 jobs in cron
-                if "tp6m" in try_name:
+                # Bug 1898514: avoid tp6m or non-essential tp6 jobs in cron on non-a55 platform
+                if "tp6m" in try_name and "a55" not in platform:
                     return False
                 return True
         return False
@@ -818,7 +819,8 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 return False
             if "chrome-m" in try_name and "-nofis" not in try_name:
                 return False
-            if "chrome-m" in try_name and "essential" in try_name:
+            # Bug 1929960 - Enable all chrome-m tp6m tests on a55 only
+            if "chrome-m" in try_name and "tp6m" in try_name and "hw-a55" in platform:
                 return True
             if "chrome-m" in try_name and (
                 ("ebay" in try_name and "live" not in try_name)
@@ -1115,7 +1117,7 @@ def target_tasks_build_linux64_clang_trunk_perf(
 
     # Only keep tasks generated from platform `linux1804-64-clang-trunk-qr/opt`
     def filter(task_label):
-        if "linux1804-64-clang-trunk-qr/opt" in task_label:
+        if "linux1804-64-clang-trunk-qr/opt" in task_label and "live" not in task_label:
             return True
         return False
 

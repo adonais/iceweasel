@@ -7,13 +7,10 @@ import logging
 
 import requests
 from requests.exceptions import HTTPError
-from taskgraph.taskgraph import TaskGraph
 from taskgraph.util.taskcluster import get_artifact_from_index, get_task_definition
 
-from gecko_taskgraph.util.taskgraph import find_decision_task
-
 from .registry import register_callback_action
-from .util import combine_task_graph_files, create_tasks
+from .util import combine_task_graph_files, create_tasks, fetch_graph_and_labels
 
 PUSHLOG_TMPL = "{}/json-pushes?version=2&startID={}&endID={}"
 INDEX_TMPL = "gecko.v2.{}.pushlog-id.{}.decision"
@@ -37,14 +34,26 @@ logger = logging.getLogger(__name__)
         {"test-type": "raptor"},
         {"test-type": "mozperftest"},
     ],
-    schema={},
+    schema={
+        "type": "object",
+        "properties": {
+            "depth": {
+                "type": "integer",
+                "default": 1,
+                "minimum": 1,
+                "maximum": 10,
+                "title": "Depth",
+                "description": "How many pushes to backfill the profiling task on.",
+            },
+        },
+    },
     available=lambda parameters: True,
 )
 def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id):
     task = get_task_definition(task_id)
     label = task["metadata"]["name"]
     pushes = []
-    depth = 2
+    depth = input.get("depth", 1)
     end_id = int(parameters["pushlog_id"])
 
     while True:
@@ -68,19 +77,12 @@ def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id)
 
     for push in pushes:
         try:
-            full_task_graph = get_artifact_from_index(
-                INDEX_TMPL.format(parameters["project"], push),
-                "public/full-task-graph.json",
-            )
-            _, full_task_graph = TaskGraph.from_json(full_task_graph)
-            label_to_taskid = get_artifact_from_index(
-                INDEX_TMPL.format(parameters["project"], push),
-                "public/label-to-taskid.json",
-            )
             push_params = get_artifact_from_index(
                 INDEX_TMPL.format(parameters["project"], push), "public/parameters.yml"
             )
-            push_decision_task_id = find_decision_task(push_params, graph_config)
+            push_decision_task_id, full_task_graph, label_to_taskid, _ = (
+                fetch_graph_and_labels(push_params, graph_config)
+            )
         except HTTPError as e:
             logger.info(f"Skipping {push} due to missing index artifacts! Error: {e}")
             continue

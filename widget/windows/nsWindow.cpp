@@ -1069,13 +1069,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   // Default to the system color scheme unless getting told otherwise.
   SetColorScheme(Nothing());
 
-  if (WinUtils::MicaEnabled() && !IsPopup()) {
-    // Enable Mica Alt Material if available.
-    const DWM_SYSTEMBACKDROP_TYPE tabbedWindow = DWMSBT_TABBEDWINDOW;
-    DwmSetWindowAttribute(mWnd, DWMWA_SYSTEMBACKDROP_TYPE, &tabbedWindow,
-                          sizeof tabbedWindow);
-  }
-
   if (mOpeningAnimationSuppressed) {
     SuppressAnimation(true);
   }
@@ -2533,6 +2526,17 @@ void nsWindow::SetColorScheme(const Maybe<ColorScheme>& aScheme) {
                         sizeof dark);
   DwmSetWindowAttribute(mWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark,
                         sizeof dark);
+}
+
+void nsWindow::SetMicaBackdrop(bool aEnabled) {
+  if (!WinUtils::MicaEnabled()) {
+    return;
+  }
+
+  // Enable Mica Alt Material if available.
+  const DWM_SYSTEMBACKDROP_TYPE type =
+      aEnabled ? DWMSBT_TABBEDWINDOW : DWMSBT_AUTO;
+  DwmSetWindowAttribute(mWnd, DWMWA_SYSTEMBACKDROP_TYPE, &type, sizeof type);
 }
 
 LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
@@ -4103,7 +4107,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
                                   LPARAM lParam, bool aIsContextMenuKey,
                                   int16_t aButton, uint16_t aInputSource,
                                   WinPointerInfo* aPointerInfo,
-                                  bool aIgnoreAPZ) {
+                                  IsNonclient aIsNonclient) {
   ContextMenuPreventer contextMenuPreventer(this);
   bool result = false;
 
@@ -4128,7 +4132,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
     sLastMouseMovePoint.y = mpScreen.y;
   }
 
-  if (!aIgnoreAPZ && WinUtils::GetIsMouseFromTouch(aEventMessage)) {
+  if (!bool(aIsNonclient) && WinUtils::GetIsMouseFromTouch(aEventMessage)) {
     if (mTouchWindow) {
       // If mTouchWindow is true, then we must have APZ enabled and be
       // feeding it raw touch events. In that case we only want to
@@ -4150,7 +4154,12 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
 
   switch (aEventMessage) {
     case eMouseDown:
-      CaptureMouse(true);
+      // If the mouse was pressed down in the nonclient region, we do not
+      // capture the mouse. (Doing so would cause Windows to start sending us
+      // client-area mouse messages instead of nonclient-area messages.)
+      if (!bool(aIsNonclient)) {
+        CaptureMouse(true);
+      }
       break;
 
     // eMouseMove and eMouseExitFromWidget are here because we need to make
@@ -5539,22 +5548,39 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_NCLBUTTONDOWN: {
+      // TODO(rkraesig): do we really need this? It should be the same as
+      // wParam, and when it's not we probably don't want it here.
+      auto const hitTest =
+          ClientMarginHitTestPoint(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
       // Dispatch a custom event when this happens in the draggable region, so
       // that non-popup-based panels can react to it. This doesn't send an
       // actual mousedown event because that would break dragging or interfere
       // with other mousedown handling in the caption area.
-      if (ClientMarginHitTestPoint(GET_X_LPARAM(lParam),
-                                   GET_Y_LPARAM(lParam)) == HTCAPTION) {
+      if (hitTest == HTCAPTION) {
         DispatchCustomEvent(u"draggableregionleftmousedown"_ns);
         mDraggingWindowWithMouse = true;
       }
 
-      if (IsWindowButton(wParam) && mCustomNonClient) {
+      if (IsWindowButton(int32_t(wParam)) && mCustomNonClient) {
         DispatchMouseEvent(eMouseDown, wParamFromGlobalMouseState(),
                            lParamToClient(lParam), false, MouseButton::ePrimary,
-                           MOUSE_INPUT_SOURCE(), nullptr, true);
+                           MOUSE_INPUT_SOURCE(), nullptr, IsNonclient::Yes);
         DispatchPendingEvents();
         result = true;
+      }
+      break;
+    }
+
+    case WM_NCLBUTTONUP: {
+      if (mCustomNonClient) {
+        result = DispatchMouseEvent(eMouseUp, wParamFromGlobalMouseState(),
+                                    lParamToClient(lParam), false,
+                                    MouseButton::ePrimary, MOUSE_INPUT_SOURCE(),
+                                    nullptr, IsNonclient::Yes);
+        DispatchPendingEvents();
+      } else {
+        result = false;
       }
       break;
     }
@@ -6043,46 +6069,48 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
     }
   }
 
-  if (!sIsInMouseCapture && allowContentOverride) {
-    {
-      POINT pt = {aX, aY};
-      ::ScreenToClient(mWnd, &pt);
-
-      if (pt.x == mCachedHitTestPoint.x.value &&
-          pt.y == mCachedHitTestPoint.y.value &&
-          TimeStamp::Now() - mCachedHitTestTime <
-              TimeDuration::FromMilliseconds(HITTEST_CACHE_LIFETIME_MS)) {
-        return mCachedHitTestResult;
-      }
-
-      mCachedHitTestPoint = {pt.x, pt.y};
-      mCachedHitTestTime = TimeStamp::Now();
-    }
-
-    auto pt = mCachedHitTestPoint;
-
-    if (mWindowBtnRect[WindowButtonType::Minimize].Contains(pt)) {
-      testResult = HTMINBUTTON;
-    } else if (mWindowBtnRect[WindowButtonType::Maximize].Contains(pt)) {
-#ifdef ACCESSIBILITY
-      a11y::Compatibility::SuppressA11yForSnapLayouts();
-#endif
-      testResult = HTMAXBUTTON;
-    } else if (mWindowBtnRect[WindowButtonType::Close].Contains(pt)) {
-      testResult = HTCLOSE;
-    } else if (!inResizeRegion) {
-      // If we're in the resize region, avoid overriding that with either a
-      // drag or a client result; resize takes priority over either (but not
-      // over the window controls, which is why we check this after those).
-      if (mDraggableRegion.Contains(pt)) {
-        testResult = HTCAPTION;
-      } else {
-        testResult = HTCLIENT;
-      }
-    }
-
-    mCachedHitTestResult = testResult;
+  if (sIsInMouseCapture || !allowContentOverride) {
+    return testResult;
   }
+
+  {
+    POINT pt = {aX, aY};
+    ::ScreenToClient(mWnd, &pt);
+
+    if (pt.x == mCachedHitTestPoint.x.value &&
+        pt.y == mCachedHitTestPoint.y.value &&
+        TimeStamp::Now() - mCachedHitTestTime <
+            TimeDuration::FromMilliseconds(HITTEST_CACHE_LIFETIME_MS)) {
+      return mCachedHitTestResult;
+    }
+
+    mCachedHitTestPoint = {pt.x, pt.y};
+    mCachedHitTestTime = TimeStamp::Now();
+  }
+
+  auto pt = mCachedHitTestPoint;
+
+  if (mWindowBtnRect[WindowButtonType::Minimize].Contains(pt)) {
+    testResult = HTMINBUTTON;
+  } else if (mWindowBtnRect[WindowButtonType::Maximize].Contains(pt)) {
+#ifdef ACCESSIBILITY
+    a11y::Compatibility::SuppressA11yForSnapLayouts();
+#endif
+    testResult = HTMAXBUTTON;
+  } else if (mWindowBtnRect[WindowButtonType::Close].Contains(pt)) {
+    testResult = HTCLOSE;
+  } else if (!inResizeRegion) {
+    // If we're in the resize region, avoid overriding that with either a
+    // drag or a client result; resize takes priority over either (but not
+    // over the window controls, which is why we check this after those).
+    if (mDraggableRegion.Contains(pt)) {
+      testResult = HTCAPTION;
+    } else {
+      testResult = HTCLIENT;
+    }
+  }
+
+  mCachedHitTestResult = testResult;
 
   return testResult;
 }

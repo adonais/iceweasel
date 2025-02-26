@@ -4,10 +4,10 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  isSupportedSiteURL: "chrome://global/content/shopping/ShoppingProduct.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  ShoppingUtils: "resource:///modules/ShoppingUtils.sys.mjs",
 });
+
+const ABOUT_SHOPPING_SIDEBAR = "about:shoppingsidebar";
 
 /**
  * When a Review Checker sidebar panel is open ReviewCheckerParent
@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 export class ReviewCheckerParent extends JSWindowActorParent {
   static SHOPPING_OPTED_IN_PREF = "browser.shopping.experience2023.optedIn";
+  static CLOSE_SIDEBAR = "CloseReviewCheckerSidebar";
 
   actorCreated() {
     this.topBrowserWindow = this.browsingContext.topChromeWindow;
@@ -29,25 +30,34 @@ export class ReviewCheckerParent extends JSWindowActorParent {
   }
 
   didDestroy() {
-    if (this.topBrowserWindow) {
-      this.topBrowserWindow.gBrowser.removeProgressListener(this);
-      this.topBrowserWindow = undefined;
+    if (!this.topBrowserWindow) {
+      return;
     }
+
+    this.topBrowserWindow.gBrowser.removeProgressListener(this);
+
+    this.topBrowserWindow = undefined;
   }
 
-  updateCurrentURL(uri, flags, isSupportedSite) {
-    this.sendAsyncMessage("ShoppingSidebar:UpdateProductURL", {
-      url: uri?.spec ?? null,
+  updateCurrentURL(uri, flags) {
+    // about:shoppingsidebar is only used for testing with fake data.
+    if (!uri || uri.spec == ABOUT_SHOPPING_SIDEBAR) {
+      return;
+    }
+    this.sendAsyncMessage("ReviewChecker:UpdateCurrentURL", {
+      url: uri.spec,
       isReload: !!(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD),
-      isSupportedSite,
     });
   }
 
   getCurrentURL() {
-    let window = this.browsingContext.topChromeWindow;
-    let { selectedBrowser } = window.gBrowser;
+    let { selectedBrowser } = this.topBrowserWindow.gBrowser;
     let uri = selectedBrowser.currentURI;
-    return uri.spec ?? null;
+    // about:shoppingsidebar is only used for testing with fake data.
+    if (!uri || uri.spec == ABOUT_SHOPPING_SIDEBAR) {
+      return null;
+    }
+    return uri.spec;
   }
 
   async receiveMessage(message) {
@@ -55,7 +65,7 @@ export class ReviewCheckerParent extends JSWindowActorParent {
       throw new Error("We should never be invoked in PBM.");
     }
     switch (message.name) {
-      case "GetProductURL":
+      case "GetCurrentURL":
         return this.getCurrentURL();
       case "DisableShopping":
         Services.prefs.setIntPref(
@@ -88,21 +98,14 @@ export class ReviewCheckerParent extends JSWindowActorParent {
       return;
     }
 
-    lazy.ShoppingUtils.onLocationChange(aLocationURI, aFlags);
-
-    this.updateCurrentURL(
-      aLocationURI,
-      aFlags,
-      lazy.isSupportedSiteURL(aLocationURI)
-    );
+    this.updateCurrentURL(aLocationURI, aFlags);
   }
 
   closeSidebarPanel() {
-    let window = this.browsingContext.topChromeWindow;
-    let { SidebarController } = window;
-
-    if (SidebarController?.isOpen) {
-      SidebarController.hide();
-    }
+    let closeEvent = new CustomEvent(ReviewCheckerParent.CLOSE_SIDEBAR, {
+      bubbles: true,
+      composed: true,
+    });
+    this.topBrowserWindow.dispatchEvent(closeEvent);
   }
 }

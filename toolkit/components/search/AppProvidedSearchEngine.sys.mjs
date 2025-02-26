@@ -318,8 +318,8 @@ const ParamPreferenceCache = {
 
     this.onNimbusUpdate = this.onNimbusUpdate.bind(this);
     this.onNimbusUpdate();
-    lazy.NimbusFeatures.search.onUpdate(this.onNimbusUpdate);
-    lazy.NimbusFeatures.search.ready().then(this.onNimbusUpdate);
+    lazy.NimbusFeatures.searchConfiguration.onUpdate(this.onNimbusUpdate);
+    lazy.NimbusFeatures.searchConfiguration.ready().then(this.onNimbusUpdate);
   },
 
   observe(subject, topic, data) {
@@ -328,7 +328,7 @@ const ParamPreferenceCache = {
 
   onNimbusUpdate() {
     let extraParams =
-      lazy.NimbusFeatures.search.getVariable("extraParams") || [];
+      lazy.NimbusFeatures.searchConfiguration.getVariable("extraParams") || [];
     this.nimbusCache.clear();
     // The try catch ensures that if the params were incorrect for some reason,
     // the search service can still startup properly.
@@ -713,7 +713,7 @@ export class AppProvidedSearchEngine extends SearchEngine {
    * Determines whether the specified engine properties differ between their
    * current and initial values.
    *
-   * @param {Engine} currentEngine
+   * @param {AppProvidedSearchEngine} currentEngine
    *   The current engine.
    * @param {Map} initialValues
    *   The initial values stored for the currentEngine.

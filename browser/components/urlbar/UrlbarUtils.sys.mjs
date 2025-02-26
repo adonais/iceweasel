@@ -209,14 +209,7 @@ export var UrlbarUtils = {
   ]),
 
   // The favicon service stores icons for URLs with the following protocols.
-  PROTOCOLS_WITH_ICONS: [
-    "chrome:",
-    "moz-extension:",
-    "about:",
-    "http:",
-    "https:",
-    "ftp:",
-  ],
+  PROTOCOLS_WITH_ICONS: ["about:", "http:", "https:", "file:"],
 
   // Valid URI schemes that are considered safe but don't contain
   // an authority component (e.g host:port). There are many URI schemes
@@ -2585,8 +2578,12 @@ export class UrlbarProvider {
    *    - `index`: The position of the visible result within the original list
    *               visible results.
    *    - `result`: The visible result itself
+   * @param {object|null} _details
+   *    If the impression is due to an engagement, this will be the `details`
+   *    object that's also passed to `onEngagement()`. Otherwise it will be
+   *    null. See `onEngagement()` documentation for info.
    *
-   * onImpression(_state, _queryContext, _controller, _providerVisibleResults)
+   * onImpression(_state, _queryContext, _controller, _providerVisibleResults, _details)
    * {}
    */
 

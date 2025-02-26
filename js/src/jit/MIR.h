@@ -3370,10 +3370,6 @@ class MToDouble : public MToFPInstruction {
   bool isConsistentFloat32Use(MUse* use) const override { return true; }
 #endif
 
-  bool canProduceFloat32() const override {
-    return input()->canProduceFloat32();
-  }
-
   TruncateKind truncateKind() const { return implicitTruncate_; }
   void setTruncateKind(TruncateKind kind) {
     implicitTruncate_ = std::max(implicitTruncate_, kind);
@@ -6605,7 +6601,7 @@ class MGuardNumberToIntPtrIndex : public MUnaryInstruction,
 
   MGuardNumberToIntPtrIndex(MDefinition* def, bool supportOOB)
       : MUnaryInstruction(classOpcode, def), supportOOB_(supportOOB) {
-    MOZ_ASSERT(def->type() == MIRType::Double);
+    MOZ_ASSERT(IsNumberType(def->type()));
     setResultType(MIRType::IntPtr);
     setMovable();
     if (!supportOOB) {
@@ -9440,6 +9436,43 @@ class MRotate : public MBinaryInstruction, public NoTypePolicy::Data {
   bool isLeftRotate() const { return isLeftRotate_; }
 
   ALLOW_CLONE(MRotate)
+};
+
+class MReinterpretCast : public MUnaryInstruction, public NoTypePolicy::Data {
+  MReinterpretCast(MDefinition* val, MIRType toType)
+      : MUnaryInstruction(classOpcode, val) {
+    switch (val->type()) {
+      case MIRType::Int32:
+        MOZ_ASSERT(toType == MIRType::Float32);
+        break;
+      case MIRType::Float32:
+        MOZ_ASSERT(toType == MIRType::Int32);
+        break;
+      case MIRType::Double:
+        MOZ_ASSERT(toType == MIRType::Int64);
+        break;
+      case MIRType::Int64:
+        MOZ_ASSERT(toType == MIRType::Double);
+        break;
+      default:
+        MOZ_CRASH("unexpected reinterpret conversion");
+    }
+    setMovable();
+    setResultType(toType);
+  }
+
+ public:
+  INSTRUCTION_HEADER(ReinterpretCast)
+  TRIVIAL_NEW_WRAPPERS
+
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  bool congruentTo(const MDefinition* ins) const override {
+    // No need to check type() here, because congruentIfOperandsEqual will
+    // check it.
+    return congruentIfOperandsEqual(ins);
+  }
+
+  ALLOW_CLONE(MReinterpretCast)
 };
 
 // Used by MIR building to represent the bytecode result of an operation for

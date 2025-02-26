@@ -6,7 +6,14 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-const { ProgressStatusText, ProgressType } = ChromeUtils.importESModule(
+const {
+  getDirectoryHandleFromOPFS,
+  ProgressStatusText,
+  ProgressType,
+  removeFromOPFS,
+} = ChromeUtils.importESModule("chrome://global/content/ml/Utils.sys.mjs");
+
+const { URLChecker } = ChromeUtils.importESModule(
   "chrome://global/content/ml/Utils.sys.mjs"
 );
 
@@ -539,7 +546,9 @@ add_task(async function testTooFewParts() {
  */
 async function initializeCache() {
   const randomSuffix = Math.floor(Math.random() * 10000);
-  return await IndexedDBCache.init({ dbName: `modelFiles-${randomSuffix}` });
+  const dbName = `modelFiles-${randomSuffix}`;
+  await getDirectoryHandleFromOPFS(dbName, { create: true });
+  return await IndexedDBCache.init({ dbName });
 }
 
 /**
@@ -548,6 +557,7 @@ async function initializeCache() {
 async function deleteCache(cache) {
   await cache.dispose();
   indexedDB.deleteDatabase(cache.dbName);
+  await removeFromOPFS(cache.dbName, { recursive: true });
 }
 
 /**
@@ -801,6 +811,7 @@ add_task(async function test_nonDeletedModels() {
     testData,
     "The retrieved data should match the stored data."
   );
+
   Assert.equal(
     headers.ETag,
     "ETAG123",
@@ -1216,10 +1227,7 @@ add_task(async function test_listFilesUsingNonExistingTaskName() {
  * Test the ability to add a database from a non-existing database.
  */
 add_task(async function test_initDbFromNonExisting() {
-  const randomSuffix = Math.floor(Math.random() * 10000);
-  const cache = await IndexedDBCache.init({
-    dbName: `modelFiles-${randomSuffix}`,
-  });
+  const cache = await initializeCache();
 
   Assert.notEqual(cache, null);
 
@@ -1547,4 +1555,79 @@ add_task(async function test_DeleteFileByEngines() {
     "The data for the deleted model should not exist."
   );
   await deleteCache(cache);
+});
+
+// tests allow deny list updating after model is cached
+add_task(async function test_update_allow_deny_after_model_cache() {
+  const cache = await initializeCache();
+  const file = "random_file.txt";
+  const taskName = FAKE_MODEL_ARGS.taskName;
+  const model = FAKE_MODEL_ARGS.model;
+  const revision = "v0.1";
+  await cache.put({
+    taskName,
+    model,
+    revision,
+    file,
+    data: createBlob(),
+    headers: null,
+  });
+
+  let exists = await cache.fileExists({
+    model,
+    revision,
+    file,
+  });
+  Assert.ok(exists, "The file should exist in the cache.");
+
+  let list = [
+    {
+      filter: "ALLOW",
+      urlPrefix:
+        "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data/acme",
+    },
+  ];
+
+  let hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+    allowDenyList: list,
+  });
+  hub.cache = cache;
+  // should go through since model is allowed
+  await hub.getModelFileAsArrayBuffer({ ...FAKE_MODEL_ARGS, file, revision });
+
+  // put model in deny list
+  list = [
+    {
+      filter: "DENY",
+      urlPrefix:
+        "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data/acme",
+    },
+  ];
+
+  hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+    allowDenyList: list,
+  });
+  hub.cache = cache;
+
+  // now ensure the model cannot be called after being put in the deny list
+  try {
+    await hub.getModelFileAsArrayBuffer({ ...FAKE_MODEL_ARGS, file, revision });
+  } catch (e) {
+    Assert.ok(e.name === "ForbiddenURLError");
+  }
+  // make sure that the model is deleted after
+  const dataAfterForbidden = await cache.getFile({
+    model,
+    revision,
+    file,
+  });
+  Assert.equal(
+    dataAfterForbidden,
+    null,
+    "The data for the deleted model should not exist."
+  );
 });

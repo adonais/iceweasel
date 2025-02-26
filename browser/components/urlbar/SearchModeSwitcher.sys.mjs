@@ -127,6 +127,13 @@ export class SearchModeSwitcher {
     Glean.urlbarUnifiedsearchbutton.opened.add(1);
   }
 
+  /**
+   * Close the SearchSwitcher popup.
+   */
+  closePanel() {
+    this.#popup.hidePopup();
+  }
+
   #openPreferences(event) {
     if (
       (event.type == "click" && event.button != 0) ||
@@ -163,6 +170,9 @@ export class SearchModeSwitcher {
    * Called when the value of the searchMode attribute on UrlbarInput is changed.
    */
   onSearchModeChanged() {
+    if (!this.#input.window || this.#input.window.closed) {
+      return;
+    }
     if (lazy.UrlbarPrefs.get("scotchBonnet.enableOverride")) {
       this.updateSearchIcon();
     }
@@ -216,9 +226,13 @@ export class SearchModeSwitcher {
   }
 
   observe(_subject, topic, data) {
+    if (!this.#input.window || this.#input.window.closed) {
+      return;
+    }
+
     switch (topic) {
       case "browser-search-engine-modified": {
-        if (data === "engine-default") {
+        if (data === "engine-default" || data === "engine-default-private") {
           this.updateSearchIcon();
         }
         break;
@@ -257,10 +271,6 @@ export class SearchModeSwitcher {
 
   async updateSearchIcon() {
     let searchMode = this.#input.searchMode;
-
-    if (!this.#input.window || this.#input.window.closed) {
-      return;
-    }
 
     try {
       await lazy.UrlbarSearchUtils.init();

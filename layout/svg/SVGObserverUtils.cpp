@@ -133,7 +133,7 @@ static already_AddRefed<nsIURI> GetBaseURLForLocalRef(nsIContent* content,
 }
 
 static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
-    nsIFrame* aFrame, const StyleComputedImageUrl& aURL) {
+    nsIFrame* aFrame, const StyleComputedUrl& aURL) {
   MOZ_ASSERT(aFrame);
 
   nsCOMPtr<nsIURI> uri = aURL.GetURI();
@@ -321,7 +321,11 @@ void SVGRenderingObserver::ContentInserted(nsIContent* aChild) {
   OnRenderingChange();
 }
 
-void SVGRenderingObserver::ContentWillBeRemoved(nsIContent* aChild) {
+void SVGRenderingObserver::ContentWillBeRemoved(
+    nsIContent* aChild, const BatchRemovalState* aState) {
+  if (aState && !aState->mIsFirst) {
+    return;
+  }
   OnRenderingChange();
 }
 
@@ -1012,7 +1016,7 @@ SVGMaskObserverList::SVGMaskObserverList(nsIFrame* aFrame) : mFrame(aFrame) {
   const nsStyleSVGReset* svgReset = aFrame->StyleSVGReset();
 
   for (uint32_t i = 0; i < svgReset->mMask.mImageCount; i++) {
-    const StyleComputedImageUrl* data =
+    const StyleComputedUrl* data =
         svgReset->mMask.mLayers[i].mImage.GetImageRequestURLValue();
     RefPtr<URLAndReferrerInfo> maskUri;
     if (data) {

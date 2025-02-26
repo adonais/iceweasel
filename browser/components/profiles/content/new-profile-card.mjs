@@ -31,13 +31,12 @@ export class NewProfileCard extends EditProfileCard {
     this.profiles = profiles;
     this.themes = themes;
 
-    this.setRandomTheme(isInAutomation);
-
-    this.setInitialInput();
+    await Promise.all([
+      this.setInitialInput(),
+      this.setRandomTheme(isInAutomation),
+    ]);
 
     super.setFavicon();
-
-    this.initialized = true;
   }
 
   async setRandomTheme(isInAutomation) {
@@ -52,21 +51,23 @@ export class NewProfileCard extends EditProfileCard {
     }
     let newTheme =
       possibleThemes[Math.floor(Math.random() * possibleThemes.length)];
-    super.updateTheme(newTheme.id);
+    await super.updateTheme(newTheme.id);
   }
 
   async setInitialInput() {
+    await super.focusInput();
     if (RPMGetBoolPref("browser.profiles.profile-name.updated", false)) {
       return;
     }
 
-    await this.updateComplete;
+    await this.getUpdateComplete();
 
     this.nameInput.value = "";
   }
 
   onDeleteClick() {
-    RPMSendAsyncMessage("Profiles:DeleteNewProfile");
+    window.removeEventListener("beforeunload", this);
+    RPMSendAsyncMessage("Profiles:DeleteProfile");
   }
 
   headerTemplate() {

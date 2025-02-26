@@ -30,24 +30,20 @@ const RESULT_MENU_COMMAND = {
  * A feature that supports Addon suggestions.
  */
 export class AddonSuggestions extends SuggestProvider {
-  get shouldEnable() {
-    return (
-      lazy.UrlbarPrefs.get("addonsFeatureGate") &&
-      lazy.UrlbarPrefs.get("suggest.addons") &&
-      lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored")
-    );
-  }
-
   get enablingPreferences() {
-    return ["suggest.addons", "suggest.quicksuggest.nonsponsored"];
+    return [
+      "addonsFeatureGate",
+      "suggest.addons",
+      "suggest.quicksuggest.nonsponsored",
+    ];
   }
 
   get merinoProvider() {
     return "amo";
   }
 
-  get rustSuggestionTypes() {
-    return ["Amo"];
+  get rustSuggestionType() {
+    return "Amo";
   }
 
   async makeResult(queryContext, suggestion, searchString) {
@@ -169,32 +165,33 @@ export class AddonSuggestions extends SuggestProvider {
     return commands;
   }
 
-  handleCommand(view, result, selType) {
-    switch (selType) {
+  onEngagement(queryContext, controller, details, _searchString) {
+    let { result } = details;
+    switch (details.selType) {
       case RESULT_MENU_COMMAND.MANAGE:
         // "manage" is handled by UrlbarInput, no need to do anything here.
         break;
       // selType == "dismiss" when the user presses the dismiss key shortcut.
       case "dismiss":
       case RESULT_MENU_COMMAND.NOT_RELEVANT:
-        lazy.QuickSuggest.blockedSuggestions.add(result.payload.originalUrl);
+        lazy.QuickSuggest.blockedSuggestions.blockResult(result);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-one",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.NOT_INTERESTED:
         lazy.UrlbarPrefs.set("suggest.addons", false);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-all",
         };
-        view.controller.removeResult(result);
+        controller.removeResult(result);
         break;
       case RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY:
-        view.acknowledgeFeedback(result);
+        controller.view.acknowledgeFeedback(result);
         this.incrementShowLessFrequentlyCount();
         if (!this.canShowLessFrequently) {
-          view.invalidateResultMenuCommands();
+          controller.view.invalidateResultMenuCommands();
         }
         break;
     }

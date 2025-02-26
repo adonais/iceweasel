@@ -22,12 +22,14 @@
      then we will show another collapsed entry saying "Access your data on 2 other domains". This entry it's for the plural case, when the add-on is accessing more than one extra domain.
      %1$d will be replaced by an integer indicating the number of additional domains for which this web extension is requesting permission. -->
     <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate">Accèdiri ê to dati nta %1$d autri dumini</string>
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Accèdiri ê dati dî siti di %1$d dumini</string>
     <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
     <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d di %3$d</string>
     <!-- Description for tabs add-on permission. -->
     <string name="mozac_feature_addons_permissions_tabs_description">Accèdiri ê schedi dû navicaturi</string>
     <!-- Description for unlimited_storage permission. -->
-    <string name="mozac_feature_addons_permissions_unlimited_storage_description">Sarbari na quantità senza lìmiti di dati nnô dispusitivu</string>
+    <string name="mozac_feature_addons_permissions_unlimited_storage_description" moz:removedIn="137" tools:ignore="UnusedResources">Sarbari na quantità senza lìmiti di dati nnô dispusitivu</string>
     <!-- Description for navigation permission. -->
     <string name="mozac_feature_addons_permissions_web_navigation_description">Accèdiri a l\'attività dû navicatri mentri chi l\'usi</string>
     <!-- Description for bookmarks permission. -->
@@ -35,7 +37,7 @@
     <!-- Description for browser_setting permission. -->
     <string name="mozac_feature_addons_permissions_browser_setting_description">Lèggiri e canciari i mpustazzioni dû navicaturi</string>
     <!-- Description for browser_data permission. -->
-    <string name="mozac_feature_addons_permissions_browser_data_description">Cancillari a crunuluggìa ricenti di navicazzioni, i viscotta e i dati rilativi</string>
+    <string name="mozac_feature_addons_permissions_browser_data_description">Scancillari a crunuluggìa ricenti di navicazzioni, i viscotta e i dati rilativi</string>
     <!-- Description for clipboard_read permission. -->
     <string name="mozac_feature_addons_permissions_clipboard_read_description">Pigghiari dati dû pitazzu</string>
     <!-- Description for clipboard_write permission. -->
@@ -74,8 +76,14 @@
     <string name="mozac_feature_addons_permissions_trial_ml_description">Scarricari e abbiari mudeḍḍi NA nnô to dispusitivu</string>
     <!-- Description for userScripts permission. -->
     <string name="mozac_feature_addons_permissions_user_scripts_description">Pirmèttiri a script terzi nun virificati di accèdiri ê to dati</string>
+    <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
+    <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">I prugrammi nun virificati ponnu èssiri un rìsicu pâ sicurizza e pâ privatizza. Abbìa sulu prugrammi di stinneri o funti chi ài fiducia.</string>
     <!-- Description for devtools permission. -->
     <string name="mozac_feature_addons_permissions_devtools_description">Pirmèttiri ê stigghi di sbiluppu l\'accessu ê dati dî schedi</string>
+    <!-- Description for text button that expands the list of domain permissions -->
+    <string name="mozac_feature_addons_permissions_show_all_sites">Mustra tutti i siti</string>
+    <!-- Description for text button that hides the majority of the list of domain permissions -->
+    <string name="mozac_feature_addons_permissions_show_fewer_sites">Mustra cchiù picca siti</string>
     <!-- The version on of add-on. -->
     <string name="mozac_feature_addons_version">Virsioni</string>
     <!-- The author of an add-on. -->
@@ -85,7 +93,7 @@
     <!-- The developer website (Homepage) of the add-on. -->
     <string name="mozac_feature_addons_home_page">Pàggina mastra</string>
     <!-- A link where users can find more information about add-ons permissions. -->
-    <string name="mozac_feature_addons_learn_more">Cchiù nfurmazzioni supra ê pirmisi</string>
+    <string name="mozac_feature_addons_learn_more">Cchiù nfurmazzioni supra ê pirmissi</string>
     <!-- The rating of the add-on. -->
     <string name="mozac_feature_addons_rating">Vutu</string>
     <!-- A link that points to the detail page of the extension. -->
@@ -123,9 +131,9 @@
     <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
     <string name="mozac_feature_addons_permissions_dialog_title">Nzitari %1$s?</string>
     <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
-    <string name="mozac_feature_addons_optional_permissions_dialog_title">%1$s addumanna pirmisi suverchiu.</string>
+    <string name="mozac_feature_addons_optional_permissions_dialog_title">%1$s addumanna pirmissi suverchiu.</string>
     <!-- This is the subtitle of a dialog that asks the users if they want to install or not an add-on, the subtitle lists the permissions that this add-on requires, the permissions will dynamically be listed after the ":". -->
-    <string name="mozac_feature_addons_permissions_dialog_subtitle">Addumanna u to\' pirmisu pi:</string>
+    <string name="mozac_feature_addons_permissions_dialog_subtitle">Addumanna u to\' pirmissu pi:</string>
     <!-- This is the subtitle of a dialog that asks the users to grant optional permissions, the subtitle lists the permissions that this add-on requests, the permissions will dynamically be listed after the ":". -->
     <string name="mozac_feature_addons_optional_permissions_dialog_subtitle">Vulissi:</string>
     <!-- This is a button to add (install) an add-on . -->
@@ -165,17 +173,17 @@
     <!-- The tile of the notification, this will be shown to the user when an add-on needs new permissions, to be updated. %1$s is the name of the add-ons-->
     <string name="mozac_feature_addons_updater_notification_title">%1$s àvi n\'attualizzu novu</string>
     <!-- The content of the notification, this will be shown when an add-on needs new permissions, to be updated. %1$d is the amount of new permissions-->
-    <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate">%1$d addumanna pirmisi novi</string>
+    <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate">%1$d addumanna pirmissi novi</string>
     <!-- The content of the notification displayed when an add-on needs a new permission-->
-    <string name="mozac_feature_addons_updater_notification_content_singular">Cc\'è bisognu d\'un pirmisu novu</string>
+    <string name="mozac_feature_addons_updater_notification_content_singular">Cc\'è bisognu d\'un pirmissu novu</string>
     <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
     <string name="mozac_feature_addons_updater_notification_channel_2">Attualizzi dî stinneri</string>
     <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
     <string name="mozac_feature_addons_supported_checker_notification_channel" tools:ignore="UnusedResources">Virificaturi dî juncitini suppurtati</string>
     <!-- The tile of the notification, this will be shown to the user when one newly supported add-on is available.-->
-    <string name="mozac_feature_addons_supported_checker_notification_title" tools:ignore="UnusedResources">Nova juncitina dispunìbbili</string>
+    <string name="mozac_feature_addons_supported_checker_notification_title" tools:ignore="UnusedResources">Juncitina nova dispunìbbili</string>
     <!-- The tile of the notification, this will be shown to the user when more than one newly supported add-ons are available.-->
-    <string name="mozac_feature_addons_supported_checker_notification_title_plural" tools:ignore="UnusedResources">Novi juncitini dispunìbbili</string>
+    <string name="mozac_feature_addons_supported_checker_notification_title_plural" tools:ignore="UnusedResources">Juncitini novi dispunìbbili</string>
     <!-- The content of the notification, this will be shown to the user when one newly supported add-on is available. %1$s is the add-on name and %2$s is the app name (in most cases Firefox). -->
     <string name="mozac_feature_addons_supported_checker_notification_content_one">Junci %1$s a %2$s</string>
     <!-- The content of the notification, this will be shown to the user when two newly supported add-ons are available. %1$s is the first add-on name. %2$s is the second add-on name. %3$s is the app name (in most cases Firefox). -->

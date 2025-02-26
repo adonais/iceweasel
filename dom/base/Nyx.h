@@ -15,7 +15,9 @@ class GlobalObject;
 
 class Nyx final {
  public:
-  static bool IsEnabled(const GlobalObject&, const nsAString& aFuzzerName);
+  static void Log(const GlobalObject&, const nsACString& aMsg);
+
+  static bool IsEnabled(const GlobalObject&, const nsACString& aFuzzerName);
 
   static bool IsReplay(const GlobalObject&);
 

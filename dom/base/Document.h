@@ -337,12 +337,8 @@ class EarlyHintConnectArgs;
 }  // namespace mozilla::net
 
 // Must be kept in sync with xpcom/rust/xpcom/src/interfaces/nonidl.rs
-#define NS_IDOCUMENT_IID                             \
-  {                                                  \
-    0xce1f7627, 0x7109, 0x4977, {                    \
-      0xba, 0x77, 0x49, 0x0f, 0xfd, 0xe0, 0x7a, 0xaa \
-    }                                                \
-  }
+#define NS_IDOCUMENT_IID \
+  {0xce1f7627, 0x7109, 0x4977, {0xba, 0x77, 0x49, 0x0f, 0xfd, 0xe0, 0x7a, 0xaa}}
 
 namespace mozilla::dom {
 
@@ -500,8 +496,8 @@ class ExternalResourceMap {
     }                                                              \
     NS_DECL_ISUPPORTS                                              \
     NS_FORWARD_NSIINTERFACEREQUESTOR(mIfReq->)                     \
-    NS_FORWARD_##_allcaps(mRealPtr->) private                      \
-        : nsCOMPtr<nsIInterfaceRequestor> mIfReq;                  \
+   NS_FORWARD_##_allcaps(mRealPtr->) private                       \
+       : nsCOMPtr<nsIInterfaceRequestor> mIfReq;                   \
     nsCOMPtr<_i> mRealPtr;                                         \
   };
 
@@ -698,7 +694,8 @@ class Document : public nsINode,
   // nsINode
   void InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
                          bool aNotify, ErrorResult& aRv) override;
-  void RemoveChildNode(nsIContent* aKid, bool aNotify) final;
+  void RemoveChildNode(nsIContent* aKid, bool aNotify,
+                       const BatchRemovalState* = nullptr) final;
   nsresult Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -1408,6 +1405,9 @@ class Document : public nsINode,
 
   // Returns whether this document is using unpartitioned cookies
   bool UsingStorageAccess();
+
+  // Returns whether the document is on the 3PCB exception list.
+  bool IsOn3PCBExceptionList() const;
 
   // Returns whether the storage access permission of the document is granted by
   // the allow list.
@@ -3340,8 +3340,8 @@ class Document : public nsINode,
                  const mozilla::dom::Optional<nsAString>& /* unused */,
                  mozilla::ErrorResult& aError);
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Open(
-      const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures,
-      mozilla::ErrorResult& rv);
+      const nsACString& aURL, const nsAString& aName,
+      const nsAString& aFeatures, mozilla::ErrorResult& rv);
   void Close(mozilla::ErrorResult& rv);
   MOZ_CAN_RUN_SCRIPT void Write(
       const mozilla::dom::Sequence<OwningTrustedHTMLOrString>& aText,
@@ -3651,6 +3651,10 @@ class Document : public nsINode,
     mUseCounters[aUseCounter] = true;
   }
 
+  bool HasUseCounter(UseCounter aUseCounter) const {
+    return mUseCounters[aUseCounter];
+  }
+
   const StyleUseCounters* GetStyleUseCounters() {
     return mStyleUseCounters.get();
   }
@@ -3863,6 +3867,7 @@ class Document : public nsINode,
   }
   void ClearActiveViewTransition();
   void PerformPendingViewTransitionOperations();
+  void EnsureViewTransitionOperationsHappen();
 
   // Getter for PermissionDelegateHandler. Performs lazy initialization.
   PermissionDelegateHandler* GetPermissionDelegateHandler();
@@ -4200,13 +4205,19 @@ class Document : public nsINode,
   bool ShouldResistFingerprinting(RFPTarget aTarget) const;
   bool IsInPrivateBrowsing() const;
 
-  const Maybe<RFPTarget>& GetOverriddenFingerprintingSettings() const {
+  const Maybe<RFPTargetSet>& GetOverriddenFingerprintingSettings() const {
     return mOverriddenFingerprintingSettings;
   }
 
   // Recompute the current resist fingerprinting state. Returns true when
   // the state was changed.
   bool RecomputeResistFingerprinting();
+
+  // Recompute the partitionKey for this document if needed. This is for
+  // handling the case where the principal of the document is changed during the
+  // loading, e.g. a sandboxed document. We only need to recompute for the
+  // top-level content document.
+  void MaybeRecomputePartitionKey();
 
   void RecordCanvasUsage(CanvasUsage& aUsage);
   void RecordFontFingerprinting();
@@ -4270,8 +4281,6 @@ class Document : public nsINode,
     // FIXME(emilio): Can SVG documents be in quirks mode anyway?
     return mCompatMode == eCompatibility_NavQuirks && !IsSVGDocument();
   }
-  void AddContentEditableStyleSheetToStyleSet();
-  void RemoveContentEditableStyleSheet();
   void AddStyleSheetToStyleSets(StyleSheet&);
   void RemoveStyleSheetFromStyleSets(StyleSheet&);
   void NotifyStyleSheetApplicableStateChanged();
@@ -4530,7 +4539,8 @@ class Document : public nsINode,
   using AutomaticStorageAccessPermissionGrantPromise =
       MozPromise<bool, bool, true>;
   [[nodiscard]] RefPtr<AutomaticStorageAccessPermissionGrantPromise>
-  AutomaticStorageAccessPermissionCanBeGranted(bool hasUserActivation);
+  AutomaticStorageAccessPermissionCanBeGranted(bool hasUserActivation,
+                                               bool aIsThirdPartyTracker);
 
   static void AddToplevelLoadingDocument(Document* aDoc);
   static void RemoveToplevelLoadingDocument(Document* aDoc);
@@ -4828,9 +4838,6 @@ class Document : public nsINode,
   // Whether we have a quirks mode stylesheet in the style set.
   bool mQuirkSheetAdded : 1;
 
-  // Whether we have a contenteditable.css stylesheet in the style set.
-  bool mContentEditableSheetAdded : 1;
-
   // True if this document has ever had an HTML or SVG <title> element
   // bound to it
   bool mMayHaveTitleElement : 1;
@@ -4980,7 +4987,7 @@ class Document : public nsINode,
   // This will only get populated if these is one that comes from the local
   // fingerprinting protection override pref or WebCompat. Otherwise, a value of
   // Nothing() indicates no overrides are present for this document.
-  Maybe<RFPTarget> mOverriddenFingerprintingSettings;
+  Maybe<RFPTargetSet> mOverriddenFingerprintingSettings;
 
   uint8_t mXMLDeclarationBits;
 

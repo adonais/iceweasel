@@ -44,7 +44,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "gfxMathTable.h"
 #include "gfxSVGGlyphs.h"
 #include "gfx2DGlue.h"
@@ -235,7 +235,10 @@ already_AddRefed<gfxFont> gfxFontCache::Lookup(
   Key key(aFontEntry, aStyle, aUnicodeRangeMap);
   HashEntry* entry = mFonts.GetEntry(key);
 
-  Telemetry::Accumulate(Telemetry::FONT_CACHE_HIT, entry != nullptr);
+  glean::fontlist::font_cache_hit
+      .EnumGet(
+          static_cast<glean::fontlist::FontCacheHitLabel>(entry != nullptr))
+      .Add();
 
   if (!entry) {
     return nullptr;
@@ -2723,14 +2726,18 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
       }
     }
 
+    const int kScale = 2;
     if (!snapshot) {
       // Create a temporary DrawTarget and render the glyph to it.
       IntSize size(int(bounds.width), int(bounds.height));
       SurfaceFormat format = SurfaceFormat::B8G8R8A8;
       RefPtr target =
-          Factory::CreateDrawTarget(BackendType::SKIA, size, format);
+          Factory::CreateDrawTarget(BackendType::SKIA, size * kScale, format);
       if (target) {
         // Use OP_OVER and opaque alpha to create the glyph snapshot.
+        Matrix m;
+        m.PreScale(kScale, kScale);
+        target->SetTransform(m);
         DrawOptions drawOptions(aFontParams.drawOptions);
         drawOptions.mCompositionOp = CompositionOp::OP_OVER;
         drawOptions.mAlpha = 1.0f;
@@ -2761,10 +2768,11 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
     }
     if (snapshot) {
       // Paint the snapshot using the appropriate composition op.
-      aDrawTarget->DrawSurface(snapshot,
-                               Rect(aPoint + bounds.TopLeft(), bounds.Size()),
-                               Rect(Point(), bounds.Size()),
-                               DrawSurfaceOptions(), aFontParams.drawOptions);
+      Point snappedPoint = Point(roundf(aPoint.x), roundf(aPoint.y));
+      aDrawTarget->DrawSurface(
+          snapshot, Rect(snappedPoint + bounds.TopLeft(), bounds.Size()),
+          Rect(Point(), bounds.Size() * kScale), DrawSurfaceOptions(),
+          aFontParams.drawOptions);
       return true;
     }
   }

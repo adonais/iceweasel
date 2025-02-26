@@ -52,6 +52,7 @@ ID
 /.mozconfig*
 /mozconfig*
 /.moz-fast-forward
+/.moz-vendoring
 /old-configure
 /config.cache
 /config.log
@@ -80,6 +81,7 @@ browser/components/asrouter/node_modules/
 browser/components/newtab/node_modules/
 browser/components/aboutwelcome/node_modules/
 tools/ts/node_modules/
+testing/xpcshell/moz-http2/node_modules/
 
 # Ignore newtab component build assets
 browser/components/newtab/logs/
@@ -158,7 +160,7 @@ devtools/client/debugger/assets/build
 devtools/client/debugger/assets/module-manifest.json
 
 # Ignore node_module directories and npm artifacts
-remote/test/puppeteer/**.tsbuildinfo
+remote/test/puppeteer/**/*.tsbuildinfo
 remote/test/puppeteer/**/lib/
 remote/test/puppeteer/**/node_modules/
 remote/test/puppeteer/**/.wireit/
@@ -184,6 +186,7 @@ remote/test/puppeteer/test/installation/puppeteer*.tgz
 remote/test/puppeteer/test/output-firefox
 remote/test/puppeteer/test/output-chromium
 remote/test/puppeteer/testserver/lib/
+remote/test/puppeteer/tools/doctest/bin/
 remote/test/puppeteer/tools/internal/
 remote/test/puppeteer/tools/mocha-runner/bin/
 remote/test/puppeteer/website
@@ -213,6 +216,7 @@ mobile/android/gradle/.gradle
 mobile/android/**/.build-cache
 mobile/android/**/.gradle
 mobile/android/**/build
+mobile/android/**/.kotlin
 mobile/android/**/bin
 mobile/android/**/generated
 

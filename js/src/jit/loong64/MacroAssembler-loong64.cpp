@@ -2889,31 +2889,6 @@ uint32_t MacroAssembler::pushFakeReturnAddress(Register scratch) {
 // ===============================================================
 // Move instructions
 
-void MacroAssembler::moveValue(const TypedOrValueRegister& src,
-                               const ValueOperand& dest) {
-  if (src.hasValue()) {
-    moveValue(src.valueReg(), dest);
-    return;
-  }
-
-  MIRType type = src.type();
-  AnyRegister reg = src.typedReg();
-
-  if (!IsFloatingPointType(type)) {
-    boxNonDouble(ValueTypeFromMIRType(type), reg.gpr(), dest);
-    return;
-  }
-
-  ScratchDoubleScope fpscratch(asMasm());
-  FloatRegister scratch = fpscratch;
-  FloatRegister freg = reg.fpu();
-  if (type == MIRType::Float32) {
-    convertFloat32ToDouble(freg, scratch);
-    freg = scratch;
-  }
-  boxDouble(freg, dest, scratch);
-}
-
 void MacroAssembler::moveValue(const ValueOperand& src,
                                const ValueOperand& dest) {
   if (src == dest) {
@@ -5353,7 +5328,7 @@ void MacroAssemblerLOONG64Compat::tagValue(JSValueType type, Register payload,
     as_or(scratch, payload, zero);
     payload = scratch;
   }
-  ma_li(dest.valueReg(), ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)));
+  ma_li(dest.valueReg(), ImmShiftedTag(type));
   if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
     as_bstrins_d(dest.valueReg(), payload, 31, 0);
   } else {

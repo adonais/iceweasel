@@ -957,7 +957,7 @@ bool Instance::initSegments(JSContext* cx,
         return false;
       }
 
-      if (!initElems(seg.tableIndex, seg, offset)) {
+      if (!initElems(cx, seg.tableIndex, seg, offset)) {
         return false;  // OOM
       }
     }
@@ -993,8 +993,8 @@ bool Instance::initSegments(JSContext* cx,
   return true;
 }
 
-bool Instance::initElems(uint32_t tableIndex, const ModuleElemSegment& seg,
-                         uint32_t dstOffset) {
+bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
+                         const ModuleElemSegment& seg, uint32_t dstOffset) {
   Table& table = *tables_[tableIndex];
   MOZ_ASSERT(dstOffset <= table.length());
   MOZ_ASSERT(seg.numElements() <= table.length() - dstOffset);
@@ -1002,8 +1002,6 @@ bool Instance::initElems(uint32_t tableIndex, const ModuleElemSegment& seg,
   if (seg.numElements() == 0) {
     return true;
   }
-
-  Rooted<WasmInstanceObject*> instanceObj(cx(), object());
 
   if (table.isFunction() &&
       seg.encoding == ModuleElemSegment::Encoding::Indices) {
@@ -1018,7 +1016,7 @@ bool Instance::initElems(uint32_t tableIndex, const ModuleElemSegment& seg,
       return false;
     }
   } else {
-    bool ok = iterElemsAnyrefs(seg, [&](uint32_t i, AnyRef ref) -> bool {
+    bool ok = iterElemsAnyrefs(cx, seg, [&](uint32_t i, AnyRef ref) -> bool {
       table.setRef(dstOffset + i, ref);
       return true;
     });
@@ -1054,22 +1052,14 @@ bool Instance::iterElemsFunctions(const ModuleElemSegment& seg,
 
       if (import.callable->is<JSFunction>()) {
         JSFunction* fun = &import.callable->as<JSFunction>();
-        if (IsWasmExportedFunction(fun)) {
+        if (!codeMeta().funcImportsAreJS && fun->isWasm()) {
           // This element is a wasm function imported from another
           // instance. To preserve the === function identity required by
           // the JS embedding spec, we must get the imported function's
           // underlying CodeRange.funcCheckedCallEntry and Instance so that
           // future Table.get()s produce the same function object as was
           // imported.
-          WasmInstanceObject* calleeInstanceObj =
-              ExportedFunctionToInstanceObject(fun);
-          Instance& calleeInstance = calleeInstanceObj->instance();
-          uint8_t* codeRangeBase;
-          const CodeRange* codeRange;
-          calleeInstanceObj->getExportedFunctionCodeRange(fun, &codeRange,
-                                                          &codeRangeBase);
-          void* code = codeRangeBase + codeRange->funcCheckedCallEntry();
-          if (!onFunc(i, code, &calleeInstance)) {
+          if (!onFunc(i, fun->wasmCheckedCallEntry(), &fun->wasmInstance())) {
             return false;
           }
           continue;
@@ -1077,13 +1067,10 @@ bool Instance::iterElemsFunctions(const ModuleElemSegment& seg,
       }
     }
 
-    const CodeBlock& codeBlock = code().funcCodeBlock(elemFuncIndex);
-    const CodeRangeVector& codeRanges = codeBlock.codeRanges;
-    const FuncToCodeRangeMap& funcToCodeRange = codeBlock.funcToCodeRange;
-    void* code =
-        codeBlock.segment->base() +
-        codeRanges[funcToCodeRange[elemFuncIndex]].funcCheckedCallEntry();
-    if (!onFunc(i, code, this)) {
+    const CodeRange* codeRange;
+    uint8_t* codeBase;
+    code().funcCodeRange(elemFuncIndex, &codeRange, &codeBase);
+    if (!onFunc(i, codeBase + codeRange->funcCheckedCallEntry(), this)) {
       return false;
     }
   }
@@ -1092,7 +1079,7 @@ bool Instance::iterElemsFunctions(const ModuleElemSegment& seg,
 }
 
 template <typename F>
-bool Instance::iterElemsAnyrefs(const ModuleElemSegment& seg,
+bool Instance::iterElemsAnyrefs(JSContext* cx, const ModuleElemSegment& seg,
                                 const F& onAnyRef) {
   if (seg.numElements() == 0) {
     return true;
@@ -1103,20 +1090,18 @@ bool Instance::iterElemsAnyrefs(const ModuleElemSegment& seg,
       // The only types of indices that exist right now are function indices, so
       // this code is specialized to functions.
 
+      RootedFunction fun(cx);
       for (uint32_t i = 0; i < seg.numElements(); i++) {
         uint32_t funcIndex = seg.elemIndices[i];
-        // Note, fnref must be rooted if we do anything more than just store it.
-        void* fnref = Instance::refFunc(this, funcIndex);
-        if (fnref == AnyRef::invalid().forCompiledCode()) {
-          return false;  // OOM, which has already been reported.
-        }
-        if (!onAnyRef(i, AnyRef::fromCompiledCode(fnref))) {
+        if (!getExportedFunction(cx, funcIndex, &fun) ||
+            !onAnyRef(i, AnyRef::fromJSObject(*fun.get()))) {
           return false;
         }
       }
-    } break;
+      break;
+    }
     case ModuleElemSegment::Encoding::Expressions: {
-      Rooted<WasmInstanceObject*> instanceObj(cx(), object());
+      Rooted<WasmInstanceObject*> instanceObj(cx, object());
       const ModuleElemSegment::Expressions& exprs = seg.elemExpressions;
 
       UniqueChars error;
@@ -1124,8 +1109,8 @@ bool Instance::iterElemsAnyrefs(const ModuleElemSegment& seg,
       // validated.
       Decoder d(exprs.exprBytes.begin(), exprs.exprBytes.end(), 0, &error);
       for (uint32_t i = 0; i < seg.numElements(); i++) {
-        RootedVal result(cx());
-        if (!InitExpr::decodeAndEvaluate(cx(), instanceObj, d, seg.elemType,
+        RootedVal result(cx);
+        if (!InitExpr::decodeAndEvaluate(cx, instanceObj, d, seg.elemType,
                                          &result)) {
           MOZ_ASSERT(!error);  // The only possible failure should be OOM.
           return false;
@@ -1137,7 +1122,8 @@ bool Instance::iterElemsAnyrefs(const ModuleElemSegment& seg,
           return false;
         }
       }
-    } break;
+      break;
+    }
     default:
       MOZ_CRASH("unknown encoding type for element segment");
   }
@@ -2430,7 +2416,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       if (!wrapper) {
         return false;
       }
-      MOZ_ASSERT(IsWasmExportedFunction(wrapper));
+      MOZ_ASSERT(wrapper->isWasm());
       f = wrapper;
     }
 #endif
@@ -2442,17 +2428,10 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     import.callable = f;
     if (f->is<JSFunction>()) {
       JSFunction* fun = &f->as<JSFunction>();
-      if (!isAsmJS() && IsWasmExportedFunction(fun)) {
-        WasmInstanceObject* calleeInstanceObj =
-            ExportedFunctionToInstanceObject(fun);
-        Instance& calleeInstance = calleeInstanceObj->instance();
-        uint8_t* codeRangeBase;
-        const CodeRange* codeRange;
-        calleeInstanceObj->getExportedFunctionCodeRange(
-            &f->as<JSFunction>(), &codeRange, &codeRangeBase);
-        import.instance = &calleeInstance;
+      if (!isAsmJS() && !codeMeta().funcImportsAreJS && fun->isWasm()) {
+        import.instance = &fun->wasmInstance();
         import.realm = fun->realm();
-        import.code = codeRangeBase + codeRange->funcUncheckedCallEntry();
+        import.code = fun->wasmUncheckedCallEntry();
       } else if (void* thunk = MaybeGetBuiltinThunk(fun, funcType)) {
         import.instance = this;
         import.realm = fun->realm();
@@ -2666,7 +2645,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
         return false;
       }
 
-      bool ok = iterElemsAnyrefs(seg, [&](uint32_t _, AnyRef ref) -> bool {
+      bool ok = iterElemsAnyrefs(cx, seg, [&](uint32_t _, AnyRef ref) -> bool {
         instanceSeg.infallibleAppend(ref);
         return true;
       });
@@ -2828,8 +2807,7 @@ void Instance::submitCallRefHints(uint32_t funcIndex) {
                   .toPrivate());
       MOZ_ASSERT(targetFuncInstance == this);
 
-      uint32_t targetFuncIndex =
-          wasm::ExportedFunctionToFuncIndex(metrics.targets[i]);
+      uint32_t targetFuncIndex = metrics.targets[i]->wasmFuncIndex();
       if (codeMeta().funcIsImport(targetFuncIndex)) {
         continue;
       }
@@ -2912,8 +2890,7 @@ void Instance::submitCallRefHints(uint32_t funcIndex) {
 
 #ifdef JS_JITSPEW
     if (!headerShown) {
-      JS_LOG(wasmPerf, mozilla::LogLevel::Info,
-             "CM=..%06lx  CallRefMetrics for I=..%06lx fI=%-4u",
+      JS_LOG(wasmPerf, Info, "CM=..%06lx  CallRefMetrics for I=..%06lx fI=%-4u",
              (unsigned long)(uintptr_t(&codeMeta()) & 0xFFFFFFL),
              (unsigned long)(uintptr_t(this) & 0xFFFFFFL), funcIndex);
       headerShown = true;
@@ -2935,7 +2912,7 @@ void Instance::submitCallRefHints(uint32_t funcIndex) {
                               i + 1 < hints.length() ? ", " : "");
       }
     }
-    JS_LOG(wasmPerf, mozilla::LogLevel::Info, "CM=..%06lx    %sother:%u --> %s",
+    JS_LOG(wasmPerf, Info, "CM=..%06lx    %sother:%u --> %s",
            (unsigned long)(uintptr_t(&codeMeta()) & 0xFFFFFFL), countsStr.get(),
            metrics.countOther, targetStr.get());
 #endif
@@ -3597,8 +3574,8 @@ static bool WasmCall(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   RootedFunction callee(cx, &args.callee().as<JSFunction>());
 
-  Instance& instance = ExportedFunctionToInstance(callee);
-  uint32_t funcIndex = ExportedFunctionToFuncIndex(callee);
+  Instance& instance = callee->wasmInstance();
+  uint32_t funcIndex = callee->wasmFuncIndex();
   return instance.callExport(cx, funcIndex, args);
 }
 
@@ -3625,7 +3602,7 @@ bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
     FuncImportInstanceData& import = funcImportInstanceData(funcIndex);
     if (import.callable->is<JSFunction>()) {
       JSFunction* fun = &import.callable->as<JSFunction>();
-      if (IsWasmExportedFunction(fun)) {
+      if (!codeMeta().funcImportsAreJS && fun->isWasm()) {
         instanceData.func = fun;
         result.set(fun);
         return true;
@@ -3636,9 +3613,13 @@ bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
   // Otherwise this is a locally defined function which we've never created a
   // function object for yet.
   const CodeBlock& codeBlock = code().funcCodeBlock(funcIndex);
-  const FuncExport& funcExport = codeBlock.lookupFuncExport(funcIndex);
+  const CodeRange& codeRange = codeBlock.codeRange(funcIndex);
   const TypeDef& funcTypeDef = codeMeta().getFuncTypeDef(funcIndex);
   unsigned numArgs = funcTypeDef.funcType().args().length();
+  Instance* instance = const_cast<Instance*>(this);
+  const SuperTypeVector* superTypeVector = funcTypeDef.superTypeVector();
+  void* uncheckedCallEntry =
+      codeBlock.segment->base() + codeRange.funcUncheckedCallEntry();
 
   if (isAsmJS()) {
     // asm.js needs to act like a normal JS function which means having the
@@ -3657,7 +3638,7 @@ bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
     STATIC_ASSERT_WASM_FUNCTIONS_TENURED;
 
     // asm.js does not support jit entries.
-    result->setWasmFuncIndex(funcIndex);
+    result->initWasm(funcIndex, instance, superTypeVector, uncheckedCallEntry);
   } else {
     Rooted<JSAtom*> name(cx, NumberToAtom(cx, funcIndex));
     if (!name) {
@@ -3685,6 +3666,7 @@ bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
     // so use a shared, provisional (and slow) lazy stub as JitEntry and wait
     // until Instance::callExport() to create the fast entry stubs.
     if (funcTypeDef.funcType().canHaveJitEntry()) {
+      const FuncExport& funcExport = codeBlock.lookupFuncExport(funcIndex);
       if (!funcExport.hasEagerStubs()) {
         if (!EnsureBuiltinThunksInitialized()) {
           return false;
@@ -3693,21 +3675,14 @@ bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
         MOZ_ASSERT(provisionalLazyJitEntryStub);
         code().setJitEntryIfNull(funcIndex, provisionalLazyJitEntryStub);
       }
-      result->setWasmJitEntry(code().getAddressOfJitEntry(funcIndex));
+      result->initWasmWithJitEntry(code().getAddressOfJitEntry(funcIndex),
+                                   instance, superTypeVector,
+                                   uncheckedCallEntry);
     } else {
-      result->setWasmFuncIndex(funcIndex);
+      result->initWasm(funcIndex, instance, superTypeVector,
+                       uncheckedCallEntry);
     }
   }
-
-  result->setExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT,
-                          PrivateValue(const_cast<Instance*>(this)));
-  result->setExtendedSlot(FunctionExtended::WASM_STV_SLOT,
-                          PrivateValue((void*)funcTypeDef.superTypeVector()));
-
-  const CodeRange& codeRange = codeBlock.codeRange(funcExport);
-  result->setExtendedSlot(FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT,
-                          PrivateValue(codeBlock.segment->base() +
-                                       codeRange.funcUncheckedCallEntry()));
 
   instanceData.func = result;
   return true;
@@ -3870,16 +3845,6 @@ void Instance::constantGlobalGet(uint32_t globalIndex,
   // Otherwise, we need to load the initialized value from its cell.
   const void* cell = addressOfGlobalCell(global);
   result.address()->initFromHeapLocation(global.type(), cell);
-}
-
-bool Instance::constantRefFunc(uint32_t funcIndex,
-                               MutableHandleFuncRef result) {
-  void* fnref = Instance::refFunc(this, funcIndex);
-  if (fnref == AnyRef::invalid().forCompiledCode()) {
-    return false;  // OOM, which has already been reported.
-  }
-  result.set(FuncRef::fromCompiledCode(fnref));
-  return true;
 }
 
 WasmStructObject* Instance::constantStructNewDefault(JSContext* cx,
@@ -4092,6 +4057,16 @@ void Instance::addSizeOfMisc(
 //
 // Reporting of errors that are traps.
 
+void wasm::MarkPendingExceptionAsTrap(JSContext* cx) {
+  RootedValue exn(cx);
+  if (!cx->getPendingException(&exn)) {
+    return;
+  }
+
+  MOZ_RELEASE_ASSERT(exn.isObject() && exn.toObject().is<ErrorObject>());
+  exn.toObject().as<ErrorObject>().setFromWasmTrap();
+}
+
 void wasm::ReportTrapError(JSContext* cx, unsigned errorNumber) {
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
 
@@ -4101,11 +4076,5 @@ void wasm::ReportTrapError(JSContext* cx, unsigned errorNumber) {
 
   // Mark the exception as thrown from a trap to prevent if from being handled
   // by wasm exception handlers.
-  RootedValue exn(cx);
-  if (!cx->getPendingException(&exn)) {
-    return;
-  }
-
-  MOZ_ASSERT(exn.isObject() && exn.toObject().is<ErrorObject>());
-  exn.toObject().as<ErrorObject>().setFromWasmTrap();
+  MarkPendingExceptionAsTrap(cx);
 }

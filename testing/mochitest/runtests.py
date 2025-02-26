@@ -2945,6 +2945,20 @@ toolbar#nav-bar {
             self.log.process_exit("Main app process", status)
             runner.process_handler = None
 
+            if not status and self.message_logger.is_test_running:
+                message = {
+                    "action": "test_end",
+                    "status": "FAIL",
+                    "expected": "PASS",
+                    "thread": None,
+                    "pid": None,
+                    "source": "mochitest",
+                    "time": int(time.time()) * 1000,
+                    "test": self.lastTestSeen,
+                    "message": "Application shut down (without crashing) in the middle of a test!",
+                }
+                self.message_logger.process_message(message)
+
             # finalize output handler
             outputHandler.finish()
 
@@ -3492,6 +3506,7 @@ toolbar#nav-bar {
                 "headless": options.headless,
                 "http3": options.useHttp3Server,
                 "http2": options.useHttp2Server,
+                "inc_origin_init": os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1",
                 # Until the test harness can understand default pref values,
                 # (https://bugzilla.mozilla.org/show_bug.cgi?id=1577912) this value
                 # should by synchronized with the default pref value indicated in

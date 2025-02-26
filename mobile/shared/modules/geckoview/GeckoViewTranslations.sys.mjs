@@ -7,7 +7,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   TranslationsUtils:
-    "chrome://global/content/translations/TranslationsUtils.sys.mjs",
+    "chrome://global/content/translations/TranslationsUtils.mjs",
 });
 
 import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
@@ -42,29 +42,31 @@ export class GeckoViewTranslations extends GeckoViewModule {
     debug`onEvent: event=${aEvent}, data=${aData}`;
     switch (aEvent) {
       case "GeckoView:Translations:Translate": {
-        const fromLangValid = lazy.TranslationsUtils.isLangTagValid(
-          aData.fromLanguage
-        );
-        const toLangValid = lazy.TranslationsUtils.isLangTagValid(
-          aData.toLanguage
-        );
-
-        if (!fromLangValid || !toLangValid) {
-          aCallback.onError(
-            `The language tag ${aData.fromLanguage} or ${aData.toLanguage} is not valid.`
-          );
-        }
-
         try {
-          this.getActor("Translations")
-            .translate(
-              aData.fromLanguage,
-              aData.toLanguage,
-              /* reportAsAutoTranslate */ false
-            )
-            .then(() => {
-              aCallback.onSuccess();
-            });
+          const { sourceLanguage, targetLanguage } = aData;
+
+          if (
+            lazy.TranslationsUtils.isLangTagValid(sourceLanguage) &&
+            lazy.TranslationsUtils.isLangTagValid(targetLanguage)
+          ) {
+            this.getActor("Translations")
+              .translate(
+                {
+                  sourceLanguage,
+                  targetLanguage,
+                  // Model variants are not currently supported. See Bug 1943444.
+                },
+                /* reportAsAutoTranslate */ false
+              )
+              .then(
+                () => aCallback.onSuccess(),
+                error => aCallback.onError(`Could not translate: ${error}`)
+              );
+          } else {
+            aCallback.onError(
+              `The language tag ${sourceLanguage} or ${targetLanguage} is not valid.`
+            );
+          }
         } catch (error) {
           aCallback.onError(`Could not translate: ${error}`);
         }
@@ -114,7 +116,7 @@ export class GeckoViewTranslations extends GeckoViewModule {
       case "TranslationsParent:LanguageState": {
         const {
           detectedLanguages,
-          requestedTranslationPair,
+          requestedLanguagePair,
           hasVisibleChange,
           error,
           isEngineReady,
@@ -122,7 +124,7 @@ export class GeckoViewTranslations extends GeckoViewModule {
 
         const data = {
           detectedLanguages,
-          requestedTranslationPair,
+          requestedLanguagePair,
           hasVisibleChange,
           error,
           isEngineReady,
@@ -286,16 +288,17 @@ export const GeckoViewTranslationsSettings = {
         ) {
           const mockResult = {
             languagePairs: [
-              { fromLang: "en", toLang: "es" },
-              { fromLang: "es", toLang: "en" },
+              { sourceLanguage: "en", targetLanguage: "es" },
+              { sourceLanguage: "es", targetLanguage: "en" },
+              { sourceLanguage: "en", targetLanguage: "es", variant: "base" },
             ],
-            fromLanguages: [
-              { langTag: "en", displayName: "English" },
-              { langTag: "es", displayName: "Spanish" },
+            sourceLanguages: [
+              { langTag: "en", langTagKey: "en", displayName: "English" },
+              { langTag: "es", langTagKey: "es", displayName: "Spanish" },
             ],
-            toLanguages: [
-              { langTag: "en", displayName: "English" },
-              { langTag: "es", displayName: "Spanish" },
+            targetLanguages: [
+              { langTag: "en", langTagKey: "en", displayName: "English" },
+              { langTag: "es", langTagKey: "en", displayName: "Spanish" },
             ],
           };
           aCallback.onSuccess(mockResult);
@@ -391,8 +394,7 @@ export const GeckoViewTranslationsSettings = {
                     aCallback.onError(
                       `An issue occurred while aggregating information: ${recordError}`
                     );
-                  },
-                  language
+                  }
                 );
               results.push(recordsResult);
             });

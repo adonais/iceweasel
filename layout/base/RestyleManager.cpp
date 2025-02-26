@@ -138,19 +138,7 @@ void RestyleManager::ContentAppended(nsIContent* aFirstNewContent) {
   }
 
   if (selectorFlags & NodeSelectorFlags::HasSlowSelector) {
-    if (container->IsElement()) {
-      auto* containerElement = container->AsElement();
-      PostRestyleEvent(containerElement, RestyleHint::RestyleSubtree(),
-                       nsChangeHint(0));
-      if (selectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
-        StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
-            containerElement->GetFirstElementChild(),
-            /* aForceRestyleSiblings = */ false);
-      }
-    } else {
-      RestylePreviousSiblings(aFirstNewContent);
-      RestyleSiblingsStartingWith(aFirstNewContent);
-    }
+    RestyleWholeContainer(container, selectorFlags);
     // Restyling the container is the most we can do here, so we're done.
     return;
   }
@@ -186,6 +174,24 @@ void RestyleManager::RestyleSiblingsStartingWith(nsIContent* aStartingSibling) {
     if (auto* element = Element::FromNode(sibling)) {
       PostRestyleEvent(element, RestyleHint::RestyleSubtree(), nsChangeHint(0));
     }
+  }
+}
+
+void RestyleManager::RestyleWholeContainer(nsINode* aContainer,
+                                           NodeSelectorFlags aSelectorFlags) {
+  if (!mRestyledAsWholeContainer.EnsureInserted(aContainer)) {
+    return;
+  }
+  if (auto* containerElement = Element::FromNode(aContainer)) {
+    PostRestyleEvent(containerElement, RestyleHint::RestyleSubtree(),
+                     nsChangeHint(0));
+    if (aSelectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
+      StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
+          containerElement->GetFirstElementChild(),
+          /* aForceRestyleSiblings = */ false);
+    }
+  } else {
+    RestyleSiblingsStartingWith(aContainer->GetFirstChild());
   }
 }
 
@@ -403,19 +409,7 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
   }
 
   if (selectorFlags & NodeSelectorFlags::HasSlowSelector) {
-    if (container->IsElement()) {
-      auto* containerElement = container->AsElement();
-      PostRestyleEvent(containerElement, RestyleHint::RestyleSubtree(),
-                       nsChangeHint(0));
-      if (selectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
-        StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
-            containerElement->GetFirstElementChild(),
-            /* aForceRestyleSiblings = */ false);
-      }
-    } else {
-      RestylePreviousSiblings(aChild);
-      RestyleSiblingsStartingWith(aChild);
-    }
+    RestyleWholeContainer(container, selectorFlags);
     // Restyling the container is the most we can do here, so we're done.
     return;
   }
@@ -472,10 +466,11 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
   }
 
   // The container cannot be a document.
-  MOZ_ASSERT(container->IsElement() || container->IsShadowRoot());
+  const bool containerIsElement = container->IsElement();
+  MOZ_ASSERT(containerIsElement || container->IsShadowRoot());
 
   if (selectorFlags & NodeSelectorFlags::HasEmptySelector &&
-      container->IsElement()) {
+      containerIsElement) {
     // see whether we need to restyle the container
     bool isEmpty = true;  // :empty or :-moz-only-whitespace
     for (nsIContent* child = container->GetFirstChild(); child;
@@ -489,26 +484,25 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
         break;
       }
     }
-    if (isEmpty && container->IsElement()) {
+    if (isEmpty && containerIsElement) {
       RestyleForEmptyChange(container->AsElement());
       return;
     }
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasSlowSelector) {
-    if (container->IsElement()) {
-      auto* containerElement = container->AsElement();
-      PostRestyleEvent(containerElement, RestyleHint::RestyleSubtree(),
-                       nsChangeHint(0));
-      if (selectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
-        StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
-            containerElement->GetFirstElementChild(),
-            /* aForceRestyleSiblings = */ false);
-      }
-    } else {
-      RestylePreviousSiblings(aOldChild);
-      RestyleSiblingsStartingWith(aOldChild);
-    }
+  // It is somewhat common to remove all nodes in a container from the
+  // beginning. If we're doing that, going through the
+  // HasSlowSelectorLaterSiblings code-path would be quadratic, so that's not
+  // amazing. Instead, we take the slower path (which also restyles the
+  // container) in that case. It restyles one more element, but it avoids the
+  // quadratic behavior.
+  const bool restyleWholeContainer =
+      (selectorFlags & NodeSelectorFlags::HasSlowSelector) ||
+      (selectorFlags & NodeSelectorFlags::HasSlowSelectorLaterSiblings &&
+       !aOldChild->GetPreviousSibling());
+
+  if (restyleWholeContainer) {
+    RestyleWholeContainer(container, selectorFlags);
     // Restyling the container is the most we can do here, so we're done.
     return;
   }
@@ -2071,55 +2065,63 @@ void RestyleManager::AnimationsWithDestroyedFrame ::
 }
 
 void RestyleManager::AnimationsWithDestroyedFrame ::StopAnimationsWithoutFrame(
-    nsTArray<RefPtr<nsIContent>>& aArray,
+    nsTArray<RefPtr<Element>>& aArray,
     const PseudoStyleRequest& aPseudoRequest) {
-  nsAnimationManager* animationManager =
-      mRestyleManager->PresContext()->AnimationManager();
-  nsTransitionManager* transitionManager =
-      mRestyleManager->PresContext()->TransitionManager();
-  for (nsIContent* content : aArray) {
+  nsPresContext* context = mRestyleManager->PresContext();
+  nsAnimationManager* animationManager = context->AnimationManager();
+  nsTransitionManager* transitionManager = context->TransitionManager();
+  const Document* doc = context->Document();
+  for (Element* element : aArray) {
+    PseudoStyleRequest request = aPseudoRequest;
+
     switch (aPseudoRequest.mType) {
-      case PseudoStyleType::NotPseudo:
-        if (content->GetPrimaryFrame()) {
+      case PseudoStyleType::NotPseudo: {
+        if (element->GetPrimaryFrame()) {
           continue;
         }
+
+        // The contents of view transition pseudos are put together with
+        // NotPseudo.
+        const auto type = element->GetPseudoElementType();
+        if (PseudoStyle::IsViewTransitionPseudoElement(type)) {
+          request = {
+              type,
+              element->HasName()
+                  ? element->GetParsedAttr(nsGkAtoms::name)->GetAtomValue()
+                  : nullptr};
+          // View transition pseudo-elements use the document element to look up
+          // their animations.
+          element = doc->GetRootElement();
+          MOZ_ASSERT(element);
+        }
         break;
+      }
       case PseudoStyleType::before:
-        if (nsLayoutUtils::GetBeforeFrame(content)) {
+        if (nsLayoutUtils::GetBeforeFrame(element)) {
           continue;
         }
         break;
       case PseudoStyleType::after:
-        if (nsLayoutUtils::GetAfterFrame(content)) {
+        if (nsLayoutUtils::GetAfterFrame(element)) {
           continue;
         }
         break;
       case PseudoStyleType::marker:
-        if (nsLayoutUtils::GetMarkerFrame(content)) {
+        if (nsLayoutUtils::GetMarkerFrame(element)) {
           continue;
         }
         break;
-      case PseudoStyleType::viewTransition:
-      case PseudoStyleType::viewTransitionGroup:
-      case PseudoStyleType::viewTransitionImagePair:
-      case PseudoStyleType::viewTransitionOld:
-      case PseudoStyleType::viewTransitionNew:
-        // FIXME: Bug 1922095. Revisit here to make sure we destroy the view
-        // transitions if the associated frames are destroyed.
       default:
-        // Do nothing
+        MOZ_ASSERT_UNREACHABLE("Unexpected PseudoStyleType");
         break;
     }
-    dom::Element* element = content->AsElement();
 
-    // FIXME: Bug 1922095. Revisit here to make sure we destroy the view
-    // transitions if the associated frames are destroyed.
-    animationManager->StopAnimationsForElement(element, aPseudoRequest);
-    transitionManager->StopAnimationsForElement(element, aPseudoRequest);
+    animationManager->StopAnimationsForElement(element, request);
+    transitionManager->StopAnimationsForElement(element, request);
 
     // All other animations should keep running but not running on the
     // *compositor* at this point.
-    if (EffectSet* effectSet = EffectSet::Get(element, aPseudoRequest)) {
+    if (EffectSet* effectSet = EffectSet::Get(element, request)) {
       for (KeyframeEffect* effect : *effectSet) {
         effect->ResetIsRunningOnCompositor();
       }
@@ -3279,6 +3281,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
 
   while (styleSet->StyleDocument(aFlags)) {
     ClearSnapshots();
+    mRestyledAsWholeContainer.Clear();
 
     // Select scroll anchors for frames that have been scrolled. Do this
     // before processing restyled frames so that anchor nodes are correctly
@@ -3374,6 +3377,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   presContext->FinishedContainerQueryUpdate();
   presContext->UpdateHiddenByContentVisibilityForAnimationsIfNeeded();
   ClearSnapshots();
+  mRestyledAsWholeContainer.Clear();
   styleSet->AssertTreeIsClean();
 
   mHaveNonAnimationRestyles = false;

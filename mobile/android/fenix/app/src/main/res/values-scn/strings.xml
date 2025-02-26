@@ -98,11 +98,11 @@
 
     <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
     <!-- Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature. -->
-    <string name="erase_action_cfr_message">Tocca cca p\'abbiari na nova sissioni privata. Scancella a crunuluggìa, i viscotta — tutti cosi.</string>
+    <string name="erase_action_cfr_message">Tocca cca p\'abbiari na sissioni privata nova. Scancella a crunuluggìa, i viscotta — tutti cosi.</string>
 
     <!-- Toolbar "contextual feature recommendation" (CFR) -->
     <!-- Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-    <string name="navbar_cfr_title">Nàvica cchiù lestu câ nova navicazzioni</string>
+    <string name="navbar_cfr_title">Nàvica cchiù lestu câ navicazzioni nova</string>
 
     <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
     <string name="navbar_cfr_message_2">Nnôn situ, sta sbarra s\'ammuccia quannu tiri versu jusu p\'aviri cchiù spazziu di navicazzioni.</string>
@@ -116,7 +116,7 @@
     <string name="address_bar_swipe_cfr_message">Tira a dritta o a manca pi canciari. Tira a manu manca nnâ to ùrtima scheda pi gràpirinni una nova.</string>
 
     <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
-    <string name="camera_permissions_needed_message">Abbisognu d\'accèdiri â fotucàmmira. Vai nnê mpustazzioni di Android, ammacca pirmisi e auturizza.</string>
+    <string name="camera_permissions_needed_message">Abbisognu d\'accèdiri â fotucàmmira. Vai nnê mpustazzioni di Android, ammacca pirmissi e doppu auturizza.</string>
     <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
     <string name="camera_permissions_needed_positive_button_text">Vai nnê mpustazzioni</string>
     <!-- Text for the negative action button to dismiss the dialog. -->
@@ -146,9 +146,9 @@
 
     <!-- Home screen icons - Long press shortcuts -->
     <!-- Shortcut action to open new tab -->
-    <string name="home_screen_shortcut_open_new_tab_2">Nova scheda</string>
+    <string name="home_screen_shortcut_open_new_tab_2">Scheda nova</string>
     <!-- Shortcut action to open new private tab -->
-    <string name="home_screen_shortcut_open_new_private_tab_2">Nova scheda privata</string>
+    <string name="home_screen_shortcut_open_new_private_tab_2">Scheda privata nova</string>
     <!-- Shortcut action to open Passwords screen -->
     <string name="home_screen_shortcut_passwords">Chiavi</string>
 
@@ -241,7 +241,7 @@
     <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
     <string name="browser_menu_add_app_to_homescreen_2">Junci app â schirmata mastra…</string>
     <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
-    <string name="browser_menu_add_to_homescreen_xiaomi">È pussìbbili chi i dispusitivi Xiaomi abbisògnanu di pirmisi addizziunali pi jùnciri accurzi â schirmata mastra. Pi favuri cuntrolla i to mpustazzioni.</string>
+    <string name="browser_menu_add_to_homescreen_xiaomi">È pussìbbili chi i dispusitivi Xiaomi abbisògnanu di pirmissi addizziunali pi jùnciri accurzi â schirmata mastra. Pi favuri cuntrolla i to mpustazzioni.</string>
     <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
     <string name="resync_button_content_description">Sincrunizza arrè</string>
     <!-- Browser menu button that opens the find in page menu -->
@@ -292,7 +292,7 @@
     <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
     <string name="browser_menu_syncing_paused_caption">Sincrunizzazzioni \'n pausa</string>
     <!-- Browser menu label that creates a private tab -->
-    <string name="browser_menu_new_private_tab">Nova scheda privata</string>
+    <string name="browser_menu_new_private_tab">Scheda privata nova</string>
     <!-- Browser menu label that navigates to the Password screen -->
     <string name="browser_menu_passwords">Chiavi</string>
     <!-- Browser menu label that navigates to the SUMO page for the Firefox for Android release notes.
@@ -320,10 +320,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Chiuji u minù dî stigghi</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Chiuji u minù dâ pirsunalizzazzioni dî schedi</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Mudalità di littura, Traduci, Stampa, Sparti, Grapi app</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Mudalità di littura, Stampa, Sparti, Grapi app</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Mudalità di littura, Traduci, %s, Stampa, Sparti, Grapi app</string>
@@ -465,7 +461,7 @@
     <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
     <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources">Navicazzioni privata cu cchiù assai scartati</string>
     <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-    <string name="juno_onboarding_default_browser_description_nimbus_3">U nostru navicaturi senza scopy di lucru t\'ajuta a bluccari \'n autumàticu l\'urganizzazzioni chi, \'n sicritu, ti sicùtanu riti riti mentri chi nàvichi.</string>
+    <string name="juno_onboarding_default_browser_description_nimbus_3">U nostru navicaturi senza scopu di lucru t\'ajuta a bluccari \'n autumàticu l\'urganizzazzioni chi, \'n sicritu, ti sicùtanu riti riti mentri chi nàvichi.</string>
     <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
     <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources">Cchiù assai di 100 miliuna di cristiani prutègginu a so privatizza scartannu un navicaturi criatu di n\'urganizzazzioni senza scopu di lucru.</string>
     <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
@@ -550,27 +546,39 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">I papelli dî scasci ni cunzèntinu di diagnusticari e abbirsari i prubblemi dû navicaturi. I papelli ponnu cuntèniri dati pirsunali o sinzìbbili.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Cchiù nfurmazzioni supra ê signalijazzioni di scasciu</string>
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Cchiù nfurmazzioni</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Manna dati tècnici e di ntirazzioni a Mozilla</string>
     <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
-    <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Dati supra ô to dispusitivu, a cunfijurazzioni hardware e ncapu a comu usi Firefox n\'ajuta a travagghiari megghiu ncapu ê carattarìstichi, i pristazzioni e a stabbilità pi tutti l\'utenti.</string>
+    <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">I dati supra ô to dispusitivu, a cunfijurazzioni hardware e ncapu a comu usi Firefox n\'ajùtanu a travagghiari megghiu ncapu ê carattarìstichi, i pristazzioni e a stabbilità pi tutti l\'utenti.</string>
+    <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">I dati supra ô to dispusitivu, a cunfijurazzioni hardware e ncapu a comu usi Firefox n\'ajùtanu a travagghiari megghiu ncapu ê carattarìstichi, i pristazzioni e a stabbilità pi tutti pari.</string>
     <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Cchiù nfurmazzioni supra î dati d\'usu</string>
+    <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Cchiù nfurmazzioni</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Fattu</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Sfai</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Sfai</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Bummegna nne Firefox</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Navicazzioni lesta e sicura.</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header_2">Navicazzioni lesta e sicura</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Accetta e cuntinua</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Cuntinuannu, accetti i %1$s di Firefox.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+    <string name="onboarding_term_of_service_line_one_2">Cuntinuannu, accetti i %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Tèrmini di sirbizzu</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Tèrmini di sirbizzu di Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">A Firefox ci ntiressa dâ to privatizza. Leggi cchiù assai nnô nostru %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">A Firefox ci ntiressa dâ to privatizza. Cchiù assai nfurmazzioni nnô nostru %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Abbisu di privatizza</string>
     <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$S is replaced by an active link, using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
@@ -578,6 +586,16 @@
 
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Manija</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Ajùtani a fari crìsciri Firefox</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Quannu sparti comu scupristi Firefox, e chi l\'usi, n\'ajuti a fàrini canùsciri di cchiù cristiani.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Sparti dati minimali câ squatra tecnulòggica dâ pubblicità di Mozilla. Sti dati nun i vinnemu mai, e nun l\'usamu pi mustràriti pubblicità.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Comu usamu i dati</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Cunferma e accumincia a navicari</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Scarta a pusizzioni dâ barra dî stigghi</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -627,7 +645,7 @@
 
     <!-- Search Widget -->
     <!-- Content description for searching with a widget. The first parameter is the name of the application.-->
-    <string name="search_widget_content_description_2">Grapi na nova scheda di %1$s</string>
+    <string name="search_widget_content_description_2">Grapi na scheda nova di %1$s</string>
     <!-- Text preview for smaller sized widgets -->
     <string name="search_widget_text_short">Riscedi</string>
     <!-- Text preview for larger sized widgets -->
@@ -789,6 +807,8 @@
     <string name="preferences_show_voice_search">Mustra risciduta vucali</string>
     <!-- Preference title for switch preference to show search suggestions also in private mode -->
     <string name="preferences_show_search_suggestions_in_private">Mustra nnî sissioni privati</string>
+    <!-- Preference title for switch preference to show trending search suggestions -->
+    <string name="preferences_show_trending_search_suggestions">Mustra suggirimenti pupulari</string>
     <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
     <string name="preferences_show_clipboard_suggestions">Mustra suggirimenti dû pitazzu</string>
     <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -846,9 +866,9 @@
     <!-- The title of the origin permission option allowing a user to enable the extension to run on all sites -->
     <string name="addons_permissions_allow_for_all_sites" tools:ignore="UnusedResources">Pirmetti pi tutti i siti</string>
     <!-- The subtitle for the allow for all sites preference toggle -->
-    <string name="addons_permissions_allow_for_all_sites_subtitle" tools:ignore="UnusedResources">Si ài fiducia nna stu stineriu, ci po\' dari u pirmisu pi tutti i siti.</string>
+    <string name="addons_permissions_allow_for_all_sites_subtitle" tools:ignore="UnusedResources">Si ài fiducia nna stu stinneriu, ci po\' dari u pirmissu pi tutti i siti.</string>
     <!-- The text shown when an extension does not require permissions -->
-    <string name="addons_does_not_require_permissions">Stu stinneriu nun abbisogna di nuḍḍu pirmisu.</string>
+    <string name="addons_does_not_require_permissions">Stu stinneriu nun abbisogna di nuḍḍu pirmissu.</string>
 
     <!-- Add-on Preferences -->
     <!-- Preference to customize the configured AMO (addons.mozilla.org) collection -->
@@ -916,9 +936,9 @@
 
     <!-- Add-ons general availability nimbus message-->
     <!-- Title of the Nimbus message for extension general availability-->
-    <string name="addon_ga_message_title_2" tools:ignore="UnusedResources">Sunnu dispunìbbili novi stinneri</string>
+    <string name="addon_ga_message_title_2" tools:ignore="UnusedResources">Sunnu dispunìbbili stinneri novi</string>
     <!-- Body of the Nimbus message for add-ons general availability. 'Firefox' intentionally hardcoded here-->
-    <string name="addon_ga_message_body" tools:ignore="BrandUsage,UnusedResources">Scopri cchiù assai di centu novi stinneri chi ti pirmèttinu di pirsunalizzari Firefox.</string>
+    <string name="addon_ga_message_body" tools:ignore="BrandUsage,UnusedResources">Scopri cchiù assai di centu stinneri novi chi ti pirmèttinu di pirsunalizzari Firefox.</string>
     <!-- Button text of the Nimbus message for extensions general availability. -->
     <string name="addon_ga_message_button_2" tools:ignore="UnusedResources">Scopri i stinneri</string>
 
@@ -1007,20 +1027,24 @@
     <string name="exceptions_empty_message_learn_more_link">Cchiù nfurmazzioni</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Dati tècnici e d\'usu</string>
-
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Dati tècnici e di ntirazzioni</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Manna dati tècnici e di ntirazzioni</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Cchiù nfurmazzioni</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Sparti i dati di pristazzioni, usu, hardware e pirsunalizzazzioni dû to navicaturi cu Mozilla p\'ajutàrini a \'mmigghiurari %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Sparti i dati di pristazzioni, usu, hardware e pirsunalizzazzioni dû to navicaturi cu Mozilla p\'ajutàrini a \'mmigghiurari %1$s</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Dati supra ô to dispusitivu, a cunfijurazzioni hardware e ncapu a comu usi Firefox n\'ajuta a \'mmigghiuràrinni i funzioni, i pristazzioni e a stabbilità.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Dati di màrketing</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Sparti dati di basi cu Adjust, u nostru furnituri di màrketing mòbbili</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Dati di màrketing</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Dati di misurazzioni dî campagni</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Sparti nfurmazzioni ncapu a comu scupristi Firefox chî cumpagni di màrketing di Mozilla. Chistu n\'ajuta a fari crìsciri Firefox e custrujiri na riti megghiu</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Sparti nfurmazzioni ncapu a comu scupristi Firefox chî cumpagni di màrketing di Mozilla. Chistu n\'ajuta a fari crìsciri Firefox e custrujiri na riti megghiu</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Sparti comu scupristi e chi usi Firefox câ nostra squatra dâ pubblicità.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Cchiù nfurmazzioni supra ê dati di màrketing</string>
 
@@ -1035,6 +1059,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Chistu n\'ajuta a diagnusticari e abbirsari i prubblemi dû navicaturi. I papelli ponnu cuntèniri dati pirsunali o sinzìbbili.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Sparti \'n autumàticu a signalijazzioni di scasciu cu Mozilla quannu s\'abbìa arrè doppu u scasciu</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Cchiù nfurmazzioni supra ê signalijazzioni di scasciu</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Studi</string>
@@ -1100,7 +1127,7 @@
     <!-- Option in Library to open History page -->
     <string name="library_history">Crunuluggìa</string>
     <!-- Option in Library to open a new tab -->
-    <string name="library_new_tab">Nova scheda</string>
+    <string name="library_new_tab">Scheda nova</string>
     <!-- Settings Page Title -->
     <string name="settings_title">Mpustazzioni</string>
     <!-- Content description (not visible, for screen readers etc.): "Close button for library settings" -->
@@ -1196,7 +1223,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Attivi</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s po nzitari e abbiari studi di tempu \'n tempu.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s po nzitari e abbiari studi di tempu \'n tempu.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Prova i funzioni e i pinzati novi prima chi vennu fatti pùbblichi.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Nzita e abbìa studi</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Cchiù nfurmazzioni</string>
     <!-- Dialog message shown after removing a study -->
@@ -1284,9 +1315,9 @@
     <!-- Text for the button to clear all history -->
     <string name="history_delete_all">Scancella a crunuluggìa</string>
     <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-    <string name="history_delete_multiple_items_snackbar">Cancillasti a crunuluggìa</string>
+    <string name="history_delete_multiple_items_snackbar">Scancillasti a crunuluggìa</string>
     <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. The first parameter is the shortened URL of the deleted history item. -->
-    <string name="history_delete_single_item_snackbar">Cancillasti %1$s</string>
+    <string name="history_delete_single_item_snackbar">Scancillasti %1$s</string>
     <!-- Context description text for the button to delete a single history item -->
     <string name="history_delete_item">Scancella</string>
     <!-- History multi select title in app bar
@@ -1309,7 +1340,7 @@
     <!-- Text for the snackbar to confirm that multiple downloads items have been removed -->
     <string name="download_delete_multiple_items_snackbar_1">Scarricamenti scancillati</string>
     <!-- Text for the snackbar to confirm that a single download item has been removed. The first parameter is the name of the download item. -->
-    <string name="download_delete_single_item_snackbar">Cancillasti %1$s</string>
+    <string name="download_delete_single_item_snackbar">Scancillasti %1$s</string>
     <!-- Text shown when no download exists -->
     <string name="download_empty_message_1">Nuḍḍu pricu scarricatu</string>
     <!-- History multi select title in app bar
@@ -1329,8 +1360,12 @@
     <string name="webcompat_reporter_url_error_invalid">Pi favuri metti nu nnirizzu vàlitu</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Qual\'è u prubblema? (facurtativu)</string>
+    <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_label_whats_broken_2">Chi si rumpìu?</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason">Scarta na scaciuni</string>
+    <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_choose_reason_error">Pi favuri scarta na scaciuni</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
     <string name="webcompat_reporter_label_description">Discrivi u prubblema (facurtativu)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
@@ -1381,9 +1416,9 @@
 
     <!-- Bookmarks -->
     <!-- Confirmation message for a dialog confirming if the user wants to delete the selected folder -->
-    <string name="bookmark_delete_folder_confirmation_dialog">Cancillari sta carpetta?</string>
+    <string name="bookmark_delete_folder_confirmation_dialog">Scancillari sta carpetta?</string>
     <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
-    <string name="bookmark_delete_folders_confirmation_dialog">Cancillari l\'elimenti scartati?</string>
+    <string name="bookmark_delete_folders_confirmation_dialog">Scancillari l\'elimenti scartati?</string>
     <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. Parameter will be replaced by app name. -->
     <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s scancella l\'elimenti scartati.</string>
     <!-- Text for the cancel button on delete bookmark dialog -->
@@ -1445,15 +1480,15 @@
     <string name="bookmarks_empty_message">Nun cc\'è nuḍḍu nzingalibbru cca</string>
     <!-- Bookmark snackbar message on deletion
      The first parameter is the host part of the URL of the bookmark deleted, if any -->
-    <string name="bookmark_deletion_snackbar_message">Cancillasti %1$s</string>
+    <string name="bookmark_deletion_snackbar_message">Scancillasti %1$s</string>
     <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders-->
-    <string name="bookmark_deletion_multiple_snackbar_message_2">Cancillasti i nzingalibbra</string>
+    <string name="bookmark_deletion_multiple_snackbar_message_2">Scancillasti i nzingalibbra</string>
     <!-- Bookmark snackbar message on deleting multiple bookmarks including folders-->
     <string name="bookmark_deletion_multiple_snackbar_message_3">Staju scancillannu i carpetti chi scartasti</string>
     <!-- Bookmark undo button for deletion snackbar action -->
     <string name="bookmark_undo_deletion">SFAI</string>
     <!-- Bookmark snackbar message for deleting a single item. Parameter is the title of the item being deleted -->
-    <string name="bookmark_delete_single_item">Cancillasti %s</string>
+    <string name="bookmark_delete_single_item">Scancillasti %s</string>
     <!-- Bookmark snackbar message for deleting multiple items. Parameter is the number of items being deleted -->
     <string name="bookmark_delete_multiple_items">Elimenti scancillati: %s</string>
     <!-- Text for the button to search all bookmarks -->
@@ -1482,7 +1517,7 @@
     <!-- Description for the bookmark list empty state when you're in an empty folder. -->
     <string name="bookmark_empty_list_folder_description">Junci nzingalibbra mentri chi nàvichi, accussì ti l\'attrovi fàcili doppu.</string>
     <!-- Description for the add new folder button when selecting a folder. -->
-    <string name="bookmark_select_folder_new_folder_button_title">Nova carpetta</string>
+    <string name="bookmark_select_folder_new_folder_button_title">Carpetta nova</string>
 
     <!-- Site Permissions -->
     <!-- Button label that take the user to the Android App setting -->
@@ -1494,20 +1529,20 @@
     <!-- Label that indicates that this option it the recommended one -->
     <string name="phone_feature_recommended">Raccumannata</string>
     <!-- Button label for clearing all the information of site permissions-->
-    <string name="clear_permissions">Scancella i pirmisi</string>
+    <string name="clear_permissions">Scancella i pirmissi</string>
     <!-- Text for the OK button on Clear permissions dialog -->
     <string name="clear_permissions_positive">OK</string>
     <!-- Text for the cancel button on Clear permissions dialog -->
     <string name="clear_permissions_negative">Sfai</string>
 
     <!-- Button label for clearing a site permission-->
-    <string name="clear_permission">Scancella u pirmisu</string>
+    <string name="clear_permission">Scancella u pirmissu</string>
     <!-- Text for the OK button on Clear permission dialog -->
     <string name="clear_permission_positive">OK</string>
     <!-- Text for the cancel button on Clear permission dialog -->
     <string name="clear_permission_negative">Sfai</string>
     <!-- Button label for clearing all the information on all sites-->
-    <string name="clear_permissions_on_all_sites">Scancella pirmisi di tutti i siti</string>
+    <string name="clear_permissions_on_all_sites">Scancella pirmissi di tutti i siti</string>
     <!-- Preference for altering video and audio autoplay for all websites -->
     <string name="preference_browser_feature_autoplay">Ripruduzzioni autumàtica</string>
     <!-- Preference for altering the camera access for all websites -->
@@ -1720,7 +1755,7 @@
 
     <!-- Snackbar -->
     <!-- Text shown in snackbar when user deletes a collection -->
-    <string name="snackbar_collection_deleted">Cancillasti a ricota</string>
+    <string name="snackbar_collection_deleted">Scancillasti a ricota</string>
     <!-- Text shown in snackbar when user renames a collection -->
     <string name="snackbar_collection_renamed">Canciasti u nomu â ricota</string>
 
@@ -1739,7 +1774,7 @@
     <!-- Text shown in snackbar when user closes all private tabs -->
     <string name="snackbar_private_tabs_closed">Chiujisti i schedi privati</string>
     <!-- Text shown in snackbar when user erases their private browsing data -->
-    <string name="snackbar_private_data_deleted">Cancillasti i dati dâ navicazzioni privata</string>
+    <string name="snackbar_private_data_deleted">Scancillasti i dati dâ navicazzioni privata</string>
     <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
     <string name="snackbar_deleted_undo">SFAI</string>
     <!-- Text shown in snackbar when user removes a top site -->
@@ -1756,7 +1791,7 @@
     <!-- QR code scanner prompt dialog positive option when there is an error -->
     <string name="qr_scanner_dialog_invalid_ok">OK</string>
     <!-- Tab collection deletion prompt dialog message. Placeholder will be replaced with the collection name -->
-    <string name="tab_collection_dialog_message">Cancillari %1$s?</string>
+    <string name="tab_collection_dialog_message">Scancillari %1$s?</string>
     <!-- Tab collection deletion prompt dialog option to delete the collection -->
     <string name="tab_collection_dialog_positive">Scancella</string>
     <!-- Message for copying the URL via long press on the toolbar -->
@@ -1794,7 +1829,7 @@
     <!-- Subtitle for the cached images and files item in Delete browsing data -->
     <string name="preferences_delete_browsing_data_cached_files_subtitle">Lìbbira spazziu di mimoria</string>
     <!-- Title for the site permissions item in Delete browsing data -->
-    <string name="preferences_delete_browsing_data_site_permissions">Pirmisi dî siti</string>
+    <string name="preferences_delete_browsing_data_site_permissions">Pirmissi dî siti</string>
     <!-- Title for the downloads item in Delete browsing data -->
     <string name="preferences_delete_browsing_data_downloads">Scarricamenti</string>
     <!-- Text for the button to delete browsing data -->
@@ -1826,7 +1861,7 @@
     <!-- Text for the allow button for the data deletion dialog -->
     <string name="delete_browsing_data_prompt_allow">Scancella</string>
     <!-- Text for the snackbar confirmation that the data was deleted -->
-    <string name="preferences_delete_browsing_data_snackbar">Cancillasti i dati di navicazzioni</string>
+    <string name="preferences_delete_browsing_data_snackbar">Scancillasti i dati di navicazzioni</string>
     <!-- Text for the snackbar to show the user that the deletion of browsing data is in progress -->
     <string name="deleting_browsing_data_in_progress">Staju scancillannu i dati di navicazzioni…</string>
 
@@ -2000,6 +2035,8 @@
     <string name="about_privacy_notice">Abbisu di privatizza</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Canusci i to diritti</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Tèrmini di sirbizzu</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Nfurmazzioni ncapu â licenza</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2172,7 +2209,7 @@
     <!-- The text for the "Delete card" button for deleting a credit card -->
     <string name="credit_cards_delete_card_button">Scancella a carta</string>
     <!-- The text for the confirmation message of "Delete card" dialog -->
-    <string name="credit_cards_delete_dialog_confirmation_2">Cancillari a carta?</string>
+    <string name="credit_cards_delete_dialog_confirmation_2">Scancillari a carta?</string>
     <!-- The text for the positive button on "Delete card" dialog -->
     <string name="credit_cards_delete_dialog_button">Scancella</string>
     <!-- The title for the "Save" menu item for saving a credit card -->
@@ -2233,7 +2270,7 @@
     <string name="addressess_delete_address_button">Scancella u nnirizzu</string>
 
     <!-- The title for the "Delete address" confirmation dialog -->
-    <string name="addressess_confirm_dialog_message_2">Cancillari stu nnirizzu?</string>
+    <string name="addressess_confirm_dialog_message_2">Scancillari stu nnirizzu?</string>
     <!-- The text for the positive button on "Delete address" dialog -->
     <string name="addressess_confirm_dialog_ok_button">Scancella</string>
     <!-- The text for the negative button on "Delete address" dialog -->
@@ -2246,7 +2283,7 @@
     <!-- Title of the Add search engine screen -->
     <string name="search_engine_add_custom_search_engine_title">Junci muturi di risciduta</string>
     <!-- Content description (not visible, for screen readers etc.): Title for the button that navigates to add new engine screen -->
-    <string name="search_engine_add_custom_search_engine_button_content_description">Junci un novu muturi di risciduta</string>
+    <string name="search_engine_add_custom_search_engine_button_content_description">Junci un muturi di risciduta novu</string>
     <!-- Title of the Edit search engine screen -->
     <string name="search_engine_edit_custom_search_engine_title">Cancia u muturi di risciduta</string>
     <!-- Text for the menu button to edit a search engine -->
@@ -2289,14 +2326,14 @@
     <!-- Text shown when a user successfully edits a custom search engine -->
     <string name="search_edit_custom_engine_success_message">Sarbasti %s</string>
     <!-- Text shown when a user successfully deletes a custom search engine -->
-    <string name="search_delete_search_engine_success_message">Cancillasti %s</string>
+    <string name="search_delete_search_engine_success_message">Scancillasti %s</string>
 
     <!-- Heading for the instructions to allow a permission -->
     <string name="phone_feature_blocked_intro">Pi pirmittìrilu:</string>
     <!-- First step for the allowing a permission -->
     <string name="phone_feature_blocked_step_settings">1. Vai nnê mpustazzioni di Android</string>
     <!-- Second step for the allowing a permission -->
-    <string name="phone_feature_blocked_step_permissions"><![CDATA[2. Ammacca <b>Pirmisi</b>]]></string>
+    <string name="phone_feature_blocked_step_permissions"><![CDATA[2. Ammacca <b>Pirmissi</b>]]></string>
     <!-- Third step for the allowing a permission (Fore example: Camera) -->
     <string name="phone_feature_blocked_step_feature"><![CDATA[3. Abbìlita <b>%1$s</b>]]></string>
 
@@ -2307,17 +2344,17 @@
     <!-- Label to clear site data -->
     <string name="clear_site_data">Scancella i viscotta e i dati dî siti</string>
     <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site -->
-    <string name="confirm_clear_site_data"><![CDATA[Cancillari tutti i viscotta e i dati dû situ <b>%s</b>?]]></string>
+    <string name="confirm_clear_site_data"><![CDATA[Scancillari tutti i viscotta e i dati dû situ <b>%s</b>?]]></string>
     <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites-->
-    <string name="confirm_clear_permissions_on_all_sites">Cancillari tutti i pirmisi di tutti i siti?</string>
+    <string name="confirm_clear_permissions_on_all_sites">Scancillari tutti i pirmissi di tutti i siti?</string>
     <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site-->
-    <string name="confirm_clear_permissions_site">Cancillari tutti i pirmisi pi stu situ?</string>
+    <string name="confirm_clear_permissions_site">Scancillari tutti i pirmissi pi stu situ?</string>
     <!-- Confirmation message for a dialog confirming if the user wants to set default value a permission for a site-->
-    <string name="confirm_clear_permission_site">Cancillari stu pirmisu pi stu situ?</string>
+    <string name="confirm_clear_permission_site">Scancillari stu pirmissu pi stu situ?</string>
     <!-- label shown when there are not site exceptions to show in the site exception settings -->
     <string name="no_site_exceptions">Nuḍḍa eccizzioni pî siti</string>
     <!-- Bookmark deletion confirmation -->
-    <string name="bookmark_deletion_confirmation">Cancillari stu nzingalibbru?</string>
+    <string name="bookmark_deletion_confirmation">Scancillari stu nzingalibbru?</string>
     <!-- Browser menu button that adds a shortcut to the home fragment -->
     <string name="browser_menu_add_to_shortcuts">Junci a l\'accurzi</string>
     <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2330,7 +2367,7 @@
     <!-- Login overflow menu edit button -->
     <string name="login_menu_edit_button">Cancia</string>
     <!-- Message in delete confirmation dialog for password -->
-    <string name="login_deletion_confirmation_2">Cancillari sta chiavi?</string>
+    <string name="login_deletion_confirmation_2">Scancillari sta chiavi?</string>
     <!-- Positive action of a dialog asking to delete  -->
     <string name="dialog_delete_positive">Scancella</string>
     <!-- Negative action of a dialog asking to delete login -->
@@ -2449,6 +2486,8 @@
     <!-- Awesome bar suggestion's headers -->
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Suggirimenti di Firefox</string>
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Risciduti pupulari</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Riscedi cu Google</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2549,7 +2588,7 @@
     <!-- Clickable text that links to Fakespot.com. First parameter is the Fakespot product name. In the phrase "Fakespot by Mozilla", "by" can be localized. Does not need to stay by. -->
     <string name="review_quality_check_powered_by_link" moz:removedIn="136" tools:ignore="UnusedResources">%s di Mozilla</string>
     <!-- Text for title of warning card informing the user that the current analysis is outdated. -->
-    <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Nova nfurmazzioni di cuntrullari</string>
+    <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Nfurmazzioni nova di cuntrullari</string>
     <!-- Text for button from warning card informing the user that the current analysis is outdated. Clicking this should trigger the product's re-analysis. -->
     <string name="review_quality_check_outdated_analysis_warning_action" moz:removedIn="136" tools:ignore="UnusedResources">Cuntrolla ora</string>
     <!-- Title for warning card informing the user that the current product does not have enough reviews for a review analysis. -->
@@ -2675,7 +2714,7 @@
     <!-- Title for the translation dialog that allows a user to translate the webpage when a user uses the translation feature the first time. The first parameter is the name of the application, for example, "Fenix". -->
     <string name="translations_bottom_sheet_title_first_time">Prova i traduzzioni privati di %1$s</string>
     <!-- Additional information on the translation dialog that appears when a user uses the translation feature the first time. The first parameter is clickable text with a link, for example, "Learn more". -->
-    <string name="translations_bottom_sheet_info_message">Pâ to privatizza, i traduzzioni nun làssanu mai u to dispusitvu. Prestu sarannu dispunìbbili novi lingui e autri ammigghiuramenti! %1$s</string>
+    <string name="translations_bottom_sheet_info_message">Pâ to privatizza, i traduzzioni nun làssanu mai u to dispusitvu. Prestu sarannu dispunìbbili lingui novi e autri ammigghiuramenti! %1$s</string>
     <!-- Text that links to additional information about the Firefox translations feature. -->
     <string name="translations_bottom_sheet_info_message_learn_more">Cchiù nfurmazzioni</string>
     <!-- Label for the dropdown to select which language to translate from on the translations dialog. Usually the translate from language selected will be the same as the page language. -->
@@ -2789,7 +2828,7 @@
     <!-- Title of the never translate site preference screen that will appear on the toolbar.-->
     <string name="never_translate_site_toolbar_title_preference">Nun tradùciri mai sti siti</string>
     <!-- Screen header presenting the never translate site preference feature. It will appear under the toolbar. -->
-    <string name="never_translate_site_header_preference">Pi jùnciri un novu situ: vacci e scarta “Nun tradùciri mai” dû minù di traduzzioni.</string>
+    <string name="never_translate_site_header_preference">Pi jùnciri un situ novu: vacci e scarta “Nun tradùciri mai” dû minù di traduzzioni.</string>
     <!-- Content description (not visible, for screen readers etc.): For a never-translated site list item that is selected.
              The first parameter is web site url (for example:"wikipedia.com") -->
     <string name="never_translate_site_item_list_content_description_preference">Scancella %1$s</string>
@@ -2797,7 +2836,7 @@
     <string name="never_translate_site_error_warning_text">Nun potti carricari i siti. Pi favuri prova cchiù tardu.</string>
     <!-- The Delete site dialogue title will appear when the user clicks on a list item.
              The first parameter is web site url (for example:"wikipedia.com") -->
-    <string name="never_translate_site_dialog_title_preference">Cancillari %1$s?</string>
+    <string name="never_translate_site_dialog_title_preference">Scancillari %1$s?</string>
     <!-- The Delete site dialogue positive button will appear when the user clicks on a list item. The site will be deleted. -->
     <string name="never_translate_site_dialog_confirm_delete_preference">Scancella</string>
     <!-- The Delete site dialogue negative button will appear when the user clicks on a list item. The dialog will be dismissed. -->
@@ -2846,13 +2885,13 @@
     <!-- Title for the dialog used by the translations feature to confirm deleting a language.
     The dialog will be presented when the user requests deletion of a language.
     The first parameter is the name of the language, for example, "Spanish" and the second parameter is the size in kilobytes or megabytes of the language file. -->
-    <string name="delete_language_file_dialog_title">Cancillari %1$s (%2$s)?</string>
+    <string name="delete_language_file_dialog_title">Scancillari %1$s (%2$s)?</string>
     <!-- Additional information for the dialog used by the translations feature to confirm deleting a language. The first parameter is the name of the application, for example, "Fenix". -->
     <string name="delete_language_file_dialog_message">Si cancelli sta lingua, %1$s scàrrica pacchetti parziali nnâ mimoria cauda mentri chi traduci.</string>
     <!-- Title for the dialog used by the translations feature to confirm deleting all languages file.
     The dialog will be presented when the user requests deletion of all languages file.
     The first parameter is the size in kilobytes or megabytes of the language file. -->
-    <string name="delete_language_all_languages_file_dialog_title">Cancillari tutti i lingui (%1$s)?</string>
+    <string name="delete_language_all_languages_file_dialog_title">Scancillari tutti i lingui (%1$s)?</string>
     <!-- Additional information for the dialog used by the translations feature to confirm deleting all languages file. The first parameter is the name of the application, for example, "Fenix". -->
     <string name="delete_language_all_languages_file_dialog_message">Si cancelli tutti i lingui, %1$s scàrrica pacchetti parziali nnâ mimoria cauda mentri chi traduci.</string>
     <!-- Button text on the dialog used by the translations feature to confirm deleting a language. -->
@@ -2877,6 +2916,10 @@
     <string name="download_language_file_dialog_negative_button_text">Sfai</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Sicuru</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">Nun sicuru</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Stai accura nna stu situ</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2898,6 +2941,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Si cc\'è quarchi cosa ca nun funziona nna stu situ, prova a sdisabbilitari i prutizzioni.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">I prutizzioni sunnu sdisabbilitati. Ti suggiremu d\'abbilitalli arrè.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Trazzatura bluccati: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">Nuḍḍu trazzaturi truvatu</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Mpustazzioni di privatizza e sicurizza</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Trazzatura bluccati: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Scancillari i viscotta e i dati dû situ pi <b>%s</b> ti putissi fari nèsciri dû situ e sbacantari i to carrelli dâ spisa.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Scancella</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Sfai</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Scancillasti viscotta e dati dî siti</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Cunnissioni sicura</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Cunnissioni nun sicura</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Virificata di %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3018,6 +3092,13 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Lingui d\'abbilitari nnô debug</string>
 
+    <!-- The title of the header for the section for managing addresses. -->
+    <string name="debug_drawer_addresses_management_header">Manija i nnirizzi</string>
+    <!-- The title of the button in the debug drawer for adding a new address. -->
+    <string name="debug_drawer_add_new_address">Agghiunci nu nnirizzu novu pâ lingua scartata</string>
+    <!-- The title of the button for deleting in the debug drawer all addresses. -->
+    <string name="debug_drawer_delete_all_addresses">Scancella tutti i nnirizzi</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The title of the CFR Tools feature in the Debug Drawer -->
     <string name="debug_drawer_cfr_tools_title">Stigghi CFR</string>
@@ -3070,4 +3151,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Attualizza prima dû 14 di marzu pi cuntinuari a usari i juncitini e autri carattarìstichi.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Certi carattarìstichi nun funziònanu cchiù di dumani.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Ammustra u testu ammucciatu</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Scancella testu</string>
 </resources>

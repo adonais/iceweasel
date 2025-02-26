@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Web Compatibility Interventions",
   "description": "Urgent post-release fixes for web compatibility.",
-  "version": "135.0.0",
+  "version": "136.7.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "webcompat@mozilla.org",
@@ -82,9 +82,9 @@
     "scripts": [
       "lib/module_shim.js",
       "lib/messaging_helper.js",
+      "lib/ua_helpers.js",
       "lib/intervention_helpers.js",
       "lib/requestStorageAccess_helper.js",
-      "lib/ua_helpers.js",
       "data/injections.js",
       "data/shims.js",
       "data/ua_overrides.js",
@@ -114,6 +114,7 @@
     "shims/cxense.js",
     "shims/doubleverify.js",
     "shims/eluminate.js",
+    "shims/embed-test-shim.js",
     "shims/empty-script.js",
     "shims/empty-shim.txt",
     "shims/everest.js",

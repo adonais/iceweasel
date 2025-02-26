@@ -140,6 +140,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
       liveSABs(0),
       beforeWaitCallback(nullptr),
       afterWaitCallback(nullptr),
+      offthreadBaselineCompilationEnabled_(false),
       offthreadIonCompilationEnabled_(true),
       parallelParsingEnabled_(true),
       autoWritableJitCodeActive_(false),
@@ -228,12 +229,12 @@ void JSRuntime::destroyRuntime() {
     sourceHook = nullptr;
 
     /*
-     * Cancel any pending, in progress or completed Ion compilations and
-     * parse tasks. Waiting for wasm and compression tasks is done
+     * Cancel any pending, in progress or completed baseline/Ion compilations
+     * and parse tasks. Waiting for wasm and compression tasks is done
      * synchronously (on the main thread or during parse tasks), so no
      * explicit canceling is needed for these.
      */
-    CancelOffThreadIonCompile(this);
+    CancelOffThreadCompile(this);
     CancelOffThreadDelazify(this);
     CancelOffThreadCompressions(this);
 
@@ -401,8 +402,8 @@ static bool HandleInterrupt(JSContext* cx, bool invokeCallback) {
 
   cx->runtime()->gc.gcIfRequested();
 
-  // A worker thread may have requested an interrupt after finishing an Ion
-  // compilation.
+  // A worker thread may have requested an interrupt after finishing an
+  // offthread compilation.
   jit::AttachFinishedCompilations(cx);
 
   // Don't call the interrupt callback if we only interrupted for GC or Ion.

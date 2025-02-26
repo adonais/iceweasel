@@ -1056,6 +1056,88 @@ function IteratorZipKeyed(predicate) {
   return false;
 }
 
+
+/**
+ * Iterator.range (start, end, step, inclusiveEnd, zero, one)
+ * 
+ * https://tc39.es/proposal-iterator.range/#sec-create-numeric-range-iterator
+ */
+function* IteratorRangeGenerator(start, end, step, inclusiveEnd, zero, one) {
+  //TODO: Handle setting prototype for generators returned from Iterator.range
+
+  // Step 18. Let closure be a new Abstract Closure with no parameters that captures start, end, step, inclusiveEnd, zero, one and performs the following steps when called:
+  // Step 18.a: If end > start, let ifIncrease be true
+  // Step 18.b: Else let ifIncrease be false
+  var ifIncrease = end > start;
+
+  // Step 18.c: If step > zero, let ifStepIncrease be true
+  // Step 18.d: Else let ifStepIncrease be false
+  var ifStepIncrease = step > zero;
+
+  // Step 18.e: If ifIncrease is not ifStepIncrease, return undefined
+  if (ifIncrease !== ifStepIncrease) {
+    return undefined;
+  }
+
+  // Step 18.f: Let hitsEnd be false
+  var hitsEnd = false;
+
+  // Step 18.g: Let currentCount be zero
+  var currentCount = zero;
+
+  // Step 18.i: Iterate while hitsEnd is false
+  while (hitsEnd === false) {
+    // Step 18.i.i: Let currentYieldingValue be start + (step × currentCount)
+    var currentYieldingValue = start + (step * currentCount);
+
+    // Step 18.i.ii: If currentYieldingValue is end, set hitsEnd to true
+    if (currentYieldingValue === end) {
+      hitsEnd = true;
+    }
+
+    // Step 18.i.iii: Set currentCount to currentCount + one
+    currentCount = currentCount + one;
+
+    // Step 18.i.iv: If ifIncrease is true, then
+    if (ifIncrease === true) {
+      // Step 18.i.iv.1: If inclusiveEnd is true, then
+      if (inclusiveEnd === true) {
+        // Step 18.i.iv.1.a: If currentYieldingValue > end, return undefined
+        if (currentYieldingValue > end) {
+          return undefined;
+        }
+      } else {
+        // Step 18.i.iv.2.a: If currentYieldingValue ≥ end, return undefined
+        if (currentYieldingValue >= end) {
+          return undefined;
+        }
+      }
+    }
+    // Step 18.i.v: Else
+    else {
+      // Step 18.i.v.1: If inclusiveEnd is true, then
+      if (inclusiveEnd === true) {
+        // Step 18.i.v.1.a: If end > currentYieldingValue, return undefined
+        if (end > currentYieldingValue) {
+          return undefined;
+        }
+      } else {
+        // Step 18.i.v.2.a: If end ≥ currentYieldingValue, return undefined
+        if (end >= currentYieldingValue) {
+          return undefined;
+        }
+      }
+    }
+
+    // Step 18.i.vi: Yield currentYieldingValue
+    yield currentYieldingValue;
+  }
+
+  // Step 18.j: Return undefined
+  return undefined;
+}
+
+
 /**
  * Iterator.range ( start, end, optionOrStep, type )
  * 
@@ -1087,13 +1169,26 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
 
     // Step 3.d. Let one be 1ℤ.
     var one = 1;
-  }
+    // 4: Else,
+  } else {
+    // 4.a. Assert: start is a BigInt.
+    assert(typeof start === 'bigint', "The 'start' argument must be a bigint");
 
+    // 4.b. If end is not +∞𝔽 or -∞𝔽 and end is not a BigInt, throw a TypeError exception.
+    if (typeof end !== 'bigint' && !(Number_isFinite(end))) {
+      ThrowTypeError(JSMSG_ITERATOR_RANGE_INVALID_END);
+    }
+
+    // 4.c. Let zero be 0𝔽.
+    var zero = 0n;
+
+    // 4.d. Let one be 1𝔽.
+    var one = 1n;
+  }
   // Step 5: If start is +∞ or -∞, throw a RangeError exception.
-  if (!Number_isFinite(start)) {
+  if (typeof start === 'number' && !Number_isFinite(start)) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_START_INFINITY);
   }
-
   // Step 6: Let inclusiveEnd be false.
   var inclusiveEnd = false;
 
@@ -1115,6 +1210,12 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
     // Step 9.a. Let step be optionOrStep.
     step = optionOrStep;
   }
+
+  // Step 10: Else if type is BIGINT-RANGE and optionOrStep is a BigInt, then
+  // Step 10.a. Let step be optionOrStep.
+  else if (!isNumberRange && typeof optionOrStep === 'bigint') {
+    step = optionOrStep;
+  }
   // Step 11: Else, throw a TypeError exception.
   else if (optionOrStep !== undefined && optionOrStep !== null) {
     ThrowTypeError(JSMSG_ITERATOR_RANGE_INVALID_STEP);
@@ -1128,7 +1229,7 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
   }
 
   // Step 13: If step is NaN, throw a RangeError exception.
-  if (Number_isNaN(step)) {
+  if (typeof step === "number" && Number_isNaN(step)) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_STEP_NAN);
   }
 
@@ -1137,8 +1238,13 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
     ThrowTypeError(JSMSG_ITERATOR_RANGE_STEP_NOT_NUMBER);
   }
 
+  // Step 15: Else if type is BIGINT-RANGE and step is not a BigInt, throw a TypeError exception
+  else if (!isNumberRange && typeof step !== 'bigint') {
+    ThrowTypeError(JSMSG_ITERATOR_RANGE_STEP_NOT_BIGINT);
+  }
+
   // Step 16: If step is +∞ or -∞, throw a RangeError exception.
-  if (!Number_isFinite(step)) {
+  if (typeof step === 'number' && !Number_isFinite(step)) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_STEP_NOT_FINITE);
   }
 
@@ -1146,8 +1252,11 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
   if (step === zero && start !== end) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_STEP_ZERO);
   }
-
+  // Step 19: Return CreateIteratorFromClosure(closure, "%NumericRangeIteratorPrototype%", %NumericRangeIteratorPrototype%).
+  return IteratorRangeGenerator(start, end, step, inclusiveEnd, zero, one);
 }
+
+
 
 /**
  *  Iterator.range ( start, end, optionOrStep )

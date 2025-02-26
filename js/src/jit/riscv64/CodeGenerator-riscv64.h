@@ -35,9 +35,9 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
   Operand ToOperand(const LDefinition* def);
 
 #ifdef JS_PUNBOX64
-  Operand ToOperandOrRegister64(const LInt64Allocation input);
+  Operand ToOperandOrRegister64(const LInt64Allocation& input);
 #else
-  Register64 ToOperandOrRegister64(const LInt64Allocation input);
+  Register64 ToOperandOrRegister64(const LInt64Allocation& input);
 #endif
 
   MoveOperand toMoveOperand(LAllocation a) const;
@@ -148,12 +148,6 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
   void emitWasmLoadI64(T* ins);
   template <typename T>
   void emitWasmStoreI64(T* ins);
-
-  ValueOperand ToValue(LInstruction* ins, size_t pos);
-  ValueOperand ToTempValue(LInstruction* ins, size_t pos);
-
-  // Functions for LTestVAndBranch.
-  void splitTagForTest(const ValueOperand& value, ScratchTagScope& tag);
 };
 
 typedef CodeGeneratorRiscv64 CodeGeneratorSpecific;

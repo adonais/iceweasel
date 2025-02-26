@@ -24,7 +24,7 @@
 #include "js/PropertyAndElement.h"  // JS_DefineElement, JS_DefineProperty
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/TelemetryMetrics.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BackgroundHangMonitor.h"
@@ -67,7 +67,6 @@
 #  include "other/UntrustedModules.h"
 #endif
 #include "nsJSUtils.h"
-#include "nsLocalFile.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
@@ -1158,7 +1157,7 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
                                         XRE_IsParentProcess());
 
   // Currently, only UserInteractions from the parent process are recorded.
-  TelemetryUserInteraction::InitializeGlobalState(useTelemetry, useTelemetry);
+  TelemetryUserInteraction::InitializeGlobalState(useTelemetry);
 
   // Now, create and initialize the Telemetry global state.
   TelemetryImpl* telemetry = new TelemetryImpl();
@@ -1795,29 +1794,11 @@ void AccumulateCategorical(HistogramID id, const nsTArray<nsCString>& labels) {
 
 void AccumulateTimeDelta(HistogramID aHistogram, TimeStamp start,
                          TimeStamp end) {
-  if (start > end) {
-#if !defined(MOZ_WIDGET_ANDROID)
-    mozilla::glean::telemetry::clamping_time_hgrams
-        .Get(nsDependentCString(GetHistogramName(aHistogram)))
-        .Add(1);
-    Accumulate(aHistogram, 0);
-#endif  // !defined(MOZ_WIDGET_ANDROID)
-    return;
-  }
   Accumulate(aHistogram, static_cast<uint32_t>((end - start).ToMilliseconds()));
 }
 
 void AccumulateTimeDelta(HistogramID aHistogram, const nsCString& key,
                          TimeStamp start, TimeStamp end) {
-  if (start > end) {
-#if !defined(MOZ_WIDGET_ANDROID)
-    mozilla::glean::telemetry::clamping_time_hgrams
-        .Get(nsDependentCString(GetHistogramName(aHistogram)))
-        .Add(1);
-    Accumulate(aHistogram, key, 0);
-#endif  // !defined(MOZ_WIDGET_ANDROID)
-    return;
-  }
   Accumulate(aHistogram, key,
              static_cast<uint32_t>((end - start).ToMilliseconds()));
 }

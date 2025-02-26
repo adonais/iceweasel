@@ -66,12 +66,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_tabs_tray_to_compose).apply {
-            isVisible = true
-            isChecked = context.settings().enableTabsTrayToCompose
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_enable_compose_top_sites).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableComposeTopSites
@@ -121,7 +115,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_fxsuggest).apply {
-            isVisible = FeatureFlags.fxSuggest
+            isVisible = FeatureFlags.FX_SUGGEST
             isChecked = context.settings().enableFxSuggest
             onPreferenceChangeListener = object : Preference.OnPreferenceChangeListener {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {

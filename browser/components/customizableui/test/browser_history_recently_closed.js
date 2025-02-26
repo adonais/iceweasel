@@ -31,24 +31,20 @@ function prepareHistoryPanel() {
   registerCleanupFunction(() => CustomizableUI.reset());
 }
 
-async function openRecentlyClosedTabsMenu() {
+async function openRecentlyClosedTabsMenu(doc = window.document) {
   prepareHistoryPanel();
-  await openHistoryPanel();
+  await openHistoryPanel(doc);
 
-  let recentlyClosedTabs = document.getElementById("appMenuRecentlyClosedTabs");
+  let recentlyClosedTabs = doc.getElementById("appMenuRecentlyClosedTabs");
   Assert.ok(
     !recentlyClosedTabs.getAttribute("disabled"),
     "Recently closed tabs button enabled"
   );
-  let closeTabsPanel = document.getElementById(
-    "appMenu-library-recentlyClosedTabs"
-  );
+  let closeTabsPanel = doc.getElementById("appMenu-library-recentlyClosedTabs");
   let panelView = closeTabsPanel && PanelView.forNode(closeTabsPanel);
   if (!panelView?.active) {
     recentlyClosedTabs.click();
-    closeTabsPanel = document.getElementById(
-      "appMenu-library-recentlyClosedTabs"
-    );
+    closeTabsPanel = doc.getElementById("appMenu-library-recentlyClosedTabs");
     await BrowserTestUtils.waitForEvent(closeTabsPanel, "ViewShown");
     ok(
       PanelView.forNode(closeTabsPanel)?.active,
@@ -216,25 +212,45 @@ add_task(async function testRecentlyClosedRestoreAllTabs() {
     "https://example.com/",
     "https://example.org/",
   ];
+  const closedTabGroupUrls = ["about:logo", "about:mozilla"];
+  const closedTabGroupId = "1234567890-1";
   const windowState = {
     tabs: [
       {
         entries: [{ url: "about:mozilla", triggeringPrincipal_base64 }],
       },
     ],
-    _closedTabs: closedTabUrls.map(url => {
-      return {
-        title: url,
-        state: {
-          entries: [
-            {
-              url,
-              triggeringPrincipal_base64,
-            },
-          ],
-        },
-      };
-    }),
+    _closedTabs: closedTabUrls.map(url => ({
+      title: url,
+      state: {
+        entries: [
+          {
+            url,
+            triggeringPrincipal_base64,
+          },
+        ],
+      },
+    })),
+    closedGroups: [
+      {
+        collapsed: false,
+        color: "blue",
+        id: closedTabGroupId,
+        name: "",
+        tabs: closedTabGroupUrls.map(url => ({
+          title: url,
+          state: {
+            entries: [
+              {
+                url,
+                triggeringPrincipal_base64,
+              },
+            ],
+            groupId: closedTabGroupId,
+          },
+        })),
+      },
+    ],
   };
   await SessionStoreTestUtils.promiseBrowserState({
     windows: [windowState],
@@ -284,8 +300,18 @@ add_task(async function testRecentlyClosedRestoreAllTabs() {
 
   is(
     gBrowser.tabs.length,
-    initialTabCount + closedTabUrls.length,
+    initialTabCount + closedTabUrls.length + closedTabGroupUrls.length,
     "The expected number of closed tabs were restored"
+  );
+  is(
+    gBrowser.tabGroups.length,
+    1,
+    "The expected number of closed tab groups were restored"
+  );
+  is(
+    gBrowser.tabGroups[0].tabs.length,
+    2,
+    "The expected number of tabs were restored to the tab group"
   );
 
   // clean up extra tabs
@@ -508,6 +534,141 @@ add_task(async function testRecentlyClosedTabGroupsSingleTab() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
+});
+
+add_task(async function testRecentlyClosedTabGroupOpensFromAnyWindow() {
+  // We need to make sure the history is cleared before starting the test
+  await Sanitizer.sanitize(["history"]);
+  await resetClosedTabsAndWindows();
+  prepareHistoryPanel();
+
+  is(gBrowser.visibleTabs.length, 1, "We start with one tab already open");
+
+  let groupedTab = BrowserTestUtils.addTab(gBrowser, "https://example.com");
+  await BrowserTestUtils.browserLoaded(groupedTab.linkedBrowser);
+  await TabStateFlusher.flush(groupedTab.linkedBrowser);
+  let tabGroup = gBrowser.addTabGroup([groupedTab], { label: "Some group" });
+  const tabGroupId = tabGroup.id;
+  const tabGroupLabel = tabGroup.label;
+
+  info("close the tab group and wait for it to be removed");
+  let removePromise = BrowserTestUtils.waitForEvent(
+    tabGroup,
+    "TabGroupRemoved"
+  );
+  gBrowser.removeTabGroup(tabGroup);
+  await removePromise;
+
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
+  let closeTabsPanel = await openRecentlyClosedTabsMenu(newWin.document);
+
+  // Click the tab group button in the panel.
+  let tabGroupToolbarButton = closeTabsPanel.querySelector(
+    `.panel-subview-body toolbarbutton[label="${tabGroupLabel}"]`
+  );
+  ok(tabGroupToolbarButton, "should find the tab group toolbar button");
+
+  let tabGroupPanelview = newWin.document.getElementById(
+    `closed-tabs-tab-group-${tabGroupId}`
+  );
+  ok(tabGroupPanelview, "should find the tab group panelview");
+
+  EventUtils.sendMouseEvent({ type: "click" }, tabGroupToolbarButton, window);
+  await BrowserTestUtils.waitForEvent(tabGroupPanelview, "ViewShown");
+
+  let tabToolbarButton = tabGroupPanelview.querySelector(
+    "toolbarbutton.reopentabgroupitem"
+  );
+  let tabGroupRestored = BrowserTestUtils.waitForEvent(
+    newWin.gBrowser.tabContainer,
+    "SSTabRestored"
+  );
+  EventUtils.sendMouseEvent({ type: "click" }, tabToolbarButton, window);
+  await tabGroupRestored;
+
+  is(
+    newWin.gBrowser.tabGroups.length,
+    1,
+    "Tab group added to new window tab strip"
+  );
+  is(
+    newWin.gBrowser.tabGroups[0].label,
+    tabGroupLabel,
+    "Tab group label is the same as it was before restore"
+  );
+
+  await BrowserTestUtils.closeWindow(newWin);
+});
+
+add_task(async function testRecentlyClosedTabsFromManyWindows() {
+  // Ensures that bug1943850 has a proper resolution.
+  info(
+    "Tabs must be indexed by individual window, even when multiple windows are open"
+  );
+
+  await resetClosedTabsAndWindows();
+  const ORIG_STATE = SessionStore.getBrowserState();
+
+  const _makeTab = function (url) {
+    return {
+      title: url,
+      state: {
+        entries: [
+          {
+            url,
+            triggeringPrincipal_base64,
+          },
+        ],
+      },
+    };
+  };
+  await SessionStoreTestUtils.promiseBrowserState({
+    windows: [
+      {
+        tabs: [_makeTab("about:mozilla")],
+        _closedTabs: [_makeTab("about:mozilla"), _makeTab("about:mozilla")],
+      },
+      {
+        tabs: [_makeTab("about:mozilla")],
+        _closedTabs: [_makeTab("about:robots")],
+      },
+    ],
+  });
+
+  Assert.equal(
+    SessionStore.getClosedTabCount(),
+    3,
+    "Sanity check number of closed tabs from closed windows"
+  );
+
+  prepareHistoryPanel();
+  let closeTabsPanel = await openRecentlyClosedTabsMenu();
+
+  info("make sure we can actually restore one of these closed tabs");
+  const closedTabItems = closeTabsPanel.querySelectorAll(
+    "toolbarbutton[targetURI]"
+  );
+  Assert.equal(
+    closedTabItems.length,
+    3,
+    "We have expected number of closed tab items"
+  );
+
+  const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+  const closedObjectsChangePromise = TestUtils.topicObserved(
+    "sessionstore-closed-objects-changed"
+  );
+  EventUtils.sendMouseEvent({ type: "click" }, closedTabItems[2], window);
+  await newTabPromise;
+  await closedObjectsChangePromise;
+
+  Assert.equal(
+    gBrowser.tabs[0].linkedBrowser.currentURI.spec,
+    "about:robots",
+    "Closed tab from the second window is opened"
+  );
+
+  await SessionStoreTestUtils.promiseBrowserState(ORIG_STATE);
 });
 
 add_task(async function testHistoryMenusWorkWithOldPreTabGroupsState() {

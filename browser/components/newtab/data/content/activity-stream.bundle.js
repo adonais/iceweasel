@@ -102,6 +102,9 @@ for (const type of [
   "ABOUT_SPONSORED_TOP_SITES",
   "ADDONS_INFO_REQUEST",
   "ADDONS_INFO_RESPONSE",
+  "ADS_FEED_UPDATE",
+  "ADS_INIT",
+  "ADS_UPDATE_DATA",
   "ARCHIVE_FROM_POCKET",
   "BLOCK_SECTION",
   "BLOCK_URL",
@@ -207,7 +210,6 @@ for (const type of [
   "SECTION_DEREGISTER",
   "SECTION_DISABLE",
   "SECTION_ENABLE",
-  "SECTION_MOVE",
   "SECTION_OPTIONS_CHANGED",
   "SECTION_REGISTER",
   "SECTION_UPDATE",
@@ -248,11 +250,11 @@ for (const type of [
   "TOP_SITES_UPDATED",
   "TOTAL_BOOKMARKS_REQUEST",
   "TOTAL_BOOKMARKS_RESPONSE",
+  "UNBLOCK_SECTION",
   "UNFOLLOW_SECTION",
   "UNINIT",
   "UPDATE_PINNED_SEARCH_SHORTCUTS",
   "UPDATE_SEARCH_SHORTCUTS",
-  "UPDATE_SECTION_PREFS",
   "WALLPAPERS_CATEGORY_SET",
   "WALLPAPERS_FEATURE_HIGHLIGHT_COUNTER_INCREMENT",
   "WALLPAPERS_FEATURE_HIGHLIGHT_CTA_CLICKED",
@@ -1594,14 +1596,13 @@ class _ContextMenuItem extends (external_React_default()).PureComponent {
     const {
       option
     } = this.props;
-    const listItemClassNames = [option.className || ""].join(" ");
-    const buttonClassNames = [option.disabled ? "disabled" : ""].join(" ");
+    const className = [option.disabled ? "disabled" : ""].join(" ");
     return /*#__PURE__*/external_React_default().createElement("li", {
       role: "presentation",
-      className: `context-menu-item ${listItemClassNames}`
+      className: "context-menu-item"
     }, /*#__PURE__*/external_React_default().createElement("button", {
       role: "menuitem",
-      className: buttonClassNames,
+      className: className,
       onClick: this.onClick,
       onKeyDown: this.onKeyDown,
       onKeyUp: this.onKeyUp,
@@ -1882,7 +1883,6 @@ const LinkMenuOptions = {
   SaveToPocket: (site, index, eventSource = "CARDGRID") => ({
     id: "newtab-menu-save-to-pocket",
     icon: "pocket-save",
-    className: "stp-context-menu",
     action: actionCreators.AlsoToMain({
       type: actionTypes.SAVE_TO_POCKET,
       data: {
@@ -2290,11 +2290,9 @@ class DSLinkMenu extends (external_React_default()).PureComponent {
     let pocketMenuOptions = [];
     let TOP_STORIES_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow"];
     if (!this.props.isRecentSave) {
-      if (this.props.pocket_button_enabled) {
-        pocketMenuOptions = this.props.saveToPocketCard ? ["CheckDeleteFromPocket"] : ["CheckSavedToPocket"];
-      }
-      // Override pocketMenuOptions to add Save to Pocket btn link to all section cards
-      if (this.props.isSectionsCard) {
+      // Show Pocket context menu options if applicable.
+      // Additionally, show these menu options for all section cards.
+      if (this.props.pocket_button_enabled && (this.props.saveToPocketCard || this.props.isSectionsCard)) {
         pocketMenuOptions = ["CheckSavedToPocket"];
       }
       TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", "CheckArchiveFromPocket", ...pocketMenuOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", ...(this.props.showPrivacyInfo ? ["ShowPrivacyInfo"] : [])];
@@ -3216,7 +3214,6 @@ class _DSCard extends (external_React_default()).PureComponent {
     super(props);
     this.onLinkClick = this.onLinkClick.bind(this);
     this.doesLinkTopicMatchSelectedTopic = this.doesLinkTopicMatchSelectedTopic.bind(this);
-    this.onSaveClick = this.onSaveClick.bind(this);
     this.onMenuUpdate = this.onMenuUpdate.bind(this);
     this.onMenuShow = this.onMenuShow.bind(this);
     this.onThumbsUpClick = this.onThumbsUpClick.bind(this);
@@ -3368,74 +3365,6 @@ class _DSCard extends (external_React_default()).PureComponent {
           }]
         }));
       }
-    }
-  }
-  onSaveClick() {
-    const matchesSelectedTopic = this.doesLinkTopicMatchSelectedTopic();
-    if (this.props.dispatch) {
-      this.props.dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.SAVE_TO_POCKET,
-        data: {
-          site: {
-            url: this.props.url,
-            title: this.props.title
-          }
-        }
-      }));
-      this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
-        event: "SAVE_TO_POCKET",
-        source: "CARDGRID_HOVER",
-        action_position: this.props.pos,
-        value: {
-          card_type: this.props.flightId ? "spoc" : "organic",
-          recommendation_id: this.props.recommendation_id,
-          tile_id: this.props.id,
-          ...(this.props.shim && this.props.shim.save ? {
-            shim: this.props.shim.save
-          } : {}),
-          fetchTimestamp: this.props.fetchTimestamp,
-          firstVisibleTimestamp: this.props.firstVisibleTimestamp,
-          corpus_item_id: this.props.corpus_item_id,
-          scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
-          recommended_at: this.props.recommended_at,
-          received_rank: this.props.received_rank,
-          topic: this.props.topic,
-          matches_selected_topic: matchesSelectedTopic,
-          selected_topics: this.props.selectedTopics,
-          is_list_card: this.props.isListCard,
-          ...(this.props.format ? {
-            format: this.props.format
-          } : {}),
-          ...(this.props.section ? {
-            section: this.props.section,
-            section_position: this.props.sectionPosition,
-            is_secton_followed: this.props.sectionFollowed
-          } : {})
-        }
-      }));
-      this.props.dispatch(actionCreators.ImpressionStats({
-        source: "CARDGRID_HOVER",
-        pocket: 0,
-        tiles: [{
-          id: this.props.id,
-          pos: this.props.pos,
-          ...(this.props.shim && this.props.shim.save ? {
-            shim: this.props.shim.save
-          } : {}),
-          recommendation_id: this.props.recommendation_id,
-          topic: this.props.topic,
-          selected_topics: this.props.selectedTopics,
-          is_list_card: this.props.isListCard,
-          ...(this.props.format ? {
-            format: this.props.format
-          } : {}),
-          ...(this.props.section ? {
-            section: this.props.section,
-            section_position: this.props.sectionPosition,
-            is_secton_followed: this.props.sectionFollowed
-          } : {})
-        }]
-      }));
     }
   }
   onThumbsUpClick(event) {
@@ -3684,9 +3613,6 @@ class _DSCard extends (external_React_default()).PureComponent {
     const descLinesClassName = `ds-card-desc-lines-${descLines}`;
     const isMediumRectangle = format === "rectangle";
     const spocFormatClassName = isMediumRectangle ? `ds-spoc-rectangle` : ``;
-
-    // Only update the "Saved" Pocket button UI for the Sections experiment.
-    const compactPocketSavedButtonClassName = mayHaveSectionsCards && this.props.context_type === "pocket" ? `ds-compact-pocket-saved-button` : ``;
     let sizes = [];
     if (!isMediumRectangle) {
       sizes = isListCard ? this.listCardImageSizes : this.dsImageSizes;
@@ -3694,25 +3620,6 @@ class _DSCard extends (external_React_default()).PureComponent {
 
     // TODO: Add logic to assign this.largeCardImageSizes
 
-    let stpButton = () => {
-      return /*#__PURE__*/external_React_default().createElement("button", {
-        className: "card-stp-button",
-        onClick: this.onSaveClick
-      }, this.props.context_type === "pocket" ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
-        "data-l10n-id": "newtab-pocket-image",
-        role: "img",
-        className: "story-badge-icon icon icon-pocket"
-      }), /*#__PURE__*/external_React_default().createElement("span", {
-        "data-l10n-id": "newtab-pocket-saved",
-        className: "pocket-saved-copy"
-      })) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
-        "data-l10n-id": "newtab-pocket-image",
-        role: "img",
-        className: "story-badge-icon icon icon-pocket-save"
-      }), /*#__PURE__*/external_React_default().createElement("span", {
-        "data-l10n-id": "newtab-pocket-save"
-      })));
-    };
     return /*#__PURE__*/external_React_default().createElement("article", {
       className: `ds-card ${listCardClassName} ${fakespotClassName} ${sectionsCardsClassName} ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName} ${spocFormatClassName} ${ctaButtonClassName} ${ctaButtonVariantClassName}`,
       ref: this.setContextMenuButtonHostRef,
@@ -3804,10 +3711,10 @@ class _DSCard extends (external_React_default()).PureComponent {
       format: format,
       topic: this.props.topic
     })), /*#__PURE__*/external_React_default().createElement("div", {
-      className: `card-stp-button-hover-background ${compactPocketSavedButtonClassName}`
+      className: "card-stp-button-hover-background"
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "card-stp-button-position-wrapper"
-    }, saveToPocketCard && !isListCard && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, !this.props.flightId && stpButton()), !isFakespot && /*#__PURE__*/external_React_default().createElement(DSLinkMenu, {
+    }, !isFakespot && /*#__PURE__*/external_React_default().createElement(DSLinkMenu, {
       id: this.props.id,
       index: this.props.pos,
       dispatch: this.props.dispatch,
@@ -4362,7 +4269,10 @@ const AdBanner = ({
       pos: row,
       recommended_at: spoc.recommended_at,
       received_rank: spoc.received_rank,
-      format: spoc.format
+      format: spoc.format,
+      ...(spoc.shim?.impression ? {
+        shim: spoc.shim.impression
+      } : {})
     }],
     dispatch: dispatch,
     firstVisibleTimestamp: firstVisibleTimestamp
@@ -5860,7 +5770,7 @@ class _Card extends (external_React_default()).PureComponent {
 
         // Save and remove the promise only while it's pending
         gImageLoading.set(imageUrl, loaderPromise);
-        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl)).catch();
+        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl));
       }
 
       // Wait for the image whether just started loading or reused promise
@@ -6612,7 +6522,7 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
     })));
   }
 }
-;// CONCATENATED MODULE: ./common/Dedupe.sys.mjs
+;// CONCATENATED MODULE: ../../modules/Dedupe.sys.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -6650,6 +6560,14 @@ class Dedupe {
   }
 }
 
+;// CONCATENATED MODULE: ../topsites/constants.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+const TOP_SITES_DEFAULT_ROWS = 1;
+const TOP_SITES_MAX_SITES_PER_ROW = 8;
+
 ;// CONCATENATED MODULE: ./common/Reducers.sys.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6658,8 +6576,8 @@ class Dedupe {
 
 
 
-const TOP_SITES_DEFAULT_ROWS = 1;
-const TOP_SITES_MAX_SITES_PER_ROW = 8;
+
+
 const PREF_COLLECTION_DISMISSIBLE = "discoverystream.isCollectionDismissible";
 
 const dedupe = new Dedupe(site => site && site.url);
@@ -6671,6 +6589,11 @@ const INITIAL_STATE = {
     locale: "",
     isForStartupCache: false,
     customizeMenuVisible: false,
+  },
+  Ads: {
+    initialized: false,
+    lastUpdated: null,
+    topsites: {},
   },
   TopSites: {
     // Have we received real data from history yet?
@@ -6820,43 +6743,6 @@ function App(prevState = INITIAL_STATE.App, action) {
     default:
       return prevState;
   }
-}
-
-/**
- * insertPinned - Inserts pinned links in their specified slots
- *
- * @param {array} a list of links
- * @param {array} a list of pinned links
- * @return {array} resulting list of links with pinned links inserted
- */
-function insertPinned(links, pinned) {
-  // Remove any pinned links
-  const pinnedUrls = pinned.map(link => link && link.url);
-  let newLinks = links.filter(link =>
-    link ? !pinnedUrls.includes(link.url) : false
-  );
-  newLinks = newLinks.map(link => {
-    if (link && link.isPinned) {
-      delete link.isPinned;
-      delete link.pinIndex;
-    }
-    return link;
-  });
-
-  // Then insert them in their specified location
-  pinned.forEach((val, index) => {
-    if (!val) {
-      return;
-    }
-    let link = Object.assign({}, val, { isPinned: true, pinIndex: index });
-    if (index > newLinks.length) {
-      newLinks[index] = link;
-    } else {
-      newLinks.splice(index, 0, link);
-    }
-  });
-
-  return newLinks;
 }
 
 function TopSites(prevState = INITIAL_STATE.TopSites, action) {
@@ -7593,11 +7479,19 @@ function Notifications(prevState = INITIAL_STATE.Notifications, action) {
         toastId: action.data.toastId,
         toastQueue: [action.data.toastId],
       };
-    case actionTypes.HIDE_TOAST_MESSAGE:
+    case actionTypes.HIDE_TOAST_MESSAGE: {
+      const { showNotifications, toastId: hiddenToastId } = action.data;
+      const queuedToasts = [...prevState.toastQueue].filter(
+        toastId => toastId !== hiddenToastId
+      );
       return {
         ...prevState,
-        showNotifications: action.data.showNotifications,
+        toastCounter: queuedToasts.length,
+        toastQueue: queuedToasts,
+        toastId: "",
+        showNotifications,
       };
+    }
     default:
       return prevState;
   }
@@ -7626,9 +7520,27 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
   }
 }
 
+function Ads(prevState = INITIAL_STATE.Ads, action) {
+  switch (action.type) {
+    case actionTypes.ADS_INIT:
+      return {
+        ...prevState,
+        initialized: true,
+      };
+    case actionTypes.ADS_UPDATE_DATA:
+      return {
+        ...prevState,
+        topsites: action.data,
+      };
+    default:
+      return prevState;
+  }
+}
+
 const reducers = {
   TopSites,
   App,
+  Ads,
   Prefs,
   Dialog,
   Sections,
@@ -8097,7 +8009,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       link,
       onClick,
       title,
-      isAddButton
+      isAddButton,
+      shortcutsRefresh
     } = this.props;
     const topSiteOuterClassName = `top-site-outer${className ? ` ${className}` : ""}${link.isDragged ? " dragged" : ""}${link.searchTopSite ? " search-shortcut" : ""}`;
     const [letterFallback] = title;
@@ -8181,7 +8094,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       onKeyPress: this.onKeyPress,
       onClick: onClick,
       draggable: true,
-      "data-is-sponsored-link": !!link.sponsored_tile_id
+      "data-is-sponsored-link": !!link.sponsored_tile_id,
+      title: title
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "tile",
       "aria-hidden": true
@@ -8198,16 +8112,21 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "top-site-icon default-icon",
       "data-fallback": smallFaviconStyle ? "" : letterFallback,
       style: smallFaviconStyle
-    })), link.searchTopSite && /*#__PURE__*/external_React_default().createElement("div", {
+    })), shortcutsRefresh && link.isPinned && /*#__PURE__*/external_React_default().createElement("div", {
+      className: "icon icon-pin-small"
+    }), !shortcutsRefresh && link.searchTopSite && /*#__PURE__*/external_React_default().createElement("div", {
       className: "top-site-icon search-topsite"
     })), /*#__PURE__*/external_React_default().createElement("div", {
       className: `title${link.isPinned ? " has-icon pinned" : ""}${link.type === SPOC_TYPE || link.show_sponsored_label ? " sponsored" : ""}`
     }, /*#__PURE__*/external_React_default().createElement("span", TopSite_extends({
+      className: "title-label",
       dir: "auto"
     }, isAddButton && {
       ...addButtonl10n
-    }), link.isPinned && /*#__PURE__*/external_React_default().createElement("div", {
+    }), !shortcutsRefresh && link.isPinned && /*#__PURE__*/external_React_default().createElement("div", {
       className: "icon icon-pin-small"
+    }), shortcutsRefresh && link.searchTopSite && /*#__PURE__*/external_React_default().createElement("div", {
+      className: "top-site-icon search-topsite"
     }), title || /*#__PURE__*/external_React_default().createElement("br", null)), /*#__PURE__*/external_React_default().createElement("span", {
       className: "sponsored-label",
       "data-l10n-id": "newtab-topsite-sponsored"
@@ -8381,7 +8300,7 @@ class TopSite extends (external_React_default()).PureComponent {
       link
     } = props;
     const isContextMenuOpen = props.activeIndex === props.index;
-    const title = link.label || link.hostname;
+    const title = link.label || link.title || link.hostname;
     let menuOptions;
     if (link.sponsored_position) {
       menuOptions = TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS;
@@ -8608,6 +8527,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     const {
       props
     } = this;
+    const prefs = props.Prefs.values;
+    const shortcutsRefresh = prefs["newtabShortcuts.refresh"];
     const topSites = this.state.topSitesPreview || this._getTopSites();
     const topSitesUI = [];
     const commonProps = {
@@ -8649,7 +8570,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           activeIndex: this.state.activeIndex,
           onActivate: this.onActivate
         }, slotProps, commonProps, {
-          colors: props.colors
+          colors: props.colors,
+          shortcutsRefresh: shortcutsRefresh
         }));
       }
       topSitesUI.push(topSiteLink);
@@ -8662,7 +8584,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
   }
 }
 const TopSiteList = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  App: state.App
+  App: state.App,
+  Prefs: state.Prefs
 }))(_TopSiteList);
 ;// CONCATENATED MODULE: ./content-src/components/TopSites/TopSiteForm.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -10066,6 +9989,14 @@ function getLayoutData(responsiveLayouts, index) {
       if (tile.position === index) {
         layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
         layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
+
+        // The API tells us whether the tile should show the excerpt or not.
+        // Apply extra styles accordingly.
+        if (tile.hasExcerpt) {
+          layoutData.classNames.push(`col-${layout.columnCount}-show-excerpt`);
+        } else {
+          layoutData.classNames.push(`col-${layout.columnCount}-hide-excerpt`);
+        }
       }
     });
   });
@@ -10692,6 +10623,219 @@ const DiscoveryStreamBase = (0,external_ReactRedux_namespaceObject.connect)(stat
   document: globalThis.document,
   App: state.App
 }))(_DiscoveryStreamBase);
+;// CONCATENATED MODULE: ./content-src/components/CustomizeMenu/SectionsMgmtPanel/SectionsMgmtPanel.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+// eslint-disable-next-line no-shadow
+
+const SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS = "discoverystream.sections.following";
+const SectionsMgmtPanel_PREF_BLOCKED_SECTIONS = "discoverystream.sections.blocked";
+
+/**
+ * Transforms a comma-separated string of topics in user preferences
+ * into a cleaned-up array.
+ *
+ * @param pref
+ * @returns string[]
+ */
+// TODO: DRY Issue: Import function from CardSections.jsx?
+const SectionsMgmtPanel_getTopics = pref => {
+  return pref.split(",").map(item => item.trim()).filter(item => item);
+};
+function SectionsMgmtPanel({
+  exitEventFired
+}) {
+  const [showPanel, setShowPanel] = (0,external_React_namespaceObject.useState)(false); // State management with useState
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const layoutComponents = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.layout[0].components);
+  const sections = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.feeds.data);
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+
+  // TODO: Wrap sectionsFeedName -> sectionsList logic in try...catch?
+  let sectionsFeedName;
+  const cardGridEntry = layoutComponents.find(item => item.type === "CardGrid");
+  if (cardGridEntry) {
+    sectionsFeedName = cardGridEntry.feed.url;
+  }
+  let sectionsList;
+  if (sectionsFeedName) {
+    sectionsList = sections[sectionsFeedName].data.sections;
+  }
+  const followedSectionsPref = prefs[SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS] || "";
+  const blockedSectionsPref = prefs[SectionsMgmtPanel_PREF_BLOCKED_SECTIONS] || "";
+  const followedSections = SectionsMgmtPanel_getTopics(followedSectionsPref);
+  const blockedSections = SectionsMgmtPanel_getTopics(blockedSectionsPref);
+  const [followedSectionsState, setFollowedSectionsState] = (0,external_React_namespaceObject.useState)(followedSectionsPref); // State management with useState
+  const [blockedSectionsState, setBlockedSectionsState] = (0,external_React_namespaceObject.useState)(blockedSectionsPref); // State management with useState
+
+  let followedSectionsData = sectionsList.filter(item => followedSectionsState.includes(item.sectionKey));
+  let blockedSectionsData = sectionsList.filter(item => blockedSectionsState.includes(item.sectionKey));
+  function updateCachedData() {
+    // Reset cached followed/blocked list data while panel is open
+    setFollowedSectionsState(followedSectionsPref);
+    setBlockedSectionsState(blockedSectionsPref);
+    followedSectionsData = sectionsList.filter(item => followedSectionsState.includes(item.sectionKey));
+    blockedSectionsData = sectionsList.filter(item => blockedSectionsState.includes(item.sectionKey));
+  }
+  const onFollowClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
+    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS, [...followedSections, sectionKey].join(", ")));
+    // Telemetry Event Dispatch
+    dispatch(actionCreators.OnlyToMain({
+      type: "FOLLOW_SECTION",
+      data: {
+        section: sectionKey,
+        section_position: receivedRank,
+        event_source: "CUSTOMIZE_PANEL"
+      }
+    }));
+  }, [dispatch, followedSections]);
+  const onBlockClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
+    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_BLOCKED_SECTIONS, [...blockedSections, sectionKey].join(", ")));
+
+    // Telemetry Event Dispatch
+    dispatch(actionCreators.OnlyToMain({
+      type: "BLOCK_SECTION",
+      data: {
+        section: sectionKey,
+        section_position: receivedRank,
+        event_source: "CUSTOMIZE_PANEL"
+      }
+    }));
+  }, [dispatch, blockedSections]);
+  const onUnblockClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
+    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_BLOCKED_SECTIONS, [...blockedSections.filter(item => item !== sectionKey)].join(", ")));
+    // Telemetry Event Dispatch
+    dispatch(actionCreators.OnlyToMain({
+      type: "UNBLOCK_SECTION",
+      data: {
+        section: sectionKey,
+        section_position: receivedRank,
+        event_source: "CUSTOMIZE_PANEL"
+      }
+    }));
+  }, [dispatch, blockedSections]);
+  const onUnfollowClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
+    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS, [...followedSections.filter(item => item !== sectionKey)].join(", ")));
+    // Telemetry Event Dispatch
+    dispatch(actionCreators.OnlyToMain({
+      type: "UNFOLLOW_SECTION",
+      data: {
+        section: sectionKey,
+        section_position: receivedRank,
+        event_source: "CUSTOMIZE_PANEL"
+      }
+    }));
+  }, [dispatch, followedSections]);
+
+  // Close followed/blocked topic subpanel when parent menu is closed
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (exitEventFired) {
+      setShowPanel(false);
+    }
+  }, [exitEventFired]);
+  const togglePanel = () => {
+    setShowPanel(prevShowPanel => !prevShowPanel);
+
+    // Fire when the panel is open
+    if (!showPanel) {
+      updateCachedData();
+    }
+  };
+  const followedSectionsList = followedSectionsData.map(({
+    sectionKey,
+    title,
+    receivedRank
+  }) => {
+    const following = followedSections.includes(sectionKey);
+    return /*#__PURE__*/external_React_default().createElement("li", {
+      key: sectionKey
+    }, /*#__PURE__*/external_React_default().createElement("label", {
+      htmlFor: `follow-topic-${sectionKey}`
+    }, title), /*#__PURE__*/external_React_default().createElement("div", {
+      className: following ? "section-follow following" : "section-follow"
+    }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+      onClick: () => following ? onUnfollowClick(sectionKey, receivedRank) : onFollowClick(sectionKey, receivedRank),
+      type: "default",
+      index: receivedRank,
+      section: sectionKey,
+      id: `follow-topic-${sectionKey}`
+    }, /*#__PURE__*/external_React_default().createElement("span", {
+      className: "section-button-follow-text",
+      "data-l10n-id": "newtab-section-follow-button"
+    }), /*#__PURE__*/external_React_default().createElement("span", {
+      className: "section-button-following-text",
+      "data-l10n-id": "newtab-section-following-button"
+    }), /*#__PURE__*/external_React_default().createElement("span", {
+      className: "section-button-unfollow-text",
+      "data-l10n-id": "newtab-section-unfollow-button"
+    }))));
+  });
+  const blockedSectionsList = blockedSectionsData.map(({
+    sectionKey,
+    title,
+    receivedRank
+  }) => {
+    const blocked = blockedSections.includes(sectionKey);
+    return /*#__PURE__*/external_React_default().createElement("li", {
+      key: sectionKey
+    }, /*#__PURE__*/external_React_default().createElement("label", {
+      htmlFor: `blocked-topic-${sectionKey}`
+    }, title), /*#__PURE__*/external_React_default().createElement("div", {
+      className: blocked ? "section-block blocked" : "section-block"
+    }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+      onClick: () => blocked ? onUnblockClick(sectionKey, receivedRank) : onBlockClick(sectionKey, receivedRank),
+      type: "default",
+      index: receivedRank,
+      section: sectionKey,
+      id: `blocked-topic-${sectionKey}`
+    }, /*#__PURE__*/external_React_default().createElement("span", {
+      className: "section-button-block-text",
+      "data-l10n-id": "newtab-section-block-button"
+    }), /*#__PURE__*/external_React_default().createElement("span", {
+      className: "section-button-blocked-text",
+      "data-l10n-id": "newtab-section-blocked-button"
+    }), /*#__PURE__*/external_React_default().createElement("span", {
+      className: "section-button-unblock-text",
+      "data-l10n-id": "newtab-section-unblock-button"
+    }))));
+  });
+  return /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("moz-box-button", {
+    onClick: togglePanel,
+    "data-l10n-id": "newtab-section-mangage-topics-button"
+  }), /*#__PURE__*/external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
+    in: showPanel,
+    timeout: 300,
+    classNames: "sections-mgmt-panel",
+    unmountOnExit: true
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sections-mgmt-panel"
+  }, /*#__PURE__*/external_React_default().createElement("button", {
+    className: "arrow-button",
+    onClick: togglePanel
+  }, /*#__PURE__*/external_React_default().createElement("h1", {
+    "data-l10n-id": "newtab-section-mangage-topics-title"
+  })), /*#__PURE__*/external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-subtitle"
+  }), followedSectionsData.length ? /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, followedSectionsList) : /*#__PURE__*/external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-empty-state"
+  }), /*#__PURE__*/external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-subtitle"
+  }), blockedSectionsData.length ? /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, blockedSectionsList) : /*#__PURE__*/external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-empty-state"
+  }))));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/WallpapersSection/WallpapersSection.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -10821,20 +10965,33 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     this.handleReset = this.handleReset.bind(this);
     this.handleCategory = this.handleCategory.bind(this);
     this.handleBack = this.handleBack.bind(this);
+    this.getRGBColors = this.getRGBColors.bind(this);
     this.prefersHighContrastQuery = null;
     this.prefersDarkQuery = null;
     this.state = {
       activeCategory: null,
-      activeCategoryFluentID: null
+      activeCategoryFluentID: null,
+      showColorPicker: false,
+      inputType: "radio",
+      activeId: null
     };
   }
   componentDidMount() {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
   }
   handleChange(event) {
-    const {
+    let {
       id
     } = event.target;
+    if (id === "solid-color-picker") {
+      id = `solid-color-picker-${event.target.value}`;
+      const rgbColors = this.getRGBColors(event.target.value);
+      event.target.style.backgroundColor = `rgb(${rgbColors.toString()})`;
+      event.target.checked = true;
+      this.setState({
+        customHexValue: event.target.style.backgroundColor
+      });
+    }
     this.props.setPref("newtabWallpapers.wallpaper-light", id);
     this.props.setPref("newtabWallpapers.wallpaper-dark", id);
     // Setting this now so when we remove v1 we don't have to migrate v1 values.
@@ -10887,6 +11044,20 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       data
     }));
   }
+  setActiveId = id => {
+    this.setState({
+      activeId: id
+    }); // Set the active ID
+  };
+  getRGBColors(input) {
+    if (input.length !== 7) {
+      return [];
+    }
+    const r = parseInt(input.substr(1, 2), 16);
+    const g = parseInt(input.substr(3, 2), 16);
+    const b = parseInt(input.substr(5, 2), 16);
+    return [r, g, b];
+  }
   render() {
     const prefs = this.props.Prefs.values;
     const {
@@ -10897,7 +11068,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       activeWallpaper
     } = this.props;
     const {
-      activeCategory
+      activeCategory,
+      showColorPicker
     } = this.state;
     const {
       activeCategoryFluentID
@@ -10907,6 +11079,46 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     if (prefs["newtabWallpapers.v2.enabled"]) {
       categorySectionClassname += " ignore-color-mode";
     }
+    let wallpaperCustomSolidColorHex = null;
+    const wallpaperLight = prefs["newtabWallpapers.wallpaper-light"];
+    const wallpaperDark = prefs["newtabWallpapers.wallpaper-dark"];
+
+    // User has previous selected a custom color
+    if (wallpaperLight.includes("solid-color-picker") && wallpaperDark.includes("solid-color-picker")) {
+      this.setState({
+        showColorPicker: true
+      });
+      const regex = /#([a-fA-F0-9]{6})/;
+      [wallpaperCustomSolidColorHex] = wallpaperLight.match(regex);
+    }
+
+    // Enable custom color select if preffed on
+    if (prefs["newtabWallpapers.customColor.enabled"]) {
+      this.setState({
+        showColorPicker: true
+      });
+    }
+    let colorPickerInput = showColorPicker && activeCategory === "solid-colors" ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("input", {
+      onChange: this.handleChange,
+      onClick: () => this.setActiveId("solid-color-picker") //
+      ,
+      type: "color",
+      name: `wallpaper-solid-color-picker`,
+      id: "solid-color-picker"
+      // aria-checked is not applicable for input[type="color"] elements
+      ,
+      "aria-current": this.state.activeId === "solid-color-picker"
+      // If nothing selected, default to Zilla Green
+      ,
+      value: wallpaperCustomSolidColorHex || "#00d230",
+      className: `wallpaper-input theme-solid-color-picker 
+              ${this.state.activeId === "solid-color-picker" ? "active" : ""}`
+    }), /*#__PURE__*/external_React_default().createElement("label", {
+      htmlFor: "solid-color-picker",
+      className: "sr-only"
+      // TODO: Add Fluent string
+      // data-l10n-id={fluent_id}
+    }, "Solid Color Picker")) : "";
     return /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("div", {
       className: "category-header"
     }, /*#__PURE__*/external_React_default().createElement("h2", {
@@ -10983,13 +11195,14 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         value: title,
         checked: title === activeWallpaper,
         "aria-checked": title === activeWallpaper,
-        className: `wallpaper-input theme-${theme}`
+        className: `wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`,
+        onClick: () => this.setActiveId(title) //
       }), /*#__PURE__*/external_React_default().createElement("label", {
         htmlFor: title,
         className: "sr-only",
         "data-l10n-id": fluent_id
       }, fluent_id));
-    })))));
+    }), colorPickerInput))));
   }
 }
 const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(state => {
@@ -11002,6 +11215,7 @@ const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(stat
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -11090,7 +11304,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       wallpapersEnabled,
       wallpapersV2Enabled,
       activeWallpaper,
-      setPref
+      setPref,
+      mayHaveTopicSections,
+      exitEventFired
     } = this.props;
     const {
       topSitesEnabled,
@@ -11208,7 +11424,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       className: "sponsored",
       htmlFor: "sponsored-pocket",
       "data-l10n-id": "newtab-custom-pocket-sponsored"
-    })), mayHaveRecentSaves && /*#__PURE__*/external_React_default().createElement("div", {
+    })), mayHaveTopicSections && /*#__PURE__*/external_React_default().createElement(SectionsMgmtPanel, {
+      exitEventFired: exitEventFired
+    }), mayHaveRecentSaves && /*#__PURE__*/external_React_default().createElement("div", {
       className: "check-wrapper",
       role: "presentation"
     }, /*#__PURE__*/external_React_default().createElement("input", {
@@ -11277,13 +11495,22 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     super(props);
     this.onEntered = this.onEntered.bind(this);
     this.onExited = this.onExited.bind(this);
+    this.state = {
+      exitEventFired: false
+    };
   }
   onEntered() {
+    this.setState({
+      exitEventFired: false
+    });
     if (this.closeButton) {
       this.closeButton.focus();
     }
   }
   onExited() {
+    this.setState({
+      exitEventFired: true
+    });
     if (this.openButton) {
       this.openButton.focus();
     }
@@ -11330,12 +11557,14 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       wallpapersV2Enabled: this.props.wallpapersV2Enabled,
       activeWallpaper: this.props.activeWallpaper,
       pocketRegion: this.props.pocketRegion,
+      mayHaveTopicSections: this.props.mayHaveTopicSections,
       mayHaveSponsoredTopSites: this.props.mayHaveSponsoredTopSites,
       mayHaveSponsoredStories: this.props.mayHaveSponsoredStories,
       mayHaveRecentSaves: this.props.DiscoveryStream.recentSavesEnabled,
       mayHaveWeather: this.props.mayHaveWeather,
       spocMessageVariant: this.props.spocMessageVariant,
-      dispatch: this.props.dispatch
+      dispatch: this.props.dispatch,
+      exitEventFired: this.state.exitEventFired
     }))));
   }
 }
@@ -11388,15 +11617,17 @@ const NEWTAB_DARK_THEME = {
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-function Logo() {
+function Logo({
+  isAprilFoolsLogo
+}) {
   return /*#__PURE__*/external_React_default().createElement("h1", {
     className: "logo-and-wordmark-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "logo-and-wordmark",
+    className: `logo-and-wordmark ${isAprilFoolsLogo ? "april-fools" : ""}`,
     role: "img",
     "data-l10n-id": "newtab-logo-and-wordmark"
   }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "logo"
+    className: `logo ${isAprilFoolsLogo ? "april-fools" : ""}`
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "wordmark"
   })));
@@ -11524,7 +11755,9 @@ class _Search extends (external_React_default()).PureComponent {
     const wrapperClassName = ["search-wrapper", this.props.disable && "search-disabled", this.props.fakeFocus && "fake-focus"].filter(v => v).join(" ");
     return /*#__PURE__*/external_React_default().createElement("div", {
       className: wrapperClassName
-    }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), !this.props.handoffEnabled && /*#__PURE__*/external_React_default().createElement("div", {
+    }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, {
+      isAprilFoolsLogo: this.props.Prefs.values["newtabLogo.aprilfools"]
+    }), !this.props.handoffEnabled && /*#__PURE__*/external_React_default().createElement("div", {
       className: "search-inner-wrapper"
     }, /*#__PURE__*/external_React_default().createElement("input", {
       id: "newtab-search-text",
@@ -11931,50 +12164,36 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
   IntersectionObserver: globalThis.IntersectionObserver,
   document: globalThis.document
 }))(_Weather);
-;// CONCATENATED MODULE: ./content-src/components/Notifications/Toasts/ThumbsUpToast.jsx
+;// CONCATENATED MODULE: ./content-src/components/Notifications/Toasts/ThumbUpThumbDownToast.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-function ThumbsUpToast({
-  onDismissClick
+function ThumbUpThumbDownToast({
+  onDismissClick,
+  onAnimationEnd
 }) {
-  return /*#__PURE__*/external_React_default().createElement("div", {
-    className: "notification-feed-item is-success"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "icon icon-check-filled icon-themed"
-  }), /*#__PURE__*/external_React_default().createElement("div", {
-    className: "notification-feed-item-text",
-    "data-l10n-id": "newtab-toast-thumbs-up-or-down"
-  }), /*#__PURE__*/external_React_default().createElement("button", {
-    onClick: onDismissClick,
-    className: "icon icon-dismiss",
-    "data-l10n-id": "newtab-toast-dismiss-button"
-  }));
-}
-
-;// CONCATENATED MODULE: ./content-src/components/Notifications/Toasts/ThumbsDownToast.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-
-function ThumbsDownToast({
-  onDismissClick
-}) {
-  return /*#__PURE__*/external_React_default().createElement("div", {
-    className: "notification-feed-item is-success"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "icon icon-check-filled icon-themed"
-  }), /*#__PURE__*/external_React_default().createElement("div", {
-    className: "notification-feed-item-text",
-    "data-l10n-id": "newtab-toast-thumbs-up-or-down"
-  }), /*#__PURE__*/external_React_default().createElement("button", {
-    onClick: onDismissClick,
-    className: "icon icon-dismiss",
-    "data-l10n-id": "newtab-toast-dismiss-button"
-  }));
+  const mozMessageBarRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const {
+      current: mozMessageBarElement
+    } = mozMessageBarRef;
+    mozMessageBarElement.addEventListener("message-bar:user-dismissed", onDismissClick, {
+      once: true
+    });
+    return () => {
+      mozMessageBarElement.removeEventListener("message-bar:user-dismissed", onDismissClick);
+    };
+  }, [onDismissClick]);
+  return /*#__PURE__*/external_React_default().createElement("moz-message-bar", {
+    type: "success",
+    class: "notification-feed-item",
+    dismissable: true,
+    "data-l10n-id": "newtab-toast-thumbs-up-or-down2",
+    ref: mozMessageBarRef,
+    onAnimationEnd: onAnimationEnd
+  });
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Notifications/Notifications.jsx
@@ -11986,46 +12205,48 @@ function ThumbsDownToast({
 
 
 
-
 function Notifications_Notifications({
   dispatch
 }) {
   const toastQueue = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Notifications.toastQueue);
   const toastCounter = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Notifications.toastCounter);
-  const onDismissClick = (0,external_React_namespaceObject.useCallback)(() => {
+
+  /**
+   * Syncs {@link toastQueue} array so it can be used to
+   * remove the toasts wrapper if there are none after a
+   * toast is auto-hidden (animated out) via CSS.
+   */
+  const syncHiddenToastData = (0,external_React_namespaceObject.useCallback)(() => {
+    const toastId = toastQueue[toastQueue.length - 1];
+    const queuedToasts = [...toastQueue].slice(1);
     dispatch(actionCreators.OnlyToOneContent({
       type: actionTypes.HIDE_TOAST_MESSAGE,
       data: {
+        toastQueue: queuedToasts,
+        toastCounter: queuedToasts.length,
+        toastId,
         showNotifications: false
       }
     }, "ActivityStream:Content"));
-  }, [dispatch]);
+  }, [dispatch, toastQueue]);
   const getToast = (0,external_React_namespaceObject.useCallback)(() => {
     // Note: This architecture could expand to support multiple toast notifications at once
     const latestToastItem = toastQueue[toastQueue.length - 1];
-    switch (latestToastItem) {
-      case "thumbsDownToast":
-        return /*#__PURE__*/external_React_default().createElement(ThumbsDownToast, {
-          onDismissClick: onDismissClick,
-          key: toastCounter
-        });
-      case "thumbsUpToast":
-        return /*#__PURE__*/external_React_default().createElement(ThumbsUpToast, {
-          onDismissClick: onDismissClick,
-          key: toastCounter
-        });
-      default:
-        throw new Error("No toast found");
+    if (!latestToastItem) {
+      throw new Error("No toast found");
     }
-  }, [onDismissClick, toastCounter, toastQueue]);
+    return /*#__PURE__*/external_React_default().createElement(ThumbUpThumbDownToast, {
+      onDismissClick: syncHiddenToastData,
+      onAnimationEnd: syncHiddenToastData,
+      key: toastCounter
+    });
+  }, [syncHiddenToastData, toastCounter, toastQueue]);
   (0,external_React_namespaceObject.useEffect)(() => {
     getToast();
   }, [toastQueue, getToast]);
-  return /*#__PURE__*/external_React_default().createElement("div", {
+  return toastQueue.length ? /*#__PURE__*/external_React_default().createElement("div", {
     className: "notification-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("ul", {
-    className: "notification-feed"
-  }, getToast()));
+  }, getToast()) : "";
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/TopicSelection/TopicSelection.jsx
@@ -12567,6 +12788,14 @@ class BaseContent extends (external_React_default()).PureComponent {
       return;
     }
     const prefs = this.props.Prefs.values;
+    const {
+      showSearch
+    } = prefs;
+    if (!showSearch) {
+      // Bug 1944718: Only apply fixed-search logic
+      // if search is visible.
+      return;
+    }
     const logoAlwaysVisible = prefs["logowordmark.alwaysVisible"];
     const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
     const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
@@ -12728,12 +12957,44 @@ class BaseContent extends (external_React_default()).PureComponent {
     const prefs = this.props.Prefs.values;
     const wallpaperLight = prefs["newtabWallpapers.wallpaper-light"];
     const wallpaperDark = prefs["newtabWallpapers.wallpaper-dark"];
+    // selected wallpaper is used for v2 of wallpapers
+    const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
     const {
       wallpaperList
     } = this.props.Wallpapers;
     if (wallpaperList) {
-      const lightWallpaper = wallpaperList.find(wp => wp.title === wallpaperLight) || "";
-      const darkWallpaper = wallpaperList.find(wp => wp.title === wallpaperDark) || "";
+      let lightWallpaper;
+      let darkWallpaper;
+      if (selectedWallpaper) {
+        // if selectedWallpaper exists - we override what light and dark prefs are to match that
+        const wallpaper = wallpaperList.find(wp => wp.title === selectedWallpaper);
+        lightWallpaper = wallpaper;
+        darkWallpaper = wallpaper;
+      } else {
+        lightWallpaper = wallpaperList.find(wp => wp.title === wallpaperLight) || "";
+        darkWallpaper = wallpaperList.find(wp => wp.title === wallpaperDark) || "";
+      }
+
+      // solid-color-picker-#00d100
+      const regexRGB = /#([a-fA-F0-9]{6})/;
+
+      // Override Remote Settings to set custom HEX bg color
+      if (wallpaperLight.includes("solid-color-picker")) {
+        lightWallpaper = {
+          theme: "light",
+          title: "solid-color-picker",
+          category: "solid-colors",
+          solid_color: wallpaperLight.match(regexRGB)[0]
+        };
+      }
+      if (wallpaperDark.includes("solid-color-picker")) {
+        darkWallpaper = {
+          theme: "dark",
+          title: "solid-color-picker",
+          category: "solid-colors",
+          solid_color: wallpaperDark.match(regexRGB)[0]
+        };
+      }
       const wallpaperColor = darkWallpaper?.solid_color || lightWallpaper?.solid_color || "";
       __webpack_require__.g.document?.body.style.setProperty(`--newtab-wallpaper-light`, `url(${lightWallpaper?.wallpaperUrl || ""})`);
       __webpack_require__.g.document?.body.style.setProperty(`--newtab-wallpaper-dark`, `url(${darkWallpaper?.wallpaperUrl || ""})`);
@@ -12860,6 +13121,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     const prefs = props.Prefs.values;
     const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
     const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
+    const shortcutsRefresh = prefs["newtabShortcuts.refresh"];
     const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper-${this.state.colorMode}`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
@@ -12901,12 +13163,18 @@ class BaseContent extends (external_React_default()).PureComponent {
     const hasThumbsUpDownLayout = prefs["discoverystream.thumbsUpDown.searchTopsitesCompact"];
     const hasThumbsUpDown = prefs["discoverystream.thumbsUpDown.enabled"];
     const sectionsEnabled = prefs["discoverystream.sections.enabled"];
+    const topicLabelsEnabled = prefs["discoverystream.topicLabels.enabled"];
+    const sectionsCustomizeMenuPanelEnabled = prefs["discoverystream.sections.customizeMenuPanel.enabled"];
+    // Logic to show follow/block topic mgmt panel in Customize panel
+    const mayHaveTopicSections = topicLabelsEnabled && sectionsEnabled && sectionsCustomizeMenuPanelEnabled && DiscoveryStream.feeds.loaded;
     const featureClassName = [weatherEnabled && mayHaveWeather && "has-weather",
     // Show is weather is enabled/visible
     prefs.showSearch ? "has-search" : "no-search", layoutsVariantAEnabled ? "layout-variant-a" : "",
     // Layout experiment variant A
     layoutsVariantBEnabled ? "layout-variant-b" : "",
     // Layout experiment variant B
+    shortcutsRefresh ? "shortcuts-refresh" : "",
+    // Shortcuts refresh experiment
     pocketEnabled ? "has-recommended-stories" : "no-recommended-stories", sectionsEnabled ? "has-sections-grid" : ""].filter(v => v).join(" ");
     const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["feeds.topsites"] && !pocketEnabled && !prefs.showSearch && "only-topsites", noSectionsEnabled && "no-sections", prefs["logowordmark.alwaysVisible"] && "visible-logo", hasThumbsUpDownLayout && hasThumbsUpDown && "thumbs-ui-compact"].filter(v => v).join(" ");
     if (wallpapersEnabled || wallpapersV2Enabled) {
@@ -12926,6 +13194,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       wallpapersV2Enabled: wallpapersV2Enabled,
       activeWallpaper: activeWallpaper,
       pocketRegion: pocketRegion,
+      mayHaveTopicSections: mayHaveTopicSections,
       mayHaveSponsoredTopSites: mayHaveSponsoredTopSites,
       mayHaveSponsoredStories: mayHaveSponsoredStories,
       mayHaveWeather: mayHaveWeather,
@@ -12947,7 +13216,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"],
       handoffEnabled: searchHandoffEnabled
-    }, props.Search)))), !prefs.showSearch && layoutsVariantAorB && !noSectionsEnabled && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement("div", {
+    }, props.Search)))), !prefs.showSearch && layoutsVariantAorB && !noSectionsEnabled && /*#__PURE__*/external_React_default().createElement(Logo, {
+      isAprilFoolsLogo: this.props.Prefs.values["newtabLogo.aprilfools"]
+    }), /*#__PURE__*/external_React_default().createElement("div", {
       className: `body-wrapper${initialized ? " on" : ""}`
     }, isDiscoveryStream ? /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
       className: "borderless-error"

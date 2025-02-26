@@ -571,6 +571,7 @@ bool IonCacheIRCompiler::init() {
     case CacheKind::NewArray:
     case CacheKind::NewObject:
     case CacheKind::Lambda:
+    case CacheKind::GetImport:
       MOZ_CRASH("Unsupported IC");
   }
 
@@ -686,6 +687,7 @@ void IonCacheIRCompiler::assertFloatRegisterAvailable(FloatRegister reg) {
     case CacheKind::NewArray:
     case CacheKind::NewObject:
     case CacheKind::Lambda:
+    case CacheKind::GetImport:
       MOZ_CRASH("Unsupported IC");
   }
 }
@@ -860,6 +862,21 @@ bool IonCacheIRCompiler::emitGuardSpecificSymbol(SymbolOperandId symId,
 
   masm.branchPtr(Assembler::NotEqual, sym, ImmGCPtr(expected),
                  failure->label());
+  return true;
+}
+
+bool IonCacheIRCompiler::emitGuardSpecificValue(ValOperandId valId,
+                                                uint32_t expectedOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  ValueOperand val = allocator.useValueRegister(masm, valId);
+  Value expected = valueStubField(expectedOffset);
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  masm.branchTestValue(Assembler::NotEqual, val, expected, failure->label());
   return true;
 }
 
@@ -1904,7 +1921,17 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
 
   // Do nothing if the IR generator failed or triggered a GC that invalidated
   // the script.
-  if (writer.failed() || ionScript->invalidated()) {
+  if (writer.tooLarge()) {
+    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::IC_STUB_TOO_LARGE);
+    return;
+  }
+  if (writer.oom()) {
+    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::IC_STUB_OOM);
+    return;
+  }
+  MOZ_ASSERT(!writer.failed());
+
+  if (ionScript->invalidated()) {
     return;
   }
 

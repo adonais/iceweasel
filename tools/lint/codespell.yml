@@ -76,7 +76,6 @@ codespell:
     # + localization files
     extensions:
         - js
-        - jsm
         - jxs
         - mjs
         - xml
@@ -94,5 +93,4 @@ codespell:
     support-files:
         - 'tools/lint/spell/**'
     type: external
-    setup: spell:setup
     payload: spell:lint

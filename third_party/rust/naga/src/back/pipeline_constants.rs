@@ -213,7 +213,7 @@ fn process_pending(
     adjusted_global_expressions: &HandleVec<Expression, Handle<Expression>>,
 ) -> Result<(), PipelineConstantError> {
     for (handle, ty) in module.types.clone().iter() {
-        if let crate::TypeInner::Array {
+        if let TypeInner::Array {
             base,
             size: crate::ArraySize::Pending(size),
             stride,
@@ -253,7 +253,7 @@ fn process_pending(
                 handle,
                 crate::Type {
                     name: None,
-                    inner: crate::TypeInner::Array {
+                    inner: TypeInner::Array {
                         base,
                         size: crate::ArraySize::Constant(value),
                         stride,
@@ -735,6 +735,20 @@ fn adjust_stmt(new_pos: &HandleVec<Expression, Handle<Expression>>, stmt: &mut S
                 | crate::AtomicFunction::Max
                 | crate::AtomicFunction::Exchange { compare: None } => {}
             }
+        }
+        Statement::ImageAtomic {
+            ref mut image,
+            ref mut coordinate,
+            ref mut array_index,
+            fun: _,
+            ref mut value,
+        } => {
+            adjust(image);
+            adjust(coordinate);
+            if let Some(ref mut array_index) = *array_index {
+                adjust(array_index);
+            }
+            adjust(value);
         }
         Statement::WorkGroupUniformLoad {
             ref mut pointer,

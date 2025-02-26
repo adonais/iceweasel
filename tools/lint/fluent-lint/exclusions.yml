@@ -63,6 +63,7 @@ ID01:
         - unsafeContentType-title
         - netReset-title
         - netTimeout-title
+        - httpErrorPage-title
         - serverError-title
         - unknownProtocolFound-title
         - proxyConnectFailure-title
@@ -132,6 +133,9 @@ ID02:
 # Check with the localization team for advice.
 CO01:
     messages:
+        # toolkit/locales/en-US/toolkit/intl/regionNames.ftl
+        # Hard-coded brand name Solo in name of region
+        - region-name-sb
         # browser/branding/official/locales/en-US/brand.ftl
         - trademarkInfo
         # toolkit/locales/en-US/toolkit/neterror/certError.ftl
@@ -162,7 +166,7 @@ CO01:
         # devtools/shared/locales/en-US/webconsole-commands.ftl
         - webconsole-commands-usage-block
         # toolkit/locales/en-US/toolkit/about/aboutAddons.ftl
-        - addon-badge-line3
+        - addon-badge-line4
         - recommended-theme-1
         - plugins-openh264-description
         - details-notification-hard-blocked-extension
@@ -173,9 +177,6 @@ CO01:
         - details-notification-soft-blocked-other-enabled
         # toolkit/locales/en-US/toolkit/about/aboutGlean.ftl
         - about-glean-description
-        # toolkit/locales/en-US/toolkit/about/aboutRights.ftl
-        - rights-intro-point-1
-        - rights-intro-point-2
         # toolkit/locales/en-US/toolkit/about/aboutSupport.ftl
         - app-basics-key-mozilla
         - virtual-monitor-disp

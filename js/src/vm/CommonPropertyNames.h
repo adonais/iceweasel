@@ -83,6 +83,7 @@
   MACRO_(callee, "callee")                                                     \
   MACRO_(caller, "caller")                                                     \
   MACRO_(callFunction, "callFunction")                                         \
+  MACRO_(captureStackTrace, "captureStackTrace")                               \
   MACRO_(cancel, "cancel")                                                     \
   MACRO_(case_, "case")                                                        \
   MACRO_(caseFirst, "caseFirst")                                               \
@@ -252,6 +253,8 @@
   MACRO_(GetIterator, "GetIterator")                                           \
   MACRO_(GetModuleNamespace, "GetModuleNamespace")                             \
   MACRO_(getOffsetNanosecondsFor, "getOffsetNanosecondsFor")                   \
+  MACRO_(getOrInsert, "getOrInsert")                                           \
+  MACRO_(getOrInsertComputed, "getOrInsertComputed")                           \
   MACRO_(getOwnPropertyDescriptor, "getOwnPropertyDescriptor")                 \
   MACRO_(getOwnPropertyNames, "getOwnPropertyNames")                           \
   MACRO_(getPossibleInstantsFor, "getPossibleInstantsFor")                     \

@@ -40,9 +40,19 @@ git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/wgpu?rev=5543961a71cc8e5399b696fae3f6aae82c019717"]
+[source."git+https://github.com/gfx-rs/metal-rs.git?rev=ef768ff9d7"]
+git = "https://github.com/gfx-rs/metal-rs.git"
+rev = "ef768ff9d7"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/gfx-rs/wgpu?rev=aa7bec65b90028e4db6ec8def8589b52097d92f9"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "5543961a71cc8e5399b696fae3f6aae82c019717"
+rev = "aa7bec65b90028e4db6ec8def8589b52097d92f9"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/glandium/rust-objc?rev=4de89f5aa9851ceca4d40e7ac1e2759410c04324"]
+git = "https://github.com/glandium/rust-objc"
+rev = "4de89f5aa9851ceca4d40e7ac1e2759410c04324"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/hsivonen/any_all_workaround?rev=7fb1b7034c9f172aade21ee1c8554e8d8a48af80"]
@@ -75,9 +85,9 @@ git = "https://github.com/mozilla-spidermonkey/jsparagus"
 rev = "61f399c53a641ebd3077c1f39f054f6d396a633c"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/application-services?rev=03cf4a362408b9caffa6848aae2fcf472a789460"]
+[source."git+https://github.com/mozilla/application-services?rev=25934715ecc08fc922c80797c637dea64ee742d1"]
 git = "https://github.com/mozilla/application-services"
-rev = "03cf4a362408b9caffa6848aae2fcf472a789460"
+rev = "25934715ecc08fc922c80797c637dea64ee742d1"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/audioipc?rev=e6f44a2bd1e57d11dfc737632a9e849077632330"]

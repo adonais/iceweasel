@@ -34,16 +34,16 @@ passwords-expand-section-tooltip = Show Passwords
 passwords-collapse-section-tooltip = Hide Passwords
 
 passwords-dismiss-breach-alert-command = Dismiss breach alert
-passwords-command-create = Add Password
-passwords-command-import-from-browser = Import from Another Browser…
-passwords-command-import = Import from a File…
-passwords-command-export = Export Passwords…
-passwords-command-remove-all = Remove All Passwords…
+passwords-command-create = Add password
+passwords-command-import-from-browser = Import from another browser…
+passwords-command-import = Import from a file…
+passwords-command-export = Export passwords
+passwords-command-remove-all = Remove all passwords
 passwords-command-settings = Settings
 passwords-command-help = Help
-passwords-command-sort-name = Sort By Name (A-Z)
+passwords-command-sort-name = Sort by name (A-Z)
 # This message can be seen when sorting logins by breached or vulnerable alerts.
-passwords-command-sort-alerts = Sort By Alerts
+passwords-command-sort-alerts = Sort by alerts
 
 passwords-os-auth-dialog-caption = { -brand-full-name }
 
@@ -214,7 +214,7 @@ passwords-add-password-success-button = View
 #   $url (string) - The url associated with the existing login
 passwords-password-already-exists-error-heading =
   .heading = A password and username for { $url } already exists
-passwords-password-already-exists-error-button = Go to Password
+passwords-password-already-exists-error-button = Go to password
 
 passwords-update-password-success-heading =
   .heading = Password saved
@@ -303,14 +303,30 @@ alert-icon =
 origin-login-line =
   .aria-label = Visit { $url }
   .title = Visit { $url }
+# "(Warning)" indicates that a login's origin field has an alert icon.
+# Variables
+#   $url (string) - The url associated with the login
+origin-login-line-with-alert =
+  .aria-label = Visit { $url } (Warning)
+  .title = Visit { $url } (Warning)
 # Variables
 #   $username (string) - The username associated with the login
 username-login-line =
   .aria-label = Copy Username { $username }
   .title = Copy Username { $username }
+# "(Warning)" indicates that a login's username field has an alert icon.
+# Variables
+#   $username (string) - The username associated with the login
+username-login-line-with-alert =
+  .aria-label = Copy Username { $username } (Warning)
+  .title = Copy Username { $username } (Warning)
 password-login-line =
   .aria-label = Copy Password
   .title = Copy Password
+# "(Warning)" indicates that a login's password field has an alert icon.
+password-login-line-with-alert =
+  .aria-label = Copy Password (Warning)
+  .title = Copy Password (Warning)
 edit-login-button = Edit
   .tooltiptext = Edit Password
 view-alert-heading =
@@ -328,7 +344,7 @@ hide-password-button =
 # The message displayed when the search text does not match any of the user's saved logins.
 passwords-no-passwords-found-header =
   .heading = No passwords found
-passwords-no-passwords-found-message = Try a different search term and try again.
+passwords-no-passwords-found-message = No passwords found. Search a different term and try again.
 
 ## When the user has no saved passwords, we display the following messages to inform the user they can save
 ## their passwords safely and securely in Firefox:

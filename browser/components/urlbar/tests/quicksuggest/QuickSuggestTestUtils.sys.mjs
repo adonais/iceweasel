@@ -6,6 +6,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AmpSuggestions: "resource:///modules/urlbar/private/AmpSuggestions.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
@@ -500,7 +501,6 @@ class _QuickSuggestTestUtils {
     fullKeyword = keyword,
     title = "Wikipedia Suggestion",
     url = "https://example.com/wikipedia",
-    originalUrl = url,
     iconBlob = null,
     suggestedIndex = -1,
     isSuggestedIndexRelativeToGroup = true,
@@ -514,7 +514,6 @@ class _QuickSuggestTestUtils {
       payload: {
         title,
         url,
-        originalUrl,
         iconBlob,
         source,
         provider,
@@ -832,6 +831,7 @@ class _QuickSuggestTestUtils {
         originalUrl,
         icon,
         displayUrl: url.replace(/^https:\/\//, ""),
+        isSponsored: false,
         shouldShowUrl: true,
         bottomTextL10n: { id: "firefox-suggest-addons-recommended" },
         helpUrl: lazy.QuickSuggest.HELP_URL,
@@ -869,6 +869,7 @@ class _QuickSuggestTestUtils {
         url: finalUrl.href,
         originalUrl: url,
         displayUrl: finalUrl.href.replace(/^https:\/\//, ""),
+        isSponsored: false,
         description,
         icon: "chrome://global/skin/icons/mdn.svg",
         shouldShowUrl: true,
@@ -928,6 +929,7 @@ class _QuickSuggestTestUtils {
         },
         source,
         provider,
+        isSponsored: true,
         telemetryType: "weather",
       },
     };
@@ -1135,7 +1137,7 @@ class _QuickSuggestTestUtils {
    *   ```
    */
   assertTimestampsReplaced(result, urls) {
-    let { TIMESTAMP_TEMPLATE, TIMESTAMP_LENGTH } = lazy.QuickSuggest;
+    let { TIMESTAMP_TEMPLATE, TIMESTAMP_LENGTH } = lazy.AmpSuggestions;
 
     // Parse the timestamp strings from each payload property and save them in
     // `urls[key].timestamp`.

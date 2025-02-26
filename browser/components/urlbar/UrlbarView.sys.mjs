@@ -677,6 +677,17 @@ export class UrlbarView {
       }
     }
 
+    // Disable autofill when search terms persist, as users are likely refining
+    // their search rather than navigating to a website matching the search
+    // term. If they do want to navigate directly, users can modify their
+    // search, which resets persistence and re-enables autofill.
+    let state = this.input.getBrowserState(
+      this.window.gBrowser.selectedBrowser
+    );
+    if (state.persist?.shouldPersist) {
+      queryOptions.allowAutofill = false;
+    }
+
     this.controller.engagementEvent.discard();
     queryOptions.searchString = this.input.value;
     queryOptions.autofillIgnoresSelection = true;
@@ -1230,18 +1241,18 @@ export class UrlbarView {
     let seenMisplacedResult = false;
     let seenSearchSuggestion = false;
 
-    // We can have more rows than the visible ones.
-    for (
-      ;
-      rowIndex < this.#rows.children.length && resultIndex < results.length;
-      ++rowIndex
+    // Update each row with the next new result until we either encounter a row
+    // that can't be updated or run out of new results. At that point, mark
+    // remaining rows as stale.
+    while (
+      rowIndex < this.#rows.children.length &&
+      resultIndex < results.length
     ) {
       let row = this.#rows.children[rowIndex];
       if (this.#isElementVisible(row)) {
         visibleSpanCount += lazy.UrlbarUtils.getSpanForResult(row.result);
       }
-      // Continue updating rows as long as we haven't encountered a new
-      // suggestedIndex result that couldn't replace a current result.
+
       if (!seenMisplacedResult) {
         let result = results[resultIndex];
         seenSearchSuggestion =
@@ -1251,17 +1262,23 @@ export class UrlbarView {
           this.#rowCanUpdateToResult(rowIndex, result, seenSearchSuggestion)
         ) {
           // We can replace the row's current result with the new one.
+          resultIndex++;
+
           if (result.isHiddenExposure) {
+            // Don't increment `rowIndex` because we're not actually updating
+            // the row. We'll visit it again in the next iteration.
             this.controller.engagementEvent.addExposure(
               result,
               this.#queryContext
             );
-          } else {
-            this.#updateRow(row, result);
+            continue;
           }
-          resultIndex++;
+
+          this.#updateRow(row, result);
+          rowIndex++;
           continue;
         }
+
         if (
           (result.hasSuggestedIndex || row.result.hasSuggestedIndex) &&
           !result.isHiddenExposure
@@ -1269,7 +1286,9 @@ export class UrlbarView {
           seenMisplacedResult = true;
         }
       }
+
       row.setAttribute("stale", "true");
+      rowIndex++;
     }
 
     // Mark all the remaining rows as stale and update the visible span count.
@@ -2118,9 +2137,11 @@ export class UrlbarView {
   }
 
   #getBlobUrlForResult(result, blob) {
-    // Blob icons are currently limited to Suggest results, which will define
-    // a `payload.originalUrl` if the result URL contains timestamp templates
-    // that are replaced at query time.
+    // For some Suggest results, `url` is a value that is modified at query time
+    // and that is potentially unique per query. For example, it might contain
+    // timestamps or query-related search params. Those results will also have
+    // an `originalUrl` that is the unmodified URL, and it should be used as the
+    // map key.
     let resultUrl = result.payload.originalUrl || result.payload.url;
     if (resultUrl) {
       let blobUrl = this.#blobUrlsByResultUrl?.get(resultUrl);
@@ -2730,6 +2751,10 @@ export class UrlbarView {
 
   #setAccessibleFocus(item) {
     if (item) {
+      if (!item.id) {
+        // Assign an id to dynamic actions as required by aria-activedescendant.
+        item.id = getUniqueId("aria-activedescendant-target-");
+      }
       this.input.inputField.setAttribute("aria-activedescendant", item.id);
     } else {
       this.input.inputField.removeAttribute("aria-activedescendant");

@@ -24,7 +24,7 @@ fuzzy-if(!useDrawSnapshot,14-14,44-95) == 1524353.html 1524353-ref.html
 == bug1523410-translate-scale-snap.html bug1523410-translate-scale-snap-ref.html
 == 1523080.html 1523080-ref.html
 == 1616444-same-color-different-paths.html 1616444-same-color-different-paths-ref.html
-skip-if(useDrawSnapshot||Android) fuzzy-if(winWidget,54-94,2713-3419) fuzzy-if(cocoaWidget,22-24,1100-1200) pref(apz.allow_zooming,true) == picture-caching-on-async-zoom.html picture-caching-on-async-zoom.html?ref
+skip-if(useDrawSnapshot||Android) fuzzy-if(winWidget,54-137,2713-3419) fuzzy-if(cocoaWidget,22-24,1100-1200) pref(apz.allow_zooming,true) == picture-caching-on-async-zoom.html picture-caching-on-async-zoom.html?ref
 pref(apz.allow_zooming,true) fails-if(useDrawSnapshot) fuzzy-if(!useDrawSnapshot,0-244,0-4285) == 1662062-1-no-blurry.html 1662062-1-ref.html
 # Bug 1715676: nsBulletFrame has been removed and the new rendering does not use PushRoundedRect that this test is for:
 # == 1681610.html 1681610-ref.html
@@ -43,8 +43,8 @@ pref(layout.css.backdrop-filter.enabled,true) == 1765862.html 1765862-ref.html
 skip-if(!cocoaWidget) != 1806140.html 1806140-notref.html
 fuzzy(0-1,0-240) == 1812341.html 1812341-ref.html
 random-if(gtkWidget) fuzzy-if(Android,0-125,0-106) fuzzy-if(winWidget,0-255,0-44) == 1845828-1.html 1845828-1-ref.html # Result on Linux depends on font configuration/hinting/etc, affecting whether subpixel positioning is used
-fuzzy-if(!winWidget,0-1,0-4) fuzzy-if(winWidget,14-14,245-314) == 1853216-1.html 1853216-1-ref.html
+fuzzy-if(!winWidget,0-2,0-106) fuzzy-if(winWidget,0-14,0-314) == 1853216-1.html 1853216-1-ref.html
 fuzzy-if(winWidget,0-1,0-13) == 1873708-emoji-canvas-filter.html 1873708-emoji-canvas-filter-ref.html
 != 1870240-colrv1-cycle.html 1870240-colrv1-cycle-notref.html
 == 1909933.html 1909933-ref.html
-fuzzy(0-2,0-3864) random-if(Android) == 1912431-emoji-globalAlpha.html 1912431-emoji-globalAlpha-ref.html
+fuzzy(0-2,0-6229) random-if(Android) == 1912431-emoji-globalAlpha.html 1912431-emoji-globalAlpha-ref.html

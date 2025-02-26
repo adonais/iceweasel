@@ -328,11 +328,7 @@
     <string name="browser_tools_menu_handlebar_content_description">ხელსაწყოების მენიუს ფურცლის დახურვა</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">მორგებული ჩანართის ფურცლის დახურვა</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">წაკითხვის ხედი, თარგმნა, ამობეჭდვა, გაზიარება, აპის გახსნა</string>
 
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">წაკითხვის ხედი, თარგმნა, ამობეჭდვა, გაზიარება, აპის გახსნა</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">საკითხავი ხედი, თარგმნა, %s, ბეჭდვა, გაზიარება, აპის გახსნა</string>
@@ -568,10 +564,9 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">უეცარი გათიშვის მოხსენებები საშუალებას გვაძლევს, გამოვავლინოთ და მოვაგვაროთ ბრაუზერის ხარვეზები. მოხსენებები შეიძლება შეიცავდეს პირად ან საფრთხილო მონაცემებს.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">ვრცლად უეცარი გათიშვების მოხსენებებზე</string>
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">ვრცლად</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
-    <string name="onboarding_preferences_dialog_usage_data_title">ტექნიკური და გამოყენების მონაცემები გაეგზავნოს Mozilla-ს</string>
+    <string name="onboarding_preferences_dialog_usage_data_title">ტექნიკურ და გამოყენების მონაცემებს გაეცნოს Mozilla</string>
 
     <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">მონაცემები თქვენი მოწყობილობის, აპარატურული გაწყობისა და იმის შესახებ, თუ როგორ გამოიყენება Firefox, გვეხმარება შესაძლებლობების, წარმადობისა და მდგრადობის გაუმჯობესებაში ყველა მომხმარებლისთვის.</string>
@@ -582,22 +577,26 @@
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">მზადაა</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">გაუქმება</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">გაუქმება</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">მოგესალმებათ Firefox</string>
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">სწრაფი და დაცული მოგზაურობა ვებსივრცეში.</string>
+    <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">გვერდების თვალიერება სწრაფად და დაცულად</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">თანხმობა და გაგრძელება</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">გაგრძელებით ეთანხმებით %1$s, რომელსაც გთავაზობთ Firefox.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one_2">თუ განაგრძობთ, თანახმა ხართ მიიღოთ %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">მომსახურების პირობებს</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
     <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">გამოყენების პირობები, რომელსაც გთავაზობთ Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox ზრუნავს თქვენს პირადულობაზე. ვრცლად, იხილეთ %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox ზრუნავს თქვენს პირადულობაზე. ვრცლად, იხილეთ %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">პირადულობის დებულება</string>
@@ -605,6 +604,16 @@
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">ბრაუზერის გასაუმჯობესებლად Firefox აგზავნის Mozilla-ში შემოწმებისა და გამოყენების შედეგებს. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">მართვა</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">დაგვეხმარეთ, გავავრცელოთ Firefox</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">როდესაც გვიზიარებთ, თუ როგორ აღმოაჩინეთ Firefox და როგორ იყენებთ, გვეხმარებით გავაცნოთ ბრაუზერი კიდევ უფრო მეტ ხალხს.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">გაუზიარეთ მცირე ოდენობის მონაცემები Mozilla-ს გაყიდვების საქმიანობაში მოკავშირე სამსახურებს. ეს მონაცემები არასდროს გაიყიდება და არ იქნება გამოყენებული სარეკლამოდ.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">როგორ ვიყენებთ მონაცემებს</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">თანხმობა და გვერდების მონახულება</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">ხელსაწყოთა ზოლის განთავსება</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -837,7 +846,7 @@
     <string name="preferences_show_sponsored_suggestions">შემოთავაზებები დამკვეთისგან</string>
     <!-- Summary for preference to show sponsored Firefox Suggest search suggestions.
          The first parameter is the name of the application. -->
-    <string name="preferences_show_sponsored_suggestions_summary">თანადგომისთვის იხილეთ დამკვეთის შემოთავაზებები, %1$s დროდადრო რომ გაჩვენებთ</string>
+    <string name="preferences_show_sponsored_suggestions_summary">თანადგომისთვის იხილეთ დამკვეთის შემოთავაზებები, %1$s დროდადრო რომ მოგაწვდით</string>
     <!-- Preference title for switch preference to show Firefox Suggest search suggestions for web content.
          The first parameter is the name of the application. -->
     <string name="preferences_show_nonsponsored_suggestions">შემოგთავაზებთ %1$s</string>
@@ -1043,26 +1052,31 @@
     <string name="exceptions_empty_message_learn_more_link">ვრცლად</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">გამოყენებისა და ტექნიკური მონაცემები</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">ტექნიკური და გამოყენების მონაცემები</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">ტექნიკური და გამოყენების მონაცემების გაგზავნა</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">ვრცლად</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">გაუზიარებს წარმადობის, გამოყენების, აპრატურისა და მორგების მონაცემებს Mozilla-ს, რომ მეტად გაუმჯობესდეს %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">გაუზიარებს წარმადობის, გამოყენების, აპრატურისა და მორგების მონაცემებს Mozilla-ს, რომ მეტად გაუმჯობესდეს %1$s</string>
 
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">თქვენი მოწყობილობის მასახიათებლები, აპარატურული გაწყობა და გამოყენების მონაცემები გვეხმარება გავაუმჯობესოთ Firefox შესაძლებლობების, წარმადობისა და მდგრადობის კუთხით.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">მარკეტინგული მონაცემები</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">გამოყენების გამარტივებულ მონაცემებს გაეცნობა Adjust, რომელიც მობილურ მარკეტინგში გვიწევს მომსახურებას</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">მარკეტინგული მონაცემები</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">გაცნობითი საქმიანობის საზომი</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">გაუზიარეთ სხვებს, თუ როგორ აღმოაჩინეთ Firefox, Mozilla-ს მარკეტინგული მოკავშირეების მეშვეობით. ეს გვეხმარება, გავაუმჯობესოთ Firefox განვითარებასა და უკეთესი ინტერნეტის შექმნაში</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">გაუზიარეთ სხვებს, თუ როგორ აღმოაჩინეთ Firefox, Mozilla-ს მარკეტინგული მოკავშირეების მეშვეობით. ეს გვეხმარება, გავაუმჯობესოთ Firefox განვითარებასა და უკეთესი ინტერნეტის შექმნაში</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">გაუზიარეთ, როგორ აღმოაჩინეთ Firefox და იყენებთ თუ არა, Mozilla-ს გაყიდვების საქმიანობაში მოკავშირე სამსახურებს.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">ვრცლად მარკეტინგულ მონაცემებზე</string>
 
     <!-- Preference switch for daily usage ping data collection -->
     <string name="preferences_daily_usage_ping_title">დღიური გამოყენების უწყება</string>
-    <string name="preferences_daily_usage_ping_description">მისი მეშვეობით %@ მიახლოებით ითვლის მოქმედ მომხმარებლებს.</string>
+    <string name="preferences_daily_usage_ping_description">ამით %@ მიახლოებით ითვლის მოქმედ მომხმარებლებს.</string>
     <string name="preferences_daily_usage_ping_learn_more">ვრცლად დღიური გამოყენების უწყების შესახებ</string>
     <!-- Preference switch title for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_title">უეცარი გათიშვის მოხსენებების თვითგაგზავნა</string>
@@ -1071,6 +1085,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">საშუალებას მოგვცემს, გამოვავლინოთ და მოვაგვაროთ ბრაუზერის ხარვეზები. მოხსენებები შეიძლება შეიცავდეს პირად ან საფრთხილო მონაცემებს.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">უზიარებს Mozilla-ს გათიშვის მონაცემებს ჩართვისას უეცარი გათიშვის შემდგომ</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">ვრცლად უეცარი გათიშვების მოხსენებებზე</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">კვლევები</string>
@@ -1234,7 +1251,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">მოქმედი</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s დროდადრო დააყენებს და ჩაატარებს კვლევებს.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s დროდადრო დააყენებს და ჩაატარებს კვლევებს.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">გამოცადეთ შესაძლებლობები ჯერ კიდევ ჩანაფიქრის დონეზე, სანამ ყველასთვის ხილული გახდება.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">კვლევების ჩადგმა და გაშვება</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">ვრცლად</string>
     <!-- Dialog message shown after removing a study -->
@@ -1272,7 +1293,7 @@
     <!-- Text shown in the menu to view recently closed tabs -->
     <string name="tab_tray_menu_recently_closed">ბოლოს დახურული ჩანართები</string>
     <!-- Text shown in the tabs tray inactive tabs section -->
-    <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">ახლახანს დახურული</string>
+    <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">ახლახან დახურული</string>
     <!-- Text shown in the menu to view account settings -->
     <string name="tab_tray_menu_account_settings">ანგარიშის პარამეტრები</string>
     <!-- Text shown in the menu to view tab settings -->
@@ -1413,7 +1434,7 @@
     <!-- Title text displayed on the tab crash page. This first parameter is the name of the application (For example: Fenix) -->
     <string name="tab_crash_title_2">ვწუხვართ. %1$s ვერ ტვირთავს ამ გვერდს.</string>
     <!-- Send crash report checkbox text on the tab crash page -->
-    <string name="tab_crash_send_report">გათიშვის მოხსენება გაეგზავნოს Mozilla-ს</string>
+    <string name="tab_crash_send_report">გათიშვის მოხსენებას გაეცნოს Mozilla</string>
     <!-- Close tab button text on the tab crash page -->
     <string name="tab_crash_close">ჩანართის დახურვა</string>
     <!-- Restore tab button text on the tab crash page -->
@@ -2053,6 +2074,8 @@
     <string name="about_privacy_notice">პირადულობის განაცხადი</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">გაეცანით თქვენს უფლებებს</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">გამოყენების პირობები</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">ლიცენზიის შესახებ</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2951,7 +2974,6 @@
     <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
     <string name="download_language_file_dialog_negative_button_text">გაუქმება</string>
 
-    <!-- Unified Trust Panel -->
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">ფრთხილად იყავით ამ საიტზე</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -3092,7 +3114,7 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">გამართვის ენების ჩართვა</string>
 
-    <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+    <!-- The title of the header for the section for managing addresses. -->
     <string name="debug_drawer_addresses_management_header">მისამართების მართვა</string>
     <!-- The title of the button in the debug drawer for adding a new address. -->
     <string name="debug_drawer_add_new_address">ახალი მისამართის დამატება შერჩეული ენისთვის</string>
@@ -3151,4 +3173,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">განაახლეთ 14 მარტამდე, დამატებებითა და სხვა შესაძლებლობებით სარგებლობა რომ განაგრძოთ.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">ზოგიერთი შესაძლებლობა ხვალიდან შეწყვეტს მუშაობას.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">დაფარული ტექსტის გამოჩენა</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">ტექსტის გასუფთავება</string>
 </resources>

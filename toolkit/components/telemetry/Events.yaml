@@ -2327,29 +2327,6 @@ security.ui.protections:
       category: The category of protections the user is in, standard, strict or custom.
 
 security.ui.protectionspopup:
-  open:
-    objects: ["protections_popup", "protectionspopup_cfr",]
-    extra_keys:
-      message: >
-        For protectionspopup_cfr, the message ID.
-    bug_numbers:
-      - 1560327
-      - 1607488
-      - 1643428
-      - 1678201
-      - 1739287
-      - 1787249
-    description: >
-      How many times the protections panel was opened.
-    expiry_version: never
-    notification_emails:
-      - emz@mozilla.com
-      - seceng-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    record_in_processes:
-      - main
-    products:
-      - firefox
   click:
     objects: [
       "etp_toggle_on",
@@ -4011,13 +3988,51 @@ profiles:
       switches app focus to a profile other than the current default. An
       event is not recorded if the current default profile is launched or
       gains app focus.
-    bug_numbers: [1693362]
     notification_emails:
-      - "jhirsch@mozilla.com"
+      - "cmkm@mozilla.com"
       - "dtownsend@mozilla.com"
+      - "jhirsch@mozilla.com"
       - "nbaumgardner@mozilla.com"
     bug_numbers:
       - 1918813
+    expiry_version: never
+    products:
+      - "firefox"
+  existing:
+    objects: ["alert", "avatar", "closed", "deleted", "displayed", "learn_more", "name", "theme"]
+    release_channel_collection: opt-out
+    record_in_processes:
+      - main
+    description: >
+      Recorded when the user loads, interacts with, and closes the
+      "about:editprofile" existing profile edit page. See Glean probe
+      definitions for details. The value varies depending on the object.
+    notification_emails:
+      - "cmkm@mozilla.com"
+      - "dtownsend@mozilla.com"
+      - "jhirsch@mozilla.com"
+      - "nbaumgardner@mozilla.com"
+    bug_numbers:
+      - 1927607
+    expiry_version: never
+    products:
+      - "firefox"
+  new:
+    objects: ["alert", "avatar", "closed", "deleted", "displayed", "learn_more", "name", "theme"]
+    release_channel_collection: opt-out
+    record_in_processes:
+      - main
+    description: >
+      Recorded when the user loads, interacts with, and closes the
+      "about:newprofile" existing profile edit page. See Glean probe
+      definitions for details. The value varies depending on the object.
+    notification_emails:
+      - "cmkm@mozilla.com"
+      - "dtownsend@mozilla.com"
+      - "jhirsch@mozilla.com"
+      - "nbaumgardner@mozilla.com"
+    bug_numbers:
+      - 1941698
     expiry_version: never
     products:
       - "firefox"

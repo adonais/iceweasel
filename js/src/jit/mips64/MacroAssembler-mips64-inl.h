@@ -765,7 +765,8 @@ void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
   ma_b(scratch, ImmWord(magic), label, cond);
 }
 
-void MacroAssembler::branchTestValue(Condition cond, const BaseIndex& lhs,
+template <typename T>
+void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {
   MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
   branchPtr(cond, lhs, rhs.valueReg(), label);
@@ -834,7 +835,7 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
   //
   // Note: src and dest can be the same register
   ScratchRegisterScope scratch(asMasm());
-  mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
+  mov(ImmShiftedTag(type), scratch);
   ma_xor(scratch, src.valueReg());
   ma_move(dest, scratch);
   ma_dsrl(scratch, scratch, Imm32(JSVAL_TAG_SHIFT));

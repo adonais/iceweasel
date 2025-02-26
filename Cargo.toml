@@ -57,6 +57,9 @@ exclude = [
 # This is required for 'third_party/rust/wgpu-hal'
 resolver = "2"
 
+[workspace.package]
+rust-version = "1.76.0"
+
 [workspace.dependencies]
 # Shared across multiple UniFFI consumers.
 uniffi = "0.28.2"
@@ -155,9 +158,6 @@ bindgen = { path = "third_party/rust/bindgen" }
 # Patch nix 0.26 to 0.29
 nix = { path = "build/rust/nix" }
 
-# Patch cfg_aliases 0.1 to 0.2
-cfg_aliases = { path = "build/rust/cfg_aliases" }
-
 # Patch indexmap 2.0 to 1.0
 indexmap = { path = "build/rust/indexmap" }
 
@@ -178,6 +178,9 @@ hashbrown = { path = "build/rust/hashbrown" }
 
 # Patch `socket2` 0.4 to 0.5
 socket2 = { path = "build/rust/socket2" }
+
+# Patch `thiserror` 1 to 2.
+thiserror = { path = "build/rust/thiserror" }
 
 # The following overrides point to dummy projects, as a temporary measure until this is resolved:
 # https://github.com/rust-lang/cargo/issues/6179
@@ -217,14 +220,17 @@ midir = { git = "https://github.com/mozilla/midir.git", rev = "85156e360a37d8517
 # in order to build standalone.
 malloc_size_of_derive = { path = "xpcom/rust/malloc_size_of_derive" }
 
+# objc 0.2.7 + fa7ca43b862861dd1cd000d7ad01e6e0266cda13
+objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca4d40e7ac1e2759410c04324" }
+
 # application-services overrides to make updating them all simpler.
-interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
-relevancy = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
-sql-support = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
-suggest = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
-sync15 = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
-tabs = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
-viaduct = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
-webext-storage = { git = "https://github.com/mozilla/application-services", rev = "03cf4a362408b9caffa6848aae2fcf472a789460" }
+interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+relevancy = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+sql-support = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+suggest = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+sync15 = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+tabs = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+viaduct = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+webext-storage = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
 
 allocator-api2 = { path = "third_party/rust/allocator-api2" }

@@ -8,7 +8,7 @@
 #include <stdio.h>   // for nullptr, stdout
 #include <string.h>  // for strcmp
 
-#include "AutoRangeArray.h"  // for AutoRangeArray
+#include "AutoClonedRangeArray.h"  // for AutoClonedRangeArray and AutoClonedSelectionRangeArray
 #include "AutoSelectionRestorer.h"
 #include "ChangeAttributeTransaction.h"
 #include "CompositionTransaction.h"
@@ -539,7 +539,7 @@ bool EditorBase::GetDesiredSpellCheckState() {
   }
 
   // Check user preferences
-  int32_t spellcheckLevel = Preferences::GetInt("layout.spellcheckDefault", 1);
+  int32_t spellcheckLevel = StaticPrefs::layout_spellcheckDefault();
 
   if (!spellcheckLevel) {
     return false;  // Spellchecking forced off globally
@@ -2515,23 +2515,13 @@ EditorBase::InsertPaddingBRElementForEmptyLastLineWithTransaction(
     pointToInsert = maybePointToInsert.unwrap();
   }
 
-  RefPtr<HTMLBRElement> newBRElement =
-      HTMLBRElement::FromNodeOrNull(RefPtr{CreateHTMLContent(nsGkAtoms::br)});
-  if (NS_WARN_IF(!newBRElement)) {
-    return Err(NS_ERROR_FAILURE);
-  }
-  nsresult rv = UpdateBRElementType(*newBRElement,
-                                    BRElementType::PaddingForEmptyLastLine);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::UpdateBRElementType() failed");
-    return Err(rv);
-  }
-
-  Result<CreateElementResult, nsresult> insertBRElementResult =
-      InsertNodeWithTransaction<Element>(*newBRElement, pointToInsert);
-  NS_WARNING_ASSERTION(insertBRElementResult.isOk(),
-                       "EditorBase::InsertNodeWithTransaction() failed");
-  return insertBRElementResult;
+  Result<CreateElementResult, nsresult> insertBRElementResultOrError =
+      InsertBRElement(WithTransaction::Yes,
+                      BRElementType::PaddingForEmptyLastLine, pointToInsert);
+  NS_WARNING_ASSERTION(insertBRElementResultOrError.isOk(),
+                       "EditorBase::InsertBRElement(WithTransaction::Yes, "
+                       "BRElementType::PaddingForEmptyLastLine) failed");
+  return insertBRElementResultOrError;
 }
 
 nsresult EditorBase::UpdateBRElementType(HTMLBRElement& aBRElement,
@@ -2594,6 +2584,65 @@ nsresult EditorBase::UpdateBRElementType(HTMLBRElement& aBRElement,
   }
   result.inspect().IgnoreCaretPointSuggestion();
   return NS_OK;
+}
+
+Result<CreateElementResult, nsresult> EditorBase::InsertBRElement(
+    WithTransaction aWithTransaction, BRElementType aBRElementType,
+    const EditorDOMPoint& aPointToInsert) {
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
+
+  const RefPtr<HTMLBRElement> newBRElement =
+      HTMLBRElement::FromNodeOrNull(RefPtr{CreateHTMLContent(nsGkAtoms::br)});
+  if (MOZ_UNLIKELY(!newBRElement)) {
+    NS_WARNING("EditorBase::CreateHTMLContent() failed");
+    return Err(NS_ERROR_FAILURE);
+  }
+  nsresult rv = MarkElementDirty(*newBRElement);
+  if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    NS_WARNING("EditorBase::MarkElementDirty() caused destroying the editor");
+    return Err(NS_ERROR_EDITOR_DESTROYED);
+  }
+  if (aBRElementType != BRElementType::Normal) {
+    nsresult rv = UpdateBRElementType(*newBRElement, aBRElementType);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::UpdateBRElementType() failed");
+      return Err(rv);
+    }
+  }
+  if (aWithTransaction == WithTransaction::Yes) {
+    Result<CreateElementResult, nsresult> insertBRElementResultOrError =
+        InsertNodeWithTransaction<Element>(*newBRElement, aPointToInsert);
+    if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
+      NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+      return insertBRElementResultOrError.propagateErr();
+    }
+    CreateElementResult insertBRElementResult =
+        insertBRElementResultOrError.unwrap();
+    insertBRElementResult.IgnoreCaretPointSuggestion();
+  } else {
+    Unused << aPointToInsert.Offset();
+    RefPtr<InsertNodeTransaction> transaction =
+        InsertNodeTransaction::Create(*this, *newBRElement, aPointToInsert);
+    nsresult rv = transaction->DoTransaction();
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_FAILED(rv)) {
+      NS_WARNING("InsertNodeTransaction::DoTransaction() failed");
+      return Err(rv);
+    }
+    RangeUpdaterRef().SelAdjInsertNode(EditorRawDOMPoint(
+        aPointToInsert.GetContainer(), aPointToInsert.Offset()));
+  }
+  if (NS_WARN_IF(newBRElement->GetParentNode() !=
+                 aPointToInsert.GetContainer())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+  return CreateElementResult(
+      newBRElement,
+      EditorDOMPoint(newBRElement, aBRElementType == BRElementType::Normal
+                                       ? InterlinePosition::StartOfNextLine
+                                       : InterlinePosition::EndOfLine));
 }
 
 NS_IMETHODIMP EditorBase::DeleteNode(nsINode* aNode, bool aPreserveSelection,
@@ -4072,7 +4121,7 @@ nsresult EditorBase::OnCompositionChange(
   // If still composing, we should fire input event via observer.
   // Note that if the composition will be committed by the following
   // compositionend event, we don't need to notify editor observes of this
-  // change.
+  // change even if it's preferred by the pref.
   // NOTE: We must notify after the auto batch will be gone.
   if (!aCompositionChangeEvent.IsFollowedByCompositionEnd()) {
     // If we're a TextEditor, we'll be initialized with a new anonymous subtree,
@@ -4082,6 +4131,13 @@ nsresult EditorBase::OnCompositionChange(
     // mComposition already has the latest information here.
     MOZ_ASSERT_IF(mComposition, mComposition->String() == data);
     NotifyEditorObservers(eNotifyEditorObserversOfEnd);
+  }
+  // NOTE: When the pref is enabled, the last `input` event which will be fired
+  // after `compositionend` won't be paired with corresponding `beforeinput`
+  // event.
+  else if (StaticPrefs::dom_input_events_dispatch_before_compositionend() &&
+           mDispatchInputEvent && !IsEditActionAborted()) {
+    DispatchInputEvent();
   }
 
   return EditorBase::ToGenericNSResult(rv);
@@ -4190,7 +4246,7 @@ void EditorBase::DoAfterRedoTransaction() {
 already_AddRefed<DeleteMultipleRangesTransaction>
 EditorBase::CreateTransactionForDeleteSelection(
     HowToHandleCollapsedRange aHowToHandleCollapsedRange,
-    const AutoRangeArray& aRangesToDelete) {
+    const AutoClonedRangeArray& aRangesToDelete) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
 
@@ -4506,8 +4562,8 @@ bool EditorBase::FlushPendingNotificationsIfToHandleDeletionWithFrameSelection(
           aDirectionAndAmount, SelectionRef())) {
     return true;
   }
-  // Although AutoRangeArray::ExtendAnchorFocusRangeFor() will use
-  // nsFrameSelection, if it still has dirty frame, nsFrameSelection doesn't
+  // Although AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() will
+  // use nsFrameSelection, if it still has dirty frame, nsFrameSelection doesn't
   // extend selection since we block script.
   if (RefPtr<PresShell> presShell = GetPresShell()) {
     presShell->FlushPendingNotifications(FlushType::Layout);
@@ -5077,7 +5133,7 @@ nsresult EditorBase::DeleteSelectionWithTransaction(
     return NS_ERROR_EDITOR_DESTROYED;
   }
 
-  AutoRangeArray rangesToDelete(SelectionRef());
+  AutoClonedSelectionRangeArray rangesToDelete(SelectionRef());
   if (NS_WARN_IF(rangesToDelete.Ranges().IsEmpty())) {
     NS_ASSERTION(
         false,
@@ -5125,7 +5181,7 @@ Result<CaretPoint, nsresult> EditorBase::DeleteRangeWithTransaction(
     return CaretPoint(EditorDOMPoint(aRangeToDelete.StartRef()));
   }
 
-  AutoRangeArray rangesToDelete(aRangeToDelete);
+  AutoClonedRangeArray rangesToDelete(aRangeToDelete);
   Result<CaretPoint, nsresult> result = DeleteRangesWithTransaction(
       aDirectionAndAmount, aStripWrappers, rangesToDelete);
   NS_WARNING_ASSERTION(result.isOk(),
@@ -5136,7 +5192,7 @@ Result<CaretPoint, nsresult> EditorBase::DeleteRangeWithTransaction(
 Result<CaretPoint, nsresult> EditorBase::DeleteRangesWithTransaction(
     nsIEditor::EDirection aDirectionAndAmount,
     nsIEditor::EStripWrappers aStripWrappers,
-    const AutoRangeArray& aRangesToDelete) {
+    const AutoClonedRangeArray& aRangesToDelete) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!Destroyed());
   MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
@@ -5646,7 +5702,7 @@ Element* EditorBase::FindSelectionRoot(const nsINode& aNode) const {
 }
 
 void EditorBase::InitializeSelectionAncestorLimit(
-    nsIContent& aAncestorLimit) const {
+    Element& aAncestorLimit) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   SelectionRef().SetAncestorLimiter(&aAncestorLimit);
@@ -5656,7 +5712,7 @@ nsresult EditorBase::InitializeSelection(
     const nsINode& aOriginalEventTargetNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsCOMPtr<nsIContent> selectionRootContent =
+  const RefPtr<Element> selectionRootContent =
       FindSelectionRoot(aOriginalEventTargetNode);
   if (!selectionRootContent) {
     return NS_OK;
@@ -6359,7 +6415,7 @@ NS_IMETHODIMP EditorBase::SetNewlineHandling(int32_t aNewlineHandling) {
 bool EditorBase::IsSelectionRangeContainerNotContent() const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  // TODO: Make all callers use !AutoRangeArray::IsInContent() instead.
+  // TODO: Make all callers use !AutoClonedRangeArray::IsInContent() instead.
   const uint32_t rangeCount = SelectionRef().RangeCount();
   for (const uint32_t i : IntegerRange(rangeCount)) {
     MOZ_ASSERT(SelectionRef().RangeCount() == rangeCount);
@@ -6801,7 +6857,7 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent(
         return NS_ERROR_EDITOR_DESTROYED;
       }
 
-      AutoRangeArray rangesToDelete(editorBase->SelectionRef());
+      AutoClonedSelectionRangeArray rangesToDelete(editorBase->SelectionRef());
       if (!rangesToDelete.Ranges().IsEmpty()) {
         nsresult rv = MOZ_KnownLive(editorBase->AsHTMLEditor())
                           ->ComputeTargetRanges(aDeleteDirectionAndAmount,
@@ -7277,14 +7333,24 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
   MOZ_ASSERT(aTransferable);
   if (aDataTransfer) {
     MOZ_ASSERT(aDataTransfer->ClipboardType() == Some(aClipboardType));
-    nsresult rv = [aDataTransfer, aTransferable]() -> nsresult {
+    bool readFromClipboard = true;
+    nsresult rv = [aDataTransfer, aTransferable,
+                   &readFromClipboard]() -> nsresult {
       nsIClipboardDataSnapshot* snapshot =
           aDataTransfer->GetClipboardDataSnapshot();
       MOZ_ASSERT(snapshot);
       bool snapshotIsValid = false;
       snapshot->GetValid(&snapshotIsValid);
+      // By default, if we have a valid snapshot, we should only read from that
+      // and not fall back to the clipboard to avoid bypassing a BLOCK result
+      // from Content Analysis (bug 1936204). There are some exceptions which
+      // are dealt with later, however.
+      readFromClipboard = !snapshotIsValid;
       if (!snapshotIsValid) {
-        NS_WARNING("DataTransfer::GetClipboardDataSnapshot() is not valid");
+        NS_WARNING(
+            "DataTransfer::GetClipboardDataSnapshot() is not valid, falling "
+            "back "
+            "to clipboard");
         return NS_ERROR_FAILURE;
       }
       AutoTArray<nsCString, 10> transferableFlavors;
@@ -7297,8 +7363,12 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
       if (transferableFlavors.Length() == 1) {
         // avoid creating unneeded temporary transferables
         rv = snapshot->GetDataSync(aTransferable);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "nsIClipboardDataSnapshot::GetDataSync() failed");
+        if (NS_FAILED(rv)) {
+          NS_WARNING("nsIClipboardDataSnapshot::GetDataSync() failed");
+        }
+        // If this fails, it may be because the snapshot was invalid and we
+        // didn't detect it until now, so fall back to reading the clipboard.
+        readFromClipboard = rv == NS_ERROR_NOT_AVAILABLE;
         return rv;
       }
       AutoTArray<nsCString, 5> snapshotFlavors;
@@ -7321,6 +7391,10 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
           rv = snapshot->GetDataSync(singleTransferable);
           if (NS_FAILED(rv)) {
             NS_WARNING("nsIClipboardDataSnapshot::GetDataSync() failed");
+            // If this fails, it may be because the snapshot was invalid and we
+            // didn't detect it until now, so fall back to reading the
+            // clipboard.
+            readFromClipboard = rv == NS_ERROR_NOT_AVAILABLE;
             return rv;
           }
           nsCOMPtr<nsISupports> data;
@@ -7338,14 +7412,15 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
           return NS_OK;
         }
       }
-      // Couldn't find any data so return an error so we try the fallback.
-      return NS_ERROR_FAILURE;
-    }();
-    if (NS_SUCCEEDED(rv)) {
+      // The snapshot doesn't have any relevant data. Leave aTransferable empty
+      // but return NS_OK since the operation did succeed (there just isn't any
+      // data) and some tests expect this.
       return NS_OK;
+    }();
+    // If the operation failed, only fall back to the clipboard if indicated.
+    if (NS_SUCCEEDED(rv) || !readFromClipboard) {
+      return rv;
     }
-    // If this fails, the snapshot may have become invalidated. Fall back
-    // to getting data from the clipboard.
   }
 
   // Get Clipboard Service

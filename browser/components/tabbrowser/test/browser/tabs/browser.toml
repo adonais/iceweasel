@@ -97,6 +97,9 @@ tags = "vertical-tabs"
 
 ["browser_file_to_http_script_closable.js"]
 support-files = ["tab_that_closes.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug && msix", # Bug 1775640
+]
 
 ["browser_hiddentab_contextmenu.js"]
 tags = "vertical-tabs"
@@ -413,6 +416,9 @@ run-if = ["crashreporter"] # test requires crashreporter due to 1536221
 tags = "vertical-tabs"
 
 ["browser_scroll_size_determination.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && bits == 64 && debug", # Bug 1932653
+]
 
 ["browser_selectTabAtIndex.js"]
 tags = "vertical-tabs"
@@ -482,6 +488,7 @@ skip-if = [
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt", # Bug 1929417 (secondary)
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && vertical_tab", # Bug 1928146
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && vertical_tab", # Bug 1928146
+  "win11_2009 && debug", # Bug 1928146 - frequent leaked window
 ]
 tags = "vertical-tabs"
 
@@ -508,6 +515,10 @@ tags = "vertical-tabs"
 
 ["browser_tab_manager_keyboard_access.js"]
 tags = "vertical-tabs"
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && socketprocess_networking && opt", # Bug 1903733
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && vertical_tab && opt", # Bug 1903733
+  ]
 
 ["browser_tab_manger_synced_tabs.js"]
 tags = "vertical-tabs"

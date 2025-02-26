@@ -27,7 +27,7 @@
     <!-- Description for tabs add-on permission. -->
     <string name="mozac_feature_addons_permissions_tabs_description">የአሳሽ ትሮችን ይድረሱ</string>
     <!-- Description for unlimited_storage permission. -->
-    <string name="mozac_feature_addons_permissions_unlimited_storage_description">ያልተገደበ የተገልጋይ-ጎን ውሂብ ያከማቹ</string>
+    <string name="mozac_feature_addons_permissions_unlimited_storage_description" moz:removedIn="137" tools:ignore="UnusedResources">ያልተገደበ የተገልጋይ-ጎን ውሂብ ያከማቹ</string>
     <!-- Description for navigation permission. -->
     <string name="mozac_feature_addons_permissions_web_navigation_description">በአሰሳ ጊዜ የአሳሽ እንቅስቃሴን ይድረሱ</string>
     <!-- Description for bookmarks permission. -->
@@ -74,6 +74,8 @@
     <string name="mozac_feature_addons_permissions_trial_ml_description">የ AI ሞዴሎችን በመሣሪያዎ ላይ ያውርዱ እና ያሂዱ</string>
     <!-- Description for userScripts permission. -->
     <string name="mozac_feature_addons_permissions_user_scripts_description">ያልተረጋገጡ የሶስተኛ ወገን ስክሪፕቶች የእርስዎን ውሂብ እንዲደርሱበት ይፍቀዱ</string>
+    <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
+    <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">ያልተረጋገጡ ስክሪፕቶች የደህንነት እና የግላዊነት አደጋዎችን ሊያስከትሉ ይችላሉ። ስክሪፕቶችን ከቅጥያዎች ወይም ከምታምኗቸው ምንጮች ብቻ አሂድ።</string>
     <!-- Description for devtools permission. -->
     <string name="mozac_feature_addons_permissions_devtools_description">በክፍት ትሮች ውስጥ ውሂብዎን ለመድረስ የገንቢ መሳሪያዎችን ዘርጋ</string>
     <!-- The version on of add-on. -->

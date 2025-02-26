@@ -40,6 +40,7 @@ fail-if = ["os == 'android'"]
 fail-if = [
   "os == 'android'",
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
 ]
 
@@ -60,6 +61,7 @@ fail-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'",
   "os == 'linux' && os_version == '22.04' && processor == 'x86_64'",
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
 ]
 
@@ -68,18 +70,22 @@ fail-if = [
 ["ensure-exts/test_WEBGL_compressed_texture_astc.html"]
 fail-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
   "win10_2009",
   "win11_2009",
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'",
 ]
 
 ["ensure-exts/test_WEBGL_compressed_texture_etc.html"]
 fail-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
   "win10_2009",
   "win11_2009",
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'",
 ]
 
@@ -88,9 +94,11 @@ fail-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'",
   "os == 'linux' && os_version == '22.04' && processor == 'x86_64'",
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
   "win10_2009",
   "win11_2009",
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'",
 ]
 
@@ -100,9 +108,11 @@ fail-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'",
   "os == 'linux' && os_version == '22.04' && processor == 'x86_64'",
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
   "win10_2009",
   "win11_2009",
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'",
 ]
 
@@ -163,6 +173,7 @@ fail-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'",
   "os == 'linux' && os_version == '22.04' && processor == 'x86_64'",
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
 ]
 

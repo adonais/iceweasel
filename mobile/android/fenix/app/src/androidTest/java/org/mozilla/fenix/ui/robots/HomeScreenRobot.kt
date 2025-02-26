@@ -740,13 +740,13 @@ class HomeScreenRobot {
             return ThreeDotMenuMainRobot.Transition()
         }
 
-        fun openThreeDotMenuFromRedesignedToolbar(interact: RedesignedMainMenuRobot.() -> Unit): RedesignedMainMenuRobot.Transition {
+        fun openThreeDotMenuFromRedesignedToolbar(composeTestRule: ComposeTestRule, interact: ThreeDotMenuMainRobotCompose.() -> Unit): ThreeDotMenuMainRobotCompose.Transition {
             Log.i(TAG, "openThreeDotMenuFromRedesignedToolbar: Trying to click main menu button")
             itemWithDescription(getStringResource(R.string.content_description_menu)).click()
             Log.i(TAG, "openThreeDotMenuFromRedesignedToolbar: Clicked main menu button")
 
-            RedesignedMainMenuRobot().interact()
-            return RedesignedMainMenuRobot.Transition()
+            ThreeDotMenuMainRobotCompose(composeTestRule).interact()
+            return ThreeDotMenuMainRobotCompose.Transition(composeTestRule)
         }
 
         fun openSearch(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
@@ -1124,9 +1124,9 @@ fun homeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition
     return HomeScreenRobot.Transition()
 }
 
-fun homeScreenWithComposeTopSites(composeTestRule: HomeActivityComposeTestRule, interact: ComposeTopSitesRobot.() -> Unit): ComposeTopSitesRobot.Transition {
-    ComposeTopSitesRobot(composeTestRule).interact()
-    return ComposeTopSitesRobot.Transition(composeTestRule)
+fun homeScreenWithComposeTopSites(composeTestRule: HomeActivityComposeTestRule, interact: TopSitesRobotCompose.() -> Unit): TopSitesRobotCompose.Transition {
+    TopSitesRobotCompose(composeTestRule).interact()
+    return TopSitesRobotCompose.Transition(composeTestRule)
 }
 
 private fun homeScreenList() =

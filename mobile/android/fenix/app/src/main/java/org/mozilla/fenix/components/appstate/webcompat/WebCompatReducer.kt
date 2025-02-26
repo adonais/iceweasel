@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.appstate.webcompat
 
 import org.mozilla.fenix.components.appstate.AppAction.WebCompatAction
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 
 /**
  * Helper object which reduces [WebCompatAction].
@@ -25,6 +26,11 @@ internal object WebCompatReducer {
         )
 
         WebCompatAction.WebCompatStateReset -> state.copy(
+            webCompatState = null,
+        )
+
+        WebCompatAction.WebCompatReportSent -> state.copy(
+            snackbarState = SnackbarState.WebCompatReportSent,
             webCompatState = null,
         )
     }

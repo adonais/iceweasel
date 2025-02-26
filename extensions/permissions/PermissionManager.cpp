@@ -11,6 +11,7 @@
 #endif
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -36,8 +37,8 @@
 #include "nsContentUtils.h"
 #include "nsCRT.h"
 #include "nsDebug.h"
-#include "nsEffectiveTLDService.h"
 #include "nsIConsoleService.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsIUserIdleService.h"
 #include "nsIInputStream.h"
 #include "nsINavHistoryService.h"
@@ -68,8 +69,6 @@ constexpr char kPermissionChangeNotification[] = PERM_CHANGE_NOTIFICATION;
 // a default value.  These will never be written to the database, but may
 // be overridden with an explicit permission (including UNKNOWN_ACTION)
 constexpr int64_t cIDPermissionIsDefault = -1;
-
-static StaticRefPtr<PermissionManager> gPermissionManager;
 
 #define ENSURE_NOT_CHILD_PROCESS_(onError)                 \
   PR_BEGIN_MACRO                                           \
@@ -252,7 +251,8 @@ nsresult GetOriginFromPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
 nsresult GetSiteFromPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
                               nsACString& aSite) {
   nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
-  nsEffectiveTLDService* etld = nsEffectiveTLDService::GetInstance();
+  nsCOMPtr<nsIEffectiveTLDService> etld =
+      mozilla::components::EffectiveTLD::Service();
   NS_ENSURE_TRUE(etld, NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
   nsresult rv = etld->GetSite(uri, aSite);
@@ -323,8 +323,9 @@ nsresult GetPrincipal(nsIURI* aURI, nsIPrincipal** aPrincipal) {
 
 nsCString GetNextSubDomainForHost(const nsACString& aHost) {
   nsCString subDomain;
-  nsresult rv =
-      nsEffectiveTLDService::GetInstance()->GetNextSubDomain(aHost, subDomain);
+  nsCOMPtr<nsIEffectiveTLDService> etld =
+      mozilla::components::EffectiveTLD::Service();
+  nsresult rv = etld->GetNextSubDomain(aHost, subDomain);
   // We can fail if there is no more subdomain or if the host can't have a
   // subdomain.
   if (NS_FAILED(rv)) {
@@ -418,8 +419,9 @@ nsresult UpgradeHostToOriginAndInsert(
 
     // Get the eTLD+1 of the domain
     nsAutoCString eTLD1;
-    rv = nsEffectiveTLDService::GetInstance()->GetBaseDomainFromHost(aHost, 0,
-                                                                     eTLD1);
+    nsCOMPtr<nsIEffectiveTLDService> etld =
+        mozilla::components::EffectiveTLD::Service();
+    rv = etld->GetBaseDomainFromHost(aHost, 0, eTLD1);
 
     if (NS_FAILED(rv)) {
       // If the lookup on the tldService for the base domain for the host
@@ -712,42 +714,38 @@ PermissionManager::~PermissionManager() {
 
 /* static */
 StaticMutex PermissionManager::sCreationMutex;
+StaticRefPtr<PermissionManager> PermissionManager::sInstanceHolder;
+bool PermissionManager::sInstanceDead(false);
 
 // static
 already_AddRefed<nsIPermissionManager> PermissionManager::GetXPCOMSingleton() {
-  // The lazy initialization could race.
-  StaticMutexAutoLock lock(sCreationMutex);
-
-  if (gPermissionManager) {
-    return do_AddRef(gPermissionManager);
-  }
-
-  // Create a new singleton PermissionManager.
-  // We AddRef only once since XPCOM has rules about the ordering of module
-  // teardowns - by the time our module destructor is called, it's too late to
-  // Release our members, since GC cycles have already been completed and
-  // would result in serious leaks.
-  // See bug 209571.
-  auto permManager = MakeRefPtr<PermissionManager>();
-  if (NS_SUCCEEDED(permManager->Init())) {
-    gPermissionManager = permManager.get();
-    return permManager.forget();
-  }
-
-  return nullptr;
+  return GetInstance();
 }
 
 // static
-PermissionManager* PermissionManager::GetInstance() {
-  // TODO: There is a minimal chance that we can race here with a
-  // GetXPCOMSingleton call that did not yet set gPermissionManager.
-  // See bug 1745056.
-  if (!gPermissionManager) {
-    // Hand off the creation of the permission manager to GetXPCOMSingleton.
-    nsCOMPtr<nsIPermissionManager> permManager = GetXPCOMSingleton();
+already_AddRefed<PermissionManager> PermissionManager::GetInstance() {
+  // The lazy initialization could race.
+  StaticMutexAutoLock lock(sCreationMutex);
+
+  if (sInstanceDead) {
+    return nullptr;
   }
 
-  return gPermissionManager;
+  if (sInstanceHolder) {
+    RefPtr<PermissionManager> ret(sInstanceHolder);
+    return ret.forget();
+  }
+
+  auto permManager = MakeRefPtr<PermissionManager>();
+  if (NS_SUCCEEDED(permManager->Init())) {
+    // Note that this does an extra AddRef on purpose to keep us alive
+    // until shutdown.
+    sInstanceHolder = permManager.get();
+    return permManager.forget();
+  }
+
+  sInstanceDead = true;
+  return nullptr;
 }
 
 nsresult PermissionManager::Init() {
@@ -777,14 +775,13 @@ nsresult PermissionManager::Init() {
 
     // We use ClearOnShutdown on the content process only because on the parent
     // process we need to block the shutdown for the final closeDB() call.
-    ClearOnShutdown(&gPermissionManager);
+    ClearOnShutdown(&sInstanceHolder);
     return NS_OK;
   }
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
     observerService->AddObserver(this, "profile-do-change", true);
-    observerService->AddObserver(this, "profile-after-change", true);
     observerService->AddObserver(this, "testonly-reload-permissions-from-disk",
                                  true);
   }
@@ -1340,6 +1337,8 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
             id = idStmt->AsInt32(0) + 1;
           }
 
+          nsCOMPtr<nsIEffectiveTLDService> etld =
+              mozilla::components::EffectiveTLD::Service();
           while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
             MigrationEntry entry;
 
@@ -1350,8 +1349,7 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
             }
 
             nsAutoCString eTLD1;
-            rv = nsEffectiveTLDService::GetInstance()->GetBaseDomainFromHost(
-                entry.mHost, 0, eTLD1);
+            rv = etld->GetBaseDomainFromHost(entry.mHost, 0, eTLD1);
             if (NS_SUCCEEDED(rv)) {
               // We only care about entries which the tldService can't
               // handle
@@ -1464,6 +1462,8 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
 
         nsTHashSet<nsCStringHashKey> deduplicationSet;
         bool hasResult;
+        nsCOMPtr<nsIEffectiveTLDService> etld =
+            mozilla::components::EffectiveTLD::Service();
         while (NS_SUCCEEDED(selectStmt->ExecuteStep(&hasResult)) && hasResult) {
           int64_t id;
           rv = selectStmt->GetInt64(0, &id);
@@ -1483,7 +1483,7 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
             continue;
           }
           nsCString site;
-          rv = nsEffectiveTLDService::GetInstance()->GetSite(uri, site);
+          rv = etld->GetSite(uri, site);
           if (NS_WARN_IF(NS_FAILED(rv))) {
             continue;
           }
@@ -1715,7 +1715,6 @@ PermissionManager::AddDefaultFromPrincipal(nsIPrincipal* aPrincipal,
                                            const nsACString& aType,
                                            uint32_t aPermission) {
   ENSURE_NOT_CHILD_PROCESS;
-  MOZ_ASSERT(mState == eReady);
 
   bool isValidPermissionPrincipal = false;
   nsresult rv = ShouldHandlePrincipalForPermission(aPrincipal,
@@ -2382,9 +2381,9 @@ void PermissionManager::CloseDB(CloseDBNextOp aNextOp) {
         }
 
         if (aNextOp == eShutdown) {
-          NS_DispatchToMainThread(NS_NewRunnableFunction(
-              "PermissionManager::MaybeCompleteShutdown",
-              [self] { self->MaybeCompleteShutdown(); }));
+          NS_DispatchToMainThread(
+              NS_NewRunnableFunction("PermissionManager::FinishAsyncShutdown",
+                                     [self] { self->FinishAsyncShutdown(); }));
         }
       }));
 }
@@ -2803,8 +2802,6 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
     // profile startup is complete, and we didn't have the permissions file
     // before; init the db from the new location
     InitDB(false);
-  } else if (!nsCRT::strcmp(aTopic, "profile-after-change")) {
-    InitRemotePermissionService();
   } else if (!nsCRT::strcmp(aTopic, "testonly-reload-permissions-from-disk")) {
     // Testing mechanism to reload all permissions from disk. Because the
     // permission manager automatically initializes itself at startup, tests
@@ -2816,7 +2813,6 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
     RemoveAllFromMemory();
     CloseDB(eNone);
     InitDB(false);
-    InitRemotePermissionService();
   } else if (!nsCRT::strcmp(aTopic, OBSERVER_TOPIC_IDLE_DAILY)) {
     PerformIdleDailyMaintenance();
   }
@@ -3263,33 +3259,6 @@ void PermissionManager::CompleteRead() {
   }
 }
 
-void PermissionManager::InitRemotePermissionService() {
-  // Check if this service is disabled by pref, and abort if it is.
-  if (!StaticPrefs::permissions_manager_remote_enabled()) {
-    return;
-  }
-
-  // Also abort if we are in a background task. We do not want to call remote
-  // settings there, because we do not want to pollute the background task
-  // profile, and because we don't need the remote permissions there anyways.
-#ifdef MOZ_BACKGROUNDTASKS
-  if (BackgroundTasks::IsBackgroundTaskMode()) {
-    return;
-  }
-#endif
-
-  NS_DispatchToCurrentThreadQueue(
-      NS_NewRunnableFunction(
-          "RemotePermissionService::Init",
-          [&] {
-            nsCOMPtr<nsIRemotePermissionService> remotePermissionService =
-                do_GetService(NS_REMOTEPERMISSIONSERVICE_CONTRACTID);
-            NS_ENSURE_TRUE_VOID(remotePermissionService);
-            remotePermissionService->Init();
-          }),
-      EventQueuePriority::Idle);
-}
-
 void PermissionManager::MaybeAddReadEntryFromMigration(
     const nsACString& aOrigin, const nsCString& aType, uint32_t aPermission,
     uint32_t aExpireType, int64_t aExpireTime, int64_t aModificationTime,
@@ -3565,7 +3534,9 @@ nsresult PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
     nsresult rv = NS_NewURI(getter_AddRefs(uri), aKey);
     if (!NS_WARN_IF(NS_FAILED(rv))) {
       nsCString site;
-      rv = nsEffectiveTLDService::GetInstance()->GetSite(uri, site);
+      nsCOMPtr<nsIEffectiveTLDService> etld =
+          mozilla::components::EffectiveTLD::Service();
+      rv = etld->GetSite(uri, site);
       if (!NS_WARN_IF(NS_FAILED(rv))) {
         aKey = site;
       }
@@ -4082,7 +4053,7 @@ nsresult PermissionManager::TestPermissionWithoutDefaultsFromPrincipal(
                               true);
 }
 
-void PermissionManager::MaybeCompleteShutdown() {
+void PermissionManager::FinishAsyncShutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIAsyncShutdownClient> asc = GetAsyncShutdownBarrier();
@@ -4090,6 +4061,13 @@ void PermissionManager::MaybeCompleteShutdown() {
 
   DebugOnly<nsresult> rv = asc->RemoveBlocker(this);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  // Now we can safely release our holder.
+  StaticMutexAutoLock lock(sCreationMutex);
+  MOZ_ASSERT(sInstanceDead);
+  if (sInstanceHolder) {
+    sInstanceHolder = nullptr;
+  }
 }
 
 // Async shutdown blocker methods
@@ -4101,11 +4079,15 @@ NS_IMETHODIMP PermissionManager::GetName(nsAString& aName) {
 
 NS_IMETHODIMP PermissionManager::BlockShutdown(
     nsIAsyncShutdownClient* aClient) {
+  {
+    // From now on we do not allow to capture new references to our singleton.
+    StaticMutexAutoLock lock(sCreationMutex);
+    sInstanceDead = true;
+  }
   RemoveIdleDailyMaintenanceJob();
   RemoveAllFromMemory();
+  // CloseDB does async work and will call FinishAsyncShutdown once done.
   CloseDB(eShutdown);
-
-  gPermissionManager = nullptr;
   return NS_OK;
 }
 

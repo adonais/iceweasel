@@ -388,7 +388,7 @@ customElements.define(
     }
 
     #createPrivateBrowsingCheckbox() {
-      const { onPrivateBrowsingAllowedChanged, grantPrivateBrowsingAllowed } =
+      const { grantPrivateBrowsingAllowed } =
         this.notification.options.customElementOptions;
 
       const doc = this.ownerDocument;
@@ -396,6 +396,12 @@ customElements.define(
       let checkboxEl = doc.createXULElement("checkbox");
       checkboxEl.checked = grantPrivateBrowsingAllowed;
       checkboxEl.addEventListener("CheckboxStateChange", () => {
+        // NOTE: the popupnotification instances will be reused
+        // and so the callback function is destructured here to
+        // avoid this custom element to prevent it from being
+        // garbage collected.
+        const { onPrivateBrowsingAllowedChanged } =
+          this.notification.options.customElementOptions;
         onPrivateBrowsingAllowedChanged?.(checkboxEl.checked);
       });
       doc.l10n.setAttributes(
@@ -995,11 +1001,9 @@ var gXPInstallObserver = {
 
         options.removeOnDismissal = true;
         options.persistent = false;
-
-        let secHistogram = Services.telemetry.getHistogramById("SECURITY_UI");
-        secHistogram.add(
-          Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED
-        );
+        Services.telemetry
+          .getHistogramById("SECURITY_UI")
+          .add(Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED);
         let popup = PopupNotifications.show(
           browser,
           aTopic,
@@ -1090,11 +1094,9 @@ var gXPInstallObserver = {
           let learnMore = doc.getElementById("addon-install-blocked-info");
           learnMore.setAttribute("support-page", article);
         };
-
-        let secHistogram = Services.telemetry.getHistogramById("SECURITY_UI");
-        secHistogram.add(
-          Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED
-        );
+        Services.telemetry
+          .getHistogramById("SECURITY_UI")
+          .add(Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED);
 
         const [
           installMsg,
@@ -1109,10 +1111,12 @@ var gXPInstallObserver = {
         ]);
 
         const action = buildNotificationAction(installMsg, () => {
-          secHistogram.add(
-            Ci.nsISecurityUITelemetry
-              .WARNING_ADDON_ASKING_PREVENTED_CLICK_THROUGH
-          );
+          Services.telemetry
+            .getHistogramById("SECURITY_UI")
+            .add(
+              Ci.nsISecurityUITelemetry
+                .WARNING_ADDON_ASKING_PREVENTED_CLICK_THROUGH
+            );
           installInfo.install();
         });
 

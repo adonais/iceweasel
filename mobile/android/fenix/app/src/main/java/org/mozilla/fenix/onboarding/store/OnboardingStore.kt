@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.onboarding.store
 
+import androidx.appcompat.app.AppCompatDelegate
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
@@ -115,7 +116,7 @@ private fun reducer(
                     OnboardingAddonStatus.INSTALLED, OnboardingAddonStatus.NOT_INSTALLED -> false
                     OnboardingAddonStatus.INSTALLING -> true
                 }
-                OnboardingState(
+                state.copy(
                     addOns = mutableAddonsList,
                     addOnInstallationInProcess = installing,
                 )
@@ -132,7 +133,30 @@ private fun reducer(
             toolbarOptionSelected = action.selected,
         )
 
-        is OnboardingAction.OnboardingThemeAction.UpdateSelected -> state.copy(
-            themeOptionSelected = action.selected,
-        )
+        is OnboardingAction.OnboardingThemeAction.UpdateSelected -> {
+            state.copy(themeOptionSelected = action.selected)
+        }
     }
+
+/**
+ * Applies the selected theme to the application if different to the current theme.
+ *
+ * This function uses [AppCompatDelegate] to change the application's theme
+ * based on the user's selection. It supports the following themes:
+ *
+ * - Dark Theme: Forces the application into dark mode.
+ * - Light Theme: Forces the application into light mode.
+ * - System Theme: Adapts to the device's current system theme.
+ *
+ * @param selectedTheme The [ThemeOptionType] selected by the user.
+ * This determines which theme to apply.
+ */
+fun applyThemeIfRequired(selectedTheme: ThemeOptionType) {
+    AppCompatDelegate.setDefaultNightMode(
+        when (selectedTheme) {
+            ThemeOptionType.THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
+            ThemeOptionType.THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            ThemeOptionType.THEME_SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        },
+    )
+}

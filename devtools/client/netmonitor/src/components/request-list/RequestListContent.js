@@ -26,6 +26,7 @@ const {
   getColumns,
   getSelectedRequest,
   getClickedRequest,
+  getWaterfallScale,
 } = require("resource://devtools/client/netmonitor/src/selectors/index.js");
 
 loader.lazyRequireGetter(
@@ -76,6 +77,8 @@ class RequestListContent extends Component {
       networkDetailsOpen: PropTypes.bool.isRequired,
       networkDetailsWidth: PropTypes.number,
       networkDetailsHeight: PropTypes.number,
+      waterfallScale: PropTypes.number,
+      slowLimit: PropTypes.number,
       cloneRequest: PropTypes.func.isRequired,
       clickedRequest: PropTypes.object,
       openDetailsPanelTab: PropTypes.func.isRequired,
@@ -185,9 +188,11 @@ class RequestListContent extends Component {
     // Wait for the next animation frame to measure the parentNode dimensions.
     // Bug 1900682.
     requestAnimationFrame(() => {
-      const parent = this.refs.scrollEl.parentNode;
-      this.refs.scrollEl.style.width = parent.offsetWidth + "px";
-      this.refs.scrollEl.style.height = parent.offsetHeight + "px";
+      if (document.visibilityState == "visible") {
+        const parent = this.refs.scrollEl.parentNode;
+        this.refs.scrollEl.style.width = parent.offsetWidth + "px";
+        this.refs.scrollEl.style.height = parent.offsetHeight + "px";
+      }
     });
   }
 
@@ -381,7 +386,16 @@ class RequestListContent extends Component {
       });
     }
 
-    this.contextMenu.open(evt, clickedRequest, displayedRequests, blockedUrls);
+    const filteredBlockedUrls = blockedUrls
+      .map(({ enabled, url }) => (enabled ? url : null))
+      .filter(Boolean);
+
+    this.contextMenu.open(
+      evt,
+      clickedRequest,
+      displayedRequests,
+      filteredBlockedUrls
+    );
   }
 
   render() {
@@ -400,6 +414,8 @@ class RequestListContent extends Component {
       openRequestBlockingAndDisableUrls,
       networkActionOpen,
       networkDetailsOpen,
+      slowLimit,
+      waterfallScale,
     } = this.props;
 
     return div(
@@ -449,6 +465,8 @@ class RequestListContent extends Component {
                 requestFilterTypes,
                 openRequestBlockingAndAddUrl,
                 openRequestBlockingAndDisableUrls,
+                slowLimit,
+                waterfallScale,
               });
             })
           )
@@ -464,14 +482,14 @@ class RequestListContent extends Component {
 
 module.exports = connect(
   state => ({
-    blockedUrls: state.requestBlocking.blockedUrls
-      .map(({ enabled, url }) => (enabled ? url : null))
-      .filter(Boolean),
+    blockedUrls: state.requestBlocking.blockedUrls,
     columns: getColumns(state),
     networkActionOpen: state.ui.networkActionOpen,
     networkDetailsOpen: state.ui.networkDetailsOpen,
     networkDetailsWidth: state.ui.networkDetailsWidth,
     networkDetailsHeight: state.ui.networkDetailsHeight,
+    waterfallScale: getWaterfallScale(state),
+    slowLimit: state.ui.slowLimit,
     clickedRequest: getClickedRequest(state),
     displayedRequests: getDisplayedRequests(state),
     firstRequestStartedMs: state.requests.firstStartedMs,

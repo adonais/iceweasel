@@ -16,19 +16,19 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * A feature for exposure suggestions.
  */
 export class ExposureSuggestions extends SuggestProvider {
-  get shouldEnable() {
-    return !!this.exposureSuggestionTypes.size;
-  }
-
   get enablingPreferences() {
     return ["quicksuggest.exposureSuggestionTypes"];
   }
 
-  get rustSuggestionTypes() {
-    return ["Exposure"];
+  get additionalEnablingPredicate() {
+    return !!this.exposureSuggestionTypes.size;
   }
 
-  getRustProviderConstraints() {
+  get rustSuggestionType() {
+    return "Exposure";
+  }
+
+  get rustProviderConstraints() {
     return {
       exposureSuggestionTypes: [...this.exposureSuggestionTypes],
     };

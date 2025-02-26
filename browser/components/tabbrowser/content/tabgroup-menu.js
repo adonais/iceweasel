@@ -7,6 +7,10 @@
 // This is loaded into chrome windows with the subscript loader. Wrap in
 // a block to prevent accidentally leaking globals onto `window`.
 {
+  const { TabStateFlusher } = ChromeUtils.importESModule(
+    "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
+  );
+
   class MozTabbrowserTabGroupMenu extends MozXULElement {
     static COLORS = [
       "blue",
@@ -24,19 +28,19 @@
         type="arrow"
         class="panel tab-group-editor-panel"
         orient="vertical"
-        role="menu"
+        role="dialog"
+        ignorekeys="true"
         norolluponanchor="true">
       <html:div class="panel-header">
-        <html:h1 class="tab-group-create-mode-only" data-l10n-id="tab-group-editor-title-create"></html:h1>
-        <html:h1 class="tab-group-edit-mode-only" data-l10n-id="tab-group-editor-title-edit"></html:h1>
+        <html:h1 id="tab-group-editor-title-create" class="tab-group-create-mode-only" data-l10n-id="tab-group-editor-title-create"></html:h1>
+        <html:h1 id="tab-group-editor-title-edit" class="tab-group-edit-mode-only" data-l10n-id="tab-group-editor-title-edit"></html:h1>
       </html:div>
       <toolbarseparator />
       <html:div class="panel-body tab-group-editor-name">
         <html:label for="tab-group-name" data-l10n-id="tab-group-editor-name-label"></html:label>
         <html:input id="tab-group-name" type="text" name="tab-group-name" value="" data-l10n-id="tab-group-editor-name-field" />
       </html:div>
-      <html:div class="panel-body tab-group-editor-swatches">
-      </html:div>
+      <html:div class="panel-body tab-group-editor-swatches" role="radiogroup" data-l10n-id="tab-group-editor-color-selector"/>
       <html:moz-button-group class="panel-body tab-group-create-actions tab-group-create-mode-only">
         <html:moz-button id="tab-group-editor-button-cancel" data-l10n-id="tab-group-editor-cancel"></html:moz-button>
         <html:moz-button type="primary" id="tab-group-editor-button-create" data-l10n-id="tab-group-editor-done"></html:moz-button>
@@ -94,11 +98,11 @@
       this.#populateSwatches();
 
       this.#cancelButton.addEventListener("click", () => {
-        this.close();
+        this.close(false);
       });
 
       this.#createButton.addEventListener("click", () => {
-        this.close(true);
+        this.close();
       });
 
       this.#nameField.addEventListener("input", () => {
@@ -151,9 +155,12 @@
         input.type = "radio";
         input.name = "tab-group-color";
         input.value = colorCode;
-        input.title = colorCode;
         let label = document.createElement("label");
         label.classList.add("tab-group-editor-swatch");
+        label.setAttribute(
+          "data-l10n-id",
+          `tab-group-editor-color-selector2-${colorCode}`
+        );
         label.htmlFor = input.id;
         label.style.setProperty(
           "--tabgroup-swatch-color",
@@ -177,9 +184,18 @@
       return this.#createMode;
     }
 
-    set createMode(mode) {
-      this.#panel.classList.toggle("tab-group-editor-mode-create", mode);
-      this.#createMode = mode;
+    set createMode(enableCreateMode) {
+      this.#panel.classList.toggle(
+        "tab-group-editor-mode-create",
+        enableCreateMode
+      );
+      this.#panel.setAttribute(
+        "aria-labelledby",
+        enableCreateMode
+          ? "tab-group-editor-title-create"
+          : "tab-group-editor-title-edit"
+      );
+      this.#createMode = enableCreateMode;
     }
 
     get activeGroup() {
@@ -245,9 +261,21 @@
       });
       document.getElementById("tabGroupEditor_moveGroupToNewWindow").disabled =
         gBrowser.openTabs.length == this.activeGroup?.tabs.length;
+      this.#maybeDisableSaveButton();
     }
 
-    close(keepNewlyCreatedGroup = false) {
+    #maybeDisableSaveButton() {
+      let flushes = [];
+      this.activeGroup.tabs.forEach(tab => {
+        flushes.push(TabStateFlusher.flush(tab.linkedBrowser));
+      });
+      Promise.allSettled(flushes).then(() => {
+        document.getElementById("tabGroupEditor_saveAndCloseGroup").disabled =
+          !SessionStore.shouldSaveTabGroup(this.activeGroup);
+      });
+    }
+
+    close(keepNewlyCreatedGroup = true) {
       if (this.createMode) {
         this.#keepNewlyCreatedGroup = keepNewlyCreatedGroup;
       }
@@ -256,21 +284,37 @@
 
     on_popupshown() {
       if (this.createMode) {
-        this.#keepNewlyCreatedGroup = false;
+        this.#keepNewlyCreatedGroup = true;
       }
       this.#nameField.focus();
     }
 
     on_popuphidden() {
-      if (this.createMode && !this.#keepNewlyCreatedGroup) {
-        this.activeGroup.ungroupTabs();
+      if (this.createMode) {
+        if (this.#keepNewlyCreatedGroup) {
+          this.dispatchEvent(
+            new CustomEvent("TabGroupCreateDone", { bubbles: true })
+          );
+        } else {
+          this.activeGroup.ungroupTabs();
+        }
       }
       this.activeGroup = null;
     }
 
     on_keypress(event) {
-      if (event.keyCode == KeyEvent.DOM_VK_RETURN) {
-        this.close(true);
+      if (event.defaultPrevented) {
+        // The event has already been consumed inside of the panel.
+        return;
+      }
+
+      switch (event.keyCode) {
+        case KeyEvent.DOM_VK_ESCAPE:
+          this.close(false);
+          break;
+        case KeyEvent.DOM_VK_RETURN:
+          this.close();
+          break;
       }
     }
 
@@ -303,6 +347,9 @@
 
     #handleSaveAndClose() {
       this.activeGroup.save();
+      this.activeGroup.dispatchEvent(
+        new CustomEvent("TabGroupSaved", { bubbles: true })
+      );
       gBrowser.removeTabGroup(this.activeGroup);
     }
 

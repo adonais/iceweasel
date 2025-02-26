@@ -159,6 +159,7 @@ template class TrackedAllocPolicy<TrackingKind::Cell>;
 JS::Zone::Zone(JSRuntime* rt, Kind kind)
     : ZoneAllocator(rt, kind),
       arenas(this),
+      bufferAllocator(this),
       data(nullptr),
       suppressAllocationMetadataBuilder(false),
       allocNurseryObjects_(true),
@@ -370,14 +371,14 @@ void Zone::checkStringWrappersAfterMovingGC() {
 }
 #endif
 
-void Zone::discardJitCode(JS::GCContext* gcx, const DiscardOptions& options) {
+void Zone::maybeDiscardJitCode(JS::GCContext* gcx) {
   if (!isPreservingCode()) {
-    forceDiscardJitCode(gcx, options);
+    forceDiscardJitCode(gcx);
   }
 }
 
 void Zone::forceDiscardJitCode(JS::GCContext* gcx,
-                               const DiscardOptions& options) {
+                               const JitDiscardOptions& options) {
   if (!jitZone()) {
     return;
   }
@@ -431,7 +432,8 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
           script->maybeReleaseJitScript(gcx);
           jitScript = script->maybeJitScript();
           if (!jitScript) {
-            // Try to discard the ScriptCounts too.
+            // If we successfully discarded the JIT script, try to discard the
+            // ScriptCounts too.
             if (!script->realm()->collectCoverageForDebug() &&
                 !gcx->runtime()->profilingScripts) {
               script->destroyScriptCounts();
@@ -454,11 +456,6 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
         // Reset the active flag of each ICScript.
         jitScript->resetAllActiveFlags();
-
-        // Optionally trace weak edges in remaining JitScripts.
-        if (options.traceWeakJitScripts) {
-          jitScript->traceWeak(options.traceWeakJitScripts);
-        }
       });
 
   // Also clear references to jit code from RegExpShared cells at this point.

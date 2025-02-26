@@ -73,6 +73,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
 #include "mozilla/Try.h"
 #include "mozilla/widget/IMEData.h"
@@ -2119,13 +2120,14 @@ void nsFocusManager::AdjustWindowFocus(
 }
 
 bool nsFocusManager::IsWindowVisible(nsPIDOMWindowOuter* aWindow) {
-  if (!aWindow || aWindow->IsFrozen()) {
+  if (!aWindow || nsGlobalWindowOuter::Cast(aWindow)->IsFrozen()) {
     return false;
   }
 
   // Check if the inner window is frozen as well. This can happen when a focus
   // change occurs while restoring a previous page.
-  nsPIDOMWindowInner* innerWindow = aWindow->GetCurrentInnerWindow();
+  auto* innerWindow =
+      nsGlobalWindowInner::Cast(aWindow->GetCurrentInnerWindow());
   if (!innerWindow || innerWindow->IsFrozen()) {
     return false;
   }
@@ -3125,7 +3127,7 @@ void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
     return;  // Never browse with caret in chrome
   }
 
-  bool browseWithCaret = Preferences::GetBool("accessibility.browsewithcaret");
+  bool browseWithCaret = StaticPrefs::accessibility_browsewithcaret();
 
   const RefPtr<PresShell> presShell = focusedDocShell->GetPresShell();
   if (!presShell) {

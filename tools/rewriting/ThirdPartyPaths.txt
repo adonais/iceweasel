@@ -1,4 +1,3 @@
-browser/components/newtab/vendor/
 browser/components/pocket/content/panels/css/normalize.scss
 browser/components/pocket/content/panels/js/vendor/
 browser/components/storybook/node_modules/
@@ -31,7 +30,6 @@ dom/media/gmp/rlz/
 dom/media/gmp/widevine-adapter/content_decryption_module_export.h
 dom/media/gmp/widevine-adapter/content_decryption_module_ext.h
 dom/media/gmp/widevine-adapter/content_decryption_module.h
-dom/media/gmp/widevine-adapter/content_decryption_module_proxy.h
 dom/media/platforms/ffmpeg/ffmpeg57/
 dom/media/platforms/ffmpeg/ffmpeg58/
 dom/media/platforms/ffmpeg/ffmpeg59/
@@ -109,6 +107,7 @@ js/src/vtune/ittnotify_types.h
 js/src/vtune/jitprofiling.c
 js/src/vtune/jitprofiling.h
 js/src/vtune/legacy/
+js/src/xsum/
 js/src/zydis/
 layout/docs/css-gap-decorations/
 media/ffvpx/
@@ -196,6 +195,7 @@ toolkit/components/url-classifier/chromium/
 toolkit/components/utils/mozjexl.sys.mjs
 toolkit/components/viaduct/fetch_msg_types.pb.cc
 toolkit/components/viaduct/fetch_msg_types.pb.h
+toolkit/content/vendor/react/
 toolkit/content/widgets/vendor/lit.all.mjs
 toolkit/crashreporter/breakpad-client/
 toolkit/crashreporter/google-breakpad/

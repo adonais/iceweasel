@@ -94,8 +94,8 @@ void LIRGenerator::visitUnbox(MUnbox* unbox) {
   ensureDefined(inner);
 
   if (IsFloatingPointType(unbox->type())) {
-    LUnboxFloatingPoint* lir =
-        new (alloc()) LUnboxFloatingPoint(useBox(inner), unbox->type());
+    MOZ_ASSERT(unbox->type() == MIRType::Double);
+    auto* lir = new (alloc()) LUnboxFloatingPoint(useBox(inner));
     if (unbox->fallible()) {
       assignSnapshot(lir, unbox->bailoutKind());
     }
@@ -215,10 +215,10 @@ void LIRGeneratorARM::lowerForMulInt64(LMulI64* ins, MMul* mir,
     }
   }
 
-  ins->setInt64Operand(0, useInt64RegisterAtStart(lhs));
-  ins->setInt64Operand(INT64_PIECES, useInt64OrConstant(rhs));
+  ins->setLhs(useInt64RegisterAtStart(lhs));
+  ins->setRhs(useInt64OrConstant(rhs));
   if (needsTemp) {
-    ins->setTemp(0, temp());
+    ins->setTemp0(temp());
   }
 
   defineInt64ReuseInput(ins, mir, 0);
@@ -289,25 +289,31 @@ void LIRGeneratorARM::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
   define(ins, mir);
 }
 
-template <size_t Temps>
-void LIRGeneratorARM::lowerForShiftInt64(
-    LInstructionHelper<INT64_PIECES, INT64_PIECES + 1, Temps>* ins,
-    MDefinition* mir, MDefinition* lhs, MDefinition* rhs) {
-  if (mir->isRotate() && !rhs->isConstant()) {
-    ins->setTemp(0, temp());
+template <class LInstr>
+void LIRGeneratorARM::lowerForShiftInt64(LInstr* ins, MDefinition* mir,
+                                         MDefinition* lhs, MDefinition* rhs) {
+  if constexpr (std::is_same_v<LInstr, LShiftI64>) {
+    ins->setLhs(useInt64RegisterAtStart(lhs));
+    ins->setRhs(useRegisterOrConstant(rhs));
+    defineInt64ReuseInput(ins, mir, LShiftI64::LhsIndex);
+  } else {
+    ins->setInput(useInt64RegisterAtStart(lhs));
+    ins->setCount(useRegisterOrConstant(rhs));
+    if (!rhs->isConstant()) {
+      ins->setTemp0(temp());
+    }
+    defineInt64ReuseInput(ins, mir, LRotateI64::InputIndex);
   }
-
-  ins->setInt64Operand(0, useInt64RegisterAtStart(lhs));
-  ins->setOperand(INT64_PIECES, useRegisterOrConstant(rhs));
-  defineInt64ReuseInput(ins, mir, 0);
 }
 
-template void LIRGeneratorARM::lowerForShiftInt64(
-    LInstructionHelper<INT64_PIECES, INT64_PIECES + 1, 0>* ins,
-    MDefinition* mir, MDefinition* lhs, MDefinition* rhs);
-template void LIRGeneratorARM::lowerForShiftInt64(
-    LInstructionHelper<INT64_PIECES, INT64_PIECES + 1, 1>* ins,
-    MDefinition* mir, MDefinition* lhs, MDefinition* rhs);
+template void LIRGeneratorARM::lowerForShiftInt64(LShiftI64* ins,
+                                                  MDefinition* mir,
+                                                  MDefinition* lhs,
+                                                  MDefinition* rhs);
+template void LIRGeneratorARM::lowerForShiftInt64(LRotateI64* ins,
+                                                  MDefinition* mir,
+                                                  MDefinition* lhs,
+                                                  MDefinition* rhs);
 
 void LIRGeneratorARM::lowerDivI(MDiv* div) {
   if (div->isUnsigned()) {
@@ -503,14 +509,13 @@ void LIRGeneratorARM::lowerWasmSelectI64(MWasmSelect* select) {
 }
 
 LTableSwitch* LIRGeneratorARM::newLTableSwitch(const LAllocation& in,
-                                               const LDefinition& inputCopy,
-                                               MTableSwitch* tableswitch) {
-  return new (alloc()) LTableSwitch(in, inputCopy, tableswitch);
+                                               const LDefinition& inputCopy) {
+  return new (alloc()) LTableSwitch(in, inputCopy, LDefinition::BogusTemp());
 }
 
-LTableSwitchV* LIRGeneratorARM::newLTableSwitchV(MTableSwitch* tableswitch) {
-  return new (alloc()) LTableSwitchV(useBox(tableswitch->getOperand(0)), temp(),
-                                     tempDouble(), tableswitch);
+LTableSwitchV* LIRGeneratorARM::newLTableSwitchV(const LBoxAllocation& in) {
+  return new (alloc())
+      LTableSwitchV(in, temp(), tempDouble(), LDefinition::BogusTemp());
 }
 
 void LIRGeneratorARM::lowerUrshD(MUrsh* mir) {
@@ -681,22 +686,28 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   LAllocation ptr = useRegisterAtStart(base);
 
   if (ins->type() == MIRType::Int64) {
-    auto* lir = new (alloc()) LWasmLoadI64(ptr, memoryBase);
+    LDefinition ptrCopy = LDefinition::BogusTemp();
     if (ins->access().offset32() || ins->access().type() == Scalar::Int64) {
-      lir->setTemp(0, tempCopy(base, 0));
+      ptrCopy = tempCopy(base, 0);
     }
+
+    LDefinition memoryBaseCopy = LDefinition::BogusTemp();
     if (ins->hasMemoryBase()) {
-      lir->setTemp(1, tempCopy(ins->memoryBase(), 1));
+      memoryBaseCopy = tempCopy(ins->memoryBase(), 1);
     }
+
+    auto* lir =
+        new (alloc()) LWasmLoadI64(ptr, memoryBase, ptrCopy, memoryBaseCopy);
     defineInt64(lir, ins);
     return;
   }
 
-  auto* lir = new (alloc()) LWasmLoad(ptr, memoryBase);
+  LDefinition ptrCopy = LDefinition::BogusTemp();
   if (ins->access().offset32()) {
-    lir->setTemp(0, tempCopy(base, 0));
+    ptrCopy = tempCopy(base, 0);
   }
 
+  auto* lir = new (alloc()) LWasmLoad(ptr, memoryBase, ptrCopy);
   define(lir, ins);
 }
 
@@ -712,7 +723,7 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
     auto* lir = new (alloc()) LWasmAtomicStoreI64(
         useRegister(base),
         useInt64Fixed(ins->value(), Register64(IntArgReg1, IntArgReg0)),
-        memoryBase, tempFixed(IntArgReg2), tempFixed(IntArgReg3));
+        memoryBase, tempInt64Fixed(Register64(IntArgReg3, IntArgReg2)));
     add(lir, ins);
     return;
   }
@@ -720,22 +731,24 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
   LAllocation ptr = useRegisterAtStart(base);
 
   if (ins->value()->type() == MIRType::Int64) {
-    LInt64Allocation value = useInt64RegisterAtStart(ins->value());
-    auto* lir = new (alloc()) LWasmStoreI64(ptr, value, memoryBase);
+    LDefinition ptrCopy = LDefinition::BogusTemp();
     if (ins->access().offset32() || ins->access().type() == Scalar::Int64) {
-      lir->setTemp(0, tempCopy(base, 0));
+      ptrCopy = tempCopy(base, 0);
     }
+
+    LInt64Allocation value = useInt64RegisterAtStart(ins->value());
+    auto* lir = new (alloc()) LWasmStoreI64(ptr, value, memoryBase, ptrCopy);
     add(lir, ins);
     return;
   }
 
-  LAllocation value = useRegisterAtStart(ins->value());
-  auto* lir = new (alloc()) LWasmStore(ptr, value, memoryBase);
-
+  LDefinition ptrCopy = LDefinition::BogusTemp();
   if (ins->access().offset32()) {
-    lir->setTemp(0, tempCopy(base, 0));
+    ptrCopy = tempCopy(base, 0);
   }
 
+  LAllocation value = useRegisterAtStart(ins->value());
+  auto* lir = new (alloc()) LWasmStore(ptr, value, memoryBase, ptrCopy);
   add(lir, ins);
 }
 
@@ -1042,7 +1055,7 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
   if (ins->access().type() == Scalar::Int64) {
     auto* lir = new (alloc()) LWasmAtomicBinopI64(
         useRegister(ins->base()), useInt64Fixed(ins->value(), FetchOpVal64),
-        memoryBase, tempFixed(FetchOpTmpLo), tempFixed(FetchOpTmpHi),
+        memoryBase, tempInt64Fixed(Register64(FetchOpTmpHi, FetchOpTmpLo)),
         ins->access(), ins->operation());
     defineInt64Fixed(lir, ins,
                      LInt64Allocation(LAllocation(AnyRegister(FetchOpOutHi)),
@@ -1057,18 +1070,14 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
   MOZ_ASSERT(base->type() == MIRType::Int32);
 
   if (!ins->hasUses()) {
-    LWasmAtomicBinopHeapForEffect* lir = new (alloc())
-        LWasmAtomicBinopHeapForEffect(useRegister(base),
-                                      useRegister(ins->value()),
-                                      /* flagTemp= */ temp(), memoryBase);
+    auto* lir = new (alloc()) LWasmAtomicBinopHeapForEffect(
+        useRegister(base), useRegister(ins->value()), memoryBase, temp());
     add(lir, ins);
     return;
   }
 
-  LWasmAtomicBinopHeap* lir = new (alloc())
-      LWasmAtomicBinopHeap(useRegister(base), useRegister(ins->value()),
-                           /* temp = */ LDefinition::BogusTemp(),
-                           /* flagTemp= */ temp(), memoryBase);
+  auto* lir = new (alloc()) LWasmAtomicBinopHeap(
+      useRegister(base), useRegister(ins->value()), memoryBase, temp());
   define(lir, ins);
 }
 
@@ -1164,8 +1173,8 @@ void LIRGeneratorShared::lowerWasmCompareAndSelect(MWasmSelect* ins,
                                                    JSOp jsop) {
   MOZ_ASSERT(canSpecializeWasmCompareAndSelect(compTy, ins->type()));
   auto* lir = new (alloc()) LWasmCompareAndSelect(
-      useRegister(lhs), useRegister(rhs), compTy, jsop,
-      useRegisterAtStart(ins->trueExpr()), useRegister(ins->falseExpr()));
+      useRegister(lhs), useRegister(rhs), useRegisterAtStart(ins->trueExpr()),
+      useRegister(ins->falseExpr()), compTy, jsop);
   defineReuseInput(lir, ins, LWasmCompareAndSelect::IfTrueExprIndex);
 }
 

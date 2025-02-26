@@ -73,7 +73,6 @@ import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.webcompat.WebCompatFeature
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.feature.webnotifications.WebNotificationFeature
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.service.digitalassetlinks.RelationChecker
@@ -93,6 +92,8 @@ import mozilla.components.service.pocket.PocketStoriesConfig
 import mozilla.components.service.pocket.PocketStoriesRequestConfig
 import mozilla.components.service.pocket.PocketStoriesService
 import mozilla.components.service.pocket.Profile
+import mozilla.components.service.pocket.mars.api.MarsSpocsRequestConfig
+import mozilla.components.service.pocket.mars.api.NEW_TAB_SPOCS_PLACEMENT_KEY
 import mozilla.components.service.sync.autofill.AutofillCreditCardsAddressesStorage
 import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.base.worker.Frequency
@@ -125,6 +126,7 @@ import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.geckoview.GeckoRuntime
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import mozilla.components.service.pocket.mars.api.Placement as MarsSpocsPlacement
 
 /**
  * Component group for all core browser functionality.
@@ -210,16 +212,6 @@ class Core(
             geckoRuntime,
         ).also {
             WebCompatFeature.install(it)
-
-            /**
-             * There are some issues around localization to be resolved, as well as questions around
-             * the capacity of the WebCompat team, so the "Report site issue" feature should stay
-             * disabled in Fenix Release builds for now.
-             * This is consistent with both Fennec and Firefox Desktop.
-             */
-            if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
-                WebCompatReporterFeature.install(it, "fenix")
-            }
         }
     }
 
@@ -348,7 +340,6 @@ class Core(
                     repository = DefaultDesktopModeRepository(
                         context = context,
                     ),
-                    engine = engine,
                 ),
             )
 
@@ -533,6 +524,16 @@ class Core(
             contentRecommendationsParams = ContentRecommendationsRequestConfig(
                 locale = LocaleManager.getSelectedLocale(context).toLanguageTag(),
             ),
+            marsSponsoredContentsParams = MarsSpocsRequestConfig(
+                contextId = context.settings().contileContextId,
+                userAgent = engine.settings.userAgentString,
+                placements = listOf(
+                    MarsSpocsPlacement(
+                        placement = NEW_TAB_SPOCS_PLACEMENT_KEY,
+                        count = 10,
+                    ),
+                ),
+            ),
         )
     }
     val pocketStoriesService by lazyMonitored { PocketStoriesService(context, pocketStoriesConfig) }
@@ -563,7 +564,7 @@ class Core(
                     ),
                 ),
             ),
-            maxCacheAgeInSeconds = CONTILE_MAX_CACHE_AGE,
+            maxCacheAgeInSeconds = MARS_TOP_SITES_MAX_CACHE_AGE,
         )
     }
 
@@ -705,6 +706,7 @@ class Core(
         private const val RECENTLY_CLOSED_MAX = 10
         const val HISTORY_METADATA_MAX_AGE_IN_MS = 14 * 24 * 60 * 60 * 1000 // 14 days
         private const val CONTILE_MAX_CACHE_AGE = 3600L // 60 minutes
+        private const val MARS_TOP_SITES_MAX_CACHE_AGE = 1800L // 30 minutes
         const val HISTORY_SEARCH_ENGINE_ID = "history_search_engine_id"
         const val BOOKMARKS_SEARCH_ENGINE_ID = "bookmarks_search_engine_id"
         const val TABS_SEARCH_ENGINE_ID = "tabs_search_engine_id"

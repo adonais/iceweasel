@@ -110,6 +110,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_dbg-pretty-print-breakpoints.js"]
+skip-if = [
+  "tsan", # Bug 1817087, fails frequently on TSAN
+]
 
 ["browser_dbg-pretty-print-console.js"]
 
@@ -117,6 +120,8 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_dbg-pretty-print-inline-scripts.js"]
 skip-if = ["a11y_checks"] # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
+
+["browser_dbg-pretty-print-line-breaks.js"]
 
 ["browser_dbg-pretty-print-paused-anonymous.js"]
 
@@ -126,6 +131,7 @@ skip-if = ["a11y_checks"] # Bug 1858041 and 1849028 intermittent a11y_checks res
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1817966
   "win11_2009 && ccov", # Bug 1817966
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov",  # Bug 1817966
 ]
 
 ["browser_dbg-pretty-print.js"]

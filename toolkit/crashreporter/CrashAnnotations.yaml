@@ -632,6 +632,11 @@ MacAvailableMemorySysctl:
     Expected to be a percentage integer value.
   type: u32
 
+Marionette:
+  description: >
+    Set to 1 when Marionette (WebDriver Classic) is enabled.
+  type: boolean
+
 LinuxUnderMemoryPressure:
   description: >
     Set to true if the memory pressure watcher was under memory pressure when
@@ -788,6 +793,11 @@ ReleaseChannel:
   type: string
   ping: true
 
+RemoteAgent:
+  description: >
+    Set to 1 when the Remote Agent (WebDriver BiDi) is enabled.
+  type: boolean
+
 RemoteType:
   description: >
     Type of the content process, can be set to "web", "file" or "extension".
@@ -903,6 +913,16 @@ TestUnicode:
   description: >
     Annotation used in tests.
   type: string
+
+TestBoolean:
+  description: >
+    Annotation used in tests.
+  type: boolean
+
+TestInteger:
+  description: >
+    Annotation used in tests.
+  type: u32
 
 TextureUsage:
   description: >

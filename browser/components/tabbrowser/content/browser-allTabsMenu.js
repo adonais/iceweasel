@@ -100,11 +100,13 @@ var gTabsPanel = {
         !PlacesUIUtils.shouldShowTabsFromOtherComputersMenuitem();
     });
 
-    this.allTabsView.addEventListener("ViewShown", () =>
-      this.allTabsView
-        .querySelector(".all-tabs-item[selected]")
-        ?.scrollIntoView({ block: "center" })
-    );
+    this.allTabsView.addEventListener("ViewShown", () => {
+      if (!gBrowser._tabGroupsEnabled) {
+        this.allTabsView
+          .querySelector(".all-tabs-item[selected]")
+          ?.scrollIntoView({ block: "center" });
+      }
+    });
 
     this.allTabsView.addEventListener("command", event => {
       let { target } = event;
@@ -206,8 +208,9 @@ var gTabsPanel = {
   },
 
   hideAllTabsPanel() {
-    if (this.allTabsView) {
-      PanelMultiView.hidePopup(this.allTabsView.closest("panel"));
+    let panel = this.allTabsView?.closest("panel");
+    if (panel) {
+      PanelMultiView.hidePopup(panel);
     }
   },
 

@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -61,6 +62,7 @@ import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStoryCaps
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStoryShim
+import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ClickableSubstringLink
 import org.mozilla.fenix.compose.EagerFlingBehavior
@@ -231,6 +233,70 @@ fun PocketSponsoredStory(
 }
 
 /**
+ * Displays a single [SponsoredContent].
+ *
+ * @param sponsoredContent The [SponsoredContent] to be displayed.
+ * @param backgroundColor The background [Color] of the sponsored content.
+ * @param onClick Callback for when the user taps on the sponsored content.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun SponsoredContent(
+    sponsoredContent: SponsoredContent,
+    backgroundColor: Color,
+    onClick: (SponsoredContent) -> Unit,
+) {
+    ListItemTabSurface(
+        imageUrl = sponsoredContent.imageUrl,
+        imageContentScale = ContentScale.Crop,
+        contentPadding = PaddingValues(16.dp, 0.dp),
+        backgroundColor = backgroundColor,
+        onClick = { onClick(sponsoredContent) },
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            Text(
+                text = sponsoredContent.title,
+                modifier = Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = "pocket.sponsoredContent.title"
+                },
+                color = FirefoxTheme.colors.textPrimary,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 2,
+                style = FirefoxTheme.typography.body2,
+            )
+
+            Text(
+                text = stringResource(R.string.pocket_stories_sponsor_indication),
+                modifier = Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = "pocket.sponsoredContent.identifier"
+                },
+                color = FirefoxTheme.colors.textSecondary,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                style = FirefoxTheme.typography.caption,
+            )
+
+            Text(
+                text = sponsoredContent.sponsor,
+                modifier = Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = "pocket.sponsoredContent.sponsor"
+                },
+                color = FirefoxTheme.colors.textSecondary,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                style = FirefoxTheme.typography.caption,
+            )
+        }
+    }
+}
+
+/**
  * Displays a single [ContentRecommendation].
  *
  * @param recommendation The [ContentRecommendation] to be displayed.
@@ -304,8 +370,8 @@ fun PocketStories(
     contentPadding: Dp,
     backgroundColor: Color = FirefoxTheme.colors.layer2,
     showPlaceholderStory: Boolean = true,
-    onStoryShown: (PocketStory, Pair<Int, Int>) -> Unit,
-    onStoryClicked: (PocketStory, Pair<Int, Int>) -> Unit,
+    onStoryShown: (PocketStory, Triple<Int, Int, Int>) -> Unit,
+    onStoryClicked: (PocketStory, Triple<Int, Int, Int>) -> Unit,
     onDiscoverMoreClicked: (String) -> Unit,
 ) {
     // Show stories in at most 3 rows but on any number of columns depending on the data received.
@@ -368,7 +434,10 @@ fun PocketStories(
                                         .buildUpon()
                                         .appendQueryParameter(URI_PARAM_UTM_KEY, POCKET_STORIES_UTM_VALUE)
                                         .build().toString()
-                                    onStoryClicked(it.copy(url = uri), rowIndex to columnIndex)
+                                    onStoryClicked(
+                                        it.copy(url = uri),
+                                        Triple(rowIndex, columnIndex, stories.indexOf(story)),
+                                    )
                                 }
                             }
 
@@ -392,7 +461,12 @@ fun PocketStories(
                                 Box(
                                     modifier = Modifier.onShown(
                                         threshold = 0.5f,
-                                        onVisible = { onStoryShown(story, rowIndex to columnIndex) },
+                                        onVisible = {
+                                            onStoryShown(
+                                                story,
+                                                Triple(rowIndex, columnIndex, stories.indexOf(story)),
+                                            )
+                                        },
                                         screenBounds = screenBounds,
                                     ),
                                 ) {
@@ -400,16 +474,36 @@ fun PocketStories(
                                         story = story,
                                         backgroundColor = backgroundColor,
                                     ) {
-                                        onStoryClicked(story, rowIndex to columnIndex)
+                                        onStoryClicked(
+                                            story,
+                                            Triple(rowIndex, columnIndex, stories.indexOf(story)),
+                                        )
                                     }
                                 }
                             }
 
-                            is ContentRecommendation -> ContentRecommendation(
-                                recommendation = story,
-                                backgroundColor = backgroundColor,
-                            ) {
-                                onStoryClicked(story, rowIndex to columnIndex)
+                            is ContentRecommendation -> {
+                                ContentRecommendation(
+                                    recommendation = story,
+                                    backgroundColor = backgroundColor,
+                                ) {
+                                    onStoryClicked(
+                                        story,
+                                        Triple(rowIndex, columnIndex, stories.indexOf(story)),
+                                    )
+                                }
+                            }
+
+                            is SponsoredContent -> {
+                                SponsoredContent(
+                                    sponsoredContent = story,
+                                    backgroundColor = backgroundColor,
+                                ) {
+                                    onStoryClicked(
+                                        story,
+                                        Triple(rowIndex, columnIndex, stories.indexOf(story)),
+                                    )
+                                }
                             }
                         }
                     }
@@ -612,6 +706,7 @@ internal fun getFakePocketStories(limit: Int = 1): List<PocketStory> {
             when {
                 (index % 3 == 0) -> add(
                     ContentRecommendation(
+                        corpusItemId = "corpusItemId$index",
                         scheduledCorpusItemId = "scheduledCorpusItemId$index",
                         url = "https://story$index.com",
                         title = "Recommendation - This is a ${"very ".repeat(index)} long title",
@@ -622,6 +717,7 @@ internal fun getFakePocketStories(limit: Int = 1): List<PocketStory> {
                         imageUrl = "",
                         tileId = index.toLong(),
                         receivedRank = index,
+                        recommendedAt = index.toLong(),
                         impressions = index.toLong(),
                     ),
                 )

@@ -15,23 +15,23 @@
       "test-windows11-64-2009-qr/opt-*"
     ],
     "accessible/tests/browser/telemetry/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "accessible/tests/mochitest/a11y.toml": [
       "test-linux1804-64-qr/opt-*-1proc"
     ],
     "accessible/tests/mochitest/actions/a11y.toml": [
-      "test-windows11-64-2009/opt-*-1proc"
+      "test-windows11-64-2009-qr/opt-*-1proc"
     ],
     "accessible/tests/mochitest/tree/a11y.toml": [
       "test-linux1804-64/opt-*-1proc"
     ],
     "browser/base/content/test/about/browser.toml": [
-      "test-windows11-64-2009/debug-*",
+      "test-windows11-64-2009-qr/debug-*",
       "test-linux1804-64/opt-*"
     ],
     "browser/base/content/test/alerts/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/base/content/test/captivePortal/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw"
@@ -44,14 +44,14 @@
       "test-linux1804-64/opt-*"
     ],
     "browser/base/content/test/forms/browser.toml": [
-      "test-windows11-64-2009/opt-*",
+      "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64/opt-*"
     ],
     "browser/base/content/test/fullscreen/browser.toml": [
-      "test-windows11-64-2009/debug-*"
+      "test-windows11-64-2009-qr/debug-*"
     ],
     "browser/base/content/test/general/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/base/content/test/keyboard/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw"
@@ -68,10 +68,10 @@
       "test-linux1804-64/opt-*"
     ],
     "browser/base/content/test/performance/hidpi/browser.toml": [
-      "test-windows11-64-2009/debug-*"
+      "test-windows11-64-2009-qr/debug-*"
     ],
     "browser/base/content/test/performance/io/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/base/content/test/performance/lowdpi/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw"
@@ -82,7 +82,7 @@
     ],
     "browser/base/content/test/popups/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/base/content/test/protectionsUI/browser.toml": [
       "test-windows11-64-2009-qr/debug-*",
@@ -91,7 +91,7 @@
       "test-linux1804-64/opt-*"
     ],
     "browser/base/content/test/referrer/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/base/content/test/sanitize/browser.toml": [
       "test-windows11-64-2009-qr/debug-*",
@@ -143,7 +143,7 @@
       "test-macosx1014-64/opt-*",
       "test-windows11-64-2009-qr/debug-*",
       "test-linux1804-64/debug-*-spi-nw",
-      "test-windows11-64-2009-asan/opt-*",
+      "test-windows11-64-24h2-asan/opt-*",
       "test-windows11-64-2009-qr/opt-*",
       "test-windows11-64-2009/opt-*",
       "test-windows7-32/debug-*"
@@ -160,7 +160,7 @@
       "test-linux1804-64/opt-*"
     ],
     "browser/components/enterprisepolicies/tests/browser/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/enterprisepolicies/tests/browser/disable_app_update/browser.toml": [
       "test-linux1804-64/opt-*"
@@ -179,30 +179,30 @@
       "test-macosx1014-64/opt-*",
       "test-windows11-64-2009-qr/debug-*",
       "test-linux1804-64/debug-*-spi-nw",
-      "test-windows11-64-2009/opt-*",
+      "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64/opt-*",
       "test-windows7-32/debug-*"
     ],
     "browser/components/extensions/test/mochitest/mochitest.toml": [
-      "test-windows11-64-2009/opt-*",
+      "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64-qr/debug-*"
     ],
     "browser/components/migration/tests/unit/xpcshell.toml": [
       "test-windows7-32/opt-*",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/newtab/test/browser/abouthomecache/browser.toml": [
       "test-windows11-64-2009-qr/debug-*",
       "test-linux1804-64/debug-*",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/newtab/test/browser/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/newtab/test/xpcshell/xpcshell.toml": [
       "test-linux1804-64-qr/opt-*",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/originattributes/test/browser/browser.toml": [
       "test-windows11-64-2009/debug-*",
@@ -214,12 +214,12 @@
     ],
     "browser/components/pioneer/test/browser/browser.toml": [
       "test-windows7-32/opt-*",
-      "test-windows11-64-2009/debug-*",
-      "test-windows11-64-2009/opt-*",
+      "test-windows11-64-2009-qr/debug-*",
+      "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64/opt-*"
     ],
     "browser/components/places/tests/browser/browser.toml": [
-      "test-windows11-64-2009/opt-*",
+      "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64/opt-*"
     ],
     "browser/components/places/tests/unit/xpcshell.toml": [
@@ -229,12 +229,12 @@
     "browser/components/preferences/tests/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw",
       "test-linux1804-64/debug-*",
-      "test-windows11-64-2009-asan/opt-*",
+      "test-windows11-64-24h2-asan/opt-*",
       "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64/opt-*"
     ],
     "browser/components/preferences/tests/siteData/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/protections/test/browser/browser.toml": [
       "test-linux1804-64/debug-*",
@@ -252,10 +252,10 @@
     ],
     "browser/components/search/test/browser/browser.toml": [
       "test-linux1804-64/debug-*",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/search/test/browser/google_codes/browser.toml": [
-      "test-windows11-64-2009/debug-*"
+      "test-windows11-64-2009-qr/debug-*"
     ],
     "browser/components/search/test/unit/xpcshell.toml": [
       "test-linux1804-64/opt-*"
@@ -264,7 +264,7 @@
       "test-linux1804-64/debug-*-spi-nw"
     ],
     "browser/components/sessionstore/test/unit/xpcshell.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/shell/test/browser.toml": [
       "test-windows11-64-2009-qr/opt-*"
@@ -276,18 +276,18 @@
       "test-linux1804-64/debug-*-spi-nw"
     ],
     "browser/components/tabbrowser/test/browser/tabs/browser.toml": [
-      "test-windows11-64-2009-asan/opt-*",
+      "test-windows11-64-24h2-asan/opt-*",
       "test-linux1804-64/debug-*",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/tests/browser/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/tests/browser/whats_new_page/browser.toml": [
-      "test-windows11-64-2009/debug-*"
+      "test-windows11-64-2009-qr/debug-*"
     ],
     "browser/components/tests/unit/xpcshell.toml": [
-      "test-windows11-64-2009/opt-*",
+      "test-windows11-64-2009-qr/opt-*",
       "test-windows7-32/debug-*"
     ],
     "browser/components/touchbar/tests/browser/browser.toml": [
@@ -300,15 +300,15 @@
     ],
     "browser/components/uitour/test/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/urlbar/tests/browser-tips/browser.toml": [
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/components/urlbar/tests/browser/browser.toml": [
       "test-macosx1014-64/debug-*",
       "test-linux1804-64/debug-*-spi-nw",
-      "test-windows11-64-2009/opt-*",
+      "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64/opt-*"
     ],
     "browser/components/urlbar/tests/unit/xpcshell.toml": [
@@ -329,7 +329,7 @@
     ],
     "browser/extensions/formautofill/test/mochitest/mochitest.toml": [
       "test-macosx1014-64/opt-*",
-      "test-windows11-64-2009/opt-*"
+      "test-windows11-64-2009-qr/opt-*"
     ],
     "browser/extensions/formautofill/test/unit/xpcshell.toml": [
       "test-windows11-64-2009/debug-*",
@@ -434,7 +434,7 @@
       "test-windows11-64-2009/opt-*"
     ],
     "devtools/client/webconsole/test/browser/_browser_console.toml": [
-      "test-windows11-64-2009-asan/opt-*",
+      "test-windows11-64-24h2-asan/opt-*",
       "test-linux1804-64/opt-*"
     ],
     "devtools/client/webconsole/test/browser/_jsterm.toml": [
@@ -530,7 +530,7 @@
     "dom/html/test/mochitest.toml": [
       "test-linux1804-64/debug-*",
       "test-windows11-64-2009/opt-*",
-      "test-windows11-64-2009-asan/opt-*",
+      "test-windows11-64-24h2-asan/opt-*",
       "test-linux1804-64-tsan/opt-*",
       "test-macosx1014-64/debug-*"
     ],
@@ -652,7 +652,7 @@
     "dom/tests/browser/browser.toml": [
       "test-macosx1014-64/opt-*",
       "test-windows11-64-2009-qr/debug-*",
-      "test-windows11-64-2009-asan/opt-*",
+      "test-windows11-64-24h2-asan/opt-*",
       "test-windows11-64-2009-qr/opt-*",
       "test-linux1804-64/debug-*",
       "test-linux1804-64/opt-*",
@@ -995,7 +995,7 @@
       "test-windows11-64-2009/opt-*"
     ],
     "remote/test/browser/runtime/browser.toml": [
-      "test-windows11-64-2009-asan/opt-*"
+      "test-windows11-64-24h2-asan/opt-*"
     ],
     "security/manager/ssl/tests/mochitest/browser/browser.toml": [
       "test-linux1804-64/debug-*-spi-nw",
@@ -2308,7 +2308,7 @@
     "test-linux1804-64-qr/debug-xpcshell-3",
     "test-windows7-32/opt-reftest-2",
     "test-linux64-shippable-qr/opt-talos-g1-swr",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-3",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-3",
     "test-linux1804-64/debug-mochitest-browser-chrome-3",
     "test-macosx1014-64/opt-mochitest-browser-chrome-3",
     "test-linux1804-64-asan/opt-reftest-7",
@@ -2445,7 +2445,7 @@
     "test-windows11-64-2009-qr/debug-mochitest-browser-chrome-6",
     "test-linux1804-64-qr/debug-web-platform-tests-reftest-4",
     "toolchain-win32-minidump-stackwalk",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-6",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-6",
     "test-linux64-shippable-qr/opt-raptor-tp6-firefox-cold-paypal",
     "source-test-python-raptor-windows11-64-2009/opt-py2",
     "test-macosx1014-64-shippable/opt-raptor-speedometer-firefox",
@@ -2461,7 +2461,7 @@
     "test-linux1804-64/debug-mochitest-webgl2-ext-4",
     "source-test-cram-tryselect",
     "test-macosx1014-64-qr/opt-reftest-6",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-2",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-2",
     "test-windows11-64-2009-shippable/opt-talos-perf-reftest-singletons",
     "test-macosx1014-64/opt-mochitest-browser-chrome-7",
     "test-windows11-64-2009/debug-mochitest-media",
@@ -2474,7 +2474,7 @@
     "test-linux1804-64-qr/debug-mochitest-plain-13",
     "toolchain-linux64-sccache",
     "test-linux1804-64/debug-mochitest-browser-chrome-spi-nw-16",
-    "test-windows11-64-2009-asan/opt-reftest-1",
+    "test-windows11-64-24h2-asan/opt-reftest-1",
     "source-test-mozlint-py-pylint",
     "test-windows7-32/opt-mochitest-browser-chrome-5",
     "test-windows11-64-2009/debug-mochitest-chrome-1proc-2",
@@ -2498,7 +2498,7 @@
     "test-linux1804-64/opt-telemetry-tests-client",
     "test-windows11-64-2009/debug-web-platform-tests-7",
     "test-windows11-64-2009-shippable/opt-raptor-tp6-firefox-cold-facebook",
-    "test-windows11-64-2009-asan/opt-mochitest-webgl1-ext",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgl1-ext",
     "test-linux1804-64-qr/debug-reftest-6",
     "test-linux1804-64-asan/opt-web-platform-tests-21",
     "test-linux1804-64-asan-qr/opt-reftest-8",
@@ -2551,7 +2551,7 @@
     "test-windows7-32/debug-mochitest-plain-gpu",
     "test-linux1804-64/debug-mochitest-devtools-chrome-4",
     "test-android-em-7.0-x86_64/opt-geckoview-junit-multi",
-    "test-windows11-64-2009-asan/opt-mochitest-webgl2-core",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgl2-core",
     "test-macosx1014-64/opt-mochitest-media-spi-2",
     "test-windows11-64-2009/debug-mochitest-devtools-chrome-5",
     "source-test-python-mozbase-macosx1014-64/opt-py2",
@@ -2672,7 +2672,7 @@
     "test-linux1804-64/opt-web-platform-tests-1",
     "test-linux1804-64/debug-web-platform-tests-reftest-3",
     "test-linux1804-64/opt-mochitest-a11y-1proc",
-    "test-windows11-64-2009-asan/opt-cppunit-1proc",
+    "test-windows11-64-24h2-asan/opt-cppunit-1proc",
     "test-windows7-32/opt-mochitest-chrome-1proc-1",
     "test-linux1804-64-qr/opt-xpcshell-1",
     "test-macosx1014-64-qr/opt-web-platform-tests-reftest-4",
@@ -2683,7 +2683,7 @@
     "source-test-python-condprof-macosx1014-64/opt-py2",
     "test-linux1804-64-tsan/opt-mochitest-plain-16",
     "test-macosx1014-64/opt-mochitest-browser-chrome-4",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-5",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-5",
     "test-linux1804-64-asan/opt-mochitest-devtools-chrome-8",
     "source-test-python-marionette-harness-linux1804-64/opt-py2",
     "test-windows11-64-2009-shippable/opt-raptor-tp6-firefox-cold-paypal",
@@ -2701,7 +2701,7 @@
     "source-test-python-talos-py2",
     "test-windows11-64-2009/debug-mochitest-browser-chrome-7",
     "test-linux1804-64/opt-web-platform-tests-9",
-    "test-windows11-64-2009-asan/opt-marionette",
+    "test-windows11-64-24h2-asan/opt-marionette",
     "build-linux64/debug",
     "test-android-em-7.0-x86_64/debug-geckoview-junit",
     "test-android-em-7.0-x86_64/opt-geckoview-reftest-1",
@@ -2745,7 +2745,7 @@
     "source-test-mozlint-android-lints",
     "test-macosx1014-64-shippable/opt-talos-webgl-gli",
     "test-macosx1014-64/debug-firefox-ui-functional-remote",
-    "test-windows11-64-2009-asan/opt-mochitest-plain-4",
+    "test-windows11-64-24h2-asan/opt-mochitest-plain-4",
     "test-windows7-32/opt-mochitest-chrome-gpu",
     "test-windows7-32/opt-web-platform-tests-7",
     "test-linux1804-64-asan/opt-mochitest-browser-chrome-2",
@@ -2779,7 +2779,7 @@
     "test-android-em-7.0-x86_64/opt-geckoview-mochitest-plain-gpu",
     "test-linux1804-64-qr/debug-xpcshell-4",
     "test-android-em-7.0-x86_64-qr/opt-geckoview-mochitest-media-spi",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-1",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-1",
     "test-android-hw-g5-7-0-arm7-shippable/opt-browsertime-tp6m-geckoview-cold-wikipedia",
     "test-linux1804-64-qr/debug-mochitest-chrome-1proc-2",
     "test-linux1804-64-asan/opt-reftest-no-accel-6",
@@ -2804,7 +2804,7 @@
     "test-windows11-64-2009-qr/debug-mochitest-webgl2-core",
     "test-windows11-64-2009/debug-web-platform-tests-9",
     "test-macosx1014-64/opt-web-platform-tests-crashtest",
-    "test-windows11-64-2009-asan/opt-reftest-3",
+    "test-windows11-64-24h2-asan/opt-reftest-3",
     "test-windows7-32-shippable/opt-talos-perf-reftest",
     "test-windows11-64-2009-shippable-qr/opt-web-platform-tests-reftest-3",
     "test-linux64-shippable/opt-talos-webgl",
@@ -2845,7 +2845,7 @@
     "test-macosx1014-64-shippable/opt-talos-tp5o",
     "test-linux1804-64-tsan/opt-xpcshell-2",
     "test-windows11-64-2009/debug-web-platform-tests-print-reftest",
-    "test-windows11-64-2009-asan/opt-mochitest-chrome-1proc-3",
+    "test-windows11-64-24h2-asan/opt-mochitest-chrome-1proc-3",
     "test-linux1804-64/debug-jsreftest-4",
     "build-macosx64/debug",
     "test-linux64-shippable/opt-raptor-tp6-firefox-cold-facebook",
@@ -2865,9 +2865,9 @@
     "test-linux1804-64-qr/opt-mochitest-plain-2",
     "test-windows7-32/debug-reftest-4",
     "source-test-python-raptor-linux1804-64/opt-py3",
-    "test-windows11-64-2009-asan/opt-mochitest-chrome-gpu",
+    "test-windows11-64-24h2-asan/opt-mochitest-chrome-gpu",
     "test-linux1804-64/opt-mochitest-browser-chrome-2",
-    "test-windows11-64-2009-asan/opt-jsreftest-3",
+    "test-windows11-64-24h2-asan/opt-jsreftest-3",
     "test-linux1804-64-asan/opt-mochitest-media-3",
     "test-linux1804-64/debug-mochitest-plain-16",
     "test-windows11-64-2009-qr/opt-web-platform-tests-7",
@@ -3027,7 +3027,7 @@
     "test-windows7-32-shippable/opt-raptor-tp6-firefox-cold-amazon",
     "test-linux1804-64/opt-reftest-1",
     "test-vismet-android-hw-g5-7-0-arm7-shippable/opt-browsertime-tp6m-geckoview-cold-bbc",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-2",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-2",
     "test-linux1804-64/debug-mochitest-browser-chrome-1",
     "test-windows11-64-2009/opt-mochitest-webgl2-ext-1",
     "test-macosx1014-64/debug-web-platform-tests-16",
@@ -3137,7 +3137,7 @@
     "test-macosx1014-64/debug-web-platform-tests-reftest-1",
     "test-windows7-32/debug-reftest-gpu-2",
     "test-macosx1014-64-qr/debug-web-platform-tests-reftest-4",
-    "test-windows11-64-2009-asan/opt-mochitest-remote",
+    "test-windows11-64-24h2-asan/opt-mochitest-remote",
     "build-android-arm/opt",
     "test-android-hw-g5-7-0-arm7-shippable/opt-browsertime-tp6m-geckoview-cold-youtube-watch",
     "test-linux1804-64-asan/opt-mochitest-plain-3",
@@ -3242,14 +3242,14 @@
     "test-linux1804-64-qr/debug-web-platform-tests-wdspec-1",
     "toolchain-macosx64-gn",
     "test-linux1804-64/opt-mochitest-browser-chrome-1",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-8",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-8",
     "test-linux1804-64/debug-telemetry-tests-client",
     "test-linux1804-64/opt-web-platform-tests-wdspec-1",
     "test-linux64-shippable-qr/opt-raptor-motionmark-animometer-firefox",
     "test-linux1804-64/debug-mochitest-browser-chrome-15",
     "test-windows11-64-2009/opt-mochitest-plain-4",
     "test-android-em-7.0-x86_64/opt-geckoview-test-verify",
-    "test-windows11-64-2009-asan/opt-jsreftest-2",
+    "test-windows11-64-24h2-asan/opt-jsreftest-2",
     "test-linux1804-64-qr/debug-mochitest-webgl1-core",
     "source-test-mozlint-wptlint-gecko",
     "test-macosx1014-64-qr/opt-reftest-7",
@@ -3329,7 +3329,7 @@
     "test-linux1804-64/debug-mochitest-devtools-chrome-spi-nw-2",
     "test-windows11-64-2009-shippable/opt-raptor-motionmark-animometer-firefox",
     "test-linux1804-64/opt-web-platform-tests-3",
-    "test-windows11-64-2009-asan/opt-crashtest",
+    "test-windows11-64-24h2-asan/opt-crashtest",
     "source-test-python-firefox-ci-py3",
     "test-linux1804-64/opt-firefox-ui-functional-local",
     "test-linux1804-64-qr/opt-reftest-3",
@@ -3391,7 +3391,7 @@
     "toolchain-linux32-geckodriver",
     "source-test-mozlint-clang-format",
     "test-linux1804-64/debug-mochitest-plain-11",
-    "test-windows11-64-2009-asan/opt-gtest-1proc",
+    "test-windows11-64-24h2-asan/opt-gtest-1proc",
     "test-android-em-7.0-x86_64/opt-geckoview-xpcshell-2",
     "test-linux1804-64-asan/opt-web-platform-tests-5",
     "test-linux1804-64-qr/debug-web-platform-tests-10",
@@ -3401,7 +3401,7 @@
     "test-macosx1014-64/debug-jsreftest-3",
     "test-macosx1014-64/debug-telemetry-tests-client",
     "test-windows11-64-2009/opt-mochitest-browser-chrome-3",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-1",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-1",
     "test-android-hw-g5-7-0-arm7-shippable/opt-browsertime-tp6m-geckoview-cold-instagram",
     "test-macosx1014-64/opt-mochitest-media-2",
     "test-linux1804-64-shippable-qr/opt-web-platform-tests-wdspec-1",
@@ -3422,7 +3422,7 @@
     "spidermonkey-sm-mozjs-sys-linux64/debug",
     "test-windows11-64-2009/debug-web-platform-tests-3",
     "test-linux1804-64-qr/debug-mochitest-plain-12",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-9",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-9",
     "test-linux1804-64-qr/debug-mochitest-webgl2-ext-4",
     "test-linux1804-64-asan/opt-reftest-no-accel-3",
     "test-linux1804-64-qr/debug-xpcshell-1",
@@ -3435,7 +3435,7 @@
     "test-linux1804-64/debug-web-platform-tests-crashtest",
     "test-windows11-64-2009/opt-web-platform-tests-2",
     "webrender-linux-release",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-5",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-5",
     "test-linux1804-64/debug-web-platform-tests-1",
     "test-macosx1014-64-shippable/opt-raptor-motionmark-animometer-firefox",
     "test-windows11-64-2009/debug-web-platform-tests-6",
@@ -3492,7 +3492,7 @@
     "test-android-em-7.0-x86_64/debug-geckoview-reftest-2",
     "test-macosx1014-64/opt-mochitest-media-1",
     "source-test-wpt-metadata-summary",
-    "test-windows11-64-2009-asan/opt-mochitest-plain-5",
+    "test-windows11-64-24h2-asan/opt-mochitest-plain-5",
     "test-windows7-32-shippable/opt-raptor-tp6-firefox-cold-pinterest",
     "test-linux1804-64/debug-mochitest-devtools-chrome-spi-nw-1",
     "test-windows7-32-shippable/opt-raptor-tp6-firefox-cold-netflix",
@@ -3500,7 +3500,7 @@
     "test-linux64-shippable-qr/opt-talos-realworld-webextensions",
     "test-windows7-32-shippable/opt-raptor-tp6-firefox-cold-yahoo-mail",
     "toolchain-linux64-clang-tidy",
-    "test-windows11-64-2009-asan/opt-mochitest-plain-1",
+    "test-windows11-64-24h2-asan/opt-mochitest-plain-1",
     "test-linux1804-64-qr/opt-mochitest-media-spi-2",
     "source-test-python-mozharness-py3",
     "source-test-mozlint-file-perm",
@@ -3624,7 +3624,7 @@
     "test-windows11-64-2009-shippable/opt-raptor-tp6-firefox-cold-docs",
     "test-macosx1014-64/debug-reftest-4",
     "test-windows11-64-2009/debug-web-platform-tests-13",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-6",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-6",
     "test-linux1804-64/opt-mochitest-webgl2-ext-4",
     "source-test-python-condprof-windows11-64-2009/opt-py2",
     "test-linux1804-64-asan/opt-mochitest-browser-chrome-12",
@@ -3649,7 +3649,7 @@
     "test-linux64-shippable-qr/opt-talos-tabswitch",
     "test-android-hw-g5-7-0-arm7-shippable/opt-browsertime-tp6m-geckoview-cold-amazon-search",
     "test-windows7-32/opt-mochitest-media-spi-3",
-    "test-windows11-64-2009-asan/opt-mochitest-plain-gpu",
+    "test-windows11-64-24h2-asan/opt-mochitest-plain-gpu",
     "test-linux1804-64/debug-mochitest-browser-chrome-8",
     "test-linux1804-64-qr/debug-mochitest-plain-4",
     "test-linux1804-64/opt-mochitest-webgl1-ext",
@@ -3663,7 +3663,7 @@
     "test-windows11-64-2009-shippable/opt-raptor-speedometer-firefox",
     "test-linux1804-64-asan/opt-mochitest-browser-chrome-1",
     "test-linux1804-64/debug-mochitest-devtools-chrome-7",
-    "test-windows11-64-2009-asan/opt-firefox-ui-functional-remote",
+    "test-windows11-64-24h2-asan/opt-firefox-ui-functional-remote",
     "test-linux1804-64/debug-web-platform-tests-reftest-2",
     "test-windows11-64-2009-shippable/opt-raptor-tp6-firefox-cold-twitter",
     "test-linux64-shippable/opt-talos-dromaeojs",
@@ -3713,7 +3713,7 @@
     "test-android-hw-g5-7-0-arm7-shippable/opt-browsertime-tp6m-geckoview-cold-imdb",
     "test-android-em-7.0-x86_64-qr/opt-geckoview-mochitest-plain-gpu",
     "source-test-python-mozbase-linux1804-64/opt-py2",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-7",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-7",
     "test-windows11-64-2009-shippable-qr/opt-web-platform-tests-5",
     "test-linux1804-64-asan/opt-web-platform-tests-20",
     "test-windows11-64-2009/debug-marionette",
@@ -3721,7 +3721,7 @@
     "test-linux64-shippable-qr/opt-talos-chrome",
     "test-windows11-64-2009-shippable-qr/opt-web-platform-tests-print-reftest",
     "test-linux1804-64/debug-mochitest-browser-chrome-4",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-3",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-3",
     "test-windows11-64-2009-shippable/opt-raptor-tp6-firefox-cold-outlook",
     "test-linux1804-64-qr/debug-web-platform-tests-reftest-3",
     "test-linux1804-64-qr/debug-jsreftest-3",
@@ -3753,7 +3753,7 @@
     "test-macosx1014-64/debug-web-platform-tests-reftest-6",
     "test-linux1804-64/debug-mochitest-plain-2",
     "test-macosx1014-64-qr/opt-reftest-2",
-    "test-windows11-64-2009-asan/opt-mochitest-webgl2-ext-2",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgl2-ext-2",
     "test-windows11-64-2009-shippable/opt-awsy-tp6",
     "test-windows7-32-shippable/opt-raptor-tp6-firefox-cold-google",
     "test-windows11-64-2009-shippable/opt-raptor-tp6-firefox-cold-yahoo-news",
@@ -3799,7 +3799,7 @@
     "test-linux1804-64/debug-mochitest-plain-9",
     "test-windows7-32/debug-jsreftest-2",
     "test-windows11-64-2009-shippable-qr/opt-raptor-webaudio-firefox",
-    "test-windows11-64-2009-asan/opt-mochitest-chrome-1proc-1",
+    "test-windows11-64-24h2-asan/opt-mochitest-chrome-1proc-1",
     "test-linux1804-64/debug-mochitest-plain-5",
     "test-linux1804-64-asan/opt-web-platform-tests-reftest-2",
     "test-linux1804-64/debug-xpcshell-spi-nw-6",
@@ -3836,7 +3836,7 @@
     "test-android-em-7.0-x86_64/debug-geckoview-web-platform-tests-reftest-6",
     "test-macosx1014-64-shippable/opt-mochitest-webgl2-ext-gli-3",
     "source-test-python-mozperftest-linux1804-64/opt",
-    "test-windows11-64-2009-asan/opt-mochitest-media",
+    "test-windows11-64-24h2-asan/opt-mochitest-media",
     "test-windows11-64-2009-shippable-qr/opt-talos-webgl",
     "test-linux1804-64/debug-mochitest-media-spi-3",
     "test-windows7-32/opt-cppunit-1proc",
@@ -3883,7 +3883,7 @@
     "source-test-mozlint-clippy",
     "test-windows7-32/debug-mochitest-plain-3",
     "test-windows11-64-2009-shippable/opt-raptor-tp6-firefox-cold-apple",
-    "test-windows11-64-2009-asan/opt-mochitest-a11y-1proc",
+    "test-windows11-64-24h2-asan/opt-mochitest-a11y-1proc",
     "test-linux1804-64-qr/opt-web-platform-tests-4",
     "test-windows11-64-2009/debug-mochitest-plain-1",
     "toolchain-rustc-dist-toolchain",
@@ -3901,7 +3901,7 @@
     "test-windows7-32-shippable/opt-raptor-speedometer-firefox",
     "test-linux1804-64/debug-web-platform-tests-13",
     "test-windows11-64-2009-qr/opt-reftest-2",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-7",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-7",
     "test-linux1804-64/opt-jsreftest-1",
     "source-test-python-featuregates-windows11-64-2009/opt-py3",
     "test-macosx1014-64/debug-web-platform-tests-13",
@@ -3929,7 +3929,7 @@
     "test-windows7-32/debug-reftest-1",
     "toolchain-win64-sccache",
     "test-macosx1014-64/opt-mochitest-webgl2-ext-2",
-    "test-windows11-64-2009-asan/opt-mochitest-media-spi",
+    "test-windows11-64-24h2-asan/opt-mochitest-media-spi",
     "test-macosx1014-64/opt-mochitest-chrome-1proc-1",
     "test-macosx1014-64-shippable/opt-talos-g1",
     "test-linux1804-64-qr/debug-crashtest",
@@ -3946,10 +3946,10 @@
     "source-test-mozlint-localization",
     "test-linux1804-64-asan-qr/opt-reftest-6",
     "build-linux64-rusttests/debug",
-    "test-windows11-64-2009-asan/opt-reftest-2",
+    "test-windows11-64-24h2-asan/opt-reftest-2",
     "test-windows7-32/opt-web-platform-tests-1",
     "test-linux1804-64/debug-mochitest-media-3",
-    "test-windows11-64-2009-asan/opt-telemetry-tests-client",
+    "test-windows11-64-24h2-asan/opt-telemetry-tests-client",
     "test-linux1804-64/debug-cppunit-1proc",
     "test-linux1804-64-asan/opt-gtest-1proc",
     "test-linux64-shippable/opt-raptor-wasm-misc-firefox",
@@ -4011,7 +4011,7 @@
     "test-android-em-7.0-x86_64/debug-geckoview-xpcshell-4",
     "source-test-python-reftest-harness-linux1804-64/debug",
     "test-linux1804-64-asan-qr/opt-crashtest",
-    "test-windows11-64-2009-asan/opt-mochitest-chrome-1proc-2",
+    "test-windows11-64-24h2-asan/opt-mochitest-chrome-1proc-2",
     "build-android-aarch64-gcp/debug",
     "test-windows7-32/debug-web-platform-tests-4",
     "test-macosx1014-64-shippable/opt-raptor-tp6-firefox-cold-slides",
@@ -4041,13 +4041,13 @@
     "test-macosx1014-64/opt-mochitest-plain-3",
     "source-test-python-tryselect-windows11-64-2009/opt-py3",
     "test-linux1804-64/opt-cppunit-1proc",
-    "test-windows11-64-2009-asan/opt-mochitest-plain-2",
+    "test-windows11-64-24h2-asan/opt-mochitest-plain-2",
     "source-test-shadow-scheduler-bugbug_disperse_low",
     "test-windows7-32/opt-mochitest-plain-2",
     "test-macosx1014-64-shippable/opt-raptor-tp6-firefox-cold-yahoo-news",
     "test-linux1804-64/debug-mochitest-browser-chrome-12",
     "test-linux64-shippable/opt-raptor-wasm-godot-firefox",
-    "test-windows11-64-2009-asan/opt-mochitest-webgl2-ext-4",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgl2-ext-4",
     "source-test-python-telemetry-python-linux1804-64/opt-py2",
     "test-windows7-32/opt-xpcshell-2",
     "test-linux1804-64-qr/debug-reftest-swr-3",
@@ -4104,7 +4104,7 @@
     "test-macosx1014-64/debug-mochitest-devtools-chrome-7",
     "test-linux1804-64-asan/opt-mochitest-browser-chrome-3",
     "test-linux1804-64-qr/debug-mochitest-media-2",
-    "test-windows11-64-2009-asan/opt-mochitest-webgpu",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgpu",
     "test-linux1804-64-asan/opt-web-platform-tests-wdspec-1",
     "test-windows7-32/opt-mochitest-browser-chrome-4",
     "test-linux1804-64-qr/opt-mochitest-media-1",
@@ -4119,7 +4119,7 @@
     "test-linux64-shippable-qr/opt-talos-g4-swr",
     "test-linux1804-64-asan/opt-mochitest-devtools-chrome-7",
     "test-linux1804-64/debug-mochitest-plain-7",
-    "test-windows11-64-2009-asan/opt-mochitest-webgl2-ext-1",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgl2-ext-1",
     "test-windows11-64-2009/opt-web-platform-tests-wdspec-headless-2",
     "source-test-python-mach-linux1804-64/opt-py2",
     "test-windows11-64-2009-shippable/opt-raptor-motionmark-htmlsuite-firefox",
@@ -4129,7 +4129,7 @@
     "test-windows7-32/debug-reftest-no-accel-3",
     "test-linux1804-64-qr/debug-web-platform-tests-5",
     "test-windows11-64-2009/opt-mochitest-browser-chrome-6",
-    "test-windows11-64-2009-asan/opt-mochitest-plain-3",
+    "test-windows11-64-24h2-asan/opt-mochitest-plain-3",
     "test-linux64-shippable-qr/opt-raptor-tp6-firefox-cold-imdb",
     "repackage-win32/opt",
     "test-linux1804-64/opt-mochitest-chrome-gpu",
@@ -4137,7 +4137,7 @@
     "test-linux1804-64/debug-jsreftest-3",
     "test-macosx1014-64-shippable/opt-talos-bcv",
     "source-test-python-mozversioncontrol-py2",
-    "test-windows11-64-2009-asan/opt-mochitest-webgl2-ext-3",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgl2-ext-3",
     "test-windows11-64-2009-shippable-qr/opt-web-platform-tests-8",
     "test-android-em-7.0-x86_64-qr/debug-geckoview-mochitest-plain-4",
     "test-windows7-32-shippable/opt-raptor-tp6-firefox-cold-youtube",
@@ -4187,15 +4187,15 @@
     "test-linux64-shippable-qr/opt-talos-g4",
     "test-windows11-64-2009/debug-web-platform-tests-reftest-1",
     "test-linux1804-64-qr/debug-mochitest-media-1",
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-4",
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-4",
     "build-linux64-fuzzing/debug",
     "test-linux1804-64-qr/debug-reftest-5",
     "test-macosx1014-64/opt-web-platform-tests-6",
     "test-macosx1014-64/opt-mochitest-devtools-chrome-5",
     "test-windows11-64-2009/debug-mochitest-browser-chrome-6",
-    "test-windows11-64-2009-asan/opt-firefox-ui-functional-local",
+    "test-windows11-64-24h2-asan/opt-firefox-ui-functional-local",
     "test-macosx1014-64/debug-mochitest-plain-4",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-4",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-4",
     "test-linux1804-64/debug-mochitest-media-spi-2",
     "test-linux1804-64-qr/debug-mochitest-plain-3",
     "test-macosx1014-64/debug-mochitest-media-gli-1",
@@ -4224,7 +4224,7 @@
     "test-macosx1014-64-shippable/opt-talos-dromaeojs",
     "diff-artifact-win64-aarch64-eme-validation",
     "test-windows7-32-shippable/opt-raptor-tp6-firefox-cold-slides",
-    "test-windows11-64-2009-asan/opt-jsreftest-1",
+    "test-windows11-64-24h2-asan/opt-jsreftest-1",
     "test-linux1804-64-qr/opt-mochitest-a11y-1proc",
     "test-windows7-32/debug-web-platform-tests-9",
     "test-android-hw-g5-7-0-arm7-shippable/opt-browsertime-tp6m-geckoview-cold-ebay-kleinanzeigen-search",
@@ -4248,7 +4248,7 @@
     "test-linux1804-64-qr/debug-web-platform-tests-15",
     "test-linux64-shippable-qr/opt-raptor-webaudio-firefox",
     "test-windows11-64-2009-shippable-qr/opt-web-platform-tests-1",
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-8",
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-8",
     "test-android-em-7.0-x86_64/opt-geckoview-web-platform-tests-9",
     "test-linux1804-64/debug-mochitest-browser-chrome-spi-nw-7",
     "toolchain-linux64-lucetc",
@@ -4320,7 +4320,7 @@
     "test-windows11-64-2009/opt-web-platform-tests-wdspec-headless-1",
     "test-linux1804-64/debug-mochitest-browser-chrome-5",
     "test-linux1804-64-asan/opt-reftest-1",
-    "test-windows11-64-2009-asan/opt-mochitest-webgl1-core",
+    "test-windows11-64-24h2-asan/opt-mochitest-webgl1-core",
     "test-linux1804-64/opt-xpcshell-5",
     "test-linux1804-64/debug-mochitest-devtools-chrome-spi-nw-5",
     "test-windows11-64-2009-shippable-qr/opt-raptor-speedometer-firefox",
@@ -4386,7 +4386,7 @@
     "test-linux1804-64-qr/opt-xpcshell-3": 0.82,
     "test-linux1804-64-tsan/opt-xpcshell-7": 0.81,
     "test-linux1804-64/opt-xpcshell-3": 0.82,
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-9": 0.83,
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-9": 0.83,
     "test-windows7-32/debug-reftest-no-accel-2": 0.8,
     "test-windows7-32/debug-reftest-no-accel-4": 0.85
   },
@@ -4564,17 +4564,17 @@
     "test-macosx1014-64/opt-mochitest-plain-4": 0.57,
     "test-macosx1014-64/opt-reftest-2": 0.63,
     "test-macosx1014-64/opt-web-platform-tests-5": 0.5,
-    "test-windows11-64-2009-asan/opt-marionette": 0.64,
-    "test-windows11-64-2009-asan/opt-mochitest-browser-chrome-9": 0.83,
-    "test-windows11-64-2009-asan/opt-mochitest-chrome-1proc-2": 0.59,
-    "test-windows11-64-2009-asan/opt-mochitest-chrome-1proc-3": 0.62,
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-1": 0.54,
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-2": 0.6,
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-4": 0.57,
-    "test-windows11-64-2009-asan/opt-mochitest-devtools-chrome-7": 0.59,
-    "test-windows11-64-2009-asan/opt-reftest-1": 0.68,
-    "test-windows11-64-2009-asan/opt-reftest-2": 0.65,
-    "test-windows11-64-2009-asan/opt-reftest-3": 0.72,
+    "test-windows11-64-24h2-asan/opt-marionette": 0.64,
+    "test-windows11-64-24h2-asan/opt-mochitest-browser-chrome-9": 0.83,
+    "test-windows11-64-24h2-asan/opt-mochitest-chrome-1proc-2": 0.59,
+    "test-windows11-64-24h2-asan/opt-mochitest-chrome-1proc-3": 0.62,
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-1": 0.54,
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-2": 0.6,
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-4": 0.57,
+    "test-windows11-64-24h2-asan/opt-mochitest-devtools-chrome-7": 0.59,
+    "test-windows11-64-24h2-asan/opt-reftest-1": 0.68,
+    "test-windows11-64-24h2-asan/opt-reftest-2": 0.65,
+    "test-windows11-64-24h2-asan/opt-reftest-3": 0.72,
     "test-windows11-64-2009-qr/debug-crashtest": 0.5,
     "test-windows11-64-2009-qr/debug-mochitest-media": 0.57,
     "test-windows11-64-2009-qr/debug-mochitest-media-spi": 0.51,

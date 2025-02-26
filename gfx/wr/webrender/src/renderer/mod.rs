@@ -1444,7 +1444,7 @@ impl Renderer {
         &mut self,
         doc_id: DocumentId,
         active_doc: &mut RenderedDocument,
-        device_size: Option<DeviceIntSize>,
+        mut device_size: Option<DeviceIntSize>,
         buffer_age: usize,
     ) -> Result<RenderResults, Vec<RendererError>> {
         profile_scope!("render");
@@ -1511,6 +1511,12 @@ impl Renderer {
 
             frame_id
         };
+
+        if !active_doc.frame.present {
+            // Setting device_size to None is what ensures compositing/presenting
+            // the frame is skipped in the rest of this module.
+            device_size = None;
+        }
 
         if let Some(device_size) = device_size {
             // Inform the client that we are starting a composition transaction if native
@@ -3494,7 +3500,7 @@ impl Renderer {
             // to the swapchain tile list
             match tile.kind {
                 TileKind::Opaque | TileKind::Alpha => {
-                    // Store (index of tile, index of layer) so we can segment them below 
+                    // Store (index of tile, index of layer) so we can segment them below
                     occlusion.add(&rect, is_opaque, idx); // (idx, input_layers.len() - 1));
                 }
                 TileKind::Clear => {
@@ -3582,9 +3588,9 @@ impl Renderer {
             };
 
             if let Some(new_layer_kind) = new_layer_kind {
-                let (rect, is_opaque) = match usage {
+                let (offset, clip_rect, is_opaque) = match usage {
                     CompositorSurfaceUsage::Content => {
-                        (device_size.into(), input_layers.is_empty())
+                        (DeviceIntPoint::zero(), device_size.into(), input_layers.is_empty())
                     }
                     CompositorSurfaceUsage::External { .. } => {
                         let rect = composite_state.get_device_rect(
@@ -3592,14 +3598,17 @@ impl Renderer {
                             tile.transform_index
                         );
 
-                        (rect.to_i32(), is_opaque)
+                        let clip_rect = tile.device_clip_rect.to_i32();
+
+                        (rect.min.to_i32(), clip_rect, is_opaque)
                     }
                 };
 
                 input_layers.push(CompositorInputLayer {
                     usage: new_layer_kind,
                     is_opaque,
-                    rect,
+                    offset,
+                    clip_rect,
                 });
 
                 swapchain_layers.push(SwapChainLayer {
@@ -3629,7 +3638,8 @@ impl Renderer {
             input_layers.push(CompositorInputLayer {
                 usage: CompositorSurfaceUsage::Content,
                 is_opaque: true,
-                rect: device_size.into(),
+                offset: DeviceIntPoint::zero(),
+                clip_rect: device_size.into(),
             });
 
             swapchain_layers.push(SwapChainLayer {
@@ -3669,7 +3679,7 @@ impl Renderer {
                     compositor.bind_layer(layer_index);
 
                     DrawTarget::NativeSurface {
-                        offset: -layer.rect.min,
+                        offset: -layer.offset,
                         external_fbo_id: 0,
                         dimensions: fb_draw_target.dimensions(),
                     }
@@ -3712,7 +3722,7 @@ impl Renderer {
                 compositor.add_surface(
                     layer_index,
                     transform,
-                    layer.rect,
+                    layer.clip_rect,
                     ImageRendering::Auto,
                 );
             }

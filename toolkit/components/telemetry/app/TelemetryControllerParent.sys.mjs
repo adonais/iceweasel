@@ -52,6 +52,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/UntrustedModulesPing.sys.mjs",
   UninstallPing: "resource://gre/modules/UninstallPing.sys.mjs",
   UpdatePing: "resource://gre/modules/UpdatePing.sys.mjs",
+  UsageReporting: "resource://gre/modules/UsageReporting.sys.mjs",
 });
 
 if (
@@ -542,10 +543,9 @@ var Impl = {
     const typeUuid = /^[a-z0-9][a-z0-9-]+[a-z0-9]$/i;
     if (!typeUuid.test(aType)) {
       this._log.error("submitExternalPing - invalid ping type: " + aType);
-      let histogram = Services.telemetry.getKeyedHistogramById(
-        "TELEMETRY_INVALID_PING_TYPE_SUBMITTED"
-      );
-      histogram.add(aType, 1);
+      Services.telemetry
+        .getKeyedHistogramById("TELEMETRY_INVALID_PING_TYPE_SUBMITTED")
+        .add(aType, 1);
       return Promise.reject(new Error("Invalid type string submitted."));
     }
     // Enforce that the payload is an object.
@@ -557,10 +557,9 @@ var Impl = {
       this._log.error(
         "submitExternalPing - invalid payload type: " + typeof aPayload
       );
-      let histogram = Services.telemetry.getHistogramById(
-        "TELEMETRY_INVALID_PAYLOAD_SUBMITTED"
-      );
-      histogram.add(1);
+      Services.telemetry
+        .getHistogramById("TELEMETRY_INVALID_PAYLOAD_SUBMITTED")
+        .add(1);
       return Promise.reject(new Error("Invalid payload type submitted."));
     }
 
@@ -982,6 +981,9 @@ var Impl = {
         if (aData == TelemetryUtils.Preferences.FhrUploadEnabled) {
           return this._onUploadPrefChange();
         }
+        if (aData == "datareporting.usage.uploadEnabled") {
+          return lazy.UsageReporting._onUsagePrefChange();
+        }
     }
     return undefined;
   },
@@ -1081,8 +1083,6 @@ var Impl = {
         let oldClientId = await lazy.ClientID.getClientID();
         let oldProfileGroupId = await lazy.ClientID.getProfileGroupID();
         await lazy.ClientID.setCanaryIdentifiers();
-        // For the time being this is tied to the telemetry upload preference.
-        await lazy.ClientID.setCanaryUsageProfileIdentifier();
         this._clientID = await lazy.ClientID.getClientID();
         this._profileGroupID = await lazy.ClientID.getProfileGroupID();
 
@@ -1112,16 +1112,20 @@ var Impl = {
     );
   },
 
-  QueryInterface: ChromeUtils.generateQI(["nsISupportsWeakReference"]),
+  QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 
   _attachObservers() {
     if (TelemetryControllerBase.IS_UNIFIED_TELEMETRY) {
       // Watch the FHR upload setting to trigger "deletion-request" pings.
       Services.prefs.addObserver(
         TelemetryUtils.Preferences.FhrUploadEnabled,
-        this,
-        true
+        this
       );
+    }
+    if (AppConstants.MOZ_APP_NAME == "firefox") {
+      // Firefox-only: watch the usage reporting setting to enable, disable, and
+      // trigger "usage-deletion-request" pings.
+      Services.prefs.addObserver("datareporting.usage.uploadEnabled", this);
     }
   },
 
@@ -1134,6 +1138,9 @@ var Impl = {
         TelemetryUtils.Preferences.FhrUploadEnabled,
         this
       );
+    }
+    if (AppConstants.MOZ_APP_NAME == "firefox") {
+      Services.prefs.removeObserver("datareporting.usage.uploadEnabled", this);
     }
   },
 

@@ -2,6 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = {};
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "verticalTabsEnabled",
+  "sidebar.verticalTabs"
+);
+
 /**
  * The properties that make up a sidebar's UI state.
  *
@@ -26,6 +36,7 @@
  */
 
 const LAUNCHER_MINIMUM_WIDTH = 100;
+const SIDEBAR_MAXIMUM_WIDTH = "75vw";
 
 /**
  * A reactive data store for the sidebar's UI state. Similar to Lit's
@@ -37,15 +48,11 @@ export class SidebarState {
   /** @type {SidebarStateProps} */
   #props = {
     panelOpen: false,
-    panelWidth: undefined,
     launcherVisible: true,
     launcherExpanded: false,
     launcherDragActive: false,
     launcherHoverActive: false,
-    launcherWidth: undefined,
-    expandedLauncherWidth: undefined,
   };
-  #previousExpandedState = false;
   #previousLauncherVisible = undefined;
 
   /**
@@ -81,6 +88,15 @@ export class SidebarState {
   }
 
   /**
+   * Get the sidebar panel element.
+   *
+   * @returns {XULElement}
+   */
+  get #sidebarBoxEl() {
+    return this.#controller._box;
+  }
+
+  /**
    * Get the sidebar panel.
    *
    * @returns {XULElement}
@@ -105,28 +121,45 @@ export class SidebarState {
     if (isPopup) {
       // Don't show launcher if we're in a popup window.
       this.launcherVisible = false;
-    } else if (this.revampVisibility === "hide-sidebar" && !this.panelOpen) {
-      // When using "Show and hide sidebar", launcher will start off hidden.
-      this.launcherVisible = false;
-    } else if (this.revampVisibility === "always-show") {
-      // When using "Expand and collapse sidebar", launcher must be visible.
+    } else {
       this.launcherVisible = true;
     }
-    // Ensure that tab container has the updated value of `launcherExpanded`.
-    const { tabContainer } = this.#controllerGlobal.gBrowser;
-    tabContainer.toggleAttribute("expanded", this.launcherExpanded);
+
+    // Explicitly trigger effects to ensure that the UI is kept up to date.
+    this.launcherExpanded = this.#props.launcherExpanded;
   }
 
   /**
-   * Update state properties.
+   * Load the state information given by session store, backup state, or
+   * adopted window.
    *
    * @param {SidebarStateProps} props
-   *   New properties to merge with the current state.
+   *   New properties to overwrite the default state with.
    */
-  updateState(props) {
+  loadInitialState(props) {
     for (const [key, value] of Object.entries(props)) {
-      if (Object.hasOwn(this.#props, key) && value !== undefined) {
-        this[key] = value;
+      if (value === undefined) {
+        // `undefined` means we should use the default value.
+        continue;
+      }
+      switch (key) {
+        case "command":
+          this.#controller.showInitially(value);
+          break;
+        case "panelWidth":
+          this.#panelEl.style.width = `${value}px`;
+          break;
+        case "width":
+          this.#panelEl.style.width = value;
+          break;
+        case "expanded":
+          this.launcherExpanded = value;
+          break;
+        case "hidden":
+          this.launcherVisible = !value;
+          break;
+        default:
+          this[key] = value;
       }
     }
   }
@@ -149,20 +182,13 @@ export class SidebarState {
    * @returns {SidebarStateProps}
    */
   getProperties() {
-    // TODO: Bug 1935482 - Replace legacy properties with SidebarState properties
     return {
-      width: this.#panelEl.style.width,
       command: this.#controller.currentID,
-      expanded: this.launcherExpanded,
-      hidden: !this.launcherVisible,
-      launcherWidth:
-        typeof this.launcherWidth === "number"
-          ? Math.round(this.launcherWidth)
-          : this.launcherWidth,
-      expandedLauncherWidth:
-        typeof this.expandedLauncherWidth === "number"
-          ? Math.round(this.expandedLauncherWidth)
-          : this.expandedLauncherWidth,
+      panelWidth: this.panelWidth,
+      launcherWidth: convertToInt(this.launcherWidth),
+      expandedLauncherWidth: convertToInt(this.expandedLauncherWidth),
+      launcherExpanded: this.launcherExpanded,
+      launcherVisible: this.launcherVisible,
     };
   }
 
@@ -176,38 +202,43 @@ export class SidebarState {
       // Launcher must be visible to open a panel.
       this.#previousLauncherVisible = this.launcherVisible;
       this.launcherVisible = true;
-
-      // Whenever a panel is shown, the sidebar is collapsed. Upon hiding
-      // that panel afterwards, `expanded` reverts back to what it was prior
-      // to calling `show()`. Thus, we store the expanded state at this point.
-      this.#previousExpandedState = this.launcherExpanded;
-      this.launcherExpanded = false;
     } else if (this.revampVisibility === "hide-sidebar") {
-      // When visibility is set to "Hide Sidebar", revert back to an expanded state except
-      // when a panel was opened via keyboard shortcut and the launcher was previously hidden.
-      this.launcherExpanded = this.#previousLauncherVisible;
+      this.launcherExpanded = lazy.verticalTabsEnabled
+        ? this.#previousLauncherVisible
+        : false;
       this.launcherVisible = this.#previousLauncherVisible;
-    } else {
-      this.launcherExpanded = this.#previousExpandedState;
     }
   }
 
   get panelWidth() {
-    return this.#props.panelWidth;
+    // Use the value from `style`. This is a more accurate user preference, as
+    // opposed to what the resize observer gives us.
+    return convertToInt(this.#panelEl.style.width);
   }
 
   set panelWidth(width) {
-    this.#props.panelWidth = width;
-    this.#panelEl.style.width = width;
+    this.#launcherContainerEl.style.maxWidth = `calc(${SIDEBAR_MAXIMUM_WIDTH} - ${width}px)`;
   }
 
   get launcherVisible() {
     return this.#props.launcherVisible;
   }
 
+  /**
+   * Update the launcher `visible` and `expanded` states to handle the
+   * following scenarios:
+   *
+   * - Toggling "Hide tabs and sidebar" from the customize panel.
+   * - Clicking sidebar button from the toolbar.
+   * - Removing sidebar button from the toolbar.
+   *
+   * @param {boolean} visible
+   * @param {boolean} onToolbarButtonClick
+   * @param {boolean} onToolbarButtonRemoval
+   */
   updateVisibility(
     visible,
-    openedByToolbarButton = false,
+    onToolbarButtonClick = false,
     onToolbarButtonRemoval = false
   ) {
     switch (this.revampVisibility) {
@@ -216,30 +247,33 @@ export class SidebarState {
           // If we are hiding the sidebar because we removed the toolbar button, close everything
           this.#previousLauncherVisible = false;
           this.launcherVisible = false;
-          this.launcherExpanded = true;
+          this.launcherExpanded = false;
 
           if (this.panelOpen) {
             this.#controller.hide();
           }
           return;
         }
-        if (!openedByToolbarButton && !visible && this.panelOpen) {
-          // no-op to handle the case when a user changes the visibility setting via the
-          // customize panel, we don't want to close anything on them.
-          return;
-        }
-        // we need this set to true to ensure it has the correct state when toggling the sidebar button
-        this.launcherExpanded = true;
-
+        // we need this set to verticalTabsEnabled to ensure it has the correct state when toggling the sidebar button
+        this.launcherExpanded = lazy.verticalTabsEnabled && visible;
         if (!visible && this.panelOpen) {
-          // Hiding the launcher should also close out any open panels and resets panelOpen
-          this.#controller.hide();
+          if (onToolbarButtonClick) {
+            // Hiding the launcher with the toolbar button should also close out any open panels and resets panelOpen
+            this.#controller.hide();
+          } else {
+            // Hide the launcher when the pref is set to hide-sidebar
+            this.launcherVisible = false;
+            this.#previousLauncherVisible = false;
+            return;
+          }
         }
         this.launcherVisible = visible;
         break;
       case "always-show":
         this.launcherVisible = true;
-        this.launcherExpanded = !this.launcherExpanded;
+        this.launcherExpanded = onToolbarButtonClick
+          ? !this.launcherExpanded
+          : true;
         break;
     }
   }
@@ -254,6 +288,8 @@ export class SidebarState {
     this.#props.launcherVisible = visible;
     this.#launcherContainerEl.hidden = !visible;
     this.#updateTabbrowser(visible);
+    this.#sidebarBoxEl.style.paddingInlineStart =
+      this.panelOpen && !visible ? "var(--space-small)" : "unset";
   }
 
   get launcherExpanded() {
@@ -266,9 +302,10 @@ export class SidebarState {
       this.#props.launcherExpanded = false;
       return;
     }
+    const previousExpanded = this.#props.launcherExpanded;
     this.#props.launcherExpanded = expanded;
     this.#launcherEl.expanded = expanded;
-    if (expanded) {
+    if (expanded && !previousExpanded) {
       Glean.sidebar.expand.record();
     }
     // Marking the tab container element as expanded or not simplifies the CSS logic
@@ -289,6 +326,8 @@ export class SidebarState {
     this.#props.launcherDragActive = active;
     if (active) {
       this.#launcherEl.toggleAttribute("customWidth", true);
+    } else if (!lazy.verticalTabsEnabled) {
+      this.launcherExpanded = false;
     } else if (this.launcherWidth < LAUNCHER_MINIMUM_WIDTH) {
       // Snap back to collapsed state when the new width is too narrow.
       this.launcherExpanded = false;
@@ -312,8 +351,13 @@ export class SidebarState {
         "inDOMFullscreen"
       )
     ) {
+      this.#panelEl.style.maxWidth = `calc(${SIDEBAR_MAXIMUM_WIDTH} - ${width}px)`;
       // Expand the launcher when it gets wide enough.
-      this.launcherExpanded = width >= LAUNCHER_MINIMUM_WIDTH;
+      if (lazy.verticalTabsEnabled) {
+        this.launcherExpanded = width >= LAUNCHER_MINIMUM_WIDTH;
+      } else {
+        this.launcherExpanded = false;
+      }
     }
   }
 
@@ -347,4 +391,20 @@ export class SidebarState {
       .getElementById("tabbrowser-tabbox")
       .toggleAttribute("sidebar-shown", isSidebarShown);
   }
+}
+
+/**
+ * Convert a value to an integer.
+ *
+ * @param {string} value
+ *   The value to convert.
+ * @returns {number}
+ *   The resulting integer, or `undefined` if it's not a number.
+ */
+function convertToInt(value) {
+  const intValue = parseInt(value);
+  if (isNaN(intValue)) {
+    return undefined;
+  }
+  return intValue;
 }

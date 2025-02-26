@@ -11,15 +11,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
 });
 
+// Directly import moz-button here, otherwise, moz-button will be loaded and upgraded on DOMContentLoaded, after MegalistAlpha is first updated.
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/megalist/PasswordCard.mjs";
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/megalist/LoginFormComponent/login-form.mjs";
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/megalist/Dialog.mjs";
+import "chrome://global/content/elements/moz-button.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/megalist/NotificationMessageBar.mjs";
+import "chrome://global/content/megalist/components/password-card/password-card.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/megalist/components/login-form/login-form.mjs";
+
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/megalist/components/notification-message-bar/notification-message-bar.mjs";
 
 const DISPLAY_MODES = {
   ALERTS: "SortByAlerts",
@@ -82,6 +84,18 @@ export class MegalistAlpha extends MozLitElement {
     await Promise.all(passwordCards.map(el => el.updateComplete));
   }
 
+  async updated(changedProperties) {
+    if (changedProperties.has("viewMode")) {
+      const mozButton = this.shadowRoot.querySelector("#create-login-button");
+      await mozButton.updateComplete;
+      // Need to set aria-expanded on the button element of the moz-button for screen readers to announce the change.
+      mozButton.buttonEl.setAttribute(
+        "aria-expanded",
+        this.viewMode === VIEW_MODES.ADD ? "true" : "false"
+      );
+    }
+  }
+
   #onPasswordRevealClick(concealed, lineIndex) {
     if (concealed) {
       this.#messageToViewModel("Command", {
@@ -107,6 +121,8 @@ export class MegalistAlpha extends MozLitElement {
   #onInputChange(e) {
     const searchText = e.target.value;
     this.searchText = searchText;
+    this.viewMode = VIEW_MODES.LIST;
+    this.selectedRecord = null;
 
     this.#debounce(
       () => this.#messageToViewModel("UpdateFilter", { searchText }),
@@ -127,7 +143,7 @@ export class MegalistAlpha extends MozLitElement {
     switch (this.viewMode) {
       case VIEW_MODES.EDIT:
         this.#sendCommand("DiscardChanges", {
-          value: { passwordIndex: this.selectedRecord.password.lineIndex - 1 },
+          value: { passwordIndex: this.selectedRecord.password.lineIndex },
         });
         return;
       default:
@@ -137,6 +153,17 @@ export class MegalistAlpha extends MozLitElement {
 
   #openMenu(e) {
     const panelList = this.shadowRoot.querySelector("panel-list");
+    const menuButton = this.shadowRoot.querySelector(
+      "#more-options-menubutton"
+    );
+    menuButton.setAttribute("aria-expanded", "true");
+
+    panelList.addEventListener(
+      "hidden",
+      () => menuButton.setAttribute("aria-expanded", "false"),
+      { once: true }
+    );
+
     panelList.toggle(e);
   }
 
@@ -146,12 +173,12 @@ export class MegalistAlpha extends MozLitElement {
       .sendAsyncMessage(messageName, data);
   }
 
-  #sendCommand(commandId, options = {}) {
+  #sendCommand(commandId, options = {}, snapshotId = 0) {
     // TODO(Bug 1913302): snapshotId should be optional for global commands.
     // Right now, we always pass 0 and overwrite when needed.
     this.#messageToViewModel("Command", {
       commandId,
-      snapshotId: 0,
+      snapshotId,
       ...options,
     });
   }
@@ -224,7 +251,10 @@ export class MegalistAlpha extends MozLitElement {
       !this.notification?.fromSidebar;
 
     if (shouldShowDiscardChangesPrompt) {
-      this.#sendCommand("DiscardChanges", { value: { fromSidebar: true } });
+      const passwordIndex = this.selectedRecord.password.lineIndex;
+      this.#sendCommand("DiscardChanges", {
+        value: { fromSidebar: true, passwordIndex },
+      });
       e.preventDefault();
     }
   }
@@ -235,7 +265,7 @@ export class MegalistAlpha extends MozLitElement {
       @keypress=${e => {
         if (e.shiftKey && e.key === "Tab") {
           e.preventDefault();
-          this.shadowRoot.querySelector("#more-options-menubutton").focus();
+          this.shadowRoot.querySelector(".passwords-list").focus();
         } else if (e.key === "Tab") {
           e.preventDefault();
           const webContent =
@@ -412,6 +442,7 @@ export class MegalistAlpha extends MozLitElement {
       data-l10n-id="passwords-no-passwords-found-header"
     >
       <div
+        id="no-results-message"
         class="empty-search-results"
         data-l10n-id="passwords-no-passwords-found-message"
       ></div>
@@ -445,10 +476,15 @@ export class MegalistAlpha extends MozLitElement {
           .onClose=${() => this.#onCancelLoginForm()}
           .onSaveClick=${loginForm => {
             loginForm.guid = this.selectedRecord.origin.guid;
-            const passwordIndex = this.selectedRecord.password.lineIndex - 1;
             this.#sendCommand("UpdateLogin", {
-              value: { login: loginForm, passwordIndex },
+              value: loginForm,
             });
+            this.#sendCommand(
+              "Cancel",
+              {},
+              this.selectedRecord.password.lineIndex
+            );
+          }}
           }}
           .onDeleteClick=${() => {
             const login = {
@@ -456,6 +492,12 @@ export class MegalistAlpha extends MozLitElement {
               guid: this.selectedRecord.origin.guid,
             };
             this.#sendCommand("DeleteLogin", { value: login });
+          }}
+          .onOriginClick=${e => {
+            e.preventDefault();
+            this.#sendCommand("OpenLink", {
+              value: this.selectedRecord.origin.href,
+            });
           }}
         >
         </login-form>`;
@@ -467,19 +509,22 @@ export class MegalistAlpha extends MozLitElement {
   }
 
   renderSearch() {
+    const hasResults = this.records.length;
+    const describedBy = hasResults ? "" : "no-results-message";
     return html`
       <div
-        class="searchContainer"
+        class="search-container"
         @click=${() => {
           this.shadowRoot.querySelector(".search").focus();
         }}
       >
-        <div class="searchIcon"></div>
+        <div class="search-icon"></div>
         <input
           class="search"
           type="search"
           data-l10n-id="filter-input"
           .value=${this.searchText}
+          aria-describedby=${describedBy}
           @input=${e => this.#onInputChange(e)}
         />
       </div>
@@ -490,6 +535,7 @@ export class MegalistAlpha extends MozLitElement {
     return html`<div class="first-row">
       ${this.renderSearch()}
       <moz-button
+        id="create-login-button"
         @click=${this.#onAddButtonClick}
         data-l10n-id="create-login-button"
         type="icon"
@@ -549,29 +595,29 @@ export class MegalistAlpha extends MozLitElement {
       >
         <panel-item
           action="import-from-browser"
-          data-l10n-id="about-logins-menu-menuitem-import-from-another-browser"
+          data-l10n-id="passwords-command-import-from-browser"
           @click=${() => this.#sendCommand("ImportFromBrowser")}
         ></panel-item>
         <panel-item
           action="import-from-file"
-          data-l10n-id="about-logins-menu-menuitem-import-from-a-file"
+          data-l10n-id="passwords-command-import"
           @click=${() => this.#sendCommand("Import")}
         ></panel-item>
         <panel-item
           action="export-logins"
-          data-l10n-id="about-logins-menu-menuitem-export-logins2"
+          data-l10n-id="passwords-command-export"
           @click=${() => this.#sendCommand("Export")}
         ></panel-item>
         <panel-item
           action="remove-all-logins"
-          data-l10n-id="about-logins-menu-menuitem-remove-all-logins2"
+          data-l10n-id="passwords-command-remove-all"
           @click=${() => this.#sendCommand("RemoveAll")}
-          .disabled=${!this.header.value.total}
+          ?disabled=${!this.header.value.total}
         ></panel-item>
         <hr />
         <panel-item
           action="open-preferences"
-          data-l10n-id="menu-menuitem-preferences"
+          data-l10n-id="passwords-command-settings"
           @click=${() => {
             const command = this.header.commands.find(
               command => command.id === "Settings"
@@ -581,7 +627,7 @@ export class MegalistAlpha extends MozLitElement {
         ></panel-item>
         <panel-item
           action="open-help"
-          data-l10n-id="about-logins-menu-menuitem-help"
+          data-l10n-id="passwords-command-help"
           @click=${() => {
             const command = this.header.commands.find(
               command => command.id === "Help"
@@ -626,8 +672,8 @@ export class MegalistAlpha extends MozLitElement {
         .onDismiss=${() => {
           this.notification = null;
         }}
-        .messageHandler=${(commandId, options) =>
-          this.#sendCommand(commandId, options)}
+        .messageHandler=${(commandId, options, snapshotId) =>
+          this.#sendCommand(commandId, options, snapshotId)}
         @view-login=${e => this.#scrollPasswordCardIntoView(e.detail.guid)}
       >
       </notification-message-bar>

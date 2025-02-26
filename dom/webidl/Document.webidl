@@ -39,35 +39,7 @@ dictionary ElementCreationOptions {
 };
 
 /* https://dom.spec.whatwg.org/#interface-document */
-[Exposed=Window,
- InstrumentedProps=(caretRangeFromPoint,
-                    exitPictureInPicture,
-                    featurePolicy,
-                    onbeforecopy,
-                    onbeforecut,
-                    onbeforepaste,
-                    oncancel,
-                    onfreeze,
-                    onmousewheel,
-                    onresume,
-                    onsearch,
-                    onwebkitfullscreenchange,
-                    onwebkitfullscreenerror,
-                    pictureInPictureElement,
-                    pictureInPictureEnabled,
-                    registerElement,
-                    wasDiscarded,
-                    webkitCancelFullScreen,
-                    webkitCurrentFullScreenElement,
-                    webkitExitFullscreen,
-                    webkitFullscreenElement,
-                    webkitFullscreenEnabled,
-                    webkitHidden,
-                    webkitIsFullScreen,
-                    webkitVisibilityState,
-                    xmlEncoding,
-                    xmlStandalone,
-                    xmlVersion)]
+[Exposed=Window]
 interface Document : Node {
   [Throws]
   constructor();
@@ -184,7 +156,7 @@ partial interface Document {
   [CEReactions, Throws]
   Document open(optional DOMString unused1, optional DOMString unused2); // both arguments are ignored
   [CEReactions, Throws]
-  WindowProxy? open(USVString url, DOMString name, DOMString features);
+  WindowProxy? open(UTF8String url, DOMString name, DOMString features);
   [CEReactions, Throws]
   undefined close();
   [CEReactions, Throws]

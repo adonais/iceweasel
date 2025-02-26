@@ -332,10 +332,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Caewch ddalen y ddewislen offer</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Caewch ddalen y ddewislen tabiau cyfaddas</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Golwg Darllenydd, Cyfieithu, Argraffu, Rhannu, Agor ap</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Golwg Darllenydd, Argraffu, Rhannu, Agor ap</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Golwg Darllenydd, Cyfieithu, %s, Argraffu, Rhannu, Agor ap</string>
@@ -570,7 +566,6 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Mae adroddiadau chwalu\'n ein galluogi i wneud diagnosis a thrwsio problemau gyda\'r porwr. Gall adroddiadau gynnwys data personol neu sensitif.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Darllen rhagor am adroddiadau chwalu</string>
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Dysgu rhagor</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Anfon data technegol a rhyngweithio i Mozilla</string>
@@ -583,30 +578,44 @@
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Gorffen</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Na</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Na</string>
 
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Croeso i Firefox</string>
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Pori gwe cyflym a diogel.</string>
+    <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">Pori gwe cyflym a diogel</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Cytuno a pharhau</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Trwy barhau, rydych yn cytuno i %1$s Firefox.</string>
-    <string name="onboarding_term_of_service_line_one_2">Drwy barhau, rydych yn cytuno i\'r %1$s.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+    <string name="onboarding_term_of_service_line_one_2">Drwy barhau, rydych yn cytuno i %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Amodau Gwasanaeth</string>
-    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Telerau Defnyddio Firefox</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Amodau Defnyddio Firefox</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Mae Firefox yn ofalus o\'ch preifatrwydd. Darllenwch fwy yn ein %1$s.</string>
-    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Mae Firefox yn poeni am eich preifatrwydd. Dysgwch fwy yn ein %1$s.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Mae Firefox yn pryderu am eich preifatrwydd. Dysgwch fwy yn ein %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Hysbysiad Preifatrwydd</string>
     <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$S is replaced by an active link, using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Er mwyn helpu i wella\'r porwr, mae Firefox yn anfon data diagnostig a rhyngweithio i Mozilla. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Rheoli</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Helpwch ni i dyfu Firefox</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Pan fyddwch chi\'n rhannu sut wnaethoch chi ddarganfod Firefox a\'ch bod chi\'n ei ddefnyddio, rydych chi\'n ein helpu ni i gyflwyno ein porwr i fwy o bobl.</string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Rhannwch y data lleiaf gyda phartneriaid technoleg marchnata Mozilla. Nid yw\'r data hwn byth yn cael ei werthu na\'i ddefnyddio i ddangos hysbysebion i chi.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Sut rydym yn defnyddio\'r data</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Cadarnhau a dechrau pori</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Dewiswch leoliad eich bar offer</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -822,6 +831,8 @@
     <string name="preferences_show_voice_search">Dangos chwiliad llais</string>
     <!-- Preference title for switch preference to show search suggestions also in private mode -->
     <string name="preferences_show_search_suggestions_in_private">Dangos mewn sesiynau preifat</string>
+    <!-- Preference title for switch preference to show trending search suggestions -->
+    <string name="preferences_show_trending_search_suggestions">Dangos awgrymiadau tueddiadau</string>
     <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
     <string name="preferences_show_clipboard_suggestions">Dangos awgrymiadau o’r clipfwrdd</string>
     <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -1048,25 +1059,30 @@
     <string name="exceptions_empty_message_learn_more_link">Darllen rhagor</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Data defnydd a thechnegol</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Data technegol a rhyngweithio</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Anfon data technegol a rhyngweithio</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Dysgu rhagor</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">Mae’n rhannu data perfformiad, defnydd, caledwedd a chyfaddasu eich porwr gyda Mozilla er mwyn gwella %1$s</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Mae’n rhannu data perfformiad, defnydd, caledwedd a chyfaddasu eich porwr gyda Mozilla er mwyn gwella %1$s</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Mae data am eich dyfais, ffurfweddiad caledwedd, a defnydd yn ein helpu i wella nodweddion, perfformiad a sefydlogrwydd Firefox.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Data marchnata</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Yn rhannu data defnydd sylfaenol gydag Adjust, ein gwerthwr marchnata symudol</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Data marchnata</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Data mesur yr ymgyrch</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Rhannwch wybodaeth am sut wnaethoch chi ddarganfod Firefox gyda phartneriaid marchnata Mozilla. Mae hyn yn ein helpu i dyfu Firefox ac adeiladu rhyngrwyd gwell</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Rhannwch wybodaeth am sut wnaethoch chi ddarganfod Firefox gyda phartneriaid marchnata Mozilla. Mae hyn yn ein helpu i dyfu Firefox ac adeiladu rhyngrwyd gwell</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Rhannwch sut wnaethoch chi ddarganfod Firefox a\'ch bod chi\'n ei ddefnyddio gyda phartneriaid technoleg marchnata Mozilla.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Dysgwch fwy am ddata marchnata</string>
 
     <!-- Preference switch for daily usage ping data collection -->
-    <string name="preferences_daily_usage_ping_title">Defnydd dyddiol ping</string>
-    <string name="preferences_daily_usage_ping_description">Mae hyn yn helpu Mozilla amcangyfrif defnyddwyr gweithredol.</string>
+    <string name="preferences_daily_usage_ping_title">Ping defnydd dyddiol</string>
+    <string name="preferences_daily_usage_ping_description">Mae hyn yn helpu Mozilla i amcangyfrif defnyddwyr gweithredol.</string>
     <string name="preferences_daily_usage_ping_learn_more">Dysgwch fwy am ping defnydd dyddiol</string>
     <!-- Preference switch title for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_title">Yn anfon adroddiadau chwalu\'n awtomatig</string>
@@ -1075,6 +1091,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Mae hyn yn ein helpu i wneud diagnosis a thrwsio problemau gyda\'r porwr. Gall adroddiadau gynnwys data personol neu sensitif.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Wrth gychwyn mae\'n rhannu data chwalu yn awtomatig gyda Mozilla ar ôl chwaliadau</string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Darllen rhagor am adroddiadau chwalu</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Astudiaethau</string>
@@ -1237,7 +1256,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Gweithredol</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">Gall %1$s osod a rhedeg astudiaethau o bryd i’w gilydd.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">Gall %1$s osod a rhedeg astudiaethau o bryd i’w gilydd.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Rhowch gynnig ar nodweddion a syniadau cyn iddyn nhw gael eu rhyddhau i bawb.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Gosod a rhedeg astudiaethau</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Darllen rhagor</string>
 
@@ -2057,6 +2080,8 @@
     <string name="about_privacy_notice">Hysbysiad preifatrwydd</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Gwybod eich hawliau</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Amodau Defnydd</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Manylion trwyddedu</string>
     <!-- About page link text to open a screen with libraries that are used -->
@@ -2523,6 +2548,8 @@
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Awgrymiadau Firefox</string>
 
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Tueddiadau Chwilio</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Google Search</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2953,6 +2980,10 @@
     <string name="download_language_file_dialog_negative_button_text">Na</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Diogel</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">Ddim yn ddiogel</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Byddwch yn ofalus ar y wefan hon</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2973,6 +3004,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Os yw rhywbeth yn edrych wedi torri ar y wefan hon, ceisiwch ddiffodd eich diogelwch.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">Mae\'r mesurau diogelwch wedi\'u DIFFODD. Rydym yn awgrymu eu troi yn ôl ymlaen.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Tracwyr wedi\'u rhwystro: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">Heb ganfod tracwyr</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Gosodiadau preifatrwydd a diogelwch</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Tracwyr wedi\'u rhwystro: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Mae\'n bosibl y bydd dileu cwcis a data gwefan <b>%s</b> yn eich allgofnodi o wefannau a chlirio\'ch certi siopa.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Clirio</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Diddymu</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Cwcis a data gwefan wedi\'u dileu</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Cysylltiadau diogel</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Nid yw’r cysylltiad yn ddiogel</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Wedi\'i wirio gan %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3093,7 +3155,7 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Dadfygio localau i\'w alluogi</string>
 
-    <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+    <!-- The title of the header for the section for managing addresses. -->
     <string name="debug_drawer_addresses_management_header">Rheoli cyfeiriadau</string>
     <!-- The title of the button in the debug drawer for adding a new address. -->
     <string name="debug_drawer_add_new_address">Ychwanegu cyfeiriad newydd ar gyfer y locale a ddewiswyd</string>
@@ -3152,4 +3214,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Diweddarwch cyn Mawrth 14 i barhau i ddefnyddio ychwanegion a nodweddion eraill.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Bydd rhai nodweddion yn peidio â gweithio yfory.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Dangos testun cudd</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Clirio testun</string>
 </resources>

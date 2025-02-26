@@ -9,7 +9,7 @@ task-defaults:
         by-test-platform:
             android-em-7.*: geckoview-test_runner.apk
             android-hw.*: geckoview-test_runner.apk
-            windows11-64-2009.*:
+            windows11-64.*:
                 by-variant:
                     msix: target.installer.msix
                     default: null
@@ -64,6 +64,7 @@ mochitest-plain:
         - geckoview-fission-isolate-high-value
         - geckoview-no-fission-ship
         - os-integration
+        - inc-origin-init
     run-on-projects:
         by-variant:
             os-integration: []  # this variant only runs as a cron task
@@ -71,14 +72,13 @@ mochitest-plain:
                 by-test-platform:
                     .*(asan|ccov|wayland).*: []
                     linux1804-64(-shippable)?-qr/opt: ['trunk']
-                    windows11-64.*(-shippable)?-qr/opt: []
+                    windows11-64.*(-shippable)?(-qr)?/opt: []
                     default: []
             xorigin:
                 by-test-platform:
                     .*(asan|wayland).*: []
                     windows.*ccov.*: []
                     (linux.*64|macosx.*64|windows11.*)(-shippable)?(-qr)?/(opt|debug): ['trunk']
-                    windows.*64-ccov-qr/opt: ['mozilla-central']
                     linux.*64-ccov-qr/opt: ['mozilla-central']
                     android-em-7.0-x86_64-qr/debug-isolated-process: []
                     android-em.*: ['trunk']
@@ -122,6 +122,12 @@ mochitest-plain:
                     android-em-7.0-x86_64-qr/debug-isolated-process: []
                     android-em.*: built-projects
                     default: []
+            inc-origin-init:
+                by-test-platform:
+                    .*asan.*: []
+                    .*ccov.*: []
+                    (linux.*64|macosx.*64|windows1.*-64.*)(-shippable)?(-qr)?/(opt|debug): built-projects
+                    default: []
             default:
                 by-test-platform:
                     android-em-7.0-x86_64-qr/debug-isolated-process: []
@@ -130,6 +136,7 @@ mochitest-plain:
     chunks:
         by-variant:
             os-integration: dynamic
+            inc-origin-init: dynamic
             default:
                 by-test-platform:
                     android.*/debug: 10
@@ -155,10 +162,14 @@ mochitest-plain:
     mozharness:
         mochitest-flavor: plain
         extra-options:
-            by-test-platform:
-                android-em.*:
-                    - --test-suite=mochitest-plain
-                default: []
+            by-variant:
+                inc-origin-init:
+                    - --tag=inc-origin-init
+                default:
+                    by-test-platform:
+                        android-em.*:
+                            - --test-suite=mochitest-plain
+                        default: []
         chunked:
             by-test-platform:
                 android-em.*: false
@@ -258,8 +269,7 @@ mochitest-browser-chrome:
                     default: []
             msix:
                 by-test-platform:
-                    windows11-64-2009-qr/debug: built-projects
-                    windows11-64-2009(-shippable)?-qr/opt: built-projects
+                    windows11-64.*: built-projects
                     default: []
             vertical-tabs:
                 by-test-platform:
@@ -292,7 +302,7 @@ mochitest-browser-chrome:
                     linux.*-qr/debug: 16
                     linux.*64-asan-qr/opt: 16
                     linux.*64-tsan-qr/opt: 32
-                    windows.*-asan-qr/opt: 16
+                    windows.*-asan.*/opt: 16
                     windows.*-ccov.*/.*: 14
                     macosx.*64.*/opt: 10
                     windows11.*/opt: 10
@@ -311,7 +321,7 @@ mochitest-browser-chrome:
                     linux.*64-tsan-qr/opt: 10800
                     linux.*-qr/opt: 5400
                     windows.*-ccov.*/.*: 10800
-                    windows.*-asan-qr/opt: 5400
+                    windows.*-asan.*/opt: 5400
                     .*/debug: 5400
                     default: 3600
     mozharness:
@@ -569,7 +579,7 @@ mochitest-devtools-chrome:
             linux.*wayland.*/debug: 14
             linux.*64-qr/debug: 14
             macosx.*64(-qr)?/debug: 8
-            .*-asan(-qr)?/opt: 8
+            .*-asan.*/opt: 8
             .*-tsan-qr/opt: 16
             default: 5
     mozharness:
@@ -783,8 +793,8 @@ mochitest-media:
                     linux.*64(-asan|-devedition|-shippable)?-qr/(opt|debug): built-projects
                     linux.*64-tsan-qr/opt: ['autoland', 'mozilla-central']
                     macosx.*-64(-devedition|-shippable)?(-qr)?/(opt|debug): built-projects
-                    windows1.*(-devedition|-shippable)?-qr/(opt|debug): built-projects
-                    windows.*-asan-qr/opt: ['autoland', 'mozilla-central']
+                    windows.*-asan.*/opt: ['autoland', 'mozilla-central']
+                    windows1.*: built-projects
                     default: []
             webrender-sw+no-fission:
                 by-test-platform:
@@ -818,9 +828,9 @@ mochitest-media:
             msix:
                 by-test-platform:
                     .*hw-ref.*: []
-                    windows11-64-2009-shippable-qr/opt: built-projects
-                    windows11-64-2009-qr/opt: ['autoland']
-                    windows11-64-2009-qr/debug: ['autoland']
+                    windows11-64-.*-shippable.*/opt: built-projects
+                    windows11-64-.*/opt: ['autoland']
+                    windows11-64-.*/debug: ['autoland']
                     default: []
             media-gpu:
                 by-test-platform:
@@ -837,7 +847,8 @@ mochitest-media:
                     android.*: built-projects
                     linux.*(asan|ccov)/opt: []
                     .*(ccov/|asan/|-32).*: built-projects
-                    (android|linux|windows10-64-2009|windows11-64-2009|macos)(?!.*-qr).*: []
+                    windows11.*: built-projects
+                    (android|linux|windows10-64-2009|windows11-64|macos)(?!.*-qr).*: []
                     default: built-projects
     loopback-video: true
     chunks:

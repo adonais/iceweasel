@@ -328,10 +328,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Mbyllni fletën e menusë së mjeteve</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Mbyllni fletën e menusë së skedave vetjake</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Pamje Lexuesi, Përktheni, Shtypni, Ndani Me të Tjerë, Hapni aplikacion</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Pamje Lexuesi, Shtypni, Ndani Me të Tjerë, Hapni aplikacion</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site" moz:removedIn="135" tools:ignore="UnusedResources">Pamje Lexuesi, Përktheni, %s, Shtypni, Ndani Me të Tjerë, Hapni aplikacion</string>
@@ -565,34 +561,55 @@
     <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_crash_reporting_description">Raportet e vithisjeve na lejojnë të diagnostikojmë dhe ndreqim probleme me shfletuesin. Raportet mund të përfshijnë të dhëna personale, ose rezervat.</string>
     <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Mësoni më tepër rreth njoftimesh vithisjesh</string>
-
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Mësoni më tepër</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Dërgo të dhëna teknike dhe ndërveprimesh te Mozilla</string>
     <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Të dhënat rreth pajisjes tuaj, formësimit hardware dhe se si e përdorni Firefox-in ndihmojnë të përmirësohen veçori, funksionimi dhe qëndrueshmëria për përdorues kudo.</string>
+    <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Të dhënat rreth pajisjes tuaj, formësimit hardware dhe se si e përdorni Firefox-in ndihmojnë të përmirësohen veçori, funksionimi dhe qëndrueshmëria për këdo.</string>
     <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Mësoni më tepër rreth të dhënash përdorimi</string>
+    <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Mësoni më tepër</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">U bë</string>
     <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button">Anuloje</string>
+    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Anuloje</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Mirë se vini në Firefox</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Shfletim i shpejtë dhe i siguruar.</string>
+    <!-- Terms of service sub header label. -->
+    <string name="onboarding_terms_of_service_sub_header_2">Shfletim i shpejtë dhe siguruar</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Shprehni pajtimin dhe vazhdoni</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text as text (“Firefox Terms of Use”). -->
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Duke vazhduar, pajtoheni me %1$s Firefox-i.</string>
+    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+    <string name="onboarding_term_of_service_line_one_2">Duke vazhduar, pajtoheni me %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
     <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Kushte Shërbimi</string>
+    <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+    <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Terma Përdorimi Firefox-i</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox-i kujdeset për privatësinë tuaj. Lexoni më tepër te %1$s tona.</string>
+    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+    <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox-i kujdeset për privatësinë tuaj. Mësoni më tepër te %1$s tona.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
     <string name="onboarding_term_of_service_line_two_link_text">Shënim Mbi Privatësinë</string>
     <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$S is replaced by an active link, using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
     <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Që të ndihmoni të përmirësohet shfletuesi, Firefox-i dërgon te Mozilla të dhëna diagnostikimesh dhe ndërveprimesh. %1$s</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
     <string name="onboarding_term_of_service_line_three_link_text">Administrojini</string>
+    <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Ndihmonani të fuqizojmë Firefox-in</string>
+    <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Kur na tregoni se si e zbuluat Firefox-in dhe se e përdorni, na ndihmoni ta paraqesim shfletuesin tonë te më tepër njerëz. </string>
+    <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Ndani me partnerë teknologjish marketingu të Mozilla-s të dhëna minimale. Këto të dhëna nuk shiten kurrë, apo të përdoren për t’ju shfaqur reklama.</string>
+    <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+    <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Si i përdorim të dhënat</string>
+    <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Ripohojeni dhe filloni të shfletoni</string>
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Zgjidhni një vendosje të panelit</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -807,6 +824,8 @@
     <string name="preferences_show_voice_search">Shfaq kërkim zanor</string>
     <!-- Preference title for switch preference to show search suggestions also in private mode -->
     <string name="preferences_show_search_suggestions_in_private">Shfaqi në sesione private</string>
+    <!-- Preference title for switch preference to show trending search suggestions -->
+    <string name="preferences_show_trending_search_suggestions">Shfaq sugjerime prirjesh</string>
     <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
     <string name="preferences_show_clipboard_suggestions">Shfaq sugjerime të papastre</string>
     <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -1034,19 +1053,24 @@
     <string name="exceptions_empty_message_learn_more_link">Mësoni më tepër</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Të dhëna përdorimi dhe teknike</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Të dhëna teknike dhe ndërveprimesh</string>
+    <!-- Preference switch for usage and technical data collection -->
+    <string name="preference_usage_data_2" tools:ignore="UnusedResources">Dërgo të dhëna teknike dhe ndërveprimesh</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources">Mësoni më tepër</string>
     <!-- Preference description for usage and technical data collection -->
-    <string name="preferences_usage_data_description">I jep Mozilla-s të dhëna rreth funksionimit, përdorimit, hardware-it dhe përshtatjeve të shfletuesit tuaj, për ta ndihmuar në përmirësimin e %1$s-ut</string>
+    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">I jep Mozilla-s të dhëna rreth funksionimit, përdorimit, hardware-it dhe përshtatjeve të shfletuesit tuaj, për ta ndihmuar në përmirësimin e %1$s-ut</string>
+    <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+    <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage, UnusedResources">Të dhënat rreth pajisjes tuaj, formësimit “hardware” dhe përdorimit na ndihmojnë të përmirësohen veçori, funksionimi dhe qëndrueshmëria e Firefox-it.</string>
     <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data">Të dhëna marketingu</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">I jep Adjust-it, tregtuesit tonë të marketingut për platforma celulare, të dhëna elementare mbi përdorimin</string>
+    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Të dhëna marketingu</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Të dhëna matjesh fushatash</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage">Ndani me partnerë marketingu të Mozilla-s informacion se si e zbuluat Firefox-in. Kjo na ndihmon të fuqizojmë Firefox-in dhe të ndërtojmë një internet më të mirë</string>
+    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Ndani me partnerë marketingu të Mozilla-s informacion se si e zbuluat Firefox-in. Kjo na ndihmon të fuqizojmë Firefox-in dhe të ndërtojmë një internet më të mirë</string>
+    <!-- Preference description for marketing data collection.
+    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Ndani me partnerë teknologjish marketingu të Mozilla-s se si e zbuluat Firefox-in dhe se e përdorni.</string>
     <!-- Learn more link for marketing data preference -->
     <string name="preferences_marketing_data_learn_more">Mësoni më tepër rreth të dhënash marketingu</string>
 
@@ -1061,6 +1085,9 @@
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">Kjo na ndihmon të diagnostikojmë dhe ndreqim probleme me shfletuesin. Raportet mund të përfshijnë të dhëna personale, ose rezervat.</string>
     <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">I jep vetvetiu gjatë nisjes Mozilla-s të dhëna vithisjeje pasi ndodhin vithisje    </string>
+
+    <!-- Learn more link for crash reporting preference -->
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Mësoni më tepër rreth njoftimesh vithisjesh</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Studime</string>
@@ -1223,7 +1250,11 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Aktive</string>
     <!-- Description for studies, it indicates why Firefox use studies. The first parameter is the name of the application. -->
-    <string name="studies_description_2">%1$s mund të instalohet dhe xhirojë studime herë pas here.</string>
+    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s mund të instalohet dhe xhirojë studime herë pas here.</string>
+    <!-- Description for studies -->
+    <string name="studies_description_3">Provoni veçori dhe ide para se të hidhen në qarkullim për këdo.</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title">Instaloni dhe kryeni studime</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Mësoni më tepër</string>
     <!-- Dialog message shown after removing a study -->
@@ -1362,8 +1393,12 @@
     <string name="webcompat_reporter_url_error_invalid">Ju lutemi, jepni një URL të vlefshme</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Ç’është dëmtuar? (në daçi)</string>
+    <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_label_whats_broken_2">Ç’është dëmtuar?</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason">Zgjidhni arsye</string>
+    <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_choose_reason_error">Ju lutemi, zgjidhni një arsye</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
     <string name="webcompat_reporter_label_description">Përshkruani problemin (në daçi)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
@@ -2040,6 +2075,8 @@
     <string name="about_privacy_notice">Shënim privatësie</string>
     <!-- About page link text to open know your rights link -->
     <string name="about_know_your_rights">Njihni të drejtat tuaja</string>
+    <!-- About page link text to open terms of use link -->
+    <string name="about_terms_of_use" tools:ignore="UnusedResources">Kushte Përdorimi</string>
     <!-- About page link text to open licensing information link -->
     <string name="about_licensing_information">Hollësi licencimi</string>
 
@@ -2507,6 +2544,8 @@
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox-i Sugjeron</string>
 
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header">Prirje Kërkimesh</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Kërkim me Google</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2941,6 +2980,10 @@
     <string name="download_language_file_dialog_negative_button_text">Anuloje</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">I siguruar</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">I pasiguruar</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Hapni sytë në këtë sajt</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2961,6 +3004,37 @@
     <string name="protection_panel_etp_toggle_enabled_description">Nëse diçka duket se nuk punon në këtë sajt, provoni të çaktivizoni mbrojtjet.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">Mbrojtjet janë OFF. Sugjerojmë t’i aktivizoni.</string>
+
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Gjurmues të bllokuar: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">S’u gjetën gjurmues</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Rregullime privatësi dhe sigurie</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Gjurmues të bllokuar: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Heqja e cookie-eve dhe të dhënave të sajteve për <b>%s</b> mund të sjellë daljen tuaj nga sajte dhe spastrim shportash blerjesh.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Spastroje</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Anuloje</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">U hoqën “cookies” dhe të dhëna sajtesh</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Lidhje e siguruar</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Lidhje jo e siguruar</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Verifikuar nga %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->
@@ -3082,6 +3156,14 @@
     <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
     <string name="debug_drawer_addresses_debug_locales_header">Vendore për t’u aktivizuar për diagnostikim</string>
 
+    <!-- The title of the header for the section for managing addresses. -->
+    <string name="debug_drawer_addresses_management_header">Administroni adresa</string>
+
+    <!-- The title of the button in the debug drawer for adding a new address. -->
+    <string name="debug_drawer_add_new_address">Shtoni adresë të re për vendoren e përzgjedhur</string>
+    <!-- The title of the button for deleting in the debug drawer all addresses. -->
+    <string name="debug_drawer_delete_all_addresses">Fshiji krejt adresat</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The title of the CFR Tools feature in the Debug Drawer -->
     <string name="debug_drawer_cfr_tools_title">Mjete CFR</string>
@@ -3132,4 +3214,10 @@
     <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Që të vazhdoni të përdorni shtesa dhe veçori të tjera, përditësojeni para 14 marsit.</string>
     <!-- Push notification message about old Firefox version -->
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Disa veçori do të reshtin së funksionuari nesër.</string>
+
+    <!-- TextField Design System Component -->
+    <!-- The default content description for the eye trailing icon button in TextField -->
+    <string name="text_field_eye_trailing_icon_default_content_description">Shfaq tekst të fshehur</string>
+    <!-- The default content description for the cross trailing icon button in TextField -->
+    <string name="text_field_cross_trailing_icon_default_content_description">Spastroje tekstin</string>
 </resources>

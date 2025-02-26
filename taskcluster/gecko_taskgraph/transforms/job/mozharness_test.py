@@ -191,9 +191,10 @@ def mozharness_test_on_docker(config, job, taskdesc):
             "reboot: {} not supported on generic-worker".format(test["reboot"])
         )
 
-    # Support vcs checkouts regardless of whether the task runs from
-    # source or not in case it is needed on an interactive loaner.
-    support_vcs_checkout(config, job, taskdesc)
+    if not test["checkout"]:
+        # Support vcs checkouts regardless of whether the task runs from
+        # source or not in case it is needed on an interactive loaner.
+        support_vcs_checkout(config, job, taskdesc)
 
     # If we have a source checkout, run mozharness from it instead of
     # downloading a zip file with the same content.
@@ -253,6 +254,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
         "tooltool-downloads": mozharness["tooltool-downloads"],
         "checkout": test["checkout"],
         "command": command,
+        "use-caches": ["checkout", "pip", "uv"],
         "using": "run-task",
     }
     configure_taskdesc_for_run(config, job, taskdesc, worker["implementation"])
@@ -487,6 +489,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
         "tooltool-downloads": mozharness["tooltool-downloads"],
         "checkout": test["checkout"],
         "command": mh_command,
+        "use-caches": ["checkout", "pip", "uv"],
         "using": "run-task",
     }
     if is_bitbar:

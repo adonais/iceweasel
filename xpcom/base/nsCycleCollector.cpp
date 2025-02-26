@@ -177,10 +177,11 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/SegmentedVector.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsCycleCollector.h"
@@ -243,15 +244,29 @@ static void SuspectUsingNurseryPurpleBuffer(
 
 // Cycle collector environment variables
 //
+// MOZ_CC_ALL_TRACES: If set to "all", any cycle collector logging done will be
+// WantAllTraces, which disables various cycle collector optimizations to give a
+// fuller picture of the heap. If set to "shutdown", only shutdown logging will
+// be WantAllTraces. The default is none.
+//
+// MOZ_CC_RUN_DURING_SHUTDOWN: In non-NS_FREE_PERMANENT_DATA builds, if this is
+// set, run cycle collections at shutdown.
+//
 // MOZ_CC_LOG_ALL: If defined, always log cycle collector heaps.
 //
 // MOZ_CC_LOG_SHUTDOWN: If defined, log cycle collector heaps at shutdown.
 //
-// MOZ_CC_LOG_SHUTDOWN_SKIP: If set to a non-negative integer value n, then
-// skip logging for the first n shutdown CCs. This implies MOZ_CC_LOG_SHUTDOWN.
-// The first log or two are much larger than the rest, so it can be useful to
-// reduce the total size of logs if you know already that the initial logs
-// aren't interesting.
+// MOZ_CC_LOG_SHUTDOWN_SKIP: If set to a non-negative integer value n, then skip
+// logging for the first n shutdown CCs. This implies MOZ_CC_LOG_SHUTDOWN. The
+// first log or two are much larger than the rest, so it can be useful to reduce
+// the total size of logs if you know already that the initial logs aren't
+// interesting.
+//
+// MOZ_CC_LOG_WINDOW_ONLY: If this is set, only log CCs where at least one DOM
+// window is still alive, as determined by GetCurrentInnerOrOuterWindowCount().
+// The purpose of this is to avoid useless logs when investigating intermittent
+// window leaks. Note that this count is only updated in DEBUG builds, and will
+// only be read on the main thread.
 //
 // MOZ_CC_LOG_THREAD: If set to "main", only automatically log main thread
 // CCs. If set to "worker", only automatically log worker CCs. If set to "all",
@@ -262,15 +277,6 @@ static void SuspectUsingNurseryPurpleBuffer(
 // CCs. If set to "content", only automatically log tab CCs. If set to "all",
 // log everything. The default value is "all". This must be used with either
 // MOZ_CC_LOG_ALL or MOZ_CC_LOG_SHUTDOWN for it to do anything.
-//
-// MOZ_CC_ALL_TRACES: If set to "all", any cycle collector
-// logging done will be WantAllTraces, which disables
-// various cycle collector optimizations to give a fuller picture of
-// the heap. If set to "shutdown", only shutdown logging will be WantAllTraces.
-// The default is none.
-//
-// MOZ_CC_RUN_DURING_SHUTDOWN: In non-DEBUG or builds, if this is set,
-// run cycle collections at shutdown.
 //
 // MOZ_CC_LOG_DIRECTORY: The directory in which logs are placed (such as
 // logs from MOZ_CC_LOG_ALL and MOZ_CC_LOG_SHUTDOWN, or other uses
@@ -291,6 +297,7 @@ struct nsCycleCollectorParams {
   bool mAllTracesShutdown;
   bool mLogThisThread;
   bool mLogGC;
+  bool mLogWindowOnly;
   int32_t mLogShutdownSkip = 0;
 
   nsCycleCollectorParams()
@@ -298,7 +305,8 @@ struct nsCycleCollectorParams {
         mLogShutdown(PR_GetEnv("MOZ_CC_LOG_SHUTDOWN") != nullptr),
         mAllTracesAll(false),
         mAllTracesShutdown(false),
-        mLogGC(!PR_GetEnv("MOZ_CC_DISABLE_GC_LOG")) {
+        mLogGC(!PR_GetEnv("MOZ_CC_DISABLE_GC_LOG")),
+        mLogWindowOnly(PR_GetEnv("MOZ_CC_LOG_WINDOW_ONLY")) {
     if (const char* lssEnv = PR_GetEnv("MOZ_CC_LOG_SHUTDOWN_SKIP")) {
       mLogShutdown = true;
       nsDependentCString lssString(lssEnv);
@@ -350,6 +358,12 @@ struct nsCycleCollectorParams {
   // For non-shutdown CCs, we'll pass in 0.
   // For the first shutdown CC, we'll pass in 1.
   bool LogThisCC(int32_t aShutdownCount) {
+#ifdef DEBUG
+    if (mLogWindowOnly && NS_IsMainThread() &&
+        nsContentUtils::GetCurrentInnerOrOuterWindowCount() == 0) {
+      return false;
+    }
+#endif
     if (mLogAll) {
       return mLogThisThread;
     }
@@ -547,15 +561,6 @@ class EdgePool {
 #else
 #  define CC_GRAPH_ASSERT(b)
 #endif
-
-#define CC_TELEMETRY(_name, _value)                                            \
-  do {                                                                         \
-    if (NS_IsMainThread()) {                                                   \
-      Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR##_name, _value);        \
-    } else {                                                                   \
-      Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_WORKER##_name, _value); \
-    }                                                                          \
-  } while (0)
 
 enum NodeColor { black, white, grey };
 
@@ -1225,6 +1230,7 @@ class nsCycleCollector : public nsIMemoryReporter {
   bool IsIncrementalGCInProgress();
   void FinishAnyIncrementalGCInProgress();
   bool ShouldMergeZones(ccIsManual aIsManual);
+  void MaybeInitLogger(bool aIsShutdown, bool aForGC);
 
   void BeginCollection(CCReason aReason, ccIsManual aIsManual,
                        nsICycleCollectorListener* aManualListener);
@@ -3449,7 +3455,17 @@ void nsCycleCollector::FixGrayBits(bool aIsShutdown, TimeLog& aTimeLog) {
 
     bool needGC = !mCCJSRuntime->AreGCGrayBitsValid();
     // Only do a telemetry ping for non-shutdown CCs.
-    CC_TELEMETRY(_NEED_GC, needGC);
+    if (NS_IsMainThread()) {
+      glean::cycle_collector::need_gc
+          .EnumGet(static_cast<glean::cycle_collector::NeedGcLabel>(needGC))
+          .Add();
+    } else {
+      glean::cycle_collector::worker_need_gc
+          .EnumGet(
+              static_cast<glean::cycle_collector::WorkerNeedGcLabel>(needGC))
+          .Add();
+    }
+
     if (!needGC) {
       return;
     }
@@ -3503,10 +3519,10 @@ void nsCycleCollector::CleanupAfterCollection() {
   timeLog.Checkpoint("Collect::FreeSnowWhite");
 
   TimeStamp endTime = TimeStamp::Now();
-  uint32_t interval = (uint32_t)((endTime - mCollectionStart).ToMilliseconds());
+  TimeDuration interval = endTime - mCollectionStart;
 #ifdef COLLECT_TIME_DEBUG
-  printf("cc: total cycle collector time was %ums in %u slices\n", interval,
-         mResults.mNumSlices);
+  printf("cc: total cycle collector time was %ums in %u slices\n",
+         (uint32_t)interval.ToMilliseconds(), mResults.mNumSlices);
   printf(
       "cc: visited %u ref counted and %u GCed objects, freed %d ref counted "
       "and %d GCed objects",
@@ -3520,10 +3536,23 @@ void nsCycleCollector::CleanupAfterCollection() {
   printf(".\ncc: \n");
 #endif
 
-  CC_TELEMETRY(, interval);
-  CC_TELEMETRY(_VISITED_REF_COUNTED, mResults.mVisitedRefCounted);
-  CC_TELEMETRY(_VISITED_GCED, mResults.mVisitedGCed);
-  CC_TELEMETRY(_COLLECTED, mWhiteNodeCount);
+  if (NS_IsMainThread()) {
+    glean::cycle_collector::time.AccumulateRawDuration(interval);
+    glean::cycle_collector::visited_ref_counted.AccumulateSingleSample(
+        mResults.mVisitedRefCounted);
+    glean::cycle_collector::visited_gced.AccumulateSingleSample(
+        mResults.mVisitedGCed);
+    glean::cycle_collector::collected.AccumulateSingleSample(mWhiteNodeCount);
+  } else {
+    glean::cycle_collector::worker_time.AccumulateRawDuration(interval);
+    glean::cycle_collector::worker_visited_ref_counted.AccumulateSingleSample(
+        mResults.mVisitedRefCounted);
+    glean::cycle_collector::worker_visited_gced.AccumulateSingleSample(
+        mResults.mVisitedGCed);
+    glean::cycle_collector::worker_collected.AccumulateSingleSample(
+        mWhiteNodeCount);
+  }
+
   timeLog.Checkpoint("CleanupAfterCollection::telemetry");
 
   PROFILER_MARKER(
@@ -3749,6 +3778,25 @@ bool nsCycleCollector::ShouldMergeZones(ccIsManual aIsManual) {
   }
 }
 
+void nsCycleCollector::MaybeInitLogger(bool aIsShutdown, bool aForGC) {
+  if (mLogger) {
+    return;
+  }
+
+  if (!mParams.LogThisCC(mShutdownCount)) {
+    return;
+  }
+
+  if (aForGC && !mParams.LogThisGC()) {
+    return;
+  }
+
+  mLogger = new nsCycleCollectorLogger(mParams.LogThisGC());
+  if (mParams.AllTracesThisCC(aIsShutdown)) {
+    mLogger->SetAllTraces();
+  }
+}
+
 void nsCycleCollector::BeginCollection(
     CCReason aReason, ccIsManual aIsManual,
     nsICycleCollectorListener* aManualListener) {
@@ -3775,14 +3823,7 @@ void nsCycleCollector::BeginCollection(
   if (aManualListener) {
     aManualListener->AsLogger(getter_AddRefs(mLogger));
   }
-
   aManualListener = nullptr;
-  if (!mLogger && mParams.LogThisCC(mShutdownCount)) {
-    mLogger = new nsCycleCollectorLogger(mParams.LogThisGC());
-    if (mParams.AllTracesThisCC(isShutdown)) {
-      mLogger->SetAllTraces();
-    }
-  }
 
   CycleCollectorResults ignoredResults;
   mozilla::CycleCollectorStats* stats = sCollectorData.get()->mStats.get();
@@ -3803,6 +3844,8 @@ void nsCycleCollector::BeginCollection(
   FinishAnyIncrementalGCInProgress();
   timeLog.Checkpoint("Pre-FixGrayBits finish IGC");
 
+  MaybeInitLogger(isShutdown, /* aForGC = */ true);
+
   FixGrayBits(isShutdown, timeLog);
   if (mCCJSRuntime) {
     mCCJSRuntime->CheckGrayBits();
@@ -3811,6 +3854,7 @@ void nsCycleCollector::BeginCollection(
   FreeSnowWhite(true);
   timeLog.Checkpoint("BeginCollection FreeSnowWhite");
 
+  MaybeInitLogger(isShutdown, /* aForGC = */ false);
   if (mLogger && NS_FAILED(mLogger->Begin())) {
     mLogger = nullptr;
   }

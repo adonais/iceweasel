@@ -79,7 +79,7 @@ internal object FakeHomepagePreview {
 
             override fun onStoryShown(
                 storyShown: PocketStory,
-                storyPosition: Pair<Int, Int>,
+                storyPosition: Triple<Int, Int, Int>,
             ) { /* no op */ }
 
             override fun onStoriesShown(storiesShown: List<PocketStory>) { /* no op */ }
@@ -88,7 +88,7 @@ internal object FakeHomepagePreview {
 
             override fun onStoryClicked(
                 storyClicked: PocketStory,
-                storyPosition: Pair<Int, Int>,
+                storyPosition: Triple<Int, Int, Int>,
             ) { /* no op */ }
 
             override fun onLearnMoreClicked(link: String) { /* no op */ }
@@ -118,6 +118,10 @@ internal object FakeHomepagePreview {
             override fun onRemoveTopSiteClicked(topSite: TopSite) { /* no op */ }
 
             override fun onSelectTopSite(topSite: TopSite, position: Int) { /* no op */ }
+
+            override fun onTopSiteImpression(topSite: TopSite.Provided, position: Int) {
+                // no-op
+            }
 
             override fun onSettingsClicked() { /* no op */ }
 

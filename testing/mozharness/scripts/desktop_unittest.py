@@ -194,6 +194,18 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 },
             ],
             [
+                ["--filter"],
+                {
+                    "action": "store",
+                    "dest": "filter",
+                    "default": "",
+                    "help": "Specify a regular expression (as could be passed "
+                    "to the JS RegExp constructor) to test against URLs in "
+                    "the manifest; only test items that have a matching test "
+                    "URL will be run.",
+                },
+            ],
+            [
                 ["--allow-software-gl-layers"],
                 {
                     "action": "store_true",
@@ -201,6 +213,24 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     "default": False,
                     "help": "Permits a software GL implementation (such as LLVMPipe) to use "
                     "the GL compositor.",
+                },
+            ],
+            [
+                ["--enable-inc-origin-init"],
+                {
+                    "action": "store_true",
+                    "dest": "enable_inc_origin_init",
+                    "default": False,
+                    "help": "Enable the incremental origin initialization in Gecko.",
+                },
+            ],
+            [
+                ["--filter-set"],
+                {
+                    "action": "store",
+                    "dest": "filter_set",
+                    "default": "",
+                    "help": "Use a predefined filter.",
                 },
             ],
             [
@@ -718,6 +748,33 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
 
             if c["headless"]:
                 base_cmd.append("--headless")
+
+            if c["filter"]:
+                if suite_category == "reftest":
+                    base_cmd.append("--filter={}".format(c["filter"]))
+                else:
+                    self.warning(
+                        "--filter does not currently work with suites other than "
+                        "reftest."
+                    )
+
+            if c["enable_inc_origin_init"]:
+                if suite_category == "gtest":
+                    base_cmd.append("--enable-inc-origin-init")
+                else:
+                    self.warning(
+                        "--enable-inc-origin-init does not currently work with "
+                        "suites other than gtest."
+                    )
+
+            if c["filter_set"]:
+                if suite_category == "gtest":
+                    base_cmd.append("--filter-set={}".format(c["filter_set"]))
+                else:
+                    self.warning(
+                        "--filter-set does not currently work with suites other then "
+                        "gtest."
+                    )
 
             if c.get("threads"):
                 base_cmd.extend(["--threads", c["threads"]])

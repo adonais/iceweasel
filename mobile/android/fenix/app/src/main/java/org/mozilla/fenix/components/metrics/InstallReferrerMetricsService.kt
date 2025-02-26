@@ -67,7 +67,7 @@ class InstallReferrerMetricsService(private val context: Context) : MetricsServi
                             PlayStoreAttribution.installReferrerResponse.set(installReferrerResponse)
 
                             val utmParams = UTMParams.parseUTMParameters(installReferrerResponse)
-                            if (FeatureFlags.metaAttributionEnabled) {
+                            if (FeatureFlags.META_ATTRIBUTION_ENABLED) {
                                 MetaParams.extractMetaAttribution(utmParams.content)
                                     ?.recordMetaAttribution()
                             }

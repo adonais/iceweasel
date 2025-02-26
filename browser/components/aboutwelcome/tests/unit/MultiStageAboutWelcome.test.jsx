@@ -1,4 +1,4 @@
-import { GlobalOverrider } from "newtab/test/unit/utils";
+import { GlobalOverrider } from "asrouter/tests/unit/utils";
 import {
   MultiStageAboutWelcome,
   SecondaryCTA,
@@ -538,6 +538,8 @@ describe("MultiStageAboutWelcome module", () => {
           },
           navigate: sandbox.stub(),
           setActiveSingleSelect: sandbox.stub(),
+          setActiveMultiSelect: sandbox.stub(),
+          setScreenMultiSelects: sandbox.stub(),
         };
         sandbox.stub(AboutWelcomeUtils, "handleUserAction").resolves();
       });

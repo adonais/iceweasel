@@ -351,6 +351,11 @@
     <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
     <string name="preference_mozilla_telemetry_summary2">Mozilla აღრიცხავს მხოლოდ იმ მონაცემებს, რაც საჭიროა %1$s-ის გასაუმჯობესებლად.</string>
 
+    <!-- Preference switch for daily usage ping data collection -->
+    <string name="preference_daily_usage_ping_title">დღიური გამოყენების უწყება</string>
+    <string name="preference_daily_usage_ping_description">ამით Mozilla მიახლოებით ითვლის მოქმედ მომხმარებლებს.</string>
+    <string name="preference_daily_usage_ping_learn_more">ვრცლად</string>
+
     <!-- In-app link (in settings) to Focus privacy notice. -->
     <string name="preference_privacy_notice">პირადი მონაცემების დაცვა</string>
 
@@ -359,6 +364,9 @@
 
     <!-- Link to Focus licensing information from other libraries that we use. -->
     <string name="preference_libraries_we_use">ბიბლიოთეკები, რომელთაც ვიყენებთ</string>
+
+    <!-- Link to Focus Crash reports list. -->
+    <string name="preference_crashes">გათიშვები</string>
 
     <!-- Open Source Licenses page title. The first parameter is the app name -->
     <string name="open_source_licenses_title">%s | OSS-ბიბლიოთეკები</string>
@@ -966,7 +974,7 @@
 
 
   <!-- Label for the checkbox to send the tab crash report to Mozilla -->
-    <string name="crash_report_send_crash_label">გათიშვის მოხსენება გაეგზავნოს Mozilla-ს</string>
+    <string name="crash_report_send_crash_label">გათიშვის მოხსენებას გაეცნოს Mozilla</string>
 
     <!-- Tracking protection bottom sheet -->
 

@@ -7,49 +7,9 @@ use std::sync::Arc;
 
 use glean::traits::Boolean;
 
-use super::{CommonMetricData, MetricId};
+use super::{CommonMetricData, MetricGetter, MetricId};
 
 use crate::ipc::{need_ipc, with_ipc_payload};
-
-#[cfg(feature = "with_gecko")]
-use super::profiler_utils::{lookup_canonical_metric_name, LookupError, TelemetryProfilerCategory};
-
-#[cfg(feature = "with_gecko")]
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-struct BooleanMetricMarker {
-    id: MetricId,
-    val: bool,
-}
-
-#[cfg(feature = "with_gecko")]
-impl gecko_profiler::ProfilerMarker for BooleanMetricMarker {
-    fn marker_type_name() -> &'static str {
-        "BooleanMetric"
-    }
-
-    fn marker_type_display() -> gecko_profiler::MarkerSchema {
-        use gecko_profiler::schema::*;
-        let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
-        schema.set_tooltip_label("{marker.data.id} {marker.data.val}");
-        schema.set_table_label("{marker.name} - {marker.data.id}: {marker.data.val}");
-        schema.add_key_label_format_searchable(
-            "id",
-            "Metric",
-            Format::UniqueString,
-            Searchable::Searchable,
-        );
-        schema.add_key_label_format("val", "Value", Format::String);
-        schema
-    }
-
-    fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
-        json_writer.unique_string_property(
-            "id",
-            lookup_canonical_metric_name(&self.id).unwrap_or_else(LookupError::as_str),
-        );
-        json_writer.bool_property("val", self.val);
-    }
-}
 
 /// A boolean metric.
 ///
@@ -57,7 +17,10 @@ impl gecko_profiler::ProfilerMarker for BooleanMetricMarker {
 #[derive(Clone)]
 pub enum BooleanMetric {
     Parent {
-        id: MetricId,
+        /// The metric's ID. Used for testing and profiler markers. Boolean
+        /// metrics can be labeled, so we may have either a metric ID or
+        /// sub-metric ID.
+        id: MetricGetter,
         inner: Arc<glean::private::BooleanMetric>,
     },
     Child(BooleanMetricIpc),
@@ -73,7 +36,7 @@ impl BooleanMetric {
             BooleanMetric::Child(BooleanMetricIpc)
         } else {
             BooleanMetric::Parent {
-                id,
+                id: id.into(),
                 inner: Arc::new(glean::private::BooleanMetric::new(meta)),
             }
         }
@@ -88,10 +51,10 @@ impl BooleanMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricId {
+    pub(crate) fn metric_id(&self) -> MetricGetter {
         match self {
             BooleanMetric::Parent { id, .. } => *id,
-            BooleanMetric::UnorderedChild(id) => *id,
+            BooleanMetric::UnorderedChild(id) => (*id).into(),
             _ => panic!("Can't get a metric_id from a non-ipc-supporting child boolean metric."),
         }
     }
@@ -119,12 +82,9 @@ impl Boolean for BooleanMetric {
                 #[cfg(feature = "with_gecko")]
                 gecko_profiler::add_marker(
                     "Boolean::set",
-                    TelemetryProfilerCategory,
+                    super::profiler_utils::TelemetryProfilerCategory,
                     Default::default(),
-                    BooleanMetricMarker {
-                        id: *id,
-                        val: value,
-                    },
+                    super::profiler_utils::BooleanMetricMarker::new(*id, None, value),
                 );
                 inner.set(value);
             }
@@ -139,12 +99,9 @@ impl Boolean for BooleanMetric {
                 #[cfg(feature = "with_gecko")]
                 gecko_profiler::add_marker(
                     "Boolean::set",
-                    TelemetryProfilerCategory,
+                    super::profiler_utils::TelemetryProfilerCategory,
                     Default::default(),
-                    BooleanMetricMarker {
-                        id: *id,
-                        val: value,
-                    },
+                    super::profiler_utils::BooleanMetricMarker::new((*id).into(), None, value),
                 );
                 with_ipc_payload(move |payload| {
                     if let Some(v) = payload.booleans.get_mut(&id) {

@@ -6,6 +6,15 @@ package mozilla.components.service.pocket.helpers
 
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
+import mozilla.components.service.pocket.PocketStory.SponsoredContent
+import mozilla.components.service.pocket.PocketStory.SponsoredContentCallbacks
+import mozilla.components.service.pocket.PocketStory.SponsoredContentFrequencyCaps
+import mozilla.components.service.pocket.mars.api.MarsSpocFrequencyCaps
+import mozilla.components.service.pocket.mars.api.MarsSpocRanking
+import mozilla.components.service.pocket.mars.api.MarsSpocResponseCallbacks
+import mozilla.components.service.pocket.mars.api.MarsSpocsResponse
+import mozilla.components.service.pocket.mars.api.MarsSpocsResponseItem
+import mozilla.components.service.pocket.mars.db.SponsoredContentEntity
 import mozilla.components.service.pocket.recommendations.api.ContentRecommendationResponseItem
 import mozilla.components.service.pocket.recommendations.api.ContentRecommendationsResponse
 import mozilla.components.service.pocket.recommendations.db.ContentRecommendationEntity
@@ -48,6 +57,14 @@ internal object PocketTestResources {
 
     val contentRecommendationsNullUrlResponse = this::class.java.classLoader!!.getResource(
         "$POCKET_DIR/content_recommendations_null_url_response.json",
+    )!!.readText()
+
+    val marsSponsoredStoriesJSONResponse = this::class.java.classLoader!!.getResource(
+        "$POCKET_DIR/mars_sponsored_stories_response.json",
+    )!!.readText()
+
+    val marsSponsoredStoriesNullUrlResponse = this::class.java.classLoader!!.getResource(
+        "$POCKET_DIR/mars_sponsored_stories_null_url_response.json",
     )!!.readText()
 
     val apiExpectedPocketStoriesRecommendations: List<PocketApiStory> = listOf(
@@ -182,6 +199,7 @@ internal object PocketTestResources {
     )
 
     val contentRecommendationEntity = ContentRecommendationEntity(
+        corpusItemId = "1111",
         scheduledCorpusItemId = "2222",
         url = "https://getpocket.com/",
         title = "Pocket",
@@ -192,10 +210,12 @@ internal object PocketTestResources {
         imageUrl = "https://img-getpocket.cdn.mozilla.net/",
         tileId = 1,
         receivedRank = 2,
+        recommendedAt = 1L,
         impressions = 1,
     )
 
     val contentRecommendation = ContentRecommendation(
+        corpusItemId = "1111",
         scheduledCorpusItemId = "2222",
         url = "https://getpocket.com/",
         title = "Pocket",
@@ -206,10 +226,12 @@ internal object PocketTestResources {
         imageUrl = "https://img-getpocket.cdn.mozilla.net/",
         tileId = 1,
         receivedRank = 2,
+        recommendedAt = 1L,
         impressions = 1,
     )
 
     val contentRecommendationResponseItem1 = ContentRecommendationResponseItem(
+        corpusItemId = "1",
         scheduledCorpusItemId = "1111",
         url = "https://getpocket.com/1",
         title = "Pocket1",
@@ -222,6 +244,7 @@ internal object PocketTestResources {
         receivedRank = 1,
     )
     private val contentRecommendationResponseItem2 = ContentRecommendationResponseItem(
+        corpusItemId = "2",
         scheduledCorpusItemId = "2222",
         url = "https://getpocket.com/2",
         title = "Pocket2",
@@ -234,6 +257,7 @@ internal object PocketTestResources {
         receivedRank = 2,
     )
     private val contentRecommendationResponseItem3 = ContentRecommendationResponseItem(
+        corpusItemId = "3",
         scheduledCorpusItemId = "3333",
         url = "https://getpocket.com/3",
         title = "Pocket3",
@@ -246,6 +270,7 @@ internal object PocketTestResources {
         receivedRank = 3,
     )
     private val contentRecommendationResponseItem4 = ContentRecommendationResponseItem(
+        corpusItemId = "4",
         scheduledCorpusItemId = "4444",
         url = "https://getpocket.com/4",
         title = "Pocket4",
@@ -258,7 +283,7 @@ internal object PocketTestResources {
         receivedRank = 4,
     )
 
-    val contentRecommendationResponseItems = listOf(
+    private val contentRecommendationResponseItems = listOf(
         contentRecommendationResponseItem1,
         contentRecommendationResponseItem2,
         contentRecommendationResponseItem3,
@@ -268,5 +293,67 @@ internal object PocketTestResources {
     val contentRecommendationsResponse = ContentRecommendationsResponse(
         recommendedAt = 0,
         data = contentRecommendationResponseItems,
+    )
+
+    internal val marsSpocsResponseItem = MarsSpocsResponseItem(
+        format = "spoc",
+        url = "https://firefox.com",
+        callbacks = MarsSpocResponseCallbacks(
+            clickUrl = "https://firefox.com/click",
+            impressionUrl = "https://firefox.com/impression",
+        ),
+        imageUrl = "https://test.com/image1.jpg",
+        title = "Firefox",
+        domain = "firefox.com",
+        excerpt = "Mozilla Firefox",
+        sponsor = "Mozilla",
+        blockKey = "1",
+        caps = MarsSpocFrequencyCaps(
+            capKey = "2",
+            day = 10,
+        ),
+        ranking = MarsSpocRanking(
+            priority = 3,
+            itemScore = 1F,
+        ),
+    )
+
+    internal val marsSpocsResponse = MarsSpocsResponse(
+        spocs = listOf(marsSpocsResponseItem),
+    )
+
+    internal val sponsoredContentEntity = SponsoredContentEntity(
+        url = "https://firefox.com",
+        title = "Firefox",
+        clickUrl = "https://firefox.com/click",
+        impressionUrl = "https://firefox.com/impression",
+        imageUrl = "https://test.com/image1.jpg",
+        domain = "firefox.com",
+        excerpt = "Mozilla Firefox",
+        sponsor = "Mozilla",
+        blockKey = "1",
+        flightCapCount = 10,
+        flightCapPeriod = 86400,
+        priority = 3,
+    )
+
+    internal val sponsoredContent = SponsoredContent(
+        url = "https://firefox.com",
+        title = "Firefox",
+        callbacks = SponsoredContentCallbacks(
+            clickUrl = "https://firefox.com/click",
+            impressionUrl = "https://firefox.com/impression",
+        ),
+        imageUrl = "https://test.com/image1.jpg",
+        domain = "firefox.com",
+        excerpt = "Mozilla Firefox",
+        sponsor = "Mozilla",
+        blockKey = "1",
+        caps = SponsoredContentFrequencyCaps(
+            currentImpressions = emptyList(),
+            flightCount = 10,
+            flightPeriod = 86400,
+        ),
+        priority = 3,
     )
 }

@@ -40,12 +40,11 @@ export class TranslationsEngineChild extends JSWindowActorChild {
   async receiveMessage({ name, data }) {
     switch (name) {
       case "TranslationsEngine:StartTranslation": {
-        const { fromLanguage, toLanguage, innerWindowId, port } = data;
+        const { languagePair, innerWindowId, port } = data;
         const transferables = [port];
         const message = {
           type: "StartTranslation",
-          fromLanguage,
-          toLanguage,
+          languagePair,
           innerWindowId,
           port,
         };
@@ -83,6 +82,7 @@ export class TranslationsEngineChild extends JSWindowActorChild {
       "TE_getLogLevel",
       "TE_log",
       "TE_logError",
+      "TE_reportEnginePerformance",
       "TE_requestEnginePayload",
       "TE_reportEngineStatus",
       "TE_resolveForceShutdown",
@@ -177,14 +177,38 @@ export class TranslationsEngineChild extends JSWindowActorChild {
   }
 
   /**
-   * @param {string} fromLanguage
-   * @param {string} toLanguage
+   * Reports translation engine performance data to telemetry.
+   *
+   * @param {object} data
+   * @param {string} data.sourceLanguage - The BCP-47 language tag of the source text.
+   * @param {string} data.targetLanguage - The BCP-47 language tag of the target text.
+   * @param {number} data.totalInferenceSeconds - Total total seconds spent in active translation inference.
+   * @param {number} data.totalTranslatedWords - Total total count of words that were translated.
+   * @param {number} data.totalCompletedRequests - Total total count of completed translation requests.
    */
-  TE_requestEnginePayload(fromLanguage, toLanguage) {
+  TE_reportEnginePerformance({
+    sourceLanguage,
+    targetLanguage,
+    totalInferenceSeconds,
+    totalTranslatedWords,
+    totalCompletedRequests,
+  }) {
+    this.sendAsyncMessage("TranslationsEngine:ReportEnginePerformance", {
+      sourceLanguage,
+      targetLanguage,
+      totalInferenceSeconds,
+      totalTranslatedWords,
+      totalCompletedRequests,
+    });
+  }
+
+  /**
+   * @param {LanguagePair} languagePair
+   */
+  TE_requestEnginePayload(languagePair) {
     return this.#convertToContentPromise(
       this.sendQuery("TranslationsEngine:RequestEnginePayload", {
-        fromLanguage,
-        toLanguage,
+        languagePair,
       })
     );
   }

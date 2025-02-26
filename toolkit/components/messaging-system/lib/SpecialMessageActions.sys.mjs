@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
@@ -225,6 +226,8 @@ export const SpecialMessageActions = {
       "sidebar.verticalTabs",
       "sidebar.revamp",
       "sidebar.visibility",
+      "browser.crashReports.unsubmittedCheck.autoSubmit2",
+      "datareporting.healthreport.uploadEnabled",
     ];
 
     if (
@@ -469,6 +472,59 @@ export const SpecialMessageActions = {
     await lazy.SelectableProfileService.createNewProfile();
   },
 
+  // For mocking during tests.
+  get _experimentManager() {
+    return lazy.ExperimentManager;
+  },
+
+  async submitOnboardingOptOutPing() {
+    // `onboarding-opt-out` pings can always be sent.
+    GleanPings.onboardingOptOut.setEnabled(true);
+
+    // The `onboarding-opt-out` ping does not include any info sections, and
+    // therefore needs to capture experiments and rollouts independently.  This
+    // data layout agrees with the `nimbus-targeting-context` ping for ease of
+    // analysis.
+    let ctx = this._experimentManager.createTargetingContext();
+
+    Glean.onboardingOptOut.activeExperiments.set(await ctx.activeExperiments);
+    Glean.onboardingOptOut.activeRollouts.set(await ctx.activeRollouts);
+    Glean.onboardingOptOut.enrollmentsMap.set(
+      Object.entries(await ctx.enrollmentsMap).map(
+        ([experimentSlug, branchSlug]) => ({
+          experimentSlug,
+          branchSlug,
+        })
+      )
+    );
+
+    GleanPings.onboardingOptOut.submit("set_upload_enabled");
+  },
+
+  async handleMultiAction(actions, browser, orderedExecution) {
+    if (orderedExecution) {
+      for (const action of actions) {
+        try {
+          await this.handleAction(action, browser);
+        } catch (err) {
+          console.error("Error in MULTI_ACTION event:", err);
+          throw err;
+        }
+      }
+      return;
+    }
+    // If order doesn't matter, allow actions to run concurrently
+    await Promise.all(
+      actions.map(async action => {
+        try {
+          await this.handleAction(action, browser);
+        } catch (err) {
+          throw new Error(`Error in MULTI_ACTION event: ${err.message}`);
+        }
+      })
+    );
+  },
+
   /**
    * Processes "Special Message Actions", which are definitions of behaviors such as opening tabs
    * installing add-ons, or focusing the awesome bar that are allowed to can be triggered from
@@ -653,14 +709,10 @@ export const SpecialMessageActions = {
         this.setPref(action.data.pref);
         break;
       case "MULTI_ACTION":
-        await Promise.all(
-          action.data.actions.map(async action => {
-            try {
-              await this.handleAction(action, browser);
-            } catch (err) {
-              throw new Error(`Error in MULTI_ACTION event: ${err.message}`);
-            }
-          })
+        await this.handleMultiAction(
+          action.data.actions,
+          browser,
+          action.data.orderedExecution
         );
         break;
       default:
@@ -690,8 +742,17 @@ export const SpecialMessageActions = {
       case "SET_BOOKMARKS_TOOLBAR_VISIBILITY":
         this.setBookmarksToolbarVisibility(window, action.data?.visibility);
         break;
+      case "DATAREPORTING_NOTIFY_DATA_POLICY_INTERACTED":
+        Services.obs.notifyObservers(
+          null,
+          "datareporting:notify-data-policy:interacted"
+        );
+        break;
       case "CREATE_NEW_SELECTABLE_PROFILE":
         this.createAndOpenProfile();
+        break;
+      case "SUBMIT_ONBOARDING_OPT_OUT_PING":
+        this.submitOnboardingOptOutPing();
         break;
     }
     return undefined;

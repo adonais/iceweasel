@@ -92,7 +92,7 @@
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/ThreadUtils.h"
 #include "mozilla/dom/quota/UsageInfo.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/DomLocalstorageMetrics.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -1662,6 +1662,12 @@ class PrivateDatastore {
   ~PrivateDatastore() { mDatastore->NoteFinishedPrivateDatastore(); }
 
   const Datastore& DatastoreRef() const {
+    AssertIsOnBackgroundThread();
+
+    return *mDatastore;
+  }
+
+  Datastore& MutableDatastoreRef() const {
     AssertIsOnBackgroundThread();
 
     return *mDatastore;
@@ -5547,8 +5553,18 @@ mozilla::ipc::IPCResult Database::RecvAllowToClose() {
     return IPC_FAIL(this, "mAllowedToClose already set!");
   }
 
-  glean::localstorage_database::request_allow_to_close_response_time
-      .StopAndAccumulate(std::move(mRequestAllowToCloseTimerId));
+  // AllowToClose can be sent from content without a prior request from the
+  // parent (RequestAllowToClose). Therefore, we need to check for this;
+  // otherwise, we would receive warnings from Glean about timing not running.
+  if (mRequestedAllowToClose) {
+    // mRequestAllowToCloseTimerId is initialized to zero in the constructor,
+    // and the Start() method always returns id that is greater than zero, so
+    // we can assert that here.
+    MOZ_ASSERT(mRequestAllowToCloseTimerId);
+
+    glean::localstorage_database::request_allow_to_close_response_time
+        .StopAndAccumulate(std::move(mRequestAllowToCloseTimerId));
+  }
 
   AllowToClose();
 
@@ -8801,12 +8817,24 @@ void QuotaClient::AbortOperationsForLocks(
 
       // The PrivateDatastore::mDatastore member is not cleared until the
       // PrivateDatastore is destroyed.
-      const auto& datastore = privateDatastore->DatastoreRef();
+      auto& datastore = privateDatastore->MutableDatastoreRef();
 
       // If the PrivateDatastore exists then it must be registered in
       // Datastore::mHasLivePrivateDatastore as well. The Datastore must have
       // a DirectoryLock if there is a registered PrivateDatastore.
-      return IsLockForObjectContainedInLockTable(datastore, aDirectoryLockIds);
+      bool result =
+          IsLockForObjectContainedInLockTable(datastore, aDirectoryLockIds);
+
+      // The datastore should be closed after removing from gPrivateDatastores
+      // (and eventually unregistered from gDatastores, so a new private
+      // browsing session won't see any data from a previous private browsing
+      // session) but just in case something still keeps alive the datastore,
+      // let's explicitly clear it here.
+      if (result) {
+        datastore.Clear(nullptr);
+      }
+
+      return result;
     });
 
     if (!gPrivateDatastores->Count()) {

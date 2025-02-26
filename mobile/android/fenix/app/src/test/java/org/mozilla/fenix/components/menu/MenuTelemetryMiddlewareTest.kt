@@ -468,7 +468,7 @@ class MenuTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Menu.showCfr.testGetValue())
 
-        store.dispatch(MenuAction.ShowCFR).joinBlocking()
+        store.dispatch(MenuAction.OnCFRShown).joinBlocking()
 
         assertTelemetryRecorded(Menu.showCfr)
     }
@@ -478,9 +478,19 @@ class MenuTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Menu.dismissCfr.testGetValue())
 
-        store.dispatch(MenuAction.DismissCFR).joinBlocking()
+        store.dispatch(MenuAction.OnCFRDismiss).joinBlocking()
 
         assertTelemetryRecorded(Menu.dismissCfr)
+    }
+
+    @Test
+    fun `WHEN navigating to web compat reporter THEN record the web compat reporter telemetry`() {
+        val store = createStore()
+        assertNull(Events.browserMenuAction.testGetValue())
+
+        store.dispatch(MenuAction.Navigate.WebCompatReporter).joinBlocking()
+
+        assertTelemetryRecorded(Events.browserMenuAction, item = "report_broken_site")
     }
 
     private fun assertTelemetryRecorded(

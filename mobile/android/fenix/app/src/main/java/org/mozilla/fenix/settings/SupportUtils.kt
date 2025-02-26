@@ -68,6 +68,10 @@ object SupportUtils {
         MANAGE_OPTIONAL_EXTENSION_PERMISSIONS("manage-optional-permissions-android-extensions"),
         EXTENSION_PERMISSIONS("extension-permissions"),
         FIND_INSTALL_ADDONS("add-ons-firefox-android"),
+        CRASH_REPORTS("mobile-crash-reports"),
+        TECHNICAL_AND_INTERACTION_DATA("mobile-technical-and-interaction-data"),
+        USAGE_PING_SETTINGS("usage-ping-settings-mobile"),
+        MARKETING_DATA("mobile-marketing-data"),
     }
 
     enum class MozillaPage(internal val path: String) {
@@ -126,8 +130,19 @@ object SupportUtils {
      * Custom tab that cannot open the content in Firefox directly.
      * This ensures the content is contained to this custom tab only.
      */
-    fun createSandboxCustomTabIntent(context: Context, url: String): Intent =
+    private fun createSandboxCustomTabIntent(context: Context, url: String): Intent =
         createCustomTabIntent(context, url).putExtra(EXTRA_IS_SANDBOX_CUSTOM_TAB, true)
+
+    /**
+     * Launches a new sandboxed custom tab Activity.
+     *
+     * @param context The context to launch the Activity from.
+     * @param url The URL to load in the custom tab.
+     */
+    fun launchSandboxCustomTab(context: Context, url: String) {
+        val intent = createSandboxCustomTabIntent(context, url)
+        context.startActivity(intent)
+    }
 
     private fun getEncodedTopicUTF8(topic: String): String {
         try {

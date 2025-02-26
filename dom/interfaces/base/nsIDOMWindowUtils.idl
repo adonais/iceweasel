@@ -2007,7 +2007,12 @@ interface nsIDOMWindowUtils : nsISupports {
    * The return values are of type APZTestData (see APZTestData.webidl).
    */
   [implicit_jscontext] jsval getContentAPZTestData();
-  [implicit_jscontext] jsval getCompositorAPZTestData();
+
+  /*
+   * |aElement| is an optional argument for popup window where APZ is enabled.
+   * |aElement| would be a popup element for popup
+   */
+  [implicit_jscontext] jsval getCompositorAPZTestData([optional] in Element aElement);
 
   /**
    * Posts an RestyleHint::RESTYLE_SELF restyle event for the given element.
@@ -2309,7 +2314,9 @@ interface nsIDOMWindowUtils : nsISupports {
 
   void syncFlushCompositor();
 
-  unsigned long long getLayersId();
+  // |aElement| is an optional argument for popup window where APZ is enabled.
+  // |aElement| would be a popup element for popup.
+  unsigned long long getLayersId([optional] in Element aElement);
 
   // Returns true if we are effectively throttling frame requests.
   readonly attribute boolean effectivelyThrottlesFrameRequests;

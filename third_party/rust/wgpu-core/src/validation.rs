@@ -519,7 +519,14 @@ impl Resource {
                         let naga_access = match access {
                             wgt::StorageTextureAccess::ReadOnly => naga::StorageAccess::LOAD,
                             wgt::StorageTextureAccess::WriteOnly => naga::StorageAccess::STORE,
-                            wgt::StorageTextureAccess::ReadWrite => naga::StorageAccess::all(),
+                            wgt::StorageTextureAccess::ReadWrite => {
+                                naga::StorageAccess::LOAD | naga::StorageAccess::STORE
+                            }
+                            wgt::StorageTextureAccess::Atomic => {
+                                naga::StorageAccess::ATOMIC
+                                    | naga::StorageAccess::LOAD
+                                    | naga::StorageAccess::STORE
+                            }
                         };
                         naga::ImageClass::Storage {
                             format: naga_format,
@@ -610,11 +617,15 @@ impl Resource {
                     },
                     naga::ImageClass::Storage { format, access } => BindingType::StorageTexture {
                         access: {
-                            const LOAD_STORE: naga::StorageAccess = naga::StorageAccess::all();
+                            const LOAD_STORE: naga::StorageAccess =
+                                naga::StorageAccess::LOAD.union(naga::StorageAccess::STORE);
                             match access {
                                 naga::StorageAccess::LOAD => wgt::StorageTextureAccess::ReadOnly,
                                 naga::StorageAccess::STORE => wgt::StorageTextureAccess::WriteOnly,
                                 LOAD_STORE => wgt::StorageTextureAccess::ReadWrite,
+                                _ if access.contains(naga::StorageAccess::ATOMIC) => {
+                                    wgt::StorageTextureAccess::Atomic
+                                }
                                 _ => unreachable!(),
                             }
                         },
@@ -640,7 +651,7 @@ impl NumericType {
         use wgt::VertexFormat as Vf;
 
         let (dim, scalar) = match format {
-            Vf::Uint32 => (NumericDimension::Scalar, Scalar::U32),
+            Vf::Uint8 | Vf::Uint16 | Vf::Uint32 => (NumericDimension::Scalar, Scalar::U32),
             Vf::Uint8x2 | Vf::Uint16x2 | Vf::Uint32x2 => {
                 (NumericDimension::Vector(Vs::Bi), Scalar::U32)
             }
@@ -648,7 +659,7 @@ impl NumericType {
             Vf::Uint8x4 | Vf::Uint16x4 | Vf::Uint32x4 => {
                 (NumericDimension::Vector(Vs::Quad), Scalar::U32)
             }
-            Vf::Sint32 => (NumericDimension::Scalar, Scalar::I32),
+            Vf::Sint8 | Vf::Sint16 | Vf::Sint32 => (NumericDimension::Scalar, Scalar::I32),
             Vf::Sint8x2 | Vf::Sint16x2 | Vf::Sint32x2 => {
                 (NumericDimension::Vector(Vs::Bi), Scalar::I32)
             }
@@ -656,7 +667,9 @@ impl NumericType {
             Vf::Sint8x4 | Vf::Sint16x4 | Vf::Sint32x4 => {
                 (NumericDimension::Vector(Vs::Quad), Scalar::I32)
             }
-            Vf::Float32 => (NumericDimension::Scalar, Scalar::F32),
+            Vf::Unorm8 | Vf::Unorm16 | Vf::Snorm8 | Vf::Snorm16 | Vf::Float16 | Vf::Float32 => {
+                (NumericDimension::Scalar, Scalar::F32)
+            }
             Vf::Unorm8x2
             | Vf::Snorm8x2
             | Vf::Unorm16x2
@@ -670,7 +683,8 @@ impl NumericType {
             | Vf::Snorm16x4
             | Vf::Float16x4
             | Vf::Float32x4
-            | Vf::Unorm10_10_10_2 => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
+            | Vf::Unorm10_10_10_2
+            | Vf::Unorm8x4Bgra => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
             Vf::Float64 => (NumericDimension::Scalar, Scalar::F64),
             Vf::Float64x2 => (NumericDimension::Vector(Vs::Bi), Scalar::F64),
             Vf::Float64x3 => (NumericDimension::Vector(Vs::Tri), Scalar::F64),
@@ -816,7 +830,7 @@ pub enum BindingLayoutSource<'a> {
     /// The binding layout is derived from the pipeline layout.
     ///
     /// This will be filled in by the shader binding validation, as it iterates the shader's interfaces.
-    Derived(ArrayVec<bgl::EntryMap, { hal::MAX_BIND_GROUPS }>),
+    Derived(Box<ArrayVec<bgl::EntryMap, { hal::MAX_BIND_GROUPS }>>),
     /// The binding layout is provided by the user in BGLs.
     ///
     /// This will be validated against the shader's interfaces.
@@ -829,7 +843,7 @@ impl<'a> BindingLayoutSource<'a> {
         for _ in 0..limits.max_bind_groups {
             array.push(Default::default());
         }
-        BindingLayoutSource::Derived(array)
+        BindingLayoutSource::Derived(Box::new(array))
     }
 }
 
@@ -1292,7 +1306,7 @@ pub fn validate_color_attachment_bytes_per_sample(
     attachment_formats: impl Iterator<Item = Option<wgt::TextureFormat>>,
     limit: u32,
 ) -> Result<(), u32> {
-    let mut total_bytes_per_sample = 0;
+    let mut total_bytes_per_sample: u32 = 0;
     for format in attachment_formats {
         let Some(format) = format else {
             continue;
@@ -1301,10 +1315,7 @@ pub fn validate_color_attachment_bytes_per_sample(
         let byte_cost = format.target_pixel_byte_cost().unwrap();
         let alignment = format.target_component_alignment().unwrap();
 
-        let rem = total_bytes_per_sample % alignment;
-        if rem != 0 {
-            total_bytes_per_sample += alignment - rem;
-        }
+        total_bytes_per_sample = total_bytes_per_sample.next_multiple_of(alignment);
         total_bytes_per_sample += byte_cost;
     }
 

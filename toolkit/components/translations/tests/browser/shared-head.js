@@ -13,7 +13,7 @@ const { TranslationsPanelShared } = ChromeUtils.importESModule(
   "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs"
 );
 const { TranslationsUtils } = ChromeUtils.importESModule(
-  "chrome://global/content/translations/TranslationsUtils.sys.mjs"
+  "chrome://global/content/translations/TranslationsUtils.mjs"
 );
 
 // Avoid about:blank's non-standard behavior.
@@ -42,6 +42,8 @@ const SELECT_TEST_PAGE_URL =
   URL_COM_PREFIX + DIR_PATH + "translations-tester-select.html";
 const TEXT_CLEANING_URL =
   URL_COM_PREFIX + DIR_PATH + "translations-text-cleaning.html";
+const SPANISH_BENCHMARK_PAGE_URL =
+  URL_COM_PREFIX + DIR_PATH + "translations-bencher-es.html";
 
 const PIVOT_LANGUAGE = "en";
 const LANGUAGE_PAIRS = [
@@ -1002,6 +1004,9 @@ async function loadTestPage({
   prefs,
   autoOffer,
   permissionsUrls,
+  systemLocales = ["en"],
+  appLocales,
+  webLanguages,
   win = window,
 }) {
   info(`Loading test page starting at url: ${page}`);
@@ -1065,6 +1070,15 @@ async function loadTestPage({
 
   if (autoOffer) {
     TranslationsParent.testAutomaticPopup = true;
+  }
+
+  let cleanupLocales;
+  if (systemLocales || appLocales || webLanguages) {
+    cleanupLocales = await mockLocales({
+      systemLocales,
+      appLocales,
+      webLanguages,
+    });
   }
 
   // Start the tab at a blank page.
@@ -1173,6 +1187,9 @@ async function loadTestPage({
       await loadBlankPage();
       await EngineProcess.destroyTranslationsEngine();
       await removeMocks();
+      if (cleanupLocales) {
+        await cleanupLocales();
+      }
       restoreA11yUtils();
       Services.fog.testResetFOG();
       TranslationsParent.testAutomaticPopup = false;
@@ -1962,9 +1979,9 @@ class TestTranslationsTelemetry {
    * @param {object} expectations - The test expectations.
    * @param {number} expectations.expectedEventCount - The expected count of events.
    * @param {boolean} expectations.expectNewFlowId
-   * @param {Record<string, string | boolean | number>} [expectations.assertForAllEvents]
+   * @param {Record<string, string | boolean | number | Function>} [expectations.assertForAllEvents]
    * - A record of key-value pairs to assert against all events in this category.
-   * @param {Record<string, string | boolean | number>} [expectations.assertForMostRecentEvent]
+   * @param {Record<string, string | boolean | number | Function>} [expectations.assertForMostRecentEvent]
    * - A record of key-value pairs to assert against the most recently recorded event in this category.
    */
   static async assertEvent(
@@ -2024,15 +2041,20 @@ class TestTranslationsTelemetry {
         true,
         `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
-      for (const [key, expectedEntry] of Object.entries(
-        assertForMostRecentEvent
-      )) {
+      for (const [key, expected] of Object.entries(assertForAllEvents)) {
         for (const event of events) {
-          is(
-            event.extra[key],
-            String(expectedEntry),
-            `Telemetry event ${name} value for ${key} should match the expected entry`
-          );
+          if (typeof expected === "function") {
+            ok(
+              expected(event.extra[key]),
+              `Telemetry event ${name} value for ${key} should match the expected predicate`
+            );
+          } else {
+            is(
+              event.extra[key],
+              String(expected),
+              `Telemetry event ${name} value for ${key} should match the expected entry`
+            );
+          }
         }
       }
     }
@@ -2043,14 +2065,19 @@ class TestTranslationsTelemetry {
         true,
         `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
-      for (const [key, expectedEntry] of Object.entries(
-        assertForMostRecentEvent
-      )) {
-        is(
-          events[eventCount - 1].extra[key],
-          String(expectedEntry),
-          `Telemetry event ${name} value for ${key} should match the expected entry`
-        );
+      for (const [key, expected] of Object.entries(assertForMostRecentEvent)) {
+        if (typeof expected === "function") {
+          ok(
+            expected(events[eventCount - 1].extra[key]),
+            `Telemetry event ${name} value for ${key} should match the expected predicate`
+          );
+        } else {
+          is(
+            events[eventCount - 1].extra[key],
+            String(expected),
+            `Telemetry event ${name} value for ${key} should match the expected entry`
+          );
+        }
       }
     }
   }
@@ -2082,6 +2109,41 @@ class TestTranslationsTelemetry {
       denominator,
       expectedDenominator,
       `Telemetry rate ${name} should have expected denominator`
+    );
+  }
+
+  /**
+   * Asserts that all TranslationsEngine performance events are expected and have valid data.
+   *
+   * @param {object} expectations - The test expectations.
+   * @param {number} expectations.expectedEventCount - The expected count of engine performance events.
+   */
+  static async assertTranslationsEnginePerformance({ expectedEventCount }) {
+    info("Destroying the TranslationsEngine.");
+    await EngineProcess.destroyTranslationsEngine();
+
+    const isNotEmptyString = entry => typeof entry === "string" && entry !== "";
+    const isGreaterThanZero = entry => parseFloat(entry) > 0;
+
+    const assertForAllEvents =
+      expectedEventCount === 0
+        ? {}
+        : {
+            from_language: isNotEmptyString,
+            to_language: isNotEmptyString,
+            average_words_per_request: isGreaterThanZero,
+            average_words_per_second: isGreaterThanZero,
+            total_completed_requests: isGreaterThanZero,
+            total_inference_seconds: isGreaterThanZero,
+            total_translated_words: isGreaterThanZero,
+          };
+
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translations.enginePerformance,
+      {
+        expectedEventCount,
+        assertForAllEvents,
+      }
     );
   }
 }

@@ -1500,19 +1500,49 @@ export class ExtensionData {
     return this.manifest.manifest_version;
   }
 
+  get workerBackground() {
+    const background = this.manifest.background;
+
+    const hasServiceWorker =
+      background?.service_worker &&
+      WebExtensionPolicy.backgroundServiceWorkerEnabled;
+    if (!hasServiceWorker) {
+      return false;
+    }
+
+    const hasDocument = background.scripts || background.page;
+    if (!hasDocument) {
+      return true;
+    }
+
+    // assurance: both "document" and "service_worker" environment specified in manifest
+
+    for (let environment of background.preferred_environment || []) {
+      if (environment === "document") {
+        return false;
+      }
+      if (environment === "service_worker") {
+        return true;
+      }
+    }
+
+    // When not specified, prefer the the "document" environment
+    // aka event page by default. This is consistent with Safari 18.
+
+    return false;
+  }
+
   get persistentBackground() {
-    let { manifest } = this;
     if (
-      !manifest.background ||
-      (manifest.background.service_worker &&
-        WebExtensionPolicy.backgroundServiceWorkerEnabled) ||
-      this.manifestVersion > 2
+      !this.manifest.background ||
+      this.manifestVersion > 2 ||
+      this.workerBackground
     ) {
       return false;
     }
     // V2 addons can only use event pages if the pref is also flipped and
     // persistent is explicilty set to false.
-    return !this.eventPagesEnabled || manifest.background.persistent;
+    return !this.eventPagesEnabled || this.manifest.background.persistent;
   }
 
   /**
@@ -1638,6 +1668,17 @@ export class ExtensionData {
       `Warning processing ${manifestKey}.browser_style: ${warning}`
     );
   }
+
+  // AMO enforces a maximum length of 45 on the name since at least 2017, via
+  // https://github.com/mozilla/addons-linter/blame/c4507688899aaafe29c522f1b1aec94b78b8a095/src/schema/updates/manifest.json#L111
+  // added in https://github.com/mozilla/addons-linter/pull/1169
+  // To avoid breaking add-ons that do not go through AMO (e.g. temporarily
+  // loaded extensions), we enforce the limit by truncating and warning if
+  // needed, instead enforcing a maxLength on "name" in schemas/manifest.json.
+  //
+  // We set the limit to 75, which is a safe limit that matches the CWS,
+  // see https://bugzilla.mozilla.org/show_bug.cgi?id=1939087#c5
+  static EXT_NAME_MAX_LEN = 75;
 
   async initializeAddonTypeAndID() {
     if (this.type) {
@@ -1767,13 +1808,42 @@ export class ExtensionData {
       }
     }
 
-    if (
-      this.manifestVersion < 3 &&
-      manifest.background &&
-      !this.eventPagesEnabled &&
-      !manifest.background.persistent
-    ) {
-      this.logWarning("Event pages are not currently supported.");
+    if (manifest.name.length > ExtensionData.EXT_NAME_MAX_LEN) {
+      // Truncate and warn - see comment in EXT_NAME_MAX_LEN.
+      manifest.name = manifest.name.slice(0, ExtensionData.EXT_NAME_MAX_LEN);
+      this.manifestWarning(
+        `Warning processing "name": must be shorter than ${ExtensionData.EXT_NAME_MAX_LEN}`
+      );
+    }
+
+    if (manifest.background) {
+      const background = manifest.background;
+
+      if (background.page && background.scripts) {
+        // both page and scripts are specified, educate the author on the deterministic behaviour
+        // Note: in Chrome and Safari, the precedence is inverted.
+        this.manifestWarning(
+          `Warning processing background: Both background.page and background.scripts specified. background.scripts will be ignored.`
+        );
+      }
+
+      // take the presence of preferred_environment as clue the author knows what it is doing
+      const hasPreference = Array.isArray(background.preferred_environment);
+      if (!hasPreference && WebExtensionPolicy.backgroundServiceWorkerEnabled) {
+        // both serviceWorker and document are specified, educate the author on the deterministic behaviour
+        const documentType = background.page ? "page" : "scripts";
+        this.manifestWarning(
+          `Warning processing background: with both background.service_worker and background.${documentType}, only background.${documentType} will be loaded. This can be changed with background.preferred_environment.`
+        );
+      }
+
+      if (
+        this.manifestVersion < 3 &&
+        !this.eventPagesEnabled &&
+        !background.persistent
+      ) {
+        this.logWarning("Event pages are not currently supported.");
+      }
     }
 
     if (
@@ -3866,7 +3936,8 @@ export class Extension extends ExtensionData {
     // We automatically add permissions to system/built-in extensions.
     // Extensions expliticy stating not_allowed will never get permission.
     let isAllowed = this.permissions.has(PRIVATE_ALLOWED_PERMISSION);
-    if (this.manifest.incognito === "not_allowed") {
+    const hasIncognitoNotAllowed = this.manifest.incognito === "not_allowed";
+    if (hasIncognitoNotAllowed) {
       // If an extension previously had permission, but upgrades/downgrades to
       // a version that specifies "not_allowed" in manifest, remove the
       // permission.
@@ -3890,6 +3961,32 @@ export class Extension extends ExtensionData {
     // (See Bug 1790115).
     if (this.type === "theme") {
       this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
+    }
+
+    // On builds where Enterprise Policies are supported, grant or revoke
+    // the private browsing access for extensions that are not app provided
+    // (system and builtin add-ons) or hidden.
+    if (
+      Services.policies &&
+      !this.isAppProvided &&
+      !this.isHidden &&
+      !hasIncognitoNotAllowed &&
+      this.type === "extension"
+    ) {
+      const settings = Services.policies.getExtensionSettings(this.id);
+      if (settings?.private_browsing) {
+        lazy.ExtensionPermissions.add(this.id, {
+          permissions: [PRIVATE_ALLOWED_PERMISSION],
+          origins: [],
+        });
+        this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
+      } else if (settings?.private_browsing === false) {
+        lazy.ExtensionPermissions.remove(this.id, {
+          permissions: [PRIVATE_ALLOWED_PERMISSION],
+          origins: [],
+        });
+        this.permissions.delete(PRIVATE_ALLOWED_PERMISSION);
+      }
     }
 
     // We only want to update the SVG_CONTEXT_PROPERTIES_PERMISSION during

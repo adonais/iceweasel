@@ -32,7 +32,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/DOMTypes.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
@@ -897,10 +897,11 @@ void MediaDecoder::FirstFrameLoaded(
           if (result->mReader.mVideoHardwareAccelerated) {
             flags += FirstFrameLoadedFlag::IsHardwareDecoding;
           }
-          mTelemetryProbesReporter->OntFirstFrameLoaded(
+          mTelemetryProbesReporter->OnFirstFrameLoaded(
               firstFrameLoadedTime, result->mReader.mTotalReadMetadataTimeMs,
               result->mReader.mTotalWaitingForVideoDataTimeMs,
-              result->mStateMachine.mTotalBufferingTimeMs, flags, *mInfo);
+              result->mStateMachine.mTotalBufferingTimeMs, flags, *mInfo,
+              NS_ConvertUTF16toUTF8(result->mReader.mVideoDecoderName));
         });
     mMDSMCreationTime.reset();
   }

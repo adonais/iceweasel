@@ -267,7 +267,8 @@
 #include "mozilla/gfx/Coord.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/ScaleFactor.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/DomMetrics.h"
+#include "mozilla/glean/DomUseCounterMetrics.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/IdleSchedulerChild.h"
 #include "mozilla/ipc/MessageChannel.h"
@@ -309,7 +310,6 @@
 #include "nsDeviceContext.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadTypes.h"
-#include "nsEffectiveTLDService.h"
 #include "nsError.h"
 #include "nsEscape.h"
 #include "nsFocusManager.h"
@@ -1370,7 +1370,6 @@ Document::Document(const char* aContentType)
       mIsGoingAway(false),
       mStyleSetFilled(false),
       mQuirkSheetAdded(false),
-      mContentEditableSheetAdded(false),
       mMayHaveTitleElement(false),
       mDOMLoadingSet(false),
       mDOMInteractiveSet(false),
@@ -2061,7 +2060,7 @@ void Document::RecordPageLoadEventTelemetry(
   }
 
   nsCOMPtr<nsIEffectiveTLDService> tldService =
-      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+      mozilla::components::EffectiveTLD::Service();
   if (tldService && mReferrerInfo &&
       (docshell->GetLoadType() & nsIDocShell::LOAD_CMD_NORMAL)) {
     nsAutoCString currentBaseDomain, referrerBaseDomain;
@@ -2939,6 +2938,7 @@ void Document::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
 
   mChannel = aChannel;
   RecomputeResistFingerprinting();
+  MaybeRecomputePartitionKey();
 }
 
 void Document::DisconnectNodeTree() {
@@ -2961,7 +2961,7 @@ void Document::DisconnectNodeTree() {
 
     while (nsCOMPtr<nsIContent> content = GetLastChild()) {
       nsMutationGuard::DidMutate();
-      MutationObservers::NotifyContentWillBeRemoved(this, content);
+      MutationObservers::NotifyContentWillBeRemoved(this, content, nullptr);
       DisconnectChild(content);
       if (content == mCachedRootElement) {
         // Immediately clear mCachedRootElement, now that it's been removed
@@ -3300,41 +3300,6 @@ void Document::FillStyleSet() {
   FillStyleSetUserAndUASheets();
   FillStyleSetDocumentSheets();
   mStyleSetFilled = true;
-}
-
-void Document::RemoveContentEditableStyleSheet() {
-  MOZ_ASSERT(IsHTMLOrXHTML());
-
-  ServoStyleSet& styleSet = EnsureStyleSet();
-  auto* cache = GlobalStyleSheetCache::Singleton();
-  bool changed = false;
-  if (mContentEditableSheetAdded) {
-    styleSet.RemoveStyleSheet(*cache->ContentEditableSheet());
-    mContentEditableSheetAdded = false;
-    changed = true;
-  }
-  if (changed) {
-    MOZ_ASSERT(mStyleSetFilled);
-    ApplicableStylesChanged();
-  }
-}
-
-void Document::AddContentEditableStyleSheetToStyleSet() {
-  MOZ_ASSERT(IsHTMLOrXHTML());
-  MOZ_DIAGNOSTIC_ASSERT(mStyleSetFilled,
-                        "Caller should ensure we're being rendered");
-
-  ServoStyleSet& styleSet = EnsureStyleSet();
-  auto* cache = GlobalStyleSheetCache::Singleton();
-  bool changed = false;
-  if (!mContentEditableSheetAdded) {
-    styleSet.AppendStyleSheet(*cache->ContentEditableSheet());
-    mContentEditableSheetAdded = true;
-    changed = true;
-  }
-  if (changed) {
-    ApplicableStylesChanged();
-  }
 }
 
 void Document::FillStyleSetDocumentSheets() {
@@ -3677,6 +3642,8 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   rv = loadInfo->GetCookieJarSettings(getter_AddRefs(mCookieJarSettings));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  MaybeRecomputePartitionKey();
+
   // Generally XFO and CSP frame-ancestors is handled within
   // DocumentLoadListener. However, the DocumentLoadListener can not handle
   // object and embed. Until then we have to enforce it here (See Bug 1646899).
@@ -3727,7 +3694,8 @@ nsIContentSecurityPolicy* Document::GetCsp() const { return mCSP; }
 void Document::SetCsp(nsIContentSecurityPolicy* aCSP) {
   mCSP = aCSP;
   mHasPolicyWithRequireTrustedTypesForDirective =
-      aCSP && aCSP->GetHasPolicyWithRequireTrustedTypesForDirective();
+      aCSP && aCSP->GetRequireTrustedTypesForDirectiveState() !=
+                  RequireTrustedTypesForDirectiveState::NONE;
 }
 
 nsIContentSecurityPolicy* Document::GetPreloadCsp() const {
@@ -3858,7 +3826,8 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     mHasPolicyWithRequireTrustedTypesForDirective = false;
   } else {
     mHasPolicyWithRequireTrustedTypesForDirective =
-        mCSP->GetHasPolicyWithRequireTrustedTypesForDirective();
+        mCSP->GetRequireTrustedTypesForDirectiveState() !=
+        RequireTrustedTypesForDirectiveState::NONE;
   }
 
   // Always overwrite the requesting context of the CSP so that any new
@@ -6064,9 +6033,6 @@ void Document::SetNotifyFormOrPasswordRemoved(bool aShouldNotify) {
 void Document::TearingDownEditor() {
   if (IsEditingOn()) {
     mEditingState = EditingState::eTearingDown;
-    if (IsHTMLOrXHTML()) {
-      RemoveContentEditableStyleSheet();
-    }
   }
 }
 
@@ -6271,13 +6237,6 @@ nsresult Document::EditingStateChanged() {
     }
 
     MOZ_ASSERT(mStyleSetFilled);
-
-    // Before making this window editable, we need to modify UA style sheet
-    // because new style may change whether focused element will be focusable
-    // or not.
-    if (IsHTMLOrXHTML()) {
-      AddContentEditableStyleSheetToStyleSet();
-    }
 
     if (designMode) {
       // designMode is being turned on (overrides contentEditable).
@@ -6511,7 +6470,7 @@ void Document::DeferredContentEditableCountChange(Element* aElement) {
             aElement->InclusiveDescendantMayNeedSpellchecking(htmlEditor)) {
           RefPtr<nsRange> range = nsRange::Create(aElement);
           IgnoredErrorResult res;
-          range->SelectNode(*aElement, res);
+          range->SelectNodeContents(*aElement, res);
           if (res.Failed()) {
             // The node might be detached from the document at this point,
             // which would cause this call to fail.  In this case, we can
@@ -6661,6 +6620,10 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
     return;
   }
 
+  nsCOMPtr<nsILoadInfo> loadInfo =
+      GetChannel() ? GetChannel()->LoadInfo() : nullptr;
+  bool on3pcbException = loadInfo && loadInfo->GetIsOn3PCBExceptionList();
+
   for (auto& principal : principals) {
     nsAutoCString baseDomain;
     nsresult rv = CookieCommons::GetBaseDomain(principal, baseDomain);
@@ -6705,9 +6668,10 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
         continue;
       }
 
-      if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookie(
-                            cookie, CookieJarSettings()->GetPartitionForeign(),
-                            IsInPrivateBrowsing(), UsingStorageAccess())) {
+      if (thirdParty &&
+          !CookieCommons::ShouldIncludeCrossSiteCookie(
+              cookie, CookieJarSettings()->GetPartitionForeign(),
+              IsInPrivateBrowsing(), UsingStorageAccess(), on3pcbException)) {
         continue;
       }
 
@@ -6821,7 +6785,7 @@ void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
   }
 
   nsCOMPtr<nsIEffectiveTLDService> tldService =
-      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+      mozilla::components::EffectiveTLD::Service();
   if (!tldService) {
     return;
   }
@@ -6842,9 +6806,14 @@ void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
                                                  nullptr, &thirdParty);
   }
 
-  if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookie(
-                        cookie, CookieJarSettings()->GetPartitionForeign(),
-                        IsInPrivateBrowsing(), UsingStorageAccess())) {
+  nsCOMPtr<nsILoadInfo> loadInfo =
+      GetChannel() ? GetChannel()->LoadInfo() : nullptr;
+  bool on3pcbException = loadInfo && loadInfo->GetIsOn3PCBExceptionList();
+
+  if (thirdParty &&
+      !CookieCommons::ShouldIncludeCrossSiteCookie(
+          cookie, CookieJarSettings()->GetPartitionForeign(),
+          IsInPrivateBrowsing(), UsingStorageAccess(), on3pcbException)) {
     return;
   }
 
@@ -7351,7 +7320,7 @@ bool Document::ShouldThrottleFrameRequests() const {
     return false;
   }
 
-  if (Hidden()) {
+  if (Hidden() && !StaticPrefs::layout_testing_top_level_always_active()) {
     // We're not visible (probably in a background tab or the bf cache).
     return true;
   }
@@ -7434,7 +7403,6 @@ void Document::DeletePresShell() {
   mStyleSet->ShellDetachedFromDocument();
   mStyleSetFilled = false;
   mQuirkSheetAdded = false;
-  mContentEditableSheetAdded = false;
 }
 
 void Document::DisallowBFCaching(uint32_t aStatus) {
@@ -7619,7 +7587,8 @@ void Document::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
   nsINode::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv);
 }
 
-void Document::RemoveChildNode(nsIContent* aKid, bool aNotify) {
+void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
+                               const BatchRemovalState* aState) {
   Maybe<mozAutoDocUpdate> updateBatch;
   const bool removingRoot = aKid->IsElement();
   if (removingRoot) {
@@ -7630,7 +7599,7 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify) {
     // Notify early so that we can clear the cached element after notifying,
     // without having to slow down nsINode::RemoveChildNode.
     if (aNotify) {
-      MutationObservers::NotifyContentWillBeRemoved(this, aKid);
+      MutationObservers::NotifyContentWillBeRemoved(this, aKid, aState);
       aNotify = false;
     }
 
@@ -9393,7 +9362,7 @@ bool Document::IsValidDomain(nsIURI* aOrigHost, nsIURI* aNewURI) {
     // We're golden if the new domain is the current page's base domain or a
     // subdomain of it.
     nsCOMPtr<nsIEffectiveTLDService> tldService =
-        do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+        mozilla::components::EffectiveTLD::Service();
     if (!tldService) {
       return false;
     }
@@ -9972,7 +9941,7 @@ nsIHTMLCollection* Document::Anchors() {
 }
 
 mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Document::Open(
-    const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures,
+    const nsACString& aURL, const nsAString& aName, const nsAString& aFeatures,
     ErrorResult& rv) {
   MOZ_ASSERT(nsContentUtils::CanCallerAccess(this),
              "XOW should have caught this!");
@@ -9990,8 +9959,7 @@ mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Document::Open(
   }
   RefPtr<nsGlobalWindowOuter> win = nsGlobalWindowOuter::Cast(outer);
   RefPtr<BrowsingContext> newBC;
-  rv = win->OpenJS(NS_ConvertUTF16toUTF8(aURL), aName, aFeatures,
-                   getter_AddRefs(newBC));
+  rv = win->OpenJS(aURL, aName, aFeatures, getter_AddRefs(newBC));
   if (!newBC) {
     return nullptr;
   }
@@ -10342,6 +10310,20 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
     return;
   }
 
+  Maybe<nsAutoString> compliantStringHolder;
+  const nsAString* compliantString = &aText;
+  if (!aIsTrusted) {
+    constexpr nsLiteralString sinkWrite = u"Document write"_ns;
+    constexpr nsLiteralString sinkWriteLn = u"Document writeln"_ns;
+    compliantString =
+        TrustedTypeUtils::GetTrustedTypesCompliantStringForTrustedHTML(
+            aText, aNewlineTerminate ? sinkWriteLn : sinkWrite,
+            kTrustedTypesOnlySinkGroup, *this, compliantStringHolder, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+
   if (!IsHTMLDocument() || mDisableDocWrite) {
     // No calling document.write*() on XHTML!
 
@@ -10408,36 +10390,17 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
 
   ++mWriteLevel;
 
-  auto parseString =
-      [this, &aNewlineTerminate, &aRv, &key](const nsAString& aString)
-          MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> void {
-    // This could be done with less code, but for performance reasons it
-    // makes sense to have the code for two separate Parse() calls here
-    // since the concatenation of strings costs more than we like. And
-    // why pay that price when we don't need to?
-    if (aNewlineTerminate) {
-      aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
-                ->Parse(aString + new_line, key, false);
-    } else {
-      aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
-                ->Parse(aString, key, false);
-    }
-  };
-
-  if (aIsTrusted) {
-    parseString(aText);
+  // This could be done with less code, but for performance reasons it
+  // makes sense to have the code for two separate Parse() calls here
+  // since the concatenation of strings costs more than we like. And
+  // why pay that price when we don't need to?
+  if (aNewlineTerminate) {
+    aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
+              ->Parse(*compliantString + new_line, key, false);
   } else {
-    constexpr nsLiteralString sinkWrite = u"Document write"_ns;
-    constexpr nsLiteralString sinkWriteLn = u"Document writeln"_ns;
-    Maybe<nsAutoString> compliantStringHolder;
-    const nsAString* compliantString =
-        TrustedTypeUtils::GetTrustedTypesCompliantStringForTrustedHTML(
-            aText, aNewlineTerminate ? sinkWriteLn : sinkWrite,
-            kTrustedTypesOnlySinkGroup, *this, compliantStringHolder, aRv);
-    if (!aRv.Failed()) {
-      parseString(*compliantString);
-    }
-  }
+    aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
+              ->Parse(*compliantString, key, false);
+  };
 
   --mWriteLevel;
 
@@ -11747,7 +11710,7 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
   // coming out of the bfcache is ok to restore, though.  So
   // we only want to block suspend windows that aren't also
   // frozen.
-  nsPIDOMWindowInner* win = GetInnerWindow();
+  auto* win = nsGlobalWindowInner::Cast(GetInnerWindow());
   if (win && win->IsSuspended() && !win->IsFrozen()) {
     MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
             ("Save of %s blocked on suspended Window", uri.get()));
@@ -16770,6 +16733,56 @@ void Document::SendPageUseCounters() {
   wgc->SendAccumulatePageUseCounters(counters);
 }
 
+void Document::MaybeRecomputePartitionKey() {
+  // We only need to recompute the partition key for the top-level content
+  // document.
+  if (!IsTopLevelContentDocument()) {
+    return;
+  }
+
+  // Bail out early if there is no cookieJarSettings for this document. For
+  // example, a chrome document.
+  if (!mCookieJarSettings) {
+    return;
+  }
+
+  // Check whether the partition key matches the document's node principal. They
+  // can be different if the document is sandboxed. In this case, the node
+  // principal is a null principal. But the partitionKey of the
+  // cookieJarSettings was derived from the channel URI of the top-level
+  // loading, which isn't a null principal. Therefore, we need to recompute
+  // the partition Key from the document's node principal to reflect the actual
+  // partition Key.
+  nsAutoCString originNoSuffix;
+  nsresult rv = NodePrincipal()->GetOriginNoSuffix(originNoSuffix);
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  nsCOMPtr<nsIURI> originURI;
+  rv = NS_NewURI(getter_AddRefs(originURI), originNoSuffix);
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  // Bail out early if we don't have a principal URI.
+  if (!originURI) {
+    return;
+  }
+
+  OriginAttributes attrs;
+  attrs.SetPartitionKey(originURI, false);
+
+  // We don't need to set the partition key if the cooieJarSettings'
+  // partitionKey matches the document's node principal.
+  if (attrs.mPartitionKey.Equals(
+          net::CookieJarSettings::Cast(mCookieJarSettings)
+              ->GetPartitionKey())) {
+    return;
+  }
+
+  // Set the partition key to the document's node principal. So we will use the
+  // right partition key afterward.
+  mozilla::net::CookieJarSettings::Cast(mCookieJarSettings)
+      ->SetPartitionKey(originURI, false);
+}
+
 bool Document::RecomputeResistFingerprinting() {
   mOverriddenFingerprintingSettings.reset();
   const bool previous = mShouldResistFingerprinting;
@@ -17998,11 +18011,8 @@ already_AddRefed<ViewTransition> Document::StartViewTransition(
   // Step 6: Set document's active view transition to transition.
   mActiveViewTransition = transition;
 
-  if (mPresShell) {
-    if (nsRefreshDriver* rd = mPresShell->GetRefreshDriver()) {
-      rd->EnsureViewTransitionOperationsHappen();
-    }
-  }
+  EnsureViewTransitionOperationsHappen();
+
   // Step 7: return transition
   return transition.forget();
 }
@@ -18017,6 +18027,18 @@ void Document::PerformPendingViewTransitionOperations() {
     aDoc.PerformPendingViewTransitionOperations();
     return CallState::Continue;
   });
+}
+
+void Document::EnsureViewTransitionOperationsHappen() {
+  if (!mPresShell) {
+    return;
+  }
+
+  nsRefreshDriver* rd = mPresShell->GetRefreshDriver();
+  if (!rd) {
+    return;
+  }
+  rd->EnsureViewTransitionOperationsHappen();
 }
 
 Selection* Document::GetSelection(ErrorResult& aRv) {
@@ -18267,10 +18289,13 @@ Document::CreatePermissionGrantPromise(
                 Telemetry::LABELS_STORAGE_ACCESS_API_UI::Request);
           }
 
+          bool isThirdPartyTracker =
+              nsContentUtils::IsThirdPartyTrackingResourceWindow(inner);
+
           // Try to auto-grant the storage access so the user doesn't see the
           // prompt.
           self->AutomaticStorageAccessPermissionCanBeGranted(
-                  aHasUserInteraction)
+                  aHasUserInteraction, isThirdPartyTracker)
               ->Then(
                   GetCurrentSerialEventTarget(), __func__,
                   // If the autogrant check didn't fail, call this function
@@ -18790,8 +18815,8 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
             // Get a grant for the storage access permission that will be set
             // when this is completed in the embedding context
             nsCString serializedSite;
-            RefPtr<nsEffectiveTLDService> etld =
-                nsEffectiveTLDService::GetInstance();
+            nsCOMPtr<nsIEffectiveTLDService> etld =
+                mozilla::components::EffectiveTLD::Service();
             if (!etld) {
               return StorageAccessAPIHelper::
                   StorageAccessPermissionGrantPromise::CreateAndReject(
@@ -19049,7 +19074,8 @@ void Document::UnlockAllWakeLocks(WakeLockType aType) {
 }
 
 RefPtr<Document::AutomaticStorageAccessPermissionGrantPromise>
-Document::AutomaticStorageAccessPermissionCanBeGranted(bool hasUserActivation) {
+Document::AutomaticStorageAccessPermissionCanBeGranted(
+    bool hasUserActivation, bool isThirdPartyTracker) {
   // requestStorageAccessForOrigin may not require user activation. If we don't
   // have user activation at this point we should always show the prompt.
   if (!hasUserActivation ||
@@ -19057,6 +19083,14 @@ Document::AutomaticStorageAccessPermissionCanBeGranted(bool hasUserActivation) {
     return AutomaticStorageAccessPermissionGrantPromise::CreateAndResolve(
         false, __func__);
   }
+
+  if (isThirdPartyTracker &&
+      StaticPrefs::
+          privacy_restrict3rdpartystorage_heuristic_exclude_third_party_trackers()) {
+    return AutomaticStorageAccessPermissionGrantPromise::CreateAndResolve(
+        false, __func__);
+  }
+
   if (XRE_IsContentProcess()) {
     // In the content process, we need to ask the parent process to compute
     // this.  The reason is that nsIPermissionManager::GetAllWithTypePrefix()
@@ -19388,6 +19422,15 @@ bool Document::UsingStorageAccess() {
   return loadInfo->GetStoragePermission() != nsILoadInfo::NoStoragePermission;
 }
 
+bool Document::IsOn3PCBExceptionList() const {
+  if (!mChannel) {
+    return false;
+  }
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+
+  return loadInfo->GetIsOn3PCBExceptionList();
+}
+
 bool Document::HasStorageAccessPermissionGrantedByAllowList() {
   // We only care about if the document gets the storage permission via the
   // allow list here. So we don't check the storage access cache in the inner
@@ -19434,9 +19477,19 @@ nsIPrincipal* Document::EffectiveStoragePrincipal() const {
     return mActiveStoragePrincipal = NodePrincipal();
   }
 
-  StorageAccess storageAccess = StorageAllowedForDocument(this);
-  if (!ShouldPartitionStorage(storageAccess) ||
-      !StoragePartitioningEnabled(storageAccess, cookieJarSettings)) {
+  // We use the lower-level ContentBlocking API here to ensure this
+  // check doesn't send notifications.
+  uint32_t rejectedReason = 0;
+  if (ShouldAllowAccessFor(inner, GetDocumentURI(), false, &rejectedReason)) {
+    return mActiveStoragePrincipal = NodePrincipal();
+  }
+
+  // Let's use the storage principal only if we need to partition the cookie
+  // jar. When the permission is granted, access will be different and the
+  // normal principal will be used.
+  if (ShouldPartitionStorage(rejectedReason) &&
+      !StoragePartitioningEnabled(
+          rejectedReason, const_cast<Document*>(this)->CookieJarSettings())) {
     return mActiveStoragePrincipal = NodePrincipal();
   }
 
@@ -19475,7 +19528,7 @@ nsIPrincipal* Document::EffectiveCookiePrincipal() const {
   // We use the lower-level ContentBlocking API here to ensure this
   // check doesn't send notifications.
   uint32_t rejectedReason = 0;
-  if (ShouldAllowAccessFor(inner, GetDocumentURI(), &rejectedReason)) {
+  if (ShouldAllowAccessFor(inner, GetDocumentURI(), true, &rejectedReason)) {
     return mActiveCookiePrincipal = NodePrincipal();
   }
 

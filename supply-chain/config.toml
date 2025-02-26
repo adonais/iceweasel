@@ -103,6 +103,10 @@ notes = "This was originally servo code which Bobby Holley put on crates.io some
 audit-as-crates-io = false
 notes = "This is a first-party crate which is also published to crates.io. We certify audits for this crate as part of the documented release process, but that step happens after the version bump lands on central so we don't enforce it here."
 
+[policy.metal]
+audit-as-crates-io = true
+notes = "wgpu-hal pins this crate."
+
 [policy.midir]
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, presumably to get a fix that hadn't been released yet. We should consider switching to the latest official release."
@@ -181,6 +185,14 @@ notes = "Part of the wgpu repository, pinned as the rest of wgpu crates."
 [policy.nss-gk-api]
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, pending update of the crate."
+
+[policy.objc]
+audit-as-crates-io = true
+notes = "This is the upstream code plus a backported fix."
+
+[policy.osclientcerts]
+audit-as-crates-io = false
+notes = "This is a first-party crate that happens to have been pushed to crates.io a very long time ago but was yanked."
 
 [policy.peek-poke]
 audit-as-crates-io = false
@@ -307,20 +319,12 @@ criteria = "safe-to-deploy"
 version = "1.3.3"
 criteria = "safe-to-deploy"
 
-[[exemptions.bitreader]]
-version = "0.3.6"
-criteria = "safe-to-deploy"
-
 [[exemptions.block]]
 version = "0.1.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.cache-padded]]
 version = "1.2.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.camino]]
-version = "1.0.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.chrono]]
@@ -614,26 +618,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.once_cell]]
 version = "1.12.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.phf]]
-version = "0.10.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.phf_codegen]]
-version = "0.10.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.phf_generator]]
-version = "0.10.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.phf_macros]]
-version = "0.10.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.phf_shared]]
-version = "0.10.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.plain]]

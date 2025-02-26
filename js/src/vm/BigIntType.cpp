@@ -159,7 +159,7 @@ BigInt* BigInt::createUninitialized(JSContext* cx, size_t digitLength,
   MOZ_ASSERT(x->isNegative() == isNegative);
 
   if (digitLength > InlineDigitsLength) {
-    x->heapDigits_ = js::AllocateCellBuffer<Digit>(cx, x, digitLength);
+    x->heapDigits_ = js::AllocNurseryOrMallocBuffer<Digit>(cx, x, digitLength);
     if (!x->heapDigits_) {
       // |x| is partially initialized, expose it as a BigInt using inline digits
       // to the GC.
@@ -1491,7 +1491,7 @@ BigInt* BigInt::destructivelyTrimHighZeroDigits(JSContext* cx, BigInt* x) {
     MOZ_ASSERT(x->hasHeapDigits());
 
     size_t oldLength = x->digitLength();
-    Digit* newdigits = js::ReallocateCellBuffer<Digit>(
+    Digit* newdigits = js::ReallocNurseryOrMallocBuffer<Digit>(
         cx, x, x->heapDigits_, oldLength, newLength, js::MallocArena);
     if (!newdigits) {
       return nullptr;
@@ -1884,8 +1884,15 @@ BigInt* BigInt::mul(JSContext* cx, HandleBigInt x, HandleBigInt y) {
   }
   result->initializeDigitsToZero();
 
-  for (size_t i = 0; i < x->digitLength(); i++) {
-    multiplyAccumulate(y, x->digit(i), result, i);
+  // Reorder operands to minimize calls to multiplyAccumulate.
+  BigInt* left = x;
+  BigInt* right = y;
+  if (left->digitLength() < right->digitLength()) {
+    std::swap(left, right);
+  }
+
+  for (size_t i = 0; i < right->digitLength(); i++) {
+    multiplyAccumulate(left, right->digit(i), result, i);
   }
 
   return destructivelyTrimHighZeroDigits(cx, result);

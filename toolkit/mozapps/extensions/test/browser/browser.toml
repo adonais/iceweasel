@@ -137,6 +137,7 @@ https_first_disabled = true
 ["browser_permission_prompt.js"]
 
 ["browser_permission_prompt_userScripts.js"]
+skip-if = ["a11y_checks"] # bug 1940773 - checkbox.click() somehow triggers a11y assertion failure
 
 ["browser_reinstall.js"]
 
@@ -153,6 +154,8 @@ https_first_disabled = true
 ["browser_subframe_install.js"]
 
 ["browser_task_next_test.js"]
+
+["browser_theme_undo.js"]
 
 ["browser_updateid.js"]
 

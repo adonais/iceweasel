@@ -612,8 +612,8 @@ static MOZ_ALWAYS_INLINE bool AllocCharsForFlatten(Nursery& nursery,
                                                    bool* hasStringBuffer) {
   /*
    * Grow by 12.5% if the buffer is very large. Otherwise, round up to the
-   * next power of 2. This is similar to what we do with arrays; see
-   * JSObject::ensureDenseArrayElements.
+   * next power of 2. This is similar to what we do with object elements; see
+   * NativeObject::goodElementsAllocationAmount.
    */
   auto calcCapacity = [](size_t length, size_t maxCapacity) {
     static const size_t DOUBLING_MAX = 1024 * 1024;
@@ -630,18 +630,14 @@ static MOZ_ALWAYS_INLINE bool AllocCharsForFlatten(Nursery& nursery,
     MOZ_ASSERT(length <= *capacity);
     MOZ_ASSERT(*capacity <= JSString::MAX_LENGTH);
 
-    auto buffer = str->zone()->make_pod_arena_array<CharT>(
-        js::StringBufferArena, *capacity);
+    size_t allocSize = *capacity * sizeof(CharT);
+    void* buffer = nursery.allocNurseryOrMallocBuffer(
+        str->zone(), str, allocSize, js::StringBufferArena);
     if (!buffer) {
       return false;
     }
-    if (!str->isTenured()) {
-      if (!nursery.registerMallocedBuffer(buffer.get(),
-                                          *capacity * sizeof(CharT))) {
-        return false;
-      }
-    }
-    *chars = buffer.release();
+
+    *chars = static_cast<CharT*>(buffer);
     *hasStringBuffer = false;
     return true;
   }
@@ -970,7 +966,7 @@ static bool UpdateNurseryBuffersOnTransfer(js::Nursery& nursery,
 }
 
 static bool CanReuseLeftmostBuffer(JSString* leftmostChild, size_t wholeLength,
-                                   bool hasTwoByteChars) {
+                                   bool hasTwoByteChars, bool isTenured) {
   if (!leftmostChild->isExtensible()) {
     return false;
   }
@@ -983,8 +979,19 @@ static bool CanReuseLeftmostBuffer(JSString* leftmostChild, size_t wholeLength,
     return false;
   }
 
-  return str.capacity() >= wholeLength &&
-         str.hasTwoByteChars() == hasTwoByteChars;
+  if (str.capacity() < wholeLength ||
+      str.hasTwoByteChars() != hasTwoByteChars) {
+    return false;
+  }
+
+  // Don't try to reuse the buffer if the extensible string's characters are in
+  // the nursery and the (root) rope is tenured.
+  if (isTenured && !str.hasStringBuffer() && !str.ownsMallocedChars()) {
+    MOZ_ASSERT(IsInsideNursery(&str));
+    return false;
+  }
+
+  return true;
 }
 
 JSLinearString* JSRope::flatten(JSContext* maybecx) {
@@ -1099,7 +1106,8 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   JSString* leftmostChild = leftmostRope->leftChild();
 
   bool reuseLeftmostBuffer = CanReuseLeftmostBuffer(
-      leftmostChild, wholeLength, std::is_same_v<CharT, char16_t>);
+      leftmostChild, wholeLength, std::is_same_v<CharT, char16_t>,
+      root->isTenured());
 
   bool hasStringBuffer = false;
   if (reuseLeftmostBuffer) {
@@ -1221,7 +1229,7 @@ finish_root:
   root->setLengthAndFlags(wholeLength, flags);
   root->setNonInlineChars(wholeChars, hasStringBuffer);
   root->d.s.u3.capacity = wholeCapacity;
-  AddCellMemory(root, root->asLinear().allocSize(), MemoryUse::StringContents);
+  AddCellMemory(root, wholeCapacity * sizeof(CharT), MemoryUse::StringContents);
 
   if (reuseLeftmostBuffer) {
     // Remove memory association for left node we're about to make into a
@@ -2893,7 +2901,7 @@ bool js::StringChars<CharT>::maybeRealloc(JSContext* cx, size_t oldLength,
     if (!chars) {
       return false;
     }
-    std::memcpy(chars.data(), inlineChars_, InlineLength);
+    std::memcpy(chars.data(), inlineChars_, InlineLength * sizeof(CharT));
 
     ownedChars_.set(std::move(chars));
     return true;

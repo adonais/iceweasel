@@ -72,36 +72,32 @@ class PrivacyPreferencesTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN crash reporting checked action WHEN middleware is invoked THEN the corresponding telemetry is sent`() {
-        assertNull(Onboarding.privacyPreferencesModalCrashReportingChecked.testGetValue())
+    fun `GIVEN crash reporting learn more action WHEN middleware is invoked THEN the corresponding telemetry is sent`() {
+        assertNull(Onboarding.privacyPreferencesModalCrashReportingLearnMore.testGetValue())
 
         middleware.invoke(
             context,
             {},
-            PrivacyPreferencesAction.CrashReportingChecked(true),
+            PrivacyPreferencesAction.CrashReportingLearnMore,
         )
 
-        val event = Onboarding.privacyPreferencesModalCrashReportingChecked.testGetValue()!!
+        val event = Onboarding.privacyPreferencesModalCrashReportingLearnMore.testGetValue()!!
         assertNotNull(event)
         assertEquals(1, event.size)
-        val result = event.single().extra?.getValue("checked").toBoolean()
-        assertTrue(result)
     }
 
     @Test
-    fun `GIVEN usage data checked action WHEN middleware is invoked THEN the corresponding telemetry is sent`() {
-        assertNull(Onboarding.privacyPreferencesModalUsageDataChecked.testGetValue())
+    fun `GIVEN usage data learn more action WHEN middleware is invoked THEN the corresponding telemetry is sent`() {
+        assertNull(Onboarding.privacyPreferencesModalUsageDataLearnMore.testGetValue())
 
         middleware.invoke(
             context,
             {},
-            PrivacyPreferencesAction.UsageDataUserChecked(true),
+            PrivacyPreferencesAction.UsageDataUserLearnMore,
         )
 
-        val event = Onboarding.privacyPreferencesModalUsageDataChecked.testGetValue()!!
+        val event = Onboarding.privacyPreferencesModalUsageDataLearnMore.testGetValue()!!
         assertNotNull(event)
         assertEquals(1, event.size)
-        val result = event.single().extra?.getValue("checked").toBoolean()
-        assertTrue(result)
     }
 }

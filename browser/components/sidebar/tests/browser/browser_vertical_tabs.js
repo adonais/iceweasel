@@ -16,8 +16,8 @@ const { NonPrivateTabs } = ChromeUtils.importESModule(
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["sidebar.animation.enabled", false],
       ["sidebar.verticalTabs", false],
-      ["sidebar.visibility", "always-show"],
     ],
   });
   Services.telemetry.clearScalars();
@@ -191,6 +191,9 @@ add_task(async function test_toggle_vertical_tabs() {
   );
 
   info("Pin a tab using the context menu.");
+  // Use setTimeout to avoid Bug 1478596 intermittent
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(r => setTimeout(r, 100));
   await openAndWaitForContextMenu(contextMenu, gBrowser.selectedTab, () => {
     document.getElementById("context_pinTab").click();
   });
@@ -283,6 +286,17 @@ add_task(async function test_toggle_vertical_tabs() {
       ok(
         !document.getElementById("toolbar-context-undoCloseTab").hidden,
         "Undo close tab item should be visible"
+      );
+    }
+  );
+
+  await openAndWaitForContextMenu(
+    toolbarContextMenu,
+    gBrowser.tabContainer,
+    () => {
+      ok(
+        !document.getElementById("toolbar-context-customize-sidebar").hidden,
+        "Customize sidebar should be visible"
       );
     }
   );
@@ -419,7 +433,7 @@ add_task(async function test_vertical_tabs_expanded() {
       ["sidebar.verticalTabs", true],
     ],
   });
-  await SidebarController.setUIState({ expanded: true });
+  await SidebarController.initializeUIState({ launcherExpanded: true });
 
   info("Disable revamped sidebar.");
   Services.prefs.setBoolPref("sidebar.revamp", false);
@@ -428,17 +442,20 @@ add_task(async function test_vertical_tabs_expanded() {
     "Sidebar launcher is hidden."
   );
 
-  info("Enable revamped sidebar and vertical tabs.");
-  Services.prefs.setBoolPref("sidebar.revamp", true);
+  info("Enable vertical tabs.");
   Services.prefs.setBoolPref("sidebar.verticalTabs", true);
   await TestUtils.waitForCondition(
     () => BrowserTestUtils.isVisible(document.getElementById("sidebar-main")),
     "Sidebar launcher is shown."
   );
-  ok(
+  const expandedStateValues = [
+    SidebarController.getUIState().launcherExpanded,
+    SidebarController.sidebarMain.expanded,
     gBrowser.tabContainer.hasAttribute("expanded"),
-    "Tab container is expanded."
-  );
+  ];
+  for (const val of expandedStateValues) {
+    is(val, false, "Launcher is collapsed.");
+  }
 
   await SpecialPowers.popPrefEnv();
 });

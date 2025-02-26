@@ -70,7 +70,7 @@ ninja_params=()
 
 # Assume that MSVC is wanted if this is running on windows.
 platform=$(uname -s)
-if [ "${platform%-*}" = "MINGW32_NT" -o "${platform%-*}" = "MINGW64_NT" ]; then
+if [ "${platform%-*}" = "MINGW32_NT" -o "${platform%-*}" = "MINGW64_NT" -o "${platform%%-*}" = "MSYS_NT" ]; then
     msvc=1
 fi
 
@@ -111,6 +111,7 @@ while [ $# -gt 0 ]; do
         --fuzz) fuzz=1 ;;
         --fuzz=oss) fuzz=1; fuzz_oss=1 ;;
         --fuzz=tls) fuzz=1; fuzz_tls=1 ;;
+        --gtests-corpus) gyp_params+=(-Dgtests_corpus=1) ;;
         --sancov) enable_sancov; gyp_params+=(-Dcoverage=1) ;;
         --sancov=?*) enable_sancov "${1#*=}"; gyp_params+=(-Dcoverage=1) ;;
         --emit-llvm) gyp_params+=(-Demit_llvm=1 -Dsign_libs=0) ;;

@@ -239,7 +239,7 @@ class HTMLInputElement final : public TextControlElement,
   bool ValueChanged() const override;
   void GetTextEditorValue(nsAString& aValue) const override;
   MOZ_CAN_RUN_SCRIPT TextEditor* GetTextEditor() override;
-  TextEditor* GetTextEditorWithoutCreation() const override;
+  TextEditor* GetExtantTextEditor() const override;
   nsISelectionController* GetSelectionController() override;
   nsFrameSelection* GetConstFrameSelection() override;
   TextControlState* GetTextControlState() const override {
@@ -752,6 +752,7 @@ class HTMLInputElement final : public TextControlElement,
   }
 
   nsIControllers* GetControllers(ErrorResult& aRv);
+  nsIControllers* GetExtantControllers() const { return mControllers; }
   // XPCOM adapter function widely used throughout code, leaving it as is.
   nsresult GetControllers(nsIControllers** aResult);
 
@@ -783,6 +784,7 @@ class HTMLInputElement final : public TextControlElement,
   void OpenDateTimePicker(const DateTimeValue& aInitialValue);
   void UpdateDateTimePicker(const DateTimeValue& aValue);
   void CloseDateTimePicker();
+  void SetDateTimePickerState(bool aIsOpen);
 
   /*
    * Called from datetime input box binding when inner text fields are focused

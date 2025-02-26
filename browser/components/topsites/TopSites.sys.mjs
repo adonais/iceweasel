@@ -2,29 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { TippyTopProvider } from "resource://activity-stream/lib/TippyTopProvider.sys.mjs";
-import {
-  insertPinned,
-  TOP_SITES_MAX_SITES_PER_ROW,
-} from "resource://activity-stream/common/Reducers.sys.mjs";
-import { Dedupe } from "resource://activity-stream/common/Dedupe.sys.mjs";
-import {
-  shortURL,
-  shortHostname,
-} from "resource://activity-stream/lib/ShortURL.sys.mjs";
-
+import { TippyTopProvider } from "resource:///modules/topsites/TippyTopProvider.sys.mjs";
+import { Dedupe } from "resource:///modules/Dedupe.sys.mjs";
+import { TOP_SITES_MAX_SITES_PER_ROW } from "resource:///modules/topsites/constants.mjs";
 import {
   CUSTOM_SEARCH_SHORTCUTS,
   checkHasSearchEngine,
   getSearchProvider,
-} from "resource://activity-stream/lib/SearchShortcuts.sys.mjs";
+} from "resource://gre/modules/SearchShortcuts.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   FaviconFeed: "resource://activity-stream/lib/FaviconFeed.sys.mjs",
-  FilterAdult: "resource://activity-stream/lib/FilterAdult.sys.mjs",
-  LinksCache: "resource://activity-stream/lib/LinksCache.sys.mjs",
+  FilterAdult: "resource:///modules/FilterAdult.sys.mjs",
+  LinksCache: "resource:///modules/LinksCache.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -39,6 +31,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
 });
 
 export const DEFAULT_TOP_SITES = [];
+
 const FRECENCY_THRESHOLD = 100 + 1; // 1 visit (skip first-run/one-time pages)
 const MIN_FAVICON_SIZE = 96;
 const PINNED_FAVICON_PROPS_TO_MIGRATE = [
@@ -75,7 +68,9 @@ const DEFAULT_SITES_OVERRIDE_PREF =
 const DEFAULT_SITES_EXPERIMENTS_PREF_BRANCH = "browser.topsites.experiment.";
 
 function getShortHostnameForCurrentSearch() {
-  const url = shortHostname(Services.search.defaultEngine.searchUrlDomain);
+  const url = lazy.NewTabUtils.shortHostname(
+    Services.search.defaultEngine.searchUrlDomain
+  );
   return url;
 }
 
@@ -366,7 +361,7 @@ class _TopSites {
     let remoteSettingData = await this._getRemoteConfig();
 
     for (let siteData of remoteSettingData) {
-      let hostname = shortURL(siteData);
+      let hostname = lazy.NewTabUtils.shortURL(siteData);
       let link = {
         isDefault: true,
         url: siteData.url,
@@ -399,7 +394,7 @@ class _TopSites {
           isDefault: true,
           url,
         };
-        site.hostname = shortURL(site);
+        site.hostname = lazy.NewTabUtils.shortURL(site);
         DEFAULT_TOP_SITES.push(site);
       }
     }
@@ -560,7 +555,9 @@ class _TopSites {
         // haven't previously inserted it, there's space to pin it, and the
         // search engine is available in Firefox
         if (
-          !pinnedSites.find(s => s && shortURL(s) === shortcut.shortURL) &&
+          !pinnedSites.find(
+            s => s && lazy.NewTabUtils.shortURL(s) === shortcut.shortURL
+          ) &&
           !prevInsertedShortcuts.includes(shortcut.shortURL) &&
           nextAvailable > -1 &&
           (await checkHasSearchEngine(shortcut.keyword))
@@ -630,7 +627,7 @@ class _TopSites {
       if (!link) {
         continue;
       }
-      const hostname = shortURL(link);
+      const hostname = lazy.NewTabUtils.shortURL(link);
       if (!this.shouldFilterSearchTile(hostname)) {
         frecent.push({
           ...(searchShortcutsExperiment
@@ -657,7 +654,7 @@ class _TopSites {
       }
       // If we've previously blocked a search shortcut, remove the default top site
       // that matches the hostname
-      const searchProvider = getSearchProvider(shortURL(link));
+      const searchProvider = getSearchProvider(lazy.NewTabUtils.shortURL(link));
       if (
         searchProvider &&
         lazy.NewTabUtils.blockedLinks.isBlocked({ url: searchProvider.url })
@@ -690,7 +687,9 @@ class _TopSites {
 
         // Drop pinned search shortcuts when their engine has been removed / hidden.
         if (link.searchTopSite) {
-          const searchProvider = getSearchProvider(shortURL(link));
+          const searchProvider = getSearchProvider(
+            lazy.NewTabUtils.shortURL(link)
+          );
           if (
             !searchProvider ||
             !(await checkHasSearchEngine(searchProvider.keyword))
@@ -709,7 +708,7 @@ class _TopSites {
           {},
           frecentSite || { isDefault: !!notBlockedDefaultSites.find(finder) },
           link,
-          { hostname: shortURL(link) },
+          { hostname: lazy.NewTabUtils.shortURL(link) },
           { searchTopSite: !!link.searchTopSite }
         );
 
@@ -835,7 +834,7 @@ class _TopSites {
   }
 
   async topSiteToSearchTopSite(site) {
-    const searchProvider = getSearchProvider(shortURL(site));
+    const searchProvider = getSearchProvider(lazy.NewTabUtils.shortURL(site));
     if (
       !searchProvider ||
       !(await checkHasSearchEngine(searchProvider.keyword))
@@ -947,7 +946,7 @@ class _TopSites {
       if (
         pinnedLink &&
         pinnedLink.searchTopSite &&
-        shortURL(pinnedLink) === vendor
+        lazy.NewTabUtils.shortURL(pinnedLink) === vendor
       ) {
         lazy.NewTabUtils.pinnedLinks.unpin(pinnedLink);
         this.pinnedCache.expire();
@@ -1086,6 +1085,43 @@ class _TopSites {
 
     this._broadcastPinnedSitesUpdated();
   }
+}
+
+/**
+ * insertPinned - Inserts pinned links in their specified slots
+ *
+ * @param {Array} links list of links
+ * @param {Array} pinned list of pinned links
+ * @returns {Array} resulting list of links with pinned links inserted
+ */
+export function insertPinned(links, pinned) {
+  // Remove any pinned links
+  const pinnedUrls = pinned.map(link => link && link.url);
+  let newLinks = links.filter(link =>
+    link ? !pinnedUrls.includes(link.url) : false
+  );
+  newLinks = newLinks.map(link => {
+    if (link && link.isPinned) {
+      delete link.isPinned;
+      delete link.pinIndex;
+    }
+    return link;
+  });
+
+  // Then insert them in their specified location
+  pinned.forEach((val, index) => {
+    if (!val) {
+      return;
+    }
+    let link = Object.assign({}, val, { isPinned: true, pinIndex: index });
+    if (index > newLinks.length) {
+      newLinks[index] = link;
+    } else {
+      newLinks.splice(index, 0, link);
+    }
+  });
+
+  return newLinks;
 }
 
 export const TopSites = new _TopSites();

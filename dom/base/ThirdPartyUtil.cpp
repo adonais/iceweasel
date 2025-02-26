@@ -16,6 +16,7 @@
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MacroForEach.h"
+#include "mozilla/NullPrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StorageAccess.h"
@@ -29,7 +30,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
-#include "nsEffectiveTLDService.h"
 #include "nsError.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIChannel.h"
@@ -45,6 +45,7 @@
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIDOMWindowInlines.h"
+#include "nsSandboxFlags.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTLiteralString.h"
 
@@ -77,7 +78,7 @@ nsresult ThirdPartyUtil::Init() {
   gService = this;
   mozilla::ClearOnShutdown(&gService);
 
-  mTLDService = nsEffectiveTLDService::GetInstance();
+  mTLDService = mozilla::components::EffectiveTLD::Service();
   return mTLDService ? NS_OK : NS_ERROR_FAILURE;
 }
 
@@ -213,6 +214,18 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
   auto* const browsingContext = current->GetBrowsingContext();
   MOZ_ASSERT(browsingContext);
 
+  if (browsingContext->IsTopContent()) {
+    *aResult = false;
+    return NS_OK;
+  }
+
+  // If the document is sandboxed, it's always third party.
+  RefPtr<Document> doc = current->GetExtantDoc();
+  if (doc && (doc->GetSandboxFlags() & SANDBOXED_ORIGIN)) {
+    *aResult = true;
+    return NS_OK;
+  }
+
   WindowContext* wc = browsingContext->GetCurrentWindowContext();
   if (NS_WARN_IF(!wc)) {
     *aResult = true;
@@ -235,6 +248,13 @@ nsresult ThirdPartyUtil::IsThirdPartyGlobal(
       *aResult = false;
       return NS_OK;
     }
+
+    // If the window global is sandboxed, it's always third party.
+    if (currentWGP->SandboxFlags() & SANDBOXED_ORIGIN) {
+      *aResult = true;
+      return NS_OK;
+    }
+
     nsCOMPtr<nsIPrincipal> currentPrincipal = currentWGP->DocumentPrincipal();
     RefPtr<WindowGlobalParent> parent =
         currentWGP->BrowsingContext()->GetEmbedderWindowGlobal();
@@ -417,6 +437,12 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
     }
   } else {
     rv = mTLDService->GetBaseDomain(aHostURI, 0, aBaseDomain);
+  }
+
+  // If the URI is a null principal, we get the UUID portion instead of the base
+  // domain because a null principal uri doesn't have a base domain.
+  if (aHostURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME)) {
+    rv = aHostURI->GetFilePath(aBaseDomain);
   }
 
   // Get the base domain. this will fail if the host contains a leading dot,

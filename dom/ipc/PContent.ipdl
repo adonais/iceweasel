@@ -80,7 +80,7 @@ include "mozilla/dom/GeolocationIPCUtils.h";
 include "mozilla/dom/MediaSessionIPCUtils.h";
 include "mozilla/dom/PageLoadEventUtils.h";
 include "mozilla/dom/ReferrerInfoUtils.h";
-include "mozilla/glean/GleanMetrics.h";
+include "mozilla/glean/DomMetrics.h";
 include "mozilla/ipc/ByteBufUtils.h";
 include "mozilla/ipc/TransportSecurityInfoUtils.h";
 include "mozilla/ipc/URIUtils.h";
@@ -89,7 +89,6 @@ include "mozilla/widget/WidgetMessageUtils.h";
 include "mozilla/PermissionDelegateIPCUtils.h";
 
 [RefCounted] using class nsIDOMGeoPosition from "nsGeoPositionIPCSerialiser.h";
-[RefCounted] using class nsIAlertNotification from "mozilla/AlertNotificationIPCSerializer.h";
 
 using struct ChromePackage from "mozilla/chrome/RegistryMessageUtils.h";
 using struct SubstitutionMapping from "mozilla/chrome/RegistryMessageUtils.h";
@@ -100,6 +99,7 @@ using mozilla::dom::NativeThreadId from "mozilla/dom/NativeThreadId.h";
 using mozilla::hal::ProcessPriority from "mozilla/HalTypes.h";
 using mozilla::gfx::IntSize from "mozilla/gfx/2D.h";
 using mozilla::gfx::SurfaceFormat from "mozilla/gfx/Types.h";
+using gfxPlatform::GlobalReflowFlags from "gfxPlatform.h";
 using mozilla::dom::TabId from "mozilla/dom/ipc/IdType.h";
 using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
 using mozilla::EventMessage from "mozilla/EventForwards.h";
@@ -129,7 +129,7 @@ using mozilla::dom::geolocation::GeolocationPermissionStatus from "mozilla/dom/G
 #endif  // defined(XP_WIN)
 
 using mozilla::Telemetry::DiscardedData from "mozilla/TelemetryComms.h";
-using mozilla::glean::perf::PageLoadExtra from "mozilla/glean/GleanMetrics.h";
+using mozilla::glean::perf::PageLoadExtra from "mozilla/glean/DomMetrics.h";
 [MoveOnly] using mozilla::CrossProcessMutexHandle from "mozilla/ipc/CrossProcessMutex.h";
 using mozilla::dom::MaybeDiscardedBrowsingContext from "mozilla/dom/BrowsingContext.h";
 using mozilla::dom::BrowsingContextTransaction from "mozilla/dom/BrowsingContext.h";
@@ -305,10 +305,6 @@ struct JSWindowActorInfo
 {
   nsCString name;
   bool allFrames;
-
-  // True if `url` is for ESM.
-  // False if `url` is for JSM or nothing.
-  bool isESModule;
 
   // This is to align with JSProcessActorInfo.
   // This attribute isn't used for JSWindow Actors.
@@ -698,17 +694,10 @@ child:
     [Priority=mediumhigh] async RebuildFontList(bool aFullRebuild);
 
     /**
-     * The shared font list has been modified, potentially adding matches
-     * for src:local() names that were previously not known, so content
-     * may need to be reflowed.
-     */
-    async FontListChanged();
-
-    /**
      * The font list or prefs have been updated in such a way that we might need
      * to do a reflow and maybe reframe.
      */
-    async ForceGlobalReflow(bool aNeedsReframe);
+    async ForceGlobalReflow(GlobalReflowFlags aFlags);
 
     /**
      * A new shmem block has been added to the font list; the child process

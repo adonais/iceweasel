@@ -87,6 +87,10 @@ export const DEFAULT_MODELS = Object.freeze({
     modelId: "Xenova/vit-base-patch16-224-in21k",
     dtype: "q8",
   },
+  "text-to-speech": {
+    modelId: "Xenova/speecht5_tts",
+    dtype: "q8",
+  },
 });
 
 /**
@@ -231,10 +235,16 @@ export const LogLevel = {
  * @typedef {import("../../translations/actors/TranslationsEngineParent.sys.mjs").TranslationsEngineParent} TranslationsEngineParent
  */
 
+const PIPELINE_TEST_NAMES = ["moz-echo", "test-echo"];
+
 /**
  * This class encapsulates the options for a pipeline process.
  */
 export class PipelineOptions {
+  /**
+   * External model data file list.
+   */
+  useExternalDataFormat = false;
   /**
    * The identifier for the engine to be used by the pipeline.
    *
@@ -384,6 +394,21 @@ export class PipelineOptions {
   }
 
   /**
+   * Determines if the pipeline is mocked.
+   *
+   * It is made static to enable easier global overriding during unit tests and to allow the
+   * check to be performed without requiring an instance of the class.
+   *
+   * @param {object} options - The options for the pipeline.
+   */
+  static isMocked(options) {
+    return (
+      PIPELINE_TEST_NAMES.includes(options.taskName) ||
+      PIPELINE_TEST_NAMES.includes(options.modelId)
+    );
+  }
+
+  /**
    * Private method to validate enum fields.
    *
    * @param {string} field - The field being validated (e.g., 'dtype', 'device', 'executionPriority').
@@ -527,6 +552,7 @@ export class PipelineOptions {
       "dtype",
       "numThreads",
       "executionPriority",
+      "useExternalDataFormat",
     ];
 
     if (options instanceof PipelineOptions) {
@@ -619,6 +645,7 @@ export class PipelineOptions {
       dtype: this.dtype,
       numThreads: this.numThreads,
       executionPriority: this.executionPriority,
+      useExternalDataFormat: this.useExternalDataFormat,
     };
   }
 

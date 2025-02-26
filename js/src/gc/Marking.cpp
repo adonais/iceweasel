@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "gc/BufferAllocator.h"
 #include "gc/GCInternals.h"
 #include "gc/ParallelMarking.h"
 #include "gc/TraceKind.h"
@@ -29,6 +30,7 @@
 #include "util/Poison.h"
 #include "vm/GeneratorObject.h"
 
+#include "gc/BufferAllocator-inl.h"
 #include "gc/GC-inl.h"
 #include "gc/PrivateIterators-inl.h"
 #include "gc/TraceMethods-inl.h"
@@ -1080,6 +1082,10 @@ template <uint32_t opts>
 void GCMarker::traverse(BaseScript* thing) {
   pushThing<opts>(thing);
 }
+template <uint32_t opts>
+void GCMarker::traverse(SmallBuffer* thing) {
+  // Buffer contents are traced by their owning GC thing.
+}
 
 template <uint32_t opts, typename T>
 void js::GCMarker::traceChildren(T* thing) {
@@ -1675,6 +1681,16 @@ scan_obj: {
   }
 
   unsigned nslots = nobj->slotSpan();
+
+  if (nobj->hasDynamicSlots()) {
+    ObjectSlots* slots = nobj->getSlotsHeader();
+    BufferAllocator::MarkTenuredAlloc(slots);
+  }
+
+  if (nobj->hasDynamicElements()) {
+    void* elements = nobj->getUnshiftedElementsHeader();
+    BufferAllocator::MarkTenuredAlloc(elements);
+  }
 
   if (!nobj->hasEmptyElements()) {
     base = nobj->getDenseElements();
@@ -2959,6 +2975,10 @@ MarkInfo GetMarkInfo(void* vp) {
     return chunk->getKind() == js::gc::ChunkKind::NurseryFromSpace
                ? MarkInfo::NURSERY_FROMSPACE
                : MarkInfo::NURSERY_TOSPACE;
+  }
+
+  if (gc.isPointerWithinBufferAlloc(vp)) {
+    return MarkInfo::BUFFER;
   }
 
   if (!gc.isPointerWithinTenuredCell(vp)) {

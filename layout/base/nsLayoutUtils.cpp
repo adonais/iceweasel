@@ -33,7 +33,7 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DisplayPortUtils.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/dom/AnonymousContent.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/CanvasUtils.h"
@@ -1263,16 +1263,24 @@ SideBits nsLayoutUtils::GetSideBitsForFixedPositionContent(
   SideBits sides = SideBits::eNone;
   if (aFixedPosFrame) {
     const nsStylePosition* position = aFixedPosFrame->StylePosition();
-    if (!position->GetInset(eSideRight).IsAuto()) {
+    if (!position
+             ->GetAnchorResolvedInset(eSideRight, StylePositionProperty::Fixed)
+             .IsAuto()) {
       sides |= SideBits::eRight;
     }
-    if (!position->GetInset(eSideLeft).IsAuto()) {
+    if (!position
+             ->GetAnchorResolvedInset(eSideLeft, StylePositionProperty::Fixed)
+             .IsAuto()) {
       sides |= SideBits::eLeft;
     }
-    if (!position->GetInset(eSideBottom).IsAuto()) {
+    if (!position
+             ->GetAnchorResolvedInset(eSideBottom, StylePositionProperty::Fixed)
+             .IsAuto()) {
       sides |= SideBits::eBottom;
     }
-    if (!position->GetInset(eSideTop).IsAuto()) {
+    if (!position
+             ->GetAnchorResolvedInset(eSideTop, StylePositionProperty::Fixed)
+             .IsAuto()) {
       sides |= SideBits::eTop;
     }
   }
@@ -8159,7 +8167,19 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
           ? SubtractDynamicToolbar::Yes
           : SubtractDynamicToolbar::No;
 
-  if (shouldSubtractDynamicToolbar == SubtractDynamicToolbar::Yes) {
+  const bool isKeyboardVisibleOnOverlaysContent =
+      aPresContext->GetKeyboardHeight() &&
+      aPresContext->Document()->InteractiveWidget() ==
+          InteractiveWidget::OverlaysContent;
+  if (shouldSubtractDynamicToolbar == SubtractDynamicToolbar::Yes &&
+      // In `overlays-content` mode with the software keyboard visible, avoid
+      // flipping `shouldSubtractDynamicToolbar` below. We want to exclude
+      // the dynamic toolbar height from the visual viewport (composition
+      // bounds) height in this case to be consistent with the handling of the
+      // layout viewport height in ExpandHeightForDynamicToolbar(). Otherwise,
+      // the visual viewport will be taller than the layout viewport which can
+      // lead to rendering problems.
+      !isKeyboardVisibleOnOverlaysContent) {
     if (RefPtr<MobileViewportManager> MVM =
             aPresContext->PresShell()->GetMobileViewportManager()) {
       // Convert the intrinsic composition size to app units here since
@@ -8192,9 +8212,7 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
   // Add the keyboard height in the case of
   // `interactive-widget=overlays-content` so that contents being overlaid by
   // the keyboard can NOT be reachable by scrolling.
-  if (aPresContext->GetKeyboardHeight() &&
-      aPresContext->Document()->InteractiveWidget() ==
-          InteractiveWidget::OverlaysContent) {
+  if (isKeyboardVisibleOnOverlaysContent) {
     contentSize.height += ViewAs<LayoutDevicePixel>(
         aPresContext->GetKeyboardHeight(),
         PixelCastJustification::LayoutDeviceIsScreenForBounds);

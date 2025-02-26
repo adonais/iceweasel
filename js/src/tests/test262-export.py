@@ -121,6 +121,20 @@ def skipTest(source: bytes) -> Optional[bytes]:
 
 MODELINE_PATTERN = re.compile(rb"/(/|\*) -\*- .* -\*-( \*/)?[\r\n]+")
 
+UNSUPPORTED_FEATURES = [
+    "async-iterator-helpers",
+    "Iterator.range",
+    "record-tuple",
+]
+
+UNSUPPORTED_PATHS = [
+    "Intl",
+    "ReadableStream",
+    "reflect-parse",
+    "extensions/empty.txt",
+    "extensions/file-mapped-arraybuffers.txt",
+]
+
 
 def convertTestFile(source: bytes, includes: "list[str]") -> Optional[bytes]:
     """
@@ -131,8 +145,6 @@ def convertTestFile(source: bytes, includes: "list[str]") -> Optional[bytes]:
 
     # Extract the reftest data from the source
     source, reftest = parseHeader(source)
-    if reftest and "record-tuple" in reftest.features:
-        return None
 
     # Add copyright, if needed.
     copyright, source = insertCopyrightLines(source)
@@ -140,7 +152,15 @@ def convertTestFile(source: bytes, includes: "list[str]") -> Optional[bytes]:
     # Extract the frontmatter data from the source
     frontmatter, source = extractMeta(source)
 
-    source = updateMeta(source, reftest, frontmatter, includes)
+    source, addincludes = translateHelpers(source)
+    includes = includes + addincludes
+
+    meta = computeMeta(source, reftest, frontmatter, includes)
+
+    if "features" in meta and any(f in UNSUPPORTED_FEATURES for f in meta["features"]):
+        return None
+
+    source = insertMeta(source, meta)
 
     source = convertReportCompare(source)
 
@@ -170,7 +190,7 @@ def featureFromReftest(reftest: str) -> Optional[str]:
     if reftest == "Iterator":
         return "iterator-helpers"
     if reftest == "AsyncIterator":
-        return "async-iteration"
+        return "async-iterator-helpers"
     if reftest == "Temporal":
         return "Temporal"
     if reftest in ("Intl", "addIntlExtras", "ReadableStream"):
@@ -360,7 +380,7 @@ def extractMeta(source: bytes) -> "tuple[dict[str, Any], bytes]":
     return result, source[:start] + source[end:]
 
 
-## updateMeta
+## computeMeta
 
 
 def translateHelpers(source: bytes) -> "tuple[bytes, list[str]]":
@@ -545,12 +565,12 @@ def insertMeta(source: bytes, frontmatter: "dict[str, Any]") -> bytes:
     return source
 
 
-def updateMeta(
+def computeMeta(
     source: bytes,
     reftest: "Optional[ReftestEntry]",
     frontmatter: "dict[str, Any]",
     includes: "list[str]",
-) -> bytes:
+) -> "dict[str, Any]":
     """
     Captures the reftest meta and a pre-existing meta if any and merge them
     into a single dict.
@@ -562,16 +582,11 @@ def updateMeta(
     if b"createIsHTMLDDA" in source:
         frontmatter.setdefault("features", []).append("IsHTMLDDA")
 
-    source, addincludes = translateHelpers(source)
-    includes = includes + addincludes
-
     # Merge the reftest and frontmatter
     merged = mergeMeta(reftest, frontmatter, includes)
 
     # Cleanup the metadata
-    properData = cleanupMeta(merged)
-
-    return insertMeta(source, properData)
+    return cleanupMeta(merged)
 
 
 ## convertReportCompare
@@ -620,6 +635,7 @@ def exportTest262(
         os.makedirs(includeDir)
 
     skipped = 0
+    skippedDirs = 0
 
     # Go through each source path
     for providedSrc in providedSrcs:
@@ -631,7 +647,7 @@ def exportTest262(
         basename = os.path.basename(src)
 
         # Process all test directories recursively.
-        for dirPath, _, fileNames in os.walk(src):
+        for dirPath, dirNames, fileNames in os.walk(src):
             # we need to make and get the unique set of includes for this filepath
             includes = []
             if includeShell:
@@ -639,6 +655,13 @@ def exportTest262(
 
             relPath = os.path.relpath(dirPath, src)
             fullRelPath = os.path.join(basename, relPath)
+
+            if relPath in UNSUPPORTED_PATHS:
+                print("SKIPPED unsupported path %s" % relPath)
+                # Prevent recursing into subdirectories
+                del dirNames[:]
+                skippedDirs += 1
+                continue
 
             # Make new test subdirectory to seperate from includes
             currentOutDir = os.path.join(outDir, "tests", fullRelPath)
@@ -659,6 +682,13 @@ def exportTest262(
                 testName = os.path.join(
                     fullRelPath, fileName
                 )  # captures folder(s)+filename
+
+                # This is hacky, but we're unlikely to add anything new
+                # that needs to be skipped this way.
+                if relPath + "/" + fileName in UNSUPPORTED_PATHS:
+                    print("SKIPPED %s" % testName)
+                    skipped += 1
+                    continue
 
                 # Copy non-test files as is.
                 if "_FIXTURE" in fileName or os.path.splitext(fileName)[1] != ".js":
@@ -700,7 +730,7 @@ def exportTest262(
 
                 print("SAVED %s" % testName)
 
-    print(f"Skipped {skipped} tests")
+    print(f"Skipped {skipped} tests and {skippedDirs} test directories")
 
 
 if __name__ == "__main__":

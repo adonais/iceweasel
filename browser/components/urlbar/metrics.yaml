@@ -115,6 +115,7 @@ urlbar:
           `merino_amo`,
           `merino_top_picks`,
           `merino_wikipedia`,
+          `ml_yelp`,
           `recent_search`,
           `remote_tab`,
           `restrict_keyword_actions`,
@@ -261,6 +262,7 @@ urlbar:
           `merino_amo`,
           `merino_top_picks`,
           `merino_wikipedia`,
+          `ml_yelp`,
           `recent_search`,
           `remote_tab`,
           `restrict_keyword_actions`,
@@ -381,6 +383,7 @@ urlbar:
           `merino_amo`,
           `merino_top_picks`,
           `merino_wikipedia`,
+          `ml_yelp`,
           `recent_search`,
           `remote_tab`,
           `restrict_keyword_actions`,
@@ -665,22 +668,6 @@ urlbar:
     expires: never
     send_in_pings:
       - events
-
-  quick_suggest_ingest_time:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      Counts how long each successful ingest takes in the Firefox Suggest Rust
-      component. Ingests that fail for whatever reason are not included.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907227
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907227
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: never
 
   # The _count suffix is to disambiguate with the event of the same name.
   abandonment_count:
@@ -974,8 +961,10 @@ quick_suggest:
       An identifier to identify users for Contextual Services user interaction pings.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1941161
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1941161
     data_sensitivity:
       - technical
     notification_emails:
@@ -983,6 +972,7 @@ quick_suggest:
     expires: never
     send_in_pings:
       - quick-suggest
+      - quick-suggest-deletion-request
 
   iab_category:
     type: string

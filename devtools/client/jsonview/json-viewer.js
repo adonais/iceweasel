@@ -15,6 +15,9 @@ define(function (require) {
     require("resource://devtools/client/jsonview/components/MainTabbedArea.js")
   );
   const TreeViewClass = require("resource://devtools/client/shared/components/tree/TreeView.js");
+  const {
+    JSON_NUMBER,
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
 
   const AUTO_EXPAND_MAX_SIZE = 100 * 1024;
   const AUTO_EXPAND_MAX_LEVEL = 7;
@@ -92,7 +95,24 @@ define(function (require) {
         theApp.setState({ jsonText: input.jsonText });
       } else {
         if (!input.jsonPretty) {
-          input.jsonPretty = new Text(JSON.stringify(input.json, null, "  "));
+          input.jsonPretty = new Text(
+            JSON.stringify(
+              input.json,
+              (key, value) => {
+                if (value?.type === JSON_NUMBER) {
+                  return JSON.rawJSON(value.source);
+                }
+
+                // By default, -0 will be stringified as `0`, so we need to handle it
+                if (Object.is(value, -0)) {
+                  return JSON.rawJSON("-0");
+                }
+
+                return value;
+              },
+              "  "
+            )
+          );
         }
         theApp.setState({ jsonText: input.jsonPretty });
       }
@@ -175,7 +195,27 @@ define(function (require) {
     // If the JSON has been loaded, parse it immediately before loading the app.
     const jsonString = input.jsonText.textContent;
     try {
-      input.json = JSON.parse(jsonString);
+      input.json = JSON.parse(jsonString, (key, parsedValue, { source }) => {
+        // Parsed numbers might be different than the source, for example
+        // JSON.parse("1516340399466235648") returns 1516340399466235600.
+        if (
+          typeof parsedValue === "number" &&
+          source !== parsedValue.toString() &&
+          // `(-0).toString()` returns "0", but the value is correctly parsed as -0, so we
+          // shouldn't render JSON_NUMBER here.
+          source !== "-0"
+        ) {
+          // In such case, we want to show the actual source, as well as an indication
+          // to the user that the parsed value might be different.
+          return {
+            source,
+            type: JSON_NUMBER,
+            parsedValue,
+          };
+        }
+
+        return parsedValue;
+      });
     } catch (err) {
       input.json = err;
       // Display the raw data tab for invalid json

@@ -10,23 +10,6 @@
 namespace js {
 namespace jit {
 
-class LBoxFloatingPoint : public LInstructionHelper<2, 1, 1> {
-  MIRType type_;
-
- public:
-  LIR_HEADER(BoxFloatingPoint);
-
-  LBoxFloatingPoint(const LAllocation& in, const LDefinition& temp,
-                    MIRType type)
-      : LInstructionHelper(classOpcode), type_(type) {
-    setOperand(0, in);
-    setTemp(0, temp);
-  }
-
-  MIRType type() const { return type_; }
-  const char* extraName() const { return StringFromMIRType(type_); }
-};
-
 class LUnbox : public LInstructionHelper<1, 2, 0> {
  public:
   LIR_HEADER(Unbox);
@@ -37,24 +20,6 @@ class LUnbox : public LInstructionHelper<1, 2, 0> {
   const LAllocation* payload() { return getOperand(0); }
   const LAllocation* type() { return getOperand(1); }
   const char* extraName() const { return StringFromMIRType(mir()->type()); }
-};
-
-class LUnboxFloatingPoint : public LInstructionHelper<1, 2, 0> {
-  MIRType type_;
-
- public:
-  LIR_HEADER(UnboxFloatingPoint);
-
-  static const size_t Input = 0;
-
-  LUnboxFloatingPoint(const LBoxAllocation& input, MIRType type)
-      : LInstructionHelper(classOpcode), type_(type) {
-    setBoxOperand(Input, input);
-  }
-
-  MUnbox* mir() const { return mir_->toUnbox(); }
-  MIRType type() const { return type_; }
-  const char* extraName() const { return StringFromMIRType(type_); }
 };
 
 class LDivOrModI64
@@ -71,6 +36,9 @@ class LDivOrModI64
     setInt64Operand(Rhs, rhs);
   }
 
+  LInt64Allocation lhs() const { return getInt64Operand(Lhs); }
+  LInt64Allocation rhs() const { return getInt64Operand(Rhs); }
+
   MBinaryArithInstruction* mir() const {
     MOZ_ASSERT(mir_->isDiv() || mir_->isMod());
     return static_cast<MBinaryArithInstruction*>(mir_);
@@ -88,12 +56,12 @@ class LDivOrModI64
     }
     return mir_->toDiv()->canBeNegativeOverflow();
   }
-  wasm::BytecodeOffset bytecodeOffset() const {
+  wasm::TrapSiteDesc trapSiteDesc() const {
     MOZ_ASSERT(mir_->isDiv() || mir_->isMod());
     if (mir_->isMod()) {
-      return mir_->toMod()->bytecodeOffset();
+      return mir_->toMod()->trapSiteDesc();
     }
-    return mir_->toDiv()->bytecodeOffset();
+    return mir_->toDiv()->trapSiteDesc();
   }
 };
 
@@ -110,6 +78,10 @@ class LUDivOrModI64
     setInt64Operand(Lhs, lhs);
     setInt64Operand(Rhs, rhs);
   }
+
+  LInt64Allocation lhs() const { return getInt64Operand(Lhs); }
+  LInt64Allocation rhs() const { return getInt64Operand(Rhs); }
+
   MBinaryArithInstruction* mir() const {
     MOZ_ASSERT(mir_->isDiv() || mir_->isMod());
     return static_cast<MBinaryArithInstruction*>(mir_);
@@ -127,69 +99,22 @@ class LUDivOrModI64
     }
     return mir_->toDiv()->canBeNegativeOverflow();
   }
-  wasm::BytecodeOffset bytecodeOffset() const {
+  wasm::TrapSiteDesc trapSiteDesc() const {
     MOZ_ASSERT(mir_->isDiv() || mir_->isMod());
     if (mir_->isMod()) {
-      return mir_->toMod()->bytecodeOffset();
+      return mir_->toMod()->trapSiteDesc();
     }
-    return mir_->toDiv()->bytecodeOffset();
+    return mir_->toDiv()->trapSiteDesc();
   }
 };
 
-class LWasmTruncateToInt64 : public LCallInstructionHelper<INT64_PIECES, 1, 0> {
- public:
-  LIR_HEADER(WasmTruncateToInt64);
+// Definitions for `extraName` methods of generated LIR instructions.
 
-  explicit LWasmTruncateToInt64(const LAllocation& in)
-      : LCallInstructionHelper(classOpcode) {
-    setOperand(0, in);
-  }
-
-  MWasmTruncateToInt64* mir() const { return mir_->toWasmTruncateToInt64(); }
-};
-
-class LInt64ToFloatingPoint
-    : public LCallInstructionHelper<1, INT64_PIECES, 0> {
- public:
-  LIR_HEADER(Int64ToFloatingPoint);
-
-  explicit LInt64ToFloatingPoint(const LInt64Allocation& in)
-      : LCallInstructionHelper(classOpcode) {
-    setInt64Operand(0, in);
-  }
-
-  MInt64ToFloatingPoint* mir() const { return mir_->toInt64ToFloatingPoint(); }
-};
-
-class LWasmAtomicLoadI64 : public LInstructionHelper<INT64_PIECES, 1, 0> {
- public:
-  LIR_HEADER(WasmAtomicLoadI64);
-
-  LWasmAtomicLoadI64(const LAllocation& ptr) : LInstructionHelper(classOpcode) {
-    setOperand(0, ptr);
-  }
-
-  const LAllocation* ptr() { return getOperand(0); }
-  const MWasmLoad* mir() const { return mir_->toWasmLoad(); }
-};
-
-class LWasmAtomicStoreI64 : public LInstructionHelper<0, 1 + INT64_PIECES, 1> {
- public:
-  LIR_HEADER(WasmAtomicStoreI64);
-
-  LWasmAtomicStoreI64(const LAllocation& ptr, const LInt64Allocation& value,
-                      const LDefinition& tmp)
-      : LInstructionHelper(classOpcode) {
-    setOperand(0, ptr);
-    setInt64Operand(1, value);
-    setTemp(0, tmp);
-  }
-
-  const LAllocation* ptr() { return getOperand(0); }
-  const LInt64Allocation value() { return getInt64Operand(1); }
-  const LDefinition* tmp() { return getTemp(0); }
-  const MWasmStore* mir() const { return mir_->toWasmStore(); }
-};
+#ifdef JS_JITSPEW
+const char* LBoxFloatingPoint::extraName() const {
+  return StringFromMIRType(type_);
+}
+#endif
 
 }  // namespace jit
 }  // namespace js

@@ -37,7 +37,7 @@ class CodeGeneratorShared : public LElementVisitor {
 
   MacroAssembler& ensureMasm(MacroAssembler* masm, TempAllocator& alloc,
                              CompileRealm* realm);
-  mozilla::Maybe<IonHeapMacroAssembler> maybeMasm_;
+  mozilla::Maybe<OffThreadMacroAssembler> maybeMasm_;
 
  public:
   MacroAssembler& masm;
@@ -237,8 +237,7 @@ class CodeGeneratorShared : public LElementVisitor {
 
   OutOfLineCode* oolTruncateDouble(
       FloatRegister src, Register dest, MInstruction* mir,
-      wasm::BytecodeOffset callOffset = wasm::BytecodeOffset(),
-      bool preserveInstance = false);
+      wasm::BytecodeOffset callOffset = wasm::BytecodeOffset());
   void emitTruncateDouble(FloatRegister src, Register dest, MInstruction* mir);
   void emitTruncateFloat32(FloatRegister src, Register dest, MInstruction* mir);
 

@@ -2104,10 +2104,25 @@ UniquePtr<uint8_t[]> CanvasRenderingContext2D::GetImageBuffer(
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
   if (ret && ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    nsRFPService::RandomizePixels(
-        GetCookieJarSettings(), ret.get(), out_imageSize->width,
-        out_imageSize->height, out_imageSize->width * out_imageSize->height * 4,
-        SurfaceFormat::A8R8G8B8_UINT32);
+    bool randomize = true;
+    // Skip randomization if we are doing user characteristics data collection.
+    // During data collection, we'll 1) set the pref to true 2) be in the main
+    // thread and 3) be in chrome code (JS Window Actor).
+    if (StaticPrefs::
+            privacy_resistFingerprinting_randomization_canvas_disable_for_chrome()) {
+      bool isCallerChrome =
+          NS_IsMainThread() && nsContentUtils::IsCallerChrome();
+      if (isCallerChrome) {
+        randomize = false;
+      }
+    }
+    if (randomize) {
+      nsRFPService::RandomizePixels(
+          GetCookieJarSettings(), ret.get(), out_imageSize->width,
+          out_imageSize->height,
+          out_imageSize->width * out_imageSize->height * 4,
+          SurfaceFormat::A8R8G8B8_UINT32);
+    }
   }
 
   return ret;
@@ -5904,6 +5919,23 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   // XXX hmm is scaledImageSize really in CSS pixels?
   CSSIntSize sz(scaledImageSize.width, scaledImageSize.height);
   SVGImageContext svgContext(Some(sz));
+
+  if (mContextProperties != CanvasContextProperties::None &&
+      aImage.mImgContainer->GetType() == imgIContainer::TYPE_VECTOR) {
+    SVGEmbeddingContextPaint* contextPaint =
+        svgContext.GetOrCreateContextPaint();
+    const ContextState& state = CurrentState();
+
+    if (mContextProperties != CanvasContextProperties::Fill &&
+        state.StyleIsColor(Style::STROKE)) {
+      contextPaint->SetStroke(state.colorStyles[Style::STROKE]);
+    }
+
+    if (mContextProperties != CanvasContextProperties::Stroke &&
+        state.StyleIsColor(Style::FILL)) {
+      contextPaint->SetFill(state.colorStyles[Style::FILL]);
+    }
+  }
 
   auto result = aImage.mImgContainer->Draw(
       &context, scaledImageSize,

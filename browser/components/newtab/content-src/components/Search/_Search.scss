@@ -161,6 +161,13 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
   }
 }
 
+.shortcuts-refresh.has-recommended-stories {
+  .outer-wrapper:not(.fixed-search) .search-wrapper {
+    margin-block-end: 28px;
+    padding: 0;
+  }
+}
+
 .layout-variant-b.has-recommended-stories {
   .outer-wrapper:not(.fixed-search) .search-wrapper {
     margin-block-start: 16px;

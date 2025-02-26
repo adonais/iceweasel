@@ -22,6 +22,8 @@ prefs = [
 
 ["browser_resize_sidebar.js"]
 
+["browser_sidebar_collapsed_close_tab_button.js"]
+
 ["browser_sidebar_context_menu.js"]
 
 ["browser_sidebar_macmenu.js"]
@@ -36,8 +38,6 @@ run-if = ["os == 'mac'"] # Mac only feature
 ["browser_sidebar_panel_header.js"]
 
 ["browser_sidebar_panel_states.js"]
-
-["browser_sidebar_panel_switcher.js"]
 
 ["browser_sidebar_position.js"]
 
