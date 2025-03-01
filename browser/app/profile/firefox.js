@@ -2695,7 +2695,6 @@ pref("browser.newtabpage.enhanced", false);
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr", false);
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false);
-pref("datareporting.healthreport.uploadEnabled", false);
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?
