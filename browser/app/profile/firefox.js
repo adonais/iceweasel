@@ -1304,7 +1304,7 @@ pref("browser.xul.error_pages.expert_bad_cert", false);
 pref("browser.xul.error_pages.show_safe_browsing_details_on_load", false);
 
 // Enable captive portal detection.
-pref("network.captive-portal-service.enabled", true);
+pref("network.captive-portal-service.enabled", false);
 
 // If true, network link events will change the value of navigator.onLine
 pref("network.manage-offline-status", true);
@@ -2675,8 +2675,8 @@ pref("doh-rollout.clearModeOnShutdown", false);
 // Normandy client preferences
 pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
 pref("app.normandy.dev_mode", false);
-pref("app.normandy.enabled", true);
-pref("app.normandy.first_run", true);
+pref("app.normandy.enabled", false);
+pref("app.normandy.first_run", false);
 pref("app.normandy.logging.level", 50); // Warn
 pref("app.normandy.run_interval_seconds", 21600); // 6 hours
 pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
