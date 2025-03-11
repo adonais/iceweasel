@@ -13,10 +13,12 @@ import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.MediaSessionState
 import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.support.test.argumentCaptor
@@ -56,7 +58,32 @@ class TabsRemovedMiddlewareTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
-        assertEquals(1, middleware.sessionsPendingDeletion.size)
+        assertEquals(1, middleware.sessionsPendingDeletion.sessions.size)
+    }
+
+    @Test
+    fun `pause any media that is playing when tab is removed`() = runTestOnMain {
+        val middleware = TabsRemovedMiddleware(scope)
+        val controller: MediaSession.Controller = mock()
+
+        val tab = createTab(
+            url = "https://www.mozilla.org",
+            id = "1",
+            mediaSessionState = MediaSessionState(controller),
+        )
+        val store = BrowserStore(
+            initialState = BrowserState(tabs = listOf(tab)),
+            middleware = listOf(middleware, ConsumeRemoveTabActionsMiddleware()),
+        )
+
+        linkEngineSession(store, tab.id)
+        store.dispatch(TabListAction.RemoveTabAction(tab.id)).joinBlocking()
+        store.waitUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
+        assertEquals(1, middleware.sessionsPendingDeletion.sessions.size)
+        verify(controller).pause()
     }
 
     @Test
@@ -83,7 +110,7 @@ class TabsRemovedMiddlewareTest {
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
         assertNull(store.state.findTab(tab2.id)?.engineState?.engineSession)
         assertNotNull(store.state.findTab(tab3.id)?.engineState?.engineSession)
-        assertEquals(2, middleware.sessionsPendingDeletion.size)
+        assertEquals(2, middleware.sessionsPendingDeletion.sessions.size)
     }
 
     @Test
@@ -109,7 +136,7 @@ class TabsRemovedMiddlewareTest {
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
         assertNull(store.state.findTab(tab2.id)?.engineState?.engineSession)
         assertNotNull(store.state.findTab(tab3.id)?.engineState?.engineSession)
-        assertEquals(2, middleware.sessionsPendingDeletion.size)
+        assertEquals(2, middleware.sessionsPendingDeletion.sessions.size)
     }
 
     @Test
@@ -135,7 +162,7 @@ class TabsRemovedMiddlewareTest {
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
         assertNull(store.state.findTab(tab2.id)?.engineState?.engineSession)
         assertNotNull(store.state.findTab(tab3.id)?.engineState?.engineSession)
-        assertEquals(2, middleware.sessionsPendingDeletion.size)
+        assertEquals(2, middleware.sessionsPendingDeletion.sessions.size)
     }
 
     @Test
@@ -161,7 +188,7 @@ class TabsRemovedMiddlewareTest {
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
         assertNull(store.state.findTab(tab2.id)?.engineState?.engineSession)
         assertNotNull(store.state.findCustomTab(tab3.id)?.engineState?.engineSession)
-        assertEquals(2, middleware.sessionsPendingDeletion.size)
+        assertEquals(2, middleware.sessionsPendingDeletion.sessions.size)
     }
 
     @Test
@@ -230,7 +257,7 @@ class TabsRemovedMiddlewareTest {
 
         verify(engineSession1).register(observerCaptor.capture())
 
-        assertEquals(1, middleware.sessionsPendingDeletion.size)
+        assertEquals(1, middleware.sessionsPendingDeletion.sessions.size)
 
         observerCaptor.value.onStateUpdated(mock())
 
@@ -238,7 +265,7 @@ class TabsRemovedMiddlewareTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         verify(engineSession1).close()
-        assertTrue(middleware.sessionsPendingDeletion.isEmpty())
+        assertTrue(middleware.sessionsPendingDeletion.sessions.isEmpty())
     }
 
     @Test
@@ -264,7 +291,7 @@ class TabsRemovedMiddlewareTest {
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
         assertNull(store.state.findTab(tab2.id)?.engineState?.engineSession)
         assertNotNull(store.state.findTab(tab3.id)?.engineState?.engineSession)
-        assertEquals(2, middleware.sessionsPendingDeletion.size)
+        assertEquals(2, middleware.sessionsPendingDeletion.sessions.size)
 
         store.dispatch(UndoAction.ClearRecoverableTabs("noop")).joinBlocking()
         store.waitUntilIdle()
@@ -273,7 +300,7 @@ class TabsRemovedMiddlewareTest {
         verify(engineSession1).close()
         verify(engineSession2).close()
         verify(engineSession3, never()).close()
-        assertTrue(middleware.sessionsPendingDeletion.isEmpty())
+        assertTrue(middleware.sessionsPendingDeletion.sessions.isEmpty())
     }
 
     @Test
@@ -299,7 +326,7 @@ class TabsRemovedMiddlewareTest {
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
         assertNull(store.state.findTab(tab2.id)?.engineState?.engineSession)
         assertNotNull(store.state.findTab(tab3.id)?.engineState?.engineSession)
-        assertEquals(2, middleware.sessionsPendingDeletion.size)
+        assertEquals(2, middleware.sessionsPendingDeletion.sessions.size)
 
         store.dispatch(UndoAction.RestoreRecoverableTabs).joinBlocking()
         store.waitUntilIdle()
@@ -308,7 +335,7 @@ class TabsRemovedMiddlewareTest {
         verify(engineSession1).close()
         verify(engineSession2).close()
         verify(engineSession3, never()).close()
-        assertTrue(middleware.sessionsPendingDeletion.isEmpty())
+        assertTrue(middleware.sessionsPendingDeletion.sessions.isEmpty())
     }
 
     private fun linkEngineSession(store: BrowserStore, tabId: String): EngineSession {
