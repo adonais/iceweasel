@@ -5,8 +5,8 @@
 // Please pull this list from, and only from https://publicsuffix.org/list/public_suffix_list.dat,
 // rather than any other VCS sites. Pulling from any other URL is not guaranteed to be supported.
 
-// VERSION: 2025-03-05_07-06-32_UTC
-// COMMIT: b5aa82bff01b7f9ebd61ab118a224ad8ca57bf43
+// VERSION: 2025-03-12_16-37-49_UTC
+// COMMIT: b85018227bf5620427fc719c80fd652d52fd945f
 
 // Instructions on pulling and using this list can be found at https://publicsuffix.org/list/.
 
@@ -3808,14 +3808,18 @@ rep.kp
 tra.kp
 
 // kr : https://www.iana.org/domains/root/db/kr.html
-// see also: http://domain.nida.or.kr/eng/registration.jsp
+// see also: https://krnic.kisa.or.kr/jsp/infoboard/law/domBylawsReg.jsp
 kr
 ac.kr
+ai.kr
 co.kr
 es.kr
 go.kr
 hs.kr
+io.kr
+it.kr
 kg.kr
+me.kr
 mil.kr
 ms.kr
 ne.kr
@@ -13771,6 +13775,10 @@ in-vpn.net
 in-dsl.org
 in-vpn.org
 
+// Inferno Communications : https://inferno.co.uk
+// Submitted by Connor McFarlane <noc@inferno.co.uk>
+oninferno.net
+
 // info.at : http://www.info.at/
 biz.at
 info.at
@@ -15475,7 +15483,7 @@ diskstation.org
 typedream.app
 
 // Typeform : https://www.typeform.com
-// Submitted by Sergi Ferriz <sergi.ferriz@typeform.com>
+// Submitted by Typeform <ops@typeform.com>
 pro.typeform.com
 
 // Uberspace : https://uberspace.de
@@ -15562,6 +15570,10 @@ router.management
 // Virtual-Info : https://www.virtual-info.info/
 // Submitted by Adnan RIHAN <hostmaster@v-info.info>
 v-info.info
+
+// Viva Republica, Inc. : https://toss.im/
+// Submitted by Deus Team <deus@toss.im>
+deus-canvas.com
 
 // Voorloper.com : https://voorloper.com
 // Submitted by Nathan van Bakel <info@voorloper.com>
