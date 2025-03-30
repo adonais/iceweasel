@@ -29,9 +29,8 @@
         persist="screenX screenY width height sizemode"
         data-l10n-sync="true">
 <head>
-#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+  <!-- CSP might be disabled by C++ code. -->
   <meta http-equiv="Content-Security-Policy" content="script-src-attr 'none' 'report-sample'" />
-#endif
 
   <!-- The "global.css" stylesheet is imported first to allow other stylesheets to
       override rules using selectors with the same specificity. This applies to
@@ -58,6 +57,10 @@
   <link rel="stylesheet" href="chrome://browser/skin/translations/panel.css" />
   <link rel="stylesheet" href="chrome://browser/skin/places/tree-icons.css" />
   <link rel="stylesheet" href="chrome://browser/skin/places/editBookmark.css" />
+  <link
+    rel="stylesheet"
+    href="chrome://global/content/resistfingerprinting/letterboxing.css"
+  />
 
   <link rel="localization" href="branding/brand.ftl"/>
   <link rel="localization" href="browser/allTabsMenu.ftl"/>
@@ -96,6 +99,7 @@
   <link rel="localization" href="browser/sidebar.ftl"/>
   <link rel="localization" href="browser/profiles.ftl"/>
   <link rel="localization" href="preview/onboarding.ftl"/>
+  <link rel="localization" href="preview/smartTabGroups.ftl"/>
   <link rel="localization" href="preview/tabUnload.ftl"/>
 
   <title data-l10n-id="browser-main-window-default-title"></title>
@@ -143,31 +147,6 @@
   // may be leaking things because they will never be destroyed after.
   window.addEventListener("DOMContentLoaded",
     gBrowserInit.onDOMContentLoaded.bind(gBrowserInit), { once: true });
-
-  document.addEventListener("securitypolicyviolation", event => {
-    // Sanitize the URLs and the sample.
-    let source = ChromeUtils.sanitizeTelemetryFileURL(event.sourceFile);
-    let blocked = ChromeUtils.sanitizeTelemetryFileURL(event.blockedURI);
-    let sourceType = source.fileNameType;
-    let sample =
-      sourceType == "chromeuri" ||
-      sourceType == "resourceuri" ||
-      sourceType == "abouturi"
-        ? event.sample
-        : "";
-
-    let isInline = event.blockedURI == "inline";
-    Glean.security.cspViolationBrowser.record({
-      directive: event.effectiveDirective,
-      sourcetype: sourceType,
-      sourcedetails: source.fileNameDetails || "",
-      blockeduritype: isInline ? "inline" : blocked.fileNameType,
-      blockeduridetails: isInline ? "" : blocked.fileNameDetails || "",
-      linenumber: event.lineNumber,
-      columnnumber: event.columnNumber,
-      sample,
-    });
-  });
 </script>
 </head>
 <html:body xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">

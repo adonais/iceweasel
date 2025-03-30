@@ -20,11 +20,12 @@ const getAlertsRenderedPromise = megalist => {
     async () => {
       const passwordsList = megalist.querySelector(".passwords-list");
       const logins = await Services.logins.getAllLogins();
-      const breaches =
-        await LoginBreaches.getPotentialBreachesByLoginGUID(logins);
+      const loginsWithAlerts = [
+        ...(await LoginBreaches.getPotentialBreachesByLoginGUID(logins)),
+      ].concat(logins.filter(login => !login.username.length));
       return (
         passwordsList?.querySelectorAll("password-card").length ===
-        breaches.size
+        loginsWithAlerts.length
       );
     }
   );
@@ -51,10 +52,21 @@ async function checkSearchResults(expectedCount, megalist) {
 }
 
 add_task(async function test_filter_passwords() {
+  Services.fog.testResetFOG();
+  await Services.fog.testFlushAllChildren();
+
   await addBreach();
   await addMockPasswords();
   info("Adding breached login");
   await Services.logins.addLoginAsync(BREACHED_LOGIN);
+  info("Adding login with no username");
+  await Services.logins.addLoginAsync(
+    LoginTestUtils.testData.formLogin({
+      origin: "example4.com",
+      username: "",
+      password: "pass4",
+    })
+  );
   const megalist = await openPasswordsSidebar();
   await checkAllLoginsRendered(megalist);
   info("Toggle showing only alerts");
@@ -64,12 +76,24 @@ add_task(async function test_filter_passwords() {
   await waitForAlertsButton(megalist);
   const alertsButton = megalist.querySelector("#alerts");
   alertsButton.click();
+
+  let events = Glean.contextualManager.toolbarAction.testGetValue();
+  assertCPMGleanEvent(events[0], {
+    trigger: "toolbar",
+    option_name: "list_state_alerts",
+  });
+
   await alertsRenderedPromise;
   ok(true, "Passwords list is showing only login alerts.");
 
   info("Toggle showing all logins");
   const allLoginsButton = megalist.querySelector("#allLogins");
   allLoginsButton.click();
+  events = Glean.contextualManager.toolbarAction.testGetValue();
+  assertCPMGleanEvent(events[1], {
+    trigger: "toolbar",
+    option_name: "list_state_all",
+  });
   await checkAllLoginsRendered(megalist);
 
   LoginTestUtils.clearData();
@@ -97,7 +121,7 @@ add_task(async function test_filter_passwords_after_sidebar_closed() {
   info("Hide sidebar.");
   SidebarController.hide();
   info("Show sidebar.");
-  await SidebarController.show("viewMegalistSidebar");
+  await SidebarController.show("viewCPMSidebar");
   await checkAllLoginsRendered(megalist);
   info("All saved logins are displayed.");
 

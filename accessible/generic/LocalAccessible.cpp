@@ -872,7 +872,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           break;
 
         case nsIAccessibleEvent::EVENT_HIDE:
-          ipcDoc->AppendMutationEventData(
+          ipcDoc->PushMutationEventData(
               HideEventData{id, aEvent->IsFromUserInput()});
           break;
 
@@ -899,7 +899,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           // reorder events on the application acc aren't necessary to tell the
           // parent about new top level documents.
           if (!aEvent->GetAccessible()->IsApplication()) {
-            ipcDoc->AppendMutationEventData(
+            ipcDoc->PushMutationEventData(
                 ReorderEventData{id, aEvent->GetEventType()});
           }
           break;
@@ -920,7 +920,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
         case nsIAccessibleEvent::EVENT_TEXT_INSERTED:
         case nsIAccessibleEvent::EVENT_TEXT_REMOVED: {
           AccTextChangeEvent* event = downcast_accEvent(aEvent);
-          ipcDoc->AppendMutationEventData(TextChangeEventData{
+          ipcDoc->PushMutationEventData(TextChangeEventData{
               id, event->ModifiedText(), event->GetStartOffset(),
               event->GetLength(), event->IsTextInserted(),
               event->IsFromUserInput()});
@@ -2281,14 +2281,32 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       return Relation();
     }
 
-    case RelationType::CONTROLLED_BY:
-      return Relation(new RelatedAccIterator(Document(), mContent,
-                                             nsGkAtoms::aria_controls));
+    case RelationType::CONTROLLED_BY: {
+      Relation rel(new RelatedAccIterator(Document(), mContent,
+                                          nsGkAtoms::aria_controls));
 
+      RelatedAccIterator owners(Document(), mContent, nsGkAtoms::aria_owns);
+      if (LocalAccessible* owner = owners.Next()) {
+        if (nsAccUtils::IsEditableARIACombobox(owner)) {
+          MOZ_ASSERT(!IsRelocated(),
+                     "Child is not relocated to editable combobox");
+          rel.AppendTarget(owner);
+        }
+      }
+
+      return rel;
+    }
     case RelationType::CONTROLLER_FOR: {
       Relation rel(new AssociatedElementsIterator(mDoc, mContent,
                                                   nsGkAtoms::aria_controls));
       rel.AppendIter(new HTMLOutputIterator(Document(), mContent));
+      if (nsAccUtils::IsEditableARIACombobox(this)) {
+        AssociatedElementsIterator iter(mDoc, mContent, nsGkAtoms::aria_owns);
+        while (Accessible* owned_child = iter.Next()) {
+          MOZ_ASSERT(!owned_child->AsLocal()->IsRelocated());
+          rel.AppendTarget(owned_child->AsLocal());
+        }
+      }
       return rel;
     }
 
@@ -3353,7 +3371,7 @@ void LocalAccessible::SendCache(uint64_t aCacheDomain,
   nsTArray<CacheData> data;
   data.AppendElement(CacheData(ID(), fields));
   if (aAppendEventData) {
-    ipcDoc->AppendMutationEventData(
+    ipcDoc->PushMutationEventData(
         CacheEventData{std::move(aUpdateType), std::move(data)});
   } else {
     ipcDoc->SendCache(aUpdateType, data);
@@ -3514,6 +3532,18 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       // have on-screen cells.
       LocalAccessible* prevParentRow = nullptr;
       for (nsIFrame* frame : frames) {
+        if (frame->IsInlineFrame() && !frame->IsPrimaryFrame()) {
+          // This is a line other than the first line in an inline element. Even
+          // though there are multiple frames for this element (one per line),
+          // there is only a single Accessible with bounds encompassing all the
+          // frames. We don't have any additional information about the
+          // individual continuation frames in our cache. Thus, we don't want
+          // this Accessible to appear before leaves on other lines which are
+          // later in the `frames` array. Otherwise, when hit testing, this
+          // Accessible will match instead of those leaves. We will add this
+          // Accessible when we get to its primary frame later.
+          continue;
+        }
         nsIContent* content = frame->GetContent();
         if (!content) {
           continue;
@@ -4068,11 +4098,17 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                 dom::HTMLLabelElement::FromNode(mContent)) {
           rel.AppendTarget(mDoc, labelEl->GetControl());
         }
-      } else if (data.mType == RelationType::DETAILS) {
+      } else if (data.mType == RelationType::DETAILS ||
+                 data.mType == RelationType::CONTROLLER_FOR) {
         // We need to use RelationByType for details because it might include
         // popovertarget. Nothing exposes an implicit reverse details
         // relation, so using RelationByType here is fine.
-        rel = RelationByType(RelationType::DETAILS);
+        //
+        // We need to use RelationByType for controls because it might include
+        // failed aria-owned relocations or it may be an output element.
+        // Nothing exposes an implicit reverse controls relation, so using
+        // RelationByType here is fine.
+        rel = RelationByType(data.mType);
       } else {
         // We use an AssociatedElementsIterator here instead of calling
         // RelationByType directly because we only want to cache explicit
@@ -4302,20 +4338,6 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
 nsAtom* LocalAccessible::TagName() const {
   return mContent && mContent->IsElement() ? mContent->NodeInfo()->NameAtom()
                                            : nullptr;
-}
-
-already_AddRefed<nsAtom> LocalAccessible::InputType() const {
-  if (!IsTextField() && !IsDateTimeField()) {
-    return nullptr;
-  }
-
-  dom::Element* el = mContent->AsElement();
-  if (const nsAttrValue* attr = el->GetParsedAttr(nsGkAtoms::type)) {
-    RefPtr<nsAtom> inputType = attr->GetAsAtom();
-    return inputType.forget();
-  }
-
-  return nullptr;
 }
 
 already_AddRefed<nsAtom> LocalAccessible::DisplayStyle() const {

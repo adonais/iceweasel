@@ -69,19 +69,9 @@ object FeatureFlags {
     const val META_ATTRIBUTION_ENABLED = true
 
     /**
-     * Enables the Compose Homepage.
-     */
-    const val COMPOSE_HOMEPAGE = false
-
-    /**
      * Enables Homepage as a New Tab.
      */
     const val HOMEPAGE_AS_NEW_TAB = false
-
-    /**
-     * Enables Merino content recommendations.
-     */
-    const val MERINO_CONTENT_RECOMMENDATIONS = false
 
     /**
      * Enables the Unified Trust Panel.
@@ -96,5 +86,5 @@ object FeatureFlags {
     /**
      * Enables the tab swipe to dismiss rewrite.
      */
-    val swipeToDismiss2 = Config.channel.isNightlyOrDebug
+    const val swipeToDismiss2 = true
 }

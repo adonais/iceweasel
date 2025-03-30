@@ -161,10 +161,10 @@ class ArrayBufferDataStream {
       return bytes
     }
 
-    writeBytes(uint8Array) {
-      this.writeUint32(uint8Array.length);
+    writeBytes(value) {
+      this.writeUint32(value.length);
       value.forEach((elt) => {
-        dataStream.writeUint8(elt);
+        this.writeUint8(elt);
       })
     }
 
@@ -286,6 +286,37 @@ class FfiConverterArrayBuffer extends FfiConverter {
         this.write(dataStream, value);
         return buf;
     }
+
+    /**
+     * Computes the size of the value.
+     *
+     * @param {*} _value
+     * @return {number}
+     */
+    static computeSize(_value) {
+        throw new UniFFIInternalError("computeSize() should be declared in the derived class");
+    }
+
+    /**
+     * Reads the type from a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @returns {any}
+     */
+    static read(_dataStream) {
+        throw new UniFFIInternalError("read() should be declared in the derived class");
+    }
+
+    /**
+     * Writes the type to a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @param {any} _value
+     */
+    static write(_dataStream, _value) {
+        throw new UniFFIInternalError("write() should be declared in the derived class");
+    }
+
 }
 
 // Symbols that are used to ensure that Object constructors
@@ -305,7 +336,7 @@ export class FfiConverterU64 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U64 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -330,7 +361,7 @@ export class FfiConverterI64 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the safe integer bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -349,7 +380,7 @@ export class FfiConverterI64 extends FfiConverter {
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterBool extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 1;
     }
     static lift(value) {
@@ -436,7 +467,7 @@ export class RemoteSettings {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -595,7 +626,7 @@ export class RemoteSettingsClient {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -779,7 +810,7 @@ export class RemoteSettingsService {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -950,7 +981,7 @@ export class FfiConverterTypeRemoteSettingsService extends FfiConverter {
  * included in calls to [Client::get_attachment].
  */
 export class Attachment {
-    constructor({ filename, mimetype, location, hash, size } = {}) {
+    constructor({ filename, mimetype, location, hash, size }) {
         try {
             FfiConverterString.checkType(filename)
         } catch (e) {
@@ -1110,7 +1141,7 @@ export class FfiConverterTypeAttachment extends FfiConverterArrayBuffer {
  * - `collection_name`: The name of the collection for the settings server.
  */
 export class RemoteSettingsConfig {
-    constructor({ collectionName, bucketName = null, serverUrl = null, server = null } = {}) {
+    constructor({ collectionName, bucketName = null, serverUrl = null, server = null }) {
         try {
             FfiConverterString.checkType(collectionName)
         } catch (e) {
@@ -1245,7 +1276,7 @@ export class FfiConverterTypeRemoteSettingsConfig extends FfiConverterArrayBuffe
  * name.
  */
 export class RemoteSettingsConfig2 {
-    constructor({ server = null, bucketName = null } = {}) {
+    constructor({ server = null, bucketName = null }) {
         try {
             FfiConverterOptionalTypeRemoteSettingsServer.checkType(server)
         } catch (e) {
@@ -1336,7 +1367,7 @@ export class FfiConverterTypeRemoteSettingsConfig2 extends FfiConverterArrayBuff
  * When set, only records where the expression is true will be returned.
  */
 export class RemoteSettingsContext {
-    constructor({ appName, appId, channel, appVersion, appBuild, architecture, deviceManufacturer, deviceModel, locale, os, osVersion, androidSdkVersion, debugTag, installationDate, homeDirectory, customTargetingAttributes } = {}) {
+    constructor({ appName, appId, channel, appVersion, appBuild, architecture, deviceManufacturer, deviceModel, locale, os, osVersion, androidSdkVersion, debugTag, installationDate, homeDirectory, customTargetingAttributes }) {
         try {
             FfiConverterString.checkType(appName)
         } catch (e) {
@@ -1772,7 +1803,7 @@ export class FfiConverterTypeRemoteSettingsContext extends FfiConverterArrayBuff
  * are required to further extract expected values from the [fields] member.
  */
 export class RemoteSettingsRecord {
-    constructor({ id, lastModified, deleted, attachment, fields } = {}) {
+    constructor({ id, lastModified, deleted, attachment, fields }) {
         try {
             FfiConverterString.checkType(id)
         } catch (e) {
@@ -1929,7 +1960,7 @@ export class FfiConverterTypeRemoteSettingsRecord extends FfiConverterArrayBuffe
  * [last_modified] will be extracted from the etag header of the response.
  */
 export class RemoteSettingsResponse {
-    constructor({ records, lastModified } = {}) {
+    constructor({ records, lastModified }) {
         try {
             FfiConverterSequenceTypeRemoteSettingsRecord.checkType(records)
         } catch (e) {
@@ -2260,7 +2291,7 @@ export class FfiConverterOptionali64 extends FfiConverterArrayBuffer {
             case 1:
                 return FfiConverterI64.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -2297,7 +2328,7 @@ export class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
             case 1:
                 return FfiConverterString.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -2334,7 +2365,7 @@ export class FfiConverterOptionalTypeAttachment extends FfiConverterArrayBuffer 
             case 1:
                 return FfiConverterTypeAttachment.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -2371,7 +2402,7 @@ export class FfiConverterOptionalTypeRemoteSettingsContext extends FfiConverterA
             case 1:
                 return FfiConverterTypeRemoteSettingsContext.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -2408,7 +2439,7 @@ export class FfiConverterOptionalTypeRemoteSettingsServer extends FfiConverterAr
             case 1:
                 return FfiConverterTypeRemoteSettingsServer.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -2445,7 +2476,7 @@ export class FfiConverterOptionalSequenceTypeRemoteSettingsRecord extends FfiCon
             case 1:
                 return FfiConverterSequenceTypeRemoteSettingsRecord.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -2482,7 +2513,7 @@ export class FfiConverterOptionalMapStringTypeRemoteSettingsRecord extends FfiCo
             case 1:
                 return FfiConverterMapStringTypeRemoteSettingsRecord.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -2519,7 +2550,7 @@ export class FfiConverterOptionalTypeRsJsonObject extends FfiConverterArrayBuffe
             case 1:
                 return FfiConverterTypeRsJsonObject.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 

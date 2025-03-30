@@ -18,32 +18,22 @@ WINDOWS_WORKER_TYPES = {
     "windows10-64": {  # source-test
         "virtual": "t-win10-64",
         "virtual-with-gpu": "t-win10-64-gpu-s",
-        "hardware": "t-win10-64-1803-hw",
+        "hardware": "win10-64-2009-hw",
     },
     "windows10-64-shippable-qr": {
         "virtual": "t-win10-64",
         "virtual-with-gpu": "t-win10-64-gpu-s",
-        "hardware": "t-win10-64-1803-hw",
-    },
-    "windows11-64-2009-hw-ref-shippable": {
-        "virtual": "win11-64-2009-hw-ref",
-        "virtual-with-gpu": "win11-64-2009-hw-ref",
-        "hardware": "win11-64-2009-hw-ref",
-    },
-    "windows11-64-2009-hw-ref": {
-        "virtual": "win11-64-2009-hw-ref",
-        "virtual-with-gpu": "win11-64-2009-hw-ref",
-        "hardware": "win11-64-2009-hw-ref",
+        "hardware": "win10-64-2009-hw",
     },
     "windows10-64-2009-qr": {
         "virtual": "win10-64-2009",
         "virtual-with-gpu": "win10-64-2009-gpu",
-        "hardware": "t-win10-64-1803-hw",
+        "hardware": "win10-64-2009-hw",
     },
     "windows10-64-2009-shippable-qr": {
         "virtual": "win10-64-2009",
         "virtual-with-gpu": "win10-64-2009-gpu",
-        "hardware": "t-win10-64-1803-hw",
+        "hardware": "win10-64-2009-hw",
     },
     "windows11-32-2009-mingwclang-qr": {
         "virtual": "win11-64-2009",
@@ -68,6 +58,16 @@ WINDOWS_WORKER_TYPES = {
     "windows11-32-24h2-shippable": {
         "virtual": "win11-64-24h2",
         "virtual-with-gpu": "win11-64-24h2-gpu",
+    },
+    "windows11-64-24h2-hw-ref-shippable": {
+        "virtual": "win11-64-24h2-hw-ref",
+        "virtual-with-gpu": "win11-64-24h2-hw-ref",
+        "hardware": "win11-64-24h2-hw-ref",
+    },
+    "windows11-64-24h2-hw-ref": {
+        "virtual": "win11-64-24h2-hw-ref",
+        "virtual-with-gpu": "win11-64-24h2-hw-ref",
+        "hardware": "win11-64-24h2-hw-ref",
     },
     "windows11-a64-2009-shippable": {
         "virtual": "win11-a64-24h2",
@@ -120,7 +120,7 @@ WINDOWS_WORKER_TYPES = {
     "windows11-64-24h2": {
         "virtual": "win11-64-24h2",
         "virtual-with-gpu": "win11-64-24h2-gpu",
-        "hardware": "win11-64-2009-hw",
+        "hardware": "win11-64-24h2-hw",
     },
     "windows11-64-24h2-ccov": {
         "virtual": "win11-64-24h2",
@@ -133,7 +133,7 @@ WINDOWS_WORKER_TYPES = {
     "windows11-64-24h2-shippable": {
         "virtual": "win11-64-24h2",
         "virtual-with-gpu": "win11-64-24h2-gpu",
-        "hardware": "win11-64-2009-hw",
+        "hardware": "win11-64-24h2-hw",
     },
     "windows11-64-24h2-asan": {
         "virtual": "win11-64-24h2",
@@ -190,8 +190,14 @@ def set_worker_type(config, tasks):
                     win_worker_type_platform = WINDOWS_WORKER_TYPES[
                         "windows11-64-2009-hw-ref"
                     ]
+                elif test_platform.startswith("windows11-64-24h2-hw-ref"):
+                    win_worker_type_platform = WINDOWS_WORKER_TYPES[
+                        "windows11-64-24h2-hw-ref"
+                    ]
                 elif test_platform.startswith("windows10-64"):
                     win_worker_type_platform = WINDOWS_WORKER_TYPES["windows10-64"]
+                elif test_platform.startswith("windows11-64-24h2"):
+                    win_worker_type_platform = WINDOWS_WORKER_TYPES["windows11-64-24h2"]
                 else:
                     win_worker_type_platform = WINDOWS_WORKER_TYPES[
                         "windows11-64-2009-qr"

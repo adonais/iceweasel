@@ -12,11 +12,13 @@ import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.browser.icons.generator.DefaultIconGenerator
 import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.concept.storage.PageVisit
 import mozilla.components.concept.storage.VisitType
 import mozilla.components.feature.search.ext.createSearchEngine
+import mozilla.components.feature.tab.collections.TabCollectionStorage
 import okhttp3.mockwebserver.MockWebServer
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.TAG
@@ -171,15 +173,37 @@ object MockBrowserDataHelper {
     /**
      * Adds a new pinned site to the app home screen.
      *
-     * @param websiteTitle The title of the website.
-     * @param websiteURL The URL of the website.
+     * @param webPageMetadata A pair of website title and URL.
      */
-    fun addPinnedSite(websiteTitle: String, websiteURL: String, activityTestRule: HomeActivityIntentTestRule) {
+    fun addPinnedSite(vararg webPageMetadata: Pair<String, String>, activityTestRule: HomeActivityIntentTestRule) {
         runBlocking {
-            Log.i(TAG, "addTopSite: Trying to add a pinned site to the home screen.")
-            appContext.components.useCases.topSitesUseCase.addPinnedSites(websiteTitle, websiteURL)
+            for (metadata in webPageMetadata) {
+                Log.i(TAG, "addTopSite: Trying to add a pinned site to the home screen.")
+                appContext.components.useCases.topSitesUseCase.addPinnedSites(
+                    metadata.first,
+                    metadata.second,
+                )
+                Log.i(TAG, "addTopSite: Added a pinned site to the home screen.")
+            }
+            // Sometimes a restart is needed to ensure the pinned site is displayed on the home screen.
             restartApp(activityTestRule)
-            Log.i(TAG, "addTopSite: Added a pinned site to the home screen.")
+        }
+    }
+
+    /**
+     * Creates a new collection with the provided tabs.
+     *
+     * @param tabInfo Pairs of URLs and titles of the tabs to add to the collection.
+     * @param title The title of the collection to create.
+     */
+    fun createCollection(vararg tabInfo: Pair<String, String>, title: String) {
+        runBlocking {
+            val tabs =
+                tabInfo.map { (tabUrl, tabTitle) ->
+                    createTab(url = tabUrl, title = tabTitle)
+                }
+
+            TabCollectionStorage(context).createCollection(title, tabs)
         }
     }
 }

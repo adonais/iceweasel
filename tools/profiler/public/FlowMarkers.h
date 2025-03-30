@@ -13,16 +13,14 @@
 #include "nsString.h"
 #include "ETWTools.h"
 
-namespace mozilla {
-
+namespace geckoprofiler::markers {
 // These are convenience marker types for ad-hoc instrumentation.
 // It's better to not use them and use a meaningful name for the flow.
-class FlowMarker : public BaseMarkerType<FlowMarker> {
+class FlowMarker : public mozilla::BaseMarkerType<FlowMarker> {
  public:
   static constexpr const char* Name = "FlowMarker";
-  static constexpr const char* Description = "";
 
-  using MS = MarkerSchema;
+  using MS = mozilla::MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
       {"flow", MS::InputType::Uint64, "Flow", MS::Format::Flow,
        MS::PayloadFlags::Searchable}};
@@ -40,10 +38,34 @@ class FlowMarker : public BaseMarkerType<FlowMarker> {
   }
 };
 
+class TerminatingFlowMarker
+    : public mozilla::BaseMarkerType<TerminatingFlowMarker> {
+ public:
+  static constexpr const char* Name = "TerminatingFlowMarker";
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"terminatingFlow", MS::InputType::Uint64, "Terminating Flow",
+       MS::Format::TerminatingFlow, MS::PayloadFlags::Searchable}};
+
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* AllLabels =
+      "{marker.name} (terminatingFlow={marker.data.terminatingFlow})";
+
+  static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
+
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter, Flow aFlow) {
+    aWriter.FlowProperty("terminatingFlow", aFlow);
+  }
+};
+
+}  // namespace geckoprofiler::markers
+namespace mozilla {
 class FlowStackMarker : public BaseMarkerType<FlowStackMarker> {
  public:
   static constexpr const char* Name = "FlowStackMarker";
-  static constexpr const char* Description = "";
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
@@ -69,7 +91,6 @@ class TerminatingFlowStackMarker
     : public BaseMarkerType<TerminatingFlowStackMarker> {
  public:
   static constexpr const char* Name = "TerminatingFlowStackMarker";
-  static constexpr const char* Description = "";
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
@@ -94,7 +115,6 @@ class TerminatingFlowStackMarker
 class FlowTextMarker : public BaseMarkerType<FlowTextMarker> {
  public:
   static constexpr const char* Name = "FlowTextMarker";
-  static constexpr const char* Description = "";
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
@@ -116,29 +136,6 @@ class FlowTextMarker : public BaseMarkerType<FlowTextMarker> {
       const ProfilerString8View& aText, Flow aFlow) {
     aWriter.StringProperty("name", aText);
     aWriter.FlowProperty("flow", aFlow);
-  }
-};
-
-class TerminatingFlowMarker : public BaseMarkerType<TerminatingFlowMarker> {
- public:
-  static constexpr const char* Name = "TerminatingFlowMarker";
-  static constexpr const char* Description = "";
-
-  using MS = MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"terminatingFlow", MS::InputType::Uint64, "Terminating Flow",
-       MS::Format::TerminatingFlow, MS::PayloadFlags::Searchable}};
-
-  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
-                                               MS::Location::MarkerTable};
-  static constexpr const char* AllLabels =
-      "{marker.name} (terminatingFlow={marker.data.terminatingFlow})";
-
-  static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
-
-  static void StreamJSONMarkerData(
-      mozilla::baseprofiler::SpliceableJSONWriter& aWriter, Flow aFlow) {
-    aWriter.FlowProperty("terminatingFlow", aFlow);
   }
 };
 

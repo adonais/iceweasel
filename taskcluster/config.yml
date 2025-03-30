@@ -69,6 +69,7 @@ treeherder:
         'M-ioi': 'Mochitests tagged with inc-origin-init'
         'M-ioi-cf': 'Mochitests tagged with inc-origin-init for confirm failure'
         'Mn': 'Marionette tests'
+        'Mn-ioi': 'Marionette tests tagged with inc-origin-init'
         'MSI': 'Repack installers into MSIs'
         'MSIs': 'Signing of Repacked installers of MSIs'
         'MSIX': 'Repack into MSIX package'
@@ -89,6 +90,9 @@ treeherder:
         'W': 'Web platform tests'
         'W-b': 'Web platform tests (backlog)'
         'W-pb': 'Web platform tests with private browsing enabled'
+        'W-ioi': 'Web platform tests tagged with inc-origin-init'
+        'W-ioi-cf': 'Web platform tests tagged with inc-origin-init for confirm failure'
+        'W-pb-ioi': 'Web platform tests with private browsing enabled and tagged with inc-origin-init'
         'X': 'Xpcshell tests'
         'X-f': 'Xpcshell tests that fail on a given config'
         'X-ioi': 'Xpcshell tests tagged with inc-origin-init'
@@ -782,6 +786,11 @@ workers:
             implementation: generic-worker
             os: linux-bitbar
             worker-type: 'gecko-{alias}'
+        t-lambda-.*:
+            provisioner: proj-autophone
+            implementation: generic-worker
+            os: linux-lambda
+            worker-type: 'gecko-{alias}'
         t-linux(-large|-xlarge|-xlarge-source):
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
@@ -893,6 +902,11 @@ workers:
             implementation: generic-worker
             os: windows
             worker-type: '{alias}'
+        win10-64-2009-hw:
+            provisioner: releng-hardware
+            implementation: generic-worker
+            os: windows
+            worker-type: '{alias}'
         win11-64-2009-hw:
             provisioner: releng-hardware
             implementation: generic-worker
@@ -910,6 +924,11 @@ workers:
             worker-type: '{alias}'
         win11-64-2009(|-gpu|-ssd|-source|-ssd-gpu):
             provisioner: 'gecko-t'
+            implementation: generic-worker
+            os: windows
+            worker-type: '{alias}'
+        win11-64-24h2(-hw|-hw-ref):
+            provisioner: 'releng-hardware'
             implementation: generic-worker
             os: windows
             worker-type: '{alias}'

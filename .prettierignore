@@ -1018,8 +1018,7 @@ browser/components/pocket/content/panels/js/main.bundle.js
 !browser/components/storybook/.storybook/*.js
 
 # Ignore newtab files
-browser/components/newtab/data/
-browser/components/newtab/logs/
+browser/extensions/newtab/logs/
 
 # Ignore about:welcome files
 browser/components/aboutwelcome/logs/
@@ -1214,7 +1213,7 @@ toolkit/components/pdfjs/content/web
 toolkit/components/reader/Readerable.sys.mjs
 
 # Generated & special files in cld2
-toolkit/components/translation/cld2/
+toolkit/components/translations/cld2/
 
 # Uses preprocessing
 toolkit/mozapps/update/tests/data/xpcshellConstantsPP.js
@@ -1245,6 +1244,8 @@ toolkit/components/uniffi-bindgen-gecko-js/components/generated/*
 browser/components/pocket/content/panels/css/normalize.scss
 browser/components/pocket/content/panels/js/vendor/
 browser/components/storybook/node_modules/
+browser/components/topsites/content/tippytop/favicons/
+browser/components/topsites/content/tippytop/images/
 browser/extensions/formautofill/content/third-party/
 browser/extensions/formautofill/test/fixtures/third_party/
 devtools/client/inspector/markup/test/lib_*
@@ -1303,6 +1304,7 @@ editor/libeditor/tests/browserscope/lib/richtext/
 editor/libeditor/tests/browserscope/lib/richtext2/
 extensions/spellcheck/hunspell/src/
 function2/
+fmt/
 gfx/angle/checkout/
 gfx/cairo/
 gfx/graphite2/
@@ -1350,6 +1352,7 @@ js/src/vtune/ittnotify_types.h
 js/src/vtune/jitprofiling.c
 js/src/vtune/jitprofiling.h
 js/src/vtune/legacy/
+js/src/xsum/
 js/src/zydis/
 layout/docs/css-gap-decorations/
 media/ffvpx/
@@ -1371,6 +1374,7 @@ media/libwebp/
 media/libyuv/
 media/mozva/va
 media/mp4parse-rust/
+media/openmax_dl/
 media/openmax_il/
 media/webrtc/signaling/gtest/MockCall.h
 mfbt/double-conversion/double-conversion/
@@ -1429,7 +1433,7 @@ toolkit/components/passwordmgr/shared/PasswordRulesParser.sys.mjs
 toolkit/components/protobuf/
 toolkit/components/reader/readability/
 toolkit/components/resistfingerprinting/content/gl-matrix.js
-toolkit/components/translation/cld2/
+toolkit/components/translations/cld2/
 toolkit/components/translations/bergamot-translator/thirdparty
 toolkit/components/translations/bergamot-translator/bergamot-translator.js
 toolkit/components/url-classifier/chromium/
@@ -1445,6 +1449,7 @@ tools/profiler/core/vtune/
 xpcom/build/mach_override.c
 xpcom/build/mach_override.h
 xpcom/io/crc32c.c
+rlbox/rlbox_sandbox.hpp
 
 
 ##############################################################################
@@ -1465,14 +1470,16 @@ browser/components/asrouter/content-src/schemas/BackgroundTaskMessagingExperimen
 browser/components/asrouter/content-src/schemas/MessagingExperiment.schema.json
 browser/components/asrouter/tests/InflightAssetsMessageProvider.sys.mjs
 browser/components/asrouter/tests/NimbusRolloutMessageProvider.sys.mjs
-browser/components/newtab/logs/
-browser/components/newtab/node_modules/
 browser/components/storybook/storybook-static/
+browser/extensions/newtab/data/content/activity-stream.bundle.js
+browser/extensions/newtab/logs/
+browser/extensions/newtab/node_modules/
 browser/locales/l10n-changesets.json
 browser/locales/l10n-onchange-changesets.json
 devtools/client/aboutdebugging/test/jest/node_modules/
 devtools/client/application/test/components/node_modules/
 devtools/client/debugger/node_modules/
+dom/base/use_counter_metrics.yaml
 dom/tests/ajax/jquery/
 dom/tests/ajax/mochikit/
 gradle/wrapper/
@@ -1487,15 +1494,53 @@ mobile/android/**/generated
 mobile/android/**\/local.properties
 mobile/android/**\/manifest.json
 mobile/android/android-components/components/feature/search/src/main/assets/search/search_telemetry_v2.json
+mobile/android/android-components/components/browser/engine-system/src/main/res/
+mobile/android/android-components/components/browser/errorpages/src/main/res/
+mobile/android/android-components/components/browser/menu/src/main/res/
+mobile/android/android-components/components/browser/menu2/src/main/res/
+mobile/android/android-components/components/browser/toolbar/src/main/res/
+mobile/android/android-components/components/browser/toolbar2/src/main/res/
+mobile/android/android-components/components/compose/awesomebar/src/main/res/
+mobile/android/android-components/components/compose/browser-toolbar/src/main/res/
+mobile/android/android-components/components/compose/cfr/src/main/res/
+mobile/android/android-components/components/compose/tabstray/src/main/res/
+mobile/android/android-components/components/feature/addons/src/main/res/
+mobile/android/android-components/components/feature/app-links/src/main/res/
+mobile/android/android-components/components/feature/autofill/src/main/res/
+mobile/android/android-components/components/feature/awesomebar/src/main/res/
+mobile/android/android-components/components/feature/contextmenu/src/main/res/
+mobile/android/android-components/components/feature/customtabs/src/main/res/
+mobile/android/android-components/components/feature/downloads/src/main/res/
+mobile/android/android-components/components/feature/findinpage/src/main/res/
+mobile/android/android-components/components/feature/fxsuggest/src/main/res/
+mobile/android/android-components/components/feature/media/src/main/res/
+mobile/android/android-components/components/feature/privatemode/src/main/res/
+mobile/android/android-components/components/feature/prompts/src/main/res/
+mobile/android/android-components/components/feature/pwa/src/main/res/
+mobile/android/android-components/components/feature/qr/src/main/res/
+mobile/android/android-components/components/feature/readerview/src/main/res/
+mobile/android/android-components/components/feature/search/src/main/res/
+mobile/android/android-components/components/feature/sitepermissions/
+mobile/android/android-components/components/feature/tabs/src/main/res/
+mobile/android/android-components/components/feature/webnotifications/src/main/res/
+mobile/android/android-components/components/lib/crash/src/main/res/
+mobile/android/android-components/components/service/nimbus/src/main/res/
+mobile/android/android-components/components/support/base/src/main/res/
+mobile/android/android-components/components/support/ktx/src/main/res/
+mobile/android/android-components/components/support/utils/src/main/res/
+mobile/android/android-components/components/ui/tabcounter/src/main/res/
+mobile/android/android-components/components/ui/widgets/src/main/res/
 mobile/android/android-components/config/detekt-baseline.xml
 mobile/android/android-components/gradle/wrapper/
 mobile/android/android-components/samples/glean/src/main/res/raw/initial_experiments.json
 mobile/android/fenix/app/lint-baseline.xml
 mobile/android/fenix/app/src/debug/res/raw/initial_experiments.json
+mobile/android/fenix/app/src/main/res/
 mobile/android/fenix/app/src/main/res/raw/initial_experiments.json
 mobile/android/fenix/config/detekt-baseline.xml
 mobile/android/fenix/gradle/wrapper/
 mobile/android/focus-android/app/lint-baseline.xml
+mobile/android/focus-android/app/src/main/res/
 mobile/android/focus-android/gradle/wrapper/
 mobile/android/focus-android/quality/detekt-baseline.xml
 mobile/locales/l10n-changesets.json

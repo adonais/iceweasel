@@ -19,7 +19,7 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
   // jumping through a bunch of hoops. Suggest's use of TelemetryEnvironment is
   // tested in browser tests, and there's no other necessary reason to wait for
   // TelemetryEnvironment initialization in xpcshell tests, so just skip it.
-  UrlbarPrefs._testSkipTelemetryEnvironmentInit = true;
+  QuickSuggest._testSkipTelemetryEnvironmentInit = true;
 });
 
 /**
@@ -40,11 +40,11 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
  *     default-branch values. These should be the default prefs for the given
  *     `migrationVersion` and will be set as defaults before migration occurs.
  *
- * @param {string} options.scenario
- *   The scenario to set at the time migration occurs.
  * @param {object} options.expectedPrefs
  *   The expected prefs after migration: `{ defaultBranch, userBranch }`
  *   Pref names should be relative to `browser.urlbar`.
+ * @param {boolean} options.shouldEnable
+ *   Whether Suggest should be enabled when migration occurs.
  * @param {object} [options.initialUserBranch]
  *   Prefs to set on the user branch before migration ocurs. Use these to
  *   simulate user actions like disabling prefs or opting in or out of the
@@ -52,8 +52,8 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
  */
 async function doMigrateTest({
   testOverrides,
-  scenario,
   expectedPrefs,
+  shouldEnable = true,
   initialUserBranch = {},
 }) {
   info(
@@ -61,7 +61,7 @@ async function doMigrateTest({
       JSON.stringify({
         testOverrides,
         initialUserBranch,
-        scenario,
+        shouldEnable,
         expectedPrefs,
       })
   );
@@ -106,9 +106,7 @@ async function doMigrateTest({
   let userBranch = Services.prefs.getBranch("browser.urlbar.");
 
   // Set initial prefs. `initialDefaultBranch` are firefox.js values, i.e.,
-  // defaults immediately after startup and before any scenario update and
-  // migration happens.
-  UrlbarPrefs._updatingFirefoxSuggestScenario = true;
+  // defaults immediately after startup, before Suggest init and migration.
   UrlbarPrefs.clear("quicksuggest.migrationVersion");
   let initialDefaultBranch = {
     "suggest.quicksuggest.nonsponsored": false,
@@ -128,19 +126,17 @@ async function doMigrateTest({
       }
     }
   }
-  UrlbarPrefs._updatingFirefoxSuggestScenario = false;
 
-  // Update the scenario and check prefs twice. The first time the migration
+  // Reinitialize Suggest and check prefs twice. The first time the migration
   // should happen, and the second time the migration should not happen and
   // all the prefs should stay the same.
   for (let i = 0; i < 2; i++) {
-    info(`Calling updateFirefoxSuggestScenario, i=${i}`);
+    info(`Reinitializing Suggest, i=${i}`);
 
-    // Do the scenario update and set `isStartup` to simulate startup.
-    await UrlbarPrefs.updateFirefoxSuggestScenario({
+    // Reinitialize Suggest.
+    await QuickSuggest._test_reinit({
       ...testOverrides,
-      scenario,
-      isStartup: true,
+      shouldEnable,
     });
 
     // Check expected pref values. Store expected effective values as we go so
@@ -164,7 +160,7 @@ async function doMigrateTest({
       }
 
       info(
-        `Checking expected prefs on ${branchType} branch after updating scenario`
+        `Checking expected prefs on ${branchType} branch after Suggest init`
       );
       for (let [name, value] of entries) {
         expectedEffectivePrefs[name] = value;
@@ -205,7 +201,7 @@ async function doMigrateTest({
 
     let currentVersion =
       testOverrides?.migrationVersion === undefined
-        ? UrlbarPrefs.FIREFOX_SUGGEST_MIGRATION_VERSION
+        ? QuickSuggest.MIGRATION_VERSION
         : testOverrides.migrationVersion;
     Assert.equal(
       UrlbarPrefs.get("quicksuggest.migrationVersion"),
@@ -215,7 +211,6 @@ async function doMigrateTest({
   }
 
   // Clean up.
-  UrlbarPrefs._updatingFirefoxSuggestScenario = true;
   UrlbarPrefs.clear("quicksuggest.migrationVersion");
   let userBranchNames = [
     ...Object.keys(initialUserBranch),
@@ -224,7 +219,6 @@ async function doMigrateTest({
   for (let name of userBranchNames) {
     userBranch.clearUserPref(name);
   }
-  UrlbarPrefs._updatingFirefoxSuggestScenario = false;
 }
 
 /**

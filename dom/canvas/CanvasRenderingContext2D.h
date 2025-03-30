@@ -115,6 +115,9 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   already_AddRefed<layers::FwdTransactionTracker> UseCompositableForwarder(
       layers::CompositableForwarder* aForwarder) override;
 
+  mozilla::gfx::Matrix GetCurrentTransform() const;
+  bool HasAnyClips() const;
+
   void Save();
   void Restore();
 
@@ -705,9 +708,19 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
    */
   bool EnsureWritablePath();
 
+  // Ensures there is a valid BufferProvider for creating a PathBuilder.
+  bool EnsureBufferProvider();
+
   // Ensures a path in UserSpace is available.
   void EnsureUserSpacePath(
       const CanvasWindingRule& aWinding = CanvasWindingRule::Nonzero);
+
+  // Ensures both target and a path in UserSpace is available.
+  void EnsureTargetAndUserSpacePath(
+      const CanvasWindingRule& aWinding = CanvasWindingRule::Nonzero) {
+    EnsureTarget();
+    EnsureUserSpacePath(aWinding);
+  }
 
   /**
    * Needs to be called before updating the transform. This makes a call to
@@ -717,6 +730,18 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   // Report the fillRule has changed.
   void FillRuleChanged();
+
+  /**
+   * Check if the target is in an error state. Functions that may need to
+   * access the transform or clip state with or without a target should call
+   * this first to verify that it's okay to access this state, as error targets
+   * should ignore it instead.
+   */
+  bool HasErrorState(ErrorResult& aError, bool aInitProvider = true);
+  bool HasErrorState() {
+    IgnoredErrorResult error;
+    return HasErrorState(error);
+  }
 
   /**
    * Create the backing surfacing, if it doesn't exist. If there is an error
@@ -863,7 +888,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   RefPtr<mozilla::gfx::DrawTarget> mTarget;
 
   RefPtr<mozilla::layers::PersistentBufferProvider> mBufferProvider;
+  // Whether the target's buffer must be cleared before drawing.
   bool mBufferNeedsClear = false;
+  // Whether the current state contains clips or transforms not set on target.
+  bool mTargetNeedsClipsAndTransforms = false;
 
   // Whether we should try to create an accelerated buffer provider.
   bool mAllowAcceleration = true;
@@ -930,6 +958,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
    */
   RefPtr<mozilla::gfx::Path> mPath;
   RefPtr<mozilla::gfx::PathBuilder> mPathBuilder;
+  mozilla::gfx::BackendType mPathType = mozilla::gfx::BackendType::NONE;
   bool mPathPruned = false;
   mozilla::gfx::Matrix mPathTransform;
   bool mPathTransformDirty = false;
@@ -1123,6 +1152,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   inline const ContextState& CurrentState() const {
     return mStyleStack[mStyleStack.Length() - 1];
+  }
+
+  inline const ContextState& PreviousState() const {
+    return mStyleStack[mStyleStack.Length() - 2];
   }
 
   struct FontStyleCacheKey {

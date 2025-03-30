@@ -311,7 +311,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: c0313ec3381521db6c5e3aca746ff1e3e29208d7
+        revision: 3346c0eb95c34e2ac0c5f157da8965ee292c64e8
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -361,6 +361,13 @@ clang-19:
         repo: https://github.com/llvm/llvm-project
         revision: cd708029e0b2869e80abe31ddb175f7c35361f90
 
+clang-20:
+    description: clang 20.1.0-rc2 source code
+    fetch:
+        type: git
+        repo: https://github.com/llvm/llvm-project
+        revision: 20621e2609ac49dcf01c4353dbfd69626cea3015
+
 clang-trunk:
     description: clang main branch source code
     attributes:
@@ -379,7 +386,10 @@ rust-1.81.0:
         type: git
         include-dot-git: true
         repo: https://github.com/rust-lang/rust/
-        revision: eeb90cda1969383f56a2637cbd3037bdf598841c
+        # NOTE: This is 1.81.0 and then some, to accommodate compiling some 1.82.0 code without
+        # breaking patches we use for sanitizers. See
+        # <https://bugzilla.mozilla.org/show_bug.cgi?id=1915537> for follow-up.
+        revision: ab1527f1d6560168f9fd36fa8cd7ba677c1d36ad
 
 rust-nightly:
     description: Rust nightly source code
@@ -476,6 +486,17 @@ fix-stacks:
         artifact-name: 7z-src.tar.zst
         add-prefix: 7zz/
 
+cabextract:
+    description: cabextract 1.11 source code
+    fetch:
+        type: static-url
+        url: https://www.cabextract.org.uk/cabextract-1.11.tar.gz
+        sha256: b5546db1155e4c718ff3d4b278573604f30dd64c3c5bfd4657cd089b823a3ac6
+        size: 489656
+        artifact-name: cabextract-src.tar.zst
+        strip-components: 1
+        add-prefix: cabextract/
+
 winchecksec:
     description: winchecksec source code
     fetch:
@@ -498,9 +519,9 @@ jdk-8-linux64:
     description: Java 8 JDK
     fetch:
         type: static-url
-        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u432-b06/OpenJDK8U-jdk_x64_linux_hotspot_8u432b06.tar.gz
-        sha256: abaaa90deadf51bd28921453baf2992b3dff6171bb7142f5bdd14ef269f7b245
-        size: 103033330
+        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u442-b06/OpenJDK8U-jdk_x64_linux_hotspot_8u442b06.tar.gz
+        sha256: 5b0a0145e7790552a9c8767b4680074c4628ec276e5bb278b61d85cf90facafa
+        size: 103096556
         artifact-name: jdk-8.tar.zst
         strip-components: 1
         add-prefix: jdk-8/
@@ -630,14 +651,14 @@ cargo-vet:
     fetch:
         type: git
         repo: https://github.com/mozilla/cargo-vet
-        revision: c23b21659b9902d97bef2f54c8e14529031092c5
+        revision: c178261c96c9f820f67817e9c5458db655ddc21f
 
 symbol-scrapers:
-    description: Linux distribution symbol scraper source
+    description: System symbols scraper source
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: 760f81a0e2d3720cd4795bdced8926ef7977856c
+        revision: 04f906fe8585b31d03d8baf6044a01654808c96a
 
 xz-5.4.4:
     description: xz 5.4.4 source code
@@ -743,3 +764,10 @@ uv:
         type: git
         repo: https://github.com/astral-sh/uv
         revision: 0652800cb018eb086fbbf220a1f73af7e320be54
+
+dxc-src:
+    description: Source code for mozilla's DXC fork
+    fetch:
+        type: git
+        repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler
+        revision: c75bb05c0e040bc09ec012ccf9767b1ec622477f

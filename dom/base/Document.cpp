@@ -26,6 +26,7 @@
 #include "ExpandedPrincipal.h"
 #include "MainThreadUtils.h"
 #include "MobileViewportManager.h"
+#include "NSSErrorsService.h"
 #include "NodeUbiReporting.h"
 #include "PLDHashTable.h"
 #include "StorageAccessPermissionRequest.h"
@@ -175,6 +176,7 @@
 #include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/FragmentDirective.h"
+#include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/HighlightRegistry.h"
@@ -208,6 +210,7 @@
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/PWindowGlobalChild.h"
+#include "mozilla/dom/PageLoadEventUtils.h"
 #include "mozilla/dom/PageTransitionEvent.h"
 #include "mozilla/dom/PageTransitionEventBinding.h"
 #include "mozilla/dom/Performance.h"
@@ -1929,6 +1932,8 @@ void Document::GetFailedCertSecurityInfo(FailedCertSecurityInfo& aInfo,
     return;
   }
 
+  aInfo.mErrorIsOverridable = mozilla::psm::ErrorIsOverridable(errorCode);
+
   nsCOMPtr<nsINSSErrorsService> nsserr =
       do_GetService("@mozilla.org/nss_errors_service;1");
   if (NS_WARN_IF(!nsserr)) {
@@ -2077,6 +2082,12 @@ void Document::RecordPageLoadEventTelemetry(
   }
 
   aEventTelemetryData.loadType = mozilla::Some(loadTypeStr);
+
+#ifdef ACCESSIBILITY
+  if (GetAccService() != nullptr) {
+    SetPageloadEventFeature(pageload_event::FeatureBits::USING_A11Y);
+  }
+#endif
 
   // Sending a glean ping must be done on the parent process.
   if (ContentChild* cc = ContentChild::GetSingleton()) {
@@ -3145,40 +3156,48 @@ already_AddRefed<nsIPrincipal> Document::MaybeDowngradePrincipal(
 }
 
 size_t Document::FindDocStyleSheetInsertionPoint(const StyleSheet& aSheet) {
-  nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   ServoStyleSet& styleSet = EnsureStyleSet();
 
   // lowest index first
-  int32_t newDocIndex = StyleOrderIndexOfSheet(aSheet);
+  const size_t newDocIndex = StyleOrderIndexOfSheet(aSheet);
+  MOZ_ASSERT(newDocIndex != mStyleSheets.NoIndex);
 
-  size_t count = styleSet.SheetCount(StyleOrigin::Author);
-  size_t index = 0;
-  for (; index < count; index++) {
+  size_t index = styleSet.SheetCount(StyleOrigin::Author);
+  while (index--) {
     auto* sheet = styleSet.SheetAt(StyleOrigin::Author, index);
     MOZ_ASSERT(sheet);
-    int32_t sheetDocIndex = StyleOrderIndexOfSheet(*sheet);
-    if (sheetDocIndex > newDocIndex) {
-      break;
+    if (!sheet->GetAssociatedDocumentOrShadowRoot()) {
+      // If the sheet is not owned by the document it should be an author sheet
+      // registered at nsStyleSheetService, or an additional sheet. In that case
+      // the doc sheet should end up before it.
+      // FIXME(emilio): Additional stylesheets inconsistently end up with
+      // associated document, depending on which code-path adds them. Fix this.
+      MOZ_ASSERT(
+          nsStyleSheetService::GetInstance()->AuthorStyleSheets()->Contains(
+              sheet) ||
+          mAdditionalSheets[eAuthorSheet].Contains(sheet));
+      continue;
     }
-
-    // If the sheet is not owned by the document it can be an author
-    // sheet registered at nsStyleSheetService or an additional author
-    // sheet on the document, which means the new
-    // doc sheet should end up before it.
-    if (sheetDocIndex < 0) {
-      if (sheetService) {
-        auto& authorSheets = *sheetService->AuthorStyleSheets();
-        if (authorSheets.IndexOf(sheet) != authorSheets.NoIndex) {
-          break;
-        }
-      }
-      if (sheet == GetFirstAdditionalAuthorSheet()) {
-        break;
-      }
+    size_t sheetDocIndex = StyleOrderIndexOfSheet(*sheet);
+    if (MOZ_UNLIKELY(sheetDocIndex == mStyleSheets.NoIndex)) {
+      MOZ_ASSERT_UNREACHABLE("Which stylesheet can hit this?");
+      continue;
     }
+    MOZ_ASSERT(sheetDocIndex != newDocIndex);
+    if (sheetDocIndex < newDocIndex) {
+      // We found a document-owned sheet. All of them go together, so if the
+      // current sheet goes before ours, we're at the right index already.
+      return index + 1;
+    }
+    // Otherwise keep looking. Unfortunately we can't do something clever like:
+    //
+    // return index - sheetDocIndex + newDocIndex;
+    //
+    // Or so, because we need to deal with disabled / non-applicable sheets
+    // which are not in the styleset, even though they're in the document.
   }
-
-  return index;
+  // We found no sheet that goes before us, so we're index 0.
+  return 0;
 }
 
 void Document::ResetStylesheetsToURI(nsIURI* aURI) {
@@ -7676,14 +7695,13 @@ void Document::InsertSheetAt(size_t aIndex, StyleSheet& aSheet) {
 }
 
 void Document::StyleSheetApplicableStateChanged(StyleSheet& aSheet) {
-  const bool applicable = aSheet.IsApplicable();
-  // If we're actually in the document style sheet list
-  if (StyleOrderIndexOfSheet(aSheet) >= 0) {
-    if (applicable) {
-      AddStyleSheetToStyleSets(aSheet);
-    } else {
-      RemoveStyleSheetFromStyleSets(aSheet);
-    }
+  if (!aSheet.IsDirectlyAssociatedTo(*this)) {
+    return;
+  }
+  if (aSheet.IsApplicable()) {
+    AddStyleSheetToStyleSets(aSheet);
+  } else {
+    RemoveStyleSheetFromStyleSets(aSheet);
   }
 }
 
@@ -7810,7 +7828,6 @@ nsresult Document::LoadAdditionalStyleSheet(additionalSheetType aType,
 
   RefPtr<StyleSheet> sheet = result.unwrap();
 
-  sheet->SetAssociatedDocumentOrShadowRoot(this);
   MOZ_ASSERT(sheet->IsApplicable());
 
   return AddAdditionalStyleSheet(aType, sheet);
@@ -7823,6 +7840,10 @@ nsresult Document::AddAdditionalStyleSheet(additionalSheetType aType,
   }
 
   if (!aSheet->IsApplicable()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  if (NS_WARN_IF(aSheet->GetAssociatedDocumentOrShadowRoot())) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -8464,6 +8485,7 @@ void Document::EndLoad() {
   // only assert if nothing stopped the load on purpose
   if (!mParserAborted) {
     nsContentSecurityUtils::AssertAboutPageHasCSP(this);
+    nsContentSecurityUtils::AssertChromePageHasCSP(this);
   }
 #endif
 
@@ -10147,9 +10169,9 @@ Document* Document::Open(const Optional<nsAString>& /* unused */,
       return nullptr;
     }
     nsCOMPtr<nsIStructuredCloneContainer> stateContainer(mStateObjectContainer);
-    rv = shell->UpdateURLAndHistory(this, newURI, stateContainer, u""_ns,
-                                    /* aReplace = */ true, currentURI,
-                                    equalURIs);
+    rv = shell->UpdateURLAndHistory(this, newURI, stateContainer,
+                                    NavigationHistoryBehavior::Replace,
+                                    currentURI, equalURIs);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aError.Throw(rv);
       return nullptr;
@@ -10859,6 +10881,13 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   if (bc && bc->ForceDesktopViewport() && !IsAboutPage()) {
     CSSCoord viewportWidth =
         StaticPrefs::browser_viewport_desktopWidth() / fullZoom;
+    // Do not use a desktop viewport size less wide than the display.
+    CSSCoord displayWidth = (aDisplaySize / defaultScale).width;
+    MOZ_LOG(MobileViewportManager::gLog, LogLevel::Debug,
+            ("Desktop-mode viewport size: choosing the larger of display width "
+             "(%f) and desktop width (%f)",
+             displayWidth.value, viewportWidth.value));
+    viewportWidth = nsViewportInfo::Max(displayWidth, viewportWidth);
     CSSToScreenScale scaleToFit(aDisplaySize.width / viewportWidth);
     float aspectRatio = (float)aDisplaySize.height / aDisplaySize.width;
     CSSSize viewportSize(viewportWidth, viewportWidth * aspectRatio);
@@ -11004,17 +11033,22 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       // value after setting it, above.
       if (maxWidth == nsViewportInfo::kAuto && !mValidScaleFloat) {
         maxWidth = StaticPrefs::browser_viewport_desktopWidth();
-        if (inRDM &&
-            bc->TouchEventsOverride() == TouchEventsOverride::Enabled) {
-          // If RDM and touch simulation are active, then use the simulated
-          // screen width to accommodate for cases where the screen width is
-          // larger than the desktop viewport default.
-          maxWidth = nsViewportInfo::Max(displaySize.width, maxWidth);
-        }
         // Divide by fullZoom to stretch CSS pixel size of viewport in order
         // to keep device pixel size unchanged after full zoom applied.
         // See bug 974242.
         maxWidth /= fullZoom;
+
+        // The fallback behaviour of using browser.viewport.desktopWidth
+        // was designed with small screens in mind, where we are _expanding_ the
+        // viewport width to this value. On wider displays (e.g. most tablets),
+        // we would actually be _shrinking_ the viewport width to this value,
+        // which we want to avoid because it constrains the viewport width
+        // (and often results in a larger initial scale) unnecessarily.
+        MOZ_LOG(MobileViewportManager::gLog, LogLevel::Debug,
+                ("Fallback viewport size: choosing the larger of display width "
+                 "(%f) and desktop width (%f)",
+                 displaySize.width, maxWidth.value));
+        maxWidth = nsViewportInfo::Max(displaySize.width, maxWidth);
 
         // We set minWidth to ExtendToZoom, which will cause our later width
         // calculation to expand to maxWidth, if scale restrictions allow it.
@@ -13877,12 +13911,7 @@ already_AddRefed<Document> Document::CreateStaticClone(
     auto& sheets = mAdditionalSheets[additionalSheetType(t)];
     for (StyleSheet* sheet : sheets) {
       if (sheet->IsApplicable()) {
-        RefPtr<StyleSheet> clonedSheet = sheet->Clone(nullptr, clonedDoc);
-        NS_WARNING_ASSERTION(clonedSheet, "Cloning a stylesheet didn't work!");
-        if (clonedSheet) {
-          clonedDoc->AddAdditionalStyleSheet(additionalSheetType(t),
-                                             clonedSheet);
-        }
+        clonedDoc->AddAdditionalStyleSheet(additionalSheetType(t), sheet);
       }
     }
   }
@@ -16153,28 +16182,52 @@ bool Document::SetOrientationPendingPromise(Promise* aPromise) {
   return true;
 }
 
+void Document::MaybeSkipTransitionAfterVisibilityChange() {
+  if (Hidden() && mActiveViewTransition) {
+    mActiveViewTransition->SkipTransition(SkipTransitionReason::DocumentHidden);
+  }
+}
+
+// https://html.spec.whatwg.org/#update-the-visibility-state
 void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
-  dom::VisibilityState oldState = mVisibilityState;
-  mVisibilityState = ComputeVisibilityState();
-  if (oldState != mVisibilityState) {
-    if (aDispatchEvent == DispatchVisibilityChange::Yes) {
-      nsContentUtils::DispatchTrustedEvent(this, this, u"visibilitychange"_ns,
-                                           CanBubble::eYes, Cancelable::eNo);
-    }
-    NotifyActivityChanged();
-    if (mVisibilityState == dom::VisibilityState::Visible) {
-      MaybeActiveMediaComponents();
-    }
+  const dom::VisibilityState visibilityState = ComputeVisibilityState();
+  if (mVisibilityState == visibilityState) {
+    // 1. If document's visibility state equals visibilityState, then return.
+    return;
+  }
+  // 2. Set document's visibility state to visibilityState.
+  mVisibilityState = visibilityState;
+  if (aDispatchEvent == DispatchVisibilityChange::Yes) {
+    // 3. Fire an event named visibilitychange at document, with its bubbles
+    // attribute initialized to true.
+    nsContentUtils::DispatchTrustedEvent(this, this, u"visibilitychange"_ns,
+                                         CanBubble::eYes, Cancelable::eNo);
+  }
+  // TODO 4. Run the screen orientation change steps with document.
 
-    bool visible = !Hidden();
-    for (auto* listener : mWorkerListeners) {
-      listener->OnVisible(visible);
-    }
+  // 5. Run the view transition page visibility change steps with document.
+  // https://drafts.csswg.org/css-view-transitions/#view-transition-page-visibility-change-steps
+  const bool visible = !Hidden();
+  if (mActiveViewTransition && !visible) {
+    // The mActiveViewTransition check is an optimization: We don't allow
+    // creating transitions while the doc is hidden.
+    Dispatch(
+        NewRunnableMethod("MaybeSkipTransitionAfterVisibilityChange", this,
+                          &Document::MaybeSkipTransitionAfterVisibilityChange));
+  }
 
-    // https://w3c.github.io/screen-wake-lock/#handling-document-loss-of-visibility
-    if (!visible) {
-      UnlockAllWakeLocks(WakeLockType::Screen);
-    }
+  NotifyActivityChanged();
+  if (visible) {
+    MaybeActiveMediaComponents();
+  }
+
+  for (auto* listener : mWorkerListeners) {
+    listener->OnVisible(visible);
+  }
+
+  // https://w3c.github.io/screen-wake-lock/#handling-document-loss-of-visibility
+  if (!visible) {
+    UnlockAllWakeLocks(WakeLockType::Screen);
   }
 }
 
@@ -17024,13 +17077,13 @@ void Document::UpdateRemoteFrameEffects(bool aIncludeInactive) {
   }
   if (XRE_IsParentProcess()) {
     if (auto* bc = GetBrowsingContext(); bc && bc->IsTop()) {
-      bc->Canonical()->CallOnAllTopDescendants(
+      bc->Canonical()->CallOnTopDescendants(
           [&](CanonicalBrowsingContext* aDescendant) {
             UpdateEffectsOnBrowsingContext(aDescendant, input,
                                            aIncludeInactive);
             return CallState::Continue;
           },
-          /* aIncludeNestedBrowsers = */ false);
+          CanonicalBrowsingContext::TopDescendantKind::NonNested);
     }
   }
   EnumerateSubDocuments([aIncludeInactive](Document& aDoc) {
@@ -17556,11 +17609,6 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
     return;
   }
 
-  // We care about first-party tracking resources only.
-  if (!nsContentUtils::IsFirstPartyTrackingResourceWindow(inner)) {
-    return;
-  }
-
   auto* outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
   if (NS_WARN_IF(!outer)) {
     return;
@@ -17614,9 +17662,16 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
   }
 
   // We don't care when the asynchronous work finishes here.
-  Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
-      NodePrincipal(), openerBC,
-      ContentBlockingNotifier::eOpenerAfterUserInteraction);
+  // Without e10s or fission enabled this is run in the parent process.
+  if (XRE_IsParentProcess()) {
+    Unused << StorageAccessAPIHelper::AllowAccessForOnParentProcess(
+        NodePrincipal(), openerBC,
+        ContentBlockingNotifier::eOpenerAfterUserInteraction);
+  } else {
+    Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
+        NodePrincipal(), openerBC,
+        ContentBlockingNotifier::eOpenerAfterUserInteraction);
+  }
 }
 
 namespace {

@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
@@ -25,13 +24,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   FORM_SUBMISSION_REASON: "resource://gre/actors/FormHandlerChild.sys.mjs",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "DELEGATE_AUTOCOMPLETE",
-  "toolkit.autocomplete.delegate",
-  false
-);
 
 /**
  * Handles content's interactions for the frame.
@@ -413,7 +405,7 @@ export class FormAutofillChild extends JSWindowActorChild {
     }
 
     if (
-      lazy.DELEGATE_AUTOCOMPLETE ||
+      AppConstants.MOZ_GECKOVIEW ||
       !lazy.FormAutofillContent.savedFieldNames
     ) {
       this.debug("onFocusIn: savedFieldNames are not known yet");
@@ -461,9 +453,8 @@ export class FormAutofillChild extends JSWindowActorChild {
         return result;
       }
       case "FormAutofill:ClearFilledFields": {
-        const { ids, focusedId } = message.data;
-        const handler = this.#getHandlerByElementId(ids[0]);
-        handler?.clearFilledFields(focusedId, ids);
+        const { focusedId, ids } = message.data;
+        this.clearFields(focusedId, ids);
         break;
       }
       case "FormAutofill:PreviewFields": {
@@ -590,6 +581,19 @@ export class FormAutofillChild extends JSWindowActorChild {
         fieldDetail.elementId
       );
     }
+  }
+
+  clearFields(focusedId, elementIds) {
+    const handler = this.#getHandlerByElementId(elementIds[0]);
+    handler?.clearFilledFields(focusedId, elementIds);
+
+    // Explicitly calling showPopupIfEmpty here, because FormAutofillChild is ignoring
+    // all focus events during the autofilling/clearing process.
+    const focusedElement =
+      lazy.FormAutofillUtils.getElementByIdentifier(focusedId);
+    const fieldName =
+      handler.getFieldDetailByElement(focusedElement)?.fieldName ?? "";
+    this.showPopupIfEmpty(focusedElement, fieldName);
   }
 
   async fillFields(focusedId, elementIds, profile) {

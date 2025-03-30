@@ -30,7 +30,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomServiceworkersMetrics.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ClientManager.h"
@@ -38,6 +38,7 @@
 #include "mozilla/dom/FetchEventOpChild.h"
 #include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/InternalRequest.h"
+#include "mozilla/dom/PushManager.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/RemoteWorkerControllerChild.h"
@@ -112,14 +113,6 @@ uint32_t ServiceWorkerPrivate::sRunningServiceWorkers = 0;
 uint32_t ServiceWorkerPrivate::sRunningServiceWorkersFetch = 0;
 uint32_t ServiceWorkerPrivate::sRunningServiceWorkersMax = 0;
 uint32_t ServiceWorkerPrivate::sRunningServiceWorkersFetchMax = 0;
-
-// Tracks the "dom.serviceWorkers.disable_open_click_delay" preference. Modified
-// on main thread, read on worker threads.
-// It is updated every time a "notificationclick" event is dispatched. While
-// this is done without synchronization, at the worst, the thread will just get
-// an older value within which a popup is allowed to be displayed, which will
-// still be a valid value since it was set prior to dispatching the runnable.
-Atomic<uint32_t> gDOMDisableOpenClickDelay(0);
 
 /**
  * KeepAliveToken
@@ -970,44 +963,41 @@ nsresult ServiceWorkerPrivate::SendPushEventInternal(
       });
 }
 
-nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent() {
+nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent(
+    const RefPtr<nsIPushSubscription>& aOldSubscription) {
   AssertIsOnMainThread();
 
+  ServiceWorkerPushSubscriptionChangeEventOpArgs args{};
+  if (aOldSubscription) {
+    PushSubscriptionData oldSubscription{};
+    MOZ_TRY(GetSubscriptionParams(aOldSubscription, oldSubscription.endpoint(),
+                                  oldSubscription.rawP256dhKey(),
+                                  oldSubscription.authSecret(),
+                                  oldSubscription.appServerKey()));
+    args.oldSubscription().emplace(oldSubscription);
+  }
+
   return ExecServiceWorkerOp(
-      ServiceWorkerPushSubscriptionChangeEventOpArgs(),
-      ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
+      std::move(args), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
       [](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
       });
 }
 
 nsresult ServiceWorkerPrivate::SendNotificationEvent(
-    const nsAString& aEventName, const nsAString& aID, const nsAString& aTitle,
-    const nsAString& aDir, const nsAString& aLang, const nsAString& aBody,
-    const nsAString& aTag, const nsAString& aIcon, const nsAString& aData,
-    const nsAString& aScope) {
+    const nsAString& aEventName, const nsAString& aScope, const nsAString& aId,
+    const IPCNotificationOptions& aOptions) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (aEventName.EqualsLiteral(NOTIFICATION_CLICK_EVENT_NAME)) {
-    gDOMDisableOpenClickDelay =
-        Preferences::GetInt("dom.serviceWorkers.disable_open_click_delay");
-  } else if (!aEventName.EqualsLiteral(NOTIFICATION_CLOSE_EVENT_NAME)) {
+  if (!aEventName.EqualsLiteral(NOTIFICATION_CLICK_EVENT_NAME) &&
+      !aEventName.EqualsLiteral(NOTIFICATION_CLOSE_EVENT_NAME)) {
     MOZ_ASSERT_UNREACHABLE("Invalid notification event name");
     return NS_ERROR_FAILURE;
   }
 
   ServiceWorkerNotificationEventOpArgs args;
   args.eventName() = nsString(aEventName);
-  args.id() = nsString(aID);
-  args.title() = nsString(aTitle);
-  args.dir() = nsString(aDir);
-  args.lang() = nsString(aLang);
-  args.body() = nsString(aBody);
-  args.tag() = nsString(aTag);
-  args.icon() = nsString(aIcon);
-  args.data() = nsString(aData);
-  args.scope() = nsString(aScope);
-  args.disableOpenClickDelay() = gDOMDisableOpenClickDelay;
+  args.notification() = IPCNotification(nsString(aId), aOptions);
 
   return ExecServiceWorkerOp(
       std::move(args), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
@@ -1691,12 +1681,11 @@ void ServiceWorkerPrivate::CreationFailed() {
 
   if (mRemoteWorkerData.remoteType().Find(SERVICEWORKER_REMOTE_TYPE) !=
       kNotFound) {
-    Telemetry::AccumulateTimeDelta(
-        Telemetry::SERVICE_WORKER_ISOLATED_LAUNCH_TIME,
-        mServiceWorkerLaunchTimeStart);
+    glean::service_worker::isolated_launch_time.AccumulateRawDuration(
+        TimeStamp::Now() - mServiceWorkerLaunchTimeStart);
   } else {
-    Telemetry::AccumulateTimeDelta(Telemetry::SERVICE_WORKER_LAUNCH_TIME_2,
-                                   mServiceWorkerLaunchTimeStart);
+    glean::service_worker::launch_time.AccumulateRawDuration(
+        TimeStamp::Now() - mServiceWorkerLaunchTimeStart);
   }
 
   mPendingSpawnLifetime = ServiceWorkerLifetimeExtension(NoLifetimeExtension{});
@@ -1719,12 +1708,11 @@ void ServiceWorkerPrivate::CreationSucceeded() {
 
   if (mRemoteWorkerData.remoteType().Find(SERVICEWORKER_REMOTE_TYPE) !=
       kNotFound) {
-    Telemetry::AccumulateTimeDelta(
-        Telemetry::SERVICE_WORKER_ISOLATED_LAUNCH_TIME,
-        mServiceWorkerLaunchTimeStart);
+    glean::service_worker::isolated_launch_time.AccumulateRawDuration(
+        TimeStamp::Now() - mServiceWorkerLaunchTimeStart);
   } else {
-    Telemetry::AccumulateTimeDelta(Telemetry::SERVICE_WORKER_LAUNCH_TIME_2,
-                                   mServiceWorkerLaunchTimeStart);
+    glean::service_worker::launch_time.AccumulateRawDuration(
+        TimeStamp::Now() - mServiceWorkerLaunchTimeStart);
   }
 
   RenewKeepAliveToken(mPendingSpawnLifetime);

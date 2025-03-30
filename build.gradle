@@ -55,22 +55,46 @@ def tryInt = { string ->
     return string
 }
 
-// Parses the Cargo.lock and returns the version for the given package name.
-def getRustVersionFor(packageName) {
-    String version = null;
-    TomlParseResult result = Toml.parse(file("Cargo.lock").getText());
-    for (object in result.getArray("package").toList()) {
-        def table = (TomlTable) object
-        if (table.getString("name") == packageName) {
-            if (version != null) {
-                throw new StopExecutionException("Multiple versions for '${packageName}' found." +
-                        " Ensure '${packageName}' is only included once.")
-            }
-            version = table.getString("version")
+abstract class VerifyGleanVersionTask extends DefaultTask {
+    @InputFile
+    final RegularFileProperty source = project.objects.fileProperty().convention(project.layout.projectDirectory.file("Cargo.lock"))
+
+    @Input
+    String expectedVersion = Versions.mozilla_glean
+
+    @OutputFiles
+    FileCollection outputFiles = project.objects.fileCollection()
+
+    @TaskAction
+    void verifyGleanVersion() {
+        def foundVersion = getRustVersionFor(source.get().asFile, "glean")
+        if (expectedVersion != foundVersion) {
+          throw new GradleException("Mismatched Glean version, expected: '${expectedVersion}'," +
+              " found '${foundVersion}'")
+        } else {
+            logger.lifecycle("verifyGleanVersion> expected version matches found version '${foundVersion}'")
         }
     }
-    return version
+
+    // Parses the Cargo.lock and returns the version for the given package name.
+    static String getRustVersionFor(file, packageName) {
+        String version = null;
+        TomlParseResult result = Toml.parse(file.getText());
+        for (object in result.getArray("package").toList()) {
+            def table = (TomlTable) object
+            if (table.getString("name") == packageName) {
+                if (version != null) {
+                    throw new GradleException("Multiple versions for '${packageName}' found." +
+                                                     " Ensure '${packageName}' is only included once.")
+                }
+                version = table.getString("version")
+            }
+        }
+        return version
+    }
 }
+
+tasks.register("verifyGleanVersion", VerifyGleanVersionTask)
 
 allprojects {
     // Expose the per-object-directory configuration to all projects.
@@ -79,11 +103,7 @@ allprojects {
         topsrcdir = gradle.mozconfig.topsrcdir
         topobjdir = gradle.mozconfig.topobjdir
 
-        gleanVersion = Versions.mozilla_glean
-        if (gleanVersion != getRustVersionFor("glean")) {
-          throw new StopExecutionException("Mismatched Glean version, expected: ${gleanVersion}," +
-              " found ${getRustVersionFor("glean")}")
-        }
+        gleanVersion = Versions.mozilla_glean // Verification done in verifyGleanVersion task
 
         artifactSuffix = getArtifactSuffix()
         versionName = getVersionName()
@@ -239,10 +259,11 @@ ext.geckoBinariesOnlyIf = { task ->
     return true
 }
 
-// Non-official versions are like "61.0a1", where "a1" is the milestone.
+// Non-official versions are like "61.0a1" or "61.0b1", where "a1" and "b1"
+// are the milestone.
 // This simply strips that off, leaving "61.0" in this example.
 def getAppVersionWithoutMilestone() {
-    return project.ext.mozconfig.substs.MOZ_APP_VERSION.replaceFirst(/a[0-9]/, "")
+    return project.ext.mozconfig.substs.MOZ_APP_VERSION.replaceFirst(/[ab][0-9]/, "")
 }
 
 // This converts MOZ_APP_VERSION into an integer

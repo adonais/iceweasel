@@ -15,9 +15,10 @@
 
 #include "nsIContentInlines.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/ipc/ProcessChild.h"
+#include "mozilla/PerfStats.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "nsAccessibilityService.h"
@@ -368,6 +369,12 @@ void NotificationController::DropMutationEvent(AccTreeMutationEvent* aEvent) {
 }
 
 void NotificationController::CoalesceMutationEvents() {
+  AUTO_PROFILER_MARKER_TEXT("NotificationController::CoalesceMutationEvents",
+                            A11Y, {}, ""_ns);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_CoalesceMutationEvents>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
+
   AccTreeMutationEvent* event = mFirstMutationEvent;
   while (event) {
     AccTreeMutationEvent* nextEvent = event->NextEvent();
@@ -677,8 +684,7 @@ void NotificationController::ProcessMutationEvents() {
 // NotificationCollector: private
 
 void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
-  AUTO_PROFILER_MARKER_TEXT("NotificationController::WillRefresh", A11Y, {},
-                            ""_ns);
+  AUTO_PROFILER_MARKER_UNTYPED("NotificationController::WillRefresh", A11Y, {});
   auto timer = glean::a11y::tree_update_timing.Measure();
   // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
 
@@ -694,7 +700,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       mDocument,
       "The document was shut down while refresh observer is attached!");
 
-  if (ipc::ProcessChild::ExpectingShutdown()) {
+  if (AppShutdown::IsShutdownImpending()) {
     return;
   }
 
@@ -709,11 +715,31 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     return;
   }
 
+  if (mDocument->IPCDoc() && mDocument->IPCDoc()->HasUnackedMutationEvents()) {
+    // We've sent mutation events to the parent process, but we haven't
+    // received its ACK yet. We defer accessibility updates until we do.
+    // Otherwise, we might flood the IPDL queue with many later mutation events
+    // while the parent process is still trying to process earlier ones, getting
+    // further and further behind and causing the browser to hang for extended
+    // periods. If the same nodes are repeatedly changing or being recreated,
+    // deferring updates can significantly reduce the overall number of events
+    // because we avoid generating events for the intermediate changes that
+    // occur while the parent process is busy. This also avoids the associated
+    // work to update the tree in the content process. We must defer all
+    // work here, not just mutation events, because otherwise, the tree and
+    // other events might get out of sync with the mutation events we've
+    // processed. Queued content insertions, events, etc. will be processed in
+    // a subsequent tick after we receive the ACK, though some of them may be
+    // irrelevant (and thus dropped) by the time that happens if a DOM node or
+    // Accessible was removed in the interim.
+    return;
+  }
+
   // Process parent's notifications before ours, to get proper ordering between
   // e.g. tab event and content event.
   if (WaitingForParent()) {
     mDocument->ParentDocument()->mNotificationController->WillRefresh(aTime);
-    if (!mDocument || ipc::ProcessChild::ExpectingShutdown()) {
+    if (!mDocument || AppShutdown::IsShutdownImpending()) {
       return;
     }
   }
@@ -743,7 +769,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
 #endif
 
     mDocument->DoInitialUpdate();
-    if (ipc::ProcessChild::ExpectingShutdown()) {
+    if (AppShutdown::IsShutdownImpending()) {
       return;
     }
 
@@ -968,7 +994,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     }
   }
 
-  if (ipc::ProcessChild::ExpectingShutdown()) {
+  if (AppShutdown::IsShutdownImpending()) {
     return;
   }
 
@@ -1011,17 +1037,24 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     mDocument->ClearMutationData();
   }
 
-  if (ipc::ProcessChild::ExpectingShutdown()) {
+  if (AppShutdown::IsShutdownImpending()) {
     return;
   }
 
   ProcessEventQueue();
 
-  // There should not be any more mutation events in the mutation event queue.
-  // ProcessEventQueue should have sent all of them.
   if (mDocument && mDocument->IPCDoc()) {
+    // There should not be any more mutation events in the mutation event queue.
+    // ProcessEventQueue should have sent all of them.
     MOZ_ASSERT(mDocument->IPCDoc()->MutationEventQueueLength() == 0,
                "Mutation event queue is non-empty.");
+    if (mDocument->IPCDoc()->HasUnackedMutationEvents()) {
+      // Now that all mutation events have been sent, request an ACK from the
+      // parent process. This request will be after the mutation events in the
+      // IPDL queue, so the parent process will respond once it has finished
+      // handling all the mutation events.
+      Unused << mDocument->IPCDoc()->SendRequestAckMutationEvents();
+    }
   }
 
   if (IPCAccessibilityActive()) {

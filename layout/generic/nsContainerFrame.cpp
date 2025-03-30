@@ -752,9 +752,8 @@ void nsContainerFrame::SetSizeConstraints(nsPresContext* aPresContext,
     devMaxSize.height = devMinSize.height;
   }
 
-  nsIWidget* rootWidget = aPresContext->GetNearestWidget();
   DesktopToLayoutDeviceScale constraintsScale(MOZ_WIDGET_INVALID_SCALE);
-  if (rootWidget) {
+  if (nsIWidget* rootWidget = aPresContext->GetNearestWidget()) {
     constraintsScale = rootWidget->GetDesktopToDeviceScale();
   }
 
@@ -763,7 +762,8 @@ void nsContainerFrame::SetSizeConstraints(nsPresContext* aPresContext,
   // The sizes are in inner window sizes, so convert them into outer window
   // sizes. Use a size of (200, 200) as only the difference between the inner
   // and outer size is needed.
-  const LayoutDeviceIntSize sizeDiff = aWidget->ClientToWindowSizeDifference();
+  const LayoutDeviceIntSize sizeDiff =
+      aWidget->NormalSizeModeClientToWindowSizeDifference();
   if (constraints.mMinSize.width) {
     constraints.mMinSize.width += sizeDiff.width;
   }
@@ -3077,7 +3077,8 @@ void nsContainerFrame::List(FILE* out, const char* aPrefix,
                             ListFlags aFlags) const {
   nsCString str;
   ListGeneric(str, aPrefix, aFlags);
-  ExtraContainerFrameInfo(str);
+  ExtraContainerFrameInfo(str,
+                          aFlags.contains(ListFlag::OnlyListDeterministicInfo));
 
   // Output the frame name and various fields.
   fprintf_stderr(out, "%s <\n", str.get());
@@ -3129,8 +3130,9 @@ void nsContainerFrame::ListChildLists(FILE* aOut, const char* aPrefix,
 
     // Use nsPrintfCString so that %p don't output prefix "0x". This is
     // consistent with nsIFrame::ListTag().
-    const nsPrintfCString str("%s%s@%p <\n", aPrefix, ChildListName(listID),
-                              &GetChildList(listID));
+    nsCString str{nsPrintfCString("%s%s", aPrefix, ChildListName(listID))};
+    ListPtr(str, aFlags, &GetChildList(listID), "@");
+    str += " <\n";
     fprintf_stderr(aOut, "%s", str.get());
 
     for (nsIFrame* kid : list) {
@@ -3142,8 +3144,6 @@ void nsContainerFrame::ListChildLists(FILE* aOut, const char* aPrefix,
   }
 }
 
-void nsContainerFrame::ExtraContainerFrameInfo(nsACString& aTo) const {
-  (void)aTo;
-}
+void nsContainerFrame::ExtraContainerFrameInfo(nsACString&, bool) const {}
 
 #endif

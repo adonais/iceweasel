@@ -355,12 +355,13 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/1865199
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
     notification_emails:
       - bvandersloot@mozilla.com
-    expires: 138
+    expires: 147
 
   set_cookie_foreign:
     type: rate
@@ -371,12 +372,13 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/1865199
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
     notification_emails:
       - bvandersloot@mozilla.com
-    expires: 138
+    expires: 147
     denominator_metric: networking.set_cookie
 
   set_cookie_partitioned:
@@ -387,12 +389,13 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/1865199
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
     notification_emails:
       - bvandersloot@mozilla.com
-    expires: 138
+    expires: 147
     denominator_metric: networking.set_cookie
 
   set_cookie_foreign_partitioned:
@@ -404,28 +407,13 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/1865199
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
     notification_emails:
       - bvandersloot@mozilla.com
-    expires: 138
-    denominator_metric: networking.set_cookie
-
-  set_cookie_expired_without_server_time:
-    type: rate
-    description: >
-      This counts the number of times a cookie is set already expires but it
-      would not if we considered the server time.
-    bugs:
-      - https://bugzilla.mozilla.org/1909980
-      - https://bugzilla.mozilla.org/1916532
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1909980#c7
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1916532#c7
-    notification_emails:
-      - baku@mozilla.com
-    expires: 138
+    expires: 147
     denominator_metric: networking.set_cookie
 
   dns_lookup_time:
@@ -647,7 +635,7 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1873551
     notification_emails:
       - smayya@mozilla.com
-    expires: 138
+    expires: 146
     labels:
       - total_keepalive_limit
       - per_origin_limit
@@ -663,7 +651,7 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1873551
     notification_emails:
       - smayya@mozilla.com
-    expires: 138
+    expires: 146
     labels:
       - worker
       - main
@@ -800,14 +788,15 @@ networking:
     description: >
       The number of times we see the IP address 0.0.0.0 or its IPv6 equivalent.
     bugs:
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1914583
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1919216
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1949775
     data_reviews:
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1914583
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1919216
     data_sensitivity:
     - technical
     notification_emails:
     - necko@mozilla.com
-    expires: 138
+    expires: 145
     labels:
     - not_blocked_requests
     - blocked_requests
@@ -818,13 +807,14 @@ networking:
         The number of times we see the IP address 0.0.0.0 or its IPv6 equivalent used as hostnames
     bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1937743
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1949775
     data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1937743
     data_sensitivity:
     - technical
     notification_emails:
     - necko@mozilla.com
-    expires: 138
+    expires: 145
     labels:
     - success
     - failure
@@ -1287,7 +1277,9 @@ networking:
     expires: never
     labels:
       - capable
-      - not-capable
+      - black-hole
+      - bleaching
+      - received-unsent-ect-1
 
   http_3_loss_ratio:
     type: custom_distribution
@@ -2015,6 +2007,454 @@ networking:
       - necko@mozilla.com
       - minden@mozilla.com
     expires: never
+
+  prconnect_blocking_time_normal:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Connect when we are not shutting down and there
+      has been niether a network nor an offline state change in the last 60s
+      (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_BLOCKING_TIME_NORMAL.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_BLOCKING_TIME_NORMAL
+
+  prconnect_blocking_time_shutdown:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Connect during a shutdown (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_BLOCKING_TIME_SHUTDOWN.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_BLOCKING_TIME_SHUTDOWN
+
+  prconnect_blocking_time_connectivity_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Connect when there has been the connectiviy
+      change in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_BLOCKING_TIME_CONNECTIVITY_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_BLOCKING_TIME_CONNECTIVITY_CHANGE
+
+  prconnect_blocking_time_link_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Connect when there has been a link change in the
+      last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_BLOCKING_TIME_LINK_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_BLOCKING_TIME_LINK_CHANGE
+
+  prconnect_blocking_time_offline:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Connect when the offline state has changed in the
+      last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_BLOCKING_TIME_OFFLINE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_BLOCKING_TIME_OFFLINE
+
+  prconnect_fail_blocking_time_normal:
+    type: timing_distribution
+    description: >
+      Time spent blocked in a failed PR_Connect when we are not shutting down
+      and there has been niether a network nor an offline state change in the
+      last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_FAIL_BLOCKING_TIME_NORMAL.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_FAIL_BLOCKING_TIME_NORMAL
+
+  prconnect_fail_blocking_time_shutdown:
+    type: timing_distribution
+    description: >
+      Time spent blocked in a failed PR_Connect during a shutdown (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_FAIL_BLOCKING_TIME_SHUTDOWN.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_FAIL_BLOCKING_TIME_SHUTDOWN
+
+  prconnect_fail_blocking_time_connectivity_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in a failed PR_Connect when there has been the
+      connectiviy change in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_FAIL_BLOCKING_TIME_CONNECTIVITY_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_FAIL_BLOCKING_TIME_CONNECTIVITY_CHANGE
+
+  prconnect_fail_blocking_time_link_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in a failed PR_Connect when there has been a link
+      change in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_FAIL_BLOCKING_TIME_LINK_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_FAIL_BLOCKING_TIME_LINK_CHANGE
+
+  prconnect_fail_blocking_time_offline:
+    type: timing_distribution
+    description: >
+      Time spent blocked in a failed PR_Connect when the offline state has
+      changed in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECT_FAIL_BLOCKING_TIME_OFFLINE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1257809
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECT_FAIL_BLOCKING_TIME_OFFLINE
+
+  prconnectcontinue_blocking_time_normal:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_ConnectContinue when we are not shutting down and
+      there has been niether a network nor an offline state change in the last
+      60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECTCONTINUE_BLOCKING_TIME_NORMAL.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECTCONTINUE_BLOCKING_TIME_NORMAL
+
+  prconnectcontinue_blocking_time_shutdown:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_ConnectContinue during a shutdown (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECTCONTINUE_BLOCKING_TIME_SHUTDOWN.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECTCONTINUE_BLOCKING_TIME_SHUTDOWN
+
+  prconnectcontinue_blocking_time_connectivity_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_ConnectContinue when there has been the
+      connectivity change in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECTCONTINUE_BLOCKING_TIME_CONNECTIVITY_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECTCONTINUE_BLOCKING_TIME_CONNECTIVITY_CHANGE
+
+  prconnectcontinue_blocking_time_link_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_ConnectContinue when there has been a link change
+      in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECTCONTINUE_BLOCKING_TIME_LINK_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECTCONTINUE_BLOCKING_TIME_LINK_CHANGE
+
+  prconnectcontinue_blocking_time_offline:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_ConnectContinue when the offline state has
+      changed in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCONNECTCONTINUE_BLOCKING_TIME_OFFLINE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCONNECTCONTINUE_BLOCKING_TIME_OFFLINE
+
+  prclose_tcp_blocking_time_normal:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when we are not shutting down and there has
+      been niether a network nor an offline state change in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_TCP_BLOCKING_TIME_NORMAL.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_TCP_BLOCKING_TIME_NORMAL
+
+  prclose_tcp_blocking_time_shutdown:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close during a shutdown (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_TCP_BLOCKING_TIME_SHUTDOWN.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_TCP_BLOCKING_TIME_SHUTDOWN
+
+  prclose_tcp_blocking_time_connectivity_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when there has been the connectivity change
+      in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_TCP_BLOCKING_TIME_CONNECTIVITY_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_TCP_BLOCKING_TIME_CONNECTIVITY_CHANGE
+
+  prclose_tcp_blocking_time_link_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when there has been a link change in the
+      last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_TCP_BLOCKING_TIME_LINK_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_TCP_BLOCKING_TIME_LINK_CHANGE
+
+  prclose_tcp_blocking_time_offline:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when the offline state has changed in the
+      last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_TCP_BLOCKING_TIME_OFFLINE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_TCP_BLOCKING_TIME_OFFLINE
+
+  prclose_udp_blocking_time_normal:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when we are not shutting down and there has
+      been niether a network nor an offline state change in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_UDP_BLOCKING_TIME_NORMAL.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_UDP_BLOCKING_TIME_NORMAL
+
+  prclose_udp_blocking_time_shutdown:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close during a shutdown (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_UDP_BLOCKING_TIME_SHUTDOWN.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_UDP_BLOCKING_TIME_SHUTDOWN
+
+  prclose_udp_blocking_time_connectivity_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when there has been the connectivity change
+      in the last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_UDP_BLOCKING_TIME_CONNECTIVITY_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_UDP_BLOCKING_TIME_CONNECTIVITY_CHANGE
+
+  prclose_udp_blocking_time_link_change:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when there has been a link change in the
+      last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_UDP_BLOCKING_TIME_LINK_CHANGE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_UDP_BLOCKING_TIME_LINK_CHANGE
+
+  prclose_udp_blocking_time_offline:
+    type: timing_distribution
+    description: >
+      Time spent blocked in PR_Close when the offline state has changed in the
+      last 60s (ms).
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PRCLOSE_UDP_BLOCKING_TIME_OFFLINE.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: PRCLOSE_UDP_BLOCKING_TIME_OFFLINE
 
 network.dns:
   trr_confirmation_context:

@@ -327,7 +327,7 @@ void GPUChild::ActorDestroy(ActorDestroyReason aWhy) {
 
     nsAutoString dumpId;
     if (!mCreatedPairedMinidumps) {
-      GenerateCrashReport(OtherPid(), &dumpId);
+      GenerateCrashReport(&dumpId);
     } else if (mCrashReporter) {
       dumpId = mCrashReporter->MinidumpID();
     }
@@ -386,7 +386,7 @@ mozilla::ipc::IPCResult GPUChild::RecvUpdateMediaCodecsSupported(
   media::MediaCodecsSupported trimedSupported = aSupported;
   if (aSupported.contains(
           mozilla::media::MediaCodecsSupport::HEVCHardwareDecode) &&
-      StaticPrefs::media_wmf_hevc_enabled() != 1) {
+      !StaticPrefs::media_hevc_enabled()) {
     trimedSupported -= mozilla::media::MediaCodecsSupport::HEVCHardwareDecode;
   }
   dom::ContentParent::BroadcastMediaCodecsSupportedUpdate(

@@ -25,6 +25,7 @@ import androidx.test.espresso.contrib.PickerActions
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
+import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
@@ -1107,6 +1108,42 @@ class BrowserRobot {
         return searchBar.getText()
     }
 
+    fun selectToAlwaysOpenDownloadedFileWithApp(appName: String) {
+        Log.i(TAG, "selectToAlwaysOpenDownloadedFileWithApp: Trying to click $appName from the \"Open with\" prompt")
+        itemWithResIdContainingText("android:id/text1", appName).click()
+        Log.i(TAG, "selectToAlwaysOpenDownloadedFileWithApp: Clicked $appName from the \"Open with\" prompt")
+        Log.i(TAG, "selectToAlwaysOpenDownloadedFileWithApp: Trying to click the \"Always\" button from the \"Open with\" prompt")
+        itemWithResId("android:id/button_always").click()
+        Log.i(TAG, "selectToAlwaysOpenDownloadedFileWithApp: Clicked the \"Always\" button from the \"Open with\" prompt")
+    }
+
+    fun verifyWebCompatReporterViewItems(websiteURL: String) {
+        assertUIObjectExists(
+            itemContainingText(
+                "Help make $appName better for everyone. Mozilla employees use the info you send to fix website problems.",
+            ),
+            itemContainingText(getStringResource(R.string.webcompat_reporter_label_url)),
+            itemContainingText(websiteURL),
+            itemContainingText(getStringResource(R.string.webcompat_reporter_label_whats_broken_2)),
+            itemContainingText(getStringResource(R.string.webcompat_reporter_choose_reason)),
+            itemContainingText(getStringResource(R.string.webcompat_reporter_label_description)),
+            itemContainingText(getStringResource(R.string.webcompat_reporter_send_more_info)),
+            itemContainingText(getStringResource(R.string.webcompat_reporter_send)),
+        )
+    }
+
+    fun verifyToolsMenuDoesNotExist() {
+        assertUIObjectIsGone(itemWithDescription(getStringResource(R.string.browser_tools_menu_handlebar_content_description)))
+    }
+
+    fun verifySaveMenuDoesNotExist() {
+        assertUIObjectIsGone(itemWithDescription(getStringResource(R.string.browser_save_menu_handlebar_content_description)))
+    }
+
+    fun verifyExtensionsMenuDoesNotExist() {
+        assertUIObjectIsGone(itemWithDescription(getStringResource(R.string.browser_extensions_menu_handlebar_content_description)))
+    }
+
     class Transition {
         fun openThreeDotMenu(interact: ThreeDotMenuMainRobot.() -> Unit): ThreeDotMenuMainRobot.Transition {
             Log.i(TAG, "openThreeDotMenu: Waiting for device to be idle for $waitingTime ms")
@@ -1222,7 +1259,13 @@ class BrowserRobot {
         }
 
         fun goToHomescreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
-            clickPageObject(itemWithDescription("Home screen"))
+            Log.i(TAG, "goToHomescreen: Trying to click the go to home screen button.")
+            onView(
+                allOf(
+                    withContentDescription("Home screen"),
+                    isDescendantOfA(withId(R.id.toolbar)),
+                ),
+            ).click()
             Log.i(TAG, "goToHomescreen: Waiting for $waitingTime ms for for home screen layout or jump back in contextual hint to exist")
             mDevice.findObject(UiSelector().resourceId("$packageName:id/homeLayout"))
                 .waitForExists(waitingTime)
@@ -1235,8 +1278,7 @@ class BrowserRobot {
         fun goToHomescreenWithRedesignedToolbar(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             itemWithResId("$packageName:id/new_tab_button").click()
             searchScreen {
-            }.dismissSearchBar {
-            }
+            }.dismissSearchBar {}
             Log.i(TAG, "goToHomescreenWithRedesignedToolbar: Waiting for $waitingTime ms for for home screen layout or jump back in contextual hint to exist")
             mDevice.findObject(UiSelector().resourceId("$packageName:id/homeLayout"))
                 .waitForExists(waitingTime)
@@ -1436,6 +1478,15 @@ class BrowserRobot {
 
             ShareOverlayRobot().interact()
             return ShareOverlayRobot.Transition()
+        }
+
+        fun closeWebCompatReporter(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "clickShareButtonFromRedesignedToolbar: Trying to click the \"Navigate back\" button")
+            itemWithDescription("Navigate back").click()
+            Log.i(TAG, "clickShareButtonFromRedesignedToolbar: Clicked the \"Navigate back\" button")
+
+            BrowserRobot().interact()
+            return BrowserRobot.Transition()
         }
     }
 }

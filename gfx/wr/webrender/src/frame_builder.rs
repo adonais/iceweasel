@@ -246,6 +246,7 @@ pub struct PictureContext {
     pub pic_index: PictureIndex,
     pub surface_spatial_node_index: SpatialNodeIndex,
     pub raster_spatial_node_index: SpatialNodeIndex,
+    pub visibility_spatial_node_index: SpatialNodeIndex,
     /// The surface that this picture will render on.
     pub surface_index: SurfaceIndex,
     pub dirty_region_count: usize,
@@ -256,7 +257,7 @@ pub struct PictureContext {
 /// the children are processed.
 pub struct PictureState {
     pub map_local_to_pic: SpaceMapper<LayoutPixel, PicturePixel>,
-    pub map_pic_to_world: SpaceMapper<PicturePixel, WorldPixel>,
+    pub map_pic_to_vis: SpaceMapper<PicturePixel, VisPixel>,
 }
 
 impl FrameBuilder {
@@ -532,6 +533,7 @@ impl FrameBuilder {
             // primitive.
             let mut default_dirty_region = DirtyRegion::new(
                 root_spatial_node_index,
+                root_spatial_node_index,
             );
             default_dirty_region.add_dirty_region(
                 PictureRect::max_rect(),
@@ -574,6 +576,7 @@ impl FrameBuilder {
         // against the screen world rect, in absence of any
         // other dirty regions.
         let mut default_dirty_region = DirtyRegion::new(
+            root_spatial_node_index,
             root_spatial_node_index,
         );
         default_dirty_region.add_dirty_region(

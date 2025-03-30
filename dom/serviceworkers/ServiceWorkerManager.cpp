@@ -21,6 +21,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsDebug.h"
 #include "nsIPermissionManager.h"
+#include "nsIPushService.h"
 #include "nsXULAppAPI.h"
 
 #include "jsapi.h"
@@ -34,7 +35,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomServiceworkersMetrics.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ClientHandle.h"
 #include "mozilla/dom/ClientManager.h"
@@ -509,20 +510,22 @@ void ServiceWorkerManager::RecordTelemetry(uint32_t aNumber, uint32_t aFetch) {
         // after a few months running. 1 month is about 500K repeats @ 5s
         // sampling
         uint32_t num_repeats = std::min(repeats, 1000000U);  // 4MB max
-        nsTArray<uint32_t> values;
+        nsTArray<uint64_t> values;
 
-        uint32_t* array = values.AppendElements(num_repeats);
+        uint64_t* array = values.AppendElements(num_repeats);
         for (uint32_t i = 0; i < num_repeats; i++) {
           array[i] = aNumber;
         }
-        Telemetry::Accumulate(Telemetry::SERVICE_WORKER_RUNNING, "All"_ns,
-                              values);
+        glean::service_worker::running
+            .EnumGet(glean::service_worker::RunningLabel::eAll)
+            .AccumulateSamples(values);
 
         for (uint32_t i = 0; i < num_repeats; i++) {
           array[i] = aFetch;
         }
-        Telemetry::Accumulate(Telemetry::SERVICE_WORKER_RUNNING, "Fetch"_ns,
-                              values);
+        glean::service_worker::running
+            .EnumGet(glean::service_worker::RunningLabel::eFetch)
+            .AccumulateSamples(values);
       });
   NS_DispatchBackgroundTask(runnable.forget(), nsIEventTarget::DISPATCH_NORMAL);
 }
@@ -827,7 +830,7 @@ ServiceWorkerManager::RegisterForTest(nsIPrincipal* aPrincipal,
 RefPtr<ServiceWorkerRegistrationPromise> ServiceWorkerManager::Register(
     const ClientInfo& aClientInfo, const nsACString& aScopeURL,
     const nsACString& aScriptURL, ServiceWorkerUpdateViaCache aUpdateViaCache) {
-  AUTO_PROFILER_MARKER_TEXT("SWM Register", DOM, {}, ""_ns);
+  AUTO_PROFILER_MARKER_UNTYPED("SWM Register", DOM, {});
 
   nsCOMPtr<nsIURI> scopeURI;
   nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), aScopeURL);
@@ -1111,7 +1114,8 @@ nsresult ServiceWorkerManager::SendPushEvent(
 
 NS_IMETHODIMP
 ServiceWorkerManager::SendPushSubscriptionChangeEvent(
-    const nsACString& aOriginAttributes, const nsACString& aScope) {
+    const nsACString& aOriginAttributes, const nsACString& aScope,
+    nsIPushSubscription* aOldSubscription) {
   OriginAttributes attrs;
   if (!attrs.PopulateFromSuffix(aOriginAttributes)) {
     return NS_ERROR_INVALID_ARG;
@@ -1121,7 +1125,8 @@ ServiceWorkerManager::SendPushSubscriptionChangeEvent(
   if (!info) {
     return NS_ERROR_FAILURE;
   }
-  return info->WorkerPrivate()->SendPushSubscriptionChangeEvent();
+  return info->WorkerPrivate()->SendPushSubscriptionChangeEvent(
+      aOldSubscription);
 }
 
 nsresult ServiceWorkerManager::SendNotificationEvent(
@@ -1141,8 +1146,15 @@ nsresult ServiceWorkerManager::SendNotificationEvent(
   }
 
   ServiceWorkerPrivate* workerPrivate = info->WorkerPrivate();
-  return workerPrivate->SendNotificationEvent(
-      aEventName, aID, aTitle, aDir, aLang, aBody, aTag, aIcon, aData, aScope);
+
+  NotificationDirection dir = StringToEnum<NotificationDirection>(aDir).valueOr(
+      NotificationDirection::Auto);
+
+  // XXX(krosylight): Some notifications options are missing in SWM
+  IPCNotificationOptions options(
+      nsString(aTitle), dir, nsString(aLang), nsString(aBody), nsString(aTag),
+      nsString(aIcon), false, false, nsTArray<uint32_t>(), nsString(aData));
+  return workerPrivate->SendNotificationEvent(aEventName, aScope, aID, options);
 }
 
 NS_IMETHODIMP

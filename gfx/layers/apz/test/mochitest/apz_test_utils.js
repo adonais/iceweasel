@@ -244,16 +244,20 @@ function isLayerized(elementId) {
 // Return a rect (or null) that holds the last known content-side displayport
 // for a given element. (The element selection works the same way, and with
 // the same assumptions as the isLayerized function above).
-function getLastContentDisplayportFor(elementId, expectPainted = true) {
-  var contentTestData =
-    SpecialPowers.getDOMWindowUtils(window).getContentAPZTestData();
+function getLastContentDisplayportFor(
+  aElementId,
+  aOptions = { expectPainted: true, popupElement: null }
+) {
+  var contentTestData = SpecialPowers.getDOMWindowUtils(
+    aOptions.popupElement ? aOptions.popupElement.ownerGlobal : window
+  ).getContentAPZTestData(aOptions.popupElement);
   if (contentTestData == undefined) {
-    ok(!expectPainted, "expected to have apz test data (1)");
+    ok(!aOptions.expectPainted, "expected to have apz test data (1)");
     return null;
   }
   var nonEmptyBucket = getLastNonemptyBucket(contentTestData.paints);
   if (nonEmptyBucket == null) {
-    ok(!expectPainted, "expected to have apz test data (2)");
+    ok(!aOptions.expectPainted, "expected to have apz test data (2)");
     return null;
   }
   var seqno = nonEmptyBucket.sequenceNumber;
@@ -261,7 +265,7 @@ function getLastContentDisplayportFor(elementId, expectPainted = true) {
   var paint = contentTestData.paints[seqno];
   for (var scrollId in paint) {
     if ("contentDescription" in paint[scrollId]) {
-      if (paint[scrollId].contentDescription.includes(elementId)) {
+      if (paint[scrollId].contentDescription.includes(aElementId)) {
         if ("displayport" in paint[scrollId]) {
           return parseRect(paint[scrollId].displayport);
         }
@@ -785,23 +789,11 @@ function centerOf(element) {
 // The returned object has two fields:
 //   hitInfo: a combination of APZHitResultFlags
 //   scrollId: the view-id of the scroll frame that was hit
-function hitTest(point) {
+function hitTest(point, popupElement = null) {
   var utils = getHitTestConfig().utils;
   dump("Hit-testing point (" + point.x + ", " + point.y + ")\n");
-  utils.sendMouseEvent(
-    "MozMouseHittest",
-    point.x,
-    point.y,
-    0,
-    0,
-    0,
-    true,
-    0,
-    0,
-    true,
-    true
-  );
-  var data = utils.getCompositorAPZTestData();
+  utils.sendMozMouseHitTestEvent(point.x, point.y, popupElement);
+  var data = utils.getCompositorAPZTestData(popupElement);
   ok(
     data.hitResults.length >= 1,
     "Expected at least one hit result in the APZTestData"
@@ -1216,12 +1208,14 @@ async function cancelScrollAnimation(aElement, aWindow = window) {
 }
 
 function collectSampledScrollOffsets(aElement, aPopupElement = null) {
-  let data =
-    SpecialPowers.DOMWindowUtils.getCompositorAPZTestData(aPopupElement);
+  const utils = SpecialPowers.getDOMWindowUtils(
+    aPopupElement ? aPopupElement.ownerGlobal : window
+  );
+  let data = utils.getCompositorAPZTestData(aPopupElement);
   let sampledResults = data.sampledResults;
 
-  const layersId = SpecialPowers.DOMWindowUtils.getLayersId(aPopupElement);
-  const scrollId = SpecialPowers.DOMWindowUtils.getViewId(aElement);
+  const layersId = utils.getLayersId(aPopupElement);
+  const scrollId = utils.getViewId(aElement);
 
   return sampledResults.filter(
     result =>
@@ -1288,5 +1282,27 @@ async function setupCrossOriginIFrame(aIFrame, aUrl, aIsOffScreen = false) {
     await SpecialPowers.spawn(aIFrame, [], async () => {
       await SpecialPowers.contentTransformsReceived(content);
     });
+  }
+}
+
+// Make sure APZ is ready for the popup.
+// With enabling GPU process initiating APZ in the popup takes some time.
+// Before the APZ has been initiated, calling flushApzRepaints() for the popup
+// returns false.
+async function ensureApzReadyForPopup(
+  aPopupElement,
+  aWindow = window,
+  aRetry = 10
+) {
+  let retry = 0;
+  while (
+    !SpecialPowers.getDOMWindowUtils(aWindow).flushApzRepaints(aPopupElement)
+  ) {
+    await promiseFrame();
+    retry++;
+    if (retry > aRetry) {
+      ok(false, "The popup didn't initialize APZ");
+      return;
+    }
   }
 }

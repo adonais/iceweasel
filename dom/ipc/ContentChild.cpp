@@ -2090,18 +2090,18 @@ mozilla::ipc::IPCResult ContentChild::RecvRegisterChromeItem(
   return IPC_OK();
 }
 mozilla::ipc::IPCResult ContentChild::RecvClearStyleSheetCache(
-    const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
+    const Maybe<bool>& aChrome, const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
     const Maybe<nsCString>& aSchemelessSite,
     const Maybe<OriginAttributesPattern>& aPattern) {
-  SharedStyleSheetCache::Clear(aPrincipal, aSchemelessSite, aPattern);
+  SharedStyleSheetCache::Clear(aChrome, aPrincipal, aSchemelessSite, aPattern);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvClearScriptCache(
-    const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
+    const Maybe<bool>& aChrome, const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
     const Maybe<nsCString>& aSchemelessSite,
     const Maybe<OriginAttributesPattern>& aPattern) {
-  SharedScriptCache::Clear(aPrincipal, aSchemelessSite, aPattern);
+  SharedScriptCache::Clear(aChrome, aPrincipal, aSchemelessSite, aPattern);
   return IPC_OK();
 }
 
@@ -2129,7 +2129,7 @@ mozilla::ipc::IPCResult ContentChild::RecvClearImageCacheFromSite(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvClearImageCache(
-    const bool& privateLoader, const bool& chrome) {
+    const bool& privateLoader, const mozilla::Maybe<bool>& chrome) {
   imgLoader* loader = privateLoader ? imgLoader::PrivateBrowsingLoader()
                                     : imgLoader::NormalLoader();
 
@@ -2731,7 +2731,8 @@ mozilla::ipc::IPCResult ContentChild::RecvInitBlobURLs(
     // for a while (see BlobURLProtocolHandler) in order to support pending
     // operations such as navigation, download and so on.
     if (registration.revoked()) {
-      BlobURLProtocolHandler::RemoveDataEntry(registration.url(), false);
+      BlobURLProtocolHandler::RemoveDataEntries(nsTArray{registration.url()},
+                                                false);
     }
   }
 
@@ -3188,13 +3189,6 @@ mozilla::ipc::IPCResult ContentChild::RecvPushWithData(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvPushSubscriptionChange(
-    const nsCString& aScope, nsIPrincipal* aPrincipal) {
-  PushSubscriptionChangeDispatcher dispatcher(aScope, aPrincipal);
-  Unused << NS_WARN_IF(NS_FAILED(dispatcher.NotifyObserversAndWorkers()));
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentChild::RecvPushError(const nsCString& aScope,
                                                     nsIPrincipal* aPrincipal,
                                                     const nsString& aMessage,
@@ -3224,20 +3218,20 @@ mozilla::ipc::IPCResult ContentChild::RecvBlobURLRegistration(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvBlobURLUnregistration(
-    const nsCString& aURI) {
-  BlobURLProtocolHandler::RemoveDataEntry(
-      aURI,
+    const nsTArray<nsCString>& aURIs) {
+  BlobURLProtocolHandler::RemoveDataEntries(
+      aURIs,
       /* aBroadcastToOtherProcesses = */ false);
   return IPC_OK();
 }
 
-void ContentChild::CreateGetFilesRequest(const nsAString& aDirectoryPath,
+void ContentChild::CreateGetFilesRequest(nsTArray<nsString>&& aDirectoryPaths,
                                          bool aRecursiveFlag, nsID& aUUID,
                                          GetFilesHelperChild* aChild) {
   MOZ_ASSERT(aChild);
   MOZ_ASSERT(!mGetFilesPendingRequests.Contains(aUUID));
 
-  Unused << SendGetFilesRequest(aUUID, aDirectoryPath, aRecursiveFlag);
+  Unused << SendGetFilesRequest(aUUID, aDirectoryPaths, aRecursiveFlag);
   mGetFilesPendingRequests.InsertOrUpdate(aUUID, RefPtr{aChild});
 }
 
@@ -3315,6 +3309,20 @@ PURLClassifierLocalChild* ContentChild::AllocPURLClassifierLocalChild(
 
 bool ContentChild::DeallocPURLClassifierLocalChild(
     PURLClassifierLocalChild* aActor) {
+  MOZ_ASSERT(aActor);
+  delete aActor;
+  return true;
+}
+
+PURLClassifierLocalByNameChild*
+ContentChild::AllocPURLClassifierLocalByNameChild(
+    nsIURI* aUri, Span<const nsCString> aFeatures,
+    const nsIUrlClassifierFeature::listType& aListType) {
+  return new URLClassifierLocalByNameChild();
+}
+
+bool ContentChild::DeallocPURLClassifierLocalByNameChild(
+    PURLClassifierLocalByNameChild* aActor) {
   MOZ_ASSERT(aActor);
   delete aActor;
   return true;

@@ -4276,6 +4276,7 @@ void MacroAssembler::Push(const ImmGCPtr ptr) {
 }
 
 void MacroAssembler::Push(FloatRegister reg) {
+  MOZ_ASSERT(reg.isFloat(), "simd128 not supported");
   VFPRegister r = VFPRegister(reg);
   ma_vpush(VFPRegister(reg));
   adjustFrame(r.size());
@@ -4292,6 +4293,7 @@ void MacroAssembler::Pop(Register reg) {
 }
 
 void MacroAssembler::Pop(FloatRegister reg) {
+  MOZ_ASSERT(reg.isFloat(), "simd128 not supported");
   ma_vpop(reg);
   adjustFrame(-reg.size());
 }
@@ -4759,6 +4761,7 @@ void MacroAssembler::branchValueIsNurseryCell(Condition cond,
 void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  MOZ_ASSERT(!rhs.isNaN());
   // If cond == NotEqual, branch when a.payload != b.payload || a.tag !=
   // b.tag. If the payloads are equal, compare the tags. If the payloads are
   // not equal, short circuit true (NotEqual).
@@ -4774,6 +4777,22 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
     ma_cmp(lhs.payloadReg(), Imm32(rhs.toNunboxPayload()), scratch);
   }
   ma_cmp(lhs.typeReg(), Imm32(rhs.toNunboxTag()), scratch, Equal);
+  ma_b(label, cond);
+}
+
+void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
+                                        Register temp, Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  ScratchRegisterScope scratch(*this);
+
+  // When testing for NaN, we want to ignore the sign bit.
+  static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
+  const uint32_t SignBit = mozilla::FloatingPoint<double>::kSignBit >> 32;
+  as_bic(temp, val.typeReg(), Imm8(SignBit));
+
+  Value expected = DoubleValue(JS::GenericNaN());
+  ma_cmp(val.payloadReg(), Imm32(expected.toNunboxPayload()), scratch);
+  ma_cmp(temp, Imm32(expected.toNunboxTag()), scratch, Equal);
   ma_b(label, cond);
 }
 

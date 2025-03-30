@@ -43,7 +43,7 @@
 #include "nsNetUtil.h"
 #include "nsSerializationHelper.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/ipc/InputStreamUtils.h"
@@ -452,9 +452,9 @@ void HttpChannelChild::OnStartRequest(
   ClassOfService::ToString(mClassOfService, cosString);
   if (!mAsyncOpenTime.IsNull() &&
       !aArgs.timing().transactionPending().IsNull()) {
-    Telemetry::AccumulateTimeDelta(
-        Telemetry::NETWORK_ASYNC_OPEN_CHILD_TO_TRANSACTION_PENDING_EXP_MS,
-        cosString, mAsyncOpenTime, aArgs.timing().transactionPending());
+    glean::network::async_open_child_to_transaction_pending_exp.Get(cosString)
+        .AccumulateRawDuration(aArgs.timing().transactionPending() -
+                               mAsyncOpenTime);
     PerfStats::RecordMeasurement(
         PerfStats::Metric::HttpChannelAsyncOpenToTransactionPending,
         aArgs.timing().transactionPending() - mAsyncOpenTime);
@@ -462,9 +462,8 @@ void HttpChannelChild::OnStartRequest(
 
   const TimeStamp now = TimeStamp::Now();
   if (!aArgs.timing().responseStart().IsNull()) {
-    Telemetry::AccumulateTimeDelta(
-        Telemetry::NETWORK_RESPONSE_START_PARENT_TO_CONTENT_EXP_MS, cosString,
-        aArgs.timing().responseStart(), now);
+    glean::network::response_start_parent_to_content_exp.Get(cosString)
+        .AccumulateRawDuration(now - aArgs.timing().responseStart());
     PerfStats::RecordMeasurement(
         PerfStats::Metric::HttpChannelResponseStartParentToContent,
         now - aArgs.timing().responseStart());
@@ -1033,8 +1032,8 @@ void HttpChannelChild::OnStopRequest(
         mLastStatusReported, now, mTransferSize, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource),
-        httpVersion, responseStatus,
+        mClassOfService.Flags(), mStatus, &mTransactionTimings,
+        std::move(mSource), httpVersion, responseStatus,
         Some(nsDependentCString(contentType.get())));
   }
 
@@ -1053,9 +1052,8 @@ void HttpChannelChild::OnStopRequest(
   if (!aTiming.responseEnd().IsNull()) {
     nsAutoCString cosString;
     ClassOfService::ToString(mClassOfService, cosString);
-    Telemetry::AccumulateTimeDelta(
-        Telemetry::NETWORK_RESPONSE_END_PARENT_TO_CONTENT_MS, cosString,
-        aTiming.responseEnd(), now);
+    glean::network::response_end_parent_to_content.Get(cosString)
+        .AccumulateRawDuration(now - aTiming.responseEnd());
     PerfStats::RecordMeasurement(
         PerfStats::Metric::HttpChannelResponseEndParentToContent,
         now - aTiming.responseEnd());
@@ -1608,8 +1606,9 @@ void HttpChannelChild::Redirect1Begin(
         NetworkLoadType::LOAD_REDIRECT, mLastStatusReported, TimeStamp::Now(),
         0, kCacheUnknown, mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource),
-        Some(responseHead.Version()), Some(responseHead.Status()),
+        mClassOfService.Flags(), mStatus, &mTransactionTimings,
+        std::move(mSource), Some(responseHead.Version()),
+        Some(responseHead.Status()),
         Some(nsDependentCString(contentType.get())), newOriginalURI,
         redirectFlags, channelId);
   }
@@ -1932,7 +1931,7 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener* aListener) {
         mChannelCreationTimestamp, mLastStatusReported, 0, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags());
+        mClassOfService.Flags(), mStatus);
   }
   StoreIsPending(true);
   StoreWasOpened(true);
@@ -2275,7 +2274,7 @@ nsresult HttpChannelChild::AsyncOpenInternal(nsIStreamListener* aListener) {
         mChannelCreationTimestamp, mLastStatusReported, 0, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags());
+        mClassOfService.Flags(), mStatus);
   }
   StoreIsPending(true);
   StoreWasOpened(true);

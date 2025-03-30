@@ -706,6 +706,12 @@ class nsINode : public mozilla::dom::EventTarget {
   mozilla::Maybe<uint32_t> ComputeIndexOf(const nsINode* aPossibleChild) const;
 
   /**
+   * Return true if ComputeIndexOf() may cache the computed index for further
+   * calls.
+   */
+  [[nodiscard]] bool MaybeCachesComputedIndex() const;
+
+  /**
    * Get the index of a child within this content's flat tree children.
    *
    * @param aPossibleChild the child to get the index of.
@@ -731,6 +737,12 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   mozilla::Maybe<uint32_t> ComputeIndexInParentNode() const;
   mozilla::Maybe<uint32_t> ComputeIndexInParentContent() const;
+
+  /**
+   * Return true if the parent node may cache the computed index for further
+   * calls.
+   */
+  [[nodiscard]] bool MaybeParentCachesComputedIndex() const;
 
   /**
    * Get the index of a child within this content.
@@ -1790,9 +1802,9 @@ class nsINode : public mozilla::dom::EventTarget {
   void GetTextContent(nsAString& aTextContent, mozilla::OOMReporter& aError) {
     GetTextContentInternal(aTextContent, aError);
   }
-  void SetTextContent(const nsAString& aTextContent,
-                      nsIPrincipal* aSubjectPrincipal,
-                      mozilla::ErrorResult& aError) {
+  MOZ_CAN_RUN_SCRIPT virtual void SetTextContent(
+      const nsAString& aTextContent, nsIPrincipal* aSubjectPrincipal,
+      mozilla::ErrorResult& aError) {
     SetTextContentInternal(aTextContent, aSubjectPrincipal, aError);
   }
   void SetTextContent(const nsAString& aTextContent,
@@ -2287,7 +2299,8 @@ class nsINode : public mozilla::dom::EventTarget {
       nsINode& aOther, mozilla::Maybe<uint32_t>* aThisIndex = nullptr,
       mozilla::Maybe<uint32_t>* aOtherIndex = nullptr) const;
   void GetNodeValue(nsAString& aNodeValue) { GetNodeValueInternal(aNodeValue); }
-  void SetNodeValue(const nsAString& aNodeValue, mozilla::ErrorResult& aError) {
+  MOZ_CAN_RUN_SCRIPT virtual void SetNodeValue(const nsAString& aNodeValue,
+                                               mozilla::ErrorResult& aError) {
     SetNodeValueInternal(aNodeValue, aError);
   }
   virtual void GetNodeValueInternal(nsAString& aNodeValue);

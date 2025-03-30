@@ -72,12 +72,19 @@ export class DataSourceBase {
     this.#aggregatorApi.setNotification(notification);
   }
 
+  setDisplayMode(displayMode) {
+    this.#aggregatorApi.setDisplayMode(displayMode);
+  }
+
   discardChangesConfirmed() {
     this.#aggregatorApi.discardChangesConfirmed();
   }
 
-  formatMessages = createFormatMessages("preview/megalist.ftl");
-  static ftl = new Localization(["branding/brand.ftl", "preview/megalist.ftl"]);
+  formatMessages = createFormatMessages("preview/contextual-manager.ftl");
+  static ftl = new Localization([
+    "branding/brand.ftl",
+    "preview/contextual-manager.ftl",
+  ]);
 
   async localizeStrings(strings) {
     const keys = Object.keys(strings);
@@ -335,6 +342,7 @@ export class DataSourceBase {
             i < this.lines.length &&
             currentRecord == this.lines[i].record
           ) {
+            this.lines[i].concealed = true;
             yield this.lines[i];
             i += 1;
           }
@@ -353,6 +361,7 @@ export class DataSourceBase {
       // No search text is provided - send all lines out, count records
       let currentRecord;
       for (const line of this.lines) {
+        line.concealed = true;
         yield line;
 
         if (line.record != currentRecord) {

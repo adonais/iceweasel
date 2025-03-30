@@ -92,7 +92,7 @@ import mozilla.components.feature.contextmenu.ContextMenuFeature
 import mozilla.components.feature.downloads.DownloadsFeature
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.downloads.temporary.CopyDownloadFeature
-import mozilla.components.feature.downloads.temporary.ShareDownloadFeature
+import mozilla.components.feature.downloads.temporary.ShareResourceFeature
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.media.fullscreen.MediaSessionFullscreenFeature
 import mozilla.components.feature.privatemode.feature.SecureWindowFeature
@@ -138,6 +138,8 @@ import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.locale.ActivityContextWrapper
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.fenix.AuthenticationStatus
+import org.mozilla.fenix.BiometricAuthenticationManager
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.GleanMetrics.Events
@@ -295,7 +297,7 @@ abstract class BaseBrowserFragment :
     private val sessionFeature = ViewBoundFeatureWrapper<SessionFeature>()
     private val contextMenuFeature = ViewBoundFeatureWrapper<ContextMenuFeature>()
     private val downloadsFeature = ViewBoundFeatureWrapper<DownloadsFeature>()
-    private val shareDownloadsFeature = ViewBoundFeatureWrapper<ShareDownloadFeature>()
+    private val shareResourceFeature = ViewBoundFeatureWrapper<ShareResourceFeature>()
     private val copyDownloadsFeature = ViewBoundFeatureWrapper<CopyDownloadFeature>()
     private val promptsFeature = ViewBoundFeatureWrapper<PromptFeature>()
     private lateinit var autofillBarsIntegration: AutofillBarsIntegration
@@ -745,7 +747,7 @@ abstract class BaseBrowserFragment :
             view = view,
         )
 
-        val shareDownloadFeature = ShareDownloadFeature(
+        val shareResourceFeature = ShareResourceFeature(
             context = context.applicationContext,
             httpClient = context.components.core.client,
             store = store,
@@ -876,8 +878,8 @@ abstract class BaseBrowserFragment :
             context,
         )
 
-        shareDownloadsFeature.set(
-            shareDownloadFeature,
+        this.shareResourceFeature.set(
+            shareResourceFeature,
             owner = this,
             view = view,
         )
@@ -1443,6 +1445,7 @@ abstract class BaseBrowserFragment :
                         attrs = null,
                         engineViewParent = getSwipeRefreshLayout(),
                         topToolbarHeight = topToolbarHeight,
+                        bottomToolbarHeight = bottomToolbarHeight,
                     )
             } else {
                 val toolbarPosition = when (context.settings().toolbarPosition) {
@@ -2030,6 +2033,11 @@ abstract class BaseBrowserFragment :
             }
 
         evaluateMessagesForMicrosurvey(components)
+
+        BiometricAuthenticationManager.biometricAuthenticationNeededInfo.shouldShowAuthenticationPrompt =
+            true
+        BiometricAuthenticationManager.biometricAuthenticationNeededInfo.authenticationStatus =
+            AuthenticationStatus.NOT_AUTHENTICATED
     }
 
     private fun evaluateMessagesForMicrosurvey(components: Components) =

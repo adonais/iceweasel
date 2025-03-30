@@ -127,12 +127,14 @@ struct IPDLParamTraits<mozilla::webgl::FrontBufferSnapshotIpc> final {
 
   static void Write(IPC::MessageWriter* const writer, IProtocol* actor, T& in) {
     WriteParam(writer, in.surfSize);
+    WriteParam(writer, in.byteStride);
     WriteIPDLParam(writer, actor, std::move(in.shmem));
   }
 
   static bool Read(IPC::MessageReader* const reader, IProtocol* actor,
                    T* const out) {
     return ReadParam(reader, &out->surfSize) &&
+           ReadParam(reader, &out->byteStride) &&
            ReadIPDLParam(reader, actor, &out->shmem);
   }
 };
@@ -173,7 +175,7 @@ struct IPDLParamTraits<mozilla::webgl::TexUnpackBlobDesc> final {
     WriteParam(writer, in.structuredSrcSize);
     MOZ_RELEASE_ASSERT(!in.image);
     WriteIPDLParam(writer, actor, std::move(in.sd));
-    MOZ_RELEASE_ASSERT(!in.dataSurf);
+    MOZ_RELEASE_ASSERT(!in.sourceSurf);
     WriteParam(writer, in.unpacking);
     WriteParam(writer, in.applyUnpackTransforms);
   }

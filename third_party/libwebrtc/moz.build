@@ -18,6 +18,7 @@ DIRS += [
     "/third_party/libwebrtc/api/audio/audio_mixer_api_gn",
     "/third_party/libwebrtc/api/audio/audio_processing_gn",
     "/third_party/libwebrtc/api/audio/audio_processing_statistics_gn",
+    "/third_party/libwebrtc/api/audio/builtin_audio_processing_builder_gn",
     "/third_party/libwebrtc/api/audio/echo_control_gn",
     "/third_party/libwebrtc/api/audio_codecs/audio_codecs_api_gn",
     "/third_party/libwebrtc/api/audio_codecs/builtin_audio_decoder_factory_gn",
@@ -97,6 +98,7 @@ DIRS += [
     "/third_party/libwebrtc/api/units/time_delta_gn",
     "/third_party/libwebrtc/api/units/timestamp_gn",
     "/third_party/libwebrtc/api/video/builtin_video_bitrate_allocator_factory_gn",
+    "/third_party/libwebrtc/api/video/corruption_detection_filter_settings_gn",
     "/third_party/libwebrtc/api/video/encoded_frame_gn",
     "/third_party/libwebrtc/api/video/encoded_image_gn",
     "/third_party/libwebrtc/api/video/frame_buffer_gn",
@@ -733,6 +735,13 @@ if CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] == "x86_64":
         "/third_party/libwebrtc/modules/audio_processing/aec3/aec3_avx2_gn",
         "/third_party/libwebrtc/modules/audio_processing/agc2/rnn_vad/vector_math_avx2_gn",
         "/third_party/libwebrtc/modules/desktop_capture/desktop_capture_differ_sse2_gn"
+    ]
+
+if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "loongarch64":
+
+    DIRS += [
+        "/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn",
+        "/third_party/libwebrtc/modules/desktop_capture/primitives_gn"
     ]
 
 if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "ppc64":

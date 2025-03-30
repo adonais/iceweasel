@@ -19,6 +19,10 @@ pub mod test {
     pub const MINIDUMP_PRUNE_SAVE_COUNT: usize = super::MINIDUMP_PRUNE_SAVE_COUNT;
 }
 
+mod buildid_section {
+    include!(concat!(env!("OUT_DIR"), "/buildid_section.rs"));
+}
+
 const VENDOR_KEY: &str = "Vendor";
 const PRODUCT_KEY: &str = "ProductName";
 const DEFAULT_VENDOR: &str = "Mozilla";
@@ -32,6 +36,8 @@ pub struct Config {
     pub dump_all_threads: bool,
     /// Whether to delete the dump files after submission.
     pub delete_dump: bool,
+    /// Whether to run memtest while ui is shown
+    pub run_memtest: bool,
     /// The data directory.
     pub data_dir: Option<PathBuf>,
     /// The events directory.
@@ -84,6 +90,7 @@ impl Config {
         self.auto_submit = env_bool(ekey!("AUTO_SUBMIT"));
         self.dump_all_threads = env_bool(ekey!("DUMP_ALL_THREADS"));
         self.delete_dump = !env_bool(ekey!("NO_DELETE_DUMP"));
+        self.run_memtest = env_bool(ekey!("RUN_MEMTEST"));
         self.data_dir = env_path(ekey!("DATA_DIRECTORY"));
         self.events_dir = env_path(ekey!("EVENTS_DIRECTORY"));
         self.ping_dir = env_path(ekey!("PING_DIRECTORY"));
@@ -560,6 +567,37 @@ pub fn installation_path() -> &'static Path {
         dir_path
     });
     &*PATH
+}
+
+/// Read the buildid from the installation.
+///
+/// This may fail if installation files are not found.
+pub fn buildid() -> Option<&'static str> {
+    static BUILDID: Lazy<Option<String>> = Lazy::new(|| {
+        let section_name = buildid_section::MOZ_BUILDID_SECTION_NAME.to_str().ok()?;
+        let xul_path = installation_path().join(if cfg!(target_os = "macos") {
+            "XUL"
+        } else if cfg!(target_os = "windows") {
+            "xul.dll"
+        } else {
+            "libxul.so"
+        });
+        #[cfg(mock)]
+        let xul_path = xul_path.as_ref();
+        match buildid_reader::BuildIdReader::new(&xul_path)
+            .and_then(|mut reader| reader.read_string_build_id(section_name))
+        {
+            Ok(s) => {
+                log::info!("read build id from XUL: {s}");
+                Some(s)
+            }
+            Err(e) => {
+                log::warn!("failed to read build id from XUL: {e}");
+                None
+            }
+        }
+    });
+    BUILDID.as_deref()
 }
 
 fn self_path() -> &'static Path {

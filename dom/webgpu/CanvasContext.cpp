@@ -137,6 +137,12 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig) {
       !gfx::gfxVars::AllowSoftwareWebRenderD3D11()) {
     mUseExternalTextureInSwapChain = false;
   }
+#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+  // When DMABufDevice is not enabled, disable external texture in swap chain.
+  const auto& modifiers = gfx::gfxVars::DMABufModifiersARGB();
+  if (modifiers.IsEmpty()) {
+    mUseExternalTextureInSwapChain = false;
+  }
 #endif
   mTexture = aConfig.mDevice->InitSwapChain(
       mConfig.get(), mRemoteTextureOwnerId.ref(),
@@ -331,10 +337,29 @@ NS_IMETHODIMP CanvasContext::GetInputStream(const char* aMimeType,
                                   aMimeType, aEncoderOptions, aStream);
 }
 
+bool CanvasContext::GetIsOpaque() {
+  if (!mConfig) {
+    return false;
+  }
+  return mConfig->mAlphaMode == dom::GPUCanvasAlphaMode::Opaque;
+}
+
 already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
     gfxAlphaType* aOutAlphaType) {
-  if (aOutAlphaType) {
-    *aOutAlphaType = gfxAlphaType::Premult;
+  gfx::SurfaceFormat snapshotFormat = mGfxFormat;
+  if (GetIsOpaque()) {
+    if (aOutAlphaType) {
+      *aOutAlphaType = gfxAlphaType::Opaque;
+    }
+    if (mGfxFormat == gfx::SurfaceFormat::B8G8R8A8) {
+      snapshotFormat = gfx::SurfaceFormat::B8G8R8X8;
+    } else if (mGfxFormat == gfx::SurfaceFormat::R8G8B8A8) {
+      snapshotFormat = gfx::SurfaceFormat::R8G8B8X8;
+    }
+  } else {
+    if (aOutAlphaType) {
+      *aOutAlphaType = gfxAlphaType::Premult;
+    }
   }
 
   auto* const cm = gfx::CanvasManagerChild::Get();
@@ -353,7 +378,7 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
   RawId encoderId = ffi::wgpu_client_make_encoder_id(mBridge->GetClient());
   RefPtr<gfx::SourceSurface> snapshot =
       cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
-                      Some(encoderId), mGfxFormat, /* aPremultiply */ false,
+                      Some(encoderId), snapshotFormat, /* aPremultiply */ false,
                       /* aYFlip */ false);
   ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(), encoderId);
   return snapshot.forget();

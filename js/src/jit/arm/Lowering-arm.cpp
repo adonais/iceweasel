@@ -292,13 +292,22 @@ void LIRGeneratorARM::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
 template <class LInstr>
 void LIRGeneratorARM::lowerForShiftInt64(LInstr* ins, MDefinition* mir,
                                          MDefinition* lhs, MDefinition* rhs) {
+  LAllocation rhsAlloc;
+  if (rhs->isConstant()) {
+    rhsAlloc = useOrConstant(rhs);
+  } else {
+    // The operands are int64, but we only care about the lower 32 bits of the
+    // RHS. The code below will load that part and will discard the upper half.
+    rhsAlloc = useLowWordRegister(rhs);
+  }
+
   if constexpr (std::is_same_v<LInstr, LShiftI64>) {
     ins->setLhs(useInt64RegisterAtStart(lhs));
-    ins->setRhs(useRegisterOrConstant(rhs));
+    ins->setRhs(rhsAlloc);
     defineInt64ReuseInput(ins, mir, LShiftI64::LhsIndex);
   } else {
     ins->setInput(useInt64RegisterAtStart(lhs));
-    ins->setCount(useRegisterOrConstant(rhs));
+    ins->setCount(rhsAlloc);
     if (!rhs->isConstant()) {
       ins->setTemp0(temp());
     }
@@ -730,13 +739,9 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
 
   LAllocation ptr = useRegisterAtStart(base);
 
-  if (ins->value()->type() == MIRType::Int64) {
-    LDefinition ptrCopy = LDefinition::BogusTemp();
-    if (ins->access().offset32() || ins->access().type() == Scalar::Int64) {
-      ptrCopy = tempCopy(base, 0);
-    }
-
+  if (ins->access().type() == Scalar::Int64) {
     LInt64Allocation value = useInt64RegisterAtStart(ins->value());
+    LDefinition ptrCopy = tempCopy(base, 0);
     auto* lir = new (alloc()) LWasmStoreI64(ptr, value, memoryBase, ptrCopy);
     add(lir, ins);
     return;
@@ -747,7 +752,13 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
     ptrCopy = tempCopy(base, 0);
   }
 
-  LAllocation value = useRegisterAtStart(ins->value());
+  LAllocation value;
+  if (ins->value()->type() != MIRType::Int64) {
+    value = useRegisterAtStart(ins->value());
+  } else {
+    value = useLowWordRegisterAtStart(ins->value());
+  }
+
   auto* lir = new (alloc()) LWasmStore(ptr, value, memoryBase, ptrCopy);
   add(lir, ins);
 }

@@ -60,6 +60,22 @@ XPCOMUtils.defineLazyPreferenceGetter(
     }
   }
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "autoCloseEnabledByUser",
+  "browser.shopping.experience2023.autoClose.userEnabled",
+  true,
+  function autoCloseEnabledByUserChanged() {
+    for (let actor of gAllActors) {
+      actor.autoCloseEnabledByUserChanged();
+    }
+  }
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "isSidebarStartPosition",
+  "sidebar.position_start"
+);
 
 /**
  * The ReviewCheckerChild will get the current URL from the parent
@@ -115,6 +131,14 @@ export class ReviewCheckerChild extends RemotePageChild {
     return lazy.autoOpenEnabledByUser;
   }
 
+  get autoCloseEnabledByUser() {
+    return lazy.autoCloseEnabledByUser;
+  }
+
+  get isSidebarStartPosition() {
+    return lazy.isSidebarStartPosition;
+  }
+
   receiveMessage(message) {
     if (this.browsingContext.usePrivateBrowsing) {
       throw new Error("We should never be invoked in PBM.");
@@ -122,6 +146,11 @@ export class ReviewCheckerChild extends RemotePageChild {
     switch (message.name) {
       case "ReviewChecker:UpdateCurrentURL":
         this.locationChanged(message.data);
+        break;
+      case "ReviewChecker:ShowNewPositionCard":
+        this.sendToContent("ShowNewPositionCard", {
+          isSidebarStartPosition: this.isSidebarStartPosition,
+        });
         break;
     }
     return null;
@@ -159,6 +188,15 @@ export class ReviewCheckerChild extends RemotePageChild {
         break;
       case "CloseShoppingSidebar":
         this.sendAsyncMessage("CloseShoppingSidebar");
+        break;
+      case "MoveSidebarToRight":
+        this.sendAsyncMessage("ReverseSidebarPosition");
+        break;
+      case "MoveSidebarToLeft":
+        this.sendAsyncMessage("ReverseSidebarPosition");
+        break;
+      case "ShowSidebarSettings":
+        this.sendAsyncMessage("ShowSidebarSettings");
         break;
     }
   }
@@ -292,6 +330,14 @@ export class ReviewCheckerChild extends RemotePageChild {
    */
   autoOpenEnabledByUserChanged() {
     this.updateAutoOpenEnabledByUser(this.autoOpenEnabledByUser);
+  }
+
+  /**
+   * Update auto-close to user's pref value.
+   *
+   */
+  autoCloseEnabledByUserChanged() {
+    this.updateAutoCloseEnabledByUser(this.autoCloseEnabledByUser);
   }
 
   /**
@@ -479,7 +525,7 @@ export class ReviewCheckerChild extends RemotePageChild {
       if (isAnalysisInProgress) {
         // Do not clear data however if an analysis was requested via a call-to-action.
         if (!isPolledRequest) {
-          this.updateAnalysisStatus({ analysisStatus });
+          this.updateAnalysisStatus({ analysisStatus }, productUrl);
         }
 
         analysisStatus = await this.waitForAnalysisCompleted(
@@ -488,7 +534,7 @@ export class ReviewCheckerChild extends RemotePageChild {
         );
       }
 
-      this.updateAnalysisStatus({ analysisStatus });
+      this.updateAnalysisStatus({ analysisStatus }, productUrl);
 
       let hasAnalysisCompleted =
         ShoppingProduct.hasAnalysisCompleted(analysisStatus);
@@ -511,6 +557,7 @@ export class ReviewCheckerChild extends RemotePageChild {
       productUrl,
       data,
       showOnboarding: false,
+      isSidebarStartPosition: this.isSidebarStartPosition,
     });
 
     if (!isPolledRequest && !data.error && !data.grade) {
@@ -610,10 +657,12 @@ export class ReviewCheckerChild extends RemotePageChild {
       adsEnabledByUser: lazy.adsEnabledByUser,
       autoOpenEnabled: lazy.autoOpenEnabled,
       autoOpenEnabledByUser: lazy.autoOpenEnabledByUser,
+      autoCloseEnabledByUser: lazy.autoCloseEnabledByUser,
       showOnboarding: !this.canFetchAndShowData,
       data: null,
       recommendationData: null,
       focusCloseButton,
+      isSidebarStartPosition: this.isSidebarStartPosition,
     });
   }
 
@@ -622,8 +671,9 @@ export class ReviewCheckerChild extends RemotePageChild {
    *
    * @param {object?} options
    * @param {string} options.analysisStatus
+   * @param {string} productUrl the url of the analyzed product
    */
-  updateAnalysisStatus({ analysisStatus } = {}) {
+  updateAnalysisStatus({ analysisStatus } = {}, productUrl) {
     let data;
     // Use the analysis status instead of re-requesting unnecessarily,
     // or throw if the status from the last analysis was an error.
@@ -646,7 +696,10 @@ export class ReviewCheckerChild extends RemotePageChild {
 
     let isAnalysisInProgress =
       ShoppingProduct.isAnalysisInProgress(analysisStatus);
-    if (!data && !isAnalysisInProgress) {
+    if (
+      (!data && !isAnalysisInProgress) ||
+      this.#currentURI.spec !== productUrl
+    ) {
       return;
     }
 
@@ -673,6 +726,7 @@ export class ReviewCheckerChild extends RemotePageChild {
       isProductPage,
       isSupportedSite,
       supportedDomains,
+      isSidebarStartPosition: this.isSidebarStartPosition,
     });
   }
 
@@ -721,6 +775,17 @@ export class ReviewCheckerChild extends RemotePageChild {
   updateAutoOpenEnabledByUser(autoOpenEnabledByUser) {
     this.sendToContent("autoOpenEnabledByUserChanged", {
       autoOpenEnabledByUser,
+    });
+  }
+
+  /**
+   * Updates if auto close has been enabled or disable in the content settings.
+   *
+   * @param {bool} autoCloseEnabledByUser
+   */
+  updateAutoCloseEnabledByUser(autoCloseEnabledByUser) {
+    this.sendToContent("autoCloseEnabledByUserChanged", {
+      autoCloseEnabledByUser,
     });
   }
 

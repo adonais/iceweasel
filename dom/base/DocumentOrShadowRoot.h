@@ -78,6 +78,8 @@ class DocumentOrShadowRoot {
     return mAdoptedStyleSheets;
   }
 
+  size_t FindSheetInsertionPointInTree(const StyleSheet&) const;
+
   /**
    * Returns an index for the sheet in relative style order.
    * If there are non-applicable sheets, then this index may
@@ -85,7 +87,7 @@ class DocumentOrShadowRoot {
    *
    * Handles sheets from both mStyleSheets and mAdoptedStyleSheets
    */
-  int32_t StyleOrderIndexOfSheet(const StyleSheet& aSheet) const;
+  size_t StyleOrderIndexOfSheet(const StyleSheet& aSheet) const;
 
   StyleSheetList* StyleSheets();
 

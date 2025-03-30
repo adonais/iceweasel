@@ -57,8 +57,8 @@
 #ifdef HAVE_MAKENSISU
 @BINPATH@/uninstall/helper.exe
 #endif
+@RESPATH@/default.locale
 #ifdef MOZ_UPDATER
-@RESPATH@/update.locale
 @RESPATH@/updater.ini
 #endif
 #if defined(MOZ_UPDATE_AGENT)
@@ -348,7 +348,6 @@ bin/libfreebl_64int_3.so
 @BINPATH@/@DLL_PREFIX@freebl3@DLL_SUFFIX@
 #endif
 @BINPATH@/@DLL_PREFIX@nss3@DLL_SUFFIX@
-@BINPATH@/@DLL_PREFIX@nssckbi@DLL_SUFFIX@
 #ifndef MOZ_FOLD_LIBS
 @BINPATH@/@DLL_PREFIX@nssutil3@DLL_SUFFIX@
 @BINPATH@/@DLL_PREFIX@smime3@DLL_SUFFIX@
@@ -358,8 +357,6 @@ bin/libfreebl_64int_3.so
 #endif
 @RESPATH@/chrome/pippki@JAREXT@
 @RESPATH@/chrome/pippki.manifest
-
-@BINPATH@/@DLL_PREFIX@ipcclientcerts@DLL_SUFFIX@
 
 ; For process sandboxing
 #if defined(MOZ_SANDBOX)

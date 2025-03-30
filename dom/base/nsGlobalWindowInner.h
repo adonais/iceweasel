@@ -77,7 +77,7 @@ class nsGlobalWindowOuter;
 class nsDOMWindowUtils;
 class nsIUserIdleService;
 struct nsRect;
-
+class nsWindowRoot;
 class nsWindowSizes;
 
 class IdleRequestExecutor;
@@ -120,7 +120,6 @@ class IdleRequestCallback;
 class InstallTriggerImpl;
 class IntlUtils;
 class MediaQueryList;
-class Navigation;
 class OwningExternalOrWindowProxy;
 class Promise;
 class PostMessageEvent;
@@ -538,10 +537,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   // Enable/disable updates for VR
   void EnableVRUpdates();
   void DisableVRUpdates();
-  // Reset telemetry data when switching windows.
-  // aUpdate, true for accumulating the result to the histogram.
-  // false for only resetting the timestamp.
-  void ResetVRTelemetry(bool aUpdate);
 
   void StartVRActivity();
   void StopVRActivity();
@@ -618,7 +613,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void SetName(const nsAString& aName, mozilla::ErrorResult& aError);
   mozilla::dom::Location* Location() override;
   nsHistory* GetHistory(mozilla::ErrorResult& aError);
-  mozilla::dom::Navigation* Navigation();
   mozilla::dom::CustomElementRegistry* CustomElements() override;
   mozilla::dom::CustomElementRegistry* GetExistingCustomElements();
   mozilla::dom::BarProp* GetLocationbar(mozilla::ErrorResult& aError);
@@ -1388,7 +1382,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   RefPtr<mozilla::EventListenerManager> mListenerManager;
   RefPtr<mozilla::dom::Location> mLocation;
   RefPtr<nsHistory> mHistory;
-  RefPtr<mozilla::dom::Navigation> mNavigation;
   RefPtr<mozilla::dom::CustomElementRegistry> mCustomElements;
 
   nsTObserverArray<RefPtr<mozilla::dom::SharedWorker>> mSharedWorkers;

@@ -127,89 +127,35 @@ var gBrowserInit = {
   },
 
   onDOMContentLoaded() {
-    // This needs setting up before we create the first remote browser.
+    // All of this needs setting up before we create the first remote browser.
     window.docShell.treeOwner
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIAppWindow).XULBrowserWindow = window.XULBrowserWindow;
-    window.browserDOMWindow = new nsBrowserAccess();
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-domcontentloaded-before-tabbrowser" },
+      window
+    );
 
     gBrowser = new window.Tabbrowser();
     gBrowser.init();
 
-    BrowserWindowTracker.track(window);
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-domcontentloaded" },
+      window
+    );
 
     FirefoxViewHandler.init();
 
-    gNavToolbox.palette = document.getElementById(
-      "BrowserToolbarPalette"
-    ).content;
-
-    let isVerticalTabs = Services.prefs.getBoolPref(
-      "sidebar.verticalTabs",
-      false
-    );
-    let nonRemovables;
-
-    // We don't want these normally non-removable elements to get put back into the
-    // tabstrip if we're initializing with vertical tabs.
-    // We should refrain from excluding popups here to make sure CUI doesn't
-    // get into a blank saved state.
-    if (isVerticalTabs) {
-      nonRemovables = [gBrowser.tabContainer];
-      for (let elem of nonRemovables) {
-        elem.setAttribute("removable", "true");
-        // tell CUI to ignore this element when it builds the toolbar areas
-        elem.setAttribute("skipintoolbarset", "true");
-      }
-    }
-    for (let area of CustomizableUI.areas) {
-      let type = CustomizableUI.getAreaType(area);
-      if (type == CustomizableUI.TYPE_TOOLBAR) {
-        let node = document.getElementById(area);
-        CustomizableUI.registerToolbarNode(node);
-      }
-    }
-    if (isVerticalTabs) {
-      // Show the vertical tabs toolbar
-      setToolbarVisibility(
-        document.getElementById(CustomizableUI.AREA_VERTICAL_TABSTRIP),
-        true,
-        false,
-        false
-      );
-      let tabstripToolbar = document.getElementById(
-        CustomizableUI.AREA_TABSTRIP
-      );
-      let wasCollapsed = tabstripToolbar.collapsed;
-      TabBarVisibility.update();
-      if (tabstripToolbar.collapsed !== wasCollapsed) {
-        let eventParams = {
-          detail: {
-            visible: !tabstripToolbar.collapsed,
-          },
-          bubbles: true,
-        };
-        let event = new CustomEvent("toolbarvisibilitychange", eventParams);
-        tabstripToolbar.dispatchEvent(event);
-      }
-
-      for (let elem of nonRemovables) {
-        elem.setAttribute("removable", "false");
-        elem.removeAttribute("skipintoolbarset");
-      }
-    }
-    BrowserSearch.initPlaceHolder();
+    gURLBar.initPlaceHolder();
 
     // Hack to ensure that the various initial pages favicon is loaded
     // instantaneously, to avoid flickering and improve perceived performance.
     this._callWithURIToLoad(uriToLoad => {
-      let url;
-      try {
-        url = Services.io.newURI(uriToLoad);
-      } catch (e) {
+      let url = URL.parse(uriToLoad);
+      if (!url) {
         return;
       }
-      let nonQuery = url.prePath + url.filePath;
+      let nonQuery = url.URI.prePath + url.pathname;
       if (nonQuery in gPageIcons) {
         gBrowser.setIcon(gBrowser.selectedTab, gPageIcons[nonQuery]);
       }
@@ -285,7 +231,6 @@ var gBrowserInit = {
     Win10TabletModeUpdater.init();
     CombinedStopReload.ensureInitialized();
     gPrivateBrowsingUI.init();
-    BrowserSearch.init();
     BrowserPageActions.init();
     if (gToolbarKeyNavEnabled) {
       ToolbarKeyboardNavigator.init();
@@ -417,7 +362,10 @@ var gBrowserInit = {
     WebAuthnPromptHelper.init();
 
     BrowserUtils.callModulesFromCategory(
-      "browser-window-delayed-startup",
+      {
+        categoryName: "browser-window-delayed-startup",
+        profilerMarker: "delayed-startup-task",
+      },
       window
     );
 
@@ -430,7 +378,7 @@ var gBrowserInit = {
     UpdateUrlbarSearchSplitterState();
 
     BookmarkingUI.init();
-    BrowserSearch.delayedStartupInit();
+    gURLBar.delayedStartupInit();
     gProtectionsHandler.init();
 
     let safeMode = document.getElementById("helpSafeMode");
@@ -1077,10 +1025,6 @@ var gBrowserInit = {
       ToolbarKeyboardNavigator.uninit();
     }
 
-    BrowserSearch.uninit();
-
-    NewTabPagePreloading.removePreloadedBrowser(window);
-
     FirefoxViewHandler.uninit();
 
     // Now either cancel delayedStartup, or clean up the services initialized from
@@ -1148,6 +1092,10 @@ var gBrowserInit = {
     window.docShell.treeOwner
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIAppWindow).XULBrowserWindow = null;
-    window.browserDOMWindow = null;
+
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-unload" },
+      window
+    );
   },
 };

@@ -103,7 +103,7 @@ export namespace Bergamot {
   export class Vector<T> {
     size(): number;
     get(index: number): T;
-    push_back(item: T);
+    push_back(item: T): void;
   }
 
   export class VectorResponse extends Vector<Response> {}
@@ -119,7 +119,7 @@ export namespace Bergamot {
      * Translate multiple messages in a single synchronous API call using a single model.
      */
     translate(
-      translationModel,
+      translationModel: TranslationModel,
       vectorSourceText: VectorString,
       vectorResponseOptions: VectorResponseOptions
     ): VectorResponse;
@@ -214,7 +214,7 @@ interface TranslationModelPayload {
   targetLanguage: string,
   variant?: string,
   languageModelFiles: LanguageTranslationModelFiles,
-};
+}
 
 /**
  * The files required to construct a Bergamot Translation Model's aligned memory.
@@ -234,13 +234,13 @@ interface LanguageTranslationModelFiles {
   // Or there are two:
   srcvocab?: LanguageTranslationModelFile,
   trgvocab?: LanguageTranslationModelFile,
-};
+}
 
 /**
  * This is the type that is generated when the models are loaded into wasm aligned memory.
  */
 type LanguageTranslationModelFilesAligned = {
-  [K in keyof LanguageTranslationModelFiles]: AlignedMemory
+  [K in keyof LanguageTranslationModelFiles]: Bergamot.AlignedMemory
 };
 
 /**
@@ -266,6 +266,9 @@ export interface LangTags {
   isDocLangTagSupported: boolean,
   docLangTag: string | null,
   userLangTag: string | null,
+  htmlLangAttribute: string | null,
+  identifiedLangTag: string | null,
+  identifiedLangConfident?: boolean,
 }
 
 /**
@@ -277,7 +280,7 @@ export interface LanguagePair {
   targetLanguage: string,
   sourceVariant?: string,
   targetVariant?: string
-};
+}
 
 /**
  * In the case of a single model, there will only be a single potential model variant.
@@ -336,3 +339,17 @@ export type SelectTranslationsPanelState =
   | { phase: "unsupported"; detectedLanguage: string; targetLanguage: string, sourceText: string }
 
 export type RequestTranslationsPort = (languagePair: LanguagePair) => Promise<MessagePort>
+
+export type TranslationsPortMessages = {
+  type: "TranslationsPort:TranslationRequest",
+  translationId: string,
+  sourceText: string,
+  isHTML: boolean,
+}
+
+export type EngineStatus = "uninitialized" | "ready" | "error" | "closed";
+
+export type PortToPage =
+  | { type: "TranslationsPort:TranslationResponse", targetText: string, translationId: number }
+  | { type: "TranslationsPort:GetEngineStatusResponse", status: EngineStatus }
+  | { type: "TranslationsPort:EngineTerminated" }

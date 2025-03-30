@@ -346,6 +346,10 @@ void nsMenuPopupFrame::PropagateStyleToWidget(WidgetStyleFlags aFlags) const {
   if (aFlags.contains(WidgetStyle::Transform)) {
     widget->SetWindowTransform(ComputeWidgetTransform());
   }
+  if (aFlags.contains(WidgetStyle::MicaBackdrop)) {
+    widget->SetMicaBackdrop(StyleDisplay()->EffectiveAppearance() ==
+                            StyleAppearance::Menupopup);
+  }
 }
 
 bool nsMenuPopupFrame::IsMouseTransparent() const {
@@ -454,6 +458,11 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
 
   if (newUI.mWindowShadow != oldUI.mWindowShadow) {
     flags += WidgetStyle::Shadow;
+  }
+
+  if (aOldStyle->StyleDisplay()->EffectiveAppearance() !=
+      StyleDisplay()->EffectiveAppearance()) {
+    flags += WidgetStyle::MicaBackdrop;
   }
 
   const auto& pc = *PresContext();
@@ -864,6 +873,8 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
       InitPositionFromAnchorAlign(anchor, align);
     }
   }
+  mUntransformedPopupAnchor = mPopupAnchor;
+  mUntransformedPopupAlignment = mPopupAlignment;
 
   if (aAttributesOverride) {
     // Use |left| and |top| dimension attributes to position the popup if
@@ -1034,10 +1045,7 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState,
   mConstrainedByLayout = false;
 
   if (auto* widget = GetWidget()) {
-    // Ideally we should call ClearCachedWebrenderResources but there are
-    // intermittent failures (see bug 1748788), so we currently call
-    // ClearWebrenderAnimationResources instead.
-    widget->ClearWebrenderAnimationResources();
+    widget->ClearCachedWebrenderResources();
   }
 
   nsView* view = GetView();

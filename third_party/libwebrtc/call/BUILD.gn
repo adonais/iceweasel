@@ -744,13 +744,19 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtp_interfaces",
+      "../api:fec_controller_api",
       "../api:frame_transformer_interface",
       "../api:libjingle_peerconnection_api",
+      "../api:scoped_refptr",
       "../api/crypto:frame_encryptor_interface",
       "../api/crypto:options",
+      "../api/transport:bandwidth_estimation_settings",
       "../api/transport:bitrate_settings",
+      "../api/transport:network_control",
+      "../api/units:timestamp",
       "../modules/pacing",
       "../modules/rtp_rtcp",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
       "../rtc_base:network_route",
       "../rtc_base:rate_limiter",
       "../rtc_base/network:sent_packet",
@@ -774,6 +780,17 @@ if (rtc_include_tests) {
     deps = [
       ":call_interfaces",
       "../test:test_support",
+    ]
+  }
+
+  rtc_source_set("fake_payload_type_suggester") {
+    testonly = true
+    sources = [ "fake_payload_type_suggester.h" ]
+    deps = [
+      ":payload_type",
+      ":payload_type_picker",
+      "../api:rtc_error",
+      "../media:codec",
     ]
   }
 

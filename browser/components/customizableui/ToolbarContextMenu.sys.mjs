@@ -237,9 +237,15 @@ export var ToolbarContextMenu = {
     // autohide item's checked state to mirror the autohide pref.
     showFullScreenViewContextMenuItems(popup);
 
+    // Show/hide sidebar and vertical tabs menu items
+    let sidebarRevampEnabled = Services.prefs.getBoolPref("sidebar.revamp");
+    let showSidebarActions =
+      ["tabbrowser-tabs", "sidebar-button"].includes(toolbarItem?.id) ||
+      toolbarItem?.localName == "toolbarspring";
     let toggleVerticalTabsItem = document.getElementById(
       "toolbar-context-toggle-vertical-tabs"
     );
+    toggleVerticalTabsItem.hidden = !showSidebarActions;
     document.l10n.setAttributes(
       toggleVerticalTabsItem,
       gBrowser.tabContainer?.verticalMode
@@ -247,7 +253,16 @@ export var ToolbarContextMenu = {
         : "toolbar-context-turn-on-vertical-tabs"
     );
     document.getElementById("toolbar-context-customize-sidebar").hidden =
-      !gBrowser.tabContainer?.verticalMode;
+      !sidebarRevampEnabled ||
+      (toolbarItem?.id != "sidebar-button" &&
+        !gBrowser.tabContainer?.verticalMode) ||
+      (!["tabbrowser-tabs", "sidebar-button"].includes(toolbarItem?.id) &&
+        gBrowser.tabContainer?.verticalMode);
+    document.getElementById("sidebarRevampSeparator").hidden =
+      !showSidebarActions;
+    document.getElementById("customizationMenuSeparator").hidden =
+      toolbarItem?.id == "tabbrowser-tabs" ||
+      toolbarItem?.localName == "toolbarspring";
 
     // View -> Toolbars menu doesn't have the moveToPanel or removeFromToolbar items.
     if (!moveToPanel || !removeFromToolbar) {
@@ -276,7 +291,7 @@ export var ToolbarContextMenu = {
     // when hiding the "moveToPanel" and "removeFromToolbar" items on flexible
     // space items. But we need to ensure its hidden state is reset in the case
     // the context menu is subsequently opened on a non-flexible space item.
-    let menuSeparator = document.getElementById("toolbarItemsMenuSeparator");
+    let menuSeparator = document.getElementById("tabbarItemsMenuSeparator");
     menuSeparator.hidden = false;
 
     document.getElementById("toolbarNavigatorItemsMenuSeparator").hidden =
@@ -292,6 +307,10 @@ export var ToolbarContextMenu = {
       moveToPanel.hidden = true;
       removeFromToolbar.hidden = true;
       menuSeparator.hidden = !showTabStripItems;
+    }
+
+    if (toolbarItem?.id != "tabbrowser-tabs") {
+      menuSeparator.hidden = true;
     }
 
     if (showTabStripItems) {

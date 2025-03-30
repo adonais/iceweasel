@@ -166,11 +166,10 @@ class nsUrlClassifierDBService::FeatureHolder final {
     // only look up at most 5 URLs per aSpec, even if aSpec has more than 5
     // components.
     nsTArray<nsCString> fragments;
-    nsresult rv = LookupCache::GetLookupFragments(aSpec, &fragments);
-    NS_ENSURE_SUCCESS(rv, rv);
+    LookupCache::GetLookupFragments(aSpec, &fragments);
 
     for (TableData* tableData : mTableData) {
-      rv = aWorker->DoSingleLocalLookupWithURIFragments(
+      nsresult rv = aWorker->DoSingleLocalLookupWithURIFragments(
           fragments, tableData->mTable, tableData->mResults);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -2437,7 +2436,7 @@ NS_IMETHODIMP
 nsUrlClassifierDBService::AsyncClassifyLocalWithFeatures(
     nsIURI* aURI, const nsTArray<RefPtr<nsIUrlClassifierFeature>>& aFeatures,
     nsIUrlClassifierFeature::listType aListType,
-    nsIUrlClassifierFeatureCallback* aCallback) {
+    nsIUrlClassifierFeatureCallback* aCallback, bool aIdlePriority) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (gShuttingDownThread) {
@@ -2528,7 +2527,7 @@ nsUrlClassifierDBService::AsyncClassifyLocalWithFeatures(
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "nsUrlClassifierDBService::AsyncClassifyLocalWithFeatures",
-      [worker, key, holder, callback, startTime]() -> void {
+      [worker, key, holder, callback, startTime, aIdlePriority]() -> void {
         holder->DoLocalLookup(key, worker);
 
         nsCOMPtr<nsIRunnable> cbRunnable = NS_NewRunnableFunction(
@@ -2546,11 +2545,64 @@ nsUrlClassifierDBService::AsyncClassifyLocalWithFeatures(
                   const_cast<nsIUrlClassifierFeatureCallback*>(callback.get());
               cb->OnClassifyComplete(results);
             });
-
-        NS_DispatchToMainThread(cbRunnable);
+        if (aIdlePriority) {
+          NS_DispatchToMainThreadQueue(cbRunnable.forget(),
+                                       EventQueuePriority::Idle);
+        } else {
+          NS_DispatchToMainThread(cbRunnable);
+        }
       });
 
+  if (aIdlePriority) {
+    return NS_DispatchToThreadQueue(r.forget(), gDbBackgroundThread,
+                                    EventQueuePriority::Idle);
+  }
   return gDbBackgroundThread->Dispatch(r, NS_DISPATCH_NORMAL);
+}
+
+NS_IMETHODIMP
+nsUrlClassifierDBService::AsyncClassifyLocalWithFeatureNames(
+    nsIURI* aURI, const nsTArray<nsCString>& aFeatureNames,
+    nsIUrlClassifierFeature::listType aListType,
+    nsIUrlClassifierFeatureCallback* aCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (gShuttingDownThread) {
+    return NS_ERROR_ABORT;
+  }
+
+  if (!XRE_IsContentProcess()) {
+    nsTArray<RefPtr<nsIUrlClassifierFeature>> features;
+    for (const nsCString& featureName : aFeatureNames) {
+      nsCOMPtr<nsIUrlClassifierFeature> feature =
+          mozilla::net::UrlClassifierFeatureFactory::GetFeatureByName(
+              featureName);
+      if (NS_WARN_IF(!feature)) {
+        continue;
+      }
+      features.AppendElement(feature);
+    }
+    MOZ_ASSERT(!features.IsEmpty(),
+               "At least one URL classifier feature must be present");
+    return AsyncClassifyLocalWithFeatures(aURI, features, aListType, aCallback,
+                                          true);
+  }
+
+  mozilla::dom::ContentChild* content =
+      mozilla::dom::ContentChild::GetSingleton();
+  if (NS_WARN_IF(!content || content->IsShuttingDown())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  auto actor = new mozilla::dom::URLClassifierLocalByNameChild();
+
+  if (!content->SendPURLClassifierLocalByNameConstructor(
+          actor, aURI, aFeatureNames, aListType)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  actor->SetFeaturesAndCallback(aFeatureNames, aCallback);
+  return NS_OK;
 }
 
 bool nsUrlClassifierDBService::AsyncClassifyLocalWithFeaturesUsingPreferences(

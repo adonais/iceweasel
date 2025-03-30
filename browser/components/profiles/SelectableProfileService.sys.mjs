@@ -6,11 +6,13 @@ import { SelectableProfile } from "./SelectableProfile.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { DeferredTask } from "resource://gre/modules/DeferredTask.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
 
 const lazy = {};
 
 // This is used to keep the icon controllers alive for as long as their windows are alive.
 const TASKBAR_ICON_CONTROLLERS = new WeakMap();
+const PROFILES_PREF_NAME = "browser.profiles.enabled";
 
 ChromeUtils.defineESModuleGetters(lazy, {
   CryptoUtils: "resource://services-crypto/utils.sys.mjs",
@@ -18,6 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "profilesLocalization", () => {
@@ -27,8 +30,9 @@ ChromeUtils.defineLazyGetter(lazy, "profilesLocalization", () => {
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "PROFILES_ENABLED",
-  "browser.profiles.enabled",
-  false
+  PROFILES_PREF_NAME,
+  false,
+  () => SelectableProfileService.updateEnabledState()
 );
 
 const PROFILES_CRYPTO_SALT_LENGTH_BYTES = 16;
@@ -75,7 +79,7 @@ function loadImage(url) {
 /**
  * The service that manages selectable profiles
  */
-class SelectableProfileServiceClass {
+class SelectableProfileServiceClass extends EventEmitter {
   #profileService = null;
   #connection = null;
   #asyncShutdownBlocker = null;
@@ -97,6 +101,8 @@ class SelectableProfileServiceClass {
   #observedPrefs = null;
   #badge = null;
   static #dirSvc = null;
+  #windowActivated = null;
+  #isEnabled = false;
 
   // The initial preferences that will be shared amongst profiles. Only used during database
   // creation, after that the set in the database is used.
@@ -108,6 +114,9 @@ class SelectableProfileServiceClass {
   ];
 
   constructor() {
+    super();
+
+    this.onNimbusUpdate = this.onNimbusUpdate.bind(this);
     this.themeObserver = this.themeObserver.bind(this);
     this.prefObserver = (subject, topic, prefName) =>
       this.flushSharedPrefToDatabase(prefName);
@@ -117,9 +126,21 @@ class SelectableProfileServiceClass {
 
     this.#asyncShutdownBlocker = () => this.uninit();
     this.#observedPrefs = new Set();
+
+    this.#isEnabled = this.#getEnabledState();
+
+    // We have to check the state again after the policy service may have disabled us.
+    Services.obs.addObserver(
+      () => this.updateEnabledState(),
+      "profile-after-change"
+    );
   }
 
-  get isEnabled() {
+  #getEnabledState() {
+    if (!Services.policies.isAllowed("profileManagement")) {
+      return false;
+    }
+
     // If a storeID has been assigned then profiles may have been created so force us on. Also
     // covers the case when the selector is shown at startup and we don't have preferences
     // available.
@@ -128,6 +149,18 @@ class SelectableProfileServiceClass {
     }
 
     return lazy.PROFILES_ENABLED && !!this.#groupToolkitProfile;
+  }
+
+  updateEnabledState() {
+    let newState = this.#getEnabledState();
+    if (newState != this.#isEnabled) {
+      this.#isEnabled = newState;
+      this.emit("enableChanged", newState);
+    }
+  }
+
+  get isEnabled() {
+    return this.#isEnabled;
   }
 
   /**
@@ -148,13 +181,6 @@ class SelectableProfileServiceClass {
         Ci.nsIToolkitProfileService
       );
     await this.init();
-
-    let enabled = lazy.PROFILES_ENABLED;
-    if (enabled) {
-      // Various parts of the UI listen to the pref to trigger updating so toggle it here.
-      Services.prefs.setBoolPref("browser.profiles.enabled", false);
-      Services.prefs.setBoolPref("browser.profiles.enabled", true);
-    }
   }
 
   overrideDirectoryService(dirSvc) {
@@ -245,6 +271,12 @@ class SelectableProfileServiceClass {
     );
   }
 
+  onNimbusUpdate() {
+    if (lazy.NimbusFeatures.selectableProfiles.getVariable("enabled")) {
+      Services.prefs.setBoolPref(PROFILES_PREF_NAME, true);
+    }
+  }
+
   /**
    * At startup, store the nsToolkitProfile for the group.
    * Get the groupDBPath from the nsToolkitProfile, and connect to it.
@@ -266,6 +298,8 @@ class SelectableProfileServiceClass {
       return;
     }
 
+    lazy.NimbusFeatures.selectableProfiles.onUpdate(this.onNimbusUpdate);
+
     this.#groupToolkitProfile =
       this.#profileService.currentProfile ?? this.#profileService.groupProfile;
     this.#storeID = this.#groupToolkitProfile?.storeID;
@@ -276,6 +310,8 @@ class SelectableProfileServiceClass {
         ""
       );
     }
+
+    this.updateEnabledState();
 
     if (!this.isEnabled) {
       return;
@@ -346,6 +382,16 @@ class SelectableProfileServiceClass {
       );
     } catch {}
 
+    // On macOS when other applications request we open a url the most recent
+    // window becomes activated first. This would cause the default profile to
+    // change before we determine which profile to open the url in. By
+    // introducing a small delay we can process the urls before changing the
+    // default profile.
+    this.#windowActivated = new DeferredTask(
+      async () => this.setDefaultProfileForGroup(),
+      500
+    );
+
     // The 'activate' event listeners use #currentProfile, so this line has
     // to come after #currentProfile has been set.
     this.initWindowTracker();
@@ -388,6 +434,8 @@ class SelectableProfileServiceClass {
       Services.prefs.removeObserver(prefName, this.prefObserver);
     }
     this.#observedPrefs.clear();
+
+    lazy.NimbusFeatures.selectableProfiles.offUpdate(this.onNimbusUpdate);
 
     // During shutdown we don't need to notify ourselves, just other instances
     // so rather than finalizing the task just disarm it and do the notification
@@ -507,7 +555,7 @@ class SelectableProfileServiceClass {
   async handleEvent(event) {
     switch (event.type) {
       case "activate": {
-        this.setDefaultProfileForGroup();
+        this.#windowActivated.arm();
         if ("nsIWinTaskbar" in Ci && this.#badge) {
           let iconController = TASKBAR_ICON_CONTROLLERS.get(event.target);
 
@@ -784,25 +832,35 @@ class SelectableProfileServiceClass {
     let themeFg = theme.toolbar_text;
     let themeBg = theme.toolbarColor;
 
-    if (!themeFg || !themeBg) {
-      // TODO Bug 1927193: The colors defined below are from the light and
-      // dark theme manifest files and they are not accurate for the default
-      // theme. We should read the color values from the document to get the
-      // correct colors.
-      const defaultDarkText = "rgb(255,255,255)"; // dark theme "tab_text"
-      const defaultLightText = "rgb(21,20,26)"; // light theme "tab_text"
-      const defaultDarkToolbar = "rgb(43,42,51)"; // dark theme "toolbar"
-      const defaultLightToolbar = "#f9f9fb"; // light theme "toolbar"
+    if (theme.id === "default-theme@mozilla.org" || !themeFg || !themeBg) {
+      // The computedStyles object is a live CSSStyleDeclaration.
+      let computedStyles = window.getComputedStyle(
+        window.document.documentElement
+      );
 
-      themeFg = isDark ? defaultDarkText : defaultLightText;
-      themeBg = isDark ? defaultDarkToolbar : defaultLightToolbar;
+      window.addEventListener(
+        "windowlwthemeupdate",
+        () => {
+          themeFg = computedStyles.getPropertyValue("--toolbar-color");
+          themeBg = computedStyles.getPropertyValue("--toolbar-bgcolor");
+
+          this.currentProfile.theme = {
+            themeId: theme.id,
+            themeFg,
+            themeBg,
+          };
+        },
+        {
+          once: true,
+        }
+      );
+    } else {
+      this.currentProfile.theme = {
+        themeId: theme.id,
+        themeFg,
+        themeBg,
+      };
     }
-
-    this.currentProfile.theme = {
-      themeId: theme.id,
-      themeFg,
-      themeBg,
-    };
   }
 
   /**
@@ -858,8 +916,8 @@ class SelectableProfileServiceClass {
       return;
     }
     this.#groupToolkitProfile.rootDir = await aProfile.rootDir;
-    await this.#attemptFlushProfileService();
     Glean.profilesDefault.updated.record();
+    await this.#attemptFlushProfileService();
   }
 
   /**
@@ -1480,7 +1538,48 @@ export class CommandLineHandler {
       if (win) {
         win.focus();
         cmdLine.preventDefault = true;
+        return;
       }
+    }
+
+    // On macOS requests to open URLs from other applications in an already running Firefox are
+    // passed directly to the running instance via the
+    // [MacApplicationDelegate::openURLs](https://searchfox.org/mozilla-central/rev/b0b003e992b199fd8e13999bd5d06d06c84a3fd2/toolkit/xre/MacApplicationDelegate.mm#323-326)
+    // API. This means it skips over the step in startup where we choose the correct profile to open
+    // the link in. Here we intercept such requests.
+    if (
+      cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_EXPLICIT &&
+      Services.appinfo.OS === "Darwin"
+    ) {
+      // If we aren't enabled or initialized there can't be other profiles.
+      if (
+        !SelectableProfileService.isEnabled ||
+        !SelectableProfileService.initialized
+      ) {
+        return;
+      }
+
+      if (!cmdLine.length) {
+        return;
+      }
+
+      // Ideally here we would be able to find which profile we should load the link in, to do so we
+      // would need to load `profiles.ini` as we can't rely on the current in-memory state in
+      // `nsIToolkitProfileService`. But we have to handle the command line synchronously. So we
+      // just assume that the current profile may not be correct and re-launch Firefox with the
+      // command line and let the startup code figure out which profile to use. If necessary it will
+      // remote the command line back to this instance.
+
+      let args = ["-foreground"];
+      for (let i = 0; i < cmdLine.length; i++) {
+        args.push(cmdLine.getArgument(i));
+      }
+
+      cmdLine.removeArguments(0, cmdLine.length - 1);
+      cmdLine.preventDefault = true;
+
+      let process = SelectableProfileService.getExecutableProcess();
+      process.runw(false, args, args.length);
     }
   }
 }

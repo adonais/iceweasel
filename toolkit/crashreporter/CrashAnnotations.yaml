@@ -637,6 +637,12 @@ Marionette:
     Set to 1 when Marionette (WebDriver Classic) is enabled.
   type: boolean
 
+MemtestOutput:
+  description: >
+    The output of memory tests done by the crash reporter client after a crash
+    in a JSON format
+  type: string
+
 LinuxUnderMemoryPressure:
   description: >
     Set to true if the memory pressure watcher was under memory pressure when
@@ -675,6 +681,13 @@ MozCrashReason:
   description: >
     Plaintext description of why Firefox crashed, this is usually set by
     assertions and the like.
+  type: string
+  ping: true
+
+NimbusEnrollments:
+  description: >
+    A comma-separated string that specifies the active Nimbus experiments and
+    rollouts, as well as their branches.
   type: string
   ping: true
 

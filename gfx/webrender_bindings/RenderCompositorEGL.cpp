@@ -88,11 +88,11 @@ bool RenderCompositorEGL::BeginFrame() {
         << "We don't have EGLSurface to draw into. Called too early?";
     return false;
   }
-#ifdef MOZ_WIDGET_GTK
+#ifdef MOZ_WAYLAND
   if (mWidget->AsGTK()) {
     if (!mWidget->AsGTK()->SetEGLNativeWindowSize(GetBufferSize())) {
-      // It's possible that GtkWidget is hidden on Wayland; e.g. maybe it's
-      // just been closed. So, we can't draw into it right now.
+      // Wayland only check we have correct window size to avoid
+      // rendering artifacts.
       return false;
     }
   }
@@ -123,7 +123,7 @@ RenderedFrameId RenderCompositorEGL::EndFrame(
   if (sync) {
     int fenceFd = egl->fDupNativeFenceFDANDROID(sync);
     if (fenceFd >= 0) {
-      mReleaseFenceFd = ipc::FileDescriptor(UniqueFileHandle(fenceFd));
+      mReleaseFenceFd = UniqueFileHandle(fenceFd);
     }
     egl->fDestroySync(sync);
     sync = nullptr;
@@ -259,13 +259,12 @@ void RenderCompositorEGL::DestroyEGLSurface() {
   }
 }
 
-ipc::FileDescriptor RenderCompositorEGL::GetAndResetReleaseFence() {
+UniqueFileHandle RenderCompositorEGL::GetAndResetReleaseFence() {
 #ifdef MOZ_WIDGET_ANDROID
-  MOZ_ASSERT(!layers::AndroidHardwareBufferApi::Get() ||
-             mReleaseFenceFd.IsValid());
+  MOZ_ASSERT(!layers::AndroidHardwareBufferApi::Get() || mReleaseFenceFd);
   return std::move(mReleaseFenceFd);
 #else
-  return ipc::FileDescriptor();
+  return UniqueFileHandle();
 #endif
 }
 

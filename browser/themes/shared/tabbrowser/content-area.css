@@ -6,7 +6,7 @@
 
 :root {
   /* --tabpanel-background-color matches $in-content-page-background in newtab
-     (browser/components/newtab/content-src/styles/_variables.scss) */
+     (browser/extensions/newtab/content-src/styles/_variables.scss) */
   --tabpanel-background-color: #F9F9FB;
   @media (-moz-content-prefers-color-scheme: dark) {
     --tabpanel-background-color: #2B2A33;
@@ -19,7 +19,7 @@
     --tabpanel-background-color: #25003e !important;
 
     /* stylelint-disable-next-line media-query-no-invalid */
-    @media (-moz-bool-pref: "browser.privatebrowsing.felt-privacy-v1") {
+    @media -moz-pref("browser.privatebrowsing.felt-privacy-v1") {
       --tabpanel-background-color: linear-gradient(45deg, #722291 0%, #45278D 50%, #393473 100%) !important;
     }
   }
@@ -29,15 +29,20 @@
   border-bottom: 0.01px solid var(--chrome-content-separator-color);
 
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media (-moz-bool-pref: "sidebar.revamp") {
+  @media -moz-pref("sidebar.revamp") {
     /* This reserves space for the content area outline */
     border-bottom-color: var(--toolbar-bgcolor);
   }
 
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media (-moz-bool-pref: "sidebar.verticalTabs") {
+  @media -moz-pref("sidebar.verticalTabs") {
     border-bottom-style: none;
   }
+}
+
+/* Needed to ensure #sidebar-wrapper is full height when vertical tabs are not enabled */
+#browser {
+  position: relative;
 }
 
 #browser,
@@ -67,18 +72,18 @@
   margin: 0;
 
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media (-moz-bool-pref: "sidebar.revamp") {
+  @media -moz-pref("sidebar.revamp") {
     outline: 0.01px solid var(--chrome-content-separator-color);
     box-shadow: var(--content-area-shadow);
 
     /* stylelint-disable-next-line media-query-no-invalid */
-    @media (-moz-bool-pref: "sidebar.revamp.round-content-area") {
+    @media -moz-pref("sidebar.revamp.round-content-area") {
       :root:not([inDOMFullscreen]) &[sidebar-shown] {
         overflow: clip;
         border-start-end-radius: var(--border-radius-medium);
 
         /* stylelint-disable-next-line media-query-no-invalid */
-        @media (-moz-bool-pref: "sidebar.position_start") {
+        @media -moz-pref("sidebar.position_start") {
           border-start-start-radius: var(--border-radius-medium);
           border-start-end-radius: 0;
         }
@@ -187,7 +192,7 @@
   }
 
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media (-moz-bool-pref: "browser.tabs.hideStatusPanel") {
+  @media -moz-pref("browser.tabs.hideStatusPanel") {
     visibility: hidden;
   }
 }

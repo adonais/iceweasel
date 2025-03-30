@@ -34,12 +34,18 @@ add_task(
       runInPage,
     });
 
-    await waitForTranslationsPrefChanged(() => {
+    await waitForTranslationModelRecordsChanged(() => {
       Services.prefs.setBoolPref(
         "browser.translations.useLexicalShortlist",
         true
       );
     });
+
+    info(
+      "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
+    );
+    await resolveDownloads(1);
+
     await FullPageTranslationsTestUtils.openPanel({
       expectedToLanguage: "en",
       onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,
@@ -58,12 +64,18 @@ add_task(
       runInPage,
     });
 
-    await waitForTranslationsPrefChanged(() => {
+    await waitForTranslationModelRecordsChanged(() => {
       Services.prefs.setBoolPref(
         "browser.translations.useLexicalShortlist",
         false
       );
     });
+
+    info(
+      "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
+    );
+    await resolveDownloads(1);
+
     await FullPageTranslationsTestUtils.openPanel({
       expectedToLanguage: "en",
       onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,
@@ -117,12 +129,18 @@ add_task(
       runInPage,
     });
 
-    await waitForTranslationsPrefChanged(() => {
+    await waitForTranslationModelRecordsChanged(() => {
       Services.prefs.setBoolPref(
         "browser.translations.useLexicalShortlist",
         false
       );
     });
+
+    info(
+      "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
+    );
+    await resolveDownloads(1);
+
     await FullPageTranslationsTestUtils.openPanel({
       expectedToLanguage: "en",
       onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,
@@ -141,12 +159,18 @@ add_task(
       runInPage,
     });
 
-    await waitForTranslationsPrefChanged(() => {
+    await waitForTranslationModelRecordsChanged(() => {
       Services.prefs.setBoolPref(
         "browser.translations.useLexicalShortlist",
         true
       );
     });
+
+    info(
+      "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
+    );
+    await resolveDownloads(1);
+
     await FullPageTranslationsTestUtils.openPanel({
       expectedToLanguage: "en",
       onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,

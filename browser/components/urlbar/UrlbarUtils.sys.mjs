@@ -798,12 +798,11 @@ export var UrlbarUtils = {
    *   if there is no ref and undefined if url is not well-formed.
    */
   extractRefFromUrl(url) {
-    try {
-      let nsUri = Services.io.newURI(url);
-      return { base: nsUri.specIgnoringRef, ref: nsUri.ref };
-    } catch {
-      return { base: url };
+    let uri = URL.parse(url)?.URI;
+    if (uri) {
+      return { base: uri.specIgnoringRef, ref: uri.ref };
     }
+    return { base: url };
   },
 
   /**
@@ -1200,10 +1199,10 @@ export var UrlbarUtils = {
     if (!lazy.UrlbarTokenizer.REGEXP_PREFIX.test(candidate)) {
       candidate = "http://" + candidate;
     }
-    try {
-      url = new URL(url);
-      candidate = new URL(candidate);
-    } catch (e) {
+
+    url = URL.parse(url);
+    candidate = URL.parse(candidate);
+    if (!url || !candidate) {
       return false;
     }
 
@@ -1236,10 +1235,6 @@ export var UrlbarUtils = {
   /**
    * Extracts a telemetry type from a result, used by scalars and event
    * telemetry.
-   *
-   * Note: New types should be added to Scalars.yaml under the urlbar.picked
-   *       category and documented in the in-tree documentation. A data-review
-   *       is always necessary.
    *
    * @param {UrlbarResult} result The result to analyze.
    * @param {boolean} camelCase Whether the returned telemetry type should be the
@@ -1295,14 +1290,6 @@ export var UrlbarUtils = {
           return "visiturl";
         }
         if (result.providerName == "UrlbarProviderQuickSuggest") {
-          // Don't add any more `urlbar.picked` legacy telemetry if possible!
-          // Return "quicksuggest" here and rely on Glean instead.
-          switch (result.payload.telemetryType) {
-            case "top_picks":
-              return "navigational";
-            case "wikipedia":
-              return camelCase ? "dynamicWikipedia" : "dynamic_wikipedia";
-          }
           return "quicksuggest";
         }
         if (result.providerName == "UrlbarProviderClipboard") {
@@ -2109,10 +2096,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "string",
       },
       titleL10n: L10N_SCHEMA,
-      // `type` is used in the names of keys in the `urlbar.tips` keyed scalar
-      // telemetry (see telemetry.rst).  If you add a new type, then you are
-      // also adding new `urlbar.tips` keys and therefore need an expanded data
-      // collection review.
       type: {
         type: "string",
         enum: [

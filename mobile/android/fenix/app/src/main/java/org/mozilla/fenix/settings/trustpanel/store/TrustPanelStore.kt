@@ -21,9 +21,23 @@ class TrustPanelStore(
 
 private fun reducer(state: TrustPanelState, action: TrustPanelAction): TrustPanelState {
     return when (action) {
-        is TrustPanelAction.Navigate -> state
+        is TrustPanelAction.Navigate,
+        is TrustPanelAction.ClearSiteData,
+        is TrustPanelAction.RequestClearSiteDataDialog,
+        is TrustPanelAction.UpdateTrackersBlocked,
+        -> state
+
+        is TrustPanelAction.UpdateDetailedTrackerCategory -> state.copy(
+            detailedTrackerCategory = action.detailedTrackerCategory,
+        )
+        is TrustPanelAction.UpdateBaseDomain -> state.copy(
+            baseDomain = action.baseDomain,
+        )
         is TrustPanelAction.ToggleTrackingProtection -> state.copy(
             isTrackingProtectionEnabled = !state.isTrackingProtectionEnabled,
+        )
+        is TrustPanelAction.UpdateNumberOfTrackersBlocked -> state.copy(
+            numberOfTrackersBlocked = action.newNumberOfTrackersBlocked,
         )
     }
 }

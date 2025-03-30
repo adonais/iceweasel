@@ -6,14 +6,13 @@
 # into `third_party/rust` by `mach vendor rust`.
 members = [
   "browser/app/nmhproxy/",
-  "js/src/frontend/smoosh",
   "js/src/rust",
   "netwerk/base/idna_glue",
   "netwerk/test/http3server",
-  "security/manager/ssl/builtins",
-  "security/manager/ssl/tests/unit/test_builtins",
   "security/manager/ssl/ipcclientcerts",
   "security/manager/ssl/osclientcerts",
+  "security/manager/ssl/trust_anchors",
+  "security/manager/ssl/tests/unit/test_trust_anchors",
   "security/mls/mls_gk",
   "testing/geckodriver",
   "toolkit/components/uniffi-bindgen-gecko-js",
@@ -58,7 +57,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.76.0"
+rust-version = "1.82.0"
 
 [workspace.dependencies]
 # Shared across multiple UniFFI consumers.
@@ -67,7 +66,7 @@ uniffi_bindgen = "0.28.2"
 # Shared across multiple application-services consumers.
 rusqlite = "0.31.0"
 # Shared across multiple glean consumers.
-glean = "=63.0.0"
+glean = "=63.1.0"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -153,13 +152,11 @@ backtrace = { path = "build/rust/backtrace" }
 # Patch bindgen 0.63 to 0.69
 bindgen_0_63 = { package = "bindgen", path = "build/rust/bindgen-0.63" }
 # Locally patch bindgen for https://github.com/rust-lang/rust-bindgen/pull/2824
+# and for bug 1945218
 bindgen = { path = "third_party/rust/bindgen" }
 
 # Patch nix 0.26 to 0.29
 nix = { path = "build/rust/nix" }
-
-# Patch indexmap 2.0 to 1.0
-indexmap = { path = "build/rust/indexmap" }
 
 # Patch derive_more 0.99 to 1.0.0-beta
 derive_more = { path = "build/rust/derive_more" }
@@ -187,6 +184,13 @@ thiserror = { path = "build/rust/thiserror" }
 js-sys = { path = "build/rust/dummy-web/js-sys" }
 wasm-bindgen = { path = "build/rust/dummy-web/wasm-bindgen" }
 web-sys = { path = "build/rust/dummy-web/web-sys" }
+
+
+# Upgrade `core-foundation` 0.9.* to 0.10.
+core-foundation = { path = "build/rust/core-foundation" }
+
+# Patch `core-graphics-types` 0.1.* to 0.2.
+core-graphics-types = { path = "build/rust/core-graphics-types" }
 
 # Overrides to allow easier use of common internal crates.
 moz_asserts = { path = "mozglue/static/rust/moz_asserts" }
@@ -226,6 +230,7 @@ objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca
 # application-services overrides to make updating them all simpler.
 interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
 relevancy = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
+search = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
 sql-support = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
 suggest = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }
 sync15 = { git = "https://github.com/mozilla/application-services", rev = "25934715ecc08fc922c80797c637dea64ee742d1" }

@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LaterRun: "resource:///modules/LaterRun.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
   ShellService: "resource:///modules/ShellService.sys.mjs",
   SpecialMessageActions:
@@ -44,7 +45,7 @@ ChromeUtils.defineLazyGetter(lazy, "gWindowsAlertsService", () => {
 });
 
 // One-time startup homepage override configurations
-const ONCE_DOMAINS = ["mozilla.org", "firefox.com"];
+const ONCE_DOMAINS = new Set(["mozilla.org", "firefox.com"]);
 const ONCE_PREF = "browser.startup.homepage_override.once";
 
 // Index of Private Browsing icon in firefox.exe
@@ -419,7 +420,8 @@ async function doSearch(searchTerm, cmdLine) {
     }, "browser-delayed-startup-finished");
   });
 
-  win.BrowserSearch.loadSearchFromCommandLine(
+  lazy.SearchUIUtils.loadSearchFromCommandLine(
+    win,
     searchTerm,
     lazy.PrivateBrowsingUtils.isInTemporaryAutoStartMode ||
       lazy.PrivateBrowsingUtils.isWindowPrivate(win),
@@ -1023,20 +1025,18 @@ nsBrowserContentHandler.prototype = {
           overridePage = url
             .split("|")
             .map(val => {
-              try {
-                return new URL(val);
-              } catch (ex) {
+              let parsed = URL.parse(val);
+              if (!parsed) {
                 // Invalid URL, so filter out below
-                console.error("Invalid once url:", ex);
-                return null;
+                console.error(`Invalid once url: ${val}`);
               }
+              return parsed;
             })
             .filter(
               parsed =>
-                parsed &&
-                parsed.protocol == "https:" &&
+                parsed?.protocol == "https:" &&
                 // Only accept exact hostname or subdomain; without port
-                ONCE_DOMAINS.includes(
+                ONCE_DOMAINS.has(
                   Services.eTLD.getBaseDomainFromHost(parsed.host)
                 )
             )
@@ -1317,6 +1317,7 @@ nsDefaultCommandLineHandler.prototype = {
     if (AppConstants.platform == "win") {
       // Windows itself does disk I/O when the notification service is
       // initialized, so make sure that is lazy.
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         let tag = cmdLine.handleFlagWithParam("notification-windowsTag", false);
         if (!tag) {

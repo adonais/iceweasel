@@ -4,7 +4,12 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 136.0 (In Development)
+# 137.0 (In Development)
+* **support-ktx**
+  * 🌟 Added `String.isContentUrl` method that checks if the string is a content URL. [Bug 1944084](https://bugzilla.mozilla.org/show_bug.cgi?id=1944084).
+  * 🌟 Added `String.isAboutUrl` method that checks if the string is an about URL. [Bug 1944084](https://bugzilla.mozilla.org/show_bug.cgi?id=1944084).
+
+# 136.0
 * **support-ktx**
     * 🆕 New `ExpandablePrompt` interface implemented by `AddressSelectBar`, `CreditCardSelectBar` to inform when it is expanded or collapsed. [Bug 19010409](https://bugzilla.mozilla.org/show_bug.cgi?id=19010409).
 

@@ -19,6 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.sys.mjs",
+  UrlbarProviderQuickSuggestContextualOptIn:
+    "resource:///modules/UrlbarProviderQuickSuggestContextualOptIn.sys.mjs",
   UrlbarProviderRecentSearches:
     "resource:///modules/UrlbarProviderRecentSearches.sys.mjs",
   UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
@@ -503,23 +505,6 @@ export class UrlbarView {
     this.panel.setAttribute("noresults", "true");
     this.clearSelection();
     this.visibleResults = [];
-  }
-
-  /**
-   * Hide the popup that shows the Urlbar results. The popup is still
-   * considered "open", this will not trigger abandonment telemetry
-   * but will not be shown to the user.
-   */
-  hideTemporarily() {
-    this.panel.toggleAttribute("hide-temporarily", true);
-  }
-
-  /**
-   * Show the Urlbar results popup after being hidden by
-   * `hideTemporarily`
-   */
-  restoreVisibility() {
-    this.panel.toggleAttribute("hide-temporarily", false);
   }
 
   /**
@@ -1786,7 +1771,7 @@ export class UrlbarView {
       item.appendChild(item._content);
       // Clear previously set attributes and classes that may refer to a
       // different result type.
-      for (const attribute of item.attributes) {
+      for (const attribute of [...item.attributes]) {
         if (!item._sharedAttributes.has(attribute.name)) {
           item.removeAttribute(attribute.name);
         }
@@ -3242,7 +3227,9 @@ export class UrlbarView {
     if (result.payload.isBlockable) {
       commands.push({
         name: RESULT_MENU_COMMANDS.DISMISS,
-        l10n: result.payload.blockL10n,
+        l10n: result.payload.blockL10n || {
+          id: "urlbar-result-menu-dismiss-suggestion",
+        },
       });
     }
     if (result.payload.helpUrl) {
@@ -3658,9 +3645,17 @@ class QueryContextCache {
       // doesn't necessarily imply top sites since there are other queries that
       // use it too, like search mode. If any result is from the top-sites
       // provider, assume the context is top sites.
+      // However, if contextual opt-in message is shown, disable the cache. The
+      // message might hide when beginning of query, this cache will be shown
+      // for a moment.
       if (
         queryContext.results?.some(
           r => r.providerName == lazy.UrlbarProviderTopSites.name
+        ) &&
+        !queryContext.results.some(
+          r =>
+            r.providerName ==
+            lazy.UrlbarProviderQuickSuggestContextualOptIn.name
         )
       ) {
         this.#topSitesContext = queryContext;

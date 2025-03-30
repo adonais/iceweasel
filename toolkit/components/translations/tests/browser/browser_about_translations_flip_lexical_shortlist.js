@@ -6,7 +6,7 @@
 /**
  * Test that flipping the useLexicalShortlist pref creates a new translator.
  */
-add_task(async function test_about_translations_language_swap() {
+add_task(async function test_about_translations_flip_lexical_shortlist_pref() {
   const { runInPage, cleanup, resolveDownloads } = await openAboutTranslations({
     languagePairs: [{ fromLang: "en", toLang: "fr" }],
     prefs: [["browser.translations.useLexicalShortlist", false]],
@@ -75,7 +75,7 @@ add_task(async function test_about_translations_language_swap() {
   });
 
   info('Flipping "browser.translations.useLexicalShortlist" to true.');
-  await waitForTranslationsPrefChanged(() => {
+  await waitForTranslationModelRecordsChanged(() => {
     Services.prefs.setBoolPref(
       "browser.translations.useLexicalShortlist",
       true
@@ -120,7 +120,7 @@ add_task(async function test_about_translations_language_swap() {
   });
 
   info('Flipping "browser.translations.useLexicalShortlist" to false.');
-  await waitForTranslationsPrefChanged(() => {
+  await waitForTranslationModelRecordsChanged(() => {
     Services.prefs.setBoolPref(
       "browser.translations.useLexicalShortlist",
       false

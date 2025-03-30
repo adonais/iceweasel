@@ -5765,7 +5765,7 @@ static nscoord ContentContribution(
   auto childAxis = isOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
   if (size == NS_INTRINSIC_ISIZE_UNKNOWN && childAxis == LogicalAxis::Block) {
     // We need to reflow the child to find its BSize contribution.
-    // XXX this will give mostly correct results for now (until bug 1174569).
+    // XXX this will give mostly correct results for now (until bug 1300366).
     nscoord availISize = INFINITE_ISIZE_COORD;
     nscoord availBSize = NS_UNCONSTRAINEDSIZE;
     // The next two variables are MinSizeClamp values in the child's axes.
@@ -7871,8 +7871,13 @@ void nsGridContainerFrame::ReflowInFlowChild(
 
   ReflowChild(aChild, pc, childSize, childRI, childWM, LogicalPoint(childWM),
               dummyContainerSize, ReflowChildFlags::Default, aStatus);
-  LogicalPoint childPos = cb.Origin(wm).ConvertTo(
-      childWM, wm, aContainerSize - childSize.PhysicalSize());
+
+  // childPos here initially represents the position that the child would have
+  // (expressed as an istart,bstart corner *in its own writing-mode*) if it
+  // were placed at the cb origin:
+  LogicalPoint childPos = cb.Origin(wm).ConvertRectOriginTo(
+      childWM, wm, childSize.PhysicalSize(), aContainerSize);
+
   // Apply align/justify-self and reflow again if that affects the size.
   if (MOZ_LIKELY(isGridItem)) {
     LogicalSize size = childSize.Size(childWM);  // from the ReflowChild()
@@ -8465,7 +8470,7 @@ nscoord nsGridContainerFrame::MasonryLayout(GridReflowInput& aGridRI,
              item->mFrame->StylePosition()
                  ->GetAnchorResolvedInset(
                      masonrySide, wm, item->mFrame->StyleDisplay()->mPosition)
-                 .IsAuto())) {
+                 ->IsAuto())) {
           sortedItems.AppendElement(item);
         } else {
           item = nullptr;
@@ -9073,7 +9078,6 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   const nscoord computedBSize = aReflowInput.ComputedBSize();
   const nscoord computedISize = aReflowInput.ComputedISize();
   const WritingMode& wm = gridRI.mWM;
-  const LogicalSize computedSize(wm, computedISize, computedBSize);
 
   nscoord consumedBSize = 0;
   nscoord bSize = 0;
@@ -9081,7 +9085,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     Grid grid;
     if (MOZ_LIKELY(!IsSubgrid())) {
       RepeatTrackSizingInput repeatSizing(aReflowInput.ComputedMinSize(),
-                                          computedSize,
+                                          aReflowInput.ComputedSize(),
                                           aReflowInput.ComputedMaxSize());
       grid.PlaceGridItems(gridRI, repeatSizing);
     } else {
@@ -9098,19 +9102,19 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     // 1488878.
     const Maybe<nscoord> containBSize =
         aReflowInput.mFrame->ContainIntrinsicBSize();
-    const nscoord trackSizingBSize = [&] {
-      // This clamping only applies to auto sizes.
-      if (containBSize && computedBSize == NS_UNCONSTRAINEDSIZE) {
-        return aReflowInput.ApplyMinMaxBSize(*containBSize);
-      }
-      return computedBSize;
-    }();
-    const LogicalSize containSize(wm, computedISize, trackSizingBSize);
-    gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
-                                      containSize.ISize(wm),
+
+    nscoord trackSizingBSize;
+    if (containBSize && computedBSize == NS_UNCONSTRAINEDSIZE) {
+      // This clamping only applies to unconstrained block-size.
+      trackSizingBSize = aReflowInput.ApplyMinMaxBSize(*containBSize);
+    } else {
+      trackSizingBSize = computedBSize;
+    }
+
+    gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid, computedISize,
                                       SizingConstraint::NoConstraint);
     gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid,
-                                      containSize.BSize(wm),
+                                      trackSizingBSize,
                                       SizingConstraint::NoConstraint);
     if (containBSize) {
       bSize = *containBSize;
@@ -10043,9 +10047,12 @@ nsresult nsGridContainerFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(u"GridContainer"_ns, aResult);
 }
 
-void nsGridContainerFrame::ExtraContainerFrameInfo(nsACString& aTo) const {
+void nsGridContainerFrame::ExtraContainerFrameInfo(
+    nsACString& aTo, bool aListOnlyDeterministic) const {
   if (const void* const subgrid = GetProperty(Subgrid::Prop())) {
-    aTo += nsPrintfCString(" [subgrid=%p]", subgrid);
+    aTo += "[subgrid";
+    ListPtr(aTo, aListOnlyDeterministic, subgrid);
+    aTo += "]";
   }
 }
 

@@ -79,7 +79,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_compose_homepage).apply {
-            isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableComposeHomepage
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -97,20 +96,34 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_mars_api_enabled).apply {
-            isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().marsAPIEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
+            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    activity?.recreate()
+                    return super.onPreferenceChange(preference, newValue)
+                }
+            }
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_pocket_content_recommendations).apply {
-            isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().showContentRecommendations
-            onPreferenceChangeListener = SharedPreferenceUpdater()
+            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    activity?.recreate()
+                    return super.onPreferenceChange(preference, newValue)
+                }
+            }
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_unified_trust_panel).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableUnifiedTrustPanel
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_trending_searches).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = context.settings().isTrendingSearchesVisible
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -133,6 +146,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                     return true
                 }
             }
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_doh_settings_enabled).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = context.settings().showDohEntryPoint
+            onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_should_enable_felt_privacy).apply {

@@ -161,10 +161,10 @@ class ArrayBufferDataStream {
       return bytes
     }
 
-    writeBytes(uint8Array) {
-      this.writeUint32(uint8Array.length);
+    writeBytes(value) {
+      this.writeUint32(value.length);
       value.forEach((elt) => {
-        dataStream.writeUint8(elt);
+        this.writeUint8(elt);
       })
     }
 
@@ -172,7 +172,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerFutureTester() {
-        const pointerId = 11; // futures:FutureTester
+        const pointerId = 12; // futures:FutureTester
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -182,7 +182,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerFutureTester(value) {
-        const pointerId = 11; // futures:FutureTester
+        const pointerId = 12; // futures:FutureTester
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -192,7 +192,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerRustTask() {
-        const pointerId = 12; // futures:RustTask
+        const pointerId = 13; // futures:RustTask
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -202,7 +202,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerRustTask(value) {
-        const pointerId = 12; // futures:RustTask
+        const pointerId = 13; // futures:RustTask
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -212,7 +212,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerTraveller() {
-        const pointerId = 13; // futures:Traveller
+        const pointerId = 14; // futures:Traveller
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -222,7 +222,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerTraveller(value) {
-        const pointerId = 13; // futures:Traveller
+        const pointerId = 14; // futures:Traveller
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -232,7 +232,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerWorkerQueue() {
-        const pointerId = 14; // futures:WorkerQueue
+        const pointerId = 15; // futures:WorkerQueue
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -242,7 +242,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerWorkerQueue(value) {
-        const pointerId = 14; // futures:WorkerQueue
+        const pointerId = 15; // futures:WorkerQueue
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -306,6 +306,37 @@ class FfiConverterArrayBuffer extends FfiConverter {
         this.write(dataStream, value);
         return buf;
     }
+
+    /**
+     * Computes the size of the value.
+     *
+     * @param {*} _value
+     * @return {number}
+     */
+    static computeSize(_value) {
+        throw new UniFFIInternalError("computeSize() should be declared in the derived class");
+    }
+
+    /**
+     * Reads the type from a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @returns {any}
+     */
+    static read(_dataStream) {
+        throw new UniFFIInternalError("read() should be declared in the derived class");
+    }
+
+    /**
+     * Writes the type to a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @param {any} _value
+     */
+    static write(_dataStream, _value) {
+        throw new UniFFIInternalError("write() should be declared in the derived class");
+    }
+
 }
 
 // Symbols that are used to ensure that Object constructors
@@ -325,7 +356,7 @@ export class FfiConverterU8 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U8 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 1;
     }
     static lift(value) {
@@ -353,7 +384,7 @@ export class FfiConverterI8 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the I8 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 1;
     }
     static lift(value) {
@@ -381,7 +412,7 @@ export class FfiConverterU16 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U16 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 2;
     }
     static lift(value) {
@@ -409,7 +440,7 @@ export class FfiConverterI16 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the I16 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 2;
     }
     static lift(value) {
@@ -437,7 +468,7 @@ export class FfiConverterU32 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U32 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 4;
     }
     static lift(value) {
@@ -465,7 +496,7 @@ export class FfiConverterI32 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the I32 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 4;
     }
     static lift(value) {
@@ -493,7 +524,7 @@ export class FfiConverterU64 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U64 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -518,7 +549,7 @@ export class FfiConverterI64 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the safe integer bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -537,7 +568,7 @@ export class FfiConverterI64 extends FfiConverter {
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterF32 extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 4;
     }
     static lift(value) {
@@ -556,7 +587,7 @@ export class FfiConverterF32 extends FfiConverter {
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterF64 extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -617,7 +648,7 @@ export class FutureTester {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -631,7 +662,7 @@ export class FutureTester {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                122, // futures:uniffi_uniffi_fixture_futures_fn_constructor_futuretester_init
+                126, // futures:uniffi_uniffi_fixture_futures_fn_constructor_futuretester_init
             )
         }
         return handleRustResult(functionCall(), liftResult, liftError);}
@@ -656,7 +687,7 @@ export class FutureTester {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                119, // futures:uniffi_uniffi_fixture_futures_fn_method_futuretester_complete_futures
+                123, // futures:uniffi_uniffi_fixture_futures_fn_method_futuretester_complete_futures
                 FfiConverterTypeFutureTester.lower(this),
                 FfiConverterU8.lower(value),
             )
@@ -673,7 +704,7 @@ export class FutureTester {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callAsync(
-                120, // futures:uniffi_uniffi_fixture_futures_fn_method_futuretester_make_future
+                124, // futures:uniffi_uniffi_fixture_futures_fn_method_futuretester_make_future
                 FfiConverterTypeFutureTester.lower(this),
             )
         }
@@ -693,7 +724,7 @@ export class FutureTester {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                121, // futures:uniffi_uniffi_fixture_futures_fn_method_futuretester_wake_futures
+                125, // futures:uniffi_uniffi_fixture_futures_fn_method_futuretester_wake_futures
                 FfiConverterTypeFutureTester.lower(this),
             )
         }
@@ -742,7 +773,7 @@ export class RustTask {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -756,7 +787,7 @@ export class RustTask {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                123, // futures:uniffi_uniffi_fixture_futures_fn_method_rusttask_run
+                127, // futures:uniffi_uniffi_fixture_futures_fn_method_rusttask_run
                 FfiConverterTypeRustTask.lower(this),
             )
         }
@@ -805,7 +836,7 @@ export class Traveller {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -827,7 +858,7 @@ export class Traveller {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                125, // futures:uniffi_uniffi_fixture_futures_fn_constructor_traveller_new
+                129, // futures:uniffi_uniffi_fixture_futures_fn_constructor_traveller_new
                 FfiConverterString.lower(name),
             )
         }
@@ -842,7 +873,7 @@ export class Traveller {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                124, // futures:uniffi_uniffi_fixture_futures_fn_method_traveller_name
+                128, // futures:uniffi_uniffi_fixture_futures_fn_method_traveller_name
                 FfiConverterTypeTraveller.lower(this),
             )
         }
@@ -897,7 +928,7 @@ export class WorkerQueue {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -919,7 +950,7 @@ export class WorkerQueue {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                126, // futures:uniffi_uniffi_fixture_futures_fn_method_workerqueue_add_task
+                130, // futures:uniffi_uniffi_fixture_futures_fn_method_workerqueue_add_task
                 FfiConverterTypeWorkerQueue.lower(this),
                 FfiConverterTypeRustTask.lower(task),
             )
@@ -1073,7 +1104,7 @@ export function expensiveComputation() {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callAsync(
-                102, // futures:uniffi_uniffi_fixture_futures_fn_func_expensive_computation
+                106, // futures:uniffi_uniffi_fixture_futures_fn_func_expensive_computation
             )
         }
         try {
@@ -1096,7 +1127,7 @@ export function initializeGeckoGlobalWorkerQueue() {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                103, // futures:uniffi_uniffi_fixture_futures_fn_func_initialize_gecko_global_worker_queue
+                107, // futures:uniffi_uniffi_fixture_futures_fn_func_initialize_gecko_global_worker_queue
             )
         }
         return handleRustResult(functionCall(), liftResult, liftError);
@@ -1120,7 +1151,7 @@ export function initializeGlobalWorkerQueue(workerQueue) {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                104, // futures:uniffi_uniffi_fixture_futures_fn_func_initialize_global_worker_queue
+                108, // futures:uniffi_uniffi_fixture_futures_fn_func_initialize_global_worker_queue
                 FfiConverterTypeWorkerQueue.lower(workerQueue),
             )
         }
@@ -1145,7 +1176,7 @@ export function roundtripF32(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                105, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_f32
+                109, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_f32
                 FfiConverterF32.lower(v),
             )
         }
@@ -1174,7 +1205,7 @@ export function roundtripF64(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                106, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_f64
+                110, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_f64
                 FfiConverterF64.lower(v),
             )
         }
@@ -1203,7 +1234,7 @@ export function roundtripI16(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                107, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i16
+                111, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i16
                 FfiConverterI16.lower(v),
             )
         }
@@ -1232,7 +1263,7 @@ export function roundtripI32(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                108, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i32
+                112, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i32
                 FfiConverterI32.lower(v),
             )
         }
@@ -1261,7 +1292,7 @@ export function roundtripI64(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                109, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i64
+                113, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i64
                 FfiConverterI64.lower(v),
             )
         }
@@ -1290,7 +1321,7 @@ export function roundtripI8(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                110, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i8
+                114, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_i8
                 FfiConverterI8.lower(v),
             )
         }
@@ -1319,7 +1350,7 @@ export function roundtripMap(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                111, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_map
+                115, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_map
                 FfiConverterMapStringString.lower(v),
             )
         }
@@ -1348,7 +1379,7 @@ export function roundtripObj(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                112, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_obj
+                116, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_obj
                 FfiConverterTypeTraveller.lower(v),
             )
         }
@@ -1377,7 +1408,7 @@ export function roundtripString(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                113, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_string
+                117, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_string
                 FfiConverterString.lower(v),
             )
         }
@@ -1406,7 +1437,7 @@ export function roundtripU16(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                114, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u16
+                118, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u16
                 FfiConverterU16.lower(v),
             )
         }
@@ -1435,7 +1466,7 @@ export function roundtripU32(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                115, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u32
+                119, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u32
                 FfiConverterU32.lower(v),
             )
         }
@@ -1464,7 +1495,7 @@ export function roundtripU64(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                116, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u64
+                120, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u64
                 FfiConverterU64.lower(v),
             )
         }
@@ -1493,7 +1524,7 @@ export function roundtripU8(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                117, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u8
+                121, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_u8
                 FfiConverterU8.lower(v),
             )
         }
@@ -1522,7 +1553,7 @@ export function roundtripVec(v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsync(
-                118, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_vec
+                122, // futures:uniffi_uniffi_fixture_futures_fn_func_roundtrip_vec
                 FfiConverterSequenceu32.lower(v),
             )
         }

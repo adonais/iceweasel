@@ -4,27 +4,24 @@
 
 package org.mozilla.fenix.settings.trustpanel.ui
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.annotation.LightDarkPreview
@@ -33,6 +30,8 @@ import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
 import org.mozilla.fenix.components.menu.compose.MenuScaffold
 import org.mozilla.fenix.components.menu.compose.MenuTextItem
+import org.mozilla.fenix.compose.LinkText
+import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -40,22 +39,29 @@ internal const val PROTECTION_PANEL_ROUTE = "protection_panel"
 
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(4.dp)
 
+@Suppress("LongParameterList", "LongMethod")
 @Composable
 internal fun ProtectionPanel(
     url: String,
     title: String,
+    icon: Bitmap?,
     isSecured: Boolean,
     isTrackingProtectionEnabled: Boolean,
+    numberOfTrackersBlocked: Int,
     onTrackerBlockedMenuClick: () -> Unit,
     onTrackingProtectionToggleClick: () -> Unit,
     onClearSiteDataMenuClick: () -> Unit,
+    onConnectionSecurityClick: () -> Unit,
+    onPrivacySecuritySettingsClick: () -> Unit,
 ) {
     MenuScaffold(
         header = {
             ProtectionPanelHeader(
                 url = url,
                 title = title,
+                icon = icon,
                 isSecured = isSecured,
+                onConnectionSecurityClick = onConnectionSecurityClick,
             )
         },
     ) {
@@ -65,12 +71,22 @@ internal fun ProtectionPanel(
                 isTrackingProtectionEnabled = isTrackingProtectionEnabled,
             )
 
-            MenuItem(
-                label = "5 Trackers blocked",
-                beforeIconPainter = painterResource(id = R.drawable.mozac_ic_shield_24),
-                onClick = onTrackerBlockedMenuClick,
-                afterIconPainter = painterResource(id = R.drawable.mozac_ic_chevron_right_24),
-            )
+            if (numberOfTrackersBlocked == 0) {
+                MenuItem(
+                    label = stringResource(id = R.string.protection_panel_no_trackers_blocked),
+                    beforeIconPainter = painterResource(id = R.drawable.mozac_ic_shield_24),
+                )
+            } else {
+                MenuItem(
+                    label = stringResource(
+                        id = R.string.protection_panel_num_trackers_blocked,
+                        numberOfTrackersBlocked,
+                    ),
+                    beforeIconPainter = painterResource(id = R.drawable.mozac_ic_shield_24),
+                    onClick = onTrackerBlockedMenuClick,
+                    afterIconPainter = painterResource(id = R.drawable.mozac_ic_chevron_right_24),
+                )
+            }
 
             Divider(color = FirefoxTheme.colors.borderSecondary)
 
@@ -93,73 +109,19 @@ internal fun ProtectionPanel(
                 onClick = onClearSiteDataMenuClick,
             )
         }
-    }
-}
 
-@Composable
-private fun ProtectionPanelHeader(
-    url: String,
-    title: String,
-    isSecured: Boolean,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 12.dp, end = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .weight(1f),
-        ) {
-            Text(
-                text = title,
-                color = FirefoxTheme.colors.textSecondary,
-                maxLines = 1,
-                style = FirefoxTheme.typography.headline7,
-            )
-
-            Text(
-                text = url,
-                color = FirefoxTheme.colors.textSecondary,
-                maxLines = 1,
-                style = FirefoxTheme.typography.caption,
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Divider(modifier = Modifier.size(width = 2.dp, height = 32.dp))
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        IconButton(
-            onClick = {},
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_lock_20),
-                    contentDescription = null,
-                    tint = FirefoxTheme.colors.iconSecondary,
-                )
-
-                Text(
-                    text = if (isSecured) { "Secured" } else { "" },
-                    color = FirefoxTheme.colors.textSecondary,
-                    maxLines = 1,
-                    style = FirefoxTheme.typography.caption,
-                )
-
-                Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_chevron_right_24),
-                    contentDescription = null,
-                    tint = FirefoxTheme.colors.iconSecondary,
-                )
-            }
-        }
+        LinkText(
+            text = stringResource(id = R.string.protection_panel_privacy_and_security_settings),
+            linkTextStates = listOf(
+                LinkTextState(
+                    text = stringResource(id = R.string.protection_panel_privacy_and_security_settings),
+                    url = "",
+                    onClick = { onPrivacySecuritySettingsClick() },
+                ),
+            ),
+            linkTextColor = FirefoxTheme.colors.textAccent,
+            linkTextDecoration = TextDecoration.Underline,
+        )
     }
 }
 
@@ -244,11 +206,15 @@ private fun ProtectionPanelPreview() {
             ProtectionPanel(
                 url = "https://www.mozilla.org",
                 title = "Mozilla",
+                icon = null,
                 isSecured = true,
                 isTrackingProtectionEnabled = true,
+                numberOfTrackersBlocked = 5,
                 onTrackerBlockedMenuClick = {},
                 onTrackingProtectionToggleClick = {},
                 onClearSiteDataMenuClick = {},
+                onConnectionSecurityClick = {},
+                onPrivacySecuritySettingsClick = {},
             )
         }
     }

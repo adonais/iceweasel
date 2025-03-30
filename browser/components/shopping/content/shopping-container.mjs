@@ -23,6 +23,8 @@ import "chrome://browser/content/shopping/shopping-message-bar.mjs";
 import "chrome://browser/content/shopping/unanalyzed.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/shopping/recommended-ad.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/shopping/new-position-notification-card.mjs";
 
 // The number of pixels that must be scrolled from the
 // top of the sidebar to show the header box shadow.
@@ -37,6 +39,11 @@ const SHOPPING_SIDEBAR_ACTIVE_PREF = "browser.shopping.experience2023.active";
 const SIDEBAR_REVAMP_PREF = "sidebar.revamp";
 const INTEGRATED_SIDEBAR_PREF =
   "browser.shopping.experience2023.integratedSidebar";
+const HAS_SEEN_POSITION_NOTIFICATION_CARD_PREF =
+  "browser.shopping.experience2023.newPositionCard.hasSeen";
+
+const CLOSED_COUNT_PREVIOUS_MIN = 4;
+const CLOSED_COUNT_PREVIOUS_MAX = 6;
 
 export class ShoppingContainer extends MozLitElement {
   static properties = {
@@ -55,12 +62,15 @@ export class ShoppingContainer extends MozLitElement {
     isOverflow: { type: Boolean },
     autoOpenEnabled: { type: Boolean },
     autoOpenEnabledByUser: { type: Boolean },
+    autoCloseEnabledByUser: { type: Boolean },
     showingKeepClosedMessage: { type: Boolean },
     isProductPage: { type: Boolean },
     isSupportedSite: { type: Boolean },
     supportedDomains: { type: Object },
     formattedDomainList: { type: Object, state: true },
     isHeaderOverflow: { type: Boolean, state: true },
+    isSidebarStartPosition: { type: Boolean },
+    showNewPositionCard: { type: Boolean },
   };
 
   static get queries() {
@@ -82,6 +92,7 @@ export class ShoppingContainer extends MozLitElement {
       emptyStateSupportedListEl: "#shopping-empty-list-of-supported-domains",
       containerContentEl: "#content",
       header: "#shopping-header",
+      newPositionNotificationCardEl: "new-position-notification-card",
     };
   }
 
@@ -104,8 +115,11 @@ export class ShoppingContainer extends MozLitElement {
     window.document.addEventListener("UpdateRecommendations", this);
     window.document.addEventListener("UpdateAnalysisProgress", this);
     window.document.addEventListener("autoOpenEnabledByUserChanged", this);
+    window.document.addEventListener("autoCloseEnabledByUserChanged", this);
     window.document.addEventListener("ShowKeepClosedMessage", this);
     window.document.addEventListener("HideKeepClosedMessage", this);
+    window.document.addEventListener("ShowNewPositionCard", this);
+    window.document.addEventListener("HideNewPositionCard", this);
 
     window.dispatchEvent(
       new CustomEvent("ContentReady", {
@@ -143,7 +157,7 @@ export class ShoppingContainer extends MozLitElement {
         this.formattedDomainList = null;
       }
     }
-    // TODO:
+
     if (this.focusCloseButton) {
       this.closeButtonEl.focus();
     }
@@ -161,9 +175,11 @@ export class ShoppingContainer extends MozLitElement {
     focusCloseButton,
     autoOpenEnabled,
     autoOpenEnabledByUser,
+    autoCloseEnabledByUser,
     isProductPage,
     isSupportedSite,
     supportedDomains,
+    isSidebarStartPosition,
   }) {
     // If we're not opted in or there's no shopping URL in the main browser,
     // the actor will pass `null`, which means this will clear out any existing
@@ -181,9 +197,13 @@ export class ShoppingContainer extends MozLitElement {
     this.autoOpenEnabled = autoOpenEnabled ?? this.autoOpenEnabled;
     this.autoOpenEnabledByUser =
       autoOpenEnabledByUser ?? this.autoOpenEnabledByUser;
+    this.autoCloseEnabledByUser =
+      autoCloseEnabledByUser ?? this.autoCloseEnabledByUser;
     this.isProductPage = isProductPage ?? true;
     this.isSupportedSite = isSupportedSite;
     this.supportedDomains = supportedDomains ?? this.supportedDomains;
+    this.isSidebarStartPosition =
+      isSidebarStartPosition ?? this.isSidebarStartPosition;
   }
 
   _updateRecommendations({ recommendationData }) {
@@ -238,11 +258,20 @@ export class ShoppingContainer extends MozLitElement {
       case "autoOpenEnabledByUserChanged":
         this.autoOpenEnabledByUser = event.detail?.autoOpenEnabledByUser;
         break;
+      case "autoCloseEnabledByUserChanged":
+        this.autoCloseEnabledByUser = event.detail?.autoCloseEnabledByUser;
+        break;
       case "ShowKeepClosedMessage":
         this.showingKeepClosedMessage = true;
         break;
       case "HideKeepClosedMessage":
         this.showingKeepClosedMessage = false;
+        break;
+      case "ShowNewPositionCard":
+        this.showNewPositionCard = true;
+        break;
+      case "HideNewPositionCard":
+        this.showNewPositionCard = false;
         break;
     }
   }
@@ -255,32 +284,31 @@ export class ShoppingContainer extends MozLitElement {
   }
 
   getHostnameFromProductUrl() {
-    let hostname;
-    try {
-      hostname = new URL(this.productUrl)?.hostname;
+    let hostname = URL.parse(this.productUrl)?.hostname;
+    if (hostname) {
       return hostname;
-    } catch (e) {
-      console.warn(`Unknown product url ${this.productUrl}.`);
-      return null;
     }
+    console.warn(`Unknown product url ${this.productUrl}.`);
+    return null;
   }
 
   analysisDetailsTemplate() {
     /* At present, en is supported as the default language for reviews. As we support more sites,
      * update `lang` accordingly if highlights need to be displayed in other languages. */
-    let lang;
     let hostname = this.getHostnameFromProductUrl();
 
-    switch (hostname) {
-      case "www.amazon.fr":
-        lang = "fr";
-        break;
-      case "www.amazon.de":
-        lang = "de";
-        break;
-      default:
-        lang = "en";
+    let lang = "en";
+    let isDEFRSupported = RPMGetBoolPref(
+      "toolkit.shopping.experience2023.defr",
+      false
+    );
+
+    if (isDEFRSupported && hostname === "www.amazon.fr") {
+      lang = "fr";
+    } else if (isDEFRSupported && hostname === "www.amazon.de") {
+      lang = "de";
     }
+
     return html`
       <review-reliability letter=${this.data.grade}></review-reliability>
       <adjusted-rating
@@ -538,6 +566,7 @@ export class ShoppingContainer extends MozLitElement {
     </div>`;
   }
 
+  // TODO: (Bug 1949647) do not render "Keep closed" message and notification card simultaneously.
   renderContainer(sidebarContent, { showSettings = false } = {}) {
     /* Empty state styles for users that are not yet opted-in are managed separately
      * by AboutWelcomeChild.sys.mjs and _shopping.scss. To prevent overlap, only apply
@@ -565,7 +594,7 @@ export class ShoppingContainer extends MozLitElement {
           aria-busy=${!this.data}
         >
           <slot name="multi-stage-message-slot"></slot>
-          ${this.keepClosedMessageTemplate()}${sidebarContent}
+          ${this.userInteractionMessageTemplate()}${sidebarContent}
           ${showSettings
             ? this.settingsTemplate(
                 !this.isSupportedSite && !this.isProductPage
@@ -591,24 +620,59 @@ export class ShoppingContainer extends MozLitElement {
       ?adsEnabledByUser=${this.adsEnabledByUser}
       ?autoOpenEnabled=${this.autoOpenEnabled}
       ?autoOpenEnabledByUser=${this.autoOpenEnabledByUser}
+      ?autoCloseEnabledByUser=${this.autoCloseEnabledByUser}
       .hostname=${hostname}
       class=${className}
     ></shopping-settings>`;
   }
 
-  keepClosedMessageTemplate() {
-    if (
-      this.autoOpenEnabled &&
-      this.autoOpenEnabledByUser &&
-      this.showingKeepClosedMessage &&
-      RPMGetBoolPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, true)
-    ) {
-      return html`<shopping-message-bar
-        id="keep-closed-message-bar"
-        type="keep-closed"
-      ></shopping-message-bar>`;
+  userInteractionMessageTemplate() {
+    /**
+     * There are two types of messages about users' interaction with Review Checker that we want to display
+     * when users keep the auto-open setting enabled:
+     * 1. The "Keep closed" message-bar
+     * 2. The "New position" notification card (integratedSidebar only)
+     *
+     * Only one or the other should be rendered at a time, at the same spot. If a user is eligible
+     * to see the notification card, make sure to show that card first. Once the card is dismissed,
+     * we can then check if the user is eligible to see the "Keep closed" message.
+     */
+    if (!this.autoOpenEnabled || !this.autoOpenEnabledByUser) {
+      return null;
     }
+
+    let canShowNotificationCard =
+      RPMGetBoolPref(INTEGRATED_SIDEBAR_PREF, false) &&
+      this.showNewPositionCard &&
+      this.isSidebarStartPosition &&
+      // Set fallback value to true to prevent weird flickering UI when switching tabs
+      !RPMGetBoolPref(HAS_SEEN_POSITION_NOTIFICATION_CARD_PREF, true);
+    let canShowKeepClosedMessage =
+      this.showingKeepClosedMessage &&
+      RPMGetBoolPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, true);
+
+    if (canShowNotificationCard) {
+      return this.newPositionNotificationCardTemplate();
+    } else if (canShowKeepClosedMessage) {
+      return this.keepClosedMessageTemplate();
+    }
+
     return null;
+  }
+
+  newPositionNotificationCardTemplate() {
+    return html`
+      <new-position-notification-card
+        isSidebarStartPosition=${this.isSidebarStartPosition}
+      ></new-position-notification-card>
+    `;
+  }
+
+  keepClosedMessageTemplate() {
+    return html`<shopping-message-bar
+      id="keep-closed-message-bar"
+      type="keep-closed"
+    ></shopping-message-bar>`;
   }
 
   render() {
@@ -636,31 +700,68 @@ export class ShoppingContainer extends MozLitElement {
   }
 
   handleCloseButtonClick() {
+    let canShowKeepClosedMessage;
+
     if (this.autoOpenEnabled && this.autoOpenEnabledByUser) {
-      let sidebarClosedCount = RPMGetIntPref(SIDEBAR_CLOSED_COUNT_PREF, 0);
-      if (
-        !this.showingKeepClosedMessage &&
-        sidebarClosedCount >= 4 &&
-        RPMGetBoolPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, true)
-      ) {
-        this.showingKeepClosedMessage = true;
-        return;
-      }
+      canShowKeepClosedMessage =
+        this._canShowKeepClosedMessageOnCloseButtonClick();
+    }
 
-      this.showingKeepClosedMessage = false;
+    if (!canShowKeepClosedMessage) {
+      RPMSetPref(SHOPPING_SIDEBAR_ACTIVE_PREF, false);
+      window.dispatchEvent(
+        new CustomEvent("CloseShoppingSidebar", {
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
 
-      if (sidebarClosedCount >= 6) {
-        RPMSetPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, false);
-      }
+    Glean.shopping.surfaceClosed.record({ source: "closeButton" });
+  }
 
+  /**
+   * Delaying close is only applicable to the "Keep closed" message.
+   *
+   * We can show the message under these conditions:
+   * - User has already seen the new location notification card
+   * - The message was never seen before
+   * - User clicked the close button at least 5 times in a session (i.e. met the minimum of 4 counts before this point)
+   * - The number of close attempts in a session is less than 7 (i.e. met the maximum of 6 counts before this point)
+   *
+   * Do not show the message again after the 7th close.
+   */
+  _canShowKeepClosedMessageOnCloseButtonClick() {
+    let yetToSeeNotificationCard =
+      !RPMGetBoolPref(HAS_SEEN_POSITION_NOTIFICATION_CARD_PREF, false) &&
+      RPMGetBoolPref(INTEGRATED_SIDEBAR_PREF, false);
+
+    if (
+      yetToSeeNotificationCard ||
+      !RPMGetBoolPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, false)
+    ) {
+      return false;
+    }
+
+    let sidebarClosedCount = RPMGetIntPref(SIDEBAR_CLOSED_COUNT_PREF, 0);
+    let canShowKeepClosedMessage =
+      !this.showingKeepClosedMessage &&
+      sidebarClosedCount >= CLOSED_COUNT_PREVIOUS_MIN;
+
+    if (canShowKeepClosedMessage) {
+      this.showingKeepClosedMessage = true;
+      return true;
+    }
+
+    this.showingKeepClosedMessage = false;
+
+    if (sidebarClosedCount >= CLOSED_COUNT_PREVIOUS_MAX) {
+      RPMSetPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, false);
+    } else {
       RPMSetPref(SIDEBAR_CLOSED_COUNT_PREF, sidebarClosedCount + 1);
     }
 
-    RPMSetPref(SHOPPING_SIDEBAR_ACTIVE_PREF, false);
-    window.dispatchEvent(
-      new CustomEvent("CloseShoppingSidebar", { bubbles: true, composed: true })
-    );
-    Glean.shopping.surfaceClosed.record({ source: "closeButton" });
+    return false;
   }
 }
 

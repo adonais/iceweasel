@@ -34,12 +34,12 @@
 #include "nsIURI.h"
 #include "nsIWebNavigation.h"
 #include "nsFocusManager.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Components.h"  // for mozilla::components
 #include "mozilla/EditorBase.h"
 #include "mozilla/HTMLEditor.h"
-#include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
@@ -508,6 +508,8 @@ void DocAccessible::Shutdown() {
   // Mark the document as shutdown before AT is notified about the document
   // removal from its container (valid for root documents on ATK and due to
   // some reason for MSAA, refer to bug 757392 for details).
+  MOZ_DIAGNOSTIC_ASSERT(!IsDefunct(),
+                        "Already marked defunct. Reentrant shutdown!");
   mStateFlags |= eIsDefunct;
 
   if (mNotificationController) {
@@ -517,9 +519,6 @@ void DocAccessible::Shutdown() {
 
   RemoveEventListeners();
 
-  // mParent->RemoveChild clears mParent, but we need to know whether we were a
-  // child later, so use a flag.
-  const bool isChild = !!mParent;
   if (mParent) {
     DocAccessible* parentDocument = mParent->Document();
     if (parentDocument) parentDocument->RemoveChildDocument(this);
@@ -589,12 +588,7 @@ void DocAccessible::Shutdown() {
   HyperTextAccessible::Shutdown();
 
   MOZ_ASSERT(GetAccService());
-  GetAccService()->NotifyOfDocumentShutdown(
-      this, mDocumentNode,
-      // Make sure we don't shut down AccService while a parent document is
-      // still shutting down. The parent will allow service shutdown when it
-      // reaches this point.
-      /* aAllowServiceShutdown */ !isChild);
+  GetAccService()->NotifyOfDocumentShutdown(this, mDocumentNode);
   mDocumentNode = nullptr;
 }
 
@@ -1365,6 +1359,12 @@ void DocAccessible::ProcessPendingUpdates() {
 }
 
 bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
+  AUTO_PROFILER_MARKER_TEXT("DocAccessible::PruneOrInsertSubtree", A11Y, {},
+                            ""_ns);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_PruneOrInsertSubtree>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
+
   bool insert = false;
 
   // In the case that we are, or are in, a shadow host, we need to assure
@@ -1423,6 +1423,16 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     if (!frame && !nsCoreUtils::CanCreateAccessibleWithoutFrame(aRoot)) {
       ContentRemoved(aRoot);
       return false;
+    }
+
+    if (!frame && aRoot->IsElement() &&
+        aRoot->AsElement()->IsDisplayContents() && acc->mOldComputedStyle) {
+      // This element has probably just become display: contents. We won't be
+      // notified of a computed style change in this case. Also, the bounds we
+      // cached previously are now invalid, but our normal bounds change
+      // notifications won't fire either. Therefore, queue cache updates for
+      // both.
+      QueueCacheUpdate(acc, CacheDomain::Style | CacheDomain::Bounds);
     }
 
     // If the frame is hidden because its ancestor is specified with
@@ -1592,8 +1602,8 @@ void DocAccessible::ProcessInvalidationList() {
 }
 
 void DocAccessible::ProcessQueuedCacheUpdates(uint64_t aInitialDomains) {
-  AUTO_PROFILER_MARKER_TEXT("DocAccessible::ProcessQueuedCacheUpdates", A11Y,
-                            {}, ""_ns);
+  AUTO_PROFILER_MARKER_UNTYPED("DocAccessible::ProcessQueuedCacheUpdates", A11Y,
+                               {});
   PerfStats::AutoMetricRecording<
       PerfStats::Metric::A11Y_ProcessQueuedCacheUpdate>
       autoRecording;
@@ -1702,7 +1712,7 @@ void DocAccessible::NotifyOfLoading(bool aIsReloading) {
 }
 
 void DocAccessible::DoInitialUpdate() {
-  AUTO_PROFILER_MARKER_TEXT("DocAccessible::DoInitialUpdate", A11Y, {}, ""_ns);
+  AUTO_PROFILER_MARKER_UNTYPED("DocAccessible::DoInitialUpdate", A11Y, {});
   PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_DoInitialUpdate>
       autoRecording;
   // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
@@ -1753,7 +1763,7 @@ void DocAccessible::DoInitialUpdate() {
     ParentDocument()->FireDelayedEvent(reorderEvent);
   }
 
-  if (ipc::ProcessChild::ExpectingShutdown()) {
+  if (AppShutdown::IsShutdownImpending()) {
     return;
   }
   if (IPCAccessibilityActive()) {
@@ -2383,6 +2393,12 @@ void DocAccessible::FireEventsOnInsertion(LocalAccessible* aContainer) {
 }
 
 void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
+  AUTO_PROFILER_MARKER_TEXT("DocAccessible::ContentRemovedAcc", A11Y, {},
+                            ""_ns);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_ContentRemovedAcc>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
+
   MOZ_DIAGNOSTIC_ASSERT(aChild != this, "Should never be called for the doc");
   LocalAccessible* parent = aChild->LocalParent();
   MOZ_DIAGNOSTIC_ASSERT(parent, "Unattached accessible from tree");
@@ -2422,6 +2438,12 @@ void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
 }
 
 void DocAccessible::ContentRemoved(nsIContent* aContentNode) {
+  AUTO_PROFILER_MARKER_TEXT("DocAccessible::ContentRemovedNode", A11Y, {},
+                            ""_ns);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_ContentRemovedNode>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
+
   if (!mRemovedNodes.EnsureInserted(aContentNode)) {
     return;
   }
@@ -2470,6 +2492,13 @@ void DocAccessible::DoARIAOwnsRelocation(LocalAccessible* aOwner) {
 #ifdef A11Y_LOG
   logging::TreeInfo("aria owns relocation", logging::eVerbose, aOwner);
 #endif
+
+  const nsRoleMapEntry* roleMap = aOwner->ARIARoleMap();
+  if (roleMap && roleMap->role == roles::EDITCOMBOBOX) {
+    // The READWRITE state of a combobox may sever aria-owns relations
+    // we fallback to "controls" relations.
+    QueueCacheUpdate(aOwner, CacheDomain::Relations);
+  }
 
   nsTArray<RefPtr<LocalAccessible>>* owned =
       mARIAOwnsHash.GetOrInsertNew(aOwner);
@@ -2905,6 +2934,13 @@ void DocAccessible::UncacheChildrenInSubtree(LocalAccessible* aRoot) {
 }
 
 void DocAccessible::ShutdownChildrenInSubtree(LocalAccessible* aAccessible) {
+  AUTO_PROFILER_MARKER_TEXT("DocAccessible::ShutdownChildrenInSubtree", A11Y,
+                            {}, ""_ns);
+  PerfStats::AutoMetricRecording<
+      PerfStats::Metric::A11Y_ShutdownChildrenInSubtree>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
+
   MOZ_ASSERT(!nsAccessibilityService::IsShutdown());
   // Traverse through children and shutdown them before this accessible. When
   // child gets shutdown then it removes itself from children array of its

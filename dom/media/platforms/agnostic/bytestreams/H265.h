@@ -8,10 +8,11 @@
 #include <stdint.h>
 
 #include "mozilla/CheckedInt.h"
-#include "mozilla/gfx/Point.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
+#include "mozilla/gfx/Point.h"
+#include "nsStringFwd.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -291,6 +292,7 @@ struct HVCCConfig final {
   uint8_t NALUSize() const { return lengthSizeMinusOne + 1; }
   uint32_t NumSPS() const;
   bool HasSPS() const;
+  nsCString ToString() const;
 
   // Returns the first available NALU of the specified type, or nothing if no
   // such NALU is found.
@@ -395,10 +397,9 @@ class H265 final {
 
   // Create new extradata with the essential information from the given
   // HVCCConfig, excluding its original NALUs. The NALUs will be replaced by the
-  // provided SPS, PPS, and VPS.
+  // given NALUS, which are usually SPS, PPS, VPS and SEI.
   static already_AddRefed<mozilla::MediaByteBuffer> CreateNewExtraData(
-      const HVCCConfig& aConfig, const Maybe<H265NALU>& aSPS,
-      const Maybe<H265NALU>& aPPS, const Maybe<H265NALU>& aVPS);
+      const HVCCConfig& aConfig, const nsTArray<H265NALU>& aNALUs);
 
  private:
   // Return RAW BYTE SEQUENCE PAYLOAD (rbsp) from NAL content.

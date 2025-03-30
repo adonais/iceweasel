@@ -46,9 +46,17 @@ void MacroAssembler::PopRegsInMaskIgnore(LiveRegisterSet set,
 
 void MacroAssembler::PopStackPtr() { MOZ_CRASH(); }
 
+void MacroAssembler::freeStackTo(uint32_t framePushed) { MOZ_CRASH(); }
+
 void MacroAssembler::flexibleDivMod32(Register rhs, Register srcDest,
                                       Register remOutput, bool isUnsigned,
                                       const LiveRegisterSet& volatileLiveRegs) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::flexibleQuotient32(
+    Register rhs, Register srcDest, bool isUnsigned,
+    const LiveRegisterSet& volatileLiveRegs) {
   MOZ_CRASH();
 }
 
@@ -390,6 +398,11 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
   MOZ_CRASH();
 }
 
+void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
+                                        Register temp, Label* label) {
+  MOZ_CRASH();
+}
+
 void MacroAssembler::branchValueIsNurseryCell(Condition cond,
                                               const Address& address,
                                               Register temp, Label* label) {
@@ -457,6 +470,18 @@ void MacroAssembler::wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
                                            Register64 expected,
                                            Register64 replacement,
                                            Register64 output) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::wasmMarkCallAsSlow() { MOZ_CRASH(); }
+
+void MacroAssembler::wasmCheckSlowCallsite(Register ra, Label* notSlow,
+                                           Register temp1, Register temp2) {
+  MOZ_CRASH();
+}
+
+CodeOffset MacroAssembler::wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
+                                              const Register reg) {
   MOZ_CRASH();
 }
 

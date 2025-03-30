@@ -34,13 +34,32 @@ class SnapTestsBase:
         self._INSTANCE = os.environ.get("TEST_SNAP_INSTANCE", "firefox")
 
         self._PROFILE_PATH = "~/snap/{}/common/.mozilla/firefox/".format(self._INSTANCE)
-        self._EXE_PATH = r"/snap/{}/current/usr/lib/firefox/geckodriver".format(
-            self._INSTANCE
-        )
         self._LIB_PATH = r"/snap/{}/current/usr/lib/firefox/libxul.so".format(
             self._INSTANCE
         )
-        self._BIN_PATH = r"/snap/bin/{}".format(self._INSTANCE)
+        # This needs to be the snap-based symlink geckodriver to properly setup
+        # the Snap environment
+        self._EXE_PATH = r"/snap/bin/{}.geckodriver".format(self._INSTANCE)
+
+        # This needs to be the full path to the binary because at the moment of
+        # its execution it will already be under the Snap environment, and
+        # running "snap" command in this context will fail with Permission denied
+        #
+        # This can be trivially verified by the following shell script being used
+        # as binary_location/_BIN_PATH below:
+        #
+        # 8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-
+        # #!/bin/sh
+        # TMPDIR=${TMPDIR:-/tmp}
+        # env > $TMPDIR/snap-test.txt
+        # 8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-
+        #
+        # One should see output generated in the instance-specific temp dir
+        # /tmp/snap-private-tmp/snap.{}/tmp/snap-test.txt
+        # denoting that everything properly runs under Snap as expected.
+        self._BIN_PATH = r"/snap/{}/current/usr/lib/firefox/firefox".format(
+            self._INSTANCE
+        )
 
         snap_profile_path = tempfile.mkdtemp(
             prefix="snap-tests",
@@ -65,8 +84,6 @@ class SnapTestsBase:
         options.add_argument("-profile")
         options.add_argument(snap_profile_path)
         self._driver = webdriver.Firefox(service=driver_service, options=options)
-        self._driver.set_window_position(0, 0)
-        self._driver.set_window_size(1280, 1024)
 
         self._logger = structuredlog.StructuredLogger(self.__class__.__name__)
         self._logger.add_handler(
@@ -87,12 +104,15 @@ class SnapTestsBase:
 
         self._update_channel = None
         self._version_major = None
+        self._snap_core_base = None
 
         self._is_debug_build = None
         if self.is_debug_build():
             self._logger.info("Running against a DEBUG build")
         else:
             self._logger.info("Running against a OPT build")
+
+        self._driver.maximize_window()
 
         self._wait = WebDriverWait(self._driver, self.get_timeout())
         self._longwait = WebDriverWait(self._driver, 60)
@@ -103,16 +123,19 @@ class SnapTestsBase:
         rv = False
         first_tab = self._driver.window_handles[0]
         channel = self.update_channel()
-        if self.is_esr_115():
-            channel = "esr-115"
         if self.is_esr_128():
             channel = "esr-128"
+
+        core_base = self.snap_core_base()
+        channel_and_core = "{}core{}".format(channel, core_base)
+        self._logger.info("Channel & Core: {}".format(channel_and_core))
+
         for m in object_methods:
             self._logger.test_start(m)
             expectations = (
                 self._expectations[m]
-                if not channel in self._expectations[m]
-                else self._expectations[m][channel]
+                if not channel_and_core in self._expectations[m]
+                else self._expectations[m][channel_and_core]
             )
             self._driver.switch_to.window(first_tab)
 
@@ -225,6 +248,16 @@ class SnapTestsBase:
             self._driver.set_context("content")
         return self._update_channel
 
+    def snap_core_base(self):
+        if self._snap_core_base is None:
+            self._driver.set_context("chrome")
+            self._snap_core_base = self._driver.execute_script(
+                "return Services.sysinfo.getProperty('distroVersion');"
+            )
+            self._logger.info("Snap Core: {}".format(self._snap_core_base))
+            self._driver.set_context("content")
+        return self._snap_core_base
+
     def version_major(self):
         if self._version_major is None:
             self._driver.set_context("chrome")
@@ -234,9 +267,6 @@ class SnapTestsBase:
             self._logger.info("Version major: {}".format(self._version_major))
             self._driver.set_context("content")
         return self._version_major
-
-    def is_esr_115(self):
-        return self.update_channel() == "esr" and self.version_major() == "115"
 
     def is_esr_128(self):
         return self.update_channel() == "esr" and self.version_major() == "128"
@@ -346,6 +376,9 @@ class SnapTests(SnapTestsBase):
         self._dir = "basic_tests"
         super(SnapTests, self).__init__(exp)
 
+    def test_snap_core_base(self, exp):
+        assert self.snap_core_base() in ["22", "24"]
+
     def test_about_support(self, exp):
         self.open_tab("about:support")
 
@@ -446,35 +479,32 @@ class SnapTests(SnapTestsBase):
             "Services.prefs.setBoolPref('media.gmp-manager.updateEnabled', true);"
         )
 
-        if self.is_esr_115():
-            rv = False
-        else:
-            enable_drm_button = self._wait.until(
-                EC.visibility_of_element_located(
-                    (By.CSS_SELECTOR, ".notification-button[label='Enable DRM']")
-                )
+        enable_drm_button = self._wait.until(
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, ".notification-button[label='Enable DRM']")
             )
-            self._logger.info("Enabling DRMs")
-            enable_drm_button.click()
-            self._wait.until(
-                EC.invisibility_of_element_located(
-                    (By.CSS_SELECTOR, ".notification-button[label='Enable DRM']")
-                )
+        )
+        self._logger.info("Enabling DRMs")
+        enable_drm_button.click()
+        self._wait.until(
+            EC.invisibility_of_element_located(
+                (By.CSS_SELECTOR, ".notification-button[label='Enable DRM']")
             )
+        )
 
-            self._logger.info("Installing DRMs")
-            self._wait.until(
-                EC.visibility_of_element_located(
-                    (By.CSS_SELECTOR, ".infobar[value='drmContentCDMInstalling']")
-                )
+        self._logger.info("Installing DRMs")
+        self._wait.until(
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, ".infobar[value='drmContentCDMInstalling']")
             )
+        )
 
-            self._logger.info("Waiting for DRMs installation to complete")
-            self._longwait.until(
-                EC.invisibility_of_element_located(
-                    (By.CSS_SELECTOR, ".infobar[value='drmContentCDMInstalling']")
-                )
+        self._logger.info("Waiting for DRMs installation to complete")
+        self._longwait.until(
+            EC.invisibility_of_element_located(
+                (By.CSS_SELECTOR, ".infobar[value='drmContentCDMInstalling']")
             )
+        )
 
         self._driver.set_context("content")
         return rv

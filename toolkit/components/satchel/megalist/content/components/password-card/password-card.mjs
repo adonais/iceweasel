@@ -127,7 +127,14 @@ export class PasswordCard extends MozLitElement {
     this.messageToViewModel("Command", { commandId, snapshotId: lineIndex });
   }
 
+  #recordInteractionType(type) {
+    Glean.contextualManager.recordsInteraction.record({
+      interaction_type: type,
+    });
+  }
+
   async onEditButtonClick() {
+    this.#recordInteractionType("edit");
     const isAuthenticated = await this.reauthCommandHandler(() =>
       this.messageToViewModel("Command", {
         commandId: "Edit",
@@ -144,10 +151,12 @@ export class PasswordCard extends MozLitElement {
 
   onViewAlertClick() {
     this.handleViewAlertClick();
+    this.#recordInteractionType("view_alert");
   }
 
   #onOriginLineClick(lineIndex) {
     this.handleCommand("OpenLink", lineIndex);
+    this.#recordInteractionType("url_navigate");
   }
 
   #onCopyButtonClick(lineIndex) {
@@ -164,7 +173,7 @@ export class PasswordCard extends MozLitElement {
         role="option"
         class="line-item"
         data-l10n-id=${dataL10nId}
-        data-l10n-args="${JSON.stringify({ url: this.origin.value })}"
+        data-l10n-args=${JSON.stringify({ url: this.origin.value })}
         inputType="text"
         lineType="origin"
         labelL10nId="passwords-origin-label"
@@ -190,13 +199,14 @@ export class PasswordCard extends MozLitElement {
         role="option"
         class="line-item"
         data-l10n-id=${dataL10nId}
-        data-l10n-args="${JSON.stringify({ username: this.username.value })}"
+        data-l10n-args=${JSON.stringify({ username: this.username.value })}
         inputType="text"
         lineType="username"
         labelL10nId="passwords-username-label"
         .value=${this.username.value}
         .onLineClick=${() => {
           this.#onCopyButtonClick(this.username.lineIndex);
+          this.#recordInteractionType("copy_username");
           return true;
         }}
         ?alert=${!this.username.value.length}
@@ -213,17 +223,24 @@ export class PasswordCard extends MozLitElement {
         .value=${this.password.value}
         .visible=${!this.password.concealed}
         ?alert=${this.password.vulnerable}
-        .onLineClick=${() =>
-          this.reauthCommandHandler(() =>
-            this.#onCopyButtonClick(this.password.lineIndex)
-          )}
-        .onButtonClick=${() =>
-          this.reauthCommandHandler(() =>
+        .onLineClick=${() => {
+          this.#recordInteractionType("copy_password");
+          return this.reauthCommandHandler(() => {
+            this.#onCopyButtonClick(this.password.lineIndex);
+          });
+        }}
+        .onButtonClick=${() => {
+          const interactionType = this.password.concealed
+            ? "view_password"
+            : "hide_password";
+          this.#recordInteractionType(interactionType);
+          return this.reauthCommandHandler(() =>
             this.onPasswordRevealClick(
               this.password.concealed,
               this.password.lineIndex
             )
-          )}
+          );
+        }}
       >
       </concealed-login-line>
     `;

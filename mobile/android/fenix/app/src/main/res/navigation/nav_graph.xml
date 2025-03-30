@@ -123,6 +123,10 @@
         android:id="@+id/action_global_addonsManagementFragment"
         app:destination="@id/addons_management_graph" />
     <action
+        android:id="@+id/action_global_LinkSharingFragment"
+        app:destination="@id/linkSharingFragment"
+        app:popUpToInclusive="true"/>
+    <action
         android:id="@+id/action_loginsListFragment"
         app:destination="@id/savedLogins"
         app:enterAnim="@anim/slide_in_right"
@@ -691,6 +695,13 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_settingsFragment_to_linkSharingFragment"
+            app:destination="@id/linkSharingFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
             android:id="@+id/action_settingsFragment_to_tabsSettingsFragment"
             app:destination="@id/tabsSettingsFragment"
             app:enterAnim="@anim/slide_in_right"
@@ -721,6 +732,13 @@
         <action
             android:id="@+id/action_settingsFragment_to_syncDebugFragment"
             app:destination="@id/syncDebugFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_settingsFragment_to_dohSettingsFragment"
+            app:destination="@id/dohSettingsFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
@@ -898,6 +916,9 @@
     <fragment
         android:id="@+id/openLinksInAppsFragment"
         android:name="org.mozilla.fenix.settings.OpenLinksInAppsFragment" />
+    <fragment
+        android:id="@+id/linkSharingFragment"
+        android:name="org.mozilla.fenix.settings.LinkSharingFragment" />
     <fragment
         android:id="@+id/deleteBrowsingDataFragment"
         android:name="org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataFragment"
@@ -1153,6 +1174,11 @@
             app:argType="string"
             app:nullable="true" />
     </dialog>
+    <fragment
+        android:id="@+id/dohSettingsFragment"
+        android:name="org.mozilla.fenix.settings.doh.DohSettingsFragment"
+        tools:layout="@layout/fragment_doh_settings">
+    </fragment>
     <fragment
         android:id="@+id/addonDetailsFragment"
         android:name="org.mozilla.fenix.addons.AddonDetailsFragment"

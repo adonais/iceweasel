@@ -425,6 +425,14 @@ class EditorBase : public nsIEditor,
   }
 
   /**
+   * Called before starting to handle eMouseDown or eMouseUp in PresShell.
+   *
+   * @return true if IME consumed aMouseEvent.
+   */
+  MOZ_CAN_RUN_SCRIPT bool WillHandleMouseButtonEvent(
+      WidgetMouseEvent& aMouseEvent);
+
+  /**
    * HandleDropEvent() is called from EditorEventListener::Drop that is handler
    * of drop event.
    */
@@ -1714,17 +1722,42 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   OnInputText(const nsAString& aStringToInsert);
 
+  enum class InsertTextFor {
+    NormalText,
+    CompositionStart,
+    CompositionUpdate,
+    CompositionEnd,
+    CompositionStartAndEnd,
+  };
+  [[nodiscard]] static bool InsertingTextForComposition(
+      InsertTextFor aPurpose) {
+    return aPurpose != InsertTextFor::NormalText;
+  }
+  [[nodiscard]] static bool InsertingTextForExtantComposition(
+      InsertTextFor aPurpose) {
+    return aPurpose == InsertTextFor::CompositionUpdate ||
+           aPurpose == InsertTextFor::CompositionEnd;
+  }
+  [[nodiscard]] static bool InsertingTextForStartingComposition(
+      InsertTextFor aPurpose) {
+    return aPurpose == InsertTextFor::CompositionStart ||
+           aPurpose == InsertTextFor::CompositionStartAndEnd;
+  }
+  [[nodiscard]] static bool NothingToDoIfInsertingEmptyText(
+      InsertTextFor aPurpose) {
+    return aPurpose == InsertTextFor::NormalText ||
+           aPurpose == InsertTextFor::CompositionStartAndEnd;
+  }
+
   /**
    * InsertTextAsSubAction() inserts aStringToInsert at selection.  This
    * should be used for handling it as an edit sub-action.
    *
    * @param aStringToInsert     The string to insert.
-   * @param aSelectionHandling  Specify whether selected content should be
-   *                            deleted or ignored.
+   * @param aPurpose            Specify the purpose to insert text.
    */
-  enum class SelectionHandling { Ignore, Delete };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsSubAction(
-      const nsAString& aStringToInsert, SelectionHandling aSelectionHandling);
+      const nsAString& aStringToInsert, InsertTextFor aPurpose);
 
   /**
    * Insert aStringToInsert to aPointToInsert or better insertion point around
@@ -1734,7 +1767,6 @@ class EditorBase : public nsIEditor,
    * If there is no text node, this creates new text node and put
    * aStringToInsert to it.
    *
-   * @param aDocument       The document of this editor.
    * @param aStringToInsert The string to insert.
    * @param aPointToInsert  The point to insert aStringToInsert.
    *                        Must be valid DOM point.
@@ -1748,8 +1780,7 @@ class EditorBase : public nsIEditor,
     AlwaysCreateNewTextNode
   };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<InsertTextResult, nsresult>
-  InsertTextWithTransaction(Document& aDocument,
-                            const nsAString& aStringToInsert,
+  InsertTextWithTransaction(const nsAString& aStringToInsert,
                             const EditorDOMPoint& aPointToInsert,
                             InsertTextTo aInsertTextTo);
 
@@ -2128,9 +2159,6 @@ class EditorBase : public nsIEditor,
 
   /**
    * This method handles "delete selection" commands.
-   * NOTE: Don't call this method recursively from the helper methods since
-   *       when nobody handled it without canceling and returing an error,
-   *       this falls it back to `DeleteSelectionWithTransaction()`.
    *
    * @param aDirectionAndAmount Direction of the deletion.
    * @param aStripWrappers      Must be nsIEditor::eNoStrip if this is a
@@ -2152,16 +2180,12 @@ class EditorBase : public nsIEditor,
   /**
    * HandleInsertText() handles inserting text at selection.
    *
-   * @param aEditSubAction      Must be EditSubAction::eInsertText or
-   *                            EditSubAction::eInsertTextComingFromIME.
    * @param aInsertionString    String to be inserted at selection.
-   * @param aSelectionHandling  Specify whether selected content should be
-   *                            deleted or ignored.
+   * @param aPurpose            Specify the purpose of inserting text.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<EditActionResult, nsresult>
-  HandleInsertText(EditSubAction aEditSubAction,
-                   const nsAString& aInsertionString,
-                   SelectionHandling aSelectionHandling) = 0;
+  HandleInsertText(const nsAString& aInsertionString,
+                   InsertTextFor aPurpose) = 0;
 
   /**
    * InsertWithQuotationsAsSubAction() inserts aQuotedText with appending ">"
@@ -2597,22 +2621,6 @@ class EditorBase : public nsIEditor,
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DeleteSelectionByDragAsAction(bool aDispatchInputEvent);
-
-  /**
-   * DeleteSelectionWithTransaction() removes selected content or content
-   * around caret with transactions and remove empty inclusive ancestor
-   * inline elements of collapsed selection after removing the contents.
-   *
-   * @param aDirectionAndAmount How much range should be removed.
-   * @param aStripWrappers      Whether the parent blocks should be removed
-   *                            when they become empty.
-   *                            Note that this must be `nsIEditor::eNoStrip`
-   *                            if this is a TextEditor because anyway it'll
-   *                            be ignored.
-   */
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteSelectionWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
-                                 nsIEditor::EStripWrappers aStripWrappers);
 
   /**
    * DeleteRangeWithTransaction() removes content in aRangeToDelete or content

@@ -191,14 +191,19 @@ pub fn update_prim_visibility(
     };
 
     let surface = &frame_state.surfaces[surface_index.0 as usize];
+    let surface_culling_rect = surface.culling_rect;
+
     let device_pixel_scale = surface.device_pixel_scale;
     let mut map_local_to_picture = surface.map_local_to_picture.clone();
-    let map_surface_to_world = SpaceMapper::new_with_target(
+
+    let map_surface_to_vis = SpaceMapper::new_with_target(
+        // TODO: switch from root to raster space.
         frame_context.root_spatial_node_index,
         surface.surface_spatial_node_index,
-        frame_context.global_screen_world_rect,
+        surface.culling_rect,
         frame_context.spatial_tree,
     );
+    let visibility_spatial_node_index = surface.visibility_spatial_node_index;
 
     for cluster in &pic.prim_list.clusters {
         profile_scope!("cluster");
@@ -287,6 +292,7 @@ pub fn update_prim_visibility(
             frame_state.clip_store.set_active_clips(
                 cluster.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
+                visibility_spatial_node_index,
                 prim_instance.clip_leaf_id,
                 &frame_context.spatial_tree,
                 &frame_state.data_stores.clip,
@@ -298,12 +304,12 @@ pub fn update_prim_visibility(
                 .build_clip_chain_instance(
                     local_coverage_rect,
                     &map_local_to_picture,
-                    &map_surface_to_world,
+                    &map_surface_to_vis,
                     &frame_context.spatial_tree,
                     frame_state.gpu_cache,
                     frame_state.resource_cache,
                     device_pixel_scale,
-                    &world_culling_rect,
+                    &surface_culling_rect,
                     &mut frame_state.data_stores.clip,
                     frame_state.rg_builder,
                     true,
@@ -378,17 +384,16 @@ pub fn update_prim_visibility(
 
 pub fn compute_conservative_visible_rect(
     clip_chain: &ClipChainInstance,
-    world_culling_rect: WorldRect,
+    culling_rect: VisRect,
+    visibility_node_index: SpatialNodeIndex,
     prim_spatial_node_index: SpatialNodeIndex,
     spatial_tree: &SpatialTree,
 ) -> LayoutRect {
-    let root_spatial_node_index = spatial_tree.root_reference_frame_index();
-
     // Mapping from picture space -> world space
-    let map_pic_to_world: SpaceMapper<PicturePixel, WorldPixel> = SpaceMapper::new_with_target(
-        root_spatial_node_index,
+    let map_pic_to_vis: SpaceMapper<PicturePixel, VisPixel> = SpaceMapper::new_with_target(
+        visibility_node_index,
         clip_chain.pic_spatial_node_index,
-        world_culling_rect,
+        culling_rect,
         spatial_tree,
     );
 
@@ -402,7 +407,7 @@ pub fn compute_conservative_visible_rect(
 
     // Unmap the world culling rect from world -> picture space. If this mapping fails due
     // to matrix weirdness, best we can do is use the clip chain's local clip rect.
-    let pic_culling_rect = match map_pic_to_world.unmap(&world_culling_rect) {
+    let pic_culling_rect = match map_pic_to_vis.unmap(&culling_rect) {
         Some(rect) => rect,
         None => return clip_chain.local_clip_rect,
     };

@@ -15,6 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
+  OPFS: "chrome://global/content/ml/Utils.sys.mjs",
   URLChecker: "chrome://global/content/ml/Utils.sys.mjs",
   DEFAULT_ENGINE_ID: "chrome://global/content/ml/EngineProcess.sys.mjs",
 });
@@ -32,10 +33,12 @@ const ALLOWED_HEADERS_KEYS = [
   "status",
   "fileSize", // the size in bytes we store
   "Content-Length", // the size we download (can be different when gzipped)
+  "lastUpdated",
+  "lastUsed",
 ];
 
 // Default indexedDB revision.
-const DEFAULT_MODEL_REVISION = 4;
+const DEFAULT_MODEL_REVISION = 6;
 
 // The origin to use for storage. If null uses system.
 const DEFAULT_PRINCIPAL_ORIGIN = null;
@@ -76,8 +79,9 @@ class ForbiddenURLError extends Error {
 
 /**
  * Class for managing a cache stored in IndexedDB.
+ *
  */
-export class IndexedDBCache {
+class IndexedDBCache {
   /**
    * Reference to the IndexedDB database.
    *
@@ -214,25 +218,30 @@ export class IndexedDBCache {
     }
   }
 
-  #migrateStore(db, oldVersion) {
+  async #migrateStore(db, oldVersion) {
     const newVersion = db.version;
+    lazy.console.debug(`Migrating from version ${oldVersion} to ${newVersion}`);
+    try {
+      // If we are migrating from version 5 to 6, we can skip the migration
+      // as we just added the header lastUsed and lastUpdated fields
+      if (oldVersion === 5 && newVersion === 6) {
+        return;
+      }
 
-    // Delete all existing data when migrating for now
-    if (oldVersion < newVersion) {
-      lazy.console.debug(
-        `Migrating from version ${oldVersion} to ${newVersion}`
-      );
-
-      for (const name of [
-        this.fileStoreName,
-        this.headersStoreName,
-        this.taskStoreName,
-        this.enginesStoreName,
-      ]) {
-        if (db.objectStoreNames.contains(name)) {
-          db.deleteObjectStore(name);
+      if (oldVersion < newVersion) {
+        for (const name of [
+          this.fileStoreName,
+          this.headersStoreName,
+          this.taskStoreName,
+          this.enginesStoreName,
+        ]) {
+          if (db.objectStoreNames.contains(name)) {
+            db.deleteObjectStore(name);
+          }
         }
       }
+    } finally {
+      lazy.console.debug("Migration done");
     }
   }
 
@@ -307,68 +316,77 @@ export class IndexedDBCache {
         this.dbVersion
       );
       request.onerror = event => reject(event.target.error);
-      request.onsuccess = event => {
+      request.onupgradeneeded = async event => {
         const db = event.target.result;
-        // This is called when a version upgrade event is sent from elsewhere
-        // for example from another tab/window from the same computer.
-        db.onversionchange = _onVersionChangeevent => {
+        let transaction = event.target.transaction;
+
+        try {
+          // Run migration first
+          await this.#migrateStore(db, event.oldVersion, transaction);
+
+          // Create object stores inside `onupgradeneeded` transaction
+          if (!db.objectStoreNames.contains(this.headersStoreName)) {
+            db.createObjectStore(this.headersStoreName, {
+              keyPath: ["model", "revision", "file"],
+            });
+          }
+          if (!db.objectStoreNames.contains(this.taskStoreName)) {
+            db.createObjectStore(this.taskStoreName, {
+              keyPath: ["taskName", "model", "revision", "file"],
+            });
+          }
+          if (!db.objectStoreNames.contains(this.enginesStoreName)) {
+            db.createObjectStore(this.enginesStoreName, {
+              keyPath: ["model", "revision", "file"],
+            });
+          }
+
+          const headerStore = transaction.objectStore(this.headersStoreName);
+          this.#createOrMigrateIndices({
+            store: headerStore,
+            name: this.#indices.modelRevisionIndex.name,
+            keyPath: this.#indices.modelRevisionIndex.keyPath,
+          });
+
+          const enginesStore = transaction.objectStore(this.enginesStoreName);
+          this.#createOrMigrateIndices({
+            store: enginesStore,
+            name: this.#indices.modelRevisionIndex.name,
+            keyPath: this.#indices.modelRevisionIndex.keyPath,
+          });
+
+          const taskStore = transaction.objectStore(this.taskStoreName);
+          for (const { name, keyPath } of Object.values(this.#indices)) {
+            this.#createOrMigrateIndices({ store: taskStore, name, keyPath });
+          }
+
+          await new Promise(resolve => (transaction.oncomplete = resolve));
+        } catch (error) {
+          console.error("Migration failed:", error);
+          reject(error);
+        }
+      };
+
+      request.onsuccess = async event => {
+        const db = event.target.result;
+
+        db.onversionchange = async () => {
           lazy.console.debug(
             "The version of this database is changing. Closing."
           );
-          // Closing allow the change from elsewhere to go through and invalidate
-          // this version.
           db.close();
         };
-        return resolve(event.target.result);
-      };
-      // If you make any change to onupgradeneeded, then you must change
-      // the version of the database, otherwise, the changes would not apply.
-      request.onupgradeneeded = event => {
-        const db = event.target.result;
 
-        // Migrating is required anytime the keyPath for an existing store changes
-        this.#migrateStore(db, event.oldVersion);
-
-        if (!db.objectStoreNames.contains(this.headersStoreName)) {
-          db.createObjectStore(this.headersStoreName, {
-            keyPath: ["model", "revision", "file"],
-          });
+        if (event.target.upgradeCompleted) {
+          try {
+            lazy.console.debug("Clearing OPFS cache");
+            await lazy.OPFS.remove("modelFiles", { recursive: true });
+          } catch (error) {
+            // we ignore failures here.
+            lazy.console.warn("Failed to clear OPFS cache:", error);
+          }
         }
-
-        const headerStore = request.transaction.objectStore(
-          this.headersStoreName
-        );
-
-        this.#createOrMigrateIndices({
-          store: headerStore,
-          name: this.#indices.modelRevisionIndex.name,
-          keyPath: this.#indices.modelRevisionIndex.keyPath,
-        });
-
-        if (!db.objectStoreNames.contains(this.taskStoreName)) {
-          db.createObjectStore(this.taskStoreName, {
-            keyPath: ["taskName", "model", "revision", "file"],
-          });
-        }
-
-        if (!db.objectStoreNames.contains(this.enginesStoreName)) {
-          db.createObjectStore(this.enginesStoreName, {
-            keyPath: ["model", "revision", "file"],
-          });
-        }
-        const enginesStore = request.transaction.objectStore(
-          this.enginesStoreName
-        );
-        this.#createOrMigrateIndices({
-          store: enginesStore,
-          name: this.#indices.modelRevisionIndex.name,
-          keyPath: this.#indices.modelRevisionIndex.keyPath,
-        });
-
-        const taskStore = request.transaction.objectStore(this.taskStoreName);
-        for (const { name, keyPath } of Object.values(this.#indices)) {
-          this.#createOrMigrateIndices({ store: taskStore, name, keyPath });
-        }
+        resolve(db);
       };
     });
   }
@@ -585,6 +603,25 @@ export class IndexedDBCache {
   }
 
   /**
+   * Sets the headers for a specific cache entry.
+   *
+   * @param {object} config
+   * @param {string} config.model - The model name (organization/name)
+   * @param {string} config.revision - The model revision.
+   * @param {string} config.file - The file name.
+   * @param {object} config.headers - The headers to set.
+   * @returns {Promise<void>} A promise that resolves when the headers are set.
+   */
+  async setHeaders({ model, revision, file, headers }) {
+    return await this.#updateData(this.headersStoreName, {
+      model,
+      revision,
+      file,
+      headers,
+    });
+  }
+
+  /**
    * Retrieves the file for a specific cache entry.
    *
    * @param {object} config
@@ -606,10 +643,14 @@ export class IndexedDBCache {
       });
 
       const fileData = await (
-        await lazy.Progress.getFileHandleFromOPFS(
+        await lazy.OPFS.getFileHandle(
           this.generateFilePathInOPFS({ model, revision, file })
         )
       ).getFile();
+
+      // mark the last used header value
+      headers.lastUsed = Date.now();
+      await this.setHeaders({ model, revision, file, headers });
 
       return [fileData, headers];
     }
@@ -714,7 +755,7 @@ export class IndexedDBCache {
    * @param {string} config.file - The file name.
    * @param {Blob | string} config.data - The content or path to the data to cache.
    * @param {object} [config.headers] - The headers for the file.
-   * @returns {Promise<void>}
+   * @returns {Promise<timestamp>} A promise that resolves when the cache entry is added or updated.
    */
   async put({
     engineId = lazy.DEFAULT_ENGINE_ID,
@@ -740,7 +781,7 @@ export class IndexedDBCache {
     if (Blob.isInstance(data) && !File.isInstance(data)) {
       updatePromises.push(
         data.stream().pipeTo(
-          await lazy.Progress.getFileHandleFromOPFS(cacheKey, {
+          await lazy.OPFS.getFileHandle(cacheKey, {
             create: true,
           }).then(handle =>
             handle.createWritable({
@@ -763,12 +804,16 @@ export class IndexedDBCache {
       })
     );
 
+    const currentTimeSinceEpoch = Date.now();
+
     // Update headers store - whith defaults for ETag and Content-Type
     headers = headers || {};
     headers["Content-Type"] =
       headers["Content-Type"] ?? "application/octet-stream";
     headers.fileSize = fileSize;
     headers.ETag = headers.ETag ?? NO_ETAG;
+    headers.lastUpdated = currentTimeSinceEpoch;
+    headers.lastUsed = currentTimeSinceEpoch;
 
     // filter out any keys that are not allowed
     headers = Object.keys(headers)
@@ -791,6 +836,7 @@ export class IndexedDBCache {
     );
 
     await Promise.all(updatePromises);
+    return currentTimeSinceEpoch;
   }
 
   /**
@@ -848,9 +894,7 @@ export class IndexedDBCache {
   async #deleteFile({ model, revision, file }) {
     await Promise.all([
       this.#deleteData(this.headersStoreName, [model, revision, file]),
-      lazy.Progress.removeFromOPFS(
-        this.generateFilePathInOPFS({ model, revision, file })
-      ),
+      lazy.OPFS.remove(this.generateFilePathInOPFS({ model, revision, file })),
     ]);
   }
 
@@ -948,8 +992,12 @@ export class IndexedDBCache {
    * @returns {Promise<Array<{path:string, headers: object}>>} An array of file identifiers.
    */
   async listFiles({ taskName, model, revision }) {
-    let modelRevisions = [{ model, revision }];
+    // When not providing taskName, we want model and revision
+    if (!taskName && (!model || !revision)) {
+      throw new Error("Both model and revision must be defined");
+    }
 
+    let modelRevisions = [{ model, revision }];
     if (taskName) {
       // Get all model/revision associated to this task.
       const data = await this.#getKeys({
@@ -995,7 +1043,6 @@ export class IndexedDBCache {
       storeName: this.taskStoreName,
       indexName: this.#indices.modelRevisionIndex.name,
     });
-
     const models = [];
     for (const { key } of modelRevisions) {
       models.push({ name: key[0], revision: key[1] });
@@ -1003,6 +1050,9 @@ export class IndexedDBCache {
     return models;
   }
 }
+
+//exporting for testing purposes only
+export const TestIndexedDBCache = IndexedDBCache;
 
 export class ModelHub {
   /**
@@ -1360,7 +1410,7 @@ export class ModelHub {
     });
 
     const fileObject = await (
-      await lazy.Progress.getFileHandleFromOPFS(filePath)
+      await lazy.OPFS.getFileHandle(filePath)
     ).getFile();
 
     // A file is a blob, so we can return it directly.
@@ -1447,6 +1497,10 @@ export class ModelHub {
 
     await this.#initCache();
 
+    // we store the hostname alongside the model so we can distinguished per hub
+    const hostname = new URL(url).hostname;
+    const modelWithHostname = `${hostname}/${model}`;
+
     let useCached;
 
     let cachedHeaders = null;
@@ -1457,7 +1511,11 @@ export class ModelHub {
       const hubETag = await this.getETag(url);
 
       // Storage ETag lookup
-      cachedHeaders = await this.cache.getHeaders({ model, revision, file });
+      cachedHeaders = await this.cache.getHeaders({
+        model: modelWithHostname,
+        revision,
+        file,
+      });
       const cachedEtag = cachedHeaders ? cachedHeaders.ETag : null;
 
       // If we have something in store, and the hub ETag is null or it matches the cached ETag, return the cached response
@@ -1465,7 +1523,11 @@ export class ModelHub {
         cachedEtag !== null && (hubETag === null || cachedEtag === hubETag);
     } else {
       // If we are dealing with a pinned revision, we ignore the ETag, to spare HEAD hits on every call
-      useCached = await this.cache.fileExists({ model, revision, file });
+      useCached = await this.cache.fileExists({
+        model: modelWithHostname,
+        revision,
+        file,
+      });
     }
 
     const progressInfo = {
@@ -1482,7 +1544,7 @@ export class ModelHub {
     };
 
     const localFilePath = this.cache.generateFilePathInOPFS({
-      model,
+      model: modelWithHostname,
       revision,
       file,
     });
@@ -1505,14 +1567,18 @@ export class ModelHub {
       );
 
       if (!cachedHeaders) {
-        cachedHeaders = await this.cache.getHeaders({ model, revision, file });
+        cachedHeaders = await this.cache.getHeaders({
+          model: modelWithHostname,
+          revision,
+          file,
+        });
       }
 
       // Ensure that we indicate that the taskName is stored
       await this.cache.updateTask({
         engineId,
         taskName,
-        model,
+        model: modelWithHostname,
         revision,
         file,
       });
@@ -1525,6 +1591,10 @@ export class ModelHub {
           statusText: lazy.Progress.ProgressStatusText.DONE,
         })
       );
+
+      cachedHeaders.lastUsed = Date.now();
+      await this.cache.setHeaders({ model, revision, file, cachedHeaders });
+
       return [localFilePath, cachedHeaders];
     }
 
@@ -1542,10 +1612,9 @@ export class ModelHub {
       let response = await this.#fetch(url);
       let isFirstCall = true;
 
-      const fileHandle = await lazy.Progress.getFileHandleFromOPFS(
-        localFilePath,
-        { create: true }
-      );
+      const fileHandle = await lazy.OPFS.getFileHandle(localFilePath, {
+        create: true,
+      });
       const writeableStream = await fileHandle.createWritable({
         keepExistingData: false,
         mode: "siloed",
@@ -1583,7 +1652,7 @@ export class ModelHub {
         await this.cache.put({
           engineId,
           taskName,
-          model,
+          model: modelWithHostname,
           revision,
           file,
           data: localFilePath,
@@ -1620,5 +1689,55 @@ export class ModelHub {
     );
 
     throw new Error(`Failed to fetch the model file: ${url}`);
+  }
+
+  /**
+   * Lists all models stored in the hub.
+   *
+   * @returns {Promise<Array<{name: string, revision: string}>>}
+   */
+  async listModels() {
+    await this.#initCache();
+    return this.cache.listModels();
+  }
+
+  /**
+   * Lists all files for a given model and revision stored in the cache.
+   *
+   * @param {object} config
+   * @param {?string} config.model - The model name (hostname/organization/name).
+   * @param {?string} config.revision - The model version.
+   * @param {?string} config.taskName - name of the inference :wtask.
+   * @returns {Promise<Array<{path:string, headers: object}>>} An array of file identifiers.
+   */
+  async listFiles({ taskName, model, revision }) {
+    await this.#initCache();
+    return this.cache.listFiles({ taskName, model, revision });
+  }
+
+  /**
+   * Deletes all data related to the specifed models.
+   *
+   * @param {object} config
+   *
+   * @param {?string} config.model - The model name (hostname/organization/name) to delete.
+   * @param {?string} config.revision - The model version to delete.
+   *  If both model and revision are null, delete models of any name and version.
+   *
+   * @param {?string} config.taskName - name of the inference task to delete.
+   *                                    If null, delete specified models for all tasks.
+   *
+   * @param {?function(IDBCursor):boolean} config.filterFn - A function to execute for each model file candidate for deletion.
+   * It should return a truthy value to delete the model file, and a falsy value otherwise.
+   *
+   * @throws {Error} If a revision is defined, the model must also be defined.
+   *                 If the model is not defined, the revision should also not be defined.
+   *                 Otherwise, an error will be thrown.
+ 
+   * @returns {Promise<void>}
+   */
+  async deleteModels({ taskName, model, revision, filterFn }) {
+    await this.#initCache();
+    return this.cache.deleteModels({ taskName, model, revision, filterFn });
   }
 }

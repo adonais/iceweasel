@@ -236,18 +236,22 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
             : nullptr;
     // Sample doesn't contain any SPS and we already have SPS, do nothing.
     auto curConfig = HVCCConfig::Parse(mCurrentConfig.mExtraData);
+    LOG("current config: %s",
+        curConfig.isOk() ? curConfig.inspect().ToString().get() : "invalid");
     if ((!extraData || extraData->IsEmpty()) && curConfig.unwrap().HasSPS()) {
       return NS_OK;
     }
 
-    auto newConfig = HVCCConfig::Parse(extraData);
+    auto rv = HVCCConfig::Parse(extraData);
     // Ignore a corrupted extradata.
-    if (newConfig.isErr()) {
+    if (rv.isErr()) {
       LOG("Ignore corrupted extradata");
       return NS_OK;
     }
+    const HVCCConfig newConfig = rv.unwrap();
+    LOG("new config: %s", newConfig.ToString().get());
 
-    if (!newConfig.unwrap().HasSPS() && !curConfig.unwrap().HasSPS()) {
+    if (!newConfig.HasSPS() && !curConfig.unwrap().HasSPS()) {
       // We don't have inband data and the original config didn't contain a SPS.
       // We can't decode this content.
       LOG("No sps found, waiting for initialization");
@@ -255,6 +259,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     }
 
     if (H265::CompareExtraData(extraData, mCurrentConfig.mExtraData)) {
+      LOG("No config changed");
       return NS_OK;
     }
     UpdateConfigFromExtraData(extraData);
@@ -338,6 +343,11 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       mVPS.Clear();
       mVPS.AppendElements(nalu->mNALU);
     }
+    if (auto nalu =
+            hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::PREFIX_SEI_NUT)) {
+      mSEI.Clear();
+      mSEI.AppendElements(nalu->mNALU);
+    }
 
     // Construct a new extradata. A situation we encountered previously involved
     // the initial extradata containing all required NALUs, while the inband
@@ -347,17 +357,23 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     // should update only the differing NALUs, ensuring all essential
     // information remains in the extradata.
     MOZ_ASSERT(!mSPS.IsEmpty());  // SPS is something MUST to have
-    Maybe<H265NALU> sps = Some(H265NALU(mSPS.Elements(), mSPS.Length()));
-    Maybe<H265NALU> pps = !mPPS.IsEmpty()
-                              ? Some(H265NALU(mPPS.Elements(), mPPS.Length()))
-                              : Nothing();
-    Maybe<H265NALU> vps = !mVPS.IsEmpty()
-                              ? Some(H265NALU(mVPS.Elements(), mVPS.Length()))
-                              : Nothing();
-    mCurrentConfig.mExtraData = H265::CreateNewExtraData(hvcc, sps, pps, vps);
+    nsTArray<H265NALU> nalus;
+    // Append NALU by the order of NALU type. If we don't do so, it would cause
+    // an error on the FFmpeg decoder on Linux.
+    if (!mVPS.IsEmpty()) {
+      nalus.AppendElement(H265NALU(mVPS.Elements(), mVPS.Length()));
+    }
+    nalus.AppendElement(H265NALU(mSPS.Elements(), mSPS.Length()));
+    if (!mPPS.IsEmpty()) {
+      nalus.AppendElement(H265NALU(mPPS.Elements(), mPPS.Length()));
+    }
+    if (!mSEI.IsEmpty()) {
+      nalus.AppendElement(H265NALU(mSEI.Elements(), mSEI.Length()));
+    }
+    mCurrentConfig.mExtraData = H265::CreateNewExtraData(hvcc, nalus);
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
-    LOG("Updated extradata, hasSPS=%d, hasPPS=%d, hasVPS=%d", !!sps, !!pps,
-        !!vps);
+    LOG("Updated extradata, hasSPS=%d, hasPPS=%d, hasVPS=%d, hasSEI=%d",
+        !mSPS.IsEmpty(), !mPPS.IsEmpty(), !mVPS.IsEmpty(), !mSEI.IsEmpty());
   }
 
   VideoInfo mCurrentConfig;
@@ -366,6 +382,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   nsTArray<uint8_t> mSPS;
   nsTArray<uint8_t> mPPS;
   nsTArray<uint8_t> mVPS;
+  nsTArray<uint8_t> mSEI;
 
   uint32_t mStreamID = 0;
   RefPtr<TrackInfoSharedPtr> mTrackInfo;

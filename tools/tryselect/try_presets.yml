@@ -97,6 +97,8 @@ devtools:
     selector: fuzzy
     description: >-
         Runs the tests relevant to the Firefox Devtools
+    env:
+        - MOZ_DEVTOOLS_TEST_SCOPES=1
     query:
         - "'node-debugger | 'node-devtools"
         - "'mozlint-eslint"
@@ -112,6 +114,8 @@ devtools-linux:
     selector: fuzzy
     description: >-
         Runs the tests relevant to the Firefox Devtools, on Linux only.
+    env:
+        - MOZ_DEVTOOLS_TEST_SCOPES=1
     query:
         - "'node-debugger | 'node-devtools"
         - "'mozlint-eslint"
@@ -281,6 +285,8 @@ remote-protocol:
         This preset can be filtered down further to limit it to a specific
         platform or to opt/debug tasks only. For example:
         |mach try --preset remote-protocol -xq "'linux 'opt"|
+    env:
+        - MOZ_DEVTOOLS_TEST_SCOPES=1
     query:
         - "'awsy-base"
         - "'firefox-ui"

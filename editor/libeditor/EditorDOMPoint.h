@@ -900,6 +900,15 @@ class EditorDOMPointBase final {
     return IsInContentNode() && IsSetAndValidInComposedDoc();
   }
 
+  [[nodiscard]] bool IsInNativeAnonymousSubtreeInTextControl() const {
+    if (!mParent || !mParent->IsInNativeAnonymousSubtree()) {
+      return false;
+    }
+    nsIContent* maybeTextControl =
+        mParent->GetClosestNativeAnonymousSubtreeRootParentOrHost();
+    return !!maybeTextControl;
+  }
+
   bool IsStartOfContainer() const {
     // If we're referring the first point in the container:
     //   If mParent is not a container like a text node, mOffset is 0.
@@ -1147,7 +1156,9 @@ class EditorDOMPointBase final {
       // If the container is a data node like a text node, we need to create
       // RangeBoundaryBase instance only with mOffset because mChild is always
       // nullptr.
-      return RawRangeBoundary(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value(),
+                              // Avoid immediately to compute the child node.
+                              RangeBoundaryIsMutationObserved::No);
     }
     if (mIsChildInitialized && mOffset.isSome()) {
       // If we've already set both child and offset, we should create
@@ -1160,12 +1171,16 @@ class EditorDOMPointBase final {
         MOZ_ASSERT(mParent->Length() == mOffset.value());
       }
 #endif  // #ifdef DEBUG
-      return RawRangeBoundary(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value(),
+                              // Avoid immediately to compute the child node.
+                              RangeBoundaryIsMutationObserved::No);
     }
     // Otherwise, we should create RangeBoundaryBase only with available
     // information.
     if (mOffset.isSome()) {
-      return RawRangeBoundary(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value(),
+                              // Avoid immediately to compute the child node.
+                              RangeBoundaryIsMutationObserved::No);
     }
     if (mChild) {
       return RawRangeBoundary(mParent, mChild->GetPreviousSibling());

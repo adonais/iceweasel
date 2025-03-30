@@ -56,7 +56,6 @@
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
-#include "vm/PIC.h"
 #include "vm/SelfHosting.h"
 #include "vm/SharedMem.h"
 #include "vm/Uint8Clamped.h"
@@ -1323,23 +1322,6 @@ template <typename T>
   return obj;
 }
 
-static MOZ_ALWAYS_INLINE bool IsOptimizableInit(JSContext* cx,
-                                                HandleObject iterable,
-                                                bool* optimized) {
-  MOZ_ASSERT(!*optimized);
-
-  if (!IsPackedArray(iterable)) {
-    return true;
-  }
-
-  ForOfPIC::Chain* stubChain = ForOfPIC::getOrCreate(cx);
-  if (!stubChain) {
-    return false;
-  }
-
-  return stubChain->tryOptimizeArray(cx, iterable.as<ArrayObject>(), optimized);
-}
-
 // ES2023 draft rev cf86f1cdc28e809170733d74ea64fd0f3dd79f78
 // 23.2.5.1 TypedArray ( ...args )
 // 23.2.5.1.4 InitializeTypedArrayFromList ( O, values )
@@ -1355,13 +1337,8 @@ template <typename T>
 
   // Step 6.b.iv.
 
-  bool optimized = false;
-  if (!IsOptimizableInit(cx, other, &optimized)) {
-    return nullptr;
-  }
-
   // Fast path when iterable is a packed array using the default iterator.
-  if (optimized) {
+  if (IsArrayWithDefaultIterator<MustBePacked::Yes>(other, cx)) {
     // Steps 6.b.iv.2-3. (We don't need to call IterableToList for the fast
     // path).
     Handle<ArrayObject*> array = other.as<ArrayObject>();

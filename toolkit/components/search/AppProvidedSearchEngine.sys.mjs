@@ -4,6 +4,10 @@
 
 /* eslint no-shadow: error, mozilla/no-aArgs: error */
 
+/**
+ * @typedef {import("resource://services-settings/RemoteSettingsClient.sys.mjs").RemoteSettingsClient} RemoteSettingsClient
+ */
+
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 import {
@@ -20,6 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  SearchEngineClassification: "resource://gre/modules/RustSearch.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
 });
 
@@ -372,6 +377,12 @@ class QueryPreferenceParameter extends QueryParameter {
     return prefValue ? encodeURIComponent(prefValue) : null;
   }
 
+  /**
+   * Creates a JavaScript object that represents this parameter.
+   *
+   * @returns {object}
+   *   An object suitable for serialization as JSON.
+   */
   toJSON() {
     lazy.logConsole.warn(
       "QueryPreferenceParameter should only exist for app provided engines which are never saved as JSON"
@@ -432,7 +443,6 @@ export class AppProvidedSearchEngine extends SearchEngine {
   constructor({ config, settings }) {
     super({
       loadPath: "[app]" + config.identifier,
-      isAppProvided: true,
       id: config.identifier,
     });
 
@@ -608,8 +618,10 @@ export class AppProvidedSearchEngine extends SearchEngine {
   #init(engineConfig) {
     this._orderHint = engineConfig.orderHint;
     this._telemetryId = engineConfig.identifier;
-    this.#isGeneralPurposeSearchEngine =
-      engineConfig.classification == "general";
+    this.#isGeneralPurposeSearchEngine = lazy.SearchUtils
+      .rustSelectorFeatureGate
+      ? engineConfig.classification == lazy.SearchEngineClassification.GENERAL
+      : engineConfig.classification == "general";
 
     if (engineConfig.charset) {
       this._queryCharset = engineConfig.charset;
@@ -628,7 +640,9 @@ export class AppProvidedSearchEngine extends SearchEngine {
       engineConfig.aliases?.map(alias => `@${alias}`) ?? [];
 
     for (const [type, urlData] of Object.entries(engineConfig.urls)) {
-      this.#setUrl(type, urlData, engineConfig.partnerCode);
+      if (urlData) {
+        this.#setUrl(type, urlData, engineConfig.partnerCode);
+      }
     }
   }
 
@@ -659,12 +673,12 @@ export class AppProvidedSearchEngine extends SearchEngine {
     if (urlData.params) {
       let isEnterprise = Services.policies.isEnterprise;
       let enterpriseParams = urlData.params
-        .filter(p => "enterpriseValue" in p)
+        .filter(p => p.enterpriseValue != undefined)
         .map(p => p.name);
 
       for (const param of urlData.params) {
         switch (true) {
-          case "value" in param:
+          case param.value != undefined:
             if (!isEnterprise || !enterpriseParams.includes(param.name)) {
               engineURL.addParam(
                 param.name,
@@ -672,14 +686,14 @@ export class AppProvidedSearchEngine extends SearchEngine {
               );
             }
             break;
-          case "experimentConfig" in param:
+          case param.experimentConfig != undefined:
             if (!isEnterprise || !enterpriseParams.includes(param.name)) {
               engineURL.addQueryParameter(
                 new QueryPreferenceParameter(param.name, param.experimentConfig)
               );
             }
             break;
-          case "enterpriseValue" in param:
+          case param.enterpriseValue != undefined:
             if (isEnterprise) {
               engineURL.addParam(
                 param.name,
@@ -693,7 +707,7 @@ export class AppProvidedSearchEngine extends SearchEngine {
       }
     }
 
-    if ("searchTermParamName" in urlData) {
+    if (urlData.searchTermParamName) {
       // The search term parameter is always added last, which will add it to the
       // end of the URL. This is because in the past we have seen users trying to
       // modify their searches by altering the end of the URL.
@@ -749,7 +763,7 @@ export class AppProvidedSearchEngine extends SearchEngine {
     this.#prevEngineInfo.forEach((_value, key) => {
       let newValue;
       if (key == "submissionURL") {
-        newValue = this.submissionURL ?? this.getSubmission("foo").uri.spec;
+        newValue = this.getSubmission("foo").uri.spec;
       } else {
         newValue = this[key];
       }

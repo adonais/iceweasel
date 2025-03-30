@@ -98,16 +98,17 @@ void LIRGeneratorX86Shared::lowerForShiftInt64(LInstr* ins, MDefinition* mir,
 #ifdef JS_CODEGEN_X64
   } else if (std::is_same_v<LInstr, LShiftI64>) {
     rhsAlloc = useShiftRegister(rhs);
-#endif
+  } else {
+    rhsAlloc = useFixed(rhs, rcx);
+  }
+#else
   } else {
     // The operands are int64, but we only care about the lower 32 bits of
     // the RHS. On 32-bit, the code below will load that part in ecx and
     // will discard the upper half.
-    ensureDefined(rhs);
-    LUse use(ecx);
-    use.setVirtualRegister(rhs->virtualRegister());
-    rhsAlloc = use;
+    rhsAlloc = useLowWordFixed(rhs, ecx);
   }
+#endif
 
   if constexpr (std::is_same_v<LInstr, LShiftI64>) {
     ins->setLhs(useInt64RegisterAtStart(lhs));
@@ -796,7 +797,7 @@ void LIRGenerator::visitWasmTernarySimd128(MWasmTernarySimd128* ins) {
       defineReuseInput(lir, ins, LWasmTernarySimd128::V2Index);
       break;
     }
-    case wasm::SimdOp::I32x4DotI8x16I7x16AddS: {
+    case wasm::SimdOp::I32x4RelaxedDotI8x16I7x16AddS: {
       auto* lir = new (alloc())
           LWasmTernarySimd128(useRegister(ins->v0()), useRegister(ins->v1()),
                               useRegisterAtStart(ins->v2()),
@@ -1072,7 +1073,7 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
     case wasm::SimdOp::F64x2RelaxedMin:
     case wasm::SimdOp::F64x2RelaxedMax:
     case wasm::SimdOp::I16x8RelaxedQ15MulrS:
-    case wasm::SimdOp::I16x8DotI8x16I7x16S:
+    case wasm::SimdOp::I16x8RelaxedDotI8x16I7x16S:
     case wasm::SimdOp::MozPMADDUBSW:
       if (isThreeOpAllowed()) {
         auto* lir = new (alloc())
@@ -1112,9 +1113,9 @@ bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
   const SimdConstant::I8x16& bytes = constant.asInt8x16();
   for (int8_t i = 0; i < 16; i++) {
     if (bytes[i] == -1) {
-      shuffle[i] = i + 16;
-    } else if (bytes[i] == 0) {
       shuffle[i] = i;
+    } else if (bytes[i] == 0) {
+      shuffle[i] = i + 16;
     } else {
       return false;
     }

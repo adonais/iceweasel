@@ -24,7 +24,6 @@ const callExpressionDefinitions = [
   /^loader\.lazyGetter\(lazy, "(\w+)"/,
   /^loader\.lazyServiceGetter\(lazy, "(\w+)"/,
   /^loader\.lazyRequireGetter\(lazy, "(\w+)"/,
-  /^XPCOMUtils\.defineLazyGetter\(lazy, "(\w+)"/,
   /^Integration\.downloads\.defineESModuleGetter\(lazy, "(\w+)"/,
   /^ChromeUtils\.defineLazyGetter\(lazy, "(\w+)"/,
   /^XPCOMUtils\.defineLazyPreferenceGetter\(lazy, "(\w+)"/,
@@ -144,7 +143,8 @@ module.exports = {
           node.id.type === "Identifier" &&
           node.id.name == "lazy" &&
           node.init.type == "CallExpression" &&
-          node.init.callee.name == "createLazyLoaders"
+          node.init.callee.name == "createLazyLoaders" &&
+          node.init.arguments.length >= 1
         ) {
           setPropertiesFromArgument(node.init, node.init.arguments[0]);
         }

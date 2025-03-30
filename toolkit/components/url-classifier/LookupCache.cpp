@@ -440,7 +440,7 @@ bool LookupCache::IsCanonicalizedIP(const nsACString& aHost) {
 // third.party.domain. This is to make sure we can find a match when a
 // exceptionlisted domain is eTLD.
 /* static */
-nsresult LookupCache::GetLookupEntitylistFragments(
+void LookupCache::GetLookupEntitylistFragments(
     const nsACString& aSpec, nsTArray<nsCString>* aFragments) {
   aFragments->Clear();
 
@@ -455,7 +455,8 @@ nsresult LookupCache::GetLookupEntitylistFragments(
   // "/?resoruce=" because this means the URL is not generated in
   // CreatePairwiseEntityListURI()
   if (!FindInReadable("/?resource="_ns, iter, iter_end)) {
-    return GetLookupFragments(aSpec, aFragments);
+    GetLookupFragments(aSpec, aFragments);
+    return;
   }
 
   const nsACString& topLevelURL = Substring(begin, iter++);
@@ -519,13 +520,11 @@ nsresult LookupCache::GetLookupEntitylistFragments(
       aFragments->AppendElement(key);
     }
   }
-
-  return NS_OK;
 }
 
 /* static */
-nsresult LookupCache::GetLookupFragments(const nsACString& aSpec,
-                                         nsTArray<nsCString>* aFragments)
+void LookupCache::GetLookupFragments(const nsACString& aSpec,
+                                     nsTArray<nsCString>* aFragments)
 
 {
   aFragments->Clear();
@@ -536,7 +535,7 @@ nsresult LookupCache::GetLookupFragments(const nsACString& aSpec,
 
   iter = begin;
   if (!FindCharInReadable('/', iter, end)) {
-    return NS_OK;
+    return;
   }
 
   const nsACString& host = Substring(begin, iter++);
@@ -624,8 +623,6 @@ nsresult LookupCache::GetLookupFragments(const nsACString& aSpec,
       aFragments->AppendElement(key);
     }
   }
-
-  return NS_OK;
 }
 
 nsresult LookupCache::LoadPrefixSet() {

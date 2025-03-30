@@ -59,10 +59,6 @@ void CodeGeneratorARM::emitBranch(Assembler::Condition cond,
   }
 }
 
-void OutOfLineBailout::accept(CodeGeneratorARM* codegen) {
-  codegen->visitOutOfLineBailout(this);
-}
-
 bool CodeGeneratorARM::generateOutOfLineCode() {
   if (!CodeGeneratorShared::generateOutOfLineCode()) {
     return false;
@@ -82,13 +78,18 @@ bool CodeGeneratorARM::generateOutOfLineCode() {
   return !masm.oom();
 }
 
+void CodeGeneratorARM::emitBailoutOOL(LSnapshot* snapshot) {
+  masm.push(Imm32(snapshot->snapshotOffset()));
+  masm.ma_b(&deoptLabel_);
+}
+
 void CodeGeneratorARM::bailoutIf(Assembler::Condition condition,
                                  LSnapshot* snapshot) {
   encode(snapshot);
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  OutOfLineBailout* ool =
-      new (alloc()) OutOfLineBailout(snapshot, masm.framePushed());
+  auto* ool = new (alloc()) LambdaOutOfLineCode(
+      [=](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
 
   // All bailout code is associated with the bytecodeSite of the block we are
   // bailing out from.
@@ -105,8 +106,8 @@ void CodeGeneratorARM::bailoutFrom(Label* label, LSnapshot* snapshot) {
   encode(snapshot);
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  OutOfLineBailout* ool =
-      new (alloc()) OutOfLineBailout(snapshot, masm.framePushed());
+  auto* ool = new (alloc()) LambdaOutOfLineCode(
+      [=](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
 
   // All bailout code is associated with the bytecodeSite of the block we are
   // bailing out from.
@@ -120,11 +121,6 @@ void CodeGeneratorARM::bailout(LSnapshot* snapshot) {
   Label label;
   masm.ma_b(&label);
   bailoutFrom(&label, snapshot);
-}
-
-void CodeGeneratorARM::visitOutOfLineBailout(OutOfLineBailout* ool) {
-  masm.push(Imm32(ool->snapshot()->snapshotOffset()));
-  masm.ma_b(&deoptLabel_);
 }
 
 void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
@@ -1745,8 +1741,9 @@ void CodeGenerator::visitWasmAddOffset(LWasmAddOffset* lir) {
 
   ScratchRegisterScope scratch(masm);
   masm.ma_add(base, Imm32(mir->offset()), out, scratch, SetCC);
-  OutOfLineAbortingWasmTrap* ool = new (alloc())
-      OutOfLineAbortingWasmTrap(mir->trapSiteDesc(), wasm::Trap::OutOfBounds);
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+    masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
+  });
   addOutOfLineCode(ool, mir);
   masm.ma_b(ool->entry(), Assembler::CarrySet);
 }
@@ -1760,8 +1757,9 @@ void CodeGenerator::visitWasmAddOffset64(LWasmAddOffset64* lir) {
   ScratchRegisterScope scratch(masm);
   masm.ma_add(base.low, Imm32(mir->offset()), out.low, scratch, SetCC);
   masm.ma_adc(base.high, Imm32(mir->offset() >> 32), out.high, scratch, SetCC);
-  OutOfLineAbortingWasmTrap* ool = new (alloc())
-      OutOfLineAbortingWasmTrap(mir->trapSiteDesc(), wasm::Trap::OutOfBounds);
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+    masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
+  });
   addOutOfLineCode(ool, mir);
   masm.ma_b(ool->entry(), Assembler::CarrySet);
 }
@@ -1769,27 +1767,22 @@ void CodeGenerator::visitWasmAddOffset64(LWasmAddOffset64* lir) {
 template <typename T>
 void CodeGeneratorARM::emitWasmStore(T* lir) {
   const MWasmStore* mir = lir->mir();
-  Scalar::Type accessType = mir->access().type();
-  Register ptr;
   Register memoryBase = ToRegister(lir->memoryBase());
-
-  // Maybe add the offset.
-  if (mir->access().offset32() || accessType == Scalar::Int64) {
-    ptr = ToRegister(lir->temp0());
-  } else {
-    MOZ_ASSERT(lir->temp0()->isBogusTemp());
-    ptr = ToRegister(lir->ptr());
-  }
 
   if constexpr (std::is_same_v<T, LWasmStoreI64>) {
     Register64 value = ToRegister64(lir->value());
-    if (accessType == Scalar::Int64) {
-      masm.wasmStoreI64(mir->access(), value, memoryBase, ptr, ptr);
-    } else {
-      masm.wasmStore(mir->access(), AnyRegister(value.low), memoryBase, ptr,
-                     ptr);
-    }
+    Register ptr = ToRegister(lir->temp0());
+    masm.wasmStoreI64(mir->access(), value, memoryBase, ptr, ptr);
   } else {
+    // Maybe add the offset.
+    Register ptr;
+    if (mir->access().offset32()) {
+      ptr = ToRegister(lir->temp0());
+    } else {
+      MOZ_ASSERT(lir->temp0()->isBogusTemp());
+      ptr = ToRegister(lir->ptr());
+    }
+
     masm.wasmStore(mir->access(), ToAnyRegister(lir->value()), memoryBase, ptr,
                    ptr);
   }

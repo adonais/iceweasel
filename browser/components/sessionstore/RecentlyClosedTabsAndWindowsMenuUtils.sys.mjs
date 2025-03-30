@@ -87,7 +87,7 @@ export var RecentlyClosedTabsAndWindowsMenuUtils = {
 
       closedTabSets.forEach(tabSet => {
         tabSet.forEach((tab, index) => {
-          let { groupId } = tab.state;
+          let groupId = tab.closedInTabGroupId;
           if (groupId && closedTabGroupsById.has(groupId)) {
             if (groupId != currentGroupId) {
               // This is the first tab in a new group. Push all the tabs into the menu.
@@ -186,35 +186,60 @@ export var RecentlyClosedTabsAndWindowsMenuUtils = {
     const browserWindows = lazy.closedTabsFromAllWindowsEnabled
       ? lazy.SessionStore.getWindows(currentWindow)
       : [currentWindow];
-    for (const sourceWindow of browserWindows) {
-      let tabData = lazy.SessionStore.getClosedTabDataForWindow(sourceWindow);
-      let closedTabGroupsById = getClosedTabGroupsById();
+    const closedTabGroupsById = getClosedTabGroupsById();
 
+    const undoAllInTabData = function (tabData, tabMethod, tabGroupMethod) {
       while (tabData.length) {
         let currentTabGroupId = tabData[0].state.groupId;
 
         if (currentTabGroupId && closedTabGroupsById.has(currentTabGroupId)) {
           let currentTabGroup = closedTabGroupsById.get(currentTabGroupId);
-          tabData.splice(0, currentTabGroup.tabs.length);
-          lazy.SessionStore.undoCloseTabGroup(
-            sourceWindow,
-            currentTabGroupId,
-            currentWindow
-          );
+          let splicedTabs = tabData.splice(0, currentTabGroup.tabs.length);
+          tabGroupMethod(splicedTabs);
         } else {
-          tabData.splice(0, 1);
-          lazy.SessionStore.undoCloseTab(sourceWindow, 0, currentWindow);
+          let splicedTabs = tabData.splice(0, 1);
+          tabMethod(splicedTabs[0]);
         }
       }
+    };
+
+    for (const sourceWindow of browserWindows) {
+      let tabData = lazy.SessionStore.getClosedTabDataForWindow(sourceWindow);
+
+      undoAllInTabData(
+        tabData,
+        _tabs => {
+          lazy.SessionStore.undoCloseTab(sourceWindow, 0, currentWindow);
+        },
+        tabs => {
+          lazy.SessionStore.undoCloseTabGroup(
+            sourceWindow,
+            tabs[0].state.groupId,
+            currentWindow
+          );
+        }
+      );
     }
     if (lazy.closedTabsFromClosedWindowsEnabled) {
-      for (let tabData of lazy.SessionStore.getClosedTabDataFromClosedWindows()) {
-        lazy.SessionStore.undoClosedTabFromClosedWindow(
-          { sourceClosedId: tabData.sourceClosedId },
-          tabData.closedId,
-          currentWindow
-        );
-      }
+      let tabData = lazy.SessionStore.getClosedTabDataFromClosedWindows();
+
+      undoAllInTabData(
+        tabData,
+        tab => {
+          lazy.SessionStore.undoCloseTabFromClosedWindow(
+            { sourceClosedId: tab.sourceClosedId },
+            tab.closedId,
+            currentWindow
+          );
+        },
+        tabs => {
+          lazy.SessionStore.undoCloseTabGroup(
+            { sourceClosedId: tabs[0].sourceClosedId },
+            tabs[0].state.groupId,
+            currentWindow
+          );
+        }
+      );
     }
   },
 
@@ -310,7 +335,7 @@ function createTabGroupSubmenu(
     aDocument.l10n.setAttributes(element, "tab-context-unnamed-group");
   }
 
-  element.classList.add("menu-iconic", "tab-group-icon-closed");
+  element.classList.add("menu-iconic", "tab-group-icon");
   setTabGroupColorProperties(element, aTabGroup);
 
   let menuPopup = aDocument.createXULElement("menupopup");
@@ -377,7 +402,7 @@ function createTabGroupSubpanel(
     "subviewbutton",
     "subviewbutton-iconic",
     "subviewbutton-nav",
-    "tab-group-icon-closed"
+    "tab-group-icon"
   );
   element.setAttribute("closemenu", "none");
   setTabGroupColorProperties(element, aTabGroup);

@@ -65,7 +65,10 @@ module.exports = {
     "plugin:json/recommended-with-comments-legacy",
     "prettier",
   ],
-  plugins: ["mozilla", "html", "import", "json", "promise"],
+  plugins: ["mozilla", "html", "import", "json", "promise", "lit"],
+  rules: {
+    "lit/quoted-expressions": ["error", "never"],
+  },
   overrides: [
     {
       files: ["*.*"],
@@ -277,8 +280,8 @@ module.exports = {
       files: [
         "browser/components/aboutwelcome/**",
         "browser/components/asrouter/**",
-        "browser/components/newtab/**",
         "browser/components/pocket/**",
+        "browser/extensions/newtab/**",
         "devtools/**",
       ],
       rules: {

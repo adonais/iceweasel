@@ -303,6 +303,7 @@ extern "C" {
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
+#define HAS_CONVERT8TO8ROW_AVX2
 #define HAS_DETILEROW_16_AVX
 #define HAS_DIVIDEROW_16_AVX2
 #define HAS_HALFMERGEUVROW_AVX2
@@ -396,6 +397,7 @@ extern "C" {
 #define HAS_ARGBTORGB565DITHERROW_NEON
 #define HAS_ARGBTORGB565ROW_NEON
 #define HAS_ARGBTOUV444ROW_NEON
+#define HAS_ARGBTOUVJ444ROW_NEON
 #define HAS_ARGBTOUVJROW_NEON
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
@@ -407,6 +409,7 @@ extern "C" {
 #define HAS_BGRATOYROW_NEON
 #define HAS_BYTETOFLOATROW_NEON
 #define HAS_CONVERT16TO8ROW_NEON
+#define HAS_CONVERT8TO8ROW_NEON
 #define HAS_COPYROW_NEON
 #define HAS_DETILEROW_16_NEON
 #define HAS_DETILEROW_NEON
@@ -537,6 +540,7 @@ extern "C" {
 
 #define HAS_ARGBCOLORMATRIXROW_NEON_I8MM
 #define HAS_ARGBTOUV444ROW_NEON_I8MM
+#define HAS_ARGBTOUVJ444ROW_NEON_I8MM
 #endif
 
 // The following are available on AArch64 SVE platforms:
@@ -553,6 +557,7 @@ extern "C" {
 #define HAS_AYUVTOUVROW_SVE2
 #define HAS_AYUVTOVUROW_SVE2
 #define HAS_BGRATOUVROW_SVE2
+#define HAS_CONVERT8TO8ROW_SVE2
 #define HAS_DIVIDEROW_16_SVE2
 #define HAS_HALFFLOATROW_SVE2
 #define HAS_I210ALPHATOARGBROW_SVE2
@@ -595,6 +600,7 @@ extern "C" {
     defined(__aarch64__)
 #define HAS_ARGBMULTIPLYROW_SME
 #define HAS_CONVERT16TO8ROW_SME
+#define HAS_CONVERT8TO8ROW_SME
 #define HAS_COPYROW_SME
 #define HAS_I210ALPHATOARGBROW_SME
 #define HAS_I210TOAR30ROW_SME
@@ -1856,6 +1862,14 @@ void ARGBToUV444Row_NEON_I8MM(const uint8_t* src_argb,
                               uint8_t* dst_u,
                               uint8_t* dst_v,
                               int width);
+void ARGBToUVJ444Row_NEON(const uint8_t* src_argb,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width);
+void ARGBToUVJ444Row_NEON_I8MM(const uint8_t* src_argb,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width);
 void ARGBToUVRow_NEON(const uint8_t* src_argb,
                       int src_stride_argb,
                       uint8_t* dst_u,
@@ -2367,6 +2381,14 @@ void ARGBToUV444Row_Any_NEON_I8MM(const uint8_t* src_ptr,
                                   uint8_t* dst_u,
                                   uint8_t* dst_v,
                                   int width);
+void ARGBToUVJ444Row_Any_NEON(const uint8_t* src_ptr,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width);
+void ARGBToUVJ444Row_Any_NEON_I8MM(const uint8_t* src_ptr,
+                                   uint8_t* dst_u,
+                                   uint8_t* dst_v,
+                                   int width);
 void ARGBToUVRow_Any_NEON(const uint8_t* src_ptr,
                           int src_stride,
                           uint8_t* dst_u,
@@ -2683,6 +2705,11 @@ void ARGBToUV444Row_C(const uint8_t* src_argb,
                       uint8_t* dst_u,
                       uint8_t* dst_v,
                       int width);
+
+void ARGBToUVJ444Row_C(const uint8_t* src_argb,
+                       uint8_t* dst_u,
+                       uint8_t* dst_v,
+                       int width);
 
 void MirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_SSSE3(const uint8_t* src, uint8_t* dst, int width);
@@ -3642,6 +3669,42 @@ void Convert16To8Row_SME(const uint16_t* src_y,
                          uint8_t* dst_y,
                          int scale,
                          int width);
+
+void Convert8To8Row_C(const uint8_t* src_y,
+                      uint8_t* dst_y,
+                      int scale,
+                      int bias,
+                      int width);
+void Convert8To8Row_NEON(const uint8_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int bias,
+                         int width);
+void Convert8To8Row_Any_NEON(const uint8_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int scale,
+                             int bias,
+                             int width);
+void Convert8To8Row_SVE2(const uint8_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int bias,
+                         int width);
+void Convert8To8Row_SME(const uint8_t* src_y,
+                        uint8_t* dst_y,
+                        int scale,
+                        int bias,
+                        int width);
+void Convert8To8Row_AVX2(const uint8_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int bias,
+                         int width);
+void Convert8To8Row_Any_AVX2(const uint8_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int scale,
+                             int bias,
+                             int width);
 
 void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);

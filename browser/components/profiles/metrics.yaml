@@ -33,6 +33,55 @@ profiles.default:
     expires: never
     telemetry_mirror: Profiles_Default_Updated
 
+profiles.delete:
+  cancel:
+    type: event
+    description: >
+      Recorded when the user clicks the "Cancel" button on the
+      about:deleteprofile page, canceling deletion of the current profile
+      and closing the page.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927608
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927608
+    notification_emails:
+      - cmkm@mozilla.com
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    telemetry_mirror: Profiles_Delete_Cancel
+  confirm:
+    type: event
+    description: >
+      Recorded when the user clicks the "Delete" button on the
+      about:deleteprofile page, triggering deletion of the current profile.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927608
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927608
+    notification_emails:
+      - cmkm@mozilla.com
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    telemetry_mirror: Profiles_Delete_Confirm
+  displayed:
+    type: event
+    description: Recorded when the about:deleteprofile page is loaded.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927608
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927608
+    notification_emails:
+      - cmkm@mozilla.com
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    telemetry_mirror: Profiles_Delete_Displayed
+
 profiles.existing:
   alert:
     type: event
@@ -332,3 +381,45 @@ profiles.new:
       - nbaumgardner@mozilla.com
     expires: never
     telemetry_mirror: Profiles_New_Theme
+
+profiles.selector_window:
+  launch:
+    type: event
+    description: >
+      Recorded when the user clicks a profile card in the profile selector
+      window, launching the profile in a new Firefox instance.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927605
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927605
+    notification_emails:
+      - cmkm@mozilla.com
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    telemetry_mirror: Profiles_SelectorWindow_Launch
+  show_at_startup:
+    type: event
+    description: >
+      Recorded when the user toggles the checkbox that determines if the
+      profile selector window is shown at startup.
+    extra_keys:
+      value:
+        description: >
+          The `value` of the event. Mirrors to the Legacy Telemetry
+          event's `value` parameter. If the user checked the checkbox, the
+          `value` will be `enabled`. If the user unchecked the checkbox,
+          the `value` will be `disabled`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927605
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1927605
+    notification_emails:
+      - cmkm@mozilla.com
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    telemetry_mirror: Profiles_SelectorWindow_ShowAtStartup

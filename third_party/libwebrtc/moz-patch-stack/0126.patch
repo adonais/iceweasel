@@ -35,7 +35,7 @@ index e379d18527..c810498584 100644
  # Normally, we'd use 'if (!build_with_mozilla)', but that flag isn't
  # available yet.
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index ddb6cd9d1b..e48d2ffada 100644
+index 40f0b3b215..e8eb1c80dc 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -48,7 +48,7 @@ index ddb6cd9d1b..e48d2ffada 100644
  
  group("media") {
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index c5c6ce13dd..ee3a30dc4c 100644
+index 7e044d26c3..3053b829f2 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -61,7 +61,7 @@ index c5c6ce13dd..ee3a30dc4c 100644
  
  rtc_library("encoded_frame") {
 diff --git a/webrtc.gni b/webrtc.gni
-index 5efc1979fd..60fd992710 100644
+index da1e18e67e..7c5a0e35ea 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -11,7 +11,7 @@ import("//build/config/mips.gni")
@@ -73,7 +73,7 @@ index 5efc1979fd..60fd992710 100644
  
  if (!build_with_chromium && is_component_build) {
    print("The Gn argument `is_component_build` is currently " +
-@@ -492,8 +492,8 @@ all_poison_types = [
+@@ -487,8 +487,8 @@ all_poison_types = [
    "software_video_codecs",
  ]
  

@@ -52,7 +52,7 @@ body {
     min-height: 120px;
 
     /* stylelint-disable-next-line media-query-no-invalid */
-    @media (-moz-bool-pref: "sidebar.verticalTabs") {
+    @media -moz-pref("sidebar.verticalTabs") {
       min-width: 732px;
 
       @media (-moz-platform: macos) {
@@ -70,6 +70,7 @@ body {
   --browser-area-z-index-toolbox: 0;
   --browser-area-z-index-sidebar: 1;
   --browser-area-z-index-tabbox: 2;
+  --browser-area-z-index-sidebar-wrapper: 3;
   --browser-area-z-index-sidebar-splitter: 3;
 
   /* on macOS the animation of the toolbox in fullscreen needs the toolbox to be higher */
@@ -191,22 +192,29 @@ body {
   }
 
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media (-moz-platform: macos) and (-moz-bool-pref: "browser.theme.native-theme") {
+  @media (-moz-platform: macos) and -moz-pref("browser.theme.native-theme") {
+    /* This is conceptually a background, but putting this on a pseudo-element
+     * avoids it from suppressing the chrome-content separator border, etc.
+     *
+     * We make this exist unconditionally to prevent dynamic changes from
+     * reframing the whole toolbox when adding or removing it.
+     *
+     * See bug 1949528 and bug 1476281 (which would make this unnecessary). */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+    }
+
     /* Don't make the toolbox vibrant when in full-screen. macOS fullscreen has a
      * native titlebar outside of the window (revealed on hover) anyways. */
     :root[customtitlebar]:not([lwtheme], [macOSNativeFullscreen]) & {
       background-color: transparent;
 
-      /* This is conceptually a background, but putting this on a
-       * pseudo-element avoids it from suppressing the chrome-content separator
-       * border, etc */
       &::after {
         -moz-default-appearance: -moz-window-titlebar;
         appearance: auto;
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: -1;
       }
     }
   }
@@ -221,7 +229,7 @@ body {
   color: inherit;
 
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media not (-moz-bool-pref: "sidebar.verticalTabs") {
+  @media not -moz-pref("sidebar.verticalTabs") {
     &:not(.browser-titlebar) {
       background-color: var(--toolbar-bgcolor);
       color: var(--toolbar-color);
@@ -304,7 +312,7 @@ body {
   }
 
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media (-moz-bool-pref: "sidebar.verticalTabs") {
+  @media -moz-pref("sidebar.verticalTabs") {
     &[type="pre-tabs"], &[type="post-tabs"] {
       display: none;
     }
@@ -414,7 +422,7 @@ body {
 }
 
 /* stylelint-disable-next-line media-query-no-invalid */
-@media not (-moz-bool-pref: "sidebar.verticalTabs") {
+@media not -moz-pref("sidebar.verticalTabs") {
   #vertical-spacer {
     display: none;
   }
@@ -610,9 +618,11 @@ menupopup::part(drop-indicator) {
 }
 
 /* Content analysis indicator */
-
-:root:not([contentanalysisactive]) #content-analysis-indicator {
-  display: none;
+.content-analysis-indicator {
+  :root:not([contentanalysisactive]) &,
+  #navigator-toolbox:not([tabs-hidden]) > #nav-bar > & {
+    display: none;
+  }
 }
 
 /* Various panels and popup notifications */

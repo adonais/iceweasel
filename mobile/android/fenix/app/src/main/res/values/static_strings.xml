@@ -101,7 +101,12 @@
     <string name="preferences_debug_settings_set_as_default_browser_prompt_for_existing_users_feature" translatable="false">Enable Native Default Browser Prompt For Existing Users</string>
     <!-- Label for enabling Unified Trust Panel -->
     <string name="preferences_debug_settings_unified_trust_panel" translatable="false">Enable Unified Trust Panel</string>
+    <!-- Label for enabling Trending Searches -->
+    <string name="preferences_debug_settings_trending_searches" translatable="false">Enable Trending Searches</string>
 
+    <!-- Label for enabling the DNS over HTTPS settings -->
+    <string name="preferences_debug_settings_enable_doh_settings" translatable="false">Enable DNS over HTTPS settings</string>
+    
     <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
     <string name="inactive_tabs_menu_item">Make inactive</string>
 
@@ -111,6 +116,8 @@
     <!-- Secret debug info strings -->
     <string name="debug_info_region_home" translatable="false">Home region</string>
     <string name="debug_info_region_current" translatable="false">Current region</string>
+    <string name="debug_info_distribution_id" translatable="false">Distribution ID</string>
+    <string name="debug_info_play_referrer" translatable="false">Play install referrer</string>
 
     <!-- Profiler settings -->
     <string name="preferences_start_profiler">Start Profiler</string>
@@ -158,10 +165,6 @@
     <string name="debug_drawer_cfr_tools_toolbar_cfr_title">Toolbar CFRs</string>
     <!-- The title of the other CFRs section in CFR Tools -->
     <string name="debug_drawer_cfr_tools_other_cfr_title">Other CFRs</string>
-    <!-- The private mode CFR title in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_private_mode_title">Add Private Tab to Home</string>
-    <!-- The private mode CFR description in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_private_mode_description">Displayed when the user enters PBM the first time AND the Focus browser is installed, OR after entering PBM three times AND the Focus browser is not installed. This will only be shown if a CFR has not been shown in at least 3 days.</string>
     <!-- The homepage nav toolbar CFR title in CFR Tools -->
     <string name="debug_drawer_cfr_tools_homepage_nav_toolbar_title">Homepage Navigation Toolbar</string>
     <!-- The homepage nav toolbar CFR description in CFR Tools -->

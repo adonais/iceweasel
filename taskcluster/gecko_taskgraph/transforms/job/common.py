@@ -7,7 +7,6 @@ worker implementation they operate on, and take the same three parameters, for
 consistency.
 """
 
-
 from taskgraph.transforms.run.common import CACHES, add_cache
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.taskcluster import get_artifact_prefix
@@ -68,12 +67,12 @@ def support_vcs_checkout(config, job, taskdesc):
     worker = job["worker"]
     is_mac = worker["os"] == "macosx"
     is_win = worker["os"] == "windows"
-    is_linux = worker["os"] == "linux" or "linux-bitbar"
+    is_linux = worker["os"] == "linux" or "linux-bitbar" or "linux-lambda"
     is_docker = worker["implementation"] == "docker-worker"
     assert is_mac or is_win or is_linux
 
     if is_win:
-        checkoutdir = "./build"
+        checkoutdir = "build"
         geckodir = f"{checkoutdir}/src"
         if "aarch64" in job["worker-type"] or "a64" in job["worker-type"]:
             # arm64 instances on azure don't support local ssds
@@ -85,14 +84,15 @@ def support_vcs_checkout(config, job, taskdesc):
         geckodir = f"{checkoutdir}/gecko"
         hgstore = f"{checkoutdir}/hg-store"
     else:
-        checkoutdir = "./checkouts"
+        checkoutdir = "checkouts"
         geckodir = f"{checkoutdir}/gecko"
         hgstore = f"{checkoutdir}/hg-shared"
 
     # Use some Gecko specific logic to determine cache name.
     CACHES["checkout"]["cache_name"] = get_cache_name
 
-    taskdesc["worker"].setdefault("env", {}).update(
+    env = taskdesc["worker"].setdefault("env", {})
+    env.update(
         {
             "GECKO_BASE_REPOSITORY": config.params["base_repository"],
             "GECKO_HEAD_REPOSITORY": config.params["head_repository"],
@@ -100,7 +100,8 @@ def support_vcs_checkout(config, job, taskdesc):
             "HG_STORE_PATH": hgstore,
         }
     )
-    taskdesc["worker"]["env"].setdefault("GECKO_PATH", geckodir)
+
+    gecko_path = env.setdefault("GECKO_PATH", geckodir)
 
     if "comm_base_repository" in config.params:
         taskdesc["worker"]["env"].update(
@@ -123,6 +124,8 @@ def support_vcs_checkout(config, job, taskdesc):
     # only some worker platforms have taskcluster-proxy enabled
     if job["worker"]["implementation"] in ("docker-worker",):
         taskdesc["worker"]["taskcluster-proxy"] = True
+
+    return gecko_path
 
 
 def setup_secrets(config, job, taskdesc):

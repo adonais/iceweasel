@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.home.store
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -25,7 +26,9 @@ import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.topsites.TopSiteColors
+import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.wallpapers.WallpaperState
 
 /**
  * State object that describes the homepage.
@@ -53,6 +56,7 @@ internal sealed class HomepageState {
     /**
      * State corresponding with the homepage in normal browsing mode.
      *
+     * @property nimbusMessage Optional message to display.
      * @property topSites List of [TopSite] to display.
      * @property recentTabs List of [RecentTab] to display.
      * @property syncedTab The [RecentSyncedTab] to display.
@@ -70,10 +74,12 @@ internal sealed class HomepageState {
      * @property cardBackgroundColor Background color for card items.
      * @property buttonBackgroundColor Background [Color] for buttons.
      * @property buttonTextColor Text [Color] for buttons.
+     * @property customizeHomeButtonBackgroundColor Background [Color] for customize home button.
      * @property bottomSpacerHeight Height in [Dp] for the bottom of the scrollable view, based on
      * what's currently visible on the screen.
      */
     internal data class Normal(
+        val nimbusMessage: NimbusMessageState?,
         val topSites: List<TopSite>,
         val recentTabs: List<RecentTab>,
         val syncedTab: RecentSyncedTab?,
@@ -91,6 +97,7 @@ internal sealed class HomepageState {
         val cardBackgroundColor: Color,
         val buttonBackgroundColor: Color,
         val buttonTextColor: Color,
+        val customizeHomeButtonBackgroundColor: Color,
         override val bottomSpacerHeight: Dp,
     ) : HomepageState() {
 
@@ -123,13 +130,14 @@ internal sealed class HomepageState {
             settings: Settings,
         ): HomepageState {
             return with(appState) {
-                if (mode.isPrivate) {
+                if (browsingModeManager.mode.isPrivate) {
                     Private(
                         feltPrivateBrowsingEnabled = settings.feltPrivateBrowsingEnabled,
                         bottomSpacerHeight = getBottomSpace(),
                     )
                 } else {
                     Normal(
+                        nimbusMessage = NimbusMessageState.build(appState),
                         topSites = topSites,
                         recentTabs = recentTabs,
                         syncedTab = when (recentSyncedTabState) {
@@ -158,12 +166,28 @@ internal sealed class HomepageState {
                         cardBackgroundColor = wallpaperState.cardBackgroundColor,
                         buttonBackgroundColor = wallpaperState.buttonBackgroundColor,
                         buttonTextColor = wallpaperState.buttonTextColor,
+                        customizeHomeButtonBackgroundColor = wallpaperState.customizeHomeButtonBackgroundColor(),
                         bottomSpacerHeight = getBottomSpace(),
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun WallpaperState.customizeHomeButtonBackgroundColor(): Color {
+    var buttonColor: Color = FirefoxTheme.colors.actionTertiary
+
+    composeRunIfWallpaperCardColorsAreAvailable { cardColorLight, cardColorDark ->
+        buttonColor = if (isSystemInDarkTheme()) {
+            cardColorDark
+        } else {
+            cardColorLight
+        }
+    }
+
+    return buttonColor
 }
 
 @Composable

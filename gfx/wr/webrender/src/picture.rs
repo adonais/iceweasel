@@ -1478,34 +1478,46 @@ impl TileDescriptor {
     }
 }
 
-/// Represents the dirty region of a tile cache picture.
+/// Represents the dirty region of a tile cache picture, relative to a
+/// "visibility" spatial node. At the moment the visibility node is
+/// world space, but the plan is to switch to raster space.
+///
+/// The plan is to move away from these world space representation and
+/// compute dirty regions in raster space instead.
 #[derive(Clone)]
 pub struct DirtyRegion {
     /// The overall dirty rect, a combination of dirty_rects
-    pub combined: WorldRect,
+    pub combined: VisRect,
 
-    /// Spatial node of the picture cache this region represents
-    spatial_node_index: SpatialNodeIndex,
+    /// The corrdinate space used to do clipping, visibility, and
+    /// dirty rect calculations.
+    pub visibility_spatial_node: SpatialNodeIndex,
+    /// Spatial node of the picture this region represents.
+    local_spatial_node: SpatialNodeIndex,
 }
 
 impl DirtyRegion {
     /// Construct a new dirty region tracker.
     pub fn new(
-        spatial_node_index: SpatialNodeIndex,
+        visibility_spatial_node: SpatialNodeIndex,
+        local_spatial_node: SpatialNodeIndex,
     ) -> Self {
         DirtyRegion {
-            combined: WorldRect::zero(),
-            spatial_node_index,
+            combined: VisRect::zero(),
+            visibility_spatial_node,
+            local_spatial_node,
         }
     }
 
     /// Reset the dirty regions back to empty
     pub fn reset(
         &mut self,
-        spatial_node_index: SpatialNodeIndex,
+        visibility_spatial_node: SpatialNodeIndex,
+        local_spatial_node: SpatialNodeIndex,
     ) {
-        self.combined = WorldRect::zero();
-        self.spatial_node_index = spatial_node_index;
+        self.combined = VisRect::zero();
+        self.visibility_spatial_node = visibility_spatial_node;
+        self.local_spatial_node = local_spatial_node;
     }
 
     /// Add a dirty region to the tracker. Returns the visibility mask that corresponds to
@@ -1515,19 +1527,19 @@ impl DirtyRegion {
         rect_in_pic_space: PictureRect,
         spatial_tree: &SpatialTree,
     ) {
-        let map_pic_to_world = SpaceMapper::new_with_target(
-            spatial_tree.root_reference_frame_index(),
-            self.spatial_node_index,
-            WorldRect::max_rect(),
+        let map_pic_to_raster = SpaceMapper::new_with_target(
+            self.visibility_spatial_node,
+            self.local_spatial_node,
+            VisRect::max_rect(),
             spatial_tree,
         );
 
-        let world_rect = map_pic_to_world
+        let raster_rect = map_pic_to_raster
             .map(&rect_in_pic_space)
             .expect("bug");
 
         // Include this in the overall dirty rect
-        self.combined = self.combined.union(&world_rect);
+        self.combined = self.combined.union(&raster_rect);
     }
 }
 
@@ -1635,6 +1647,8 @@ pub struct TileCacheParams {
     pub slice_flags: SliceFlags,
     // The anchoring spatial node / scroll root
     pub spatial_node_index: SpatialNodeIndex,
+    // The space in which visibility/invalidation/clipping computations are done.
+    pub visibility_node_index: SpatialNodeIndex,
     // Optional background color of this tilecache. If present, can be used as an optimization
     // to enable opaque blending and/or subpixel AA in more places.
     pub background_color: Option<ColorF>,
@@ -1782,6 +1796,8 @@ pub struct TileCacheInstance {
     pub sub_slices: Vec<SubSlice>,
     /// The positioning node for this tile cache.
     pub spatial_node_index: SpatialNodeIndex,
+    /// The coordinate space to do visibility/clipping/invalidation in.
+    pub visibility_node_index: SpatialNodeIndex,
     /// List of opacity bindings, with some extra information
     /// about whether they changed since last frame.
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -1930,13 +1946,14 @@ impl TileCacheInstance {
             slice: params.slice,
             slice_flags: params.slice_flags,
             spatial_node_index: params.spatial_node_index,
+            visibility_node_index: params.visibility_node_index,
             sub_slices,
             opacity_bindings: FastHashMap::default(),
             old_opacity_bindings: FastHashMap::default(),
             spatial_node_comparer: SpatialNodeComparer::new(),
             color_bindings: FastHashMap::default(),
             old_color_bindings: FastHashMap::default(),
-            dirty_region: DirtyRegion::new(params.spatial_node_index),
+            dirty_region: DirtyRegion::new(params.visibility_node_index, params.spatial_node_index),
             tile_size: PictureSize::zero(),
             tile_rect: TileRect::zero(),
             tile_bounds_p0: TileOffset::zero(),
@@ -2145,6 +2162,14 @@ impl TileCacheInstance {
             .unmap(&frame_context.global_screen_world_rect)
             .expect("unable to unmap screen rect");
 
+        let pic_to_vis_mapper = SpaceMapper::new_with_target(
+            // TODO: use the raster node instead of the root node.
+            frame_context.root_spatial_node_index,
+            self.spatial_node_index,
+            surface.culling_rect,
+            frame_context.spatial_tree,
+        );
+
         // If there is a valid set of shared clips, build a clip chain instance for this,
         // which will provide a local clip rect. This is useful for establishing things
         // like whether the backdrop rect supplied by Gecko can be considered opaque.
@@ -2157,6 +2182,7 @@ impl TileCacheInstance {
             frame_state.clip_store.set_active_clips(
                 self.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
+                surface.visibility_spatial_node_index,
                 shared_clip_leaf_id,
                 frame_context.spatial_tree,
                 &mut frame_state.data_stores.clip,
@@ -2166,12 +2192,12 @@ impl TileCacheInstance {
             let clip_chain_instance = frame_state.clip_store.build_clip_chain_instance(
                 pic_rect.cast_unit(),
                 &map_local_to_picture,
-                &pic_to_world_mapper,
+                &pic_to_vis_mapper,
                 frame_context.spatial_tree,
                 frame_state.gpu_cache,
                 frame_state.resource_cache,
                 frame_context.global_device_pixel_scale,
-                &frame_context.global_screen_world_rect,
+                &surface.culling_rect,
                 &mut frame_state.data_stores.clip,
                 frame_state.rg_builder,
                 true,
@@ -3774,7 +3800,10 @@ impl TileCacheInstance {
     ) {
         assert!(self.current_surface_traversal_depth == 0);
 
-        self.dirty_region.reset(self.spatial_node_index);
+        // TODO: Switch from the root node ot raster space.
+        let visibility_node = frame_context.spatial_tree.root_reference_frame_index();
+
+        self.dirty_region.reset(visibility_node, self.spatial_node_index);
         self.subpixel_mode = self.calculate_subpixel_mode();
 
         self.transform_index = composite_state.register_transform(
@@ -4009,11 +4038,11 @@ pub struct SurfaceInfo {
     /// The local space coverage of child primitives after they are
     /// are clipped to their owning clip-chain.
     pub clipped_local_rect: PictureRect,
-    /// If true, we know this surface is completely opaque
-    pub is_opaque: bool,
     /// The (conservative) valid part of this surface rect. Used
     /// to reduce the size of render target allocation.
     pub clipping_rect: PictureRect,
+    /// The rectangle to use for culling and clipping.
+    pub culling_rect: VisRect,
     /// Helper structs for mapping local rects in different
     /// coordinate systems into the picture coordinates.
     pub map_local_to_picture: SpaceMapper<LayoutPixel, PicturePixel>,
@@ -4021,12 +4050,17 @@ pub struct SurfaceInfo {
     pub surface_spatial_node_index: SpatialNodeIndex,
     /// The rasterization root for this surface.
     pub raster_spatial_node_index: SpatialNodeIndex,
+    /// The spatial node for culling and clipping (anything using VisPixel).
+    /// TODO: Replace with the raster spatial node.
+    pub visibility_spatial_node_index: SpatialNodeIndex,
     /// The device pixel ratio specific to this surface.
     pub device_pixel_scale: DevicePixelScale,
     /// The scale factors of the surface to world transform.
     pub world_scale_factors: (f32, f32),
     /// Local scale factors surface to raster transform
     pub local_scale: (f32, f32),
+    /// If true, we know this surface is completely opaque.
+    pub is_opaque: bool,
     /// If true, allow snapping on this and child surfaces
     pub allow_snapping: bool,
     /// If true, the scissor rect must be set when drawing this surface
@@ -4061,6 +4095,9 @@ impl SurfaceInfo {
             pic_bounds,
         );
 
+        // TODO: replace the root with raster space.
+        let visibility_spatial_node_index = spatial_tree.root_reference_frame_index();
+
         SurfaceInfo {
             unclipped_local_rect: PictureRect::zero(),
             clipped_local_rect: PictureRect::zero(),
@@ -4069,11 +4106,15 @@ impl SurfaceInfo {
             map_local_to_picture,
             raster_spatial_node_index,
             surface_spatial_node_index,
+            visibility_spatial_node_index,
             device_pixel_scale,
             world_scale_factors,
             local_scale,
             allow_snapping,
             force_scissor_rect,
+            // TODO: At the moment all culling is done in world space but
+            // but the plan is to move it to raster space.
+            culling_rect: world_rect.cast_unit(),
         }
     }
 
@@ -5202,7 +5243,8 @@ impl PicturePrimitive {
             Some(ref raster_config) => raster_config.surface_index,
             None => parent_surface_index.expect("bug: no parent"),
         };
-        let surface_spatial_node_index = frame_state.surfaces[surface_index.0].surface_spatial_node_index;
+        let surface = &frame_state.surfaces[surface_index.0];
+        let surface_spatial_node_index = surface.surface_spatial_node_index;
 
         let map_pic_to_world = SpaceMapper::new_with_target(
             frame_context.root_spatial_node_index,
@@ -5211,6 +5253,17 @@ impl PicturePrimitive {
             frame_context.spatial_tree,
         );
 
+        let map_pic_to_vis = SpaceMapper::new_with_target(
+            // TODO: switch from root to raster space.
+            frame_context.root_spatial_node_index,
+            surface_spatial_node_index,
+            surface.culling_rect,
+            frame_context.spatial_tree,
+        );
+
+        // TODO: When moving VisRect to raster space, compute the picture
+        // bounds by projecting the parent surface's culling rect into the
+        // current surface's raster space.
         let pic_bounds = map_pic_to_world
             .unmap(&map_pic_to_world.bounds)
             .unwrap_or_else(PictureRect::max_rect);
@@ -6443,7 +6496,7 @@ impl PicturePrimitive {
 
         let state = PictureState {
             map_local_to_pic,
-            map_pic_to_world,
+            map_pic_to_vis,
         };
 
         let mut dirty_region_count = 0;
@@ -6453,6 +6506,7 @@ impl PicturePrimitive {
         if let Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { slice_id }, .. }) = self.raster_config {
             let dirty_region = tile_caches[&slice_id].dirty_region.clone();
             frame_state.push_dirty_region(dirty_region);
+
             dirty_region_count += 1;
         }
 
@@ -6518,6 +6572,8 @@ impl PicturePrimitive {
         let context = PictureContext {
             pic_index,
             raster_spatial_node_index: frame_state.surfaces[surface_index.0].raster_spatial_node_index,
+            // TODO: switch the visibility spatial node from the root to raster space.
+            visibility_spatial_node_index: frame_context.root_spatial_node_index,
             surface_spatial_node_index,
             surface_index,
             dirty_region_count,
@@ -6595,13 +6651,19 @@ impl PicturePrimitive {
         splitter: &mut PlaneSplitter,
         spatial_tree: &SpatialTree,
         prim_spatial_node_index: SpatialNodeIndex,
+        // TODO: this is called "visibility" while transitioning from world to raster
+        // space.
+        visibility_spatial_node_index: SpatialNodeIndex,
         original_local_rect: LayoutRect,
         combined_local_clip_rect: &LayoutRect,
-        world_rect: WorldRect,
+        dirty_rect: VisRect,
         plane_split_anchor: PlaneSplitAnchor,
     ) -> bool {
-        let transform = spatial_tree
-            .get_world_transform(prim_spatial_node_index);
+        let transform = spatial_tree.get_relative_transform(
+            prim_spatial_node_index,
+            visibility_spatial_node_index
+        );
+
         let matrix = transform.clone().into_transform().cast().to_untyped();
 
         // Apply the local clip rect here, before splitting. This is
@@ -6616,7 +6678,7 @@ impl PicturePrimitive {
             Some(rect) => rect.cast(),
             None => return false,
         };
-        let world_rect = world_rect.cast();
+        let dirty_rect = dirty_rect.cast();
 
         match transform {
             CoordinateSpaceMapping::Local => {
@@ -6645,7 +6707,7 @@ impl PicturePrimitive {
                         plane_split_anchor,
                     ),
                     &matrix,
-                    Some(world_rect.to_rect().to_untyped()),
+                    Some(dirty_rect.to_rect().to_untyped()),
                 );
                 if let Ok(results) = results {
                     for poly in results {
@@ -8238,9 +8300,11 @@ fn test_large_surface_scale_1() {
             clipped_local_rect: PictureRect::max_rect(),
             is_opaque: true,
             clipping_rect: PictureRect::max_rect(),
+            culling_rect: VisRect::max_rect(),
             map_local_to_picture: map_local_to_picture.clone(),
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(1.0),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
@@ -8255,9 +8319,11 @@ fn test_large_surface_scale_1() {
             clipped_local_rect: PictureRect::max_rect(),
             is_opaque: true,
             clipping_rect: PictureRect::max_rect(),
+            culling_rect: VisRect::max_rect(),
             map_local_to_picture,
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(43.82798767089844),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
@@ -8310,11 +8376,13 @@ fn test_drop_filter_dirty_region_outside_prim() {
             map_local_to_picture: map_local_to_picture.clone(),
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(1.0),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            culling_rect: VisRect::max_rect(),
         },
         SurfaceInfo {
             unclipped_local_rect: PictureRect::new(
@@ -8330,11 +8398,13 @@ fn test_drop_filter_dirty_region_outside_prim() {
             map_local_to_picture,
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(1.0),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            culling_rect: VisRect::max_rect(),
         },
     ];
 

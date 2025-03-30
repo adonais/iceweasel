@@ -5,6 +5,7 @@
 import { Log } from "resource://gre/modules/Log.sys.mjs";
 import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { Observers } from "resource://services-common/observers.sys.mjs";
 import { TelemetryUtils } from "resource://gre/modules/TelemetryUtils.sys.mjs";
 
@@ -12,8 +13,12 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
   TelemetrySend: "resource://gre/modules/TelemetrySend.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  OnboardingMessageProvider:
+    "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
+  WinTaskbarJumpList: "resource:///modules/WindowsJumpLists.sys.mjs",
 });
 
 const LOGGER_NAME = "Toolkit.Telemetry";
@@ -58,6 +63,7 @@ export var Policy = {
   showModal: async data => {
     return TelemetryReportingPolicyImpl._showModal(data);
   },
+  delayedSetup: async () => TelemetryReportingPolicyImpl._delayedSetup(),
 };
 
 /**
@@ -600,7 +606,7 @@ var TelemetryReportingPolicyImpl = {
    * Handle initialization/configuration that happens at
    * `sessionstore-windows-restored` time.
    */
-  _delayedSetup() {
+  async _delayedSetup() {
     // We're ready to make decisions about how to notify the user.  We only read
     // the Nimbus features once, so that Nimbus features changing doesn't yield
     // inconsistent results.  We also configure the datareporting policy Gecko
@@ -608,7 +614,7 @@ var TelemetryReportingPolicyImpl = {
     // makes sense because we don't have support for re-notifying a user
     // _during_ the Firefox process lifetime; right now, we only notify the user
     // at Firefox startup.
-    this._configureFromNimbus();
+    await this._configureFromNimbus();
 
     if (this.isFirstRun()) {
       // We're performing the first run, flip firstRun preference for subsequent runs.
@@ -715,12 +721,77 @@ var TelemetryReportingPolicyImpl = {
     });
   },
 
+  async _configureFromOnTrainRollout() {
+    const ENROLLMENT_PREF = "browser.preonboarding.enrolledInOnTrainRollout";
+
+    const platformSupported =
+      AppConstants.platform == "linux" ||
+      AppConstants.platform == "macosx" ||
+      (AppConstants.platform === "win" &&
+        Services.sysinfo.getProperty("hasWinPackageId", false));
+    if (!platformSupported) {
+      return;
+    }
+
+    let enrolled;
+    // Only enroll new users
+    if (this.isFirstRun()) {
+      const count = this._nimbusVariables.onTrainRolloutPopulation;
+      if (!count) {
+        this._log.trace(
+          `_configureFromOnTrainRollout: User not enrolled in on-train rollout - population is 0, not setting preferences`
+        );
+        return;
+      }
+      const bucketConfig = {
+        count,
+        namespace: "firefox-desktop-preonboarding-on-train-rollout-1",
+        randomizationUnit: "normandy_id",
+        start: 0,
+        total: 10000,
+      };
+
+      enrolled =
+        await lazy.ExperimentManager.isInBucketAllocation(bucketConfig);
+
+      if (enrolled) {
+        Services.prefs.setBoolPref(ENROLLMENT_PREF, enrolled);
+      }
+    } else {
+      enrolled = Services.prefs.getBoolPref(ENROLLMENT_PREF, false);
+    }
+
+    if (enrolled) {
+      const preonboardingMessage =
+        lazy.OnboardingMessageProvider.getPreonboardingMessages().find(
+          m => m.id === "ON_TRAIN_ROLLOUT"
+        );
+
+      this._nimbusVariables = preonboardingMessage;
+
+      this._log.trace(
+        `_configureFromOnTrainRollout: User enrolled in on-train rollout, will set preferences`
+      );
+    } else {
+      this._log.trace(
+        `_configureFromOnTrainRollout: User not enrolled in on-train rollout, not setting preferences`
+      );
+    }
+  },
+
   /**
    * Capture Nimbus configuration: record feature variables for future use and
    * set Gecko preferences based on values.
    */
-  _configureFromNimbus() {
+  async _configureFromNimbus() {
     this._nimbusVariables = lazy.NimbusFeatures.preonboarding.getAllVariables();
+
+    if (
+      this._nimbusVariables.enabled === null &&
+      this._nimbusVariables.onTrainRolloutEnabled
+    ) {
+      await this._configureFromOnTrainRollout();
+    }
 
     if (this._nimbusVariables.enabled) {
       if ("currentPolicyVersion" in this._nimbusVariables) {
@@ -813,6 +884,13 @@ var TelemetryReportingPolicyImpl = {
     this._log.trace(
       "_notifyUserViaModal: modal displayed, waiting for user interaction"
     );
+
+    // On Windows, clear the jump list to limit opening new windows while the
+    // modal is displayed
+    if (AppConstants.platform === "win") {
+      lazy.WinTaskbarJumpList.blockJumpList(p);
+    }
+
     await p;
 
     this._log.trace("_notifyUserViaModal: user interacted with modal");

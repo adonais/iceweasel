@@ -1781,11 +1781,7 @@ void MacroAssembler::branchSurrogate(Assembler::Condition cond, Register src,
                               ? unicode::LeadSurrogateMin
                               : unicode::TrailSurrogateMin;
 
-  if (src != scratch) {
-    move32(src, scratch);
-  }
-
-  and32(Imm32(SurrogateMask), scratch);
+  and32(Imm32(SurrogateMask), src, scratch);
   branch32(cond, scratch, Imm32(SurrogateMin), label);
 }
 
@@ -1984,11 +1980,8 @@ void MacroAssembler::loadInt32ToStringWithBase(
     if (mozilla::IsPowerOfTwo(uint32_t(base))) {
       uint32_t shift = mozilla::FloorLog2(base);
 
-      move32(input, scratch1);
-      rshift32(Imm32(shift), scratch1);
-
-      move32(input, scratch2);
-      and32(Imm32((uint32_t(1) << shift) - 1), scratch2);
+      rshift32(Imm32(shift), input, scratch1);
+      and32(Imm32((uint32_t(1) << shift) - 1), input, scratch2);
     } else {
       // The following code matches CodeGenerator::visitUDivOrModConstant()
       // for x86-shared. Also see Hacker's Delight 2nd edition, chapter 10-8
@@ -2721,6 +2714,15 @@ void MacroAssembler::setIsCrossRealmArrayConstructor(Register obj,
   bind(&done);
 }
 
+void MacroAssembler::guardObjectHasSameRealm(Register obj, Register scratch,
+                                             Label* fail) {
+  loadPtr(Address(obj, JSObject::offsetOfShape()), scratch);
+  loadPtr(Address(scratch, Shape::offsetOfBaseShape()), scratch);
+  loadPtr(Address(scratch, BaseShape::offsetOfRealm()), scratch);
+  branchPtr(Assembler::NotEqual, AbsoluteAddress(ContextRealmPtr(runtime())),
+            scratch, fail);
+}
+
 void MacroAssembler::setIsDefinitelyTypedArrayConstructor(Register obj,
                                                           Register output) {
   Label isFalse, isTrue, done;
@@ -2856,7 +2858,8 @@ void MacroAssembler::loadAtomOrSymbolAndHash(ValueOperand value, Register outId,
 
 void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
     Register obj, Register entry, Register scratch1, Register scratch2,
-    ValueOperand output, Label* cacheHit, Label* cacheMiss) {
+    ValueOperand output, Label* cacheHit, Label* cacheMiss,
+    Label* cacheHitGetter) {
   Label isMissing, dynamicSlot, protoLoopHead, protoLoopTail;
 
   // scratch2 = entry->hopsAndKind_
@@ -2866,9 +2869,35 @@ void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
   branch32(Assembler::Equal, scratch2,
            Imm32(MegamorphicCache::Entry::NumHopsForMissingProperty),
            &isMissing);
-  // if (scratch2 & NonDataPropertyFlag) goto cacheMiss
-  branchTest32(Assembler::NonZero, scratch2,
-               Imm32(MegamorphicCache::Entry::NonDataPropertyFlag), cacheMiss);
+
+  if (cacheHitGetter) {
+    // Here we're going to set scratch1 to 0 for a data property and 1 for a
+    // getter and scratch2 to the number of hops
+    Label dataProperty;
+
+    // if (scratch2 & NonDataPropertyFlag == 0) goto dataProperty
+    move32(Imm32(0), scratch1);
+    branchTest32(Assembler::Zero, scratch2,
+                 Imm32(MegamorphicCache::Entry::NonDataPropertyFlag),
+                 &dataProperty);
+
+    // if (scratch2 > NonDataPropertyFlag | MaxHopsForAccessorProperty) goto
+    // cacheMiss
+    branch32(Assembler::GreaterThan, scratch2,
+             Imm32(MegamorphicCache::Entry::NonDataPropertyFlag |
+                   MegamorphicCache::Entry::MaxHopsForAccessorProperty),
+             cacheMiss);
+
+    and32(Imm32(~MegamorphicCache::Entry::NonDataPropertyFlag), scratch2);
+    move32(Imm32(1), scratch1);
+
+    bind(&dataProperty);
+  } else {
+    // if (scratch2 & NonDataPropertyFlag) goto cacheMiss
+    branchTest32(Assembler::NonZero, scratch2,
+                 Imm32(MegamorphicCache::Entry::NonDataPropertyFlag),
+                 cacheMiss);
+  }
 
   // NOTE: Where this is called, `output` can actually alias `obj`, and before
   // the last cacheMiss branch above we can't write to `obj`, so we can't
@@ -2886,24 +2915,29 @@ void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
   branchSub32(Assembler::NonZero, Imm32(1), scratch2, &protoLoopHead);
   bind(&protoLoopTail);
 
-  // scratch1 = entry->slotOffset()
-  load32(Address(entry, MegamorphicCacheEntry::offsetOfSlotOffset()), scratch1);
+  // entry = entry->slotOffset()
+  load32(Address(entry, MegamorphicCacheEntry::offsetOfSlotOffset()), entry);
 
   // scratch2 = slotOffset.offset()
-  move32(scratch1, scratch2);
-  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch2);
+  rshift32(Imm32(TaggedSlotOffset::OffsetShift), entry, scratch2);
 
   // if (!slotOffset.isFixedSlot()) goto dynamicSlot
-  branchTest32(Assembler::Zero, scratch1,
-               Imm32(TaggedSlotOffset::IsFixedSlotFlag), &dynamicSlot);
+  branchTest32(Assembler::Zero, entry, Imm32(TaggedSlotOffset::IsFixedSlotFlag),
+               &dynamicSlot);
   // output = outputScratch[scratch2]
   loadValue(BaseIndex(outputScratch, scratch2, TimesOne), output);
+  if (cacheHitGetter) {
+    branchTest32(Assembler::NonZero, scratch1, scratch1, cacheHitGetter);
+  }
   jump(cacheHit);
 
   bind(&dynamicSlot);
   // output = outputScratch->slots_[scratch2]
   loadPtr(Address(outputScratch, NativeObject::offsetOfSlots()), outputScratch);
   loadValue(BaseIndex(outputScratch, scratch2, TimesOne), output);
+  if (cacheHitGetter) {
+    branchTest32(Assembler::NonZero, scratch1, scratch1, cacheHitGetter);
+  }
   jump(cacheHit);
 
   bind(&isMissing);
@@ -2987,7 +3021,8 @@ void MacroAssembler::emitMegamorphicCacheLookupByValueCommon(
 
 void MacroAssembler::emitMegamorphicCacheLookup(
     PropertyKey id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit) {
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter) {
   Label cacheMiss, isMissing, dynamicSlot, protoLoopHead, protoLoopTail;
 
   // scratch1 = obj->shape()
@@ -3045,8 +3080,9 @@ void MacroAssembler::emitMegamorphicCacheLookup(
   // if (outEntryPtr->generation_ != scratch2) goto cacheMiss
   branch32(Assembler::NotEqual, scratch1, scratch2, &cacheMiss);
 
-  emitExtractValueFromMegamorphicCacheEntry(
-      obj, outEntryPtr, scratch1, scratch2, output, cacheHit, &cacheMiss);
+  emitExtractValueFromMegamorphicCacheEntry(obj, outEntryPtr, scratch1,
+                                            scratch2, output, cacheHit,
+                                            &cacheMiss, cacheHitGetter);
 
   bind(&cacheMiss);
 }
@@ -3054,14 +3090,15 @@ void MacroAssembler::emitMegamorphicCacheLookup(
 template <typename IdOperandType>
 void MacroAssembler::emitMegamorphicCacheLookupByValue(
     IdOperandType id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit) {
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter) {
   Label cacheMiss, cacheMissWithEntry;
   emitMegamorphicCacheLookupByValueCommon(id, obj, scratch1, scratch2,
                                           outEntryPtr, &cacheMiss,
                                           &cacheMissWithEntry);
-  emitExtractValueFromMegamorphicCacheEntry(obj, outEntryPtr, scratch1,
-                                            scratch2, output, cacheHit,
-                                            &cacheMissWithEntry);
+  emitExtractValueFromMegamorphicCacheEntry(
+      obj, outEntryPtr, scratch1, scratch2, output, cacheHit,
+      &cacheMissWithEntry, cacheHitGetter);
   bind(&cacheMiss);
   xorPtr(outEntryPtr, outEntryPtr);
   bind(&cacheMissWithEntry);
@@ -3069,11 +3106,13 @@ void MacroAssembler::emitMegamorphicCacheLookupByValue(
 
 template void MacroAssembler::emitMegamorphicCacheLookupByValue<ValueOperand>(
     ValueOperand id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit);
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter);
 
 template void MacroAssembler::emitMegamorphicCacheLookupByValue<Register>(
     Register id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit);
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter);
 
 void MacroAssembler::emitMegamorphicCacheLookupExists(
     ValueOperand id, Register obj, Register scratch1, Register scratch2,
@@ -3140,8 +3179,7 @@ void MacroAssembler::extractCurrentIndexAndKindFromIterator(Register iterator,
          outIndex);
 
   // Extract kind.
-  move32(outIndex, outKind);
-  rshift32(Imm32(PropertyIndex::KindShift), outKind);
+  rshift32(Imm32(PropertyIndex::KindShift), outIndex, outKind);
 
   // Extract index.
   and32(Imm32(PropertyIndex::IndexMask), outIndex);
@@ -3223,8 +3261,7 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
       scratch2);
 
   // scratch1 = slotOffset.offset()
-  move32(scratch2, scratch1);
-  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch1);
+  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch2, scratch1);
 
   Address afterShapePtr(scratch3,
                         MegamorphicSetPropCache::Entry::offsetOfAfterShape());
@@ -3520,7 +3557,7 @@ void MacroAssembler::dateTimeFromSecondsIntoYear(ValueOperand secondsIntoYear,
 #ifdef DEBUG
   Label okValue;
   branchTestInt32(Assembler::Equal, secondsIntoYear, &okValue);
-  branchTestValue(Assembler::Equal, secondsIntoYear, JS::NaNValue(), &okValue);
+  branchTestNaNValue(Assembler::Equal, secondsIntoYear, scratch1, &okValue);
   assumeUnreachable("secondsIntoYear is an int32 or NaN");
   bind(&okValue);
 #endif
@@ -3658,6 +3695,12 @@ void MacroAssembler::loadDOMExpandoValueGuardGeneration(
 void MacroAssembler::loadJitActivation(Register dest) {
   loadJSContext(dest);
   loadPtr(Address(dest, offsetof(JSContext, activation_)), dest);
+}
+
+void MacroAssembler::loadBaselineCompileQueue(Register dest) {
+  loadPtr(AbsoluteAddress(ContextRealmPtr(runtime())), dest);
+  computeEffectiveAddress(Address(dest, Realm::offsetOfBaselineCompileQueue()),
+                          dest);
 }
 
 void MacroAssembler::guardSpecificAtom(Register str, JSAtom* atom,
@@ -4741,14 +4784,6 @@ void MacroAssembler::setupABICallHelper() {
   // On ARM, we need to know what ABI we are using.
   abiArgs_.setUseHardFp(ARMFlags::UseHardFpABI());
 #endif
-
-#if defined(JS_CODEGEN_MIPS32)
-  // On MIPS, the system ABI use general registers pairs to encode double
-  // arguments, after one or 2 integer-like arguments. Unfortunately, the
-  // Lowering phase is not capable to express it at the moment. So we enforce
-  // the system ABI here.
-  abiArgs_.enforceO32ABI();
-#endif
 }
 
 void MacroAssembler::setupNativeABICall() {
@@ -5025,8 +5060,7 @@ void MacroAssembler::powPtr(Register base, Register power, Register dest,
 void MacroAssembler::signInt32(Register input, Register output) {
   MOZ_ASSERT(input != output);
 
-  move32(input, output);
-  rshift32Arithmetic(Imm32(31), output);
+  rshift32Arithmetic(Imm32(31), input, output);
   or32(Imm32(1), output);
   cmp32Move32(Assembler::Equal, input, Imm32(0), input, output);
 }
@@ -5423,8 +5457,7 @@ void MacroAssembler::loadFunctionLength(Register func,
                Imm32(FunctionFlags::BASESCRIPT), &isInterpreted);
   {
     // The length property of a native function stored with the flags.
-    move32(funFlagsAndArgCount, output);
-    rshift32(Imm32(JSFunction::ArgCountShift), output);
+    rshift32(Imm32(JSFunction::ArgCountShift), funFlagsAndArgCount, output);
     jump(&lengthLoaded);
   }
   bind(&isInterpreted);
@@ -7005,8 +7038,7 @@ void MacroAssembler::branchWasmSTVIsSubtypeDynamicDepth(
 }
 
 void MacroAssembler::extractWasmAnyRefTag(Register src, Register dest) {
-  movePtr(src, dest);
-  andPtr(Imm32(int32_t(wasm::AnyRef::TagMask)), dest);
+  andPtr(Imm32(int32_t(wasm::AnyRef::TagMask)), src, dest);
 }
 
 void MacroAssembler::untagWasmAnyRef(Register src, Register dest,
@@ -7068,10 +7100,10 @@ void MacroAssembler::truncate32ToWasmI31Ref(Register src, Register dest) {
   // This will either zero-extend or sign-extend the high 32-bits on 64-bit
   // platforms (see comments on invariants in MacroAssembler.h). Either case
   // is fine, as we won't use this bits.
-  move32(src, dest);
+  //
   // Move the payload of the integer over by 1 to make room for the tag. This
   // will perform the truncation required by the spec.
-  lshift32(Imm32(1), dest);
+  lshift32(Imm32(1), src, dest);
   // Add the i31 tag to the integer.
   orPtr(Imm32(int32_t(wasm::AnyRefTag::I31)), dest);
 #ifdef JS_64BIT
@@ -7086,10 +7118,10 @@ void MacroAssembler::convertWasmI31RefTo32Signed(Register src, Register dest) {
   // This will either zero-extend or sign-extend the high 32-bits on 64-bit
   // platforms (see comments on invariants in MacroAssembler.h). Either case
   // is fine, as we won't use this bits.
-  move32(src, dest);
+  //
   // Shift the payload back (clobbering the tag). This will sign-extend, giving
   // us the unsigned behavior we want.
-  rshift32Arithmetic(Imm32(1), dest);
+  rshift32Arithmetic(Imm32(1), src, dest);
 }
 
 void MacroAssembler::convertWasmI31RefTo32Unsigned(Register src,
@@ -7100,10 +7132,10 @@ void MacroAssembler::convertWasmI31RefTo32Unsigned(Register src,
   // This will either zero-extend or sign-extend the high 32-bits on 64-bit
   // platforms (see comments on invariants in MacroAssembler.h). Either case
   // is fine, as we won't use this bits.
-  move32(src, dest);
+  //
   // Shift the payload back (clobbering the tag). This will zero-extend, giving
   // us the unsigned behavior we want.
-  rshift32(Imm32(1), dest);
+  rshift32(Imm32(1), src, dest);
 }
 
 void MacroAssembler::branchValueConvertsToWasmAnyRefInline(
@@ -7215,8 +7247,7 @@ void MacroAssembler::convertObjectToWasmAnyRef(Register src, Register dest) {
 
 void MacroAssembler::convertStringToWasmAnyRef(Register src, Register dest) {
   // JS strings require a tag.
-  movePtr(src, dest);
-  orPtr(Imm32(int32_t(wasm::AnyRefTag::String)), dest);
+  orPtr(Imm32(int32_t(wasm::AnyRefTag::String)), src, dest);
 }
 
 void MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject, Register src,
@@ -7749,8 +7780,7 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
 #endif
 
   // Load the chunk address in temp2.
-  movePtr(temp1, temp2);
-  andPtr(Imm32(int32_t(~gc::ChunkMask)), temp2);
+  andPtr(Imm32(int32_t(~gc::ChunkMask)), temp1, temp2);
 
   // If the GC thing is in the nursery, we don't need to barrier it.
   if (type == MIRType::Value || type == MIRType::Object ||
@@ -7816,8 +7846,6 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
   ma_lsl(temp3, temp1, temp1);
 #elif JS_CODEGEN_ARM64
   Lsl(ARMRegister(temp1, 64), ARMRegister(temp1, 64), ARMRegister(temp3, 64));
-#elif JS_CODEGEN_MIPS32
-  ma_sll(temp1, temp1, temp3);
 #elif JS_CODEGEN_MIPS64
   ma_dsll(temp1, temp1, temp3);
 #elif JS_CODEGEN_LOONG64
@@ -9126,8 +9154,7 @@ void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
   loadPtr(Address(shapeAndProto, Shape::offsetOfCachePtr()), dest);
 
   // Check if it's an iterator.
-  movePtr(dest, temp3);
-  andPtr(Imm32(ShapeCachePtr::MASK), temp3);
+  andPtr(Imm32(ShapeCachePtr::MASK), dest, temp3);
   branch32(Assembler::NotEqual, temp3, Imm32(ShapeCachePtr::ITERATOR), failure);
 
   // If we've cached an iterator, |obj| must be a native object.
@@ -9930,8 +9957,7 @@ void MacroAssembler::touchFrameValues(Register numStackValues,
 
   moveStackPtrTo(scratch2);
 
-  mov(numStackValues, scratch1);
-  lshiftPtr(Imm32(3), scratch1);
+  lshiftPtr(Imm32(3), numStackValues, scratch1);
   {
     // Note: this loop needs to update the stack pointer register because older
     // Linux kernels check the distance between the touched address and RSP.

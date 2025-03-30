@@ -52,26 +52,17 @@ function doToggleTest(pref) {
 }
 
 // Simulates the race on startup between telemetry environment initialization
-// and the initial update of the Suggest scenario. After startup is done,
-// telemetry environment should record the correct values for startup prefs.
+// and initialization of default Suggest prefs. After startup is done, telemetry
+// environment should record the correct values for the prefs.
 add_task(async function telemetryEnvironmentOnStartup() {
-  await QuickSuggestTestUtils.setScenario(null);
+  await QuickSuggest._test_reinit();
 
   // Restart telemetry environment so we know it's watching its default set of
   // prefs.
   await TelemetryEnvironment.testCleanRestart().onInitialized();
 
-  // Get the prefs that UrlbarPrefs sets when the Suggest scenario is updated on
-  // startup. They're the union of the prefs exposed in the UI and the prefs
-  // that are set on the default branch per scenario.
-  let prefs = [
-    ...new Set([
-      ...Object.values(UrlbarPrefs.FIREFOX_SUGGEST_UI_PREFS_BY_VARIABLE),
-      ...Object.values(UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS)
-        .map(valuesByPrefName => Object.keys(valuesByPrefName))
-        .flat(),
-    ]),
-  ];
+  // Get the Suggest prefs that are set on Suggest init.
+  let prefs = Object.keys(QuickSuggest.DEFAULT_PREFS);
 
   // Not all of the prefs are recorded in telemetry environment. Filter in the
   // ones that are.
@@ -110,26 +101,22 @@ add_task(async function telemetryEnvironmentOnStartup() {
   );
 
   // Now simulate startup. Restart telemetry environment but don't wait for it
-  // to finish before calling `updateFirefoxSuggestScenario()`. This simulates
-  // startup where telemetry environment's initialization races the intial
-  // update of the Suggest scenario.
+  // to finish before reinitializing Suggest. This simulates startup where
+  // telemetry environment's initialization races Suggest pref init.
   let environmentInitPromise =
     TelemetryEnvironment.testCleanRestart().onInitialized();
 
-  // Update the scenario and force the startup prefs to take on values that are
-  // the inverse of what they are now.
-  await UrlbarPrefs.updateFirefoxSuggestScenario({
-    isStartup: true,
-    scenario: "online",
-    defaultPrefs: {
-      online: Object.fromEntries(
-        Object.entries(defaultValues).map(([p, value]) => [p, !value])
-      ),
-    },
+  // Reinit and force the startup prefs to take on values that are the inverse
+  // of what they are now.
+  await QuickSuggest._test_reinit({
+    shouldEnable: true,
+    defaultPrefs: Object.fromEntries(
+      Object.entries(defaultValues).map(([p, value]) => [p, !value])
+    ),
   });
 
   // At this point telemetry environment should be done initializing since
-  // `updateFirefoxSuggestScenario()` waits for it, but await our promise now.
+  // Suggest initialization waits for it, but await our promise now.
   await environmentInitPromise;
 
   // TelemetryEnvironment should have cached the new values.
@@ -149,13 +136,7 @@ add_task(async function telemetryEnvironmentOnStartup() {
   environmentInitPromise =
     TelemetryEnvironment.testCleanRestart().onInitialized();
 
-  await UrlbarPrefs.updateFirefoxSuggestScenario({
-    isStartup: true,
-    scenario: "online",
-    defaultPrefs: {
-      online: defaultValues,
-    },
-  });
+  await QuickSuggest._test_reinit();
 
   await environmentInitPromise;
 

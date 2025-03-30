@@ -2,9 +2,8 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [compareArray.js, deepEqual.js, include.js]
-flags:
-- noStrict
+includes: [include.js, deepEqual.js, compareArray.js]
+flags: [noStrict]
 description: |
   pending
 esid: pending

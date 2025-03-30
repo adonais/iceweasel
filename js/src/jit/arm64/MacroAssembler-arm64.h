@@ -98,6 +98,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     return LoadStoreMacro(rt, MemOperand(scratch64, addr.offset), op);
   }
   void push(FloatRegister f) {
+    MOZ_ASSERT(f.isDouble(), "float32 and simd128 not supported");
     vixl::MacroAssembler::Push(ARMFPRegister(f, 64));
   }
   void push(ARMFPRegister f) { vixl::MacroAssembler::Push(f); }
@@ -200,6 +201,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   void pop(const ValueOperand& v) { pop(v.valueReg()); }
   void pop(const FloatRegister& f) {
+    MOZ_ASSERT(f.isDouble(), "float32 and simd128 not supported");
     vixl::MacroAssembler::Pop(ARMFPRegister(f, 64));
   }
 
@@ -618,9 +620,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
       Cbnz(dest32, &nonzero);
       // dest32 is 0, fail if fsrc64 is negative.
       Fmov(dest32, fsrc);
-      Cmp(dest32, xzr);
+      Cmp(dest32, wzr);
       B(fail, Assembler::Signed);
-      Mov(dest32, xzr);
+      Mov(dest32, wzr);
       bind(&nonzero);
     }
     Uxtw(dest64, dest64);

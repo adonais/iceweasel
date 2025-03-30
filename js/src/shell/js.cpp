@@ -81,9 +81,6 @@
 #include "builtin/TestingUtility.h"  // js::ParseCompileOptions, js::ParseDebugMetadata, js::CreateScriptPrivate
 #include "debugger/DebugAPI.h"
 #include "frontend/CompilationStencil.h"
-#ifdef JS_ENABLE_SMOOSH
-#  include "frontend/Frontend2.h"
-#endif
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/Parser.h"
@@ -97,9 +94,6 @@
 #ifdef JS_SIMULATOR_ARM
 #  include "jit/arm/Simulator-arm.h"
 #endif
-#ifdef JS_SIMULATOR_MIPS32
-#  include "jit/mips32/Simulator-mips32.h"
-#endif
 #ifdef JS_SIMULATOR_MIPS64
 #  include "jit/mips64/Simulator-mips64.h"
 #endif
@@ -109,6 +103,7 @@
 #ifdef JS_SIMULATOR_RISCV64
 #  include "jit/riscv64/Simulator-riscv64.h"
 #endif
+#include "jit/BaselineCompileQueue.h"
 #include "jit/CacheIRHealth.h"
 #include "jit/InlinableNatives.h"
 #include "jit/Ion.h"
@@ -1563,65 +1558,157 @@ static bool SetPromiseRejectionTrackerCallback(JSContext* cx, unsigned argc,
   return true;
 }
 
-// clang-format off
 static const char* telemetryNames[static_cast<int>(JSMetric::Count)] = {
 #define LIT(NAME, _) #NAME,
-  FOR_EACH_JS_METRIC(LIT)
+    FOR_EACH_JS_METRIC(LIT)
 #undef LIT
 };
-// clang-format on
 
 // Telemetry can be executed from multiple threads, and the callback is
 // responsible to avoid contention on the recorded telemetry data.
-static Mutex* telemetryLock = nullptr;
 class MOZ_RAII AutoLockTelemetry : public LockGuard<Mutex> {
   using Base = LockGuard<Mutex>;
 
+  Mutex& getMutex() {
+    static Mutex mutex(mutexid::ShellTelemetry);
+    return mutex;
+  }
+
  public:
-  AutoLockTelemetry() : Base(*telemetryLock) { MOZ_ASSERT(telemetryLock); }
+  AutoLockTelemetry() : Base(getMutex()) {}
 };
 
-using TelemetryData = uint32_t;
-using TelemetryVec = Vector<TelemetryData, 0, SystemAllocPolicy>;
-MOZ_RUNINIT static mozilla::Array<TelemetryVec, size_t(JSMetric::Count)>
-    telemetryResults;
+using TelemetrySamples = mozilla::Vector<uint32_t, 0, js::SystemAllocPolicy>;
+MOZ_CONSTINIT static mozilla::Array<UniquePtr<TelemetrySamples>,
+                                    size_t(JSMetric::Count)>
+    recordedTelemetrySamples;
+
 static void AccumulateTelemetryDataCallback(JSMetric id, uint32_t sample) {
   AutoLockTelemetry alt;
-  // We ignore OOMs while writting teleemtry data.
-  if (telemetryResults[static_cast<int>(id)].append(sample)) {
+  TelemetrySamples* samples = recordedTelemetrySamples[size_t(id)].get();
+  if (!samples) {
     return;
   }
-}
 
-static void WriteTelemetryDataToDisk(const char* dir) {
-  const int pathLen = 260;
-  char fileName[pathLen];
-  Fprinter output;
-  auto initOutput = [&](const char* name) -> bool {
-    if (SprintfLiteral(fileName, "%s%s.csv", dir, name) >= pathLen) {
-      return false;
-    }
-    FILE* file = fopen(fileName, "a");
-    if (!file) {
-      return false;
-    }
-    output.init(file);
-    return true;
-  };
-
-  for (size_t id = 0; id < size_t(JSMetric::Count); id++) {
-    auto clear = MakeScopeExit([&] { telemetryResults[id].clearAndFree(); });
-    if (!initOutput(telemetryNames[id])) {
-      continue;
-    }
-    for (uint32_t data : telemetryResults[id]) {
-      output.printf("%u\n", data);
-    }
-    output.finish();
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (!samples->append(sample)) {
+    oomUnsafe.crash("AccumulateTelemetrySamplesCallback");
   }
 }
 
-#undef MAP_TELEMETRY
+static bool LookupTelemetryName(JSContext* cx, Handle<Value> nameValue,
+                                JSMetric* resultOut) {
+  static_assert(size_t(JSMetric::Count) == std::size(telemetryNames));
+  MOZ_ASSERT(resultOut);
+
+  JSString* str = ToString(cx, nameValue);
+  if (!str) {
+    return false;
+  }
+
+  UniqueChars name = EncodeLatin1(cx, str);
+  if (!name) {
+    return false;
+  }
+
+  for (size_t i = 0; i < std::size(telemetryNames); i++) {
+    if (strcmp(telemetryNames[i], name.get()) == 0) {
+      *resultOut = JSMetric(i);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static bool StartRecordingTelemetry(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (args.length() != 1) {
+    JS_ReportErrorNumberASCII(cx, my_GetErrorMessage, nullptr,
+                              JSSMSG_INVALID_ARGS, "startRecordingTelemetry");
+    return false;
+  }
+
+  JSMetric id;
+  if (!LookupTelemetryName(cx, args[0], &id)) {
+    JS_ReportErrorASCII(cx, "Telemetry probe name not found");
+    return false;
+  }
+
+  if (recordedTelemetrySamples[size_t(id)]) {
+    JS_ReportErrorASCII(cx, "Already recording telemetry for this probe");
+    return false;
+  }
+
+  auto samples = MakeUnique<TelemetrySamples>();
+  if (!samples) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  recordedTelemetrySamples[size_t(id)] = std::move(samples);
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool StopRecordingTelemetry(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (args.length() != 1) {
+    JS_ReportErrorNumberASCII(cx, my_GetErrorMessage, nullptr,
+                              JSSMSG_INVALID_ARGS, "stopRecordingTelemetry");
+    return false;
+  }
+
+  JSMetric id;
+  if (!LookupTelemetryName(cx, args[0], &id)) {
+    JS_ReportErrorASCII(cx, "Telemetry probe name not found");
+    return false;
+  }
+
+  if (!recordedTelemetrySamples[size_t(id)]) {
+    JS_ReportErrorASCII(cx, "Not recording telemetry for this probe");
+    return false;
+  }
+
+  recordedTelemetrySamples[size_t(id)].reset();
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool GetTelemetrySamples(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (args.length() != 1) {
+    JS_ReportErrorNumberASCII(cx, my_GetErrorMessage, nullptr,
+                              JSSMSG_INVALID_ARGS, "getTelemetrySamples");
+    return false;
+  }
+
+  JSMetric id;
+  if (!LookupTelemetryName(cx, args[0], &id)) {
+    JS_ReportErrorASCII(cx, "Telemetry probe name not found");
+    return false;
+  }
+
+  TelemetrySamples* samples = recordedTelemetrySamples[size_t(id)].get();
+  if (!samples) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  Rooted<ArrayObject*> array(cx, NewDenseEmptyArray(cx));
+  if (!array) {
+    return false;
+  }
+
+  for (uint32_t sample : *samples) {
+    if (!NewbornArrayPush(cx, array, NumberValue(sample))) {
+      return false;
+    }
+  }
+
+  args.rval().setObject(*array);
+  return true;
+}
 
 // Use Counter introspection
 MOZ_RUNINIT static Mutex useCounterLock(mutexid::ShellUseCounters);
@@ -6112,9 +6199,6 @@ static bool FrontendTest(JSContext* cx, unsigned argc, Value* vp,
   }
 
   frontend::ParseGoal goal = frontend::ParseGoal::Script;
-#ifdef JS_ENABLE_SMOOSH
-  bool smoosh = false;
-#endif
 
   CompileOptions options(cx);
   options.setIntroductionType("js shell parse")
@@ -6153,31 +6237,6 @@ static bool FrontendTest(JSContext* cx, unsigned argc, Value* vp,
       JS_ReportErrorASCII(cx, "Module cannot be compiled with lineNumber == 0");
       return false;
     }
-
-#ifdef JS_ENABLE_SMOOSH
-    bool found = false;
-    if (!JS_HasProperty(cx, objOptions, "rustFrontend", &found)) {
-      return false;
-    }
-    if (found) {
-      JS_ReportErrorASCII(cx, "'rustFrontend' option is renamed to 'smoosh'");
-      return false;
-    }
-
-    RootedValue optionSmoosh(cx);
-    if (!JS_GetProperty(cx, objOptions, "smoosh", &optionSmoosh)) {
-      return false;
-    }
-
-    if (optionSmoosh.isBoolean()) {
-      smoosh = optionSmoosh.toBoolean();
-    } else if (!optionSmoosh.isUndefined()) {
-      const char* typeName = InformalValueTypeName(optionSmoosh);
-      JS_ReportErrorASCII(cx, "option `smoosh` should be a boolean, got %s",
-                          typeName);
-      return false;
-    }
-#endif  // JS_ENABLE_SMOOSH
   }
 
   JSString* scriptContents = args[0].toString();
@@ -6207,30 +6266,6 @@ static bool FrontendTest(JSContext* cx, unsigned argc, Value* vp,
   }
 
   size_t length = scriptContents->length();
-#ifdef JS_ENABLE_SMOOSH
-  if (dumpType == DumpType::ParseNode) {
-    if (smoosh) {
-      if (isAscii) {
-        const Latin1Char* chars = stableChars.latin1Range().begin().get();
-
-        if (goal == frontend::ParseGoal::Script) {
-          if (!SmooshParseScript(cx, chars, length)) {
-            return false;
-          }
-        } else {
-          if (!SmooshParseModule(cx, chars, length)) {
-            return false;
-          }
-        }
-        args.rval().setUndefined();
-        return true;
-      }
-      JS_ReportErrorASCII(cx,
-                          "SmooshMonkey does not support non-ASCII chars yet");
-      return false;
-    }
-  }
-#endif  // JS_ENABLE_SMOOSH
 
   if (goal == frontend::ParseGoal::Module) {
     // See frontend::CompileModule.
@@ -6239,51 +6274,6 @@ static bool FrontendTest(JSContext* cx, unsigned argc, Value* vp,
   }
 
   if (dumpType == DumpType::Stencil) {
-#ifdef JS_ENABLE_SMOOSH
-    if (smoosh) {
-      if (isAscii) {
-        if (goal == frontend::ParseGoal::Script) {
-          const Latin1Char* latin1 = stableChars.latin1Range().begin().get();
-          auto utf8 = reinterpret_cast<const mozilla::Utf8Unit*>(latin1);
-          JS::SourceText<Utf8Unit> srcBuf;
-          if (!srcBuf.init(cx, utf8, length, JS::SourceOwnership::Borrowed)) {
-            return false;
-          }
-
-          AutoReportFrontendContext fc(cx);
-          Rooted<frontend::CompilationInput> input(
-              cx, frontend::CompilationInput(options));
-          UniquePtr<frontend::ExtensibleCompilationStencil> stencil;
-          if (!Smoosh::tryCompileGlobalScriptToExtensibleStencil(
-                  cx, &fc, input.get(), srcBuf, stencil)) {
-            return false;
-          }
-          if (!stencil) {
-            fc.clearAutoReport();
-            JS_ReportErrorASCII(cx, "SmooshMonkey failed to parse");
-            return false;
-          }
-
-#  ifdef DEBUG
-          {
-            frontend::BorrowingCompilationStencil borrowingStencil(*stencil);
-            borrowingStencil.dump();
-          }
-#  endif
-        } else {
-          JS_ReportErrorASCII(cx,
-                              "SmooshMonkey does not support module stencil");
-          return false;
-        }
-        args.rval().setUndefined();
-        return true;
-      }
-      JS_ReportErrorASCII(cx,
-                          "SmooshMonkey does not support non-ASCII chars yet");
-      return false;
-    }
-#endif  // JS_ENABLE_SMOOSH
-
     if (isAscii) {
       const Latin1Char* latin1 = stableChars.latin1Range().begin().get();
       auto utf8 = reinterpret_cast<const mozilla::Utf8Unit*>(latin1);
@@ -7638,14 +7628,24 @@ static bool WithSourceHook(JSContext* cx, unsigned argc, Value* vp) {
   return result;
 }
 
-static void PrintProfilerEvents_Callback(const char* msg, const char* details) {
+static void PrintProfilerEvents_Callback(mozilla::MarkerCategory,
+                                         const char* msg, const char* details) {
   fprintf(stderr, "PROFILER EVENT: %s %s\n", msg, details);
+}
+
+static void PrintProfilerIntervals_Callback(mozilla::MarkerCategory,
+                                            const char* msg,
+                                            mozilla::TimeStamp start,
+                                            const char* details) {
+  fprintf(stderr, "PROFILER INTERVAL (%.2fms): %s %s\n",
+          (TimeStamp::Now() - start).ToMilliseconds(), msg, details);
 }
 
 static bool PrintProfilerEvents(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   if (cx->runtime()->geckoProfiler().enabled()) {
-    js::RegisterContextProfilingEventMarker(cx, &PrintProfilerEvents_Callback);
+    js::RegisterContextProfilingEventMarker(cx, &PrintProfilerEvents_Callback,
+                                            &PrintProfilerIntervals_Callback);
   }
   args.rval().setUndefined();
   return true;
@@ -7672,7 +7672,7 @@ static void SingleStepCallback(void* arg, jit::Simulator* sim, void* pc) {
   state.lr = (void*)sim->get_lr();
   state.fp = (void*)sim->get_fp();
   state.tempFP = (void*)sim->xreg(11);
-#  elif defined(JS_SIMULATOR_MIPS64) || defined(JS_SIMULATOR_MIPS32)
+#  elif defined(JS_SIMULATOR_MIPS64)
   state.sp = (void*)sim->getRegister(jit::Simulator::sp);
   state.lr = (void*)sim->getRegister(jit::Simulator::ra);
   state.fp = (void*)sim->getRegister(jit::Simulator::fp);
@@ -7998,10 +7998,6 @@ static bool GetSharedObject(JSContext* cx, unsigned argc, Value* vp) {
         break;
       }
       case MailboxTag::WasmModule: {
-        // Flag was set in the sender; ensure it is set in the receiver.
-        MOZ_ASSERT(
-            cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
-
         if (!GlobalObject::ensureConstructor(cx, cx->global(),
                                              JSProto_WebAssembly)) {
           return false;
@@ -9941,7 +9937,6 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "  If present, |options| may have properties saying how the code should be\n"
 "  compiled:\n"
 "      module: if present and true, compile the source as module.\n"
-"      smoosh: if present and true, use SmooshMonkey.\n"
 "  CompileOptions-related properties of evaluate function's option can also\n"
 "  be used."),
 
@@ -9950,7 +9945,6 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "  Parses a string, potentially throwing. If present, |options| may\n"
 "  have properties saying how the code should be compiled:\n"
 "      module: if present and true, compile the source as module.\n"
-"      smoosh: if present and true, use SmooshMonkey.\n"
 "  CompileOptions-related properties of evaluate function's option can also\n"
 "  be used. except forceFullParse. This function always use full parse."),
 
@@ -10476,6 +10470,18 @@ TestAssertRecoveredOnBailout,
 "disableExecutionTracing()",
 "  Disable execution tracing for the current context."),
 #endif   // MOZ_EXECUTION_TRACING
+
+    JS_FN_HELP("startRecordingTelemetry", StartRecordingTelemetry, 1, 0,
+"startRecordingTelemetry(probeName)",
+"  Start recording telemetry samples for the specified probe."),
+
+    JS_FN_HELP("stopRecordingTelemetry", StopRecordingTelemetry, 1, 0,
+"stopRecordingTelemetry(probeName)",
+"  Stop recording telemetry samples for the specified probe."),
+
+    JS_FN_HELP("getTelemetrySamples", GetTelemetrySamples, 1, 0,
+"getTelemetry(probeName)",
+"  Return an array of recorded telemetry samples for the specified probe."),
 
     JS_FS_HELP_END
 };
@@ -12299,18 +12305,6 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  // Record aggregated telemetry data on disk. Do this as early as possible such
-  // that the telemetry is recording both before starting the context and after
-  // closing it.
-  auto writeTelemetryResults = MakeScopeExit([&op] {
-    if (telemetryLock) {
-      const char* dir = op.getStringOption("telemetry-dir");
-      WriteTelemetryDataToDisk(dir);
-      js_free(telemetryLock);
-      telemetryLock = nullptr;
-    }
-  });
-
   if (!InitSharedObjectMailbox()) {
     return EXIT_FAILURE;
   }
@@ -12328,10 +12322,8 @@ int main(int argc, char** argv) {
   }
   ParseLoggerOptions();
 
-  // Register telemetry callbacks, if needed.
-  if (telemetryLock) {
-    JS_SetAccumulateTelemetryCallback(cx, AccumulateTelemetryDataCallback);
-  }
+  // Register telemetry callbacks.
+  JS_SetAccumulateTelemetryCallback(cx, AccumulateTelemetryDataCallback);
   JS_SetSetUseCounterCallback(cx, SetUseCounterCallback);
 
   auto destroyCx = MakeScopeExit([cx] { JS_DestroyContext(cx); });
@@ -12535,7 +12527,6 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "less-debug-code",
                         "Emit less machine code for "
                         "checking assertions under DEBUG.") ||
-      !op.addBoolOption('\0', "disable-weak-refs", "Disable weak references") ||
       !op.addBoolOption('\0', "disable-tosource", "Disable toSource/uneval") ||
       !op.addBoolOption('\0', "disable-property-error-message-fix",
                         "Disable fix for the error message when accessing "
@@ -12549,21 +12540,10 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "enable-shadow-realms", "Enable ShadowRealms") ||
       !op.addBoolOption('\0', "disable-array-grouping",
                         "Disable Object.groupBy and Map.groupBy") ||
-      !op.addBoolOption('\0', "disable-well-formed-unicode-strings",
-                        "Disable String.prototype.{is,to}WellFormed() methods"
-                        "(Well-Formed Unicode Strings) (default: Enabled)") ||
-      !op.addBoolOption('\0', "enable-new-set-methods",
-                        "Enable New Set methods") ||
-      !op.addBoolOption('\0', "disable-arraybuffer-transfer",
-                        "Disable ArrayBuffer.prototype.transfer() methods") ||
       !op.addBoolOption('\0', "enable-symbols-as-weakmap-keys",
                         "Enable Symbols As WeakMap keys") ||
-      !op.addBoolOption(
-          '\0', "enable-arraybuffer-resizable",
-          "Enable resizable ArrayBuffers and growable SharedArrayBuffers") ||
       !op.addBoolOption('\0', "enable-uint8array-base64",
                         "Enable Uint8Array base64/hex methods") ||
-      !op.addBoolOption('\0', "enable-float16array", "Enable Float16Array") ||
       !op.addBoolOption('\0', "enable-regexp-duplicate-named-groups",
                         "Enable Duplicate Named Capture Groups") ||
       !op.addBoolOption('\0', "enable-regexp-modifiers",
@@ -12573,8 +12553,6 @@ bool InitOptionParser(OptionParser& op) {
                         "Enable top-level await") ||
       !op.addBoolOption('\0', "enable-import-attributes",
                         "Enable import attributes") ||
-      !op.addBoolOption('\0', "disable-destructuring-fuse",
-                        "Disable Destructuring Fuse") ||
       !op.addStringOption('\0', "shared-memory", "on/off",
                           "SharedArrayBuffer and Atomics "
 #if SHARED_MEMORY_DEFAULT
@@ -12667,6 +12645,9 @@ bool InitOptionParser(OptionParser& op) {
       !op.addStringOption(
           '\0', "baseline-offthread-compile", "on/off",
           "Compile baseline scripts offthread (default: off)") ||
+      !op.addStringOption(
+          '\0', "baseline-batching", "on/off",
+          "Batch baseline scripts before dispatching (default: off)") ||
       !op.addStringOption('\0', "ion-offthread-compile", "on/off",
                           "Compile Ion scripts offthread (default: on)") ||
       !op.addStringOption('\0', "ion-parallel-compile", "on/off",
@@ -12698,6 +12679,11 @@ bool InitOptionParser(OptionParser& op) {
           '\0', "baseline-warmup-threshold", "COUNT",
           "Wait for COUNT calls or iterations before baseline-compiling "
           "(default: 10)",
+          -1) ||
+      !op.addIntOption(
+          '\0', "baseline-queue-capacity", "CAPACITY",
+          "Wait for at most CAPACITY scripts to be added to baseline compile"
+          "queue before dispatching (default: 8)",
           -1) ||
       !op.addBoolOption('\0', "blinterp",
                         "Enable Baseline Interpreter (default)") ||
@@ -12864,13 +12850,6 @@ bool InitOptionParser(OptionParser& op) {
                                "Dynamically load LIBRARY") ||
       !op.addBoolOption('\0', "suppress-minidump",
                         "Suppress crash minidumps") ||
-#ifdef JS_ENABLE_SMOOSH
-      !op.addBoolOption('\0', "smoosh", "Use SmooshMonkey") ||
-      !op.addStringOption('\0', "not-implemented-watchfile", "[filename]",
-                          "Track NotImplemented errors in the new frontend") ||
-#else
-      !op.addBoolOption('\0', "smoosh", "No-op") ||
-#endif
       !op.addStringOption(
           '\0', "delazification-mode", "[option]",
           "Select one of the delazification mode for scripts given on the "
@@ -12884,8 +12863,6 @@ bool InitOptionParser(OptionParser& op) {
 #ifdef FUZZING_JS_FUZZILLI
       !op.addBoolOption('\0', "reprl", "Enable REPRL mode for fuzzing") ||
 #endif
-      !op.addStringOption('\0', "telemetry-dir", "[directory]",
-                          "Output telemetry results in a directory") ||
       !op.addMultiStringOption('P', "setpref", "name[=val]",
                                "Set the value of a JS pref. The value may "
                                "be omitted for boolean prefs, in which case "
@@ -12956,31 +12933,11 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
 
   // Override pref values for prefs that have a custom shell flag.
   // If you're adding a new feature, consider using --setpref instead.
-
-  if (op.getBoolOption("disable-array-grouping")) {
-    JS::Prefs::setAtStartup_array_grouping(false);
-  }
-  if (op.getBoolOption("disable-arraybuffer-transfer")) {
-    JS::Prefs::setAtStartup_arraybuffer_transfer(false);
-  }
   if (op.getBoolOption("enable-shadow-realms")) {
     JS::Prefs::set_experimental_shadow_realms(true);
   }
-  if (op.getBoolOption("disable-well-formed-unicode-strings")) {
-    JS::Prefs::setAtStartup_well_formed_unicode_strings(false);
-  }
-  if (op.getBoolOption("enable-arraybuffer-resizable")) {
-    JS::Prefs::setAtStartup_experimental_arraybuffer_resizable(true);
-    JS::Prefs::setAtStartup_experimental_sharedarraybuffer_growable(true);
-  }
   if (op.getBoolOption("enable-regexp-duplicate-named-groups")) {
     JS::Prefs::setAtStartup_experimental_regexp_duplicate_named_groups(true);
-  }
-  if (op.getBoolOption("enable-float16array")) {
-    JS::Prefs::setAtStartup_experimental_float16array(true);
-  }
-  if (op.getBoolOption("enable-new-set-methods")) {
-    JS::Prefs::setAtStartup_experimental_new_set_methods(true);
   }
   if (op.getBoolOption("enable-regexp-modifiers")) {
     JS::Prefs::setAtStartup_experimental_regexp_modifiers(true);
@@ -12988,11 +12945,14 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-uint8array-base64")) {
     JS::Prefs::setAtStartup_experimental_uint8array_base64(true);
   }
-  if (op.getBoolOption("enable-regexp-escape")) {
-    JS::Prefs::setAtStartup_experimental_regexp_escape(true);
-  }
   if (op.getBoolOption("enable-promise-try")) {
     JS::Prefs::setAtStartup_experimental_promise_try(true);
+  }
+  if (op.getBoolOption("enable-math-sumprecise")) {
+    JS::Prefs::setAtStartup_experimental_math_sumprecise(true);
+  }
+  if (op.getBoolOption("enable-atomics-pause")) {
+    JS::Prefs::setAtStartup_experimental_atomics_pause(true);
   }
 #ifdef NIGHTLY_BUILD
   if (op.getBoolOption("enable-async-iterator-helpers")) {
@@ -13007,17 +12967,11 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-iterator-sequencing")) {
     JS::Prefs::setAtStartup_experimental_iterator_sequencing(true);
   }
-  if (op.getBoolOption("enable-math-sumprecise")) {
-    JS::Prefs::setAtStartup_experimental_math_sumprecise(true);
-  }
   if (op.getBoolOption("enable-iterator-range")) {
     JS::Prefs::setAtStartup_experimental_iterator_range(true);
   }
   if (op.getBoolOption("enable-joint-iteration")) {
     JS::Prefs::setAtStartup_experimental_joint_iteration(true);
-  }
-  if (op.getBoolOption("enable-atomics-pause")) {
-    JS::Prefs::setAtStartup_experimental_atomics_pause(true);
   }
   if (op.getBoolOption("enable-upsert")) {
     JS::Prefs::setAtStartup_experimental_upsert(true);
@@ -13040,14 +12994,8 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     JS::Prefs::set_experimental_json_parse_with_source(true);
   }
 
-  if (op.getBoolOption("disable-weak-refs")) {
-    JS::Prefs::setAtStartup_weakrefs(false);
-  }
   JS::Prefs::setAtStartup_experimental_weakrefs_expose_cleanupSome(true);
 
-  if (op.getBoolOption("disable-destructuring-fuse")) {
-    JS::Prefs::setAtStartup_destructuring_fuse(false);
-  }
   if (op.getBoolOption("disable-property-error-message-fix")) {
     JS::Prefs::setAtStartup_property_error_message_fix(false);
   }
@@ -13164,14 +13112,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
 }
 
 bool SetGlobalOptionsPostJSInit(const OptionParser& op) {
-  if (op.getStringOption("telemetry-dir")) {
-    MOZ_ASSERT(!telemetryLock);
-    telemetryLock = js_new<Mutex>(mutexid::ShellTelemetry);
-    if (!telemetryLock) {
-      return false;
-    }
-  }
-
   // Allow dumping on Linux with the fuzzing flag set, even when running with
   // the suid/sgid flag set on the shell.
 #ifdef XP_LINUX
@@ -13293,21 +13233,6 @@ bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableDisassemblyDumps = op.getBoolOption('D');
   cx->runtime()->profilingScripts =
       enableCodeCoverage || enableDisassemblyDumps;
-
-#ifdef JS_ENABLE_SMOOSH
-  if (op.getBoolOption("smoosh")) {
-    JS::ContextOptionsRef(cx).setTrySmoosh(true);
-    js::frontend::InitSmoosh();
-  }
-
-  if (const char* filename = op.getStringOption("not-implemented-watchfile")) {
-    FILE* out = fopen(filename, "a");
-    MOZ_RELEASE_ASSERT(out);
-    setbuf(out, nullptr);  // Make unbuffered
-    cx->runtime()->parserWatcherFile.init(out);
-    JS::ContextOptionsRef(cx).setTrackNotImplemented(true);
-  }
-#endif
 
   if (const char* mode = op.getStringOption("delazification-mode")) {
     if (strcmp(mode, "on-demand") == 0) {
@@ -13784,6 +13709,26 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
   cx->runtime()->setOffthreadBaselineCompilationEnabled(
       offthreadBaselineCompilation);
 
+  if (const char* str = op.getStringOption("baseline-batching")) {
+    if (strcmp(str, "on") == 0) {
+      jit::JitOptions.baselineBatching = true;
+    } else if (strcmp(str, "off") == 0) {
+      jit::JitOptions.baselineBatching = false;
+    } else {
+      return OptionFailure("baseline-batching", str);
+    }
+  }
+
+  int32_t queueCapacity = op.getIntOption("baseline-queue-capacity");
+  if (queueCapacity == 0) {
+    fprintf(stderr, "baseline-queue-capacity must be positive\n");
+    return false;
+  }
+  if (queueCapacity > 0) {
+    jit::JitOptions.baselineQueueCapacity = std::min(
+        uint32_t(queueCapacity), js::jit::BaselineCompileQueue::MaxCapacity);
+  }
+
   offthreadIonCompilation = true;
   if (const char* str = op.getStringOption("ion-offthread-compile")) {
     if (strcmp(str, "off") == 0) {
@@ -13842,7 +13787,7 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
   if (stopAt >= 0) {
     jit::Simulator::StopSimAt = stopAt;
   }
-#elif defined(JS_SIMULATOR_MIPS32) || defined(JS_SIMULATOR_MIPS64)
+#elif defined(JS_SIMULATOR_MIPS64)
   if (op.getBoolOption("mips-sim-icache-checks")) {
     jit::SimulatorProcess::ICacheCheckingDisableCount = 0;
   }

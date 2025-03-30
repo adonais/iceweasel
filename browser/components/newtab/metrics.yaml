@@ -351,7 +351,33 @@ newtab:
         type: string
       had_previous_wallpaper:
         description: >
-          Wheather or not user had a previously set wallpaper
+          Whether or not user had a previously set wallpaper
+        type: boolean
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  wallpaper_upload:
+    type: event
+    description: >
+      Recorded when a user uploads a custom wallpaper
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943663
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943663
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    extra_keys:
+      had_previous_wallpaper:
+          description: >
+            Whether or not user had a previously set wallpaper
+          type: boolean
+      had_uploaded_previously:
+        description: >
+          Whether or not user had a previously uploaded a custom wallpaper
         type: boolean
       newtab_visit_id: *newtab_visit_id
     send_in_pings:
@@ -809,6 +835,62 @@ newtab:
       event_source:
         description: >
           Where the source of the event originated ("button", "context menu", etc.)
+        type: string
+    send_in_pings:
+      - newtab
+
+  inline_selection_impression:
+    type: event
+    description: >
+      Recorded when there is an impression on the inline selection component
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943474
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943474
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - nbarrett@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      position:
+        description: >
+          position of the inline selection component (index point within sections)
+        type: string
+    send_in_pings:
+      - newtab
+
+  inline_selection_click:
+    type: event
+    description: >
+      Recorded when there is a click on the inline selection component
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943474
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1943474
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - nbarrett@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      topic:
+        description: >
+          unique id of topic that was clicked
+        type: string
+      is_followed:
+        description: >
+          whether the click followed a topic or unfollowed. True for followed, false for unfollowed
+        type: boolean
+      position:
+        description: >
+          position of the inline selection component (index point within sections)
+        type: string
+      topic_position:
+        description: >
+          position of the topic within the inline selection component (index point starting at 0)
         type: string
     send_in_pings:
       - newtab

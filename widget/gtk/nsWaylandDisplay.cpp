@@ -342,7 +342,12 @@ static void keyboard_handle_leave(void* data, struct wl_keyboard* keyboard,
 
 static void keyboard_handle_key(void* data, struct wl_keyboard* keyboard,
                                 uint32_t serial, uint32_t time, uint32_t key,
-                                uint32_t state) {}
+                                uint32_t state) {
+  // hardware key code is +8.
+  // https://gitlab.gnome.org/GNOME/gtk/-/blob/3.24.41/gdk/wayland/gdkdevice-wayland.c#L2341
+  KeymapWrapper::KeyboardHandlerForWayland(serial, key + 8, state);
+}
+
 static void keyboard_handle_modifiers(void* data, struct wl_keyboard* keyboard,
                                       uint32_t serial, uint32_t mods_depressed,
                                       uint32_t mods_latched,
@@ -367,6 +372,7 @@ void nsWaylandDisplay::ClearKeyboard() {
   if (mKeyboard) {
     wl_keyboard_destroy(mKeyboard);
     mKeyboard = nullptr;
+    KeymapWrapper::ClearKeymap();
   }
 }
 
@@ -407,7 +413,6 @@ void nsWaylandDisplay::SetDmabuf(zwp_linux_dmabuf_v1* aDmabuf, int aVersion) {
     return;
   }
   mDmabuf = aDmabuf;
-  mFormats = new DMABufFormats();
   mDmabufIsFeedback =
       (aVersion >= ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK_SINCE_VERSION);
   if (mDmabufIsFeedback) {
@@ -415,6 +420,13 @@ void nsWaylandDisplay::SetDmabuf(zwp_linux_dmabuf_v1* aDmabuf, int aVersion) {
   } else {
     mFormats->InitV3(mDmabuf);
   }
+}
+
+void nsWaylandDisplay::EnsureDMABufFormats() {
+  if (mDmabuf && !mDmabufIsFeedback) {
+    mFormats->InitV3Done();
+  }
+  mFormats->EnsureBasicFormats();
 }
 
 void nsWaylandDisplay::SetXdgActivation(xdg_activation_v1* aXdgActivation) {
@@ -640,13 +652,12 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   // in a similar fashion
   wl_log_set_handler_client(WlLogHandler);
 
+  mFormats = new DMABufFormats();
   mRegistry = wl_display_get_registry(mDisplay);
   wl_registry_add_listener(mRegistry, &registry_listener, this);
   wl_display_roundtrip(mDisplay);
   wl_display_roundtrip(mDisplay);
-  if (mDmabuf && !mDmabufIsFeedback) {
-    mFormats->InitV3Done();
-  }
+  EnsureDMABufFormats();
 
   for (auto& e : mSupportedTransfer) {
     e = -1;

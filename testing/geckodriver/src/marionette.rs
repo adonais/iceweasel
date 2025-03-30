@@ -34,6 +34,8 @@ use mozdevice::AndroidStorageInput;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use serde_json::{Map, Value};
+use std::borrow::Cow;
+use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::io::prelude::*;
@@ -102,6 +104,7 @@ pub(crate) struct MarionetteSettings {
     pub(crate) websocket_port: u16,
     pub(crate) allow_hosts: Vec<Host>,
     pub(crate) allow_origins: Vec<Url>,
+    pub(crate) system_access: bool,
 
     /// Brings up the Browser Toolbox when starting Firefox,
     /// letting you debug internals.
@@ -203,6 +206,7 @@ impl MarionetteHandler {
                 options,
                 marionette_port,
                 websocket_port,
+                self.settings.system_access,
                 self.settings.profile_root.as_deref(),
             )?)
         } else if !self.settings.connect_existing {
@@ -210,6 +214,7 @@ impl MarionetteHandler {
                 options,
                 marionette_port,
                 self.settings.jsdebugger,
+                self.settings.system_access,
                 self.settings.profile_root.as_deref(),
             )?)
         } else {
@@ -1199,6 +1204,7 @@ struct MarionetteError {
     #[serde(rename = "error")]
     code: String,
     message: String,
+    data: Option<BTreeMap<String, Value>>,
     stacktrace: Option<String>,
 }
 
@@ -1207,11 +1213,12 @@ impl From<MarionetteError> for WebDriverError {
         let status = ErrorStatus::from(error.code);
         let message = error.message;
 
-        if let Some(stack) = error.stacktrace {
-            WebDriverError::new_with_stack(status, message, stack)
-        } else {
-            WebDriverError::new(status, message)
-        }
+        // Convert `str` to `Cow<'static, str>`
+        let data = error
+            .data
+            .map(|map| map.into_iter().map(|(k, v)| (Cow::Owned(k), v)).collect());
+
+        WebDriverError::new_with_data(status, message, data, error.stacktrace)
     }
 }
 
@@ -1884,7 +1891,7 @@ mod tests {
         let mut dmp_file_present = false;
         let mut extra_file_present = false;
 
-        for result_entry in std::fs::read_dir(&minidumps_path).unwrap() {
+        for result_entry in std::fs::read_dir(minidumps_path).unwrap() {
             let entry = result_entry.unwrap();
 
             let path: PathBuf = entry.path();
@@ -1902,8 +1909,8 @@ mod tests {
             }
         }
 
-        assert_eq!(dmp_file_present, true);
-        assert_eq!(extra_file_present, true);
+        assert!(dmp_file_present);
+        assert!(extra_file_present);
     }
 
     fn create_file(folder: &Path, filename: &str) {
@@ -1915,7 +1922,7 @@ mod tests {
         let folder = create_minidump_folder(profile_path);
 
         let mut file_extensions = [".dmp", ".extra"];
-        for (_, file_extension) in file_extensions.iter_mut().enumerate() {
+        for file_extension in file_extensions.iter_mut() {
             let mut filename_with_extension: String = filename.to_owned();
             filename_with_extension.push_str(file_extension);
 
@@ -1939,7 +1946,7 @@ mod tests {
 
         let filename = "test";
 
-        create_minidump_files(&profile_path, filename);
+        create_minidump_files(profile_path, filename);
 
         let tmp_dir_minidumps = TempDir::new().unwrap();
         let minidumps_path = tmp_dir_minidumps.path();
@@ -1958,10 +1965,10 @@ mod tests {
         let profile_path = tmp_dir_profile.path();
 
         let filename_1 = "test_1";
-        create_minidump_files(&profile_path, filename_1);
+        create_minidump_files(profile_path, filename_1);
 
         let filename_2 = "test_2";
-        create_minidump_files(&profile_path, filename_2);
+        create_minidump_files(profile_path, filename_2);
 
         let tmp_dir_minidumps = TempDir::new().unwrap();
         let minidumps_path = tmp_dir_minidumps.path();
@@ -1980,7 +1987,7 @@ mod tests {
         let tmp_dir_profile = TempDir::new().unwrap();
         let profile_path = tmp_dir_profile.path();
 
-        create_minidump_folder(&profile_path);
+        create_minidump_folder(profile_path);
 
         assert!(copy_minidumps_files(profile_path, Path::new("/non-existent")).is_ok());
 
@@ -2002,7 +2009,7 @@ mod tests {
         let tmp_dir_profile = TempDir::new().unwrap();
         let profile_path = tmp_dir_profile.path();
 
-        let minidumps_folder = create_minidump_folder(&profile_path);
+        let minidumps_folder = create_minidump_folder(profile_path);
 
         // Create a folder.
         let test_folder_binding = profile_path.join("test");

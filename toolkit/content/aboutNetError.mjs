@@ -213,7 +213,8 @@ function disallowCertOverridesIfNeeded() {
   // Disallow overrides if this is a Strict-Transport-Security
   // host and the cert is bad (STS Spec section 7.3) or if the
   // certerror is in a frame (bug 633691).
-  if (gHasSts || window != top) {
+  const failedCertInfo = document.getFailedCertSecurityInfo();
+  if (gHasSts || window != top || !failedCertInfo.errorIsOverridable) {
     document.getElementById("exceptionDialogButton").hidden = true;
   }
   if (gHasSts) {
@@ -443,12 +444,6 @@ function initPage() {
 
   const isTRROnlyFailure = gErrorCode == "dnsNotFound" && RPMIsTRROnlyFailure();
 
-  let isNativeFallbackWarning = false;
-  if (RPMGetBoolPref("network.trr.display_fallback_warning")) {
-    isNativeFallbackWarning =
-      gErrorCode == "dnsNotFound" && RPMIsNativeFallbackFailure();
-  }
-
   const docTitle = document.querySelector("title");
   const shortDesc = document.getElementById("errorShortDesc");
 
@@ -506,11 +501,10 @@ function initPage() {
   // The TRR errors may present options that direct users to settings only available on Firefox Desktop
   if (RPMIsFirefox()) {
     if (isTRROnlyFailure) {
-      document.body.className = "certerror"; // Shows warning icon
-      pageTitleId = "dns-not-found-trr-only-title2";
+      pageTitleId = "neterror-dns-not-found-title";
       document.l10n.setAttributes(docTitle, pageTitleId);
       if (bodyTitle) {
-        bodyTitleId = "dns-not-found-trr-only-title2";
+        bodyTitleId = "dnsNotFound-title";
         document.l10n.setAttributes(bodyTitle, bodyTitleId);
       }
 
@@ -627,9 +621,6 @@ function initPage() {
       div.hidden = false;
 
       return;
-    } else if (isNativeFallbackWarning) {
-      showNativeFallbackWarning();
-      return;
     }
   }
 
@@ -650,81 +641,6 @@ function initPage() {
   setNetErrorMessageFromCode();
 }
 
-function showNativeFallbackWarning() {
-  const docTitle = document.querySelector("title");
-  const bodyTitle = document.querySelector(".title-text");
-  const shortDesc = document.getElementById("errorShortDesc");
-
-  let pageTitleId = "neterror-page-title";
-  let bodyTitleId = gErrorCode + "-title";
-
-  document.body.className = "certerror"; // Shows warning icon
-  pageTitleId = "dns-not-found-native-fallback-title2";
-  document.l10n.setAttributes(docTitle, pageTitleId);
-
-  bodyTitleId = "dns-not-found-native-fallback-title2";
-  document.l10n.setAttributes(bodyTitle, bodyTitleId);
-
-  shortDesc.textContent = "";
-  let nativeFallbackIgnoreButton = document.getElementById(
-    "nativeFallbackIgnoreButton"
-  );
-  nativeFallbackIgnoreButton.addEventListener("click", () => {
-    RPMSetPref("network.trr.display_fallback_warning", false);
-    retryThis(nativeFallbackIgnoreButton);
-  });
-
-  let continueThisTimeButton = document.getElementById(
-    "nativeFallbackContinueThisTimeButton"
-  );
-  continueThisTimeButton.addEventListener("click", () => {
-    RPMSetTRRDisabledLoadFlags();
-    document.location.reload();
-  });
-  continueThisTimeButton.hidden = false;
-
-  nativeFallbackIgnoreButton.hidden = false;
-  let message = document.getElementById("nativeFallbackMessage");
-  document.l10n.setAttributes(
-    message,
-    "neterror-dns-not-found-native-fallback-reason2",
-    {
-      hostname: HOST_NAME,
-    }
-  );
-  let skipReason = RPMGetTRRSkipReason();
-  let descriptionTag = "neterror-dns-not-found-trr-unknown-problem";
-  let args = { trrDomain: RPMGetTRRDomain() };
-
-  if (skipReason.includes("HEURISTIC_TRIPPED")) {
-    descriptionTag = "neterror-dns-not-found-native-fallback-heuristic";
-  } else if (skipReason == "TRR_NOT_CONFIRMED") {
-    descriptionTag = "neterror-dns-not-found-native-fallback-not-confirmed2";
-  }
-
-  let description = document.getElementById("nativeFallbackDescription");
-  document.l10n.setAttributes(description, descriptionTag, args);
-
-  let learnMoreContainer = document.getElementById(
-    "nativeFallbackLearnMoreContainer"
-  );
-  learnMoreContainer.hidden = false;
-
-  let learnMoreLink = document.getElementById("nativeFallbackLearnMoreLink");
-  learnMoreLink.href =
-    RPMGetFormatURLPref("network.trr_ui.skip_reason_learn_more_url") +
-    skipReason.toLowerCase().replaceAll("_", "-");
-
-  let div = document.getElementById("nativeFallbackContainer");
-  div.hidden = false;
-
-  recordTRREventTelemetry(
-    "NativeFallbackWarning",
-    RPMGetIntPref("network.trr.mode"),
-    args.trrDomain,
-    skipReason
-  );
-}
 /**
  * Builds HTML elements from `parts` and appends them to `parentElement`.
  *
@@ -1264,6 +1180,16 @@ function setCertErrorDetails() {
         ],
       ];
       break;
+    case "SEC_ERROR_REVOKED_CERTIFICATE":
+      whatToDoParts = [
+        [
+          "p",
+          // This string was added for the certificate transparency error case,
+          // but it applies in other cases as well, such as this one.
+          "cert-error-trust-certificate-transparency-what-can-you-do-about-it",
+        ],
+      ];
+      break;
   }
 
   if (whatToDoParts) {
@@ -1458,6 +1384,11 @@ function setTechnicalDetailsOnCertError(
         addErrorCodeLink();
       });
       break;
+  }
+
+  if (failedCertInfo.errorCodeString == "SEC_ERROR_REVOKED_CERTIFICATE") {
+    addLabel("cert-error-revoked", { hostname });
+    addErrorCodeLink();
   }
 
   getFailedCertificatesAsPEMString().then(pemString => {

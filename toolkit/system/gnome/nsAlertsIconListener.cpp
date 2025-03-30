@@ -29,6 +29,8 @@ static bool gHasActions = false;
 static bool gHasCaps = false;
 static bool gBodySupportsMarkup = false;
 
+static constexpr nsLiteralCString kActionSuffix = "-moz"_ns;
+
 void* nsAlertsIconListener::libNotifyHandle = nullptr;
 bool nsAlertsIconListener::libNotifyNotAvail = false;
 nsAlertsIconListener::notify_is_initted_t
@@ -55,6 +57,16 @@ static void notify_action_cb(NotifyNotification* notification, gchar* action,
                              gpointer user_data) {
   nsAlertsIconListener* alert = static_cast<nsAlertsIconListener*>(user_data);
   alert->SendCallback();
+}
+
+static void notify_nondefault_action_cb(NotifyNotification* notification,
+                                        gchar* action, gpointer user_data) {
+  nsAlertsIconListener* alert = static_cast<nsAlertsIconListener*>(user_data);
+  nsCString actionName(action);
+
+  // Trim the suffix
+  actionName.Truncate(actionName.Length() - kActionSuffix.Length());
+  alert->SendActionCallback(NS_ConvertUTF8toUTF16(actionName));
 }
 
 static void notify_closed_marshal(GClosure* closure, GValue* return_value,
@@ -97,9 +109,12 @@ static already_AddRefed<GdkPixbuf> GetPixbufFromImgRequest(
 NS_IMPL_ISUPPORTS(nsAlertsIconListener, nsIAlertNotificationImageListener,
                   nsIObserver, nsISupportsWeakReference)
 
-nsAlertsIconListener::nsAlertsIconListener(nsSystemAlertsService* aBackend,
-                                           const nsAString& aAlertName)
-    : mAlertName(aAlertName), mBackend(aBackend) {
+nsAlertsIconListener::nsAlertsIconListener(
+    nsSystemAlertsService* aBackend, nsIAlertNotification* aAlertNotification,
+    const nsAString& aAlertName)
+    : mAlertName(aAlertName),
+      mBackend(aBackend),
+      mAlertNotification(aAlertNotification) {
   if (!libNotifyHandle && !libNotifyNotAvail) {
     libNotifyHandle = dlopen("libnotify.so.4", RTLD_LAZY);
     if (!libNotifyHandle) {
@@ -182,6 +197,24 @@ nsresult nsAlertsIconListener::ShowAlert(GdkPixbuf* aPixbuf) {
                                    notify_action_cb, this, nullptr);
   }
 
+  for (const RefPtr<nsIAlertAction>& action : mActions) {
+    nsAutoString actionName;
+    MOZ_TRY(action->GetAction(actionName));
+    nsAutoCString actionNameUTF8;
+    CopyUTF16toUTF8(actionName, actionNameUTF8);
+    // Add suffix to prevent potential collision with keywords like "default"
+    actionNameUTF8.Append(kActionSuffix);
+
+    nsAutoString actionTitle;
+    MOZ_TRY(action->GetTitle(actionTitle));
+    nsAutoCString actionTitleUTF8;
+    CopyUTF16toUTF8(actionTitle, actionTitleUTF8);
+
+    notify_notification_add_action(mNotification, actionNameUTF8.get(),
+                                   actionTitleUTF8.get(),
+                                   notify_nondefault_action_cb, this, nullptr);
+  }
+
   if (notify_notification_set_hint) {
     notify_notification_set_hint(mNotification, "suppress-sound",
                                  g_variant_new_boolean(mAlertIsSilent));
@@ -232,6 +265,15 @@ void nsAlertsIconListener::SendCallback() {
   }
 }
 
+void nsAlertsIconListener::SendActionCallback(const nsAString& aActionName) {
+  if (mAlertListener) {
+    nsCOMPtr<nsIAlertAction> alertAction;
+    mAlertNotification->GetAction(aActionName, getter_AddRefs(alertAction));
+    mAlertListener->Observe(alertAction, "alertclickcallback",
+                            mAlertCookie.get());
+  }
+}
+
 void nsAlertsIconListener::SendClosed() {
   if (mNotification) {
     g_object_unref(mNotification);
@@ -260,8 +302,9 @@ nsresult nsAlertsIconListener::Close() {
     mIconRequest = nullptr;
   }
 
+  NotifyFinished();
+
   if (!mNotification) {
-    NotifyFinished();
     return NS_OK;
   }
 
@@ -334,6 +377,11 @@ nsresult nsAlertsIconListener::InitAlertAsync(nsIAlertNotification* aAlert,
     return NS_ERROR_FAILURE;  // No good, fallback to XUL
   }
 
+  MOZ_TRY(aAlert->GetActions(mActions));
+  if (!gHasActions && mActions.Length() > 0) {
+    return NS_ERROR_FAILURE;  // No good, fallback to XUL
+  }
+
   rv = aAlert->GetSilent(&mAlertIsSilent);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -377,7 +425,7 @@ nsresult nsAlertsIconListener::InitAlertAsync(nsIAlertNotification* aAlert,
 }
 
 void nsAlertsIconListener::NotifyFinished() {
-  if (mAlertListener) {
-    mAlertListener->Observe(nullptr, "alertfinished", mAlertCookie.get());
+  if (nsCOMPtr<nsIObserver> alertListener = mAlertListener.forget()) {
+    alertListener->Observe(nullptr, "alertfinished", mAlertCookie.get());
   }
 }

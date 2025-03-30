@@ -102,6 +102,17 @@ webrtc_fuzzer_test("vp9_depacketizer_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("dtls_utils_fuzzer") {
+  sources = [ "dtls_utils_fuzzer.cc" ]
+  deps = [
+    "../../api:array_view",
+    "../../p2p:dtls_utils",
+  ]
+
+  # Seed from boringssl DTLS corpus.
+  seed_corpus = "//third_party/boringssl/src/fuzz/dtls_client_corpus"
+}
+
 webrtc_fuzzer_test("vp8_qp_parser_fuzzer") {
   sources = [ "vp8_qp_parser_fuzzer.cc" ]
   deps = [
@@ -462,20 +473,14 @@ if (!build_with_chromium) {
 
 webrtc_fuzzer_test("stun_parser_fuzzer") {
   sources = [ "stun_parser_fuzzer.cc" ]
-  deps = [
-    "../../api/transport:stun_types",
-    "../../p2p:rtc_p2p",
-  ]
+  deps = [ "../../api/transport:stun_types" ]
   seed_corpus = "corpora/stun-corpus"
   dict = "corpora/stun.tokens"
 }
 
 webrtc_fuzzer_test("stun_validator_fuzzer") {
   sources = [ "stun_validator_fuzzer.cc" ]
-  deps = [
-    "../../api/transport:stun_types",
-    "../../p2p:rtc_p2p",
-  ]
+  deps = [ "../../api/transport:stun_types" ]
   seed_corpus = "corpora/stun-corpus"
   dict = "corpora/stun.tokens"
 }
@@ -484,7 +489,6 @@ webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
   sources = [ "pseudotcp_parser_fuzzer.cc" ]
   deps = [
     "../../p2p:pseudo_tcp",
-    "../../p2p:rtc_p2p",
     "../../rtc_base:threading",
   ]
 }

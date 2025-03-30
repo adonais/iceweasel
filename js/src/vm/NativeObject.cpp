@@ -26,13 +26,6 @@
 #include "vm/PlainObject.h"         // js::PlainObject
 #include "vm/TypedArrayObject.h"
 #include "vm/Watchtower.h"
-
-#ifdef ENABLE_RECORD_TUPLE
-#  include "builtin/RecordObject.h"
-#  include "builtin/TupleObject.h"
-#  include "vm/RecordTupleShared.h"
-#endif
-
 #include "gc/Nursery-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Shape-inl.h"
@@ -177,11 +170,6 @@ void ForEachObjectElementsFlag(uint16_t flags, KnownF known, UnknownF unknown) {
       case ObjectElements::Flags::NONWRITABLE_ARRAY_LENGTH:
         known("NONWRITABLE_ARRAY_LENGTH");
         break;
-#  ifdef ENABLE_RECORD_TUPLE
-      case ObjectElements::Flags::TUPLE_IS_ATOMIZED:
-        known("TUPLE_IS_ATOMIZED");
-        break;
-#  endif
       case ObjectElements::Flags::SHARED_MEMORY:
         known("SHARED_MEMORY");
         break;
@@ -1258,16 +1246,20 @@ static bool ChangeProperty(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   if (existing->isNativeProperty()) {
+    Rooted<Value> value(cx, PrivateGCThingValue(gs));
     if (!NativeObject::changeProperty(cx, obj, id, flags, slotOut)) {
       return false;
     }
-  } else {
-    if (!NativeObject::addProperty(cx, obj, id, flags, slotOut)) {
-      return false;
-    }
+    Watchtower::watchPropertyValueChange<AllowGC::CanGC>(
+        cx, obj, id, value, existing->propertyInfo());
+    obj->setSlot(*slotOut, value);
+    return true;
   }
 
-  obj->setSlot(*slotOut, PrivateGCThingValue(gs));
+  if (!NativeObject::addProperty(cx, obj, id, flags, slotOut)) {
+    return false;
+  }
+  obj->initSlot(*slotOut, PrivateGCThingValue(gs));
   return true;
 }
 
@@ -1360,12 +1352,15 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
         if (!NativeObject::changeProperty(cx, obj, id, flags, &slot)) {
           return false;
         }
+        Watchtower::watchPropertyValueChange<AllowGC::CanGC>(
+            cx, obj, id, desc.value(), existing->propertyInfo());
+        obj->setSlot(slot, desc.value());
       } else {
         if (!NativeObject::addProperty(cx, obj, id, flags, &slot)) {
           return false;
         }
+        obj->initSlot(slot, desc.value());
       }
-      obj->setSlot(slot, desc.value());
     }
   }
 
@@ -1637,12 +1632,7 @@ bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
   if (prop.isNotFound()) {
     // Note: We are sharing the property definition machinery with private
     //       fields. Private fields may be added to non-extensible objects.
-    if (!obj->isExtensible() && !id.isPrivateName() &&
-        // R&T wrappers are non-extensible, but we still want to be able to
-        // lazily resolve their properties. We can special-case them to
-        // allow doing so.
-        IF_RECORD_TUPLE(
-            !(IsExtendedPrimitiveWrapper(*obj) && desc_.resolving()), true)) {
+    if (!obj->isExtensible() && !id.isPrivateName()) {
       return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
     }
 
@@ -2415,9 +2405,7 @@ static bool NativeSetExistingDataProperty(JSContext* cx,
   MOZ_ASSERT(obj->is<NativeObject>());
   MOZ_ASSERT(prop.isDataDescriptor());
 
-  if (!Watchtower::watchPropertyModification<AllowGC::CanGC>(cx, obj, id)) {
-    return false;
-  }
+  Watchtower::watchPropertyValueChange<AllowGC::CanGC>(cx, obj, id, v, prop);
 
   if (prop.isDataProperty()) {
     // The common path. Standard data property.
@@ -2783,10 +2771,6 @@ static bool CallJSDeletePropertyOp(JSContext* cx, JSDeletePropertyOp op,
  */
 bool js::NativeDeleteProperty(JSContext* cx, Handle<NativeObject*> obj,
                               HandleId id, ObjectOpResult& result) {
-#ifdef ENABLE_RECORD_TUPLE
-  MOZ_ASSERT(!js::IsExtendedPrimitive(*obj));
-#endif
-
   // Step 1.
   PropertyResult prop;
   if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
@@ -2835,19 +2819,13 @@ bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
                                   Handle<NativeObject*> from,
                                   Handle<PlainObject*> excludedItems,
                                   bool* optimized) {
-#ifdef ENABLE_RECORD_TUPLE
-  MOZ_ASSERT(!js::IsExtendedPrimitive(*target));
-#endif
-
   *optimized = false;
 
   // Don't use the fast path if |from| may have extra indexed or lazy
   // properties.
   if (from->getDenseInitializedLength() > 0 || from->isIndexed() ||
-      from->is<TypedArrayObject>() ||
-      IF_RECORD_TUPLE(from->is<RecordObject>() || from->is<TupleObject>(),
-                      false) ||
-      from->getClass()->getNewEnumerate() || from->getClass()->getEnumerate()) {
+      from->is<TypedArrayObject>() || from->getClass()->getNewEnumerate() ||
+      from->getClass()->getEnumerate()) {
     return true;
   }
 

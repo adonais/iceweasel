@@ -1548,12 +1548,19 @@ class nsLayoutUtils {
   }
 
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
-                                         const mozilla::StyleInset& aInset) {
-    if (!aInset.IsLengthPercentage()) {
+                                         mozilla::StylePhysicalAxis aAxis,
+                                         mozilla::StylePositionProperty aProp,
+                                         const AnchorResolvedInset& aInset) {
+    if (aInset->IsAuto()) {
       // Callers are assumed to have handled other cases already.
       return 0;
     }
-    return ComputeCBDependentValue(aPercentBasis, aInset.AsLengthPercentage());
+    NS_ASSERTION(aPercentBasis != NS_UNCONSTRAINEDSIZE || !aInset->HasPercent(),
+                 "Have unconstrained percentage basis when percentage "
+                 "resolution needed; this should only result from very "
+                 "large sizes, not attempts at intrinsic size calculation");
+    return aInset->AsLengthPercentage().ResolveWithAnchor(aPercentBasis, aAxis,
+                                                          aProp);
   }
 
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,

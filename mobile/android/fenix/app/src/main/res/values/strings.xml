@@ -82,11 +82,11 @@
 
     <!-- Private mode shortcut "contextual feature recommendation" (CFR) -->
     <!-- Text for the Private mode shortcut CFR message for adding a private mode shortcut to open private tabs from the Home screen -->
-    <string name="private_mode_cfr_message_2">Launch your next private tab in one tap.</string>
+    <string name="private_mode_cfr_message_2" moz:removedIn="138" tools:ignore="UnusedResources">Launch your next private tab in one tap.</string>
     <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
-    <string name="private_mode_cfr_pos_button_text">Add to Home screen</string>
+    <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Add to Home screen</string>
     <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-    <string name="cfr_neg_button_text">No thanks</string>
+    <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">No thanks</string>
 
     <!-- Open in App "contextual feature recommendation" (CFR) -->
     <!-- Text for the info message. The first parameter is the name of the application.-->
@@ -317,10 +317,6 @@
     <string name="browser_tools_menu_handlebar_content_description">Close tools menu sheet</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Close custom tab menu sheet</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description_with_translate" moz:removedIn="134" tools:ignore="UnusedResources">Reader View, Translate, Print, Share, Open app</string>
-    <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-    <string name="browser_menu_tools_description" moz:removedIn="134" tools:ignore="UnusedResources">Reader View, Print, Share, Open app</string>
     <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu
          The first parameter is the label of the report site issue (for example: Report Site issue) -->
     <string name="browser_menu_tools_description_with_translate_with_report_site"  moz:removedIn="135" tools:ignore="UnusedResources">Reader View, Translate, %s, Print, Share, Open app</string>
@@ -590,6 +586,14 @@
     <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">How we use the data</string>
     <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
     <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Confirm and start browsing</string>
+
+    <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
+    <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">One last thing</string>
+    <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
+    <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold.</string>
+    <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
+    <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Agree and start browsing</string>
+
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Pick a toolbar placement</string>
     <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -795,6 +799,8 @@
     <string name="preferences_show_voice_search">Show voice search</string>
     <!-- Preference title for switch preference to show search suggestions also in private mode -->
     <string name="preferences_show_search_suggestions_in_private">Show in private sessions</string>
+    <!-- Preference title for switch preference to show trending search suggestions -->
+    <string name="preferences_show_trending_search_suggestions">Show trending suggestions</string>
     <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
     <string name="preferences_show_clipboard_suggestions">Show clipboard suggestions</string>
     <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -817,6 +823,16 @@
     <string name="preferences_show_nonsponsored_suggestions">Suggestions from %1$s</string>
     <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
     <string name="preferences_show_nonsponsored_suggestions_summary">Get suggestions from the web related to your search</string>
+    <!-- Preference for link sharing -->
+    <string name="preferences_link_sharing">Link sharing</string>
+    <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox).  -->
+    <string name="link_sharing_toggle_title">Include %1$s download link on WhatsApp shares</string>
+    <!-- Body for the link sharing toggle.  %1$s is replaced by the brand name (e.g. Firefox).  -->
+    <string name="link_sharing_toggle_body">Invite your friends to try faster, safer browsing with %1$s every time you share a link on WhatsApp.</string>
+    <!--Snackbar message shown when user shares a link -->
+    <string name="link_shared_snackbar_message">Link shared</string>
+    <!-- Snackbar action label shown when user shares a link  -->
+    <string name="link_shared_snackbar_action">Manage settings</string>
     <!-- Preference for open links in third party apps -->
     <string name="preferences_open_links_in_apps">Open links in apps</string>
     <!-- Preference for open links in third party apps always open in apps option -->
@@ -1009,8 +1025,6 @@
     <string name="exceptions_empty_message_learn_more_link">Learn more</string>
 
     <!-- Preference switch for usage and technical data collection -->
-    <string name="preference_usage_data" moz:removedIn="134" tools:ignore="UnusedResources">Usage and technical data</string>
-    <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_1">Technical and interaction data</string>
     <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_2" tools:ignore="UnusedResources">Send technical and interaction data</string>
@@ -1024,8 +1038,6 @@
     <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Marketing data</string>
     <!-- Preference switch for campaign measurement data (marketing data) collection -->
     <string name="preferences_marketing_data_2">Campaign measurement data</string>
-    <!-- Preference description for marketing data collection -->
-    <string name="preferences_marketing_data_description2" moz:removedIn="134" tools:ignore="UnusedResources">Shares basic usage data with Adjust, our mobile marketing vendor</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
     <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Share information about how you discovered Firefox with Mozilla’s marketing partners. This helps us grow Firefox and build a better internet</string>
     <!-- Preference description for marketing data collection.
@@ -1680,6 +1692,10 @@
     <string name="sync_add_new_device_learn_button">Learn About Sending Tabs…</string>
     <!-- Text for the button to connect another device -->
     <string name="sync_add_new_device_connect_button">Connect Another Device…</string>
+    <!-- A message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+    <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nSent from %2$s 🦊 Try the mobile browser: %3$s</string>
+    <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+    <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nSent from %2$s 🦊 %3$s</string>
 
     <!-- Notifications -->
     <!-- Text shown in the notification that pops up to remind the user that a private browsing session is active. -->
@@ -1987,6 +2003,99 @@
     <!-- Content description (not visible, for screen readers etc.):
     Enhanced tracking protection exception preference icon for ETP settings. -->
     <string name="preference_etp_exceptions_icon_description">Enhanced tracking protection exception preference icon</string>
+
+    <!-- DNS Over HTTPS (DoH) -->
+    <!-- Preference title for DNS over HTTPS settings -->
+    <string name="preference_doh_title">DNS Over HTTPS</string>
+    <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+    <string name="preference_doh_summary">Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access. %1$s</string>
+    <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
+    <string name="preference_doh_learn_more">Learn more</string>
+
+    <!-- Content description for the toolbar "Navigate up" button -->
+    <string name="preference_doh_up_description">Navigate up</string>
+    <!-- Content description for the "Exceptions" button -->
+    <string name="preference_doh_exceptions_description">Exceptions</string>
+    <!-- Content description for the "Info" button -->
+    <string name="preference_doh_info_description">Info</string>
+    <!-- Content description for the "Add Site" button -->
+    <string name="preference_doh_add_site_description">Add Site</string>
+
+    <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
+    <string name="preference_doh_default_protection">Default Protection</string>
+    <!-- Summary displayed for "Default Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
+    <string name="preference_doh_default_protection_summary">%1$s decides when to use secure DNS to protect your privacy.</string>
+    <!-- Bullet point 1 for "Default Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_default_protection_info_1">Use the provider you select</string>
+    <!-- Bullet point 2 for "Default Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_default_protection_info_2">Use your default DNS resolver if there is a problem with the secure DNS provider</string>
+    <!-- Bullet point 3 for "Default Protection" information page under "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+    <string name="preference_doh_default_protection_info_3">Use a local provider, if possible. %1$s</string>
+    <!-- Bullet point 4 for "Default Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_default_protection_info_4">Turn off when VPN, parental control, or enterprise policies are active</string>
+    <!-- Bullet point 5 for "Default Protection" information page under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). %2$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+    <string name="preference_doh_default_protection_info_5">Turn off when a network tells %1$s it shouldn’t use secure DNS. %2$s</string>
+
+    <!-- Title displayed for "Increased Protection" option under "DNS over HTTPS" -->
+    <string name="preference_doh_increased_protection">Increased Protection</string>
+    <!-- Summary displayed for "Increased Protection" option under "DNS over HTTPS" -->
+    <string name="preference_doh_increased_protection_summary">You control when to use secure DNS and choose your provider.</string>
+    <!-- Bullet point 1 for "Increased Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_increased_protection_info_1">Use the provider you select</string>
+    <!-- Bullet point 2 for "Increased Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_increased_protection_info_2">Only use your default DNS resolver if there is a problem with secure DNS</string>
+
+    <!-- Title displayed for "Max Protection" option under "DNS over HTTPS" -->
+    <string name="preference_doh_max_protection">Max Protection</string>
+    <!-- Summary displayed for "Max Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
+    <string name="preference_doh_max_protection_summary">%1$s will always use secure DNS. You’ll see a security risk warning before we use your system DNS.</string>
+    <!-- Bullet point 1 for "Max Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_max_protection_info_1">Only use the provider you select</string>
+    <!-- Bullet point 2 for "Max Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_max_protection_info_2">Always warn if secure DNS isn’t available</string>
+    <!-- Bullet point 3 for "Max Protection" information page under "DNS over HTTPS" -->
+    <string name="preference_doh_max_protection_info_3">If secure DNS is not available sites will not load or function properly</string>
+
+    <!-- Title displayed for "Off" option under "DNS over HTTPS" -->
+    <string name="preference_doh_off">Off</string>
+    <!-- Summary displayed for "Off" option under "DNS over HTTPS" -->
+    <string name="preference_doh_off_summary">Use your default DNS resolver</string>
+
+    <!-- Text displayed above provider dropdown under "DNS over HTTPS" -->
+    <string name="preference_doh_choose_provider">Choose provider</string>
+    <!-- Text displayed for "Default provider" under "DNS over HTTPS" providers -->
+    <string name="preference_doh_provider_default">(default)</string>
+    <!-- Text displayed for "Custom" under "DNS over HTTPS" providers -->
+    <string name="preference_doh_provider_custom">Custom</string>
+    <!-- Text displayed for "Custom provider" dialog under "DNS over HTTPS" -->
+    <string name="preference_doh_provider_custom_dialog_title">Custom provider</string>
+    <!-- Text displayed above provider textfield under "DNS over HTTPS" -->
+    <string name="preference_doh_provider_custom_dialog_textfield">Provider</string>
+    <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL does not start with "https://" or its scheme is not "https"-->
+    <string name="preference_doh_provider_custom_dialog_error_https">URL must start with “https://”</string>
+    <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL is invalid -->
+    <string name="preference_doh_provider_custom_dialog_error_invalid">Invalid URL</string>
+    <!-- Cancel button text for provider textfield under "DNS over HTTPS" -->
+    <string name="preference_doh_provider_custom_dialog_cancel">Cancel</string>
+    <!-- Add button text for provider textfield under "DNS over HTTPS" -->
+    <string name="preference_doh_provider_custom_dialog_add">Add</string>
+
+    <!-- Preference to access list of login exceptions that we don't use DNS over HTTPS -->
+    <string name="preference_doh_exceptions">Exceptions</string>
+    <!-- Description of "exceptions" for "DNS over HTTPS". The first parameter is the name of the application. (For example: Fenix) -->
+    <string name="preference_doh_exceptions_summary">%1$s won’t use secure DNS on these sites and their subdomains.</string>
+    <!-- Text displayed that links to adding website domain for "DNS over HTTPS" exceptions. -->
+    <string name="preference_doh_exceptions_add">Add site</string>
+    <!-- Text displayed above the input field when adding exceptions for "DNS over HTTPS". -->
+    <string name="preference_doh_exceptions_add_site">Site</string>
+    <!-- Placeholder URL displayed in the input field when adding exceptions for "DNS over HTTPS". -->
+    <string name="preference_doh_exceptions_add_placeholder">example.com</string>
+    <!-- Error displayed in the input field when adding invalid URLs for "DNS over HTTPS". -->
+    <string name="preference_doh_exceptions_add_error">Must be a valid domain</string>
+    <!-- Text displayed on the button within the input field for adding exceptions to "DNS over HTTPS" -->
+    <string name="preference_doh_exceptions_add_save">Save</string>
+    <!-- Text displayed for removing all exceptions in "DNS over HTTPS" -->
+    <string name="preference_doh_exceptions_remove_all_exceptions">Remove all exceptions</string>
 
     <!-- About page link text to open support link -->
     <string name="about_support">Support</string>
@@ -2438,6 +2547,11 @@
     <!-- Awesome bar suggestion's headers -->
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
+    <!-- Search suggestions title for trending searches. -->
+    <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Trending Searches</string>
+    <!-- Search suggestions title for trending search suggestions.
+        %s is a placeholder for the name of the search engine providing the trending search suggestions. -->
+    <string name="trending_searches_header_2">Trending on %s</string>
     <!-- Title for search suggestions when Google is the default search suggestion engine. -->
     <string name="google_search_engine_suggestion_header">Google Search</string>
     <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. The first parameter is default search engine name. -->
@@ -2858,6 +2972,10 @@
     <string name="download_language_file_dialog_negative_button_text">Cancel</string>
 
     <!-- Unified Trust Panel -->
+    <!-- Text for the protection panel header when the site is secure. -->
+    <string name="protection_panel_header_secure">Secure</string>
+    <!-- Text for the protection panel header when the site is not secure. -->
+    <string name="protection_panel_header_not_secure">Not secure</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Be careful on this site</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -2878,6 +2996,36 @@
     <string name="protection_panel_etp_toggle_enabled_description">If something looks broken on this site, try turning off protections.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
     <string name="protection_panel_etp_toggle_disabled_description">Protections are OFF. We suggest turning them back on.</string>
+    <!-- Text for displaying the total number of trackers blocked in the protection panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="protection_panel_num_trackers_blocked">Trackers blocked: %d</string>
+    <!-- Text for when no trackers have been blocked. -->
+    <string name="protection_panel_no_trackers_blocked">No trackers found</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings">Privacy and security settings</string>
+    <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_total_num_trackers_blocked">Trackers blocked: %d</string>
+    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
+        %s is a placeholder for the name of the tracker category.
+        %d is a placeholder for the number of trackers blocked. -->
+    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
+        %s is a placeholder for the base domain of website. -->
+    <string name="clear_site_data_dialog_description"><![CDATA[Removing cookies and site data for <b>%s</b> might log you out of websites and clear shopping carts.]]></string>
+    <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+    <string name="clear_site_data_dialog_positive_button_text">Clear</string>
+    <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+    <string name="clear_site_data_dialog_negative_button_text">Cancel</string>
+    <!-- Snackbar title shown when the site data has been cleared. -->
+    <string name="clear_site_data_snackbar">Cookies and site data removed</string>
+    <!-- Text for the connection security panel when the site is secure. -->
+    <string name="connection_security_panel_secure">Secure connection</string>
+    <!-- Text for the connection security panel when the site is not secure. -->
+    <string name="connection_security_panel_not_secure">Connection not secure</string>
+    <!-- Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+    <string name="connection_security_panel_verified_by">Verified by %s</string>
 
     <!-- Debug drawer -->
     <!-- The user-facing title of the Debug Drawer feature. -->

@@ -125,6 +125,7 @@
 #define DOM_SECURITY_PREFIX "dom.security"
 
 #define ACCEPT_HEADER_STYLE "text/css,*/*;q=0.1"
+#define ACCEPT_HEADER_JSON "application/json,*/*;q=0.5"
 #define ACCEPT_HEADER_ALL "*/*"
 
 #define UA_PREF(_pref) UA_PREF_PREFIX _pref
@@ -675,6 +676,8 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
     accept.Assign(mImageAcceptHeader);
   } else if (aContentPolicyType == ExtContentPolicy::TYPE_STYLESHEET) {
     accept.Assign(ACCEPT_HEADER_STYLE);
+  } else if (aContentPolicyType == ExtContentPolicy::TYPE_JSON) {
+    accept.Assign(ACCEPT_HEADER_JSON);
   } else {
     accept.Assign(ACCEPT_HEADER_ALL);
   }
@@ -2880,9 +2883,10 @@ void nsHttpHandler::MaybeAddAltSvcForTesting(
     aUri->GetPort(&originPort);
     LOG(("nsHttpHandler::MaybeAddAltSvcForTesting for %s map: %s",
          originHost.get(), PromiseFlatCString(*map).get()));
-    AltSvcMapping::ProcessHeader(
-        *map, nsCString("https"), originHost, originPort, aUsername,
-        aPrivateBrowsing, aCallbacks, nullptr, 0, aOriginAttributes, true);
+    AltSvcMapping::ProcessHeader(*map, nsCString("https"), originHost,
+                                 originPort, aUsername, aPrivateBrowsing,
+                                 aCallbacks, nullptr, 0, aOriginAttributes,
+                                 nullptr, true);
   }
 }
 

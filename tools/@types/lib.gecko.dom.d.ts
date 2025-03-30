@@ -5,15 +5,12 @@
  */
 
 /// <reference no-default-lib="true" />
-/// <reference lib="es2023" />
-
-interface Principal extends nsIPrincipal {}
-interface URI extends nsIURI {}
-interface WindowProxy extends Window {}
+/// <reference lib="es2024" />
 
 type HTMLCollectionOf<T> = any;
 type IsInstance<T> = (obj: any) => obj is T;
 type NodeListOf<T> = any;
+interface WindowProxy extends Window {}
 
 /////////////////////////////
 /// Window APIs
@@ -860,11 +857,6 @@ interface FileInfo {
     permissions?: number;
     size?: number;
     type?: FileType;
-}
-
-interface FileNameTypeDetails {
-    fileNameDetails?: string;
-    fileNameType: string;
 }
 
 interface FilePropertyBag extends BlobPropertyBag {
@@ -2770,7 +2762,6 @@ interface ProcessActorOptions {
 
 interface ProcessActorSidedOptions {
     esModuleURI?: string;
-    moduleURI?: string;
 }
 
 interface ProfilerMarkerOptions {
@@ -3488,6 +3479,10 @@ interface SVGBoundingBoxOptions {
     stroke?: boolean;
 }
 
+interface SVGPathDataSettings {
+    normalize?: boolean;
+}
+
 interface SanitizerAttributeNamespace {
     name: string;
     namespace?: string | null;
@@ -3496,12 +3491,11 @@ interface SanitizerAttributeNamespace {
 interface SanitizerConfig {
     attributes?: SanitizerAttribute[];
     comments?: boolean;
-    customElements?: boolean;
+    dataAttributes?: boolean;
     elements?: SanitizerElementWithAttributes[];
     removeAttributes?: SanitizerAttribute[];
     removeElements?: SanitizerElement[];
     replaceWithChildrenElements?: SanitizerElement[];
-    unknownMarkup?: boolean;
 }
 
 interface SanitizerElementNamespace {
@@ -3563,7 +3557,7 @@ interface ServerSocketOptions {
 }
 
 interface SetHTMLOptions {
-    sanitizer?: SanitizerConfig;
+    sanitizer?: Sanitizer | SanitizerConfig | SanitizerPresets;
 }
 
 interface ShadowRootInit {
@@ -4170,7 +4164,6 @@ interface WindowActorOptions {
 
 interface WindowActorSidedOptions {
     esModuleURI?: string;
-    moduleURI?: string;
 }
 
 interface WindowInfoDictionary {
@@ -5217,6 +5210,7 @@ declare var BroadcastChannel: {
     prototype: BroadcastChannel;
     new(channel: string): BroadcastChannel;
     isInstance: IsInstance<BroadcastChannel>;
+    unpartitionedTestingChannel(channel: string): BroadcastChannel;
 };
 
 interface BrowsingContext extends LoadContextMixin {
@@ -5804,6 +5798,7 @@ declare var CallbackDebuggerNotification: {
 
 interface CanonicalBrowsingContext extends BrowsingContext {
     readonly activeSessionHistoryEntry: nsISHEntry | null;
+    readonly canOpenModalPicker: boolean;
     crossGroupOpener: CanonicalBrowsingContext | null;
     readonly currentRemoteType: string | null;
     readonly currentURI: URI | null;
@@ -5866,6 +5861,7 @@ interface CanvasCompositing {
 }
 
 interface CanvasDrawImage {
+    contextProperties: CanvasContextProperties;
     drawImage(image: CanvasImageSource, dx: number, dy: number): void;
     drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
     drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
@@ -6441,9 +6437,6 @@ declare var ContentProcessMessageManager: {
     isInstance: IsInstance<ContentProcessMessageManager>;
 };
 
-interface ContentSecurityPolicy {
-}
-
 interface ContentVisibilityAutoStateChangeEvent extends Event {
     readonly skipped: boolean;
 }
@@ -6464,9 +6457,6 @@ declare var ConvolverNode: {
     new(context: BaseAudioContext, options?: ConvolverOptions): ConvolverNode;
     isInstance: IsInstance<ConvolverNode>;
 };
-
-interface Cookie {
-}
 
 /** Available only in secure contexts. */
 interface CookieChangeEvent extends Event {
@@ -7196,7 +7186,7 @@ interface Document extends Node, DocumentOrShadowRoot, FontFaceSource, GeometryU
     readonly doctype: DocumentType | null;
     readonly documentElement: Element | null;
     readonly documentLoadGroup: nsILoadGroup | null;
-    readonly documentReadyForIdle: Promise<undefined>;
+    readonly documentReadyForIdle: Promise<void>;
     readonly documentURI: string;
     readonly documentURIObject: URI | null;
     domain: string;
@@ -7421,7 +7411,7 @@ interface Document extends Node, DocumentOrShadowRoot, FontFaceSource, GeometryU
     mozSetImageElement(aImageElementId: string, aImageElement: Element | null): void;
     notifyUserGestureActivation(): void;
     open(unused1?: string, unused2?: string): Document;
-    open(url: string | URL, name: string, features: string): WindowProxy | null;
+    open(url: string, name: string, features: string): WindowProxy | null;
     queryCommandEnabled(commandId: string): boolean;
     queryCommandIndeterm(commandId: string): boolean;
     queryCommandState(commandId: string): boolean;
@@ -7738,7 +7728,6 @@ interface Element extends Node, ARIAMixin, Animatable, ChildNode, GeometryUtils,
     setAttributeNodeNS(newAttr: Attr): Attr | null;
     setCapture(retargetToElement?: boolean): void;
     setCaptureAlways(retargetToElement?: boolean): void;
-    /** Available only in secure contexts. */
     setHTML(aInnerHTML: string, options?: SetHTMLOptions): void;
     setHTMLUnsafe(html: TrustedHTML | string): void;
     setPointerCapture(pointerId: number): void;
@@ -8337,7 +8326,7 @@ interface FontFaceSet extends EventTarget {
     onloading: ((this: FontFaceSet, ev: Event) => any) | null;
     onloadingdone: ((this: FontFaceSet, ev: Event) => any) | null;
     onloadingerror: ((this: FontFaceSet, ev: Event) => any) | null;
-    readonly ready: Promise<undefined>;
+    readonly ready: Promise<void>;
     readonly size: number;
     readonly status: FontFaceSetLoadStatus;
     add(font: FontFace): void;
@@ -8408,6 +8397,7 @@ declare var FormDataEvent: {
 };
 
 interface FragmentDirective {
+    createTextDirective(range: Range): Promise<string>;
     getTextDirectiveRanges(): Range[];
     removeAllTextDirectives(): void;
 }
@@ -8482,6 +8472,7 @@ interface GPUAdapter {
     readonly info: GPUAdapterInfo;
     readonly isFallbackAdapter: boolean;
     readonly limits: GPUSupportedLimits;
+    readonly missingFeatures: number;
     requestDevice(descriptor?: GPUDeviceDescriptor): Promise<GPUDevice>;
 }
 
@@ -10497,6 +10488,7 @@ interface HTMLInputElement extends HTMLElement, InvokerElement, MozEditableEleme
     reportValidity(): boolean;
     select(): void;
     setCustomValidity(error: string): void;
+    setDateTimePickerState(aIsOpen: boolean): void;
     setFocusState(aIsFocused: boolean): void;
     setRangeText(replacement: string): void;
     setRangeText(replacement: string, start: number, end: number, selectionMode?: SelectionMode): void;
@@ -11048,6 +11040,7 @@ declare var HTMLQuoteElement: {
     isInstance: IsInstance<HTMLQuoteElement>;
 };
 
+// @ts-ignore
 interface HTMLScriptElement extends HTMLElement {
     async: boolean;
     readonly blocking: DOMTokenList;
@@ -11937,7 +11930,7 @@ declare var ImageData: {
 /** Available only in secure contexts. */
 interface ImageDecoder {
     readonly complete: boolean;
-    readonly completed: Promise<undefined>;
+    readonly completed: Promise<void>;
     readonly tracks: ImageTrackList;
     readonly type: string;
     close(): void;
@@ -11986,7 +11979,7 @@ declare var ImageTrack: {
 /** Available only in secure contexts. */
 interface ImageTrackList {
     readonly length: number;
-    readonly ready: Promise<undefined>;
+    readonly ready: Promise<void>;
     readonly selectedIndex: number;
     readonly selectedTrack: ImageTrack | null;
     [index: number]: ImageTrack;
@@ -12011,9 +12004,6 @@ declare var InputEvent: {
     new(type: string, eventInitDict?: InputEventInit): InputEvent;
     isInstance: IsInstance<InputEvent>;
 };
-
-interface InputStream {
-}
 
 interface InspectorCSSParser {
     readonly columnNumber: number;
@@ -12042,13 +12032,52 @@ interface InspectorFontFace {
     readonly rule: CSSFontFaceRule | null;
     readonly srcIndex: number;
     getFeatures(): InspectorFontFeature[];
+    getNameString(id: number): string;
     getVariationAxes(): InspectorVariationAxis[];
     getVariationInstances(): InspectorVariationInstance[];
+    readonly NAME_ID_COPYRIGHT: 0;
+    readonly NAME_ID_FAMILY: 1;
+    readonly NAME_ID_SUBFAMILY: 2;
+    readonly NAME_ID_UNIQUE: 3;
+    readonly NAME_ID_FULL: 4;
+    readonly NAME_ID_VERSION: 5;
+    readonly NAME_ID_POSTSCRIPT: 6;
+    readonly NAME_ID_TRADEMARK: 7;
+    readonly NAME_ID_MANUFACTURER: 8;
+    readonly NAME_ID_DESIGNER: 9;
+    readonly NAME_ID_DESCRIPTION: 10;
+    readonly NAME_ID_VENDOR_URL: 11;
+    readonly NAME_ID_DESIGNER_URL: 12;
+    readonly NAME_ID_LICENSE: 13;
+    readonly NAME_ID_LICENSE_URL: 14;
+    readonly NAME_ID_TYPOGRAPHIC_FAMILY: 16;
+    readonly NAME_ID_TYPOGRAPHIC_SUBFAMILY: 17;
+    readonly NAME_ID_COMPATIBLE_FULL: 18;
+    readonly NAME_ID_SAMPLE_TEXT: 19;
 }
 
 declare var InspectorFontFace: {
     prototype: InspectorFontFace;
     new(): InspectorFontFace;
+    readonly NAME_ID_COPYRIGHT: 0;
+    readonly NAME_ID_FAMILY: 1;
+    readonly NAME_ID_SUBFAMILY: 2;
+    readonly NAME_ID_UNIQUE: 3;
+    readonly NAME_ID_FULL: 4;
+    readonly NAME_ID_VERSION: 5;
+    readonly NAME_ID_POSTSCRIPT: 6;
+    readonly NAME_ID_TRADEMARK: 7;
+    readonly NAME_ID_MANUFACTURER: 8;
+    readonly NAME_ID_DESIGNER: 9;
+    readonly NAME_ID_DESCRIPTION: 10;
+    readonly NAME_ID_VENDOR_URL: 11;
+    readonly NAME_ID_DESIGNER_URL: 12;
+    readonly NAME_ID_LICENSE: 13;
+    readonly NAME_ID_LICENSE_URL: 14;
+    readonly NAME_ID_TYPOGRAPHIC_FAMILY: 16;
+    readonly NAME_ID_TYPOGRAPHIC_SUBFAMILY: 17;
+    readonly NAME_ID_COMPATIBLE_FULL: 18;
+    readonly NAME_ID_SAMPLE_TEXT: 19;
     isInstance: IsInstance<InspectorFontFace>;
 };
 
@@ -12866,9 +12895,6 @@ interface LinkStyle {
     readonly sheet: StyleSheet | null;
 }
 
-interface LoadContext {
-}
-
 interface LoadContextMixin {
     readonly associatedWindow: WindowProxy | null;
     readonly isContent: boolean;
@@ -12879,9 +12905,6 @@ interface LoadContextMixin {
     readonly useRemoteSubframes: boolean;
     readonly useRemoteTabs: boolean;
     useTrackingProtection: boolean;
-}
-
-interface LoadInfo {
 }
 
 interface Localization {
@@ -12913,9 +12936,9 @@ interface Location {
     port: string;
     protocol: string;
     search: string;
-    assign(url: string | URL): void;
+    assign(url: string): void;
     reload(forceget?: boolean): void;
-    replace(url: string | URL): void;
+    replace(url: string): void;
 }
 
 declare var Location: {
@@ -13353,7 +13376,7 @@ interface MediaKeySessionEventMap {
 }
 
 interface MediaKeySession extends EventTarget {
-    readonly closed: Promise<undefined>;
+    readonly closed: Promise<void>;
     readonly error: MediaKeyError | null;
     readonly expiration: number;
     readonly keyStatuses: MediaKeyStatusMap;
@@ -13912,9 +13935,6 @@ declare var MozCanvasPrintState: {
     isInstance: IsInstance<MozCanvasPrintState>;
 };
 
-interface MozChannel {
-}
-
 interface MozDocumentMatcher {
     readonly allFrames: boolean;
     readonly checkPermissions: boolean;
@@ -14049,9 +14069,6 @@ declare var MozStorageStatementRow: {
     new(): MozStorageStatementRow;
     isInstance: IsInstance<MozStorageStatementRow>;
 };
-
-interface MozTreeView {
-}
 
 interface MozWritableSharedMap extends MozSharedMap {
     delete(name: string): void;
@@ -14274,7 +14291,7 @@ declare var NavigationPreloadManager: {
 };
 
 interface NavigationTransition {
-    readonly finished: Promise<undefined>;
+    readonly finished: Promise<void>;
     readonly from: NavigationHistoryEntry;
     readonly navigationType: NavigationType;
 }
@@ -14750,9 +14767,6 @@ declare var OscillatorNode: {
     new(context: BaseAudioContext, options?: OscillatorOptions): OscillatorNode;
     isInstance: IsInstance<OscillatorNode>;
 };
-
-interface OutputStream {
-}
 
 interface PageTransitionEvent extends Event {
     readonly inFrameSwap: boolean;
@@ -15719,9 +15733,6 @@ declare var PrecompiledScript: {
     isInstance: IsInstance<PrecompiledScript>;
 };
 
-interface Principal {
-}
-
 /** Available only in secure contexts. */
 interface PrivateAttribution {
     measureConversion(options: PrivateAttributionConversionOptions): void;
@@ -16407,14 +16418,8 @@ declare var ReadableStreamDefaultReader: {
 };
 
 interface ReadableStreamGenericReader {
-    readonly closed: Promise<undefined>;
+    readonly closed: Promise<void>;
     cancel(reason?: any): Promise<void>;
-}
-
-interface ReferrerInfo {
-}
-
-interface RemoteTab {
 }
 
 interface Report {
@@ -16740,7 +16745,7 @@ declare var SVGAnimatedRect: {
 
 interface SVGAnimatedString {
     readonly animVal: string;
-    baseVal: string;
+    baseVal: TrustedScriptURL | string;
 }
 
 declare var SVGAnimatedString: {
@@ -16877,6 +16882,19 @@ declare var SVGDescElement: {
     prototype: SVGDescElement;
     new(): SVGDescElement;
     isInstance: IsInstance<SVGDescElement>;
+};
+
+interface SVGDiscardElement extends SVGAnimationElement {
+    addEventListener<K extends keyof SVGAnimationElementEventMap>(type: K, listener: (this: SVGDiscardElement, ev: SVGAnimationElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener<K extends keyof SVGAnimationElementEventMap>(type: K, listener: (this: SVGDiscardElement, ev: SVGAnimationElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+}
+
+declare var SVGDiscardElement: {
+    prototype: SVGDiscardElement;
+    new(): SVGDiscardElement;
+    isInstance: IsInstance<SVGDiscardElement>;
 };
 
 interface SVGElementEventMap extends ElementEventMap, GlobalEventHandlersEventMap, OnErrorEventHandlerForNodesEventMap, TouchEventHandlersEventMap {
@@ -17798,7 +17816,13 @@ declare var SVGNumberList: {
     isInstance: IsInstance<SVGNumberList>;
 };
 
-interface SVGPathElement extends SVGGeometryElement {
+interface SVGPathData {
+    getPathData(settings?: SVGPathDataSettings): SVGPathSegment[];
+    setPathData(pathData: SVGPathSegment[]): void;
+}
+
+interface SVGPathElement extends SVGGeometryElement, SVGPathData {
+    getPathSegmentAtLength(distance: number): SVGPathSegment | null;
     addEventListener<K extends keyof SVGElementEventMap>(type: K, listener: (this: SVGPathElement, ev: SVGElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof SVGElementEventMap>(type: K, listener: (this: SVGPathElement, ev: SVGElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -17810,6 +17834,11 @@ declare var SVGPathElement: {
     new(): SVGPathElement;
     isInstance: IsInstance<SVGPathElement>;
 };
+
+interface SVGPathSegment {
+    type: string;
+    values: number[] | Float32Array;
+}
 
 interface SVGPatternElement extends SVGElement, SVGFitToViewBox, SVGURIReference {
     readonly height: SVGAnimatedLength;
@@ -18357,19 +18386,27 @@ interface SVGZoomAndPan {
     readonly SVG_ZOOMANDPAN_MAGNIFY: 2;
 }
 
-/** Available only in secure contexts. */
 interface Sanitizer {
-    sanitize(input: SanitizerInput): DocumentFragment;
+    allowAttribute(attribute: SanitizerAttribute): void;
+    allowElement(element: SanitizerElementWithAttributes): void;
+    get(): SanitizerConfig;
+    removeAttribute(attribute: SanitizerAttribute): void;
+    removeElement(element: SanitizerElement): void;
+    removeUnsafe(): void;
+    replaceElementWithChildren(element: SanitizerElement): void;
+    setComments(allow: boolean): void;
+    setDataAttributes(allow: boolean): void;
 }
 
 declare var Sanitizer: {
     prototype: Sanitizer;
-    new(sanitizerConfig?: SanitizerConfig): Sanitizer;
+    new(configuration?: SanitizerConfig | SanitizerPresets): Sanitizer;
     isInstance: IsInstance<Sanitizer>;
 };
 
 interface Scheduler {
     postTask(callback: SchedulerPostTaskCallback, options?: SchedulerPostTaskOptions): Promise<any>;
+    yield(): Promise<void>;
 }
 
 declare var Scheduler: {
@@ -18594,7 +18631,7 @@ interface ServiceWorkerContainer extends EventTarget {
     readonly ready: Promise<ServiceWorkerRegistration>;
     getRegistration(documentURL?: string | URL): Promise<ServiceWorkerRegistration | undefined>;
     getRegistrations(): Promise<ServiceWorkerRegistration[]>;
-    register(scriptURL: string | URL, options?: RegistrationOptions): Promise<ServiceWorkerRegistration>;
+    register(scriptURL: TrustedScriptURL | string, options?: RegistrationOptions): Promise<ServiceWorkerRegistration>;
     startMessages(): void;
     addEventListener<K extends keyof ServiceWorkerContainerEventMap>(type: K, listener: (this: ServiceWorkerContainer, ev: ServiceWorkerContainerEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
@@ -19036,9 +19073,6 @@ declare var SpeechSynthesisVoice: {
     new(): SpeechSynthesisVoice;
     isInstance: IsInstance<SpeechSynthesisVoice>;
 };
-
-interface StackFrame {
-}
 
 interface StaticRange extends AbstractRange {
 }
@@ -20259,12 +20293,12 @@ interface UDPSocketEventMap {
 
 interface UDPSocket extends EventTarget {
     readonly addressReuse: boolean;
-    readonly closed: Promise<undefined>;
+    readonly closed: Promise<void>;
     readonly localAddress: string | null;
     readonly localPort: number | null;
     readonly loopback: boolean;
     onmessage: ((this: UDPSocket, ev: Event) => any) | null;
-    readonly opened: Promise<undefined>;
+    readonly opened: Promise<void>;
     readonly readyState: SocketReadyState;
     readonly remoteAddress: string | null;
     readonly remotePort: number | null;
@@ -20304,9 +20338,6 @@ declare var UIEvent: {
     readonly SCROLL_PAGE_DOWN: 32768;
     isInstance: IsInstance<UIEvent>;
 };
-
-interface URI {
-}
 
 interface URL {
     readonly URI: URI;
@@ -20818,9 +20849,9 @@ declare var VideoTrackList: {
 };
 
 interface ViewTransition {
-    readonly finished: Promise<undefined>;
-    readonly ready: Promise<undefined>;
-    readonly updateCallbackDone: Promise<undefined>;
+    readonly finished: Promise<void>;
+    readonly ready: Promise<void>;
+    readonly updateCallbackDone: Promise<void>;
     skipTransition(): void;
 }
 
@@ -23079,7 +23110,7 @@ interface WebTransport {
     readonly datagrams: WebTransportDatagramDuplexStream;
     readonly incomingBidirectionalStreams: ReadableStream;
     readonly incomingUnidirectionalStreams: ReadableStream;
-    readonly ready: Promise<undefined>;
+    readonly ready: Promise<void>;
     readonly reliability: WebTransportReliabilityMode;
     close(closeInfo?: WebTransportCloseInfo): void;
     createBidirectionalStream(options?: WebTransportSendStreamOptions): Promise<WebTransportBidirectionalStream>;
@@ -23364,7 +23395,7 @@ interface WindowContext {
     readonly isInBFCache: boolean;
     readonly isInProcess: boolean;
     readonly isLocalIP: boolean;
-    readonly overriddenFingerprintingSettings: number | null;
+    readonly overriddenFingerprintingSettings: nsIRFPTargetSetIDL | null;
     readonly parentWindowContext: WindowContext | null;
     readonly shouldResistFingerprinting: boolean;
     readonly topWindowContext: WindowContext;
@@ -23509,9 +23540,6 @@ interface WindowOrWorkerGlobalScope {
     structuredClone(value: any, options?: StructuredSerializeOptions): any;
 }
 
-interface WindowProxy {
-}
-
 interface WindowRoot extends EventTarget {
 }
 
@@ -23593,9 +23621,9 @@ declare var WritableStreamDefaultController: {
 };
 
 interface WritableStreamDefaultWriter {
-    readonly closed: Promise<undefined>;
+    readonly closed: Promise<void>;
     readonly desiredSize: number | null;
-    readonly ready: Promise<undefined>;
+    readonly ready: Promise<void>;
     abort(reason?: any): Promise<void>;
     close(): Promise<void>;
     releaseLock(): void;
@@ -24112,9 +24140,6 @@ declare var XSLTProcessor: {
     isInstance: IsInstance<XSLTProcessor>;
 };
 
-interface XULCommandDispatcher {
-}
-
 interface XULCommandEvent extends UIEvent {
     readonly altKey: boolean;
     readonly button: number;
@@ -24131,9 +24156,6 @@ declare var XULCommandEvent: {
     new(): XULCommandEvent;
     isInstance: IsInstance<XULCommandEvent>;
 };
-
-interface XULControllers {
-}
 
 interface XULElementEventMap extends ElementEventMap, GlobalEventHandlersEventMap, OnErrorEventHandlerForNodesEventMap, TouchEventHandlersEventMap {
 }
@@ -24299,150 +24321,101 @@ declare var XULTreeElement: {
     isInstance: IsInstance<XULTreeElement>;
 };
 
-interface imgINotificationObserver {
-}
-
-interface imgIRequest {
-}
-
-interface nsIBrowserDOMWindow {
-}
-
-interface nsICookieJarSettings {
-}
-
-interface nsIDOMProcessChild {
-}
-
-interface nsIDOMProcessParent {
-}
-
-interface nsIDOMWindowUtils {
-}
-
-interface nsIDocShell {
-}
-
-interface nsIEditor {
-}
-
-interface nsIEventTarget {
-}
-
-interface nsIFile {
-}
-
-interface nsIGleanPing {
-}
-
-interface nsILoadGroup {
-}
-
-interface nsIMediaDevice {
-}
-
-interface nsIOpenWindowInfo {
-}
-
-interface nsIPermissionDelegateHandler {
-}
-
-interface nsIPrintSettings {
-}
-
-interface nsIReferrerInfo {
-}
-
-interface nsISHEntry {
-}
-
-interface nsISHistory {
-}
-
-interface nsIScreen {
-}
-
-interface nsISecureBrowserUI {
-}
-
-interface nsISelectionListener {
-}
-
-interface nsISessionStoreRestoreData {
-}
-
-interface nsISocketTransport {
-}
-
-interface nsIStreamListener {
-}
-
-interface nsISupports {
-}
-
-interface nsITransportProvider {
-}
-
-interface nsITreeSelection {
-}
-
-interface nsIWebBrowserPersistDocumentReceiver {
-}
-
-interface nsIWebNavigation {
-}
-
-interface nsIWebProgress {
-}
-
-interface nsIWebProgressListener {
-}
-
-declare namespace TestUtils {
-    function gc(): Promise<void>;
-}
-
-declare namespace Nyx {
-    function getRawData(): ArrayBuffer;
-    function isEnabled(aFuzzerName: string): boolean;
-    function isReplay(): boolean;
-    function isStarted(): boolean;
-    function log(aMsg: string): void;
-    function release(): void;
-    function start(): void;
-}
-
 declare namespace APZHitResultFlags {
 }
 
-interface Console {
-    assert(condition?: boolean, ...data: any[]): void;
-    clear(): void;
-    count(label?: string): void;
-    countReset(label?: string): void;
-    createInstance(options?: ConsoleInstanceOptions): ConsoleInstance;
-    debug(...data: any[]): void;
-    dir(...data: any[]): void;
-    dirxml(...data: any[]): void;
-    error(...data: any[]): void;
-    exception(...data: any[]): void;
-    group(...data: any[]): void;
-    groupCollapsed(...data: any[]): void;
-    groupEnd(): void;
-    info(...data: any[]): void;
-    log(...data: any[]): void;
-    profile(...data: any[]): void;
-    profileEnd(...data: any[]): void;
-    table(...data: any[]): void;
-    time(label?: string): void;
-    timeEnd(label?: string): void;
-    timeLog(label?: string, ...data: any[]): void;
-    timeStamp(data?: any): void;
-    trace(...data: any[]): void;
-    warn(...data: any[]): void;
+declare namespace AddonManagerPermissions {
+    function isHostPermitted(host: string): boolean;
 }
 
-declare var console: Console;
+declare namespace CSS {
+    var highlights: HighlightRegistry;
+    function escape(ident: string): string;
+    function registerProperty(definition: PropertyDefinition): void;
+    function supports(property: string, value: string): boolean;
+    function supports(conditionText: string): boolean;
+}
+
+declare namespace ChromeUtils {
+    var aliveUtilityProcesses: number;
+    var domProcessChild: nsIDOMProcessChild | null;
+    var recentJSDevError: any;
+    function CreateOriginAttributesFromOriginSuffix(suffix: string): OriginAttributesDictionary;
+    function addProfilerMarker(name: string, options?: ProfilerMarkerOptions | DOMHighResTimeStamp, text?: string): void;
+    function base64URLDecode(string: string, options: Base64URLDecodeOptions): ArrayBuffer;
+    function base64URLEncode(source: BufferSource, options: Base64URLEncodeOptions): string;
+    function clearMessagingLayerSecurityState(): void;
+    function clearMessagingLayerSecurityStateByPrincipal(principal: Principal): void;
+    function clearMessagingLayerSecurityStateBySite(schemelessSite: string, pattern?: OriginAttributesPatternDictionary): void;
+    function clearRecentJSDevError(): void;
+    function clearResourceCache(chrome?: boolean): void;
+    function clearScriptCache(chrome?: boolean): void;
+    function clearScriptCacheByPrincipal(principal: Principal): void;
+    function clearScriptCacheBySite(schemelessSite: string, pattern?: OriginAttributesPatternDictionary): void;
+    function clearStyleSheetCache(chrome?: boolean): void;
+    function clearStyleSheetCacheByPrincipal(principal: Principal): void;
+    function clearStyleSheetCacheBySite(schemelessSite: string, pattern?: OriginAttributesPatternDictionary): void;
+    function collectPerfStats(): Promise<string>;
+    function collectScrollingData(): Promise<InteractionData>;
+    function compileScript(url: string, options?: CompileScriptOptionsDictionary): Promise<PrecompiledScript>;
+    function consumeInteractionData(): Record<string, InteractionData>;
+    function createError(message: string, stack?: any): any;
+    function createOriginAttributesFromOrigin(origin: string): OriginAttributesDictionary;
+    function dateNow(): number;
+    function defineESModuleGetters(aTarget: any, aModules: any, aOptions?: ImportESModuleOptionsDictionary): void;
+    function defineLazyGetter(aTarget: any, aName: any, aLambda: any): void;
+    function endWheelTransaction(): void;
+    function ensureHeadlessContentProcess(aRemoteType: string): Promise<nsIContentParentKeepAlive>;
+    function ensureJSOracleStarted(): void;
+    function fillNonDefaultOriginAttributes(originAttrs?: OriginAttributesDictionary): OriginAttributesDictionary;
+    function generateQI(interfaces: any[]): MozQueryInterface;
+    function getAllDOMProcesses(): nsIDOMProcessParent[];
+    function getAllPossibleUtilityActorNames(): string[];
+    function getBaseDomainFromPartitionKey(partitionKey: string): string;
+    function getCallerLocation(principal: Principal): any;
+    function getClassName(obj: any, unwrap?: boolean): string;
+    function getFormAutofillConfidences(elements: Element[]): FormAutofillConfidences[];
+    function getGMPContentDecryptionModuleInformation(): Promise<CDMInformation[]>;
+    function getLibcConstants(): LibcConstants;
+    function getObjectNodeId(obj: any): NodeId;
+    function getPartitionKeyFromURL(topLevelUrl: string, subresourceUrl: string, foreignContext?: boolean): string;
+    function getPopupControlState(): PopupBlockerState;
+    function getWMFContentDecryptionModuleInformation(): Promise<CDMInformation[]>;
+    function getXPCOMErrorName(aErrorCode: number): string;
+    function hasReportingHeaderForOrigin(aOrigin: string): boolean;
+    function idleDispatch(callback: IdleRequestCallback, options?: IdleRequestOptions): void;
+    function importESModule(aResourceURI: string, aOptions?: ImportESModuleOptionsDictionary): any;
+    function isClassifierBlockingErrorCode(aError: number): boolean;
+    function isDOMObject(obj: any, unwrap?: boolean): boolean;
+    function isDarkBackground(element: Element): boolean;
+    function isDevToolsOpened(): boolean;
+    function isISOStyleDate(str: string): boolean;
+    function isOriginAttributesEqual(aA?: OriginAttributesDictionary, aB?: OriginAttributesDictionary): boolean;
+    function lastExternalProtocolIframeAllowed(): number;
+    function nondeterministicGetWeakMapKeys(map: any): any;
+    function nondeterministicGetWeakSetKeys(aSet: any): any;
+    function notifyDevToolsClosed(): void;
+    function notifyDevToolsOpened(): void;
+    function originAttributesMatchPattern(originAttrs?: OriginAttributesDictionary, pattern?: OriginAttributesPatternDictionary): boolean;
+    function originAttributesToSuffix(originAttrs?: OriginAttributesDictionary): string;
+    function privateNoteIntentionalCrash(): void;
+    function readHeapSnapshot(filePath: string): HeapSnapshot;
+    function registerProcessActor(aName: string, aOptions?: ProcessActorOptions): void;
+    function registerWindowActor(aName: string, aOptions?: WindowActorOptions): void;
+    function releaseAssert(condition: boolean, message?: string): void;
+    function requestProcInfo(): Promise<ParentProcInfoDictionary>;
+    function resetLastExternalProtocolIframeAllowed(): void;
+    function saveHeapSnapshot(boundaries?: HeapSnapshotBoundaries): string;
+    function saveHeapSnapshotGetId(boundaries?: HeapSnapshotBoundaries): string;
+    function setPerfStatsCollectionMask(aCollectionMask: number): void;
+    function shallowClone(obj: any, target?: any): any;
+    function shouldResistFingerprinting(target: JSRFPTarget, overriddenFingerprintingSettings: nsIRFPTargetSetIDL | null, isPBM?: boolean): boolean;
+    function unregisterProcessActor(aName: string): void;
+    function unregisterWindowActor(aName: string): void;
+    function unwaiveXrays(val: any): any;
+    function vsyncEnabled(): boolean;
+    function waiveXrays(val: any): any;
+}
 
 declare namespace FuzzingFunctions {
     function crash(reason?: string): void;
@@ -24456,31 +24429,52 @@ declare namespace FuzzingFunctions {
     function synthesizeKeyboardEvents(aKeyValue: string, aDictionary?: KeyboardEventInit): void;
 }
 
-declare namespace CSS {
-    var highlights: HighlightRegistry;
-    function escape(ident: string): string;
-    function registerProperty(definition: PropertyDefinition): void;
-    function supports(property: string, value: string): boolean;
-    function supports(conditionText: string): boolean;
-}
-
 declare namespace GPUBufferUsage {
-}
-
-declare namespace GPUMapMode {
-}
-
-declare namespace GPUTextureUsage {
-}
-
-declare namespace GPUShaderStage {
 }
 
 declare namespace GPUColorWrite {
 }
 
-declare namespace AddonManagerPermissions {
-    function isHostPermitted(host: string): boolean;
+declare namespace GPUMapMode {
+}
+
+declare namespace GPUShaderStage {
+}
+
+declare namespace GPUTextureUsage {
+}
+
+declare namespace IOUtils {
+    var profileBeforeChange: any;
+    var sendTelemetry: any;
+    function computeHexDigest(path: string, method: HashAlgorithm): Promise<string>;
+    function copy(sourcePath: string, destPath: string, options?: CopyOptions): Promise<void>;
+    function createUniqueDirectory(parent: string, prefix: string, permissions?: number): Promise<string>;
+    function createUniqueFile(parent: string, prefix: string, permissions?: number): Promise<string>;
+    function delMacXAttr(path: string, attr: string): Promise<void>;
+    function exists(path: string): Promise<boolean>;
+    function getChildren(path: string, options?: GetChildrenOptions): Promise<string[]>;
+    function getDirectory(...components: string[]): Promise<nsIFile>;
+    function getFile(...components: string[]): Promise<nsIFile>;
+    function getMacXAttr(path: string, attr: string): Promise<Uint8Array>;
+    function getWindowsAttributes(path: string): Promise<WindowsFileAttributes>;
+    function hasChildren(path: string, options?: HasChildrenOptions): Promise<boolean>;
+    function hasMacXAttr(path: string, attr: string): Promise<boolean>;
+    function makeDirectory(path: string, options?: MakeDirectoryOptions): Promise<void>;
+    function move(sourcePath: string, destPath: string, options?: MoveOptions): Promise<void>;
+    function read(path: string, opts?: ReadOptions): Promise<Uint8Array>;
+    function readJSON(path: string, opts?: ReadUTF8Options): Promise<any>;
+    function readUTF8(path: string, opts?: ReadUTF8Options): Promise<string>;
+    function remove(path: string, options?: RemoveOptions): Promise<void>;
+    function setAccessTime(path: string, access?: number): Promise<number>;
+    function setMacXAttr(path: string, attr: string, value: Uint8Array): Promise<void>;
+    function setModificationTime(path: string, modification?: number): Promise<number>;
+    function setPermissions(path: string, permissions: number, honorUmask?: boolean): Promise<void>;
+    function setWindowsAttributes(path: string, attrs?: WindowsFileAttributes): Promise<void>;
+    function stat(path: string): Promise<FileInfo>;
+    function write(path: string, data: Uint8Array, options?: WriteOptions): Promise<number>;
+    function writeJSON(path: string, value: any, options?: WriteOptions): Promise<number>;
+    function writeUTF8(path: string, string: string, options?: WriteOptions): Promise<number>;
 }
 
 declare namespace InspectorUtils {
@@ -24531,16 +24525,24 @@ declare namespace InspectorUtils {
     function valueMatchesSyntax(document: Document, value: string, syntax: string): boolean;
 }
 
-declare namespace WebrtcGlobalInformation {
-    var aecDebug: boolean;
-    var aecDebugLogDir: string;
-    function clearAllStats(): void;
-    function clearLogging(): void;
-    function getAllStats(callback: WebrtcGlobalStatisticsCallback, pcIdFilter?: string): void;
-    function getLogging(pattern: string, callback: WebrtcGlobalLoggingCallback): void;
-    function getMediaContext(): WebrtcGlobalMediaContext;
-    function getStatsHistoryPcIds(callback: WebrtcGlobalStatisticsHistoryPcIdsCallback): void;
-    function getStatsHistorySince(callback: WebrtcGlobalStatisticsHistoryCallback, pcIdFilter: string, after?: DOMHighResTimeStamp, sdpAfter?: DOMHighResTimeStamp): void;
+declare namespace L10nOverlays {
+    function translateElement(element: Element, translation?: L10nMessage): L10nOverlaysError[] | null;
+}
+
+declare namespace MediaControlService {
+    function generateMediaControlKey(aKey: MediaControlKey, aSeekValue?: number): void;
+    function getCurrentActiveMediaMetadata(): MediaMetadataInit;
+    function getCurrentMediaSessionPlaybackState(): MediaSessionPlaybackState;
+}
+
+declare namespace Nyx {
+    function getRawData(): ArrayBuffer;
+    function isEnabled(aFuzzerName: string): boolean;
+    function isReplay(): boolean;
+    function isStarted(): boolean;
+    function log(aMsg: string): void;
+    function release(): void;
+    function start(): void;
 }
 
 declare namespace PathUtils {
@@ -24569,6 +24571,16 @@ declare namespace PlacesObservers {
     function removeListener(eventTypes: PlacesEventType[], listener: PlacesWeakCallbackWrapper): void;
 }
 
+declare namespace PromiseDebugging {
+    function addUncaughtRejectionObserver(o: UncaughtRejectionObserver): void;
+    function getAllocationStack(p: any): any;
+    function getFullfillmentStack(p: any): any;
+    function getPromiseID(p: any): string;
+    function getRejectionStack(p: any): any;
+    function getState(p: any): PromiseDebuggingStateHolder;
+    function removeUncaughtRejectionObserver(o: UncaughtRejectionObserver): boolean;
+}
+
 declare namespace SessionStoreUtils {
     function addDynamicFrameFilteredListener(target: EventTarget, type: string, listener: any, useCapture: boolean, mozSystemGroup?: boolean): nsISupports | null;
     function collectDocShellCapabilities(docShell: nsIDocShell): string;
@@ -24585,10 +24597,6 @@ declare namespace SessionStoreUtils {
     function restoreSessionStorageFromParent(browsingContext: CanonicalBrowsingContext, sessionStorage: Record<string, Record<string, string>>): void;
 }
 
-declare namespace L10nOverlays {
-    function translateElement(element: Element, translation?: L10nMessage): L10nOverlaysError[] | null;
-}
-
 declare namespace TelemetryStopwatch {
     function cancel(histogram: HistogramID, obj?: any): boolean;
     function cancelKeyed(histogram: HistogramID, key: HistogramKey, obj?: any): boolean;
@@ -24603,94 +24611,8 @@ declare namespace TelemetryStopwatch {
     function timeElapsedKeyed(histogram: HistogramID, key: HistogramKey, obj?: any, canceledOkay?: boolean): number;
 }
 
-declare namespace ChromeUtils {
-    var aliveUtilityProcesses: number;
-    var domProcessChild: nsIDOMProcessChild | null;
-    var recentJSDevError: any;
-    function CreateOriginAttributesFromOriginSuffix(suffix: string): OriginAttributesDictionary;
-    function addProfilerMarker(name: string, options?: ProfilerMarkerOptions | DOMHighResTimeStamp, text?: string): void;
-    function base64URLDecode(string: string, options: Base64URLDecodeOptions): ArrayBuffer;
-    function base64URLEncode(source: BufferSource, options: Base64URLEncodeOptions): string;
-    function clearMessagingLayerSecurityState(): void;
-    function clearMessagingLayerSecurityStateByPrincipal(principal: Principal): void;
-    function clearMessagingLayerSecurityStateBySite(schemelessSite: string, pattern?: OriginAttributesPatternDictionary): void;
-    function clearRecentJSDevError(): void;
-    function clearScriptCache(): void;
-    function clearScriptCacheByPrincipal(principal: Principal): void;
-    function clearScriptCacheBySite(schemelessSite: string, pattern?: OriginAttributesPatternDictionary): void;
-    function clearStyleSheetCache(): void;
-    function clearStyleSheetCacheByPrincipal(principal: Principal): void;
-    function clearStyleSheetCacheBySite(schemelessSite: string, pattern?: OriginAttributesPatternDictionary): void;
-    function collectPerfStats(): Promise<string>;
-    function collectScrollingData(): Promise<InteractionData>;
-    function compileScript(url: string, options?: CompileScriptOptionsDictionary): Promise<PrecompiledScript>;
-    function consumeInteractionData(): Record<string, InteractionData>;
-    function createError(message: string, stack?: any): any;
-    function createOriginAttributesFromOrigin(origin: string): OriginAttributesDictionary;
-    function dateNow(): number;
-    function defineESModuleGetters(aTarget: any, aModules: any, aOptions?: ImportESModuleOptionsDictionary): void;
-    function defineLazyGetter(aTarget: any, aName: any, aLambda: any): void;
-    function endWheelTransaction(): void;
-    function ensureJSOracleStarted(): void;
-    function fillNonDefaultOriginAttributes(originAttrs?: OriginAttributesDictionary): OriginAttributesDictionary;
-    function generateQI(interfaces: any[]): MozQueryInterface;
-    function getAllDOMProcesses(): nsIDOMProcessParent[];
-    function getAllPossibleUtilityActorNames(): string[];
-    function getBaseDomainFromPartitionKey(partitionKey: string): string;
-    function getCallerLocation(principal: Principal): any;
-    function getClassName(obj: any, unwrap?: boolean): string;
-    function getFormAutofillConfidences(elements: Element[]): FormAutofillConfidences[];
-    function getGMPContentDecryptionModuleInformation(): Promise<CDMInformation[]>;
-    function getLibcConstants(): LibcConstants;
-    function getObjectNodeId(obj: any): NodeId;
-    function getPartitionKeyFromURL(topLevelUrl: string, subresourceUrl: string, foreignContext?: boolean): string;
-    function getPopupControlState(): PopupBlockerState;
-    function getWMFContentDecryptionModuleInformation(): Promise<CDMInformation[]>;
-    function getXPCOMErrorName(aErrorCode: number): string;
-    function hasReportingHeaderForOrigin(aOrigin: string): boolean;
-    function idleDispatch(callback: IdleRequestCallback, options?: IdleRequestOptions): void;
-    function importESModule(aResourceURI: string, aOptions?: ImportESModuleOptionsDictionary): any;
-    function isClassifierBlockingErrorCode(aError: number): boolean;
-    function isDOMObject(obj: any, unwrap?: boolean): boolean;
-    function isDarkBackground(element: Element): boolean;
-    function isDevToolsOpened(): boolean;
-    function isISOStyleDate(str: string): boolean;
-    function isOriginAttributesEqual(aA?: OriginAttributesDictionary, aB?: OriginAttributesDictionary): boolean;
-    function lastExternalProtocolIframeAllowed(): number;
-    function nondeterministicGetWeakMapKeys(map: any): any;
-    function nondeterministicGetWeakSetKeys(aSet: any): any;
-    function notifyDevToolsClosed(): void;
-    function notifyDevToolsOpened(): void;
-    function originAttributesMatchPattern(originAttrs?: OriginAttributesDictionary, pattern?: OriginAttributesPatternDictionary): boolean;
-    function originAttributesToSuffix(originAttrs?: OriginAttributesDictionary): string;
-    function privateNoteIntentionalCrash(): void;
-    function readHeapSnapshot(filePath: string): HeapSnapshot;
-    function registerProcessActor(aName: string, aOptions?: ProcessActorOptions): void;
-    function registerWindowActor(aName: string, aOptions?: WindowActorOptions): void;
-    function releaseAssert(condition: boolean, message?: string): void;
-    function requestProcInfo(): Promise<ParentProcInfoDictionary>;
-    function resetLastExternalProtocolIframeAllowed(): void;
-    function sanitizeTelemetryFileURL(url: string): FileNameTypeDetails;
-    function saveHeapSnapshot(boundaries?: HeapSnapshotBoundaries): string;
-    function saveHeapSnapshotGetId(boundaries?: HeapSnapshotBoundaries): string;
-    function setPerfStatsCollectionMask(aCollectionMask: number): void;
-    function shallowClone(obj: any, target?: any): any;
-    function shouldResistFingerprinting(target: JSRFPTarget, overriddenFingerprintingSettings: number | null): boolean;
-    function unregisterProcessActor(aName: string): void;
-    function unregisterWindowActor(aName: string): void;
-    function unwaiveXrays(val: any): any;
-    function vsyncEnabled(): boolean;
-    function waiveXrays(val: any): any;
-}
-
-declare namespace PromiseDebugging {
-    function addUncaughtRejectionObserver(o: UncaughtRejectionObserver): void;
-    function getAllocationStack(p: any): any;
-    function getFullfillmentStack(p: any): any;
-    function getPromiseID(p: any): string;
-    function getRejectionStack(p: any): any;
-    function getState(p: any): PromiseDebuggingStateHolder;
-    function removeUncaughtRejectionObserver(o: UncaughtRejectionObserver): boolean;
+declare namespace TestUtils {
+    function gc(): Promise<void>;
 }
 
 declare namespace UniFFIScaffolding {
@@ -24703,12 +24625,6 @@ declare namespace UniFFIScaffolding {
     function writePointer(id: UniFFIPointerId, ptr: UniFFIPointer, buff: ArrayBuffer, position: number): void;
 }
 
-declare namespace MediaControlService {
-    function generateMediaControlKey(aKey: MediaControlKey, aSeekValue?: number): void;
-    function getCurrentActiveMediaMetadata(): MediaMetadataInit;
-    function getCurrentMediaSessionPlaybackState(): MediaSessionPlaybackState;
-}
-
 declare namespace UserInteraction {
     function cancel(id: string, obj?: any): boolean;
     function finish(id: string, obj?: any, additionalText?: string): boolean;
@@ -24717,38 +24633,46 @@ declare namespace UserInteraction {
     function update(id: string, value: string, obj?: any): boolean;
 }
 
-declare namespace IOUtils {
-    var profileBeforeChange: any;
-    var sendTelemetry: any;
-    function computeHexDigest(path: string, method: HashAlgorithm): Promise<string>;
-    function copy(sourcePath: string, destPath: string, options?: CopyOptions): Promise<void>;
-    function createUniqueDirectory(parent: string, prefix: string, permissions?: number): Promise<string>;
-    function createUniqueFile(parent: string, prefix: string, permissions?: number): Promise<string>;
-    function delMacXAttr(path: string, attr: string): Promise<void>;
-    function exists(path: string): Promise<boolean>;
-    function getChildren(path: string, options?: GetChildrenOptions): Promise<string[]>;
-    function getDirectory(...components: string[]): Promise<nsIFile>;
-    function getFile(...components: string[]): Promise<nsIFile>;
-    function getMacXAttr(path: string, attr: string): Promise<Uint8Array>;
-    function getWindowsAttributes(path: string): Promise<WindowsFileAttributes>;
-    function hasChildren(path: string, options?: HasChildrenOptions): Promise<boolean>;
-    function hasMacXAttr(path: string, attr: string): Promise<boolean>;
-    function makeDirectory(path: string, options?: MakeDirectoryOptions): Promise<void>;
-    function move(sourcePath: string, destPath: string, options?: MoveOptions): Promise<void>;
-    function read(path: string, opts?: ReadOptions): Promise<Uint8Array>;
-    function readJSON(path: string, opts?: ReadUTF8Options): Promise<any>;
-    function readUTF8(path: string, opts?: ReadUTF8Options): Promise<string>;
-    function remove(path: string, options?: RemoveOptions): Promise<void>;
-    function setAccessTime(path: string, access?: number): Promise<number>;
-    function setMacXAttr(path: string, attr: string, value: Uint8Array): Promise<void>;
-    function setModificationTime(path: string, modification?: number): Promise<number>;
-    function setPermissions(path: string, permissions: number, honorUmask?: boolean): Promise<void>;
-    function setWindowsAttributes(path: string, attrs?: WindowsFileAttributes): Promise<void>;
-    function stat(path: string): Promise<FileInfo>;
-    function write(path: string, data: Uint8Array, options?: WriteOptions): Promise<number>;
-    function writeJSON(path: string, value: any, options?: WriteOptions): Promise<number>;
-    function writeUTF8(path: string, string: string, options?: WriteOptions): Promise<number>;
+declare namespace WebrtcGlobalInformation {
+    var aecDebug: boolean;
+    var aecDebugLogDir: string;
+    function clearAllStats(): void;
+    function clearLogging(): void;
+    function getAllStats(callback: WebrtcGlobalStatisticsCallback, pcIdFilter?: string): void;
+    function getLogging(pattern: string, callback: WebrtcGlobalLoggingCallback): void;
+    function getMediaContext(): WebrtcGlobalMediaContext;
+    function getStatsHistoryPcIds(callback: WebrtcGlobalStatisticsHistoryPcIdsCallback): void;
+    function getStatsHistorySince(callback: WebrtcGlobalStatisticsHistoryCallback, pcIdFilter: string, after?: DOMHighResTimeStamp, sdpAfter?: DOMHighResTimeStamp): void;
 }
+
+interface Console {
+    assert(condition?: boolean, ...data: any[]): void;
+    clear(): void;
+    count(label?: string): void;
+    countReset(label?: string): void;
+    createInstance(options?: ConsoleInstanceOptions): ConsoleInstance;
+    debug(...data: any[]): void;
+    dir(...data: any[]): void;
+    dirxml(...data: any[]): void;
+    error(...data: any[]): void;
+    exception(...data: any[]): void;
+    group(...data: any[]): void;
+    groupCollapsed(...data: any[]): void;
+    groupEnd(): void;
+    info(...data: any[]): void;
+    log(...data: any[]): void;
+    profile(...data: any[]): void;
+    profileEnd(...data: any[]): void;
+    table(...data: any[]): void;
+    time(label?: string): void;
+    timeEnd(label?: string): void;
+    timeLog(label?: string, ...data: any[]): void;
+    timeStamp(data?: any): void;
+    trace(...data: any[]): void;
+    warn(...data: any[]): void;
+}
+
+declare var console: Console;
 
 interface AnyCallback {
     (value: any): any;
@@ -25504,6 +25428,8 @@ type ConstrainBoolean = boolean | ConstrainBooleanParameters;
 type ConstrainDOMString = string | string[] | ConstrainDOMStringParameters;
 type ConstrainDouble = number | ConstrainDoubleRange;
 type ConstrainLong = number | ConstrainLongRange;
+type ContentSecurityPolicy = nsIContentSecurityPolicy;
+type Cookie = nsICookie;
 type CookieList = CookieListItem[];
 type DOMHighResTimeStamp = number;
 type DOMTimeStamp = number;
@@ -25556,6 +25482,7 @@ type HistogramID = string;
 type HistogramKey = string;
 type ImageBitmapSource = CanvasImageSource | Blob | CanvasRenderingContext2D | ImageData;
 type ImageBufferSource = ArrayBufferView | ArrayBuffer | ReadableStream;
+type InputStream = nsIInputStream;
 type Int32List = Int32Array | GLint[];
 type KeyFormat = string;
 type KeyType = string;
@@ -25563,6 +25490,8 @@ type KeyUsage = string;
 type L10nArgs = Record<string, string | number | null>;
 type L10nKey = string | L10nIdArgs;
 type L10nResourceId = string | ResourceId;
+type LoadContext = nsILoadContext;
+type LoadInfo = nsILoadInfo;
 type MLSBytesOrUint8Array = MLSBytes | Uint8Array;
 type MLSBytesOrUint8ArrayOrUTF8String = MLSBytes | Uint8Array | string;
 type MLSClientId = MLSBytes;
@@ -25573,25 +25502,32 @@ type MLSProposal = MLSBytes;
 type MatchGlobOrString = MatchGlob | string;
 type MatchPatternSetOrStringSequence = MatchPatternSet | string[];
 type MessageEventSource = WindowProxy | MessagePort | ServiceWorker;
+type MozChannel = nsIChannel;
+type MozTreeView = nsITreeView;
 type NodeId = number;
 type NodeSize = number;
 type OffscreenRenderingContext = OffscreenCanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext;
 type OnBeforeUnloadEventHandler = OnBeforeUnloadEventHandlerNonNull | null;
 type OnErrorEventHandler = OnErrorEventHandlerNonNull | null;
+type OutputStream = nsIOutputStream;
 type PerformanceEntryList = PerformanceEntry[];
+type Principal = nsIPrincipal;
 type PublicKeyCredentialClientCapabilities = Record<string, boolean>;
 type RTCRtpTransform = RTCRtpScriptTransform;
 type ReadableStreamReader = ReadableStreamDefaultReader | ReadableStreamBYOBReader;
+type ReferrerInfo = nsIReferrerInfo;
+type RemoteTab = nsIRemoteTab;
 type ReportList = Report[];
 type RequestInfo = Request | string;
 type SanitizerAttribute = string | SanitizerAttributeNamespace;
 type SanitizerElement = string | SanitizerElementNamespace;
 type SanitizerElementWithAttributes = string | SanitizerElementNamespaceWithAttributes;
-type SanitizerInput = DocumentFragment | Document;
+type StackFrame = nsIStackFrame;
 type StringOrOpenPopupOptions = string | OpenPopupOptions;
 type StructuredClonable = any;
 type TimerHandler = Function | TrustedScript | string;
 type TrustedType = TrustedHTML | TrustedScript | TrustedScriptURL;
+type URI = nsIURI;
 type Uint32List = Uint32Array | GLuint[];
 type UniFFICallbackInterfaceId = number;
 type UniFFICallbackObjectHandle = number;
@@ -25603,6 +25539,8 @@ type VibratePattern = number | number[];
 type XMLHttpRequestBodyInit = Blob | BufferSource | FormData | URLSearchParams | string;
 type XRWebGLRenderingContext = WebGLRenderingContext | WebGL2RenderingContext;
 type XSLTParameterValue = number | boolean | string | Node | Node[] | XPathResult;
+type XULCommandDispatcher = nsIDOMXULCommandDispatcher;
+type XULControllers = nsIControllers;
 type nsContentPolicyType = number;
 type AlignSetting = "center" | "end" | "left" | "right" | "start";
 type AlphaOption = "discard" | "keep";
@@ -25622,6 +25560,7 @@ type CSSBoxType = "border" | "content" | "margin" | "padding";
 type CSSStyleSheetParsingMode = "agent" | "author" | "user";
 type CacheStorageNamespace = "chrome" | "content";
 type CallbackDebuggerNotificationPhase = "post" | "pre";
+type CanvasContextProperties = "both" | "fill" | "none" | "stroke";
 type CanvasDirection = "inherit" | "ltr" | "rtl";
 type CanvasFontKerning = "auto" | "none" | "normal";
 type CanvasFontStretch = "condensed" | "expanded" | "extra-condensed" | "extra-expanded" | "normal" | "semi-condensed" | "semi-expanded" | "ultra-condensed" | "ultra-expanded";
@@ -25696,7 +25635,7 @@ type GPUTextureDimension = "1d" | "2d" | "3d";
 type GPUTextureFormat = "astc-10x10-unorm" | "astc-10x10-unorm-srgb" | "astc-10x5-unorm" | "astc-10x5-unorm-srgb" | "astc-10x6-unorm" | "astc-10x6-unorm-srgb" | "astc-10x8-unorm" | "astc-10x8-unorm-srgb" | "astc-12x10-unorm" | "astc-12x10-unorm-srgb" | "astc-12x12-unorm" | "astc-12x12-unorm-srgb" | "astc-4x4-unorm" | "astc-4x4-unorm-srgb" | "astc-5x4-unorm" | "astc-5x4-unorm-srgb" | "astc-5x5-unorm" | "astc-5x5-unorm-srgb" | "astc-6x5-unorm" | "astc-6x5-unorm-srgb" | "astc-6x6-unorm" | "astc-6x6-unorm-srgb" | "astc-8x5-unorm" | "astc-8x5-unorm-srgb" | "astc-8x6-unorm" | "astc-8x6-unorm-srgb" | "astc-8x8-unorm" | "astc-8x8-unorm-srgb" | "bc1-rgba-unorm" | "bc1-rgba-unorm-srgb" | "bc2-rgba-unorm" | "bc2-rgba-unorm-srgb" | "bc3-rgba-unorm" | "bc3-rgba-unorm-srgb" | "bc4-r-snorm" | "bc4-r-unorm" | "bc5-rg-snorm" | "bc5-rg-unorm" | "bc6h-rgb-float" | "bc6h-rgb-ufloat" | "bc7-rgba-unorm" | "bc7-rgba-unorm-srgb" | "bgra8unorm" | "bgra8unorm-srgb" | "depth16unorm" | "depth24plus" | "depth24plus-stencil8" | "depth32float" | "depth32float-stencil8" | "eac-r11snorm" | "eac-r11unorm" | "eac-rg11snorm" | "eac-rg11unorm" | "etc2-rgb8a1unorm" | "etc2-rgb8a1unorm-srgb" | "etc2-rgb8unorm" | "etc2-rgb8unorm-srgb" | "etc2-rgba8unorm" | "etc2-rgba8unorm-srgb" | "r16float" | "r16sint" | "r16uint" | "r32float" | "r32sint" | "r32uint" | "r8sint" | "r8snorm" | "r8uint" | "r8unorm" | "rg11b10ufloat" | "rg16float" | "rg16sint" | "rg16uint" | "rg32float" | "rg32sint" | "rg32uint" | "rg8sint" | "rg8snorm" | "rg8uint" | "rg8unorm" | "rgb10a2uint" | "rgb10a2unorm" | "rgb9e5ufloat" | "rgba16float" | "rgba16sint" | "rgba16uint" | "rgba32float" | "rgba32sint" | "rgba32uint" | "rgba8sint" | "rgba8snorm" | "rgba8uint" | "rgba8unorm" | "rgba8unorm-srgb" | "stencil8";
 type GPUTextureSampleType = "depth" | "float" | "sint" | "uint" | "unfilterable-float";
 type GPUTextureViewDimension = "1d" | "2d" | "2d-array" | "3d" | "cube" | "cube-array";
-type GPUVertexFormat = "float16x2" | "float16x4" | "float32" | "float32x2" | "float32x3" | "float32x4" | "sint16x2" | "sint16x4" | "sint32" | "sint32x2" | "sint32x3" | "sint32x4" | "sint8x2" | "sint8x4" | "snorm16x2" | "snorm16x4" | "snorm8x2" | "snorm8x4" | "uint16x2" | "uint16x4" | "uint32" | "uint32x2" | "uint32x3" | "uint32x4" | "uint8x2" | "uint8x4" | "unorm10-10-10-2" | "unorm16x2" | "unorm16x4" | "unorm8x2" | "unorm8x4";
+type GPUVertexFormat = "float16" | "float16x2" | "float16x4" | "float32" | "float32x2" | "float32x3" | "float32x4" | "sint16" | "sint16x2" | "sint16x4" | "sint32" | "sint32x2" | "sint32x3" | "sint32x4" | "sint8" | "sint8x2" | "sint8x4" | "snorm16" | "snorm16x2" | "snorm16x4" | "snorm8" | "snorm8x2" | "snorm8x4" | "uint16" | "uint16x2" | "uint16x4" | "uint32" | "uint32x2" | "uint32x3" | "uint32x4" | "uint8" | "uint8x2" | "uint8x4" | "unorm10-10-10-2" | "unorm16" | "unorm16x2" | "unorm16x4" | "unorm8" | "unorm8x2" | "unorm8x4" | "unorm8x4-bgra";
 type GPUVertexStepMode = "instance" | "vertex";
 type GamepadHand = "" | "left" | "right";
 type GamepadHapticActuatorType = "vibration";
@@ -25814,6 +25753,7 @@ type RequestPriority = "auto" | "high" | "low";
 type RequestRedirect = "error" | "follow" | "manual";
 type ResizeObserverBoxOptions = "border-box" | "content-box" | "device-pixel-content-box";
 type ResponseType = "basic" | "cors" | "default" | "error" | "opaque" | "opaqueredirect";
+type SanitizerPresets = "default";
 type ScreenColorGamut = "p3" | "rec2020" | "srgb";
 type ScrollBehavior = "auto" | "instant" | "smooth";
 type ScrollLogicalPosition = "center" | "end" | "nearest" | "start";
@@ -25874,10 +25814,6 @@ type mozPacketDumpType = "rtcp" | "rtp" | "srtcp" | "srtp";
 /// Window Iterable APIs
 /////////////////////////////
 
-interface AbortSignal {
-    any(signals: Iterable<AbortSignal>): AbortSignal;
-}
-
 interface AudioParam {
     setValueCurveAtTime(values: Iterable<number>, startTime: number, duration: number): AudioParam;
 }
@@ -25908,10 +25844,6 @@ interface CSSStyleDeclaration {
 
 interface Cache {
     addAll(requests: Iterable<RequestInfo>): Promise<void>;
-}
-
-interface CanonicalBrowsingContext {
-    countSiteOrigins(roots: Iterable<BrowsingContext>): number;
 }
 
 interface CanvasPathDrawingStyles {
@@ -26069,10 +26001,6 @@ interface IntlUtils {
     getDisplayNames(locales: Iterable<string>, options?: DisplayNameOptions): DisplayNameResult;
 }
 
-interface L10nFileSource {
-    createMock(name: string, metasource: string, locales: Iterable<string>, prePath: string, fs: Iterable<L10nFileSourceMockFile>): L10nFileSource;
-}
-
 interface L10nRegistry {
     generateBundles(aLocales: Iterable<string>, aResourceIds: Iterable<L10nResourceId>): FluentBundleAsyncIterator;
     generateBundlesSync(aLocales: Iterable<string>, aResourceIds: Iterable<L10nResourceId>): FluentBundleIterator;
@@ -26190,6 +26118,10 @@ interface SVGLengthList {
 
 interface SVGNumberList {
     [Symbol.iterator](): IterableIterator<SVGNumber>;
+}
+
+interface SVGPathData {
+    setPathData(pathData: Iterable<SVGPathSegment>): void;
 }
 
 interface SVGPointList {
@@ -26378,10 +26310,6 @@ interface WebGLRenderingContextBase {
     vertexAttrib2fv(indx: GLuint, values: Iterable<GLfloat>): void;
     vertexAttrib3fv(indx: GLuint, values: Iterable<GLfloat>): void;
     vertexAttrib4fv(indx: GLuint, values: Iterable<GLfloat>): void;
-}
-
-interface WebSocket {
-    createServerWebSocket(url: string, protocols: Iterable<string>, transportProvider: nsITransportProvider, negotiatedExtensions: string): WebSocket;
 }
 
 interface Window {

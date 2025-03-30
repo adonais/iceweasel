@@ -161,10 +161,10 @@ class ArrayBufferDataStream {
       return bytes
     }
 
-    writeBytes(uint8Array) {
-      this.writeUint32(uint8Array.length);
+    writeBytes(value) {
+      this.writeUint32(value.length);
       value.forEach((elt) => {
-        dataStream.writeUint8(elt);
+        this.writeUint8(elt);
       })
     }
 
@@ -172,7 +172,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerSprite() {
-        const pointerId = 19; // sprites:Sprite
+        const pointerId = 20; // sprites:Sprite
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -182,7 +182,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerSprite(value) {
-        const pointerId = 19; // sprites:Sprite
+        const pointerId = 20; // sprites:Sprite
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -246,6 +246,37 @@ class FfiConverterArrayBuffer extends FfiConverter {
         this.write(dataStream, value);
         return buf;
     }
+
+    /**
+     * Computes the size of the value.
+     *
+     * @param {*} _value
+     * @return {number}
+     */
+    static computeSize(_value) {
+        throw new UniFFIInternalError("computeSize() should be declared in the derived class");
+    }
+
+    /**
+     * Reads the type from a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @returns {any}
+     */
+    static read(_dataStream) {
+        throw new UniFFIInternalError("read() should be declared in the derived class");
+    }
+
+    /**
+     * Writes the type to a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @param {any} _value
+     */
+    static write(_dataStream, _value) {
+        throw new UniFFIInternalError("write() should be declared in the derived class");
+    }
+
 }
 
 // Symbols that are used to ensure that Object constructors
@@ -256,7 +287,7 @@ UnitTestObjs.uniffiObjectPtr = uniffiObjectPtr;
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterF64 extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -317,7 +348,7 @@ export class Sprite {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -339,7 +370,7 @@ export class Sprite {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                196, // sprites:uniffi_uniffi_sprites_fn_constructor_sprite_new
+                200, // sprites:uniffi_uniffi_sprites_fn_constructor_sprite_new
                 FfiConverterOptionalTypePoint.lower(initialPosition),
             )
         }
@@ -373,7 +404,7 @@ export class Sprite {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                197, // sprites:uniffi_uniffi_sprites_fn_constructor_sprite_new_relative_to
+                201, // sprites:uniffi_uniffi_sprites_fn_constructor_sprite_new_relative_to
                 FfiConverterTypePoint.lower(reference),
                 FfiConverterTypeVector.lower(direction),
             )
@@ -393,7 +424,7 @@ export class Sprite {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callAsyncWrapper(
-                193, // sprites:uniffi_uniffi_sprites_fn_method_sprite_get_position
+                197, // sprites:uniffi_uniffi_sprites_fn_method_sprite_get_position
                 FfiConverterTypeSprite.lower(this),
             )
         }
@@ -420,7 +451,7 @@ export class Sprite {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                194, // sprites:uniffi_uniffi_sprites_fn_method_sprite_move_by
+                198, // sprites:uniffi_uniffi_sprites_fn_method_sprite_move_by
                 FfiConverterTypeSprite.lower(this),
                 FfiConverterTypeVector.lower(direction),
             )
@@ -448,7 +479,7 @@ export class Sprite {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                195, // sprites:uniffi_uniffi_sprites_fn_method_sprite_move_to
+                199, // sprites:uniffi_uniffi_sprites_fn_method_sprite_move_to
                 FfiConverterTypeSprite.lower(this),
                 FfiConverterTypePoint.lower(position),
             )
@@ -495,7 +526,7 @@ export class FfiConverterTypeSprite extends FfiConverter {
  * Point
  */
 export class Point {
-    constructor({ x, y } = {}) {
+    constructor({ x, y }) {
         try {
             FfiConverterF64.checkType(x)
         } catch (e) {
@@ -578,7 +609,7 @@ export class FfiConverterTypePoint extends FfiConverterArrayBuffer {
  * Vector
  */
 export class Vector {
-    constructor({ dx, dy } = {}) {
+    constructor({ dx, dy }) {
         try {
             FfiConverterF64.checkType(dx)
         } catch (e) {
@@ -673,7 +704,7 @@ export class FfiConverterOptionalTypePoint extends FfiConverterArrayBuffer {
             case 1:
                 return FfiConverterTypePoint.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -724,7 +755,7 @@ export function translate(p,v) {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                192, // sprites:uniffi_uniffi_sprites_fn_func_translate
+                196, // sprites:uniffi_uniffi_sprites_fn_func_translate
                 FfiConverterTypePoint.lower(p),
                 FfiConverterTypeVector.lower(v),
             )

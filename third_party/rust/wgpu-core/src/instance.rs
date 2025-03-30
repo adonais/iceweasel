@@ -1,5 +1,12 @@
-use std::sync::Arc;
-use std::{borrow::Cow, collections::HashMap};
+use alloc::{
+    borrow::{Cow, ToOwned as _},
+    boxed::Box,
+    string::String,
+    sync::Arc,
+    vec::Vec,
+};
+
+use hashbrown::HashMap;
 
 use crate::{
     api_log, api_log_debug,
@@ -73,8 +80,7 @@ impl Instance {
                 let hal_desc = hal::InstanceDescriptor {
                     name: "wgpu",
                     flags: instance_desc.flags,
-                    dx12_shader_compiler: instance_desc.dx12_shader_compiler.clone(),
-                    gles_minor_version: instance_desc.gles_minor_version,
+                    backend_options: instance_desc.backend_options.clone(),
                 };
 
                 use hal::Instance as _;
@@ -106,9 +112,11 @@ impl Instance {
         init(hal::api::Dx12, instance_desc, &mut instance_per_backend);
         #[cfg(gles)]
         init(hal::api::Gles, instance_desc, &mut instance_per_backend);
+        #[cfg(feature = "noop")]
+        init(hal::api::Noop, instance_desc, &mut instance_per_backend);
 
         Self {
-            name: name.to_string(),
+            name: name.to_owned(),
             instance_per_backend,
             flags: instance_desc.flags,
         }
@@ -200,7 +208,7 @@ impl Instance {
     #[cfg(metal)]
     pub unsafe fn create_surface_metal(
         &self,
-        layer: *mut std::ffi::c_void,
+        layer: *mut core::ffi::c_void,
     ) -> Result<Surface, CreateSurfaceError> {
         profiling::scope!("Instance::create_surface_metal");
 
@@ -225,7 +233,7 @@ impl Instance {
 
         let surface = Surface {
             presentation: Mutex::new(rank::SURFACE_PRESENTATION, None),
-            surface_per_backend: std::iter::once((Backend::Metal, raw_surface)).collect(),
+            surface_per_backend: core::iter::once((Backend::Metal, raw_surface)).collect(),
         };
 
         Ok(surface)
@@ -242,7 +250,7 @@ impl Instance {
 
         let surface = Surface {
             presentation: Mutex::new(rank::SURFACE_PRESENTATION, None),
-            surface_per_backend: std::iter::once((Backend::Dx12, surface)).collect(),
+            surface_per_backend: core::iter::once((Backend::Dx12, surface)).collect(),
         };
 
         Ok(surface)
@@ -254,7 +262,7 @@ impl Instance {
     /// The visual must be valid and able to be used to make a swapchain with.
     pub unsafe fn create_surface_from_visual(
         &self,
-        visual: *mut std::ffi::c_void,
+        visual: *mut core::ffi::c_void,
     ) -> Result<Surface, CreateSurfaceError> {
         profiling::scope!("Instance::instance_create_surface_from_visual");
         self.create_surface_dx12(|inst| unsafe { inst.create_surface_from_visual(visual) })
@@ -266,7 +274,7 @@ impl Instance {
     /// The surface_handle must be valid and able to be used to make a swapchain with.
     pub unsafe fn create_surface_from_surface_handle(
         &self,
-        surface_handle: *mut std::ffi::c_void,
+        surface_handle: *mut core::ffi::c_void,
     ) -> Result<Surface, CreateSurfaceError> {
         profiling::scope!("Instance::instance_create_surface_from_surface_handle");
         self.create_surface_dx12(|inst| unsafe {
@@ -280,7 +288,7 @@ impl Instance {
     /// The swap_chain_panel must be valid and able to be used to make a swapchain with.
     pub unsafe fn create_surface_from_swap_chain_panel(
         &self,
-        swap_chain_panel: *mut std::ffi::c_void,
+        swap_chain_panel: *mut core::ffi::c_void,
     ) -> Result<Surface, CreateSurfaceError> {
         profiling::scope!("Instance::instance_create_surface_from_swap_chain_panel");
         self.create_surface_dx12(|inst| unsafe {
@@ -616,11 +624,17 @@ impl Adapter {
         hal_device: hal::DynOpenDevice,
         desc: &DeviceDescriptor,
         instance_flags: wgt::InstanceFlags,
-        trace_path: Option<&std::path::Path>,
+        trace_dir_name: Option<&str>,
     ) -> Result<(Arc<Device>, Arc<Queue>), RequestDeviceError> {
         api_log!("Adapter::create_device");
 
-        let device = Device::new(hal_device.device, self, desc, trace_path, instance_flags)?;
+        let device = Device::new(
+            hal_device.device,
+            self,
+            desc,
+            trace_dir_name,
+            instance_flags,
+        )?;
         let device = Arc::new(device);
 
         let queue = Queue::new(device.clone(), hal_device.queue)?;
@@ -635,7 +649,7 @@ impl Adapter {
         self: &Arc<Self>,
         desc: &DeviceDescriptor,
         instance_flags: wgt::InstanceFlags,
-        trace_path: Option<&std::path::Path>,
+        trace_dir_name: Option<&str>,
     ) -> Result<(Arc<Device>, Arc<Queue>), RequestDeviceError> {
         // Verify all features were exposed by the adapter
         if !self.raw.features.contains(desc.required_features) {
@@ -682,7 +696,7 @@ impl Adapter {
         }
         .map_err(DeviceError::from_hal)?;
 
-        self.create_device_and_queue_from_hal(open, desc, instance_flags, trace_path)
+        self.create_device_and_queue_from_hal(open, desc, instance_flags, trace_dir_name)
     }
 }
 
@@ -764,7 +778,7 @@ impl Global {
     #[cfg(metal)]
     pub unsafe fn instance_create_surface_metal(
         &self,
-        layer: *mut std::ffi::c_void,
+        layer: *mut core::ffi::c_void,
         id_in: Option<SurfaceId>,
     ) -> Result<SurfaceId, CreateSurfaceError> {
         let surface = unsafe { self.instance.create_surface_metal(layer) }?;
@@ -778,7 +792,7 @@ impl Global {
     /// The visual must be valid and able to be used to make a swapchain with.
     pub unsafe fn instance_create_surface_from_visual(
         &self,
-        visual: *mut std::ffi::c_void,
+        visual: *mut core::ffi::c_void,
         id_in: Option<SurfaceId>,
     ) -> Result<SurfaceId, CreateSurfaceError> {
         let surface = unsafe { self.instance.create_surface_from_visual(visual) }?;
@@ -792,7 +806,7 @@ impl Global {
     /// The surface_handle must be valid and able to be used to make a swapchain with.
     pub unsafe fn instance_create_surface_from_surface_handle(
         &self,
-        surface_handle: *mut std::ffi::c_void,
+        surface_handle: *mut core::ffi::c_void,
         id_in: Option<SurfaceId>,
     ) -> Result<SurfaceId, CreateSurfaceError> {
         let surface = unsafe {
@@ -809,7 +823,7 @@ impl Global {
     /// The swap_chain_panel must be valid and able to be used to make a swapchain with.
     pub unsafe fn instance_create_surface_from_swap_chain_panel(
         &self,
-        swap_chain_panel: *mut std::ffi::c_void,
+        swap_chain_panel: *mut core::ffi::c_void,
         id_in: Option<SurfaceId>,
     ) -> Result<SurfaceId, CreateSurfaceError> {
         let surface = unsafe {
@@ -923,7 +937,7 @@ impl Global {
         &self,
         adapter_id: AdapterId,
         desc: &DeviceDescriptor,
-        trace_path: Option<&std::path::Path>,
+        trace_dir_name: Option<&str>,
         device_id_in: Option<DeviceId>,
         queue_id_in: Option<QueueId>,
     ) -> Result<(DeviceId, QueueId), RequestDeviceError> {
@@ -935,7 +949,7 @@ impl Global {
 
         let adapter = self.hub.adapters.get(adapter_id);
         let (device, queue) =
-            adapter.create_device_and_queue(desc, self.instance.flags, trace_path)?;
+            adapter.create_device_and_queue(desc, self.instance.flags, trace_dir_name)?;
 
         let device_id = device_fid.assign(device);
         resource_log!("Created Device {:?}", device_id);
@@ -955,7 +969,7 @@ impl Global {
         adapter_id: AdapterId,
         hal_device: hal::DynOpenDevice,
         desc: &DeviceDescriptor,
-        trace_path: Option<&std::path::Path>,
+        trace_dir_name: Option<&str>,
         device_id_in: Option<DeviceId>,
         queue_id_in: Option<QueueId>,
     ) -> Result<(DeviceId, QueueId), RequestDeviceError> {
@@ -969,7 +983,7 @@ impl Global {
             hal_device,
             desc,
             self.instance.flags,
-            trace_path,
+            trace_dir_name,
         )?;
 
         let device_id = devices_fid.assign(device);
@@ -980,39 +994,4 @@ impl Global {
 
         Ok((device_id, queue_id))
     }
-}
-
-/// Generates a set of backends from a comma separated list of case-insensitive backend names.
-///
-/// Whitespace is stripped, so both 'gl, dx12' and 'gl,dx12' are valid.
-///
-/// Always returns WEBGPU on wasm over webgpu.
-///
-/// Names:
-/// - vulkan = "vulkan" or "vk"
-/// - dx12   = "dx12" or "d3d12"
-/// - metal  = "metal" or "mtl"
-/// - gles   = "opengl" or "gles" or "gl"
-/// - webgpu = "webgpu"
-pub fn parse_backends_from_comma_list(string: &str) -> Backends {
-    let mut backends = Backends::empty();
-    for backend in string.to_lowercase().split(',') {
-        backends |= match backend.trim() {
-            "vulkan" | "vk" => Backends::VULKAN,
-            "dx12" | "d3d12" => Backends::DX12,
-            "metal" | "mtl" => Backends::METAL,
-            "opengl" | "gles" | "gl" => Backends::GL,
-            "webgpu" => Backends::BROWSER_WEBGPU,
-            b => {
-                log::warn!("unknown backend string '{}'", b);
-                continue;
-            }
-        }
-    }
-
-    if backends.is_empty() {
-        log::warn!("no valid backend strings found!");
-    }
-
-    backends
 }

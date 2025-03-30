@@ -7,6 +7,10 @@
 
 const CONTENT_PAGE = "https://example.com";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ContentTaskUtils: "resource://testing-common/ContentTaskUtils.sys.mjs",
+});
+
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -21,12 +25,14 @@ add_setup(async function setup() {
   registerCleanupFunction(async () => {
     SidebarController.hide();
   });
+  await SidebarController.initializeUIState({ launcherVisible: true });
 });
 
 add_task(async function test_integrated_sidebar() {
   await BrowserTestUtils.withNewTab(CONTENT_PAGE, async function (browser) {
     const { document } = browser.ownerGlobal;
     let sidebar = document.querySelector("sidebar-main");
+    await sidebar.updateComplete;
     let reviewCheckerButton = await TestUtils.waitForCondition(
       () =>
         sidebar.shadowRoot.querySelector(
@@ -288,6 +294,10 @@ add_task(async function test_integrated_sidebar_empty_states() {
 
     BrowserTestUtils.startLoadingURIString(browser, "about:newtab");
     await BrowserTestUtils.browserLoaded(browser);
+
+    // Set review checker to show because it will be hidden by default
+    // on an unsupported page with auto-close enabled
+    await SidebarController.show("viewReviewCheckerSidebar");
     await reviewCheckerSidebarUpdated("about:newtab");
 
     await withReviewCheckerSidebar(async () => {
@@ -424,23 +434,291 @@ add_task(async function test_sidebar_navigation() {
   });
 });
 
-add_task(async function test_no_reliability_available() {
-  Services.fog.testResetFOG();
-  await Services.fog.testFlushAllChildren();
-  await BrowserTestUtils.withNewTab(NEEDS_ANALYSIS_TEST_URL, async () => {
+add_task(async function test_close_sidebar_after_opt_out() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shopping.experience2023.optedIn", 1]],
+  });
+  await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async () => {
     await SidebarController.show("viewReviewCheckerSidebar");
     info("Waiting for sidebar to update.");
-    await reviewCheckerSidebarUpdated(NEEDS_ANALYSIS_TEST_URL);
+    await reviewCheckerSidebarUpdated(PRODUCT_TEST_URL);
+
+    await withReviewCheckerSidebar(async () => {
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded."
+      );
+
+      Assert.ok(shoppingContainer, "Review Checker is loaded");
+
+      await shoppingContainer.updateComplete;
+
+      let shoppingSettings = shoppingContainer.settingsEl;
+      Assert.ok(shoppingSettings, "Got the shopping-settings element");
+
+      let optOutButton = shoppingSettings.optOutButtonEl;
+      Assert.ok(optOutButton, "There should be an opt-out button");
+
+      optOutButton.click();
+    });
+
+    let rcSidebarPanelOpen =
+      SidebarController.isOpen &&
+      SidebarController.currentID == "viewReviewCheckerSidebar";
+    Assert.ok(
+      !rcSidebarPanelOpen,
+      "Review Checker panel is closed after pressing the opt-out button"
+    );
   });
 
-  await Services.fog.testFlushAllChildren();
-  var sawPageEvents =
-    Glean.shopping.surfaceNoReviewReliabilityAvailable.testGetValue();
+  await SpecialPowers.popPrefEnv();
+});
 
-  Assert.equal(sawPageEvents.length, 1);
-  Assert.equal(sawPageEvents[0].category, "shopping");
-  Assert.equal(
-    sawPageEvents[0].name,
-    "surface_no_review_reliability_available"
-  );
+/**
+ * Tests that the shopping-message-bar component does not appear when switching to another page
+ * with an analysis in progress
+ */
+add_task(
+  async function test_inprogress_message_does_not_appear_on_navigation() {
+    await BrowserTestUtils.withNewTab(
+      NEEDS_ANALYSIS_TEST_URL,
+      async browser => {
+        await SidebarController.show("viewReviewCheckerSidebar");
+        info("Waiting for sidebar to update.");
+        await reviewCheckerSidebarUpdated(NEEDS_ANALYSIS_TEST_URL);
+
+        await withReviewCheckerSidebar(async () => {
+          let shoppingContainer = await ContentTaskUtils.waitForCondition(
+            () =>
+              content.document.querySelector("shopping-container")
+                ?.wrappedJSObject,
+            "Review Checker is loaded."
+          );
+
+          /**
+           * Let's ensure the inprogress message-bar is visible so that we can reliability test its
+           * visibility later in the test
+           */
+          let messageBarVisiblePromise = ContentTaskUtils.waitForCondition(
+            () => {
+              return (
+                !!shoppingContainer.shoppingMessageBarEl &&
+                ContentTaskUtils.isVisible(
+                  shoppingContainer.shoppingMessageBarEl
+                )
+              );
+            },
+            "Waiting for shopping-message-bar to be visible"
+          );
+
+          info("Pressing analysis button");
+          let analysisButton =
+            shoppingContainer.unanalyzedProductEl.analysisButtonEl;
+          analysisButton.click();
+
+          await messageBarVisiblePromise;
+        });
+
+        // Load a new page
+        let loadedPromise = BrowserTestUtils.browserLoaded(
+          browser,
+          false,
+          "https://example.com/1"
+        );
+
+        BrowserTestUtils.startLoadingURIString(
+          browser,
+          "https://example.com/1"
+        );
+        info("Loading non-product page");
+        await loadedPromise;
+        await reviewCheckerSidebarUpdated("https://example.com/1");
+
+        await withReviewCheckerSidebar(
+          async args => {
+            const [NEEDS_ANALYSIS_TEST_URL] = args;
+
+            let actor =
+              content.windowGlobalChild.getExistingActor("ReviewChecker");
+            Assert.ok(actor, "Got ReviewCheckerChild actor");
+
+            info(
+              "Calling updateAnalysisStatus to pretend it resolved late from the previous URL after loading a new one"
+            );
+            await actor.updateAnalysisStatus(
+              { status: "pending" },
+              NEEDS_ANALYSIS_TEST_URL
+            );
+
+            let shoppingContainer = await ContentTaskUtils.waitForCondition(
+              () =>
+                content.document.querySelector("shopping-container")
+                  ?.wrappedJSObject,
+              "Review Checker is loaded."
+            );
+
+            // Now, let's ensure the inprogress message-bar is never visible in Review Checker.
+            let messageBarVisiblePromise = ContentTaskUtils.waitForCondition(
+              () => {
+                return (
+                  !!shoppingContainer.shoppingMessageBarEl &&
+                  ContentTaskUtils.isVisible(
+                    shoppingContainer.shoppingMessageBarEl
+                  )
+                );
+              },
+              "Waiting for shopping-message-bar to be visible"
+            );
+
+            // ContentTaskUtils.waitForCondition error message will include "timed out" since it couldn't find the shopping-message-bar.
+            await Assert.rejects(
+              messageBarVisiblePromise,
+              /timed out/,
+              "shopping-message-bar for in-progress analysis should never be visible"
+            );
+
+            Assert.ok(
+              !shoppingContainer.shoppingMessageBarEl,
+              "The shopping message bar element does not exist on non-PDP"
+            );
+          },
+          [NEEDS_ANALYSIS_TEST_URL]
+        );
+      }
+    );
+  }
+);
+
+/**
+ * Tests that the auto-close toggle component is rendered as expected
+ * and that auto-close toggle UI and browser.shopping.experience2023.autoClose.userEnabled
+ * pref update correctly when the toggle is clicked.
+ */
+add_task(async function test_settings_auto_close_toggle() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shopping.experience2023.autoClose.userEnabled", true]],
+  });
+
+  await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async function () {
+    await SidebarController.show("viewReviewCheckerSidebar");
+    await reviewCheckerSidebarUpdated(PRODUCT_TEST_URL);
+
+    await withReviewCheckerSidebar(async () => {
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded"
+      );
+
+      await shoppingContainer.updateComplete;
+
+      let shoppingSettings = shoppingContainer.settingsEl;
+      ok(shoppingSettings, "Got the shopping-settings element");
+
+      let autoCloseToggle = shoppingSettings.autoCloseToggleEl;
+      ok(autoCloseToggle, "There should be an auto-close toggle");
+      ok(
+        autoCloseToggle.hasAttribute("pressed"),
+        "Toggle should have enabled state"
+      );
+
+      let toggleStateChangePromise = ContentTaskUtils.waitForCondition(() => {
+        return !autoCloseToggle.hasAttribute("pressed");
+      }, "Waiting for auto-close toggle state to be disabled");
+      let autoCloseUserEnabledPromise = ContentTaskUtils.waitForEvent(
+        content.document,
+        "autoCloseEnabledByUserChanged"
+      );
+      let autoClosePrefChange = ContentTaskUtils.waitForCondition(
+        () =>
+          !SpecialPowers.getBoolPref(
+            "browser.shopping.experience2023.autoClose.userEnabled"
+          ),
+        "Auto-close pref should be false, but isn't"
+      );
+
+      autoCloseToggle.click();
+
+      Promise.all([
+        await toggleStateChangePromise,
+        await autoCloseUserEnabledPromise,
+        await autoClosePrefChange,
+      ]);
+
+      // Make sure that clicking the toggle updates the pref
+      ok(
+        !SpecialPowers.getBoolPref(
+          "browser.shopping.experience2023.autoClose.userEnabled"
+        ),
+        "autoOpen.userEnabled pref should be false"
+      );
+    });
+    await Services.fog.testFlushAllChildren();
+    let toggledEvents =
+      Glean.shopping.surfaceAutoCloseSettingToggled.testGetValue();
+
+    Assert.equal(toggledEvents.length, 1);
+    Assert.equal(toggledEvents[0].category, "shopping");
+    Assert.equal(toggledEvents[0].name, "surface_auto_close_setting_toggled");
+  });
+  await SpecialPowers.popPrefEnv();
+});
+
+/* Tests that the auto-close toggle UI and browser.shopping.experience2023.autoClose.userEnabled
+ *  pref are updated when auto-close pref is changed outside of toggle action.
+ */
+add_task(async function test_settings_auto_close_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shopping.experience2023.autoClose.userEnabled", true]],
+  });
+
+  await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async function () {
+    await SidebarController.show("viewReviewCheckerSidebar");
+    await reviewCheckerSidebarUpdated(PRODUCT_TEST_URL);
+
+    await withReviewCheckerSidebar(async () => {
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded"
+      );
+
+      await shoppingContainer.updateComplete;
+
+      let shoppingSettings = shoppingContainer.settingsEl;
+      ok(shoppingSettings, "Got the shopping-settings element");
+
+      let autoCloseToggle = shoppingSettings.autoCloseToggleEl;
+      ok(autoCloseToggle, "There should be an auto-close toggle");
+      ok(
+        autoCloseToggle.hasAttribute("pressed"),
+        "Toggle should initially have enabled state"
+      );
+
+      // Confirm that pref update updates the UI and sends autoClose event
+      let toggleStateChangePromise = ContentTaskUtils.waitForCondition(() => {
+        return !autoCloseToggle.hasAttribute("pressed");
+      }, "Waiting for auto-close toggle state to be disabled");
+      let autoCloseUserEnabledPromise = ContentTaskUtils.waitForEvent(
+        content.document,
+        "autoCloseEnabledByUserChanged"
+      );
+
+      await SpecialPowers.popPrefEnv();
+
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.shopping.experience2023.autoClose.userEnabled", false]],
+      });
+
+      Promise.all([
+        await toggleStateChangePromise,
+        await autoCloseUserEnabledPromise,
+      ]);
+    });
+  });
+  await SpecialPowers.popPrefEnv();
 });

@@ -43,20 +43,26 @@ export const ContentTiles = props => {
   useEffect(() => {
     // Run once when ContentTiles mounts to prefill activeMultiSelect
     if (!props.activeMultiSelect) {
-      const newActiveMultiSelect = [];
       const tilesArray = Array.isArray(tiles) ? tiles : [tiles];
 
-      tilesArray.forEach(tile => {
+      tilesArray.forEach((tile, index) => {
         if (tile.type !== "multiselect" || !tile.data) {
           return;
         }
+
+        const multiSelectId = `tile-${index}`;
+        const newActiveMultiSelect = [];
+
         tile.data.forEach(({ id, defaultValue }) => {
           if (defaultValue && id) {
             newActiveMultiSelect.push(id);
           }
         });
+
+        if (newActiveMultiSelect.length) {
+          props.setActiveMultiSelect(newActiveMultiSelect, multiSelectId);
+        }
       });
-      props.setActiveMultiSelect(newActiveMultiSelect);
     }
   }, [tiles]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -74,9 +80,17 @@ export const ContentTiles = props => {
     );
   };
 
+  function getTileMultiSelects(screenMultiSelects, index) {
+    return screenMultiSelects?.[`tile-${index}`];
+  }
+
+  function getTileActiveMultiSelect(activeMultiSelect, index) {
+    return activeMultiSelect?.[`tile-${index}`];
+  }
+
   const renderContentTile = (tile, index = 0) => {
     const isExpanded = expandedTileIndex === index;
-    const { header } = tile;
+    const { header, title, subtitle } = tile;
 
     return (
       <div
@@ -105,6 +119,26 @@ export const ContentTiles = props => {
             <div className="arrow-icon"></div>
           </button>
         )}
+        {(title || subtitle) && (
+          <div
+            className="tile-title-container"
+            id={`tile-title-container-${index}`}
+          >
+            {title && (
+              <Localized text={title}>
+                {/* H1 content is provided by Localized */}
+                {/* eslint-disable-next-line jsx-a11y/heading-has-content */}
+                <h1 className="tile-title" id={`content-tile-title-${index}`} />
+              </Localized>
+            )}
+
+            {subtitle && (
+              <Localized text={subtitle}>
+                <p className="tile-subtitle" />
+              </Localized>
+            )}
+          </div>
+        )}
         {isExpanded || !header ? (
           <div className="tile-content" id={`tile-content-${index}`}>
             {tile.type === "addons-picker" && tile.data && (
@@ -113,6 +147,7 @@ export const ContentTiles = props => {
                 installedAddons={props.installedAddons}
                 message_id={props.messageId}
                 handleAction={props.handleAction}
+                layout={content.position}
               />
             )}
             {["theme", "single-select"].includes(tile.type) && tile.data && (
@@ -133,10 +168,17 @@ export const ContentTiles = props => {
             {tile.type === "multiselect" && tile.data && (
               <MultiSelect
                 content={{ tiles: tile }}
-                screenMultiSelects={props.screenMultiSelects}
+                screenMultiSelects={getTileMultiSelects(
+                  props.screenMultiSelects,
+                  index
+                )}
                 setScreenMultiSelects={props.setScreenMultiSelects}
-                activeMultiSelect={props.activeMultiSelect}
+                activeMultiSelect={getTileActiveMultiSelect(
+                  props.activeMultiSelect,
+                  index
+                )}
                 setActiveMultiSelect={props.setActiveMultiSelect}
+                multiSelectId={`tile-${index}`}
               />
             )}
             {tile.type === "migration-wizard" && (

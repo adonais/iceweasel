@@ -863,6 +863,8 @@ const SHOPPING_MICROSURVEY = {
 };
 
 const OPTED_IN_TIME_PREF = "browser.shopping.experience2023.survey.optedInTime";
+const ONBOARDING_FIRST_IMPRESSION_TIME_PREF =
+  "browser.shopping.experience2023.firstImpressionTime";
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -968,6 +970,19 @@ export class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     });
   }
 
+  setOnBoardingImpressionTime() {
+    const now = Date.now() / 1000;
+    this.AWSendToParent("SPECIAL_ACTION", {
+      type: "SET_PREF",
+      data: {
+        pref: {
+          name: ONBOARDING_FIRST_IMPRESSION_TIME_PREF,
+          value: now,
+        },
+      },
+    });
+  }
+
   handleEvent(event) {
     // Decide when to show/hide onboarding and survey message
     const { productUrl, showOnboarding, data, isSupportedSite, isProductPage } =
@@ -1042,6 +1057,8 @@ export class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     if (this.showMicroSurvey && !this.showOnboarding) {
       messageContent = SHOPPING_MICROSURVEY;
       this.setShoppingSurveySeen();
+    } else {
+      this.setOnBoardingImpressionTime();
     }
     return Cu.cloneInto(messageContent, this.contentWindow);
   }
@@ -1114,14 +1131,6 @@ export class AboutWelcomeShoppingChild extends AboutWelcomeChild {
       switch (
         productUrl // Insert the productUrl into content
       ) {
-        case "www.amazon.fr":
-        case "www.amazon.de":
-          optInScreen.content.subtitle.string_id =
-            "shopping-onboarding-single-subtitle";
-          optInScreen.content.subtitle.args = {
-            currentSite: "Amazon",
-          };
-          break;
         case "www.amazon.com":
           optInScreen.content.subtitle.args = {
             currentSite: "Amazon",
@@ -1149,6 +1158,17 @@ export class AboutWelcomeShoppingChild extends AboutWelcomeChild {
             secondSite: "Walmart",
             thirdSite: "Best Buy",
           };
+      }
+
+      if (
+        Services.prefs.getBoolPref("toolkit.shopping.experience2023.defr") &&
+        (productUrl === "www.amazon.fr" || productUrl === "www.amazon.de")
+      ) {
+        optInScreen.content.subtitle.string_id =
+          "shopping-onboarding-single-subtitle";
+        optInScreen.content.subtitle.args = {
+          currentSite: "Amazon",
+        };
       }
     }
 

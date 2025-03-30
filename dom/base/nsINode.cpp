@@ -341,14 +341,16 @@ class IsItemInRangeComparator {
   }
 
   int operator()(const AbstractRange* const aRange) const {
-    int32_t cmp = nsContentUtils::ComparePoints_Deprecated(
-        &mNode, mEndOffset, aRange->GetMayCrossShadowBoundaryStartContainer(),
-        aRange->MayCrossShadowBoundaryStartOffset(), nullptr, mCache);
-    if (cmp == 1) {
-      cmp = nsContentUtils::ComparePoints_Deprecated(
-          &mNode, mStartOffset, aRange->GetMayCrossShadowBoundaryEndContainer(),
-          aRange->MayCrossShadowBoundaryEndOffset(), nullptr, mCache);
-      if (cmp == -1) {
+    Maybe<int32_t> cmp = nsContentUtils::ComparePoints(
+        ConstRawRangeBoundary(&mNode, mEndOffset,
+                              RangeBoundaryIsMutationObserved::No),
+        aRange->MayCrossShadowBoundaryStartRef(), mCache);
+    if (cmp.valueOr(1) == 1) {
+      cmp = nsContentUtils::ComparePoints(
+          ConstRawRangeBoundary(&mNode, mStartOffset,
+                                RangeBoundaryIsMutationObserved::No),
+          aRange->MayCrossShadowBoundaryEndRef(), mCache);
+      if (cmp.valueOr(1) == -1) {
         return 0;
       }
       return 1;
@@ -433,16 +435,21 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         // if node end > start of middle+1, result = 1
         if (middle + 1 < high &&
             (middlePlus1 = selection->GetAbstractRangeAt(middle + 1)) &&
-            nsContentUtils::ComparePoints_Deprecated(
-                this, aEndOffset, middlePlus1->GetStartContainer(),
-                middlePlus1->StartOffset(), nullptr, &cache) > 0) {
+            nsContentUtils::ComparePoints(
+                ConstRawRangeBoundary(this, aEndOffset,
+                                      RangeBoundaryIsMutationObserved::No),
+                middlePlus1->StartRef(), &cache)
+                    .valueOr(1) > 0) {
           result = 1;
           // if node start < end of middle - 1, result = -1
         } else if (middle >= 1 &&
                    (middleMinus1 = selection->GetAbstractRangeAt(middle - 1)) &&
-                   nsContentUtils::ComparePoints_Deprecated(
-                       this, aStartOffset, middleMinus1->GetEndContainer(),
-                       middleMinus1->EndOffset(), nullptr, &cache) < 0) {
+                   nsContentUtils::ComparePoints(
+                       ConstRawRangeBoundary(
+                           this, aStartOffset,
+                           RangeBoundaryIsMutationObserved::No),
+                       middleMinus1->EndRef(), &cache)
+                           .valueOr(1) < 0) {
           result = -1;
         } else {
           break;
@@ -1887,7 +1894,7 @@ Maybe<uint32_t> nsINode::ComputeIndexOf(const nsINode* aPossibleChild) const {
     return Some(GetChildCount() - 1);
   }
 
-  if (mChildCount >= CACHE_CHILD_LIMIT) {
+  if (MaybeCachesComputedIndex()) {
     const nsINode* child;
     Maybe<uint32_t> maybeChildIndex;
     GetChildAndIndexFromCache(this, &child, &maybeChildIndex);
@@ -1928,7 +1935,7 @@ Maybe<uint32_t> nsINode::ComputeIndexOf(const nsINode* aPossibleChild) const {
   while (current) {
     MOZ_ASSERT(current->GetParentNode() == this);
     if (current == aPossibleChild) {
-      if (mChildCount >= CACHE_CHILD_LIMIT) {
+      if (MaybeCachesComputedIndex()) {
         AddChildAndIndexToCache(this, current, index);
       }
       return Some(index);
@@ -1939,6 +1946,10 @@ Maybe<uint32_t> nsINode::ComputeIndexOf(const nsINode* aPossibleChild) const {
   }
 
   return Nothing();
+}
+
+bool nsINode::MaybeCachesComputedIndex() const {
+  return mChildCount >= CACHE_CHILD_LIMIT;
 }
 
 Maybe<uint32_t> nsINode::ComputeIndexInParentNode() const {
@@ -1955,6 +1966,11 @@ Maybe<uint32_t> nsINode::ComputeIndexInParentContent() const {
     return Nothing();
   }
   return parent->ComputeIndexOf(this);
+}
+
+bool nsINode::MaybeParentCachesComputedIndex() const {
+  nsINode* parent = GetParentNode();
+  return parent && parent->MaybeCachesComputedIndex();
 }
 
 static Maybe<uint32_t> DoComputeFlatTreeIndexOf(FlattenedChildIterator& aIter,

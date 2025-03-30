@@ -53,6 +53,7 @@ __webpack_require__.d(__webpack_exports__, {
   AnnotationEditorUIManager: () => (/* reexport */ AnnotationEditorUIManager),
   AnnotationLayer: () => (/* reexport */ AnnotationLayer),
   AnnotationMode: () => (/* reexport */ AnnotationMode),
+  AnnotationType: () => (/* reexport */ AnnotationType),
   ColorPicker: () => (/* reexport */ ColorPicker),
   DOMSVGFactory: () => (/* reexport */ DOMSVGFactory),
   DrawLayer: () => (/* reexport */ DrawLayer),
@@ -70,6 +71,8 @@ __webpack_require__.d(__webpack_exports__, {
   PixelsPerInch: () => (/* reexport */ PixelsPerInch),
   RenderingCancelledException: () => (/* reexport */ RenderingCancelledException),
   ResponseException: () => (/* reexport */ ResponseException),
+  SignatureExtractor: () => (/* reexport */ SignatureExtractor),
+  SupportedImageMimeTypes: () => (/* reexport */ SupportedImageMimeTypes),
   TextLayer: () => (/* reexport */ TextLayer),
   TouchManager: () => (/* reexport */ TouchManager),
   Util: () => (/* reexport */ Util),
@@ -81,6 +84,7 @@ __webpack_require__.d(__webpack_exports__, {
   getDocument: () => (/* reexport */ getDocument),
   getFilenameFromUrl: () => (/* reexport */ getFilenameFromUrl),
   getPdfFilenameFromUrl: () => (/* reexport */ getPdfFilenameFromUrl),
+  getUuid: () => (/* reexport */ getUuid),
   getXfaPageViewport: () => (/* reexport */ getXfaPageViewport),
   isDataScheme: () => (/* reexport */ isDataScheme),
   isPdfFile: () => (/* reexport */ isPdfFile),
@@ -96,7 +100,6 @@ __webpack_require__.d(__webpack_exports__, {
 const isNodeJS = false;
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
-const MAX_IMAGE_SIZE_TO_CACHE = 10e6;
 const LINE_FACTOR = 1.35;
 const LINE_DESCENT_FACTOR = 0.35;
 const BASELINE_FACTOR = LINE_DESCENT_FACTOR / LINE_FACTOR;
@@ -124,7 +127,8 @@ const AnnotationEditorType = {
   FREETEXT: 3,
   HIGHLIGHT: 9,
   STAMP: 13,
-  INK: 15
+  INK: 15,
+  SIGNATURE: 101
 };
 const AnnotationEditorParamsType = {
   RESIZE: 1,
@@ -412,26 +416,21 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
   if (!url) {
     return null;
   }
-  try {
-    if (options && typeof url === "string") {
-      if (options.addDefaultProtocol && url.startsWith("www.")) {
-        const dots = url.match(/\./g);
-        if (dots?.length >= 2) {
-          url = `http://${url}`;
-        }
-      }
-      if (options.tryConvertEncoding) {
-        try {
-          url = stringToUTF8String(url);
-        } catch {}
+  if (options && typeof url === "string") {
+    if (options.addDefaultProtocol && url.startsWith("www.")) {
+      const dots = url.match(/\./g);
+      if (dots?.length >= 2) {
+        url = `http://${url}`;
       }
     }
-    const absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
-    if (_isValidProtocol(absoluteUrl)) {
-      return absoluteUrl;
+    if (options.tryConvertEncoding) {
+      try {
+        url = stringToUTF8String(url);
+      } catch {}
     }
-  } catch {}
-  return null;
+  }
+  const absoluteUrl = baseUrl ? URL.parse(url, baseUrl) : URL.parse(url);
+  return _isValidProtocol(absoluteUrl) ? absoluteUrl : null;
 }
 function shadow(obj, prop, value, nonSerializable = false) {
   Object.defineProperty(obj, prop, {
@@ -554,9 +553,15 @@ class util_FeatureTest {
     return shadow(this, "isImageDecoderSupported", typeof ImageDecoder !== "undefined");
   }
   static get platform() {
+    const {
+      platform,
+      userAgent
+    } = navigator;
     return shadow(this, "platform", {
-      isMac: navigator.platform.includes("Mac"),
-      isWindows: navigator.platform.includes("Win"),
+      isAndroid: userAgent.includes("Android"),
+      isLinux: platform.includes("Linux"),
+      isMac: platform.includes("Mac"),
+      isWindows: platform.includes("Win"),
       isFirefox: true
     });
   }
@@ -1191,6 +1196,7 @@ class OutputScale {
     return this.sx === this.sy;
   }
 }
+const SupportedImageMimeTypes = ["image/apng", "image/avif", "image/bmp", "image/gif", "image/jpeg", "image/png", "image/svg+xml", "image/webp", "image/x-icon"];
 
 ;// ./src/display/editor/toolbar.js
 
@@ -1200,6 +1206,7 @@ class EditorToolbar {
   #editor;
   #buttons = null;
   #altText = null;
+  #signatureDescriptionButton = null;
   static #l10nRemove = null;
   constructor(editor) {
     this.#editor = editor;
@@ -1207,7 +1214,8 @@ class EditorToolbar {
       freetext: "pdfjs-editor-remove-freetext-button",
       highlight: "pdfjs-editor-remove-highlight-button",
       ink: "pdfjs-editor-remove-ink-button",
-      stamp: "pdfjs-editor-remove-stamp-button"
+      stamp: "pdfjs-editor-remove-stamp-button",
+      signature: "pdfjs-editor-remove-signature-button"
     });
   }
   render() {
@@ -1305,6 +1313,16 @@ class EditorToolbar {
     const button = colorPicker.renderButton();
     this.#addListenersToElement(button);
     this.#buttons.prepend(button, this.#divider);
+  }
+  async addEditSignatureButton(signatureManager) {
+    const button = this.#signatureDescriptionButton = await signatureManager.renderEditButton(this.#editor);
+    this.#addListenersToElement(button);
+    this.#buttons.prepend(button, this.#divider);
+  }
+  updateEditSignatureButton(description) {
+    if (this.#signatureDescriptionButton) {
+      this.#signatureDescriptionButton.title = description;
+    }
   }
   remove() {
     this.#toolbar.remove();
@@ -1815,6 +1833,7 @@ class AnnotationEditorUIManager {
   #mode = AnnotationEditorType.NONE;
   #selectedEditors = new Set();
   #selectedTextNode = null;
+  #signatureManager = null;
   #pageColors = null;
   #showAllStates = null;
   #previousStates = {
@@ -1890,11 +1909,12 @@ class AnnotationEditorUIManager {
       checker: arrowChecker
     }]]));
   }
-  constructor(container, viewer, altTextManager, eventBus, pdfDocument, pageColors, highlightColors, enableHighlightFloatingButton, enableUpdatedAddImage, enableNewAltTextWhenAddingImage, mlManager, editorUndoBar, supportsPinchToZoom) {
+  constructor(container, viewer, altTextManager, signatureManager, eventBus, pdfDocument, pageColors, highlightColors, enableHighlightFloatingButton, enableUpdatedAddImage, enableNewAltTextWhenAddingImage, mlManager, editorUndoBar, supportsPinchToZoom) {
     const signal = this._signal = this.#abortController.signal;
     this.#container = container;
     this.#viewer = viewer;
     this.#altTextManager = altTextManager;
+    this.#signatureManager = signatureManager;
     this._eventBus = eventBus;
     eventBus._on("editingaction", this.onEditingAction.bind(this), {
       signal
@@ -1950,6 +1970,7 @@ class AnnotationEditorUIManager {
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
+    this.#signatureManager?.destroy();
     this.#highlightToolbar?.hide();
     this.#highlightToolbar = null;
     this.#mainHighlightColorPicker?.destroy();
@@ -2002,6 +2023,15 @@ class AnnotationEditorUIManager {
   }
   editAltText(editor, firstTime = false) {
     this.#altTextManager?.editAltText(this, editor, firstTime);
+  }
+  getSignature(editor) {
+    this.#signatureManager?.getSignature({
+      uiManager: this,
+      editor
+    });
+  }
+  get signatureManager() {
+    return this.#signatureManager;
   }
   switchToMode(mode, callback) {
     this._eventBus.on("annotationeditormodechanged", callback, {
@@ -2565,6 +2595,9 @@ class AnnotationEditorUIManager {
       this.#updateModeCapability.resolve();
       return;
     }
+    if (mode === AnnotationEditorType.SIGNATURE) {
+      await this.#signatureManager?.loadSignatures();
+    }
     this.setEditingState(true);
     await this.#enableAll();
     this.unselectAll();
@@ -2588,9 +2621,6 @@ class AnnotationEditorUIManager {
     }
     this.#updateModeCapability.resolve();
   }
-  isInEditingMode() {
-    return this.#mode !== AnnotationEditorType.NONE;
-  }
   addNewEditorFromKeyboard() {
     if (this.currentLayer.canCreateNewEmptyEditor()) {
       this.currentLayer.addNewEditor();
@@ -2611,7 +2641,7 @@ class AnnotationEditorUIManager {
     }
     switch (type) {
       case AnnotationEditorParamsType.CREATE:
-        this.currentLayer.addNewEditor();
+        this.currentLayer.addNewEditor(value);
         return;
       case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
         this.#mainHighlightColorPicker?.updateColor(value);
@@ -2951,6 +2981,7 @@ class AnnotationEditorUIManager {
           for (const editor of editors) {
             if (this.#allEditors.has(editor.id)) {
               editor.translateInPage(totalX, totalY);
+              editor.translationDone();
             }
           }
         },
@@ -2958,6 +2989,7 @@ class AnnotationEditorUIManager {
           for (const editor of editors) {
             if (this.#allEditors.has(editor.id)) {
               editor.translateInPage(-totalX, -totalY);
+              editor.translationDone();
             }
           }
         },
@@ -2966,6 +2998,7 @@ class AnnotationEditorUIManager {
     }, TIME_TO_WAIT);
     for (const editor of editors) {
       editor.translateInPage(x, y);
+      editor.translationDone();
     }
   }
   setUpDragSession() {
@@ -3448,7 +3481,7 @@ class AltText {
     if (!tooltip.parentNode) {
       button.append(tooltip);
     }
-    const element = this.#editor.getImageForAltText();
+    const element = this.#editor.getElementForAltText();
     element?.setAttribute("aria-describedby", tooltip.id);
   }
 }
@@ -3658,6 +3691,7 @@ class AnnotationEditor {
   #prevDragY = 0;
   #telemetryTimeouts = null;
   #touchManager = null;
+  _isCopy = false;
   _editToolbar = null;
   _initialOptions = Object.create(null);
   _initialData = null;
@@ -3874,6 +3908,11 @@ class AnnotationEditor {
     this.y = (y + ty) / height;
     this.fixAndSetPosition();
   }
+  _moveAfterPaste(baseX, baseY) {
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    this.setAt(baseX * parentWidth, baseY * parentHeight, this.width * parentWidth, this.height * parentHeight);
+    this._onTranslated();
+  }
   #translate([width, height], x, y) {
     [x, y] = this.screenToPageTranslation(x, y);
     this.x += x / width;
@@ -3890,6 +3929,9 @@ class AnnotationEditor {
     this.div.scrollIntoView({
       block: "nearest"
     });
+  }
+  translationDone() {
+    this._onTranslated(this.x, this.y);
   }
   drag(tx, ty) {
     this.#initialRect ||= [this.x, this.y, this.width, this.height];
@@ -4370,27 +4412,31 @@ class AnnotationEditor {
     return this.#altText?.hasData() ?? false;
   }
   render() {
-    this.div = document.createElement("div");
-    this.div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
-    this.div.className = this.name;
-    this.div.setAttribute("id", this.id);
-    this.div.tabIndex = this.#disabled ? -1 : 0;
+    const div = this.div = document.createElement("div");
+    div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
+    div.className = this.name;
+    div.setAttribute("id", this.id);
+    div.tabIndex = this.#disabled ? -1 : 0;
+    div.setAttribute("role", "application");
+    if (this.defaultL10nId) {
+      div.setAttribute("data-l10n-id", this.defaultL10nId);
+    }
     if (!this._isVisible) {
-      this.div.classList.add("hidden");
+      div.classList.add("hidden");
     }
     this.setInForeground();
     this.#addFocusListeners();
     const [parentWidth, parentHeight] = this.parentDimensions;
     if (this.parentRotation % 180 !== 0) {
-      this.div.style.maxWidth = `${(100 * parentHeight / parentWidth).toFixed(2)}%`;
-      this.div.style.maxHeight = `${(100 * parentWidth / parentHeight).toFixed(2)}%`;
+      div.style.maxWidth = `${(100 * parentHeight / parentWidth).toFixed(2)}%`;
+      div.style.maxHeight = `${(100 * parentWidth / parentHeight).toFixed(2)}%`;
     }
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
-    bindEvents(this, this.div, ["pointerdown"]);
+    bindEvents(this, div, ["keydown", "pointerdown"]);
     if (this.isResizable && this._uiManager._supportsPinchToZoom) {
       this.#touchManager ||= new TouchManager({
-        container: this.div,
+        container: div,
         isPinchingDisabled: () => !this.isSelected,
         onPinchStart: this.#touchPinchStartCallback.bind(this),
         onPinching: this.#touchPinchCallback.bind(this),
@@ -4399,7 +4445,7 @@ class AnnotationEditor {
       });
     }
     this._uiManager._editorUndoBar?.hide();
-    return this.div;
+    return div;
   }
   #touchPinchStartCallback() {
     this.#savedDimensions = {
@@ -4677,6 +4723,7 @@ class AnnotationEditor {
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
+    editor._isCopy = data.isCopy || false;
     const [pageWidth, pageHeight] = editor.pageDimensions;
     const [x, y, width, height] = editor.getRectInCurrentCoords(data.rect, pageHeight);
     editor.x = x / pageWidth;
@@ -4722,7 +4769,6 @@ class AnnotationEditor {
     if (this.isResizable) {
       this.#createResizers();
       this.#resizersDiv.classList.remove("hidden");
-      bindEvents(this, this.div, ["keydown"]);
     }
   }
   get toolbarPosition() {
@@ -4861,8 +4907,8 @@ class AnnotationEditor {
   disableEditing() {}
   enableEditing() {}
   enterInEditMode() {}
-  getImageForAltText() {
-    return null;
+  getElementForAltText() {
+    return this.div;
   }
   get contentDiv() {
     return this.div;
@@ -5333,12 +5379,13 @@ class FontLoader {
   }
   async loadSystemFont({
     systemFontInfo: info,
+    disableFontFace,
     _inspectFont
   }) {
     if (!info || this.#systemFonts.has(info.loadedName)) {
       return;
     }
-    assert(!this.disableFontFace, "loadSystemFont shouldn't be called when `disableFontFace` is set.");
+    assert(!disableFontFace, "loadSystemFont shouldn't be called when `disableFontFace` is set.");
     if (this.isFontLoadingAPISupported) {
       const {
         loadedName,
@@ -5409,17 +5456,11 @@ class FontLoader {
   }
 }
 class FontFaceObject {
-  constructor(translatedData, {
-    disableFontFace = false,
-    fontExtraProperties = false,
-    inspectFont = null
-  }) {
+  constructor(translatedData, inspectFont = null) {
     this.compiledGlyphs = Object.create(null);
     for (const i in translatedData) {
       this[i] = translatedData[i];
     }
-    this.disableFontFace = disableFontFace === true;
-    this.fontExtraProperties = fontExtraProperties === true;
     this._inspectFont = inspectFont;
   }
   createNativeFontFace() {
@@ -8044,7 +8085,7 @@ class CanvasGraphics {
     this._cachedGetSinglePixelWidth = null;
     ctx.save();
     ctx.transform(...current.textMatrix);
-    ctx.translate(current.x, current.y);
+    ctx.translate(current.x, current.y + current.textRise);
     ctx.scale(textHScale, fontDirection);
     for (i = 0; i < glyphsLength; ++i) {
       glyph = glyphs[i];
@@ -9680,7 +9721,6 @@ class PDFDataTransportStreamRangeReader {
 
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
 const DEFAULT_FONT_SIZE = 30;
-const DEFAULT_FONT_ASCENT = 0.8;
 class TextLayer {
   #capability = Promise.withResolvers();
   #container = null;
@@ -9858,7 +9898,7 @@ class TextLayer {
     let fontFamily = this.#fontInspectorEnabled && style.fontSubstitution || style.fontFamily;
     fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
     const fontHeight = Math.hypot(tx[2], tx[3]);
-    const fontAscent = fontHeight * TextLayer.#getAscent(fontFamily, this.#lang);
+    const fontAscent = fontHeight * TextLayer.#getAscent(fontFamily, style, this.#lang);
     let left, top;
     if (angle === 0) {
       left = tx[4];
@@ -10004,7 +10044,7 @@ class TextLayer {
     this.#minFontSize = div.getBoundingClientRect().height;
     div.remove();
   }
-  static #getAscent(fontFamily, lang) {
+  static #getAscent(fontFamily, style, lang) {
     const cachedAscent = this.#ascentCache.get(fontFamily);
     if (cachedAscent) {
       return cachedAscent;
@@ -10013,37 +10053,20 @@ class TextLayer {
     ctx.canvas.width = ctx.canvas.height = DEFAULT_FONT_SIZE;
     this.#ensureCtxFont(ctx, DEFAULT_FONT_SIZE, fontFamily);
     const metrics = ctx.measureText("");
-    let ascent = metrics.fontBoundingBoxAscent;
-    let descent = Math.abs(metrics.fontBoundingBoxDescent);
-    if (ascent) {
-      const ratio = ascent / (ascent + descent);
-      this.#ascentCache.set(fontFamily, ratio);
-      ctx.canvas.width = ctx.canvas.height = 0;
-      return ratio;
-    }
-    ctx.strokeStyle = "red";
-    ctx.clearRect(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE);
-    ctx.strokeText("g", 0, 0);
-    let pixels = ctx.getImageData(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE).data;
-    descent = 0;
-    for (let i = pixels.length - 1 - 3; i >= 0; i -= 4) {
-      if (pixels[i] > 0) {
-        descent = Math.ceil(i / 4 / DEFAULT_FONT_SIZE);
-        break;
-      }
-    }
-    ctx.clearRect(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE);
-    ctx.strokeText("A", 0, DEFAULT_FONT_SIZE);
-    pixels = ctx.getImageData(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE).data;
-    ascent = 0;
-    for (let i = 0, ii = pixels.length; i < ii; i += 4) {
-      if (pixels[i] > 0) {
-        ascent = DEFAULT_FONT_SIZE - Math.floor(i / 4 / DEFAULT_FONT_SIZE);
-        break;
-      }
-    }
+    const ascent = metrics.fontBoundingBoxAscent;
+    const descent = Math.abs(metrics.fontBoundingBoxDescent);
     ctx.canvas.width = ctx.canvas.height = 0;
-    const ratio = ascent ? ascent / (ascent + descent) : DEFAULT_FONT_ASCENT;
+    let ratio = 0.8;
+    if (ascent) {
+      ratio = ascent / (ascent + descent);
+    } else {
+      warn("Enable the `dom.textMetrics.fontBoundingBox.enabled` preference " + "in `about:config` to improve TextLayer rendering.");
+      if (style.ascent) {
+        ratio = style.ascent;
+      } else if (style.descent) {
+        ratio = 1 + style.descent;
+      }
+    }
     this.#ascentCache.set(fontFamily, ratio);
     return ratio;
   }
@@ -10116,7 +10139,6 @@ class XfaText {
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536;
 const RENDERING_CANCELLED_TIMEOUT = 100;
-const DELAYED_CLEANUP_TIMEOUT = 5000;
 function getDocument(src = {}) {
   const task = new PDFDocumentLoadingTask();
   const {
@@ -10132,12 +10154,12 @@ function getDocument(src = {}) {
   let worker = src.worker instanceof PDFWorker ? src.worker : null;
   const verbosity = src.verbosity;
   const docBaseUrl = typeof src.docBaseUrl === "string" && !isDataScheme(src.docBaseUrl) ? src.docBaseUrl : null;
-  const cMapUrl = typeof src.cMapUrl === "string" ? src.cMapUrl : null;
+  const cMapUrl = getFactoryUrlProp(src.cMapUrl);
   const cMapPacked = src.cMapPacked !== false;
   const CMapReaderFactory = src.CMapReaderFactory || DOMCMapReaderFactory;
-  const standardFontDataUrl = typeof src.standardFontDataUrl === "string" ? src.standardFontDataUrl : null;
+  const standardFontDataUrl = getFactoryUrlProp(src.standardFontDataUrl);
   const StandardFontDataFactory = src.StandardFontDataFactory || DOMStandardFontDataFactory;
-  const wasmUrl = typeof src.wasmUrl === "string" ? src.wasmUrl : null;
+  const wasmUrl = getFactoryUrlProp(src.wasmUrl);
   const WasmFactory = src.WasmFactory || DOMWasmFactory;
   const ignoreErrors = src.stopAtErrors !== true;
   const maxImageSize = Number.isInteger(src.maxImageSize) && src.maxImageSize > -1 ? src.maxImageSize : -1;
@@ -10156,6 +10178,7 @@ function getDocument(src = {}) {
   const CanvasFactory = src.CanvasFactory || DOMCanvasFactory;
   const FilterFactory = src.FilterFactory || DOMFilterFactory;
   const enableHWA = src.enableHWA === true;
+  const useWasm = src.useWasm !== false;
   const length = rangeTransport ? rangeTransport.length : src.length ?? NaN;
   const useSystemFonts = typeof src.useSystemFonts === "boolean" ? src.useSystemFonts : !isNodeJS && !disableFontFace;
   const useWorkerFetch = typeof src.useWorkerFetch === "boolean" ? src.useWorkerFetch : true;
@@ -10184,7 +10207,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.0.44",
+    apiVersion: "5.0.254",
     data,
     password,
     disableAutoFetch,
@@ -10202,14 +10225,14 @@ function getDocument(src = {}) {
       canvasMaxAreaInBytes,
       fontExtraProperties,
       useSystemFonts,
-      cMapUrl: useWorkerFetch ? cMapUrl : null,
-      standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null,
-      wasmUrl: useWorkerFetch ? wasmUrl : null
+      useWasm,
+      useWorkerFetch,
+      cMapUrl,
+      standardFontDataUrl,
+      wasmUrl
     }
   };
   const transportParams = {
-    disableFontFace,
-    fontExtraProperties,
     ownerDocument,
     pdfBug,
     styleElement,
@@ -10264,6 +10287,15 @@ function getDataProp(val) {
     return new Uint8Array(val);
   }
   throw new Error("Invalid PDF binary data: either TypedArray, " + "string, or array-like object is expected in the data property.");
+}
+function getFactoryUrlProp(val) {
+  if (typeof val !== "string") {
+    return null;
+  }
+  if (val.endsWith("/")) {
+    return val;
+  }
+  throw new Error(`Invalid factory url: "${val}" must include trailing slash.`);
 }
 function isRefProxy(ref) {
   return typeof ref === "object" && Number.isInteger(ref?.num) && ref.num >= 0 && Number.isInteger(ref?.gen) && ref.gen >= 0;
@@ -10462,7 +10494,6 @@ class PDFDocumentProxy {
   }
 }
 class PDFPageProxy {
-  #delayedCleanupTimeout = null;
   #pendingCleanup = false;
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
     this._pageIndex = pageIndex;
@@ -10472,7 +10503,6 @@ class PDFPageProxy {
     this._pdfBug = pdfBug;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
-    this._maybeCleanupAfterRender = false;
     this._intentStates = new Map();
     this.destroyed = false;
   }
@@ -10548,7 +10578,6 @@ class PDFPageProxy {
       cacheKey
     } = intentArgs;
     this.#pendingCleanup = false;
-    this.#abortDelayedCleanup();
     optionalContentConfigPromise ||= this._transport.getOptionalContentConfig(renderingIntent);
     let intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
@@ -10573,10 +10602,10 @@ class PDFPageProxy {
     }
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
-      if (this._maybeCleanupAfterRender || intentPrint) {
+      if (intentPrint) {
         this.#pendingCleanup = true;
       }
-      this.#tryCleanup(!intentPrint);
+      this.#tryCleanup();
       if (error) {
         internalRenderTask.capability.reject(error);
         this._abortOperatorList({
@@ -10708,27 +10737,18 @@ class PDFPageProxy {
     }
     this.objs.clear();
     this.#pendingCleanup = false;
-    this.#abortDelayedCleanup();
     return Promise.all(waitOn);
   }
   cleanup(resetStats = false) {
     this.#pendingCleanup = true;
-    const success = this.#tryCleanup(false);
+    const success = this.#tryCleanup();
     if (resetStats && success) {
       this._stats &&= new StatTimer();
     }
     return success;
   }
-  #tryCleanup(delayed = false) {
-    this.#abortDelayedCleanup();
+  #tryCleanup() {
     if (!this.#pendingCleanup || this.destroyed) {
-      return false;
-    }
-    if (delayed) {
-      this.#delayedCleanupTimeout = setTimeout(() => {
-        this.#delayedCleanupTimeout = null;
-        this.#tryCleanup(false);
-      }, DELAYED_CLEANUP_TIMEOUT);
       return false;
     }
     for (const {
@@ -10743,12 +10763,6 @@ class PDFPageProxy {
     this.objs.clear();
     this.#pendingCleanup = false;
     return true;
-  }
-  #abortDelayedCleanup() {
-    if (this.#delayedCleanupTimeout) {
-      clearTimeout(this.#delayedCleanupTimeout);
-      this.#delayedCleanupTimeout = null;
-    }
   }
   _startRenderPage(transparency, cacheKey) {
     const intentState = this._intentStates.get(cacheKey);
@@ -10769,7 +10783,7 @@ class PDFPageProxy {
       internalRenderTask.operatorListChanged();
     }
     if (operatorListChunk.lastChunk) {
-      this.#tryCleanup(true);
+      this.#tryCleanup();
     }
   }
   _pumpOperatorList({
@@ -10816,7 +10830,7 @@ class PDFPageProxy {
           for (const internalRenderTask of intentState.renderTasks) {
             internalRenderTask.operatorListChanged();
           }
-          this.#tryCleanup(true);
+          this.#tryCleanup();
         }
         if (intentState.displayReadyCapability) {
           intentState.displayReadyCapability.reject(reason);
@@ -11352,27 +11366,18 @@ class WorkerTransport {
       }
       switch (type) {
         case "Font":
-          const {
-            disableFontFace,
-            fontExtraProperties,
-            pdfBug
-          } = this._params;
           if ("error" in exportedData) {
             const exportedError = exportedData.error;
             warn(`Error during font loading: ${exportedError}`);
             this.commonObjs.resolve(id, exportedError);
             break;
           }
-          const inspectFont = pdfBug && globalThis.FontInspector?.enabled ? (font, url) => globalThis.FontInspector.fontAdded(font, url) : null;
-          const font = new FontFaceObject(exportedData, {
-            disableFontFace,
-            fontExtraProperties,
-            inspectFont
-          });
+          const inspectFont = this._params.pdfBug && globalThis.FontInspector?.enabled ? (font, url) => globalThis.FontInspector.fontAdded(font, url) : null;
+          const font = new FontFaceObject(exportedData, inspectFont);
           this.fontLoader.bind(font).catch(() => messageHandler.sendWithPromise("FontFallback", {
             id
           })).finally(() => {
-            if (!fontExtraProperties && font.data) {
+            if (!font.fontExtraProperties && font.data) {
               font.data = null;
             }
             this.commonObjs.resolve(id, font);
@@ -11420,11 +11425,6 @@ class WorkerTransport {
       }
       switch (type) {
         case "Image":
-          pageProxy.objs.resolve(id, imageData);
-          if (imageData?.dataLen > MAX_IMAGE_SIZE_TO_CACHE) {
-            pageProxy._maybeCleanupAfterRender = true;
-          }
-          break;
         case "Pattern":
           pageProxy.objs.resolve(id, imageData);
           break;
@@ -11441,14 +11441,8 @@ class WorkerTransport {
         total: data.total
       });
     });
-    messageHandler.on("FetchBuiltInCMap", async data => {
-      throw new Error("Not implemented: FetchBuiltInCMap");
-    });
-    messageHandler.on("FetchStandardFontData", async data => {
-      throw new Error("Not implemented: FetchStandardFontData");
-    });
-    messageHandler.on("FetchWasm", async data => {
-      throw new Error("Not implemented: FetchWasm");
+    messageHandler.on("FetchBinaryData", async data => {
+      throw new Error("Not implemented: FetchBinaryData");
     });
   }
   getData() {
@@ -11677,9 +11671,10 @@ class PDFObjects {
 }
 class RenderTask {
   #internalRenderTask = null;
+  onContinue = null;
+  onError = null;
   constructor(internalRenderTask) {
     this.#internalRenderTask = internalRenderTask;
-    this.onContinue = null;
   }
   get promise() {
     return this.#internalRenderTask.capability.promise;
@@ -11791,7 +11786,9 @@ class InternalRenderTask {
       this.#rAF = null;
     }
     InternalRenderTask.#canvasInUse.delete(this._canvas);
-    this.callback(error || new RenderingCancelledException(`Rendering cancelled, page ${this._pageIndex + 1}`, extraDelay));
+    error ||= new RenderingCancelledException(`Rendering cancelled, page ${this._pageIndex + 1}`, extraDelay);
+    this.callback(error);
+    this.task.onError?.(error);
   }
   operatorListChanged() {
     if (!this.graphicsReady) {
@@ -11840,8 +11837,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.0.44";
-const build = "e0873f575";
+const version = "5.0.254";
+const build = "3103747c8";
 
 ;// ./src/shared/scripting_utils.js
 function makeColorComp(n) {
@@ -12157,12 +12154,6 @@ class XfaLayer {
 const DEFAULT_TAB_INDEX = 1000;
 const annotation_layer_DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
-function getRectDims(rect) {
-  return {
-    width: rect[2] - rect[0],
-    height: rect[3] - rect[1]
-  };
-}
 class AnnotationElementFactory {
   static create(parameters) {
     const subtype = parameters.data.annotationType;
@@ -12310,15 +12301,11 @@ class AnnotationElement {
       }
     } = this;
     currentRect?.splice(0, 4, ...rect);
-    const {
-      width,
-      height
-    } = getRectDims(rect);
     style.left = `${100 * (rect[0] - pageX) / pageWidth}%`;
     style.top = `${100 * (pageHeight - rect[3] + pageY) / pageHeight}%`;
     if (rotation === 0) {
-      style.width = `${100 * width / pageWidth}%`;
-      style.height = `${100 * height / pageHeight}%`;
+      style.width = `${100 * (rect[2] - rect[0]) / pageWidth}%`;
+      style.height = `${100 * (rect[3] - rect[1]) / pageHeight}%`;
     } else {
       this.setRotation(rotation);
     }
@@ -12358,7 +12345,7 @@ class AnnotationElement {
     const {
       width,
       height
-    } = getRectDims(data.rect);
+    } = this;
     if (!ignoreBorder && data.borderStyle.width > 0) {
       style.borderWidth = `${data.borderStyle.width}px`;
       const horizontalRadius = data.borderStyle.horizontalCornerRadius;
@@ -12425,20 +12412,15 @@ class AnnotationElement {
       pageWidth,
       pageHeight
     } = this.parent.viewport.rawDims;
-    const {
+    let {
       width,
       height
-    } = getRectDims(this.data.rect);
-    let elementWidth, elementHeight;
-    if (angle % 180 === 0) {
-      elementWidth = 100 * width / pageWidth;
-      elementHeight = 100 * height / pageHeight;
-    } else {
-      elementWidth = 100 * height / pageWidth;
-      elementHeight = 100 * width / pageHeight;
+    } = this;
+    if (angle % 180 !== 0) {
+      [width, height] = [height, width];
     }
-    container.style.width = `${elementWidth}%`;
-    container.style.height = `${elementHeight}%`;
+    container.style.width = `${100 * width / pageWidth}%`;
+    container.style.height = `${100 * height / pageHeight}%`;
     container.setAttribute("data-main-rotation", (360 - angle) % 360);
   }
   get _commonActions() {
@@ -12735,6 +12717,12 @@ class AnnotationElement {
         editId
       });
     });
+  }
+  get width() {
+    return this.data.rect[2] - this.data.rect[0];
+  }
+  get height() {
+    return this.data.rect[3] - this.data.rect[1];
   }
 }
 class LinkAnnotationElement extends AnnotationElement {
@@ -13142,7 +13130,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         }
       } else {
         element = document.createElement("input");
-        element.type = "text";
+        element.type = this.data.password ? "password" : "text";
         element.setAttribute("value", fieldFormattedValues ?? textContent);
         if (this.data.doNotScroll) {
           element.style.overflowX = "hidden";
@@ -14181,11 +14169,11 @@ class LineAnnotationElement extends AnnotationElement {
   }
   render() {
     this.container.classList.add("lineAnnotation");
-    const data = this.data;
     const {
+      data,
       width,
       height
-    } = getRectDims(data.rect);
+    } = this;
     const svg = this.svgFactory.create(width, height, true);
     const line = this.#line = this.svgFactory.createElement("svg:line");
     line.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
@@ -14219,11 +14207,11 @@ class SquareAnnotationElement extends AnnotationElement {
   }
   render() {
     this.container.classList.add("squareAnnotation");
-    const data = this.data;
     const {
+      data,
       width,
       height
-    } = getRectDims(data.rect);
+    } = this;
     const svg = this.svgFactory.create(width, height, true);
     const borderWidth = data.borderStyle.width;
     const square = this.#square = this.svgFactory.createElement("svg:rect");
@@ -14258,11 +14246,11 @@ class CircleAnnotationElement extends AnnotationElement {
   }
   render() {
     this.container.classList.add("circleAnnotation");
-    const data = this.data;
     const {
+      data,
       width,
       height
-    } = getRectDims(data.rect);
+    } = this;
     const svg = this.svgFactory.create(width, height, true);
     const borderWidth = data.borderStyle.width;
     const circle = this.#circle = this.svgFactory.createElement("svg:ellipse");
@@ -14305,15 +14293,13 @@ class PolylineAnnotationElement extends AnnotationElement {
         vertices,
         borderStyle,
         popupRef
-      }
+      },
+      width,
+      height
     } = this;
     if (!vertices) {
       return this.container;
     }
-    const {
-      width,
-      height
-    } = getRectDims(rect);
     const svg = this.svgFactory.create(width, height, true);
     let points = [];
     for (let i = 0, ii = vertices.length; i < ii; i += 2) {
@@ -14686,11 +14672,7 @@ class AnnotationLayer {
       }
       const isPopupAnnotation = data.annotationType === AnnotationType.POPUP;
       if (!isPopupAnnotation) {
-        const {
-          width,
-          height
-        } = getRectDims(data.rect);
-        if (width <= 0 || height <= 0) {
+        if (data.rect[2] === data.rect[0] || data.rect[3] === data.rect[1]) {
           continue;
         }
       } else {
@@ -14724,6 +14706,25 @@ class AnnotationLayer {
       }
     }
     this.#setAnnotationCanvasMap();
+  }
+  async addLinkAnnotations(annotations, linkService) {
+    const elementParams = {
+      data: null,
+      layer: this.div,
+      linkService,
+      svgFactory: new DOMSVGFactory(),
+      parent: this
+    };
+    for (const data of annotations) {
+      data.borderStyle ||= AnnotationLayer._defaultBorderStyle;
+      elementParams.data = data;
+      const element = AnnotationElementFactory.create(elementParams);
+      if (!element.isRenderable) {
+        continue;
+      }
+      const rendered = element.render();
+      await this.#appendElement(rendered, data.id);
+    }
   }
   update({
     viewport
@@ -14777,6 +14778,16 @@ class AnnotationLayer {
   }
   getEditableAnnotation(id) {
     return this.#editableAnnotations.get(id);
+  }
+  static get _defaultBorderStyle() {
+    return shadow(this, "_defaultBorderStyle", Object.freeze({
+      width: 1,
+      rawWidth: 1,
+      style: AnnotationBorderStyleType.SOLID,
+      dashArray: [3],
+      horizontalCornerRadius: 0,
+      verticalCornerRadius: 0
+    }));
   }
 }
 
@@ -15117,7 +15128,7 @@ class FreeTextEditor extends AnnotationEditor {
       return this.div;
     }
     let baseX, baseY;
-    if (this.width) {
+    if (this._isCopy || this.annotationElementId) {
       baseX = this.x;
       baseY = this.y;
     }
@@ -15139,7 +15150,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.add("overlay", "enabled");
     this.div.append(this.overlayDiv);
     bindEvents(this, this.div, ["dblclick", "keydown"]);
-    if (this.width) {
+    if (this._isCopy || this.annotationElementId) {
       const [parentWidth, parentHeight] = this.parentDimensions;
       if (this.annotationElementId) {
         const {
@@ -15173,7 +15184,7 @@ class FreeTextEditor extends AnnotationEditor {
         }
         this.setAt(posX * parentWidth, posY * parentHeight, tx, ty);
       } else {
-        this.setAt(baseX * parentWidth, baseY * parentHeight, this.width * parentWidth, this.height * parentHeight);
+        this._moveAfterPaste(baseX, baseY);
       }
       this.#setContent();
       this._isDraggable = true;
@@ -15351,6 +15362,7 @@ class FreeTextEditor extends AnnotationEditor {
       structTreeParentId: this._structTreeParentId
     };
     if (isForCopying) {
+      serialized.isCopy = true;
       return serialized;
     }
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
@@ -17146,7 +17158,9 @@ class DrawingOptions {
       return;
     }
     for (const [name, value] of Object.entries(properties)) {
-      this.updateProperty(name, value);
+      if (!name.startsWith("_")) {
+        this.updateProperty(name, value);
+      }
     }
   }
   updateSVGProperty(name, value) {
@@ -17186,6 +17200,9 @@ class DrawingEditor extends AnnotationEditor {
   constructor(params) {
     super(params);
     this.#mustBeCommitted = params.mustBeCommitted || false;
+    this._addOutlines(params);
+  }
+  _addOutlines(params) {
     if (params.drawOutlines) {
       this.#createDrawOutlines(params);
       this.#addToDrawLayer();
@@ -17300,9 +17317,9 @@ class DrawingEditor extends AnnotationEditor {
       bbox: this.#rotateBox()
     }));
   }
-  _onTranslating(x, y) {
+  _onTranslating(_x, _y) {
     this.parent?.drawLayer.updateProperties(this._drawId, {
-      bbox: this.#rotateBox(x, y)
+      bbox: this.#rotateBox()
     });
   }
   _onTranslated() {
@@ -17518,6 +17535,11 @@ class DrawingEditor extends AnnotationEditor {
     if (this.div) {
       return this.div;
     }
+    let baseX, baseY;
+    if (this._isCopy) {
+      baseX = this.x;
+      baseY = this.y;
+    }
     const div = super.render();
     div.classList.add("draw");
     const drawDiv = document.createElement("div");
@@ -17528,6 +17550,9 @@ class DrawingEditor extends AnnotationEditor {
     this.setDims(this.width * parentWidth, this.height * parentHeight);
     this._uiManager.addShouldRescale(this);
     this.disableEditing();
+    if (this._isCopy) {
+      this._moveAfterPaste(baseX, baseY);
+    }
     return div;
   }
   static createDrawerInstance(_x, _y, _parentWidth, _parentHeight, _rotation) {
@@ -17975,6 +18000,9 @@ class InkDrawOutline extends Outline {
     this.#lines = lines;
     this.#computeBbox();
   }
+  get thickness() {
+    return this.#thickness;
+  }
   setLastElement(element) {
     this.#lines.push(element);
     return {
@@ -18001,7 +18029,7 @@ class InkDrawOutline extends Outline {
         buffer.push("Z");
         continue;
       }
-      if (line.length === 12) {
+      if (line.length === 12 && isNaN(line[6])) {
         buffer.push(`L${Outline.svgRound(line[10])} ${Outline.svgRound(line[11])}`);
         continue;
       }
@@ -18146,7 +18174,7 @@ class InkDrawOutline extends Outline {
         points: rescaleFn(points[i].map(x => x ?? NaN), tx, ty, sx, sy)
       });
     }
-    const outlines = new InkDrawOutline();
+    const outlines = new this.prototype.constructor();
     outlines.build(newLines, pageWidth, pageHeight, 1, rotation, thickness, innerMargin);
     return outlines;
   }
@@ -18422,10 +18450,9 @@ class InkDrawOutline extends Outline {
 
 
 class InkDrawingOptions extends DrawingOptions {
-  #viewParameters;
   constructor(viewerParameters) {
     super();
-    this.#viewParameters = viewerParameters;
+    this._viewParameters = viewerParameters;
     super.updateProperties({
       fill: "none",
       stroke: AnnotationEditor._defaultLineColor,
@@ -18439,12 +18466,12 @@ class InkDrawingOptions extends DrawingOptions {
   updateSVGProperty(name, value) {
     if (name === "stroke-width") {
       value ??= this["stroke-width"];
-      value *= this.#viewParameters.realScale;
+      value *= this._viewParameters.realScale;
     }
     super.updateSVGProperty(name, value);
   }
   clone() {
-    const clone = new InkDrawingOptions(this.#viewParameters);
+    const clone = new InkDrawingOptions(this._viewParameters);
     clone.updateAll(this);
     return clone;
   }
@@ -18592,6 +18619,7 @@ class InkEditor extends DrawingEditor {
       structTreeParentId: this._structTreeParentId
     };
     if (isForCopying) {
+      serialized.isCopy = true;
       return serialized;
     }
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
@@ -18620,6 +18648,1014 @@ class InkEditor extends DrawingEditor {
       points
     });
     return null;
+  }
+}
+
+;// ./src/display/editor/drawers/contour.js
+
+class ContourDrawOutline extends InkDrawOutline {
+  toSVGPath() {
+    let path = super.toSVGPath();
+    if (!path.endsWith("Z")) {
+      path += "Z";
+    }
+    return path;
+  }
+}
+
+;// ./src/display/editor/drawers/signaturedraw.js
+
+
+
+
+const BASE_HEADER_LENGTH = 8;
+const POINTS_PROPERTIES_NUMBER = 3;
+class SignatureExtractor {
+  static #PARAMETERS = {
+    maxDim: 512,
+    sigmaSFactor: 0.02,
+    sigmaR: 25,
+    kernelSize: 16
+  };
+  static #neighborIndexToId(i0, j0, i, j) {
+    i -= i0;
+    j -= j0;
+    if (i === 0) {
+      return j > 0 ? 0 : 4;
+    }
+    if (i === 1) {
+      return j + 6;
+    }
+    return 2 - j;
+  }
+  static #neighborIdToIndex = new Int32Array([0, 1, -1, 1, -1, 0, -1, -1, 0, -1, 1, -1, 1, 0, 1, 1]);
+  static #clockwiseNonZero(buf, width, i0, j0, i, j, offset) {
+    const id = this.#neighborIndexToId(i0, j0, i, j);
+    for (let k = 0; k < 8; k++) {
+      const kk = (-k + id - offset + 16) % 8;
+      const shiftI = this.#neighborIdToIndex[2 * kk];
+      const shiftJ = this.#neighborIdToIndex[2 * kk + 1];
+      if (buf[(i0 + shiftI) * width + (j0 + shiftJ)] !== 0) {
+        return kk;
+      }
+    }
+    return -1;
+  }
+  static #counterClockwiseNonZero(buf, width, i0, j0, i, j, offset) {
+    const id = this.#neighborIndexToId(i0, j0, i, j);
+    for (let k = 0; k < 8; k++) {
+      const kk = (k + id + offset + 16) % 8;
+      const shiftI = this.#neighborIdToIndex[2 * kk];
+      const shiftJ = this.#neighborIdToIndex[2 * kk + 1];
+      if (buf[(i0 + shiftI) * width + (j0 + shiftJ)] !== 0) {
+        return kk;
+      }
+    }
+    return -1;
+  }
+  static #findContours(buf, width, height, threshold) {
+    const N = buf.length;
+    const types = new Int32Array(N);
+    for (let i = 0; i < N; i++) {
+      types[i] = buf[i] <= threshold ? 1 : 0;
+    }
+    for (let i = 1; i < height - 1; i++) {
+      types[i * width] = types[i * width + width - 1] = 0;
+    }
+    for (let i = 0; i < width; i++) {
+      types[i] = types[width * height - 1 - i] = 0;
+    }
+    let nbd = 1;
+    let lnbd;
+    const contours = [];
+    for (let i = 1; i < height - 1; i++) {
+      lnbd = 1;
+      for (let j = 1; j < width - 1; j++) {
+        const ij = i * width + j;
+        const pix = types[ij];
+        if (pix === 0) {
+          continue;
+        }
+        let i2 = i;
+        let j2 = j;
+        if (pix === 1 && types[ij - 1] === 0) {
+          nbd += 1;
+          j2 -= 1;
+        } else if (pix >= 1 && types[ij + 1] === 0) {
+          nbd += 1;
+          j2 += 1;
+          if (pix > 1) {
+            lnbd = pix;
+          }
+        } else {
+          if (pix !== 1) {
+            lnbd = Math.abs(pix);
+          }
+          continue;
+        }
+        const points = [j, i];
+        const isHole = j2 === j + 1;
+        const contour = {
+          isHole,
+          points,
+          id: nbd,
+          parent: 0
+        };
+        contours.push(contour);
+        let contour0;
+        for (const c of contours) {
+          if (c.id === lnbd) {
+            contour0 = c;
+            break;
+          }
+        }
+        if (!contour0) {
+          contour.parent = isHole ? lnbd : 0;
+        } else if (contour0.isHole) {
+          contour.parent = isHole ? contour0.parent : lnbd;
+        } else {
+          contour.parent = isHole ? lnbd : contour0.parent;
+        }
+        const k = this.#clockwiseNonZero(types, width, i, j, i2, j2, 0);
+        if (k === -1) {
+          types[ij] = -nbd;
+          if (types[ij] !== 1) {
+            lnbd = Math.abs(types[ij]);
+          }
+          continue;
+        }
+        let shiftI = this.#neighborIdToIndex[2 * k];
+        let shiftJ = this.#neighborIdToIndex[2 * k + 1];
+        const i1 = i + shiftI;
+        const j1 = j + shiftJ;
+        i2 = i1;
+        j2 = j1;
+        let i3 = i;
+        let j3 = j;
+        while (true) {
+          const kk = this.#counterClockwiseNonZero(types, width, i3, j3, i2, j2, 1);
+          shiftI = this.#neighborIdToIndex[2 * kk];
+          shiftJ = this.#neighborIdToIndex[2 * kk + 1];
+          const i4 = i3 + shiftI;
+          const j4 = j3 + shiftJ;
+          points.push(j4, i4);
+          const ij3 = i3 * width + j3;
+          if (types[ij3 + 1] === 0) {
+            types[ij3] = -nbd;
+          } else if (types[ij3] === 1) {
+            types[ij3] = nbd;
+          }
+          if (i4 === i && j4 === j && i3 === i1 && j3 === j1) {
+            if (types[ij] !== 1) {
+              lnbd = Math.abs(types[ij]);
+            }
+            break;
+          } else {
+            i2 = i3;
+            j2 = j3;
+            i3 = i4;
+            j3 = j4;
+          }
+        }
+      }
+    }
+    return contours;
+  }
+  static #douglasPeuckerHelper(points, start, end, output) {
+    if (end - start <= 4) {
+      for (let i = start; i < end - 2; i += 2) {
+        output.push(points[i], points[i + 1]);
+      }
+      return;
+    }
+    const ax = points[start];
+    const ay = points[start + 1];
+    const abx = points[end - 4] - ax;
+    const aby = points[end - 3] - ay;
+    const dist = Math.hypot(abx, aby);
+    const nabx = abx / dist;
+    const naby = aby / dist;
+    const aa = nabx * ay - naby * ax;
+    const m = aby / abx;
+    const invS = 1 / dist;
+    const phi = Math.atan(m);
+    const cosPhi = Math.cos(phi);
+    const sinPhi = Math.sin(phi);
+    const tmax = invS * (Math.abs(cosPhi) + Math.abs(sinPhi));
+    const poly = invS * (1 - tmax + tmax ** 2);
+    const partialPhi = Math.max(Math.atan(Math.abs(sinPhi + cosPhi) * poly), Math.atan(Math.abs(sinPhi - cosPhi) * poly));
+    let dmax = 0;
+    let index = start;
+    for (let i = start + 2; i < end - 2; i += 2) {
+      const d = Math.abs(aa - nabx * points[i + 1] + naby * points[i]);
+      if (d > dmax) {
+        index = i;
+        dmax = d;
+      }
+    }
+    if (dmax > (dist * partialPhi) ** 2) {
+      this.#douglasPeuckerHelper(points, start, index + 2, output);
+      this.#douglasPeuckerHelper(points, index, end, output);
+    } else {
+      output.push(ax, ay);
+    }
+  }
+  static #douglasPeucker(points) {
+    const output = [];
+    const len = points.length;
+    this.#douglasPeuckerHelper(points, 0, len, output);
+    output.push(points[len - 2], points[len - 1]);
+    return output.length <= 4 ? null : output;
+  }
+  static #bilateralFilter(buf, width, height, sigmaS, sigmaR, kernelSize) {
+    const kernel = new Float32Array(kernelSize ** 2);
+    const sigmaS2 = -2 * sigmaS ** 2;
+    const halfSize = kernelSize >> 1;
+    for (let i = 0; i < kernelSize; i++) {
+      const x = (i - halfSize) ** 2;
+      for (let j = 0; j < kernelSize; j++) {
+        kernel[i * kernelSize + j] = Math.exp((x + (j - halfSize) ** 2) / sigmaS2);
+      }
+    }
+    const rangeValues = new Float32Array(256);
+    const sigmaR2 = -2 * sigmaR ** 2;
+    for (let i = 0; i < 256; i++) {
+      rangeValues[i] = Math.exp(i ** 2 / sigmaR2);
+    }
+    const N = buf.length;
+    const out = new Uint8Array(N);
+    const histogram = new Uint32Array(256);
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const ij = i * width + j;
+        const center = buf[ij];
+        let sum = 0;
+        let norm = 0;
+        for (let k = 0; k < kernelSize; k++) {
+          const y = i + k - halfSize;
+          if (y < 0 || y >= height) {
+            continue;
+          }
+          for (let l = 0; l < kernelSize; l++) {
+            const x = j + l - halfSize;
+            if (x < 0 || x >= width) {
+              continue;
+            }
+            const neighbour = buf[y * width + x];
+            const w = kernel[k * kernelSize + l] * rangeValues[Math.abs(neighbour - center)];
+            sum += neighbour * w;
+            norm += w;
+          }
+        }
+        const pix = out[ij] = Math.round(sum / norm);
+        histogram[pix]++;
+      }
+    }
+    return [out, histogram];
+  }
+  static #getHistogram(buf) {
+    const histogram = new Uint32Array(256);
+    for (const g of buf) {
+      histogram[g]++;
+    }
+    return histogram;
+  }
+  static #toUint8(buf) {
+    const N = buf.length;
+    const out = new Uint8ClampedArray(N >> 2);
+    let max = -Infinity;
+    let min = Infinity;
+    for (let i = 0, ii = out.length; i < ii; i++) {
+      const A = buf[(i << 2) + 3];
+      if (A === 0) {
+        max = out[i] = 0xff;
+        continue;
+      }
+      const pix = out[i] = buf[i << 2];
+      if (pix > max) {
+        max = pix;
+      }
+      if (pix < min) {
+        min = pix;
+      }
+    }
+    const ratio = 255 / (max - min);
+    for (let i = 0; i < N; i++) {
+      out[i] = (out[i] - min) * ratio;
+    }
+    return out;
+  }
+  static #guessThreshold(histogram) {
+    let i;
+    let M = -Infinity;
+    let L = -Infinity;
+    const min = histogram.findIndex(v => v !== 0);
+    let pos = min;
+    let spos = min;
+    for (i = min; i < 256; i++) {
+      const v = histogram[i];
+      if (v > M) {
+        if (i - pos > L) {
+          L = i - pos;
+          spos = i - 1;
+        }
+        M = v;
+        pos = i;
+      }
+    }
+    for (i = spos - 1; i >= 0; i--) {
+      if (histogram[i] > histogram[i + 1]) {
+        break;
+      }
+    }
+    return i;
+  }
+  static #getGrayPixels(bitmap) {
+    const originalBitmap = bitmap;
+    const {
+      width,
+      height
+    } = bitmap;
+    const {
+      maxDim
+    } = this.#PARAMETERS;
+    let newWidth = width;
+    let newHeight = height;
+    if (width > maxDim || height > maxDim) {
+      let prevWidth = width;
+      let prevHeight = height;
+      let steps = Math.log2(Math.max(width, height) / maxDim);
+      const isteps = Math.floor(steps);
+      steps = steps === isteps ? isteps - 1 : isteps;
+      for (let i = 0; i < steps; i++) {
+        newWidth = prevWidth;
+        newHeight = prevHeight;
+        if (newWidth > maxDim) {
+          newWidth = Math.ceil(newWidth / 2);
+        }
+        if (newHeight > maxDim) {
+          newHeight = Math.ceil(newHeight / 2);
+        }
+        const offscreen = new OffscreenCanvas(newWidth, newHeight);
+        const ctx = offscreen.getContext("2d");
+        ctx.drawImage(bitmap, 0, 0, prevWidth, prevHeight, 0, 0, newWidth, newHeight);
+        prevWidth = newWidth;
+        prevHeight = newHeight;
+        if (bitmap !== originalBitmap) {
+          bitmap.close();
+        }
+        bitmap = offscreen.transferToImageBitmap();
+      }
+      const ratio = Math.min(maxDim / newWidth, maxDim / newHeight);
+      newWidth = Math.round(newWidth * ratio);
+      newHeight = Math.round(newHeight * ratio);
+    }
+    const offscreen = new OffscreenCanvas(newWidth, newHeight);
+    const ctx = offscreen.getContext("2d", {
+      willReadFrequently: true
+    });
+    ctx.filter = "grayscale(1)";
+    ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, newWidth, newHeight);
+    const grayImage = ctx.getImageData(0, 0, newWidth, newHeight).data;
+    const uint8Buf = this.#toUint8(grayImage);
+    return [uint8Buf, newWidth, newHeight];
+  }
+  static extractContoursFromText(text, {
+    fontFamily,
+    fontStyle,
+    fontWeight
+  }, pageWidth, pageHeight, rotation, innerMargin) {
+    let canvas = new OffscreenCanvas(1, 1);
+    let ctx = canvas.getContext("2d", {
+      alpha: false
+    });
+    const fontSize = 200;
+    const font = ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+    const {
+      actualBoundingBoxLeft,
+      actualBoundingBoxRight,
+      actualBoundingBoxAscent,
+      actualBoundingBoxDescent,
+      fontBoundingBoxAscent,
+      fontBoundingBoxDescent,
+      width
+    } = ctx.measureText(text);
+    const SCALE = 1.5;
+    const canvasWidth = Math.ceil(Math.max(Math.abs(actualBoundingBoxLeft) + Math.abs(actualBoundingBoxRight) || 0, width) * SCALE);
+    const canvasHeight = Math.ceil(Math.max(Math.abs(actualBoundingBoxAscent) + Math.abs(actualBoundingBoxDescent) || fontSize, Math.abs(fontBoundingBoxAscent) + Math.abs(fontBoundingBoxDescent) || fontSize) * SCALE);
+    canvas = new OffscreenCanvas(canvasWidth, canvasHeight);
+    ctx = canvas.getContext("2d", {
+      alpha: true,
+      willReadFrequently: true
+    });
+    ctx.font = font;
+    ctx.filter = "grayscale(1)";
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    ctx.fillStyle = "black";
+    ctx.fillText(text, canvasWidth * (SCALE - 1) / 2, canvasHeight * (3 - SCALE) / 2);
+    const uint8Buf = this.#toUint8(ctx.getImageData(0, 0, canvasWidth, canvasHeight).data);
+    const histogram = this.#getHistogram(uint8Buf);
+    const threshold = this.#guessThreshold(histogram);
+    const contourList = this.#findContours(uint8Buf, canvasWidth, canvasHeight, threshold);
+    return this.processDrawnLines({
+      lines: {
+        curves: contourList,
+        width: canvasWidth,
+        height: canvasHeight
+      },
+      pageWidth,
+      pageHeight,
+      rotation,
+      innerMargin,
+      mustSmooth: true,
+      areContours: true
+    });
+  }
+  static process(bitmap, pageWidth, pageHeight, rotation, innerMargin) {
+    const [uint8Buf, width, height] = this.#getGrayPixels(bitmap);
+    const [buffer, histogram] = this.#bilateralFilter(uint8Buf, width, height, Math.hypot(width, height) * this.#PARAMETERS.sigmaSFactor, this.#PARAMETERS.sigmaR, this.#PARAMETERS.kernelSize);
+    const threshold = this.#guessThreshold(histogram);
+    const contourList = this.#findContours(buffer, width, height, threshold);
+    return this.processDrawnLines({
+      lines: {
+        curves: contourList,
+        width,
+        height
+      },
+      pageWidth,
+      pageHeight,
+      rotation,
+      innerMargin,
+      mustSmooth: true,
+      areContours: true
+    });
+  }
+  static processDrawnLines({
+    lines,
+    pageWidth,
+    pageHeight,
+    rotation,
+    innerMargin,
+    mustSmooth,
+    areContours
+  }) {
+    if (rotation % 180 !== 0) {
+      [pageWidth, pageHeight] = [pageHeight, pageWidth];
+    }
+    const {
+      curves,
+      width,
+      height
+    } = lines;
+    const thickness = lines.thickness ?? 0;
+    const linesAndPoints = [];
+    const ratio = Math.min(pageWidth / width, pageHeight / height);
+    const xScale = ratio / pageWidth;
+    const yScale = ratio / pageHeight;
+    const newCurves = [];
+    for (const {
+      points
+    } of curves) {
+      const reducedPoints = mustSmooth ? this.#douglasPeucker(points) : points;
+      if (!reducedPoints) {
+        continue;
+      }
+      newCurves.push(reducedPoints);
+      const len = reducedPoints.length;
+      const newPoints = new Float32Array(len);
+      const line = new Float32Array(3 * (len === 2 ? 2 : len - 2));
+      linesAndPoints.push({
+        line,
+        points: newPoints
+      });
+      if (len === 2) {
+        newPoints[0] = reducedPoints[0] * xScale;
+        newPoints[1] = reducedPoints[1] * yScale;
+        line.set([NaN, NaN, NaN, NaN, newPoints[0], newPoints[1]], 0);
+        continue;
+      }
+      let [x1, y1, x2, y2] = reducedPoints;
+      x1 *= xScale;
+      y1 *= yScale;
+      x2 *= xScale;
+      y2 *= yScale;
+      newPoints.set([x1, y1, x2, y2], 0);
+      line.set([NaN, NaN, NaN, NaN, x1, y1], 0);
+      for (let i = 4; i < len; i += 2) {
+        const x = newPoints[i] = reducedPoints[i] * xScale;
+        const y = newPoints[i + 1] = reducedPoints[i + 1] * yScale;
+        line.set(Outline.createBezierPoints(x1, y1, x2, y2, x, y), (i - 2) * 3);
+        [x1, y1, x2, y2] = [x2, y2, x, y];
+      }
+    }
+    if (linesAndPoints.length === 0) {
+      return null;
+    }
+    const outline = areContours ? new ContourDrawOutline() : new InkDrawOutline();
+    outline.build(linesAndPoints, pageWidth, pageHeight, 1, rotation, areContours ? 0 : thickness, innerMargin);
+    return {
+      outline,
+      newCurves,
+      areContours,
+      thickness,
+      width,
+      height
+    };
+  }
+  static async compressSignature({
+    outlines,
+    areContours,
+    thickness,
+    width,
+    height
+  }) {
+    let minDiff = Infinity;
+    let maxDiff = -Infinity;
+    let outlinesLength = 0;
+    for (const points of outlines) {
+      outlinesLength += points.length;
+      for (let i = 2, ii = points.length; i < ii; i++) {
+        const dx = points[i] - points[i - 2];
+        minDiff = Math.min(minDiff, dx);
+        maxDiff = Math.max(maxDiff, dx);
+      }
+    }
+    let bufferType;
+    if (minDiff >= -128 && maxDiff <= 127) {
+      bufferType = Int8Array;
+    } else if (minDiff >= -32768 && maxDiff <= 32767) {
+      bufferType = Int16Array;
+    } else {
+      bufferType = Int32Array;
+    }
+    const len = outlines.length;
+    const headerLength = BASE_HEADER_LENGTH + POINTS_PROPERTIES_NUMBER * len;
+    const header = new Uint32Array(headerLength);
+    let offset = 0;
+    header[offset++] = headerLength * Uint32Array.BYTES_PER_ELEMENT + (outlinesLength - 2 * len) * bufferType.BYTES_PER_ELEMENT;
+    header[offset++] = 0;
+    header[offset++] = width;
+    header[offset++] = height;
+    header[offset++] = areContours ? 0 : 1;
+    header[offset++] = Math.max(0, Math.floor(thickness ?? 0));
+    header[offset++] = len;
+    header[offset++] = bufferType.BYTES_PER_ELEMENT;
+    for (const points of outlines) {
+      header[offset++] = points.length - 2;
+      header[offset++] = points[0];
+      header[offset++] = points[1];
+    }
+    const cs = new CompressionStream("deflate-raw");
+    const writer = cs.writable.getWriter();
+    await writer.ready;
+    writer.write(header);
+    const BufferCtor = bufferType.prototype.constructor;
+    for (const points of outlines) {
+      const diffs = new BufferCtor(points.length - 2);
+      for (let i = 2, ii = points.length; i < ii; i++) {
+        diffs[i - 2] = points[i] - points[i - 2];
+      }
+      writer.write(diffs);
+    }
+    writer.close();
+    const buf = await new Response(cs.readable).arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    return toBase64Util(bytes);
+  }
+  static async decompressSignature(signatureData) {
+    try {
+      const bytes = fromBase64Util(signatureData);
+      const {
+        readable,
+        writable
+      } = new DecompressionStream("deflate-raw");
+      const writer = writable.getWriter();
+      await writer.ready;
+      writer.write(bytes).then(async () => {
+        await writer.ready;
+        await writer.close();
+      }).catch(() => {});
+      let data = null;
+      let offset = 0;
+      for await (const chunk of readable) {
+        data ||= new Uint8Array(new Uint32Array(chunk.buffer, 0, 4)[0]);
+        data.set(chunk, offset);
+        offset += chunk.length;
+      }
+      const header = new Uint32Array(data.buffer, 0, data.length >> 2);
+      const version = header[1];
+      if (version !== 0) {
+        throw new Error(`Invalid version: ${version}`);
+      }
+      const width = header[2];
+      const height = header[3];
+      const areContours = header[4] === 0;
+      const thickness = header[5];
+      const numberOfDrawings = header[6];
+      const bufferType = header[7];
+      const outlines = [];
+      const diffsOffset = (BASE_HEADER_LENGTH + POINTS_PROPERTIES_NUMBER * numberOfDrawings) * Uint32Array.BYTES_PER_ELEMENT;
+      let diffs;
+      switch (bufferType) {
+        case Int8Array.BYTES_PER_ELEMENT:
+          diffs = new Int8Array(data.buffer, diffsOffset);
+          break;
+        case Int16Array.BYTES_PER_ELEMENT:
+          diffs = new Int16Array(data.buffer, diffsOffset);
+          break;
+        case Int32Array.BYTES_PER_ELEMENT:
+          diffs = new Int32Array(data.buffer, diffsOffset);
+          break;
+      }
+      offset = 0;
+      for (let i = 0; i < numberOfDrawings; i++) {
+        const len = header[POINTS_PROPERTIES_NUMBER * i + BASE_HEADER_LENGTH];
+        const points = new Float32Array(len + 2);
+        outlines.push(points);
+        for (let j = 0; j < POINTS_PROPERTIES_NUMBER - 1; j++) {
+          points[j] = header[POINTS_PROPERTIES_NUMBER * i + BASE_HEADER_LENGTH + j + 1];
+        }
+        for (let j = 0; j < len; j++) {
+          points[j + 2] = points[j] + diffs[offset++];
+        }
+      }
+      return {
+        areContours,
+        thickness,
+        outlines,
+        width,
+        height
+      };
+    } catch (e) {
+      warn(`decompressSignature: ${e}`);
+      return null;
+    }
+  }
+}
+
+;// ./src/display/editor/signature.js
+
+
+
+
+
+
+
+class SignatureOptions extends DrawingOptions {
+  constructor() {
+    super();
+    super.updateProperties({
+      fill: "CanvasText",
+      "stroke-width": 0
+    });
+  }
+  clone() {
+    const clone = new SignatureOptions();
+    clone.updateAll(this);
+    return clone;
+  }
+}
+class DrawnSignatureOptions extends InkDrawingOptions {
+  constructor(viewerParameters) {
+    super(viewerParameters);
+    super.updateProperties({
+      stroke: "CanvasText",
+      "stroke-width": 1
+    });
+  }
+  clone() {
+    const clone = new DrawnSignatureOptions(this._viewParameters);
+    clone.updateAll(this);
+    return clone;
+  }
+}
+class SignatureEditor extends DrawingEditor {
+  #isExtracted = false;
+  #description = null;
+  #signatureData = null;
+  #signatureUUID = null;
+  static _type = "signature";
+  static _editorType = AnnotationEditorType.SIGNATURE;
+  static _defaultDrawingOptions = null;
+  constructor(params) {
+    super({
+      ...params,
+      mustBeCommitted: true,
+      name: "signatureEditor"
+    });
+    this._willKeepAspectRatio = true;
+    this.#signatureData = params.signatureData || null;
+    this.#description = null;
+  }
+  static initialize(l10n, uiManager) {
+    AnnotationEditor.initialize(l10n, uiManager);
+    this._defaultDrawingOptions = new SignatureOptions();
+    this._defaultDrawnSignatureOptions = new DrawnSignatureOptions(uiManager.viewParameters);
+  }
+  static getDefaultDrawingOptions(options) {
+    const clone = this._defaultDrawingOptions.clone();
+    clone.updateProperties(options);
+    return clone;
+  }
+  static get supportMultipleDrawings() {
+    return false;
+  }
+  static get typesMap() {
+    return shadow(this, "typesMap", new Map());
+  }
+  static get isDrawer() {
+    return false;
+  }
+  get telemetryFinalData() {
+    return {
+      type: "signature",
+      hasDescription: !!this.#description
+    };
+  }
+  static computeTelemetryFinalData(data) {
+    const hasDescriptionStats = data.get("hasDescription");
+    return {
+      hasAltText: hasDescriptionStats.get(true) ?? 0,
+      hasNoAltText: hasDescriptionStats.get(false) ?? 0
+    };
+  }
+  get isResizable() {
+    return true;
+  }
+  onScaleChanging() {
+    if (this._drawId === null) {
+      return;
+    }
+    super.onScaleChanging();
+  }
+  render() {
+    if (this.div) {
+      return this.div;
+    }
+    let baseX, baseY;
+    const {
+      _isCopy
+    } = this;
+    if (_isCopy) {
+      this._isCopy = false;
+      baseX = this.x;
+      baseY = this.y;
+    }
+    super.render();
+    if (this._drawId === null) {
+      if (this.#signatureData) {
+        const {
+          lines,
+          mustSmooth,
+          areContours,
+          description,
+          uuid,
+          heightInPage
+        } = this.#signatureData;
+        const {
+          rawDims: {
+            pageWidth,
+            pageHeight
+          },
+          rotation
+        } = this.parent.viewport;
+        const outline = SignatureExtractor.processDrawnLines({
+          lines,
+          pageWidth,
+          pageHeight,
+          rotation,
+          innerMargin: SignatureEditor._INNER_MARGIN,
+          mustSmooth,
+          areContours
+        });
+        this.addSignature(outline, heightInPage, description, uuid);
+      } else {
+        this.div.hidden = true;
+        this._uiManager.getSignature(this);
+      }
+    }
+    if (_isCopy) {
+      this._isCopy = true;
+      this._moveAfterPaste(baseX, baseY);
+    }
+    return this.div;
+  }
+  setUuid(uuid) {
+    this.#signatureUUID = uuid;
+    this.addEditToolbar();
+  }
+  getUuid() {
+    return this.#signatureUUID;
+  }
+  get description() {
+    return this.#description;
+  }
+  set description(description) {
+    this.#description = description;
+    super.addEditToolbar().then(toolbar => {
+      toolbar?.updateEditSignatureButton(description);
+    });
+  }
+  getSignaturePreview() {
+    const {
+      newCurves,
+      areContours,
+      thickness,
+      width,
+      height
+    } = this.#signatureData;
+    const maxDim = Math.max(width, height);
+    const outlineData = SignatureExtractor.processDrawnLines({
+      lines: {
+        curves: newCurves.map(points => ({
+          points
+        })),
+        thickness,
+        width,
+        height
+      },
+      pageWidth: maxDim,
+      pageHeight: maxDim,
+      rotation: 0,
+      innerMargin: 0,
+      mustSmooth: false,
+      areContours
+    });
+    return {
+      areContours,
+      outline: outlineData.outline
+    };
+  }
+  async addEditToolbar() {
+    const toolbar = await super.addEditToolbar();
+    if (!toolbar) {
+      return null;
+    }
+    if (this._uiManager.signatureManager && this.#description !== null) {
+      await toolbar.addEditSignatureButton(this._uiManager.signatureManager, this.#signatureUUID, this.#description);
+      toolbar.show();
+    }
+    return toolbar;
+  }
+  addSignature(data, heightInPage, description, uuid) {
+    const {
+      x: savedX,
+      y: savedY
+    } = this;
+    const {
+      outline
+    } = this.#signatureData = data;
+    this.#isExtracted = outline instanceof ContourDrawOutline;
+    this.#description = description;
+    this.div.setAttribute("aria-description", description);
+    let drawingOptions;
+    if (this.#isExtracted) {
+      drawingOptions = SignatureEditor.getDefaultDrawingOptions();
+    } else {
+      drawingOptions = SignatureEditor._defaultDrawnSignatureOptions.clone();
+      drawingOptions.updateProperties({
+        "stroke-width": outline.thickness
+      });
+    }
+    this._addOutlines({
+      drawOutlines: outline,
+      drawingOptions
+    });
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    const [, pageHeight] = this.pageDimensions;
+    let newHeight = heightInPage / pageHeight;
+    newHeight = newHeight >= 1 ? 0.5 : newHeight;
+    this.width *= newHeight / this.height;
+    if (this.width >= 1) {
+      newHeight *= 0.9 / this.width;
+      this.width = 0.9;
+    }
+    this.height = newHeight;
+    this.setDims(parentWidth * this.width, parentHeight * this.height);
+    this.x = savedX;
+    this.y = savedY;
+    this.center();
+    this._onResized();
+    this.onScaleChanging();
+    this.rotate();
+    this._uiManager.addToAnnotationStorage(this);
+    this.setUuid(uuid);
+    this._reportTelemetry({
+      action: "pdfjs.signature.inserted",
+      data: {
+        hasBeenSaved: !!uuid,
+        hasDescription: !!description
+      }
+    });
+    this.div.hidden = false;
+  }
+  getFromImage(bitmap) {
+    const {
+      rawDims: {
+        pageWidth,
+        pageHeight
+      },
+      rotation
+    } = this.parent.viewport;
+    return SignatureExtractor.process(bitmap, pageWidth, pageHeight, rotation, SignatureEditor._INNER_MARGIN);
+  }
+  getFromText(text, fontInfo) {
+    const {
+      rawDims: {
+        pageWidth,
+        pageHeight
+      },
+      rotation
+    } = this.parent.viewport;
+    return SignatureExtractor.extractContoursFromText(text, fontInfo, pageWidth, pageHeight, rotation, SignatureEditor._INNER_MARGIN);
+  }
+  getDrawnSignature(curves) {
+    const {
+      rawDims: {
+        pageWidth,
+        pageHeight
+      },
+      rotation
+    } = this.parent.viewport;
+    return SignatureExtractor.processDrawnLines({
+      lines: curves,
+      pageWidth,
+      pageHeight,
+      rotation,
+      innerMargin: SignatureEditor._INNER_MARGIN,
+      mustSmooth: false,
+      areContours: false
+    });
+  }
+  createDrawingOptions({
+    areContours,
+    thickness
+  }) {
+    if (areContours) {
+      this._drawingOptions = SignatureEditor.getDefaultDrawingOptions();
+    } else {
+      this._drawingOptions = SignatureEditor._defaultDrawnSignatureOptions.clone();
+      this._drawingOptions.updateProperties({
+        "stroke-width": thickness
+      });
+    }
+  }
+  serialize(isForCopying = false) {
+    if (this.isEmpty()) {
+      return null;
+    }
+    const {
+      lines,
+      points,
+      rect
+    } = this.serializeDraw(isForCopying);
+    const {
+      _drawingOptions: {
+        "stroke-width": thickness
+      }
+    } = this;
+    const serialized = {
+      annotationType: AnnotationEditorType.SIGNATURE,
+      isSignature: true,
+      areContours: this.#isExtracted,
+      color: [0, 0, 0],
+      thickness: this.#isExtracted ? 0 : thickness,
+      pageIndex: this.pageIndex,
+      rect,
+      rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId
+    };
+    if (isForCopying) {
+      serialized.paths = {
+        lines,
+        points
+      };
+      serialized.uuid = this.#signatureUUID;
+      serialized.isCopy = true;
+    } else {
+      serialized.lines = lines;
+    }
+    if (this.#description) {
+      serialized.accessibilityData = {
+        type: "Figure",
+        alt: this.#description
+      };
+    }
+    return serialized;
+  }
+  static deserializeDraw(pageX, pageY, pageWidth, pageHeight, innerMargin, data) {
+    if (data.areContours) {
+      return ContourDrawOutline.deserialize(pageX, pageY, pageWidth, pageHeight, innerMargin, data);
+    }
+    return InkDrawOutline.deserialize(pageX, pageY, pageWidth, pageHeight, innerMargin, data);
+  }
+  static async deserialize(data, parent, uiManager) {
+    const editor = await super.deserialize(data, parent, uiManager);
+    editor.#isExtracted = data.areContours;
+    editor.#description = data.accessibilityData?.alt || "";
+    editor.#signatureUUID = data.uuid;
+    return editor;
   }
 }
 
@@ -18653,15 +19689,8 @@ class StampEditor extends AnnotationEditor {
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
   }
-  static get supportedTypes() {
-    const types = ["apng", "avif", "bmp", "gif", "jpeg", "png", "svg+xml", "webp", "x-icon"];
-    return shadow(this, "supportedTypes", types.map(type => `image/${type}`));
-  }
-  static get supportedTypesStr() {
-    return shadow(this, "supportedTypesStr", this.supportedTypes.join(","));
-  }
   static isHandlingMimeForPasting(mime) {
-    return this.supportedTypes.includes(mime);
+    return SupportedImageMimeTypes.includes(mime);
   }
   static paste(item, parent) {
     parent.pasteEditor(AnnotationEditorType.STAMP, {
@@ -18798,7 +19827,7 @@ class StampEditor extends AnnotationEditor {
     }
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = StampEditor.supportedTypesStr;
+    input.accept = SupportedImageMimeTypes.join(",");
     const signal = this._uiManager._signal;
     this.#bitmapPromise = new Promise(resolve => {
       input.addEventListener("change", async () => {
@@ -18876,13 +19905,12 @@ class StampEditor extends AnnotationEditor {
       return this.div;
     }
     let baseX, baseY;
-    if (this.width) {
+    if (this._isCopy) {
       baseX = this.x;
       baseY = this.y;
     }
     super.render();
     this.div.hidden = true;
-    this.div.setAttribute("role", "figure");
     this.addAltTextButton();
     if (!this.#missingCanvas) {
       if (this.#bitmap) {
@@ -18891,9 +19919,8 @@ class StampEditor extends AnnotationEditor {
         this.#getBitmap();
       }
     }
-    if (this.width && !this.annotationElementId) {
-      const [parentWidth, parentHeight] = this.parentDimensions;
-      this.setAt(baseX * parentWidth, baseY * parentHeight, this.width * parentWidth, this.height * parentHeight);
+    if (this._isCopy) {
+      this._moveAfterPaste(baseX, baseY);
     }
     this._uiManager.addShouldRescale(this);
     return this.div;
@@ -18973,7 +20000,7 @@ class StampEditor extends AnnotationEditor {
       action: "inserted_image"
     });
     if (this.#bitmapFileName) {
-      canvas.setAttribute("aria-label", this.#bitmapFileName);
+      this.div.setAttribute("aria-description", this.#bitmapFileName);
     }
   }
   copyCanvas(maxDataDimension, maxPreviewDimension, createImageData = false) {
@@ -19103,9 +20130,6 @@ class StampEditor extends AnnotationEditor {
     const ctx = canvas.getContext("2d");
     ctx.filter = this._uiManager.hcmFilter;
     ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, scaledWidth, scaledHeight);
-  }
-  getImageForAltText() {
-    return this.#canvas;
   }
   #serializeBitmap(toUrl) {
     if (toUrl) {
@@ -19237,6 +20261,7 @@ class StampEditor extends AnnotationEditor {
     if (isForCopying) {
       serialized.bitmapUrl = this.#serializeBitmap(true);
       serialized.accessibilityData = this.serializeAltText(true);
+      serialized.isCopy = true;
       return serialized;
     }
     const {
@@ -19312,6 +20337,7 @@ class StampEditor extends AnnotationEditor {
 
 
 
+
 class AnnotationEditorLayer {
   #accessibilityManager;
   #allowClick = false;
@@ -19328,7 +20354,7 @@ class AnnotationEditorLayer {
   #textSelectionAC = null;
   #uiManager;
   static _initialized = false;
-  static #editorTypes = new Map([FreeTextEditor, InkEditor, StampEditor, HighlightEditor].map(type => [type._editorType, type]));
+  static #editorTypes = new Map([FreeTextEditor, InkEditor, StampEditor, HighlightEditor, SignatureEditor].map(type => [type._editorType, type]));
   constructor({
     uiManager,
     pageIndex,
@@ -19716,9 +20742,9 @@ class AnnotationEditorLayer {
   canCreateNewEmptyEditor() {
     return this.#currentEditorType?.canCreateNewEmptyEditor();
   }
-  pasteEditor(mode, params) {
+  async pasteEditor(mode, params) {
     this.#uiManager.updateToolbar(mode);
-    this.#uiManager.updateMode(mode);
+    await this.#uiManager.updateMode(mode);
     const {
       offsetX,
       offsetY
@@ -19775,8 +20801,8 @@ class AnnotationEditorLayer {
       offsetY
     };
   }
-  addNewEditor() {
-    this.createAndAddNewEditor(this.#getCenterPoint(), true);
+  addNewEditor(data = {}) {
+    this.createAndAddNewEditor(this.#getCenterPoint(), true, data);
   }
   setSelected(editor) {
     this.#uiManager.setSelected(editor);
@@ -19808,7 +20834,8 @@ class AnnotationEditorLayer {
       this.#allowClick = true;
       return;
     }
-    if (this.#uiManager.getMode() === AnnotationEditorType.STAMP) {
+    const currentMode = this.#uiManager.getMode();
+    if (currentMode === AnnotationEditorType.STAMP || currentMode === AnnotationEditorType.SIGNATURE) {
       this.#uiManager.unselectAll();
       return;
     }
@@ -20195,8 +21222,9 @@ class DrawLayer {
 
 
 
-const pdfjsVersion = "5.0.44";
-const pdfjsBuild = "e0873f575";
+
+const pdfjsVersion = "5.0.254";
+const pdfjsBuild = "3103747c8";
 
 var __webpack_exports__AbortException = __webpack_exports__.AbortException;
 var __webpack_exports__AnnotationEditorLayer = __webpack_exports__.AnnotationEditorLayer;
@@ -20205,6 +21233,7 @@ var __webpack_exports__AnnotationEditorType = __webpack_exports__.AnnotationEdit
 var __webpack_exports__AnnotationEditorUIManager = __webpack_exports__.AnnotationEditorUIManager;
 var __webpack_exports__AnnotationLayer = __webpack_exports__.AnnotationLayer;
 var __webpack_exports__AnnotationMode = __webpack_exports__.AnnotationMode;
+var __webpack_exports__AnnotationType = __webpack_exports__.AnnotationType;
 var __webpack_exports__ColorPicker = __webpack_exports__.ColorPicker;
 var __webpack_exports__DOMSVGFactory = __webpack_exports__.DOMSVGFactory;
 var __webpack_exports__DrawLayer = __webpack_exports__.DrawLayer;
@@ -20222,6 +21251,8 @@ var __webpack_exports__PermissionFlag = __webpack_exports__.PermissionFlag;
 var __webpack_exports__PixelsPerInch = __webpack_exports__.PixelsPerInch;
 var __webpack_exports__RenderingCancelledException = __webpack_exports__.RenderingCancelledException;
 var __webpack_exports__ResponseException = __webpack_exports__.ResponseException;
+var __webpack_exports__SignatureExtractor = __webpack_exports__.SignatureExtractor;
+var __webpack_exports__SupportedImageMimeTypes = __webpack_exports__.SupportedImageMimeTypes;
 var __webpack_exports__TextLayer = __webpack_exports__.TextLayer;
 var __webpack_exports__TouchManager = __webpack_exports__.TouchManager;
 var __webpack_exports__Util = __webpack_exports__.Util;
@@ -20233,6 +21264,7 @@ var __webpack_exports__fetchData = __webpack_exports__.fetchData;
 var __webpack_exports__getDocument = __webpack_exports__.getDocument;
 var __webpack_exports__getFilenameFromUrl = __webpack_exports__.getFilenameFromUrl;
 var __webpack_exports__getPdfFilenameFromUrl = __webpack_exports__.getPdfFilenameFromUrl;
+var __webpack_exports__getUuid = __webpack_exports__.getUuid;
 var __webpack_exports__getXfaPageViewport = __webpack_exports__.getXfaPageViewport;
 var __webpack_exports__isDataScheme = __webpack_exports__.isDataScheme;
 var __webpack_exports__isPdfFile = __webpack_exports__.isPdfFile;
@@ -20242,4 +21274,4 @@ var __webpack_exports__setLayerDimensions = __webpack_exports__.setLayerDimensio
 var __webpack_exports__shadow = __webpack_exports__.shadow;
 var __webpack_exports__stopEvent = __webpack_exports__.stopEvent;
 var __webpack_exports__version = __webpack_exports__.version;
-export { __webpack_exports__AbortException as AbortException, __webpack_exports__AnnotationEditorLayer as AnnotationEditorLayer, __webpack_exports__AnnotationEditorParamsType as AnnotationEditorParamsType, __webpack_exports__AnnotationEditorType as AnnotationEditorType, __webpack_exports__AnnotationEditorUIManager as AnnotationEditorUIManager, __webpack_exports__AnnotationLayer as AnnotationLayer, __webpack_exports__AnnotationMode as AnnotationMode, __webpack_exports__ColorPicker as ColorPicker, __webpack_exports__DOMSVGFactory as DOMSVGFactory, __webpack_exports__DrawLayer as DrawLayer, __webpack_exports__FeatureTest as FeatureTest, __webpack_exports__GlobalWorkerOptions as GlobalWorkerOptions, __webpack_exports__ImageKind as ImageKind, __webpack_exports__InvalidPDFException as InvalidPDFException, __webpack_exports__OPS as OPS, __webpack_exports__OutputScale as OutputScale, __webpack_exports__PDFDataRangeTransport as PDFDataRangeTransport, __webpack_exports__PDFDateString as PDFDateString, __webpack_exports__PDFWorker as PDFWorker, __webpack_exports__PasswordResponses as PasswordResponses, __webpack_exports__PermissionFlag as PermissionFlag, __webpack_exports__PixelsPerInch as PixelsPerInch, __webpack_exports__RenderingCancelledException as RenderingCancelledException, __webpack_exports__ResponseException as ResponseException, __webpack_exports__TextLayer as TextLayer, __webpack_exports__TouchManager as TouchManager, __webpack_exports__Util as Util, __webpack_exports__VerbosityLevel as VerbosityLevel, __webpack_exports__XfaLayer as XfaLayer, __webpack_exports__build as build, __webpack_exports__createValidAbsoluteUrl as createValidAbsoluteUrl, __webpack_exports__fetchData as fetchData, __webpack_exports__getDocument as getDocument, __webpack_exports__getFilenameFromUrl as getFilenameFromUrl, __webpack_exports__getPdfFilenameFromUrl as getPdfFilenameFromUrl, __webpack_exports__getXfaPageViewport as getXfaPageViewport, __webpack_exports__isDataScheme as isDataScheme, __webpack_exports__isPdfFile as isPdfFile, __webpack_exports__noContextMenu as noContextMenu, __webpack_exports__normalizeUnicode as normalizeUnicode, __webpack_exports__setLayerDimensions as setLayerDimensions, __webpack_exports__shadow as shadow, __webpack_exports__stopEvent as stopEvent, __webpack_exports__version as version };
+export { __webpack_exports__AbortException as AbortException, __webpack_exports__AnnotationEditorLayer as AnnotationEditorLayer, __webpack_exports__AnnotationEditorParamsType as AnnotationEditorParamsType, __webpack_exports__AnnotationEditorType as AnnotationEditorType, __webpack_exports__AnnotationEditorUIManager as AnnotationEditorUIManager, __webpack_exports__AnnotationLayer as AnnotationLayer, __webpack_exports__AnnotationMode as AnnotationMode, __webpack_exports__AnnotationType as AnnotationType, __webpack_exports__ColorPicker as ColorPicker, __webpack_exports__DOMSVGFactory as DOMSVGFactory, __webpack_exports__DrawLayer as DrawLayer, __webpack_exports__FeatureTest as FeatureTest, __webpack_exports__GlobalWorkerOptions as GlobalWorkerOptions, __webpack_exports__ImageKind as ImageKind, __webpack_exports__InvalidPDFException as InvalidPDFException, __webpack_exports__OPS as OPS, __webpack_exports__OutputScale as OutputScale, __webpack_exports__PDFDataRangeTransport as PDFDataRangeTransport, __webpack_exports__PDFDateString as PDFDateString, __webpack_exports__PDFWorker as PDFWorker, __webpack_exports__PasswordResponses as PasswordResponses, __webpack_exports__PermissionFlag as PermissionFlag, __webpack_exports__PixelsPerInch as PixelsPerInch, __webpack_exports__RenderingCancelledException as RenderingCancelledException, __webpack_exports__ResponseException as ResponseException, __webpack_exports__SignatureExtractor as SignatureExtractor, __webpack_exports__SupportedImageMimeTypes as SupportedImageMimeTypes, __webpack_exports__TextLayer as TextLayer, __webpack_exports__TouchManager as TouchManager, __webpack_exports__Util as Util, __webpack_exports__VerbosityLevel as VerbosityLevel, __webpack_exports__XfaLayer as XfaLayer, __webpack_exports__build as build, __webpack_exports__createValidAbsoluteUrl as createValidAbsoluteUrl, __webpack_exports__fetchData as fetchData, __webpack_exports__getDocument as getDocument, __webpack_exports__getFilenameFromUrl as getFilenameFromUrl, __webpack_exports__getPdfFilenameFromUrl as getPdfFilenameFromUrl, __webpack_exports__getUuid as getUuid, __webpack_exports__getXfaPageViewport as getXfaPageViewport, __webpack_exports__isDataScheme as isDataScheme, __webpack_exports__isPdfFile as isPdfFile, __webpack_exports__noContextMenu as noContextMenu, __webpack_exports__normalizeUnicode as normalizeUnicode, __webpack_exports__setLayerDimensions as setLayerDimensions, __webpack_exports__shadow as shadow, __webpack_exports__stopEvent as stopEvent, __webpack_exports__version as version };

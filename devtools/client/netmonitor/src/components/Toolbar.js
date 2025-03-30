@@ -12,7 +12,7 @@ const dom = require("resource://devtools/client/shared/vendor/react-dom-factorie
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
 const {
   connect,
-} = require("resource://devtools/client/shared/redux/visibility-handler-connect.js");
+} = require("resource://devtools/client/shared/vendor/react-redux.js");
 const Actions = require("resource://devtools/client/netmonitor/src/actions/index.js");
 const {
   FILTER_SEARCH_DELAY,
@@ -366,11 +366,6 @@ class Toolbar extends Component {
    */
   renderSearchButton(toggleSearchPanel) {
     const { networkActionBarOpen, networkActionBarSelectedPanel } = this.props;
-
-    // The search feature is available behind a pref.
-    if (!Services.prefs.getBoolPref("devtools.netmonitor.features.search")) {
-      return null;
-    }
 
     return button({
       className: "devtools-button devtools-search-icon",

@@ -120,7 +120,7 @@
         <activity
             android:name=".activity.CrashListActivity"
             android:exported="false"
-            android:theme="@style/Theme.AppCompat.NoActionBar"/>
+            android:theme="@style/Theme.CrashActivityTheme"/>
 
         <activity android:name=".activity.CustomTabActivity"
             android:windowSoftInputMode="adjustResize|stateAlwaysHidden"
@@ -144,9 +144,6 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".activity.InstallFirefoxActivity"
-            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <activity android:name=".activity.EraseShortcutActivity"
             android:theme="@android:style/Theme.Translucent" />

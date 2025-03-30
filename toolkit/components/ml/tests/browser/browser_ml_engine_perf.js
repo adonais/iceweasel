@@ -17,8 +17,20 @@ const perfMetadata = {
         },
         {
           name: "memory",
-          unit: "MB",
+          unit: "MiB",
           shouldAlert: true,
+        },
+        {
+          name: "tokenSpeed",
+          unit: "tokens/s",
+          shouldAlert: true,
+          lowerIsBetter: false,
+        },
+        {
+          name: "charactersSpeed",
+          unit: "chars/s",
+          shouldAlert: true,
+          lowerIsBetter: false,
         },
       ],
       verbose: true,
@@ -48,5 +60,11 @@ add_task(async function test_ml_generic_pipeline() {
     args,
     options: { pooling: "mean", normalize: true },
   };
-  await perfTest("example", options, request, ITERATIONS, true);
+  await perfTest({
+    name: "example",
+    options,
+    request,
+    iterations: ITERATIONS,
+    addColdStart: true,
+  });
 });

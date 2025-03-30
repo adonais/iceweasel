@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.76"
 name = "wgpu-types"
-version = "23.0.0"
+version = "24.0.0"
 authors = ["gfx-rs developers"]
 build = false
 autolib = false
@@ -41,6 +41,21 @@ targets = [
     "wasm32-unknown-unknown",
 ]
 
+[features]
+counters = []
+default = ["std"]
+fragile-send-sync-non-atomic-wasm = []
+serde = [
+    "dep:serde",
+    "bitflags/serde",
+]
+std = [
+    "js-sys/std",
+    "web-sys/std",
+    "thiserror/std",
+]
+strict_asserts = []
+
 [lib]
 name = "wgpu_types"
 path = "src/lib.rs"
@@ -48,6 +63,9 @@ path = "src/lib.rs"
 [dependencies.bitflags]
 version = "2.7"
 features = ["serde"]
+
+[dependencies.log]
+version = "0.4"
 
 [dependencies.serde]
 version = "1"
@@ -58,24 +76,18 @@ features = [
 optional = true
 default-features = false
 
+[dependencies.thiserror]
+version = "2"
+optional = true
+default-features = false
+
 [dev-dependencies.serde]
 version = "1"
 features = ["derive"]
 default-features = false
 
 [dev-dependencies.serde_json]
-version = "1.0.134"
-
-[features]
-counters = []
-default = ["std"]
-fragile-send-sync-non-atomic-wasm = []
-serde = ["dep:serde"]
-std = [
-    "js-sys/std",
-    "web-sys/std",
-]
-strict_asserts = []
+version = "1.0.139"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.js-sys]
 version = "0.3.70"

@@ -5,7 +5,6 @@
 package org.mozilla.fenix.utils
 
 import android.accessibilityservice.AccessibilityServiceInfo.CAPABILITY_CAN_PERFORM_GESTURES
-import android.app.Application
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
@@ -15,6 +14,7 @@ import android.view.accessibility.AccessibilityManager
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.lifecycle.LifecycleOwner
+import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
 import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingMode
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
@@ -36,7 +36,6 @@ import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
-import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.settings.counterPreference
 import org.mozilla.fenix.components.settings.featureFlagPreference
 import org.mozilla.fenix.components.settings.lazyFeatureFlagPreference
@@ -81,8 +80,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         private const val BLOCKED_INT = 0
         private const val ASK_TO_ALLOW_INT = 1
         private const val ALLOWED_INT = 2
-        private const val CFR_COUNT_CONDITION_FOCUS_INSTALLED = 1
-        private const val CFR_COUNT_CONDITION_FOCUS_NOT_INSTALLED = 3
         private const val INACTIVE_TAB_MINIMUM_TO_SHOW_AUTO_CLOSE_DIALOG = 20
 
         const val FOUR_HOURS_MS = 60 * 60 * 4 * 1000L
@@ -619,6 +616,17 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         }
     }
 
+    var whatsappLinkSharingEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_link_sharing),
+        featureFlag = true,
+        default = { FxNimbus.features.sentFromFirefox.value().enabled },
+    )
+
+    var linkSharingSettingsSnackbarShown by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_link_sharing_settings_snackbar),
+        default = false,
+    )
+
     /**
      * Get the display string for the current open links in apps setting
      */
@@ -1082,6 +1090,22 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = false,
     )
 
+    /**
+     * Indicates if the user have enabled trending search in search suggestions.
+     */
+    @VisibleForTesting
+    internal var trendingSearchSuggestionsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_show_trending_search_suggestions),
+        default = true,
+    )
+
+    /**
+     * Returns true if trending searches should be shown to the user.
+     */
+    fun shouldShowTrendingSearchSuggestions(isPrivate: Boolean, searchEngine: SearchEngine?) =
+        trendingSearchSuggestionsEnabled && isTrendingSearchesVisible &&
+            searchEngine?.trendingUrl != null && (!isPrivate || shouldShowSearchSuggestionsInPrivate)
+
     var showSearchSuggestionsInPrivateOnboardingFinished by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_search_suggestions_in_private_onboarding),
         default = false,
@@ -1319,34 +1343,9 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     fun incrementNumTimesPrivateModeOpened() = numTimesPrivateModeOpened.increment()
 
-    var showedPrivateModeContextualFeatureRecommender by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_showed_private_mode_cfr),
-        default = false,
-    )
-
     private val numTimesPrivateModeOpened = counterPreference(
         appContext.getPreferenceKey(R.string.pref_key_private_mode_opened),
     )
-
-    val shouldShowPrivateModeCfr: Boolean
-        get() {
-            if (!canShowCfr) return false
-            val focusInstalled = MozillaProductDetector
-                .getInstalledMozillaProducts(appContext as Application)
-                .contains(MozillaProductDetector.MozillaProducts.FOCUS.productName)
-
-            val showCondition = if (focusInstalled) {
-                numTimesPrivateModeOpened.value >= CFR_COUNT_CONDITION_FOCUS_INSTALLED
-            } else {
-                numTimesPrivateModeOpened.value >= CFR_COUNT_CONDITION_FOCUS_NOT_INSTALLED
-            }
-
-            if (showCondition && !showedPrivateModeContextualFeatureRecommender) {
-                return true
-            }
-
-            return false
-        }
 
     var openLinksInExternalAppOld by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_open_links_in_external_app_old),
@@ -1695,9 +1694,10 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Indicates if Merino content recommendations should be shown.
      */
-    var showContentRecommendations by booleanPreference(
+    var showContentRecommendations by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_pocket_content_recommendations),
-        default = FeatureFlags.MERINO_CONTENT_RECOMMENDATIONS,
+        default = { FxNimbus.features.merinoRecommendations.value().enabled },
+        featureFlag = true,
     )
 
     /**
@@ -1914,9 +1914,10 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Indicates if the Compose Homepage is enabled.
      */
-    var enableComposeHomepage by booleanPreference(
+    var enableComposeHomepage by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_homepage),
-        default = FeatureFlags.COMPOSE_HOMEPAGE,
+        default = { FxNimbus.features.composeHomepage.value().enabled },
+        featureFlag = true,
     )
 
     /**
@@ -1942,6 +1943,15 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var enableUnifiedTrustPanel by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_unified_trust_panel),
         default = FeatureFlags.UNIFIED_TRUST_PANEL,
+    )
+
+    /**
+     * Indicates if Trending Searches is enabled.
+     */
+    var isTrendingSearchesVisible by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_trending_searches),
+        default = { FxNimbus.features.trendingSearches.value().enabled },
+        featureFlag = true,
     )
 
     /**
@@ -2284,5 +2294,18 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         key = appContext.getPreferenceKey(R.string.pref_key_use_new_bookmarks_ui),
         default = { FxNimbus.features.bookmarks.value().newComposeUi },
         featureFlag = true,
+    )
+
+    var lastSavedInFolderGuid by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_last_folder_saved_in),
+        default = "",
+    )
+
+    /**
+     * Indicates whether or not to show the entry point for the DNS over HTTPS settings
+     */
+    val showDohEntryPoint by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_settings_enabled),
+        default = false,
     )
 }

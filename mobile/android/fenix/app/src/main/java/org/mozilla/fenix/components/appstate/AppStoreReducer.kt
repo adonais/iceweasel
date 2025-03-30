@@ -6,7 +6,6 @@ package org.mozilla.fenix.components.appstate
 
 import androidx.annotation.VisibleForTesting
 import mozilla.components.lib.crash.store.crashReducer
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewStateReducer
 import org.mozilla.fenix.components.appstate.recommendations.ContentRecommendationsReducer
@@ -105,10 +104,6 @@ internal object AppStoreReducer {
                 else -> state.recentSyncedTabState
             },
         )
-        is AppAction.SelectedTabChanged -> state.copy(
-            selectedTabId = action.tab.id,
-            mode = BrowsingMode.fromBoolean(action.tab.content.private),
-        )
         is AppAction.DisbandSearchGroupAction -> state.copy(
             recentHistory = state.recentHistory.filterNot {
                 it is RecentHistoryGroup && it.title.equals(action.searchTerm, true)
@@ -176,6 +171,10 @@ internal object AppStoreReducer {
         is AppAction.DeleteAndQuitStarted -> {
             state.copy(snackbarState = SnackbarState.DeletingBrowserDataInProgress)
         }
+
+        is AppAction.SiteDataCleared -> state.copy(
+            snackbarState = SnackbarState.SiteDataCleared,
+        )
 
         is AppAction.OpenInFirefoxStarted -> {
             state.copy(openInFirefoxRequested = true)

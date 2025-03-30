@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import os
-from collections import defaultdict
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -39,6 +38,10 @@ class MochitestData:
                 {"file": "mochitest", "value": value, "xaxis": xaxis}
                 for xaxis, value in enumerate(data["values"])
             ],
+            "value": data.get("value", None),
+            "unit": data.get("unit", None),
+            "shouldAlert": data.get("shouldAlert", None),
+            "lowerIsBetter": data.get("lowerIsBetter", None),
         }
 
     def transform(self, data):
@@ -84,6 +87,11 @@ class Mochitest(Layer):
                 "Additional arguments to pass to mochitest. Expected in a format such as: "
                 "--mochitest-extra-args headless profile-path=/path/to/profile"
             ),
+        },
+        "name-change": {
+            "action": "store_true",
+            "default": False,
+            "help": "Use the test name from the metadata instead of the test filename.",
         },
     }
 
@@ -144,6 +152,17 @@ class Mochitest(Layer):
 
                 output_dir_path = str(Path(self.get_arg("output")).resolve())
                 gecko_profile_args.append(f"--setenv=MOZ_UPLOAD_DIR={output_dir_path}")
+            else:
+                # Setup where the profile gets saved to so it doesn't get deleted
+                profile_path = os.getenv("MOZ_PROFILER_SHUTDOWN")
+                if not profile_path:
+                    output_dir = Path(self.get_arg("output"))
+                    if not output_dir.is_absolute():
+                        output_dir = Path(self.topsrcdir, output_dir)
+                    output_dir.resolve().mkdir(parents=True, exist_ok=True)
+                    profile_path = output_dir / "profile_mochitest.json"
+                    os.environ["MOZ_PROFILER_SHUTDOWN"] = str(profile_path)
+                self.info(f"Profile will be saved to: {profile_path}")
 
         return gecko_profile_args
 
@@ -215,17 +234,30 @@ class Mochitest(Layer):
 
     def run(self, metadata):
         test = Path(metadata.script["filename"])
+        if self.get_arg("name-change", False):
+            test_name = metadata.script["name"]
+        else:
+            test_name = test.name
 
-        results = defaultdict(list)
+        results = []
         cycles = self.get_arg("cycles", 1)
         for cycle in range(1, cycles + 1):
-            if ON_TRY:
-                status, log_processor = self.remote_run(test, metadata)
-            else:
-                status, log_processor = FunctionalTestRunner.test(
-                    self.mach_cmd,
-                    [str(test)],
-                    self._get_mochitest_args() + ["--keep-open=False"],
+
+            metadata.run_hook(
+                "before_cycle", metadata, self.env, cycle, metadata.script
+            )
+            try:
+                if ON_TRY:
+                    status, log_processor = self.remote_run(test, metadata)
+                else:
+                    status, log_processor = FunctionalTestRunner.test(
+                        self.mach_cmd,
+                        [str(test)],
+                        self._get_mochitest_args() + ["--keep-open=False"],
+                    )
+            finally:
+                metadata.run_hook(
+                    "after_cycle", metadata, self.env, cycle, metadata.script
                 )
 
             if status is not None and status != 0:
@@ -236,21 +268,37 @@ class Mochitest(Layer):
                 self.metrics.append(json.loads(metrics_line.split("|")[-1].strip()))
 
         for m in self.metrics:
-            for key, val in m.items():
-                results[key].append(val)
+            # Expecting results like {"metric-name": value, "metric-name2": value, ...}
+            if isinstance(m, dict):
+                for key, val in m.items():
+                    for r in results:
+                        if r["name"] == key:
+                            r["values"].append(val)
+                            break
+                    else:
+                        results.append({"name": key, "values": [val]})
+            # Expecting results like [
+            #     {"name": "metric-name", "values": [value1, value2, ...], ...},
+            #     {"name": "metric-name2", "values": [value1, value2, ...], ...},
+            # ]
+            else:
+                for metric in m:
+                    for r in results:
+                        if r["name"] == metric["name"]:
+                            r["values"].extend(metric["values"])
+                            break
+                    else:
+                        results.append(metric)
 
-        if len(results.items()) == 0:
+        if len(results) == 0:
             raise NoPerfMetricsError("mochitest")
 
         metadata.add_result(
             {
-                "name": test.name,
+                "name": test_name,
                 "framework": {"name": "mozperftest"},
                 "transformer": "mozperftest.test.mochitest:MochitestData",
-                "results": [
-                    {"values": measures, "name": subtest}
-                    for subtest, measures in results.items()
-                ],
+                "results": results,
             }
         )
 

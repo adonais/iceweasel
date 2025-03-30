@@ -177,7 +177,6 @@ class ProviderTopSites extends UrlbarProvider {
     );
     sites = sites.slice(0, numTopSites);
 
-    let index = 1;
     sites = sites.map(link => {
       let site = {
         type: link.searchTopSite ? "search" : "url",
@@ -202,10 +201,8 @@ class ProviderTopSites extends UrlbarProvider {
           sponsoredTileId: sponsored_tile_id,
           sponsoredImpressionUrl: sponsored_impression_url,
           sponsoredClickUrl: sponsored_click_url,
-          position: index,
         };
       }
-      index++;
       return site;
     });
 
@@ -314,10 +311,7 @@ class ProviderTopSites extends UrlbarProvider {
 
           if (!engine && site.url) {
             // Look up the engine by its domain.
-            let host;
-            try {
-              host = new URL(site.url).hostname;
-            } catch (err) {}
+            let host = URL.parse(site.url)?.hostname;
             if (host) {
               engine = (
                 await lazy.UrlbarSearchUtils.enginesForDomainPrefix(host)

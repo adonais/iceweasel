@@ -42,7 +42,7 @@
 #include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/EditorLibeditorMetrics.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
@@ -259,25 +259,33 @@ HTMLEditor::HTMLEditor(const Document& aDocument)
       mDefaultParagraphSeparator(ParagraphSeparator::div) {}
 
 HTMLEditor::~HTMLEditor() {
-  Telemetry::Accumulate(Telemetry::HTMLEDITORS_WITH_BEFOREINPUT_LISTENERS,
-                        MayHaveBeforeInputEventListenersForTelemetry() ? 1 : 0);
-  Telemetry::Accumulate(
-      Telemetry::HTMLEDITORS_OVERRIDDEN_BY_BEFOREINPUT_LISTENERS,
-      mHasBeforeInputBeenCanceled ? 1 : 0);
-  Telemetry::Accumulate(
-      Telemetry::
-          HTMLEDITORS_WITH_MUTATION_LISTENERS_WITHOUT_BEFOREINPUT_LISTENERS,
-      !MayHaveBeforeInputEventListenersForTelemetry() &&
-              MayHaveMutationEventListeners()
-          ? 1
-          : 0);
-  Telemetry::Accumulate(
-      Telemetry::
-          HTMLEDITORS_WITH_MUTATION_OBSERVERS_WITHOUT_BEFOREINPUT_LISTENERS,
-      !MayHaveBeforeInputEventListenersForTelemetry() &&
-              MutationObserverHasObservedNodeForTelemetry()
-          ? 1
-          : 0);
+  glean::htmleditors::with_beforeinput_listeners
+      .EnumGet(static_cast<glean::htmleditors::WithBeforeinputListenersLabel>(
+          MayHaveBeforeInputEventListenersForTelemetry() ? 1 : 0))
+      .Add();
+  glean::htmleditors::overridden_by_beforeinput_listeners
+      .EnumGet(static_cast<
+               glean::htmleditors::OverriddenByBeforeinputListenersLabel>(
+          mHasBeforeInputBeenCanceled ? 1 : 0))
+      .Add();
+  glean::htmleditors::with_mutation_listeners_without_beforeinput_listeners
+      .EnumGet(static_cast<
+               glean::htmleditors::
+                   WithMutationListenersWithoutBeforeinputListenersLabel>(
+          !MayHaveBeforeInputEventListenersForTelemetry() &&
+                  MayHaveMutationEventListeners()
+              ? 1
+              : 0))
+      .Add();
+  glean::htmleditors::with_mutation_observers_without_beforeinput_listeners
+      .EnumGet(static_cast<
+               glean::htmleditors::
+                   WithMutationObserversWithoutBeforeinputListenersLabel>(
+          !MayHaveBeforeInputEventListenersForTelemetry() &&
+                  MutationObserverHasObservedNodeForTelemetry()
+              ? 1
+              : 0))
+      .Add();
 
   mPendingStylesToApplyToNewContent = nullptr;
 
@@ -3492,7 +3500,7 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
   }
 
   // Optimization for a single selected element
-  if (startRef.Container() == endRef.Container()) {
+  if (startRef.GetContainer() == endRef.GetContainer()) {
     nsIContent* startContent = startRef.GetChildAtOffset();
     nsIContent* endContent = endRef.GetChildAtOffset();
     if (startContent && endContent &&
@@ -3515,11 +3523,11 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
     }
   }
 
-  if (isLinkTag && startRef.Container()->IsContent() &&
-      endRef.Container()->IsContent()) {
+  if (isLinkTag && startRef.GetContainer()->IsContent() &&
+      endRef.GetContainer()->IsContent()) {
     // Link node must be the same for both ends of selection.
     Element* parentLinkOfStart = GetInclusiveAncestorByTagNameInternal(
-        *nsGkAtoms::href, *startRef.Container()->AsContent());
+        *nsGkAtoms::href, *startRef.GetContainer()->AsContent());
     if (parentLinkOfStart) {
       if (SelectionRef().IsCollapsed()) {
         // We have just a caret in the link.
@@ -3527,7 +3535,7 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
       }
       // Link node must be the same for both ends of selection.
       Element* parentLinkOfEnd = GetInclusiveAncestorByTagNameInternal(
-          *nsGkAtoms::href, *endRef.Container()->AsContent());
+          *nsGkAtoms::href, *endRef.GetContainer()->AsContent());
       if (parentLinkOfStart == parentLinkOfEnd) {
         return do_AddRef(parentLinkOfStart);
       }
@@ -4053,6 +4061,7 @@ Result<CaretPoint, nsresult>
 HTMLEditor::DeleteEmptyInclusiveAncestorInlineElements(
     nsIContent& aContent, const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(HTMLEditUtils::IsRemovableFromParentNode(aContent));
 
   constexpr static HTMLEditUtils::EmptyCheckOptions kOptionsToCheckInline =
       HTMLEditUtils::EmptyCheckOptions{
@@ -4107,8 +4116,10 @@ HTMLEditor::DeleteEmptyInclusiveAncestorInlineElements(
   if (NS_WARN_IF(nextSibling && nextSibling->GetParentNode() != parentNode)) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
-  return CaretPoint(nextSibling ? EditorDOMPoint(nextSibling)
-                                : EditorDOMPoint::AtEndOf(*parentNode));
+  return CaretPoint(nextSibling &&
+                            HTMLEditUtils::IsSimplyEditableNode(*nextSibling)
+                        ? EditorDOMPoint(nextSibling)
+                        : EditorDOMPoint::AtEndOf(*parentNode));
 }
 
 nsresult HTMLEditor::DeleteAllChildrenWithTransaction(Element& aElement) {
@@ -4197,12 +4208,8 @@ Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
   }
 
   if (!aLength) {
-    RefPtr<Document> document = GetDocument();
-    if (NS_WARN_IF(!document)) {
-      return Err(NS_ERROR_NOT_INITIALIZED);
-    }
     Result<InsertTextResult, nsresult> insertTextResult =
-        InsertTextWithTransaction(*document, aStringToInsert,
+        InsertTextWithTransaction(aStringToInsert,
                                   EditorDOMPoint(&aTextNode, aOffset),
                                   InsertTextTo::ExistingTextNodeIfAvailable);
     NS_WARNING_ASSERTION(insertTextResult.isOk(),
@@ -4285,20 +4292,20 @@ Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
 }
 
 Result<InsertTextResult, nsresult> HTMLEditor::InsertTextWithTransaction(
-    Document& aDocument, const nsAString& aStringToInsert,
-    const EditorDOMPoint& aPointToInsert, InsertTextTo aInsertTextTo) {
+    const nsAString& aStringToInsert, const EditorDOMPoint& aPointToInsert,
+    InsertTextTo aInsertTextTo) {
   if (NS_WARN_IF(!aPointToInsert.IsSet())) {
     return Err(NS_ERROR_INVALID_ARG);
   }
 
   // Do nothing if the node is read-only
-  if (MOZ_UNLIKELY(NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(
-          *aPointToInsert.GetContainer())))) {
+  if (NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(
+          *aPointToInsert.GetContainer()))) {
     return Err(NS_ERROR_FAILURE);
   }
 
-  return EditorBase::InsertTextWithTransaction(aDocument, aStringToInsert,
-                                               aPointToInsert, aInsertTextTo);
+  return EditorBase::InsertTextWithTransaction(aStringToInsert, aPointToInsert,
+                                               aInsertTextTo);
 }
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
@@ -4532,7 +4539,8 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
   const Maybe<EditorLineBreak> unnecessaryLineBreak =
       HTMLEditUtils::GetFollowingUnnecessaryLineBreak<EditorLineBreak>(
           aNextOrAfterModifiedPoint);
-  if (MOZ_LIKELY(unnecessaryLineBreak.isNothing())) {
+  if (MOZ_LIKELY(unnecessaryLineBreak.isNothing() ||
+                 !unnecessaryLineBreak->IsDeletableFromComposedDoc())) {
     return NS_OK;
   }
   if (unnecessaryLineBreak->IsHTMLBRElement()) {
@@ -4946,10 +4954,9 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
   //     be deleted at least during the call.
   RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return;
-  }
+  // Do not create AutoEditActionDataSetter here because it grabs `Selection`,
+  // but that appear in the profile. If you need to create to it in some cases,
+  // you should do it in the minimum scope.
 
   if (ShouldReplaceRootElement()) {
     // Forget maybe disconnected root element right now because nobody should
@@ -5026,10 +5033,9 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::ContentWillBeRemoved(
   //     deleted during the call.
   RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return;
-  }
+  // Do not create AutoEditActionDataSetter here because it grabs `Selection`,
+  // but that appear in the profile. If you need to create to it in some cases,
+  // you should do it in the minimum scope.
 
   // FYI: mRootElement may be the <body> of the document or the root element.
   // Therefore, we don't need to check it across shadow DOM boundaries.
@@ -7056,8 +7062,8 @@ Element* HTMLEditor::GetSelectionContainerElement() const {
       // when only one node is selected.  However, it simply returns start
       // node of Selection with additional cost.  So, we do not need to call
       // it anymore.
-      if (startRef.Container()->IsElement() &&
-          startRef.Container() == endRef.Container() &&
+      if (startRef.GetContainer()->IsElement() &&
+          startRef.GetContainer() == endRef.GetContainer() &&
           startRef.GetChildAtOffset() &&
           startRef.GetChildAtOffset()->GetNextSibling() ==
               endRef.GetChildAtOffset()) {
@@ -7753,7 +7759,11 @@ nsresult HTMLEditor::OnModifyDocument(const DocumentModifiedEvent& aRunner) {
   // could destroy the editor
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
-  {
+  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
+    // Selection changes caused by the hacks below should not be exposed because
+    // they should occur silently from web apps.
+    AutoHideSelectionChanges hideSelectionChangesCausedByTheHacks(
+        SelectionRef());
     // When this is called, there is no toplevel edit sub-action. Then,
     // InsertNodeWithTransaction() or ReplaceTextWithTransaction() will set it.
     // Then, OnEndHandlingTopLevelEditSubActionInternal() will call
@@ -7887,7 +7897,8 @@ void HTMLEditor::DocumentModifiedEvent::MaybeAppendNewInvisibleWhiteSpace(
   // the candidate white-space which becomes invisible.
   // FIXME: This does not work well if a padding `<br>` is removed with its
   // parent.
-  if (!aContentWillBeRemoved || !aContentWillBeRemoved->IsInComposedDoc() ||
+  if (StaticPrefs::editor_white_space_normalization_blink_compatible() ||
+      !aContentWillBeRemoved || !aContentWillBeRemoved->IsInComposedDoc() ||
       !HTMLEditUtils::IsSimplyEditableNode(*aContentWillBeRemoved) ||
       !aContentWillBeRemoved->IsHTMLElement(nsGkAtoms::br)) {
     return;

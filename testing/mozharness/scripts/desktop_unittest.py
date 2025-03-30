@@ -723,7 +723,29 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     if test_paths:
                         base_cmd.extend(test_paths)
                     if c["test_tags"]:
-                        base_cmd.extend(["--tag={}".format(t) for t in c["test_tags"]])
+                        # Exclude suites that don't support --tag to prevent
+                        # errors caused by passing unknown argument.
+                        # Note there's a similar list in chunking.py in
+                        # DefaultLoader's get_manifest method. The lists should
+                        # be kept in sync.
+                        if suite_category not in [
+                            "gtest",
+                            "cppunittest",
+                            "jittest",
+                            "crashtest",
+                            "crashtest-qr",
+                            "jsreftest",
+                            "reftest",
+                            "reftest-qr",
+                        ]:
+                            base_cmd.extend(
+                                ["--tag={}".format(t) for t in c["test_tags"]]
+                            )
+                        else:
+                            self.warning(
+                                "--tag does not currently work with the "
+                                "'{suite_category}' suite."
+                            )
                 elif c.get("total_chunks") and c.get("this_chunk"):
                     base_cmd.extend(
                         [
@@ -1253,6 +1275,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
 
         def do_gnome_video_recording(suite_name, upload_dir, ev):
             import os
+            import subprocess
 
             import dbus
 
@@ -1260,6 +1283,12 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 upload_dir,
                 "video_{}.webm".format(suite_name),
             )
+
+            tmp_file = os.path.join(
+                upload_dir,
+                "video_{}_tmp.webm".format(suite_name),
+            )
+
             self.info("Recording suite {} to {}".format(suite_name, target_file))
 
             session_bus = dbus.SessionBus()
@@ -1270,12 +1299,38 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 "Screencast",
                 signature="sa{sv}",
                 args=[
-                    target_file,
+                    tmp_file,
                     {"draw-cursor": True, "framerate": 35},
                 ],
             )
 
             ev.wait()
+
+            # Use ffmpeg to add duration headers in the screen recording.
+            try:
+                subprocess.run(
+                    [
+                        "ffmpeg",
+                        "-i",
+                        tmp_file,
+                        "-vcodec",
+                        "copy",
+                        "-acodec",
+                        "copy",
+                        target_file,
+                    ],
+                    check=True,
+                )
+                # If subprocess.run did not raise CalledProcessError, remove
+                # the temporary file.
+                os.remove(tmp_file)
+            except subprocess.CalledProcessError as e:
+                self.error(
+                    f"Error occurred while running ffmpeg: {e.stderr} ({e.returncode})"
+                )
+                # If subprocess.run failed, rename the temporary file to the
+                # expected target file name.
+                os.rename(tmp_file, target_file)
 
         def do_macos_video_recording(suite_name, upload_dir, ev):
             import os
@@ -1293,6 +1348,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             )
             ev.wait()
             process.stdin.write(b"p")
+            process.stdin.flush()
             process.wait()
 
         if suites:
@@ -1444,26 +1500,29 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     final_env = copy.copy(env)
 
                     finish_video = threading.Event()
-                    do_video_recording = os.getenv("MOZ_RECORD_TEST")
-                    if do_video_recording:
+                    video_recording_thread = None
+                    if os.getenv("MOZ_RECORD_TEST"):
+                        video_recording_target = None
                         if sys.platform == "linux":
-                            target = do_gnome_video_recording
+                            video_recording_target = do_gnome_video_recording
                         elif sys.platform == "darwin":
-                            target = do_macos_video_recording
+                            video_recording_target = do_macos_video_recording
+
+                        if video_recording_target:
+                            video_recording_thread = threading.Thread(
+                                target=video_recording_target,
+                                args=(
+                                    suite,
+                                    env["MOZ_UPLOAD_DIR"],
+                                    finish_video,
+                                ),
+                            )
+                            self.info("Starting recording thread {}".format(suite))
+                            video_recording_thread.start()
                         else:
                             self.warning(
                                 "Screen recording not implemented for this platform"
                             )
-                        thread = threading.Thread(
-                            target=target,
-                            args=(
-                                suite,
-                                env["MOZ_UPLOAD_DIR"],
-                                finish_video,
-                            ),
-                        )
-                        self.info("Starting recording thread {}".format(suite))
-                        thread.start()
 
                     if self.per_test_coverage:
                         self.set_coverage_env(final_env)
@@ -1491,10 +1550,10 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     #    findings for harness/suite errors <- DesktopUnittestOutputParser
                     # 3) checking to see if the return code is in success_codes
 
-                    if do_video_recording:
+                    if video_recording_thread:
                         self.info("Stopping recording thread {}".format(suite))
                         finish_video.set()
-                        thread.join()
+                        video_recording_thread.join()
                         self.info("Stopped recording thread {}".format(suite))
 
                     success_codes = None

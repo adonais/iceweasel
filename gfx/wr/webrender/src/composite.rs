@@ -473,6 +473,7 @@ pub enum CompositorSurfaceUsage {
         external_image_id: ExternalImageId,
         transform_index: CompositorTransformIndex,
     },
+    DebugOverlay,
 }
 
 impl CompositorSurfaceUsage {
@@ -489,6 +490,10 @@ impl CompositorSurfaceUsage {
             (CompositorSurfaceUsage::External { image_key: key1, .. }, CompositorSurfaceUsage::External { image_key: key2, .. }) => {
                 key1 == key2
             }
+
+            (CompositorSurfaceUsage::DebugOverlay, CompositorSurfaceUsage::DebugOverlay) => true,
+
+            (CompositorSurfaceUsage::DebugOverlay, _) | (_, CompositorSurfaceUsage::DebugOverlay) => false,
         }
     }
 }
@@ -1140,6 +1145,20 @@ pub struct NativeSurfaceInfo {
 }
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WindowProperties {
+    pub is_opaque: bool,
+}
+
+impl Default for WindowProperties {
+    fn default() -> Self {
+        WindowProperties {
+            is_opaque: true,
+        }
+    }
+}
+
+#[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -1407,6 +1426,9 @@ pub trait LayerCompositor {
 
     // Finish compositing this frame - commit the visual tree to the OS
     fn end_frame(&mut self);
+
+    // Get current information about the window, such as opacity
+    fn get_window_properties(&self) -> WindowProperties;
 }
 
 /// Information about the underlying data buffer of a mapped tile.

@@ -596,6 +596,12 @@ bool GetTrustedTypeDataForAttribute(const nsAtom* aElementName,
                                     int32_t aAttributeNamespaceID,
                                     TrustedType& aTrustedType,
                                     nsAString& aSink) {
+  if (aElementNamespaceID != kNameSpaceID_XHTML &&
+      aElementNamespaceID != kNameSpaceID_SVG &&
+      aElementNamespaceID != kNameSpaceID_MathML) {
+    return false;
+  }
+
   // The spec is not really clear about which "event handler content attributes"
   // we should consider, so we just include everything but XUL's specific ones.
   // See https://github.com/w3c/trusted-types/issues/520.
@@ -641,10 +647,10 @@ bool GetTrustedTypeDataForAttribute(const nsAtom* aElementName,
   return false;
 }
 
+template <typename TrustedTypeOrStringArg>
 MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantAttributeValue(
     const nsINode& aElement, nsAtom* aAttributeName,
-    int32_t aAttributeNamespaceID,
-    const TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString& aNewValue,
+    int32_t aAttributeNamespaceID, const TrustedTypeOrStringArg& aNewValue,
     Maybe<nsAutoString>& aResultHolder, ErrorResult& aError) {
   if (!StaticPrefs::dom_security_trusted_types_enabled()) {
     // A trusted type might've been created before the pref was set to `false`,
@@ -670,12 +676,19 @@ MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantAttributeValue(
     return GetContent(aNewValue);
   }
 
-  if ((expectedType == TrustedType::TrustedHTML && aNewValue.IsTrustedHTML()) ||
-      (expectedType == TrustedType::TrustedScript &&
-       aNewValue.IsTrustedScript()) ||
-      (expectedType == TrustedType::TrustedScriptURL &&
-       aNewValue.IsTrustedScriptURL())) {
-    return GetAsTrustedType(aNewValue);
+  if constexpr (std::is_same_v<
+                    TrustedTypeOrStringArg,
+                    TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString>) {
+    if ((expectedType == TrustedType::TrustedHTML &&
+         aNewValue.IsTrustedHTML()) ||
+        (expectedType == TrustedType::TrustedScript &&
+         aNewValue.IsTrustedScript()) ||
+        (expectedType == TrustedType::TrustedScriptURL &&
+         aNewValue.IsTrustedScriptURL())) {
+      return GetAsTrustedType(aNewValue);
+    }
+  } else {
+    MOZ_ASSERT((std::is_same_v<TrustedTypeOrStringArg, const nsAString*>));
   }
 
   const nsAString* input = GetContent(aNewValue);
@@ -695,6 +708,26 @@ MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantAttributeValue(
   }
   MOZ_ASSERT_UNREACHABLE();
   return nullptr;
+}
+
+MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantAttributeValue(
+    const nsINode& aElement, nsAtom* aAttributeName,
+    int32_t aAttributeNamespaceID,
+    const TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString& aNewValue,
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError) {
+  return GetTrustedTypesCompliantAttributeValue<
+      TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString>(
+      aElement, aAttributeName, aAttributeNamespaceID, aNewValue, aResultHolder,
+      aError);
+}
+
+MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantAttributeValue(
+    const nsINode& aElement, nsAtom* aAttributeName,
+    int32_t aAttributeNamespaceID, const nsAString& aNewValue,
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError) {
+  return GetTrustedTypesCompliantAttributeValue<const nsAString*>(
+      aElement, aAttributeName, aAttributeNamespaceID, &aNewValue,
+      aResultHolder, aError);
 }
 
 bool HostGetCodeForEval(JSContext* aCx, JS::Handle<JSObject*> aCode,

@@ -2173,7 +2173,7 @@ nsresult EditorBase::InsertTextAt(
     return rv;
   }
 
-  rv = InsertTextAsSubAction(aStringToInsert, SelectionHandling::Delete);
+  rv = InsertTextAsSubAction(aStringToInsert, InsertTextFor::NormalText);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
   return rv;
@@ -3245,8 +3245,8 @@ nsresult EditorBase::ScrollSelectionFocusIntoView() const {
 }
 
 Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
-    Document& aDocument, const nsAString& aStringToInsert,
-    const EditorDOMPoint& aPointToInsert, InsertTextTo aInsertTextTo) {
+    const nsAString& aStringToInsert, const EditorDOMPoint& aPointToInsert,
+    InsertTextTo aInsertTextTo) {
   MOZ_ASSERT_IF(IsTextEditor(),
                 aInsertTextTo == InsertTextTo::ExistingTextNodeIfAvailable);
 
@@ -4115,8 +4115,17 @@ nsresult EditorBase::OnCompositionChange(
         "AutoPlaceholderBatch should've notified the observes of before-edit");
     // If we're updating composition, we need to ignore normal selection
     // which may be updated by the web content.
-    rv = InsertTextAsSubAction(data, wasComposing ? SelectionHandling::Ignore
-                                                  : SelectionHandling::Delete);
+    const auto purpose = [&]() -> InsertTextFor {
+      if (!wasComposing) {
+        return !aCompositionChangeEvent.IsFollowedByCompositionEnd()
+                   ? InsertTextFor::CompositionStart
+                   : InsertTextFor::CompositionStartAndEnd;
+      }
+      return !aCompositionChangeEvent.IsFollowedByCompositionEnd()
+                 ? InsertTextFor::CompositionUpdate
+                 : InsertTextFor::CompositionEnd;
+    }();
+    rv = InsertTextAsSubAction(data, purpose);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "EditorBase::InsertTextAsSubAction() failed");
 
@@ -4215,6 +4224,16 @@ void EditorBase::OnCompositionEnd(
   //      change and does not make sense.  See spec issue:
   //      https://github.com/w3c/uievents/issues/202
   NotifyEditorObservers(eNotifyEditorObserversOfEnd);
+}
+
+bool EditorBase::WillHandleMouseButtonEvent(WidgetMouseEvent& aMouseEvent) {
+  MOZ_ASSERT(aMouseEvent.mMessage == eMouseDown ||
+             aMouseEvent.mMessage == eMouseUp);
+  if (!mEventListener) {
+    return false;
+  }
+  OwningNonNull<EditorEventListener> editorEventListener(*mEventListener);
+  return editorEventListener->WillHandleMouseButtonEvent(aMouseEvent);
 }
 
 void EditorBase::DoAfterDoTransaction(nsITransaction* aTransaction) {
@@ -5131,48 +5150,6 @@ nsresult EditorBase::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
 
-nsresult EditorBase::DeleteSelectionWithTransaction(
-    nsIEditor::EDirection aDirectionAndAmount,
-    nsIEditor::EStripWrappers aStripWrappers) {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-
-  AutoClonedSelectionRangeArray rangesToDelete(SelectionRef());
-  if (NS_WARN_IF(rangesToDelete.Ranges().IsEmpty())) {
-    NS_ASSERTION(
-        false,
-        "For avoiding to throw incompatible exception for `execCommand`, fix "
-        "the caller");
-    return NS_ERROR_FAILURE;
-  }
-
-  if (IsTextEditor()) {
-    if (const Text* theTextNode = AsTextEditor()->GetTextNode()) {
-      rangesToDelete.EnsureRangesInTextNode(*theTextNode);
-    }
-  }
-
-  Result<CaretPoint, nsresult> caretPointOrError = DeleteRangesWithTransaction(
-      aDirectionAndAmount, aStripWrappers, rangesToDelete);
-  if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-    NS_WARNING("EditorBase::DeleteRangesWithTransaction() failed");
-    return caretPointOrError.unwrapErr();
-  }
-  nsresult rv = caretPointOrError.inspect().SuggestCaretPointTo(
-      *this, {SuggestCaret::OnlyIfHasSuggestion,
-              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-              SuggestCaret::AndIgnoreTrivialError});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-  }
-  NS_WARNING_ASSERTION(rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-                       "CaretPoint::SuggestCaretPointTo() failed, but ignored");
-  return NS_OK;
-}
-
 Result<CaretPoint, nsresult> EditorBase::DeleteRangeWithTransaction(
     nsIEditor::EDirection aDirectionAndAmount,
     nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete) {
@@ -5530,7 +5507,7 @@ nsresult EditorBase::OnInputText(const nsAString& aStringToInsert) {
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName,
                                              ScrollSelectionIntoView::Yes,
                                              __FUNCTION__);
-  rv = InsertTextAsSubAction(aStringToInsert, SelectionHandling::Delete);
+  rv = InsertTextAsSubAction(aStringToInsert, InsertTextFor::NormalText);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
   return EditorBase::ToGenericNSResult(rv);
@@ -5676,7 +5653,7 @@ nsresult EditorBase::ReplaceSelectionAsSubAction(const nsAString& aString) {
     return rv;
   }
 
-  nsresult rv = InsertTextAsSubAction(aString, SelectionHandling::Delete);
+  nsresult rv = InsertTextAsSubAction(aString, InsertTextFor::NormalText);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
   return rv;
@@ -6474,19 +6451,23 @@ nsresult EditorBase::InsertTextAsAction(const nsAString& aStringToInsert,
   }
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-  rv = InsertTextAsSubAction(stringToInsert, SelectionHandling::Delete);
+  rv = InsertTextAsSubAction(stringToInsert, InsertTextFor::NormalText);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
   return EditorBase::ToGenericNSResult(rv);
 }
 
-nsresult EditorBase::InsertTextAsSubAction(
-    const nsAString& aStringToInsert, SelectionHandling aSelectionHandling) {
+nsresult EditorBase::InsertTextAsSubAction(const nsAString& aStringToInsert,
+                                           InsertTextFor aPurpose) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mPlaceholderBatch);
   MOZ_ASSERT(IsHTMLEditor() ||
              aStringToInsert.FindChar(nsCRT::CR) == kNotFound);
-  MOZ_ASSERT_IF(aSelectionHandling == SelectionHandling::Ignore, mComposition);
+  MOZ_ASSERT_IF(aPurpose == InsertTextFor::CompositionStart ||
+                    aPurpose == InsertTextFor::CompositionUpdate ||
+                    aPurpose == InsertTextFor::CompositionEnd ||
+                    aPurpose == InsertTextFor::CompositionStartAndEnd,
+                mComposition);
 
   if (NS_WARN_IF(!mInitSucceeded)) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -6511,7 +6492,7 @@ nsresult EditorBase::InsertTextAsSubAction(
       "TextEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
   Result<EditActionResult, nsresult> result =
-      HandleInsertText(editSubAction, aStringToInsert, aSelectionHandling);
+      HandleInsertText(aStringToInsert, aPurpose);
   if (MOZ_UNLIKELY(result.isErr())) {
     NS_WARNING("EditorBase::HandleInsertText() failed");
     return result.unwrapErr();

@@ -10,6 +10,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/TimeStamp.h"
 #include "nsStringFwd.h"
 
 class nsIURI;
@@ -57,10 +58,10 @@ class TextDirectiveUtil final {
    *
    * This is a thin wrapper around `nsFind`.
    */
-  static RefPtr<nsRange> FindStringInRange(nsRange* aSearchRange,
-                                           const nsAString& aQuery,
-                                           bool aWordStartBounded,
-                                           bool aWordEndBounded);
+  static RefPtr<nsRange> FindStringInRange(
+      const RangeBoundary& aSearchStart, const RangeBoundary& aSearchEnd,
+      const nsAString& aQuery, bool aWordStartBounded, bool aWordEndBounded,
+      nsContentUtils::NodeIndexCache* aCache = nullptr);
 
   /**
    * @brief Moves `aRangeBoundary` one word in `aDirection`.
@@ -192,7 +193,8 @@ class TextDirectiveUtil final {
    */
   static bool NormalizedRangeBoundariesAreEqual(
       const RangeBoundary& aRangeBoundary1,
-      const RangeBoundary& aRangeBoundary2);
+      const RangeBoundary& aRangeBoundary2,
+      nsContentUtils::NodeIndexCache* aCache = nullptr);
 
   /**
    * @brief Extends the range boundaries to word boundaries across nodes.
@@ -244,6 +246,20 @@ class TextDirectiveUtil final {
    */
   static RangeBoundary CreateRangeBoundaryByMovingOffsetFromRangeStart(
       nsRange* aRange, uint32_t aLogicalOffset);
+};
+
+class TimeoutWatchdog final {
+ public:
+  TimeoutWatchdog()
+      : mStartTime(TimeStamp::Now()),
+        mDuration(TimeDuration::FromSeconds(
+            StaticPrefs::
+                dom_text_fragments_create_text_fragment_timeout_seconds())) {}
+  bool IsDone() const { return TimeStamp::Now() - mStartTime > mDuration; }
+
+ private:
+  TimeStamp mStartTime;
+  TimeDuration mDuration;
 };
 }  // namespace mozilla::dom
 

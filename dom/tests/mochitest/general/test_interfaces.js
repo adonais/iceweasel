@@ -128,6 +128,7 @@ let ecmaGlobals = [
   { name: "String", insecureContext: true },
   { name: "Symbol", insecureContext: true },
   { name: "SyntaxError", insecureContext: true },
+  { name: "Temporal", nightly: true, insecureContext: true },
   { name: "TypeError", insecureContext: true },
   { name: "Uint16Array", insecureContext: true },
   { name: "Uint32Array", insecureContext: true },
@@ -338,6 +339,8 @@ let interfaceNamesInGlobalScope = [
   { name: "CSSRule", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CSSRuleList", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSScopeRule", insecureContext: true, nightly: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CSSStartingStyleRule", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -787,11 +790,7 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "InputEvent", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  {
-    name: "InstallTrigger",
-    insecureContext: true,
-    disabled: isEarlyBetaOrEarlier,
-  },
+  { name: "InstallTrigger", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "IntersectionObserver", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!

@@ -50,6 +50,7 @@
 #include "nsITransferable.h"
 #include "nsIDOMGeoPositionCallback.h"
 #include "nsIDOMGeoPositionErrorCallback.h"
+#include "nsIUrlClassifierFeature.h"
 #include "nsRefPtrHashtable.h"
 #include "PermissionMessageUtils.h"
 #include "DriverCrashGuard.h"
@@ -563,7 +564,7 @@ class ContentParent final : public PContentParent,
       const nsCString& aPartitionKey, ContentParent* aIgnoreThisCP = nullptr);
 
   static void BroadcastBlobURLUnregistration(
-      const nsACString& aURI, nsIPrincipal* aPrincipal,
+      const nsTArray<BroadcastBlobURLUnregistrationRequest>& aRequests,
       ContentParent* aIgnoreThisCP = nullptr);
 
   mozilla::ipc::IPCResult RecvStoreAndBroadcastBlobURLRegistration(
@@ -571,7 +572,7 @@ class ContentParent final : public PContentParent,
       const nsCString& aPartitionKey);
 
   mozilla::ipc::IPCResult RecvUnstoreAndBroadcastBlobURLUnregistration(
-      const nsACString& aURI, nsIPrincipal* aPrincipal);
+      const nsTArray<BroadcastBlobURLUnregistrationRequest>& aRequests);
 
   virtual int32_t Pid() const override;
 
@@ -590,6 +591,16 @@ class ContentParent final : public PContentParent,
       PURLClassifierLocalParent* aActor, nsIURI* aURI,
       nsTArray<IPCURLClassifierFeature>&& aFeatures) override;
 
+  // PURLClassifierLocalByNameParent.
+  PURLClassifierLocalByNameParent* AllocPURLClassifierLocalByNameParent(
+      nsIURI* aURI, const nsTArray<nsCString>& aFeatures,
+      const nsIUrlClassifierFeature::listType& aListType);
+
+  virtual mozilla::ipc::IPCResult RecvPURLClassifierLocalByNameConstructor(
+      PURLClassifierLocalByNameParent* aActor, nsIURI* aURI,
+      nsTArray<nsCString>&& aFeatureNames,
+      const nsIUrlClassifierFeature::listType& aListType) override;
+
   PSessionStorageObserverParent* AllocPSessionStorageObserverParent();
 
   virtual mozilla::ipc::IPCResult RecvPSessionStorageObserverConstructor(
@@ -597,6 +608,9 @@ class ContentParent final : public PContentParent,
 
   bool DeallocPSessionStorageObserverParent(
       PSessionStorageObserverParent* aActor);
+
+  bool DeallocPURLClassifierLocalByNameParent(
+      PURLClassifierLocalByNameParent* aActor);
 
   bool DeallocPURLClassifierLocalParent(PURLClassifierLocalParent* aActor);
 
@@ -1149,9 +1163,6 @@ class ContentParent final : public PContentParent,
       const nsACString& aScope, nsIPrincipal* aPrincipal,
       const nsAString& aMessageId, nsTArray<uint8_t>&& aData);
 
-  mozilla::ipc::IPCResult RecvNotifyPushSubscriptionChangeObservers(
-      const nsACString& aScope, nsIPrincipal* aPrincipal);
-
   mozilla::ipc::IPCResult RecvPushError(const nsACString& aScope,
                                         nsIPrincipal* aPrincipal,
                                         const nsAString& aMessage,
@@ -1160,9 +1171,9 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvNotifyPushSubscriptionModifiedObservers(
       const nsACString& aScope, nsIPrincipal* aPrincipal);
 
-  mozilla::ipc::IPCResult RecvGetFilesRequest(const nsID& aID,
-                                              const nsAString& aDirectoryPath,
-                                              const bool& aRecursiveFlag);
+  mozilla::ipc::IPCResult RecvGetFilesRequest(
+      const nsID& aID, nsTArray<nsString>&& aDirectoryPaths,
+      const bool& aRecursiveFlag);
 
   mozilla::ipc::IPCResult RecvDeleteGetFilesRequest(const nsID& aID);
 
@@ -1337,6 +1348,11 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvGetLoadingSessionHistoryInfoFromParent(
       const MaybeDiscarded<BrowsingContext>& aContext,
       GetLoadingSessionHistoryInfoFromParentResolver&& aResolver);
+
+  mozilla::ipc::IPCResult RecvGetContiguousSessionHistoryInfos(
+      const MaybeDiscarded<BrowsingContext>& aContext,
+      SessionHistoryInfo&& aInfo,
+      GetContiguousSessionHistoryInfosResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvRemoveFromBFCache(
       const MaybeDiscarded<BrowsingContext>& aContext);
@@ -1549,7 +1565,7 @@ class ContentParent final : public PContentParent,
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
-  mozilla::UniquePtr<SandboxBroker> mSandboxBroker;
+  RefPtr<SandboxBroker> mSandboxBroker;
   static mozilla::StaticAutoPtr<SandboxBrokerPolicyFactory>
       sSandboxBrokerPolicyFactory;
 #endif

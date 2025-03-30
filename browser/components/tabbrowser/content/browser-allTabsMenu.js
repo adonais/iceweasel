@@ -22,6 +22,7 @@ var gTabsPanel = {
     hiddenTabsButton: "allTabsMenu-hiddenTabsButton",
     hiddenTabsView: "allTabsMenu-hiddenTabsView",
     groupsView: "allTabsMenu-groupsView",
+    groupsSubView: "allTabsMenu-groupsSubView",
   },
   _initialized: false,
   _initializedElements: false,
@@ -55,7 +56,7 @@ var gTabsPanel = {
 
     this.hiddenAudioTabsPopup = new TabsPanel({
       view: this.allTabsView,
-      insertBefore: document.getElementById("allTabsMenu-tabsSeparator"),
+      insertBefore: document.getElementById("allTabsMenu-hiddenTabsSeparator"),
       filterFn: tab => tab.hidden && tab.soundPlaying,
     });
     this.allTabsPanel = new TabsPanel({
@@ -68,6 +69,11 @@ var gTabsPanel = {
     this.groupsPanel = new GroupsPanel({
       view: this.allTabsView,
       containerNode: this.groupsView,
+    });
+    this.showAllGroupsPanel = new GroupsPanel({
+      view: this.groupsSubView,
+      containerNode: document.getElementById("allTabsMenu-groupsSubView-body"),
+      showAll: true,
     });
 
     this.allTabsView.addEventListener("ViewShowing", () => {
@@ -100,13 +106,11 @@ var gTabsPanel = {
         !PlacesUIUtils.shouldShowTabsFromOtherComputersMenuitem();
     });
 
-    this.allTabsView.addEventListener("ViewShown", () => {
-      if (!gBrowser._tabGroupsEnabled) {
-        this.allTabsView
-          .querySelector(".all-tabs-item[selected]")
-          ?.scrollIntoView({ block: "center" });
-      }
-    });
+    this.allTabsView.addEventListener("ViewShown", () =>
+      this.allTabsView
+        .querySelector(".all-tabs-item[selected]")
+        ?.scrollIntoView({ block: "center" })
+    );
 
     this.allTabsView.addEventListener("command", event => {
       let { target } = event;
@@ -126,6 +130,9 @@ var gTabsPanel = {
           break;
         case "allTabsMenu-syncedTabs":
           SidebarController.show("viewTabsSidebar");
+          break;
+        case "allTabsMenu-groupsViewShowMore":
+          PanelUI.showSubView(this.kElements.groupsSubView, target);
           break;
       }
     });

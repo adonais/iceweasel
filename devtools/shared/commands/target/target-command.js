@@ -123,6 +123,7 @@ class TargetCommand extends EventEmitter {
       this.rootFront.traits.workerConsoleApiMessagesDispatchedToMainThread ===
       false;
     this.listenForServiceWorkers = false;
+    this.listenForContentScripts = false;
 
     // Tells us if we received the first top level target.
     // If target switching is done on:
@@ -611,8 +612,15 @@ class TargetCommand extends EventEmitter {
         BROWSERTOOLBOX_SCOPE_PREF
       );
       if (browserToolboxScope == BROWSERTOOLBOX_SCOPE_EVERYTHING) {
-        // We don't try to show content scripts in the browser toolbox
-        types = TargetCommand.ALL_TYPES.filter(t => t != TargetCommand.TYPES.CONTENT_SCRIPT);
+        // Listen for all target types when the browser toolbox is in multiprocess mode.
+        //
+        // Except for CONTENT_SCRIPT targets, as their scripts are already debuggable
+        // via the content process targets.
+        if (!this.listenForContentScripts) {
+          types = TargetCommand.ALL_TYPES.filter(t => t != TargetCommand.TYPES.CONTENT_SCRIPT);
+        } else {
+          types = TargetCommand.ALL_TYPES;
+        }
       }
     }
     if (this.listenForWorkers && !types.includes(TargetCommand.TYPES.WORKER)) {
@@ -709,6 +717,14 @@ class TargetCommand extends EventEmitter {
   }
 
   getTargetType(target) {
+    const { targetType } = target.targetForm;
+    if (targetType) {
+      return targetType;
+    }
+
+    // @backward-compat { version 137 } This can be removed as target.targetForm.targetType
+    // will always be defined. We can then remove TargetCommand.getTargetType and TargetMixin.setTargetType
+    // and instead have a getter like this `TargetMixin.targetType() this.targetForm.targetType`.
     const { typeName } = target;
     if (typeName == "windowGlobalTarget") {
       return TargetCommand.TYPES.FRAME;

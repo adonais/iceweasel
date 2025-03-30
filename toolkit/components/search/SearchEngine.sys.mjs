@@ -4,6 +4,11 @@
 
 /* eslint no-shadow: error, mozilla/no-aArgs: error */
 
+/**
+ * @typedef {import("./AddonSearchEngine.sys.mjs").AddonSearchEngine} AddonSearchEngine
+ * @typedef {import("./OpenSearchEngine.sys.mjs").OpenSearchEngine} OpenSearchEngine
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -99,6 +104,12 @@ export class QueryParameter {
     return this._value;
   }
 
+  /**
+   * Creates a JavaScript object that represents this parameter.
+   *
+   * @returns {object}
+   *   An object suitable for serialization as JSON.
+   */
   toJSON() {
     return {
       name: this.name,
@@ -324,7 +335,7 @@ export class EngineURL {
     // terms are part of the URL. We only use '+' if they are a query parameter.
     let url = ParamSubstitution(
       this.template,
-      escapedSearchTerms.replace("+", "%20"),
+      escapedSearchTerms.replaceAll("+", "%20"),
       queryCharset
     );
 
@@ -419,6 +430,8 @@ export class EngineURL {
 
 /**
  * SearchEngine represents WebExtension based search engines.
+ *
+ * @implements {nsISearchEngine}
  */
 export class SearchEngine {
   QueryInterface = ChromeUtils.generateQI(["nsISearchEngine"]);
@@ -456,6 +469,12 @@ export class SearchEngine {
    * @type {string}
    */
   #id;
+  /**
+   * The URL to report the search to.
+   *
+   * @type {?string}
+   */
+  clickUrl = null;
 
   /**
    *  Creates a Search Engine.
@@ -468,7 +487,7 @@ export class SearchEngine {
    * @param {string} options.loadPath
    *   The path of the engine was originally loaded from. Should be anonymized.
    */
-  constructor(options = {}) {
+  constructor(options) {
     this.#id = options.id ?? this.#uuid();
     if (!("loadPath" in options)) {
       throw new Error("loadPath missing from options.");
@@ -548,7 +567,6 @@ export class SearchEngine {
     );
     // Only accept remote icons from http[s]
     switch (uri.scheme) {
-      case "data":
       case "moz-extension": {
         if (!size) {
           let byteArray, contentType;
@@ -560,21 +578,14 @@ export class SearchEngine {
             );
             return;
           }
-
-          let byteString = String.fromCharCode(...byteArray);
-          size = lazy.SearchUtils.decodeSize(byteString, contentType);
-          if (!size) {
-            lazy.logConsole.warn(
-              `Failed to decode size of icon for search engine ${this.name}.`,
-              "Assuming 16x16."
-            );
-            size = 16;
-          }
+          size = lazy.SearchUtils.decodeSize(byteArray, contentType, 16);
         }
 
         this._addIconToMap(iconURL, size, override);
         break;
       }
+      // We also fetch data URLs to ensure the size doesn't exceed MAX_ICON_SIZE.
+      case "data":
       case "http":
       case "https": {
         let byteArray, contentType;
@@ -594,8 +605,10 @@ export class SearchEngine {
             );
             [byteArray, contentType] = lazy.SearchUtils.rescaleIcon(
               byteArray,
-              contentType
+              contentType,
+              32
             );
+            size = 32;
           } catch (ex) {
             lazy.logConsole.error(
               `Unable to rescale  icon for search engine ${this.name}:`,
@@ -605,19 +618,11 @@ export class SearchEngine {
           }
         }
 
-        let byteString = String.fromCharCode(...byteArray);
         if (!size) {
-          size = lazy.SearchUtils.decodeSize(byteString, contentType);
-          if (!size) {
-            lazy.logConsole.warn(
-              `Failed to decode size of icon for search engine ${this.name}.`,
-              "Assuming 16x16."
-            );
-            size = 16;
-          }
+          size = lazy.SearchUtils.decodeSize(byteArray, contentType, 16);
         }
 
-        let dataURL = "data:" + contentType + ";base64," + btoa(byteString);
+        let dataURL = "data:" + contentType + ";base64," + byteArray.toBase64();
         this._addIconToMap(dataURL, size, override);
         break;
       }
@@ -690,7 +695,7 @@ export class SearchEngine {
    *   The name of the engine.
    * @param {string} details.keyword
    *   The keyword for the engine.
-   * @param {string} details.iconURL
+   * @param {string} [details.iconURL]
    *   The url to use for the icon of the engine.
    * @param {string} details.search_url
    *   The search url template for the engine.
@@ -1096,17 +1101,6 @@ export class SearchEngine {
     }
   }
 
-  // Where the engine is being loaded from: will return the URI's spec if the
-  // engine is being downloaded and does not yet have a file. This is only used
-  // for logging and error messages.
-  get _location() {
-    if (this._uri) {
-      return this._uri.spec;
-    }
-
-    return this._loadPath;
-  }
-
   /**
    * Whether or not this engine is provided by the application, e.g. it is
    * in the list of configured search engines.
@@ -1230,7 +1224,7 @@ export class SearchEngine {
     // path of the URL from search config is not percent encoded. Thus, we
     // convert both strings into URL objects to ensure consistent comparisons.
     let url1 = new URL(url.template);
-    let url2 = new URL(uri.spec);
+    let url2 = URL.fromURI(uri);
     if (url1.origin != url2.origin || url1.pathname != url2.pathname) {
       return "";
     }
@@ -1333,7 +1327,7 @@ export class SearchEngine {
   get searchForm() {
     let url = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH_FORM);
     if (url) {
-      return url.getSubmission("").uri.spec;
+      return url.getSubmission("", this.queryCharset).uri.spec;
     }
     return this.searchURLWithNoTerms.prePath;
   }
@@ -1400,7 +1394,7 @@ export class SearchEngine {
    *
    * @param {object} options
    *   The options object
-   * @param {DOMWindow} options.window
+   * @param {Window} options.window
    *   The content window for the window performing the search.
    * @param {object} options.originAttributes
    *   The originAttributes for performing the search
@@ -1474,7 +1468,7 @@ export class SearchEngine {
 }
 
 /**
- * Implements nsISearchSubmission.
+ * @implements {nsISearchSubmission}.
  */
 class Submission {
   QueryInterface = ChromeUtils.generateQI(["nsISearchSubmission"]);

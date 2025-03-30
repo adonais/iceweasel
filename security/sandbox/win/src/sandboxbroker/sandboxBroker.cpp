@@ -280,6 +280,20 @@ static void AddDeveloperRepoDirToPolicy(sandbox::TargetPolicy* aPolicy) {
   }
 }
 
+#if defined(MOZ_PROFILE_GENERATE)
+// It should only be allowed on instrumented builds, never on production
+// builds.
+static void AddLLVMProfilePathDirectoryToPolicy(
+    sandbox::TargetPolicy* aPolicy) {
+  std::wstring parentPath;
+  if (GetLlvmProfileDir(parentPath)) {
+    aPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
+                     sandbox::TargetPolicy::FILES_ALLOW_ANY,
+                     parentPath.c_str());
+  }
+}
+#endif
+
 #undef WSTRING
 
 static void EnsureAppLockerAccess(sandbox::TargetPolicy* aPolicy) {
@@ -380,6 +394,10 @@ Result<Ok, mozilla::ipc::LaunchError> SandboxBroker::LaunchApp(
 
   // Enable the child process to write log files when setup
   AddMozLogRulesToPolicy(mPolicy, aEnvironment);
+
+#if defined(MOZ_PROFILE_GENERATE)
+  AddLLVMProfilePathDirectoryToPolicy(mPolicy);
+#endif
 
   if (!mozilla::IsPackagedBuild()) {
     AddDeveloperRepoDirToPolicy(mPolicy);
@@ -1732,8 +1750,8 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
   }
 }
 
-bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
-                                                bool aIsRemoteLaunch) {
+bool SandboxBroker::SetSecurityLevelForGMPlugin(
+    GMPSandboxKind aGMPSandboxKind) {
   if (!mPolicy) {
     return false;
   }
@@ -1743,8 +1761,10 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
   SANDBOX_ENSURE_SUCCESS(
       result,
       "SetJobLevel should never fail with these arguments, what happened?");
-  auto level = (aLevel == Restricted) ? sandbox::USER_RESTRICTED
-                                      : sandbox::USER_LOCKDOWN;
+
+  // The Widevine CDM on Windows can only load at USER_RESTRICTED
+  auto level = (aGMPSandboxKind == Widevine) ? sandbox::USER_RESTRICTED
+                                             : sandbox::USER_LOCKDOWN;
   result = mPolicy->SetTokenLevel(sandbox::USER_RESTRICTED_SAME_ACCESS, level);
   SANDBOX_ENSURE_SUCCESS(
       result,
@@ -1785,13 +1805,28 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
   result = mPolicy->SetProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
 
-  if (StaticPrefs::security_sandbox_gmp_win32k_disable()) {
+  // win32k is currently not disabled for clearkey due to WMF decoding or
+  // widevine due to intermittent test failures, where the GMP process fails
+  // very early. See bug 1449348.
+  if (StaticPrefs::security_sandbox_gmp_win32k_disable() &&
+      aGMPSandboxKind != Widevine && aGMPSandboxKind != Clearkey) {
     result = AddWin32kLockdownPolicy(mPolicy, true);
     SANDBOX_ENSURE_SUCCESS(result, "Failed to add the win32k lockdown policy");
   }
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DLL_SEARCH_ORDER;
+  if (StaticPrefs::security_sandbox_gmp_acg_enabled()) {
+    auto acgMitigation = sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
+    if (aGMPSandboxKind == Widevine) {
+      // We can't guarantee that widevine won't use dynamic code.
+      acgMitigation = 0;
+    } else if (aGMPSandboxKind == Clearkey) {
+      // Clearkey uses system decoding libraries.
+      acgMitigation = DynamicCodeFlagForSystemMediaLibraries();
+    }
+    mitigations |= acgMitigation;
+  }
 
   result = mPolicy->SetDelayedProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result,

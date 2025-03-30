@@ -515,6 +515,16 @@ void LIRGenerator::visitGuardArgumentsObjectFlags(
   redefine(ins, argsObj);
 }
 
+void LIRGenerator::visitGuardObjectHasSameRealm(MGuardObjectHasSameRealm* ins) {
+  MDefinition* obj = ins->object();
+  MOZ_ASSERT(obj->type() == MIRType::Object);
+
+  auto* lir = new (alloc()) LGuardObjectHasSameRealm(useRegister(obj), temp());
+  assignSnapshot(lir, ins->bailoutKind());
+  add(lir, ins);
+  redefine(ins, obj);
+}
+
 void LIRGenerator::visitBoundFunctionNumArgs(MBoundFunctionNumArgs* ins) {
   MDefinition* obj = ins->object();
   MOZ_ASSERT(obj->type() == MIRType::Object);
@@ -1607,10 +1617,6 @@ void LIRGenerator::visitTypeOfIs(MTypeOfIs* ins) {
       return;
     }
 
-#ifdef ENABLE_RECORD_TUPLE
-    case JSTYPE_RECORD:
-    case JSTYPE_TUPLE:
-#endif
     case JSTYPE_LIMIT:
       break;
   }
@@ -3544,13 +3550,13 @@ void LIRGenerator::visitWasmWrapU32Index(MWasmWrapU32Index* ins) {
   // be a sign/zero extension).  On 32-bit, it returns the low register of the
   // input, and should generate no code.
 
-  // If this assertion does not hold then using "input" unadorned as an alias
-  // for the low register will not work.
-#if defined(JS_NUNBOX32)
-  static_assert(INT64LOW_INDEX == 0);
+#ifdef JS_64BIT
+  LAllocation index = useRegisterAtStart(input);
+#else
+  LAllocation index = useLowWordRegisterAtStart(input);
 #endif
 
-  auto* lir = new (alloc()) LWasmWrapU32Index(useRegisterAtStart(input));
+  auto* lir = new (alloc()) LWasmWrapU32Index(index);
   defineReuseInput(lir, ins, 0);
 }
 
@@ -5744,11 +5750,16 @@ void LIRGenerator::visitMegamorphicLoadSlot(MMegamorphicLoadSlot* ins) {
 void LIRGenerator::visitMegamorphicLoadSlotPermissive(
     MMegamorphicLoadSlotPermissive* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
+  static_assert(IonGenericCallCalleeReg == CallTempReg1);
+  static_assert(IonGenericCallArgcReg == CallTempReg2);
+
   auto* lir = new (alloc()) LMegamorphicLoadSlotPermissive(
       useRegisterAtStart(ins->object()), tempFixed(CallTempReg0),
-      tempFixed(CallTempReg1), tempFixed(CallTempReg2));
+      tempFixed(IonGenericCallCalleeReg), tempFixed(IonGenericCallArgcReg),
+      tempFixed(CallTempReg4));
   defineReturn(lir, ins);
   assignSafepoint(lir, ins);
+  lirGraph_.addExtraSafepointUses(1);
 }
 
 void LIRGenerator::visitMegamorphicLoadSlotByValue(
@@ -5767,12 +5778,25 @@ void LIRGenerator::visitMegamorphicLoadSlotByValuePermissive(
     MMegamorphicLoadSlotByValuePermissive* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->idVal()->type() == MIRType::Value);
+#ifdef JS_CODEGEN_X86
   auto* lir = new (alloc()) LMegamorphicLoadSlotByValuePermissive(
       useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
-      tempFixed(CallTempReg0), tempFixed(CallTempReg1),
-      tempFixed(CallTempReg2));
+      tempFixed(CallTempReg0), tempFixed(IonGenericCallCalleeReg),
+      tempFixed(IonGenericCallArgcReg));
   defineReturn(lir, ins);
   assignSafepoint(lir, ins);
+#else
+  static_assert(IonGenericCallCalleeReg == CallTempReg1);
+  static_assert(IonGenericCallArgcReg == CallTempReg2);
+
+  auto* lir = new (alloc()) LMegamorphicLoadSlotByValuePermissive(
+      useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
+      tempFixed(CallTempReg0), tempFixed(IonGenericCallCalleeReg),
+      tempFixed(IonGenericCallArgcReg), tempFixed(CallTempReg4));
+  defineReturn(lir, ins);
+  assignSafepoint(lir, ins);
+  lirGraph_.addExtraSafepointUses(1);
+#endif
 }
 
 void LIRGenerator::visitMegamorphicStoreSlot(MMegamorphicStoreSlot* ins) {
@@ -5876,7 +5900,9 @@ void LIRGenerator::visitNurseryObject(MNurseryObject* ins) {
 
 void LIRGenerator::visitGuardValue(MGuardValue* ins) {
   MOZ_ASSERT(ins->value()->type() == MIRType::Value);
-  auto* lir = new (alloc()) LGuardValue(useBox(ins->value()));
+  LDefinition nanTemp =
+      ins->expected().isNaN() ? temp() : LDefinition::BogusTemp();
+  auto* lir = new (alloc()) LGuardValue(useBox(ins->value()), nanTemp);
   assignSnapshot(lir, ins->bailoutKind());
   add(lir, ins);
   redefine(ins, ins->value());
@@ -8211,37 +8237,24 @@ void LIRGenerator::visitWasmFence(MWasmFence* ins) {
 }
 
 void LIRGenerator::visitWasmLoadField(MWasmLoadField* ins) {
-  uint32_t offs = ins->offset();
-  LAllocation obj = useRegister(ins->obj());
+  uint32_t offset = ins->offset();
+  LAllocation data = useRegisterAtStart(ins->base());
   MWideningOp wideningOp = ins->wideningOp();
   if (ins->type() == MIRType::Int64) {
     MOZ_RELEASE_ASSERT(wideningOp == MWideningOp::None);
-    defineInt64(new (alloc()) LWasmLoadSlotI64(obj, offs, ins->maybeTrap()),
+    defineInt64(new (alloc()) LWasmLoadSlotI64(data, offset, ins->maybeTrap()),
                 ins);
   } else {
-    define(new (alloc()) LWasmLoadSlot(obj, offs, ins->type(), wideningOp,
+    define(new (alloc()) LWasmLoadSlot(data, offset, ins->type(), wideningOp,
                                        ins->maybeTrap()),
            ins);
   }
-}
-
-void LIRGenerator::visitWasmLoadFieldKA(MWasmLoadFieldKA* ins) {
-  uint32_t offs = ins->offset();
-  LAllocation obj = useRegister(ins->obj());
-  MWideningOp wideningOp = ins->wideningOp();
-  if (ins->type() == MIRType::Int64) {
-    MOZ_RELEASE_ASSERT(wideningOp == MWideningOp::None);
-    defineInt64(new (alloc()) LWasmLoadSlotI64(obj, offs, ins->maybeTrap()),
-                ins);
-  } else {
-    define(new (alloc()) LWasmLoadSlot(obj, offs, ins->type(), wideningOp,
-                                       ins->maybeTrap()),
-           ins);
+  if (ins->keepAlive() != ins->base()) {
+    add(new (alloc()) LKeepAliveObject(useKeepalive(ins->keepAlive())), ins);
   }
-  add(new (alloc()) LKeepAliveObject(useKeepalive(ins->ka())), ins);
 }
 
-void LIRGenerator::visitWasmLoadElementKA(MWasmLoadElementKA* ins) {
+void LIRGenerator::visitWasmLoadElement(MWasmLoadElement* ins) {
   LAllocation base = useRegister(ins->base());
   LAllocation index = useRegister(ins->index());
   MWideningOp wideningOp = ins->wideningOp();
@@ -8257,40 +8270,46 @@ void LIRGenerator::visitWasmLoadElementKA(MWasmLoadElementKA* ins) {
                                           wideningOp, scale, ins->maybeTrap()),
            ins);
   }
-  add(new (alloc()) LKeepAliveObject(useKeepalive(ins->ka())), ins);
+  if (ins->keepAlive() != ins->base()) {
+    add(new (alloc()) LKeepAliveObject(useKeepalive(ins->keepAlive())), ins);
+  }
 }
 
-void LIRGenerator::visitWasmStoreFieldKA(MWasmStoreFieldKA* ins) {
+void LIRGenerator::visitWasmStoreField(MWasmStoreField* ins) {
   MDefinition* value = ins->value();
   uint32_t offs = ins->offset();
   MNarrowingOp narrowingOp = ins->narrowingOp();
-  LAllocation obj = useRegister(ins->obj());
+  LAllocation base = useRegister(ins->base());
   LInstruction* lir;
   if (value->type() == MIRType::Int64) {
     MOZ_RELEASE_ASSERT(narrowingOp == MNarrowingOp::None);
-    lir = new (alloc())
-        LWasmStoreSlotI64(useInt64Register(value), obj, offs, ins->maybeTrap());
+    lir = new (alloc()) LWasmStoreSlotI64(useInt64Register(value), base, offs,
+                                          ins->maybeTrap());
   } else {
     lir = new (alloc())
-        LWasmStoreSlot(useRegister(value), obj, offs, value->type(),
+        LWasmStoreSlot(useRegister(value), base, offs, value->type(),
                        narrowingOp, ins->maybeTrap());
   }
   add(lir, ins);
-  add(new (alloc()) LKeepAliveObject(useKeepalive(ins->ka())), ins);
+  if (ins->keepAlive() != ins->base()) {
+    add(new (alloc()) LKeepAliveObject(useKeepalive(ins->keepAlive())), ins);
+  }
 }
 
-void LIRGenerator::visitWasmStoreFieldRefKA(MWasmStoreFieldRefKA* ins) {
+void LIRGenerator::visitWasmStoreFieldRef(MWasmStoreFieldRef* ins) {
   LAllocation instance = useRegister(ins->instance());
-  LAllocation obj = useFixed(ins->obj(), PreBarrierReg);
+  LAllocation base = useFixed(ins->base(), PreBarrierReg);
   LAllocation value = useRegister(ins->value());
   uint32_t offset = ins->offset();
-  add(new (alloc()) LWasmStoreRef(instance, obj, value, temp(), offset,
+  add(new (alloc()) LWasmStoreRef(instance, base, value, temp(), offset,
                                   ins->maybeTrap(), ins->preBarrierKind()),
       ins);
-  add(new (alloc()) LKeepAliveObject(useKeepalive(ins->ka())), ins);
+  if (ins->keepAlive() != ins->base()) {
+    add(new (alloc()) LKeepAliveObject(useKeepalive(ins->keepAlive())), ins);
+  }
 }
 
-void LIRGenerator::visitWasmStoreElementKA(MWasmStoreElementKA* ins) {
+void LIRGenerator::visitWasmStoreElement(MWasmStoreElement* ins) {
   LAllocation base = useRegister(ins->base());
   LAllocation index = useRegister(ins->index());
   MDefinition* value = ins->value();
@@ -8309,10 +8328,12 @@ void LIRGenerator::visitWasmStoreElementKA(MWasmStoreElementKA* ins) {
                           narrowingOp, scale, ins->maybeTrap());
   }
   add(lir, ins);
-  add(new (alloc()) LKeepAliveObject(useKeepalive(ins->ka())), ins);
+  if (ins->keepAlive() != ins->base()) {
+    add(new (alloc()) LKeepAliveObject(useKeepalive(ins->keepAlive())), ins);
+  }
 }
 
-void LIRGenerator::visitWasmStoreElementRefKA(MWasmStoreElementRefKA* ins) {
+void LIRGenerator::visitWasmStoreElementRef(MWasmStoreElementRef* ins) {
   LAllocation instance = useRegister(ins->instance());
   LAllocation base = useFixed(ins->base(), PreBarrierReg);
   LAllocation index = useRegister(ins->index());
@@ -8324,7 +8345,9 @@ void LIRGenerator::visitWasmStoreElementRefKA(MWasmStoreElementRefKA* ins) {
           LWasmStoreElementRef(instance, base, index, value, temp0, temp1,
                                ins->maybeTrap(), ins->preBarrierKind()),
       ins);
-  add(new (alloc()) LKeepAliveObject(useKeepalive(ins->ka())), ins);
+  if (ins->keepAlive() != ins->base()) {
+    add(new (alloc()) LKeepAliveObject(useKeepalive(ins->keepAlive())), ins);
+  }
 }
 
 WasmRefIsSubtypeDefs LIRGenerator::useWasmRefIsSubtype(wasm::RefType destType,

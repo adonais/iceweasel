@@ -190,6 +190,7 @@ skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1775605
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1638958
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # Disabled due to bleedover with other tests when run in regular suites; passes in "failures" jobs
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Disabled due to bleedover with other tests when run in regular suites; passes in "failures" jobs
   "os == 'win' && os_version == '11.2009' && processor == 'x86' && opt", # Bug 1775605
   "os == 'win' && os_version == '11.2009' && processor == 'x86_64' && opt", # Bug 1775605
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1775605
@@ -315,11 +316,15 @@ tags = "os_integration"
 
 ["browser_tab_groups_restore_closed_in_open_window.js"]
 
+["browser_tab_groups_restore_closed_many_tabs.js"]
+
 ["browser_tab_groups_restore_multiple.js"]
 
 ["browser_tab_groups_restore_saved.js"]
 
 ["browser_tab_groups_restore_simple.js"]
+
+["browser_tab_groups_restore_to_group.js"]
 
 ["browser_tab_groups_save_on_removeAllTabsBut.js"]
 

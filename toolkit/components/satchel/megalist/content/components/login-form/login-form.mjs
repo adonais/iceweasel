@@ -56,12 +56,21 @@ export class LoginForm extends MozLitElement {
     }
   }
 
-  #shouldShowWarning(input, warning) {
+  #shouldShowWarning(field, input, warning) {
     if (!input.checkValidity()) {
+      // FIXME: for some reason checkValidity does not apply the :invalid style
+      // to the field. For now, we reset the input value to "" apply :invalid
+      // styling.
+      input.value = "";
+
+      input.focus();
       warning.setAttribute("message", input.validationMessage);
       warning.classList.add("invalid-input");
+      field.setAttribute("aria-describedby", warning.id);
       return true;
     }
+
+    field.removeAttribute("aria-describedby");
     this.#removeWarning(warning);
     return false;
   }
@@ -73,31 +82,48 @@ export class LoginForm extends MozLitElement {
 
     if (field.input.checkValidity()) {
       this.#removeWarning(warning);
+      field.removeAttribute("aria-describedby");
     }
   }
 
   onSubmit(e) {
     e.preventDefault();
 
-    if (
-      this.type !== "edit" &&
-      this.#shouldShowWarning(this.originField.input, this.originWarning)
-    ) {
-      return;
-    }
-
-    if (
-      this.#shouldShowWarning(this.passwordField.input, this.passwordWarning)
-    ) {
+    if (!this.#isFormValid()) {
       return;
     }
 
     const loginForm = {
       origin: this.originValue || this.originField.input.value,
-      username: this.usernameField.input.value,
+      username: this.usernameField.input.value.trim(),
       password: this.passwordField.value,
     };
     this.onSaveClick(loginForm);
+  }
+
+  #isFormValid() {
+    let originError = false;
+    let passwordError = false;
+
+    passwordError = this.#shouldShowWarning(
+      this.passwordField,
+      this.passwordField.input,
+      this.passwordWarning
+    );
+
+    if (this.type !== "edit") {
+      originError = this.#shouldShowWarning(
+        this.originField,
+        this.originField.input,
+        this.originWarning
+      );
+    }
+
+    if (passwordError || originError) {
+      return false;
+    }
+
+    return true;
   }
 
   #toggleDeleteCard() {
@@ -169,10 +195,10 @@ export class LoginForm extends MozLitElement {
 
         <form
           role="region"
-          aria-label=${heading}
+          aria-labelledby="moz-fieldset-id"
           @submit=${e => this.onSubmit(e)}
         >
-          <moz-fieldset data-l10n-id=${heading}>
+          <moz-fieldset id="moz-fieldset-id" data-l10n-id=${heading}>
             <div class="field-container">
               <login-origin-field
                 name="origin"
@@ -184,6 +210,7 @@ export class LoginForm extends MozLitElement {
               >
               </login-origin-field>
               <origin-warning
+                id="origin-alert"
                 role="alert"
                 arrowdirection="down"
               ></origin-warning>
@@ -203,6 +230,7 @@ export class LoginForm extends MozLitElement {
                 @input=${e => this.onInput(e)}
               ></login-password-field>
               <password-warning
+                id="password-alert"
                 role="alert"
                 isNewLogin
                 arrowdirection="down"

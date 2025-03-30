@@ -11,7 +11,6 @@ const SPLITCONSOLE_HEIGHT_PREF = "devtools.toolbox.splitconsoleHeight";
 const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
 const DISABLE_AUTOHIDE_PREF = "ui.popup.disable_autohide";
 const PSEUDO_LOCALE_PREF = "intl.l10n.pseudo";
-const HOST_HISTOGRAM = "DEVTOOLS_TOOLBOX_HOST";
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const REGEX_4XX_5XX = /^[4,5]\d\d$/;
 
@@ -919,44 +918,14 @@ Toolbox.prototype = {
    */
   async open() {
     try {
-      // Kick off async loading the Fluent bundles.
-      const fluentL10n = new FluentL10n();
-      const fluentInitPromise = fluentL10n.init([
-        "devtools/client/toolbox.ftl",
-      ]);
-
       const isToolboxURL = this.win.location.href.startsWith(this._URL);
       if (isToolboxURL) {
         // Update the URL so that onceDOMReady watch for the right url.
         this._URL = this.win.location.href;
       }
 
-      // To avoid any possible artifact, wait for the document to be fully loaded
-      // before creating the Browser Loader based on toolbox window object.
-      await new Promise(resolve => {
-        DOMHelpers.onceDOMReady(
-          this.win,
-          () => {
-            resolve();
-          },
-          this._URL
-        );
-      });
-
-      // Setup the Toolbox Browser Loader, used to load React component modules
-      // which expect to be loaded with toolbox.xhtml document as global scope.
-      this.browserRequire = BrowserLoader({
-        window: this.win,
-        useOnlyShared: true,
-      }).require;
-
-      // Wait for fluent initialization before mounting React component,
-      // which depends on it.
-      await fluentInitPromise;
-
       // Mount toolbox React components and update all its state that can be updated synchronously.
-      // Do that early as it will be used to render any exception happening next.
-      this._mountReactComponent(fluentL10n.getBundles());
+      this.onReactLoaded = this._initializeReactComponent();
 
       // Bug 1709063: Use commands.resourceCommand instead of toolbox.resourceCommand
       this.resourceCommand = this.commands.resourceCommand;
@@ -1029,6 +998,8 @@ Toolbox.prototype = {
         }
       );
 
+      await this.onReactLoaded;
+
       this.isReady = true;
 
       const framesPromise = this._listFrames();
@@ -1057,12 +1028,9 @@ Toolbox.prototype = {
       this.webconsolePanel = this.doc.querySelector(
         "#toolbox-panel-webconsole"
       );
-      this.webconsolePanel.style.height =
-        Services.prefs.getIntPref(SPLITCONSOLE_HEIGHT_PREF) + "px";
-      this.webconsolePanel.addEventListener(
-        "resize",
-        this._saveSplitConsoleHeight
-      );
+      this.doc
+        .getElementById("toolbox-console-splitter")
+        .addEventListener("command", this._saveSplitConsoleHeight);
 
       this._buildButtons();
 
@@ -1156,17 +1124,26 @@ Toolbox.prototype = {
         dump("Server stack:" + error.serverStack + "\n");
       }
 
-      // If the exception happens *after* the React component were initialized,
-      // try to display the exception to the user via AppErrorBoundary component
-      if (this._appBoundary) {
-        this._appBoundary.setState({
-          errorMsg: error.toString(),
-          errorStack: error.stack,
-          errorInfo: {
-            serverStack: error.serverStack,
-          },
-          toolbox: this,
-        });
+      try {
+        // React may not be fully loaded yet and still waiting for Fluent or toolbox.xhtml document load.
+        // Wait for it in order to have a functional AppErrorBoundary
+        await this.onReactLoaded;
+
+        // If React managed to load, try to display the exception to the user via AppErrorBoundary component.
+        // But ignore the exception if the React component itself thrown while rendering (errorInfo is defined)
+        if (this._appBoundary && !this._appBoundary.state.errorInfo) {
+          this._appBoundary.setState({
+            errorMsg: error.toString(),
+            errorStack: error.stack,
+            errorInfo: {
+              serverStack: error.serverStack,
+            },
+            toolbox: this,
+          });
+        }
+      } catch (e) {
+        // Ignore any further error related to AppErrorBoundary as it would prevent closing the toolbox.
+        // The exception was already logged to stdout.
       }
     }
   },
@@ -1613,9 +1590,9 @@ Toolbox.prototype = {
     Services.prefs.setBoolPref("devtools.everOpened", true);
     this.telemetry.toolOpened("toolbox", this);
 
-    this.telemetry
-      .getHistogramById(HOST_HISTOGRAM)
-      .add(this._getTelemetryHostId());
+    Glean.devtools.toolboxHost.accumulateSingleSample(
+      this._getTelemetryHostId()
+    );
 
     // Log current theme. The question we want to answer is:
     // "What proportion of users use which themes?"
@@ -1859,18 +1836,24 @@ Toolbox.prototype = {
     const openedConsolePanel = this.currentToolId === "webconsole";
 
     if (openedConsolePanel) {
-      deck.collapsed = true;
+      deck.setAttribute("hidden", "");
       deck.removeAttribute("expanded");
       splitter.hidden = true;
-      webconsolePanel.collapsed = false;
+      webconsolePanel.removeAttribute("hidden");
       webconsolePanel.setAttribute("expanded", "");
     } else {
-      deck.collapsed = false;
+      deck.removeAttribute("hidden");
       deck.toggleAttribute("expanded", !this.splitConsole);
       splitter.hidden = !this.splitConsole;
       webconsolePanel.collapsed = !this.splitConsole;
       webconsolePanel.removeAttribute("expanded");
     }
+
+    // Either restore the last known split console height, if in split console mode,
+    // or ensure there is no height set to prevent shrinking the regular console.
+    this.webconsolePanel.style.height = openedConsolePanel
+      ? ""
+      : Services.prefs.getIntPref(SPLITCONSOLE_HEIGHT_PREF) + "px";
   },
 
   /**
@@ -2011,12 +1994,37 @@ Toolbox.prototype = {
 
   /**
    * Initiate toolbox React components and all it's properties. Do the initial render.
-   *
-   * @param {Object} fluentBundles
-   *        A FluentBundle instance used to display any localized text in the React component.
    */
-  _mountReactComponent(fluentBundles) {
-    // Ensure the toolbar doesn't try to render until the tool is ready.
+  async _initializeReactComponent() {
+    // Kick off async loading the Fluent bundles.
+    const fluentL10n = new FluentL10n();
+    const fluentInitPromise = fluentL10n.init(["devtools/client/toolbox.ftl"]);
+
+    // To avoid any possible artifact, wait for the document to be fully loaded
+    // before creating the Browser Loader based on toolbox window object.
+    await new Promise(resolve => {
+      DOMHelpers.onceDOMReady(
+        this.win,
+        () => {
+          resolve();
+        },
+        this._URL
+      );
+    });
+
+    // Setup the Toolbox Browser Loader, used to load React component modules
+    // which expect to be loaded with toolbox.xhtml document as global scope.
+    this.browserRequire = BrowserLoader({
+      window: this.win,
+      useOnlyShared: true,
+    }).require;
+
+    // Wait for the bundles to be ready to use
+    await fluentInitPromise;
+    const fluentBundles = fluentL10n.getBundles();
+
+    // ToolboxController is wrapped into AppErrorBoundary in order to nicely
+    // show any exception that may happen in React updates/renders.
     const element = this.React.createElement(
       this.AppErrorBoundary,
       {
@@ -2045,7 +2053,7 @@ Toolbox.prototype = {
       })
     );
 
-    // Get the DOM element to mount the ToolboxController to.
+    // Get the DOM element to mount the React components to.
     this._componentMount = this.doc.getElementById("toolbox-toolbar-mount");
     this._appBoundary = this.ReactDOM.render(element, this._componentMount);
   },
@@ -2785,7 +2793,6 @@ Toolbox.prototype = {
       iframe.setAttribute("flex", 1);
       iframe.setAttribute("forceOwnRefreshDriver", "");
       iframe.tooltip = "aHTMLTooltip";
-      iframe.style.visibility = "hidden";
 
       gDevTools.emit(id + "-init", this, iframe);
       this.emit(id + "-init", iframe);
@@ -2794,13 +2801,9 @@ Toolbox.prototype = {
       if (!iframe.parentNode) {
         const vbox = this.doc.getElementById("toolbox-panel-" + id);
         vbox.appendChild(iframe);
-        vbox.visibility = "visible";
       }
 
       const onLoad = async () => {
-        // Prevent flicker while loading by waiting to make visible until now.
-        iframe.style.visibility = "visible";
-
         // Try to set the dir attribute as early as possible.
         this.setIframeDocumentDir(iframe);
 
@@ -3009,10 +3012,6 @@ Toolbox.prototype = {
       throw new Error("No tool found");
     }
 
-    // and select the right iframe
-    const toolboxPanels = this.doc.querySelectorAll(".toolbox-panel");
-    this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
-
     this.lastUsedToolId = this.currentToolId;
     this.currentToolId = id;
     this._refreshConsoleDisplay();
@@ -3021,6 +3020,16 @@ Toolbox.prototype = {
     }
 
     return this.loadTool(id, options).then(panel => {
+      // If some other tool started being selected,
+      // cancel any further operation, but still return the panel to the callsite.
+      if (this.currentToolId != id) {
+        return panel;
+      }
+      // Only select the panel once it is loaded to prevent showing it
+      // while it is bootstrapping and prevent blinks
+      const toolboxPanels = this.doc.querySelectorAll(".toolbox-panel");
+      this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
+
       // focus the tool's frame to start receiving key events
       this.focusTool(id);
 
@@ -3224,6 +3233,8 @@ Toolbox.prototype = {
   closeSplitConsole() {
     this._splitConsole = false;
     Services.prefs.setBoolPref(SPLITCONSOLE_OPEN_PREF, false);
+    this._saveSplitConsoleHeight();
+
     this._refreshConsoleDisplay();
     this.component.setIsSplitConsoleActive(false);
 
@@ -3396,9 +3407,7 @@ Toolbox.prototype = {
       return;
     }
     const delay = this.win.performance.now() - start;
-
-    const telemetryKey = "DEVTOOLS_TOOLBOX_PAGE_RELOAD_DELAY_MS";
-    this.telemetry.getKeyedHistogramById(telemetryKey).add(toolId, delay);
+    Glean.devtools.toolboxPageReloadDelay[toolId].accumulateSingleSample(delay);
   },
 
   /**
@@ -3462,11 +3471,11 @@ Toolbox.prototype = {
    * @return {String} pathname
    */
   getExtensionPathName(url) {
-    if (!URL.canParse(url)) {
+    const parsedURL = URL.parse(url);
+    if (!parsedURL) {
       // Return the url if unable to resolve the pathname.
       return url;
     }
-    const parsedURL = new URL(url);
     // Only moz-extension URL should be shortened into the URL pathname.
     if (parsedURL.protocol !== "moz-extension:") {
       return url;
@@ -3852,9 +3861,9 @@ Toolbox.prototype = {
     this.focusTool(this.currentToolId, true);
 
     this.emit("host-changed");
-    this.telemetry
-      .getHistogramById(HOST_HISTOGRAM)
-      .add(this._getTelemetryHostId());
+    Glean.devtools.toolboxHost.accumulateSingleSample(
+      this._getTelemetryHostId()
+    );
 
     this.component.setCurrentHostType(hostType);
   },

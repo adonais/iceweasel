@@ -4,141 +4,42 @@
 
 package org.mozilla.fenix.onboarding.store
 
-import androidx.core.content.edit
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.mockk.every
-import io.mockk.mockk
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
 import mozilla.components.support.test.robolectric.testContext
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
 class DefaultPrivacyPreferencesRepositoryTest {
-    private val privacyPreferenceKeys = PrivacyPreferencesRepository.PrivacyPreference.entries
 
-    private lateinit var settings: Settings
+    @Test
+    fun `GIVEN crash reporting flag is updated in settings WHEN getPreference is called THEN updated value is returned `() {
+        val settings = Settings(testContext)
+        val repository = DefaultPrivacyPreferencesRepository(settings)
+        assertFalse(settings.crashReportAlwaysSend)
+        assertFalse(repository.getPreference(PreferenceType.CrashReporting))
 
-    @Before
-    fun setup() {
-        settings = Settings(testContext)
-        every { testContext.settings() } returns settings
+        settings.crashReportAlwaysSend = true
+        assertTrue(repository.getPreference(PreferenceType.CrashReporting))
+
+        settings.crashReportAlwaysSend = false
+        assertFalse(repository.getPreference(PreferenceType.CrashReporting))
     }
 
     @Test
-    fun `test the privacy preference enum keys map to the correct preference key`() {
-        assertEquals(
-            R.string.pref_key_crash_reporting_always_report,
-            privacyPreferenceKeys[0].preferenceKey,
-        )
-        assertEquals(R.string.pref_key_telemetry, privacyPreferenceKeys[1].preferenceKey)
+    fun `GIVEN telemetry flag is updated in settings WHEN getPreference is called THEN updated value is returned `() {
+        val settings = Settings(testContext)
+        val repository = DefaultPrivacyPreferencesRepository(settings)
+        assertTrue(settings.isTelemetryEnabled)
+        assertTrue(repository.getPreference(PreferenceType.UsageData))
+
+        settings.isTelemetryEnabled = false
+        assertFalse(repository.getPreference(PreferenceType.UsageData))
+
+        settings.isTelemetryEnabled = true
+        assertTrue(repository.getPreference(PreferenceType.UsageData))
     }
-
-    @Test
-    fun `WHEN the repository is initialized THEN the initial state of the preferences should be emitted`() =
-        runTest {
-            val repository = DefaultPrivacyPreferencesRepository(
-                context = testContext,
-                lifecycleOwner = mockk(relaxed = true),
-                coroutineScope = this,
-            )
-
-            settings.preferences.edit {
-                privacyPreferenceKeys.forEach {
-                    putBoolean(testContext.getString(it.preferenceKey), false)
-                }
-            }
-
-            repository.init()
-
-            val actual =
-                repository.privacyPreferenceUpdates.take(privacyPreferenceKeys.size).toList()
-
-            assertTrue(actual.isNotEmpty())
-            assertFalse(actual.all { it.value })
-        }
-
-    @Test
-    fun `WHEN a change is made to the preference values THEN the repository emits the change`() =
-        runTest {
-            val repository = DefaultPrivacyPreferencesRepository(
-                context = testContext,
-                lifecycleOwner = mockk(relaxed = true),
-                coroutineScope = this,
-            )
-
-            PrivacyPreferencesRepository.PrivacyPreference.entries.forEach {
-                val preferenceKey = testContext.getString(it.preferenceKey)
-
-                settings.preferences.edit { putBoolean(preferenceKey, false) }
-                repository.onPreferenceChange(
-                    sharedPreferences = settings.preferences,
-                    key = preferenceKey,
-                )
-
-                assertFalse(repository.privacyPreferenceUpdates.first().value)
-            }
-        }
-
-    @Test
-    fun `GIVEN crash reporting preference update WHEN updatePrivacyPreference is called THEN the real preference is updated`() =
-        runTest {
-            val repository = DefaultPrivacyPreferencesRepository(
-                context = testContext,
-                lifecycleOwner = mockk(relaxed = true),
-                coroutineScope = this,
-            )
-
-            settings.preferences.edit {
-                privacyPreferenceKeys.forEach {
-                    putBoolean(testContext.getString(it.preferenceKey), false)
-                }
-            }
-
-            assertFalse(settings.crashReportAlwaysSend)
-
-            val preferenceUpdate = PrivacyPreferencesRepository.PrivacyPreferenceUpdate(
-                preferenceType = PrivacyPreferencesRepository.PrivacyPreference.CrashReporting,
-                value = true,
-            )
-            repository.updatePrivacyPreference(preferenceUpdate)
-
-            assertTrue(settings.crashReportAlwaysSend)
-        }
-
-    @Test
-    fun `GIVEN usage data preference update WHEN updatePrivacyPreference is called THEN the real preference is updated`() =
-        runTest {
-            val repository = DefaultPrivacyPreferencesRepository(
-                context = testContext,
-                lifecycleOwner = mockk(relaxed = true),
-                coroutineScope = this,
-            )
-
-            settings.preferences.edit {
-                privacyPreferenceKeys.forEach {
-                    putBoolean(testContext.getString(it.preferenceKey), false)
-                }
-            }
-
-            assertFalse(settings.isTelemetryEnabled)
-
-            val preferenceUpdate = PrivacyPreferencesRepository.PrivacyPreferenceUpdate(
-                preferenceType = PrivacyPreferencesRepository.PrivacyPreference.UsageData,
-                value = true,
-            )
-            repository.updatePrivacyPreference(preferenceUpdate)
-
-            assertTrue(settings.isTelemetryEnabled)
-        }
 }

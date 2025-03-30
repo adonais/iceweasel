@@ -557,6 +557,8 @@ bool DMABufSurfaceRGBA::Create(int aWidth, int aHeight,
                                                      : GBM_FORMAT_XRGB8888;
   RefPtr<DRMFormat> format = GetDMABufDevice()->GetDRMFormat(mFOURCCFormat);
   if (!format) {
+    LOGDMABUF(("DMABufSurfaceRGBA::Create(): Missing drm format 0x%x!",
+               mFOURCCFormat));
     return false;
   }
   return Create(aWidth, aHeight, format, aDMABufSurfaceFlags);
@@ -1633,8 +1635,10 @@ bool DMABufSurfaceYUV::CreateEGLImage(GLContext* aGLContext, int aPlane) {
              "EGLImage is already created!");
   MOZ_ASSERT(aGLContext, "Missing GLContext!");
 
-  const auto& gle = gl::GLContextEGL::Cast(aGLContext);
-  const auto& egl = gle->mEgl;
+  if (!aGLContext->IsExtensionSupported(gl::GLContext::OES_EGL_image)) {
+    LOGDMABUF(("DMABufSurfaceYUV::CreateEGLImage(): no OES_EGL_image."));
+    return false;
+  }
 
   MutexAutoLock lockFD(mSurfaceLock);
   if (!OpenFileDescriptorForPlane(lockFD, aPlane)) {
@@ -1668,6 +1672,8 @@ bool DMABufSurfaceYUV::CreateEGLImage(GLContext* aGLContext, int aPlane) {
 #undef ADD_PLANE_ATTRIBS_NV12
   attribs.AppendElement(LOCAL_EGL_NONE);
 
+  const auto& gle = gl::GLContextEGL::Cast(aGLContext);
+  const auto& egl = gle->mEgl;
   mEGLImage[aPlane] =
       egl->fCreateImage(LOCAL_EGL_NO_CONTEXT, LOCAL_EGL_LINUX_DMA_BUF_EXT,
                         nullptr, attribs.Elements());
@@ -1793,12 +1799,9 @@ bool DMABufSurfaceYUV::VerifyTextureCreation() {
 gfx::SurfaceFormat DMABufSurfaceYUV::GetFormat() {
   switch (mFOURCCFormat) {
     case VA_FOURCC_P010:
-    // ReportVA_FOURCC_P010 as NV12 as Gecko threats P010 as a variant of P016
-    // with zeroed bits, see gfx::SurfaceFormat for details.
-    // NV12 / P010 uses the same plane composition but NV12 is 8-bit format
-    // and P010 10-bit one.
-    // It doesn't matter much as long as we create textures with correct
-    // drm format.
+      return gfx::SurfaceFormat::P010;
+    case VA_FOURCC_P016:
+      return gfx::SurfaceFormat::P016;
     case VA_FOURCC_NV12:
       return gfx::SurfaceFormat::NV12;
     case VA_FOURCC_YV12:

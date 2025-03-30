@@ -1121,7 +1121,8 @@ Result<Ok, LaunchError> BaseProcessLauncher::DoSetup() {
   geckoargs::sParentPid.Put(static_cast<uint64_t>(base::GetCurrentProcId()),
                             mChildArgs);
 
-  if (!CrashReporter::IsDummy() && CrashReporter::GetEnabled()) {
+  if (!CrashReporter::IsDummy() && CrashReporter::GetEnabled() &&
+      mProcessType != GeckoProcessType_ForkServer) {
 #if defined(MOZ_WIDGET_COCOA) || defined(XP_WIN)
     geckoargs::sCrashReporter.Put(CrashReporter::GetChildNotificationPipe(),
                                   mChildArgs);
@@ -1310,6 +1311,12 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
   mChildArgs.mArgs.push_back(mChildIDString);
 
   mChildArgs.mArgs.push_back(ChildProcessType());
+
+#  ifdef MOZ_ENABLE_FORKSERVER
+  MOZ_ASSERT(mProcessType != GeckoProcessType_ForkServer ||
+                 mChildArgs.mFiles.size() == 1,
+             "The ForkServer only expects a single FD argument");
+#  endif
 
 #  if !defined(MOZ_WIDGET_ANDROID)
   // Add any files which need to be transferred to fds_to_remap.
@@ -1526,11 +1533,6 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   FilePath exePath;
   BinPathType pathType = GetPathToBinary(exePath, mProcessType);
 
-#  if defined(MOZ_SANDBOX) || defined(_ARM64_)
-  const bool isGMP = mProcessType == GeckoProcessType_GMPlugin;
-  const bool isWidevine = isGMP && Contains(mChildArgs, "gmp-widevinecdm");
-#  endif  // defined(MOZ_SANDBOX) || defined(_ARM64_)
-
   mCmdLine.emplace(exePath.ToWStringHack());
 
   if (pathType == BinPathType::Self) {
@@ -1574,14 +1576,15 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
       break;
     case GeckoProcessType_GMPlugin:
       if (!PR_GetEnv("MOZ_DISABLE_GMP_SANDBOX")) {
-        // The Widevine CDM on Windows can only load at USER_RESTRICTED,
-        // not at USER_LOCKDOWN. So look in the command line arguments
-        // to see if we're loading the path to the Widevine CDM, and if
-        // so use sandbox level USER_RESTRICTED instead of USER_LOCKDOWN.
-        auto level =
-            isWidevine ? SandboxBroker::Restricted : SandboxBroker::LockDown;
-        if (NS_WARN_IF(
-                !mResults.mSandboxBroker->SetSecurityLevelForGMPlugin(level))) {
+        auto gmpSandboxKind = GMPSandboxKind::Default;
+        if (Contains(mChildArgs, "gmp-widevinecdm")) {
+          gmpSandboxKind = GMPSandboxKind::Widevine;
+        } else if (Contains(mChildArgs, "gmp-clearkey")) {
+          gmpSandboxKind = GMPSandboxKind::Clearkey;
+        }
+
+        if (NS_WARN_IF(!mResults.mSandboxBroker->SetSecurityLevelForGMPlugin(
+                gmpSandboxKind))) {
           return Err(LaunchError("SetSecurityLevelForGMPlugin"));
         }
         mUseSandbox = true;

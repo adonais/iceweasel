@@ -4,6 +4,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+interface nsIContentParentKeepAlive;
 interface nsIDOMProcessChild;
 interface nsIDOMProcessParent;
 interface Principal;
@@ -241,8 +242,41 @@ namespace ChromeUtils {
 
   /**
    * Clears the entire stylesheet cache.
+   *
+   * If chrome parameter is passed and true, this clears chrome cache.
+   * If chrome parameter is passed and false, this clears content cache.
+   * If chrome parameter is not passed, this clears all cache.
    */
-  undefined clearStyleSheetCache();
+  undefined clearStyleSheetCache(optional boolean chrome);
+
+  /**
+   * Clears the JavaScript cache by schemeless site. This includes associated
+   * state-partitioned cache.
+   */
+  undefined clearScriptCacheBySite(UTF8String schemelessSite, optional OriginAttributesPatternDictionary pattern = {});
+
+  /**
+   * Clears the JavaScript cache by principal.
+   */
+  undefined clearScriptCacheByPrincipal(Principal principal);
+
+  /**
+   * Clears the entire JavaScript cache.
+   *
+   * If chrome parameter is passed and true, this clears chrome cache.
+   * If chrome parameter is passed and false, this clears content cache.
+   * If chrome parameter is not passed, this clears all cache.
+   */
+  undefined clearScriptCache(optional boolean chrome);
+
+  /**
+   * Clears the entire resource cache (stylesheets, JavaScripts, and images).
+   *
+   * If chrome parameter is passed and true, this clears chrome cache.
+   * If chrome parameter is passed and false, this clears content cache.
+   * If chrome parameter is not passed, this clears all cache.
+   */
+  undefined clearResourceCache(optional boolean chrome);
 
   /**
    * Clears the Messaging Layer Security state by schemeless site.
@@ -262,22 +296,6 @@ namespace ChromeUtils {
    */
   [Throws]
   undefined clearMessagingLayerSecurityState();
-
-  /**
-   * Clears the JavaScript cache by schemeless site. This includes associated
-   * state-partitioned cache.
-   */
-  undefined clearScriptCacheBySite(UTF8String schemelessSite, optional OriginAttributesPatternDictionary pattern = {});
-
-  /**
-   * Clears the JavaScript cache by principal.
-   */
-  undefined clearScriptCacheByPrincipal(Principal principal);
-
-  /**
-   * Clears the entire JavaScript cache.
-   */
-  undefined clearScriptCache();
 
   /**
    * If the profiler is currently running and recording the current thread,
@@ -663,7 +681,7 @@ partial namespace ChromeUtils {
   [ChromeOnly, Throws]
   undefined registerWindowActor(UTF8String aName, optional WindowActorOptions aOptions = {});
 
-  [ChromeOnly]
+  [ChromeOnly, Throws]
   undefined unregisterWindowActor(UTF8String aName);
 
   /**
@@ -675,8 +693,24 @@ partial namespace ChromeUtils {
   [ChromeOnly, Throws]
   undefined registerProcessActor(UTF8String aName, optional ProcessActorOptions aOptions = {});
 
-  [ChromeOnly]
+  [ChromeOnly, Throws]
   undefined unregisterProcessActor(UTF8String aName);
+
+  /**
+   * Ensure a content process with the given remote type is running, and return
+   * a "KeepAlive" object for it. While this object is kept alive, the
+   * process will not intentionally exit.
+   *
+   * This follows the same process selection logic as creating a remote browser,
+   * allowing up to `dom.ipc.processCount.<aRemoteType>` processes (default 1)
+   * to be created per remote type. Once the limit has been reached, a new
+   * KeepAlive for an existing process will be returned instead.
+   *
+   * This can be used to start a content process for non-browser use cases, such
+   * as running sandboxed JS/WASM operations in a content process.
+   */
+  [ChromeOnly, Throws]
+  Promise<nsIContentParentKeepAlive> ensureHeadlessContentProcess(UTF8String aRemoteType);
 
   [ChromeOnly]
   // aError should a nsresult.
@@ -752,8 +786,6 @@ partial namespace ChromeUtils {
   boolean shouldResistFingerprinting(JSRFPTarget target,
                                      nsIRFPTargetSetIDL? overriddenFingerprintingSettings,
                                      optional boolean isPBM);
-
-  FileNameTypeDetails sanitizeTelemetryFileURL(UTF8String url);
 };
 
 /*
@@ -1148,9 +1180,4 @@ dictionary CDMInformation {
   required boolean clearlead;
   required boolean isHDCP22Compatible;
   required boolean isHardwareDecryption;
-};
-
-dictionary FileNameTypeDetails {
-  required UTF8String fileNameType;
-  UTF8String fileNameDetails;
 };

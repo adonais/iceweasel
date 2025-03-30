@@ -1869,8 +1869,10 @@ def _run_android(
             # The app is waiting for jdb to attach and will not continue running
             # until we do so.
             def _jdb_ping(local_jdb_port):
+                java_bin_path = os.path.dirname(command_context.substs["JAVA"])
+                jdb_path = os.path.join(java_bin_path, "jdb")
                 jdb_process = subprocess.Popen(
-                    ["jdb", "-attach", "localhost:%d" % local_jdb_port],
+                    [jdb_path, "-attach", "localhost:%d" % local_jdb_port],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -3374,26 +3376,6 @@ def package_l10n(command_context, verbose=False, locales=[]):
         ensure_exit_code=True,
     )
 
-    if command_context.substs["MOZ_BUILD_APP"] == "mobile/android":
-        command_context.log(
-            logging.INFO,
-            "package-multi-locale",
-            {},
-            "Invoking `mach android assemble-app`",
-        )
-        command_context.run_process(
-            [
-                sys.executable,
-                mozpath.join(command_context.topsrcdir, "mach"),
-                "android",
-                "assemble-app",
-            ],
-            append_env=append_env,
-            pass_thru=True,
-            ensure_exit_code=True,
-            cwd=mozpath.join(command_context.topsrcdir),
-        )
-
     if command_context.substs["MOZ_BUILD_APP"] == "browser":
         command_context.log(
             logging.INFO, "package-multi-locale", {}, "Repackaging browser"
@@ -3500,3 +3482,69 @@ def _prepend_debugger_args(args, debugger, debugger_args):
     # Prepend the debugger args.
     args = [debuggerInfo.path] + debuggerInfo.args + args
     return args
+
+
+@SubCommand(
+    "repackage",
+    "flatpak",
+    description="Repackage a tar file into a flatpak",
+    virtualenv_name="repackage-desktop-file",
+)
+@CommandArgument("--input", "-i", type=str, required=True, help="Input filename")
+@CommandArgument("--output", "-o", type=str, required=True, help="Output filename")
+@CommandArgument("--name", type=str, required=True, help="flatpak package name")
+@CommandArgument("--arch", type=str, required=True, help="flatpak architecture")
+@CommandArgument("--version", type=str, required=True, help="package version")
+@CommandArgument("--product", type=str, required=True, help="release product")
+@CommandArgument(
+    "--release-type",
+    type=str,
+    required=True,
+    help="The release being shipped. Used to disambiguate nightly/try etc.",
+)
+@CommandArgument(
+    "--flatpak-branch",
+    type=str,
+    required=True,
+    help="flatpak branch",
+)
+@CommandArgument(
+    "--template-dir", type=str, required=True, help="path to template directory"
+)
+@CommandArgument(
+    "--langpack-pattern",
+    type=str,
+    help="shell pattern matching language packs to include in the flatpak",
+)
+def repackage_flatpak(
+    command_context,
+    input,
+    output,
+    name,
+    arch,
+    version,
+    product,
+    release_type,
+    flatpak_branch,
+    template_dir,
+    langpack_pattern,
+):
+    if not os.path.exists(input):
+        print("Input file does not exist: %s" % input)
+        return 1
+
+    from mozbuild.repackaging.flatpak import repackage_flatpak
+
+    repackage_flatpak(
+        command_context.log,
+        input,
+        output,
+        arch,
+        version,
+        product,
+        release_type,
+        name,
+        flatpak_branch,
+        template_dir,
+        langpack_pattern,
+    )

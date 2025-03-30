@@ -9,16 +9,15 @@
 
 const kBaseUrl = "https://example.org/browser/dom/events/test/";
 
-// Resolve fn for promise we resolve after mockCA.analyzeContentRequest runs.
-let resolveDropPromise;
-
 let testName;
+
+requestLongerTimeout(2);
 
 let mockCA = {
   isActive: true,
   mightBeActive: true,
   caShouldAllow: undefined,
-  numAnalyzeContentRequestCalls: undefined,
+  numAnalyzeContentRequestPrivateCalls: undefined,
   numGetURIForDropEvent: undefined,
 
   getURIForDropEvent(event) {
@@ -27,9 +26,10 @@ let mockCA = {
     return this.realCAService.getURIForDropEvent(event);
   },
 
-  async analyzeContentRequest(aRequest, _aAutoAcknowledge) {
-    info(`[${testName}]| Called analyzeContentRequest`);
-    this.numAnalyzeContentRequestCalls += 1;
+  analyzeContentRequestPrivate(aRequest, _aAutoAcknowledge, aCallback) {
+    info(`[${testName}]| Called analyzeContentRequestPrivate`);
+    this.numAnalyzeContentRequestPrivateCalls += 1;
+
     is(
       aRequest.analysisType,
       Ci.nsIContentAnalysisRequest.eBulkDataEntry,
@@ -45,16 +45,37 @@ let mockCA = {
       Ci.nsIContentAnalysisRequest.eDroppedText,
       "request has correct operation type"
     );
+    is(
+      aRequest.userActionRequestsCount,
+      1,
+      "request has correct userActionRequestsCount"
+    );
+    ok(
+      aRequest.userActionId.length,
+      "request userActionId should not be empty"
+    );
 
-    // We want analyzeContentRequest to return before dropPromise is resolved
-    // because dropPromise tells the test harness that it is time to check that
-    // the drop or dragleave event was received, and that is sent immediately
-    // after analyzeContentRequest returns (as part of a promise handler chain).
-    setTimeout(resolveDropPromise, 0);
+    aCallback.contentResult(
+      this.realCAService.makeResponseForTest(
+        this.caShouldAllow
+          ? Ci.nsIContentAnalysisResponse.eAllow
+          : Ci.nsIContentAnalysisResponse.eBlock,
+        aRequest.requestToken,
+        aRequest.userActionId
+      )
+    );
+  },
 
-    return this.caShouldAllow
-      ? { shouldAllowContent: true }
-      : { shouldAllowContent: false };
+  analyzeContentRequests(aRequests, aAutoAcknowledge) {
+    // This will call into our mock analyzeContentRequestPrivate
+    return this.realCAService.analyzeContentRequests(
+      aRequests,
+      aAutoAcknowledge
+    );
+  },
+
+  showBlockedRequestDialog(aRequest) {
+    info(`got showBlockedRequestDialog for request ${aRequest.requestToken}`);
   },
 };
 
@@ -75,22 +96,41 @@ Services.scriptloader.loadSubScript(
 );
 
 const TEST_MODES = Object.freeze({
-  ALLOW: {
+  ALLOW_PLAINTEXTONLY: {
     caAllow: true,
     turnOffPref: false,
-    shouldDrag: true,
+    plainTextOnly: true,
+    bypassForSameTab: false,
+    // Since plain text only is being analyzed and the drag/drop tests don't
+    // drag anything with a text/plain MIME type, we do not expect to run CA.
+    shouldRunCA: false,
+  },
+  ALLOW_CHECKALLFORMATS: {
+    caAllow: true,
+    turnOffPref: false,
+    plainTextOnly: false,
+    bypassForSameTab: false,
     shouldRunCA: true,
   },
   BLOCK: {
     caAllow: false,
     turnOffPref: false,
-    shouldDrag: false,
+    plainTextOnly: false,
+    bypassForSameTab: false,
     shouldRunCA: true,
   },
   PREFOFF: {
-    caAllow: false,
+    caAllow: true,
     turnOffPref: true,
-    shouldDrag: true,
+    plainTextOnly: false,
+    bypassForSameTab: false,
+    shouldRunCA: false,
+  },
+  BYPASS_SAME_TAB: {
+    caAllow: true,
+    turnOffPref: false,
+    plainTextOnly: false,
+    bypassForSameTab: true,
     shouldRunCA: false,
   },
 });
@@ -101,44 +141,43 @@ runTest = async function (
   targetBrowsingCxt,
   dndOptions = {}
 ) {
-  if (
-    sourceBrowsingCxt.top == targetBrowsingCxt.top &&
-    targetBrowsingCxt.currentWindowGlobal.documentPrincipal.subsumes(
-      sourceBrowsingCxt.currentWindowGlobal.documentPrincipal
-    )
-  ) {
-    // Content Analysis should not run.
-    info(testRootName);
-    testName = testRootName;
-    mockCA.numAnalyzeContentRequestCalls = 0;
-    mockCA.numGetURIForDropEvent = 0;
-    await runDnd(testRootName, sourceBrowsingCxt, targetBrowsingCxt, {
-      ...dndOptions,
-    });
-    is(
-      mockCA.numAnalyzeContentRequestCalls,
-      0,
-      `[${testName}]| AnalyzeContentRequest was not called`
-    );
-    is(
-      mockCA.numGetURIForDropEvent,
-      0,
-      `[${testName}]| GetURIForDropEvent was not called`
-    );
-    return;
-  }
+  mockCA.sourceBrowsingCxt = sourceBrowsingCxt;
+  mockCA.targetBrowsingCxt = targetBrowsingCxt;
 
   for (let testMode of [
-    TEST_MODES.ALLOW,
+    TEST_MODES.ALLOW_PLAINTEXTONLY,
+    TEST_MODES.ALLOW_CHECKALLFORMATS,
     TEST_MODES.BLOCK,
     TEST_MODES.PREFOFF,
+    TEST_MODES.BYPASS_SAME_TAB,
   ]) {
+    let isSameTab =
+      sourceBrowsingCxt.top == targetBrowsingCxt.top &&
+      targetBrowsingCxt.currentWindowGlobal.documentPrincipal.subsumes(
+        sourceBrowsingCxt.currentWindowGlobal.documentPrincipal
+      );
+
+    mockCA.caShouldAllow = testMode.caAllow;
+    mockCA.numAnalyzeContentRequestPrivateCalls = 0;
+    mockCA.numGetURIForDropEvent = 0;
+
+    let shouldRunCA = testMode.shouldRunCA;
     let description;
-    if (testMode.shouldRunCA) {
-      description = testMode.caAllow ? "allow_drop" : "deny_drop";
+    if (testMode.bypassForSameTab) {
+      shouldRunCA = !isSameTab;
+      mockCA.caShouldAllow = isSameTab;
+      description = `${isSameTab ? "no_run" : "diff_tab_deny"}_ca_with_same_tab_pref`;
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.contentanalysis.bypass_for_same_tab_operations", true]],
+      });
+    } else if (testMode.turnOffPref) {
+      description = "no_run_ca_because_of_dnd_interception_point_pref";
     } else {
-      description = "no_run_ca_because_of_pref";
+      description =
+        (testMode.caAllow ? "allow_drop" : "deny_drop") +
+        (testMode.plainTextOnly ? "_plain_text_only" : "");
     }
+
     let name = `${testRootName}:${description}`;
     info(name);
     testName = name;
@@ -152,35 +191,55 @@ runTest = async function (
         ],
       });
     }
-    mockCA.caShouldAllow = testMode.caAllow;
-    mockCA.numAnalyzeContentRequestCalls = 0;
-    mockCA.numGetURIForDropEvent = 0;
-    let dropPromise = new Promise(res => {
-      if (testMode.shouldRunCA) {
-        resolveDropPromise = res;
-      } else {
-        // CA won't get called, just resolve the promise now
-        res();
-      }
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [
+          "browser.contentanalysis.interception_point.drag_and_drop.plain_text_only",
+          testMode.plainTextOnly,
+        ],
+      ],
     });
+
+    let dropPromise = SpecialPowers.spawn(
+      targetBrowsingCxt,
+      [mockCA.caShouldAllow],
+      async shouldAllow => {
+        let resolver;
+        let promise = new Promise(res => {
+          resolver = res;
+        });
+        let targetElt = content.document.getElementById("dropTarget");
+        targetElt.addEventListener(
+          shouldAllow ? "drop" : "dragleave",
+          _ => {
+            resolver();
+          },
+          { once: true }
+        );
+        await promise;
+        info("dropPromise was alerted in content");
+      }
+    );
+
     await runDnd(name, sourceBrowsingCxt, targetBrowsingCxt, {
       dropPromise,
-      expectDragLeave: !testMode.shouldDrag,
+      expectDragLeave: !mockCA.caShouldAllow,
       ...dndOptions,
     });
-    const expectedCaCalls = testMode.shouldRunCA ? 1 : 0;
+
     is(
-      mockCA.numAnalyzeContentRequestCalls,
-      expectedCaCalls,
-      `[${testName}]| Called AnalyzeContentRequest correct number of times`
+      mockCA.numAnalyzeContentRequestPrivateCalls,
+      shouldRunCA ? 1 : 0,
+      `[${testName}]| Called AnalyzeContentRequestPrivate correct number of times`
     );
     is(
       mockCA.numGetURIForDropEvent,
-      expectedCaCalls,
+      1,
       `[${testName}]| GetURIForDropEvent was called correct number of times`
     );
-    if (testMode.turnOffPref) {
+    if (testMode.turnOffPref || testMode.bypassForSameTab) {
       await SpecialPowers.popPrefEnv();
     }
+    await SpecialPowers.popPrefEnv();
   }
 };

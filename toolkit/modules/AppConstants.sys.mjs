@@ -154,6 +154,8 @@ export var AppConstants = Object.freeze({
 
   MOZ_GECKO_PROFILER: @MOZ_GECKO_PROFILER_BOOL@,
 
+  BROWSER_NEWTAB_AS_ADDON: @BROWSER_NEWTAB_AS_ADDON_BOOL@,
+
   DLL_PREFIX: "@DLL_PREFIX@",
   DLL_SUFFIX: "@DLL_SUFFIX@",
 
@@ -267,12 +269,5 @@ export var AppConstants = Object.freeze({
     false,
 #endif
 
-  // Returns true for CN region build when distibution id set as 'MozillaOnline'
-  isChinaRepack() {
-    return (
-      Services.prefs
-      .getDefaultBranch("")
-      .getCharPref("distribution.id", "default") === "MozillaOnline"
-    );
-  },
+  USE_LIBZ_RS: @USE_LIBZ_RS_BOOL@,
 });

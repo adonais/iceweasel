@@ -6,7 +6,6 @@ package org.mozilla.fenix
 
 import android.app.ActivityManager
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.StrictMode
@@ -17,6 +16,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
@@ -87,7 +87,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.initializeGlean
 import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.startMetricsIfEnabled
-import org.mozilla.fenix.distributions.getDistributionId
 import org.mozilla.fenix.experiments.maybeFetchExperiments
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.containsQueryParameters
@@ -120,8 +119,8 @@ private const val RAM_THRESHOLD_MEGABYTES = 1024
 private const val BYTES_TO_MEGABYTES_CONVERSION = 1024.0 * 1024.0
 
 /**
- *The main application class for Fenix. Records data to measure initialization performance.
- *  Installs [CrashReporter], initializes [Glean]  in fenix builds and setup Megazord in the main process.
+ * The main application class for Fenix. Records data to measure initialization performance.
+ * Installs [CrashReporter], initializes [Glean] in fenix builds and setup [Megazord] in the main process.
  */
 @Suppress("Registered", "TooManyFunctions", "LargeClass")
 open class FenixApplication : LocaleAwareApplication(), Provider {
@@ -341,7 +340,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                             frecencyConfig = TopSitesFrecencyConfig(
                                 FrecencyThresholdOption.SKIP_ONE_TIME_PAGES,
                             ) {
-                                !Uri.parse(it.url)
+                                !it.url.toUri()
                                     .containsQueryParameters(components.settings.frecencyFilterQuery)
                             },
                             providerConfig = TopSitesProviderConfig(
@@ -715,7 +714,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         setPreferenceMetrics(settings)
         with(Metrics) {
             // Set this early to guarantee it's in every ping from here on.
-            distributionId.set(getDistributionId(browserStore))
+            distributionId.set(components.distributionIdManager.getDistributionId())
 
             defaultBrowser.set(browsersCache.all(applicationContext).isDefaultBrowser)
             mozillaProductDetector.getMozillaBrowserDefault(applicationContext)?.also {
@@ -979,7 +978,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         CustomizeHome.contile.set(settings.showContileFeature)
     }
 
-    protected fun recordOnInit() {
+    private fun recordOnInit() {
         // This gets called by more than one process. Ideally we'd only run this in the main process
         // but the code to check which process we're in crashes because the Context isn't valid yet.
         //

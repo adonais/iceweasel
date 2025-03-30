@@ -138,7 +138,12 @@ metrics_headers = sorted(
     {
         convert_yaml_path_to_header_name(path) + ".h"
         for path in metrics_yamls
-        if path != "toolkit/components/glean/metrics.yaml"
+        if path
+        not in (
+            "toolkit/components/glean/metrics.yaml",
+            "browser/components/asrouter/metrics.yaml",
+            # TODO: Remove in bug 1899019
+        )
     }
 )
 EXPORTS.mozilla.glean += [("!" + filename) for filename in metrics_headers]
@@ -173,16 +178,28 @@ GeneratedFile(
 GeneratedFile(
     "GleanMetrics.h",
     *metrics_headers,
-    "GleanJSMetricsLookup.h",
+    script="build_scripts/glean_parser_ext/run_glean_parser.py",
+    flags=glean_parser_flags,
+    inputs=["!metrics_yamls.cached"],
+)
+
+GeneratedFile(
     "GleanJSMetricsLookup.cpp",
-    "api/src/metrics.rs",
+    "GleanJSMetricsLookup.h",
+    entry_point="js_metrics",
     script="build_scripts/glean_parser_ext/run_glean_parser.py",
     flags=glean_parser_flags
     + [
         "GleanJSMetricsLookup.h",
-        "GleanJSMetricsLookup.cpp",
-        "api/src/metrics.rs",
     ],
+    inputs=["!metrics_yamls.cached"],
+)
+
+GeneratedFile(
+    "api/src/metrics.rs",
+    entry_point="rust_metrics",
+    script="build_scripts/glean_parser_ext/run_glean_parser.py",
+    flags=glean_parser_flags,
     inputs=["!metrics_yamls.cached"],
 )
 
@@ -191,6 +208,7 @@ GeneratedFile(
     "GleanJSPingsLookup.h",
     "GleanJSPingsLookup.cpp",
     "api/src/pings.rs",
+    entry_point="pings",
     script="build_scripts/glean_parser_ext/run_glean_parser.py",
     flags=glean_parser_flags
     + [
@@ -251,6 +269,16 @@ if CONFIG["MOZ_ARTIFACT_BUILDS"]:
     )
     # Once generated, it needs to be placed in GreD so it can be found.
     FINAL_TARGET_FILES += ["!jogfile.json"]
+
+if CONFIG["MOZ_GLEAN_INTERESTING_METRICS_FILES"]:
+    GeneratedFile(
+        "interesting_serverknobs.json",
+        script="build_scripts/glean_parser_ext/interesting_serverknobs.py",
+        flags=[CONFIG["MOZ_APP_VERSION"]],
+        inputs=["!metrics_yamls.cached"],
+    )
+    # Once generated, it needs to be placed in GreD so it can be found.
+    FINAL_TARGET_FILES += ["!interesting_serverknobs.json"]
 
 # OHTTP support requires the fog_control crate know which pings wish to be sent
 # using OHTTP. fog_control has no access to the firefox_on_glean crate, so it

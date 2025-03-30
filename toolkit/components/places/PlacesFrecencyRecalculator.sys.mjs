@@ -185,17 +185,15 @@ export class PlacesFrecencyRecalculator {
     if (this.#task.isFinalized) {
       return;
     }
-    const refObj = {};
-    const histogram = "PLACES_FRECENCY_RECALC_CHUNK_TIME_MS";
-    TelemetryStopwatch.start(histogram, refObj);
+    let timerId = Glean.places.frecencyRecalcChunkTime.start();
     try {
       if (await this.recalculateSomeFrecencies()) {
-        TelemetryStopwatch.finish(histogram, refObj);
+        Glean.places.frecencyRecalcChunkTime.stopAndAccumulate(timerId);
       } else {
-        TelemetryStopwatch.cancel(histogram, refObj);
+        Glean.places.frecencyRecalcChunkTime.cancel(timerId);
       }
     } catch (ex) {
-      TelemetryStopwatch.cancel(histogram, refObj);
+      Glean.places.frecencyRecalcChunkTime.cancel(timerId);
       console.error(ex);
       lazy.logger.error(ex);
     }
@@ -391,8 +389,7 @@ export class PlacesFrecencyRecalculator {
    */
   async decay() {
     lazy.logger.trace("Decay frecency");
-    let refObj = {};
-    TelemetryStopwatch.start("PLACES_IDLE_FRECENCY_DECAY_TIME_MS", refObj);
+    let timerId = Glean.places.idleFrecencyDecayTime.start();
     // Ensure moz_places_afterupdate_frecency_trigger ignores decaying
     // frecency changes.
     lazy.PlacesUtils.history.isFrecencyDecaying = true;
@@ -423,11 +420,11 @@ export class PlacesFrecencyRecalculator {
           }
         );
 
-        TelemetryStopwatch.finish("PLACES_IDLE_FRECENCY_DECAY_TIME_MS", refObj);
+        Glean.places.idleFrecencyDecayTime.stopAndAccumulate(timerId);
         PlacesObservers.notifyListeners([new PlacesRanking()]);
       });
     } catch (ex) {
-      TelemetryStopwatch.cancel("PLACES_IDLE_FRECENCY_DECAY_TIME_MS", refObj);
+      Glean.places.idleFrecencyDecayTime.cancel(timerId);
       console.error(ex);
       lazy.logger.error(ex);
     } finally {
@@ -544,9 +541,13 @@ class AlternativeFrecencyHelper {
       // Object containing variables influencing the calculation.
       // Any change to this object will cause a full recalculation on restart.
       variables: {
-        // Current version of origins alternative frecency.
+        // Current version of pages alternative frecency.
         //  ! IMPORTANT: Always bump up when making changes to the algorithm.
-        version: 2,
+        version: 3,
+        veryHighWeight: Services.prefs.getIntPref(
+          "places.frecency.pages.alternative.veryHighWeight",
+          200
+        ),
         highWeight: Services.prefs.getIntPref(
           "places.frecency.pages.alternative.highWeight",
           100
@@ -684,7 +685,7 @@ class AlternativeFrecencyHelper {
 
   async #recalculateSomePagesAlternativeFrecencies({ chunkSize }) {
     lazy.logger.trace(
-      `Recalculate ${chunkSize} alternative pages frecency values`
+      `Recalculate ${chunkSize * 2} alternative pages frecency values`
     );
     // Since it takes a long period of time to recalculate frecency of all the
     // pages, due to the high number of them, we artificially increase the

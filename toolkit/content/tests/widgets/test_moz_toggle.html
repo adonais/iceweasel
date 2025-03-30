@@ -10,7 +10,7 @@
   solution for token variables for the new widgets -->
   <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
   <script type="module" src="chrome://global/content/elements/moz-toggle.mjs"></script>
-  <script src="input-test-helpers.js"></script>
+  <script src="lit-test-helpers.js"></script>
 </head>
 <body>
 <script class="testbody" type="application/javascript">
@@ -21,8 +21,8 @@
     let templateFn = (attrs, children) => html`
       <moz-toggle ${attrs}>${children}</moz-toggle>
     `;
-    await testHelpers.setupInputTests({ templateFn });
-    testHelpers.activatedProperty = "pressed";
+    testHelpers.setupTests({ templateFn });
+    testHelpers.activatedProperty = customElements.get("moz-toggle").activatedProperty;
   });
 
   add_task(async function testMozToggleProperties() {
@@ -32,7 +32,7 @@
   add_task(async function testMozToggleInteraction() {
     let { trackEvent, verifyEvents } = testHelpers.getInputEventHelpers();
     let interactionTemplate = testHelpers.templateFn({ value: "default", label: "Label" });
-    let renderTarget = await testHelpers.renderInputElements(interactionTemplate);
+    let renderTarget = await testHelpers.renderTemplate(interactionTemplate);
     const mozToggle = renderTarget.querySelector("moz-toggle");
     const button = mozToggle.buttonEl;
     mozToggle.pressed = true;
@@ -93,25 +93,7 @@
   });
 
   add_task(async function testMozToggleWithoutVisibleLabel() {
-    const ARIA_LABEL = "I'm not visible";
-    let ariaLabelTemplate = testHelpers.templateFn({
-      value: "default",
-      "aria-label": ARIA_LABEL,
-    });
-    let renderTarget = await testHelpers.renderInputElements(ariaLabelTemplate);
-    let mozToggle = renderTarget.querySelector("moz-toggle");
-
-    let labelText = mozToggle.shadowRoot.querySelector(".text");
-    ok(!labelText, "No visible label text is rendered.");
-    ok(
-      !mozToggle.getAttribute("aria-label"),
-      "aria-label is not set on the outer toggle element."
-    );
-    is(
-      mozToggle.buttonEl.getAttribute("aria-label"),
-      ARIA_LABEL,
-      "The aria-label is set on the button element."
-    );
+    await testHelpers.verifyAriaLabel("moz-toggle");
   });
 </script>
 </pre>

@@ -49,19 +49,18 @@
         return;
       }
 
+      this._initialized = true;
+      this.saveOnWindowClose = true;
+
       this.textContent = "";
       this.appendChild(this.constructor.fragment);
       this.initializeAttributeInheritance();
-
-      this._initialized = true;
 
       this.#labelElement = this.querySelector(".tab-group-label");
       this.#labelElement.addEventListener("click", this);
 
       this.#updateLabelAriaAttributes();
       this.#updateCollapsedAriaAttributes();
-
-      this.createdDate = Date.now();
 
       this.addEventListener("TabSelect", this);
 
@@ -104,6 +103,10 @@
               new CustomEvent("TabGroupRemoved", { bubbles: true })
             );
             this.remove();
+            Services.obs.notifyObservers(
+              this,
+              "browser-tabgroup-removed-from-dom"
+            );
           }
         });
       }
@@ -177,8 +180,12 @@
       this.dispatchEvent(new CustomEvent(eventName, { bubbles: true }));
     }
 
+    #lastAddedTo = 0;
     get lastSeenActive() {
-      return Math.max(...this.tabs.map(t => t.lastSeenActive));
+      return Math.max(
+        this.#lastAddedTo,
+        ...this.tabs.map(t => t.lastSeenActive)
+      );
     }
 
     async #updateLabelAriaAttributes() {
@@ -196,6 +203,7 @@
         }
       );
       this.#labelElement?.setAttribute("aria-label", tabGroupName);
+      this.#labelElement.group = this;
       this.#labelElement?.setAttribute("aria-description", tabGroupDescription);
     }
 
@@ -232,6 +240,7 @@
               );
         gBrowser.moveTabToGroup(tabToMove, this);
       }
+      this.#lastAddedTo = Date.now();
     }
 
     /**
@@ -249,6 +258,12 @@
      */
     save() {
       SessionStore.addSavedTabGroup(this);
+      this.dispatchEvent(new CustomEvent("TabGroupSaved", { bubbles: true }));
+    }
+
+    saveAndClose() {
+      this.save();
+      gBrowser.removeTabGroup(this);
     }
 
     /**

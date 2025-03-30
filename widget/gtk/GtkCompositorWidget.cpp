@@ -55,6 +55,11 @@ GtkCompositorWidget::GtkCompositorWidget(
 GtkCompositorWidget::~GtkCompositorWidget() {
   LOG("GtkCompositorWidget::~GtkCompositorWidget [%p]\n", (void*)mWidget.get());
   CleanupResources();
+#ifdef MOZ_WAYLAND
+  if (mNativeLayerRoot) {
+    mNativeLayerRoot->Shutdown();
+  }
+#endif
   RefPtr<nsIWidget> widget = mWidget.forget();
   NS_ReleaseOnMainThread("GtkCompositorWidget::mWidget", widget.forget());
 }
@@ -110,7 +115,8 @@ EGLNativeWindowType GtkCompositorWidget::GetEGLNativeWindow() {
 bool GtkCompositorWidget::SetEGLNativeWindowSize(
     const LayoutDeviceIntSize& aEGLWindowSize) {
 #if defined(MOZ_WAYLAND)
-  if (mWidget) {
+  // We explicitly need to set EGL window size on Wayland only.
+  if (GdkIsWaylandDisplay() && mWidget) {
     return mWidget->SetEGLNativeWindowSize(aEGLWindowSize);
   }
 #endif
@@ -129,18 +135,17 @@ LayoutDeviceIntRegion GtkCompositorWidget::GetTransparentRegion() {
 #ifdef MOZ_WAYLAND
 RefPtr<mozilla::layers::NativeLayerRoot>
 GtkCompositorWidget::GetNativeLayerRoot() {
-#  if 0
   if (gfx::gfxVars::UseWebRenderCompositor()) {
     if (!mNativeLayerRoot) {
-      LOG("GtkCompositorWidget::GetNativeLayerRoot [%p] create\n",
+      LOG("GtkCompositorWidget::GetNativeLayerRoot [%p] create",
           (void*)mWidget.get());
       MOZ_ASSERT(mWidget && mWidget->GetMozContainer());
       mNativeLayerRoot = layers::NativeLayerRootWayland::Create(
           MOZ_WL_SURFACE(mWidget->GetMozContainer()));
+      mNativeLayerRoot->Init();
     }
     return mNativeLayerRoot;
   }
-#  endif
   return nullptr;
 }
 #endif

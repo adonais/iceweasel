@@ -345,23 +345,27 @@ export async function modelToResponse(modelFilePath, headers) {
 /**
  * Retrieves a handle to a directory at the specified path in the Origin Private File System (OPFS).
  *
- * @param {string} path - The path to the directory, using "/" as the directory separator.
+ * @param {string|null} path - The path to the directory, using "/" as the directory separator.
  *                        Example: "subdir1/subdir2/subdir3"
+ *                        If null, returns the root.
  * @param {object} options - Configuration object
  * @param {boolean} options.create - if `true` (default is false), create any missing subdirectories.
  * @returns {Promise<FileSystemDirectoryHandle>} - A promise that resolves to the directory handle
  *                                                 for the specified path.
  */
 export async function getDirectoryHandleFromOPFS(
-  path,
+  path = null,
   { create = false } = {}
 ) {
   let currentNavigator = globalThis.navigator;
   if (!currentNavigator) {
-    currentNavigator =
-      Services.wm.getMostRecentWindow("navigator:browser").navigator;
+    currentNavigator = Services.wm.getMostRecentBrowserWindow().navigator;
   }
   let directoryHandle = await currentNavigator.storage.getDirectory();
+
+  if (!path) {
+    return directoryHandle;
+  }
 
   // Split the `path` into directory components.
   const components = path.split("/").filter(Boolean);
@@ -418,7 +422,9 @@ export async function removeFromOPFS(path, { recursive = false } = {}) {
   const dirPath = path.substring(0, lastSlashIndex);
 
   const directoryHandle = await getDirectoryHandleFromOPFS(dirPath);
-
+  if (!directoryHandle) {
+    throw new Error("Directory does not exist: " + dirPath);
+  }
   await directoryHandle.removeEntry(fileName, { recursive });
 }
 
@@ -477,9 +483,13 @@ Progress.ProgressAndStatusCallbackParams = ProgressAndStatusCallbackParams;
 Progress.ProgressStatusText = ProgressStatusText;
 Progress.ProgressType = ProgressType;
 Progress.readResponse = readResponse;
-Progress.getFileHandleFromOPFS = getFileHandleFromOPFS;
-Progress.removeFromOPFS = removeFromOPFS;
 Progress.readResponseToWriter = readResponseToWriter;
+
+// OPFS operations
+export var OPFS = OPFS || {};
+OPFS.getFileHandle = getFileHandleFromOPFS;
+OPFS.getDirectoryHandle = getDirectoryHandleFromOPFS;
+OPFS.remove = removeFromOPFS;
 
 export async function getInferenceProcessInfo() {
   // for now we only have a single inference process.
@@ -559,16 +569,12 @@ export class URLChecker {
    * @returns {string} - Normalized URL.
    */
   normalizeLocalhost(url) {
-    try {
-      const parsedURL = new URL(url);
-      if (parsedURL.hostname === "localhost") {
-        // Normalize to only scheme and localhost without port or user info
-        return `${parsedURL.protocol}//localhost/`;
-      }
-      return url;
-    } catch (error) {
-      return url;
+    const parsedURL = URL.parse(url);
+    if (parsedURL?.hostname === "localhost") {
+      // Normalize to only scheme and localhost without port or user info
+      return `${parsedURL.protocol}//localhost/`;
     }
+    return url;
   }
 
   /**
@@ -598,4 +604,14 @@ export class URLChecker {
     // If no matches, return a default rejectionType
     return { allowed: false, rejectionType: RejectionType.DISALLOWED };
   }
+}
+
+/**
+ * Returns the optimal CPU concurrency for ML
+ *
+ * @returns {number} The number of threads we should be using
+ */
+export function getOptimalCPUConcurrency() {
+  let mlUtils = Cc["@mozilla.org/ml-utils;1"].createInstance(Ci.nsIMLUtils);
+  return mlUtils.getOptimalCPUConcurrency();
 }

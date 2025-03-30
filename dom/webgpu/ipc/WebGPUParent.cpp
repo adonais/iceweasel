@@ -24,7 +24,7 @@
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #endif
 
-#if MOZ_WIDGET_GTK
+#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/webgpu/ExternalTextureDMABuf.h"
 #endif
 
@@ -107,7 +107,7 @@ extern int32_t wgpu_server_get_dma_buf_fd(void* aParam, WGPUTextureId aId) {
     return -1;
   }
 
-#ifdef MOZ_WIDGET_GTK
+#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   auto* textureDMABuf = texture->AsExternalTextureDMABuf();
   if (!textureDMABuf) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -133,7 +133,7 @@ extern const WGPUVkImageHandle* wgpu_server_get_vk_image_handle(
     return nullptr;
   }
 
-#  if defined(MOZ_WIDGET_GTK)
+#  if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   auto* textureDMABuf = texture->AsExternalTextureDMABuf();
   if (!textureDMABuf) {
     return nullptr;
@@ -331,6 +331,9 @@ void WebGPUParent::MaintainDevices() {
 
 void WebGPUParent::LoseDevice(const RawId aDeviceId, Maybe<uint8_t> aReason,
                               const nsACString& aMessage) {
+  if (mActiveDeviceIds.Contains(aDeviceId)) {
+    mActiveDeviceIds.Remove(aDeviceId);
+  }
   // Check to see if we've already sent a DeviceLost message to aDeviceId.
   if (mLostDeviceIds.Contains(aDeviceId)) {
     return;
@@ -507,6 +510,9 @@ ipc::IPCResult WebGPUParent::RecvAdapterRequestDevice(
   }
 #endif
 
+  MOZ_ASSERT(!mActiveDeviceIds.Contains(aDeviceId));
+  mActiveDeviceIds.Insert(aDeviceId);
+
   return IPC_OK();
 }
 
@@ -521,6 +527,10 @@ ipc::IPCResult WebGPUParent::RecvDeviceDestroy(RawId aDeviceId) {
 }
 
 ipc::IPCResult WebGPUParent::RecvDeviceDrop(RawId aDeviceId) {
+  if (mActiveDeviceIds.Contains(aDeviceId)) {
+    mActiveDeviceIds.Remove(aDeviceId);
+  }
+
   ffi::wgpu_server_device_drop(mContext.get(), aDeviceId);
 
   mErrorScopeStackByDevice.erase(aDeviceId);
@@ -1237,7 +1247,8 @@ static void ReadbackSnapshotCallback(uint8_t* userdata,
 
 ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
     IProtocol* aProtocol, const layers::RemoteTextureOwnerId& aOwnerId,
-    const RawId& aCommandEncoderId, Maybe<Shmem>& aShmem, gfx::IntSize& aSize) {
+    const RawId& aCommandEncoderId, Maybe<Shmem>& aShmem, gfx::IntSize& aSize,
+    uint32_t& aByteStride) {
   const auto& lookup = mPresentationDataMap.find(aOwnerId);
   if (lookup == mPresentationDataMap.end()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -1249,6 +1260,7 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   aSize = data->mDesc.size();
   uint32_t stride = layers::ImageDataSerializer::ComputeRGBStride(
       data->mDesc.format(), aSize.width);
+  aByteStride = stride;
   uint32_t len = data->mDesc.size().height * stride;
   Shmem shmem;
   if (!AllocShmem(len, &shmem)) {
@@ -1260,14 +1272,6 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   }
 
   auto it = mExternalTextures.find(data->mLastSubmittedTextureId.ref());
-
-  // ExternalTexture is still in use as no readback
-  if (data->mUseExternalTextureInSwapChain && it != mExternalTextures.end()) {
-    auto& externalTexture = it->second;
-    externalTexture->GetSnapshot(shmem, aSize);
-    return IPC_OK();
-  }
-
   // External texture is already invalid and posted to RemoteTextureMap
   if (it == mExternalTextures.end()) {
     if (!mRemoteTextureOwner || !mRemoteTextureOwner->IsRegistered(aOwnerId)) {
@@ -1648,6 +1652,7 @@ void WebGPUParent::ActorDestroy(ActorDestroyReason aWhy) {
     mRemoteTextureOwner->UnregisterAllTextureOwners();
     mRemoteTextureOwner = nullptr;
   }
+  mActiveDeviceIds.Clear();
   ffi::wgpu_server_poll_all_devices(mContext.get(), true);
   mContext = nullptr;
 }
@@ -1956,17 +1961,17 @@ Maybe<ffi::WGPUFfiLUID> WebGPUParent::GetCompositorDeviceLuid() {
 #endif
 }
 
-#if !defined(XP_MACOSX)
+#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
 VkImageHandle::~VkImageHandle() {
   if (!mParent) {
     return;
   }
   auto* context = mParent->GetContext();
-  if (!context || !mVkImageHandle) {
-    return;
+  if (context && mParent->IsDeviceActive(mDeviceId) && mVkImageHandle) {
+    wgpu_vkimage_destroy(context, mDeviceId,
+                         const_cast<ffi::WGPUVkImageHandle*>(mVkImageHandle));
   }
-  wgpu_vkimage_delete(context, mDeviceId,
-                      const_cast<ffi::WGPUVkImageHandle*>(mVkImageHandle));
+  wgpu_vkimage_delete(const_cast<ffi::WGPUVkImageHandle*>(mVkImageHandle));
 }
 #endif
 

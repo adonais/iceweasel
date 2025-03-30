@@ -12,6 +12,8 @@
 #include "js/Exception.h"  // JS::ExceptionStack, JS::StealPendingExceptionStack
 #include "jsapi.h"
 
+#include "mozilla/dom/PushSubscriptionChangeEvent.h"
+#include "mozilla/dom/PushSubscriptionChangeEventBinding.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
@@ -830,12 +832,28 @@ class PushSubscriptionChangeEventOp final : public ExtendableEventOp {
 
     RefPtr<EventTarget> target = aWorkerPrivate->GlobalScope();
 
-    ExtendableEventInit init;
+    ServiceWorkerPushSubscriptionChangeEventOpArgs& args =
+        mArgs.get_ServiceWorkerPushSubscriptionChangeEventOpArgs();
+
+    PushSubscriptionChangeEventInit init;
     init.mBubbles = false;
     init.mCancelable = false;
 
-    RefPtr<ExtendableEvent> event = ExtendableEvent::Constructor(
-        target, u"pushsubscriptionchange"_ns, init);
+    if (args.oldSubscription()) {
+      PushSubscriptionData oldSubscriptionData =
+          args.oldSubscription().extract();
+      RefPtr<PushSubscription> oldSubscription = new PushSubscription(
+          target->GetParentObject(), oldSubscriptionData.endpoint(), u""_ns,
+          Nullable<EpochTimeStamp>(),
+          std::move(oldSubscriptionData.rawP256dhKey()),
+          std::move(oldSubscriptionData.authSecret()),
+          std::move(oldSubscriptionData.appServerKey()));
+      init.mOldSubscription = oldSubscription.forget();
+    }
+
+    RefPtr<PushSubscriptionChangeEvent> event =
+        PushSubscriptionChangeEvent::Constructor(
+            target, u"pushsubscriptionchange"_ns, init);
     event->SetTrusted(true);
 
     nsresult rv = DispatchExtendableEventOnWorkerScope(
@@ -917,8 +935,8 @@ class NotificationEventOp : public ExtendableEventOp,
 
     // We swap first and then initialize the timer so that even if initializing
     // fails, we still clean the interaction count correctly.
-    uint32_t delay = mArgs.get_ServiceWorkerNotificationEventOpArgs()
-                         .disableOpenClickDelay();
+    uint32_t delay =
+        StaticPrefs::dom_webnotifications_disable_open_click_delay();
     rv = mTimer->InitWithCallback(this, delay, nsITimer::TYPE_ONE_SHOT);
 
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -939,10 +957,9 @@ class NotificationEventOp : public ExtendableEventOp,
     ServiceWorkerNotificationEventOpArgs& args =
         mArgs.get_ServiceWorkerNotificationEventOpArgs();
 
-    auto result = Notification::ConstructFromFields(
-        aWorkerPrivate->GlobalScope(), args.id(), args.title(), args.dir(),
-        args.lang(), args.body(), args.tag(), args.icon(), args.data(),
-        args.scope());
+    auto result = Notification::ConstructFromIPC(
+        aWorkerPrivate->GlobalScope(), args.notification(),
+        NS_ConvertUTF8toUTF16(aWorkerPrivate->ServiceWorkerScope()));
 
     if (NS_WARN_IF(result.isErr())) {
       return false;

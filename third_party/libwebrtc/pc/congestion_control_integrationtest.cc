@@ -17,13 +17,14 @@
 #include "api/peer_connection_interface.h"
 #include "pc/test/integration_test_helpers.h"
 #include "rtc_base/gunit.h"
-#include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
+using testing::Eq;
 using testing::HasSubstr;
+using testing::Not;
 
 class PeerConnectionCongestionControlTest
     : public PeerConnectionIntegrationBaseTest {
@@ -33,8 +34,7 @@ class PeerConnectionCongestionControlTest
 };
 
 TEST_F(PeerConnectionCongestionControlTest, OfferContainsCcfbIfEnabled) {
-  test::ScopedFieldTrials trials(
-      "WebRTC-RFC8888CongestionControlFeedback/Enabled/");
+  SetFieldTrials("WebRTC-RFC8888CongestionControlFeedback/Enabled/");
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   caller()->AddAudioVideoTracks();
   auto offer = caller()->CreateOfferAndWait();
@@ -43,8 +43,7 @@ TEST_F(PeerConnectionCongestionControlTest, OfferContainsCcfbIfEnabled) {
 }
 
 TEST_F(PeerConnectionCongestionControlTest, ReceiveOfferSetsCcfbFlag) {
-  test::ScopedFieldTrials trials(
-      "WebRTC-RFC8888CongestionControlFeedback/Enabled/");
+  SetFieldTrials("WebRTC-RFC8888CongestionControlFeedback/Enabled/");
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignalingForSdpOnly();
   caller()->AddAudioVideoTracks();
@@ -64,6 +63,47 @@ TEST_F(PeerConnectionCongestionControlTest, ReceiveOfferSetsCcfbFlag) {
   for (const auto& content : parsed_contents) {
     EXPECT_TRUE(content.media_description()->rtcp_fb_ack_ccfb());
   }
+  // Check that the answer does not contain transport-cc
+  std::string answer_str = absl::StrCat(*caller()->pc()->remote_description());
+  EXPECT_THAT(answer_str, Not(HasSubstr("transport-cc")));
+}
+
+TEST_F(PeerConnectionCongestionControlTest, CcfbGetsUsed) {
+  SetFieldTrials("WebRTC-RFC8888CongestionControlFeedback/Enabled/");
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  MediaExpectations media_expectations;
+  media_expectations.CalleeExpectsSomeAudio();
+  media_expectations.CalleeExpectsSomeVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+  auto pc_internal = caller()->pc_internal();
+  EXPECT_TRUE_WAIT(pc_internal->FeedbackAccordingToRfc8888CountForTesting() > 0,
+                   kDefaultTimeout);
+  // There should be no transport-cc generated.
+  EXPECT_THAT(pc_internal->FeedbackAccordingToTransportCcCountForTesting(),
+              Eq(0));
+}
+
+TEST_F(PeerConnectionCongestionControlTest, TransportCcGetsUsed) {
+  SetFieldTrials("WebRTC-RFC8888CongestionControlFeedback/Disabled/");
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  MediaExpectations media_expectations;
+  media_expectations.CalleeExpectsSomeAudio();
+  media_expectations.CalleeExpectsSomeVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+  auto pc_internal = caller()->pc_internal();
+  EXPECT_TRUE_WAIT(
+      pc_internal->FeedbackAccordingToTransportCcCountForTesting() > 0,
+      kDefaultTimeout);
+  // Test that RFC 8888 feedback is NOT generated when field trial disabled.
+  EXPECT_THAT(pc_internal->FeedbackAccordingToRfc8888CountForTesting(), Eq(0));
 }
 
 }  // namespace webrtc

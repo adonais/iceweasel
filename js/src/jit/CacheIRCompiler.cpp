@@ -2184,9 +2184,6 @@ bool CacheIRCompiler::emitGuardNonDoubleType(ValOperandId inputId,
     case ValueType::Magic:
     case ValueType::PrivateGCThing:
     case ValueType::Object:
-#ifdef ENABLE_RECORD_TUPLE
-    case ValueType::ExtendedPrimitive:
-#endif
       MOZ_CRASH("unexpected type");
   }
 
@@ -5308,6 +5305,21 @@ bool CacheIRCompiler::emitGuardArgumentsObjectFlags(ObjOperandId objId,
 
   masm.branchTestArgumentsObjectFlags(obj, scratch, flags, Assembler::NonZero,
                                       failure->label());
+  return true;
+}
+
+bool CacheIRCompiler::emitGuardObjectHasSameRealm(ObjOperandId objId) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+
+  Register obj = allocator.useRegister(masm, objId);
+  AutoScratchRegister scratch(allocator, masm);
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  masm.guardObjectHasSameRealm(obj, scratch, failure->label());
   return true;
 }
 
@@ -9028,7 +9040,6 @@ bool CacheIRCompiler::emitCallObjectHasSparseElementResult(
 
   LiveRegisterSet volatileRegs = liveVolatileRegs();
   volatileRegs.takeUnchecked(scratch1);
-  volatileRegs.takeUnchecked(index);
   masm.PushRegsInMask(volatileRegs);
 
   using Fn =
@@ -9537,21 +9548,33 @@ bool CacheIRCompiler::emitCallInt32ToString(Int32OperandId inputId,
     return false;
   }
 
-  LiveRegisterSet volatileRegs = liveVolatileRegs();
-  volatileRegs.takeUnchecked(result);
-  masm.PushRegsInMask(volatileRegs);
+  Label done, callVM;
 
-  using Fn = JSLinearString* (*)(JSContext* cx, int32_t i);
-  masm.setupUnalignedABICall(result);
-  masm.loadJSContext(result);
-  masm.passABIArg(result);
-  masm.passABIArg(input);
-  masm.callWithABI<Fn, js::Int32ToStringPure>();
+  {
+    masm.lookupStaticIntString(input, result, cx_->staticStrings(), &callVM);
+    masm.jump(&done);
+  }
 
-  masm.storeCallPointerResult(result);
-  masm.PopRegsInMask(volatileRegs);
+  {
+    masm.bind(&callVM);
+    LiveRegisterSet volatileRegs = liveVolatileRegs();
+    volatileRegs.takeUnchecked(result);
+    masm.PushRegsInMask(volatileRegs);
 
-  masm.branchPtr(Assembler::Equal, result, ImmPtr(nullptr), failure->label());
+    using Fn = JSLinearString* (*)(JSContext* cx, int32_t i);
+    masm.setupUnalignedABICall(result);
+    masm.loadJSContext(result);
+    masm.passABIArg(result);
+    masm.passABIArg(input);
+    masm.callWithABI<Fn, js::Int32ToStringPure>();
+
+    masm.storeCallPointerResult(result);
+    masm.PopRegsInMask(volatileRegs);
+
+    masm.branchPtr(Assembler::Equal, result, ImmPtr(nullptr), failure->label());
+  }
+
+  masm.bind(&done);
   return true;
 }
 

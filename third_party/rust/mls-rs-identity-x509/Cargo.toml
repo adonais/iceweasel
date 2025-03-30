@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "mls-rs-identity-x509"
-version = "0.11.0"
+version = "0.15.0"
 build = false
 autolib = false
 autobins = false
@@ -29,6 +29,15 @@ keywords = [
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/awslabs/mls-rs"
 
+[features]
+arbitrary = []
+default = ["std"]
+ffi = []
+std = [
+    "mls-rs-core/std",
+    "dep:thiserror",
+]
+
 [lib]
 name = "mls_rs_identity_x509"
 path = "src/lib.rs"
@@ -37,7 +46,7 @@ path = "src/lib.rs"
 maybe-async = "0.2.10"
 
 [dependencies.mls-rs-core]
-version = "0.18.0"
+version = "0.21.0"
 path = "../mls-rs-core"
 features = ["x509"]
 default-features = false
@@ -51,15 +60,6 @@ assert_matches = "1"
 mockall = "0.12"
 rand = "0.8"
 
-[features]
-arbitrary = []
-default = ["std"]
-ffi = []
-std = [
-    "mls-rs-core/std",
-    "dep:thiserror",
-]
-
 [target."cfg(mls_build_async)".dependencies]
 async-trait = "^0.1"
 
@@ -71,8 +71,7 @@ version = "0.2"
 features = ["js"]
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies.wasm-bindgen-test]
-version = "0.3.26"
-default-features = false
+version = "0.3"
 
 [lints.rust.unexpected_cfgs]
 level = "warn"

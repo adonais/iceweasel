@@ -48,16 +48,23 @@ class DocAccessibleChild : public PDocAccessibleChild {
   }
 
   /**
-   * Serializes a shown tree and appends the show event data to the mutation
-   * event queue with AppendMutationEventData. This function may queue multiple
+   * Serializes a shown tree and pushes the show event data to the mutation
+   * event queue with PushMutationEventData. This function may push multiple
    * show events depending on the size of the flattened tree.
    */
   void InsertIntoIpcTree(LocalAccessible* aChild, bool aSuppressShowEvent);
   void ShowEvent(AccShowEvent* aShowEvent);
 
-  void AppendMutationEventData(MutationEventData aData, uint32_t aAccCount = 1);
+  /**
+   * Append the mutation event to mutation event queue, potentially creating a
+   * new batch of mutation events. This function may send queued mutation events
+   * if the number of batches meets or exceeds a set limit.
+   */
+  void PushMutationEventData(MutationEventData aData, uint32_t aAccCount = 1);
   void SendQueuedMutationEvents();
   size_t MutationEventQueueLength() const;
+
+  bool HasUnackedMutationEvents() const { return mHasUnackedMutationEvents; }
 
   virtual void ActorDestroy(ActorDestroyReason) override {
     if (!mDoc) {
@@ -154,8 +161,17 @@ class DocAccessibleChild : public PDocAccessibleChild {
       const int32_t& aEndOffset, const uint32_t& aCoordinateType,
       const int32_t& aX, const int32_t& aY) override;
 
+  virtual mozilla::ipc::IPCResult RecvAckMutationEvents() override;
+
  private:
   LayoutDeviceIntRect GetCaretRectFor(const uint64_t& aID);
+
+  // Set to true if we have sent mutation events that have not yet been
+  // acknowledged by the parent process. We only request and receive one ACK per
+  // tick, regardless of how many mutation events we send. Additional ticks
+  // cannot occur (and thus additional mutation events cannot be sent) before we
+  // receive this ACK.
+  bool mHasUnackedMutationEvents = false;
 
  protected:
   static void FlattenTree(LocalAccessible* aRoot,
@@ -177,25 +193,21 @@ class DocAccessibleChild : public PDocAccessibleChild {
 
   // Utility structure that encapsulates mutation event batching.
   struct MutationEventBatcher {
-    void AppendMutationEventData(MutationEventData aData, uint32_t aAccCount);
+    void PushMutationEventData(MutationEventData aData, uint32_t aAccCount,
+                               DocAccessibleChild& aDocAcc);
     void SendQueuedMutationEvents(DocAccessibleChild& aDocAcc);
-    uint32_t GetCurrentBatchAccCount() const { return mCurrentBatchAccCount; }
+    uint32_t AccCount() const { return mAccCount; }
     size_t EventCount() const { return mMutationEventData.Length(); }
 
    private:
-    // A collection of mutation events to be sent in batches.
+    // A batch of mutation events to be sent in one IPC message.
     nsTArray<MutationEventData> mMutationEventData;
 
-    // Indices that demarcate batch endpoint boundaries. All indices are one
-    // past the end, to make them suitable for working with Spans. The start
-    // index of the first batch is implicitly 0.
-    nsTArray<size_t> mBatchBoundaries;
-
-    // The number of accessibles in the current (latest) batch. A show event may
-    // have many accessibles shown, where each accessible in the show event
+    // The number of accessibles in the mutation event data batch. A show event
+    // may have many accessibles shown, where each accessible in the show event
     // counts separately here. Every other mutation event adds one to this
     // count.
-    uint32_t mCurrentBatchAccCount = 0;
+    uint32_t mAccCount = 0;
   };
   MutationEventBatcher mMutationEventBatcher;
 

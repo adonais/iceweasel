@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.components.appstate
 
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.sync.TabData
 import mozilla.components.feature.tab.collections.TabCollection
@@ -135,16 +134,14 @@ sealed class AppAction : Action {
     data class RemoveRecentSyncedTab(val syncedTab: RecentSyncedTab) : AppAction()
 
     /**
-     * Action indicating that the selected tab has been changed.
-     *
-     * @property tab The tab that has been selected.
-     */
-    data class SelectedTabChanged(val tab: TabSessionState) : AppAction()
-
-    /**
      * Action dispatched when the browser is deleting its data and quitting.
      */
     data object DeleteAndQuitStarted : AppAction()
+
+    /**
+     * Action dispatched when the current site's data has been cleared.
+     */
+    data object SiteDataCleared : AppAction()
 
     /**
      * Action dispatched when open in firefox action is selected from custom tab.
@@ -412,6 +409,11 @@ sealed class AppAction : Action {
          * [ShareAction] dispatched when sharing to an application failed.
          */
         data object ShareToAppFailed : ShareAction()
+
+        /**
+         * [ShareAction] dispatched when sharing to whatsapp.
+         */
+        data object ShareToWhatsApp : ShareAction()
 
         /**
          * [ShareAction] dispatched when sharing tabs to other connected devices was successful.

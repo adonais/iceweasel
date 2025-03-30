@@ -6,17 +6,20 @@ package org.mozilla.fenix.components.toolbar
 
 import androidx.navigation.NavController
 import mozilla.components.browser.state.action.ContentAction
+import mozilla.components.browser.state.action.ShareResourceAction
 import mozilla.components.browser.state.ext.getUrl
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.ktx.kotlin.isUrl
+import mozilla.components.support.utils.ext.isContentUrl
 import mozilla.components.ui.tabcounter.TabCounterMenu
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
@@ -251,26 +254,40 @@ class DefaultBrowserToolbarController(
         val url = sessionId?.let {
             store.state.findTab(it)?.getUrl()
         }
-        val directions = NavGraphDirections.actionGlobalShareFragment(
-            sessionId = sessionId,
-            data = arrayOf(
-                ShareData(
-                    url = url,
-                    title = currentSession?.content?.title,
+
+        if (url?.isContentUrl() == true) {
+            val tab = sessionId.let { store.state.findTab(it) } ?: return
+
+            store.dispatch(
+                ShareResourceAction.AddShareAction(
+                    tab.id,
+                    ShareResourceState.LocalResource(url),
                 ),
-            ),
-            showPage = true,
-        )
-        navController.navigate(directions)
+            )
+        } else {
+            val directions = NavGraphDirections.actionGlobalShareFragment(
+                sessionId = sessionId,
+                data = arrayOf(
+                    ShareData(
+                        url = url,
+                        title = currentSession?.content?.title,
+                    ),
+                ),
+                showPage = true,
+            )
+            navController.navigate(directions)
+        }
     }
 
     override fun handleNewTabButtonClick() {
         if (settings.enableHomepageAsNewTab) {
             tabsUseCases.addTab.invoke(
+                url = "about:home",
                 startLoading = false,
                 private = currentSession?.content?.private ?: false,
             )
         }
+
         if (activity.shouldAddNavigationBar()) {
             NavigationBar.browserNewTabTapped.record(NoExtras())
         } else {

@@ -288,7 +288,6 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
         and manifest["vendoring"].get("flavor", "regular") != "regular"
     ):
         for i in [
-            "skip-vendoring-steps",
             "keep",
             "exclude",
             "include",
@@ -299,6 +298,7 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
 
         if manifest["vendoring"].get("flavor", "regular") == "rust":
             for i in [
+                "skip-vendoring-steps",
                 "update-actions",
             ]:
                 if i in manifest["vendoring"]:
@@ -377,6 +377,19 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
             if "individual-files-default-destination" not in manifest["vendoring"]:
                 raise ValueError(
                     "individual-files-default-destination must be used with individual-files-list"
+                )
+            misplaced = []
+            previous = None
+            for current in manifest["vendoring"]["individual-files-list"]:
+                if previous is not None and not (previous.lower() <= current.lower()):
+                    misplaced.append(current)
+                else:
+                    previous = current
+            if len(misplaced) > 0:
+                raise ValueError(
+                    "individual-files-list must be sorted, the following files are misplaced: {}".format(
+                        ", ".join(misplaced)
+                    )
                 )
 
     if "updatebot" in manifest:

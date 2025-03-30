@@ -22,6 +22,7 @@ gecko_metrics = [
     "devtools/client/inspector/metrics.yaml",
     "devtools/client/responsive/metrics.yaml",
     "devtools/client/shared/metrics.yaml",
+    "devtools/shared/heapsnapshot/metrics.yaml",
     "docshell/base/metrics.yaml",
     "dom/base/use_counter_metrics.yaml",
     "dom/canvas/metrics.yaml",
@@ -39,7 +40,11 @@ gecko_metrics = [
     "dom/push/metrics.yaml",
     "dom/quota/metrics.yaml",
     "dom/security/metrics.yaml",
+    "dom/serviceworkers/metrics.yaml",
+    "dom/storage/metrics.yaml",
     "dom/webauthn/metrics.yaml",
+    "dom/workers/metrics.yaml",
+    "editor/libeditor/metrics.yaml",
     "gfx/metrics.yaml",
     "image/decoders/metrics.yaml",
     "js/xpconnect/metrics.yaml",
@@ -47,6 +52,8 @@ gecko_metrics = [
     "mobile/shared/modules/geckoview/metrics.yaml",
     "modules/libjar/metrics.yaml",
     "modules/libpref/metrics.yaml",
+    "netwerk/cache2/metrics.yaml",
+    "netwerk/dns/metrics.yaml",
     "netwerk/metrics.yaml",
     "netwerk/protocol/http/metrics.yaml",
     "parser/html/metrics.yaml",
@@ -66,6 +73,7 @@ gecko_metrics = [
     "toolkit/components/extensions/metrics.yaml",
     "toolkit/components/formautofill/metrics.yaml",
     "toolkit/components/glean/metrics.yaml",
+    "toolkit/components/mediasniffer/metrics.yaml",
     "toolkit/components/messaging-system/metrics.yaml",
     "toolkit/components/normandy/metrics.yaml",
     "toolkit/components/passwordmgr/metrics.yaml",
@@ -84,6 +92,7 @@ gecko_metrics = [
     "toolkit/mozapps/extensions/metrics.yaml",
     "toolkit/mozapps/extensions/metrics_legacy.yaml",
     "toolkit/mozapps/handling/metrics.yaml",
+    "toolkit/mozapps/update/metrics.yaml",
     "toolkit/profile/metrics.yaml",
     "toolkit/xre/metrics.yaml",
     "widget/metrics.yaml",
@@ -93,6 +102,7 @@ gecko_metrics = [
 # Metrics that are sent by Firefox Desktop
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 firefox_desktop_metrics = [
+    "browser/components/asrouter/metrics.yaml",
     "browser/components/backup/metrics.yaml",
     "browser/components/doh/metrics.yaml",
     "browser/components/downloads/metrics.yaml",
@@ -126,6 +136,7 @@ firefox_desktop_metrics = [
     "toolkit/components/pictureinpicture/metrics.yaml",
     "toolkit/components/places/metrics.yaml",
     "toolkit/components/reportbrokensite/metrics.yaml",
+    "toolkit/components/satchel/megalist/metrics.yaml",
     "toolkit/components/search/metrics.yaml",
     "toolkit/components/shopping/metrics.yaml",
     "toolkit/components/telemetry/metrics.yaml",
@@ -186,6 +197,7 @@ gecko_pings = [
 # Pings that are sent by Firefox Desktop.
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 firefox_desktop_pings = [
+    "browser/components/asrouter/pings.yaml",
     "browser/components/newtab/pings.yaml",
     "browser/components/pocket/pings.yaml",
     "browser/components/search/pings.yaml",

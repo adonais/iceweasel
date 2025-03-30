@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionUserScriptsContent:
     "resource://gre/modules/ExtensionUserScriptsContent.sys.mjs",
   LanguageDetector:
-    "resource://gre/modules/translation/LanguageDetector.sys.mjs",
+    "resource://gre/modules/translations/LanguageDetector.sys.mjs",
   Schemas: "resource://gre/modules/Schemas.sys.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
 });
@@ -931,7 +931,7 @@ var contentScripts = new DefaultWeakMap(matcher => {
  * This is the child side of the ContentScriptContextParent class
  * defined in ExtensionParent.sys.mjs.
  */
-class ContentScriptContextChild extends BaseContext {
+export class ContentScriptContextChild extends BaseContext {
   constructor(extension, contentWindow) {
     super("content_child", extension);
 

@@ -368,16 +368,10 @@ class ProviderQuickSuggest extends UrlbarProvider {
     // Set the appropriate suggested index and related properties unless the
     // feature did it already.
     if (!result.hasSuggestedIndex) {
-      if (suggestion.is_top_pick) {
-        result.isBestMatch = true;
+      if (result.isBestMatch) {
         result.isRichSuggestion = true;
         result.richSuggestionIconSize ||= 52;
         result.suggestedIndex = 1;
-      } else if (
-        !isNaN(suggestion.position) &&
-        lazy.UrlbarPrefs.get("quickSuggestAllowPositionInSuggestions")
-      ) {
-        result.suggestedIndex = suggestion.position;
       } else {
         result.isSuggestedIndexRelativeToGroup = true;
         if (!result.payload.isSponsored) {
@@ -436,9 +430,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let payload = {
       url: suggestion.url,
       isBlockable: true,
-      blockL10n: {
-        id: "urlbar-result-menu-dismiss-firefox-suggest",
-      },
       isManageable: true,
     };
 
@@ -453,13 +444,18 @@ class ProviderQuickSuggest extends UrlbarProvider {
       payload.shouldShowUrl = true;
     }
 
-    return new lazy.UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.SEARCH,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-        queryContext.tokens,
-        payload
-      )
+    return Object.assign(
+      new lazy.UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.URL,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        ...lazy.UrlbarResult.payloadAndSimpleHighlights(
+          queryContext.tokens,
+          payload
+        )
+      ),
+      {
+        isBestMatch: !!suggestion.is_top_pick,
+      }
     );
   }
 

@@ -19,13 +19,14 @@ import "chrome://global/content/elements/moz-button.mjs";
 import "chrome://global/content/megalist/components/password-card/password-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/megalist/components/login-form/login-form.mjs";
-
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/megalist/components/notification-message-bar/notification-message-bar.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/sidebar/sidebar-panel-header.mjs";
 
 const DISPLAY_MODES = {
-  ALERTS: "SortByAlerts",
-  ALL: "SortByName",
+  ALERTS: "DisplayAlerts",
+  ALL: "DisplayAll",
 };
 
 const VIEW_MODES = {
@@ -73,7 +74,7 @@ export class MegalistAlpha extends MozLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.#messageToViewModel("Refresh");
-    this.#sendCommand(this.displayMode);
+    this.#sendCommand("UpdateDisplayMode", { value: this.displayMode });
   }
 
   async getUpdateComplete() {
@@ -82,18 +83,6 @@ export class MegalistAlpha extends MozLitElement {
       this.shadowRoot.querySelectorAll("password-card")
     );
     await Promise.all(passwordCards.map(el => el.updateComplete));
-  }
-
-  async updated(changedProperties) {
-    if (changedProperties.has("viewMode")) {
-      const mozButton = this.shadowRoot.querySelector("#create-login-button");
-      await mozButton.updateComplete;
-      // Need to set aria-expanded on the button element of the moz-button for screen readers to announce the change.
-      mozButton.buttonEl.setAttribute(
-        "aria-expanded",
-        this.viewMode === VIEW_MODES.ADD ? "true" : "false"
-      );
-    }
   }
 
   #onPasswordRevealClick(concealed, lineIndex) {
@@ -130,13 +119,20 @@ export class MegalistAlpha extends MozLitElement {
     )();
   }
 
-  #onAddButtonClick() {
+  #onAddButtonClick(trigger) {
     this.viewMode = VIEW_MODES.ADD;
+    this.#recordToolbarAction("add_new", trigger);
   }
 
   #onRadioButtonChange(e) {
     this.displayMode = e.target.value;
-    this.#sendCommand(this.displayMode);
+    this.#sendCommand("UpdateDisplayMode", { value: this.displayMode });
+
+    let gleanAction =
+      this.displayMode === DISPLAY_MODES.ALL
+        ? "list_state_all"
+        : "list_state_alerts";
+    this.#recordToolbarAction(gleanAction, "toolbar");
   }
 
   #onCancelLoginForm() {
@@ -165,6 +161,20 @@ export class MegalistAlpha extends MozLitElement {
     );
 
     panelList.toggle(e);
+  }
+
+  #recordToolbarAction(action, trigger = "") {
+    Glean.contextualManager.toolbarAction.record({
+      trigger,
+      option_name: action,
+    });
+  }
+
+  #recordNotificationShown(id) {
+    const gleanNotificationString = id.replaceAll("-", "_");
+    Glean.contextualManager.notificationShown.record({
+      notification_detail: gleanNotificationString,
+    });
   }
 
   #messageToViewModel(messageName, data) {
@@ -197,8 +207,18 @@ export class MegalistAlpha extends MozLitElement {
   }
 
   receiveSetNotification(notification) {
+    this.#recordNotificationShown(notification.id);
     this.notification = notification;
     this.viewMode = notification.viewMode ?? this.viewMode;
+  }
+
+  receiveSetDisplayMode(displayMode) {
+    if (this.displayMode !== displayMode) {
+      this.displayMode = displayMode;
+      const radioBtnId =
+        displayMode === DISPLAY_MODES.ALL ? "allLogins" : "alerts";
+      this.shadowRoot.querySelector(`#${radioBtnId}`).checked = true;
+    }
   }
 
   receiveReauthResponse(isAuthorized) {
@@ -366,20 +386,23 @@ export class MegalistAlpha extends MozLitElement {
           ${alerts.map(({ displayAlert, notification }) =>
             when(
               displayAlert,
-              () => html`
-                <li>
-                  <notification-message-bar
-                    .notification=${{
-                      ...notification,
-                      onButtonClick: handleButtonClick,
-                    }}
-                    .onDismiss=${() => (this.viewMode = VIEW_MODES.LIST)}
-                    .messageHandler=${(commandId, options) =>
-                      this.#sendCommand(commandId, options)}
-                  >
-                  </notification-message-bar>
-                </li>
-              `,
+              () => {
+                this.#recordNotificationShown(notification.id);
+                return html`
+                  <li>
+                    <notification-message-bar
+                      exportparts="support-link"
+                      .notification=${{
+                        ...notification,
+                        onButtonClick: handleButtonClick,
+                      }}
+                      .messageHandler=${(commandId, options) =>
+                        this.#sendCommand(commandId, options)}
+                    >
+                    </notification-message-bar>
+                  </li>
+                `;
+              },
               () => ""
             )
           )}
@@ -418,17 +441,26 @@ export class MegalistAlpha extends MozLitElement {
           <p data-l10n-id="passwords-no-passwords-get-started-message"></p>
           <div class="no-logins-card-buttons">
             <moz-button
+              class="empty-state-import-from-browser"
               data-l10n-id="passwords-command-import-from-browser"
               type="primary"
-              @click=${() => this.#sendCommand("ImportFromBrowser")}
+              @click=${() => {
+                this.#sendCommand("ImportFromBrowser");
+                this.#recordToolbarAction("import_browser", "empty_state_card");
+              }}
             ></moz-button>
             <moz-button
+              class="empty-state-import-from-file"
               data-l10n-id="passwords-command-import"
-              @click=${() => this.#sendCommand("Import")}
+              @click=${() => {
+                this.#sendCommand("Import");
+                this.#recordToolbarAction("import_file", "empty_state_card");
+              }}
             ></moz-button>
             <moz-button
+              class="empty-state-add-password"
               data-l10n-id="passwords-add-manually"
-              @click=${this.#onAddButtonClick}
+              @click=${() => this.#onAddButtonClick("empty_state_card")}
             ></moz-button>
           </div>
         </div>
@@ -533,14 +565,7 @@ export class MegalistAlpha extends MozLitElement {
 
   renderFirstRow() {
     return html`<div class="first-row">
-      ${this.renderSearch()}
-      <moz-button
-        id="create-login-button"
-        @click=${this.#onAddButtonClick}
-        data-l10n-id="create-login-button"
-        type="icon"
-        iconSrc="chrome://global/skin/icons/plus.svg"
-      ></moz-button>
+      ${this.renderSearch()} ${this.renderMenu()}
     </div>`;
   }
 
@@ -594,25 +619,42 @@ export class MegalistAlpha extends MozLitElement {
         data-l10n-id="more-options-popup"
       >
         <panel-item
+          action="add-password"
+          data-l10n-id="passwords-command-create"
+          @click=${() => this.#onAddButtonClick("toolbar")}
+        ></panel-item>
+        <panel-item
           action="import-from-browser"
           data-l10n-id="passwords-command-import-from-browser"
-          @click=${() => this.#sendCommand("ImportFromBrowser")}
+          @click=${() => {
+            this.#sendCommand("ImportFromBrowser");
+            this.#recordToolbarAction("import_browser", "toolbar");
+          }}
         ></panel-item>
         <panel-item
           action="import-from-file"
           data-l10n-id="passwords-command-import"
-          @click=${() => this.#sendCommand("Import")}
+          @click=${() => {
+            this.#sendCommand("Import");
+            this.#recordToolbarAction("import_file", "toolbar");
+          }}
         ></panel-item>
         <panel-item
           action="export-logins"
           data-l10n-id="passwords-command-export"
-          @click=${() => this.#sendCommand("Export")}
+          @click=${() => {
+            this.#sendCommand("Export");
+            this.#recordToolbarAction("export", "toolbar");
+          }}
         ></panel-item>
         <panel-item
           action="remove-all-logins"
           data-l10n-id="passwords-command-remove-all"
-          @click=${() => this.#sendCommand("RemoveAll")}
-          ?disabled=${!this.header.value.total}
+          @click=${() => {
+            this.#sendCommand("RemoveAll");
+            this.#recordToolbarAction("remove_all", "toolbar");
+          }}
+          ?disabled=${!this.header?.value.total}
         ></panel-item>
         <hr />
         <panel-item
@@ -623,6 +665,7 @@ export class MegalistAlpha extends MozLitElement {
               command => command.id === "Settings"
             );
             this.#sendCommand("OpenLink", { value: command.url });
+            this.#recordToolbarAction("preferences", "toolbar");
           }}
         ></panel-item>
         <panel-item
@@ -633,6 +676,7 @@ export class MegalistAlpha extends MozLitElement {
               command => command.id === "Help"
             );
             this.#sendCommand("OpenLink", { value: command.url });
+            this.#recordToolbarAction("help", "toolbar");
           }}
         ></panel-item>
       </panel-list>
@@ -644,9 +688,7 @@ export class MegalistAlpha extends MozLitElement {
       return "";
     }
 
-    return html`<div class="second-row">
-      ${this.renderRadioButtons()} ${this.renderMenu()}
-    </div>`;
+    return html`<div class="second-row">${this.renderRadioButtons()}</div>`;
   }
 
   async #scrollPasswordCardIntoView(guid) {
@@ -668,6 +710,7 @@ export class MegalistAlpha extends MozLitElement {
 
     return html`
       <notification-message-bar
+        exportparts="support-link"
         .notification=${this.notification}
         .onDismiss=${() => {
           this.notification = null;
@@ -687,6 +730,11 @@ export class MegalistAlpha extends MozLitElement {
         href="chrome://global/content/megalist/megalist.css"
       />
       <div class="container">
+        <sidebar-panel-header
+          data-l10n-id="sidebar-menu-cpm-header"
+          data-l10n-attrs="heading"
+          view="viewCPMSidebar"
+        ></sidebar-panel-header>
         ${this.renderFirstRow()} ${this.renderSecondRow()}
         ${this.renderNotification()} ${this.renderLastRow()}
       </div>

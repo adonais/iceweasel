@@ -325,6 +325,16 @@ skip-if = ["os == 'win'"] # skip because 0.0.0.0 is invalid in windows platform
 
 ["test_bug1940663.js"]
 
+["test_bug1948203.js"]
+skip-if = [
+  "os == 'android'", # bug 1622901
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt",
+  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && opt",
+  "asan",
+  "os == 'win'", # https://bugzilla.mozilla.org/show_bug.cgi?id=1808048
+]
+run-sequentially = "node server exceptions dont replay well"
+
 ["test_bug_1918928.js"]
 skip-if = [
   "socketprocess_networking", # confirmation state isn't passed cross-process
@@ -440,6 +450,11 @@ skip-if = ["true"]
 ["test_cache2-31-visit-all.js"]
 
 ["test_cache2-32-clear-origin.js"]
+
+["test_cache2-33-clear-base-domain.js"]
+
+["test_cache2_clear_with_principal.js"]
+run-sequentially = "httpd server"
 
 ["test_cache2_clear_with_usercontext_oa.js"]
 run-sequentially = "httpd server"
@@ -589,6 +604,9 @@ run-sequentially = "node server exceptions dont replay well"
 firefox-appdir = "browser"
 skip-if = ["tsan && socketprocess_networking"] # Bug 1808236
 
+["test_essential_domain_fallback.js"]
+skip-if = ["socketprocess_networking"] # cancel connections doesn't work in socket proc
+
 ["test_event_sink.js"]
 
 ["test_eviction.js"]
@@ -688,6 +706,7 @@ skip-if = [
   "socketprocess_networking",
   "os == 'win'", # https://bugzilla.mozilla.org/show_bug.cgi?id=1808049
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # https://bugzilla.mozilla.org/show_bug.cgi?id=1866067
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # https://bugzilla.mozilla.org/show_bug.cgi?id=1866067
 ]
 run-sequentially = "node server exceptions dont replay well"
 
@@ -904,6 +923,8 @@ skip-if = [
 
 ["test_multipart_byteranges.js"]
 
+["test_multipart_contentdisp.js"]
+
 ["test_multipart_set_cookie.js"]
 
 ["test_multipart_streamconv-byte-by-byte.js"]
@@ -1009,6 +1030,7 @@ run-sequentially = "node server exceptions dont replay well"
 ["test_protocolproxyservice.js"]
 skip-if = [
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # bug 1707738
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707738
   "tsan && socketprocess_networking", # Bug 1808235
 ]
 
@@ -1366,5 +1388,3 @@ skip-if = [
 ]
 
 ["test_xmlhttprequest.js"]
-
-["test_multipart_contentdisp.js"]

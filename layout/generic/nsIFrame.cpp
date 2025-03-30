@@ -63,6 +63,7 @@
 #include "nsFlexContainerFrame.h"
 #include "nsFocusManager.h"
 #include "nsFrameList.h"
+#include "nsFrameState.h"
 #include "nsTextControlFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsIBaseWindow.h"
@@ -1761,6 +1762,7 @@ bool nsIFrame::Extend3DContext(const nsStyleDisplay* aStyleDisplay,
          !GetClipPropClipRect(disp, effects, GetSize()) &&
          !SVGIntegrationUtils::UsingEffectsForFrame(this) &&
          !effects->HasMixBlendMode() &&
+         !ForcesStackingContextForViewTransition() &&
          disp->mIsolation != StyleIsolation::Isolate;
 }
 
@@ -2742,6 +2744,19 @@ Maybe<nsRect> nsIFrame::GetClipPropClipRect(const nsStyleDisplay* aDisp,
   return Some(rect);
 }
 
+// https://drafts.csswg.org/css-view-transitions-1/#named-and-transitioning
+//
+// Note https://github.com/w3c/csswg-drafts/issues/11772, however, for the root
+// style check.
+bool nsIFrame::ForcesStackingContextForViewTransition() const {
+  auto* style = Style();
+  return (style->StyleUIReset()->HasViewTransitionName() ||
+          HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) ||
+          style->StyleDisplay()->mWillChange.bits &
+              mozilla::StyleWillChangeBits::VIEW_TRANSITION_NAME) &&
+         !style->IsRootElementStyle();
+}
+
 /**
  * If the CSS 'overflow' property applies to this frame, and is not
  * handled by constructing a dedicated nsHTML/XULScrollFrame, set up clipping
@@ -3340,7 +3355,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   bool useFixedPosition =
       disp->mPosition == StylePositionProperty::Fixed &&
-      aBuilder->IsPaintingToWindow() &&
+      aBuilder->IsPaintingToWindow() && !IsMenuPopupFrame() &&
       (DisplayPortUtils::IsFixedPosFrameInDisplayPort(this) ||
        BuilderHasScrolledClip(aBuilder));
 
@@ -4698,6 +4713,17 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
   // Check with the ESM to see if we should process this one
   if (!aPresContext->EventStateManager()->EventStatusOK(aMouseEvent)) {
     return NS_OK;
+  }
+
+  EventStateManager* const esm = aPresContext->EventStateManager();
+  if (nsIContent* dragGestureContent = esm->GetTrackingDragGestureContent()) {
+    if (dragGestureContent != this->GetContent()) {
+      // When the current tracked dragging gesture is different
+      // than this frame, it means this frame was being dragged, however
+      // it got moved/destroyed. So we should consider the drag is
+      // still happening, so return early here.
+      return NS_OK;
+    }
   }
 
   const nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(
@@ -6910,17 +6936,17 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
   const auto iStartOffsetIsAuto =
       stylePos
           ->GetAnchorResolvedInset(LogicalSide::IStart, aWM, positionProperty)
-          .IsAuto();
+          ->IsAuto();
   const auto iEndOffsetIsAuto =
       stylePos->GetAnchorResolvedInset(LogicalSide::IEnd, aWM, positionProperty)
-          .IsAuto();
+          ->IsAuto();
   const auto bStartOffsetIsAuto =
       stylePos
           ->GetAnchorResolvedInset(LogicalSide::BStart, aWM, positionProperty)
-          .IsAuto();
+          ->IsAuto();
   const auto bEndOffsetIsAuto =
       stylePos->GetAnchorResolvedInset(LogicalSide::BEnd, aWM, positionProperty)
-          .IsAuto();
+          ->IsAuto();
   const auto boxSizingAdjust = stylePos->mBoxSizing == StyleBoxSizing::Border
                                    ? aBorderPadding
                                    : LogicalSize(aWM);
@@ -8550,13 +8576,13 @@ Maybe<uint32_t> nsIFrame::ContentIndexInContainer(const nsIFrame* aFrame) {
   return Nothing();
 }
 
-nsAutoCString nsIFrame::ListTag() const {
+nsAutoCString nsIFrame::ListTag(bool aListOnlyDeterministic) const {
   nsAutoString tmp;
   GetFrameName(tmp);
 
   nsAutoCString tag;
   tag += NS_ConvertUTF16toUTF8(tmp);
-  tag += nsPrintfCString("@%p", static_cast<const void*>(this));
+  ListPtr(tag, aListOnlyDeterministic, this, "@");
   return tag;
 }
 
@@ -8586,25 +8612,31 @@ std::string nsIFrame::ConvertToString(const LogicalSize& aSize,
 void nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix,
                            ListFlags aFlags) const {
   aTo += aPrefix;
-  aTo += ListTag();
+  const bool onlyDeterministic =
+      aFlags.contains(ListFlag::OnlyListDeterministicInfo);
+  aTo += ListTag(onlyDeterministic);
   if (HasView()) {
-    aTo += nsPrintfCString(" [view=%p]", static_cast<void*>(GetView()));
+    aTo += " [view";
+    ListPtr(aTo, aFlags, GetView());
+    aTo += "]";
   }
-  if (GetParent()) {
-    aTo += nsPrintfCString(" parent=%p", static_cast<void*>(GetParent()));
-  }
-  if (GetNextSibling()) {
-    aTo += nsPrintfCString(" next=%p", static_cast<void*>(GetNextSibling()));
+  if (!onlyDeterministic) {
+    if (GetParent()) {
+      aTo += nsPrintfCString(" parent=%p", static_cast<void*>(GetParent()));
+    }
+    if (GetNextSibling()) {
+      aTo += nsPrintfCString(" next=%p", static_cast<void*>(GetNextSibling()));
+    }
   }
   if (GetPrevContinuation()) {
     bool fluid = GetPrevInFlow() == GetPrevContinuation();
-    aTo += nsPrintfCString(" prev-%s=%p", fluid ? "in-flow" : "continuation",
-                           static_cast<void*>(GetPrevContinuation()));
+    aTo += nsPrintfCString(" prev-%s", fluid ? "in-flow" : "continuation");
+    ListPtr(aTo, aFlags, GetPrevContinuation());
   }
   if (GetNextContinuation()) {
     bool fluid = GetNextInFlow() == GetNextContinuation();
-    aTo += nsPrintfCString(" next-%s=%p", fluid ? "in-flow" : "continuation",
-                           static_cast<void*>(GetNextContinuation()));
+    aTo += nsPrintfCString(" next-%s", fluid ? "in-flow" : "continuation");
+    ListPtr(aTo, aFlags, GetNextContinuation());
   }
   if (const nsAtom* const autoPageValue =
           GetProperty(AutoPageValueProperty())) {
@@ -8629,11 +8661,13 @@ void nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix,
   }
   void* IBsibling = GetProperty(IBSplitSibling());
   if (IBsibling) {
-    aTo += nsPrintfCString(" IBSplitSibling=%p", IBsibling);
+    aTo += nsPrintfCString(" IBSplitSibling");
+    ListPtr(aTo, aFlags, IBsibling);
   }
   void* IBprevsibling = GetProperty(IBSplitPrevSibling());
   if (IBprevsibling) {
-    aTo += nsPrintfCString(" IBSplitPrevSibling=%p", IBprevsibling);
+    aTo += nsPrintfCString(" IBSplitPrevSibling");
+    ListPtr(aTo, aFlags, IBprevsibling);
   }
   if (nsLayoutUtils::FontSizeInflationEnabled(PresContext())) {
     if (HasAnyStateBits(NS_FRAME_FONT_INFLATION_FLOW_ROOT)) {
@@ -8725,20 +8759,25 @@ void nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix,
     aTo += nsPrintfCString(" combines-3d-transform-with-ancestors");
   }
   if (mContent) {
-    aTo += nsPrintfCString(" [content=%p", static_cast<void*>(mContent));
+    if (!onlyDeterministic) {
+      aTo += nsPrintfCString(" [content=%p]", static_cast<void*>(mContent));
+    }
     if (IsPrimaryFrame() && DisplayPortUtils::HasDisplayPort(mContent)) {
       // Anon boxes and continuations point to the same content - Just print on
       // primary frame.
-      aTo += ",displayport"_ns;
+      aTo += "[displayport]"_ns;
     }
-    aTo += "]"_ns;
   }
-  aTo += nsPrintfCString(" [cs=%p", static_cast<void*>(mComputedStyle));
+  if (!onlyDeterministic) {
+    aTo += nsPrintfCString("[cs=%p]", static_cast<void*>(mComputedStyle));
+  }
   if (mComputedStyle) {
-    auto pseudoType = mComputedStyle->GetPseudoType();
-    aTo += ToString(pseudoType).c_str();
+    const auto pseudoType = mComputedStyle->GetPseudoType();
+    const auto pseudoTypeStr = ToString(pseudoType);
+    if (!pseudoTypeStr.empty()) {
+      aTo += nsPrintfCString("[%s]", pseudoTypeStr.c_str());
+    }
   }
-  aTo += "]";
 
   auto contentVisibility = StyleDisplay()->ContentVisibility(*this);
   if (contentVisibility != StyleContentVisibility::Visible) {
@@ -8839,12 +8878,20 @@ nsresult nsIFrame::MakeFrameName(const nsAString& aType,
   return NS_OK;
 }
 
-void nsIFrame::DumpFrameTree() const {
-  PresShell()->GetRootFrame()->List(stderr);
+void nsIFrame::DumpFrameTree(bool aListOnlyDeterministic) const {
+  ListFlags flags;
+  if (aListOnlyDeterministic) {
+    flags += ListFlag::OnlyListDeterministicInfo;
+  }
+  PresShell()->GetRootFrame()->List(stderr, "", flags);
 }
 
-void nsIFrame::DumpFrameTreeInCSSPixels() const {
-  PresShell()->GetRootFrame()->List(stderr, "", ListFlag::DisplayInCSSPixels);
+void nsIFrame::DumpFrameTreeInCSSPixels(bool aListOnlyDeterministic) const {
+  ListFlags flags{ListFlag::DisplayInCSSPixels};
+  if (aListOnlyDeterministic) {
+    flags += ListFlag::OnlyListDeterministicInfo;
+  }
+  PresShell()->GetRootFrame()->List(stderr, "", flags);
 }
 
 void nsIFrame::DumpFrameTreeLimited() const { List(stderr); }
@@ -11544,6 +11591,11 @@ bool nsIFrame::IsStackingContext(const nsStyleDisplay* aStyleDisplay,
       return true;
     }
   }
+
+  if (ForcesStackingContextForViewTransition()) {
+    return true;
+  }
+
   // strictly speaking, 'perspective' doesn't require visual atomicity,
   // but the spec says it acts like the rest of these
   if (aStyleDisplay->HasPerspectiveStyle() ||
@@ -11558,6 +11610,9 @@ bool nsIFrame::IsStackingContext(const nsStyleDisplay* aStyleDisplay,
       return true;
     }
   }
+  // Elements captured in a view transition during a view transition or whose
+  // view-transition-name computed value is not none (at any time) form a s
+  // https://drafts.csswg.org/css-view-transitions-1/#named-and-transitioning
   return aStyleEffects->mMixBlendMode != StyleBlend::Normal ||
          SVGIntegrationUtils::UsingEffectsForFrame(this) ||
          aStyleDisplay->IsPositionForcingStackingContext() ||

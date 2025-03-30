@@ -17,6 +17,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarView: "resource:///modules/UrlbarView.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "l10n", () => {
+  return new Localization(["browser/browser.ftl"], true);
+});
+
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ClipboardHelper",
@@ -59,6 +63,13 @@ const VIEW_TEMPLATE = {
 
 // Minimum number of parts of the expression before we show a result.
 const MIN_EXPRESSION_LENGTH = 3;
+const UNDEFINED_VALUE = "undefined";
+// Minimum and maximum value of result before it switches to scientific
+// notation. Displaying numbers longer than 10 digits long or a decimal
+// containing 5 or more leading zeroes in scientific notation improves
+// readability.
+const FULL_NUMBER_MAX_THRESHOLD = 1 * 10 ** 10;
+const FULL_NUMBER_MIN_THRESHOLD = 10 ** -5;
 
 /**
  * A provider that returns a suggested url to the user based on what
@@ -137,18 +148,40 @@ class ProviderCalculator extends UrlbarProvider {
   }
 
   getViewUpdate(result) {
+    let input;
+    const { value } = result.payload;
+
+    if (value == UNDEFINED_VALUE) {
+      input = {
+        l10n: { id: "urlbar-result-action-undefined-calculator-result" },
+      };
+    } else if (value.toString().includes("e")) {
+      input = {
+        l10n: {
+          id: "urlbar-result-action-calculator-result-scientific-notation",
+          args: { result: value },
+        },
+      };
+    } else {
+      const l10nId =
+        Math.abs(value) < 1
+          ? "urlbar-result-action-calculator-result-decimal"
+          : "urlbar-result-action-calculator-result-3";
+      input = {
+        l10n: {
+          id: l10nId,
+          args: { result: value },
+        },
+      };
+    }
+
     const viewUpdate = {
       icon: {
         attributes: {
           src: "chrome://global/skin/icons/edit-copy.svg",
         },
       },
-      input: {
-        l10n: {
-          id: "urlbar-result-action-calculator-result",
-          args: { result: result.payload.value },
-        },
-      },
+      input,
       action: {
         l10n: { id: "urlbar-result-action-copy-to-clipboard" },
       },
@@ -159,7 +192,17 @@ class ProviderCalculator extends UrlbarProvider {
 
   onEngagement(queryContext, controller, details) {
     let { result } = details;
-    lazy.ClipboardHelper.copyString(result.payload.value);
+    const resultL10n = this.getViewUpdate(result).input.l10n;
+    const res = resultL10n.args || {};
+
+    let localizedResult = lazy.l10n.formatValueSync(resultL10n.id, res);
+
+    // Remove "= " from the start of the string.
+    if (localizedResult.startsWith("=")) {
+      localizedResult = localizedResult.slice(1).trim();
+    }
+
+    lazy.ClipboardHelper.copyString(localizedResult);
   }
 }
 
@@ -274,25 +317,44 @@ class BaseCalculator {
     "^": (a, b) => a ** b,
   };
 
+  toScientificNotation(num) {
+    let res = new Intl.NumberFormat("en-US", {
+      style: "decimal",
+      notation: "scientific",
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 8,
+    }).format(num);
+    return res.toLowerCase();
+  }
+
   evaluatePostfix(postfix) {
     let stack = [];
 
-    postfix.forEach(token => {
+    for (const token of postfix) {
       if (!this.isOperator(token)) {
         stack.push(token);
       } else {
         let op2 = stack.pop();
         let op1 = stack.pop();
         let result = this.evaluate[token](op1, op2);
+        if (token == "/" && op2 == 0) {
+          return UNDEFINED_VALUE;
+        }
         if (isNaN(result) || !isFinite(result)) {
           throw new Error("Value is " + result);
         }
         stack.push(result);
       }
-    });
+    }
     let finalResult = stack.pop();
     if (isNaN(finalResult) || !isFinite(finalResult)) {
       throw new Error("Value is " + finalResult);
+    }
+    if (
+      Math.abs(finalResult) >= FULL_NUMBER_MAX_THRESHOLD ||
+      (Math.abs(finalResult) <= FULL_NUMBER_MIN_THRESHOLD && finalResult != 0)
+    ) {
+      finalResult = this.toScientificNotation(finalResult);
     }
     return finalResult;
   }
@@ -468,8 +530,14 @@ Calculator.addNumberSystem({
       // Contains both a period and a comma and the comma came first
       // so strip the comma (ie 1,999.5).
       num = num.replace(/,/g, "");
+    } else if (firstComma != -1 && num.includes(",", firstComma + 1)) {
+      // Contains multiple commas and no periods, strip commas
+      num = num.replace(/,/g, "");
+    } else if (firstPeriod != -1 && num.includes(".", firstPeriod + 1)) {
+      // Contains multiple periods and no commas, strip periods
+      num = num.replace(/\./g, "");
     } else if (firstComma != -1) {
-      // Has commas but no periods so treat comma as decimal seperator
+      // Has a single comma and no periods, treat comma as decimal seperator
       num = num.replace(/,/g, ".");
     }
     return num;

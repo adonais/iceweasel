@@ -1593,6 +1593,18 @@ nsXULAppInfo::GetDrawInTitlebar(bool* aResult) {
 }
 
 NS_IMETHODIMP
+nsXULAppInfo::GetCaretBlinkCount(int32_t* aResult) {
+  *aResult = LookAndFeel::CaretBlinkCount();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::GetCaretBlinkTime(int32_t* aResult) {
+  *aResult = LookAndFeel::CaretBlinkTime();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsXULAppInfo::GetDesktopEnvironment(nsACString& aDesktopEnvironment) {
 #ifdef MOZ_WIDGET_GTK
   aDesktopEnvironment.Assign(GetDesktopEnvironmentIdentifier());
@@ -3991,14 +4003,16 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   }
 #endif  // ANDROID
 
-  if (PR_GetEnv("MOZ_CHAOSMODE")) {
+  if (auto* featureStr = PR_GetEnv("MOZ_CHAOSMODE")) {
     ChaosFeature feature = ChaosFeature::Any;
-    long featureInt = strtol(PR_GetEnv("MOZ_CHAOSMODE"), nullptr, 16);
+    long featureInt = strtol(featureStr, nullptr, 16);
     if (featureInt) {
       // NOTE: MOZ_CHAOSMODE=0 or a non-hex value maps to Any feature.
       feature = static_cast<ChaosFeature>(featureInt);
     }
     ChaosMode::SetChaosFeature(feature);
+    ChaosMode::enterChaosMode();
+    MOZ_ASSERT(ChaosMode::isActive(ChaosFeature::Any));
   }
 
   if (CheckArgExists("fxr")) {
@@ -4492,7 +4506,6 @@ static void ReadAheadDlls(const wchar_t* greDir) {
     // Prefetch the DLLs shipped with firefox
     ReadAheadPackagedDll(L"libegl.dll", greDir);
     ReadAheadPackagedDll(L"libGLESv2.dll", greDir);
-    ReadAheadPackagedDll(L"nssckbi.dll", greDir);
     ReadAheadPackagedDll(L"freebl3.dll", greDir);
     ReadAheadPackagedDll(L"softokn3.dll", greDir);
 
@@ -5687,7 +5700,11 @@ nsresult XREMain::XRE_mainRun() {
 
     if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
 #ifdef XP_MACOSX
-      if (!BackgroundTasks::IsBackgroundTaskMode()) {
+      bool isBackgroundTaskMode = false;
+#  ifdef MOZ_BACKGROUNDTASKS
+      isBackgroundTaskMode = BackgroundTasks::IsBackgroundTaskMode();
+#  endif
+      if (!isBackgroundTaskMode) {
         rv = appStartup->CreateHiddenWindow();
         NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
       }
@@ -6266,6 +6283,13 @@ bool XRE_IsE10sParentProcess() {
 #undef GECKO_PROCESS_TYPE
 
 bool XRE_UseNativeEventProcessing() {
+#if defined(XP_WIN)
+  // If win32k is locked down we can't use native event processing.
+  if (IsWin32kLockedDown()) {
+    return false;
+  }
+#endif
+
   switch (XRE_GetProcessType()) {
 #if defined(XP_MACOSX) || defined(XP_WIN)
     case GeckoProcessType_RDD:

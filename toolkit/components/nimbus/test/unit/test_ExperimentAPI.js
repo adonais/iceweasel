@@ -9,9 +9,6 @@ const { ExperimentFakes } = ChromeUtils.importESModule(
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
-const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
-);
 const COLLECTION_ID_PREF = "messaging-system.rsexperimentloader.collection_id";
 
 /**
@@ -22,9 +19,12 @@ add_task(async function test_getExperiment_fromChild_slug() {
   const manager = ExperimentFakes.manager();
   const expected = ExperimentFakes.experiment("foo");
 
-  await manager.onStartup();
-
+  // NB: We are not setting ExperimentAPI._manager here to manager or
+  // manager.store to a child store because we are simulating synchronization
+  // between a parent store and child store.
   sandbox.stub(ExperimentAPI, "_store").get(() => ExperimentFakes.childStore());
+
+  await manager.onStartup();
 
   await manager.store.addEnrollment(expected);
 
@@ -54,8 +54,9 @@ add_task(async function test_getExperiment_fromParent_slug() {
   const manager = ExperimentFakes.manager();
   const expected = ExperimentFakes.experiment("foo");
 
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
+
   await manager.onStartup();
-  sandbox.stub(ExperimentAPI, "_store").get(() => manager.store);
   await ExperimentAPI.ready();
 
   await manager.store.addEnrollment(expected);
@@ -75,8 +76,9 @@ add_task(async function test_getExperimentMetaData() {
   const expected = ExperimentFakes.experiment("foo");
   let exposureStub = sandbox.stub(ExperimentAPI, "recordExposureEvent");
 
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
+
   await manager.onStartup();
-  sandbox.stub(ExperimentAPI, "_store").get(() => manager.store);
   await ExperimentAPI.ready();
 
   await manager.store.addEnrollment(expected);
@@ -95,6 +97,9 @@ add_task(async function test_getExperimentMetaData() {
   );
 
   Assert.ok(exposureStub.notCalled, "Not called for this method");
+
+  manager.unenroll(expected.slug);
+  assertEmptyStore(manager.store);
 
   sandbox.restore();
 });
@@ -105,8 +110,9 @@ add_task(async function test_getRolloutMetaData() {
   const expected = ExperimentFakes.rollout("foo");
   let exposureStub = sandbox.stub(ExperimentAPI, "recordExposureEvent");
 
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
+
   await manager.onStartup();
-  sandbox.stub(ExperimentAPI, "_store").get(() => manager.store);
   await ExperimentAPI.ready();
 
   await manager.store.addEnrollment(expected);
@@ -125,6 +131,9 @@ add_task(async function test_getRolloutMetaData() {
   );
 
   Assert.ok(exposureStub.notCalled, "Not called for this method");
+
+  manager.unenroll(expected.slug);
+  await assertEmptyStore(manager.store);
 
   sandbox.restore();
 });
@@ -180,6 +189,9 @@ add_task(async function test_getExperiment_feature() {
 
   await manager.onStartup();
 
+  // NB: We are not setting ExperimentAPI._manager here to manager or
+  // manager.store to a child store because we are simulating synchronization
+  // between a parent store and child store.
   sandbox.stub(ExperimentAPI, "_store").get(() => ExperimentFakes.childStore());
   let exposureStub = sandbox.stub(ExperimentAPI, "recordExposureEvent");
 
@@ -399,11 +411,13 @@ add_task(async function test_addEnrollment_eventEmit_add() {
   const experiment = ExperimentFakes.experiment("foo", {
     branch: {
       slug: "variant",
-      features: [{ featureId: "purple", value: null }],
+      ratio: 1,
+      features: [{ featureId: "purple", value: {} }],
     },
   });
-  const store = ExperimentFakes.store();
-  sandbox.stub(ExperimentAPI, "_store").get(() => store);
+  const manager = ExperimentFakes.manager();
+  const store = manager.store;
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
 
   await store.init();
   await ExperimentAPI.ready();
@@ -429,6 +443,10 @@ add_task(async function test_addEnrollment_eventEmit_add() {
 
   store.off("update:foo", slugStub);
   store.off("featureUpdate:purple", featureStub);
+
+  manager.unenroll(experiment.slug);
+  await assertEmptyStore(store);
+
   sandbox.restore();
 });
 
@@ -439,11 +457,13 @@ add_task(async function test_updateExperiment_eventEmit_add_and_update() {
   const experiment = ExperimentFakes.experiment("foo", {
     branch: {
       slug: "variant",
-      features: [{ featureId: "purple", value: null }],
+      ratio: 1,
+      features: [{ featureId: "purple", value: {} }],
     },
   });
-  const store = ExperimentFakes.store();
-  sandbox.stub(ExperimentAPI, "_store").get(() => store);
+  const manager = ExperimentFakes.manager();
+  const store = manager.store;
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
 
   await store.init();
   await ExperimentAPI.ready();
@@ -468,6 +488,9 @@ add_task(async function test_updateExperiment_eventEmit_add_and_update() {
 
   store.off("update:foo", slugStub);
   store._offFeatureUpdate("featureUpdate:purple", featureStub);
+
+  manager.unenroll(experiment.slug);
+  await assertEmptyStore(store);
 });
 
 add_task(async function test_updateExperiment_eventEmit_off() {
@@ -477,11 +500,13 @@ add_task(async function test_updateExperiment_eventEmit_off() {
   const experiment = ExperimentFakes.experiment("foo", {
     branch: {
       slug: "variant",
-      features: [{ featureId: "purple", value: null }],
+      ratio: 1,
+      features: [{ featureId: "purple", value: {} }],
     },
   });
-  const store = ExperimentFakes.store();
-  sandbox.stub(ExperimentAPI, "_store").get(() => store);
+  const manager = ExperimentFakes.manager();
+  const store = manager.store;
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
 
   await store.init();
   await ExperimentAPI.ready();
@@ -499,17 +524,23 @@ add_task(async function test_updateExperiment_eventEmit_off() {
   Assert.equal(slugStub.callCount, 1, "Called only once before `off`");
   Assert.equal(featureStub.callCount, 1, "Called only once before `off`");
 
+  manager.unenroll(experiment.slug);
+  await assertEmptyStore(store);
+
   sandbox.restore();
 });
 
 add_task(async function test_getActiveBranch() {
   const sandbox = sinon.createSandbox();
-  const store = ExperimentFakes.store();
-  sandbox.stub(ExperimentAPI, "_store").get(() => store);
+  const manager = ExperimentFakes.manager();
+  const store = manager.store;
+
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
   const experiment = ExperimentFakes.experiment("foo", {
     branch: {
       slug: "variant",
-      features: [{ featureId: "green", value: null }],
+      ratio: 1,
+      features: [{ featureId: "green", value: {} }],
     },
   });
 
@@ -521,6 +552,9 @@ add_task(async function test_getActiveBranch() {
     experiment.branch,
     "Should return feature of active experiment"
   );
+
+  manager.unenroll(experiment.slug);
+  await assertEmptyStore(store);
 
   sandbox.restore();
 });
@@ -543,13 +577,15 @@ add_task(async function test_getActiveBranch_safe() {
 });
 
 add_task(async function test_getActiveBranch_storeFailure() {
-  const store = ExperimentFakes.store();
   const sandbox = sinon.createSandbox();
-  sandbox.stub(ExperimentAPI, "_store").get(() => store);
+  const manager = ExperimentFakes.manager();
+  const store = manager.store;
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
   const experiment = ExperimentFakes.experiment("foo", {
     branch: {
       slug: "variant",
-      features: [{ featureId: "green" }],
+      ratio: 1,
+      features: [{ featureId: "green", value: {} }],
     },
   });
 
@@ -566,17 +602,23 @@ add_task(async function test_getActiveBranch_storeFailure() {
   }
 
   Assert.equal(stub.callCount, 0, "Not called if store somehow fails");
+
+  manager.unenroll(experiment.slug);
+  await assertEmptyStore(store);
+
   sandbox.restore();
 });
 
 add_task(async function test_getActiveBranch_noActivationEvent() {
-  const store = ExperimentFakes.store();
+  const manager = ExperimentFakes.manager();
+  const store = manager.store;
   const sandbox = sinon.createSandbox();
-  sandbox.stub(ExperimentAPI, "_store").get(() => store);
+  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
   const experiment = ExperimentFakes.experiment("foo", {
     branch: {
       slug: "variant",
-      features: [{ featureId: "green" }],
+      ratio: 1,
+      features: [{ featureId: "green", value: {} }],
     },
   });
 
@@ -588,122 +630,9 @@ add_task(async function test_getActiveBranch_noActivationEvent() {
   ExperimentAPI.getActiveBranch({ featureId: "green" });
 
   Assert.equal(stub.callCount, 0, "Not called: sendExposureEvent is false");
-  sandbox.restore();
-});
 
-/**
- * #getFirefoxLabsOptInRecipes
- */
-add_task(async function test_getFirefoxLabsOptInRecipes() {
-  const sandbox = sinon.createSandbox();
-  const manager = ExperimentFakes.manager();
-  sandbox.stub(RemoteSettingsExperimentLoader, "updatingRecipes").resolves();
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  const actualRecipes = [
-    ExperimentFakes.recipe("opt-in-one", {
-      targeting: "true",
-      isFirefoxLabsOptIn: true,
-      bucketConfig: {
-        ...ExperimentFakes.recipe.bucketConfig,
-        count: 1000,
-      },
-    }),
-    ExperimentFakes.recipe("opt-in-two", {
-      targeting: "true",
-      isFirefoxLabsOptIn: true,
-      bucketConfig: {
-        ...ExperimentFakes.recipe.bucketConfig,
-        count: 1000,
-      },
-    }),
-  ];
-
-  manager.optInRecipes = actualRecipes;
-
-  const expectedRecipes = await ExperimentAPI.getFirefoxLabsOptInRecipes();
-
-  Assert.deepEqual(
-    expectedRecipes,
-    actualRecipes,
-    "Should return all opt in recipes that match targeting and bucketing"
-  );
-
-  sandbox.restore();
-});
-
-/**
- * #enrollInFirefoxLabsOptInRecipe
- */
-add_task(async function test_enrollInFirefoxLabsOptInRecipe() {
-  const sandbox = sinon.createSandbox();
-  const manager = ExperimentFakes.manager();
-  const managerEnrollStub = sandbox.stub(manager, "enroll").resolves(true);
-  sandbox.stub(RemoteSettingsExperimentLoader, "updatingRecipes").resolves();
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  const optInRecipes = [
-    ExperimentFakes.recipe("opt-in-one", {
-      targeting: "true",
-      isFirefoxLabsOptIn: true,
-      branches: [
-        {
-          slug: "branch-slug-one",
-          ratio: 1,
-          features: [{ featureId: "pink", value: {} }],
-        },
-      ],
-    }),
-    ExperimentFakes.recipe("opt-in-two", {
-      targeting: "true",
-      isFirefoxLabsOptIn: true,
-      branches: [
-        {
-          slug: "branch-slug-two",
-          ratio: 1,
-          features: [{ featureId: "pink", value: {} }],
-        },
-      ],
-    }),
-  ];
-
-  manager.optInRecipes = optInRecipes;
-
-  await Assert.rejects(
-    ExperimentAPI.enrollInFirefoxLabsOptInRecipe(),
-    /ExperimentAPI.enrollInFirefoxLabsOptInRecipe must be called with slug and optInRecipeBranchSlug./,
-    "Should throw when .enrollInFirefoxLabsOptInRecipe is called without a slug or optInRecipeBranchSlug argument"
-  );
-
-  await Assert.rejects(
-    ExperimentAPI.enrollInFirefoxLabsOptInRecipe("opt-in-one"),
-    /ExperimentAPI.enrollInFirefoxLabsOptInRecipe must be called with slug and optInRecipeBranchSlug./,
-    "Should throw when .enrollInFirefoxLabsOptInRecipe is called without a optInRecipeBranchSlug argument"
-  );
-
-  await ExperimentAPI.enrollInFirefoxLabsOptInRecipe(
-    "opt-in-one",
-    "branch-slug-one"
-  );
-  Assert.ok(
-    managerEnrollStub.calledOnceWith(optInRecipes[0], "rs-loader", {
-      optInRecipeBranchSlug: "branch-slug-one",
-    })
-  );
-
-  managerEnrollStub.reset();
-
-  // The ExperimentAPI._manager.getSingleOptInRecipe(slug) made inside this call
-  // should not return a recipe, hence the below enroll call won't be executed.
-  await ExperimentAPI.enrollInFirefoxLabsOptInRecipe(
-    "slug-non-existent",
-    "branch-slug-one"
-  );
-  Assert.equal(
-    managerEnrollStub.callCount,
-    0,
-    "Should not call the enroll function when no recipe is returned"
-  );
+  manager.unenroll(experiment.slug);
+  await assertEmptyStore(store);
 
   sandbox.restore();
 });

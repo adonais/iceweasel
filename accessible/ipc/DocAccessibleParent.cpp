@@ -12,6 +12,8 @@
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/PerfStats.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "nsAccessibilityService.h"
 #include "xpcAccessibleDocument.h"
 #include "xpcAccEvents.h"
@@ -81,6 +83,12 @@ void DocAccessibleParent::SetBrowsingContext(
 mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
     nsTArray<AccessibleData>&& aNewTree, const bool& aEventSuppressed,
     const bool& aComplete, const bool& aFromUser) {
+  AUTO_PROFILER_MARKER_TEXT("DocAccessibleParent::ProcessShowEvent", A11Y, {},
+                            ""_ns);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_ProcessShowEvent>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
+
   ACQUIRE_ANDROID_LOCK
 
   MOZ_ASSERT(CheckDocTree());
@@ -566,6 +574,13 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvMutationEvents(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult DocAccessibleParent::RecvRequestAckMutationEvents() {
+  if (!mShutdown) {
+    Unused << SendAckMutationEvents();
+  }
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult DocAccessibleParent::RecvSelectionEvent(
     const uint64_t& aID, const uint64_t& aWidgetID, const uint32_t& aType) {
   ACQUIRE_ANDROID_LOCK
@@ -642,6 +657,11 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvScrollingEvent(
 mozilla::ipc::IPCResult DocAccessibleParent::RecvCache(
     const mozilla::a11y::CacheUpdateType& aUpdateType,
     nsTArray<CacheData>&& aData) {
+  AUTO_PROFILER_MARKER_TEXT("DocAccessibleParent::RecvCache", A11Y, {}, ""_ns);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_RecvCache>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
+
   ACQUIRE_ANDROID_LOCK
   if (mShutdown) {
     return IPC_OK();
@@ -878,23 +898,17 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   if (aChildDoc->IsTopLevelInContentProcess()) {
     // aChildDoc is an embedded document in a different content process to
     // this document.
-    auto embeddedBrowser =
-        static_cast<dom::BrowserParent*>(aChildDoc->Manager());
-    dom::BrowserBridgeParent* bridge =
-        embeddedBrowser->GetBrowserBridgeParent();
-    if (bridge) {
 #if defined(XP_WIN)
-      if (nsWinUtils::IsWindowEmulationStarted()) {
-        aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
-      }
-#endif  // defined(XP_WIN)
-      // We need to fire a reorder event on the outer doc accessible.
-      // For same-process documents, this is fired by the content process, but
-      // this isn't possible when the document is in a different process to its
-      // embedder.
-      // FireEvent fires both OS and XPCOM events.
-      FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
+    if (nsWinUtils::IsWindowEmulationStarted()) {
+      aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
     }
+#endif  // defined(XP_WIN)
+    // We need to fire a reorder event on the outer doc accessible.
+    // For same-process documents, this is fired by the content process, but
+    // this isn't possible when the document is in a different process to its
+    // embedder.
+    // FireEvent fires both OS and XPCOM events.
+    FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
   }
 
   return IPC_OK();

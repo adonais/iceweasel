@@ -9,6 +9,7 @@
 #include "mozilla/Casting.h"
 
 #include "gc/GC.h"
+#include "jit/BaselineCompileQueue.h"
 #include "jit/BaselineCompileTask.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
@@ -1548,8 +1549,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
   // Do nothing if Ion is already compiling this script off-thread or if Ion has
   // been disabled for this script.
-  masm.branchTestPtr(Assembler::NonZero, scriptReg,
-                     Imm32(CompilingOrDisabledBit), &done);
+  masm.branchTestPtr(Assembler::NonZero, scriptReg, Imm32(SpecialScriptBit),
+                     &done);
 
   // Try to compile and/or finish a compilation.
   if (JSOp(*pc) == JSOp::LoopHead) {
@@ -1659,6 +1660,105 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
 
+  if (JitOptions.baselineBatching) {
+    Register scratch = R1.scratchReg();
+    Label done, compileBatch;
+    Address baselineScriptAddr(scriptReg, JitScript::offsetOfBaselineScript());
+
+    // If the script is not warm enough to compile, we're done.
+    masm.branch32(Assembler::BelowOrEqual, countReg,
+                  Imm32(JitOptions.baselineJitWarmUpThreshold), &done);
+
+    // Decide what to do based on the state of the baseline script field.
+    Label notSpecial;
+    masm.loadPtr(baselineScriptAddr, scratch);
+    masm.branchTestPtr(Assembler::Zero, scratch, Imm32(SpecialScriptBit),
+                       &notSpecial);
+
+    // The baseline script is a special tagged value: disabled, queued, or
+    // compiling. If it's queued and the warmup count is high enough,
+    // trigger a batch compilation with whatever is currently queued.
+    // Otherwise, we're done.
+    uint32_t eagerWarmUpThreshold = JitOptions.baselineJitWarmUpThreshold * 2;
+    masm.branchPtr(Assembler::NotEqual, scratch,
+                   ImmPtr(BaselineQueuedScriptPtr), &done);
+
+    masm.branch32(Assembler::Below, countReg, Imm32(eagerWarmUpThreshold),
+                  &done);
+
+    masm.jump(&compileBatch);
+
+    masm.bind(&notSpecial);
+
+    // If we already have a valid BaselineScript, tier up now.
+    Label notCompiled;
+    masm.branchPtr(Assembler::BelowOrEqual, scratch,
+                   ImmPtr(BaselineCompilingScriptPtr), &notCompiled);
+
+    // We just need to update our frame, find the OSR address, and jump to it.
+    saveInterpreterPCReg();
+
+    using Fn = uint8_t* (*)(BaselineFrame*);
+    masm.setupUnalignedABICall(R0.scratchReg());
+    masm.loadBaselineFramePtr(FramePointer, R0.scratchReg());
+    masm.passABIArg(R0.scratchReg());
+    masm.callWithABI<Fn, BaselineScript::OSREntryForFrame>();
+
+    // If we are a debuggee frame, and our baseline script was compiled
+    // without debug instrumentation, and recompilation failed, we may
+    // not have an OSR entry available.
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, &done);
+
+    // Otherwise: OSR!
+    masm.jump(ReturnReg);
+
+    masm.bind(&notCompiled);
+
+    // Otherwise, add this script to the queue.
+    // First, mark the jitscript as queued.
+    masm.storePtr(ImmPtr(BaselineQueuedScriptPtr), baselineScriptAddr);
+
+    Register queueReg = scratch;
+    masm.loadBaselineCompileQueue(queueReg);
+
+    Address numQueuedAddr(queueReg, BaselineCompileQueue::offsetOfNumQueued());
+    masm.load32(numQueuedAddr, countReg);
+
+    BaseIndex queueSlot(queueReg, countReg, ScalePointer,
+                        BaselineCompileQueue::offsetOfQueue());
+
+    // Store the JSScript in the compilation queue. Note that we don't need
+    // a prebarrier here because we will always be overwriting a nullptr,
+    // and we don't need a postbarrier because the script is always tenured.
+#ifdef DEBUG
+    Label queueSlotIsEmpty;
+    masm.branchPtr(Assembler::Equal, queueSlot, ImmWord(0), &queueSlotIsEmpty);
+    masm.assumeUnreachable(
+        "Overwriting non-null slot in baseline compile queue");
+    masm.bind(&queueSlotIsEmpty);
+#endif
+    loadScript(scriptReg);
+    masm.storePtr(scriptReg, queueSlot);
+
+    // Update `numQueued`.
+    masm.add32(Imm32(1), countReg);
+    masm.store32(countReg, numQueuedAddr);
+
+    // If the queue is now full, trigger a batch compilation.
+    masm.branch32(Assembler::Below, countReg,
+                  Imm32(JitOptions.baselineQueueCapacity), &done);
+
+    masm.bind(&compileBatch);
+    prepareVMCall();
+
+    using Fn2 = bool (*)(JSContext*);
+    if (!callVM<Fn2, DispatchOffThreadBaselineBatch>()) {
+      return false;
+    }
+    masm.bind(&done);
+    return true;
+  }
+
   // If the script is warm enough for Baseline compilation, call into the VM to
   // compile it.
   Label done;
@@ -1667,7 +1767,7 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
 
   masm.branchTestPtr(Assembler::NonZero,
                      Address(scriptReg, JitScript::offsetOfBaselineScript()),
-                     Imm32(CompilingOrDisabledBit), &done);
+                     Imm32(SpecialScriptBit), &done);
   {
     prepareVMCall();
 
@@ -2606,25 +2706,6 @@ bool BaselineCodeGen<Handler>::emit_RegExp() {
   frame.push(R0);
   return true;
 }
-
-#ifdef ENABLE_RECORD_TUPLE
-#  define UNSUPPORTED_OPCODE(OP)                              \
-    template <typename Handler>                               \
-    bool BaselineCodeGen<Handler>::emit_##OP() {              \
-      MOZ_CRASH("Record and Tuple are not supported by jit"); \
-      return false;                                           \
-    }
-
-UNSUPPORTED_OPCODE(InitRecord)
-UNSUPPORTED_OPCODE(AddRecordProperty)
-UNSUPPORTED_OPCODE(AddRecordSpread)
-UNSUPPORTED_OPCODE(FinishRecord)
-UNSUPPORTED_OPCODE(InitTuple)
-UNSUPPORTED_OPCODE(AddTupleElement)
-UNSUPPORTED_OPCODE(FinishTuple)
-
-#  undef UNSUPPORTED_OPCODE
-#endif
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_Lambda() {
@@ -5937,7 +6018,7 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
                                                       Register scratch) {
   // Resume in either the BaselineScript (if present) or Baseline Interpreter.
 
-  static_assert(CompilingScript == 0x3,
+  static_assert(CompilingScript == 0x5,
                 "Comparison below requires specific sentinel encoding");
 
   // Initialize the icScript slot in the baseline frame.

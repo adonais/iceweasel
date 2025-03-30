@@ -7,11 +7,12 @@
   <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
   <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
   <link rel="stylesheet" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
-  <script src="input-test-helpers.js"></script>
+  <script src="lit-test-helpers.js"></script>
   <script>
     let testHelpers = new InputTestHelpers();
     let html;
     let defaultTemplate;
+    const isMac = navigator.platform.includes("Mac");
 
     add_setup(async function setup() {
       ({ html } = await testHelpers.setupLit());
@@ -25,7 +26,7 @@
       defaultTemplate = templateFn(
         testHelpers.spread({ label: "Radio group label", name: "test-name" })
       );
-      await testHelpers.setupInputTests({ templateFn });
+      testHelpers.setupTests({ templateFn });
     });
 
     // Verify the radio group has label, description, and support link.
@@ -33,7 +34,7 @@
       const TEST_LABEL = "Testing...";
       const TEST_DESCRIPTION = "Testing description..";
       const TEST_SUPPORT_PAGE = "Testing support page..";
-      let renderTarget = await testHelpers.renderInputElements(defaultTemplate);
+      let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
 
       is(
@@ -87,7 +88,7 @@
       const FIRST_NAME = "test-name";
       const SECOND_NAME = "test-name-two";
 
-      let renderTarget = await testHelpers.renderInputElements(defaultTemplate);
+      let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let radioButtons = renderTarget.querySelectorAll("moz-radio");
 
@@ -106,7 +107,7 @@
 
     // Verify effects and methods of changing radio button checked state.
     add_task(async function testChangeRadioButtonChecked() {
-      let renderTarget = await testHelpers.renderInputElements(defaultTemplate);
+      let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let radioButtons = [...renderTarget.querySelectorAll("moz-radio")];
       let [firstButton, secondButton, thirdButton] = radioButtons;
@@ -243,7 +244,7 @@
           <moz-radio value="third" label="Third"></moz-radio>
         </moz-radio-group>
       `;
-      let renderTarget = await testHelpers.renderInputElements(valueAttrTemplate);
+      let renderTarget = await testHelpers.renderTemplate(valueAttrTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let [firstButton, secondButton, thirdButton] =
         renderTarget.querySelectorAll("moz-radio");
@@ -269,15 +270,32 @@
         is(radioGroup.value, button.value, "Radio group value is updated.");
       }
 
-      let renderTarget = await testHelpers.renderInputElements(defaultTemplate);
+      let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let [firstButton, secondButton, thirdButton] = renderTarget.querySelectorAll("moz-radio");
-      firstButton.click();
-      is(
-        document.activeElement,
-        firstButton,
-        "The first radio button receives focus on click."
-      );
+
+      synthesizeMouseAtCenter(firstButton, {});
+      await radioGroup.updateComplete;
+      // Bug 1927205: The focus model for native dialogs on macOS is that clicking a radio button
+      // does not move focus. Since our chrome UI emulates native OS behaviors, clicking
+      // a moz-radio _should not_ move focus to the inner HTML input in that clicked
+      // moz-radio element.
+      if (isMac) {
+        is(
+          document.activeElement,
+          document.body,
+          "On macOS, the first radio button should NOT receive focus on click."
+        );
+        // In order to keep compatibility with the rest of the test task,
+        // we manually move focus to the first button.
+        firstButton.focus();
+      } else {
+        is(
+          document.activeElement,
+          firstButton,
+          "The first radio button receives focus on click."
+        );
+      }
 
       await keyboardNavigate("down");
       validateActiveElement(secondButton);
@@ -334,6 +352,12 @@
       await keyboardNavigate("right");
       validateActiveElement(secondButton);
 
+      // Bug 1927205: If a radio button is already focused and we click
+      // another button in that group, focus should move accordingly.
+      secondButton.click();
+      await radioGroup.updateComplete;
+      validateActiveElement(secondButton);
+
       await SpecialPowers.popPrefEnv();
     });
 
@@ -348,7 +372,7 @@
         </moz-radio-group>
         <button tabindex="0" id="after">After group/button></button>
       `;
-      let renderTarget = await testHelpers.renderInputElements(template);
+      let renderTarget = await testHelpers.renderTemplate(template);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let [firstButton, secondButton, thirdButton] = renderTarget.querySelectorAll("moz-radio");
       let [beforeButton, afterButton] = renderTarget.querySelectorAll("button");
@@ -435,7 +459,7 @@
         </moz-radio-group>
         <button id="after">after group</button>
       `;
-      let renderTarget = await testHelpers.renderInputElements(disabledTemplate);
+      let renderTarget = await testHelpers.renderTemplate(disabledTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let [firstButton, secondButton, thirdButton] = renderTarget.querySelectorAll("moz-radio");
 
@@ -481,7 +505,7 @@
 
     // Verify expected events emitted in the correct order.
     add_task(async function testRadioEvents() {
-      let renderTarget = await testHelpers.renderInputElements(defaultTemplate);
+      let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let radioButtons = renderTarget.querySelectorAll("moz-radio");
       let [firstButton, secondButton, thirdButton] = radioButtons;
@@ -507,6 +531,12 @@
         { type: "change", value: "third", localName: "moz-radio-group" },
       ]);
 
+      // The macOS native focus model is that clicking on a radio button does not move the focus
+      // to that radio button. Because our chrome UI emulates native OS behaviors, we must
+      // manually move the focus in order to keep compatibility with the test.
+      if (isMac) {
+        thirdButton.focus();
+      }
       // Verify that keyboard navigation emits the right events in the correct order.
       synthesizeKey("KEY_ArrowUp", {});
       await radioGroup.updateComplete;
@@ -514,10 +544,7 @@
       await TestUtils.waitForTick();
 
       verifyEvents([
-        { type: "click", value: "second", localName: "moz-radio", checked: true },
-        { type: "input", value: "second", localName: "moz-radio", checked: true },
         { type: "input", value: "second", localName: "moz-radio-group" },
-        { type: "change", value: "second", localName: "moz-radio", checked: true },
         { type: "change", value: "second", localName: "moz-radio-group" },
       ]);
 
@@ -557,7 +584,7 @@
     // Verify disabling the group disables all buttons in the group as well as
     // the ways it's possible to disable/enable individual buttons.
     add_task(async function testDisablingRadioElements() {
-      let renderTarget = await testHelpers.renderInputElements(defaultTemplate);
+      let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
       let radioGroup = renderTarget.querySelector("moz-radio-group");
       let radioButtons = renderTarget.querySelectorAll("moz-radio");
       let [firstButton, ...otherButtons] = radioButtons;

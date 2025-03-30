@@ -42,7 +42,7 @@ use webrender::{
     MappableCompositor, MappedTileInfo, NativeSurfaceId, NativeSurfaceInfo, NativeTileId, PartialPresentCompositor,
     PipelineInfo, ProfilerHooks, RecordedFrameHandle, RenderBackendHooks, Renderer, RendererStats,
     SWGLCompositeSurfaceInfo, SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders, TextureCacheConfig,
-    UploadMethod, WebRenderOptions, WindowVisibility, ONE_TIME_USAGE_HINT, CompositorInputConfig, CompositorSurfaceUsage,
+    UploadMethod, WebRenderOptions, WindowVisibility, WindowProperties, ONE_TIME_USAGE_HINT, CompositorInputConfig, CompositorSurfaceUsage,
 };
 use wr_malloc_size_of::MallocSizeOfOps;
 
@@ -1325,6 +1325,7 @@ extern "C" {
     fn wr_compositor_deinit(compositor: *mut c_void);
     fn wr_compositor_get_capabilities(compositor: *mut c_void, caps: *mut CompositorCapabilities);
     fn wr_compositor_get_window_visibility(compositor: *mut c_void, caps: *mut WindowVisibility);
+    fn wr_compositor_get_window_properties(compositor: *mut c_void, props: *mut WindowProperties);
     fn wr_compositor_bind_swapchain(compositor: *mut c_void, id: NativeSurfaceId);
     fn wr_compositor_present_swapchain(compositor: *mut c_void, id: NativeSurfaceId);
     fn wr_compositor_map_tile(
@@ -1564,7 +1565,7 @@ impl LayerCompositor for WrLayerCompositor {
 
                     unsafe {
                         match request.usage {
-                            CompositorSurfaceUsage::Content => {
+                            CompositorSurfaceUsage::Content | CompositorSurfaceUsage::DebugOverlay => {
                                 wr_compositor_create_swapchain_surface(
                                     self.compositor,
                                     id,
@@ -1593,7 +1594,7 @@ impl LayerCompositor for WrLayerCompositor {
             };
 
             match layer.usage {
-                CompositorSurfaceUsage::Content => {
+                CompositorSurfaceUsage::Content | CompositorSurfaceUsage::DebugOverlay => {
                     if layer.size.width != size.width || layer.size.height != size.height {
                         unsafe {
                             wr_compositor_resize_swapchain(
@@ -1694,6 +1695,14 @@ impl LayerCompositor for WrLayerCompositor {
         }
 
         self.surface_pool.append(&mut self.visual_tree);
+    }
+
+    fn get_window_properties(&self) -> WindowProperties {
+        unsafe {
+            let mut props: WindowProperties = Default::default();
+            wr_compositor_get_window_properties(self.compositor, &mut props);
+            props
+        }
     }
 }
 
@@ -2861,6 +2870,7 @@ pub struct WrStackingContextParams {
     pub animation: *const WrAnimationProperty,
     pub opacity: *const f32,
     pub computed_transform: *const WrComputedTransformData,
+    pub snapshot: *const SnapshotInfo,
     pub transform_style: TransformStyle,
     pub reference_frame_kind: WrReferenceFrameKind,
     pub is_2d_scale_translation: bool,
@@ -2884,7 +2894,6 @@ pub extern "C" fn wr_dp_push_stacking_context(
     filter_datas: *const WrFilterData,
     filter_datas_count: usize,
     glyph_raster_space: RasterSpace,
-    snapshot: Option<&SnapshotInfo>,
 ) -> WrSpatialId {
     debug_assert!(unsafe { !is_in_render_thread() });
 
@@ -3024,7 +3033,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
         &[],
         glyph_raster_space,
         params.flags,
-        snapshot.cloned(),
+        unsafe { params.snapshot.as_ref() }.cloned(),
     );
 
     result

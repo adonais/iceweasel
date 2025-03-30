@@ -34,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
@@ -148,6 +149,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 getString(R.string.pref_key_sync_history),
                 getString(R.string.pref_key_show_voice_search),
                 getString(R.string.pref_key_show_search_suggestions_in_private),
+                getString(R.string.pref_key_show_trending_search_suggestions),
             )
         }
 
@@ -367,6 +369,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 SettingsFragmentDirections.actionSettingsFragmentToTrackingProtectionFragment()
             }
 
+            resources.getString(R.string.pref_key_doh_settings) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToDohSettingsFragment()
+            }
+
             resources.getString(R.string.pref_key_site_permissions) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToSitePermissionsFragment()
             }
@@ -441,6 +447,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }.show()
 
                 null
+            }
+
+            resources.getString(R.string.pref_key_link_sharing) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToLinkSharingFragment()
             }
 
             resources.getString(R.string.pref_key_open_links_in_apps) -> {
@@ -552,6 +562,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         setupCookieBannerPreference()
         setupInstallAddonFromFilePreference(requireContext().settings())
+        setLinkSharingPreference()
         setupAmoCollectionOverridePreference(requireContext().settings())
         setupGeckoLogsPreference(requireContext().settings())
         setupAllowDomesticChinaFxaServerPreference()
@@ -560,6 +571,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setupSearchPreference()
         setupHomepagePreference()
         setupTrackingProtectionPreference()
+        setupDnsOverHttpsPreference(requireContext().settings())
     }
 
     /**
@@ -732,6 +744,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
+    private fun setupDnsOverHttpsPreference(settings: Settings) {
+        with(requirePreference<Preference>(R.string.pref_key_doh_settings)) {
+            isVisible = settings.showDohEntryPoint
+            summary = when (context.components.core.engine.settings.dohSettingsMode) {
+                Engine.DohSettingsMode.DEFAULT -> getString(R.string.preference_doh_default_protection)
+                Engine.DohSettingsMode.OFF -> getString(R.string.preference_doh_off)
+                Engine.DohSettingsMode.INCREASED -> getString(R.string.preference_doh_increased_protection)
+                Engine.DohSettingsMode.MAX -> getString(R.string.preference_doh_max_protection)
+            }
+        }
+    }
+
     @VisibleForTesting
     internal fun setupCookieBannerPreference() {
         FxNimbus.features.cookieBanners.recordExposure()
@@ -766,6 +790,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
     internal fun setupInstallAddonFromFilePreference(settings: Settings) {
         with(requirePreference<Preference>(R.string.pref_key_install_local_addon)) {
             isVisible = settings.showSecretDebugMenuThisSession
+        }
+    }
+
+    @VisibleForTesting
+    internal fun setLinkSharingPreference() {
+        with(requirePreference<Preference>(R.string.pref_key_link_sharing)) {
+            isVisible = FxNimbus.features.sentFromFirefox.value().enabled
         }
     }
 

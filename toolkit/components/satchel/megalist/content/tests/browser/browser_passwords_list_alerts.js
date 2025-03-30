@@ -23,9 +23,17 @@ async function close_sidebar(megalist) {
     .click();
 }
 
+function testNotificationInteractionTelemetry(notificationId) {
+  const events = Glean.contextualManager.notificationInteraction.testGetValue();
+  assertCPMGleanEvent(events[0], {
+    notification_detail: notificationId,
+    action_type: "change_record",
+  });
+}
+
 add_task(async function test_breached_origin_alert() {
-  if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
-    ok(true, "Cannot test OSAuth.");
+  const canTestOSAuth = await resetTelemetryIfKeyStoreTestable();
+  if (!canTestOSAuth) {
     return;
   }
   await addBreach();
@@ -42,7 +50,8 @@ add_task(async function test_breached_origin_alert() {
     breachedPasswordCard.shadowRoot.querySelector(".view-alert-button");
   info("Click on view alerts.");
   viewAlertsButton.click();
-  const notifMsgBar = await waitForNotification(
+
+  const notifMsgBar = await checkNotificationAndTelemetry(
     megalist,
     "breached-origin-warning"
   );
@@ -54,15 +63,20 @@ add_task(async function test_breached_origin_alert() {
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
+  testNotificationInteractionTelemetry("breached_origin_warning");
 
   await close_sidebar(megalist);
 });
 
 add_task(async function test_no_username_alert() {
-  if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
-    ok(true, "Cannot test OSAuth.");
+  const canTestOSAuth = await resetTelemetryIfKeyStoreTestable();
+  if (!canTestOSAuth) {
     return;
   }
+
+  Services.fog.testResetFOG();
+  await Services.fog.testFlushAllChildren();
+
   info("Adding a login with no username.");
   await Services.logins.addLoginAsync({ ...TEST_LOGIN_1, username: "" });
   const megalist = await openPasswordsSidebar();
@@ -77,7 +91,11 @@ add_task(async function test_no_username_alert() {
 
   info("Click on view alerts.");
   viewAlertsButton.click();
-  const notifMsgBar = await waitForNotification(
+  let events = Glean.contextualManager.recordsInteraction.testGetValue();
+  assertCPMGleanEvent(events[0], {
+    interaction_type: "view_alert",
+  });
+  const notifMsgBar = await checkNotificationAndTelemetry(
     megalist,
     "no-username-warning"
   );
@@ -90,12 +108,14 @@ add_task(async function test_no_username_alert() {
     "Login form failed to render"
   );
 
+  testNotificationInteractionTelemetry("no_username_warning");
+
   await close_sidebar(megalist);
 });
 
 add_task(async function test_vulnerable_password_alert() {
-  if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
-    ok(true, "Cannot test OSAuth.");
+  const canTestOSAuth = await resetTelemetryIfKeyStoreTestable();
+  if (!canTestOSAuth) {
     return;
   }
   await addBreach();
@@ -112,9 +132,10 @@ add_task(async function test_vulnerable_password_alert() {
     breachedPasswordCard.shadowRoot.querySelector(".view-alert-button");
   info("Click on view alerts.");
   viewAlertsButton.click();
-  const notifMsgBar = await waitForNotification(
+  const notifMsgBar = await checkNotificationAndTelemetry(
     megalist,
-    "vulnerable-password-warning"
+    "vulnerable-password-warning",
+    1
   );
 
   info("Click on change password.");
@@ -125,5 +146,6 @@ add_task(async function test_vulnerable_password_alert() {
     "Login form failed to render"
   );
 
+  testNotificationInteractionTelemetry("vulnerable_password_warning");
   await close_sidebar(megalist);
 });

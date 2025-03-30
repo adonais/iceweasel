@@ -4,20 +4,9 @@
 
 # The title of the experiment should be kept in English as it may be referenced
 # by various online articles and is technical in nature.
-experimental-features-css-masonry2 =
-    .label = CSS: Masonry Layout
-experimental-features-css-masonry-description = Enables support for the experimental CSS Masonry Layout feature. See the <a data-l10n-name="explainer">explainer</a> for a high level description of the feature. To provide feedback, please comment in <a data-l10n-name="w3c-issue">this GitHub issue</a> or <a data-l10n-name="bug">this bug</a>.
-
-# The title of the experiment should be kept in English as it may be referenced
-# by various online articles and is technical in nature.
 experimental-features-media-jxl =
     .label = Media: JPEG XL
 experimental-features-media-jxl-description = With this feature enabled, { -brand-short-name } supports the JPEG XL (JXL) format. This is an enhanced image file format that supports lossless transition from traditional JPEG files. See <a data-l10n-name="bugzilla">bug 1539075</a> for more details.
-
-# WebRTC global mute toggle controls
-experimental-features-webrtc-global-mute-toggles =
-    .label = WebRTC Global Mute Toggles
-experimental-features-webrtc-global-mute-toggles-description = Add controls to the WebRTC global sharing indicator that allow users to globally mute their microphone and camera feeds.
 
 # JS JIT Warp project
 experimental-features-js-warp =
@@ -40,4 +29,3 @@ experimental-features-group-webpage-display =
   .label = Webpage Display
 experimental-features-group-customize-browsing =
   .label = Customize your browsing
-experimental-features-group-customize-browsing-description = If you try these features, <a data-l10n-name="connect">share your thoughts on Connect</a>

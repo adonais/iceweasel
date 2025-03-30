@@ -660,8 +660,6 @@ void DCLayerTree::CompositorEndFrame() {
   // Disable video overlay if mCompositionDevice->Commit() with video overlay is
   // too slow. It drops fps.
 
-  const auto maxCommitWaitDurationMs = 20;
-  const auto maxSlowCommitCount = 5;
   const auto commitDurationMs =
       static_cast<uint32_t>((end - start).ToMilliseconds());
 
@@ -669,35 +667,11 @@ void DCLayerTree::CompositorEndFrame() {
                          (uint8_t)mUsedOverlayTypesInFrame, commitDurationMs);
   PROFILER_MARKER_TEXT("CommitWait", GRAPHICS, {}, marker);
 
-  if (mUsedOverlayTypesInFrame != DCompOverlayTypes::NO_OVERLAY &&
-      commitDurationMs > maxCommitWaitDurationMs) {
-    mSlowCommitCount++;
-  } else {
-    mSlowCommitCount = 0;
-  }
-
-  if (mSlowCommitCount <= maxSlowCommitCount) {
-    return;
-  }
-
   for (auto it = mDCSurfaces.begin(); it != mDCSurfaces.end(); it++) {
     auto* surfaceVideo = it->second->AsDCSurfaceVideo();
     if (surfaceVideo) {
-      surfaceVideo->DisableVideoOverlay();
+      surfaceVideo->OnCompositorEndFrame(mCurrentFrame, commitDurationMs);
     }
-  }
-
-  if (mUsedOverlayTypesInFrame & DCompOverlayTypes::SOFTWARE_DECODED_VIDEO) {
-    gfxCriticalNoteOnce << "Sw video swapchain present is slow";
-
-    nsPrintfCString marker("Sw video swapchain present is slow");
-    PROFILER_MARKER_TEXT("DisableOverlay", GRAPHICS, {}, marker);
-  }
-  if (mUsedOverlayTypesInFrame & DCompOverlayTypes::HARDWARE_DECODED_VIDEO) {
-    gfxCriticalNoteOnce << "Hw video swapchain present is slow";
-
-    nsPrintfCString marker("Hw video swapchain present is slow");
-    PROFILER_MARKER_TEXT("DisableOverlay", GRAPHICS, {}, marker);
   }
 }
 
@@ -1703,6 +1677,8 @@ void DCSurfaceVideo::PresentVideo() {
 
   const auto device = mDCLayerTree->GetDevice();
   HRESULT hr;
+
+  auto start = TimeStamp::Now();
   if (mFirstPresent) {
     mFirstPresent = false;
     UINT flags = DXGI_PRESENT_USE_DURATION;
@@ -1761,7 +1737,6 @@ void DCSurfaceVideo::PresentVideo() {
     interval = 0;
   }
 
-  auto start = TimeStamp::Now();
   hr = mVideoSwapChain->Present(interval, flags);
   auto end = TimeStamp::Now();
 
@@ -1778,8 +1753,6 @@ void DCSurfaceVideo::PresentVideo() {
     return;
   }
 
-  const auto maxPresentWaitDurationMs = 2;
-  const auto maxSlowPresentCount = 5;
   const auto presentDurationMs =
       static_cast<uint32_t>((end - start).ToMilliseconds());
   const auto overlayType = mRenderTextureHost->IsSoftwareDecodedVideo()
@@ -1790,36 +1763,17 @@ void DCSurfaceVideo::PresentVideo() {
                          presentDurationMs);
   PROFILER_MARKER_TEXT("PresentWait", GRAPHICS, {}, marker);
 
-  if (presentDurationMs > maxPresentWaitDurationMs) {
-    mSlowPresentCount++;
-  } else {
-    mSlowPresentCount = 0;
-  }
-
-  if (mSlowPresentCount <= maxSlowPresentCount) {
-    return;
-  }
-
-  DisableVideoOverlay();
-
-  if (overlayType == DCompOverlayTypes::SOFTWARE_DECODED_VIDEO) {
-    gfxCriticalNoteOnce << "Sw video swapchain present is slow";
-
-    nsPrintfCString marker("Sw video swapchain present is slow");
-    PROFILER_MARKER_TEXT("DisableOverlay", GRAPHICS, {}, marker);
-  } else {
-    gfxCriticalNoteOnce << "Hw video swapchain present is slow";
-
-    nsPrintfCString marker("Hw video swapchain present is slow");
-    PROFILER_MARKER_TEXT("DisableOverlay", GRAPHICS, {}, marker);
+  if (mRenderTextureHostUsageInfo) {
+    mRenderTextureHostUsageInfo->OnVideoPresent(mDCLayerTree->GetFrameId(),
+                                                presentDurationMs);
   }
 }
 
-void DCSurfaceVideo::DisableVideoOverlay() {
+void DCSurfaceVideo::OnCompositorEndFrame(int aFrameId, uint32_t aDurationMs) {
   if (!mRenderTextureHostUsageInfo) {
     return;
   }
-  mRenderTextureHostUsageInfo->DisableVideoOverlay();
+  mRenderTextureHostUsageInfo->OnCompositorEndFrame(aFrameId, aDurationMs);
 }
 
 DXGI_FORMAT DCSurfaceVideo::GetSwapChainFormat(bool aUseVpAutoHDR) {

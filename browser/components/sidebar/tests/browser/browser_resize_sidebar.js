@@ -15,6 +15,7 @@ add_setup(async () => {
     launcherExpanded: false,
     launcherVisible: true,
   });
+  await waitForTabstripOrientation("vertical");
 });
 
 registerCleanupFunction(async () => {
@@ -24,28 +25,31 @@ registerCleanupFunction(async () => {
 async function dragLauncher(deltaX, shouldExpand) {
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
 
+  // Let the launcher splitter stabilize before attempting a drag-and-drop.
+  await waitForRepaint();
+
   info(`Drag the launcher by ${deltaX} px.`);
-  const splitter = SidebarController._launcherSplitter;
+  const { sidebarMain, _launcherSplitter: splitter } = SidebarController;
   EventUtils.synthesizeMouseAtCenter(splitter, { type: "mousedown" });
-  EventUtils.synthesizeMouse(splitter, deltaX, 0, { type: "mousemove" });
-  // Using synthesizeMouse() sometimes fails to trigger the resize observer,
-  // even if the splitter was dragged successfully. Invoke the resize handler
-  // explicitly to avoid this issue.
-  const resizeEntry = {
-    contentBoxSize: [
-      {
-        inlineSize: SidebarController.sidebarMain.getBoundingClientRect().width,
-      },
-    ],
-  };
-  SidebarController._handleLauncherResize(resizeEntry);
+  await mouseMoveInChunks(splitter, deltaX, 10);
+  EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" });
   await TestUtils.waitForCondition(
-    () => SidebarController.sidebarMain.expanded == shouldExpand,
+    () => sidebarMain.expanded == shouldExpand,
     `The sidebar is ${shouldExpand ? "expanded" : "collapsed"}.`
   );
-  EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" });
 
   AccessibilityUtils.resetEnv();
+}
+
+async function mouseMoveInChunks(el, deltaX, numberOfChunks) {
+  for (let i = 0; i < numberOfChunks; i++) {
+    await new Promise(resolve => {
+      requestAnimationFrame(resolve);
+    });
+    EventUtils.synthesizeMouse(el, deltaX / numberOfChunks, 0, {
+      type: "mousemove",
+    });
+  }
 }
 
 function getLauncherWidth({ SidebarController } = window) {
@@ -116,4 +120,31 @@ add_task(async function test_drag_show_and_hide_for_horizontal_tabs() {
   await dragLauncher(-200, false);
   ok(!SidebarController.sidebarContainer.hidden, "Sidebar is not hidden.");
   ok(!SidebarController.sidebarContainer.expanded, "Sidebar is not expanded.");
+});
+
+add_task(async function test_resize_after_toggling_revamp() {
+  await SidebarController.initializeUIState({
+    launcherExpanded: true,
+  });
+
+  info("Disable and then re-enable sidebar and vertical tabs.");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.revamp", false],
+      ["sidebar.verticalTabs", false],
+    ],
+  });
+  await waitForTabstripOrientation("horizontal");
+  await SpecialPowers.popPrefEnv();
+  await waitForTabstripOrientation("vertical");
+
+  info("Resize the vertical tab strip.");
+  const originalWidth = getLauncherWidth();
+  await dragLauncher(200, true);
+  const newWidth = getLauncherWidth();
+  Assert.greater(
+    parseInt(newWidth),
+    parseInt(originalWidth),
+    "Vertical tab strip was resized."
+  );
 });

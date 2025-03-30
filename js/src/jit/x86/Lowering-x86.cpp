@@ -445,7 +445,11 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
     case Scalar::Int8:
     case Scalar::Uint8:
       // See comment for LIRGeneratorX86::useByteOpRegister.
-      valueAlloc = useFixed(ins->value(), eax);
+      if (ins->value()->type() != MIRType::Int64) {
+        valueAlloc = useFixed(ins->value(), eax);
+      } else {
+        valueAlloc = useLowWordFixed(ins->value(), eax);
+      }
       break;
     case Scalar::Int16:
     case Scalar::Uint16:
@@ -455,7 +459,11 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
     case Scalar::Float64:
       // For now, don't allow constant values. The immediate operand affects
       // instruction layout which affects patching.
-      valueAlloc = useRegisterAtStart(ins->value());
+      if (ins->value()->type() != MIRType::Int64) {
+        valueAlloc = useRegisterAtStart(ins->value());
+      } else {
+        valueAlloc = useLowWordRegisterAtStart(ins->value());
+      }
       break;
     case Scalar::Simd128:
 #ifdef ENABLE_WASM_SIMD
@@ -809,12 +817,9 @@ void LIRGenerator::visitInt64ToFloatingPoint(MInt64ToFloatingPoint* ins) {
   MOZ_ASSERT(opd->type() == MIRType::Int64);
   MOZ_ASSERT(IsFloatingPointType(ins->type()));
 
-  LDefinition maybeTemp =
-      (ins->isUnsigned() &&
-       ((ins->type() == MIRType::Double && AssemblerX86Shared::HasSSE3()) ||
-        ins->type() == MIRType::Float32))
-          ? temp()
-          : LDefinition::BogusTemp();
+  LDefinition maybeTemp = ins->isUnsigned() && ins->type() == MIRType::Float32
+                              ? temp()
+                              : LDefinition::BogusTemp();
 
   define(new (alloc()) LInt64ToFloatingPoint(useInt64Register(opd), maybeTemp),
          ins);

@@ -8,6 +8,9 @@ menu-view-genai-chat =
 menu-view-review-checker =
   .label = Review Checker
 
+menu-view-contextual-password-manager =
+  .label = Passwords
+
 sidebar-options-menu-button =
   .title = Open menu
 
@@ -58,6 +61,13 @@ sidebar-show-on-the-right =
   .label = Move sidebar to the right
 sidebar-show-on-the-left =
   .label = Move sidebar to the left
+# Option to automatically expand the collapsed sidebar when the mouse pointer
+# hovers over it.
+expand-sidebar-on-hover =
+  .label = Expand sidebar on hover
+expand-on-hover-message =
+  .heading = Expand on hover coming soon
+  .message = In a future update, you’ll be able to expand the sidebar on hover.
 
 ## Labels for sidebar context menu items
 
@@ -75,6 +85,12 @@ sidebar-context-menu-bookmark-tab =
   .label = Bookmark Tab…
 sidebar-context-menu-copy-link =
   .label = Copy Link
+sidebar-context-menu-hide-sidebar =
+  .label = Hide Sidebar
+sidebar-context-menu-enable-vertical-tabs =
+  .label = Turn on Vertical Tabs
+sidebar-context-menu-customize-sidebar =
+  .label = Customize Sidebar
 # Variables:
 #   $deviceName (String) - The name of the device the user is closing a tab for
 sidebar-context-menu-close-remote-tab =
@@ -99,6 +115,8 @@ sidebar-menu-customize-label =
   .label = Customize sidebar
 sidebar-menu-review-checker-label =
   .label = Review Checker
+sidebar-menu-contextual-password-manager-label =
+  .label = Passwords
 
 ## Tooltips for sidebar menu items.
 
@@ -145,6 +163,8 @@ sidebar-menu-syncedtabs-header =
   .heading = Tabs from other devices
 sidebar-menu-bookmarks-header =
   .heading = Bookmarks
+sidebar-menu-cpm-header =
+  .heading = Passwords
 
 ## Titles for sidebar menu panels.
 

@@ -10,4 +10,5 @@ DIRS += [
     "webcompat",
     "pictureinpicture",
     "search-detection",
+    "newtab",
 ]

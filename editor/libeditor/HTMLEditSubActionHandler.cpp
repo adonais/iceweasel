@@ -1069,13 +1069,8 @@ nsresult HTMLEditor::PrepareInlineStylesForCaret() {
 }
 
 Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
-    EditSubAction aEditSubAction, const nsAString& aInsertionString,
-    SelectionHandling aSelectionHandling) {
+    const nsAString& aInsertionString, InsertTextFor aPurpose) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
-  MOZ_ASSERT(aEditSubAction == EditSubAction::eInsertText ||
-             aEditSubAction == EditSubAction::eInsertTextComingFromIME);
-  MOZ_ASSERT_IF(aSelectionHandling == SelectionHandling::Ignore,
-                aEditSubAction == EditSubAction::eInsertTextComingFromIME);
 
   {
     Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction();
@@ -1093,7 +1088,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
   // If the selection isn't collapsed, delete it.  Don't delete existing inline
   // tags, because we're hopefully going to insert text (bug 787432).
   if (!SelectionRef().IsCollapsed() &&
-      aSelectionHandling == SelectionHandling::Delete) {
+      !InsertingTextForExtantComposition(aPurpose)) {
     nsresult rv =
         DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eNoStrip);
     if (NS_FAILED(rv)) {
@@ -1137,23 +1132,18 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     }
   }
 
-  RefPtr<Document> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
+  auto pointToInsert = [&]() -> EditorDOMPoint {
+    if (InsertingTextForExtantComposition(aPurpose)) {
+      auto compositionStartPoint =
+          GetFirstIMESelectionStartPoint<EditorDOMPoint>();
+      if (MOZ_LIKELY(compositionStartPoint.IsSet())) {
+        return compositionStartPoint;
+      }
+    }
+    return GetFirstSelectionStartPoint<EditorDOMPoint>();
+  }();
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
     return Err(NS_ERROR_FAILURE);
-  }
-
-  const bool isHandlingComposition =
-      aEditSubAction == EditSubAction::eInsertTextComingFromIME;
-  auto pointToInsert = isHandlingComposition
-                           ? GetFirstIMESelectionStartPoint<EditorDOMPoint>()
-                           : GetFirstSelectionStartPoint<EditorDOMPoint>();
-  if (!pointToInsert.IsSet()) {
-    if (MOZ_LIKELY(isHandlingComposition)) {
-      pointToInsert = GetFirstSelectionStartPoint<EditorDOMPoint>();
-    }
-    if (NS_WARN_IF(!pointToInsert.IsSet())) {
-      return Err(NS_ERROR_FAILURE);
-    }
   }
 
   // for every property that is set, insert a new inline style node
@@ -1190,13 +1180,13 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     }
   }
 
-  if (isHandlingComposition) {
+  if (InsertingTextForComposition(aPurpose)) {
     if (aInsertionString.IsEmpty()) {
       // Right now the WhiteSpaceVisibilityKeeper code bails on empty strings,
       // but IME needs the InsertTextWithTransaction() call to still happen
       // since empty strings are meaningful there.
       Result<InsertTextResult, nsresult> insertEmptyTextResultOrError =
-          InsertTextWithTransaction(*document, aInsertionString, pointToInsert,
+          InsertTextWithTransaction(aInsertionString, pointToInsert,
                                     InsertTextTo::ExistingTextNodeIfAvailable);
       if (MOZ_UNLIKELY(insertEmptyTextResultOrError.isErr())) {
         NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
@@ -1239,15 +1229,14 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       return EditActionResult::HandledResult();
     }
 
-    auto compositionEndPoint = GetLastIMESelectionEndPoint<EditorDOMPoint>();
-    if (!compositionEndPoint.IsSet()) {
-      compositionEndPoint = pointToInsert;
-    }
+    const auto compositionEndPoint =
+        GetLastIMESelectionEndPoint<EditorDOMPoint>();
     Result<InsertTextResult, nsresult> replaceTextResult =
-        WhiteSpaceVisibilityKeeper::ReplaceText(
+        WhiteSpaceVisibilityKeeper::InsertOrUpdateCompositionString(
             *this, aInsertionString,
-            EditorDOMRange(pointToInsert, compositionEndPoint),
-            InsertTextTo::ExistingTextNodeIfAvailable);
+            compositionEndPoint.IsSet()
+                ? EditorDOMRange(pointToInsert, compositionEndPoint)
+                : EditorDOMRange(pointToInsert));
     if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
       NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
       return replaceTextResult.propagateErr();
@@ -1282,7 +1271,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     return EditActionResult::HandledResult();
   }
 
-  MOZ_ASSERT(aEditSubAction == EditSubAction::eInsertText);
+  MOZ_ASSERT(!InsertingTextForComposition(aPurpose));
 
   // find where we are
   EditorDOMPoint currentPoint(pointToInsert);
@@ -1344,7 +1333,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         MOZ_ASSERT(*lineBreakType == LineBreakType::Linefeed);
         Result<InsertTextResult, nsresult> insertTextResult =
             InsertTextWithTransaction(
-                *document, aInsertionString, currentPoint,
+                aInsertionString, currentPoint,
                 InsertTextTo::ExistingTextNodeIfAvailable);
         if (MOZ_UNLIKELY(insertTextResult.isErr())) {
           NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
@@ -1378,7 +1367,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
                                                 lineStartOffset, lineLength);
             Result<InsertTextResult, nsresult> insertTextResult =
                 InsertTextWithTransaction(
-                    *document, lineText, currentPoint,
+                    lineText, currentPoint,
                     GetInsertTextTo(inclusiveNextLinefeedOffset,
                                     lineStartOffset));
             if (MOZ_UNLIKELY(insertTextResult.isErr())) {
@@ -3366,6 +3355,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
               BlockInlineCheck::UseComputedDisplayStyle,
               editableBlockElementOrInlineEditingHost);
       if (previousContent &&
+          HTMLEditUtils::IsSimplyEditableNode(*previousContent) &&
           !HTMLEditUtils::IsBlockElement(
               *previousContent, BlockInlineCheck::UseComputedDisplayStyle)) {
         newCaretPosition =
@@ -3382,10 +3372,13 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
                        {LeafNodeType::LeafNodeOrNonEditableNode},
                        BlockInlineCheck::UseComputedDisplayStyle,
                        editableBlockElementOrInlineEditingHost)) {
-        newCaretPosition = nextContent->IsText() ||
-                                   HTMLEditUtils::IsContainerNode(*nextContent)
-                               ? EditorDOMPoint(nextContent, 0)
-                               : EditorDOMPoint(nextContent);
+        if (HTMLEditUtils::IsSimplyEditableNode(*nextContent)) {
+          newCaretPosition =
+              nextContent->IsText() ||
+                      HTMLEditUtils::IsContainerNode(*nextContent)
+                  ? EditorDOMPoint(nextContent, 0)
+                  : EditorDOMPoint(nextContent);
+        }
       }
     }
   }
@@ -3396,10 +3389,13 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
   if (newCaretPosition.IsStartOfContainer() &&
       newCaretPosition.IsInTextNode() &&
       newCaretPosition.GetContainer()->GetPreviousSibling() &&
+      newCaretPosition.GetContainer()->GetPreviousSibling()->IsEditable() &&
       newCaretPosition.GetContainer()->GetPreviousSibling()->IsText()) {
     newCaretPosition.SetToEndOf(
         newCaretPosition.GetContainer()->GetPreviousSibling()->AsText());
   }
+  MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(
+      *newCaretPosition.ContainerAs<nsIContent>()));
 
   {
     AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(),
@@ -6108,9 +6104,9 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleOutdentAtSelection(
     if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
       return Err(NS_ERROR_FAILURE);
     }
-    if (atStartOfSelection.Container() ==
+    if (atStartOfSelection.GetContainer() ==
             unwrappedOutdentResult.GetLeftContent() ||
-        EditorUtils::IsDescendantOf(*atStartOfSelection.Container(),
+        EditorUtils::IsDescendantOf(*atStartOfSelection.GetContainer(),
                                     *unwrappedOutdentResult.GetLeftContent())) {
       // Selection is inside the left node - push it past it.
       EditorRawDOMPoint afterRememberedLeftBQ(
@@ -6138,10 +6134,10 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleOutdentAtSelection(
     if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
       return Err(NS_ERROR_FAILURE);
     }
-    if (atStartOfSelection.Container() ==
+    if (atStartOfSelection.GetContainer() ==
             unwrappedOutdentResult.GetRightContent() ||
         EditorUtils::IsDescendantOf(
-            *atStartOfSelection.Container(),
+            *atStartOfSelection.GetContainer(),
             *unwrappedOutdentResult.GetRightContent())) {
       // Selection is inside the right element - push it before it.
       EditorRawDOMPoint atRememberedRightBQ(
@@ -10172,9 +10168,9 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
   const RangeBoundary& atStartOfSelection =
       SelectionRef().GetRangeAt(0)->StartRef();
   const RefPtr<Element> startContainerElement =
-      atStartOfSelection.Container() &&
-              atStartOfSelection.Container()->IsContent()
-          ? atStartOfSelection.Container()->GetAsElementOrParentElement()
+      atStartOfSelection.GetContainer() &&
+              atStartOfSelection.GetContainer()->IsContent()
+          ? atStartOfSelection.GetContainer()->GetAsElementOrParentElement()
           : nullptr;
   if (NS_WARN_IF(!startContainerElement)) {
     return NS_OK;
@@ -11198,6 +11194,8 @@ HTMLEditor::InsertPaddingBRElementIfNeeded(
     const EditorDOMPoint& aPoint, nsIEditor::EStripWrappers aDeleteEmptyInlines,
     const Element& aEditingHost) {
   MOZ_ASSERT(aPoint.IsInContentNode());
+  MOZ_ASSERT(HTMLEditUtils::NodeIsEditableOrNotInComposedDoc(
+      *aPoint.ContainerAs<nsIContent>()));
 
   auto pointToInsertPaddingBR = [&]() MOZ_NEVER_INLINE_DEBUG -> EditorDOMPoint {
     // If the point is immediately before a block boundary which is for a

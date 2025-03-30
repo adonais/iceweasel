@@ -37,10 +37,8 @@ FEATURE_CHECK_NEEDED = {
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  # Bug 1568906
     "Intl.Segmenter": "!Intl.Segmenter",  # Bug 1423593
     "Intl.DurationFormat": "!Intl.hasOwnProperty('DurationFormat')",  # Bug 1648139
-    "resizable-arraybuffer": "!ArrayBuffer.prototype.resize",  # Bug 1670026
     "uint8array-base64": "!Uint8Array.fromBase64",  # Bug 1862220
     "json-parse-with-source": "!JSON.hasOwnProperty('isRawJSON')",  # Bug 1658310
-    "Float16Array": "!this.hasOwnProperty('Float16Array')",
     "RegExp.escape": "!RegExp.escape",
     "promise-try": "!Promise.try",
     "explicit-resource-management": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))",  # Bug 1569081
@@ -60,10 +58,8 @@ SHELL_OPTIONS = {
     "ShadowRealm": "--enable-shadow-realms",
     "iterator-helpers": "--enable-iterator-helpers",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
-    "resizable-arraybuffer": "--enable-arraybuffer-resizable",
     "uint8array-base64": "--enable-uint8array-base64",
     "json-parse-with-source": "--enable-json-parse-with-source",
-    "Float16Array": "--enable-float16array",
     "regexp-duplicate-named-groups": "--enable-regexp-duplicate-named-groups",
     "RegExp.escape": "--enable-regexp-escape",
     "regexp-modifiers": "--enable-regexp-modifiers",
@@ -76,9 +72,7 @@ SHELL_OPTIONS = {
     "Math.sumPrecise": "--enable-math-sumprecise",
 }
 
-INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {
-    "testTypedArray.js": "Float16Array",
-}
+INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {}
 
 
 @contextlib.contextmanager

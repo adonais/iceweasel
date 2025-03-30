@@ -65,6 +65,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -91,10 +92,12 @@
 #include "nsISocketTransport.h"
 #include "nsIStreamConverterService.h"
 #include "nsISiteSecurityService.h"
+#include "nsIURIMutator.h"
 #include "nsString.h"
 #include "nsStringStream.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "AlternateServices.h"
 #include "NetworkMarker.h"
@@ -351,6 +354,8 @@ nsHttpChannel::nsHttpChannel() : HttpAsyncAborter<nsHttpChannel>(this) {
 }
 
 nsHttpChannel::~nsHttpChannel() {
+  PROFILER_MARKER("~nsHttpChannel", NETWORK, {}, TerminatingFlowMarker,
+                  Flow::FromPointer(this));
   LOG(("Destroying nsHttpChannel [this=%p, nsIChannel=%p]\n", this,
        static_cast<nsIChannel*>(this)));
 
@@ -1188,6 +1193,8 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
   nsresult rv;
 
   LOG(("nsHttpChannel::ConnectOnTailUnblock [this=%p]\n", this));
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::ConnectOnTailUnblock", NETWORK,
+                            Flow::FromPointer(this));
 
   // Consider opening a TCP connection right away.
   SpeculativeConnect();
@@ -1227,8 +1234,9 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
                                 mIgnoreCacheEntry)) {
     // We won't send the conditional request because the unconditional
     // request was already sent (see bug 1377223).
-    AccumulateCategorical(
-        Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::NotSent);
+    glean::network::race_cache_validation
+        .EnumGet(glean::network::RaceCacheValidationLabel::eNotsent)
+        .Add();
   }
 
   // When racing, if OnCacheEntryAvailable is called before AsyncOpenURI
@@ -1245,6 +1253,8 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
 nsresult nsHttpChannel::ContinueConnect() {
   // If we need to start a CORS preflight, do it now!
   // Note that it is important to do this before the early returns below.
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::ContinueConnect", NETWORK,
+                            Flow::FromPointer(this));
   if (!LoadIsCorsPreflightDone() && LoadRequireCORSPreflight()) {
     MOZ_ASSERT(!mPreflightChannel);
     nsresult rv = nsCORSListenerProxy::StartCORSPreflight(
@@ -2450,7 +2460,7 @@ void nsHttpChannel::ProcessSSLInformation() {
   }
 }
 
-void nsHttpChannel::ProcessAltService() {
+void nsHttpChannel::ProcessAltService(nsHttpConnectionInfo* aTransConnInfo) {
   // e.g. Alt-Svc: h2=":443"; ma=60
   // e.g. Alt-Svc: h2="otherhost:443"
   // Alt-Svc       = 1#( alternative *( OWS ";" OWS parameter ) )
@@ -2519,9 +2529,10 @@ void nsHttpChannel::ProcessAltService() {
         this, originAttributes);
   }
 
-  AltSvcMapping::ProcessHeader(
-      altSvc, scheme, originHost, originPort, mUsername, mPrivateBrowsing,
-      callbacks, proxyInfo, mCaps & NS_HTTP_DISALLOW_SPDY, originAttributes);
+  AltSvcMapping::ProcessHeader(altSvc, scheme, originHost, originPort,
+                               mUsername, mPrivateBrowsing, callbacks,
+                               proxyInfo, mCaps & NS_HTTP_DISALLOW_SPDY,
+                               originAttributes, aTransConnInfo);
 }
 
 nsresult nsHttpChannel::ProcessResponse() {
@@ -2532,11 +2543,15 @@ nsresult nsHttpChannel::ProcessResponse() {
 
   // Gather data on whether the transaction and page (if this is
   // the initial page load) is being loaded with SSL.
-  Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_IS_SSL,
-                        mConnectionInfo->EndToEndSSL());
+  glean::http::transaction_is_ssl
+      .EnumGet(static_cast<glean::http::TransactionIsSslLabel>(
+          mConnectionInfo->EndToEndSSL()))
+      .Add();
   if (mLoadFlags & LOAD_INITIAL_DOCUMENT_URI) {
-    Telemetry::Accumulate(Telemetry::HTTP_PAGELOAD_IS_SSL,
-                          mConnectionInfo->EndToEndSSL());
+    glean::http::pageload_is_ssl
+        .EnumGet(static_cast<glean::http::PageloadIsSslLabel>(
+            mConnectionInfo->EndToEndSSL()))
+        .Add();
   }
 
   if (Telemetry::CanRecordPrereleaseData()) {
@@ -2552,96 +2567,81 @@ nsresult nsHttpChannel::ProcessResponse() {
         saw_quic = 2;
       }
     }
-    Telemetry::Accumulate(Telemetry::HTTP_SAW_QUIC_ALT_PROTOCOL_2, saw_quic);
+    glean::http::saw_quic_alt_protocol.AccumulateSingleSample(saw_quic);
 
     // Gather data on various response status to monitor any increased frequency
     // of auth failures due to Bug 1896350
     switch (httpStatus) {
       case 200:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 0);
         mozilla::glean::networking::http_response_status_code.Get("200_ok"_ns)
             .Add(1);
         break;
       case 301:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 1);
         mozilla::glean::networking::http_response_status_code
             .Get("301_moved_permanently"_ns)
             .Add(1);
         break;
       case 302:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 2);
         mozilla::glean::networking::http_response_status_code
             .Get("302_found"_ns)
             .Add(1);
         break;
       case 304:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 3);
         mozilla::glean::networking::http_response_status_code
             .Get("304_not_modified"_ns)
             .Add(1);
         break;
       case 307:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 4);
         mozilla::glean::networking::http_response_status_code
             .Get("307_temporary_redirect"_ns)
             .Add(1);
         break;
       case 308:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 5);
         mozilla::glean::networking::http_response_status_code
             .Get("308_permanent_redirect"_ns)
             .Add(1);
         break;
       case 400:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 6);
         mozilla::glean::networking::http_response_status_code
             .Get("400_bad_request"_ns)
             .Add(1);
         break;
       case 401:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 7);
         mozilla::glean::networking::http_response_status_code
             .Get("401_unauthorized"_ns)
             .Add(1);
         break;
       case 403:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 8);
         mozilla::glean::networking::http_response_status_code
             .Get("403_forbidden"_ns)
             .Add(1);
         break;
       case 404:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 9);
         mozilla::glean::networking::http_response_status_code
             .Get("404_not_found"_ns)
             .Add(1);
         break;
       case 421:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 11);
         mozilla::glean::networking::http_response_status_code
             .Get("421_misdirected_request"_ns)
             .Add(1);
         break;
       case 425:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 11);
         mozilla::glean::networking::http_response_status_code
             .Get("425_too_early"_ns)
             .Add(1);
         break;
       case 429:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 11);
         mozilla::glean::networking::http_response_status_code
             .Get("429_too_many_requests"_ns)
             .Add(1);
         break;
       case 500:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 10);
         mozilla::glean::networking::http_response_status_code
             .Get("other_5xx"_ns)
             .Add(1);
         break;
       default:
-        Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_STATUS_CODE, 11);
         if (httpStatus >= 400 && httpStatus < 500) {
           mozilla::glean::networking::http_response_status_code
               .Get("other_4xx"_ns)
@@ -2747,7 +2747,8 @@ nsresult nsHttpChannel::ContinueProcessResponse1() {
     }
 
     if ((httpStatus < 500) && (httpStatus != 421)) {
-      ProcessAltService();
+      RefPtr<nsHttpConnectionInfo> connInfo = mTransaction->GetConnInfo();
+      ProcessAltService(connInfo);
     }
   }
 
@@ -3098,8 +3099,8 @@ nsresult nsHttpChannel::ContinueProcessResponseAfterNotModified(nsresult aRv) {
 
 static void ReportHttpResponseVersion(HttpVersion version) {
   if (Telemetry::CanRecordPrereleaseData()) {
-    Telemetry::Accumulate(Telemetry::HTTP_RESPONSE_VERSION,
-                          static_cast<uint32_t>(version));
+    glean::http::response_version.AccumulateSingleSample(
+        static_cast<uint32_t>(version));
   }
   mozilla::glean::networking::http_response_version
       .Get(HttpVersionToTelemetryLabel(version))
@@ -3111,11 +3112,14 @@ void nsHttpChannel::UpdateCacheDisposition(bool aSuccessfulReval,
   if (mRaceDelay && !mRaceCacheWithNetwork &&
       (LoadCachedContentIsPartial() || mDidReval)) {
     if (aSuccessfulReval || aPartialContentUsed) {
-      AccumulateCategorical(
-          Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::CachedContentUsed);
+      glean::network::race_cache_validation
+          .EnumGet(glean::network::RaceCacheValidationLabel::eCachedcontentused)
+          .Add();
     } else {
-      AccumulateCategorical(Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::
-                                CachedContentNotUsed);
+      glean::network::race_cache_validation
+          .EnumGet(
+              glean::network::RaceCacheValidationLabel::eCachedcontentnotused)
+          .Add();
     }
   }
 
@@ -4368,6 +4372,8 @@ NS_IMETHODIMP
 nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
   nsresult rv = NS_OK;
 
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::OnCacheEntryCheck", NETWORK,
+                            Flow::FromPointer(this));
   LOG(("nsHttpChannel::OnCacheEntryCheck enter [channel=%p entry=%p]", this,
        entry));
 
@@ -4381,13 +4387,12 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     *aResult = ENTRY_NOT_WANTED;
 
     // Net-win indicates that mOnStartRequestTimestamp is from net.
-    int64_t savedTime =
-        (TimeStamp::Now() - mOnStartRequestTimestamp).ToMilliseconds();
-    Telemetry::Accumulate(Telemetry::NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME,
-                          savedTime);
-    PROFILER_MARKER_TEXT(
-        "RCWN", NETWORK, {},
-        nsPrintfCString("Network won by %" PRId64 "ms", savedTime));
+    TimeDuration savedTime = (TimeStamp::Now() - mOnStartRequestTimestamp);
+    glean::network::race_cache_with_network_saved_time.AccumulateRawDuration(
+        savedTime);
+    PROFILER_MARKER_TEXT("RCWN", NETWORK, {},
+                         nsPrintfCString("Network won by %" PRId64 "ms",
+                                         int64_t(savedTime.ToMilliseconds())));
     return NS_OK;
   }
   if (mRaceCacheWithNetwork && mFirstResponseSource == RESPONSE_PENDING) {
@@ -4766,6 +4771,8 @@ nsHttpChannel::OnCacheEntryAvailable(nsICacheEntry* entry, bool aNew,
 
   nsresult rv;
 
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::OnCacheEntryAvailable", NETWORK,
+                            Flow::FromPointer(this));
   LOG(
       ("nsHttpChannel::OnCacheEntryAvailable [this=%p entry=%p "
        "new=%d status=%" PRIx32 "] for %s",
@@ -4841,8 +4848,9 @@ nsresult nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry* entry,
        mIgnoreCacheEntry)) {
     // We won't send the conditional request because the unconditional
     // request was already sent (see bug 1377223).
-    AccumulateCategorical(
-        Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::NotSent);
+    glean::network::race_cache_validation
+        .EnumGet(glean::network::RaceCacheValidationLabel::eNotsent)
+        .Add();
   }
 
   if (mRaceCacheWithNetwork && valid) {
@@ -5240,20 +5248,17 @@ nsresult nsHttpChannel::ReadFromCache(void) {
 
       if (!mOnCacheEntryCheckTimestamp.IsNull()) {
         TimeStamp currentTime = TimeStamp::Now();
-        int64_t savedTime =
-            (currentTime - mOnStartRequestTimestamp).ToMilliseconds();
-        Telemetry::Accumulate(
-            Telemetry::NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME, savedTime);
+        TimeDuration savedTime = currentTime - mOnStartRequestTimestamp;
+        glean::network::race_cache_with_network_saved_time
+            .AccumulateRawDuration(savedTime);
 
         PROFILER_MARKER_TEXT(
             "RCWN", NETWORK, {},
-            nsPrintfCString("Network won by %" PRId64 "ms for %s", savedTime,
-                            mSpec.get()));
-        int64_t diffTime =
-            (currentTime - mOnCacheEntryCheckTimestamp).ToMilliseconds();
-        Telemetry::Accumulate(
-            Telemetry::NETWORK_RACE_CACHE_WITH_NETWORK_OCEC_ON_START_DIFF,
-            diffTime);
+            nsPrintfCString("Network won by %" PRId64 "ms for %s",
+                            int64_t(savedTime.ToMilliseconds()), mSpec.get()));
+        TimeDuration diffTime = currentTime - mOnCacheEntryCheckTimestamp;
+        glean::network::race_cache_with_network_ocec_on_start_diff
+            .AccumulateRawDuration(diffTime);
       }
       return NS_OK;
     }
@@ -5805,9 +5810,10 @@ nsresult nsHttpChannel::SetupReplacementChannel(nsIURI* newURI,
         NetworkLoadType::LOAD_REDIRECT, mLastStatusReported, TimeStamp::Now(),
         size, mCacheDisposition, mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), &timings, std::move(mSource), httpVersion,
-        responseStatus, Some(nsDependentCString(contentType.get())), newURI,
-        redirectFlags, channelId);
+        mClassOfService.Flags(), mStatus, &timings, std::move(mSource),
+        httpVersion, responseStatus,
+        Some(nsDependentCString(contentType.get())), newURI, redirectFlags,
+        channelId);
   }
 
   nsresult rv = HttpBaseChannel::SetupReplacementChannel(
@@ -6424,7 +6430,8 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
         mLastStatusReported, TimeStamp::Now(), size, mCacheDisposition,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource));
+        mClassOfService.Flags(), mStatus, &mTransactionTimings,
+        std::move(mSource));
   }
 
   // If we don't have mTransactionPump and mCachePump, we need to call
@@ -6509,6 +6516,8 @@ NS_IMETHODIMP
 nsHttpChannel::Resume() {
   NS_ENSURE_TRUE(mSuspendCount > 0, NS_ERROR_UNEXPECTED);
 
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::Resume", NETWORK,
+                            Flow::FromPointer(this));
   LOG(("nsHttpChannel::ResumeInternal [this=%p]\n", this));
   LogCallingScriptLocation(this);
 
@@ -6630,6 +6639,8 @@ nsHttpChannel::GetSecurityInfo(nsITransportSecurityInfo** securityInfo) {
 // any error.
 NS_IMETHODIMP
 nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::AsyncOpen", NETWORK,
+                            Flow::FromPointer(this));
   nsCOMPtr<nsIStreamListener> listener = aListener;
   nsresult rv =
       nsContentSecurityManager::doContentSecurityCheck(this, listener);
@@ -6764,6 +6775,8 @@ void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
   // We save this timestamp from outside of the if block in case we enable the
   // profiler after AsyncOpen().
   mLastStatusReported = TimeStamp::Now();
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::AsyncOpenFinal", NETWORK,
+                            Flow::FromPointer(this));
   if (profiler_thread_is_being_profiled_for_markers()) {
     nsAutoCString requestMethod;
     GetRequestMethod(requestMethod);
@@ -6773,7 +6786,7 @@ void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
         mChannelCreationTimestamp, mLastStatusReported, 0, mCacheDisposition,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags());
+        mClassOfService.Flags(), mStatus);
   }
 
   // Added due to PauseTask/DelayHttpChannel
@@ -6797,7 +6810,8 @@ void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
   // lookup is not needed so CheckIsTrackerWithLocalTable() will return an
   // error and then we can MaybeResolveProxyAndBeginConnect() right away.
   // We skip the check in case this is an internal redirected channel
-  if (!LoadAuthRedirectedChannel() && NS_ShouldClassifyChannel(this)) {
+  if (!LoadAuthRedirectedChannel() &&
+      NS_ShouldClassifyChannel(this, ClassifyType::ETP)) {
     RefPtr<nsHttpChannel> self = this;
     willCallback = NS_SUCCEEDED(
         AsyncUrlChannelClassifier::CheckChannel(this, [self]() -> void {
@@ -6851,6 +6865,8 @@ void nsHttpChannel::MaybeResolveProxyAndBeginConnect() {
 }
 
 nsresult nsHttpChannel::AsyncOpenOnTailUnblock() {
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::AsyncOpenOnTailUnblock", NETWORK,
+                            Flow::FromPointer(this));
   return AsyncOpen(mListener);
 }
 
@@ -6975,6 +6991,17 @@ nsresult nsHttpChannel::BeginConnect() {
       nsCOMPtr<WebTransportConnectionSettings> wtconSettings =
           do_QueryInterface(mWebTransportSessionEventListener, &rv);
       NS_ENSURE_SUCCESS(rv, rv);
+      nsIWebTransport::HTTPVersion httpVersion;
+      Unused << wtconSettings->GetHttpVersion(&httpVersion);
+      if (httpVersion == nsIWebTransport::HTTPVersion::h2) {
+        connInfo =
+            new nsHttpConnectionInfo(host, port, "h2"_ns, mUsername, proxyInfo,
+                                     originAttributes, isHttps, false, true);
+      } else {
+        connInfo =
+            new nsHttpConnectionInfo(host, port, "h3"_ns, mUsername, proxyInfo,
+                                     originAttributes, isHttps, true, true);
+      }
       wtconSettings->GetDedicated(&dedicated);
       if (dedicated) {
         connInfo->SetWebTransportId(
@@ -7048,7 +7075,9 @@ nsresult nsHttpChannel::BeginConnect() {
     LOG(("nsHttpChannel %p Using connection info from altsvc mapping", this));
     mapping->GetConnectionInfo(getter_AddRefs(mConnectionInfo), proxyInfo,
                                originAttributes);
-    Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, true);
+    glean::http::transaction_use_altsvc
+        .EnumGet(glean::http::TransactionUseAltsvcLabel::eTrue)
+        .Add();
     if (mConnectionInfo->IsHttp3() &&
         StaticPrefs::
             network_http_http3_force_use_alt_svc_mapping_for_testing()) {
@@ -7056,12 +7085,16 @@ nsresult nsHttpChannel::BeginConnect() {
     }
   } else if (mConnectionInfo) {
     LOG(("nsHttpChannel %p Using channel supplied connection info", this));
-    Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
+    glean::http::transaction_use_altsvc
+        .EnumGet(glean::http::TransactionUseAltsvcLabel::eFalse)
+        .Add();
   } else {
     LOG(("nsHttpChannel %p Using default connection info", this));
 
     mConnectionInfo = connInfo;
-    Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
+    glean::http::transaction_use_altsvc
+        .EnumGet(glean::http::TransactionUseAltsvcLabel::eFalse)
+        .Add();
   }
 
   bool trrEnabled = false;
@@ -7163,10 +7196,11 @@ nsresult nsHttpChannel::BeginConnect() {
   }
   // skip classifier checks if this channel was the result of internal auth
   // redirect
-  bool shouldBeClassified =
-      !LoadAuthRedirectedChannel() && NS_ShouldClassifyChannel(this);
+  bool shouldBeClassifiedForTracker =
+      !LoadAuthRedirectedChannel() &&
+      NS_ShouldClassifyChannel(this, ClassifyType::ETP);
 
-  if (shouldBeClassified) {
+  if (shouldBeClassifiedForTracker) {
     if (LoadChannelClassifierCancellationPending()) {
       LOG(
           ("Waiting for safe-browsing protection cancellation in BeginConnect "
@@ -7190,7 +7224,10 @@ nsresult nsHttpChannel::BeginConnect() {
     return rv;
   }
 
-  if (shouldBeClassified) {
+  bool shouldBeClassifiedForSafeBrowsing =
+      NS_ShouldClassifyChannel(this, ClassifyType::SafeBrowsing);
+
+  if (shouldBeClassifiedForSafeBrowsing) {
     // Start nsChannelClassifier to catch phishing and malware URIs.
     RefPtr<nsChannelClassifier> channelClassifier =
         GetOrCreateChannelClassifier();
@@ -7755,8 +7792,10 @@ nsHttpChannel::GetRequestMethod(nsACString& aMethod) {
 
 void nsHttpChannel::RecordOnStartTelemetry(nsresult aStatus,
                                            bool aIsNavigation) {
-  Telemetry::Accumulate(Telemetry::HTTP_CHANNEL_ONSTART_SUCCESS,
-                        NS_SUCCEEDED(aStatus));
+  glean::http::channel_onstart_success
+      .EnumGet(static_cast<glean::http::ChannelOnstartSuccessLabel>(
+          NS_SUCCEEDED(aStatus)))
+      .Add();
 
   mozilla::glean::networking::http_channel_onstart_status
       .Get(NS_SUCCEEDED(aStatus) ? "successful"_ns : "fail"_ns)
@@ -7787,13 +7826,13 @@ void nsHttpChannel::RecordOnStartTelemetry(nsresult aStatus,
     }
 
     if (aIsNavigation) {
-      Telemetry::Accumulate(Telemetry::HTTP_CHANNEL_PAGE_ONSTART_SUCCESS_TRR3,
-                            TRRService::ProviderKey(),
-                            static_cast<uint32_t>(state));
+      glean::http::channel_page_onstart_success_trr
+          .Get(TRRService::ProviderKey())
+          .AccumulateSingleSample(static_cast<uint32_t>(state));
     } else {
-      Telemetry::Accumulate(Telemetry::HTTP_CHANNEL_SUB_ONSTART_SUCCESS_TRR3,
-                            TRRService::ProviderKey(),
-                            static_cast<uint32_t>(state));
+      glean::http::channel_sub_onstart_success_trr
+          .Get(TRRService::ProviderKey())
+          .AccumulateSingleSample(static_cast<uint32_t>(state));
     }
   }
 
@@ -7816,6 +7855,43 @@ void nsHttpChannel::RecordOnStartTelemetry(nsresult aStatus,
   }
 }
 
+static bool hasConnectivity() {
+  if (RefPtr<NetworkConnectivityService> ncs =
+          NetworkConnectivityService::GetSingleton()) {
+    nsINetworkConnectivityService::ConnectivityState state;
+    if (NS_SUCCEEDED(ncs->GetIPv4(&state)) &&
+        state == nsINetworkConnectivityService::OK) {
+      return true;
+    }
+    // We should also check for IPv6 connectivity here, but since
+    // quite a few mozilla domains don't have IPv6 records yet,
+    // we might incorrectly fallback to a backup domain on
+    // IPv6 only networks.
+    // When bug 1665605 gets fixed we can also return true when only IPv6 is OK.
+  }
+
+  return false;
+};
+
+static already_AddRefed<nsIURI> GetFallbackURI(nsIURI* aURI) {
+  nsresult rv;
+  nsAutoCString host;
+  aURI->GetHost(host);
+  nsCOMPtr<nsIURI> backupURI;
+
+  nsAutoCString fallbackDomain;
+  if (!gIOService->GetFallbackDomain(host, fallbackDomain)) {
+    return nullptr;
+  }
+
+  rv = NS_MutateURI(aURI).SetHost(fallbackDomain).Finalize(backupURI);
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+
+  return backupURI.forget();
+}
+
 NS_IMETHODIMP
 nsHttpChannel::OnStartRequest(nsIRequest* request) {
   nsresult rv;
@@ -7823,6 +7899,8 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
   MOZ_ASSERT(LoadRequestObserversCalled());
 
   AUTO_PROFILER_LABEL("nsHttpChannel::OnStartRequest", NETWORK);
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::OnStartRequest", NETWORK,
+                            Flow::FromPointer(this));
 
   if (!(mCanceled || NS_FAILED(mStatus)) &&
       !WRONG_RACING_RESPONSE_SOURCE(request)) {
@@ -7990,6 +8068,27 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     rv =
         StartRedirectChannelToURI(mURI, nsIChannelEventSink::REDIRECT_INTERNAL);
     if (NS_SUCCEEDED(rv)) return NS_OK;
+  }
+
+  // If this is a system principal request to an essential domain and we
+  // currently have connectivity, then check if there's a fallback domain we can
+  // use to retry. If so we redirect to the fallback domain.
+  if (StaticPrefs::network_essential_domains_fallback() && NS_FAILED(mStatus) &&
+      !mCanceled && mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
+      hasConnectivity()) {
+    if (nsCOMPtr<nsIURI> fallbackURI = GetFallbackURI(mURI)) {
+      rv = StartRedirectChannelToURI(
+          fallbackURI, nsIChannelEventSink::REDIRECT_INTERNAL |
+                           nsIChannelEventSink::REDIRECT_TRANSPARENT);
+      if (NS_SUCCEEDED(rv)) {
+        nsCOMPtr<nsIObserverService> obsService =
+            services::GetObserverService();
+        if (obsService)
+          obsService->NotifyObservers(static_cast<nsIHttpChannel*>(this),
+                                      "httpchannel-fallback", nullptr);
+        return NS_OK;
+      }
+    }
   }
 
   // avoid crashing if mListener happens to be null...
@@ -8403,6 +8502,8 @@ NS_IMETHODIMP
 nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   MOZ_ASSERT(!mAsyncOpenTime.IsNull());
   AUTO_PROFILER_LABEL("nsHttpChannel::OnStopRequest", NETWORK);
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::OnStopRequest", NETWORK,
+                            Flow::FromPointer(this));
 
   LOG(("nsHttpChannel::OnStopRequest [this=%p request=%p status=%" PRIx32 "]\n",
        this, request, static_cast<uint32_t>(status)));
@@ -8705,6 +8806,8 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
        "[this=%p aStatus=%" PRIx32 ", aIsFromNet=%d]\n",
        this, static_cast<uint32_t>(aStatus), aIsFromNet));
 
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::ContinueOnStopRequest", NETWORK,
+                            Flow::FromPointer(this));
   // HTTP_CHANNEL_DISPOSITION TELEMETRY
   ChannelDisposition chanDisposition = kHttpCanceled;
   // HTTP_CHANNEL_DISPOSITION_UPGRADE TELEMETRY
@@ -8792,7 +8895,7 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
 
   LOG(("  nsHttpChannel::OnStopRequest ChannelDisposition %d\n",
        chanDisposition));
-  Telemetry::Accumulate(Telemetry::HTTP_CHANNEL_DISPOSITION, chanDisposition);
+  glean::http::channel_disposition.AccumulateSingleSample(chanDisposition);
   RecordHttpChanDispositionGlean(chanDisposition);
 
   // Collect specific telemetry for measuring image, video, audio
@@ -8805,41 +8908,47 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
   if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_IMAGE ||
       internalLoadType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD) {
     if (mLoadInfo->GetBrowserDidUpgradeInsecureRequests()) {
-      Telemetry::AccumulateCategorical(
-          statusIsSuccess
-              ? Telemetry::LABELS_MIXED_CONTENT_IMAGES::ImgUpSuccess
-              : Telemetry::LABELS_MIXED_CONTENT_IMAGES::ImgUpFailure);
+      glean::mixed_content::images
+          .EnumGet(statusIsSuccess
+                       ? glean::mixed_content::ImagesLabel::eImgupsuccess
+                       : glean::mixed_content::ImagesLabel::eImgupfailure)
+          .Add();
     } else {
-      Telemetry::AccumulateCategorical(
-          statusIsSuccess
-              ? Telemetry::LABELS_MIXED_CONTENT_IMAGES::ImgNoUpSuccess
-              : Telemetry::LABELS_MIXED_CONTENT_IMAGES::ImgNoUpFailure);
+      glean::mixed_content::images
+          .EnumGet(statusIsSuccess
+                       ? glean::mixed_content::ImagesLabel::eImgnoupsuccess
+                       : glean::mixed_content::ImagesLabel::eImgnoupfailure)
+          .Add();
     }
   }
   if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_VIDEO) {
     if (mLoadInfo->GetBrowserDidUpgradeInsecureRequests()) {
-      Telemetry::AccumulateCategorical(
-          statusIsSuccess
-              ? Telemetry::LABELS_MIXED_CONTENT_VIDEO::VideoUpSuccess
-              : Telemetry::LABELS_MIXED_CONTENT_VIDEO::VideoUpFailure);
+      glean::mixed_content::video
+          .EnumGet(statusIsSuccess
+                       ? glean::mixed_content::VideoLabel::eVideoupsuccess
+                       : glean::mixed_content::VideoLabel::eVideoupfailure)
+          .Add();
     } else {
-      Telemetry::AccumulateCategorical(
-          statusIsSuccess
-              ? Telemetry::LABELS_MIXED_CONTENT_VIDEO::VideoNoUpSuccess
-              : Telemetry::LABELS_MIXED_CONTENT_VIDEO::VideoNoUpFailure);
+      glean::mixed_content::video
+          .EnumGet(statusIsSuccess
+                       ? glean::mixed_content::VideoLabel::eVideonoupsuccess
+                       : glean::mixed_content::VideoLabel::eVideonoupfailure)
+          .Add();
     }
   }
   if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_AUDIO) {
     if (mLoadInfo->GetBrowserDidUpgradeInsecureRequests()) {
-      Telemetry::AccumulateCategorical(
-          statusIsSuccess
-              ? Telemetry::LABELS_MIXED_CONTENT_AUDIO::AudioUpSuccess
-              : Telemetry::LABELS_MIXED_CONTENT_AUDIO::AudioUpFailure);
+      glean::mixed_content::audio
+          .EnumGet(statusIsSuccess
+                       ? glean::mixed_content::AudioLabel::eAudioupsuccess
+                       : glean::mixed_content::AudioLabel::eAudioupfailure)
+          .Add();
     } else {
-      Telemetry::AccumulateCategorical(
-          statusIsSuccess
-              ? Telemetry::LABELS_MIXED_CONTENT_AUDIO::AudioNoUpSuccess
-              : Telemetry::LABELS_MIXED_CONTENT_AUDIO::AudioNoUpFailure);
+      glean::mixed_content::audio
+          .EnumGet(statusIsSuccess
+                       ? glean::mixed_content::AudioLabel::eAudionoupsuccess
+                       : glean::mixed_content::AudioLabel::eAudionoupfailure)
+          .Add();
     }
   }
 
@@ -8943,8 +9052,8 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
         mLastStatusReported, TimeStamp::Now(), size, mCacheDisposition,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), &mTransactionTimings, std::move(mSource),
-        httpVersion, responseStatus,
+        mClassOfService.Flags(), mStatus, &mTransactionTimings,
+        std::move(mSource), httpVersion, responseStatus,
         Some(nsDependentCString(contentType.get())));
   }
 
@@ -9069,6 +9178,8 @@ nsHttpChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
                                uint64_t offset, uint32_t count) {
   nsresult rv;
   AUTO_PROFILER_LABEL("nsHttpChannel::OnDataAvailable", NETWORK);
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::OnDataAvailable", NETWORK,
+                            Flow::FromPointer(this));
 
   LOG(("nsHttpChannel::OnDataAvailable [this=%p request=%p offset=%" PRIu64
        " count=%" PRIu32 "]\n",
@@ -10370,17 +10481,18 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
           nsPrintfCString("Network won valid = %d, channel %p, URI %s",
                           LoadCachedContentIsValid(), this, mSpec.get()));
       gIOService->IncrementNetWonRequestNumber();
-      Telemetry::Accumulate(
-          Telemetry::NETWORK_RACE_CACHE_BANDWIDTH_RACE_NETWORK_WIN,
+      glean::network::race_cache_bandwidth_race_network_win.Accumulate(
           mTransferSize);
       if (mRaceDelay) {
-        AccumulateCategorical(
-            Telemetry::LABELS_NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2::
-                NetworkDelayedRace);
+        glean::network::race_cache_with_network_usage
+            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::
+                         eNetworkdelayedrace)
+            .Add();
       } else {
-        AccumulateCategorical(
-            Telemetry::LABELS_NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2::
-                NetworkRace);
+        glean::network::race_cache_with_network_usage
+            .EnumGet(
+                glean::network::RaceCacheWithNetworkUsageLabel::eNetworkrace)
+            .Add();
       }
     } else {
       PROFILER_MARKER_TEXT(
@@ -10388,11 +10500,11 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
           nsPrintfCString(
               "Cache won or was replaced, valid = %d, channel %p, URI %s",
               LoadCachedContentIsValid(), this, mSpec.get()));
-      Telemetry::Accumulate(Telemetry::NETWORK_RACE_CACHE_BANDWIDTH_NOT_RACE,
-                            mTransferSize);
-      AccumulateCategorical(
-          Telemetry::LABELS_NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2::
-              NetworkNoRace);
+      glean::network::race_cache_bandwidth_not_race.Accumulate(mTransferSize);
+      glean::network::race_cache_with_network_usage
+          .EnumGet(
+              glean::network::RaceCacheWithNetworkUsageLabel::eNetworknorace)
+          .Add();
     }
   } else {
     if (mRaceCacheWithNetwork || mRaceDelay) {
@@ -10401,24 +10513,23 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
           nsPrintfCString("Cache won valid=%d, channel %p, URI %s",
                           LoadCachedContentIsValid(), this, mSpec.get()));
       gIOService->IncrementCacheWonRequestNumber();
-      Telemetry::Accumulate(
-          Telemetry::NETWORK_RACE_CACHE_BANDWIDTH_RACE_CACHE_WIN,
+      glean::network::race_cache_bandwidth_race_cache_win.Accumulate(
           mTransferSize);
       if (mRaceDelay) {
-        AccumulateCategorical(
-            Telemetry::LABELS_NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2::
-                CacheDelayedRace);
+        glean::network::race_cache_with_network_usage
+            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::
+                         eCachedelayedrace)
+            .Add();
       } else {
-        AccumulateCategorical(
-            Telemetry::LABELS_NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2::
-                CacheRace);
+        glean::network::race_cache_with_network_usage
+            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::eCacherace)
+            .Add();
       }
     } else {
-      Telemetry::Accumulate(Telemetry::NETWORK_RACE_CACHE_BANDWIDTH_NOT_RACE,
-                            mTransferSize);
-      AccumulateCategorical(
-          Telemetry::LABELS_NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2::
-              CacheNoRace);
+      glean::network::race_cache_bandwidth_not_race.Accumulate(mTransferSize);
+      glean::network::race_cache_with_network_usage
+          .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::eCachenorace)
+          .Add();
     }
   }
 
@@ -10440,21 +10551,6 @@ void nsHttpChannel::ReportSystemChannelTelemetry(nsresult status) {
       !StringEndsWith(domain, ".mozilla.com"_ns)) {
     return;
   }
-
-  auto hasConnectivity = []() -> bool {
-    if (RefPtr<NetworkConnectivityService> ncs =
-            NetworkConnectivityService::GetSingleton()) {
-      nsINetworkConnectivityService::ConnectivityState state;
-      if (NS_SUCCEEDED(ncs->GetIPv4(&state)) &&
-          state == nsINetworkConnectivityService::NOT_AVAILABLE &&
-          NS_SUCCEEDED(ncs->GetIPv6(&state)) &&
-          state == nsINetworkConnectivityService::NOT_AVAILABLE) {
-        return false;
-      }
-    }
-
-    return true;
-  };
 
   nsAutoCString label("ok"_ns);
   if (NS_FAILED(status)) {
@@ -10839,7 +10935,8 @@ NS_IMETHODIMP
 nsHttpChannel::OnTailUnblock(nsresult rv) {
   LOG(("nsHttpChannel::OnTailUnblock this=%p rv=%" PRIx32 " rc=%p", this,
        static_cast<uint32_t>(rv), mRequestContext.get()));
-
+  AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::OnTailUnblock", NETWORK,
+                            Flow::FromPointer(this));
   MOZ_RELEASE_ASSERT(mOnTailUnblock);
 
   if (NS_FAILED(mStatus)) {

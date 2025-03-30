@@ -12,11 +12,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
@@ -30,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
@@ -110,11 +113,18 @@ fun MarketingDataOnboardingPage(
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 state.marketingData?.let { marketingData ->
-                    Row {
+                    Row(
+                        Modifier.toggleable(
+                            value = checkboxChecked,
+                            role = Role.Checkbox,
+                            onValueChange = { checkboxChecked = !checkboxChecked },
+                        ),
+                    ) {
                         Checkbox(
                             modifier = Modifier
                                 .align(Alignment.Top)
-                                .offset(y = (-12).dp, x = (-12).dp),
+                                .offset(y = (-12).dp, x = (-12).dp)
+                                .clearAndSetSemantics {},
                             checked = checkboxChecked,
                             onCheckedChange = {
                                 checkboxChecked = !checkboxChecked
@@ -156,7 +166,7 @@ fun MarketingDataOnboardingPage(
 
                 PrimaryButton(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .width(width = FirefoxTheme.layout.size.maxWidth.small)
                         .semantics { testTag = state.title + "onboarding_card.positive_button" },
                     text = state.primaryButton.text,
                     onClick = { onMarketingDataContinueClick(checkboxChecked) },

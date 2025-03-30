@@ -3034,23 +3034,6 @@ security.doh.settings:
       - necko@mozilla.com
     products:
       - firefox
-  warn_checkbox:
-    objects: ["checkbox"]
-    bug_numbers:
-      - 1829905
-    description: >
-      User clicked the Warn if a third party actively prevents secure DNS
-      checkbox in about:preferences#privacy.
-      Value is true or false, reflecting if box is checked or unchecked.
-    expiry_version: never
-    record_in_processes:
-      - main
-    release_channel_collection: opt-out
-    notification_emails:
-      - vgosu@mozilla.com
-      - necko@mozilla.com
-    products:
-      - firefox
   provider_choice:
     objects: ["value"]
     bug_numbers:
@@ -3273,6 +3256,7 @@ zero_byte_load:
       file_name: The name of the file being loaded.
       status: The channel status code.
       cancelled: Whether this load has been cancelled.
+      cancel_reason: Reason why this load was cancelled.
 
 avif:
   dav1d_get_picture:
@@ -3998,6 +3982,26 @@ profiles:
     expiry_version: never
     products:
       - "firefox"
+  delete:
+    objects: ["cancel", "confirm", "displayed"]
+    release_channel_collection: opt-out
+    record_in_processes:
+      - main
+    description: >
+      Recorded when the user loads and interacts with the
+      "about:deleteprofile" profile delete confirmation page. See Glean
+      probe definitions for details. The value varies depending on the
+      object.
+    notification_emails:
+      - "cmkm@mozilla.com"
+      - "dtownsend@mozilla.com"
+      - "jhirsch@mozilla.com"
+      - "nbaumgardner@mozilla.com"
+    bug_numbers:
+      - 1927608
+    expiry_version: never
+    products:
+      - "firefox"
   existing:
     objects: ["alert", "avatar", "closed", "deleted", "displayed", "learn_more", "name", "theme"]
     release_channel_collection: opt-out
@@ -4033,6 +4037,25 @@ profiles:
       - "nbaumgardner@mozilla.com"
     bug_numbers:
       - 1941698
+    expiry_version: never
+    products:
+      - "firefox"
+  selector_window:
+    objects: ["launch", "show_at_startup"]
+    release_channel_collection: opt-out
+    record_in_processes:
+      - main
+    description: >
+      Recorded when the user launches a profile or toggles the "show at
+      startup" checkbox in the profile selector dialog. See Glean probe
+      definitions for details. The value varies depending on the object.
+    notification_emails:
+      - "cmkm@mozilla.com"
+      - "dtownsend@mozilla.com"
+      - "jhirsch@mozilla.com"
+      - "nbaumgardner@mozilla.com"
+    bug_numbers:
+      - 1927605
     expiry_version: never
     products:
       - "firefox"

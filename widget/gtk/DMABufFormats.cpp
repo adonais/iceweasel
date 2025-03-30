@@ -5,17 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "DMABufLibWrapper.h"
-#include "DMABufFormats.h"
-#include "nsWaylandDisplay.h"
-
 #include <drm/xf86drm.h>
 #include <sys/mman.h>
-
-#include "mozilla/widget/mozwayland.h"
-#include "mozilla/widget/gbm.h"
-#include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
 #include <sys/types.h>
+
+#include "DMABufLibWrapper.h"
+#include "DMABufFormats.h"
+#include "mozilla/widget/gbm.h"
+#ifdef MOZ_WAYLAND
+#  include "nsWaylandDisplay.h"
+#  include "mozilla/widget/mozwayland.h"
+#  include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
+#endif
 
 #include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
 
@@ -68,7 +69,45 @@ class DMABufFormatTable final {
 
 class DMABufFeedbackTranche final {
  public:
-  void SetFormats(DMABufFormatTable* aFormatTable, wl_array* aIndices);
+#ifdef MOZ_WAYLAND
+  void SetFormats(DMABufFormatTable* aFormatTable, wl_array* aIndices) {
+    // Formats are reported as array with appropriate modifiers.
+    // Modifiers are sorted from the most preffered.
+    // There's a sample output of weston-simple-dmabuf-feedback utility
+    // which prints the format table:
+    //
+    // format ABGR16161616F, modifier
+    // AMD_GFX10_RBPLUS,64KB_R_X,PIPE_XOR_BITS=3... format ABGR16161616F,
+    // modifier AMD_GFX10,64KB_S_X,PIPE_XOR_BITS=3 format ABGR16161616F,
+    // modifier AMD_GFX9,64KB_D format ABGR16161616F, modifier AMD_GFX9,64KB_S
+    // format ABGR16161616F, modifier LINEAR
+
+    RefPtr<DRMFormat> currentDrmFormat;
+
+    // We need to use such ugly constructions because wl_array_for_each
+    // is not C++ compliant
+    // (https://gitlab.freedesktop.org/wayland/wayland/-/issues/34)
+    uint16_t* index = (uint16_t*)aIndices->data;
+    uint16_t* lastIndex =
+        (uint16_t*)((const char*)aIndices->data + aIndices->size);
+
+    for (; index < lastIndex; index++) {
+      uint32_t format;
+      uint64_t modifier;
+      if (!aFormatTable->GetFormat(*index, &format, &modifier)) {
+        return;
+      }
+      LOGDMABUF(("DMABufFeedbackTranche [%p] format 0x%x modifier %" PRIx64,
+                 this, format, modifier));
+      if (!currentDrmFormat || !currentDrmFormat->Matches(format)) {
+        currentDrmFormat = new DRMFormat(format, modifier);
+        mFormats.AppendElement(currentDrmFormat);
+        continue;
+      }
+      currentDrmFormat->AddModifier(modifier);
+    }
+  }
+#endif
   void SetScanout(bool aIsScanout) { mIsScanout = aIsScanout; }
   bool IsScanout() { return mIsScanout; }
 
@@ -95,45 +134,6 @@ class DMABufFeedbackTranche final {
   nsTArray<RefPtr<DRMFormat>> mFormats;
 };
 
-void DMABufFeedbackTranche::SetFormats(DMABufFormatTable* aFormatTable,
-                                       wl_array* aIndices) {
-  // Formats are reported as array with appropriate modifiers.
-  // Modifiers are sorted from the most preffered.
-  // There's a sample output of weston-simple-dmabuf-feedback utility
-  // which prints the format table:
-  //
-  // format ABGR16161616F, modifier AMD_GFX10_RBPLUS,64KB_R_X,PIPE_XOR_BITS=3...
-  // format ABGR16161616F, modifier AMD_GFX10,64KB_S_X,PIPE_XOR_BITS=3
-  // format ABGR16161616F, modifier AMD_GFX9,64KB_D
-  // format ABGR16161616F, modifier AMD_GFX9,64KB_S
-  // format ABGR16161616F, modifier LINEAR
-
-  RefPtr<DRMFormat> currentDrmFormat;
-
-  // We need to use such ugly constructions because wl_array_for_each
-  // is not C++ compliant
-  // (https://gitlab.freedesktop.org/wayland/wayland/-/issues/34)
-  uint16_t* index = (uint16_t*)aIndices->data;
-  uint16_t* lastIndex =
-      (uint16_t*)((const char*)aIndices->data + aIndices->size);
-
-  for (; index < lastIndex; index++) {
-    uint32_t format;
-    uint64_t modifier;
-    if (!aFormatTable->GetFormat(*index, &format, &modifier)) {
-      return;
-    }
-    LOGDMABUF(("DMABufFeedbackTranche [%p] format 0x%x modifier %" PRIx64, this,
-               format, modifier));
-    if (!currentDrmFormat || !currentDrmFormat->Matches(format)) {
-      currentDrmFormat = new DRMFormat(format, modifier);
-      mFormats.AppendElement(currentDrmFormat);
-      continue;
-    }
-    currentDrmFormat->AddModifier(modifier);
-  }
-}
-
 class DMABufFeedback final {
  public:
   DMABufFormatTable* FormatTable() { return &mFormatTable; }
@@ -151,7 +151,6 @@ class DMABufFeedback final {
     }
   }
   DRMFormat* GetFormat(uint32_t aFormat, bool aRequestScanoutFormat) {
-    MOZ_ASSERT(!mPendingTranche);
     for (const auto& tranche : mTranches) {
       if (aRequestScanoutFormat && !tranche->IsScanout()) {
         continue;
@@ -183,6 +182,7 @@ void DMABufFormats::PendingDMABufFeedbackDone() {
   }
 }
 
+#ifdef MOZ_WAYLAND
 static void dmabuf_feedback_format_table(
     void* data,
     struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
@@ -304,13 +304,6 @@ static void dmabuf_v3_format(void* data,
 static const struct zwp_linux_dmabuf_v1_listener dmabuf_v3_listener = {
     dmabuf_v3_format, dmabuf_v3_modifiers};
 
-DRMFormat* DMABufFormats::GetFormat(uint32_t aFormat,
-                                    bool aRequestScanoutFormat) {
-  return mDMABufFeedback
-             ? mDMABufFeedback->GetFormat(aFormat, aRequestScanoutFormat)
-             : nullptr;
-}
-
 void DMABufFormats::InitFeedback(zwp_linux_dmabuf_v1* aDMABuf,
                                  const DMABufFormatsCallback& aFormatRefreshCB,
                                  wl_surface* aSurface) {
@@ -336,15 +329,48 @@ void DMABufFormats::InitV3Done() {
   GetPendingDMABufFeedback()->PendingTrancheDone();
   PendingDMABufFeedbackDone();
 }
+#endif
+
+DRMFormat* DMABufFormats::GetFormat(uint32_t aFormat,
+                                    bool aRequestScanoutFormat) {
+  MOZ_DIAGNOSTIC_ASSERT(mDMABufFeedback);
+  return mDMABufFeedback->GetFormat(aFormat, aRequestScanoutFormat);
+}
+
+void DMABufFormats::EnsureBasicFormats() {
+  MOZ_DIAGNOSTIC_ASSERT(!mPendingDMABufFeedback,
+                        "Can't add extra formats during init!");
+  if (!mDMABufFeedback) {
+    mDMABufFeedback = MakeUnique<DMABufFeedback>();
+  }
+  if (!GetFormat(GBM_FORMAT_XRGB8888)) {
+    LOGDMABUF(
+        ("DMABufFormats::EnsureBasicFormats(): GBM_FORMAT_XRGB8888 is missing, "
+         "adding."));
+    mDMABufFeedback->PendingTranche()->AddFormat(GBM_FORMAT_XRGB8888,
+                                                 DRM_FORMAT_MOD_INVALID);
+  }
+  if (!GetFormat(GBM_FORMAT_ARGB8888)) {
+    LOGDMABUF(
+        ("DMABufFormats::EnsureBasicFormats(): GBM_FORMAT_ARGB8888 is missing, "
+         "adding."));
+    mDMABufFeedback->PendingTranche()->AddFormat(GBM_FORMAT_ARGB8888,
+                                                 DRM_FORMAT_MOD_INVALID);
+  }
+  mDMABufFeedback->PendingTrancheDone();
+}
 
 DMABufFormats::DMABufFormats() {}
 
 DMABufFormats::~DMABufFormats() {
+#ifdef MOZ_WAYLAND
   if (mWaylandFeedback) {
     zwp_linux_dmabuf_feedback_v1_destroy(mWaylandFeedback);
   }
+#endif
 }
 
+#ifdef MOZ_WAYLAND
 RefPtr<DMABufFormats> CreateDMABufFeedbackFormats(
     wl_surface* aSurface, const DMABufFormatsCallback& aFormatRefreshCB) {
   if (!WaylandDisplayGet()->HasDMABufFeedback()) {
@@ -355,5 +381,6 @@ RefPtr<DMABufFormats> CreateDMABufFeedbackFormats(
                         aSurface);
   return formats.forget();
 }
+#endif
 
 }  // namespace mozilla::widget

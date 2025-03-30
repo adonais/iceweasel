@@ -61,7 +61,6 @@
 #include "mozilla/KeySystemConfig.h"
 #include "mozilla/WheelHandlingHelper.h"
 #include "nsIRFPTargetSetIDL.h"
-#include "nsContentSecurityUtils.h"
 #include "nsString.h"
 #include "nsNativeTheme.h"
 #include "nsThreadUtils.h"
@@ -71,6 +70,7 @@
 #include "nsDocShell.h"
 #include "nsIException.h"
 #include "VsyncSource.h"
+#include "imgLoader.h"
 
 #ifdef XP_UNIX
 #  include <errno.h>
@@ -1283,18 +1283,21 @@ void ChromeUtils::ClearRecentJSDevError(GlobalObject&) {
 
 void ChromeUtils::ClearStyleSheetCacheByPrincipal(GlobalObject&,
                                                   nsIPrincipal* aForPrincipal) {
-  SharedStyleSheetCache::Clear(Some(aForPrincipal));
+  SharedStyleSheetCache::Clear(Nothing(), Some(aForPrincipal));
 }
 
 void ChromeUtils::ClearStyleSheetCacheBySite(
     GlobalObject&, const nsACString& aSchemelessSite,
     const dom::OriginAttributesPatternDictionary& aPattern) {
-  SharedStyleSheetCache::Clear(Nothing(), Some(nsCString(aSchemelessSite)),
+  SharedStyleSheetCache::Clear(Nothing(), Nothing(),
+                               Some(nsCString(aSchemelessSite)),
                                Some(OriginAttributesPattern(aPattern)));
 }
 
-void ChromeUtils::ClearStyleSheetCache(GlobalObject&) {
-  SharedStyleSheetCache::Clear();
+void ChromeUtils::ClearStyleSheetCache(GlobalObject&,
+                                       const Optional<bool>& aChrome) {
+  SharedStyleSheetCache::Clear(aChrome.WasPassed() ? Some(aChrome.Value())
+                                                   : Nothing());
 }
 
 void ChromeUtils::ClearMessagingLayerSecurityStateByPrincipal(
@@ -1593,18 +1596,29 @@ void ChromeUtils::ClearMessagingLayerSecurityState(GlobalObject&,
 
 void ChromeUtils::ClearScriptCacheByPrincipal(GlobalObject&,
                                               nsIPrincipal* aForPrincipal) {
-  SharedScriptCache::Clear(Some(aForPrincipal));
+  SharedScriptCache::Clear(Nothing(), Some(aForPrincipal));
 }
 
 void ChromeUtils::ClearScriptCacheBySite(
     GlobalObject&, const nsACString& aSchemelessSite,
     const dom::OriginAttributesPatternDictionary& aPattern) {
-  SharedScriptCache::Clear(Nothing(), Some(nsCString(aSchemelessSite)),
-                           Some(aPattern));
+  SharedScriptCache::Clear(Nothing(), Nothing(),
+                           Some(nsCString(aSchemelessSite)), Some(aPattern));
 }
 
-void ChromeUtils::ClearScriptCache(GlobalObject&) {
-  SharedScriptCache::Clear();
+void ChromeUtils::ClearScriptCache(GlobalObject&,
+                                   const Optional<bool>& aChrome) {
+  SharedScriptCache::Clear(aChrome.WasPassed() ? Some(aChrome.Value())
+                                               : Nothing());
+}
+
+void ChromeUtils::ClearResourceCache(GlobalObject&,
+                                     const Optional<bool>& aChrome) {
+  Maybe<bool> chrome = aChrome.WasPassed() ? Some(aChrome.Value()) : Nothing();
+  SharedStyleSheetCache::Clear(chrome);
+  SharedScriptCache::Clear(chrome);
+  imgLoader::PrivateBrowsingLoader()->ClearCache(chrome);
+  imgLoader::NormalLoader()->ClearCache(chrome);
 }
 
 #define PROCTYPE_TO_WEBIDL_CASE(_procType, _webidl) \
@@ -2157,7 +2171,11 @@ void ChromeUtils::RegisterWindowActor(const GlobalObject& aGlobal,
                                       const nsACString& aName,
                                       const WindowActorOptions& aOptions,
                                       ErrorResult& aRv) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowNotAllowedError(
+        "registerWindowActor() may only be called in the parent process");
+    return;
+  }
 
   RefPtr<JSActorService> service = JSActorService::GetSingleton();
   service->RegisterWindowActor(aName, aOptions, aRv);
@@ -2165,8 +2183,13 @@ void ChromeUtils::RegisterWindowActor(const GlobalObject& aGlobal,
 
 /* static */
 void ChromeUtils::UnregisterWindowActor(const GlobalObject& aGlobal,
-                                        const nsACString& aName) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+                                        const nsACString& aName,
+                                        ErrorResult& aRv) {
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowNotAllowedError(
+        "unregisterWindowActor() may only be called in the parent process");
+    return;
+  }
 
   RefPtr<JSActorService> service = JSActorService::GetSingleton();
   service->UnregisterWindowActor(aName);
@@ -2177,7 +2200,11 @@ void ChromeUtils::RegisterProcessActor(const GlobalObject& aGlobal,
                                        const nsACString& aName,
                                        const ProcessActorOptions& aOptions,
                                        ErrorResult& aRv) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowNotAllowedError(
+        "registerProcessActor() may only be called in the parent process");
+    return;
+  }
 
   RefPtr<JSActorService> service = JSActorService::GetSingleton();
   service->RegisterProcessActor(aName, aOptions, aRv);
@@ -2185,11 +2212,45 @@ void ChromeUtils::RegisterProcessActor(const GlobalObject& aGlobal,
 
 /* static */
 void ChromeUtils::UnregisterProcessActor(const GlobalObject& aGlobal,
-                                         const nsACString& aName) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+                                         const nsACString& aName,
+                                         ErrorResult& aRv) {
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowNotAllowedError(
+        "unregisterProcessActor() may only be called in the parent process");
+    return;
+  }
 
   RefPtr<JSActorService> service = JSActorService::GetSingleton();
   service->UnregisterProcessActor(aName);
+}
+
+/* static */
+already_AddRefed<Promise> ChromeUtils::EnsureHeadlessContentProcess(
+    const GlobalObject& aGlobal, const nsACString& aRemoteType,
+    ErrorResult& aRv) {
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowNotAllowedError(
+        "ensureHeadlessContentProcess() may only be called in the parent "
+        "process");
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  RefPtr<Promise> promise = Promise::Create(global, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  ContentParent::GetNewOrUsedBrowserProcessAsync(aRemoteType)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [promise](UniqueContentParentKeepAlive&& aKeepAlive) {
+            nsCOMPtr<nsIContentParentKeepAlive> jsKeepAlive =
+                WrapContentParentKeepAliveForJS(std::move(aKeepAlive));
+            promise->MaybeResolve(jsKeepAlive);
+          },
+          [promise](nsresult aError) { promise->MaybeReject(aError); });
+  return promise.forget();
 }
 
 /* static */
@@ -2369,19 +2430,6 @@ bool ChromeUtils::ShouldResistFingerprinting(
   // more work would be needed to get the correct context.
   return nsRFPService::IsRFPEnabledFor(isPBM, target,
                                        overriddenFingerprintingSettings);
-}
-
-/* static */
-void ChromeUtils::SanitizeTelemetryFileURL(
-    GlobalObject& aGlobal, const nsACString& aURL,
-    FileNameTypeDetails& aFileTypeDetails) {
-  FilenameTypeAndDetails result =
-      nsContentSecurityUtils::FilenameToFilenameType(aURL, true);
-
-  aFileTypeDetails.mFileNameType = result.first;
-  if (result.second.isSome()) {
-    aFileTypeDetails.mFileNameDetails.Construct(*result.second);
-  }
 }
 
 std::atomic<uint32_t> ChromeUtils::sDevToolsOpenedCount = 0;

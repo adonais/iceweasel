@@ -1,6 +1,7 @@
 [DEFAULT]
 support-files = [
     "head.js",
+    "shared-head.js"
 ]
 
 ["browser_ml_autofill_perf.js"]
@@ -12,6 +13,9 @@ disabled = "Disabled as we want to run this only as perftest, not regular CI"
 ["browser_ml_engine_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
 
+["browser_ml_smart_tab_perf.js"]
+disabled = "Disabled as we want to run this only as perftest, not regular CI"
+
 ["browser_ml_suggest_feature_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
 
@@ -19,7 +23,4 @@ disabled = "Disabled as we want to run this only as perftest, not regular CI"
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
 
 ["browser_ml_summarizer_perf.js"]
-disabled = "Disabled as we want to run this only as perftest, not regular CI"
-
-["browser_ml_smart_tab_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"

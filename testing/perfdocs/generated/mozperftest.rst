@@ -43,7 +43,7 @@ browser_translations_perf_es_en.js
 ::
 
  --perfherder
- --perfherder-metrics name:engine-init-time,unit:ms,shouldAlert:True,lowerIsBetter:True, name:words-per-second,unit:WPS,shouldAlert:True,lowerIsBetter:False, name:tokens-per-second,unit:TPS,shouldAlert:True,lowerIsBetter:False, name:total-memory-usage,unit:MiB,shouldAlert:True,lowerIsBetter:True, name:total-translation-time,unit:s,shouldAlert:True,lowerIsBetter:True
+ --perfherder-metrics name:engine-init-time,unit:ms,shouldAlert:True,lowerIsBetter:True, name:words-per-second,unit:WPS,shouldAlert:True,lowerIsBetter:False, name:tokens-per-second,unit:TPS,shouldAlert:True,lowerIsBetter:False, name:peak-memory-usage,unit:MiB,shouldAlert:True,lowerIsBetter:True, name:stabilized-memory-usage,unit:MiB,shouldAlert:True,lowerIsBetter:True, name:total-translation-time,unit:s,shouldAlert:True,lowerIsBetter:True
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
@@ -392,7 +392,7 @@ browser_ml_autofill_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:AUTOFILL-pipeline-ready-latency,unit:ms,shouldAlert:True, name:AUTOFILL-initialization-latency,unit:ms,shouldAlert:True, name:AUTOFILL-model-run-latency,unit:ms,shouldAlert:True, name:AUTOFILL-total-memory-usage,unit:MB,shouldAlert:True
+ --perfherder-metrics name:AUTOFILL-pipeline-ready-latency,unit:ms,shouldAlert:True, name:AUTOFILL-initialization-latency,unit:ms,shouldAlert:True, name:AUTOFILL-model-run-latency,unit:ms,shouldAlert:True, name:AUTOFILL-total-memory-usage,unit:MiB,shouldAlert:True, name:tokenSpeed,unit:tokens/s,shouldAlert:True,lowerIsBetter:False, name:charactersSpeed,unit:chars/s,shouldAlert:True,lowerIsBetter:False
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
@@ -410,7 +410,7 @@ browser_ml_smart_tab_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MB,shouldAlert:True
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MiB,shouldAlert:True, name:tokenSpeed,unit:tokens/s,shouldAlert:True,lowerIsBetter:False, name:charactersSpeed,unit:chars/s,shouldAlert:True,lowerIsBetter:False
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
@@ -428,7 +428,7 @@ browser_ml_suggest_feature_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MB,shouldAlert:True
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MiB,shouldAlert:True
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
@@ -464,7 +464,7 @@ browser_ml_summarizer_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MB,shouldAlert:True
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MiB,shouldAlert:True, name:tokenSpeed,unit:tokens/s,shouldAlert:True,lowerIsBetter:False, name:charactersSpeed,unit:chars/s,shouldAlert:True,lowerIsBetter:False
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
@@ -482,7 +482,7 @@ browser_ml_engine_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MB,shouldAlert:True
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MiB,shouldAlert:True, name:tokenSpeed,unit:tokens/s,shouldAlert:True,lowerIsBetter:False, name:charactersSpeed,unit:chars/s,shouldAlert:True,lowerIsBetter:False
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
@@ -500,7 +500,7 @@ browser_ml_engine_multi_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MB,shouldAlert:True
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MiB,shouldAlert:True
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome

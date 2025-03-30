@@ -7,12 +7,18 @@
  * dynamically adding menubar menu items for the View -> Sidebar menu,
  * and provides APIs for sidebar extensions, etc.
  */
+
+var { ShoppingUtils } = ChromeUtils.importESModule(
+  "resource:///modules/ShoppingUtils.sys.mjs"
+);
+
 const defaultTools = {
   viewGenaiChatSidebar: "aichat",
   viewReviewCheckerSidebar: "reviewchecker",
   viewTabsSidebar: "syncedtabs",
   viewHistorySidebar: "history",
   viewBookmarksSidebar: "bookmarks",
+  viewCPMSidebar: "passwords",
 };
 
 var SidebarController = {
@@ -172,26 +178,26 @@ var SidebarController = {
       );
     }
 
-    if (!this.sidebarRevampEnabled) {
-      this.registerPrefSidebar(
-        "browser.contextual-password-manager.enabled",
-        "viewMegalistSidebar",
-        {
-          elementId: "sidebar-switcher-megalist",
-          url: "chrome://global/content/megalist/megalist.html",
-          menuId: "menu_megalistSidebar",
-          menuL10nId: "menu-view-megalist-sidebar",
-          revampL10nId: "sidebar-menu-megalist",
-        }
-      );
-    } else {
-      this._sidebars.set("viewCustomizeSidebar", {
-        url: "chrome://browser/content/sidebar/sidebar-customize.html",
-        revampL10nId: "sidebar-menu-customize-label",
-        iconUrl: "chrome://global/skin/icons/settings.svg",
-        gleanEvent: Glean.sidebarCustomize.panelToggle,
-      });
-    }
+    this.registerPrefSidebar(
+      "browser.contextual-password-manager.enabled",
+      "viewCPMSidebar",
+      {
+        elementId: "sidebar-switcher-megalist",
+        url: "chrome://global/content/megalist/megalist.html",
+        menuId: "menu_megalistSidebar",
+        menuL10nId: "menu-view-contextual-password-manager",
+        revampL10nId: "sidebar-menu-contextual-password-manager-label",
+        iconUrl: "chrome://browser/skin/login.svg",
+        gleanEvent: Glean.contextualManager.sidebarToggle,
+      }
+    );
+
+    this._sidebars.set("viewCustomizeSidebar", {
+      url: "chrome://browser/content/sidebar/sidebar-customize.html",
+      revampL10nId: "sidebar-menu-customize-label",
+      iconUrl: "chrome://global/skin/icons/settings.svg",
+      gleanEvent: Glean.sidebarCustomize.panelToggle,
+    });
 
     return this._sidebars;
   },
@@ -291,6 +297,20 @@ var SidebarController = {
       this._sidebarMain = document.querySelector("sidebar-main");
     }
     return this._sidebarMain;
+  },
+
+  get sidebarWrapper() {
+    if (!this._sidebarWrapper) {
+      this._sidebarWrapper = document.getElementById("sidebar-wrapper");
+    }
+    return this._sidebarWrapper;
+  },
+
+  get contentArea() {
+    if (!this._contentArea) {
+      this._contentArea = document.getElementById("tabbrowser-tabbox");
+    }
+    return this._contentArea;
   },
 
   get toolbarButton() {
@@ -437,7 +457,11 @@ var SidebarController = {
       // UI state at this point, load the backup state. (Do not load the backup
       // state if this is a popup, or we are coming from a window of a different
       // privacy level.)
-      if (!this.uiStateInitialized && !isPopup && windowPrivacyMatches) {
+      if (
+        !this.uiStateInitialized &&
+        !isPopup &&
+        (this.sidebarRevampEnabled || windowPrivacyMatches)
+      ) {
         const backupState = this.SidebarManager.getBackupState();
         this.initializeUIState(backupState);
       }
@@ -495,6 +519,9 @@ var SidebarController = {
     if (this.isLauncherDragging) {
       this._state.launcherDragActive = true;
     }
+    if (this._state.visibilitySetting === "expand-on-hover") {
+      this.setLauncherInlineMargin();
+    }
   },
 
   getUIState() {
@@ -522,7 +549,10 @@ var SidebarController = {
       delete state.command;
     }
     await this.promiseInitialized;
+    await this.waitUntilStable(); // Finish currently scheduled tasks.
     this._state.loadInitialState(state);
+    await this.waitUntilStable(); // Finish newly scheduled tasks.
+    this.updateToolbarButton();
     this.uiStateInitialized = true;
   },
 
@@ -668,6 +698,9 @@ var SidebarController = {
    */
   reversePosition() {
     Services.prefs.setBoolPref(this.POSITION_START_PREF, !this._positionStart);
+    if (this.sidebarRevampVisibility === "expand-on-hover") {
+      this.setLauncherInlineMargin();
+    }
   },
 
   /**
@@ -676,37 +709,78 @@ var SidebarController = {
    */
   setPosition() {
     // First reset all ordinals to match DOM ordering.
-    let browser = document.getElementById("browser");
-    [...browser.children].forEach((node, i) => {
-      node.style.order = i + 1;
-    });
+    let contentArea = document.getElementById("tabbrowser-tabbox");
+    if (this.sidebarRevampVisibility !== "expand-on-hover") {
+      let flattenedSidebarEls = [...this.sidebarWrapper.children, contentArea];
+      flattenedSidebarEls.forEach((node, i) => {
+        if (node.id !== "sidebar-wrapper") {
+          node.style.order = i + 1;
+        }
+      });
+    } else {
+      let browser = document.getElementById("browser");
+      [...browser.children].forEach((node, i) => {
+        node.style.order = i + 1;
+      });
+      [...this.sidebarWrapper.children].forEach((node, i) => {
+        node.style.order = i + 1;
+      });
+    }
     let sidebarContainer = document.getElementById("sidebar-main");
     let sidebarMain = document.querySelector("sidebar-main");
     if (!this._positionStart) {
-      // DOM ordering is:     sidebar-main |  launcher-splitter | sidebar-box  | splitter | tabbrowser-tabbox |
-      // Want to display as:  |   tabbrowser-tabbox  | splitter |  sidebar-box  | launcher-splitter | sidebar-main
-      // So we just swap box and tabbrowser-tabbox ordering and move sidebar-main to the end
-      let tabbox = document.getElementById("tabbrowser-tabbox");
-      let boxOrdinal = this._box.style.order;
-      this._box.style.order = tabbox.style.order;
+      // DOM ordering is:     sidebar-main | launcher-splitter | sidebar-box | splitter | after-splitter | tabbrowser-tabbox
+      // Want to display as:  tabbrowser-tabbox | after-splitter |  splitter |  sidebar-box  | launcher-splitter | sidebar-main
+      if (this.sidebarRevampVisibility === "expand-on-hover") {
+        // First switch order of sidebar-wrapper and tabbrowser-tabbox
+        let wrapperOrdinal = this.sidebarWrapper.style.order;
+        this.sidebarWrapper.style.order = contentArea.style.order;
+        contentArea.style.order = wrapperOrdinal;
 
-      tabbox.style.order = boxOrdinal;
-      const launcherSplitterOrdinal = parseInt(this._box.style.order) + 1;
-      this._launcherSplitter.style.order = launcherSplitterOrdinal;
-      // the launcher should be on the right of the launcher-splitter
-      sidebarContainer.style.order = launcherSplitterOrdinal + 1;
+        // Next swap sidebar-main and after-splitter
+        let afterSplitter = document.getElementById("after-splitter");
+        let mainOrdinal = parseInt(this.sidebarContainer.style.order);
+        this.sidebarContainer.style.order = parseInt(afterSplitter.style.order);
+        afterSplitter.style.order = mainOrdinal;
+
+        // Then swap launcher-splitter and splitter
+        const launcherSplitterOrdinal = parseInt(
+          this._launcherSplitter.style.order
+        );
+        this._launcherSplitter.style.order = parseInt(
+          this._splitter.style.order
+        );
+        this._splitter.style.order = launcherSplitterOrdinal;
+      } else {
+        // First switch order of sidebar-main and tabbrowser-tabbox
+        let mainOrdinal = this.sidebarContainer.style.order;
+        this.sidebarContainer.style.order = parseInt(contentArea.style.order);
+        contentArea.style.order = mainOrdinal;
+        // Then swap launcher-splitter and after-splitter
+        let afterSplitter = document.getElementById("after-splitter");
+        let afterSplitterOrdinal = afterSplitter.style.order;
+        afterSplitter.style.order = this._launcherSplitter.style.order;
+        this._launcherSplitter.style.order = afterSplitterOrdinal;
+        // Last swap splitter and sidebar-box
+        let splitterOrdinal = this._splitter.style.order;
+        this._splitter.style.order = this._box.style.order;
+        this._box.style.order = splitterOrdinal;
+      }
+
       // Indicate we've switched ordering to the box
       this._box.toggleAttribute("positionend", true);
       sidebarMain.toggleAttribute("positionend", true);
       sidebarContainer.toggleAttribute("positionend", true);
       this.toolbarButton &&
         this.toolbarButton.toggleAttribute("positionend", true);
+      this.sidebarWrapper.toggleAttribute("positionend", true);
     } else {
       this._box.toggleAttribute("positionend", false);
       sidebarMain.toggleAttribute("positionend", false);
       sidebarContainer.toggleAttribute("positionend", false);
       this.toolbarButton &&
         this.toolbarButton.toggleAttribute("positionend", false);
+      this.sidebarWrapper.toggleAttribute("positionend", false);
     }
 
     this.hideSwitcherPanel();
@@ -816,7 +890,8 @@ var SidebarController = {
       if (
         sourceWindow.closed ||
         sourceWindow.location.protocol != "chrome:" ||
-        !this.windowPrivacyMatches(sourceWindow, window)
+        (!this.sidebarRevampEnabled &&
+          !this.windowPrivacyMatches(sourceWindow, window))
       ) {
         return;
       }
@@ -887,7 +962,7 @@ var SidebarController = {
    * True if the sidebar is currently open.
    */
   get isOpen() {
-    return !this._box.hidden;
+    return this._box ? !this._box.hidden : false;
   },
 
   /**
@@ -955,14 +1030,45 @@ var SidebarController = {
     return this.show(commandID, triggerNode);
   },
 
+  _getRects(animatingElements) {
+    return animatingElements.map(e => [
+      e.hidden,
+      e.getBoundingClientRect().toJSON(),
+    ]);
+  },
+
+  async _waitForOngoingAnimations() {
+    // Wait for any ongoing animations to finish
+    return new Promise(resolve => {
+      if (!this._ongoingAnimations.length) {
+        resolve();
+      }
+    });
+  },
+
+  /**
+   * Wait for Lit updates and ongoing animations to complete.
+   *
+   * @returns {Promise}
+   */
+  async waitUntilStable() {
+    if (!this.sidebarRevampEnabled) {
+      // Legacy sidebar doesn't have animations, nothing to await.
+      return null;
+    }
+    const tasks = [
+      this.sidebarMain.updateComplete,
+      ...this._ongoingAnimations.map(animation => animation.finished),
+    ];
+    return Promise.allSettled(tasks);
+  },
+
   async _animateSidebarMain() {
     let tabbox = document.getElementById("tabbrowser-tabbox");
-    let animatingElements = [
-      this.sidebarContainer,
-      this._box,
-      this._splitter,
-      tabbox,
-    ];
+    let animatingElements = [this.sidebarContainer, this._box, this._splitter];
+    if (this.sidebarRevampVisibility !== "expand-on-hover") {
+      animatingElements.push(tabbox);
+    }
     let resetElements = () => {
       for (let el of animatingElements) {
         el.style.minWidth =
@@ -972,30 +1078,29 @@ var SidebarController = {
           el.style.display =
             "";
       }
+      this.sidebarWrapper.classList.remove("ongoing-animations");
     };
     if (this._ongoingAnimations.length) {
       this._ongoingAnimations.forEach(a => a.cancel());
       this._ongoingAnimations = [];
       resetElements();
     }
-    let getRects = () => {
-      return animatingElements.map(e => [
-        e.hidden,
-        e.getBoundingClientRect().toJSON(),
-      ]);
-    };
-    let fromRects = getRects();
+
+    let fromRects = this._getRects(animatingElements);
 
     // We need to wait for rAF for lit to re-render, and us to get the final
     // width. This is a bit unfortunate but alas...
     let toRects = await new Promise(resolve => {
       requestAnimationFrame(() => {
-        resolve(getRects());
+        resolve(this._getRects(animatingElements));
       });
     });
 
     const options = {
-      duration: this._animationDurationMs,
+      duration:
+        this.sidebarRevampVisibility === "expand-on-hover"
+          ? this._animationExpandOnHoverDurationMs
+          : this._animationDurationMs,
       easing: "ease-in-out",
     };
     let animations = [];
@@ -1039,6 +1144,7 @@ var SidebarController = {
       if (isHidden && !wasHidden) {
         el.style.display = "flex";
       }
+
       if (widthGrowth < 0) {
         el.style.minWidth = el.style.maxWidth = from.width + "px";
         el.style["margin-" + (sidebarOnLeft ? "right" : "left")] =
@@ -1058,6 +1164,7 @@ var SidebarController = {
       } else if (isSidebar && !this._positionStart) {
         fromTranslate += sidebarOnLeft ? -widthGrowth : widthGrowth;
       }
+
       animations.push(
         el.animate(
           [
@@ -1080,6 +1187,7 @@ var SidebarController = {
       );
     }
     this._ongoingAnimations = animations;
+    this.sidebarWrapper.classList.add("ongoing-animations");
     await Promise.allSettled(animations.map(a => a.finished));
     if (this._ongoingAnimations === animations) {
       this._ongoingAnimations = [];
@@ -1088,13 +1196,30 @@ var SidebarController = {
   },
 
   async handleToolbarButtonClick() {
+    let initialExpandedValue = this._state.launcherExpanded;
     if (this.inPopup || this.uninitializing) {
       return;
     }
     if (this._animationEnabled && !window.gReduceMotion) {
       this._animateSidebarMain();
     }
+
     this._state.updateVisibility(!this._state.launcherVisible, true);
+    if (this.sidebarRevampVisibility === "expand-on-hover") {
+      this.toggleExpandOnHover(initialExpandedValue);
+    }
+    this.updateToolbarButton();
+
+    if (this.lastOpenedId == "viewReviewCheckerSidebar") {
+      ShoppingUtils.sendTrigger({
+        browser: this.browser,
+        id: "sidebarButtonClicked",
+        context: {
+          isReviewCheckerInSidebarClosed: !this?.isOpen,
+          isSidebarVisible: this._state?.launcherVisible,
+        },
+      });
+    }
   },
 
   /**
@@ -1111,13 +1236,17 @@ var SidebarController = {
       let sidebarToggleKey = document.getElementById("toggleSidebarKb");
       const shortcut = ShortcutUtils.prettifyShortcut(sidebarToggleKey);
       toolbarButton.dataset.l10nArgs = JSON.stringify({ shortcut });
-      if (this.sidebarVerticalTabsEnabled) {
+      // we need to use the pref rather than SidebarController's getter here
+      // as the getter might not have the new value yet
+      const isVerticalTabs = Services.prefs.getBoolPref("sidebar.verticalTabs");
+      if (isVerticalTabs) {
         toolbarButton.toggleAttribute("expanded", this.sidebarMain.expanded);
       } else {
         toolbarButton.toggleAttribute("expanded", false);
       }
       switch (this.sidebarRevampVisibility) {
         case "always-show":
+        case "expand-on-hover":
           // Toolbar button controls expanded state.
           toolbarButton.checked = this.sidebarMain.expanded;
           toolbarButton.dataset.l10nId = toolbarButton.checked
@@ -1762,15 +1891,104 @@ var SidebarController = {
     this.sidebarMain.requestUpdate();
   },
 
+  onMouseOver() {
+    SidebarController._state.launcherHoverActive = true;
+    SidebarController.sidebarMain.addEventListener(
+      "mouseout",
+      SidebarController.onMouseOut,
+      { once: true }
+    );
+    if (SidebarController._animationEnabled && !window.gReduceMotion) {
+      SidebarController._animateSidebarMain();
+    }
+    SidebarController._state.updateVisibility(true, false, false, true);
+    SidebarController.sidebarMain.removeEventListener(
+      "mouseover",
+      SidebarController.onMouseOver
+    );
+  },
+
+  onMouseOut() {
+    SidebarController._state.launcherHoverActive = false;
+    SidebarController.sidebarMain.addEventListener(
+      "mouseover",
+      SidebarController.onMouseOver,
+      { once: true }
+    );
+    if (SidebarController._animationEnabled && !window.gReduceMotion) {
+      SidebarController._animateSidebarMain();
+    }
+    SidebarController._state.updateVisibility(true, false, false, false);
+    SidebarController.sidebarMain.removeEventListener(
+      "mouseout",
+      SidebarController.onMouseOut
+    );
+  },
+
+  async setLauncherInlineMargin() {
+    let collapsedWidth;
+    if (this._state.launcherExpanded) {
+      this._state.launcherExpanded = false;
+      await this.sidebarMain.updateComplete;
+      collapsedWidth = await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          resolve(this._getRects([this.sidebarMain])[0][1].width);
+        });
+      });
+    } else {
+      collapsedWidth = this._getRects([this.sidebarMain])[0][1].width;
+    }
+
+    this._state.collapsedLauncherWidth = collapsedWidth;
+
+    // Make sure sidebar doesn't overlay content area outline
+    const CONTENT_AREA_OUTLINE_WIDTH = 1;
+
+    if (this._positionStart) {
+      this.contentArea.style.marginInlineStart = `${this._state.collapsedLauncherWidth + CONTENT_AREA_OUTLINE_WIDTH}px`;
+      this.contentArea.style.marginInlineEnd = "";
+    } else {
+      this.contentArea.style.marginInlineEnd = `${this._state.collapsedLauncherWidth + CONTENT_AREA_OUTLINE_WIDTH}px`;
+      this.contentArea.style.marginInlineStart = "";
+    }
+  },
+
+  async toggleExpandOnHover(isEnabled) {
+    this.setPosition();
+    if (isEnabled) {
+      this.sidebarWrapper.classList.add("expandOnHover");
+      if (!this._state) {
+        this._state = new this.SidebarState(this);
+      }
+
+      await this.sidebarMain.updateComplete;
+      await this._waitForOngoingAnimations();
+      await this.setLauncherInlineMargin();
+
+      this.sidebarMain.addEventListener("mouseover", this.onMouseOver, {
+        once: true,
+      });
+    } else {
+      this.sidebarWrapper.classList.remove("expandOnHover");
+      this.sidebarMain.removeEventListener("mouseover", this.onMouseOver);
+      this.contentArea.style.marginInlineStart = "";
+      this.contentArea.style.marginInlineEnd = "";
+    }
+  },
+
   /**
    * Report visibility preference to Glean.
    *
    * @param {string} [value] - The preference value.
    */
   recordVisibilitySetting(value = this.sidebarRevampVisibility) {
-    Glean.sidebar.displaySettings.set(
-      value === "always-show" ? "always" : "hide"
-    );
+    let visibilitySetting = "hide";
+    if (value === "always-show") {
+      visibilitySetting = "always";
+    } else if (value === "expand-on-hover") {
+      visibilitySetting = "expand-on-hover";
+    }
+    Glean.sidebar.displaySettings.set(visibilitySetting);
   },
 
   /**
@@ -1825,6 +2043,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
+  "_animationExpandOnHoverDurationMs",
+  "sidebar.animation.expand-on-hover.duration-ms",
+  400
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
   "sidebarRevampEnabled",
   "sidebar.revamp",
   false,
@@ -1846,6 +2070,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
     }
   }
 );
+
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
   "sidebarRevampVisibility",
@@ -1853,20 +2078,38 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "always-show",
   (_aPreference, _previousValue, newValue) => {
     if (!SidebarController.inPopup && !SidebarController.uninitializing) {
+      SidebarController.toggleExpandOnHover(newValue === "expand-on-hover");
       SidebarController.recordVisibilitySetting(newValue);
-      SidebarController._state.revampVisibility = newValue;
-      if (SidebarController._animationEnabled && !window.gReduceMotion) {
-        SidebarController._animateSidebarMain();
+      if (SidebarController._state) {
+        // we need to use the pref rather than SidebarController's getter here
+        // as the getter might not have the new value yet
+        const isVerticalTabs = Services.prefs.getBoolPref(
+          "sidebar.verticalTabs"
+        );
+        SidebarController._state.revampVisibility = newValue;
+        if (
+          SidebarController._animationEnabled &&
+          !window.gReduceMotion &&
+          newValue !== "expand-on-hover"
+        ) {
+          SidebarController._animateSidebarMain();
+        }
+        const forceExpand = isVerticalTabs && newValue === "always-show";
+
+        // horizontal tabs and hide-sidebar = visible initially.
+        // vertical tab and hide-sidebar = not visible initally.
+        SidebarController._state.updateVisibility(
+          (newValue != "hide-sidebar" && isVerticalTabs) || !isVerticalTabs,
+          false,
+          false,
+          forceExpand
+        );
       }
-      SidebarController._state.updateVisibility(
-        (newValue != "hide-sidebar" &&
-          SidebarController.sidebarVerticalTabsEnabled) ||
-          !SidebarController.sidebarVerticalTabsEnabled
-      );
       SidebarController.updateToolbarButton();
     }
   }
 );
+
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
   "sidebarVerticalTabsEnabled",
@@ -1875,10 +2118,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   (_aPreference, _previousValue, newValue) => {
     if (!SidebarController.uninitializing && !SidebarController.inPopup) {
       SidebarController.recordTabsLayoutSetting(newValue);
-      Services.prefs.setStringPref(
-        SidebarController.VISIBILITY_PREF,
-        newValue ? "always-show" : "hide-sidebar"
-      );
     }
   }
 );

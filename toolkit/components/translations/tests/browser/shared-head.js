@@ -16,6 +16,17 @@ const { TranslationsUtils } = ChromeUtils.importESModule(
   "chrome://global/content/translations/TranslationsUtils.mjs"
 );
 
+// This is a bit silly, but ml/tests/browser/head.js relies on this function:
+// https://searchfox.org/mozilla-central/rev/14f68f084d6a3bc438a3f973ed81d3a4dbab9629/toolkit/components/ml/tests/browser/head.js#23-25
+//
+// And it also pulls in the entirety of this file.
+// https://searchfox.org/mozilla-central/rev/14f68f084d6a3bc438a3f973ed81d3a4dbab9629/toolkit/components/ml/tests/browser/head.js#41-46
+//
+// So we can't have a naming conflict of a variable defined twice like this.
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1949530
+const { getInferenceProcessInfo: fetchInferenceProcessInfo } =
+  ChromeUtils.importESModule("chrome://global/content/ml/Utils.sys.mjs");
+
 // Avoid about:blank's non-standard behavior.
 const BLANK_PAGE =
   "data:text/html;charset=utf-8,<!DOCTYPE html><title>Blank</title>Blank page";
@@ -24,26 +35,34 @@ const URL_COM_PREFIX = "https://example.com/browser/";
 const URL_ORG_PREFIX = "https://example.org/browser/";
 const CHROME_URL_PREFIX = "chrome://mochitests/content/browser/";
 const DIR_PATH = "toolkit/components/translations/tests/browser/";
-const ENGLISH_PAGE_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-tester-en.html";
-const SPANISH_PAGE_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-tester-es.html";
-const FRENCH_PAGE_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-tester-fr.html";
-const SPANISH_PAGE_URL_2 =
-  URL_COM_PREFIX + DIR_PATH + "translations-tester-es-2.html";
+
+/**
+ * Use a utility function to make this easier to read.
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+function _url(path) {
+  return URL_COM_PREFIX + DIR_PATH + path;
+}
+
+const SPANISH_PAGE_URL = _url("translations-tester-es.html");
+const SPANISH_PAGE_URL_2 = _url("translations-tester-es-2.html");
+const SPANISH_PAGE_SHORT_URL = _url("translations-tester-es-short.html");
+const SPANISH_PAGE_MISMATCH_URL = _url("translations-tester-es-mismatch.html");
+const SPANISH_PAGE_MISMATCH_SHORT_URL = _url("translations-tester-es-mismatch-short.html"); // prettier-ignore
+const SPANISH_PAGE_UNDECLARED_URL = _url("translations-tester-es-undeclared.html"); // prettier-ignore
+const SPANISH_PAGE_UNDECLARED_SHORT_URL = _url("translations-tester-es-undeclared-short.html"); // prettier-ignore
+const ENGLISH_PAGE_URL = _url("translations-tester-en.html");
+const FRENCH_PAGE_URL = _url("translations-tester-fr.html");
+const NO_LANGUAGE_URL = _url("translations-tester-no-tag.html");
+const PDF_TEST_PAGE_URL = _url("translations-tester-pdf-file.pdf");
+const SELECT_TEST_PAGE_URL = _url("translations-tester-select.html");
+const TEXT_CLEANING_URL = _url("translations-text-cleaning.html");
+const SPANISH_BENCHMARK_PAGE_URL = _url("translations-bencher-es.html");
+
 const SPANISH_PAGE_URL_DOT_ORG =
   URL_ORG_PREFIX + DIR_PATH + "translations-tester-es.html";
-const NO_LANGUAGE_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-tester-no-tag.html";
-const PDF_TEST_PAGE_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-tester-pdf-file.pdf";
-const SELECT_TEST_PAGE_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-tester-select.html";
-const TEXT_CLEANING_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-text-cleaning.html";
-const SPANISH_BENCHMARK_PAGE_URL =
-  URL_COM_PREFIX + DIR_PATH + "translations-bencher-es.html";
 
 const PIVOT_LANGUAGE = "en";
 const LANGUAGE_PAIRS = [
@@ -1848,21 +1867,21 @@ async function testWithAndWithoutLexicalShortlist(callback) {
 }
 
 /**
- * Waits for the "translations:pref-changed" observer event to occur.
+ * Waits for the "translations:model-records-changed" observer event to occur.
  *
  * @param {Function} [callback]
  *   - An optional function to execute before waiting for the "translations:pref-changed" observer event.
  * @returns {Promise<void>}
- *   - A promise that resolves when the "translations:pref-changed" event is observed.
+ *   - A promise that resolves when the "translations:model-records-changed" event is observed.
  */
-async function waitForTranslationsPrefChanged(callback) {
+async function waitForTranslationModelRecordsChanged(callback) {
   const { promise, resolve } = Promise.withResolvers();
 
   function onChange() {
-    Services.obs.removeObserver(onChange, "translations:pref-changed");
+    Services.obs.removeObserver(onChange, "translations:model-records-changed");
     resolve();
   }
-  Services.obs.addObserver(onChange, "translations:pref-changed");
+  Services.obs.addObserver(onChange, "translations:model-records-changed");
 
   if (callback) {
     await callback();

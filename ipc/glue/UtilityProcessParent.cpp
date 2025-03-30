@@ -155,7 +155,8 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
 #endif
     }
 
-    GenerateCrashReport(OtherPid(), &dumpID);
+    GenerateCrashReport(&dumpID);
+
 #endif
     // It's okay for dumpID to be empty if there was no minidump generated
     // tests like ipc/glue/test/browser/browser_utility_crashReporter.js are

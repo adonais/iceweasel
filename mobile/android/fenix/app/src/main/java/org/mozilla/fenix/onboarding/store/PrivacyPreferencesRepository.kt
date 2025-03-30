@@ -4,132 +4,60 @@
 
 package org.mozilla.fenix.onboarding.store
 
-import android.content.Context
-import android.content.SharedPreferences
-import androidx.annotation.StringRes
-import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
-import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
-import org.mozilla.fenix.settings.registerOnSharedPreferenceChangeListener
+import org.mozilla.fenix.utils.Settings
 
 /**
- * Cache for accessing any settings related to privacy preferences.
+ * The repository for managing user privacy preferences set during onboarding.
  */
 interface PrivacyPreferencesRepository {
 
     /**
-     * Enum for all privacy preference keys.
+     * Retrieves the state of a specific preference.
+     *
+     * @param type The type of preference to retrieve.
+     * @return Returns `true` if the preference is enabled.
      */
-    enum class PrivacyPreference(@StringRes val preferenceKey: Int) {
-        CrashReporting(preferenceKey = R.string.pref_key_crash_reporting_always_report),
-        UsageData(preferenceKey = R.string.pref_key_telemetry),
-    }
+    fun getPreference(type: PreferenceType): Boolean
 
     /**
-     * An update to a [PrivacyPreference].
+     * Updates a specific preference.
+     *
+     * @param type The type of preference to modify.
+     * @param enabled The new state of the preference.
      */
-    data class PrivacyPreferenceUpdate(val preferenceType: PrivacyPreference, val value: Boolean)
-
-    /**
-     * A [Flow] of [PrivacyPreferenceUpdate]s.
-     */
-    val privacyPreferenceUpdates: Flow<PrivacyPreferenceUpdate>
-
-    /**
-     * Initializes the repository and starts the [SharedPreferences] listener.
-     */
-    fun init()
-
-    /**
-     * Update [PrivacyPreferenceUpdate.preferenceType] with [PrivacyPreferenceUpdate.value].
-     */
-    fun updatePrivacyPreference(preferenceUpdate: PrivacyPreferenceUpdate)
+    fun setPreference(type: PreferenceType, enabled: Boolean)
 }
 
 /**
- * Default implementation of [PrivacyPreferencesRepository].
+ * Enum representing the types of privacy preferences available.
+ */
+enum class PreferenceType {
+    CrashReporting, UsageData,
+}
+
+/**
+ * The default implementation of [PrivacyPreferencesRepository].
  *
- * @param context the application context.
- * @param lifecycleOwner the lifecycle owner used for the SharedPreferences API.
- * @param coroutineScope the coroutine scope used for emitting flows.
+ * @param settings The [Settings] instance for accessing and modifying privacy-related settings.
  */
 class DefaultPrivacyPreferencesRepository(
-    private val context: Context,
-    private val lifecycleOwner: LifecycleOwner,
-    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
+    private val settings: Settings,
 ) : PrivacyPreferencesRepository {
-    private val settings = context.settings()
-    private val _privacyPreferenceUpdates =
-        MutableSharedFlow<PrivacyPreferencesRepository.PrivacyPreferenceUpdate>()
 
-    private fun emitPreferenceUpdate(
-        privacyPreferenceUpdate: PrivacyPreferencesRepository.PrivacyPreferenceUpdate,
-    ) = coroutineScope.launch { _privacyPreferenceUpdates.emit(privacyPreferenceUpdate) }
-
-    override val privacyPreferenceUpdates: Flow<PrivacyPreferencesRepository.PrivacyPreferenceUpdate>
-        get() = _privacyPreferenceUpdates.asSharedFlow()
-
-    override fun init() {
-        PrivacyPreferencesRepository.PrivacyPreference.entries.forEach { preference ->
-            val initialPreferences = when (preference) {
-                PrivacyPreferencesRepository.PrivacyPreference.CrashReporting ->
-                    settings.crashReportAlwaysSend
-
-                PrivacyPreferencesRepository.PrivacyPreference.UsageData ->
-                    settings.isTelemetryEnabled
-            }
-
-            emitPreferenceUpdate(
-                PrivacyPreferencesRepository.PrivacyPreferenceUpdate(
-                    preferenceType = preference,
-                    value = initialPreferences,
-                ),
-            )
-
-            startListener()
+    override fun getPreference(type: PreferenceType): Boolean {
+        return when (type) {
+            PreferenceType.CrashReporting -> settings.crashReportAlwaysSend
+            PreferenceType.UsageData -> settings.isTelemetryEnabled
         }
     }
 
-    private fun startListener() {
-        settings.preferences
-            .registerOnSharedPreferenceChangeListener(owner = lifecycleOwner) { sharedPreferences, key ->
-                onPreferenceChange(sharedPreferences = sharedPreferences, key = key)
-            }
-    }
-
-    @VisibleForTesting
-    internal fun onPreferenceChange(
-        sharedPreferences: SharedPreferences,
-        key: String?,
+    override fun setPreference(
+        type: PreferenceType,
+        enabled: Boolean,
     ) {
-        val preferenceType = PrivacyPreferencesRepository.PrivacyPreference.entries.find {
-            context.getString(it.preferenceKey) == key
-        } ?: return
-
-        val privacyPreference = sharedPreferences.getBoolean(key, false)
-
-        emitPreferenceUpdate(
-            PrivacyPreferencesRepository.PrivacyPreferenceUpdate(
-                preferenceType = preferenceType,
-                value = privacyPreference,
-            ),
-        )
-    }
-
-    override fun updatePrivacyPreference(preferenceUpdate: PrivacyPreferencesRepository.PrivacyPreferenceUpdate) {
-        when (preferenceUpdate.preferenceType) {
-            PrivacyPreferencesRepository.PrivacyPreference.CrashReporting ->
-                settings.crashReportAlwaysSend = preferenceUpdate.value
-
-            PrivacyPreferencesRepository.PrivacyPreference.UsageData ->
-                settings.isTelemetryEnabled = preferenceUpdate.value
+        when (type) {
+            PreferenceType.CrashReporting -> settings.crashReportAlwaysSend = enabled
+            PreferenceType.UsageData -> settings.isTelemetryEnabled = enabled
         }
     }
 }

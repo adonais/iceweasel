@@ -415,7 +415,7 @@ index 178aeb8b66..8db74fde2d 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 6ce4327475..25cc708c67 100644
+index 8f37af0be1..179d4c7efb 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -744,7 +744,7 @@ index 3745e9cba5..f68cfb94c1 100644
        device_names->push_back(rtc::ToUtf8(device.DeviceName));
      }
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index 51ace1cf75..051d77c4f7 100644
+index 8b8b88cb27..a59bae521d 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
 @@ -211,7 +211,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
@@ -807,10 +807,10 @@ index 46c82180eb..bb035729f8 100644
  //
  // E.g. default video or screenshare.
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.h b/modules/rtp_rtcp/source/rtp_header_extensions.h
-index b8495f4ba6..ed816caa10 100644
+index eb35da45c0..5b5c7c1e50 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.h
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.h
-@@ -308,6 +308,21 @@ class ColorSpaceExtension {
+@@ -310,6 +310,21 @@ class ColorSpaceExtension {
    static size_t WriteLuminance(uint8_t* data, float f, int denominator);
  };
  
@@ -848,7 +848,7 @@ index 19372880b2..3192c27a49 100644
    }
  }
 diff --git a/modules/rtp_rtcp/source/rtp_packet_unittest.cc b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
-index 5f9544dcab..7c2b93e219 100644
+index 689a5fc2e7..2cb8370f99 100644
 --- a/modules/rtp_rtcp/source/rtp_packet_unittest.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
 @@ -123,6 +123,18 @@ constexpr uint8_t kPacketWithMid[] = {
@@ -916,7 +916,7 @@ index 0b87d6d065..d69ae9420b 100644
  }  // namespace webrtc
  
 diff --git a/modules/rtp_rtcp/source/rtp_sender.cc b/modules/rtp_rtcp/source/rtp_sender.cc
-index c467cb76fd..9ff0c56253 100644
+index 7739631edd..01de2fdabc 100644
 --- a/modules/rtp_rtcp/source/rtp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtp_sender.cc
 @@ -140,6 +140,10 @@ bool IsNonVolatile(RTPExtensionType type) {
@@ -931,7 +931,7 @@ index c467cb76fd..9ff0c56253 100644
    RTC_CHECK_NOTREACHED();
  }
 diff --git a/modules/video_capture/device_info_impl.cc b/modules/video_capture/device_info_impl.cc
-index ff32a78580..7cccdb51a7 100644
+index d55ea6dcce..82f8a2db81 100644
 --- a/modules/video_capture/device_info_impl.cc
 +++ b/modules/video_capture/device_info_impl.cc
 @@ -65,7 +65,7 @@ int32_t DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
@@ -1289,13 +1289,13 @@ index 48920b27c0..f31b239c71 100644
  
    // Returns the name of the device used by this module.
 diff --git a/modules/video_capture/video_capture_factory.cc b/modules/video_capture/video_capture_factory.cc
-index 563ef5abd2..e085ac2df8 100644
+index e4afdb4164..127bb06a2e 100644
 --- a/modules/video_capture/video_capture_factory.cc
 +++ b/modules/video_capture/video_capture_factory.cc
 @@ -16,11 +16,7 @@ namespace webrtc {
  
  rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
-     const char* deviceUniqueIdUTF8) {
+     [[maybe_unused]] const char* deviceUniqueIdUTF8) {
 -#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
 -  return nullptr;
 -#else
@@ -1424,7 +1424,7 @@ index 5ec1fd4a83..e46e050609 100644
  
    int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-index b3aff7a17b..4defd80355 100644
+index c558f9262d..8b2e3fe295 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 @@ -282,6 +282,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
@@ -1530,10 +1530,10 @@ index 0073380520..c2dc03efda 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index e772028b9a..d6a9de35f5 100644
+index 0cd28c73e9..d0d90bbb3e 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -446,6 +446,12 @@ rtc_library("logging") {
+@@ -442,6 +442,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1593,10 +1593,10 @@ index f0461f79e9..adf6deffa9 100644
  // The list of logging streams currently configured.
  // Note: we explicitly do not clean this up, because of the uncertain ordering
 diff --git a/rtc_base/logging.h b/rtc_base/logging.h
-index 6d5a4bebcf..4b5a99f14e 100644
+index 8131102944..3ac4edb454 100644
 --- a/rtc_base/logging.h
 +++ b/rtc_base/logging.h
-@@ -555,6 +555,12 @@ class LogMessage {
+@@ -556,6 +556,12 @@ class LogMessage {
    }
  #endif  // RTC_LOG_ENABLED()
  
@@ -1609,7 +1609,7 @@ index 6d5a4bebcf..4b5a99f14e 100644
   private:
    friend class LogMessageForTesting;
  
-@@ -610,6 +616,9 @@ class LogMessage {
+@@ -611,6 +617,9 @@ class LogMessage {
  
    // The stringbuilder that buffers the formatted message before output
    rtc::StringBuilder print_stream_;
@@ -1648,7 +1648,7 @@ index 0a9226ef6f..620c1c02f3 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 6a09451900..b4f0cad7ab 100644
+index ec67d534eb..8c1aeab911 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -123,7 +123,7 @@ declare_args() {

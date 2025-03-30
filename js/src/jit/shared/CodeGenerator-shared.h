@@ -381,7 +381,7 @@ class CodeGeneratorShared : public LElementVisitor {
   void jumpToBlock(MBasicBlock* mir);
 
 // This function is not used for MIPS. MIPS has branchToBlock.
-#if !defined(JS_CODEGEN_MIPS32) && !defined(JS_CODEGEN_MIPS64)
+#if !defined(JS_CODEGEN_MIPS64)
   void jumpToBlock(MBasicBlock* mir, Assembler::Condition cond);
 #endif
 
@@ -420,6 +420,19 @@ class OutOfLineCode : public TempObject,
   uint32_t framePushed() const { return framePushed_; }
   void setBytecodeSite(const BytecodeSite* site) { site_ = site; }
   const BytecodeSite* bytecodeSite() const { return site_; }
+};
+
+// An implementation of OutOfLineCode for quick and simple cases. The lambda
+// should have the signature (OutOfLineCode& ool) -> void.
+template <typename Func>
+class LambdaOutOfLineCode : public OutOfLineCode {
+  Func generateFunc_;
+
+ public:
+  explicit LambdaOutOfLineCode(Func generateFunc)
+      : generateFunc_(std::move(generateFunc)) {}
+
+  void generate(CodeGeneratorShared*) override { generateFunc_(*this); }
 };
 
 // For OOL paths that want a specific-typed code generator.

@@ -587,6 +587,18 @@
   # The flags are packed with the length in a fixed private slot.
   alias_set: custom
 
+# Guard cx->realm() == obj->realm().
+- name: GuardObjectHasSameRealm
+  operands:
+    object: Object
+  result_type: Object
+  guard: true
+  movable: true
+  congruent_to: if_operands_equal
+  # The object's realm is immutable. The context's realm must always be the same
+  # realm for this compilation.
+  alias_set: none
+
 - name: LoadScriptedProxyHandler
   operands:
     object: Object
@@ -3700,22 +3712,19 @@
 - name: WasmLoadField
   gen_boilerplate: false
 
-- name: WasmLoadFieldKA
+- name: WasmLoadElement
   gen_boilerplate: false
 
-- name: WasmLoadElementKA
+- name: WasmStoreField
   gen_boilerplate: false
 
-- name: WasmStoreFieldKA
+- name: WasmStoreFieldRef
   gen_boilerplate: false
 
-- name: WasmStoreFieldRefKA
+- name: WasmStoreElement
   gen_boilerplate: false
 
-- name: WasmStoreElementKA
-  gen_boilerplate: false
-
-- name: WasmStoreElementRefKA
+- name: WasmStoreElementRef
   gen_boilerplate: false
 
 - name: WasmRefIsSubtypeOfConcrete

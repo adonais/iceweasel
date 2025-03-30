@@ -19,8 +19,6 @@
 #  include "jit/arm/CodeGenerator-arm.h"
 #elif defined(JS_CODEGEN_ARM64)
 #  include "jit/arm64/CodeGenerator-arm64.h"
-#elif defined(JS_CODEGEN_MIPS32)
-#  include "jit/mips32/CodeGenerator-mips32.h"
 #elif defined(JS_CODEGEN_MIPS64)
 #  include "jit/mips64/CodeGenerator-mips64.h"
 #elif defined(JS_CODEGEN_LOONG64)
@@ -50,38 +48,9 @@ template <typename Fn, Fn fn, class ArgSeq, class StoreOutputTo>
 class OutOfLineCallVM;
 
 class OutOfLineTestObject;
-class OutOfLineNewArray;
-class OutOfLineNewObject;
-class CheckOverRecursedFailure;
-class OutOfLineUnboxFloatingPoint;
-class OutOfLineStoreElementHole;
-class OutOfLineTypeOfV;
-class OutOfLineTypeOfIsNonPrimitiveV;
-class OutOfLineTypeOfIsNonPrimitiveO;
-class OutOfLineUpdateCache;
 class OutOfLineICFallback;
 class OutOfLineCallPostWriteBarrier;
 class OutOfLineCallPostWriteElementBarrier;
-class OutOfLineElementPostWriteBarrier;
-class OutOfLineIsCallable;
-class OutOfLineIsConstructor;
-class OutOfLineRegExpMatcher;
-class OutOfLineRegExpSearcher;
-class OutOfLineRegExpExecMatch;
-class OutOfLineRegExpExecTest;
-class OutOfLineRegExpPrototypeOptimizable;
-class OutOfLineRegExpInstanceOptimizable;
-class OutOfLineNaNToZero;
-class OutOfLineResumableWasmTrap;
-class OutOfLineAbortingWasmTrap;
-class OutOfLineGuardNumberToIntPtrIndex;
-class OutOfLineBoxNonStrictThis;
-class OutOfLineArrayPush;
-class OutOfLineAtomizeSlot;
-class OutOfLineWasmCallPostWriteBarrierImmediate;
-class OutOfLineWasmCallPostWriteBarrierIndex;
-class OutOfLineWasmNewStruct;
-class OutOfLineWasmNewArray;
 
 class CodeGenerator final : public CodeGeneratorSpecific {
   // Warp snapshot. This is nullptr for Wasm compilations.
@@ -128,7 +97,8 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                                   size_t trapExitLayoutNumWords,
                                   wasm::FuncOffsets* offsets,
                                   wasm::StackMaps* stackMaps,
-                                  wasm::Decoder* decoder);
+                                  wasm::Decoder* decoder,
+                                  jit::IonPerfSpewer* spewer);
 
   [[nodiscard]] bool link(JSContext* cx);
 
@@ -147,32 +117,12 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void visitOutOfLineCallVM(
       OutOfLineCallVM<Fn, fn, ArgSeq, StoreOutputTo>* ool);
 
-  void visitOutOfLineRegExpMatcher(OutOfLineRegExpMatcher* ool);
-  void visitOutOfLineRegExpSearcher(OutOfLineRegExpSearcher* ool);
-  void visitOutOfLineRegExpExecMatch(OutOfLineRegExpExecMatch* ool);
-  void visitOutOfLineRegExpExecTest(OutOfLineRegExpExecTest* ool);
-  void visitOutOfLineRegExpPrototypeOptimizable(
-      OutOfLineRegExpPrototypeOptimizable* ool);
-  void visitOutOfLineRegExpInstanceOptimizable(
-      OutOfLineRegExpInstanceOptimizable* ool);
+  void emitStoreElementHoleOOL(LInstruction* lir);
+  void emitIsCallableOOL(Register object, Register output);
 
-  void visitOutOfLineTypeOfV(OutOfLineTypeOfV* ool);
-  void visitOutOfLineTypeOfIsNonPrimitiveV(OutOfLineTypeOfIsNonPrimitiveV* ool);
-  void visitOutOfLineTypeOfIsNonPrimitiveO(OutOfLineTypeOfIsNonPrimitiveO* ool);
-
-  void visitOutOfLineIsCallable(OutOfLineIsCallable* ool);
-  void visitOutOfLineIsConstructor(OutOfLineIsConstructor* ool);
-
-  void visitOutOfLineNaNToZero(OutOfLineNaNToZero* ool);
-
-  void visitOutOfLineResumableWasmTrap(OutOfLineResumableWasmTrap* ool);
-  void visitOutOfLineAbortingWasmTrap(OutOfLineAbortingWasmTrap* ool);
-  void visitCheckOverRecursedFailure(CheckOverRecursedFailure* ool);
-
-  void visitOutOfLineUnboxFloatingPoint(OutOfLineUnboxFloatingPoint* ool);
-  void visitOutOfLineStoreElementHole(OutOfLineStoreElementHole* ool);
-
-  void visitOutOfLineBoxNonStrictThis(OutOfLineBoxNonStrictThis* ool);
+  void emitResumableWasmTrapOOL(LInstruction* lir, size_t framePushed,
+                                const wasm::TrapSiteDesc& trapSiteDesc,
+                                wasm::Trap trap);
 
   void visitOutOfLineICFallback(OutOfLineICFallback* ool);
 
@@ -180,34 +130,14 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void visitOutOfLineCallPostWriteElementBarrier(
       OutOfLineCallPostWriteElementBarrier* ool);
 
-  void visitOutOfLineElementPostWriteBarrier(
-      OutOfLineElementPostWriteBarrier* ool);
-
-  void visitOutOfLineNewArray(OutOfLineNewArray* ool);
-  void visitOutOfLineNewObject(OutOfLineNewObject* ool);
-
-  void visitOutOfLineGuardNumberToIntPtrIndex(
-      OutOfLineGuardNumberToIntPtrIndex* ool);
-
-  void visitOutOfLineArrayPush(OutOfLineArrayPush* ool);
-
-  void visitOutOfLineAtomizeSlot(OutOfLineAtomizeSlot* ool);
-
-  void visitOutOfLineWasmCallPostWriteBarrierImmediate(
-      OutOfLineWasmCallPostWriteBarrierImmediate* ool);
-  void visitOutOfLineWasmCallPostWriteBarrierIndex(
-      OutOfLineWasmCallPostWriteBarrierIndex* ool);
-
   void callWasmStructAllocFun(LInstruction* lir, wasm::SymbolicAddress fun,
                               Register typeDefData, Register output,
                               const wasm::TrapSiteDesc& trapSiteDesc);
-  void visitOutOfLineWasmNewStruct(OutOfLineWasmNewStruct* ool);
 
   void callWasmArrayAllocFun(LInstruction* lir, wasm::SymbolicAddress fun,
                              Register numElements, Register typeDefData,
                              Register output,
                              const wasm::TrapSiteDesc& trapSiteDesc);
-  void visitOutOfLineWasmNewArray(OutOfLineWasmNewArray* ool);
 
 #ifdef ENABLE_WASM_JSPI
   void callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction kind,
@@ -353,6 +283,11 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                         Register output, Register maybeTemp,
                         Register64 maybeTemp64 = Register64::Invalid());
 
+  void emitCallMegamorphicGetter(LInstruction* lir,
+                                 ValueOperand accessorAndOutput, Register obj,
+                                 Register calleeScratch, Register argcScratch,
+                                 Label* nullGetter);
+
   template <size_t NumDefs>
   void emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir);
 
@@ -485,46 +420,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
     }
     return false;
   }
-};
-
-class OutOfLineResumableWasmTrap : public OutOfLineCodeBase<CodeGenerator> {
-  LInstruction* lir_;
-  size_t framePushed_;
-  wasm::TrapSiteDesc trapSiteDesc_;
-  wasm::Trap trap_;
-
- public:
-  OutOfLineResumableWasmTrap(LInstruction* lir, size_t framePushed,
-                             const wasm::TrapSiteDesc& trapSiteDesc,
-                             wasm::Trap trap)
-      : lir_(lir),
-        framePushed_(framePushed),
-        trapSiteDesc_(trapSiteDesc),
-        trap_(trap) {}
-
-  void accept(CodeGenerator* codegen) override {
-    codegen->visitOutOfLineResumableWasmTrap(this);
-  }
-  LInstruction* lir() const { return lir_; }
-  size_t framePushed() const { return framePushed_; }
-  const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }
-  wasm::Trap trap() const { return trap_; }
-};
-
-class OutOfLineAbortingWasmTrap : public OutOfLineCodeBase<CodeGenerator> {
-  wasm::TrapSiteDesc trapSiteDesc_;
-  wasm::Trap trap_;
-
- public:
-  OutOfLineAbortingWasmTrap(const wasm::TrapSiteDesc& trapSiteDesc,
-                            wasm::Trap trap)
-      : trapSiteDesc_(trapSiteDesc), trap_(trap) {}
-
-  void accept(CodeGenerator* codegen) override {
-    codegen->visitOutOfLineAbortingWasmTrap(this);
-  }
-  const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }
-  wasm::Trap trap() const { return trap_; }
 };
 
 }  // namespace jit

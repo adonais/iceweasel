@@ -37,7 +37,6 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const COLLECTION_ID_PREF = "messaging-system.rsexperimentloader.collection_id";
 const COLLECTION_ID_FALLBACK = "nimbus-desktop-experiments";
-const ENABLED_PREF = "messaging-system.rsexperimentloader.enabled";
 const TARGETING_CONTEXT_TELEMETRY_ENABLED_PREF =
   "nimbus.telemetry.targetingContextEnabled";
 
@@ -112,9 +111,11 @@ export const RecipeStatus = Object.freeze({
 });
 
 export class _RemoteSettingsExperimentLoader {
+  static LOCK_ID = "remote-settings-experiment-loader:update";
+
   constructor() {
     // Has the timer been set?
-    this._initialized = false;
+    this._enabled = false;
     // Are we in the middle of updating recipes already?
     this._updating = false;
     // Have we updated recipes at least once?
@@ -145,14 +146,6 @@ export class _RemoteSettingsExperimentLoader {
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "enabled",
-      ENABLED_PREF,
-      false,
-      this.onEnabledPrefChange.bind(this)
-    );
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
       "intervalInSeconds",
       RUN_INTERVAL_PREF,
       21600,
@@ -180,51 +173,88 @@ export class _RemoteSettingsExperimentLoader {
    * @return {Promise}                  which resolves after initialization and recipes
    *                                    are updated.
    */
-  async init(options = {}) {
+  async enable(options = {}) {
     const { forceSync = false } = options;
 
-    if (this._initialized || !this.enabled || !this.studiesEnabled) {
+    if (this._enabled) {
+      return;
+    }
+
+    if (!this.studiesEnabled) {
+      lazy.log.debug(
+        "Not enabling RemoteSettingsExperimentLoader: studies disabled"
+      );
       return;
     }
 
     this.setTimer();
-    lazy.CleanupManager.addCleanupHandler(() => this.uninit());
-    this._initialized = true;
+    lazy.CleanupManager.addCleanupHandler(() => this.disable());
+    this._enabled = true;
 
-    await this.updateRecipes(undefined, { forceSync });
+    await this.updateRecipes("enabled", { forceSync });
   }
 
-  uninit() {
-    if (!this._initialized) {
+  disable() {
+    if (!this._enabled) {
       return;
     }
     lazy.timerManager.unregisterTimer(TIMER_NAME);
-    this._initialized = false;
+    this._enabled = false;
     this._updating = false;
     this._hasUpdatedOnce = false;
   }
 
   /**
+   * Run a function while holding the update lock.
+   *
+   * This will prevent recipe updates from starting until after the callback finishes.
+   *
+   * @param {Function} fn The callback to call
+   * @param {object} options Options to pass to the WebLocks request API.
+   *
+   * @returns {any} The return value of fn.
+   */
+  async withUpdateLock(fn, options) {
+    return await locks.request(this.LOCK_ID, options, fn);
+  }
+
+  /**
    * Get all recipes from remote settings and update enrollments.
    *
-   * @param {string} trigger - What caused the update to occur?
+   * If the RemoteSettingsExperimentLoader is already updating or disabled, this
+   * function will not trigger an update.
+   *
+   * The actual update implementation is behind a WebLock. You can request the
+   * lock `RemoteSettingsExperimentLoader.LOCK_ID` in order to pause updates.
+   *
+   * @param {string} trigger
+   *                 The name of the event that triggered the update.
    * @param {object} options
-   * @param {boolean}   options.forceSync - Force Remote Settings to sync recipe
-   *                                     collection before updating recipes.
+   *                 Additional options. See `#updateImpl` docs for available
+   *                 options.
    */
-  async updateRecipes(trigger, { forceSync = false } = {}) {
-    if (this._updating || !this._initialized) {
+  async updateRecipes(trigger, options) {
+    if (this._updating || !this._enabled) {
       return;
     }
 
     this._updating = true;
-    this.manager.optInRecipes = [];
+    await this.withUpdateLock(() => this.#updateImpl(trigger, options));
+    this._updating = false;
+  }
 
-    // If recipes have been updated once, replace the promise with a new one
-    // such that we reset the resolved state of it from the previous .updateRecipes call.
-    if (this._hasUpdatedOnce) {
-      this._updatingDeferred = Promise.withResolvers();
-    }
+  /**
+   * Get all recipes from Remote Settings and update enrollments.
+   *
+   * @param {string} trigger
+   *                 The name of the event that triggered the update.
+   * @param {object} options
+   * @param {boolean} options.forceSync
+   *                  Force a Remote Settings client to sync records before
+   *                  updating. Otherwise locally cached records will be used.
+   */
+  async #updateImpl(trigger, { forceSync = false } = {}) {
+    this.manager.optInRecipes = [];
 
     // The targeting context metrics do not work in artifact builds.
     // See-also: https://bugzilla.mozilla.org/show_bug.cgi?id=1936317
@@ -246,7 +276,7 @@ export class _RemoteSettingsExperimentLoader {
       );
     }
 
-    lazy.log.debug(`Updating recipes with trigger "${trigger ?? ""}`);
+    lazy.log.debug(`Updating recipes with trigger "${trigger ?? ""}"`);
 
     const recipes = [];
     let loadingError = false;
@@ -310,7 +340,6 @@ export class _RemoteSettingsExperimentLoader {
 
     Services.obs.notifyObservers(null, "nimbus:enrollments-updated");
 
-    this._updating = false;
     this._hasUpdatedOnce = true;
     this._updatingDeferred.resolve();
 
@@ -353,9 +382,8 @@ export class _RemoteSettingsExperimentLoader {
       );
     } catch (e) {
       lazy.log.debug(
-        `Error getting recipes from Remote Settings collection ${client.collectionName}`
+        `Error getting recipes from Remote Settings collection ${client.collectionName}: ${e}`
       );
-      console.error(e);
 
       return null;
     }
@@ -484,18 +512,19 @@ export class _RemoteSettingsExperimentLoader {
   }
 
   /**
-   * Handles feature status based on feature pref and STUDIES_OPT_OUT_PREF.
-   * Changing any of them to false will turn off any recipe fetching and
+   * Handles feature status based on STUDIES_OPT_OUT_PREF.
+   *
+   * Changing this pref to false will turn off any recipe fetching and
    * processing.
    */
   onEnabledPrefChange() {
-    if (this._initialized && !(this.enabled && this.studiesEnabled)) {
-      this.uninit();
-    } else if (!this._initialized && this.enabled && this.studiesEnabled) {
+    if (this._enabled && !this.studiesEnabled) {
+      this.disable();
+    } else if (!this._enabled && this.studiesEnabled) {
       // If the feature pref is turned on then turn on recipe processing.
       // If the opt in pref is turned on then turn on recipe processing only if
       // the feature pref is also enabled.
-      this.init();
+      this.enable();
     }
   }
 
@@ -509,8 +538,13 @@ export class _RemoteSettingsExperimentLoader {
    * Sets a timer to update recipes every this.intervalInSeconds
    */
   setTimer() {
+    if (!this._enabled) {
+      // Don't enable the timer if we're disabled and the interval pref changes.
+      return;
+    }
     if (this.intervalInSeconds === 0) {
       // Used in tests where we want to turn this mechanism off
+      lazy.timerManager.unregisterTimer(TIMER_NAME);
       return;
     }
     // The callbacks will be called soon after the timer is registered
@@ -531,10 +565,16 @@ export class _RemoteSettingsExperimentLoader {
   }
 
   /**
-   * Returns a promise to the caller waiting for the recipes to be updated,
-   * which is resolved in the .updateRecipe function.
+   * Resolves when the RemoteSettingsExperimentLoader has updated at least once
+   * and is not in the middle of an update.
+   *
+   * If studies are disabled, then this will always resolve immediately.
    */
-  updatingRecipes() {
+  finishedUpdating() {
+    if (!this.studiesEnabled) {
+      return Promise.resolve();
+    }
+
     return this._updatingDeferred.promise;
   }
 }
@@ -596,7 +636,7 @@ export class EnrollmentsContext {
       let validation = this.recipeValidator.validate(recipe);
       if (!validation.valid) {
         console.error(
-          `Could not validate experiment recipe ${recipe.id}: ${JSON.stringify(
+          `Could not validate experiment recipe ${recipe.slug}: ${JSON.stringify(
             validation.errors,
             null,
             2
@@ -628,7 +668,7 @@ export class EnrollmentsContext {
 
       if (!feature.applications.includes(lazy.APP_ID)) {
         lazy.log.debug(
-          `${recipe.id} uses feature ${featureId} which is not enabled for this application (${lazy.APP_ID}) -- skipping`
+          `${recipe.slug} uses feature ${featureId} which is not enabled for this application (${lazy.APP_ID}) -- skipping`
         );
         haveAllFeatures = false;
         break;
@@ -644,9 +684,9 @@ export class EnrollmentsContext {
 
       if (match) {
         const type = recipe.isRollout ? "rollout" : "experiment";
-        lazy.log.debug(`[${type}] ${recipe.id} matched targeting`);
+        lazy.log.debug(`[${type}] ${recipe.slug} matched targeting`);
       } else {
-        lazy.log.debug(`${recipe.id} did not match due to targeting`);
+        lazy.log.debug(`${recipe.slug} did not match due to targeting`);
         this.recipeMismatches.push(recipe.slug);
         return RecipeStatus.TARGETING_MISMATCH;
       }
@@ -664,7 +704,7 @@ export class EnrollmentsContext {
       ) {
         this.missingLocale.push(recipe.slug);
         lazy.log.debug(
-          `${recipe.id} is localized but missing locale ${this.locale}`
+          `${recipe.slug} is localized but missing locale ${this.locale}`
         );
         return RecipeStatus.INVALID;
       }
@@ -681,7 +721,7 @@ export class EnrollmentsContext {
       if (result.missingL10nIds.length) {
         this.missingL10nIds.set(recipe.slug, result.missingL10nIds);
       }
-      lazy.log.debug(`${recipe.id} did not validate`);
+      lazy.log.debug(`${recipe.slug} did not validate`);
       return RecipeStatus.INVALID;
     }
 
@@ -730,7 +770,9 @@ export class EnrollmentsContext {
    */
   async checkTargeting(recipe) {
     if (!recipe.targeting) {
-      lazy.log.debug("No targeting for recipe, so it matches automatically");
+      lazy.log.debug(
+        `No targeting for recipe ${recipe.slug}, so it matches automatically`
+      );
       return true;
     }
 

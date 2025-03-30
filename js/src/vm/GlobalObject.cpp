@@ -69,7 +69,6 @@
 #include "vm/GeneratorObject.h"
 #include "vm/JSContext.h"
 #include "vm/NumberObject.h"
-#include "vm/PIC.h"
 #include "vm/PlainObject.h"
 #include "vm/RegExpObject.h"
 #include "vm/RegExpStatics.h"
@@ -77,11 +76,6 @@
 #include "vm/StringObject.h"
 #include "wasm/WasmFeatures.h"
 #include "wasm/WasmJS.h"
-#ifdef ENABLE_RECORD_TUPLE
-#  include "vm/RecordType.h"
-#  include "vm/TupleType.h"
-#endif
-
 #include "gc/GCContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
@@ -154,6 +148,7 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_Uint16Array:
     case JSProto_Int32Array:
     case JSProto_Uint32Array:
+    case JSProto_Float16Array:
     case JSProto_Float32Array:
     case JSProto_Float64Array:
     case JSProto_Uint8ClampedArray:
@@ -174,10 +169,8 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_AsyncFunction:
     case JSProto_GeneratorFunction:
     case JSProto_AsyncGeneratorFunction:
-#ifdef ENABLE_RECORD_TUPLE
-    case JSProto_Record:
-    case JSProto_Tuple:
-#endif
+    case JSProto_WeakRef:
+    case JSProto_FinalizationRegistry:
       return false;
 
     case JSProto_WebAssembly:
@@ -239,18 +232,11 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_SharedArrayBuffer:
       return !cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
 
-    case JSProto_WeakRef:
-    case JSProto_FinalizationRegistry:
-      return JS::GetWeakRefsEnabled() == JS::WeakRefSpecifier::Disabled;
-
     case JSProto_AsyncIterator:
       return !IsAsyncIteratorHelpersEnabled();
 
     case JSProto_ShadowRealm:
       return !JS::Prefs::experimental_shadow_realms();
-
-    case JSProto_Float16Array:
-      return !JS::Prefs::experimental_float16array();
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case JSProto_SuppressedError:
@@ -836,23 +822,6 @@ bool js::DefineToStringTag(JSContext* cx, HandleObject obj, JSAtom* tag) {
 }
 
 /* static */
-NativeObject* GlobalObject::getOrCreateForOfPICObject(
-    JSContext* cx, Handle<GlobalObject*> global) {
-  cx->check(global);
-  NativeObject* forOfPIC = global->getForOfPICObject();
-  if (forOfPIC) {
-    return forOfPIC;
-  }
-
-  forOfPIC = ForOfPIC::createForOfPICObject(cx, global);
-  if (!forOfPIC) {
-    return nullptr;
-  }
-  global->data().forOfPICChain.init(forOfPIC);
-  return forOfPIC;
-}
-
-/* static */
 JSObject* GlobalObject::getOrCreateRealmKeyObject(
     JSContext* cx, Handle<GlobalObject*> global) {
   cx->check(global);
@@ -1074,7 +1043,6 @@ void GlobalObjectData::trace(JSTracer* trc, GlobalObject* global) {
   TraceNullableEdge(trc, &intrinsicsHolder, "global-intrinsics-holder");
   TraceNullableEdge(trc, &computedIntrinsicsHolder,
                     "global-computed-intrinsics-holder");
-  TraceNullableEdge(trc, &forOfPICChain, "global-for-of-pic");
   TraceNullableEdge(trc, &sourceURLsHolder, "global-source-urls");
   TraceNullableEdge(trc, &realmKeyObject, "global-realm-key");
   TraceNullableEdge(trc, &throwTypeError, "global-throw-type-error");

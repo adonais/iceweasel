@@ -5,11 +5,14 @@
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["sidebar.verticalTabs", true],
-      ["sidebar.visibility", "always-show"],
-    ],
+    set: [["sidebar.verticalTabs", true]],
   });
+  await waitForTabstripOrientation("vertical");
+  Assert.equal(
+    Services.prefs.getStringPref("sidebar.visibility"),
+    "always-show",
+    "Sanity check the visibilty pref when verticalTabs are enabled"
+  );
 });
 registerCleanupFunction(async () => {
   await SpecialPowers.popPrefEnv();
@@ -41,10 +44,12 @@ add_task(async function test_toggle_collapse_close_button() {
     "The selected tab is not showing the close button."
   );
 
+  // Let `gBrowser.selectedTab` stabilize before synthesizing a mouseover.
+  await waitForRepaint();
+
   EventUtils.synthesizeMouse(gBrowser.selectedTab, 10, 10, {
     type: "mouseover",
   });
-  await TestUtils.waitForTick();
 
   computedStyle = window.getComputedStyle(selectedTab);
   await TestUtils.waitForCondition(

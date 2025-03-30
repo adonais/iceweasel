@@ -180,6 +180,9 @@ const mozilla::StyleLockedDeclarationBlock* Gecko_GetStyleAttrDeclarationBlock(
 
 void Gecko_UnsetDirtyStyleAttr(const mozilla::dom::Element* element);
 
+const mozilla::StyleLockedDeclarationBlock* Gecko_GetViewTransitionDynamicRule(
+    const mozilla::dom::Element* element);
+
 const mozilla::StyleLockedDeclarationBlock*
 Gecko_GetHTMLPresentationAttrDeclarationBlock(
     const mozilla::dom::Element* element);
@@ -550,7 +553,8 @@ const nsTArray<mozilla::dom::Element*>* Gecko_Document_GetElementsWithId(
 const nsTArray<mozilla::dom::Element*>* Gecko_ShadowRoot_GetElementsWithId(
     const mozilla::dom::ShadowRoot*, nsAtom* aId);
 
-bool Gecko_ComputeBoolPrefMediaQuery(nsAtom*);
+bool Gecko_EvalMozPrefFeature(nsAtom*,
+                              const mozilla::StyleComputedMozPrefFeatureValue*);
 
 // Check whether font format/tech is supported.
 bool Gecko_IsFontFormatSupported(

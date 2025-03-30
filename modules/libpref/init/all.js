@@ -60,7 +60,7 @@ pref("security.remote_settings.intermediates.enabled", true);
 pref("security.remote_settings.intermediates.downloads_per_poll", 5000);
 pref("security.remote_settings.intermediates.parallel_downloads", 8);
 
-#if defined(EARLY_BETA_OR_EARLIER) && !defined(MOZ_WIDGET_ANDROID)
+#if !defined(MOZ_WIDGET_ANDROID)
   pref("security.remote_settings.crlite_filters.enabled", true);
 #else
   pref("security.remote_settings.crlite_filters.enabled", false);
@@ -327,8 +327,9 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   #endif
 
   // 770 = DTLS 1.0, 771 = DTLS 1.2, 772 = DTLS 1.3
+  // TODO(bug 1952950) Re-enable this once 1952706 lands everywhere.
   pref("media.peerconnection.dtls.version.min", 771);
-  pref("media.peerconnection.dtls.version.max", 772);
+  pref("media.peerconnection.dtls.version.max", 771);
 
 #if defined(XP_MACOSX)
   pref("media.getusermedia.audio.processing.platform.enabled", true);
@@ -547,6 +548,9 @@ pref("toolkit.scrollbox.clickToScroll.scrollDelay", 150);
 pref("toolkit.shopping.ohttpConfigURL", "https://prod.ohttp-gateway.prod.webservices.mozgcp.net/ohttp-configs");
 pref("toolkit.shopping.ohttpRelayURL", "https://mozilla-ohttp.fastly-edge.com/");
 pref("toolkit.shopping.environment", "prod");
+
+// Determines whether Review Checker is enabled for de and fr domains
+pref("toolkit.shopping.experience2023.defr", false);
 
 // Controls logging for Sqlite.sys.mjs.
 pref("toolkit.sqlitejsm.loglevel", "Error");
@@ -800,8 +804,6 @@ pref("dom.allow_scripts_to_close_windows",          false);
 pref("dom.mutation_events.forceEnable", "");
 
 pref("dom.popup_allowed_events", "change click dblclick auxclick mousedown mouseup pointerdown pointerup notificationclick reset submit touchend contextmenu");
-
-pref("dom.serviceWorkers.disable_open_click_delay", 1000);
 
 pref("dom.storage.shadow_writes", false);
 pref("dom.storage.snapshot_prefill", 16384);
@@ -2139,11 +2141,7 @@ pref("font.size.monospace.x-math", 13);
   // Per Taiwanese users' demand. They don't want to use TC fonts for
   // rendering Latin letters. (bug 88579)
   pref("font.name-list.serif.zh-TW", "Times New Roman, PMingLiu, MingLiU, MingLiU-ExtB");
-  #ifdef EARLY_BETA_OR_EARLIER
-    pref("font.name-list.sans-serif.zh-TW", "Arial, Microsoft JhengHei, PMingLiU, MingLiU, MingLiU-ExtB");
-  #else
-    pref("font.name-list.sans-serif.zh-TW", "Arial, PMingLiU, MingLiU, MingLiU-ExtB, Microsoft JhengHei");
-  #endif
+  pref("font.name-list.sans-serif.zh-TW", "Arial, Microsoft JhengHei, PMingLiU, MingLiU, MingLiU-ExtB");
   pref("font.name-list.monospace.zh-TW", "MingLiU, MingLiU-ExtB");
   pref("font.name-list.cursive.zh-TW", "DFKai-SB");
 
@@ -3291,8 +3289,6 @@ pref("network.trr.confirmationNS", "example.com");
 // Comma separated list of domains that we should not use TRR for
 pref("network.trr.excluded-domains", "");
 pref("network.trr.builtin-excluded-domains", "localhost,local");
-// Whether the checkbox to display a fallback warning error page is visible in about:preferences#privacy
-pref("network.trr_ui.show_fallback_warning_option", false);
 
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/canonical.html");
 pref("captivedetect.canonicalContent", "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>");
@@ -3596,11 +3592,8 @@ pref("webextensions.tests", false);
 // 16MB default non-parseable upload limit for requestBody.raw.bytes
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
-#ifdef NIGHTLY_BUILD
-  pref("webextensions.storage.session.enforceQuota", true);
-#else
-  pref("webextensions.storage.session.enforceQuota", false);
-#endif
+// Enforce a 10MB quota in the storage.session extension API.
+pref("webextensions.storage.session.enforceQuota", true);
 
 // Should we use the old kinto-based implementation of storage.sync? To be removed in bug 1637465.
 pref("webextensions.storage.sync.kinto", false);

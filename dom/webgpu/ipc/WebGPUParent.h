@@ -135,8 +135,8 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   ipc::IPCResult GetFrontBufferSnapshot(
       IProtocol* aProtocol, const layers::RemoteTextureOwnerId& aOwnerId,
-      const RawId& aCommandEncoderId, Maybe<Shmem>& aShmem,
-      gfx::IntSize& aSize);
+      const RawId& aCommandEncoderId, Maybe<Shmem>& aShmem, gfx::IntSize& aSize,
+      uint32_t& aByteStride);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -186,6 +186,10 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   ffi::WGPUGlobal* GetContext() const { return mContext.get(); }
 
+  bool IsDeviceActive(const RawId aDeviceId) {
+    return mActiveDeviceIds.Contains(aDeviceId);
+  }
+
  private:
   static void MapCallback(uint8_t* aUserData,
                           ffi::WGPUBufferMapAsyncStatus aStatus);
@@ -232,11 +236,14 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   // limit each Device to one DeviceLost message.
   nsTHashSet<RawId> mLostDeviceIds;
 
+  // Store active DeviceIds
+  nsTHashSet<RawId> mActiveDeviceIds;
+
   // Shared handle of wgpu device's fence.
   std::unordered_map<RawId, RefPtr<gfx::FileHandleWrapper>> mDeviceFenceHandles;
 };
 
-#if !defined(XP_MACOSX)
+#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
 class VkImageHandle {
  public:
   explicit VkImageHandle(WebGPUParent* aParent,

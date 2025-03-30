@@ -32,8 +32,18 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
                 TrackingProtection.exceptionAdded.record(NoExtras())
             }
 
+            is TrustPanelAction.ClearSiteData,
+            is TrustPanelAction.RequestClearSiteDataDialog,
+            is TrustPanelAction.UpdateBaseDomain,
+            is TrustPanelAction.UpdateDetailedTrackerCategory,
+            is TrustPanelAction.UpdateNumberOfTrackersBlocked,
+            is TrustPanelAction.UpdateTrackersBlocked,
             TrustPanelAction.Navigate.Back,
+            is TrustPanelAction.Navigate.ClearSiteDataDialog,
+            is TrustPanelAction.Navigate.TrackerCategoryDetailsPanel,
             TrustPanelAction.Navigate.TrackersPanel,
+            TrustPanelAction.Navigate.ConnectionSecurityPanel,
+            TrustPanelAction.Navigate.PrivacySecuritySettings,
             -> Unit
         }
     }

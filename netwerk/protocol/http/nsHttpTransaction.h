@@ -194,7 +194,11 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   void GetHashKeyOfConnectionEntry(nsACString& aResult);
 
-  bool IsForWebTransport() { return mIsForWebTransport; }
+  bool IsForWebTransport() override { return mIsForWebTransport; }
+  bool IsResettingForTunnelConn() override { return mIsResettingForTunnelConn; }
+  void SetResettingForTunnelConn(bool aValue) override {
+    mIsResettingForTunnelConn = aValue;
+  }
 
   nsAutoCString GetUrl() { return mUrl; }
 
@@ -577,10 +581,17 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   RefPtr<HTTPSRecordResolver> mResolver;
   TRANSACTION_RESTART_REASON mRestartReason = TRANSACTION_RESTART_NONE;
 
+  enum TRANSACTION_ECH_RETRY_COUNT : uint32_t {
+    TRANSACTION_ECH_RETRY_OTHERS_COUNT = 0,
+    TRANSACTION_ECH_RETRY_WITH_ECH_COUNT = 1,
+    TRANSACTION_ECH_RETRY_WITHOUT_ECH_COUNT = 2,
+    TRANSACTION_ECH_RETRY_ECH_FAILED_COUNT = 3,
+  };
   nsTHashMap<nsUint32HashKey, uint32_t> mEchRetryCounterMap;
 
   bool mSupportsHTTP3 = false;
   Atomic<bool, Relaxed> mIsForWebTransport{false};
+  bool mIsResettingForTunnelConn = false;
 
   bool mEarlyDataWasAvailable = false;
   bool ShouldRestartOn0RttError(nsresult reason);

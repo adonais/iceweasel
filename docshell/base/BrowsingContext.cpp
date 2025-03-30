@@ -35,6 +35,7 @@
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/LocationBinding.h"
 #include "mozilla/dom/MediaDevices.h"
+#include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SessionStoreChild.h"
@@ -88,6 +89,7 @@
 #include "GVAutoplayRequestStatusIPC.h"
 
 extern mozilla::LazyLogModule gAutoplayPermissionLog;
+extern mozilla::LazyLogModule gNavigationLog;
 extern mozilla::LazyLogModule gTimeoutDeferralLog;
 
 #define AUTOPLAY_LOG(msg, ...) \
@@ -2745,8 +2747,9 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ExplicitActive>,
       }
       return CallState::Continue;
     };
-    Canonical()->CallOnAllTopDescendants(manageTopDescendant,
-                                         /* aIncludeNestedBrowsers = */ false);
+    Canonical()->CallOnTopDescendants(
+        manageTopDescendant,
+        CanonicalBrowsingContext::TopDescendantKind::NonNested);
   }
 
   PreOrderWalk([&](BrowsingContext* aContext) {
@@ -3660,8 +3663,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsUnderHiddenEmbedderElement>,
   }
 
   // Propagate to children.
-  for (BrowsingContext* child : Children()) {
-    Element* embedderElement = child->GetEmbedderElement();
+  auto PropagateToChild = [&newValue](BrowsingContext* aChild) {
+    Element* embedderElement = aChild->GetEmbedderElement();
     if (!embedderElement) {
       // TODO: We shouldn't need to null check here since `child` and the
       // element returned by `child->GetEmbedderElement()` are in our
@@ -3669,7 +3672,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsUnderHiddenEmbedderElement>,
       // be, but that doesn't matter).  However, there are currently a very
       // small number of crashes due to `embedderElement` being null, somehow
       // - see bug 1551241.  For now we wallpaper the crash.
-      continue;
+      return CallState::Continue;
     }
 
     bool embedderFrameIsHidden = true;
@@ -3677,10 +3680,22 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsUnderHiddenEmbedderElement>,
       embedderFrameIsHidden = !embedderFrame->StyleVisibility()->IsVisible();
     }
 
-    bool hidden = IsUnderHiddenEmbedderElement() || embedderFrameIsHidden;
-    if (child->IsUnderHiddenEmbedderElement() != hidden) {
-      Unused << child->SetIsUnderHiddenEmbedderElement(hidden);
+    bool hidden = newValue || embedderFrameIsHidden;
+    if (aChild->IsUnderHiddenEmbedderElement() != hidden) {
+      Unused << aChild->SetIsUnderHiddenEmbedderElement(hidden);
     }
+
+    return CallState::Continue;
+  };
+
+  for (BrowsingContext* child : Children()) {
+    PropagateToChild(child);
+  }
+
+  if (XRE_IsParentProcess()) {
+    Canonical()->CallOnTopDescendants(
+        PropagateToChild,
+        CanonicalBrowsingContext::TopDescendantKind::ChildrenOnly);
   }
 }
 
@@ -3909,6 +3924,25 @@ void BrowsingContext::LocationCreated(dom::Location* aLocation) {
 void BrowsingContext::ClearCachedValuesOfLocations() {
   for (dom::Location* loc = mLocations.getFirst(); loc; loc = loc->getNext()) {
     loc->ClearCachedValues();
+  }
+}
+
+void BrowsingContext::GetContiguousHistoryEntries(
+    SessionHistoryInfo& aActiveEntry, Navigation* aNavigation) {
+  if (!aNavigation) {
+    return;
+  }
+  if (XRE_IsContentProcess()) {
+    MOZ_ASSERT(ContentChild::GetSingleton());
+    ContentChild::GetSingleton()->SendGetContiguousSessionHistoryInfos(
+        this, aActiveEntry,
+        [aActiveEntry, navigation = RefPtr(aNavigation)](auto aInfos) mutable {
+          navigation->InitializeHistoryEntries(aInfos, &aActiveEntry);
+        },
+        [](auto aReason) { MOZ_ASSERT(false, "How did this happen?"); });
+  } else {
+    auto infos = Canonical()->GetContiguousSessionHistoryInfos(aActiveEntry);
+    aNavigation->InitializeHistoryEntries(infos, &aActiveEntry);
   }
 }
 

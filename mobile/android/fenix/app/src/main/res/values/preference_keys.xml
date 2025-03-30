@@ -63,7 +63,6 @@
     <string name="pref_key_remote_debugging" translatable="false">pref_key_remote_debugging</string>
     <string name="pref_key_studies_section" translatable="false">pref_key_studies_section</string>
     <string name="pref_key_experimentation_v2" translatable="false">pref_key_experimentation_v2</string>
-    <string name="pref_key_showed_private_mode_cfr" translatable="false">pref_key_showed_private_mode_cfr</string>
     <string name="pref_key_private_mode_opened" translatable="false">pref_key_private_mode_opened</string>
     <string name="pref_key_open_in_app_opened" translatable="false">pref_key_open_in_app_opened</string>
     <string name="pref_key_install_pwa_opened" translatable="false">pref_key_install_pwa_opened</string>
@@ -128,6 +127,7 @@
     <string name="pref_key_search_synced_tabs" translatable="false">pref_key_search_synced_tabs</string>
     <string name="pref_key_show_search_suggestions_in_private" translatable="false">pref_key_show_search_suggestions_in_private</string>
     <string name="pref_key_show_search_suggestions_in_private_onboarding" translatable="false">pref_key_show_search_suggestions_in_privateonboarding</string>
+    <string name="pref_key_show_trending_search_suggestions" translatable="false">pref_key_show_trending_search_suggestions</string>
     <string name="pref_key_show_voice_search" translatable="false">pref_key_show_voice_search</string>
     <string name="pref_key_enable_autocomplete_urls" translatable="false">pref_key_enable_domain_autocomplete</string>
     <string name="pref_key_show_sponsored_suggestions" translatable="false">pref_key_show_sponsored_suggestions</string>
@@ -197,6 +197,9 @@
     <!-- Cookie Banner Reduction Settings-->
     <string name="pref_key_cookie_banner_private_mode" translatable="false">pref_key_cookie_banner_private_mode</string>
 
+    <!-- DNS Over HTTPS Settings -->
+    <string name="pref_key_doh_settings" translatable="false">pref_key_doh_settings</string>
+
     <!-- Tracking Protection Settings -->
     <string name="pref_key_etp_learn_more" translatable="false">pref_key_etp_learn_more</string>
     <string name="pref_key_tracking_protection_settings" translatable="false">pref_key_tracking_protection_settings</string>
@@ -240,8 +243,11 @@
     <string name="pref_key_addresses_save_and_autofill_addresses" translatable="false">pref_key_addresses_save_and_autofill_addresses</string>
 
     <!-- Privacy Settings -->
+    <string name="pref_key_privacy_security_category" translatable="false">pref_key_privacy_security_category</string>
     <string name="pref_key_open_links_in_a_private_tab" translatable="false">pref_key_open_links_in_a_private_tab</string>
     <string name="pref_key_open_links_in_external_app_old" translatable="false">pref_key_open_links_in_external_app</string>
+    <string name="pref_key_link_sharing" translatable="false">pref_key_link_sharing</string>
+    <string name="pref_key_link_sharing_settings_snackbar" translatable="false">pref_key_link_sharing_settings_snackbar</string>
     <string name="pref_key_open_links_in_apps" translatable="false">pref_key_open_links_in_apps</string>
     <string name="pref_key_open_links_in_apps_always" translatable="false">pref_key_open_links_in_apps_always</string>
     <string name="pref_key_open_links_in_apps_ask" translatable="false">pref_key_open_links_in_apps_ask</string>
@@ -395,6 +401,7 @@
     <string name="pref_key_enable_menu_redesign" translatable="false">pref_key_enable_menu_redesign</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
+    <string name="pref_key_enable_trending_searches" translatable="false">pref_key_enable_trending_searches</string>
 
     <!-- Growth Data -->
     <string name="pref_key_growth_set_as_default" translatable="false">pref_key_growth_set_as_default</string>
@@ -424,8 +431,6 @@
     <string name="pref_key_app_is_onboarding_set_as_default_displayed" translatable="false">pref_key_app_is_onboarding_set_as_default_displayed</string>
 
     <string name="pref_key_desktop_browsing" translatable="false">pref_key_desktop_browsing</string>
-    <string name="pref_key_category_content" translatable="false">pref_key_category_content</string>
-    <string name="pref_key_site_permissions_preference_screen" translatable="false">pref_key_site_permissions_preference_screen</string>
 
     <!-- Crash reporting -->
     <string name="pref_key_crash_reporting_cutoff_date" translatable="false">pref_key_crash_reporting_cutoff_date</string>
@@ -435,6 +440,10 @@
 
     <!-- Bookmarks -->
     <string name="pref_key_use_new_bookmarks_ui" translatable="false">pref_key_use_new_bookmarks_ui</string>
+    <string name="pref_last_folder_saved_in" translatable="false">pref_last_folder_saved_in</string>
+
+    <!-- DNS over HTTPS Secret settings -->
+    <string name="pref_key_doh_settings_enabled" translatable="false">pref_key_doh_settings_enabled</string>
 
     <!-- Glean usage profile id -->
     <string name="pref_key_glean_usage_profile_id" translatable="false">pref_key_glean_usage_profile_id</string>

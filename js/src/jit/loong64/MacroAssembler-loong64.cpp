@@ -1577,8 +1577,8 @@ FaultingCodeOffset MacroAssemblerLOONG64::ma_store(
     LoadStoreExtension extension) {
   SecondScratchRegisterScope scratch2(asMasm());
   asMasm().computeScaledAddress(dest, scratch2);
-  return asMasm().ma_store(data, Address(scratch2, dest.offset), size,
-                           extension);
+  ma_add_d(scratch2, scratch2, Imm32(dest.offset));
+  return asMasm().ma_store(data, Address(scratch2, 0), size, extension);
 }
 
 void MacroAssemblerLOONG64::ma_store(Imm32 imm, const BaseIndex& dest,
@@ -2583,21 +2583,17 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
 }
 
 void MacroAssembler::Push(Register reg) {
-  ma_push(reg);
+  push(reg);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Push(const Imm32 imm) {
-  ScratchRegisterScope scratch(asMasm());
-  ma_li(scratch, imm);
-  ma_push(scratch);
+  push(imm);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Push(const ImmWord imm) {
-  ScratchRegisterScope scratch(asMasm());
-  ma_li(scratch, imm);
-  ma_push(scratch);
+  push(imm);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
@@ -2606,14 +2602,12 @@ void MacroAssembler::Push(const ImmPtr imm) {
 }
 
 void MacroAssembler::Push(const ImmGCPtr ptr) {
-  ScratchRegisterScope scratch(asMasm());
-  ma_li(scratch, ptr);
-  ma_push(scratch);
+  push(ptr);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Push(FloatRegister f) {
-  ma_push(f);
+  push(f);
   adjustFrame(int32_t(sizeof(double)));
 }
 
@@ -2624,12 +2618,12 @@ void MacroAssembler::PushBoxed(FloatRegister reg) {
 }
 
 void MacroAssembler::Pop(Register reg) {
-  ma_pop(reg);
+  pop(reg);
   adjustFrame(-int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Pop(FloatRegister f) {
-  ma_pop(f);
+  pop(f);
   adjustFrame(-int32_t(sizeof(double)));
 }
 
@@ -2961,10 +2955,27 @@ void MacroAssembler::branchValueIsNurseryCellImpl(Condition cond,
 void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  MOZ_ASSERT(!rhs.isNaN());
   ScratchRegisterScope scratch(asMasm());
   MOZ_ASSERT(lhs.valueReg() != scratch);
   moveValue(rhs, ValueOperand(scratch));
   ma_b(lhs.valueReg(), scratch, label, cond);
+}
+
+void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
+                                        Register temp, Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  ScratchRegisterScope scratch(asMasm());
+  MOZ_ASSERT(val.valueReg() != scratch);
+
+  // When testing for NaN, we want to ignore the sign bit.
+  // Clear the sign bit by extracting bits 62:0.
+  as_bstrpick_d(temp, val.valueReg(), 62, 0);
+
+  // Compare against a NaN with sign bit 0.
+  static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
+  moveValue(DoubleValue(JS::GenericNaN()), ValueOperand(scratch));
+  ma_b(temp, scratch, label, cond);
 }
 
 // ========================================================================
@@ -4945,9 +4956,9 @@ FaultingCodeOffset MacroAssemblerLOONG64Compat::store32(Register src,
 
 template <typename T>
 void MacroAssemblerLOONG64Compat::storePtr(ImmWord imm, T address) {
-  SecondScratchRegisterScope scratch2(asMasm());
-  ma_li(scratch2, imm);
-  ma_store(scratch2, address, SizeDouble);
+  ScratchRegisterScope scratch(asMasm());
+  ma_li(scratch, imm);
+  ma_store(scratch, address, SizeDouble);
 }
 
 template void MacroAssemblerLOONG64Compat::storePtr<Address>(ImmWord imm,

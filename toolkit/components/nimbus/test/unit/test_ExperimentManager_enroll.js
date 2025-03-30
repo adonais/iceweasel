@@ -143,16 +143,14 @@ add_task(async function test_enroll_optin_recipe_branch_selection() {
 
   // Call with incorrect optInRecipeBranchSlug for the optin recipe
   await Assert.rejects(
-    manager.enroll(optInRecipe, "test", {
-      optInRecipeBranchSlug: "invalid-slug",
-    }),
+    manager.enroll(optInRecipe, "test", { branchSlug: "invalid-slug" }),
     /Invalid branch slug provided for Firefox Labs opt in recipe: "opt-in-recipe"/,
     "Should not enroll an opt-in recipe with invalid branch slug"
   );
 
   // Call with the correct branch slug
   await manager.enroll(optInRecipe, "test", {
-    optInRecipeBranchSlug: optInRecipe.branches[0].slug,
+    branchSlug: optInRecipe.branches[0].slug,
   });
   Assert.ok(
     enrollStub.calledOnceWith(optInRecipe, optInRecipe.branches[0], "test"),
@@ -867,10 +865,9 @@ add_task(async function test_forceEnroll() {
   sinon
     .stub(loader.remoteSettingsClients.experiments, "get")
     .resolves([experiment1, experiment2, rollout1, rollout2]);
-  sinon.stub(loader, "setTimer");
 
   await manager.onStartup();
-  await loader.init();
+  await loader.enable();
 
   for (const { enroll, expected } of TEST_CASES) {
     for (const recipe of enroll) {
@@ -1192,7 +1189,7 @@ add_task(async function test_getSingleOptInRecipe() {
 
   manager.optInRecipes = optInRecipes;
 
-  sandbox.stub(RemoteSettingsExperimentLoader, "updatingRecipes").resolves();
+  sandbox.stub(RemoteSettingsExperimentLoader, "finishedUpdating").resolves();
 
   Assert.equal(
     await manager.getSingleOptInRecipe(optInRecipes[0].slug),
@@ -1271,7 +1268,7 @@ add_task(async function test_getAllOptInRecipes() {
     }),
   ];
 
-  sandbox.stub(RemoteSettingsExperimentLoader, "updatingRecipes").resolves();
+  sandbox.stub(RemoteSettingsExperimentLoader, "finishedUpdating").resolves();
 
   // Happy path, opt in recipes meet targeting and bucketing criteria.
   manager.optInRecipes = optInRecipesWithTargetMatchingAndBucketing;

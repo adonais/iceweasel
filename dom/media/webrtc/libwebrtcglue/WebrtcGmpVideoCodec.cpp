@@ -18,8 +18,12 @@
 #include "api/video/video_frame_type.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "media/base/media_constants.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/svc/create_scalability_structure.h"
 
 namespace mozilla {
+
+using detail::InputImageData;
 
 // QP scaling thresholds.
 static const int kLowH264QpThreshold = 24;
@@ -33,6 +37,8 @@ WebrtcGmpVideoEncoder::WebrtcGmpVideoEncoder(
       mConfiguredBitrateKbps(0),
       mHost(nullptr),
       mMaxPayloadSize(0),
+      mNeedKeyframe(true),
+      mSyncLayerCap(webrtc::kMaxTemporalStreams),
       mFormatParams(aFormat.parameters),
       mCallbackMutex("WebrtcGmpVideoEncoder encoded callback mutex"),
       mCallback(nullptr),
@@ -88,6 +94,23 @@ static int GmpFrameTypeToWebrtcFrameType(GMPVideoFrameType aIn,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+static webrtc::ScalabilityMode GmpCodecParamsToScalabilityMode(
+    const GMPVideoCodec& aParams) {
+  switch (aParams.mTemporalLayerNum) {
+    case 1:
+      return webrtc::ScalabilityMode::kL1T1;
+    case 2:
+      return webrtc::ScalabilityMode::kL1T2;
+    case 3:
+      return webrtc::ScalabilityMode::kL1T3;
+    default:
+      NS_WARNING(nsPrintfCString("Expected 1-3 temporal layers but got %d.\n",
+                                 aParams.mTemporalLayerNum)
+                     .get());
+      MOZ_CRASH("Unexpected number of temporal layers");
+  }
+}
+
 int32_t WebrtcGmpVideoEncoder::InitEncode(
     const webrtc::VideoCodec* aCodecSettings,
     const webrtc::VideoEncoder::Settings& aSettings) {
@@ -112,6 +135,11 @@ int32_t WebrtcGmpVideoEncoder::InitEncode(
     return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
   }
 
+  if (aCodecSettings->simulcastStream[0].numberOfTemporalLayers > 1 &&
+      !HaveGMPFor("encode-video"_ns, {"moz-h264-temporal-svc"_ns})) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+
   GMPVideoCodec codecParams{};
   codecParams.mGMPApiVersion = kGMPVersion36;
   codecParams.mLogLevel = GetGMPLibraryLogLevel();
@@ -130,17 +158,9 @@ int32_t WebrtcGmpVideoEncoder::InitEncode(
   codecParams.mWidth = aCodecSettings->width;
   codecParams.mHeight = aCodecSettings->height;
 
-  mCodecSpecificInfo.codecType = webrtc::kVideoCodecH264;
-  mCodecSpecificInfo.codecSpecific = {};
-  mCodecSpecificInfo.codecSpecific.H264.packetization_mode =
-      mFormatParams.count(cricket::kH264FmtpPacketizationMode) == 1 &&
-              mFormatParams.at(cricket::kH264FmtpPacketizationMode) == "1"
-          ? webrtc::H264PacketizationMode::NonInterleaved
-          : webrtc::H264PacketizationMode::SingleNalUnit;
-
   uint32_t maxPayloadSize = aSettings.max_payload_size;
-  if (mCodecSpecificInfo.codecSpecific.H264.packetization_mode ==
-      webrtc::H264PacketizationMode::NonInterleaved) {
+  if (mFormatParams.count(cricket::kH264FmtpPacketizationMode) == 1 &&
+      mFormatParams.at(cricket::kH264FmtpPacketizationMode) == "1") {
     maxPayloadSize = 0;  // No limit, use FUAs
   }
 
@@ -167,6 +187,18 @@ void WebrtcGmpVideoEncoder::InitEncode_g(const GMPVideoCodec& aCodecParams,
       new InitDoneCallback(this, aCodecParams));
   mInitting = true;
   mMaxPayloadSize = aMaxPayloadSize;
+  mSyncLayerCap = aCodecParams.mTemporalLayerNum;
+  mSvcController = webrtc::CreateScalabilityStructure(
+      GmpCodecParamsToScalabilityMode(aCodecParams));
+  if (!mSvcController) {
+    GMP_LOG_DEBUG(
+        "GMP Encode: CreateScalabilityStructure for %d temporal layers failed",
+        aCodecParams.mTemporalLayerNum);
+    Close_g();
+    NotifyGmpInitDone(mPCHandle, WEBRTC_VIDEO_CODEC_ERROR,
+                      "GMP Encode: CreateScalabilityStructure failed");
+    return;
+  }
   nsresult rv =
       mMPS->GetGMPVideoEncoder(nullptr, &tags, ""_ns, std::move(callback));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -321,6 +353,7 @@ void WebrtcGmpVideoEncoder::Encode_g(
                   mCodecParams.mWidth, mCodecParams.mHeight,
                   aInputImage.width(), aInputImage.height());
 
+    mNeedKeyframe = true;
     RegetEncoderForResolutionChange(aInputImage.width(), aInputImage.height());
     if (!mGMP) {
       // We needed to go async to re-get the encoder. Bail.
@@ -363,18 +396,27 @@ void WebrtcGmpVideoEncoder::Encode_g(
                                    sizeof(GMPCodecSpecificInfo));
 
   nsTArray<GMPVideoFrameType> gmp_frame_types;
-  for (auto it = aFrameTypes.begin(); it != aFrameTypes.end(); ++it) {
+  for (const auto& frameType : aFrameTypes) {
     GMPVideoFrameType ft;
 
-    int32_t ret = WebrtcFrameTypeToGmpFrameType(*it, &ft);
-    if (ret != WEBRTC_VIDEO_CODEC_OK) {
-      GMP_LOG_DEBUG(
-          "GMP Encode: failed to map webrtc frame type to gmp frame type");
-      return;
+    if (mNeedKeyframe) {
+      ft = kGMPKeyFrame;
+    } else {
+      int32_t ret = WebrtcFrameTypeToGmpFrameType(frameType, &ft);
+      if (ret != WEBRTC_VIDEO_CODEC_OK) {
+        GMP_LOG_DEBUG(
+            "GMP Encode: failed to map webrtc frame type to gmp frame type");
+        return;
+      }
     }
 
     gmp_frame_types.AppendElement(ft);
   }
+  mNeedKeyframe = false;
+
+  auto frameConfigs =
+      mSvcController->NextFrameConfig(gmp_frame_types[0] == kGMPKeyFrame);
+  MOZ_ASSERT(frameConfigs.size() == 1);
 
   MOZ_RELEASE_ASSERT(mInputImageMap.IsEmpty() ||
                      mInputImageMap.LastElement().ntp_timestamp_ms <
@@ -383,7 +425,8 @@ void WebrtcGmpVideoEncoder::Encode_g(
       InputImageData{.gmp_timestamp_us = frame->Timestamp(),
                      .ntp_timestamp_ms = aInputImage.ntp_time_ms(),
                      .timestamp_us = aInputImage.timestamp_us(),
-                     .rtp_timestamp = aInputImage.rtp_timestamp()});
+                     .rtp_timestamp = aInputImage.rtp_timestamp(),
+                     .frame_config = frameConfigs[0]});
 
   GMP_LOG_DEBUG("GMP Encode: %" PRIu64, (frame->Timestamp()));
   err = mGMP->Encode(std::move(frame), codecSpecificInfo, gmp_frame_types);
@@ -417,10 +460,11 @@ int32_t WebrtcGmpVideoEncoder::SetRates(
   MOZ_ASSERT(mGMPThread);
   MOZ_ASSERT(!aParameters.bitrate.IsSpatialLayerUsed(1),
              "No simulcast support for H264");
+  auto old = mConfiguredBitrateKbps;
   mConfiguredBitrateKbps = aParameters.bitrate.GetSpatialLayerSum(0) / 1000;
   MOZ_ALWAYS_SUCCEEDS(
-      mGMPThread->Dispatch(NewRunnableMethod<uint32_t, Maybe<double>>(
-          __func__, this, &WebrtcGmpVideoEncoder::SetRates_g,
+      mGMPThread->Dispatch(NewRunnableMethod<uint32_t, uint32_t, Maybe<double>>(
+          __func__, this, &WebrtcGmpVideoEncoder::SetRates_g, old,
           mConfiguredBitrateKbps,
           aParameters.framerate_fps > 0.0 ? Some(aParameters.framerate_fps)
                                           : Nothing())));
@@ -439,12 +483,15 @@ WebrtcVideoEncoder::EncoderInfo WebrtcGmpVideoEncoder::GetEncoderInfo() const {
   return info;
 }
 
-int32_t WebrtcGmpVideoEncoder::SetRates_g(uint32_t aNewBitRateKbps,
+int32_t WebrtcGmpVideoEncoder::SetRates_g(uint32_t aOldBitRateKbps,
+                                          uint32_t aNewBitRateKbps,
                                           Maybe<double> aFrameRate) {
   if (!mGMP) {
     // destroyed via Terminate()
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
+
+  mNeedKeyframe |= (aOldBitRateKbps == 0 && aNewBitRateKbps != 0);
 
   GMPErr err = mGMP->SetRates(
       aNewBitRateKbps, aFrameRate
@@ -501,6 +548,27 @@ void WebrtcGmpVideoEncoder::Encoded(
   }
   mInputImageMap.RemoveElementsAt(0, numToRemove);
 
+  webrtc::VideoFrameType frt;
+  GmpFrameTypeToWebrtcFrameType(aEncodedFrame->FrameType(), &frt);
+  MOZ_ASSERT_IF(mCodecParams.mTemporalLayerNum > 1 &&
+                    aEncodedFrame->FrameType() == kGMPKeyFrame,
+                aEncodedFrame->GetTemporalLayerId() == 0);
+  if (aEncodedFrame->FrameType() == kGMPKeyFrame &&
+      !data->frame_config.IsKeyframe()) {
+    GMP_LOG_WARNING("GMP Encoded non-requested keyframe at t=%" PRIu64,
+                    aEncodedFrame->TimeStamp());
+    // If there could be multiple encode jobs in flight this would be racy.
+    auto frameConfigs = mSvcController->NextFrameConfig(/* restart =*/true);
+    MOZ_ASSERT(frameConfigs.size() == 1);
+    data->frame_config = frameConfigs[0];
+  }
+
+  MOZ_ASSERT((aEncodedFrame->FrameType() == kGMPKeyFrame) ==
+             data->frame_config.IsKeyframe());
+  MOZ_ASSERT_IF(
+      mCodecParams.mTemporalLayerNum > 1,
+      aEncodedFrame->GetTemporalLayerId() == data->frame_config.TemporalId());
+
   MutexAutoLock lock(mCallbackMutex);
   if (!mCallback) {
     return;
@@ -509,6 +577,12 @@ void WebrtcGmpVideoEncoder::Encoded(
   for (size_t i = 0; i < numFramesDropped; ++i) {
     mCallback->OnDroppedFrame(
         webrtc::EncodedImageCallback::DropReason::kDroppedByEncoder);
+  }
+
+  if (data.isNothing()) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Unexpectedly didn't find an input image for this encoded frame");
+    return;
   }
 
   webrtc::VideoFrameType ft;
@@ -534,19 +608,70 @@ void WebrtcGmpVideoEncoder::Encoded(
   unit.ntp_time_ms_ = data->ntp_timestamp_ms;
   unit._encodedWidth = aEncodedFrame->EncodedWidth();
   unit._encodedHeight = aEncodedFrame->EncodedHeight();
-  if (int idx = aEncodedFrame->GetTemporalLayerId(); idx >= 0) {
-    unit.SetTemporalIndex(idx);
+
+  webrtc::CodecSpecificInfo info;
+#ifdef __LP64__
+  // Only do these checks on some common builds to avoid build issues on more
+  // exotic flavors.
+  static_assert(
+      sizeof(info.codecSpecific.H264) == 8,
+      "webrtc::CodecSpecificInfoH264 has changed. We must handle the changes.");
+  static_assert(
+      sizeof(info) - sizeof(info.codecSpecific) -
+              sizeof(info.generic_frame_info) -
+              sizeof(info.template_structure) -
+              sizeof(info.frame_instrumentation_data) ==
+          24,
+      "webrtc::CodecSpecificInfo's generic bits have changed. We must handle "
+      "the changes.");
+#endif
+  info.codecType = webrtc::kVideoCodecH264;
+  info.codecSpecific = {};
+  info.codecSpecific.H264.packetization_mode =
+      mFormatParams.count(cricket::kH264FmtpPacketizationMode) == 1 &&
+              mFormatParams.at(cricket::kH264FmtpPacketizationMode) == "1"
+          ? webrtc::H264PacketizationMode::NonInterleaved
+          : webrtc::H264PacketizationMode::SingleNalUnit;
+  info.codecSpecific.H264.temporal_idx = webrtc::kNoTemporalIdx;
+  info.codecSpecific.H264.base_layer_sync = false;
+  info.codecSpecific.H264.idr_frame =
+      ft == webrtc::VideoFrameType::kVideoFrameKey;
+  info.generic_frame_info = mSvcController->OnEncodeDone(data->frame_config);
+  if (info.codecSpecific.H264.idr_frame &&
+      info.generic_frame_info.has_value()) {
+    info.template_structure = mSvcController->DependencyStructure();
+  }
+
+  if (mCodecParams.mTemporalLayerNum > 1) {
+    int temporalIdx = std::max(0, aEncodedFrame->GetTemporalLayerId());
+    unit.SetTemporalIndex(temporalIdx);
+    info.codecSpecific.H264.temporal_idx = temporalIdx;
+    info.scalability_mode = GmpCodecParamsToScalabilityMode(mCodecParams);
+
+    if (temporalIdx == 0) {
+      // Base layer. Reset the sync layer tracking.
+      mSyncLayerCap = mCodecParams.mTemporalLayerNum;
+    } else {
+      // Decrease the sync layer tracking. base_layer_sync per upstream code
+      // shall be true iff the layer in question only depends on layer 0, i.e.
+      // the base layer. Note in L1T3 the frame dependencies (and cap) are:
+      //       | Temporal | Dependency |       |
+      // Frame | Layer    | Frame      | Sync? |  Cap
+      // ===============================================
+      //     0 |        0 |          0 | False | _ -> 3
+      //     1 |        2 |          0 | True  | 3 -> 2
+      //     2 |        1 |          0 | True  | 2 -> 1
+      //     3 |        2 |          1 | False | 1 -> 2
+      info.codecSpecific.H264.base_layer_sync = temporalIdx < mSyncLayerCap;
+      mSyncLayerCap = temporalIdx;
+    }
   }
 
   // Parse QP.
   mH264BitstreamParser.ParseBitstream(unit);
   unit.qp_ = mH264BitstreamParser.GetLastSliceQp().value_or(-1);
 
-  // TODO: Currently the OpenH264 codec does not preserve any codec
-  //       specific info passed into it and just returns default values.
-  //       If this changes in the future, it would be nice to get rid of
-  //       mCodecSpecificInfo.
-  mCallback->OnEncodedImage(unit, &mCodecSpecificInfo);
+  mCallback->OnEncodedImage(unit, &info);
 }
 
 // Decoder.

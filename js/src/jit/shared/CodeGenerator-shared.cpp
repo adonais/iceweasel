@@ -438,6 +438,9 @@ void CodeGeneratorShared::encodeAllocation(LSnapshot* snapshot,
 
       MOZ_DIAGNOSTIC_ASSERT(payload->isMemory() || payload->isRegister());
       if (payload->isMemory()) {
+        MOZ_ASSERT_IF(payload->isStackSlot(),
+                      payload->toStackSlot()->width() ==
+                          LStackSlot::width(LDefinition::TypeFrom(type)));
         alloc = RValueAllocation::Typed(valueType, ToStackIndex(payload));
       } else if (payload->isGeneralReg()) {
         alloc = RValueAllocation::Typed(valueType, ToRegister(payload));
@@ -448,8 +451,7 @@ void CodeGeneratorShared::encodeAllocation(LSnapshot* snapshot,
       }
       break;
     }
-    case MIRType::Float32:
-    case MIRType::Simd128: {
+    case MIRType::Float32: {
       LAllocation* payload = snapshot->payloadOfSlot(*allocIndex);
       if (payload->isConstant()) {
         MConstant* constant = mir->toConstant();
@@ -462,9 +464,12 @@ void CodeGeneratorShared::encodeAllocation(LSnapshot* snapshot,
 
       MOZ_ASSERT(payload->isMemory() || payload->isFloatReg());
       if (payload->isFloatReg()) {
-        alloc = RValueAllocation::AnyFloat(ToFloatRegister(payload));
+        alloc = RValueAllocation::Float32(ToFloatRegister(payload));
       } else {
-        alloc = RValueAllocation::AnyFloat(ToStackIndex(payload));
+        MOZ_ASSERT_IF(payload->isStackSlot(),
+                      payload->toStackSlot()->width() ==
+                          LStackSlot::width(LDefinition::TypeFrom(type)));
+        alloc = RValueAllocation::Float32(ToStackIndex(payload));
       }
       break;
     }
@@ -495,6 +500,16 @@ void CodeGeneratorShared::encodeAllocation(LSnapshot* snapshot,
       MOZ_ASSERT(payload->isMemory() || payload->isGeneralReg());
       if (payload->isGeneralReg()) {
         alloc = RValueAllocation::IntPtr(ToRegister(payload));
+      } else if (payload->isStackSlot()) {
+        LStackSlot::Width width = payload->toStackSlot()->width();
+        MOZ_ASSERT(width == LStackSlot::width(LDefinition::GENERAL) ||
+                   width == LStackSlot::width(LDefinition::INT32));
+
+        if (width == LStackSlot::width(LDefinition::GENERAL)) {
+          alloc = RValueAllocation::IntPtr(ToStackIndex(payload));
+        } else {
+          alloc = RValueAllocation::IntPtrInt32(ToStackIndex(payload));
+        }
       } else {
         alloc = RValueAllocation::IntPtr(ToStackIndex(payload));
       }
@@ -546,6 +561,13 @@ void CodeGeneratorShared::encodeAllocation(LSnapshot* snapshot,
       LAllocation* type = snapshot->typeOfSlot(*allocIndex);
       MOZ_ASSERT(type->isMemory() || type->isRegister());
 
+      MOZ_ASSERT_IF(payload->isStackSlot(),
+                    payload->toStackSlot()->width() ==
+                        LStackSlot::width(LDefinition::GENERAL));
+      MOZ_ASSERT_IF(type->isStackSlot(),
+                    type->toStackSlot()->width() ==
+                        LStackSlot::width(LDefinition::GENERAL));
+
       if (payload->isRegister()) {
         if (type->isRegister()) {
           alloc =
@@ -567,6 +589,9 @@ void CodeGeneratorShared::encodeAllocation(LSnapshot* snapshot,
       if (payload->isRegister()) {
         alloc = RValueAllocation::Int64(ToRegister(payload));
       } else {
+        MOZ_ASSERT_IF(payload->isStackSlot(),
+                      payload->toStackSlot()->width() ==
+                          LStackSlot::width(LDefinition::GENERAL));
         alloc = RValueAllocation::Int64(ToStackIndex(payload));
       }
 #endif
@@ -1061,10 +1086,10 @@ Label* CodeGeneratorShared::getJumpLabelForBranch(MBasicBlock* block) {
   return skipTrivialBlocks(block)->lir()->label();
 }
 
-// This function is not used for MIPS/MIPS64/LOONG64. They have
+// This function is not used for MIPS64/LOONG64/RISCV64. They have
 // branchToBlock.
-#if !defined(JS_CODEGEN_MIPS32) && !defined(JS_CODEGEN_MIPS64) && \
-    !defined(JS_CODEGEN_LOONG64) && !defined(JS_CODEGEN_RISCV64)
+#if !defined(JS_CODEGEN_MIPS64) && !defined(JS_CODEGEN_LOONG64) && \
+    !defined(JS_CODEGEN_RISCV64)
 void CodeGeneratorShared::jumpToBlock(MBasicBlock* mir,
                                       Assembler::Condition cond) {
   // Skip past trivial blocks.

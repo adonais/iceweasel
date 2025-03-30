@@ -339,7 +339,37 @@ class Client:
     def await_script(self, script, *args, **kwargs):
         return self.run_script(script, *args, **kwargs, await_promise=True)
 
+    def await_interventions_started(self):
+        with self.using_context("chrome"):
+            interventionsOn = self.request.node.get_closest_marker("with_interventions")
+            shimsOn = self.request.node.get_closest_marker("with_shims")
+
+            if not interventionsOn and not shimsOn:
+                print("Not waiting for interventions/shims")
+                return
+
+            expectedMsg = (
+                "WebCompatTests:InterventionsStatus"
+                if interventionsOn
+                else "WebCompatTests:ShimsStatus"
+            )
+
+            print("Waiting for", expectedMsg, 'to be "active"')
+            self.execute_async_script(
+                """
+                const [expectedMsg, done] = arguments;
+                const timer = setInterval(() => {
+                  if (Services.ppmm.sharedData.get(expectedMsg) === "active") {
+                    clearInterval(timer);
+                    done();
+                  }
+                }, 100);
+            """,
+                expectedMsg,
+            )
+
     async def navigate(self, url, timeout=90, no_skip=False, **kwargs):
+        self.await_interventions_started()
         try:
             return await asyncio.wait_for(
                 asyncio.ensure_future(self._navigate(url, **kwargs)), timeout=timeout
@@ -688,7 +718,24 @@ class Client:
     async def disable_window_alert(self):
         return await self.make_preload_script("window.alert = () => {}")
 
-    async def await_alert(self, text, timeout=None):
+    async def set_prompt_responses(self, responses, timeout=10):
+        if type(responses) is not list:
+            responses = [responses]
+        if not hasattr(self, "prompts_preload_script"):
+            self.prompts_preload_script = await self.make_preload_script(
+                f"""
+                    const responses = {responses};
+                    window.wrappedJSObject.prompt = function() {{
+                        return responses.shift();
+                    }}
+                """,
+                "prompt_detector",
+            )
+        return self.prompts_preload_script
+
+    async def await_alert(self, texts, timeout=10):
+        if type(texts) is not list:
+            texts = [texts]
         if not hasattr(self, "alert_preload_script"):
             self.alert_preload_script = await self.make_preload_script(
                 """
@@ -700,15 +747,17 @@ class Client:
                 "alert_detector",
             )
         return self.alert_preload_script.run(
-            """(msg, timeout) => new Promise(done => {
+            """(timeout, ...msgs) => new Promise(done => {
                     const interval = 200;
                     let count = 0;
                     const to = setInterval(() => {
-                        for (const a of window.__alerts) {
-                            if (a.includes(msg)) {
-                                clearInterval(to);
-                                done(a);
-                                return;
+                        for (const a of window.__alerts || []) {
+                            for (const msg of msgs) {
+                                if (a.includes(msg)) {
+                                    clearInterval(to);
+                                    done(a);
+                                    return;
+                                }
                             }
                         }
                         count += interval;
@@ -719,8 +768,8 @@ class Client:
                     }, interval);
                })
             """,
-            text,
             timeout,
+            *texts,
             await_promise=True,
         )
 
@@ -868,9 +917,12 @@ class Client:
         except webdriver.error.NoSuchElementException:
             return None
 
-    def find_element(self, finder, is_displayed=None, **kwargs):
-        ele = finder.find(self, **kwargs)
-        return self._do_is_displayed_check(ele, is_displayed)
+    def find_element(self, finder, is_displayed=None, all=None, **kwargs):
+        ele = finder.find(self, all=True, **kwargs)
+        found = self._do_is_displayed_check(ele, is_displayed)
+        if not all:
+            return found[0] if len(found) else None
+        return found
 
     def await_css(self, selector, **kwargs):
         return self.await_element(self.css(selector), **kwargs)
@@ -906,10 +958,12 @@ class Client:
             return client.find_text(self.selector, **kwargs)
 
     def await_first_element_of(
-        self, finders, timeout=None, delay=0.25, condition=False, **kwargs
+        self, finders, timeout=None, delay=0.25, condition=False, all=False, **kwargs
     ):
         t0 = time.time()
-        condition = f"var elem=arguments[0]; return {condition}" if condition else False
+        condition = (
+            f"return arguments[0].filter(elem => {condition})" if condition else False
+        )
 
         if timeout is None:
             timeout = 10
@@ -920,12 +974,11 @@ class Client:
         while time.time() < t0 + timeout:
             for i, finder in enumerate(finders):
                 try:
-                    result = finder.find(self, **kwargs)
-                    if result and (
-                        not condition
-                        or self.session.execute_script(condition, [result])
-                    ):
-                        found[i] = result
+                    result = finder.find(self, all=True, **kwargs)
+                    if len(result):
+                        if condition:
+                            result = self.session.execute_script(condition, [result])
+                        found[i] = result[0] if not all else result
                         return found
                 except webdriver.error.NoSuchElementException as e:
                     exc = e
@@ -1126,7 +1179,7 @@ class Client:
         fastclick_preload_script.stop()
 
     async def test_nicochannel_like_site(self, url, shouldPass=True):
-        CONSENT = self.css("button.MuiButton-containedPrimary")
+        CONSENT = self.css(".MuiDialog-container button.MuiButton-containedPrimary")
         BLOCKED = self.text("このブラウザはサポートされていません。")
         PLAY = self.css(".nfcp-overlay-play-lg")
 

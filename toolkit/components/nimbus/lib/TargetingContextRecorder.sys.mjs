@@ -21,11 +21,11 @@ Object.defineProperty(lazy, "ExperimentManager", {
 });
 
 const { PREF_INVALID, PREF_STRING, PREF_INT, PREF_BOOL } = Ci.nsIPrefBranch;
-const PREF_TYPES = {
+const PREF_TYPES = Object.freeze({
   [PREF_STRING]: "Ci.nsIPrefBranch.PREF_STRING",
   [PREF_INT]: "Ci.nsIPrefBranch.PREF_INT",
   [PREF_BOOL]: "Ci.nsIPrefBranch.PREF_BOOL",
-};
+});
 
 /**
  * Return a function that returns specific keys of an object.
@@ -144,6 +144,7 @@ export const ATTRIBUTE_TRANSFORMS = Object.freeze({
   isDefaultBrowser: typeAssertions.boolean,
   isFirstStartup: typeAssertions.boolean,
   isFxAEnabled: typeAssertions.boolean,
+  isFxASignedIn: typeAssertions.boolean,
   isMSIX: typeAssertions.boolean,
   locale: typeAssertions.string,
   memoryMB: typeAssertions.quantity,
@@ -154,6 +155,7 @@ export const ATTRIBUTE_TRANSFORMS = Object.freeze({
     "windowsBuildNumber",
     "windowsVersion"
   ),
+  primaryResolution: pick("height", "width"),
   profileAgeCreated: typeAssertions.quantity,
   region: typeAssertions.string,
   totalBookmarksCount: typeAssertions.quantity,
@@ -162,7 +164,10 @@ export const ATTRIBUTE_TRANSFORMS = Object.freeze({
       numberOfURLsVisited,
       date,
     })),
-  userPrefersReducedMotion: typeAssertions.boolean,
+  // userPrefersReducedMotion can only be false in xpcshell tests because it
+  // uses a stubbed nsIXULAppInfo (/testing/modules/AppInfo.sys.mjs).
+  userPrefersReducedMotion: userPrefersReducedMotion =>
+    userPrefersReducedMotion ?? false,
   usesFirefoxSync: typeAssertions.boolean,
   version: typeAssertions.string,
 });
@@ -185,8 +190,8 @@ export const ATTRIBUTE_TRANSFORMS = Object.freeze({
  */
 export function normalizeAttributeName(attr) {
   switch (attr) {
-    case "isFxAEnabled":
-      // Would transform to `isFxAenabled";
+    case "isFxAEnabled": // Would transform to `isFxAenabled`.
+    case "isFxASignedIn": // Would transform to `isFxAsignedIn`.
       return attr;
 
     case "defaultPDFHandler":

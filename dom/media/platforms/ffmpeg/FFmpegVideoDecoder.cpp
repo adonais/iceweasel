@@ -11,6 +11,7 @@
 #include "ImageContainer.h"
 #include "MP4Decoder.h"
 #include "MediaInfo.h"
+#include "VALibWrapper.h"
 #include "VideoUtils.h"
 #include "VPXDecoder.h"
 #include "mozilla/layers/KnowsCompositor.h"
@@ -21,11 +22,13 @@
 #if LIBAVCODEC_VERSION_MAJOR >= 58
 #  include "mozilla/ProfilerMarkers.h"
 #endif
-#if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
+#ifdef MOZ_USE_HWDECODE
 #  include "H264.h"
+#  include "H265.h"
+#endif
+#if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
 #  include "mozilla/gfx/gfxVars.h"
 #  include "mozilla/layers/DMABUFSurfaceImage.h"
-#  include "mozilla/widget/DMABufLibWrapper.h"
 #  include "FFmpegVideoFramePool.h"
 #  include "va/va.h"
 #endif
@@ -71,13 +74,6 @@
 #  include "ffvpx/hwcontext_d3d11va.h"
 #endif
 
-// Forward declare from va.h
-#if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
-typedef int VAStatus;
-#  define VA_EXPORT_SURFACE_READ_ONLY 0x0001
-#  define VA_EXPORT_SURFACE_SEPARATE_LAYERS 0x0004
-#  define VA_STATUS_SUCCESS 0x00000000
-#endif
 // Use some extra HW frames for potential rendering lags.
 // AV1 and VP9 can have maximum 8 frames for reference frames, so 1 base + 8
 // references.
@@ -238,32 +234,9 @@ AVCodec* FFmpegVideoDecoder<LIBAV_VER>::FindVAAPICodec() {
   return nullptr;
 }
 
-template <int V>
-class VAAPIDisplayHolder {};
-
-template <>
-class VAAPIDisplayHolder<LIBAV_VER>;
-
-template <>
-class VAAPIDisplayHolder<LIBAV_VER> {
- public:
-  VAAPIDisplayHolder(FFmpegLibWrapper* aLib, VADisplay aDisplay, int aDRMFd)
-      : mLib(aLib), mDisplay(aDisplay), mDRMFd(aDRMFd) {};
-  ~VAAPIDisplayHolder() {
-    mLib->vaTerminate(mDisplay);
-    close(mDRMFd);
-  }
-
- private:
-  FFmpegLibWrapper* mLib;
-  VADisplay mDisplay;
-  int mDRMFd;
-};
-
 static void VAAPIDisplayReleaseCallback(struct AVHWDeviceContext* hwctx) {
-  auto displayHolder =
-      static_cast<VAAPIDisplayHolder<LIBAV_VER>*>(hwctx->user_opaque);
-  delete displayHolder;
+  auto displayHolder = static_cast<VADisplayHolder*>(hwctx->user_opaque);
+  displayHolder->Release();
 }
 
 bool FFmpegVideoDecoder<LIBAV_VER>::CreateVAAPIDeviceContext() {
@@ -279,22 +252,14 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CreateVAAPIDeviceContext() {
   AVHWDeviceContext* hwctx = (AVHWDeviceContext*)mVAAPIDeviceContext->data;
   AVVAAPIDeviceContext* vactx = (AVVAAPIDeviceContext*)hwctx->hwctx;
 
-  int drmFd = widget::GetDMABufDevice()->OpenDRMFd();
-  mDisplay = mLib->vaGetDisplayDRM(drmFd);
-  if (!mDisplay) {
-    FFMPEG_LOG("  Can't get DRM VA-API display.");
+  RefPtr displayHolder = VADisplayHolder::GetSingleton();
+  if (!displayHolder) {
     return false;
   }
 
-  hwctx->user_opaque = new VAAPIDisplayHolder<LIBAV_VER>(mLib, mDisplay, drmFd);
+  mDisplay = displayHolder->mDisplay;
+  hwctx->user_opaque = displayHolder.forget().take();
   hwctx->free = VAAPIDisplayReleaseCallback;
-
-  int major, minor;
-  int status = mLib->vaInitialize(mDisplay, &major, &minor);
-  if (status != VA_STATUS_SUCCESS) {
-    FFMPEG_LOG("  vaInitialize failed.");
-    return false;
-  }
 
   vactx->display = mDisplay;
   if (mLib->av_hwdevice_ctx_init(mVAAPIDeviceContext) < 0) {
@@ -549,6 +514,9 @@ bool FFmpegVideoDecoder<LIBAV_VER>::ShouldEnableLinuxHWDecoding() const {
       break;
     case AV_CODEC_ID_AV1:
       supported = gfx::gfxVars::UseAV1HwDecode();
+      break;
+    case AV_CODEC_ID_HEVC:
+      supported = gfx::gfxVars::UseHEVCHwDecode();
       break;
     default:
       break;
@@ -995,6 +963,9 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWCodecContext(ContextType aType) {
   if (mCodecID == AV_CODEC_ID_H264) {
     mCodecContext->extra_hw_frames =
         H264::ComputeMaxRefFrames(mInfo.mExtraData);
+  } else if (mCodecID == AV_CODEC_ID_HEVC) {
+    mCodecContext->extra_hw_frames =
+        H265::ComputeMaxRefFrames(mInfo.mExtraData);
   } else {
     mCodecContext->extra_hw_frames = EXTRA_HW_FRAMES;
   }
@@ -1119,6 +1090,9 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
 #if LIBAVCODEC_VERSION_MAJOR >= 55
       case AV_CODEC_ID_VP9:
         flag |= MediaInfoFlag::VIDEO_VP9;
+        break;
+      case AV_CODEC_ID_HEVC:
+        flag |= MediaInfoFlag::VIDEO_HEVC;
         break;
 #endif
 #ifdef FFMPEG_AV1_DECODE
@@ -1595,13 +1569,13 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
 bool FFmpegVideoDecoder<LIBAV_VER>::GetVAAPISurfaceDescriptor(
     VADRMPRIMESurfaceDescriptor* aVaDesc) {
   VASurfaceID surface_id = (VASurfaceID)(uintptr_t)mFrame->data[3];
-  VAStatus vas = mLib->vaExportSurfaceHandle(
+  VAStatus vas = VALibWrapper::sFuncs.vaExportSurfaceHandle(
       mDisplay, surface_id, VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
       VA_EXPORT_SURFACE_READ_ONLY | VA_EXPORT_SURFACE_SEPARATE_LAYERS, aVaDesc);
   if (vas != VA_STATUS_SUCCESS) {
     return false;
   }
-  vas = mLib->vaSyncSurface(mDisplay, surface_id);
+  vas = VALibWrapper::sFuncs.vaSyncSurface(mDisplay, surface_id);
   if (vas != VA_STATUS_SUCCESS) {
     NS_WARNING("vaSyncSurface() failed.");
   }
@@ -1729,6 +1703,12 @@ AVCodecID FFmpegVideoDecoder<LIBAV_VER>::GetCodecId(
     return AV_CODEC_ID_H264;
   }
 
+#if LIBAVCODEC_VERSION_MAJOR >= 55
+  if (MP4Decoder::IsHEVC(aMimeType)) {
+    return AV_CODEC_ID_HEVC;
+  }
+#endif
+
   if (aMimeType.EqualsLiteral("video/x-vnd.on2.vp6")) {
     return AV_CODEC_ID_VP6F;
   }
@@ -1807,6 +1787,9 @@ static const struct {
     MAP(VP9, VP9Profile2, "VP9Profile2"),
     MAP(AV1, AV1Profile0, "AV1Profile0"),
     MAP(AV1, AV1Profile1, "AV1Profile1"),
+    MAP(HEVC, HEVCMain, "HEVCMain"),
+    MAP(HEVC, HEVCMain10, "HEVCMain10"),
+    MAP(HEVC, HEVCMain10, "HEVCMain12"),
 #  undef MAP
 };
 

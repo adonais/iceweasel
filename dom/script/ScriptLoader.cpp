@@ -21,7 +21,7 @@
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"  // JS::CompileOptions, JS::OwningCompileOptions, JS::DecodeOptions, JS::OwningDecodeOptions, JS::DelazificationOption
 #include "js/ContextOptions.h"  // JS::ContextOptionsRef
-#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::InstantiationStorage, JS::StartCollectingDelazifications, JS::FinishCollectingDelazifications, JS::AbortCollectingDelazifications
+#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::InstantiationStorage, JS::StartCollectingDelazifications, JS::FinishCollectingDelazifications, JS::AbortCollectingDelazifications, JS::IsStencilCacheable
 #include "js/experimental/CompileScript.h"  // JS::FrontendContext, JS::NewFrontendContext, JS::DestroyFrontendContext, JS::SetNativeStackQuota, JS::ThreadStackQuotaForSize, JS::CompilationStorage, JS::CompileGlobalScriptToStencil, JS::CompileModuleScriptToStencil, JS::DecodeStencil, JS::PrepareForInstantiate
 #include "js/loader/ScriptLoadRequest.h"
 #include "ScriptCompression.h"
@@ -461,6 +461,10 @@ nsresult ScriptLoader::CheckContentPolicy(Document* aDocument,
                                           nsIScriptElement* aElement,
                                           const nsAString& aNonce,
                                           ScriptLoadRequest* aRequest) {
+  MOZ_ASSERT(aDocument);
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(aRequest);
+
   nsContentPolicyType contentPolicyType =
       ScriptLoadRequestToContentPolicyType(aRequest);
 
@@ -885,10 +889,8 @@ nsresult ScriptLoader::PrepareHttpRequestAndInitiatorType(
   nsresult rv = NS_OK;
 
   if (httpChannel) {
-    // HTTP content negotation has little value in this context.
-    nsAutoCString acceptTypes("*/*");
-    rv = httpChannel->SetRequestHeader("Accept"_ns, acceptTypes, false);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    // The 'Accept' HTTP header should be set in
+    // nsHttpHandler::AddStandardRequestHeaders.
 
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
         new ReferrerInfo(aRequest->mReferrer, aRequest->ReferrerPolicy());
@@ -929,12 +931,8 @@ nsresult ScriptLoader::PrepareIncrementalStreamLoader(
     ScriptLoadRequest* aRequest) {
   UniquePtr<mozilla::dom::SRICheckDataVerifier> sriDataVerifier;
   if (!aRequest->mIntegrity.IsEmpty()) {
-    nsAutoCString sourceUri;
-    if (mDocument->GetDocumentURI()) {
-      mDocument->GetDocumentURI()->GetAsciiSpec(sourceUri);
-    }
     sriDataVerifier = MakeUnique<SRICheckDataVerifier>(aRequest->mIntegrity,
-                                                       sourceUri, mReporter);
+                                                       aChannel, mReporter);
   }
 
   RefPtr<ScriptLoadHandler> handler =
@@ -1114,15 +1112,21 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
     RefPtr<ScriptLoadRequest> aRequest =
         new ScriptLoadRequest(aKind, aURI, aReferrerPolicy, fetchOptions,
                               aIntegrity, referrer, context);
-    if (requestType == RequestType::External && mCache) {
+    if ((requestType == RequestType::External ||
+         requestType == RequestType::Preload) &&
+        mCache) {
       ScriptHashKey key(this, aRequest);
       auto cacheResult = mCache->Lookup(*this, key,
                                         /* aSyncLoad = */ true);
       if (cacheResult.mState == CachedSubResourceState::Complete) {
-        if (NS_FAILED(
-                CheckContentPolicy(mDocument, aElement, aNonce, aRequest))) {
-          aRequest->NoCacheEntryFound();
-          return aRequest.forget();
+        if (requestType == RequestType::External) {
+          // NOTE: The preload case checks the same after the
+          //       LookupPreloadRequest call.
+          if (NS_FAILED(
+                  CheckContentPolicy(mDocument, aElement, aNonce, aRequest))) {
+            aRequest->NoCacheEntryFound();
+            return aRequest.forget();
+          }
         }
 
         nsCOMPtr<nsINode> context;
@@ -1334,6 +1338,45 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
           NS_DispatchToCurrentThread(runnable.forget());
         }
         return false;
+      }
+    } else {
+      // https://html.spec.whatwg.org/#prepare-the-script-element
+      //
+      // Step 33. If el's type is "classic" and el has a src attribute, or el's
+      //          type is "module":
+      // ...
+      // Step 33.2. If el has an async attribute or el's force async is true:
+      // Step 33.2.1. Let scripts be el's preparation-time document's set of
+      //              scripts that will execute as soon as possible.
+      // Step 33.2.2. Append el to scripts.
+      // ...
+      // Step 33.3. Otherwise, if el is not parser-inserted:
+      // Step 33.3.1. Let scripts be el's preparation-time document's list of
+      //              scripts that will execute in order as soon as possible.
+      // Step 33.3.2. Append el to scripts.
+      // ...
+      //
+      // https://html.spec.whatwg.org/#the-end
+      //
+      // Step 7. Spin the event loop until the set of scripts that will execute
+      //         as soon as possible and the list of scripts that will execute
+      //         in order as soon as possible are empty.
+      //
+      // For scripts that creates the actual necko channel, the request is
+      // associated with the document's load group, and the load group manages
+      // the script set and the script list above implicitly, and the above
+      // "spin the event loop" is handled by IsBusy() check inside
+      // nsDocLoader::DocLoaderIsEmpty.
+      //
+      // https://searchfox.org/mozilla-central/rev/e85232b4b28ecc970240d39203e417d1c320623c/uriloader/base/nsDocLoader.cpp#704
+      //
+      // For in-memory-cached scripts, no channel is created, and those scripts
+      // should explicitly block the step 7 above.
+      //
+      // NOTE: IsAsyncScript represents both "async" and "force async".
+      if (request->GetScriptLoadContext()->IsAsyncScript() ||
+          parserMetadata == ParserMetadata::NotParserInserted) {
+        request->GetScriptLoadContext()->BlockOnload(mDocument);
       }
     }
   }
@@ -2924,6 +2967,12 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
   }
 }
 
+enum class CacheBehavior : uint8_t {
+  DoNothing,
+  Insert,
+  Evict,
+};
+
 void ScriptLoader::InstantiateClassicScriptFromAny(
     JSContext* aCx, JS::CompileOptions& aCompileOptions,
     ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
@@ -2937,16 +2986,30 @@ void ScriptLoader::InstantiateClassicScriptFromAny(
     return;
   }
 
-  bool createCache = false;
+  CacheBehavior cacheBehavior = CacheBehavior::DoNothing;
   if (mCache) {
-    createCache = aRequest->IsCacheable();
-
-    ScriptHashKey key(this, aRequest);
-    auto cacheResult = mCache->Lookup(*this, key,
-                                      /* aSyncLoad = */ true);
-    if (cacheResult.mState == CachedSubResourceState::Complete) {
-      // NOTE: Avoid creating cache regardless of CSP.
-      createCache = false;
+    // NOTE: A new response may arrive even if the exiting cache is still valid,
+    // for example when the request is performed with bypassing the cache.
+    //
+    // If the response is cacheable, it should overwrite the existing cache
+    // if any.  If the response is not cacheable, that should just evict the
+    // existing cache if any, so that the next request will also reach the
+    // server.
+    if (aRequest->IsCacheable()) {
+      if (ShouldBypassCache()) {
+        // If the request bypasses the cache, the response should always
+        // overwrite the cache, regardless of the content.
+        cacheBehavior = CacheBehavior::Insert;
+      } else {
+        ScriptHashKey key(this, aRequest);
+        auto cacheResult = mCache->Lookup(*this, key,
+                                          /* aSyncLoad = */ true);
+        if (cacheResult.mState != CachedSubResourceState::Complete) {
+          cacheBehavior = CacheBehavior::Insert;
+        }
+      }
+    } else {
+      cacheBehavior = CacheBehavior::Evict;
     }
   }
 
@@ -2954,13 +3017,24 @@ void ScriptLoader::InstantiateClassicScriptFromAny(
   InstantiateClassicScriptFromMaybeEncodedSource(
       aCx, aCompileOptions, aRequest, aScript, stencil, aDebuggerPrivateValue,
       aDebuggerIntroductionScript, aRv);
-  if (!aRv.Failed()) {
-    if (createCache) {
-      MOZ_ASSERT(mCache);
-      MOZ_ASSERT(stencil);
-      aRequest->SetStencil(stencil.forget());
+  if (!aRv.Failed() && cacheBehavior != CacheBehavior::DoNothing) {
+    MOZ_ASSERT(mCache);
+    MOZ_ASSERT(stencil);
+
+    if (!JS::IsStencilCacheable(stencil)) {
+      // If the stencil is not compatible with the cache (e.g. contains asm.js),
+      // this should also evict any the existing cache if any.
+      cacheBehavior = CacheBehavior::Evict;
+    }
+
+    aRequest->SetStencil(stencil.forget());
+    if (cacheBehavior == CacheBehavior::Insert) {
       auto loadData = MakeRefPtr<ScriptLoadData>(this, aRequest);
       mCache->Insert(*loadData);
+    } else {
+      MOZ_ASSERT(cacheBehavior == CacheBehavior::Evict);
+      ScriptHashKey key(this, aRequest);
+      mCache->Evict(key);
     }
   }
 }
@@ -3759,13 +3833,7 @@ nsresult ScriptLoader::VerifySRI(ScriptLoadRequest* aRequest,
   if (!aRequest->mIntegrity.IsEmpty() && NS_SUCCEEDED((rv = aSRIStatus))) {
     MOZ_ASSERT(aSRIDataVerifier);
     MOZ_ASSERT(mReporter);
-
-    nsAutoCString sourceUri;
-    if (mDocument && mDocument->GetDocumentURI()) {
-      mDocument->GetDocumentURI()->GetAsciiSpec(sourceUri);
-    }
-    rv = aSRIDataVerifier->Verify(aRequest->mIntegrity, channel, sourceUri,
-                                  mReporter);
+    rv = aSRIDataVerifier->Verify(aRequest->mIntegrity, channel, mReporter);
     if (channelRequest) {
       mReporter->FlushReportsToConsole(
           nsContentUtils::GetInnerWindowID(channelRequest));
@@ -4370,10 +4438,12 @@ void ScriptLoader::PreloadURI(
          request.get(), url.get()));
   }
 
-  nsAutoString charset(aCharset);
-  nsresult rv = StartLoad(request, Some(charset));
-  if (NS_FAILED(rv)) {
-    return;
+  if (!request->IsStencil()) {
+    nsAutoString charset(aCharset);
+    nsresult rv = StartLoad(request, Some(charset));
+    if (NS_FAILED(rv)) {
+      return;
+    }
   }
 
   PreloadInfo* pi = mPreloads.AppendElement();

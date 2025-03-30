@@ -68,13 +68,6 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/Watchtower.h"
 #include "vm/WrapperObject.h"
-#ifdef ENABLE_RECORD_TUPLE
-#  include "builtin/RecordObject.h"
-#  include "builtin/TupleObject.h"
-#  include "vm/RecordType.h"
-#  include "vm/TupleType.h"
-#endif
-
 #include "gc/StableCellHasher-inl.h"
 #include "vm/BooleanObject-inl.h"
 #include "vm/EnvironmentObject-inl.h"
@@ -137,10 +130,7 @@ JS_PUBLIC_API const char* JS::InformalValueTypeName(const Value& v) {
     case ValueType::BigInt:
       return "bigint";
     case ValueType::Object:
-#ifdef ENABLE_RECORD_TUPLE
-    case ValueType::ExtendedPrimitive:
-#endif
-      return v.getObjectPayload().getClass()->name;
+      return v.toObject().getClass()->name;
     case ValueType::Magic:
       return "magic";
     case ValueType::PrivateGCThing:
@@ -2231,8 +2221,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   }
 
   if (key == JSProto_FinalizationRegistry &&
-      JS::GetWeakRefsEnabled() ==
-          JS::WeakRefSpecifier::EnabledWithoutCleanupSome &&
+      !JS::Prefs::experimental_weakrefs_expose_cleanupSome() &&
       id == NameToId(cx->names().cleanupSome)) {
     return true;
   }
@@ -2241,49 +2230,11 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   // to realize is that this is a -constructor function-, not a function
   // on the prototype; and the proto of the constructor is JSProto_Function.
   if (key == JSProto_Function) {
-    if (!JS::Prefs::array_grouping() && (id == NameToId(cx->names().groupBy))) {
-      return true;
-    }
-
     if (!JS::Prefs::experimental_uint8array_base64() &&
         (id == NameToId(cx->names().fromBase64) ||
          id == NameToId(cx->names().fromHex))) {
       return true;
     }
-  }
-
-  if (key == JSProto_Set && !JS::Prefs::experimental_new_set_methods() &&
-      (id == NameToId(cx->names().union_) ||
-       id == NameToId(cx->names().difference) ||
-       id == NameToId(cx->names().intersection) ||
-       id == NameToId(cx->names().isSubsetOf) ||
-       id == NameToId(cx->names().isSupersetOf) ||
-       id == NameToId(cx->names().isDisjointFrom) ||
-       id == NameToId(cx->names().symmetricDifference))) {
-    return true;
-  }
-
-  if (key == JSProto_ArrayBuffer &&
-      !JS::Prefs::experimental_arraybuffer_resizable() &&
-      (id == NameToId(cx->names().maxByteLength) ||
-       id == NameToId(cx->names().resizable) ||
-       id == NameToId(cx->names().resize))) {
-    return true;
-  }
-
-  if (key == JSProto_SharedArrayBuffer &&
-      !JS::Prefs::experimental_sharedarraybuffer_growable() &&
-      (id == NameToId(cx->names().maxByteLength) ||
-       id == NameToId(cx->names().growable) ||
-       id == NameToId(cx->names().grow))) {
-    return true;
-  }
-
-  if (key == JSProto_ArrayBuffer && !JS::Prefs::arraybuffer_transfer() &&
-      (id == NameToId(cx->names().transfer) ||
-       id == NameToId(cx->names().transferToFixedLength) ||
-       id == NameToId(cx->names().detached))) {
-    return true;
   }
 
   if (key == JSProto_Uint8Array &&
@@ -2306,10 +2257,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     }
     if (!JS::Prefs::experimental_promise_try() &&
         id == NameToId(cx->names().try_)) {
-      return true;
-    }
-    if (!JS::Prefs::experimental_regexp_escape() &&
-        id == NameToId(cx->names().escape)) {
       return true;
     }
   }
@@ -2344,14 +2291,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       return true;
     }
   }
-  if (key == JSProto_Math && !JS::Prefs::experimental_math_sumprecise() &&
-      id == NameToId(cx->names().sumPrecise)) {
-    return true;
-  }
-  if (key == JSProto_Atomics && !JS::Prefs::experimental_atomics_pause() &&
-      id == NameToId(cx->names().pause)) {
-    return true;
-  }
   if (key == JSProto_Map || key == JSProto_WeakMap) {
     if (!JS::Prefs::experimental_upsert() &&
         (id == NameToId(cx->names().getOrInsert) ||
@@ -2374,13 +2313,13 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
-  if (key == JSProto_Math && !JS::Prefs::experimental_float16array() &&
-      (id == NameToId(cx->names().f16round))) {
+  if (key == JSProto_Math && !JS::Prefs::experimental_math_sumprecise() &&
+      id == NameToId(cx->names().sumPrecise)) {
     return true;
   }
-  if (key == JSProto_DataView && !JS::Prefs::experimental_float16array() &&
-      (id == NameToId(cx->names().getFloat16) ||
-       id == NameToId(cx->names().setFloat16))) {
+
+  if (key == JSProto_Atomics && !JS::Prefs::experimental_atomics_pause() &&
+      id == NameToId(cx->names().pause)) {
     return true;
   }
 
@@ -2667,22 +2606,6 @@ JSObject* js::PrimitiveToObject(JSContext* cx, const Value& v) {
       RootedBigInt bigInt(cx, v.toBigInt());
       return BigIntObject::create(cx, bigInt);
     }
-#ifdef ENABLE_RECORD_TUPLE
-    case ValueType::ExtendedPrimitive: {
-      JSObject& obj = v.toExtendedPrimitive();
-
-      if (obj.is<RecordType>()) {
-        Rooted<RecordType*> rec(cx, &obj.as<RecordType>());
-        return RecordObject::create(cx, rec);
-      }
-      if (obj.is<TupleType>()) {
-        Rooted<TupleType*> tuple(cx, &obj.as<TupleType>());
-        return TupleObject::create(cx, tuple);
-      }
-
-      MOZ_CRASH("Unexpected ExtendedPrimitive type.");
-    }
-#endif
     case ValueType::Undefined:
     case ValueType::Null:
     case ValueType::Magic:
@@ -2711,16 +2634,6 @@ JSProtoKey js::PrimitiveToProtoKey(JSContext* cx, const Value& v) {
       return JSProto_Symbol;
     case ValueType::BigInt:
       return JSProto_BigInt;
-#ifdef ENABLE_RECORD_TUPLE
-    case ValueType::ExtendedPrimitive:
-      if (v.toExtendedPrimitive().is<TupleType>()) {
-        return JSProto_Tuple;
-      }
-      if (v.toExtendedPrimitive().is<RecordType>()) {
-        return JSProto_Null;
-      }
-      MOZ_CRASH("Unsupported ExtendedPrimitive");
-#endif
     case ValueType::Undefined:
     case ValueType::Null:
     case ValueType::Magic:
@@ -3582,12 +3495,6 @@ bool js::Unbox(JSContext* cx, HandleObject obj, MutableHandleValue vp) {
     vp.setSymbol(obj->as<SymbolObject>().unbox());
   } else if (obj->is<BigIntObject>()) {
     vp.setBigInt(obj->as<BigIntObject>().unbox());
-#ifdef ENABLE_RECORD_TUPLE
-  } else if (obj->is<RecordObject>()) {
-    vp.setExtendedPrimitive(*obj->as<RecordObject>().unbox());
-  } else if (obj->is<TupleObject>()) {
-    vp.setExtendedPrimitive(obj->as<TupleObject>().unbox());
-#endif
   } else {
     vp.setUndefined();
   }

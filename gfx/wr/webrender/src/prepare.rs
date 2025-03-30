@@ -304,6 +304,7 @@ fn prepare_prim_for_render(
                 &prim_rect.min,
                 cluster.spatial_node_index,
                 pic_context.raster_spatial_node_index,
+                pic_context.visibility_spatial_node_index,
                 pic_context,
                 pic_state,
                 frame_context,
@@ -1132,6 +1133,7 @@ fn prepare_interned_prim_for_render(
             ) {
                 if let Picture3DContext::In { root_data: None, plane_splitter_index, .. } = pic.context_3d {
                     let dirty_rect = frame_state.current_dirty_region().combined;
+                    let visibility_node = frame_state.current_dirty_region().visibility_spatial_node;
                     let splitter = &mut frame_state.plane_splitters[plane_splitter_index.0];
                     let surface_index = pic.raster_config.as_ref().unwrap().surface_index;
                     let surface = &frame_state.surfaces[surface_index.0];
@@ -1141,6 +1143,7 @@ fn prepare_interned_prim_for_render(
                         splitter,
                         frame_context.spatial_tree,
                         prim_spatial_node_index,
+                        visibility_node,
                         local_prim_rect,
                         &prim_instance.vis.clip_chain.local_clip_rect,
                         dirty_rect,
@@ -1239,6 +1242,7 @@ fn decompose_repeated_gradient(
         let visible_rect = compute_conservative_visible_rect(
             &prim_vis.clip_chain,
             frame_state.current_dirty_region().combined,
+            frame_state.current_dirty_region().visibility_spatial_node,
             prim_spatial_node_index,
             spatial_tree,
         );
@@ -1278,6 +1282,7 @@ fn update_clip_task_for_brush(
     prim_origin: &LayoutPoint,
     prim_spatial_node_index: SpatialNodeIndex,
     root_spatial_node_index: SpatialNodeIndex,
+    visibility_spatial_node_index: SpatialNodeIndex,
     pic_context: &PictureContext,
     pic_state: &mut PictureState,
     frame_context: &FrameBuildingContext,
@@ -1415,7 +1420,7 @@ fn update_clip_task_for_brush(
         );
         clip_mask_instances.push(clip_mask_kind);
     } else {
-        let dirty_world_rect = frame_state.current_dirty_region().combined;
+        let dirty_rect = frame_state.current_dirty_region().combined;
 
         for segment in segments {
             // Build a clip chain for the smaller segment rect. This will
@@ -1424,6 +1429,7 @@ fn update_clip_task_for_brush(
             frame_state.clip_store.set_active_clips_from_clip_chain(
                 &instance.vis.clip_chain,
                 prim_spatial_node_index,
+                visibility_spatial_node_index,
                 &frame_context.spatial_tree,
                 &data_stores.clip,
             );
@@ -1433,12 +1439,12 @@ fn update_clip_task_for_brush(
                 .build_clip_chain_instance(
                     segment.local_rect.translate(prim_origin.to_vector()),
                     &pic_state.map_local_to_pic,
-                    &pic_state.map_pic_to_world,
+                    &pic_state.map_pic_to_vis,
                     &frame_context.spatial_tree,
                     frame_state.gpu_cache,
                     frame_state.resource_cache,
                     device_pixel_scale,
-                    &dirty_world_rect,
+                    &dirty_rect,
                     &mut data_stores.clip,
                     frame_state.rg_builder,
                     false,
@@ -1466,6 +1472,7 @@ pub fn update_clip_task(
     prim_origin: &LayoutPoint,
     prim_spatial_node_index: SpatialNodeIndex,
     root_spatial_node_index: SpatialNodeIndex,
+    visibility_spatial_node_index: SpatialNodeIndex,
     pic_context: &PictureContext,
     pic_state: &mut PictureState,
     frame_context: &FrameBuildingContext,
@@ -1491,6 +1498,7 @@ pub fn update_clip_task(
         prim_origin,
         prim_spatial_node_index,
         root_spatial_node_index,
+        visibility_spatial_node_index,
         pic_context,
         pic_state,
         frame_context,

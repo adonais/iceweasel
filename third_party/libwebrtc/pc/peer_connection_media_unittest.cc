@@ -62,7 +62,6 @@
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
-#include "test/scoped_key_value_config.h"
 #ifdef WEBRTC_ANDROID
 #include "pc/test/android_test_initializer.h"
 #endif
@@ -176,7 +175,6 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     EnableFakeMedia(factory_dependencies, std::move(media_engine));
     factory_dependencies.event_log_factory =
         std::make_unique<RtcEventLogFactory>();
-    factory_dependencies.trials = std::move(field_trials_);
     auto pc_factory =
         CreateModularPeerConnectionFactory(std::move(factory_dependencies));
 
@@ -253,7 +251,6 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     return sdp_semantics_ == SdpSemantics::kUnifiedPlan;
   }
 
-  std::unique_ptr<test::ScopedKeyValueConfig> field_trials_;
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   rtc::AutoSocketServerThread main_;
   const SdpSemantics sdp_semantics_;
@@ -277,29 +274,6 @@ class PeerConnectionMediaTestPlanB : public PeerConnectionMediaBaseTest {
   PeerConnectionMediaTestPlanB()
       : PeerConnectionMediaBaseTest(SdpSemantics::kPlanB_DEPRECATED) {}
 };
-
-TEST_P(PeerConnectionMediaTest,
-       FailToSetRemoteDescriptionIfCreateMediaChannelFails) {
-  auto caller = CreatePeerConnectionWithAudioVideo();
-  auto callee = CreatePeerConnectionWithAudioVideo();
-  callee->media_engine()->set_fail_create_channel(true);
-
-  std::string error;
-  ASSERT_FALSE(callee->SetRemoteDescription(caller->CreateOffer(), &error));
-  EXPECT_THAT(error,
-              HasSubstr("Failed to set remote offer sdp: Failed to create"));
-}
-
-TEST_P(PeerConnectionMediaTest,
-       FailToSetLocalDescriptionIfCreateMediaChannelFails) {
-  auto caller = CreatePeerConnectionWithAudioVideo();
-  caller->media_engine()->set_fail_create_channel(true);
-
-  std::string error;
-  ASSERT_FALSE(caller->SetLocalDescription(caller->CreateOffer(), &error));
-  EXPECT_THAT(error,
-              HasSubstr("Failed to set local offer sdp: Failed to create"));
-}
 
 std::vector<std::string> GetIds(
     const std::vector<cricket::StreamParams>& streams) {

@@ -115,7 +115,7 @@ static media::MediaCodecsSupported GetFullMediaCodecSupport(
     WMFDecoderModule::Init(WMFDecoderModule::Config::ForceEnableHEVC);
   }
   auto disableHEVCIfNeeded = MakeScopeExit([]() {
-    if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
+    if (!StaticPrefs::media_hevc_enabled()) {
       WMFDecoderModule::DisableForceEnableHEVC();
     }
   });
@@ -412,6 +412,10 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   wr::RenderThread::Start(aWrNamespace);
   gfx::CanvasRenderThread::Start();
   image::ImageMemoryReporter::InitForWebRender();
+
+  // Since gfxPlatform::Init is never called for the GPU process, ensure that
+  // common memory reporters get registered here instead.
+  gfxPlatform::InitMemoryReportersForGPUProcess();
 
   VRManager::ManagerInit();
   // Send a message to the UI process that we're done.

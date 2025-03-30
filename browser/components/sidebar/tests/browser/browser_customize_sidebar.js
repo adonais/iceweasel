@@ -6,7 +6,14 @@
 requestLongerTimeout(2);
 
 const SIDEBAR_VISIBILITY_PREF = "sidebar.visibility";
+const POSITION_SETTING_PREF = "sidebar.position_start";
 const TAB_DIRECTION_PREF = "sidebar.verticalTabs";
+
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref(SIDEBAR_VISIBILITY_PREF);
+  Services.prefs.clearUserPref(POSITION_SETTING_PREF);
+  Services.prefs.clearUserPref(TAB_DIRECTION_PREF);
+});
 
 async function showCustomizePanel(win) {
   await win.SidebarController.show("viewCustomizeSidebar");
@@ -189,6 +196,7 @@ add_task(async function test_customize_position_setting() {
     {},
     win.SidebarController.browser.contentWindow
   );
+  await panel.updateComplete;
   ok(panel.positionInput.checked, "Sidebar is positioned on the right");
 
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
@@ -202,8 +210,8 @@ add_task(async function test_customize_position_setting() {
   ok(newPanel.positionInput.checked, "Position setting persists.");
   is(
     newSidebarBox.style.order,
-    "5",
-    "Sidebar box should have an order of 5 when on the right"
+    "4",
+    "Sidebar box should have an order of 4 when on the right"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -215,6 +223,8 @@ add_task(async function test_customize_visibility_setting() {
   await SpecialPowers.pushPrefEnv({
     set: [[TAB_DIRECTION_PREF, true]],
   });
+  await waitForTabstripOrientation("vertical");
+
   const deferredPrefChange = Promise.withResolvers();
   const prefObserver = () => deferredPrefChange.resolve();
   Services.prefs.addObserver(SIDEBAR_VISIBILITY_PREF, prefObserver);
@@ -234,6 +244,7 @@ add_task(async function test_customize_visibility_setting() {
     {},
     win.SidebarController.browser.contentWindow
   );
+  await panel.updateComplete;
   ok(panel.visibilityInput.checked, "Hide sidebar is enabled.");
   ok(
     win.SidebarController.sidebarContainer.hidden,
@@ -259,14 +270,8 @@ add_task(async function test_customize_visibility_setting() {
 });
 
 add_task(async function test_vertical_tabs_setting() {
-  const deferredPrefChange = Promise.withResolvers();
-  const prefObserver = () => deferredPrefChange.resolve();
-  Services.prefs.addObserver(TAB_DIRECTION_PREF, prefObserver);
-  registerCleanupFunction(() =>
-    Services.prefs.removeObserver(TAB_DIRECTION_PREF, prefObserver)
-  );
-
   const win = await BrowserTestUtils.openNewBrowserWindow();
+  await waitForTabstripOrientation("horizontal", win);
   const panel = await showCustomizePanel(win);
   ok(
     !panel.verticalTabsInput.checked,
@@ -277,12 +282,15 @@ add_task(async function test_vertical_tabs_setting() {
     {},
     win.SidebarController.browser.contentWindow
   );
+  await panel.updateComplete;
   ok(panel.verticalTabsInput.checked, "Vertical tabs is enabled.");
-  await deferredPrefChange.promise;
+  await waitForTabstripOrientation("vertical", win);
+
   const newPrefValue = Services.prefs.getBoolPref(TAB_DIRECTION_PREF);
   is(newPrefValue, true, "Vertical tabs pref updated.");
 
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
+  await waitForTabstripOrientation("vertical", newWin);
   const newPanel = await showCustomizePanel(newWin);
   ok(newPanel.verticalTabsInput.checked, "Vertical tabs setting persists.");
 
@@ -306,11 +314,90 @@ add_task(async function test_keyboard_navigation_away_from_settings_link() {
     "Settings link is focused"
   );
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, win);
+  await panel.updateComplete;
+
   Assert.notEqual(
     panel.shadowRoot.activeElement,
     manageSettingsLink,
     "Settings link is not focused"
   );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_settings_synchronized_across_windows() {
+  const panel = await showCustomizePanel(window);
+  const { contentWindow } = SidebarController.browser;
+  const newWindow = await BrowserTestUtils.openNewBrowserWindow();
+  const newPanel = await showCustomizePanel(newWindow);
+
+  info("Update vertical tabs settings.");
+  EventUtils.synthesizeMouseAtCenter(
+    panel.verticalTabsInput,
+    {},
+    contentWindow
+  );
+  await newPanel.updateComplete;
+  ok(
+    newPanel.verticalTabsInput.checked,
+    "New window shows the vertical tabs setting."
+  );
+
+  info("Update visibility settings.");
+  EventUtils.synthesizeMouseAtCenter(panel.visibilityInput, {}, contentWindow);
+  await newPanel.updateComplete;
+  ok(
+    newPanel.visibilityInput.checked,
+    "New window shows the updated visibility setting."
+  );
+
+  info("Update position settings.");
+  EventUtils.synthesizeMouseAtCenter(panel.positionInput, {}, contentWindow);
+  await newPanel.updateComplete;
+  ok(
+    newPanel.positionInput.checked,
+    "New window shows the updated position setting."
+  );
+
+  SidebarController.hide();
+  await BrowserTestUtils.closeWindow(newWindow);
+});
+
+add_task(async function test_expand_on_hover_message() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.expandOnHoverMessage.dismissed", false]],
+  });
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  let panel = await showCustomizePanel(win);
+  let expandOnHoverMessage = panel.shadowRoot.querySelector(
+    ".expand-on-hover-message"
+  );
+
+  ok(expandOnHoverMessage, "Found the expand on hover message");
+  ok(expandOnHoverMessage.isConnected, "Message bar is connected");
+
+  let messageBarRemoved = BrowserTestUtils.waitForEvent(
+    expandOnHoverMessage,
+    "message-bar:close"
+  );
+  ok(expandOnHoverMessage.closeButton, "close button exists");
+  EventUtils.synthesizeMouseAtCenter(
+    expandOnHoverMessage.closeButton,
+    {},
+    win.SidebarController.browser.contentWindow
+  );
+  await messageBarRemoved;
+  ok(!expandOnHoverMessage.isConnected, "Message bar was removed");
+
+  // Close the window, make a new one to check that the message is not shown
+  await BrowserTestUtils.closeWindow(win);
+  win = await BrowserTestUtils.openNewBrowserWindow();
+  panel = await showCustomizePanel(win);
+  expandOnHoverMessage = panel.shadowRoot.querySelector(
+    ".expand-on-hover-message"
+  );
+
+  ok(!expandOnHoverMessage, "Expand on hover message is not shown");
 
   await BrowserTestUtils.closeWindow(win);
 });

@@ -324,6 +324,7 @@
   MACRO_(integer, "integer")                                                   \
   MACRO_(interface, "interface")                                               \
   MACRO_(InterpretGeneratorResume, "InterpretGeneratorResume")                 \
+  MACRO_(Intl_DurationFormat_format, "Intl_DurationFormat_format")             \
   MACRO_(Invalid_Date_, "Invalid Date")                                        \
   MACRO_(isBreakpoint, "isBreakpoint")                                         \
   IF_EXPLICIT_RESOURCE_MANAGEMENT_OR_DECORATORS(                               \
@@ -442,6 +443,7 @@
   MACRO_(null, "null")                                                         \
   MACRO_(numberingSystem, "numberingSystem")                                   \
   MACRO_(numeric, "numeric")                                                   \
+  MACRO_(NumericRangeIterator, "NumericRangeIterator")                         \
   MACRO_(object_Arguments_, "[object Arguments]")                              \
   MACRO_(object_Array_, "[object Array]")                                      \
   MACRO_(object_BigInt_, "[object BigInt]")                                    \
@@ -452,11 +454,9 @@
   MACRO_(object_Null_, "[object Null]")                                        \
   MACRO_(object_Number_, "[object Number]")                                    \
   MACRO_(object_Object_, "[object Object]")                                    \
-  IF_RECORD_TUPLE(MACRO_(object_Record_, "[object Record]"))                   \
   MACRO_(object_RegExp_, "[object RegExp]")                                    \
   MACRO_(object_String_, "[object String]")                                    \
   MACRO_(object_Symbol_, "[object Symbol]")                                    \
-  IF_RECORD_TUPLE(MACRO_(object_Tuple_, "[object Tuple]"))                     \
   MACRO_(object_Undefined_, "[object Undefined]")                              \
   MACRO_(Object_valueOf, "Object_valueOf")                                     \
   MACRO_(objects, "objects")                                                   \
@@ -679,9 +679,7 @@
   MACRO_(number, "number")                                                     \
   MACRO_(boolean, "boolean")                                                   \
   MACRO_(symbol, "symbol")                                                     \
-  MACRO_(bigint, "bigint")                                                     \
-  IF_RECORD_TUPLE(MACRO_(record, "record"))                                    \
-  IF_RECORD_TUPLE(MACRO_(tuple, "tuple"))
+  MACRO_(bigint, "bigint")
 
 #define PROPERTY_NAME_IGNORE(ID, TEXT)
 

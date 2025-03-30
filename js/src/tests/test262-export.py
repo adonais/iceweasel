@@ -43,8 +43,12 @@ def findAndCopyIncludes(dirPath: str, baseDir: str, includeDir: str) -> "list[st
         # find the shell.js
         shellFile = os.path.join(baseDir, relPath, "shell.js")
 
-        # if the file exists and is not empty, include in includes
-        if os.path.exists(shellFile) and os.path.getsize(shellFile) > 0:
+        # if the file isn't excluded, exists, and is not empty, include in includes
+        if (
+            not any(relPath == f"non262/{path}" for path in UNSUPPORTED_PATHS)
+            and os.path.exists(shellFile)
+            and os.path.getsize(shellFile) > 0
+        ):
             with open(shellFile, "rb") as f:
                 testSource = f.read()
 
@@ -124,15 +128,19 @@ MODELINE_PATTERN = re.compile(rb"/(/|\*) -\*- .* -\*-( \*/)?[\r\n]+")
 UNSUPPORTED_FEATURES = [
     "async-iterator-helpers",
     "Iterator.range",
-    "record-tuple",
 ]
 
 UNSUPPORTED_PATHS = [
     "Intl",
+    "Temporal/Intl",
     "ReadableStream",
     "reflect-parse",
     "extensions/empty.txt",
     "extensions/file-mapped-arraybuffers.txt",
+    "module/bug1693261-async.mjs",
+    "module/bug1693261-c1.mjs",
+    "module/bug1693261-c2.mjs",
+    "module/bug1693261-x.mjs",
 ]
 
 
@@ -185,8 +193,6 @@ class ReftestEntry:
 
 
 def featureFromReftest(reftest: str) -> Optional[str]:
-    if reftest in ("Record", "Tuple"):
-        return "record-tuple"
     if reftest == "Iterator":
         return "iterator-helpers"
     if reftest == "AsyncIterator":
@@ -498,7 +504,7 @@ def cleanupMeta(meta: "dict[str, Any]") -> "dict[str, Any]":
                 del meta[tag]
             else:
                 # We need the list back for the yaml dump
-                meta[tag] = sorted(set(meta[tag]))
+                meta[tag] = sorted(set(meta[tag]), reverse=tag == "includes")
                 if not len(meta[tag]):
                     del meta[tag]
 
@@ -542,9 +548,9 @@ def insertMeta(source: bytes, frontmatter: "dict[str, Any]") -> bytes:
                 .strip()
                 .replace(b"|-\n", b"")
             )
-        elif key == "includes":
+        elif key in ["flags", "includes", "features"]:
             lines.append(
-                b"includes: "
+                b"%s: " % key.encode("ascii")
                 + yaml.dump(
                     value, encoding="utf8", default_flow_style=True, width=math.inf
                 ).strip()

@@ -2804,12 +2804,23 @@ void HTMLMediaElement::SelectResource() {
       ReportLoadError("MediaLoadInvalidURI", params);
       rv = MediaResult(rv.Code(), "MediaLoadInvalidURI");
     }
-    // The media element has neither a src attribute nor a source element child:
-    // set the networkState to NETWORK_EMPTY, and abort these steps; the
-    // synchronous section ends.
-    GetMainThreadSerialEventTarget()->Dispatch(NewRunnableMethod<nsCString>(
-        "HTMLMediaElement::NoSupportedMediaSourceError", this,
-        &HTMLMediaElement::NoSupportedMediaSourceError, rv.Description()));
+    // https://html.spec.whatwg.org/multipage/media.html#concept-media-load-algorithm
+    // "Failed with attribute:"
+    // "Take pending play promises and queue a media element task given the
+    // media element to run the dedicated media source failure steps with the
+    // result."
+    GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+        "HTMLMediaElement::NoSupportedMediaSourceError",
+        [this, self = RefPtr{this}, loadId = GetCurrentLoadID(),
+         description = rv.Description()]() {
+          // Drop the task if the load algorithm has been invoked again.
+          // https://html.spec.whatwg.org/multipage/media.html#media-element-load-algorithm
+          // "Remove each task in pending tasks from its task queue."
+          if (GetCurrentLoadID() == loadId) {
+            // The failed load has not been aborted.
+            NoSupportedMediaSourceError(description);
+          }
+        }));
   } else {
     // Otherwise, the source elements will be used.
     mIsLoadingFromSourceChildren = true;
@@ -4632,6 +4643,8 @@ already_AddRefed<Promise> HTMLMediaElement::Play(ErrorResult& aRv) {
     mAllowedToPlayPromise.ResolveIfExists(true, __func__);
     PlayInternal(handlingUserInput);
     UpdateCustomPolicyAfterPlayed();
+
+    MaybeMarkSHEntryAsUserInteracted();
   } else {
     AUTOPLAY_LOG("reject MediaElement %p to play", this);
     AsyncRejectPendingPlayPromises(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
@@ -6372,6 +6385,8 @@ void HTMLMediaElement::RunAutoplay() {
   DispatchAsyncEvent(u"play"_ns);
 
   DispatchAsyncEvent(u"playing"_ns);
+
+  MaybeMarkSHEntryAsUserInteracted();
 }
 
 bool HTMLMediaElement::IsActuallyInvisible() const {
@@ -8085,6 +8100,15 @@ void HTMLMediaElement::NodeInfoChanged(Document* aOldDoc) {
   }
 
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
+}
+
+void HTMLMediaElement::MaybeMarkSHEntryAsUserInteracted() {
+  if (media::AutoplayPolicy::GetAutoplayPolicy(*this) ==
+      dom::AutoplayPolicy::Allowed) {
+    // Only mark entries when autoplay is allowed for both audio and video,
+    // i.e. when AutoplayPolicy is not Blocked or Allowed_muted.
+    OwnerDoc()->SetSHEntryHasUserInteraction(true);
+  }
 }
 
 #ifdef MOZ_WMF_CDM

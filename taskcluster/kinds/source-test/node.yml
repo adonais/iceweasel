@@ -28,18 +28,23 @@ newtab-unit-tests:
                 linux1804-64/opt: build-linux64/opt
             default:
                 linux1804-64/opt: build-linux64-shippable/opt
+    fetches:
+        build:
+            - target.tar.xz
+        toolchain:
+            - linux64-node
     run:
         command: >
             cd /builds/worker/checkouts/gecko &&
             rm -rf node_modules &&
             npm ci &&
-            cd /builds/worker/checkouts/gecko/browser/components/newtab &&
+            cd /builds/worker/checkouts/gecko/browser/extensions/newtab &&
             rm -rf node_modules &&
             npm ci &&
-            node bin/try-runner.js
+            FIREFOX_BIN=$MOZ_FETCHES_DIR/firefox/firefox node bin/try-runner.js
     when:
         files-changed:
-            - "browser/components/newtab/**"
+            - "browser/extensions/newtab/**"
 
 newtab-unit-tests-ccov:
     description: newtab unit tests code coverage
@@ -48,7 +53,7 @@ newtab-unit-tests-ccov:
     worker:
         artifacts:
             - name: public/code-coverage-grcov.zip
-              path: /builds/worker/checkouts/gecko/browser/components/newtab/logs/coverage/code-coverage-grcov.zip
+              path: /builds/worker/checkouts/gecko/browser/extensions/newtab/logs/coverage/code-coverage-grcov.zip
               type: file
     require-build:
         by-project:
@@ -56,15 +61,20 @@ newtab-unit-tests-ccov:
                 linux1804-64/opt: build-linux64/opt
             default:
                 linux1804-64/opt: build-linux64-shippable/opt
+    fetches:
+        build:
+            - target.tar.xz
+        toolchain:
+            - linux64-node
     run:
         command: >
             cd /builds/worker/checkouts/gecko &&
             rm -rf node_modules &&
             npm ci &&
-            cd /builds/worker/checkouts/gecko/browser/components/newtab &&
+            cd /builds/worker/checkouts/gecko/browser/extensions/newtab &&
             rm -rf node_modules &&
             npm ci &&
-            node bin/try-runner.js
+            FIREFOX_BIN=$MOZ_FETCHES_DIR/firefox/firefox node bin/try-runner.js
     # This should only run on mozilla-central, as the bot will only parse mozilla-central
     # coverage anyways.
     run-on-projects: ["mozilla-central"]

@@ -4119,15 +4119,15 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
 
-  // Munge the corruption detection header extension into the SDP.
-  // If caller adds corruption detection header extension to its SDP offer, it
-  // will receive it from the callee.
-  caller()->AddCorruptionDetectionHeader();
-
   // Do normal offer/answer and wait for some frames to be received in each
   // direction, and `corruption_score` to be aggregated.
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
+  // Negotiate the corruption detection header extension in SDP.
+  // If caller adds corruption detection header extension to its SDP offer, it
+  // will receive it from the callee.
+  caller()->NegotiateCorruptionDetectionHeader();
+
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_TRUE_WAIT(caller()->GetCorruptionScoreCount() > 0, kMaxWaitForStatsMs);
@@ -4174,16 +4174,18 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
 
-  // Munge the corruption detection header extension into the SDP.
-  // If caller adds corruption detection header extension to its SDP offer, it
-  // will receive it from the callee.
-  caller()->AddCorruptionDetectionHeader();
-  callee()->AddCorruptionDetectionHeader();
 
   // Do normal offer/answer and wait for some frames to be received in each
   // direction, and `corruption_score` to be aggregated.
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
+
+  // Negotiate the corruption detection header extension in SDP.
+  // If caller adds corruption detection header extension to its SDP offer, it
+  // will receive it from the callee.
+  caller()->NegotiateCorruptionDetectionHeader();
+  callee()->NegotiateCorruptionDetectionHeader();
+
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_TRUE_WAIT(caller()->GetCorruptionScoreCount() > 0, kMaxWaitForStatsMs);
@@ -4221,11 +4223,11 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
 
-  // Munge the corruption detection header extension into the SDP.
+  // Negotiate the corruption detection header extension in SDP.
   // If caller adds corruption detection header extension to its SDP offer, it
   // will receive it from the callee.
-  caller()->AddCorruptionDetectionHeader();
-  callee()->AddCorruptionDetectionHeader();
+  caller()->NegotiateCorruptionDetectionHeader();
+  callee()->NegotiateCorruptionDetectionHeader();
 
   // Do normal offer/answer and wait for some frames to be received in each
   // direction, and `corruption_score` to be aggregated.
@@ -4250,6 +4252,49 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
       }
     }
   }
+}
+
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       AbsCaptureTimestampShouldBeMeteredCorrectly) {
+  metrics::Reset();
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddVideoTrack();
+  auto transceiver = caller()->pc()->GetTransceivers()[0];
+  auto extensions = transceiver->GetHeaderExtensionsToNegotiate();
+  bool found = false;
+  for (auto& extension : extensions) {
+    if (extension.uri == RtpExtension::kAbsoluteCaptureTimeUri) {
+      extension.direction = RtpTransceiverDirection::kSendRecv;
+      found = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(found);
+  ASSERT_TRUE(transceiver->SetHeaderExtensionsToNegotiate(extensions).ok());
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  const auto& negotiated_header_extensions = caller()
+                                                 ->pc()
+                                                 ->remote_description()
+                                                 ->description()
+                                                 ->contents()[0]
+                                                 .media_description()
+                                                 ->rtp_header_extensions();
+  ASSERT_TRUE(RtpExtension::FindHeaderExtensionByUri(
+      negotiated_header_extensions, RtpExtension::kAbsoluteCaptureTimeUri,
+      RtpExtension::kDiscardEncryptedExtension));
+  ASSERT_TRUE_WAIT(
+      metrics::NumSamples("WebRTC.Call.AbsCapture.ExtensionWait") > 0,
+      kDefaultTimeout);
+  // Observed deltas are more than 100 msec. Use 1 minute as tolerance;
+  // this is a check against wrong timebase.
+  EXPECT_LT(metrics::MinSample("WebRTC.Call.AbsCapture.Delta"), 60'000'000);
+  ASSERT_TRUE_WAIT(metrics::NumSamples("WebRTC.Call.AbsCapture.OffsetWait") > 0,
+                   kDefaultTimeout);
+  // On a point-to-point call, we expect the offset to be zero.
+  EXPECT_LT(metrics::MinSample("WebRTC.Call.AbsCapture.Offset"), 2);
 }
 
 }  // namespace

@@ -538,6 +538,7 @@ addUiaTask(
 <div id="superscript-container">a <sup>bcd</sup> ef</div>
 <div id="not-hidden-container">a bcd ef</div>
 <div id="readonly-container">a <span contenteditable="true">bcd</span> ef</div>
+<input id="text-input"/>
 <div id="spelling-error-container">a <span aria-invalid="spelling">bcd</span> ef</div>
 <div id="grammar-error-container">a <span aria-invalid="grammar">bcd</span> ef</div>
 <div id="data-validation-error-container">a <span aria-invalid="true">bcd</span> ef</div>
@@ -790,6 +791,19 @@ addUiaTask(
       await runPython(`range.GetAttributeValue(UIA_IsReadOnlyAttributeId)`),
       false,
       "IsReadOnly correct"
+    );
+
+    // Verify that text inputs are not read-only by default.
+    await runPython(`
+      global range
+      textInputAcc = findUiaByDomId(doc, "text-input")
+      range = docText.RangeFromChild(textInputAcc)
+    `);
+    info("checking IsReadOnly");
+    is(
+      await runPython(`range.GetAttributeValue(UIA_IsReadOnlyAttributeId)`),
+      false,
+      "IsReadOnly correct for text input"
     );
 
     // ================== UIA_AnnotationTypesAttributeId - AnnotationType_SpellingError ==================
@@ -2133,28 +2147,28 @@ addUiaTask(
     await runPython(`
       global subrange
       subrange = range.FindAttribute(UIA_FontWeightAttributeId, 400, False)
-      `);
+    `);
     is(await runPython(`subrange.GetText(-1)`), "a ", "range text correct");
 
     info("Finding first font-weight 700 text range");
     await runPython(`
       global subrange
       subrange = range.FindAttribute(UIA_FontWeightAttributeId, 700, False)
-      `);
+    `);
     is(await runPython(`subrange.GetText(-1)`), "bcd ef", "range text correct");
 
     info("Finding last font-weight 700 text range");
     await runPython(`
       global subrange
       subrange = range.FindAttribute(UIA_FontWeightAttributeId, 700, True)
-      `);
+    `);
     is(await runPython(`subrange.GetText(-1)`), "bcd ef", "range text correct");
 
     info("Finding last font-weight 400 text range");
     await runPython(`
       global subrange
       subrange = range.FindAttribute(UIA_FontWeightAttributeId, 400, True)
-      `);
+    `);
     is(await runPython(`subrange.GetText(-1)`), " ghi", "range text correct");
 
     // The IA2 -> UIA proxy gets things below this wrong.
@@ -2177,7 +2191,7 @@ addUiaTask(
     await runPython(`
       global subrange
       subrange = range.FindAttribute(UIA_FontWeightAttributeId, 700, False)
-      `);
+    `);
     is(await runPython(`subrange.GetText(-1)`), "cd ef", "range text correct");
 
     await runPython(`
@@ -2204,8 +2218,22 @@ addUiaTask(
     await runPython(`
       global subrange
       subrange = range.FindAttribute(UIA_FontWeightAttributeId, 700, True)
-      `);
+    `);
     is(await runPython(`subrange.GetText(-1)`), "bcd e", "range text correct");
+
+    info("Collapsing range at start");
+    await runPython(`
+      global subrange
+      subrange = range.Clone()
+      subrange.MoveEndpointByRange(TextPatternRangeEndpoint_End, subrange, TextPatternRangeEndpoint_Start)
+    `);
+    is(await runPython(`subrange.GetText(-1)`), "", "subrange text correct");
+    info("Finding last font-weight 400 text range on collapsed range");
+    await runPython(`
+      global subrange
+      subrange = subrange.FindAttribute(UIA_FontWeightAttributeId, 400, True)
+    `);
+    is(await runPython(`subrange.GetText(-1)`), "", "subrange text correct");
   },
   { uiaEnabled: true, uiaDisabled: true }
 );
@@ -2288,3 +2316,250 @@ line7</textarea>
   // The IA2 -> UIA proxy doesn't support GetVisibleRanges.
   { uiaEnabled: true, uiaDisabled: false }
 );
+
+/**
+ * Test the TextRange pattern's FindText method.
+ */
+addUiaTask(
+  `<div id="container"><b>abc</b>TEST<div id="inner">def</div>TEST<p>ghi</p></div>`,
+  async function testTextRangeFromChild() {
+    await runPython(`
+      global doc, docText, container, range
+      doc = getDocUia()
+      docText = getUiaPattern(doc, "Text")
+      container = findUiaByDomId(doc, "container")
+      range = docText.RangeFromChild(container)
+    `);
+    // The IA2 -> UIA bridge inserts a space at the end of the text.
+    if (gIsUiaEnabled) {
+      is(
+        await runPython(`range.GetText(-1)`),
+        `abcTESTdefTESTghi`,
+        "doc returned correct range for container"
+      );
+    }
+    info("Finding 'abc', searching from the start");
+    await runPython(`
+      global subrange
+      subrange = range.FindText("abc", False, False)
+      `);
+    is(await runPython(`subrange.GetText(-1)`), "abc", "range text correct");
+
+    info("Finding 'abc', searching from the end");
+    await runPython(`
+      global subrange
+      subrange = range.FindText("abc", True, False)
+      `);
+    is(await runPython(`subrange.GetText(-1)`), "abc", "range text correct");
+
+    info("Finding 'ghi', searching from the start");
+    await runPython(`
+      global subrange
+      subrange = range.FindText("ghi", False, False)
+      `);
+    is(await runPython(`subrange.GetText(-1)`), "ghi", "range text correct");
+
+    info("Finding 'ghi', searching from the end");
+    await runPython(`
+      global subrange
+      subrange = range.FindText("ghi", True, False)
+      `);
+    is(await runPython(`subrange.GetText(-1)`), "ghi", "range text correct");
+
+    info("Finding 'TEST', searching from the start");
+    await runPython(`
+      global subrange
+      subrange = range.FindText("TEST", False, False)
+      `);
+    is(await runPython(`subrange.GetText(-1)`), "TEST", "range text correct");
+    info("Finding 'TEST', searching from the end");
+    await runPython(`
+      global subrange2
+      subrange2 = range.FindText("TEST", True, False)
+      `);
+    is(await runPython(`subrange2.GetText(-1)`), "TEST", "range text correct");
+    ok(
+      !(await runPython(`subrange.compare(subrange2)`)),
+      "ranges are not equal"
+    );
+
+    info("Finding 'test', searching from the start, case-sensitive");
+    await runPython(`
+      global subrange
+      subrange = range.FindText("test", False, False)
+      `);
+    ok(await runPython(`not subrange`), "range not found");
+    info("Finding 'test', searching from the start, case-insensitive");
+    await runPython(`
+      global subrange
+      subrange = range.FindText("test", False, True)
+      `);
+    is(await runPython(`subrange.GetText(-1)`), "TEST", "range text correct");
+  },
+  { uiaEnabled: true, uiaDisabled: true }
+);
+
+const textChildSnippet = `
+<p id="p">p</p>
+<a id="a" href="/">a</a>
+<img id="img" src="https://example.com/a11y/accessible/tests/mochitest/moz.png" alt="img">
+<div id="textbox" contenteditable role="textbox">textboxLeaf
+  <p id="textboxP">textboxP</p>
+</div>
+`;
+
+/**
+ * Test the TextChild pattern's TextContainer property.
+ */
+addUiaTask(textChildSnippet, async function testTextChildTextContainer() {
+  ok(
+    await runPython(`
+        global doc, p
+        doc = getDocUia()
+        p = findUiaByDomId(doc, "p")
+        tc = getUiaPattern(p, "TextChild")
+        return uiaClient.CompareElements(tc.TextContainer, doc)
+      `),
+    "p TextContainer is doc"
+  );
+  // The IA2 -> UIA proxy doesn't support the TextChild pattern on text
+  // leaves.
+  if (gIsUiaEnabled) {
+    ok(
+      await runPython(`
+        pLeaf = uiaClient.RawViewWalker.GetFirstChildElement(p)
+        tc = getUiaPattern(pLeaf, "TextChild")
+        return uiaClient.CompareElements(tc.TextContainer, doc)
+      `),
+      "p leaf TextContainer is doc"
+    );
+  }
+  ok(
+    await runPython(`
+        a = findUiaByDomId(doc, "a")
+        tc = getUiaPattern(a, "TextChild")
+        return uiaClient.CompareElements(tc.TextContainer, doc)
+      `),
+    "a TextContainer is doc"
+  );
+  ok(
+    await runPython(`
+        img = findUiaByDomId(doc, "img")
+        tc = getUiaPattern(img, "TextChild")
+        return uiaClient.CompareElements(tc.TextContainer, doc)
+      `),
+    "img TextContainer is doc"
+  );
+  ok(
+    await runPython(`
+        global textbox
+        textbox = findUiaByDomId(doc, "textbox")
+        tc = getUiaPattern(textbox, "TextChild")
+        return uiaClient.CompareElements(tc.TextContainer, doc)
+      `),
+    "textbox TextContainer is doc"
+  );
+  // The IA2 -> UIA proxy doesn't support the TextChild pattern on text
+  // leaves.
+  if (gIsUiaEnabled) {
+    ok(
+      await runPython(`
+        textboxLeaf = uiaClient.RawViewWalker.GetFirstChildElement(textbox)
+        tc = getUiaPattern(textboxLeaf, "TextChild")
+        return uiaClient.CompareElements(tc.TextContainer, textbox)
+      `),
+      "textbox leaf  TextContainer is textbox"
+    );
+  }
+  ok(
+    await runPython(`
+        textboxP = findUiaByDomId(doc, "textboxP")
+        tc = getUiaPattern(textboxP, "TextChild")
+        return uiaClient.CompareElements(tc.TextContainer, textbox)
+      `),
+    "textboxP TextContainer is textbox"
+  );
+});
+
+/**
+ * Test the TextChild pattern's TextRange property.
+ */
+addUiaTask(textChildSnippet, async function testTextChildTextRange() {
+  is(
+    await runPython(`
+        global doc, p
+        doc = getDocUia()
+        p = findUiaByDomId(doc, "p")
+        tc = getUiaPattern(p, "TextChild")
+        return tc.TextRange.GetText(-1)
+      `),
+    "p",
+    "p text correct"
+  );
+  // The IA2 -> UIA proxy doesn't support the TextChild pattern on text
+  // leaves.
+  if (gIsUiaEnabled) {
+    is(
+      await runPython(`
+        pLeaf = uiaClient.RawViewWalker.GetFirstChildElement(p)
+        tc = getUiaPattern(pLeaf, "TextChild")
+        return tc.TextRange.GetText(-1)
+      `),
+      "p",
+      "p leaf  text correct"
+    );
+  }
+  is(
+    await runPython(`
+        a = findUiaByDomId(doc, "a")
+        tc = getUiaPattern(a, "TextChild")
+        return tc.TextRange.GetText(-1)
+      `),
+    "a",
+    "a text correct"
+  );
+  if (gIsUiaEnabled) {
+    // The IA2 -> UIA proxy doesn't expose an embedded object character for
+    // images.
+    is(
+      await runPython(`
+        img = findUiaByDomId(doc, "img")
+        tc = getUiaPattern(img, "TextChild")
+        return tc.TextRange.GetText(-1)
+      `),
+      kEmbedChar,
+      "img text correct"
+    );
+    // The IA2 -> UIA proxy adds spaces between elements that don't exist.
+    is(
+      await runPython(`
+        global textbox
+        textbox = findUiaByDomId(doc, "textbox")
+        tc = getUiaPattern(textbox, "TextChild")
+        return tc.TextRange.GetText(-1)
+      `),
+      "textboxLeaf textboxP",
+      "textbox text correct"
+    );
+    // The IA2 -> UIA proxy doesn't support the TextChild pattern on text
+    // leaves.
+    is(
+      await runPython(`
+        textboxLeaf = uiaClient.RawViewWalker.GetFirstChildElement(textbox)
+        tc = getUiaPattern(textboxLeaf, "TextChild")
+        return tc.TextRange.GetText(-1)
+      `),
+      "textboxLeaf ",
+      "textbox leaf  text correct"
+    );
+  }
+  is(
+    await runPython(`
+        textboxP = findUiaByDomId(doc, "textboxP")
+        tc = getUiaPattern(textboxP, "TextChild")
+        return tc.TextRange.GetText(-1)
+      `),
+    "textboxP",
+    "textboxP text correct"
+  );
+});

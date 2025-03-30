@@ -31,7 +31,8 @@ LOCAL_INCLUDES += [
 ]
 
 UNIFIED_SOURCES += [
-    "/third_party/libwebrtc/rtc_base/event_tracer.cc"
+    "/third_party/libwebrtc/rtc_base/event_tracer.cc",
+    "/third_party/libwebrtc/rtc_base/trace_categories.cc"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:
@@ -146,6 +147,10 @@ if CONFIG["TARGET_CPU"] == "arm":
     DEFINES["WEBRTC_ARCH_ARM"] = True
     DEFINES["WEBRTC_ARCH_ARM_V7"] = True
     DEFINES["WEBRTC_HAS_NEON"] = True
+
+if CONFIG["TARGET_CPU"] == "loongarch64":
+
+    DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["TARGET_CPU"] == "mips32":
 

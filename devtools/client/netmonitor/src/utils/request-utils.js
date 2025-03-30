@@ -10,6 +10,13 @@ const {
   getUnicodeHostname,
 } = require("resource://devtools/client/shared/unicode-url.js");
 
+loader.lazyRequireGetter(
+  this,
+  "parseJsonLossless",
+  "resource://devtools/client/shared/components/reps/reps/rep-utils.js",
+  true
+);
+
 const {
   UPDATE_PROPS,
 } = require("resource://devtools/client/netmonitor/src/constants.js");
@@ -190,14 +197,10 @@ function getFileName(baseNameWithQuery) {
  * @return {URL} The URL object
  */
 function getUrl(url) {
-  try {
-    if (url instanceof URL) {
-      return url;
-    }
-    return new URL(url);
-  } catch (err) {
-    return null;
+  if (URL.isInstance(url)) {
+    return url;
   }
+  return URL.parse(url);
 }
 
 /**
@@ -209,7 +212,7 @@ function getUrl(url) {
  */
 function getUrlProperty(input, property) {
   const url = getUrl(input);
-  return url?.[property] ? url[property] : "";
+  return url?.[property] ?? "";
 }
 
 /**
@@ -661,7 +664,7 @@ function parseJSON(payloadUnclean) {
   let { payload, strippedChars, error } = removeXSSIString(payloadUnclean);
 
   try {
-    json = JSON.parse(payload);
+    json = parseJsonLossless(payload);
   } catch (err) {
     if (isBase64(payload)) {
       try {
@@ -705,7 +708,7 @@ function removeXSSIString(payloadUnclean) {
   const xssiRegexMatch = payloadUnclean.match(xssiRegex);
 
   // Remove XSSI string if there was one found
-  if (xssiRegexMatch?.length > 0) {
+  if (xssiRegexMatch?.length) {
     const xssiLen = xssiRegexMatch[0].length;
     try {
       // substring the payload by the length of the XSSI match to remove it
@@ -743,7 +746,7 @@ function getRequestHeadersRawText(
   requestHeaders,
   urlDetails
 ) {
-  const url = new URL(urlDetails.url);
+  const url = getUrl(urlDetails.url);
   const path = url ? `${url.pathname}${url.search}` : "<unknown>";
   const preHeaderText = `${method} ${path} ${httpVersion}`;
   return writeHeaderText(requestHeaders.headers, preHeaderText).trim();

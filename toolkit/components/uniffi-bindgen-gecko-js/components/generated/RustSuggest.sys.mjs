@@ -161,10 +161,10 @@ class ArrayBufferDataStream {
       return bytes
     }
 
-    writeBytes(uint8Array) {
-      this.writeUint32(uint8Array.length);
+    writeBytes(value) {
+      this.writeUint32(value.length);
       value.forEach((elt) => {
-        dataStream.writeUint8(elt);
+        this.writeUint8(elt);
       })
     }
 
@@ -172,7 +172,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerSuggestStore() {
-        const pointerId = 4; // suggest:SuggestStore
+        const pointerId = 5; // suggest:SuggestStore
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -182,7 +182,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerSuggestStore(value) {
-        const pointerId = 4; // suggest:SuggestStore
+        const pointerId = 5; // suggest:SuggestStore
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -192,7 +192,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerSuggestStoreBuilder() {
-        const pointerId = 5; // suggest:SuggestStoreBuilder
+        const pointerId = 6; // suggest:SuggestStoreBuilder
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -202,7 +202,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerSuggestStoreBuilder(value) {
-        const pointerId = 5; // suggest:SuggestStoreBuilder
+        const pointerId = 6; // suggest:SuggestStoreBuilder
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -266,6 +266,37 @@ class FfiConverterArrayBuffer extends FfiConverter {
         this.write(dataStream, value);
         return buf;
     }
+
+    /**
+     * Computes the size of the value.
+     *
+     * @param {*} _value
+     * @return {number}
+     */
+    static computeSize(_value) {
+        throw new UniFFIInternalError("computeSize() should be declared in the derived class");
+    }
+
+    /**
+     * Reads the type from a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @returns {any}
+     */
+    static read(_dataStream) {
+        throw new UniFFIInternalError("read() should be declared in the derived class");
+    }
+
+    /**
+     * Writes the type to a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @param {any} _value
+     */
+    static write(_dataStream, _value) {
+        throw new UniFFIInternalError("write() should be declared in the derived class");
+    }
+
 }
 
 // Symbols that are used to ensure that Object constructors
@@ -285,7 +316,7 @@ export class FfiConverterI32 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the I32 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 4;
     }
     static lift(value) {
@@ -313,7 +344,7 @@ export class FfiConverterU64 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U64 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -338,7 +369,7 @@ export class FfiConverterI64 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the safe integer bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -357,7 +388,7 @@ export class FfiConverterI64 extends FfiConverter {
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterF64 extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -376,7 +407,7 @@ export class FfiConverterF64 extends FfiConverter {
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterBool extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 1;
     }
     static lift(value) {
@@ -490,7 +521,7 @@ export class SuggestStore {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -520,7 +551,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                36, // suggest:uniffi_suggest_fn_constructor_suggeststore_new
+                40, // suggest:uniffi_suggest_fn_constructor_suggeststore_new
                 FfiConverterString.lower(path),
                 FfiConverterOptionalTypeRemoteSettingsConfig.lower(settingsConfig),
             )
@@ -535,7 +566,7 @@ export class SuggestStore {
         const liftError = (data) => FfiConverterTypeSuggestApiError.lift(data);
         const functionCall = () => {
             return UniFFIScaffolding.callAsyncWrapper(
-                26, // suggest:uniffi_suggest_fn_method_suggeststore_clear
+                30, // suggest:uniffi_suggest_fn_method_suggeststore_clear
                 FfiConverterTypeSuggestStore.lower(this),
             )
         }
@@ -554,7 +585,7 @@ export class SuggestStore {
         const liftError = (data) => FfiConverterTypeSuggestApiError.lift(data);
         const functionCall = () => {
             return UniFFIScaffolding.callAsyncWrapper(
-                27, // suggest:uniffi_suggest_fn_method_suggeststore_clear_dismissed_suggestions
+                31, // suggest:uniffi_suggest_fn_method_suggeststore_clear_dismissed_suggestions
                 FfiConverterTypeSuggestStore.lower(this),
             )
         }
@@ -585,7 +616,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                28, // suggest:uniffi_suggest_fn_method_suggeststore_dismiss_suggestion
+                32, // suggest:uniffi_suggest_fn_method_suggeststore_dismiss_suggestion
                 FfiConverterTypeSuggestStore.lower(this),
                 FfiConverterString.lower(suggestionUrl),
             )
@@ -660,7 +691,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                29, // suggest:uniffi_suggest_fn_method_suggeststore_fetch_geonames
+                33, // suggest:uniffi_suggest_fn_method_suggeststore_fetch_geonames
                 FfiConverterTypeSuggestStore.lower(this),
                 FfiConverterString.lower(query),
                 FfiConverterBool.lower(matchNamePrefix),
@@ -684,7 +715,7 @@ export class SuggestStore {
         const liftError = (data) => FfiConverterTypeSuggestApiError.lift(data);
         const functionCall = () => {
             return UniFFIScaffolding.callAsyncWrapper(
-                30, // suggest:uniffi_suggest_fn_method_suggeststore_fetch_global_config
+                34, // suggest:uniffi_suggest_fn_method_suggeststore_fetch_global_config
                 FfiConverterTypeSuggestStore.lower(this),
             )
         }
@@ -712,7 +743,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                31, // suggest:uniffi_suggest_fn_method_suggeststore_fetch_provider_config
+                35, // suggest:uniffi_suggest_fn_method_suggeststore_fetch_provider_config
                 FfiConverterTypeSuggestStore.lower(this),
                 FfiConverterTypeSuggestionProvider.lower(provider),
             )
@@ -741,7 +772,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                32, // suggest:uniffi_suggest_fn_method_suggeststore_ingest
+                36, // suggest:uniffi_suggest_fn_method_suggeststore_ingest
                 FfiConverterTypeSuggestStore.lower(this),
                 FfiConverterTypeSuggestIngestionConstraints.lower(constraints),
             )
@@ -773,7 +804,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                33, // suggest:uniffi_suggest_fn_method_suggeststore_interrupt
+                37, // suggest:uniffi_suggest_fn_method_suggeststore_interrupt
                 FfiConverterTypeSuggestStore.lower(this),
                 FfiConverterOptionalTypeInterruptKind.lower(kind),
             )
@@ -798,7 +829,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                34, // suggest:uniffi_suggest_fn_method_suggeststore_query
+                38, // suggest:uniffi_suggest_fn_method_suggeststore_query
                 FfiConverterTypeSuggestStore.lower(this),
                 FfiConverterTypeSuggestionQuery.lower(query),
             )
@@ -827,7 +858,7 @@ export class SuggestStore {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                35, // suggest:uniffi_suggest_fn_method_suggeststore_query_with_metrics
+                39, // suggest:uniffi_suggest_fn_method_suggeststore_query_with_metrics
                 FfiConverterTypeSuggestStore.lower(this),
                 FfiConverterTypeSuggestionQuery.lower(query),
             )
@@ -884,7 +915,7 @@ export class SuggestStoreBuilder {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -898,7 +929,7 @@ export class SuggestStoreBuilder {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                43, // suggest:uniffi_suggest_fn_constructor_suggeststorebuilder_new
+                47, // suggest:uniffi_suggest_fn_constructor_suggeststorebuilder_new
             )
         }
         return handleRustResult(functionCall(), liftResult, liftError);}
@@ -912,7 +943,7 @@ export class SuggestStoreBuilder {
         const liftError = (data) => FfiConverterTypeSuggestApiError.lift(data);
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                37, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_build
+                41, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_build
                 FfiConverterTypeSuggestStoreBuilder.lower(this),
             )
         }
@@ -936,7 +967,7 @@ export class SuggestStoreBuilder {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                38, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_cache_path
+                42, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_cache_path
                 FfiConverterTypeSuggestStoreBuilder.lower(this),
                 FfiConverterString.lower(path),
             )
@@ -965,7 +996,7 @@ export class SuggestStoreBuilder {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                39, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_data_path
+                43, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_data_path
                 FfiConverterTypeSuggestStoreBuilder.lower(this),
                 FfiConverterString.lower(path),
             )
@@ -1002,7 +1033,7 @@ export class SuggestStoreBuilder {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                40, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_load_extension
+                44, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_load_extension
                 FfiConverterTypeSuggestStoreBuilder.lower(this),
                 FfiConverterString.lower(library),
                 FfiConverterOptionalstring.lower(entryPoint),
@@ -1028,7 +1059,7 @@ export class SuggestStoreBuilder {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                41, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_bucket_name
+                45, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_bucket_name
                 FfiConverterTypeSuggestStoreBuilder.lower(this),
                 FfiConverterString.lower(bucketName),
             )
@@ -1053,7 +1084,7 @@ export class SuggestStoreBuilder {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                42, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_server
+                46, // suggest:uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_server
                 FfiConverterTypeSuggestStoreBuilder.lower(this),
                 FfiConverterTypeRemoteSettingsServer.lower(server),
             )
@@ -1096,7 +1127,7 @@ export class FfiConverterTypeSuggestStoreBuilder extends FfiConverter {
  * Additional data about how an FTS match was made
  */
 export class FtsMatchInfo {
-    constructor({ prefix, stemming } = {}) {
+    constructor({ prefix, stemming }) {
         try {
             FfiConverterBool.checkType(prefix)
         } catch (e) {
@@ -1186,7 +1217,7 @@ export class FfiConverterTypeFtsMatchInfo extends FfiConverterArrayBuffer {
  * [1]: https://download.geonames.org/export/dump/readme.txt
  */
 export class Geoname {
-    constructor({ geonameId, name, latitude, longitude, countryCode, admin1Code, population } = {}) {
+    constructor({ geonameId, name, latitude, longitude, countryCode, admin1Code, population }) {
         try {
             FfiConverterI64.checkType(geonameId)
         } catch (e) {
@@ -1402,7 +1433,7 @@ export class FfiConverterTypeGeoname extends FfiConverterArrayBuffer {
  * A fetched geoname with info on how it was matched.
  */
 export class GeonameMatch {
-    constructor({ geoname, matchType, prefix } = {}) {
+    constructor({ geoname, matchType, prefix }) {
         try {
             FfiConverterTypeGeoname.checkType(geoname)
         } catch (e) {
@@ -1512,7 +1543,7 @@ export class FfiConverterTypeGeonameMatch extends FfiConverterArrayBuffer {
  * Single sample for a Glean labeled_timing_distribution
  */
 export class LabeledTimingSample {
-    constructor({ label, value } = {}) {
+    constructor({ label, value }) {
         try {
             FfiConverterString.checkType(label)
         } catch (e) {
@@ -1596,7 +1627,7 @@ export class FfiConverterTypeLabeledTimingSample extends FfiConverterArrayBuffer
  * QueryWithMetricsResult
  */
 export class QueryWithMetricsResult {
-    constructor({ suggestions, queryTimes } = {}) {
+    constructor({ suggestions, queryTimes }) {
         try {
             FfiConverterSequenceTypeSuggestion.checkType(suggestions)
         } catch (e) {
@@ -1680,7 +1711,7 @@ export class FfiConverterTypeQueryWithMetricsResult extends FfiConverterArrayBuf
  * Global Suggest configuration data.
  */
 export class SuggestGlobalConfig {
-    constructor({ showLessFrequentlyCap } = {}) {
+    constructor({ showLessFrequentlyCap }) {
         try {
             FfiConverterI32.checkType(showLessFrequentlyCap)
         } catch (e) {
@@ -1739,7 +1770,7 @@ export class FfiConverterTypeSuggestGlobalConfig extends FfiConverterArrayBuffer
  * Constraints limit which suggestions to ingest from Remote Settings.
  */
 export class SuggestIngestionConstraints {
-    constructor({ providers = null, providerConstraints = null, emptyOnly = false } = {}) {
+    constructor({ providers = null, providerConstraints = null, emptyOnly = false }) {
         try {
             FfiConverterOptionalSequenceTypeSuggestionProvider.checkType(providers)
         } catch (e) {
@@ -1850,7 +1881,7 @@ export class FfiConverterTypeSuggestIngestionConstraints extends FfiConverterArr
  * These are recorded during [crate::Store::ingest] and returned to the consumer to record.
  */
 export class SuggestIngestionMetrics {
-    constructor({ ingestionTimes, downloadTimes } = {}) {
+    constructor({ ingestionTimes, downloadTimes }) {
         try {
             FfiConverterSequenceTypeLabeledTimingSample.checkType(ingestionTimes)
         } catch (e) {
@@ -1936,7 +1967,7 @@ export class FfiConverterTypeSuggestIngestionMetrics extends FfiConverterArrayBu
  * other operations on those providers must be constrained to a desired subtype.
  */
 export class SuggestionProviderConstraints {
-    constructor({ exposureSuggestionTypes = null, ampAlternativeMatching = null } = {}) {
+    constructor({ exposureSuggestionTypes = null, ampAlternativeMatching = null }) {
         try {
             FfiConverterOptionalSequencestring.checkType(exposureSuggestionTypes)
         } catch (e) {
@@ -2024,7 +2055,7 @@ export class FfiConverterTypeSuggestionProviderConstraints extends FfiConverterA
  * A query for suggestions to show in the address bar.
  */
 export class SuggestionQuery {
-    constructor({ keyword, providers, providerConstraints = null, limit = null } = {}) {
+    constructor({ keyword, providers, providerConstraints = null, limit = null }) {
         try {
             FfiConverterString.checkType(keyword)
         } catch (e) {
@@ -3264,7 +3295,7 @@ export class FfiConverterOptionali32 extends FfiConverterArrayBuffer {
             case 1:
                 return FfiConverterI32.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3301,7 +3332,7 @@ export class FfiConverterOptionalf64 extends FfiConverterArrayBuffer {
             case 1:
                 return FfiConverterF64.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3338,7 +3369,7 @@ export class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
             case 1:
                 return FfiConverterString.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3375,7 +3406,7 @@ export class FfiConverterOptionalbytes extends FfiConverterArrayBuffer {
             case 1:
                 return FfiConverterBytes.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3412,7 +3443,7 @@ export class FfiConverterOptionalTypeFtsMatchInfo extends FfiConverterArrayBuffe
             case 1:
                 return FfiConverterTypeFtsMatchInfo.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3449,7 +3480,7 @@ export class FfiConverterOptionalTypeSuggestionProviderConstraints extends FfiCo
             case 1:
                 return FfiConverterTypeSuggestionProviderConstraints.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3486,7 +3517,7 @@ export class FfiConverterOptionalTypeAmpMatchingStrategy extends FfiConverterArr
             case 1:
                 return FfiConverterTypeAmpMatchingStrategy.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3523,7 +3554,7 @@ export class FfiConverterOptionalTypeGeonameType extends FfiConverterArrayBuffer
             case 1:
                 return FfiConverterTypeGeonameType.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3560,7 +3591,7 @@ export class FfiConverterOptionalTypeInterruptKind extends FfiConverterArrayBuff
             case 1:
                 return FfiConverterTypeInterruptKind.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3597,7 +3628,7 @@ export class FfiConverterOptionalTypeSuggestProviderConfig extends FfiConverterA
             case 1:
                 return FfiConverterTypeSuggestProviderConfig.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3634,7 +3665,7 @@ export class FfiConverterOptionalSequencestring extends FfiConverterArrayBuffer 
             case 1:
                 return FfiConverterSequencestring.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3671,7 +3702,7 @@ export class FfiConverterOptionalSequenceTypeGeoname extends FfiConverterArrayBu
             case 1:
                 return FfiConverterSequenceTypeGeoname.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3708,7 +3739,7 @@ export class FfiConverterOptionalSequenceTypeSuggestionProvider extends FfiConve
             case 1:
                 return FfiConverterSequenceTypeSuggestionProvider.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -3745,7 +3776,7 @@ export class FfiConverterOptionalTypeRemoteSettingsConfig extends FfiConverterAr
             case 1:
                 return FfiConverterTypeRemoteSettingsConfig.read(dataStream)
             default:
-                throw UniFFIError(`Unexpected code: ${code}`);
+                throw new UniFFIError(`Unexpected code: ${code}`);
         }
     }
 
@@ -4078,7 +4109,7 @@ export function rawSuggestionUrlMatches(rawUrl,cookedUrl) {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                25, // suggest:uniffi_suggest_fn_func_raw_suggestion_url_matches
+                29, // suggest:uniffi_suggest_fn_func_raw_suggestion_url_matches
                 FfiConverterString.lower(rawUrl),
                 FfiConverterString.lower(cookedUrl),
             )

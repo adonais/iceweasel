@@ -160,6 +160,12 @@ void wr_compositor_get_window_visibility(void* aCompositor,
   compositor->GetWindowVisibility(aVisibility);
 }
 
+void wr_compositor_get_window_properties(void* aCompositor,
+                                         WindowProperties* aProperties) {
+  RenderCompositor* compositor = static_cast<RenderCompositor*>(aCompositor);
+  compositor->GetWindowProperties(aProperties);
+}
+
 void wr_compositor_unbind(void* aCompositor) {
   RenderCompositor* compositor = static_cast<RenderCompositor*>(aCompositor);
   compositor->Unbind();
@@ -199,7 +205,10 @@ UniquePtr<RenderCompositor> RenderCompositor::Create(
       return RenderCompositorNativeSWGL::Create(aWidget, aError);
     }
 #elif defined(MOZ_WAYLAND)
-    if (gfx::gfxVars::UseWebRenderCompositor()) {
+    // Some widgets on Wayland (D&D popups for instance) can't use native
+    // compositor due to system limitations.
+    if (gfx::gfxVars::UseWebRenderCompositor() &&
+        aWidget->GetCompositorOptions().AllowNativeCompositor()) {
       return RenderCompositorNativeSWGL::Create(aWidget, aError);
     }
 #endif
@@ -225,7 +234,8 @@ UniquePtr<RenderCompositor> RenderCompositor::Create(
 #endif
 
 #if defined(MOZ_WAYLAND)
-  if (gfx::gfxVars::UseWebRenderCompositor()) {
+  if (gfx::gfxVars::UseWebRenderCompositor() &&
+      aWidget->GetCompositorOptions().AllowNativeCompositor()) {
     return RenderCompositorNativeOGL::Create(aWidget, aError);
   }
 #endif
@@ -274,6 +284,10 @@ void RenderCompositor::GetWindowVisibility(WindowVisibility* aVisibility) {
   }
   aVisibility->is_fully_occluded = widget->GetWindowIsFullyOccluded();
 #endif
+}
+
+void RenderCompositor::GetWindowProperties(WindowProperties* aProperties) {
+  aProperties->is_opaque = true;
 }
 
 gfx::DeviceResetReason RenderCompositor::IsContextLost(bool aForce) {

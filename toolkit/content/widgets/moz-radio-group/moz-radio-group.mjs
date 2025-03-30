@@ -181,8 +181,15 @@ export class MozRadioGroup extends MozLitElement {
 
     for (let i = 1; i < this.radioButtons.length; i++) {
       let nextIndex = (currentIndex + indexStep * i) % this.radioButtons.length;
-      if (!this.radioButtons[nextIndex].disabled) {
-        this.radioButtons[nextIndex].click();
+      let nextButton = this.radioButtons[nextIndex];
+      if (!nextButton.disabled) {
+        this.value = nextButton.value;
+        nextButton.focus();
+        this.dispatchEvent(new Event("input"), {
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(new Event("change"), { bubbles: true });
         return;
       }
     }
@@ -263,6 +270,12 @@ export class MozRadio extends MozBaseInputElement {
     inputTabIndex: { type: Number, state: true },
   };
 
+  static activatedProperty = "checked";
+
+  get controller() {
+    return this.#controller;
+  }
+
   constructor() {
     super();
     this.checked = false;
@@ -317,7 +330,9 @@ export class MozRadio extends MozBaseInputElement {
 
   handleClick() {
     this.#controller.value = this.value;
-    this.focus();
+    if (this.getRootNode().activeElement?.localName == "moz-radio") {
+      this.focus();
+    }
   }
 
   // Re-dispatch change event so it propagates out of moz-radio.

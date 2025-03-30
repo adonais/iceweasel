@@ -19,7 +19,7 @@ use wgh::Instance;
 use std::borrow::Cow;
 #[allow(unused_imports)]
 use std::mem;
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 use std::os::fd::{FromRawFd, IntoRawFd, OwnedFd, RawFd};
 use std::os::raw::{c_char, c_void};
 use std::ptr;
@@ -33,7 +33,7 @@ use std::ffi::{c_long, c_ulong};
 #[cfg(target_os = "windows")]
 use windows::Win32::{Foundation, Graphics::Direct3D12};
 
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 use ash::{khr, vk};
 
 #[cfg(target_os = "macos")]
@@ -125,7 +125,7 @@ pub extern "C" fn wgpu_server_new(owner: *mut c_void, use_dxc: bool) -> *mut Glo
             "Selecting backends based on dom.webgpu.wgpu-backend pref: {:?}",
             backends_pref
         );
-        wgc::instance::parse_backends_from_comma_list(&backends_pref)
+        wgt::Backends::from_comma_list(&backends_pref)
     };
 
     let mut instance_flags = wgt::InstanceFlags::from_build_config().with_env();
@@ -137,6 +137,7 @@ pub extern "C" fn wgpu_server_new(owner: *mut c_void, use_dxc: bool) -> *mut Glo
         wgt::Dx12Compiler::DynamicDxc {
             dxc_path: "dxcompiler.dll".into(),
             dxil_path: "dxil.dll".into(),
+            max_shader_model: wgt::DxcShaderModel::V6_6
         }
     } else {
         wgt::Dx12Compiler::Fxc
@@ -147,8 +148,16 @@ pub extern "C" fn wgpu_server_new(owner: *mut c_void, use_dxc: bool) -> *mut Glo
         &wgt::InstanceDescriptor {
             backends,
             flags: instance_flags,
-            dx12_shader_compiler,
-            gles_minor_version: wgt::Gles3MinorVersion::Automatic,
+            backend_options: wgt::BackendOptions {
+                gl: wgt::GlBackendOptions {
+                    gles_minor_version: wgt::Gles3MinorVersion::Automatic,
+                    fence_behavior: wgt::GlFenceBehavior::Normal,
+                },
+                dx12: wgt::Dx12BackendOptions {
+                    shader_compiler: dx12_shader_compiler,
+                },
+                noop: wgt::NoopBackendOptions { enable: false },
+            },
         },
     );
     let global = Global { global, owner };
@@ -178,9 +187,9 @@ pub extern "C" fn wgpu_server_device_poll(
     force_wait: bool,
 ) {
     let maintain = if force_wait {
-        wgt::Maintain::Wait
+        wgt::PollType::Wait
     } else {
-        wgt::Maintain::Poll
+        wgt::PollType::Poll
     };
     global.device_poll(device_id, maintain).unwrap();
 }
@@ -369,7 +378,7 @@ pub unsafe extern "C" fn wgpu_server_adapter_pack_info(
             let info = AdapterInformation {
                 id,
                 limits: restrict_limits(global.adapter_limits(id)),
-                features: global.adapter_features(id),
+                features: global.adapter_features(id).features_webgpu,
                 name,
                 vendor,
                 device,
@@ -410,9 +419,7 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
 
         path
     });
-    let trace_path = trace_string
-        .as_ref()
-        .map(|string| std::path::Path::new(string.as_str()));
+    let trace_path = trace_string.as_deref();
     // TODO: in https://github.com/gfx-rs/wgpu/pull/3626/files#diff-033343814319f5a6bd781494692ea626f06f6c3acc0753a12c867b53a646c34eR97
     // which introduced the queue id parameter, the queue id is also the device id. I don't know how applicable this is to
     // other situations (this one in particular).
@@ -983,7 +990,7 @@ pub struct DMABufInfo {
 }
 
 #[derive(Debug)]
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 pub struct VkImageHandle {
     pub device: vk::Device,
     pub image: vk::Image,
@@ -994,7 +1001,7 @@ pub struct VkImageHandle {
     pub layouts: Vec<vk::SubresourceLayout>,
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 impl VkImageHandle {
     fn destroy(&self, global: &Global, device_id: id::DeviceId) {
         unsafe {
@@ -1015,7 +1022,7 @@ impl VkImageHandle {
 }
 
 #[no_mangle]
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
     global: &Global,
     device_id: id::DeviceId,
@@ -1268,18 +1275,23 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 }
 
 #[no_mangle]
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
-pub unsafe extern "C" fn wgpu_vkimage_delete(
+#[cfg(target_os = "linux")]
+pub unsafe extern "C" fn wgpu_vkimage_destroy(
     global: &Global,
     device_id: id::DeviceId,
-    handle: *mut VkImageHandle,
+    handle: &VkImageHandle,
 ) {
-    let handle = Box::from_raw(handle);
     handle.destroy(global, device_id);
 }
 
 #[no_mangle]
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
+pub unsafe extern "C" fn wgpu_vkimage_delete(handle: *mut VkImageHandle) {
+    let _ = Box::from_raw(handle);
+}
+
+#[no_mangle]
+#[cfg(target_os = "linux")]
 pub extern "C" fn wgpu_vkimage_get_file_descriptor(
     global: &Global,
     device_id: id::DeviceId,
@@ -1314,7 +1326,7 @@ pub extern "C" fn wgpu_vkimage_get_file_descriptor(
 }
 
 #[no_mangle]
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 pub extern "C" fn wgpu_vkimage_get_dma_buf_info(handle: &VkImageHandle) -> DMABufInfo {
     let mut offsets: [u64; 3] = [0; 3];
     let mut strides: [u64; 3] = [0; 3];
@@ -1431,7 +1443,7 @@ extern "C" {
     ) -> *mut c_void;
     #[allow(improper_ctypes)]
     #[allow(dead_code)]
-    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+    #[cfg(target_os = "linux")]
     fn wgpu_server_get_vk_image_handle(
         param: *mut c_void,
         texture_id: id::TextureId,
@@ -1442,7 +1454,7 @@ extern "C" {
     fn wgpu_server_get_external_io_surface_id(param: *mut c_void, id: id::TextureId) -> u32;
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 pub unsafe fn is_dmabuf_supported(
     instance: &ash::Instance,
     physical_device: vk::PhysicalDevice,
@@ -1485,7 +1497,7 @@ pub unsafe fn is_dmabuf_supported(
         .contains(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT)
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 pub fn select_memory_type(
     props: &vk::PhysicalDeviceMemoryProperties,
     flags: vk::MemoryPropertyFlags,
@@ -1510,7 +1522,7 @@ pub fn select_memory_type(
     None
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 struct VkImageHolder {
     pub device: vk::Device,
     pub image: vk::Image,
@@ -1519,7 +1531,7 @@ struct VkImageHolder {
     pub fn_free_memory: vk::PFN_vkFreeMemory,
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "ios")))]
+#[cfg(target_os = "linux")]
 impl VkImageHolder {
     fn destroy(&self) {
         unsafe {
@@ -1623,7 +1635,7 @@ impl Global {
     }
 
     #[allow(dead_code)]
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "ios")))]
+    #[cfg(target_os = "linux")]
     fn create_texture_with_external_texture_dmabuf(
         &self,
         device_id: id::DeviceId,
@@ -1792,7 +1804,7 @@ impl Global {
             sample_count: desc.sample_count,
             dimension: desc.dimension,
             format: desc.format,
-            usage: wgh::TextureUses::COPY_DST | wgh::TextureUses::COLOR_TARGET,
+            usage: wgt::TextureUses::COPY_DST | wgt::TextureUses::COLOR_TARGET,
             memory_flags: wgh::MemoryFlags::empty(),
             view_formats: vec![],
         };

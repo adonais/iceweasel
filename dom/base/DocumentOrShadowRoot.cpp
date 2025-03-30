@@ -623,15 +623,64 @@ void DocumentOrShadowRoot::GetAnimations(
   aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
 }
 
-int32_t DocumentOrShadowRoot::StyleOrderIndexOfSheet(
+struct SheetTreeOrderComparator {
+  nsINode* mNode = nullptr;
+
+  int operator()(StyleSheet* aSheet) const {
+    auto* sheetNode = aSheet->GetOwnerNode();
+    MOZ_ASSERT(sheetNode != mNode, "Sheet already in the list?");
+    if (!sheetNode) {
+      // We go after all the link headers.
+      return 1;
+    }
+    return nsContentUtils::CompareTreePosition<TreeKind::DOM>(mNode, sheetNode,
+                                                              nullptr);
+  }
+};
+
+size_t DocumentOrShadowRoot::FindSheetInsertionPointInTree(
+    const StyleSheet& aSheet) const {
+  MOZ_ASSERT(!aSheet.IsConstructed());
+  nsINode* owningNode = aSheet.GetOwnerNode();
+  // We should always have an owning node unless Link: headers are at play.
+  MOZ_ASSERT_IF(!owningNode, AsNode().IsDocument());
+  MOZ_ASSERT_IF(owningNode, owningNode->SubtreeRoot() == &AsNode());
+  if (mStyleSheets.IsEmpty()) {
+    return 0;
+  }
+
+  if (!owningNode) {
+    // We come from a link header, our position is after all the other link
+    // headers, but before any link-owned node.
+    size_t i = 0;
+    for (const auto& sheet : mStyleSheets) {
+      if (sheet->GetOwnerNode()) {
+        break;
+      }
+      i++;
+    }
+    return i;
+  }
+
+  SheetTreeOrderComparator cmp{owningNode};
+  if (cmp(mStyleSheets.LastElement()) > 0) {
+    // Optimize for append.
+    return mStyleSheets.Length();
+  }
+  size_t idx;
+  BinarySearchIf(mStyleSheets, 0, mStyleSheets.Length(), cmp, &idx);
+  return idx;
+}
+
+size_t DocumentOrShadowRoot::StyleOrderIndexOfSheet(
     const StyleSheet& aSheet) const {
   if (aSheet.IsConstructed()) {
     // NOTE: constructable sheets can have duplicates, so we need to start
     // looking from behind.
-    int32_t index = mAdoptedStyleSheets.LastIndexOf(&aSheet);
-    return (index < 0) ? index : index + SheetCount();
+    size_t index = mAdoptedStyleSheets.LastIndexOf(&aSheet);
+    return index == mAdoptedStyleSheets.NoIndex ? index : index + SheetCount();
   }
-  return mStyleSheets.IndexOf(&aSheet);
+  return mStyleSheets.LastIndexOf(&aSheet);
 }
 
 void DocumentOrShadowRoot::TraverseSheetRefInStylesIfApplicable(

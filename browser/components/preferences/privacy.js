@@ -268,8 +268,6 @@ Preferences.addAll([
   { id: "network.trr.uri", type: "string" },
   { id: "network.trr.default_provider_uri", type: "string" },
   { id: "network.trr.custom_uri", type: "string" },
-  { id: "network.trr_ui.show_fallback_warning_option", type: "bool" },
-  { id: "network.trr.display_fallback_warning", type: "bool" },
   { id: "doh-rollout.disable-heuristics", type: "bool" },
 ]);
 
@@ -679,10 +677,8 @@ var gPrivacyPane = {
 
   async updateDoHStatus() {
     let trrURI = Services.dns.currentTrrURI;
-    let hostname = "";
-    try {
-      hostname = new URL(trrURI).hostname;
-    } catch (e) {
+    let hostname = URL.parse(trrURI)?.hostname;
+    if (!hostname) {
       hostname = await document.l10n.formatValue("preferences-doh-bad-url");
     }
 
@@ -874,15 +870,6 @@ var gPrivacyPane = {
     setEventListener("dohStrictRadio", "command", modeButtonPressed);
     setEventListener("dohOffRadio", "command", modeButtonPressed);
 
-    function warnCheckboxClicked(e) {
-      Glean.securityDohSettings.warnCheckboxCheckbox.record({
-        value: e.target.checked,
-      });
-    }
-
-    setEventListener("dohWarnCheckbox1", "command", warnCheckboxClicked);
-    setEventListener("dohWarnCheckbox2", "command", warnCheckboxClicked);
-
     this.populateDoHResolverList("dohEnabled");
     this.populateDoHResolverList("dohStrict");
 
@@ -908,11 +895,6 @@ var gPrivacyPane = {
       Services.obs.removeObserver(this, "network:trr-confirmation");
     };
     window.addEventListener("unload", unload, { once: true });
-
-    if (Preferences.get("network.trr_ui.show_fallback_warning_option").value) {
-      document.getElementById("dohWarningBox1").hidden = false;
-      document.getElementById("dohWarningBox2").hidden = false;
-    }
 
     let uriPref = Services.prefs.getStringPref("network.trr.uri");
     // If the value isn't one of the providers, we need to update the
@@ -1183,7 +1165,7 @@ var gPrivacyPane = {
 
     let onNimbus = () => this._updateFirefoxSuggestToggle();
     NimbusFeatures.urlbar.onUpdate(onNimbus);
-    this._updateFirefoxSuggestToggle(true);
+    this._updateFirefoxSuggestToggle();
     window.addEventListener("unload", () => {
       NimbusFeatures.urlbar.offUpdate(onNimbus);
     });
@@ -2677,21 +2659,14 @@ var gPrivacyPane = {
   /**
    * Updates the visibility of the Firefox Suggest Privacy Container
    * based on the user's Quick Suggest settings.
-   *
-   * @param {boolean} [onInit]
-   *   Pass true when calling this when initializing the pane.
    */
-  _updateFirefoxSuggestToggle(onInit = false) {
-    let container = document.getElementById("firefoxSuggestPrivacyContainer");
-
-    if (
-      UrlbarPrefs.get("quickSuggestEnabled") &&
-      !UrlbarPrefs.get("quickSuggestHideSettingsUI")
-    ) {
-      container.removeAttribute("hidden");
-    } else if (!onInit) {
-      container.setAttribute("hidden", "true");
-    }
+  _updateFirefoxSuggestToggle() {
+    document.getElementById(
+      "firefoxSuggestDataCollectionPrivacyToggle"
+    ).hidden =
+      !UrlbarPrefs.get("quickSuggestEnabled") ||
+      UrlbarPrefs.get("quickSuggestSettingsUi") !=
+        QuickSuggest.SETTINGS_UI.FULL;
   },
 
   // GEOLOCATION

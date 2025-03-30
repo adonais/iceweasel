@@ -161,10 +161,10 @@ class ArrayBufferDataStream {
       return bytes
     }
 
-    writeBytes(uint8Array) {
-      this.writeUint32(uint8Array.length);
+    writeBytes(value) {
+      this.writeUint32(value.length);
       value.forEach((elt) => {
-        dataStream.writeUint8(elt);
+        this.writeUint8(elt);
       })
     }
 
@@ -246,6 +246,37 @@ class FfiConverterArrayBuffer extends FfiConverter {
         this.write(dataStream, value);
         return buf;
     }
+
+    /**
+     * Computes the size of the value.
+     *
+     * @param {*} _value
+     * @return {number}
+     */
+    static computeSize(_value) {
+        throw new UniFFIInternalError("computeSize() should be declared in the derived class");
+    }
+
+    /**
+     * Reads the type from a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @returns {any}
+     */
+    static read(_dataStream) {
+        throw new UniFFIInternalError("read() should be declared in the derived class");
+    }
+
+    /**
+     * Writes the type to a data stream.
+     *
+     * @param {ArrayBufferDataStream} _dataStream
+     * @param {any} _value
+     */
+    static write(_dataStream, _value) {
+        throw new UniFFIInternalError("write() should be declared in the derived class");
+    }
+
 }
 
 // Symbols that are used to ensure that Object constructors
@@ -265,7 +296,7 @@ export class FfiConverterU32 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U32 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 4;
     }
     static lift(value) {
@@ -293,7 +324,7 @@ export class FfiConverterU64 extends FfiConverter {
             throw new UniFFITypeError(`${value} exceeds the U64 bounds`);
         }
     }
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -312,7 +343,7 @@ export class FfiConverterU64 extends FfiConverter {
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterF64 extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 8;
     }
     static lift(value) {
@@ -331,7 +362,7 @@ export class FfiConverterF64 extends FfiConverter {
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterBool extends FfiConverter {
-    static computeSize() {
+    static computeSize(_value) {
         return 1;
     }
     static lift(value) {
@@ -396,7 +427,7 @@ export class RelevancyStore {
             throw new UniFFIError("Attempting to construct an object using the JavaScript constructor directly" +
             "Please use a UDL defined constructor, or the init function for the primary constructor")
         }
-        if (!opts[constructUniffiObject] instanceof UniFFIPointer) {
+        if (!(opts[constructUniffiObject] instanceof UniFFIPointer)) {
             throw new UniFFIError("Attempting to create a UniFFI object with a pointer that is not an instance of UniFFIPointer")
         }
         this[uniffiObjectPtr] = opts[constructUniffiObject];
@@ -754,7 +785,7 @@ export class FfiConverterTypeRelevancyStore extends FfiConverter {
  * BanditData
  */
 export class BanditData {
-    constructor({ bandit, arm, impressions, clicks, alpha, beta } = {}) {
+    constructor({ bandit, arm, impressions, clicks, alpha, beta }) {
         try {
             FfiConverterString.checkType(bandit)
         } catch (e) {
@@ -942,7 +973,7 @@ export class FfiConverterTypeBanditData extends FfiConverterArrayBuffer {
  * rounding.  This is to make them compatible with Glean's distribution metrics.
  */
 export class InterestMetrics {
-    constructor({ topSingleInterestSimilarity, top2interestSimilarity, top3interestSimilarity } = {}) {
+    constructor({ topSingleInterestSimilarity, top2interestSimilarity, top3interestSimilarity }) {
         try {
             FfiConverterU32.checkType(topSingleInterestSimilarity)
         } catch (e) {
@@ -1061,7 +1092,7 @@ export class FfiConverterTypeInterestMetrics extends FfiConverterArrayBuffer {
  * number of elements.
  */
 export class InterestVector {
-    constructor({ inconclusive, animals, arts, autos, business, career, education, fashion, finance, food, government, hobbies, home, news, realEstate, society, sports, tech, travel } = {}) {
+    constructor({ inconclusive, animals, arts, autos, business, career, education, fashion, finance, food, government, hobbies, home, news, realEstate, society, sports, tech, travel }) {
         try {
             FfiConverterU32.checkType(inconclusive)
         } catch (e) {

@@ -453,7 +453,7 @@ pref("browser.urlbar.suggest.remotetab",            true);
 pref("browser.urlbar.suggest.searches",             true);
 pref("browser.urlbar.suggest.topsites",             true);
 pref("browser.urlbar.suggest.engines",              true);
-pref("browser.urlbar.suggest.calculator",           false);
+pref("browser.urlbar.suggest.calculator",           true);
 pref("browser.urlbar.suggest.recentsearches",       true);
 pref("browser.urlbar.suggest.quickactions",         true);
 
@@ -525,23 +525,32 @@ pref("browser.urlbar.suggest.quicksuggest.sponsored", false, sticky);
 // with their various default-branch values, the user is enrolled in over time.
 pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 
-// Whether the Firefox Suggest contextual opt-in result is enabled. If true,
-// this implicitly disables shouldShowOnboardingDialog.
+// Whether the Firefox Suggest contextual opt-in result is enabled.
 pref("browser.urlbar.quicksuggest.contextualOptIn", false);
 
-// Controls which variant of the copy is used for the Firefox Suggest
-// contextual opt-in result.
-pref("browser.urlbar.quicksuggest.contextualOptIn.sayHello", false);
+// Number that the user dismissed the Firefox Suggest contextual opt-in result.
+pref("browser.urlbar.quicksuggest.contextualOptIn.dismissedCount", 0);
 
-// Controls whether the Firefox Suggest contextual opt-in result appears at
-// the top of results or at the bottom, after one-off buttons.
-pref("browser.urlbar.quicksuggest.contextualOptIn.topPosition", true);
+// Period until reshow the Firefox Suggest contextual opt-in result when first dismissed.
+pref("browser.urlbar.quicksuggest.contextualOptIn.firstReshowAfterPeriodDays", 7);
+
+// Period until reshow the Firefox Suggest contextual opt-in result when second dismissed.
+pref("browser.urlbar.quicksuggest.contextualOptIn.secondReshowAfterPeriodDays", 14);
+
+// Period until reshow the Firefox Suggest contextual opt-in result when third dismissed.
+pref("browser.urlbar.quicksuggest.contextualOptIn.thirdReshowAfterPeriodDays", 60);
+
+// Number of impression for the Firefox Suggest contextual opt-in result.
+pref("browser.urlbar.quicksuggest.contextualOptIn.impressionCount", 0);
+
+// Limit for impression to dismiss the Firefox Suggest contextual opt-in result.
+pref("browser.urlbar.quicksuggest.contextualOptIn.impressionLimit", 20);
+
+// Days until dismiss the Firefox Suggest contextual opt-in result after first impression.
+pref("browser.urlbar.quicksuggest.contextualOptIn.impressionDaysLimit", 5);
 
 // Whether the quick suggest feature in the urlbar is enabled.
 pref("browser.urlbar.quicksuggest.enabled", false);
-
-// Whether Suggest should be hidden in the settings UI even when enabled.
-pref("browser.urlbar.quicksuggest.hideSettingsUI", false);
 
 // Ranking mode of QuickSuggest. Currently used for relevance ranking
 // experimentation. It can be any of "default", "interest", and "random".
@@ -551,22 +560,12 @@ pref("browser.urlbar.quicksuggest.rankingMode", "default");
 // JS backend.
 pref("browser.urlbar.quicksuggest.rustEnabled", true);
 
-// Whether to show the QuickSuggest onboarding dialog.
-pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", false);
-
-// Show QuickSuggest onboarding dialog on the nth browser restarts.
-pref("browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 0);
-
 // The index of sponsored Firefox Suggest results within the Firefox Suggest
 // section when "Show search suggestions ahead of browsing history in address bar
 // results" is checked. When not checked, the index is hardcoded as -1. Negative
 // indexes are relative to the end of the section.
 pref("browser.urlbar.quicksuggest.sponsoredIndex", 0);
 pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
-
-// Whether quick suggest results can be shown in position specified in the
-// suggestions.
-pref("browser.urlbar.quicksuggest.allowPositionInSuggestions", true);
 
 // Whether non-sponsored quick suggest results are subject to impression
 // frequency caps.
@@ -595,6 +594,10 @@ pref("browser.urlbar.quicksuggest.exposureSuggestionTypes", "");
 
 // Whether Suggest will use the ML backend in addition to Rust.
 pref("browser.urlbar.quicksuggest.mlEnabled", false);
+
+// Which Suggest settings to show in the settings UI. See
+// `QuickSuggest.SETTINGS_UI` for values.
+pref("browser.urlbar.quicksuggest.settingsUi", 0);
 
 // Whether unit conversion is enabled.
 #ifdef NIGHTLY_BUILD
@@ -878,6 +881,9 @@ pref("browser.shopping.experience2023.autoOpen.enabled", false);
 // Opens the shopping sidebar automatically when viewing a PDP.
 pref("browser.shopping.experience2023.autoOpen.userEnabled", true);
 
+// Close the shopping sidebar automatically when viewing an unsupported site.
+pref("browser.shopping.experience2023.autoClose.userEnabled", true);
+
 // Number of times the sidebar has been closed in a session
 pref("browser.shopping.experience2023.sidebarClosedCount", 0);
 
@@ -894,12 +900,17 @@ pref("browser.shopping.experience2023.integratedSidebar", false);
 // the Review Checker sidebar panel.
 pref("browser.shopping.experience2023.shoppingSidebar", true);
 
+// If true, users have already seen a card in the Review Checker sidebar panel
+// notifying users of the feature's new location and asking if they want to
+// move the sidebar to the left or right side. Else if false, users are yet to
+// see the card.
+pref("browser.shopping.experience2023.newPositionCard.hasSeen", false);
+
 // Spin the cursor while the page is loading
 pref("browser.spin_cursor_while_busy", false);
 
 // Enable display of contextual-password-manager option in browser sidebar
-// Keep it hidden from about:config for now.
-// pref("browser.contextual-password-manager.enabled", false);
+pref("browser.contextual-password-manager.enabled", false);
 
 // Enables the display of the Mozilla VPN banner in private browsing windows
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
@@ -1048,14 +1059,15 @@ pref("browser.tabs.tooltipsShowPidAndActiveness", false);
 pref("browser.tabs.hoverPreview.enabled", true);
 pref("browser.tabs.hoverPreview.showThumbnails", true);
 
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.tabs.groups.enabled", true);
 #else
 pref("browser.tabs.groups.enabled", false);
 #endif
-pref("browser.tabs.groups.dragOverThresholdPercent", 20);
-pref("browser.tabs.groups.dragOverDelayMS", 120);
-pref("browser.tabs.dragdrop.moveOverThresholdPercent", 70);
+pref("browser.tabs.groups.smart.enabled", false);
+
+pref("browser.tabs.groups.dragOverDelayMS", 240);
+pref("browser.tabs.dragdrop.moveOverThresholdPercent", 80);
 
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 
@@ -1796,14 +1808,13 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 // Activates preloading of the new tab url.
 pref("browser.newtab.preload", true);
 
+// If an on-train limited rollout of the preonboarding modal is enabled, the
+// percentage of the Mac, Linux, and MSIX population to enroll
+pref("browser.preonboarding.onTrainRolloutPopulation",  0);
+
 // Mozilla Ad Routing Service (MARS) unified ads service
-#ifdef NIGHTLY_BUILD
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
 pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", true);
-#else
-pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", false);
-pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", false);
-#endif
 pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://ads.mozilla.org/");
 pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.enabled", false);
 pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.tiles.enabled", false);
@@ -1812,6 +1823,8 @@ pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.tiles.enabled", fals
 pref("browser.newtabpage.activity-stream.showWeather", true);
 pref("browser.newtabpage.activity-stream.weather.query", "");
 pref("browser.newtabpage.activity-stream.weather.display", "simple");
+
+pref("browser.newtabpage.activity-stream.images.smart", true);
 
 // enable location search for newtab weather widget
 pref("browser.newtabpage.activity-stream.weather.locationSearchEnabled", true);
@@ -1826,10 +1839,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config",
 pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled", false);
+pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled", false);
 
 // Current new tab page background images.
-pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper-light", "");
-pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper-dark", "");
 pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "");
 
 // Preference to show feature highlight about wallpaper on new tab page
@@ -1852,9 +1864,6 @@ pref("browser.newtabpage.activity-stream.newtabShortcuts.refresh", false);
 // Discovery stream ad size experiment
 pref("browser.newtabpage.activity-stream.newtabAdSize.variant-a", false);
 pref("browser.newtabpage.activity-stream.newtabAdSize.variant-b", false);
-
-// April Fools experiment
-pref("browser.newtabpage.activity-stream.newtabLogo.aprilfools", false);
 
 // Activity Stream prefs that control to which page to redirect
 #ifndef RELEASE_OR_BETA
@@ -1968,6 +1977,11 @@ pref("browser.newtabpage.activity-stream.discoverystream.sections.locale-content
 pref("browser.newtabpage.activity-stream.discoverystream.sections.region-content-config", "");
 
 pref("browser.newtabpage.activity-stream.discoverystream.sections.cards.enabled", true);
+pref("browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.enabled", false);
+
+pref("browser.newtabpage.activity-stream.discoverystream.sections.interestPicker.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.sections.interestPicker.visibleSections", "");
+
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.endpoint", "merino.services.mozilla.com");
@@ -2007,6 +2021,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thu
 // Shows users compact layout of Home New Tab page. Also requires region-thumbs-config.
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", true);
 
+// Displays publisher favicons on recommended stories of New Tab page
+pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled", false);
+
 // User pref to show stories on newtab (feeds.system.topstories has to be set to true as well)
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
 
@@ -2031,7 +2048,6 @@ pref("browser.aboutwelcome.screens", "");
 // Experiment Manager
 // See Console.sys.mjs LOG_LEVELS for all possible values
 pref("messaging-system.log", "warn");
-pref("messaging-system.rsexperimentloader.enabled", true);
 pref("messaging-system.rsexperimentloader.collection_id", "nimbus-desktop-experiments");
 pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", true);
@@ -2080,6 +2096,7 @@ pref("sidebar.revamp.round-content-area", false);
 #endif
 pref("sidebar.animation.enabled", true);
 pref("sidebar.animation.duration-ms", 200);
+pref("sidebar.animation.expand-on-hover.duration-ms", 400);
 pref("sidebar.main.tools", "aichat,syncedtabs,history");
 pref("sidebar.verticalTabs", false);
 pref("sidebar.visibility", "always-show");
@@ -2087,6 +2104,9 @@ pref("sidebar.visibility", "always-show");
 // as a backup to restore the sidebar UI state when a user has PPB mode on
 // or has history cleared on browser close.
 pref("sidebar.backupState", "{}");
+pref("sidebar.expandOnHover", false);
+pref("sidebar.old-sidebar.has-used", false);
+pref("sidebar.new-sidebar.has-used", false);
 
 pref("browser.ml.chat.enabled", true);
 pref("browser.ml.chat.hideLocalhost", true);
@@ -2351,7 +2371,7 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 //     "btp": BTP enabled
 //     "-btp": BTP disabled
 // One value from each section must be included in the browser.contentblocking.features.strict pref.
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate,3pcd,btp");
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate,btp");
 
 // Hide the "Change Block List" link for trackers/tracking content in the custom
 // Content Blocking/ETP panel. By default, it will not be visible. There is also
@@ -2511,6 +2531,10 @@ pref("browser.tabs.unloadTabInContextMenu", true);
 #else
 pref("browser.tabs.unloadTabInContextMenu", false);
 #endif
+
+// Whether unloaded tabs (either from session restore or because
+// they are explicitly unloaded) are faded out in the tab bar
+pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 // If true, unprivileged extensions may use experimental APIs on
 // nightly and developer edition.
@@ -2921,7 +2945,6 @@ pref("devtools.serviceWorkers.testing.enabled", false);
 // Enable the Network Monitor
 pref("devtools.netmonitor.enabled", true);
 
-pref("devtools.netmonitor.features.search", true);
 pref("devtools.netmonitor.features.requestBlocking", true);
 
 // Enable the Application panel
@@ -2939,10 +2962,10 @@ pref("devtools.netmonitor.panes-search-width", 550);
 pref("devtools.netmonitor.panes-search-height", 450);
 pref("devtools.netmonitor.filters", "[\"all\"]");
 pref("devtools.netmonitor.visibleColumns",
-    "[\"status\",\"method\",\"domain\",\"file\",\"initiator\",\"type\",\"transferred\",\"contentSize\",\"waterfall\"]"
+    "[\"override\",\"status\",\"method\",\"domain\",\"file\",\"initiator\",\"type\",\"transferred\",\"contentSize\",\"waterfall\"]"
 );
 pref("devtools.netmonitor.columnsData",
-  '[{"name":"status","minWidth":30,"width":5}, {"name":"method","minWidth":30,"width":5}, {"name":"domain","minWidth":30,"width":10}, {"name":"file","minWidth":30,"width":25}, {"name":"url","minWidth":30,"width":25},{"name":"initiator","minWidth":30,"width":10},{"name":"type","minWidth":30,"width":5},{"name":"transferred","minWidth":30,"width":10},{"name":"contentSize","minWidth":30,"width":5},{"name":"waterfall","minWidth":150,"width":15}]');
+  '[{"name":"override","minWidth":20,"width":2}, {"name":"status","minWidth":30,"width":5}, {"name":"method","minWidth":30,"width":5}, {"name":"domain","minWidth":30,"width":10}, {"name":"file","minWidth":30,"width":25}, {"name":"url","minWidth":30,"width":25},{"name":"initiator","minWidth":30,"width":10},{"name":"type","minWidth":30,"width":5},{"name":"transferred","minWidth":30,"width":10},{"name":"contentSize","minWidth":30,"width":5},{"name":"waterfall","minWidth":150,"width":15}]');
 pref("devtools.netmonitor.msg.payload-preview-height", 128);
 pref("devtools.netmonitor.msg.visibleColumns",
   '["data", "time"]'

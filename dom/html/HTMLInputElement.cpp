@@ -3152,32 +3152,18 @@ bool HTMLInputElement::IsDisabledForEvents(WidgetEvent* aEvent) {
 
 bool HTMLInputElement::CheckActivationBehaviorPreconditions(
     EventChainVisitor& aVisitor) const {
-  switch (mType) {
-    case FormControlType::InputColor:
-    case FormControlType::InputCheckbox:
-    case FormControlType::InputRadio:
-    case FormControlType::InputFile:
-    case FormControlType::InputSubmit:
-    case FormControlType::InputImage:
-    case FormControlType::InputReset:
-    case FormControlType::InputButton: {
-      // Track whether we're in the outermost Dispatch invocation that will
-      // cause activation of the input.  That is, if we're a click event, or a
-      // DOMActivate that was dispatched directly, this will be set, but if
-      // we're a DOMActivate dispatched from click handling, it will not be set.
-      WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-      bool outerActivateEvent =
-          (mouseEvent && mouseEvent->IsLeftClickEvent()) ||
-          (aVisitor.mEvent->mMessage == eLegacyDOMActivate &&
-           !mInInternalActivate);
-      if (outerActivateEvent) {
-        aVisitor.mItemFlags |= NS_OUTER_ACTIVATE_EVENT;
-      }
-      return outerActivateEvent;
-    }
-    default:
-      return false;
+  // Track whether we're in the outermost Dispatch invocation that will
+  // cause activation of the input.  That is, if we're a click event, or a
+  // DOMActivate that was dispatched directly, this will be set, but if
+  // we're a DOMActivate dispatched from click handling, it will not be set.
+  WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
+  bool outerActivateEvent =
+      (mouseEvent && mouseEvent->IsLeftClickEvent()) ||
+      (aVisitor.mEvent->mMessage == eLegacyDOMActivate && !mInInternalActivate);
+  if (outerActivateEvent) {
+    aVisitor.mItemFlags |= NS_OUTER_ACTIVATE_EVENT;
   }
+  return outerActivateEvent;
 }
 
 void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
@@ -3337,18 +3323,18 @@ void HTMLInputElement::LegacyPreActivationBehavior(
   }
 
   // out-of-spec legacy pre-activation behavior needed because of bug 1803805
-  if ((mType == FormControlType::InputSubmit ||
-       mType == FormControlType::InputImage) &&
-      mForm) {
+  if (mForm) {
     aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
     aVisitor.mItemData = static_cast<Element*>(mForm);
     // tell the form that we are about to enter a click handler.
     // that means that if there are scripted submissions, the
     // latest one will be deferred until after the exit point of the
     // handler.
-    mForm->OnSubmitClickBegin(this);
+    mForm->OnSubmitClickBegin();
 
-    if (aVisitor.mDOMEvent) {
+    if ((mType == FormControlType::InputSubmit ||
+         mType == FormControlType::InputImage) &&
+        aVisitor.mDOMEvent) {
       if (auto* mouseEvent = aVisitor.mDOMEvent->AsMouseEvent()) {
         const CSSIntPoint pt = RoundedToInt(mouseEvent->OffsetPoint());
         if (auto* imageClickedPoint = static_cast<CSSIntPoint*>(
@@ -4101,10 +4087,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 }
 
 void EndSubmitClick(EventChainPostVisitor& aVisitor) {
-  auto oldType = FormControlType(NS_CONTROL_TYPE(aVisitor.mItemFlags));
-  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) &&
-      (oldType == FormControlType::InputSubmit ||
-       oldType == FormControlType::InputImage)) {
+  if (aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) {
     nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
     RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
     // Tell the form that we are about to exit a click handler,

@@ -34,6 +34,12 @@ project_flag(
 )
 
 project_flag(
+    "MOZ_APP_PROFILE",
+    nargs=1,
+    help='Used for application.ini\'s "Profile" field, which controls profile location',
+)
+
+project_flag(
     env="MOZ_DEVTOOLS",
     default="server",
     choices=("all", "server"),
@@ -124,7 +130,7 @@ def all_configure_options():
         # defaults.
         if (
             value is not None
-            and value.origin not in ("default", "implied")
+            and value.origin not in ("default", "implied", "confvars")
             and value != option.default
         ):
             result.append(
@@ -1459,6 +1465,7 @@ def webrtc_default(target):
         "aarch64",
         "x86",
         "ia64",
+        "loongarch64",
         "mips32",
         "mips64",
         "ppc",
@@ -3144,6 +3151,84 @@ set_define(
 
 # Branding
 # ==============================================================
+
+option(
+    "--enable-official-branding",
+    help="Enable Official mozilla.org Branding. "
+    "Do not distribute builds with --enable-official-branding unless "
+    "you have permission to use trademarks per "
+    "http://www.mozilla.org/foundation/trademarks/",
+)
+
+with only_when("--enable-official-branding"):
+    set_config("MOZ_OFFICIAL_BRANDING", True)
+    set_define("MOZ_OFFICIAL_BRANDING", True)
+
+    add_old_configure_assignment("MOZ_OFFICIAL_BRANDING", True)
+
+
+confvar(
+    "MOZ_BRANDING_DIRECTORY",
+    nargs=1,
+    set_as_config=False,
+    help="Path to the directory used for branding resources",
+)
+
+confvar(
+    "MOZ_OFFICIAL_BRANDING_DIRECTORY",
+    set_as_config=False,
+    allow_implied=True,
+    nargs=1,
+    help="Path to the directory used for official branding resources",
+)
+
+
+option(
+    "--with-branding", metavar="DIR", nargs=1, help="Use branding from directory DIR"
+)
+
+
+@depends("MOZ_OFFICIAL_BRANDING_DIRECTORY", when="--enable-official-branding")
+def check_official_branding_directory(moz_official_branding_directory):
+    if not moz_official_branding_directory:
+        die(
+            "MOZ_OFFICIAL_BRANDING_DIRECTORY must be set in a confvars.sh to use --enable-official-branding."
+        )
+
+
+@depends(
+    "--with-branding",
+    "--enable-official-branding",
+    "MOZ_OFFICIAL_BRANDING_DIRECTORY",
+    "MOZ_BRANDING_DIRECTORY",
+)
+def moz_branding_directory(
+    with_branding_dir,
+    moz_official_branding,
+    moz_official_branding_directory,
+    moz_branding_directory,
+):
+    if moz_official_branding:
+        return moz_official_branding_directory[0]
+    if with_branding_dir:
+        return with_branding_dir[0]
+    if moz_branding_directory:
+        return moz_branding_directory[0]
+
+
+set_config("MOZ_BRANDING_DIRECTORY", moz_branding_directory)
+add_old_configure_assignment("MOZ_BRANDING_DIRECTORY", moz_branding_directory)
+
+
+@depends(moz_branding_directory, build_project)
+def real_branding_directory(moz_branding_directory, build_project):
+    if moz_branding_directory:
+        return moz_branding_directory
+    return f"{build_project}/branding/nightly"
+
+
+add_old_configure_assignment("REAL_BRANDING_DIRECTORY", real_branding_directory)
+
 option(
     env="MOZ_APP_REMOTINGNAME",
     nargs=1,

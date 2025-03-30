@@ -134,7 +134,6 @@ windows11-32-24h2-shippable/opt:
     build-platform: win32-shippable/opt
     build-signing-label: build-signing-win32-shippable/opt
     test-sets:
-        - awsy
         - desktop-screenshot-capture
         - windows32-tests
 
@@ -142,7 +141,6 @@ windows11-32-24h2/opt:
     build-platform: win32/opt
     build-signing-label: build-signing-win32/opt
     test-sets:
-        - awsy
         - desktop-screenshot-capture
         - windows32-tests
 
@@ -169,13 +167,7 @@ windows10-64-shippable-qr/opt:
     test-sets:
         - browsertime-benchmark
 
-windows11-64-qr/opt:
-    build-platform: win64/opt
-    test-sets:
-        - windows-talos
-        - browsertime
-
-windows11-64-2009-hw-ref-shippable/opt:
+windows11-64-24h2-hw-ref-shippable/opt:
     build-platform: win64-shippable/opt
     build-signing-label:
         by-variant:
@@ -185,7 +177,7 @@ windows11-64-2009-hw-ref-shippable/opt:
         - browsertime-ref-hw
         - windows-ref-hw-tests
 
-windows11-64-2009-hw-ref/opt:
+windows11-64-24h2-hw-ref/opt:
     build-platform: win64/opt
     build-signing-label:
         by-variant:
@@ -194,18 +186,17 @@ windows11-64-2009-hw-ref/opt:
     test-sets:
         - browsertime-ref-hw
         - windows-ref-hw-tests
+
+windows11-64-qr/opt:
+    build-platform: win64/opt
+    test-sets:
+        - windows-talos
 
 windows11-64-shippable-qr/opt:
     build-platform: win64-shippable/opt
     test-sets:
         - talos-profiling
         - windows-talos
-        - browsertime
-
-windows11-64-nightlyasrelease-qr/opt:
-    build-platform: win64-nightlyasrelease/opt
-    test-sets:
-        - browsertime
 
 # win10-64 2004
 windows10-64-2009-qr/debug:
@@ -237,12 +228,6 @@ windows10-64-2009-shippable-qr/opt:
 
 # win11-64 2009
 # a few tests remain in win11-2009-tests set
-windows11-64-2009-ccov-qr/opt:
-    build-platform: win64-ccov/opt
-    build-signing-label: build-signing-win64-ccov/opt
-    test-sets:
-        - windows11-2009-tests
-
 windows11-64-2009-qr/debug:
     build-platform: win64/debug
     build-signing-label:
@@ -251,7 +236,6 @@ windows11-64-2009-qr/debug:
             default: build-signing-win64/debug
     test-sets:
         - webgpu
-        - windows11-2009-tests
 
 windows11-64-2009-qr/opt:
     build-platform: win64/opt
@@ -260,30 +244,7 @@ windows11-64-2009-qr/opt:
             msix: repackage-signing-msix-win64/opt
             default: build-signing-win64/opt
     test-sets:
-        - awsy
         - webgpu
-        - windows11-2009-tests
-
-windows11-64-2009-shippable-qr/opt:
-    build-platform: win64-shippable/opt
-    build-signing-label:
-        by-variant:
-            msix: repackage-signing-shippable-l10n-msix-win64-shippable/opt
-            default: build-signing-win64-shippable/opt
-    test-sets:
-        - awsy
-        - windows11-2009-tests
-
-windows11-64-2009-devedition-qr/opt:
-    build-platform: win64-devedition/opt
-    build-signing-label: build-signing-win64-devedition/opt
-    test-sets:
-        - windows11-2009-tests
-
-windows11-64-2009-asan-qr/opt:
-    build-platform: win64-asan/opt
-    test-sets:
-        - windows11-2009-tests
 
 
 # win64 24h2 (no -qr)
@@ -320,6 +281,8 @@ windows11-64-24h2/opt:
         - web-platform-tests-backlog
         - windows11-24h2-tests
         - talos-xperf
+        # - windows-talos
+        - browsertime
 
 windows11-64-24h2-shippable/opt:
     build-platform: win64-shippable/opt
@@ -334,6 +297,9 @@ windows11-64-24h2-shippable/opt:
         - web-platform-tests-backlog
         - windows11-24h2-tests
         - talos-xperf
+        # - talos-profiling
+        # - windows-talos
+        - browsertime
 
 windows11-64-24h2-devedition/opt:
     build-platform: win64-devedition/opt
@@ -357,6 +323,11 @@ windows11-64-24h2-mingwclang/opt:
     build-platform: win64-mingwclang/opt
     test-sets:
         - mingwclang-tests-opt
+
+windows11-64-24h2-nightlyasrelease/opt:
+    build-platform: win64-nightlyasrelease/opt
+    test-sets:
+        - browsertime
 
 ##
 # MacOS X platforms (matching /macosx.*/)

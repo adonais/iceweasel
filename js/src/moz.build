@@ -398,7 +398,6 @@ UNIFIED_SOURCES += [
     "vm/NativeObject.cpp",
     "vm/ObjectWithStashedPointer.cpp",
     "vm/OffThreadPromiseRuntimeState.cpp",
-    "vm/PIC.cpp",
     "vm/PlainObject.cpp",
     "vm/Prefs.cpp",
     "vm/Printer.cpp",
@@ -460,15 +459,6 @@ SOURCES += [
 if CONFIG["ENABLE_PORTABLE_BASELINE_INTERP"]:
     SOURCES += [
         "vm/PortableBaselineInterpret.cpp",
-    ]
-
-if CONFIG["ENABLE_RECORD_TUPLE"]:
-    UNIFIED_SOURCES += [
-        "builtin/RecordObject.cpp",
-        "builtin/TupleObject.cpp",
-        "vm/RecordTupleShared.cpp",
-        "vm/RecordType.cpp",
-        "vm/TupleType.cpp",
     ]
 
 if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
@@ -638,9 +628,6 @@ selfhosted_inputs = [
     else []
 )
 
-if CONFIG["ENABLE_RECORD_TUPLE"]:
-    selfhosted_inputs += ["builtin/Tuple.js"]
-
 if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
     selfhosted_inputs += [
         "builtin/AsyncDisposableStack.js",
@@ -675,3 +662,6 @@ if CONFIG["JS_HAS_INTL_API"]:
         ]
 
     USE_LIBS += ["intlcomponents"]
+
+if CONFIG["USE_LIBZ_RS"]:
+    DEFINES["USE_LIBZ_RS"] = True

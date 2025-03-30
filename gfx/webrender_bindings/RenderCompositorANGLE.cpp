@@ -817,6 +817,11 @@ bool RenderCompositorANGLE::UseCompositor() const {
 }
 
 bool RenderCompositorANGLE::SupportAsyncScreenshot() {
+#ifdef NIGHTLY_BUILD
+  if (StaticPrefs::gfx_webrender_layer_compositor_AtStartup()) {
+    return true;
+  }
+#endif
   return !UseCompositor() && !mDisablingNativeCompositor;
 }
 
@@ -907,6 +912,10 @@ void RenderCompositorANGLE::GetCompositorCapabilities(
   }
   // DComp video overlay does not support negative scaling. See Bug 1831820
   aCaps->supports_external_compositor_surface_negative_scaling = false;
+}
+
+void RenderCompositorANGLE::GetWindowProperties(WindowProperties* aProperties) {
+  aProperties->is_opaque = !ShouldUseAlpha();
 }
 
 void RenderCompositorANGLE::EnableNativeCompositor(bool aEnable) {

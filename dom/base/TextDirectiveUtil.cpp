@@ -31,14 +31,30 @@ LazyLogModule gFragmentDirectiveLog("FragmentDirective");
 /* static */
 Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
     nsRange* aRange) {
-  ErrorResult rv;
   nsString content;
-  if (!aRange) {
+  if (!aRange || aRange->Collapsed()) {
     return content;
   }
-  aRange->ToString(content, rv);
-  if (rv.Failed()) {
-    return Err(std::move(rv));
+  UnsafePreContentIterator iter;
+  nsresult rv = iter.Init(aRange);
+  if (NS_FAILED(rv)) {
+    return Err(ErrorResult(rv));
+  }
+  for (; !iter.IsDone(); iter.Next()) {
+    nsINode* current = iter.GetCurrentNode();
+    if (!TextDirectiveUtil::NodeIsVisibleTextNode(*current) ||
+        TextDirectiveUtil::NodeIsPartOfNonSearchableSubTree(*current)) {
+      continue;
+    }
+    const uint32_t startOffset =
+        current == aRange->GetStartContainer() ? aRange->StartOffset() : 0;
+    const uint32_t endOffset =
+        std::min(current == aRange->GetEndContainer() ? aRange->EndOffset()
+                                                      : current->Length(),
+                 current->Length());
+    const Text* text = Text::FromNode(current);
+    text->TextFragment().AppendTo(content, startOffset,
+                                  endOffset - startOffset);
   }
   content.CompressWhitespace();
   return content;
@@ -67,9 +83,9 @@ TextDirectiveUtil::RangeContentAsFoldCase(nsRange* aRange) {
 }
 
 /* static */ RefPtr<nsRange> TextDirectiveUtil::FindStringInRange(
-    nsRange* aSearchRange, const nsAString& aQuery, bool aWordStartBounded,
-    bool aWordEndBounded) {
-  MOZ_ASSERT(aSearchRange);
+    const RangeBoundary& aSearchStart, const RangeBoundary& aSearchEnd,
+    const nsAString& aQuery, bool aWordStartBounded, bool aWordEndBounded,
+    nsContentUtils::NodeIndexCache* aCache) {
   TEXT_FRAGMENT_LOG("query='{}', wordStartBounded='{}', wordEndBounded='{}'.\n",
                     NS_ConvertUTF16toUTF8(aQuery), aWordStartBounded,
                     aWordEndBounded);
@@ -77,13 +93,9 @@ TextDirectiveUtil::RangeContentAsFoldCase(nsRange* aRange) {
   finder->SetWordStartBounded(aWordStartBounded);
   finder->SetWordEndBounded(aWordEndBounded);
   finder->SetCaseSensitive(false);
-  RefPtr<nsRange> searchRangeStart = nsRange::Create(
-      aSearchRange->StartRef(), aSearchRange->StartRef(), IgnoreErrors());
-  RefPtr<nsRange> searchRangeEnd = nsRange::Create(
-      aSearchRange->EndRef(), aSearchRange->EndRef(), IgnoreErrors());
-  RefPtr<nsRange> result;
-  Unused << finder->Find(aQuery, aSearchRange, searchRangeStart, searchRangeEnd,
-                         getter_AddRefs(result));
+  finder->SetNodeIndexCache(aCache);
+  RefPtr<nsRange> result =
+      finder->FindFromRangeBoundaries(aQuery, aSearchStart, aSearchEnd);
   if (!result || result->Collapsed()) {
     TEXT_FRAGMENT_LOG("Did not find query '{}'", NS_ConvertUTF16toUTF8(aQuery));
   } else {
@@ -287,7 +299,7 @@ TextDirectiveUtil::RangeContentAsFoldCase(nsRange* aRange) {
 TextDirectiveUtil::MoveBoundaryToNextNonWhitespacePosition(
     const RangeBoundary& aRangeBoundary) {
   MOZ_ASSERT(aRangeBoundary.IsSetAndValid());
-  nsINode* node = aRangeBoundary.Container();
+  nsINode* node = aRangeBoundary.GetContainer();
   uint32_t offset =
       *aRangeBoundary.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
   while (node) {
@@ -320,7 +332,7 @@ TextDirectiveUtil::MoveBoundaryToNextNonWhitespacePosition(
 TextDirectiveUtil::MoveBoundaryToPreviousNonWhitespacePosition(
     const RangeBoundary& aRangeBoundary) {
   MOZ_ASSERT(aRangeBoundary.IsSetAndValid());
-  nsINode* node = aRangeBoundary.Container();
+  nsINode* node = aRangeBoundary.GetContainer();
   uint32_t offset =
       *aRangeBoundary.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
   // Decrement offset by one so that the actual previous character is used. This
@@ -428,8 +440,8 @@ TextDirectiveUtil::FindBlockBoundaryInRange(const nsRange& aRange,
 }
 
 /* static */ bool TextDirectiveUtil::NormalizedRangeBoundariesAreEqual(
-    const RangeBoundary& aRangeBoundary1,
-    const RangeBoundary& aRangeBoundary2) {
+    const RangeBoundary& aRangeBoundary1, const RangeBoundary& aRangeBoundary2,
+    nsContentUtils::NodeIndexCache* aCache /* = nullptr */) {
   MOZ_ASSERT(aRangeBoundary1.IsSetAndValid() &&
              aRangeBoundary2.IsSetAndValid());
   if (aRangeBoundary1 == aRangeBoundary2) {
@@ -455,8 +467,8 @@ TextDirectiveUtil::FindBlockBoundaryInRange(const nsRange& aRange,
         }
         return true;
       };
-  const nsINode* node1 = aRangeBoundary1.Container();
-  const nsINode* node2 = aRangeBoundary2.Container();
+  const nsINode* node1 = aRangeBoundary1.GetContainer();
+  const nsINode* node2 = aRangeBoundary2.GetContainer();
   size_t offset1 =
       *aRangeBoundary1.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
   size_t offset2 =
@@ -471,7 +483,8 @@ TextDirectiveUtil::FindBlockBoundaryInRange(const nsRange& aRange,
 
   mozilla::UnsafePreContentIterator iter;
   // ContentIterator classes require boundaries to be in correct order.
-  auto comp = nsContentUtils::ComparePoints(aRangeBoundary1, aRangeBoundary2);
+  auto comp =
+      nsContentUtils::ComparePoints(aRangeBoundary1, aRangeBoundary2, aCache);
   if (!comp) {
     return false;
   }
@@ -482,7 +495,8 @@ TextDirectiveUtil::FindBlockBoundaryInRange(const nsRange& aRange,
       *comp == -1 ? std::tuple{&aRangeBoundary1, &aRangeBoundary2}
                   : std::tuple{&aRangeBoundary2, &aRangeBoundary1};
 
-  if (NS_FAILED(iter.Init(firstBoundary->AsRaw(), secondBoundary->AsRaw()))) {
+  if (NS_FAILED(iter.InitWithoutValidatingPoints(firstBoundary->AsRaw(),
+                                                 secondBoundary->AsRaw()))) {
     return false;
   }
 
@@ -491,7 +505,7 @@ TextDirectiveUtil::FindBlockBoundaryInRange(const nsRange& aRange,
     if (!node || !TextDirectiveUtil::NodeIsVisibleTextNode(*node)) {
       continue;
     }
-    if (node == firstBoundary->Container()) {
+    if (node == firstBoundary->GetContainer()) {
       auto firstOffset =
           *firstBoundary->Offset(RangeBoundary::OffsetFilter::kValidOffsets);
       if (firstOffset == node->Length()) {
@@ -505,7 +519,7 @@ TextDirectiveUtil::FindBlockBoundaryInRange(const nsRange& aRange,
         }
       }
     }
-    if (node == secondBoundary->Container()) {
+    if (node == secondBoundary->GetContainer()) {
       auto secondOffset =
           *secondBoundary->Offset(RangeBoundary::OffsetFilter::kValidOffsets);
       if (secondOffset == 0) {
@@ -642,34 +656,26 @@ TextDirectiveUtil::CreateTextDirectiveFromRanges(nsRange* aPrefix,
 
   ErrorResult rv;
   TextDirective textDirective;
-
-  aStart->ToString(textDirective.start, rv);
-  if (MOZ_UNLIKELY(rv.Failed())) {
-    return Err(std::move(rv));
-  }
-  textDirective.start.CompressWhitespace();
-
-  if (aPrefix && !aPrefix->Collapsed()) {
-    aPrefix->ToString(textDirective.prefix, rv);
-    if (MOZ_UNLIKELY(rv.Failed())) {
-      return Err(std::move(rv));
-    }
-    textDirective.prefix.CompressWhitespace();
-  }
-  if (aEnd && !aEnd->Collapsed()) {
-    aEnd->ToString(textDirective.end, rv);
-    if (MOZ_UNLIKELY(rv.Failed())) {
-      return Err(std::move(rv));
-    }
-    textDirective.end.CompressWhitespace();
-  }
-  if (aSuffix && !aSuffix->Collapsed()) {
-    aSuffix->ToString(textDirective.suffix, rv);
-    textDirective.suffix.CompressWhitespace();
-    if (MOZ_UNLIKELY(rv.Failed())) {
-      return Err(std::move(rv));
-    }
-  }
+  MOZ_TRY(RangeContentAsString(aStart).andThen(
+      [&textDirective](nsString start) -> Result<Ok, ErrorResult> {
+        textDirective.start = std::move(start);
+        return Ok();
+      }));
+  MOZ_TRY(RangeContentAsString(aPrefix).andThen(
+      [&textDirective](nsString prefix) -> Result<Ok, ErrorResult> {
+        textDirective.prefix = std::move(prefix);
+        return Ok();
+      }));
+  MOZ_TRY(RangeContentAsString(aEnd).andThen(
+      [&textDirective](nsString end) -> Result<Ok, ErrorResult> {
+        textDirective.end = std::move(end);
+        return Ok();
+      }));
+  MOZ_TRY(RangeContentAsString(aSuffix).andThen(
+      [&textDirective](nsString suffix) -> Result<Ok, ErrorResult> {
+        textDirective.suffix = std::move(suffix);
+        return Ok();
+      }));
   return textDirective;
 }
 

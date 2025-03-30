@@ -146,15 +146,6 @@ void BRFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       } else {
         aMetrics.SetBlockStartAscent(aMetrics.BSize(wm) = 0);
       }
-
-      // XXX temporary until I figure out a better solution; see the
-      // code in nsLineLayout::VerticalAlignFrames that zaps minY/maxY
-      // if the width is zero.
-      // XXX This also fixes bug 10036!
-      // Warning: nsTextControlFrame::CalculateSizeStandard depends on
-      // the following line, see bug 228752.
-      // The code below in AddInlinePrefISize also adds 1 appunit to width
-      finalSize.ISize(wm) = 1;
     }
 
     // Return our reflow status
@@ -181,8 +172,6 @@ void BRFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
 void BRFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
                                  InlinePrefISizeData* aData) {
   if (!GetParent()->Style()->ShouldSuppressLineBreak()) {
-    // Match the 1 appunit width assigned in the Reflow method above
-    aData->mCurrentLine += 1;
     aData->ForceBreak();
   }
 }
@@ -278,7 +267,7 @@ a11y::AccType BRFrame::AccessibleType() {
   // must not work well with such layout.  So, this should be okay for the
   // web apps in the wild.
   nsIFrame* const parentFrame = GetParent();
-  if (!parentFrame) {
+  if (HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) || !parentFrame) {
     return a11y::eHTMLBRType;
   }
   nsIFrame* const currentBlock =
@@ -296,6 +285,7 @@ a11y::AccType BRFrame::AccessibleType() {
     if (precedingContentFrame->IsBlockFrameOrSubclass()) {
       break;  // Reached a child block.
     }
+    // FIXME: Oh, this should be a11y::eNoType because it's a meaningless <br>.
     return a11y::eHTMLBRType;
   }
   return a11y::eHTMLBRType;

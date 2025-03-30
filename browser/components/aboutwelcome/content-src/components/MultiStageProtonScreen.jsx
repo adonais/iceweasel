@@ -108,10 +108,22 @@ export const ProtonScreenActionButtons = props => {
 
   // If we have a multi-select screen, we want to disable the primary button
   // until the user has selected at least one item.
-  const isPrimaryDisabled = primaryDisabledValue =>
-    primaryDisabledValue === "hasActiveMultiSelect"
-      ? !(activeMultiSelect?.length > 0)
-      : primaryDisabledValue;
+  const isPrimaryDisabled = primaryDisabledValue => {
+    if (primaryDisabledValue === "hasActiveMultiSelect") {
+      if (!activeMultiSelect) {
+        return true;
+      }
+
+      // Check if there's at least one selection in any of the multiselects
+      for (const selectKey in activeMultiSelect) {
+        if (activeMultiSelect[selectKey]?.length > 0) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return primaryDisabledValue;
+  };
 
   return (
     <div
@@ -307,11 +319,11 @@ export class ProtonScreen extends React.PureComponent {
   }
 
   renderDismissButton() {
-    const { size, marginBlock, marginInline, label } =
+    const { size, marginBlock, marginInline, label, background } =
       this.props.content.dismiss_button;
     return (
       <button
-        className="dismiss-button"
+        className={`dismiss-button ${background ? "with-background" : ""}`}
         onClick={this.props.handleAction}
         value="dismiss_button"
         data-l10n-id={label?.string_id || "spotlight-dialog-close-button"}

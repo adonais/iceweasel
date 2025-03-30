@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "mls-rs-crypto-traits"
-version = "0.10.0"
+version = "0.15.0"
 build = false
 autolib = false
 autobins = false
@@ -29,6 +29,14 @@ keywords = [
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/awslabs/mls-rs"
 
+[features]
+default = ["std"]
+mock = [
+    "std",
+    "dep:mockall",
+]
+std = ["mls-rs-core/std"]
+
 [lib]
 name = "mls_rs_crypto_traits"
 path = "src/lib.rs"
@@ -37,21 +45,13 @@ path = "src/lib.rs"
 maybe-async = "0.2.10"
 
 [dependencies.mls-rs-core]
-version = "0.18.0"
+version = "0.21.0"
 path = "../mls-rs-core"
 default-features = false
 
 [dependencies.mockall]
 version = "^0.11"
 optional = true
-
-[features]
-default = ["std"]
-mock = [
-    "std",
-    "dep:mockall",
-]
-std = ["mls-rs-core/std"]
 
 [target."cfg(mls_build_async)".dependencies]
 async-trait = "^0.1"

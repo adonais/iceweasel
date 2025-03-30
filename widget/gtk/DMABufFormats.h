@@ -21,6 +21,10 @@ namespace mozilla::widget {
 class DMABufFormatTable;
 class DMABufFeedback;
 
+#ifndef DRM_FORMAT_MOD_INVALID
+#  define DRM_FORMAT_MOD_INVALID ((1ULL << 56) - 1)
+#endif
+
 // DRMFormat (fourcc) and available modifiers for it.
 // Modifiers are sorted from the most preffered one.
 class DRMFormat final {
@@ -44,7 +48,11 @@ class DRMFormat final {
     MOZ_ASSERT(!IsFormatModifierSupported(aModifier), "Added modifier twice?");
     mModifiers.AppendElement(aModifier);
   }
-  bool UseModifiers() const { return !mModifiers.IsEmpty(); }
+  bool UseModifiers() const {
+    // Don't use modifiers if we don't have any or we have an invalid one.
+    return !(mModifiers.IsEmpty() || (mModifiers.Length() == 1 ||
+                                      mModifiers[0] == DRM_FORMAT_MOD_INVALID));
+  }
   const uint64_t* GetModifiers(uint32_t& aModifiersNum) {
     aModifiersNum = mModifiers.Length();
     return mModifiers.Elements();
@@ -58,7 +66,6 @@ class DRMFormat final {
   AutoTArray<uint64_t, 15> mModifiers;
 };
 
-#ifdef MOZ_WAYLAND
 class DMABufFormats;
 using DMABufFormatsCallback = std::function<void(DMABufFormats*)>;
 
@@ -66,11 +73,13 @@ class DMABufFormats final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DMABufFormats)
 
+#ifdef MOZ_WAYLAND
   void InitFeedback(zwp_linux_dmabuf_v1* aDMABuf,
                     const DMABufFormatsCallback& aFormatRefreshCB,
                     wl_surface* aSurface = nullptr);
   void InitV3(zwp_linux_dmabuf_v1* aDMABuf);
   void InitV3Done();
+#endif
 
   DMABufFeedback* GetDMABufFeedback() { return mDMABufFeedback.get(); }
   DMABufFeedback* GetPendingDMABufFeedback();
@@ -79,20 +88,23 @@ class DMABufFormats final {
   DRMFormat* GetFormat(uint32_t aFormat, bool aRequestScanoutFormat = false);
   DMABufFormats();
 
+  void EnsureBasicFormats();
+
  private:
   ~DMABufFormats();
 
   DMABufFormatsCallback mFormatRefreshCallback;
+#ifdef MOZ_WAYLAND
   zwp_linux_dmabuf_feedback_v1* mWaylandFeedback = nullptr;
-
+#endif
   UniquePtr<DMABufFeedback> mDMABufFeedback;
   UniquePtr<DMABufFeedback> mPendingDMABufFeedback;
 };
 
+#ifdef MOZ_WAYLAND
 RefPtr<DMABufFormats> CreateDMABufFeedbackFormats(
     wl_surface* aSurface,
     const std::function<void(DMABufFormats*)>& aFormatRefreshCB = nullptr);
-
 #endif
 
 }  // namespace mozilla::widget

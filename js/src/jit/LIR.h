@@ -45,7 +45,7 @@ static const uint32_t VREG_INCREMENT = 1;
 static const uint32_t THIS_FRAME_ARGSLOT = 0;
 
 #if defined(JS_NUNBOX32)
-#  define BOX_PIECES 2
+static const uint32_t BOX_PIECES = 2;
 static const uint32_t VREG_TYPE_OFFSET = 0;
 static const uint32_t VREG_DATA_OFFSET = 1;
 static const uint32_t TYPE_INDEX = 0;
@@ -53,7 +53,7 @@ static const uint32_t PAYLOAD_INDEX = 1;
 static const uint32_t INT64LOW_INDEX = 0;
 static const uint32_t INT64HIGH_INDEX = 1;
 #elif defined(JS_PUNBOX64)
-#  define BOX_PIECES 1
+static const uint32_t BOX_PIECES = 1;
 #else
 #  error "Unknown!"
 #endif
@@ -392,10 +392,51 @@ class LConstantIndex : public LAllocation {
 
 // Stack slots are indices into the stack. The indices are byte indices.
 class LStackSlot : public LAllocation {
- public:
-  explicit LStackSlot(uint32_t slot) : LAllocation(STACK_SLOT, slot) {}
+  // Stack slots are aligned to 32-bit word boundaries.
+  static constexpr uint32_t SLOT_ALIGNMENT = 4;
 
-  uint32_t slot() const { return data(); }
+  // Stack slot width is stored in the two least significant bits.
+  static constexpr uint32_t WIDTH_MASK = SLOT_ALIGNMENT - 1;
+
+  // Remaining bits hold the stack slot offset.
+  static constexpr uint32_t SLOT_MASK = ~WIDTH_MASK;
+
+ public:
+  enum Width {
+    Word,
+    DoubleWord,
+    QuadWord,
+  };
+
+  LStackSlot(uint32_t slot, Width width)
+      : LAllocation(STACK_SLOT, slotAndWidth(slot, width)) {}
+
+  uint32_t slot() const { return data() & SLOT_MASK; }
+
+  Width width() const { return Width(data() & WIDTH_MASK); }
+
+  // |Type| is LDefinition::Type, but can't forward declare a nested definition.
+  template <typename Type>
+  static Width width(Type type);
+
+  static uint32_t ByteWidth(Width width) {
+    switch (width) {
+      case Width::Word:
+        return 4;
+      case Width::DoubleWord:
+        return 8;
+      case Width::QuadWord:
+        return 16;
+    }
+    MOZ_CRASH("invalid width");
+  }
+
+ private:
+  static uint32_t slotAndWidth(uint32_t slot, Width width) {
+    MOZ_ASSERT(slot % SLOT_ALIGNMENT == 0);
+    MOZ_ASSERT(uint32_t(width) < SLOT_ALIGNMENT);
+    return slot | uint32_t(width);
+  }
 };
 
 // Stack area indicates a contiguous stack allocation meant to receive call
@@ -578,7 +619,7 @@ class LDefinition {
     return !isFloatReg() && !r.isFloat();
   }
   bool isCompatibleDef(const LDefinition& other) const {
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
+#if defined(JS_CODEGEN_ARM)
     if (isFloatReg() && other.isFloatReg()) {
       return type() == other.type();
     }
@@ -688,6 +729,41 @@ class LInt64Definition : public LInt64Value<LDefinition> {
 #endif
   }
 };
+
+template <>
+inline LStackSlot::Width LStackSlot::width(LDefinition::Type type) {
+  switch (type) {
+#if JS_BITS_PER_WORD == 32
+    case LDefinition::GENERAL:
+    case LDefinition::OBJECT:
+    case LDefinition::SLOTS:
+    case LDefinition::WASM_ANYREF:
+#endif
+#ifdef JS_NUNBOX32
+    case LDefinition::TYPE:
+    case LDefinition::PAYLOAD:
+#endif
+    case LDefinition::INT32:
+    case LDefinition::FLOAT32:
+      return LStackSlot::Word;
+#if JS_BITS_PER_WORD == 64
+    case LDefinition::GENERAL:
+    case LDefinition::OBJECT:
+    case LDefinition::SLOTS:
+    case LDefinition::WASM_ANYREF:
+#endif
+#ifdef JS_PUNBOX64
+    case LDefinition::BOX:
+#endif
+    case LDefinition::DOUBLE:
+      return LStackSlot::DoubleWord;
+    case LDefinition::SIMD128:
+      return LStackSlot::QuadWord;
+    case LDefinition::STACKRESULTS:
+      MOZ_CRASH("Stack results area must be allocated manually");
+  }
+  MOZ_CRASH("Unknown slot type");
+}
 
 // Forward declarations of LIR types.
 #define LIROP(op) class L##op;
@@ -2050,13 +2126,9 @@ AnyRegister LAllocation::toRegister() const {
 #  include "jit/loong64/LIR-loong64.h"
 #elif defined(JS_CODEGEN_RISCV64)
 #  include "jit/riscv64/LIR-riscv64.h"
-#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-#  if defined(JS_CODEGEN_MIPS32)
-#    include "jit/mips32/LIR-mips32.h"
-#  elif defined(JS_CODEGEN_MIPS64)
-#    include "jit/mips64/LIR-mips64.h"
-#  endif
+#elif defined(JS_CODEGEN_MIPS64)
 #  include "jit/mips-shared/LIR-mips-shared.h"
+#  include "jit/mips64/LIR-mips64.h"
 #elif defined(JS_CODEGEN_WASM32)
 #  include "jit/wasm32/LIR-wasm32.h"
 #elif defined(JS_CODEGEN_NONE)

@@ -19,10 +19,19 @@ const kPrefCustomizationHorizontalTabstrip =
   "browser.uiCustomization.horizontalTabstrip";
 const kPrefCustomizationNavBarWhenVerticalTabs =
   "browser.uiCustomization.navBarWhenVerticalTabs";
-// Ensure we clear any previous uiCustomization pref values
-Services.prefs.clearUserPref(kPrefCustomizationState);
-Services.prefs.clearUserPref(kPrefCustomizationHorizontalTabstrip);
-Services.prefs.clearUserPref(kPrefCustomizationNavBarWhenVerticalTabs);
+const kPrefSidebarTools = "sidebar.main.tools";
+
+const MODIFIED_PREFS = Object.freeze([
+  kPrefCustomizationState,
+  kPrefCustomizationHorizontalTabstrip,
+  kPrefCustomizationNavBarWhenVerticalTabs,
+  kPrefSidebarTools,
+]);
+
+// Ensure we clear any previous pref values
+for (const pref of MODIFIED_PREFS) {
+  Services.prefs.clearUserPref(pref);
+}
 
 /* global browser */
 const extData = {
@@ -142,7 +151,42 @@ async function toggleSidebarPanel(win, commandID) {
   await promiseFocused;
 }
 
+async function waitForTabstripOrientation(
+  toOrientation = "vertical",
+  win = window
+) {
+  await win.SidebarController.promiseInitialized;
+  // We use the orient attribute on the tabstrip element as a reliable signal that
+  // tabstrip orientation has changed/is settled into the given orientation
+  info(
+    `waitForTabstripOrientation: waiting for orient attribute to be "${toOrientation}"`
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    win.gBrowser.tabContainer,
+    { attributes: true, attributeFilter: ["orient"] },
+    () => win.gBrowser.tabContainer.getAttribute("orient") == toOrientation
+  );
+  // This change is followed by a update/render step for the lit elements.
+  // We need to wait for that too
+  await win.SidebarController.sidebarMain?.updateComplete;
+}
+
 // Reset the Glean events after each test.
 registerCleanupFunction(() => {
   Services.fog.testResetFOG();
 });
+
+/**
+ * Wait until Style and Layout information have been calculated and the paint
+ * has occurred.
+ *
+ * @see https://firefox-source-docs.mozilla.org/performance/bestpractices.html
+ */
+async function waitForRepaint() {
+  await SidebarController.waitUntilStable();
+  return new Promise(resolve =>
+    requestAnimationFrame(() => {
+      Services.tm.dispatchToMainThread(resolve);
+    })
+  );
+}

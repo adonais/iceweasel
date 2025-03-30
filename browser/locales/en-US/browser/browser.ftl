@@ -14,7 +14,10 @@
 # .data-content-title-default and .data-content-title-private are for use when
 # there *is* a content title.
 #
-# .*-with-profile are for use when there a SelectableProfileService.current profile exists.
+# .data-title-default-with-profile, .data-title-private-with-profile,
+# .data-content-title-default-with-profile,
+# .data-content-title-private-with-profile are used when there a
+# SelectableProfileService.current profile exists.
 #
 # Variables:
 #  $content-title (String): the title of the web content.
@@ -41,7 +44,10 @@ browser-main-window-titles =
 # there *is* a content title.
 # Do not use the brand name in these, as we do on non-macOS.
 #
-# .*-with-profile are for use when there a SelectableProfileService.current profile exists.
+# .data-title-default-with-profile, .data-title-private-with-profile,
+# .data-content-title-default-with-profile,
+# .data-content-title-private-with-profile are used when there a
+# SelectableProfileService.current profile exists.
 #
 # Also note the other subtle difference here: we use a `-` to separate the
 # brand name from `(Private Browsing)`, which does not happen on other OSes.
@@ -137,6 +143,15 @@ urlbar-result-menu-remove-from-history =
 urlbar-result-menu-tip-get-help =
     .label = Get help
     .accesskey = h
+urlbar-result-menu-dismiss-suggestion =
+    .label = Dismiss this suggestion
+    .accesskey = D
+urlbar-result-menu-learn-more-about-firefox-suggest =
+    .label = Learn more about { -firefox-suggest-brand-name }
+    .accesskey = L
+urlbar-result-menu-manage-firefox-suggest =
+    .label = Manage { -firefox-suggest-brand-name }
+    .accesskey = M
 
 ## Prompts users to use the Urlbar when they open a new tab or visit the
 ## homepage of their default search engine.
@@ -656,6 +671,25 @@ urlbar-result-action-copy-to-clipboard = Copy
 # Variables
 #  $result (String): the string representation for a formula result
 urlbar-result-action-calculator-result = = { $result }
+# The string returned for an undefined calculator result such as when dividing by 0
+urlbar-result-action-undefined-calculator-result = undefined
+# Shows the result of a formula expression being calculated, in scientific notation.
+# The last = sign will be shown as part of the result (e.g. "= 1.0e17").
+# Variables
+#  $result (String): the string representation for a result in scientific notation
+#  (e.g. "1.0e17").
+urlbar-result-action-calculator-result-scientific-notation = = { $result }
+# Shows the result of a formula expression being calculated, this is used for numbers >= 1.
+# The last = sign will be shown as part of the result (e.g. "= 2").
+# Variables
+#  $result (String): the string representation for a formula result
+urlbar-result-action-calculator-result-3 = = { NUMBER($result, useGrouping: "false", maximumFractionDigits: 8)}
+# Shows the result of a formula expression being calculated, to a maximum of 9 significant
+# digits. This is used for numbers < 1.
+# The last = sign will be shown as part of the result (e.g. "= 0.333333333").
+# Variables
+#  $result (String): the string representation for a formula result
+urlbar-result-action-calculator-result-decimal = = { NUMBER($result, maximumSignificantDigits: 9)}
 
 ## Strings used for buttons in the urlbar
 
@@ -681,8 +715,11 @@ urlbar-searchmode-actions =
 urlbar-searchmode-exit-button =
     .tooltiptext = Close
 
+# Label shown on the top of Searchmode Switcher popup. After this label, the
+# available search engines will be listed.
 urlbar-searchmode-popup-description = This time search with:
-urlbar-searchmode-popup-search-settings = Search Settings
+urlbar-searchmode-popup-search-settings-menuitem =
+    .label = Search Settings
 
 # Label prompting user to search with a particular search engine.
 #  $engine (String): the name of a search engine that searches a specific site

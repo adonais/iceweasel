@@ -849,8 +849,7 @@ class HTMLEditor final : public EditorBase,
    * this returns error.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
-  InsertTextWithTransaction(Document& aDocument,
-                            const nsAString& aStringToInsert,
+  InsertTextWithTransaction(const nsAString& aStringToInsert,
                             const EditorDOMPoint& aPointToInsert,
                             InsertTextTo aInsertTextTo) final;
 
@@ -1154,9 +1153,8 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult PrepareInlineStylesForCaret();
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
-  HandleInsertText(EditSubAction aEditSubAction,
-                   const nsAString& aInsertionString,
-                   SelectionHandling aSelectionHandling) final;
+  HandleInsertText(const nsAString& aInsertionString,
+                   InsertTextFor aPurpose) final;
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertDroppedDataTransferAsAction(
       AutoEditActionDataSetter& aEditActionData, DataTransfer& aDataTransfer,

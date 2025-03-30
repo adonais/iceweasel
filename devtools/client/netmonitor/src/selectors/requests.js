@@ -180,16 +180,30 @@ const getClickedRequest = createSelector(
     requests.find(request => request.id == clickedRequestId)
 );
 
+/**
+ * If a network override is set for the provided url, returns the override path.
+ * Otherwise returns null.
+ */
+function getOverriddenUrl(toolboxState, url) {
+  return toolboxState.networkOverrides.mutableOverrides[url] || null;
+}
+
+function hasOverride(toolboxState) {
+  return !!Object.keys(toolboxState.networkOverrides.mutableOverrides).length;
+}
+
 module.exports = {
   getClickedRequest,
   getDisplayedRequestById,
   getDisplayedRequests,
   getDisplayedRequestsSummary,
+  getOverriddenUrl,
   getRecordingState,
   getRequestById,
   getRequestByChannelId,
   getSelectedRequest,
   getSortedRequests,
   getTypeFilteredRequests,
+  hasOverride,
   isSelectedRequestVisible,
 };

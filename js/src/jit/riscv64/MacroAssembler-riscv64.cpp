@@ -2829,12 +2829,32 @@ void MacroAssembler::branchPtrInNurseryChunk(Condition cond, Register ptr,
 void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  MOZ_ASSERT(!rhs.isNaN());
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   MOZ_ASSERT(lhs.valueReg() != scratch);
   moveValue(rhs, ValueOperand(scratch));
   ma_b(lhs.valueReg(), scratch, label, cond);
 }
+
+void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
+                                        Register temp, Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+  MOZ_ASSERT(val.valueReg() != scratch);
+
+  // When testing for NaN, we want to ignore the sign bit.
+  // Clear the top bit by shifting left and then right.
+  slli(temp, val.valueReg(), 1);
+  slri(temp, temp, 1);
+
+  // Compare against a NaN with sign bit 0.
+  static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
+  moveValue(DoubleValue(JS::GenericNaN()), ValueOperand(scratch));
+  ma_b(temp, scratch, label, cond);
+}
+
 void MacroAssembler::branchValueIsNurseryCell(Condition cond,
                                               const Address& address,
                                               Register temp, Label* label) {
@@ -3411,12 +3431,12 @@ void MacroAssembler::patchNopToCall(uint8_t* call, uint8_t* target) {
   *reinterpret_cast<Instr*>(p + 6) = jalr_;
 }
 void MacroAssembler::Pop(Register reg) {
-  ma_pop(reg);
+  pop(reg);
   adjustFrame(-int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Pop(FloatRegister f) {
-  ma_pop(f);
+  pop(f);
   adjustFrame(-int32_t(sizeof(double)));
 }
 
@@ -3472,23 +3492,17 @@ void MacroAssembler::PushBoxed(FloatRegister reg) {
 }
 
 void MacroAssembler::Push(Register reg) {
-  ma_push(reg);
+  push(reg);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Push(const Imm32 imm) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ma_li(scratch, imm);
-  ma_push(scratch);
+  push(imm);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Push(const ImmWord imm) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ma_li(scratch, imm);
-  ma_push(scratch);
+  push(imm);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
@@ -3497,15 +3511,12 @@ void MacroAssembler::Push(const ImmPtr imm) {
 }
 
 void MacroAssembler::Push(const ImmGCPtr ptr) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ma_li(scratch, ptr);
-  ma_push(scratch);
+  push(ptr);
   adjustFrame(int32_t(sizeof(intptr_t)));
 }
 
 void MacroAssembler::Push(FloatRegister f) {
-  ma_push(f);
+  push(f);
   adjustFrame(int32_t(sizeof(double)));
 }
 

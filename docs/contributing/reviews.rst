@@ -99,10 +99,10 @@ Review groups
      - cubeb, Gecko's audio input/output library and associated projects (audioipc, cubeb-rs, rust cubeb backends)
      - `Member list <https://phabricator.services.mozilla.com/project/profile/129/>`__
    * - #desktop-theme-reviewers
-     - User interface CSS
+     - `User interface CSS </mots/index.html#desktop-theme>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/141/>`__
    * - #devtools-reviewers
-     - Firefox DevTools
+     - `Firefox DevTools </mots/index.html#devtools>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/153/>`__
    * - #dom-core
      - `Core: DOM <https://firefox-source-docs.mozilla.org/mots/index.html#core-document-object-model>`__
@@ -113,6 +113,9 @@ Review groups
    * - #dom-storage-reviewers
      - DOM Storage
      - `Member list <https://phabricator.services.mozilla.com/project/members/147/>`__
+   * - #extension-reviewers
+     - `WebExtensions </mots/index.html#webextensions>`__ and `Toolkit::Add-ons Manager </mots/index.html#add-ons-manager>`__
+     - `Member list <https://phabricator.services.mozilla.com/project/members/130/>`__
    * - #fluent-reviewers
      - Fluent (FTL) files (translation).
      - `Member list <https://phabricator.services.mozilla.com/project/members/105/>`__

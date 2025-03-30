@@ -382,6 +382,10 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool CanHandleUserInputEvents(WidgetGUIEvent* aGUIEvent);
 
+  void ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
+                                     const nsRect& aPositionFixedRect,
+                                     ScrollFlags aScrollFlags);
+
  public:
   /**
    * Updates pending layout, assuming reasonable (up-to-date, or mid-update for
@@ -602,6 +606,9 @@ class PresShell final : public nsStubDocumentObserver,
    * If ScrollNoParentFrames is set then we only scroll
    * nodes in this document, not in any parent documents which
    * contain this document in a iframe or the like.
+   * If AxesAreLogical is set, then the aVertical param actually refers to the
+   * frame's block axis, and the aHorizontal param to its inline axis, rather
+   * than to physical directions.
    * @return true if any scrolling happened, false if no scrolling happened
    */
   MOZ_CAN_RUN_SCRIPT
@@ -1645,6 +1652,10 @@ class PresShell final : public nsStubDocumentObserver,
    *                      using ScrollContainerFrame::ScrollMode::SMOOTH_MSD;
    *                      otherwise, ScrollContainerFrame::ScrollMode::INSTANT
    *                      will be used.
+   *                      If ScrollFlags::AxesAreLogical is set, then the
+   *                      aVertical param actually refers to the element's
+   *                      block axis, and the aHorizontal param to its inline
+   *                      axis, rather than to physical directions.
    */
   MOZ_CAN_RUN_SCRIPT
   nsresult ScrollContentIntoView(nsIContent* aContent, ScrollAxis aVertical,
@@ -2914,6 +2925,10 @@ class PresShell final : public nsStubDocumentObserver,
     already_AddRefed<PresShell> GetParentPresShellForEventHandling() {
       return mPresShell->GetParentPresShellForEventHandling();
     }
+
+    bool UpdateFocusSequenceNumber(nsIFrame* aFrameForPresShell,
+                                   uint64_t aEventFocusSequenceNumber);
+
     OwningNonNull<PresShell> mPresShell;
     AutoCurrentEventInfoSetter* mCurrentEventInfoSetter;
     static TimeStamp sLastInputCreated;
@@ -3101,9 +3116,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   // Only populated on root content documents.
   nsSize mVisualViewportSize;
-
-  // The focus information needed for async keyboard scrolling
-  FocusTarget mAPZFocusTarget;
 
   using Arena = nsPresArena<8192, ArenaObjectID, eArenaObjectID_COUNT>;
   Arena mFrameArena;

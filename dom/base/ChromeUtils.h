@@ -193,7 +193,8 @@ class ChromeUtils {
       GlobalObject&, const nsACString& aSchemelessSite,
       const dom::OriginAttributesPatternDictionary& aPattern);
 
-  static void ClearStyleSheetCache(GlobalObject& aGlobal);
+  static void ClearStyleSheetCache(GlobalObject& aGlobal,
+                                   const Optional<bool>& aChrome);
 
   static void ClearMessagingLayerSecurityStateByPrincipal(
       GlobalObject&, nsIPrincipal* aPrincipal, ErrorResult& aRv);
@@ -212,7 +213,11 @@ class ChromeUtils {
       GlobalObject& aGlobal, const nsACString& aSchemelessSite,
       const dom::OriginAttributesPatternDictionary& aPattern);
 
-  static void ClearScriptCache(GlobalObject& aGlobal);
+  static void ClearScriptCache(GlobalObject& aGlobal,
+                               const Optional<bool>& aChrome);
+
+  static void ClearResourceCache(GlobalObject& aGlobal,
+                                 const Optional<bool>& aChrome);
 
   static void SetPerfStatsCollectionMask(GlobalObject& aGlobal, uint64_t aMask);
 
@@ -282,7 +287,7 @@ class ChromeUtils {
                                   ErrorResult& aRv);
 
   static void UnregisterWindowActor(const GlobalObject& aGlobal,
-                                    const nsACString& aName);
+                                    const nsACString& aName, ErrorResult& aRv);
 
   static void RegisterProcessActor(const GlobalObject& aGlobal,
                                    const nsACString& aName,
@@ -290,7 +295,11 @@ class ChromeUtils {
                                    ErrorResult& aRv);
 
   static void UnregisterProcessActor(const GlobalObject& aGlobal,
-                                     const nsACString& aName);
+                                     const nsACString& aName, ErrorResult& aRv);
+
+  static already_AddRefed<Promise> EnsureHeadlessContentProcess(
+      const GlobalObject& aGlobal, const nsACString& aRemoteType,
+      ErrorResult& aRv);
 
   static bool IsClassifierBlockingErrorCode(GlobalObject& aGlobal,
                                             uint32_t aError);
@@ -330,10 +339,6 @@ class ChromeUtils {
       GlobalObject& aGlobal, JSRFPTarget aTarget,
       nsIRFPTargetSetIDL* aOverriddenFingerprintingSettings,
       const Optional<bool>& aIsPBM);
-
-  static void SanitizeTelemetryFileURL(GlobalObject& aGlobal,
-                                       const nsACString& aURL,
-                                       FileNameTypeDetails& aFileTypeDetails);
 
 #ifdef MOZ_WMF_CDM
   static already_AddRefed<Promise> GetWMFContentDecryptionModuleInformation(

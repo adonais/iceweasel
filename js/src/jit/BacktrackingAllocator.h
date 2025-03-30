@@ -726,8 +726,8 @@ class BacktrackingAllocator : protected RegisterAllocator {
     LStackSlot alloc;
     LiveRangePlusSet allocated;
 
-    SpillSlot(uint32_t slot, LifoAlloc* alloc)
-        : alloc(slot), allocated(alloc) {}
+    SpillSlot(uint32_t slot, LStackSlot::Width width, LifoAlloc* alloc)
+        : alloc(slot, width), allocated(alloc) {}
   };
   using SpillSlotList = InlineForwardList<SpillSlot>;
 
@@ -829,7 +829,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
                                                         CodePosition to);
 
   // Merging and queueing of LiveRange groups
-  [[nodiscard]] bool tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1);
+  void tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1);
   void allocateStackDefinition(VirtualRegister& reg);
   [[nodiscard]] bool tryMergeReusedRegister(VirtualRegister& def,
                                             VirtualRegister& input);

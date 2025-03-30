@@ -112,6 +112,7 @@ include = [
   "FontVariantEastAsian",
   "FontVariantLigatures",
   "FontVariantNumeric",
+  "ComputedMozPrefFeatureValue",
   "ComputedFontStretchRange",
   "ComputedFontStyleDescriptor",
   "ComputedFontWeightRange",
@@ -140,6 +141,7 @@ include = [
   "FontFaceSourceTechFlags",
   "FontLanguageOverride",
   "FontSynthesis",
+  "FontSynthesisStyle",
   "GenericFontFamily",
   "FontFamily",
   "FontFamilyNameSyntax",
@@ -185,7 +187,7 @@ include = [
   "Time",
   "Rect",
   "InitialLetter",
-  "IntersectionObserverRootMargin",
+  "IntersectionObserverMargin",
   "Size",
   "MaxSize",
   "FlexBasis",
@@ -328,7 +330,7 @@ include = [
   "AnchorSizeFunction",
   "Margin",
   "PositionProperty",
-  "PhysicalSide",
+  "PhysicalAxis",
 ]
 item_types = [
   "enums",
@@ -412,6 +414,7 @@ renaming_overrides_prefixing = true
   inline CSSCoord ResolveToCSSPixels(CSSCoord aBasis) const;
   template<typename Rounder>
   inline nscoord Resolve(nscoord aBasis, Rounder) const;
+  inline nscoord ResolveWithAnchor(nscoord aBasis, mozilla::StylePhysicalAxis aAxis, mozilla::StylePositionProperty aProp) const;
 """
 
 "GenericCalcNode" = """
@@ -478,6 +481,7 @@ renaming_overrides_prefixing = true
   inline nscoord Resolve(nscoord aPercentageBasis, Rounder) const;
   template<typename T> inline nscoord Resolve(T aPercentageGetter) const;
   inline nscoord Resolve(nscoord aPercentageBasis) const;
+  inline nscoord ResolveWithAnchor(nscoord aPercentageBasis, mozilla::StylePhysicalAxis aAxis, mozilla::StylePositionProperty aProp) const;
 """
 
 "GenericLengthPercentageOrAuto" = """
@@ -1025,8 +1029,7 @@ renaming_overrides_prefixing = true
  SERVO_FIXED_POINT_HELPERS(StyleFontStyle, int16_t, StyleFONT_STYLE_FRACTION_BITS);
  bool IsNormal() const { return *this == NORMAL; }
  inline bool IsItalic() const;
- inline bool IsOblique() const;
- inline float ObliqueAngle() const;  // Only for use when IsOblique() is true
+ inline float ObliqueAngle() const;  // Not for use when IsItalic() is true
  inline float SlantAngle() const;  // Returns angle for any font-style, including
                                    // normal/italic as well as explicit oblique
 """
@@ -1074,6 +1077,12 @@ renaming_overrides_prefixing = true
 "Time" = """
  float ToSeconds() const { return seconds; }
  float ToMilliseconds() const { return seconds * 1000.0f; }
+"""
+
+"ComputedFontStyleDescriptor" = """
+  inline static StyleComputedFontStyleDescriptor Normal() {
+    return StyleComputedFontStyleDescriptor::Oblique(0, 0);
+  }
 """
 
 "FontFaceSourceTechFlags" = """
@@ -1168,8 +1177,6 @@ renaming_overrides_prefixing = true
   inline nscoord ToLength() const;
   inline bool ConvertsToPercentage() const;
   inline float ToPercentage() const;
-  inline bool MaybeAuto() const;
-  inline bool MaybePercentageAware() const;
 """
 
 "GenericMargin" = """

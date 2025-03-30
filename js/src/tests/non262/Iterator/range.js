@@ -141,5 +141,88 @@ assertDeepEq(bigintResult4, []);
 const bigintResult5 = Array.from(Iterator.range(5n, 0n, -1n));
 assertDeepEq(bigintResult5, [5n, 4n, 3n, 2n, 1n]);
 
+
+// test invalid this
+const invalidValues = [
+    null,
+    undefined,
+    42,
+    'string',
+    true,
+    {},
+    Symbol('test'),
+    [],
+    new Date()
+];
+
+const iterator = Iterator.range(0, 10);
+
+invalidValues.forEach(value => {
+    assertThrowsInstanceOf(() => {
+        iterator.next.call(value);
+    }, TypeError, `Should throw TypeError for ${typeof value}`);
+});
+
+// this value is a valid iterator object from another compartment
+const g = newGlobal({ newCompartment: true });
+const localIterator = Iterator.range(0, 10);
+const otherIterator = g.eval("Iterator.range(0, 10)");
+
+const result = localIterator.next.call(otherIterator);
+
+assertEq(typeof result, 'object');
+assertEq(result.value, 0);
+assertEq(result.done, false);
+
+// infinite tests for iterator sequences
+const infiniteRange = Iterator.range(0, Infinity);
+assertEq(typeof infiniteRange.next, 'function');
+
+const first = infiniteRange.next();
+assertEq(first.value, 0);
+assertEq(infiniteRange.next().value, 1);
+assertEq(first.done, false);
+
+// negative infinity
+const negativeInfiniteRange = Iterator.range(0, -Infinity, -1);
+assertEq(negativeInfiniteRange.next().value, 0);
+assertEq(negativeInfiniteRange.next().value, -1);
+assertEq(negativeInfiniteRange.next().value, -2);
+
+// steps
+const stepRange = Iterator.range(0, Infinity, 2);
+assertEq(stepRange.next().value, 0);
+assertEq(stepRange.next().value, 2);
+assertEq(stepRange.next().value, 4);
+
+// test with an option object
+const options = Iterator.range(0, Infinity, { step: 3 });
+assertEq(options.next().value, 0);
+assertEq(options.next().value, 3);
+assertEq(options.next().value, 6);
+
+// test that inclusive end is ignored for infinite ranges
+const infiniteRangeInclusive = Iterator.range(0, Infinity, { inclusiveEnd: true });
+assertEq(infiniteRangeInclusive.next().value, 0);
+assertEq(infiniteRangeInclusive.next().value, 1);
+
+// test negative infinity with inclusive end
+const negativeInfiniteRangeInclusive = Iterator.range(0, -Infinity, -1, { inclusiveEnd: true });
+assertEq(negativeInfiniteRangeInclusive.next().value, 0);
+assertEq(negativeInfiniteRangeInclusive.next().value, -1);
+assertEq(negativeInfiniteRangeInclusive.next().value, -2);
+
+// test negative infinity with step and inclusive end
+const negativeInfiniteRangeStepInclusive = Iterator.range(0, -Infinity, -2, { inclusiveEnd: true });
+assertEq(negativeInfiniteRangeStepInclusive.next().value, 0);
+assertEq(negativeInfiniteRangeStepInclusive.next().value, -2);
+
+// bigint and infinite range
+assertThrowsInstanceOf(() => Iterator.range(0n, Infinity), TypeError);
+assertThrowsInstanceOf(() => Iterator.range(0n, -Infinity), TypeError);
+assertThrowsInstanceOf(() => Iterator.range(0, Infinity, 2n), TypeError);
+assertThrowsInstanceOf(() => Iterator.range(0, 10, Infinity), RangeError);
+
+
 if (typeof reportCompare === 'function')
     reportCompare(0, 0);

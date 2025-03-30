@@ -10,12 +10,23 @@ import {
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
-const actionButton = action => {
+const recordNotificationInteraction = (notificationDetail, actionType) => {
+  Glean.contextualManager.notificationInteraction.record({
+    notification_detail: notificationDetail.replaceAll("-", "_"),
+    action_type: actionType,
+  });
+};
+
+const actionButton = (action, id) => {
   return html` <moz-button
     slot=${ifDefined(action.slot)}
     type=${ifDefined(action.type)}
     data-l10n-id=${action.dataL10nId}
-    @click=${action.onClick}
+    @click=${() => {
+      recordNotificationInteraction(action.telemetryId, action.telemetryType);
+      action.onClick();
+    }}
+    id=${id}
   ></moz-button>`;
 };
 
@@ -31,10 +42,11 @@ const notificationShell = ({
   link,
   primaryAction,
   secondaryAction,
+  notificationId,
 }) => {
   return html`
     <moz-message-bar
-      @message-bar:user-dismissed=${onDismiss}
+      @message-bar:user-dismissed=${ifDefined(onDismiss)}
       ?dismissable=${dismissable}
       type=${type}
       data-l10n-id=${dataL10nId}
@@ -46,12 +58,16 @@ const notificationShell = ({
         link,
         () =>
           html`<a
+            part="support-link"
             slot="support-link"
             data-l10n-id=${link.dataL10nId}
             href=${link.url}
             @click=${e => {
               e.preventDefault();
-              messageHandler("OpenLink", { value: link.url });
+              recordNotificationInteraction(notificationId, "open_link");
+              messageHandler("OpenLink", {
+                value: link.url,
+              });
             }}
           ></a>`,
         () => nothing
@@ -60,9 +76,10 @@ const notificationShell = ({
         secondaryAction,
         () =>
           html` <moz-button-group slot="actions">
-            ${actionButton(primaryAction)} ${actionButton(secondaryAction)}
+            ${actionButton(primaryAction, "primary-action")}
+            ${actionButton(secondaryAction, "secondary-action")}
           </moz-button-group>`,
-        () => html`${actionButton(primaryAction)}`
+        () => html`${actionButton(primaryAction, "primary-action")}`
       )}
     </moz-message-bar>
   `;
@@ -85,9 +102,14 @@ class NotificationMessageBar extends MozLitElement {
     );
   }
 
+  #handleDismiss() {
+    recordNotificationInteraction(this.notification.id, "dismiss");
+    this.onDismiss();
+  }
+
   #renderImportSuccess() {
     return html`${notificationShell({
-      onDismiss: this.onDismiss,
+      onDismiss: this.#handleDismiss,
       messageHandler: this.messageHandler,
       dataL10nId: "passwords-import-success-heading",
       messageL10nId: "passwords-import-success-message",
@@ -99,16 +121,19 @@ class NotificationMessageBar extends MozLitElement {
       },
       primaryAction: {
         type: "primary",
+        telemetryType: "dismiss",
+        telemetryId: this.notification.id,
         slot: "actions",
         dataL10nId: "passwords-import-success-button",
         onClick: this.onDismiss,
       },
-    })}`;
+      notificationId: this.notification.id,
+    })} `;
   }
 
   #renderImportError() {
     return html`${notificationShell({
-      onDismiss: this.onDismiss,
+      onDismiss: this.#handleDismiss,
       messageHandler: this.messageHandler,
       dataL10nId: "passwords-import-error-heading-and-message",
       type: "error",
@@ -118,28 +143,36 @@ class NotificationMessageBar extends MozLitElement {
       },
       primaryAction: {
         type: "primary",
+        telemetryType: "import",
+        telemetryId: this.notification.id,
         dataL10nId: "passwords-import-error-button-try-again",
         onClick: () => this.messageHandler(this.notification.commands.onRetry),
       },
       secondaryAction: {
+        telemetryType: "dismiss",
+        telemetryId: this.notification.id,
         dataL10nId: "passwords-import-error-button-cancel",
         onClick: this.onDismiss,
       },
+      notificationId: this.notification.id,
     })}`;
   }
 
   #renderExportPasswordsSuccess() {
     return html`
       ${notificationShell({
-        onDismiss: this.onDismiss,
+        onDismiss: this.#handleDismiss,
         dataL10nId: "passwords-export-success-heading",
         type: "success",
         primaryAction: {
           type: "primary",
+          telemetryType: "dismiss",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-export-success-button",
           onClick: this.onDismiss,
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
@@ -147,12 +180,14 @@ class NotificationMessageBar extends MozLitElement {
   #renderAddLoginSuccess() {
     return html`
       ${notificationShell({
-        onDismiss: this.onDismiss,
+        onDismiss: this.#handleDismiss,
         dataL10nId: "passwords-add-password-success-heading",
         dataL10nArgs: JSON.stringify(this.notification.l10nArgs),
         type: "success",
         primaryAction: {
           type: "primary",
+          telemetryType: "nav_record",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-add-password-success-button",
           onClick: () => {
@@ -160,6 +195,7 @@ class NotificationMessageBar extends MozLitElement {
             this.onDismiss();
           },
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
@@ -167,12 +203,14 @@ class NotificationMessageBar extends MozLitElement {
   #renderAddLoginAlreadyExistsWarning() {
     return html`
       ${notificationShell({
-        onDismiss: this.onDismiss,
+        onDismiss: this.#handleDismiss,
         dataL10nId: "passwords-password-already-exists-error-heading",
         dataL10nArgs: JSON.stringify(this.notification.l10nArgs),
         type: "warning",
         primaryAction: {
           type: "primary",
+          telemetryType: "nav_record",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-password-already-exists-error-button",
           onClick: () => {
@@ -180,6 +218,7 @@ class NotificationMessageBar extends MozLitElement {
             this.onDismiss();
           },
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
@@ -187,16 +226,19 @@ class NotificationMessageBar extends MozLitElement {
   #renderUpdateLoginSuccess() {
     return html`
       ${notificationShell({
-        onDismiss: this.onDismiss,
+        onDismiss: this.#handleDismiss,
         dataL10nId: "passwords-update-password-success-heading",
         dataL10nAttrs: "heading",
         type: "success",
         primaryAction: {
           type: "primary",
+          telemetryType: "dismiss",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-update-password-success-button",
           onClick: this.onDismiss,
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
@@ -204,28 +246,33 @@ class NotificationMessageBar extends MozLitElement {
   #renderDeleteLoginSuccess() {
     return html`
       ${notificationShell({
-        onDismiss: this.onDismiss,
+        onDismiss: this.#handleDismiss,
         dataL10nId: "passwords-delete-password-success-heading",
         dataL10nArgs: JSON.stringify(this.notification.l10nArgs),
         dataL10nAttrs: "heading",
         type: "success",
         primaryAction: {
           type: "primary",
+          telemetryType: "dismiss",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-delete-password-success-button",
           onClick: this.onDismiss,
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
 
   #renderDiscardChanges() {
     return html`${notificationShell({
-      onDismiss: this.onDismiss,
+      onDismiss: this.#handleDismiss,
       dataL10nId: "passwords-discard-changes-heading-and-message",
       type: "warning",
       primaryAction: {
         type: "destructive",
+        telemetryType: "confirm_discard_changes",
+        telemetryId: this.notification.id,
         dataL10nId: "passwords-discard-changes-confirm-button",
         onClick: () => {
           this.messageHandler("Cancel", {}, this.notification.passwordIndex);
@@ -237,9 +284,12 @@ class NotificationMessageBar extends MozLitElement {
         },
       },
       secondaryAction: {
+        telemetryType: "dismiss",
+        telemetryId: this.notification.id,
         dataL10nId: "passwords-discard-changes-go-back-button",
         onClick: this.onDismiss,
       },
+      notificationId: this.notification.id,
     })}`;
   }
 
@@ -247,7 +297,6 @@ class NotificationMessageBar extends MozLitElement {
     return html`
       ${notificationShell({
         dismissable: false,
-        onDismiss: this.onDismiss,
         messageHandler: this.messageHandler,
         dataL10nId: "passwords-breached-origin-heading-and-message",
         type: "error",
@@ -256,10 +305,13 @@ class NotificationMessageBar extends MozLitElement {
           dataL10nId: "passwords-breached-origin-link-message",
         },
         primaryAction: {
+          telemetryType: "change_record",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-change-password-button",
           onClick: this.notification.onButtonClick,
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
@@ -268,14 +320,16 @@ class NotificationMessageBar extends MozLitElement {
     return html`
       ${notificationShell({
         dismissable: false,
-        onDismiss: this.onDismiss,
         dataL10nId: "passwords-no-username-heading-and-message",
         type: "info",
         primaryAction: {
+          telemetryType: "change_record",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-add-username-button",
           onClick: this.notification.onButtonClick,
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
@@ -284,7 +338,6 @@ class NotificationMessageBar extends MozLitElement {
     return html`
       ${notificationShell({
         dismissable: false,
-        onDismiss: this.onDismiss,
         messageHandler: this.messageHandler,
         dataL10nId: "passwords-vulnerable-password-heading-and-message",
         type: "warning",
@@ -293,10 +346,13 @@ class NotificationMessageBar extends MozLitElement {
           dataL10nId: "passwords-vulnerabe-password-link-message",
         },
         primaryAction: {
+          telemetryType: "change_record",
+          telemetryId: this.notification.id,
           slot: "actions",
           dataL10nId: "passwords-change-password-button",
           onClick: this.notification.onButtonClick,
         },
+        notificationId: this.notification.id,
       })}
     `;
   }
