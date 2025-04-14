@@ -11567,7 +11567,11 @@
 # 0 : disabled, 1 : enabled allowed list, 2 : enabled blocked list
 -   name: media.eme.mfcdm.origin-filter.enabled
     type: RelaxedAtomicUint32
+#if defined(MOZ_DEV_EDITION) || defined(EARLY_BETA_OR_EARLIER)
     value: 2
+#else
+    value: 1
+#endif
     mirror: always
 
 #endif  # MOZ_WMF
@@ -18424,7 +18428,7 @@
 #  * 2: auto
 - name: widget.windows.follow_shortcuts_on_file_open
   type: RelaxedAtomicInt32
-  value: 2
+  value: 1
   mirror: always
 
 # The number of messages of each type to keep for display in
