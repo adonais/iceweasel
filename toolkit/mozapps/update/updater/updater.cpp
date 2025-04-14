@@ -54,6 +54,7 @@
 #ifdef XP_WIN
 #  include "mozilla/Maybe.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
+#  include "mozilla/WinTokenUtils.h"
 #  include <climits>
 #endif  // XP_WIN
 
@@ -123,19 +124,76 @@ BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
                             LPCWSTR newFileName);
 #  include "updatehelper.h"
 
-// Closes the handle if valid and if the updater is elevated returns with the
-// return code specified. This prevents multiple launches of the callback
-// application by preventing the elevated process from launching the callback.
-#  define EXIT_WHEN_ELEVATED(path, handle, retCode) \
-    {                                               \
-      if (handle != INVALID_HANDLE_VALUE) {         \
-        CloseHandle(handle);                        \
-      }                                             \
-      if (NS_tremove(path) && errno != ENOENT) {    \
-        return retCode;                             \
-      }                                             \
+// Closes the handle if valid and if this is the second updater instance,
+// return with the return code specified. As `gIsSecondInvocation` alludes to,
+// this is used to guard things like launching the callback application, since
+// only the first updater invocation should do that.
+// The passed handle is meant to be the handle to the "update in progress" lock
+// so that we close it when we are done updating.
+#  define EXIT_IF_SECOND_UPDATER_INSTANCE(handle, retCode)                    \
+    {                                                                         \
+      if (handle != INVALID_HANDLE_VALUE) {                                   \
+        CloseHandle(handle);                                                  \
+      }                                                                       \
+      if (gInvocation == UpdaterInvocation::Second) {                         \
+        return retCode;                                                       \
+      }                                                                       \
     }
 #endif
+
+//-----------------------------------------------------------------------------
+
+/**
+ * This enum and its related functions are intended for interpreting the passed
+ * parameter and using it to determine whether this is the first or second
+ * invocation of the updater.
+ */
+enum class UpdaterInvocation {
+  // The initial invocation of the updater. This may apply the update, or it may
+  // start the second invocation of the updater to update depending on whether
+  // elevation is required.
+  // This invocation always does all modifications of the update directory and
+  // calls the callback application, even if another updater is launched.
+  First,
+  // The second invocation of the updater. This basically applies the update to
+  // the installation directory, calls PostUpdate (on Windows) and exits.
+  Second,
+  // It cannot be determined that we are doing either of the above invocations.
+  // This generally represents an uninitialized value or an error.
+  Unknown,
+};
+
+/**
+ * Returns a human-readable representation of an `UpdaterInvocation`.
+ */
+const char* getUpdaterInvocationString(UpdaterInvocation value) {
+  switch (value) {
+    case UpdaterInvocation::First:
+      return "UpdaterInvocation::First";
+    case UpdaterInvocation::Second:
+      return "UpdaterInvocation::Second";
+    case UpdaterInvocation::Unknown:
+      return "UpdaterInvocation::Unknown";
+  }
+  MOZ_CRASH("impossible value for UpdaterInvocation");
+}
+
+const NS_tchar* firstUpdateInvocationArg = NS_T("first");
+const NS_tchar* secondUpdateInvocationArg = NS_T("second");
+
+/**
+ * Gets which updater invocation this is based on the value passed to this
+ * function by the caller.
+ */
+static UpdaterInvocation getUpdaterInvocationFromArg(const NS_tchar* argument) {
+  if (NS_tstrcmp(argument, firstUpdateInvocationArg) == 0) {
+    return UpdaterInvocation::First;
+  }
+  if (NS_tstrcmp(argument, secondUpdateInvocationArg) == 0) {
+    return UpdaterInvocation::Second;
+  }
+  return UpdaterInvocation::Unknown;
+}
 
 //-----------------------------------------------------------------------------
 
@@ -283,6 +341,30 @@ static bool gSucceeded = false;
 static bool sStagedUpdate = false;
 static bool sReplaceRequest = false;
 static bool sUsingService = false;
+// When the updater needs to elevate, we generally run the updater again with
+// elevation. These two invocations differ in many important ways. The elevated
+// updater doesn't touch any files that don't require that elevation, it
+// basically just changes the installation directory, runs PostUpdate
+// (on Windows), and exits to let the first updater invocation finalize the
+// update (write its own logs, conditionally move the elevated updater
+// logs/status to the update directory, call the callback application, etc).
+static UpdaterInvocation gInvocation = UpdaterInvocation::Unknown;
+
+// `argv` indices for standard invocation. Does not apply to other methods of
+// invocation including when `--openAppBundle`, or `-dmgInstall` are used.
+// Note that `argv[1]` is the argument version, which is needed by the MMS, but
+// not by the updater since it is guaranteed to be the same version as the
+// application launching it.
+static const int kPatchDirIndex = 2;
+static const int kInstallDirIndex = 3;
+static const int kApplyToDirIndex = 4;
+static const int kWhichInvocationIndex = 5;
+// Note that this is the first optional argument.
+static const int kWaitPidIndex = 6;
+static const int kCallbackWorkingDirIndex = 7;
+// This indicates the entry in `argv` that is the callback binary path. All
+// arguments after this one are treated as arguments to the callback.
+static const int kCallbackIndex = 8;
 
 // Normally, we run updates as a result of user action (the user started Firefox
 // or clicked a "Restart to Update" button). But there are some cases when
@@ -309,8 +391,6 @@ static NS_tchar gDeleteDirPath[MAXPATHLEN];
 // Whether to copy the update.log and update.status file to the update patch
 // directory from a secure directory.
 static bool gCopyOutputFiles = false;
-// Whether to write the update.log and update.status file to a secure directory.
-static bool gUseSecureOutputPath = false;
 #endif
 
 static const NS_tchar kWhitespace[] = NS_T(" \t");
@@ -2121,7 +2201,7 @@ static void LaunchCallbackApp(const NS_tchar* workingDir, int argc,
 static bool WriteToFile(const NS_tchar* aFilename, const char* aStatus) {
   NS_tchar statusFilePath[MAXPATHLEN + 1] = {NS_T('\0')};
 #if defined(XP_WIN)
-  if (gUseSecureOutputPath) {
+  if (gInvocation == UpdaterInvocation::Second) {
     if (!GetSecureOutputFilePath(gPatchDirPath, L".status", statusFilePath)) {
       return false;
     }
@@ -2150,7 +2230,7 @@ static bool WriteToFile(const NS_tchar* aFilename, const char* aStatus) {
   }
 
 #if defined(XP_WIN)
-  if (gUseSecureOutputPath) {
+  if (gInvocation == UpdaterInvocation::Second) {
     // This is done after the update status file has been written so if the
     // write to the update status file fails an existing update status file
     // won't be used.
@@ -2767,11 +2847,9 @@ void freeArguments(int argc, char** argv) {
 }
 #endif
 
-int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
-                                     int callbackIndex
+int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv
 #ifdef XP_WIN
                                      ,
-                                     const WCHAR* elevatedLockFilePath,
                                      HANDLE updateLockFileHandle
 #elif XP_MACOSX
                                      ,
@@ -2784,7 +2862,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
   umaskContext.reset();
 #endif
 
-  if (argc > callbackIndex) {
+  if (argc > kCallbackIndex) {
 #if defined(XP_WIN)
     if (gSucceeded) {
       if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
@@ -2804,16 +2882,17 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
       }
 #  endif
     }
-    EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 0);
+
+    EXIT_IF_SECOND_UPDATER_INSTANCE(updateLockFileHandle, 0);
 #elif XP_MACOSX
-    if (!isElevated) {
+    if (gInvocation == UpdaterInvocation::First) {
       if (gSucceeded) {
         LaunchMacPostProcess(gInstallDirPath);
       }
 #endif
 
-    LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
-                      sUsingService);
+    LaunchCallbackApp(argv[kCallbackWorkingDirIndex], argc - kCallbackIndex,
+                      argv + kCallbackIndex, sUsingService);
 #ifdef XP_MACOSX
   }    // if (!isElevated)
 #endif /* XP_MACOSX */
@@ -2846,15 +2925,21 @@ bool ShouldRunSilently(int argc, NS_tchar** argv) {
 }
 
 int NS_main(int argc, NS_tchar** argv) {
+  // We may need to tweak our argument list when we launch the Second Updater
+  // Invocation (SUI), so we are going to make a copy of our arguments to
+  // modify.
+  int suiArgc = argc;
+  mozilla::UniquePtr<const NS_tchar*[]> suiArgv =
+      mozilla::MakeUnique<const NS_tchar*[]>(suiArgc);
+  for (int argIndex = 0; argIndex < suiArgc; argIndex++) {
+    suiArgv.get()[argIndex] = argv[argIndex];
+  }
+
 #ifdef MOZ_MAINTENANCE_SERVICE
   sUsingService = EnvHasValue("MOZ_USING_SERVICE");
   putenv(const_cast<char*>("MOZ_USING_SERVICE="));
 #endif
 
-  // The callback is the remaining arguments starting at callbackIndex.
-  // The argument specified by callbackIndex is the callback executable and the
-  // argument prior to callbackIndex is the working directory.
-  const int callbackIndex = 6;
 
   // `isDMGInstall` is only ever true for macOS, but we are declaring it here
   // to avoid a ton of extra #ifdef's.
@@ -2866,10 +2951,49 @@ int NS_main(int argc, NS_tchar** argv) {
   // umask to 0 for all file creations below and reset it on exit. See Bug
   // 1337007
   mozilla::UniquePtr<UmaskContext> umaskContext(new UmaskContext(0));
+#endif
 
+#ifdef XP_WIN
+  auto isAdmin = mozilla::UserHasAdminPrivileges();
+  if (isAdmin.isErr()) {
+    fprintf(stderr,
+            "Failed to query if the current process has admin privileges.\n");
+    return 1;
+  }
+  auto isLocalSystem = mozilla::UserIsLocalSystem();
+  if (isLocalSystem.isErr()) {
+    fprintf(
+        stderr,
+        "Failed to query if the current process has LocalSystem privileges.\n");
+    return 1;
+  }
+#endif
+
+  // Indicates that we are running with elevated privileges.
+  // This is only ever true on macOS and Windows. We don't currently have a
+  // way of elevating on other platforms.
+  // Note that this should not be used to determine whether this is the first or
+  // second invocation of the updater, even though the first invocation will
+  // _usually_ be unelevated and the second invocation should always be
+  // elevated. `gInvocation` can be used for that purpose.
+#ifdef XP_WIN
+  // While is it technically redundant to check LocalSystem in addition to
+  // Admin given the former contains privileges of the latter, we have opt
+  // to verify both. A few reasons for this decision include the off chance
+  // that the Windows security model changes in the future and weird system
+  // setups where someone has modified the group lists in surprising ways.
+  //
+  // We use this to detect if we were launched from the Maintenance Service
+  // under LocalSystem or UAC under the user's account, and therefore can
+  // proceed with an install to `Program Files` or `Program Files(x86)`.
+  bool isElevated = isAdmin.unwrap() || isLocalSystem.unwrap();
+#elif defined(XP_MACOSX)
   bool isElevated =
       strstr(argv[0], "/Library/PrivilegedHelperTools/org.mozilla.updater") !=
       0;
+#endif
+
+#ifdef XP_MACOSX
   if (isElevated) {
     if (!ObtainUpdaterArguments(&argc, &argv)) {
       // Won't actually get here because ObtainUpdaterArguments will terminate
@@ -2906,23 +3030,25 @@ int NS_main(int argc, NS_tchar** argv) {
 #endif
 
     // To process an update the updater command line must at a minimum have the
-    // directory path containing the updater.mar file to process as the first
-    // argument, the install directory as the second argument, and the directory
-    // to apply the update to as the third argument. When the updater is
-    // launched by another process the PID of the parent process should be
-    // provided in the optional fourth argument and the updater will wait on the
-    // parent process to exit if the value is non-zero and the process is
-    // present. This is necessary due to not being able to update files that are
-    // in use on Windows. The optional fifth argument is the callback's working
-    // directory and the optional sixth argument is the callback path. The
-    // callback is the application to launch after updating and it will be
-    // launched when these arguments are provided whether the update was
-    // successful or not. All remaining arguments are optional and are passed to
-    // the callback when it is launched.
-    if (argc < 4) {
+    // argument version as the first argument, the directory path containing the
+    // updater.mar file to process as the second argument, the install directory
+    // as the third argument, the directory to apply the update to as the fourth
+    // argument, and which updater invocation this is as the fifth argument.
+    // When the updater is launched by another process, the PID of the parent
+    // process should be provided in the optional sixth argument and the updater
+    // will wait on the parent process to exit if the value is non-zero and the
+    // process is present. This is necessary due to not being able to update
+    // files that are in use on Windows. The optional seventh argument is the
+    // callback's working directory and the optional eighth argument is the
+    // callback path. The callback is the application to launch after updating
+    // and it will be launched when these arguments are provided whether the
+    // update was successful or not. All remaining arguments are optional and
+    // are passed to the callback when it is launched.
+    if (argc < kWaitPidIndex) {
       fprintf(stderr,
-              "Usage: updater patch-dir install-dir apply-to-dir [wait-pid "
-              "[callback-working-dir callback-path args...]]\n");
+              "Usage: updater arg-version patch-dir install-dir apply-to-dir "
+              "which-invocation [wait-pid [callback-working-dir callback-path "
+              "args...]]\n");
 #ifdef XP_MACOSX
       if (isElevated) {
         freeArguments(argc, argv);
@@ -2943,31 +3069,41 @@ int NS_main(int argc, NS_tchar** argv) {
     }
 #endif
 
-  }  // if (!isDMGInstall)
+    gInvocation = getUpdaterInvocationFromArg(argv[kWhichInvocationIndex]);
+    switch (gInvocation) {
+      case UpdaterInvocation::Unknown:
+        fprintf(stderr, "Invalid which-invocation value: " LOG_S "\n",
+                argv[kWhichInvocationIndex]);
+        return 1;
+      case UpdaterInvocation::First:
+        suiArgv.get()[kWhichInvocationIndex] = secondUpdateInvocationArg;
+        break;
+      default:
+        // There is no good reason we should be launching a third updater, but
+        // assign something recognizable and unlikely to be used in the future
+        // to make any bugs here a bit easier to understand.
+        suiArgv.get()[kWhichInvocationIndex] = NS_T("third???");
+        break;
+    }
+  } else { /* else if (isDMGInstall) */
+    // We already exited in the other case.
+    gInvocation = UpdaterInvocation::First;
+  }
 
   // The directory containing the update information.
-  NS_tstrncpy(gPatchDirPath, argv[1], MAXPATHLEN);
+  NS_tstrncpy(gPatchDirPath, argv[kPatchDirIndex], MAXPATHLEN);
   gPatchDirPath[MAXPATHLEN - 1] = NS_T('\0');
-
-#ifdef XP_WIN
-  NS_tchar elevatedLockFilePath[MAXPATHLEN] = {NS_T('\0')};
-  NS_tsnprintf(elevatedLockFilePath,
-               sizeof(elevatedLockFilePath) / sizeof(elevatedLockFilePath[0]),
-               NS_T("%s\\update_elevated.lock"), gPatchDirPath);
-  gUseSecureOutputPath =
-      sUsingService || (NS_tremove(elevatedLockFilePath) && errno != ENOENT);
-#endif
 
   if (!isDMGInstall) {
     // This check is also performed in workmonitor.cpp since the maintenance
     // service can be called directly.
-    if (!IsValidFullPath(argv[1])) {
+    if (!IsValidFullPath(argv[kPatchDirIndex])) {
       // Since the status file is written to the patch directory and the patch
       // directory is invalid don't write the status file.
       fprintf(stderr,
               "The patch directory path is not valid for this "
               "application (" LOG_S ")\n",
-              argv[1]);
+              argv[kPatchDirIndex]);
 #ifdef XP_MACOSX
       if (isElevated) {
         freeArguments(argc, argv);
@@ -2979,12 +3115,12 @@ int NS_main(int argc, NS_tchar** argv) {
 
     // This check is also performed in workmonitor.cpp since the maintenance
     // service can be called directly.
-    if (!IsValidFullPath(argv[2])) {
+    if (!IsValidFullPath(argv[kInstallDirIndex])) {
       WriteStatusFile(INVALID_INSTALL_DIR_PATH_ERROR);
       fprintf(stderr,
               "The install directory path is not valid for this "
               "application (" LOG_S ")\n",
-              argv[2]);
+              argv[kInstallDirIndex]);
 #ifdef XP_MACOSX
       if (isElevated) {
         freeArguments(argc, argv);
@@ -3000,7 +3136,7 @@ int NS_main(int argc, NS_tchar** argv) {
   // We copy this string because we need to remove trailing slashes.  The C++
   // standard says that it's always safe to write to strings pointed to by argv
   // elements, but I don't necessarily believe it.
-  NS_tstrncpy(gInstallDirPath, argv[2], MAXPATHLEN);
+  NS_tstrncpy(gInstallDirPath, argv[kInstallDirIndex], MAXPATHLEN);
   gInstallDirPath[MAXPATHLEN - 1] = NS_T('\0');
   NS_tchar* slash = NS_tstrrchr(gInstallDirPath, NS_SLASH);
   if (slash && !slash[1]) {
@@ -3063,13 +3199,13 @@ int NS_main(int argc, NS_tchar** argv) {
   // If there is a PID specified and it is not '0' then wait for the process to
   // exit.
   NS_tpid pid = 0;
-  if (argc > 4) {
-    pid = NS_tatoi(argv[4]);
+  if (argc > kWaitPidIndex) {
+    pid = NS_tatoi(argv[kWaitPidIndex]);
     if (pid == -1) {
       // This is a signal from the parent process that the updater should stage
       // the update.
       sStagedUpdate = true;
-    } else if (NS_tstrstr(argv[4], NS_T("/replace"))) {
+    } else if (NS_tstrstr(argv[kWaitPidIndex], NS_T("/replace"))) {
       // We're processing a request to replace the application with a staged
       // update.
       sReplaceRequest = true;
@@ -3079,12 +3215,12 @@ int NS_main(int argc, NS_tchar** argv) {
   if (!isDMGInstall) {
     // This check is also performed in workmonitor.cpp since the maintenance
     // service can be called directly.
-    if (!IsValidFullPath(argv[3])) {
+    if (!IsValidFullPath(argv[kApplyToDirIndex])) {
       WriteStatusFile(INVALID_WORKING_DIR_PATH_ERROR);
       fprintf(stderr,
               "The working directory path is not valid for this "
               "application (" LOG_S ")\n",
-              argv[3]);
+              argv[kApplyToDirIndex]);
 #ifdef XP_MACOSX
       if (isElevated) {
         freeArguments(argc, argv);
@@ -3097,20 +3233,20 @@ int NS_main(int argc, NS_tchar** argv) {
     // We copy this string because we need to remove trailing slashes.  The C++
     // standard says that it's always safe to write to strings pointed to by
     // argv elements, but I don't necessarily believe it.
-    NS_tstrncpy(gWorkingDirPath, argv[3], MAXPATHLEN);
+    NS_tstrncpy(gWorkingDirPath, argv[kApplyToDirIndex], MAXPATHLEN);
     gWorkingDirPath[MAXPATHLEN - 1] = NS_T('\0');
     slash = NS_tstrrchr(gWorkingDirPath, NS_SLASH);
     if (slash && !slash[1]) {
       *slash = NS_T('\0');
     }
 
-    if (argc > callbackIndex) {
-      if (!IsValidFullPath(argv[callbackIndex])) {
+    if (argc > kCallbackIndex) {
+      if (!IsValidFullPath(argv[kCallbackIndex])) {
         WriteStatusFile(INVALID_CALLBACK_PATH_ERROR);
         fprintf(stderr,
                 "The callback file path is not valid for this "
                 "application (" LOG_S ")\n",
-                argv[callbackIndex]);
+                argv[kCallbackIndex]);
 #ifdef XP_MACOSX
         if (isElevated) {
           freeArguments(argc, argv);
@@ -3122,13 +3258,13 @@ int NS_main(int argc, NS_tchar** argv) {
 
       size_t len = NS_tstrlen(gInstallDirPath);
       NS_tchar callbackInstallDir[MAXPATHLEN] = {NS_T('\0')};
-      NS_tstrncpy(callbackInstallDir, argv[callbackIndex], len);
+      NS_tstrncpy(callbackInstallDir, argv[kCallbackIndex], len);
       if (NS_tstrcmp(gInstallDirPath, callbackInstallDir) != 0) {
         WriteStatusFile(INVALID_CALLBACK_DIR_ERROR);
         fprintf(stderr,
                 "The callback file must be located in the "
                 "installation directory (" LOG_S ")\n",
-                argv[callbackIndex]);
+                argv[kCallbackIndex]);
 #ifdef XP_MACOSX
         if (isElevated) {
           freeArguments(argc, argv);
@@ -3139,7 +3275,7 @@ int NS_main(int argc, NS_tchar** argv) {
       }
 
       sUpdateSilently =
-          ShouldRunSilently(argc - callbackIndex, argv + callbackIndex);
+          ShouldRunSilently(argc - kCallbackIndex, argv + kCallbackIndex);
     }
 
   }  // if (!isDMGInstall)
@@ -3153,7 +3289,8 @@ int NS_main(int argc, NS_tchar** argv) {
   }
 
 #ifdef XP_MACOSX
-  if (!isElevated && (!IsRecursivelyWritable(argv[2]) || isDMGInstall)) {
+  if (!isElevated &&
+      (!IsRecursivelyWritable(argv[kInstallDirIndex]) || isDMGInstall)) {
     // If the app directory isn't recursively writeable or if this is a DMG
     // install, an elevated helper process is required.
     if (sUpdateSilently) {
@@ -3172,8 +3309,8 @@ int NS_main(int argc, NS_tchar** argv) {
               "Skipping update to avoid elevation prompt from silent update.");
     } else {
       UpdateServerThreadArgs threadArgs;
-      threadArgs.argc = argc;
-      threadArgs.argv = const_cast<const NS_tchar**>(argv);
+      threadArgs.argc = suiArgc;
+      threadArgs.argv = suiArgv.get();
 
       Thread t1;
       if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
@@ -3186,8 +3323,7 @@ int NS_main(int argc, NS_tchar** argv) {
       t1.Join();
     }
 
-    LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex, false,
-                                     std::move(umaskContext));
+    LaunchCallbackAndPostProcessApps(argc, argv, false, std::move(umaskContext));
     return gSucceeded ? 0 : 1;
   }
 #endif
@@ -3199,7 +3335,7 @@ int NS_main(int argc, NS_tchar** argv) {
   if (!isDMGInstall) {
     NS_tchar logFilePath[MAXPATHLEN + 1] = {L'\0'};
 #ifdef XP_WIN
-    if (gUseSecureOutputPath) {
+    if (gInvocation == UpdaterInvocation::Second) {
       // Remove the secure output files so it is easier to determine when new
       // files are created in the unelevated updater.
       RemoveSecureOutputFiles(gPatchDirPath);
@@ -3320,7 +3456,7 @@ int NS_main(int argc, NS_tchar** argv) {
     // maintenance service or with the 'runas' verb when write access is denied
     // to the installation directory.
     if (!sUsingService &&
-        (argc > callbackIndex || sStagedUpdate || sReplaceRequest)) {
+        (argc > kCallbackIndex || sStagedUpdate || sReplaceRequest)) {
       NS_tchar updateLockFilePath[MAXPATHLEN];
       if (sStagedUpdate) {
         // When staging an update, the lock file is:
@@ -3344,7 +3480,7 @@ int NS_main(int argc, NS_tchar** argv) {
         // <install_dir>\<app_name>.exe.update_in_progress.lock
         NS_tsnprintf(updateLockFilePath,
                      sizeof(updateLockFilePath) / sizeof(updateLockFilePath[0]),
-                     NS_T("%s.update_in_progress.lock"), argv[callbackIndex]);
+                     NS_T("%s.update_in_progress.lock"), argv[kCallbackIndex]);
       }
 
       // The update_in_progress.lock file should only exist during an update. In
@@ -3365,51 +3501,25 @@ int NS_main(int argc, NS_tchar** argv) {
         return 1;
       }
 
-      updateLockFileHandle =
-          CreateFileW(updateLockFilePath, GENERIC_READ | GENERIC_WRITE, 0,
-                      nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
-
-      // Even if a file has no sharing access, you can still get its attributes
-      bool startedFromUnelevatedUpdater =
-          GetFileAttributesW(elevatedLockFilePath) != INVALID_FILE_ATTRIBUTES;
-
       // If we're running from the service, then we were started with the same
       // token as the service so the permissions are already dropped.  If we're
       // running from an elevated updater that was started from an unelevated
       // updater, then we drop the permissions here. We do not drop the
       // permissions on the originally called updater because we use its token
       // to start the callback application.
-      if (startedFromUnelevatedUpdater) {
+      if (isElevated) {
         // Disable every privilege we don't need. Processes started using
         // CreateProcess will use the same token as this process.
         UACHelper::DisablePrivileges(nullptr);
       }
 
+      updateLockFileHandle =
+          CreateFileW(updateLockFilePath, GENERIC_READ | GENERIC_WRITE, 0,
+                      nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+
       if (updateLockFileHandle == INVALID_HANDLE_VALUE ||
           (useService && testOnlyFallbackKeyExists &&
            (noServiceFallback || forceServiceFallback))) {
-        HANDLE elevatedFileHandle;
-        if (NS_tremove(elevatedLockFilePath) && errno != ENOENT) {
-          LOG(("Unable to create elevated lock file! Exiting"));
-          output_finish();
-          return 1;
-        }
-
-        elevatedFileHandle = CreateFileW(
-            elevatedLockFilePath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-            OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
-        if (elevatedFileHandle == INVALID_HANDLE_VALUE) {
-          LOG(("Unable to create elevated lock file! Exiting"));
-          output_finish();
-          return 1;
-        }
-
-        auto cmdLine = mozilla::MakeCommandLine(argc - 1, argv + 1);
-        if (!cmdLine) {
-          CloseHandle(elevatedFileHandle);
-          output_finish();
-          return 1;
-        }
 
 #  ifdef MOZ_MAINTENANCE_SERVICE
 // Only invoke the service for installations in Program Files.
@@ -3486,18 +3596,18 @@ int NS_main(int argc, NS_tchar** argv) {
           WriteStatusFile(SERVICE_UPDATE_STATUS_UNCHANGED);
 
           int serviceArgc = argc;
-          if (forceServiceFallback && serviceArgc > 2) {
+          if (forceServiceFallback && serviceArgc > kPatchDirIndex) {
             // To force the service to fail, we can just pass it too few
             // arguments. However, we don't want to pass it no arguments,
             // because then it won't have enough information to write out the
             // update status file telling us that it failed.
-            serviceArgc = 2;
+            serviceArgc = kPatchDirIndex + 1;
           }
 
           // If the update couldn't be started, then set useService to false so
           // we do the update the old way.
-          DWORD ret =
-              LaunchServiceSoftwareUpdateCommand(serviceArgc, (LPCWSTR*)argv);
+          DWORD ret = LaunchServiceSoftwareUpdateCommand(
+              serviceArgc, (LPCWSTR*)suiArgv.get());
           useService = (ret == ERROR_SUCCESS);
           // If the command was launched then wait for the service to be done.
           if (useService) {
@@ -3595,7 +3705,8 @@ int NS_main(int argc, NS_tchar** argv) {
           LOG(("Skipping update to avoid UAC prompt from background task."));
           output_finish();
 
-          LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
+          LaunchCallbackApp(argv[kCallbackWorkingDirIndex],
+                            argc - kCallbackIndex, argv + kCallbackIndex,
                             sUsingService);
           return 0;
         }
@@ -3624,24 +3735,23 @@ int NS_main(int argc, NS_tchar** argv) {
                         SEE_MASK_NOCLOSEPROCESS;
           sinfo.hwnd = nullptr;
           sinfo.lpFile = argv[0];
-          sinfo.lpParameters = cmdLine.get();
           if (forceServiceFallback) {
             // In testing, we don't actually want a UAC prompt. We should
             // already have the permissions such that we shouldn't need it.
             // And we don't have a good way of accepting the prompt in
             // automation.
             sinfo.lpVerb = L"open";
-            // This handle is what lets the updater that we spawn below know
-            // that it's the elevated updater. We are going to close it so that
-            // it doesn't know that and will run un-elevated. Doing this make
-            // this makes for an imperfect test of the service fallback
-            // functionality because it changes how the (usually) elevated
-            // updater runs. One of the effects of this is that the secure
-            // output files will not be used. So that functionality won't really
-            // be covered by testing. But we can't really have the updater run
-            // elevated, because that would require a UAC, which we have no way
-            // to deal with in automation.
-            CloseHandle(elevatedFileHandle);
+            // This argument is what lets the updater that we spawn below know
+            // that it's the second updater invocation. We are going to change
+            // it so that it doesn't know that it runs as the first updater
+            // invocation would. Doing this makes this an imperfect test of
+            // the service fallback functionality because it changes how the
+            // second updater invocation runs. One of the effects of this is
+            // that the secure output files will not be used. So that
+            // functionality won't really be covered by testing. But writing to
+            // those files would require that the updater run with actual
+            // elevation, which we have no way to do with in automation.
+            suiArgv.get()[kWhichInvocationIndex] = firstUpdateInvocationArg;
             // We need to let go of the update lock to let the un-elevated
             // updater we are about to spawn update.
             if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
@@ -3651,6 +3761,14 @@ int NS_main(int argc, NS_tchar** argv) {
             sinfo.lpVerb = L"runas";
           }
           sinfo.nShow = SW_SHOWNORMAL;
+
+          auto cmdLine =
+              mozilla::MakeCommandLine(suiArgc - 1, suiArgv.get() + 1);
+          if (!cmdLine) {
+            output_finish();
+            return 1;
+          }
+          sinfo.lpParameters = cmdLine.get();
 
           bool result = ShellExecuteEx(&sinfo);
 
@@ -3698,8 +3816,6 @@ int NS_main(int argc, NS_tchar** argv) {
           }
         }
 
-        CloseHandle(elevatedFileHandle);
-
         if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
           CloseHandle(updateLockFileHandle);
         }
@@ -3719,8 +3835,9 @@ int NS_main(int argc, NS_tchar** argv) {
         // secure directory used by the maintenance service and the elevated
         // updater.
         output_finish();
-        if (argc > callbackIndex) {
-          LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
+        if (argc > kCallbackIndex) {
+          LaunchCallbackApp(argv[kCallbackWorkingDirIndex],
+                            argc - kCallbackIndex, argv + kCallbackIndex,
                             sUsingService);
         }
         return 0;
@@ -3785,16 +3902,16 @@ int NS_main(int argc, NS_tchar** argv) {
       WriteStatusFile(WRITE_ERROR_APPLY_DIR_PATH);
       LOG(("NS_main: unable to find apply to dir: " LOG_S, gWorkingDirPath));
       output_finish();
-      EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-      if (argc > callbackIndex) {
-        LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
-                          sUsingService);
+      EXIT_IF_SECOND_UPDATER_INSTANCE(updateLockFileHandle, 1);
+      if (argc > kCallbackIndex) {
+        LaunchCallbackApp(argv[kCallbackWorkingDirIndex], argc - kCallbackIndex,
+                          argv + kCallbackIndex, sUsingService);
       }
       return 1;
     }
 
     HANDLE callbackFile = INVALID_HANDLE_VALUE;
-    if (argc > callbackIndex) {
+    if (argc > kCallbackIndex) {
       // If the callback executable is specified it must exist for a successful
       // update.  It is important we null out the whole buffer here because
       // later we make the assumption that the callback application is inside
@@ -3802,16 +3919,16 @@ int NS_main(int argc, NS_tchar** argv) {
       // lead to stack corruption which causes crashes and other problems.
       NS_tchar callbackLongPath[MAXPATHLEN];
       ZeroMemory(callbackLongPath, sizeof(callbackLongPath));
-      NS_tchar* targetPath = argv[callbackIndex];
+      NS_tchar* targetPath = argv[kCallbackIndex];
       NS_tchar buffer[MAXPATHLEN * 2] = {NS_T('\0')};
       size_t bufferLeft = MAXPATHLEN * 2;
       if (sReplaceRequest) {
         // In case of replace requests, we should look for the callback file in
         // the destination directory.
         size_t commonPrefixLength =
-            PathCommonPrefixW(argv[callbackIndex], gInstallDirPath, nullptr);
+            PathCommonPrefixW(argv[kCallbackIndex], gInstallDirPath, nullptr);
         NS_tchar* p = buffer;
-        NS_tstrncpy(p, argv[callbackIndex], commonPrefixLength);
+        NS_tstrncpy(p, argv[kCallbackIndex], commonPrefixLength);
         p += commonPrefixLength;
         bufferLeft -= commonPrefixLength;
         NS_tstrncpy(p, gInstallDirPath + commonPrefixLength, bufferLeft);
@@ -3826,9 +3943,9 @@ int NS_main(int argc, NS_tchar** argv) {
         NS_tchar installDir[MAXPATHLEN];
         NS_tstrcpy(installDir, gInstallDirPath);
         size_t callbackPrefixLength =
-            PathCommonPrefixW(argv[callbackIndex], installDir, nullptr);
+            PathCommonPrefixW(argv[kCallbackIndex], installDir, nullptr);
         NS_tstrncpy(p,
-                    argv[callbackIndex] +
+                    argv[kCallbackIndex] +
                         std::max(callbackPrefixLength, commonPrefixLength),
                     bufferLeft);
         targetPath = buffer;
@@ -3839,9 +3956,10 @@ int NS_main(int argc, NS_tchar** argv) {
         WriteStatusFile(WRITE_ERROR_CALLBACK_PATH);
         LOG(("NS_main: unable to find callback file: " LOG_S, targetPath));
         output_finish();
-        EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-        if (argc > callbackIndex) {
-          LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
+        EXIT_IF_SECOND_UPDATER_INSTANCE(updateLockFileHandle, 1);
+        if (argc > kCallbackIndex) {
+          LaunchCallbackApp(argv[kCallbackWorkingDirIndex],
+                            argc - kCallbackIndex, argv + kCallbackIndex,
                             sUsingService);
         }
         return 1;
@@ -3877,7 +3995,7 @@ int NS_main(int argc, NS_tchar** argv) {
             sizeof(gCallbackBackupPath) / sizeof(gCallbackBackupPath[0]);
         const int callbackBackupPathLen =
             NS_tsnprintf(gCallbackBackupPath, callbackBackupPathBufSize,
-                         NS_T("%s" CALLBACK_BACKUP_EXT), argv[callbackIndex]);
+                         NS_T("%s" CALLBACK_BACKUP_EXT), argv[kCallbackIndex]);
 
         if (callbackBackupPathLen < 0 ||
             callbackBackupPathLen >=
@@ -3888,13 +4006,13 @@ int NS_main(int argc, NS_tchar** argv) {
 
           // Don't attempt to launch the callback when the callback path is
           // longer than expected.
-          EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+          EXIT_IF_SECOND_UPDATER_INSTANCE(updateLockFileHandle, 1);
           return 1;
         }
 
         // Make a copy of the callback executable so it can be read when
         // patching.
-        if (!CopyFileW(argv[callbackIndex], gCallbackBackupPath, false)) {
+        if (!CopyFileW(argv[kCallbackIndex], gCallbackBackupPath, false)) {
           DWORD copyFileError = GetLastError();
           if (copyFileError == ERROR_ACCESS_DENIED) {
             WriteStatusFile(WRITE_ERROR_ACCESS_DENIED);
@@ -3903,11 +4021,12 @@ int NS_main(int argc, NS_tchar** argv) {
           }
           LOG(("NS_main: failed to copy callback file " LOG_S
                " into place at " LOG_S,
-               argv[callbackIndex], gCallbackBackupPath));
+               argv[kCallbackIndex], gCallbackBackupPath));
           output_finish();
-          EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-          LaunchCallbackApp(argv[callbackIndex], argc - callbackIndex,
-                            argv + callbackIndex, sUsingService);
+          EXIT_IF_SECOND_UPDATER_INSTANCE(updateLockFileHandle, 1);
+          LaunchCallbackApp(argv[kCallbackWorkingDirIndex],
+                            argc - kCallbackIndex, argv + kCallbackIndex,
+                            sUsingService);
           return 1;
         }
 
@@ -3948,7 +4067,7 @@ int NS_main(int argc, NS_tchar** argv) {
             LOG((
                 "NS_main: callback app file in use, failed to exclusively open "
                 "executable file: " LOG_S,
-                argv[callbackIndex]));
+                argv[kCallbackIndex]));
             if (lastWriteError == ERROR_ACCESS_DENIED) {
               WriteStatusFile(WRITE_ERROR_ACCESS_DENIED);
             } else {
@@ -3966,7 +4085,7 @@ int NS_main(int argc, NS_tchar** argv) {
             LOG((
                 "NS_main: callback app file in use, failed to exclusively open "
                 "executable file from background task: " LOG_S,
-                argv[callbackIndex]));
+                argv[kCallbackIndex]));
             WriteStatusFile(WRITE_ERROR_BACKGROUND_TASK_SHARING_VIOLATION);
 
             proceedWithoutExclusive = false;
@@ -3980,16 +4099,17 @@ int NS_main(int argc, NS_tchar** argv) {
                    gCallbackBackupPath));
             }
             output_finish();
-            EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-            LaunchCallbackApp(argv[5], argc - callbackIndex,
-                              argv + callbackIndex, sUsingService);
+            EXIT_IF_SECOND_UPDATER_INSTANCE(updateLockFileHandle, 1);
+            LaunchCallbackApp(argv[kCallbackWorkingDirIndex],
+                              argc - kCallbackIndex, argv + kCallbackIndex,
+                              sUsingService);
             return 1;
           }
 
           LOG(
               ("NS_main: callback app file in use, continuing without "
                "exclusive access for executable file: " LOG_S,
-               argv[callbackIndex]));
+               argv[kCallbackIndex]));
         }
       }
     }
@@ -4032,7 +4152,7 @@ int NS_main(int argc, NS_tchar** argv) {
     t.Join();
 
 #ifdef XP_WIN
-    if (argc > callbackIndex && !sReplaceRequest) {
+    if (argc > kCallbackIndex && !sReplaceRequest) {
       if (callbackFile != INVALID_HANDLE_VALUE) {
         CloseHandle(callbackFile);
       }
@@ -4088,10 +4208,9 @@ int NS_main(int argc, NS_tchar** argv) {
 
   output_finish();
 
-  int retVal = LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex
+  int retVal = LaunchCallbackAndPostProcessApps(argc, argv
 #ifdef XP_WIN
                                                 ,
-                                                elevatedLockFilePath,
                                                 updateLockFileHandle
 #elif XP_MACOSX
                                                   ,
