@@ -24,6 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FaviconFeed: "resource://newtab/lib/FaviconFeed.sys.mjs",
   HighlightsFeed: "resource://newtab/lib/HighlightsFeed.sys.mjs",
   NewTabInit: "resource://newtab/lib/NewTabInit.sys.mjs",
+  NewTabMessaging: "resource://newtab/lib/NewTabMessaging.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrefsFeed: "resource://newtab/lib/PrefsFeed.sys.mjs",
   PlacesFeed: "resource://newtab/lib/PlacesFeed.sys.mjs",
@@ -462,11 +463,32 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "newtabWallpapers.customWallpaper.uuid",
+    {
+      title: "uuid for uploaded custom wallpaper",
+      value: "",
+    },
+  ],
+  [
     "newtabWallpapers.customWallpaper.uploadedPreviously",
     {
       title:
-        "Boolean flag to track if a user has previously uploaded a custom wallpaper",
+        "Boolean flag used for telemetry to track if a user has previously uploaded a custom wallpaper",
       value: false,
+    },
+  ],
+  [
+    "newtabWallpapers.customWallpaper.fileSize.enabled",
+    {
+      title: "Boolean flag to enforce a maximum file size for uploaded images",
+      value: false,
+    },
+  ],
+  [
+    "newtabWallpapers.customWallpaper.fileSize",
+    {
+      title: "Number pref of maximum file size (in MB) a user can upload",
+      value: 0,
     },
   ],
   [
@@ -494,7 +516,7 @@ export const PREFS_CONFIG = new Map([
     "newtabAdSize.leaderboard.position",
     {
       title:
-        "position for leaderboard spoc - should corralate to a row in DS grid",
+        "position for leaderboard spoc - should correlate to a row in DS grid",
       value: "3",
     },
   ],
@@ -509,8 +531,15 @@ export const PREFS_CONFIG = new Map([
     "newtabAdSize.billboard.position",
     {
       title:
-        "position for billboard spoc - should corralate to a row in DS grid",
+        "position for billboard spoc - should correlate to a row in DS grid",
       value: "3",
+    },
+  ],
+  [
+    "newtabAdSize.mediumRectangle",
+    {
+      title: "Boolean flag to turn the medium (MREC) ad size on and off",
+      value: false,
     },
   ],
   [
@@ -573,11 +602,26 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "discoverystream.sections.personalization.inferred.user.enabled",
+    {
+      title: "User pref to toggle inferred personalizaton",
+      value: false,
+    },
+  ],
+  [
     "discoverystream.sections.cards.thumbsUpDown.enabled",
     {
       title:
         "Boolean flag to enable thumbs up/down buttons in the new card UI in recommended stories",
       value: true,
+    },
+  ],
+  [
+    "discoverystream.reportContent.enabled",
+    {
+      title:
+        "Boolean flag to enable reporting content and ads from the context menu",
+      value: false,
     },
   ],
   [
@@ -1202,6 +1246,12 @@ const FEEDS_DATA = [
     name: "adsfeed",
     factory: () => new lazy.AdsFeed(),
     title: "Handles fetching and caching ads data",
+    value: true,
+  },
+  {
+    name: "newtabmessaging",
+    factory: () => new lazy.NewTabMessaging(),
+    title: "Handles fetching and triggering ASRouter messages in newtab",
     value: true,
   },
 ];

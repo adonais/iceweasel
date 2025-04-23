@@ -93,8 +93,6 @@ genai-header-close-button =
 
 genai-provider-view-details =
     .label = View chatbot details
-genai-provider-about-chatbots =
-    .label = About these chatbots
 genai-options-reload-generic =
     .label = Reload AI chatbot
 # $provider (string) - name of the provider
@@ -110,8 +108,11 @@ genai-options-about-chatbot =
 ## Chatbot onboarding
 
 genai-onboarding-header = Summarize, brainstorm, and more as you browse
+genai-onboarding-choose-header = Choose an AI chatbot to use in the { -brand-short-name } sidebar
 # "Switch anytime" refers to allowing the user to switch to a different chatbot.
 genai-onboarding-description = Choose an AI chatbot to use in the { -brand-short-name } sidebar. We’ll show details about each chatbot when you select it. Switch anytime. <a data-l10n-name="learn-more">Learn more</a>
+# "Switch anytime" refers to allowing the user to switch to a different chatbot.
+genai-onboarding-choose-description = Switch anytime. For help choosing, <a data-l10n-name="learn-more">learn more about each chatbot</a>.
 genai-onboarding-primary = Continue
 genai-onboarding-secondary = Close
 genai-onboarding-claude-tooltip =
@@ -157,3 +158,14 @@ genai-onboarding-huggingchat-switch = Switch between a diverse set of open model
 genai-onboarding-huggingchat-price-2 = Free; account required after a certain number of requests
 genai-onboarding-lechat-generate = Generate text and code
 genai-onboarding-lechat-price = Free; account required
+
+## Model Optin Component
+
+genai-model-optin-continue =
+  .label = Continue
+
+genai-model-optin-optout =
+  .label = Cancel
+
+genai-model-optin-cancel =
+  .label = Cancel

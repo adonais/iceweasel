@@ -26,6 +26,7 @@
 #include "mozilla/dom/AutoSuppressEventHandlingAndSuspend.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BeforeUnloadEvent.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -1309,7 +1310,7 @@ nsDocumentViewer::DispatchBeforeUnload() {
   if (window->AreDialogsEnabled() && mDocument &&
       !(mDocument->GetSandboxFlags() & SANDBOXED_MODALS) &&
       (!StaticPrefs::dom_require_user_interaction_for_beforeunload() ||
-       mDocument->UserHasInteracted()) &&
+       mDocument->ChromeRulesEnabled() || mDocument->UserHasInteracted()) &&
       (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
     return eRequestBlockNavigation;
   }
@@ -2871,8 +2872,8 @@ nsresult nsDocViewerFocusListener::HandleEvent(Event* aEvent) {
     if (selection != presShell->ConstFrameSelection()) {
       RefPtr<Document> doc = presShell->GetDocument();
       const bool selectionMatchesFocus =
-          selection->GetLimiter() &&
-          selection->GetLimiter()->GetChromeOnlyAccessSubtreeRootParent() ==
+          selection->IsIndependentSelection() &&
+          selection->GetIndependentSelectionRootParentElement() ==
               doc->GetUnretargetedFocusedContent();
       if (NS_WARN_IF(!selectionMatchesFocus)) {
         presShell->FrameSelectionWillLoseFocus(*selection);

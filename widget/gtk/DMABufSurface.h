@@ -23,6 +23,10 @@ typedef void* EGLSyncKHR;
 
 #define DMABUF_BUFFER_PLANES 4
 
+// The files bellow has exact description of all formats:
+// media/ffvpx/libavutil/pixdesc.h
+// media/ffvpx/libavutil/pixdesc.c
+
 #ifndef VA_FOURCC_NV12
 #  define VA_FOURCC_NV12 0x3231564E
 #endif
@@ -74,6 +78,10 @@ class DMABufSurfaceRGBA;
 class DMABufSurfaceYUV;
 struct wl_buffer;
 
+namespace mozilla::layers {
+class PlanarYCbCrImage;
+}
+
 class DMABufSurface {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DMABufSurface)
@@ -86,6 +94,8 @@ class DMABufSurface {
 #ifdef MOZ_LOGGING
   constexpr static const char* sSurfaceTypeNames[] = {"RGBA", "YUV"};
 #endif
+
+  nsAutoCString GetDebugTag() const;
 
   // Import surface from SurfaceDescriptor. This is usually
   // used to copy surface from another process over IPC.
@@ -174,6 +184,8 @@ class DMABufSurface {
   void GlobalRefAdd();
   void GlobalRefRelease();
 
+  static void DeleteSnapshotGLContext();
+
   // Release all underlying data.
   virtual void ReleaseSurface() = 0;
 
@@ -193,6 +205,9 @@ class DMABufSurface {
   // more wl_surfaces at the same time.
   virtual wl_buffer* CreateWlBuffer() = 0;
 #endif
+
+  static bool UseDmaBufGL(mozilla::gl::GLContext* aGLContext);
+  static bool UseDmaBufExportExtension(mozilla::gl::GLContext* aGLContext);
 
   DMABufSurface(SurfaceType aSurfaceType);
 
@@ -222,8 +237,8 @@ class DMABufSurface {
   void CloseFileDescriptors(const mozilla::MutexAutoLock& aProofOfLock,
                             bool aForceClose = false);
 
-  nsresult ReadIntoBuffer(uint8_t* aData, int32_t aStride,
-                          const mozilla::gfx::IntSize& aSize,
+  nsresult ReadIntoBuffer(mozilla::gl::GLContext* aGLContext, uint8_t* aData,
+                          int32_t aStride, const mozilla::gfx::IntSize& aSize,
                           mozilla::gfx::SurfaceFormat aFormat);
 
   virtual ~DMABufSurface();
@@ -242,7 +257,6 @@ class DMABufSurface {
   int32_t mDrmFormats[DMABUF_BUFFER_PLANES];
   int32_t mStrides[DMABUF_BUFFER_PLANES];
   int32_t mOffsets[DMABUF_BUFFER_PLANES];
-  uint64_t mBufferModifiers[DMABUF_BUFFER_PLANES];
 
   struct gbm_bo* mGbmBufferObject[DMABUF_BUFFER_PLANES];
   void* mMappedRegion[DMABUF_BUFFER_PLANES];
@@ -264,13 +278,9 @@ class DMABufSurface {
 class DMABufSurfaceRGBA final : public DMABufSurface {
  public:
   static already_AddRefed<DMABufSurfaceRGBA> CreateDMABufSurface(
-      int aWidth, int aHeight, int aDMABufSurfaceFlags);
-  static already_AddRefed<DMABufSurfaceRGBA> CreateDMABufSurface(
-      int aWidth, int aHeight, RefPtr<mozilla::widget::DRMFormat> aFormat,
-      int aDMABufSurfaceFlags);
-  static already_AddRefed<DMABufSurface> CreateDMABufSurface(
-      mozilla::gl::GLContext* aGLContext, const EGLImageKHR aEGLImage,
-      int aWidth, int aHeight);
+      mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
+      int aDMABufSurfaceFlags = 0,
+      RefPtr<mozilla::widget::DRMFormat> aFormat = nullptr);
   static already_AddRefed<DMABufSurface> CreateDMABufSurface(
       RefPtr<mozilla::gfx::FileHandleWrapper>&& aFd,
       const mozilla::webgpu::ffi::WGPUDMABufInfo& aDMABufInfo, int aWidth,
@@ -279,8 +289,6 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   bool Serialize(mozilla::layers::SurfaceDescriptor& aOutDescriptor) override;
 
   DMABufSurfaceRGBA* GetAsDMABufSurfaceRGBA() override { return this; }
-
-  void Clear();
 
   void ReleaseSurface() override;
 
@@ -326,13 +334,15 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   DMABufSurfaceRGBA& operator=(const DMABufSurfaceRGBA&) = delete;
   ~DMABufSurfaceRGBA();
 
-  bool Create(int aWidth, int aHeight, int aDMABufSurfaceFlags);
-  bool Create(int aWidth, int aHeight,
-              RefPtr<mozilla::widget::DRMFormat> aFormat,
-              int aDMABufSurfaceFlags);
+  bool Create(mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
+              int aDMABufSurfaceFlags,
+              RefPtr<mozilla::widget::DRMFormat> aFormat = nullptr);
+  bool CreateGBM(int aWidth, int aHeight, int aDMABufSurfaceFlags,
+                 RefPtr<mozilla::widget::DRMFormat> aFormat);
+  bool CreateExport(mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
+                    int aDMABufSurfaceFlags);
+
   bool Create(const mozilla::layers::SurfaceDescriptor& aDesc) override;
-  bool Create(mozilla::gl::GLContext* aGLContext, const EGLImageKHR aEGLImage,
-              int aWidth, int aHeight);
   bool Create(RefPtr<mozilla::gfx::FileHandleWrapper>&& aFd,
               const mozilla::webgpu::ffi::WGPUDMABufInfo& aDMABufInfo,
               int aWidth, int aHeight);
@@ -351,13 +361,11 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   EGLImageKHR mEGLImage;
   GLuint mTexture;
   uint32_t mGbmBufferFlags;
+  uint64_t mBufferModifier;
 };
 
 class DMABufSurfaceYUV final : public DMABufSurface {
  public:
-  static already_AddRefed<DMABufSurfaceYUV> CreateYUVSurface(
-      int aWidth, int aHeight, void** aPixelData = nullptr,
-      int* aLineSizes = nullptr);
   static already_AddRefed<DMABufSurfaceYUV> CreateYUVSurface(
       const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth, int aHeight);
   static already_AddRefed<DMABufSurfaceYUV> CopyYUVSurface(
@@ -379,6 +387,11 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   int GetHeight(int aPlane = 0) override { return mHeight[aPlane]; }
   mozilla::gfx::SurfaceFormat GetFormat() override;
   mozilla::gfx::SurfaceFormat GetFormatGL() override;
+
+  // Get hardware compatible format for SW decoded one.
+  // It's used for uploading SW decoded images to DMABuf.
+  mozilla::gfx::SurfaceFormat GetHWFormat(
+      mozilla::gfx::SurfaceFormat aSWFormat);
 
   bool CreateTexture(mozilla::gl::GLContext* aGLContext,
                      int aPlane = 0) override;
@@ -412,9 +425,10 @@ class DMABufSurfaceYUV final : public DMABufSurface {
 
   DMABufSurfaceYUV();
 
-  bool UpdateYUVData(void** aPixelData, int* aLineSizes);
   bool UpdateYUVData(const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth,
                      int aHeight, bool aCopy);
+  bool UpdateYUVData(const mozilla::layers::PlanarYCbCrData& aData,
+                     mozilla::gfx::SurfaceFormat aImageFormat);
   bool VerifyTextureCreation();
 
 #ifdef MOZ_WAYLAND
@@ -427,11 +441,9 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   ~DMABufSurfaceYUV();
 
   bool Create(const mozilla::layers::SurfaceDescriptor& aDesc) override;
-  bool Create(int aWidth, int aHeight, void** aPixelData, int* aLineSizes);
-  bool CreateYUVPlane(int aPlane);
-  bool CreateLinearYUVPlane(int aPlane, int aWidth, int aHeight,
-                            int aDrmFormat);
-  void UpdateYUVPlane(int aPlane, void* aPixelData, int aLineSize);
+  bool CreateYUVPlane(mozilla::gl::GLContext* aGLContext, int aPlane);
+  bool CreateYUVPlaneGBM(int aPlane);
+  bool CreateYUVPlaneExport(mozilla::gl::GLContext* aGLContext, int aPlane);
 
   bool MoveYUVDataImpl(const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth,
                        int aHeight);
@@ -448,9 +460,6 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   void CloseFileDescriptorForPlane(const mozilla::MutexAutoLock& aProofOfLock,
                                    int aPlane, bool aForceClose) override;
 
-  bool CreateEGLImage(mozilla::gl::GLContext* aGLContext, int aPlane);
-  void ReleaseEGLImages(mozilla::gl::GLContext* aGLContext);
-
   int mWidth[DMABUF_BUFFER_PLANES];
   int mHeight[DMABUF_BUFFER_PLANES];
   // Aligned size of the surface imported from VADRMPRIMESurfaceDescriptor.
@@ -460,6 +469,7 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   int mHeightAligned[DMABUF_BUFFER_PLANES];
   EGLImageKHR mEGLImage[DMABUF_BUFFER_PLANES];
   GLuint mTexture[DMABUF_BUFFER_PLANES];
+  uint64_t mBufferModifiers[DMABUF_BUFFER_PLANES];
   mozilla::gfx::YUVColorSpace mColorSpace =
       mozilla::gfx::YUVColorSpace::Default;
   mozilla::gfx::ColorSpace2 mColorPrimaries =

@@ -1,14 +1,11 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
-"use strict";
+const { NimbusTelemetry } = ChromeUtils.importESModule(
+  "resource://nimbus/lib/Telemetry.sys.mjs"
+);
 
-const { ExperimentFakes } = ChromeUtils.importESModule(
-  "resource://testing-common/NimbusTestUtils.sys.mjs"
-);
-const { ExperimentAPI } = ChromeUtils.importESModule(
-  "resource://nimbus/ExperimentAPI.sys.mjs"
-);
+("use strict");
 
 const SINGLE_FEATURE_RECIPE = {
   appId: "firefox-desktop",
@@ -28,20 +25,6 @@ const SINGLE_FEATURE_RECIPE = {
       },
       ratio: 1,
       slug: "control",
-    },
-    {
-      feature: {
-        featureId: "urlbar",
-        isEarlyStartup: true,
-        value: {
-          enabled: true,
-          quickSuggestEnabled: true,
-          quickSuggestNonSponsoredIndex: -1,
-          quickSuggestSponsoredIndex: -1,
-        },
-      },
-      ratio: 1,
-      slug: "treatment",
     },
   ],
   bucketConfig: {
@@ -73,7 +56,7 @@ const SYNC_DATA_PREF_BRANCH = "nimbus.syncdatastore.";
 
 add_task(async function test_TODO() {
   let sandbox = sinon.createSandbox();
-  let stub = sandbox.stub(ExperimentAPI, "recordExposureEvent");
+  sandbox.stub(NimbusTelemetry, "recordExposure");
 
   const doExperimentCleanup = await ExperimentFakes.enrollmentHelper(
     SINGLE_FEATURE_RECIPE
@@ -98,16 +81,13 @@ add_task(async function test_TODO() {
 
   NimbusFeatures.urlbar.recordExposureEvent();
 
-  Assert.ok(stub.calledOnce, "Should be called once by urlbar");
-  Assert.equal(
-    stub.firstCall.args[0].experimentSlug,
-    "firefox-suggest-history-vs-offline",
-    "Should have expected slug"
-  );
-  Assert.equal(
-    stub.firstCall.args[0].featureId,
-    "urlbar",
-    "Should have expected featureId"
+  Assert.ok(
+    NimbusTelemetry.recordExposure.calledOnceWith(
+      "firefox-suggest-history-vs-offline",
+      "control",
+      "urlbar"
+    ),
+    "Should be called once by urlbar"
   );
 
   doExperimentCleanup();

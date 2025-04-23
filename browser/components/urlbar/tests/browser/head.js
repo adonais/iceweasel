@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PromptTestUtils: "resource://testing-common/PromptTestUtils.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
+  SearchUITestUtils: "resource://testing-common/SearchUITestUtils.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   UrlbarController: "resource:///modules/UrlbarController.sys.mjs",
@@ -29,6 +30,8 @@ ChromeUtils.defineLazyGetter(this, "PlacesFrecencyRecalculator", () => {
     Ci.nsIObserver
   ).wrappedJSObject;
 });
+
+SearchUITestUtils.init(this);
 
 let sandbox;
 
@@ -401,4 +404,12 @@ async function focusSwitcher(win = window) {
   await BrowserTestUtils.waitForCondition(
     () => win.document.activeElement == switcher
   );
+}
+
+/**
+ * Clears the SAP telemetry probes (SEARCH_COUNTS and all of Glean).
+ */
+function clearSAPTelemetry() {
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  Services.fog.testResetFOG();
 }

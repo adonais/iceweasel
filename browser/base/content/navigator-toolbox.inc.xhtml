@@ -49,13 +49,14 @@
               setfocus="false"
               tooltip="tabbrowser-tab-tooltip"
               orient="horizontal"
-              stopwatchid="FX_TAB_CLICK_MS">
+              stopwatchid="tabClick">
           <hbox class="tab-drop-indicator" hidden="true"/>
+          <html:span id="tab-drag-empty-feedback" role="presentation"/>
 # If the name (tabbrowser-arrowscrollbox) or structure of this changes
 # significantly, there is an optimization in
 # DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered based
 # the current structure that we may want to revisit.
-          <html:div id="vertical-pinned-tabs-container" tabindex="-1"></html:div>
+          <arrowscrollbox id="vertical-pinned-tabs-container" orient="vertical" tabindex="-1"></arrowscrollbox>
           <html:div id="vertical-pinned-tabs-container-separator"></html:div>
           <arrowscrollbox id="tabbrowser-arrowscrollbox" orient="horizontal" flex="1" clicktoscroll="" scrolledtostart="" scrolledtoend="">
             <tab is="tabbrowser-tab" class="tabbrowser-tab" selected="true" visuallyselected="" fadein=""/>

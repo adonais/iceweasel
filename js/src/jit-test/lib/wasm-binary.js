@@ -244,6 +244,16 @@ function toU8(array) {
     return Uint8Array.from(array);
 }
 
+function toSharedU8(array) {
+    let sab = new SharedArrayBuffer(array.length);
+    let view = new Uint8Array(sab);
+    for (const [i, b] of array.entries()) {
+        assertEq(b < 256, true, `expected byte at index ${i} but got ${b}`);
+        view[i] = b;
+    }
+    return view;
+}
+
 function varU32(u32) {
     assertEq(u32 >= 0, true, `varU32 input must be number between 0 and 2^32-1, got ${u32}`);
     assertEq(u32 < Math.pow(2,32), true, `varU32 input must be number between 0 and 2^32-1, got ${u32}`);
@@ -295,7 +305,7 @@ function moduleWithSections(sections) {
     const bytes = moduleHeaderThen();
     for (const section of sections) {
         bytes.push(section.name);
-        bytes.push(...varU32(section.body.length));
+        bytes.push(...varU32(section.length ?? section.body.length));
         for (let byte of section.body) {
             bytes.push(byte);
         }
@@ -706,7 +716,7 @@ function moduleNameSubsection(moduleName) {
     return body;
 }
 
-function funcNameSubsection(funcNames) {
+function funcNameSubsection(funcNames, subsectionLen = null) {
     var body = [];
     body.push(...varU32(nameTypeFunction));
 
@@ -719,19 +729,19 @@ function funcNameSubsection(funcNames) {
         funcIndex++;
     }
 
-    body.push(...varU32(subsection.length));
+    body.push(...varU32(subsectionLen ?? subsection.length));
     body.push(...subsection);
     return body;
 }
 
-function nameSection(subsections) {
+function nameSection(subsections, sectionLength = null) {
     var body = [];
     body.push(...string(nameName));
 
     for (let ss of subsections)
         body.push(...ss);
 
-    return { name: userDefinedId, body };
+    return { name: userDefinedId, length: sectionLength, body };
 }
 
 function customSection(name, ...body) {

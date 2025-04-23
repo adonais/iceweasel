@@ -7,6 +7,7 @@ package org.mozilla.focus.settings.privacy
 import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
+import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
 import mozilla.components.lib.auth.canUseBiometricFeature
@@ -147,10 +148,9 @@ class PrivacySecuritySettingsFragment :
         if (!requireContext().canUseBiometricFeature()) {
             switch?.isChecked = false
             switch?.isEnabled = false
-            preferenceManager.sharedPreferences
-                ?.edit()
-                ?.putBoolean(resources.getString(R.string.pref_key_biometric), false)
-                ?.apply()
+            preferenceManager.sharedPreferences?.edit {
+                putBoolean(resources.getString(R.string.pref_key_biometric), false)
+            }
         } else {
             switch?.isEnabled = true
         }
@@ -243,9 +243,9 @@ class PrivacySecuritySettingsFragment :
             ) == true
         ) {
             sharedPreferences
-                .edit()
-                .putBoolean(resources.getString(R.string.pref_key_secure), true)
-                .apply()
+                .edit() {
+                    putBoolean(resources.getString(R.string.pref_key_secure), true)
+                }
 
             // Disable the stealth switch
             switch?.isChecked = true

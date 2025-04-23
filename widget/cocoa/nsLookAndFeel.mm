@@ -13,6 +13,7 @@
 #include "gfxFontConstants.h"
 #include "gfxPlatformMac.h"
 #include "nsCSSColorUtils.h"
+#include "nsAppShell.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/StaticPrefs_widget.h"
@@ -22,6 +23,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h>
+#import <Accessibility/Accessibility.h>
 #import <AppKit/NSColor.h>
 
 // This must be included last:
@@ -47,6 +49,10 @@ void nsLookAndFeel::EnsureInit() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK
 
   mInitialized = true;
+  // Ensure GeckoNSApplication is instantiated before creating a window,
+  // otherwise we might instantiate the wrong application class, causing
+  // exceptions to be thrown elsewhere.
+  [GeckoNSApplication sharedApplication];
   NSWindow* window =
       [[NSWindow alloc] initWithContentRect:NSZeroRect
                                   styleMask:NSWindowStyleMaskTitled
@@ -330,10 +336,10 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       aColor =
           GetColorFromNSColor(NSColor.controlAlternatingRowBackgroundColors[1]);
       break;
-    case ColorID::MozNativehyperlinktext:
+    case ColorID::Linktext:
       aColor = GetColorFromNSColor(NSColor.linkColor);
       break;
-    case ColorID::MozNativevisitedhyperlinktext:
+    case ColorID::Visitedtext:
       aColor = GetColorFromNSColor(NSColor.systemPurpleColor);
       break;
     case ColorID::MozHeaderbartext:
@@ -351,6 +357,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       // This has better contrast than the stand-in colors.
       aColor = GetColorFromNSColor(NSColor.windowBackgroundColor);
       return NS_OK;
+    case ColorID::Activetext:
     case ColorID::Marktext:
     case ColorID::Mark:
     case ColorID::SpellCheckerUnderline:
@@ -380,6 +387,13 @@ static bool SystemWantsDarkTheme() {
   return [aquaOrDarkAqua isEqualToString:NSAppearanceNameDarkAqua];
 }
 
+static bool PrefersNonBlinkingTextInsertionIndicator() {
+  if (@available(macOS 15.0, *)) {
+    return AXPrefersNonBlinkingTextInsertionIndicator();
+  }
+  return false;
+}
+
 nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -394,7 +408,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = 3;
       break;
     case IntID::CaretBlinkTime:
-      aResult = 567;
+      aResult = PrefersNonBlinkingTextInsertionIndicator() ? -1 : 567;
       break;
     case IntID::CaretWidth:
       aResult = 1;
@@ -602,6 +616,15 @@ nsresult nsLookAndFeel::GetKeyboardLayoutImpl(nsACString& aLayout) {
 
 - (instancetype)init {
   self = [super init];
+
+  if (@available(macOS 15.0, *)) {
+    [NSNotificationCenter.defaultCenter
+        addObserver:self
+           selector:@selector(cachedValuesChanged)
+               name:
+                   AXPrefersNonBlinkingTextInsertionIndicatorDidChangeNotification
+             object:nil];
+  }
 
   [NSNotificationCenter.defaultCenter
       addObserver:self

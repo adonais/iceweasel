@@ -30,12 +30,15 @@ function isActiveElement(el) {
 }
 
 add_task(async function test_keyboard_navigation() {
-  const { document } = win;
+  const { document, SidebarController } = win;
   const sidebar = document.querySelector("sidebar-main");
-  const toolButtons = await TestUtils.waitForCondition(
-    () => sidebar.toolButtons,
-    "Tool buttons are shown."
+  info("Waiting for tool buttons to be present");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebar,
+    { subTree: true, childList: true },
+    () => !!sidebar.toolButtons.length
   );
+  const toolButtons = sidebar.toolButtons;
 
   toolButtons[0].focus();
   ok(isActiveElement(toolButtons[0]), "First tool button is focused.");
@@ -84,15 +87,49 @@ add_task(async function test_keyboard_navigation() {
   info("Press Tab key.");
   EventUtils.synthesizeKey("KEY_Tab", {}, win);
   ok(isActiveElement(customizeButton), "Customize button is focused.");
+  info("Press Enter key again.");
+  const promiseFocused = BrowserTestUtils.waitForEvent(win, "SidebarFocused");
+  EventUtils.synthesizeKey("KEY_Enter", {}, win);
+  await promiseFocused;
+  await sidebar.updateComplete;
+  ok(sidebar.open, "Sidebar is open.");
+
+  let customizeDocument = SidebarController.browser.contentDocument;
+  const customizeComponent =
+    customizeDocument.querySelector("sidebar-customize");
+  const sidebarPanelHeader = customizeComponent.shadowRoot.querySelector(
+    "sidebar-panel-header"
+  );
+  let closeButton = sidebarPanelHeader.closeButton;
+  info("Press Tab key.");
+  EventUtils.synthesizeKey("KEY_Tab", {}, win);
+  ok(isActiveElement(closeButton), "Close button is focused.");
+
+  info("Press Tab key.");
+  EventUtils.synthesizeKey("KEY_Tab", {}, win);
+  ok(
+    isActiveElement(customizeComponent.verticalTabsInput),
+    "First customize component is focused"
+  );
+
+  info("Press Tab and Shift key.");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, win);
+  ok(isActiveElement(closeButton), "Close button is focused.");
+  EventUtils.synthesizeKey("KEY_Enter", {}, win);
+  await sidebar.updateComplete;
+  ok(!sidebar.open, "Sidebar is closed.");
 });
 
 add_task(async function test_menu_items_labeled() {
   const { document, SidebarController } = win;
   const sidebar = document.querySelector("sidebar-main");
-  const allButtons = await TestUtils.waitForCondition(
-    () => sidebar.allButtons,
-    "All buttons are shown."
+  info("Waiting for tool buttons to be present");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebar,
+    { subTree: true, childList: true },
+    () => !!sidebar.toolButtons.length
   );
+  const allButtons = sidebar.allButtons;
   const dynamicTooltips = Object.keys(SidebarController.sidebarMain.tooltips);
 
   await SidebarController.initializeUIState({ launcherExpanded: false });
@@ -164,9 +201,11 @@ add_task(async function test_keyboard_navigation_vertical_tabs() {
   });
   await waitForTabstripOrientation("vertical");
   const sidebar = document.querySelector("sidebar-main");
-  const toolButtons = await TestUtils.waitForCondition(
-    () => sidebar.toolButtons,
-    "Tool buttons are shown."
+  info("Waiting for tool buttons to be present");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebar,
+    { subTree: true, childList: true },
+    () => !!sidebar.toolButtons.length
   );
   const newTabButton = sidebar.querySelector("#tabs-newtab-button");
 
@@ -191,7 +230,7 @@ add_task(async function test_keyboard_navigation_vertical_tabs() {
 
   info("Tab to get to tools.");
   EventUtils.synthesizeKey("KEY_Tab", {}, win);
-  ok(isActiveElement(toolButtons[0]), "First tool button is focused.");
+  ok(isActiveElement(sidebar.toolButtons[0]), "First tool button is focused.");
 
   info("Shift+Tab back to new tab button.");
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, win);

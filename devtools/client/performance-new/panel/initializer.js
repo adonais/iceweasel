@@ -40,8 +40,8 @@
   scope.loader = browserLoader.loader;
 }
 
-const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom.js");
-const React = require("resource://devtools/client/shared/vendor/react.js");
+const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom.mjs");
+const React = require("resource://devtools/client/shared/vendor/react.mjs");
 const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
 const {
   FluentL10n,
@@ -185,5 +185,8 @@ async function gInit(perfFront, traits, pageContext, openAboutProfiling) {
 }
 
 function gDestroy() {
-  ReactDOM.unmountComponentAtNode(document.querySelector("#root"));
+  const root = document.querySelector("#root");
+  if (root) {
+    ReactDOM.unmountComponentAtNode(root);
+  }
 }

@@ -8,9 +8,10 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
   CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
+  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  UserSearchEngine: "resource://gre/modules/UserSearchEngine.sys.mjs",
 });
 
 const PREF_URLBAR_QUICKSUGGEST_BLOCKLIST =
@@ -30,6 +31,7 @@ Preferences.addAll([
   { id: "browser.urlbar.recentsearches.featureGate", type: "bool" },
   { id: "browser.urlbar.suggest.recentsearches", type: "bool" },
   { id: "browser.urlbar.scotchBonnet.enableOverride", type: "bool" },
+  { id: "browser.urlbar.update2.engineAliasRefresh", type: "bool" },
 ]);
 
 const ENGINE_FLAVOR = "text/x-moz-search-engine";
@@ -81,6 +83,11 @@ var gSearchPane = {
     let urlbarSuggestsPref = Preferences.get("browser.urlbar.suggest.searches");
     let privateSuggestsPref = Preferences.get(
       "browser.search.suggest.enabled.private"
+    );
+
+    Preferences.get("browser.urlbar.update2.engineAliasRefresh").on(
+      "change",
+      () => gEngineView.updateUserEngineButtonVisibility()
     );
 
     let updateSuggestionCheckboxes =
@@ -620,6 +627,8 @@ class EngineStore {
     for (let i of ["id", "name", "alias", "hidden"]) {
       clonedObj[i] = aEngine[i];
     }
+    clonedObj.isUserEngine =
+      aEngine.wrappedJSObject instanceof lazy.UserSearchEngine;
     clonedObj.originalEngine = aEngine;
 
     // Trigger getting the iconURL for this engine.
@@ -806,7 +815,7 @@ class EngineView {
 
     this.loadL10nNames();
     this.#addListeners();
-    this.#showAddEngineButton();
+    this.updateUserEngineButtonVisibility();
   }
 
   async loadL10nNames() {
@@ -861,17 +870,15 @@ class EngineView {
   }
 
   /**
-   * Shows the "Add Search Engine" button if the pref is enabled.
+   * Shows the Add and Edit Search Engines buttons if the pref is enabled.
    */
-  #showAddEngineButton() {
+  updateUserEngineButtonVisibility() {
     let aliasRefresh = Services.prefs.getBoolPref(
       "browser.urlbar.update2.engineAliasRefresh",
       false
     );
-    if (aliasRefresh) {
-      let addButton = document.getElementById("addEngineButton");
-      addButton.hidden = false;
-    }
+    document.getElementById("addEngineButton").hidden = !aliasRefresh;
+    document.getElementById("editEngineButton").hidden = !aliasRefresh;
   }
 
   get lastEngineIndex() {
@@ -1021,10 +1028,18 @@ class EngineView {
           case "removeEngineButton":
             Services.search.removeEngine(this.selectedEngine.originalEngine);
             break;
+          case "editEngineButton":
+            gSubDialog.open(
+              "chrome://browser/content/search/addEngine.xhtml",
+              { features: "resizable=no, modal=yes" },
+              { engine: this.selectedEngine.originalEngine, mode: "EDIT" }
+            );
+            break;
           case "addEngineButton":
             gSubDialog.open(
-              "chrome://browser/content/preferences/dialogs/addEngine.xhtml",
-              { features: "resizable=no, modal=yes" }
+              "chrome://browser/content/search/addEngine.xhtml",
+              { features: "resizable=no, modal=yes" },
+              { mode: "NEW" }
             );
             break;
         }
@@ -1076,6 +1091,8 @@ class EngineView {
   #onTreeSelect() {
     document.getElementById("removeEngineButton").disabled =
       !this.isEngineSelectedAndRemovable();
+    document.getElementById("editEngineButton").disabled =
+      !this.selectedEngine?.isUserEngine;
   }
 
   #onTreeKeyPress(aEvent) {
@@ -1129,11 +1146,29 @@ class EngineView {
       return;
     }
 
-    let tree = document.getElementById("engineList");
     let engine = this._engineStore.engines[index];
-    tree.startEditing(index, tree.columns.getLastColumn());
-    tree.inputField.value = engine.alias || "";
-    tree.inputField.select();
+    this.tree.startEditing(index, this.tree.columns.getLastColumn());
+    this.tree.inputField.value = engine.alias || "";
+    this.tree.inputField.select();
+  }
+
+  /**
+   * Triggers editing of an engine name in the tree.
+   *
+   * @param {number} index
+   */
+  #startEditingName(index) {
+    let engine = this._engineStore.engines[index];
+    if (!engine.isUserEngine) {
+      return;
+    }
+
+    this.tree.startEditing(
+      index,
+      this.tree.columns.getNamedColumn("engineName")
+    );
+    this.tree.inputField.value = engine.name;
+    this.tree.inputField.select();
   }
 
   // nsITreeView
@@ -1288,8 +1323,10 @@ class EngineView {
   cycleCell() {}
   isEditable(index, column) {
     return (
-      column.id != "engineName" &&
-      (column.id == "engineShown" || !this._getLocalShortcut(index))
+      column.id == "engineShown" ||
+      (column.id == "engineKeyword" && !this._getLocalShortcut(index)) ||
+      (column.id == "engineName" &&
+        this._engineStore.engines[index].isUserEngine)
     );
   }
   setCellValue(index, column, value) {
@@ -1305,15 +1342,18 @@ class EngineView {
       this.invalidate();
     }
   }
-  setCellText(index, column, value) {
+  async setCellText(index, column, value) {
+    let engine = this._engineStore.engines[index];
     if (column.id == "engineKeyword") {
-      this.#changeKeyword(this._engineStore.engines[index], value).then(
-        valid => {
-          if (!valid) {
-            this.#startEditingAlias(index);
-          }
-        }
-      );
+      let valid = await this.#changeKeyword(engine, value);
+      if (!valid) {
+        this.#startEditingAlias(index);
+      }
+    } else if (column.id == "engineName" && engine.isUserEngine) {
+      let valid = await this.#changeName(engine, value);
+      if (!valid) {
+        this.#startEditingName(index);
+      }
     }
   }
 
@@ -1331,48 +1371,55 @@ class EngineView {
   async #changeKeyword(aEngine, aNewKeyword) {
     let keyword = aNewKeyword.trim();
     if (keyword) {
-      let eduplicate = false;
-      let dupName = "";
+      let isBookmarkDuplicate = !!(await PlacesUtils.keywords.fetch(keyword));
 
-      // Check for duplicates in Places keywords.
-      let bduplicate = !!(await PlacesUtils.keywords.fetch(keyword));
-
-      // Check for duplicates in changes we haven't committed yet
-      let engines = this._engineStore.engines;
-      let lc_keyword = keyword.toLocaleLowerCase();
-      for (let engine of engines) {
-        if (
-          engine.alias &&
-          engine.alias.toLocaleLowerCase() == lc_keyword &&
-          engine.name != aEngine.name
-        ) {
-          eduplicate = true;
-          dupName = engine.name;
-          break;
-        }
-      }
+      let dupEngine = await Services.search.getEngineByAlias(keyword);
+      let isEngineDuplicate = dupEngine !== null && dupEngine.id != aEngine.id;
 
       // Notify the user if they have chosen an existing engine/bookmark keyword
-      if (eduplicate || bduplicate) {
-        let msgids = [{ id: "search-keyword-warning-title" }];
-        if (eduplicate) {
-          msgids.push({
+      if (isEngineDuplicate || isBookmarkDuplicate) {
+        let msgid;
+        if (isEngineDuplicate) {
+          msgid = {
             id: "search-keyword-warning-engine",
-            args: { name: dupName },
-          });
+            args: { name: dupEngine.name },
+          };
         } else {
-          msgids.push({ id: "search-keyword-warning-bookmark" });
+          msgid = { id: "search-keyword-warning-bookmark" };
         }
 
-        let [dtitle, msg] = await document.l10n.formatValues(msgids);
-
-        Services.prompt.alert(window, dtitle, msg);
+        let msg = await document.l10n.formatValue(msgid.id, msgid.args);
+        alert(msg);
         return false;
       }
     }
 
     this._engineStore.changeEngine(aEngine, "alias", keyword);
     this.invalidate();
+    return true;
+  }
+
+  /**
+   * Handles changing the name for a user engine. This will check for
+   * duplicate names and warn the user if necessary.
+   *
+   * @param {object} aEngine
+   *   The user search engine to change.
+   * @param {string} aNewName
+   *   The new name.
+   * @returns {Promise<boolean>}
+   *   Resolves to true if the name was changed.
+   */
+  async #changeName(aEngine, aNewName) {
+    let valid = aEngine.originalEngine.wrappedJSObject.rename(aNewName);
+    if (!valid) {
+      let msg = await document.l10n.formatValue(
+        "edit-engine-name-warning-duplicate",
+        { name: aNewName }
+      );
+      alert(msg);
+      return false;
+    }
     return true;
   }
 }

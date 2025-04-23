@@ -13,7 +13,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -57,6 +56,7 @@ import androidx.browser.customtabs.CustomTabsIntent.TOOLBAR_ACTION_BUTTON_ID
 import androidx.browser.customtabs.CustomTabsSessionToken
 import androidx.browser.customtabs.TrustedWebUtils.EXTRA_LAUNCH_AS_TRUSTED_WEB_ACTIVITY
 import androidx.core.content.ContextCompat.getColor
+import androidx.core.graphics.toColorInt
 import mozilla.components.browser.menu.BrowserMenuBuilder
 import mozilla.components.browser.menu.item.SimpleBrowserMenuItem
 import mozilla.components.browser.state.selector.findCustomTab
@@ -120,10 +120,15 @@ fun isTrustedWebActivityIntent(safeIntent: SafeIntent) = isCustomTabIntent(safeI
  *
  * @param intent The [Intent] wrapped as a [SafeIntent], which is processed to extract configuration data.
  * @param resources Optional [Resources] to verify that only icons of a max size are provided.
+ * @param externalAppType The [ExternalAppType] to use for the custom tab.
  *
  * @return the configured [CustomTabConfig].
  */
-fun createCustomTabConfigFromIntent(intent: Intent, resources: Resources?): CustomTabConfig {
+fun createCustomTabConfigFromIntent(
+    intent: Intent,
+    resources: Resources?,
+    externalAppType: ExternalAppType = ExternalAppType.CUSTOM_TAB,
+): CustomTabConfig {
     val safeIntent = intent.toSafeIntent()
 
     return CustomTabConfig(
@@ -142,7 +147,7 @@ fun createCustomTabConfigFromIntent(intent: Intent, resources: Resources?): Cust
         } else {
             null
         },
-        externalAppType = ExternalAppType.CUSTOM_TAB,
+        externalAppType = externalAppType,
     )
 }
 
@@ -401,7 +406,7 @@ fun ColorSchemeParams?.getToolbarContrastColorDisabled(
     } else {
         // When in private mode disabled elements need to have enough contrast to
         // differentiate themselves from the background and also from other enabled elements.
-        Color.parseColor(LIGHT_GRAY_HEX)
+        LIGHT_GRAY_HEX.toColorInt()
     }
 }
 

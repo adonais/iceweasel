@@ -600,19 +600,6 @@ addAccessibleTask(
   <div id="popover2" popover>popover2</div>
   <button id="toggle5">toggle5</button>
 </template></div>
-<script>
-  const toggle1 = document.getElementById("toggle1");
-  const popover1 = document.getElementById("popover1");
-  toggle1.popoverTargetElement = popover1;
-  const toggle3 = document.getElementById("toggle3");
-  const shadow = document.getElementById("shadowHost").shadowRoot;
-  const toggle4 = shadow.getElementById("toggle4");
-  const popover2 = shadow.getElementById("popover2");
-  toggle3.popoverTargetElement = popover2;
-  toggle4.popoverTargetElement = popover2;
-  const toggle5 = shadow.getElementById("toggle5");
-  toggle5.popoverTargetElement = popover1;
-</script>
   `,
   async function (browser, docAcc) {
     const toggle1 = findAccessibleChildByID(docAcc, "toggle1");
@@ -710,7 +697,24 @@ addAccessibleTask(
     // toggle4 is in the same shadow DOM as popover2.
     testStates(toggle4, STATE_COLLAPSED);
   },
-  { chrome: true, topLevel: true }
+  {
+    chrome: true,
+    topLevel: true,
+    contentSetup: async function contentSetup() {
+      const doc = content.document;
+      const toggle1 = doc.getElementById("toggle1");
+      const popover1 = doc.getElementById("popover1");
+      toggle1.popoverTargetElement = popover1;
+      const toggle3 = doc.getElementById("toggle3");
+      const shadow = doc.getElementById("shadowHost").shadowRoot;
+      const toggle4 = shadow.getElementById("toggle4");
+      const popover2 = shadow.getElementById("popover2");
+      toggle3.popoverTargetElement = popover2;
+      toggle4.popoverTargetElement = popover2;
+      const toggle5 = shadow.getElementById("toggle5");
+      toggle5.popoverTargetElement = popover1;
+    },
+  }
 );
 
 /**
@@ -862,4 +866,44 @@ addAccessibleTask(
     testStates(textareaPassword, 0, 0, STATE_PROTECTED);
   },
   { chrome: true, topLevel: true }
+);
+
+/**
+ * Test the selectable text state.
+ */
+addAccessibleTask(
+  `
+<p id="selectableP">selectableP</p>
+<p id="unselectableP" style="user-select: none;">unselectableP</p>
+  `,
+  async function testSelectableText(browser, docAcc) {
+    testStates(docAcc, 0, EXT_STATE_SELECTABLE_TEXT);
+    const selectableP = findAccessibleChildByID(docAcc, "selectableP");
+    testStates(selectableP, 0, EXT_STATE_SELECTABLE_TEXT);
+    const unselectableP = findAccessibleChildByID(docAcc, "unselectableP");
+    testStates(unselectableP, 0, 0, 0, EXT_STATE_SELECTABLE_TEXT);
+  },
+  { chrome: true, topLevel: true }
+);
+
+/**
+ * Test the selectable text state on an unselectable body.
+ */
+addAccessibleTask(
+  `
+<style>
+body {
+  user-select: none;
+}
+<p id="p">p</p>
+  `,
+  async function testSelectableTextUnselectableBody(browser, docAcc) {
+    testStates(docAcc, 0, 0, 0, EXT_STATE_SELECTABLE_TEXT);
+    const p = findAccessibleChildByID(docAcc, "p");
+    testStates(p, 0, 0, 0, EXT_STATE_SELECTABLE_TEXT);
+  },
+  {
+    chrome: true,
+    topLevel: true,
+  }
 );

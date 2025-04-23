@@ -26,6 +26,7 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/MediaController.h"
+#include "mozilla/dom/NavigatorLogin.h"
 #include "mozilla/dom/WebAuthnTransactionParent.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/ChromeUtils.h"
@@ -1474,6 +1475,17 @@ IPCResult WindowGlobalParent::RecvStoreIdentityCredential(
   return IPC_OK();
 }
 
+IPCResult WindowGlobalParent::RecvDisconnectIdentityCredential(
+    const IdentityCredentialDisconnectOptions& aOptions,
+    const DisconnectIdentityCredentialResolver& aResolver) {
+  IdentityCredential::DisconnectInMainProcess(DocumentPrincipal(), aOptions)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [aResolver](const bool& aResult) { aResolver(NS_OK); },
+          [aResolver](nsresult aErr) { aResolver(aErr); });
+  return IPC_OK();
+}
+
 IPCResult WindowGlobalParent::RecvPreventSilentAccess(
     const PreventSilentAccessResolver& aResolver) {
   nsIPrincipal* principal = DocumentPrincipal();
@@ -1489,6 +1501,18 @@ IPCResult WindowGlobalParent::RecvPreventSilentAccess(
   }
 
   aResolver(NS_ERROR_NOT_AVAILABLE);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult WindowGlobalParent::RecvSetLoginStatus(
+    LoginStatus aStatus, const SetLoginStatusResolver& aResolver) {
+  nsIPrincipal* principal = DocumentPrincipal();
+  if (!principal) {
+    aResolver(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    return IPC_OK();
+  }
+  nsresult rv = NavigatorLogin::SetLoginStatus(principal, aStatus);
+  aResolver(rv);
   return IPC_OK();
 }
 

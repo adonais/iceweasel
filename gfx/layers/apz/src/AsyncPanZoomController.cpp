@@ -86,9 +86,8 @@
 #include "nsThreadUtils.h"   // for NS_IsMainThread
 #include "nsViewportInfo.h"  // for ViewportMinScale(), ViewportMaxScale()
 #include "prsystem.h"        // for PR_GetPhysicalMemorySize
-#include "mozilla/ipc/SharedMemory.h"  // for SharedMemory
-#include "ScrollSnap.h"                // for ScrollSnapUtils
-#include "ScrollAnimationPhysics.h"    // for ComputeAcceleratedWheelDelta
+#include "ScrollSnap.h"      // for ScrollSnapUtils
+#include "ScrollAnimationPhysics.h"  // for ComputeAcceleratedWheelDelta
 #include "SmoothMsdScrollAnimation.h"
 #include "SmoothScrollAnimation.h"
 #include "WheelScrollAnimation.h"
@@ -2745,10 +2744,9 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   APZC_LOG_DETAIL("got a pan-begin in state %s\n", this,
                   ToString(mState).c_str());
 
-  if (mState == SMOOTHMSD_SCROLL) {
-    // SMOOTHMSD_SCROLL scrolls are cancelled by pan gestures.
-    CancelAnimation();
-  }
+  MOZ_ASSERT(GetCurrentPanGestureBlock());
+  GetCurrentPanGestureBlock()->GetOverscrollHandoffChain()->CancelAnimations(
+      ExcludeOverscroll);
 
   StartTouch(aEvent.mLocalPanStartPoint, aEvent.mTimeStamp);
 
@@ -3980,8 +3978,8 @@ ParentLayerPoint AsyncPanZoomController::AttemptFling(
 
   // We may have a pre-existing velocity for whatever reason (for example,
   // a previously handed off fling). We don't want to clobber that.
-  APZC_LOG("%p accepting fling with velocity %s\n", this,
-           ToString(aHandoffState.mVelocity).c_str());
+  APZC_LOG_DETAIL("accepting fling with velocity %s\n", this,
+                  ToString(aHandoffState.mVelocity).c_str());
   ParentLayerPoint residualVelocity = aHandoffState.mVelocity;
   if (mX.CanScroll()) {
     mX.SetVelocity(mX.GetVelocity() + aHandoffState.mVelocity.x);
@@ -3989,6 +3987,11 @@ ParentLayerPoint AsyncPanZoomController::AttemptFling(
   }
   if (mY.CanScroll()) {
     mY.SetVelocity(mY.GetVelocity() + aHandoffState.mVelocity.y);
+    residualVelocity.y = 0;
+  }
+
+  if (!aHandoffState.mIsHandoff && aHandoffState.mScrolledApzc == this) {
+    residualVelocity.x = 0;
     residualVelocity.y = 0;
   }
 
@@ -4366,10 +4369,6 @@ void AsyncPanZoomController::CancelAnimation(CancelAnimationFlags aFlags) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   APZC_LOG_DETAIL("running CancelAnimation(0x%x) in state %s\n", this, aFlags,
                   ToString(mState).c_str());
-
-  if ((aFlags & ExcludeWheel) && mState == WHEEL_SCROLL) {
-    return;
-  }
 
   if (mAnimation) {
     mAnimation->Cancel(aFlags);
@@ -6204,7 +6203,22 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
       const CSSCoord scrollableRectHeight =
           Metrics().GetScrollableRect().height;
 
-      if (scrollableRectHeight > svh && scrollableRectHeight < lvh) {
+      auto mightNeedToHideToolbar = [&]() -> bool {
+        // While the software keyboard is visible on resizes-visual mode,
+        // if the target rect is underneath of the toolbar, we will have to
+        // hide the toolbar.
+        if (aFlags & ZOOM_TO_FOCUSED_INPUT_ON_RESIZES_VISUAL) {
+          return true;
+        }
+        // FIXME: This condition is too strict even in resizes-content mode,
+        // it's possible for the toolbar to cover up an element at the bottom
+        // of the scrollable rect even if `scrollableRectHeight > lvh`.
+        // We need to either relax the condition, or find a different solution
+        // such as bug 1920019 comment 8.
+        return scrollableRectHeight > svh && scrollableRectHeight < lvh;
+      };
+
+      if (mightNeedToHideToolbar()) {
         const CSSCoord targetDistanceFromBottom =
             (Metrics().GetScrollableRect().YMost() -
              aZoomTarget.targetRect.YMost());
@@ -6367,7 +6381,8 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     }
 
     // Vertically center the zoomed element in the screen.
-    if (!zoomOut && (sizeAfterZoom.height > rect.Height())) {
+    if (!zoomOut &&
+        (sizeAfterZoom.height - rect.Height() > COORDINATE_EPSILON)) {
       rect.MoveByY(-(sizeAfterZoom.height - rect.Height()) * 0.5f);
       if (rect.Y() < 0.0f) {
         rect.MoveToY(0.0f);
@@ -6375,7 +6390,7 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     }
 
     // Horizontally center the zoomed element in the screen.
-    if (!zoomOut && (sizeAfterZoom.width > rect.Width())) {
+    if (!zoomOut && (sizeAfterZoom.width - rect.Width() > COORDINATE_EPSILON)) {
       rect.MoveByX(-(sizeAfterZoom.width - rect.Width()) * 0.5f);
       if (rect.X() < 0.0f) {
         rect.MoveToX(0.0f);
@@ -6387,7 +6402,8 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     // are able to show to center what was visible.
     // Note that this calculation works no matter the relation of sizeBeforeZoom
     // to sizeAfterZoom, ie whether we are increasing or decreasing zoom.
-    if (!zoomOut && (sizeAfterZoom.height < rect.Height())) {
+    if (!zoomOut &&
+        (rect.Height() - sizeAfterZoom.height > COORDINATE_EPSILON)) {
       rect.y =
           scrollOffset.y + (sizeBeforeZoom.height - sizeAfterZoom.height) / 2;
       rect.height = sizeAfterZoom.Height();
@@ -6395,7 +6411,7 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
       intersectRectAgain = true;
     }
 
-    if (!zoomOut && (sizeAfterZoom.width < rect.Width())) {
+    if (!zoomOut && (rect.Width() - sizeAfterZoom.width > COORDINATE_EPSILON)) {
       rect.x =
           scrollOffset.x + (sizeBeforeZoom.width - sizeAfterZoom.width) / 2;
       rect.width = sizeAfterZoom.Width();
@@ -6421,7 +6437,7 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
           std::max(cssPageRect.X(), cssPageRect.XMost() - sizeAfterZoom.width));
     }
     if (rect.X() < cssPageRect.X()) {
-      rect.MoveToY(cssPageRect.X());
+      rect.MoveToX(cssPageRect.X());
     }
 
     endZoomToMetrics.SetVisualScrollOffset(rect.TopLeft());
@@ -6485,9 +6501,17 @@ void AsyncPanZoomController::ResetPanGestureInputState() {
     return;
   }
 
-  // No point sending a PANGESTURE_INTERRUPTED as all it does is
-  // call CancelAnimation(), which we also do here.
-  CancelAnimationAndGestureState();
+  // Unlike in ResetTouchInputState(), do not cancel animations unconditionally.
+  // Doing so would break scenarios where content handled `wheel` events
+  // triggered by pan gesture input by calling preventDefault() and doing its
+  // own smooth (animated) scrolling. However, we do need to call
+  // CancelAnimation for its state-resetting effect if there isn't an animation
+  // running, otherwise we could e.g. get stuck in a PANNING state if content
+  // preventDefault()s an event in the middle of a pan gesture.
+  if (!mAnimation) {
+    CancelAnimationAndGestureState();
+  }
+
   // Clear overscroll along the entire handoff chain, in case an APZC
   // later in the chain is overscrolled.
   if (block) {

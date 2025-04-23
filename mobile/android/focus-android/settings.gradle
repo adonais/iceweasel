@@ -12,7 +12,7 @@ pluginManagement {
     repositories {
         gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
             maven {
-                url repository
+                url = repository
                 if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
                     allowInsecureProtocol = true
                 }
@@ -26,8 +26,15 @@ pluginManagement {
 }
 
 plugins {
-    id "mozac.ConfigPlugin"
     id 'mozac.DependenciesPlugin'
+}
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            from(files("../../../gradle/libs.versions.toml"))
+        }
+    }
 }
 
 ext.topsrcdir = rootProject.projectDir.absolutePath.minus("mobile/android/focus-android")

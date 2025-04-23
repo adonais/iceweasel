@@ -15,13 +15,18 @@ task-defaults:
     limit-platforms:
         by-app:
             chrome:
-                - (?!macosx1470).*shippable.*
+                - .*64.*shippable.*
             safari:
-                - .*macos.*shippable.*
+                - .*macosx.*shippable.*
             safari-tp:
                 - macosx1400.*
+                - macosx1500.*
             custom-car:
-                - (macosx1400|linux|windows.*-64).*shippable.*
+                - macosx1400.*shippable.*
+                - macosx1470.*shippable.*
+                - macosx1500.*shippable.*
+                - linux.*-64.*shippable.*
+                - windows.*-64.*shippable.*
             default: []
     test-manifest-loader: null  # don't load tests in the taskgraph
     tier:
@@ -67,10 +72,21 @@ task-defaults:
                             - macosx-arm64-custom-car
                             - macosx64-aarch64-minidump-stackwalk
                             - macosx64-aarch64-fix-stacks
+                        macosx1500.*:
+                            - macosx-arm64-custom-car
+                            - macosx64-aarch64-minidump-stackwalk
+                            - macosx64-aarch64-fix-stacks
+                        macosx1470.*:
+                            - macosx-custom-car
+                            - macosx64-minidump-stackwalk
+                            - macosx64-fix-stacks
                         default: []
                 safari-tp:
                     by-test-platform:
                         macosx1400.*:
+                            - macosx64-aarch64-minidump-stackwalk
+                            - macosx64-aarch64-fix-stacks
+                        macosx1500.*:
                             - macosx64-aarch64-minidump-stackwalk
                             - macosx64-aarch64-fix-stacks
                         default: []
@@ -85,6 +101,9 @@ task-defaults:
                         macosx1400.*:
                             - macosx64-aarch64-minidump-stackwalk
                             - macosx64-aarch64-fix-stacks
+                        macosx1500.*:
+                            - macosx64-aarch64-minidump-stackwalk
+                            - macosx64-aarch64-fix-stacks
                         default:
                             - linux64-minidump-stackwalk
                             - linux64-fix-stacks
@@ -95,11 +114,15 @@ browsertime-tp6:
         limit-platforms:
             by-app:
                 chrome:
-                    - (?!macosx1470).*shippable.*
+                    - .*shippable.*
                 safari:
                     - .*macos.*shippable.*
                 custom-car:
-                    - (macosx1400|linux|windows.*-64).*shippable.*
+                    - macosx1400.*shippable.*
+                    - macosx1470.*shippable.*
+                    - macosx1500.*shippable.*
+                    - linux.*shippable.*
+                    - windows.*-64.*shippable.*
                 default: []
         max-run-time:
             by-subtest:
@@ -124,7 +147,9 @@ browsertime-tp6:
                         firefox:
                             by-test-platform:
                                 windows.*-32.*: []
-                                (macosx1470|linux|windows.*-64).*shippable.*: [trunk]
+                                linux.*shippable.*: [trunk]
+                                windows.*-64.*shippable.*: [trunk]
+                                macosx1470.*shippable.*: [trunk]
                                 default: []
                         default: []
                 default:
@@ -227,6 +252,7 @@ browsertime-tp6-essential:
             run-visual-metrics:
                 by-test-platform:
                     macosx1400.*shippable.*: false
+                    macosx1500.*shippable.*: false
                     # Bug 1845014 Resolve osx 1300 vismet permafails
                     default: true
             subtests:
@@ -306,11 +332,15 @@ browsertime-tp7:
         limit-platforms:
             by-app:
                 chrome:
-                    - (?!macosx1470).*shippable.*
+                    - .*shippable.*
                 safari:
                     - .*macos.*shippable.*
                 custom-car:
-                    - (macosx1400|linux|windows.*-64).*shippable.*
+                    - macosx1400.*shippable.*
+                    - macosx1470.*shippable.*
+                    - macosx1500.*shippable.*
+                    - linux.*shippable.*
+                    - windows.*-64.*shippable.*
                 default: []
         max-run-time:
             by-subtest:
@@ -354,13 +384,15 @@ browsertime-benchmark:
         apps: [firefox, chrome, safari, safari-tp, custom-car]
         subtests:
             by-test-platform:
-                macosx1400.*shippable.*:
+                (macosx1400|macosx1500).*shippable.*:
                     by-app:
                         safari-tp:
                             - [speedometer3, sp3]
                             # Bug 1931699, jetstream permafailing
                             # - [jetstream2, js2]
+                            - [jetstream3, js3]
                         default:
+                            - [jetstream3, js3]
                             - [speedometer, sp]
                             - [speedometer3, sp3]
                             - [motionmark-1-3, mm-1.3]
@@ -385,6 +417,7 @@ browsertime-benchmark:
                             - ares6
                             - [assorted-dom, dom]
                             - [jetstream2, js2]
+                            - [jetstream3, js3]
                             - [matrix-react-bench, mrb]
                             - [motionmark-1-3, mm-1.3]
                             - [motionmark-htmlsuite-1-3, mm-h-1.3]
@@ -399,6 +432,7 @@ browsertime-benchmark:
                             - ares6
                             - [assorted-dom, dom]
                             - [jetstream2, js2]
+                            - [jetstream3, js3]
                             # - [matrix-react-bench, mrb] Perma fails on osx 10.15.x machines (Bug 1807754)
                             - [motionmark-1-3, mm-1.3]
                             - [motionmark-htmlsuite-1-3, mm-h-1.3]
@@ -413,26 +447,26 @@ browsertime-benchmark:
                             - [speedometer3, sp3]
                             - [motionmark-1-3, mm-1.3]
                             - [motionmark-htmlsuite-1-3, mm-h-1.3]
+                            - [jetstream3, js3]
                         chrome:
-                            by-test-platform:
-                                macosx1470.*shippable.*: []
-                                default:
-                                    - ares6
-                                    - [assorted-dom, dom]
-                                    - [jetstream2, js2]
-                                    - [matrix-react-bench, mrb]
-                                    - [motionmark-1-3, mm-1.3]
-                                    - [motionmark-htmlsuite-1-3, mm-h-1.3]
-                                    - [speedometer, sp]
-                                    - [speedometer3, sp3]
-                                    - [stylebench, sb]
-                                    - [sunspider, ss]
-                                    - [unity-webgl, ugl]
-                                    - [webaudio, wa]
+                            - ares6
+                            - [assorted-dom, dom]
+                            - [jetstream2, js2]
+                            - [jetstream3, js3]
+                            - [matrix-react-bench, mrb]
+                            - [motionmark-1-3, mm-1.3]
+                            - [motionmark-htmlsuite-1-3, mm-h-1.3]
+                            - [speedometer, sp]
+                            - [speedometer3, sp3]
+                            - [stylebench, sb]
+                            - [sunspider, ss]
+                            - [unity-webgl, ugl]
+                            - [webaudio, wa]
                         default:
                             - ares6
                             - [assorted-dom, dom]
                             - [jetstream2, js2]
+                            - [jetstream3, js3]
                             - [matrix-react-bench, mrb]
                             - [motionmark-1-3, mm-1.3]
                             - [motionmark-htmlsuite-1-3, mm-h-1.3]
@@ -455,7 +489,12 @@ browsertime-benchmark:
                     jetstream2:
                         by-test-platform:
                             macosx1400.*shippable.*: 3
+                            macosx1500.*shippable.*: 3
                             default: 2
+                    jetstream3:
+                        by-app:
+                            firefox: 2
+                            default: 3
                     default: 2
 
     run-on-projects:
@@ -468,19 +507,24 @@ browsertime-benchmark:
                             # Bug 1909894, windows 10 + sp3 temporarily
                             windows10-64.*shippable.*: [mozilla-central]
                             windows11-64-.*-hw-ref-shippable/opt: [mozilla-central]
-                            windows11-64-shippable-qr/opt: [trunk]
+                            windows11-64-shippable(-qr)?/opt: [trunk]
                             windows11-64-24h2-shippable/opt: [trunk]
-                            (linux|macosx1470|macosx1400).*shippable.*: [trunk]
+                            linux.*shippable.*: [trunk]
+                            macosx1470.*shippable.*: [trunk]
+                            macosx1400.*shippable.*: [trunk]
+                            macosx1500.*shippable.*: [trunk]
                             .*nightlyasrelease.*: [autoland, mozilla-central]
                             default: []
                     custom-car:
                         by-test-platform:
                             # NOTE: this includes windows -hw-ref machines
-                            (linux|windows).*shippable.*: [mozilla-central]
+                            linux.*shippable.*: [mozilla-central]
+                            windows.*shippable.*: [mozilla-central]
                             default: []
                     safari-tp:
                         by-test-platform:
                             macosx1400.*: [mozilla-central]
+                            macosx1500.*: [mozilla-central]
                             default: []
                     default: []
             unity-webgl:
@@ -502,7 +546,8 @@ browsertime-benchmark:
                             default: []
                     custom-car:
                         by-test-platform:
-                            (linux|windows.*-64).*shippable.*: [mozilla-central]
+                            linux.*shippable.*: [mozilla-central]
+                            windows.*-64.*shippable.*: [mozilla-central]
                             default: []
                     default: []
             default:
@@ -510,8 +555,9 @@ browsertime-benchmark:
                     firefox:
                         by-test-platform:
                             windows.*-32.*: []
-                            (?!macosx1400).*64.*shippable.*/.*: [trunk]
+                            (?!macosx1400|macosx1500).*64.*shippable.*/.*: [trunk]
                             macosx1400.*shippable.*: [mozilla-central]
+                            macosx1500.*shippable.*: [mozilla-central]
                             default: []
                     default: []
     max-run-time:
@@ -522,6 +568,7 @@ browsertime-benchmark:
                     .*-qr/.*: 2100
                     default: 1500
             jetstream2: 8000
+            jetstream3: 3000
             matrix-react-bench: 1500
             motionmark-1-3: 3000
             motionmark-htmlsuite-1-3: 3000
@@ -529,6 +576,7 @@ browsertime-benchmark:
             speedometer3:
                 by-test-platform:
                     macosx1400.*shippable.*: 4200
+                    macosx1500.*shippable.*: 4200
                     default: 2100
             speedometer: 2100
             default: 900
@@ -536,6 +584,9 @@ browsertime-benchmark:
         extra-options:
             by-test-platform:
                 macosx1400.*shippable.*:
+                    - --extra-profiler-run
+                    - --page-timeout=900000
+                macosx1500.*shippable.*:
                     - --extra-profiler-run
                     - --page-timeout=900000
                 default:
@@ -604,7 +655,7 @@ browsertime-youtube-playback:
     run-on-projects:
         by-test-platform:
             windows.*-32.*: []
-            .*64(?!.*nightlyasrelease).*shippable.*/.*: [mozilla-central]
+            .*64(?!.*nightlyasrelease).*shippable.*: [mozilla-central]
             default: []
     tier:
         by-app:
@@ -776,8 +827,10 @@ browsertime-tp6-live-sheriffed:
             - --browsertime-arg=maxLoadTime=240000
     run-on-projects:
         by-test-platform:
-            (linux|windows.*-64|macos).*: []
+            linux.*: []
             windows.*-32.*: []
+            windows.*-64.*: []
+            macosx.*: []
             default: []
     tier:
         by-app:
@@ -802,7 +855,9 @@ browsertime-tp6-profiling:
             - --gecko-profile
     run-on-projects:
         by-test-platform:
-            (linux|windows|macosx1470).*shippable.*: [mozilla-central]
+            linux.*shippable.*: [mozilla-central]
+            windows.*shippable.*: [mozilla-central]
+            macosx1470.*shippable.*: [mozilla-central]
             default: []
     tier:
         by-app:
@@ -964,7 +1019,8 @@ browsertime-pageload-benchmark:
     run-on-projects:
         by-test-platform:
             windows.*-32.*: []
-            (linux|windows.*-64).*shippable.*: [autoland]
+            windows.*-64.*shippable.*: [autoland]
+            linux.*shippable.*: [autoland]
             default: []
     tier:
         by-app:
@@ -1004,7 +1060,9 @@ browsertime-video-playback-latency:
         by-app:
             firefox:
                 by-test-platform:
-                    (macosx1470|linux|windows10-64).*shippable.*: [autoland, mozilla-central]
+                    macosx1470.*shippable.*: [autoland, mozilla-central]
+                    linux.*shippable.*: [autoland, mozilla-central]
+                    windows10-64.*shippable.*: [autoland, mozilla-central]
                     default: []
             default: []
     treeherder-symbol: Btime(vpl)
@@ -1154,9 +1212,13 @@ browsertime-indexeddb:
     limit-platforms:
         by-app:
             chrome:
-                - (.*?!macosx1470.*)shippable.*
+                - .*shippable.*
             custom-car:
-                - (macosx1400|linux|windows.*-64).*shippable.*
+                - macosx1400.*shippable.*
+                - macosx1470.*shippable.*
+                - macosx1500.*shippable.*
+                - linux.*shippable.*
+                - windows.*-64.*shippable.*
             default: []
     raptor:
         apps: [firefox, chrome]

@@ -438,7 +438,7 @@ export class RelevancyStore {
      * This is non-blocking since databases and other resources are lazily opened.
      * @returns {RelevancyStore}
      */
-    static init(dbPath) {
+    static init(dbPath,remoteSettingsService = null) {
         const liftResult = (result) => FfiConverterTypeRelevancyStore.lift(result);
         const liftError = null;
         const functionCall = () => {
@@ -450,9 +450,18 @@ export class RelevancyStore {
                 }
                 throw e;
             }
+            try {
+                FfiConverterOptionalTypeRemoteSettingsService.checkType(remoteSettingsService)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("remoteSettingsService");
+                }
+                throw e;
+            }
             return UniFFIScaffolding.callSync(
                 12, // relevancy:uniffi_relevancy_fn_constructor_relevancystore_new
                 FfiConverterString.lower(dbPath),
+                FfiConverterOptionalTypeRemoteSettingsService.lower(remoteSettingsService),
             )
         }
         return handleRustResult(functionCall(), liftResult, liftError);}
@@ -785,7 +794,7 @@ export class FfiConverterTypeRelevancyStore extends FfiConverter {
  * BanditData
  */
 export class BanditData {
-    constructor({ bandit, arm, impressions, clicks, alpha, beta }) {
+    constructor({ bandit, arm, impressions, clicks, alpha, beta } = { bandit: undefined, arm: undefined, impressions: undefined, clicks: undefined, alpha: undefined, beta: undefined }) {
         try {
             FfiConverterString.checkType(bandit)
         } catch (e) {
@@ -973,7 +982,7 @@ export class FfiConverterTypeBanditData extends FfiConverterArrayBuffer {
  * rounding.  This is to make them compatible with Glean's distribution metrics.
  */
 export class InterestMetrics {
-    constructor({ topSingleInterestSimilarity, top2interestSimilarity, top3interestSimilarity }) {
+    constructor({ topSingleInterestSimilarity, top2interestSimilarity, top3interestSimilarity } = { topSingleInterestSimilarity: undefined, top2interestSimilarity: undefined, top3interestSimilarity: undefined }) {
         try {
             FfiConverterU32.checkType(topSingleInterestSimilarity)
         } catch (e) {
@@ -1092,7 +1101,7 @@ export class FfiConverterTypeInterestMetrics extends FfiConverterArrayBuffer {
  * number of elements.
  */
 export class InterestVector {
-    constructor({ inconclusive, animals, arts, autos, business, career, education, fashion, finance, food, government, hobbies, home, news, realEstate, society, sports, tech, travel }) {
+    constructor({ inconclusive, animals, arts, autos, business, career, education, fashion, finance, food, government, hobbies, home, news, realEstate, society, sports, tech, travel } = { inconclusive: undefined, animals: undefined, arts: undefined, autos: undefined, business: undefined, career: undefined, education: undefined, fashion: undefined, finance: undefined, food: undefined, government: undefined, hobbies: undefined, home: undefined, news: undefined, realEstate: undefined, society: undefined, sports: undefined, tech: undefined, travel: undefined }) {
         try {
             FfiConverterU32.checkType(inconclusive)
         } catch (e) {
@@ -1865,6 +1874,43 @@ export class FfiConverterTypeRelevancyApiError extends FfiConverterArrayBuffer {
 }
 
 // Export the FFIConverter object to make external types work.
+export class FfiConverterOptionalTypeRemoteSettingsService extends FfiConverterArrayBuffer {
+    static checkType(value) {
+        if (value !== undefined && value !== null) {
+            FfiConverterTypeRemoteSettingsService.checkType(value)
+        }
+    }
+
+    static read(dataStream) {
+        const code = dataStream.readUint8(0);
+        switch (code) {
+            case 0:
+                return null
+            case 1:
+                return FfiConverterTypeRemoteSettingsService.read(dataStream)
+            default:
+                throw new UniFFIError(`Unexpected code: ${code}`);
+        }
+    }
+
+    static write(dataStream, value) {
+        if (value === null || value === undefined) {
+            dataStream.writeUint8(0);
+            return;
+        }
+        dataStream.writeUint8(1);
+        FfiConverterTypeRemoteSettingsService.write(dataStream, value)
+    }
+
+    static computeSize(value) {
+        if (value === null || value === undefined) {
+            return 1;
+        }
+        return 1 + FfiConverterTypeRemoteSettingsService.computeSize(value)
+    }
+}
+
+// Export the FFIConverter object to make external types work.
 export class FfiConverterSequencestring extends FfiConverterArrayBuffer {
     static read(dataStream) {
         const len = dataStream.readInt32();
@@ -1951,6 +1997,14 @@ export class FfiConverterSequenceTypeInterest extends FfiConverterArrayBuffer {
         })
     }
 }
+
+import {
+  FfiConverterTypeRemoteSettingsService,
+  RemoteSettingsService,
+} from "resource://gre/modules/RustRemoteSettings.sys.mjs";
+
+// Export the FFIConverter object to make external types work.
+export { FfiConverterTypeRemoteSettingsService, RemoteSettingsService };
 
 
 

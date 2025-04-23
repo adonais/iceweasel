@@ -11,6 +11,7 @@
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
 #include "js/ScalarType.h"  // js::Scalar::Type
+#include "util/DifferentialTesting.h"
 
 using namespace js;
 using namespace js::jit;
@@ -78,8 +79,8 @@ static void SetTypePolicyBailoutKind(MInstruction* newIns,
   return replace->typePolicy()->adjustInputs(alloc, replace);
 }
 
-MDefinition* js::jit::AlwaysBoxAt(TempAllocator& alloc, MInstruction* at,
-                                  MDefinition* operand) {
+MDefinition* js::jit::BoxAt(TempAllocator& alloc, MInstruction* at,
+                            MDefinition* operand) {
   MDefinition* boxedOperand = operand;
   // Replace Float32 by double
   if (operand->type() == MIRType::Float32) {
@@ -90,14 +91,6 @@ MDefinition* js::jit::AlwaysBoxAt(TempAllocator& alloc, MInstruction* at,
   MBox* box = MBox::New(alloc, boxedOperand);
   at->block()->insertBefore(at, box);
   return box;
-}
-
-static MDefinition* BoxAt(TempAllocator& alloc, MInstruction* at,
-                          MDefinition* operand) {
-  if (operand->isUnbox()) {
-    return operand->toUnbox()->input();
-  }
-  return AlwaysBoxAt(alloc, at, operand);
 }
 
 bool BoxInputsPolicy::staticAdjustInputs(TempAllocator& alloc,
@@ -933,6 +926,12 @@ bool StoreUnboxedScalarPolicy::adjustValueInput(TempAllocator& alloc,
       break;
     default:
       MOZ_CRASH("Invalid array type");
+  }
+
+  // Canonicalize floating point values for differential testing.
+  if (Scalar::isFloatingType(writeType) && js::SupportDifferentialTesting()) {
+    value = MCanonicalizeNaN::New(alloc, value);
+    ins->block()->insertBefore(ins, value->toInstruction());
   }
 
   if (value != curValue) {

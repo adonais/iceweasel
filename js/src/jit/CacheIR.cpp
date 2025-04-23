@@ -5039,15 +5039,12 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
              "Extensible objects should not have frozen elements");
 
   uint32_t initLength = nobj->getDenseInitializedLength();
+  uint32_t capacity = nobj->getDenseCapacity();
 
-  // Optimize if we're adding an element at initLength or writing to a hole.
-  //
-  // In the case where index > initLength, we need noteHasDenseAdd to be called
-  // to ensure Ion is aware that writes have occurred to-out-of-bound indexes
-  // before.
-  //
-  // TODO(post-Warp): noteHasDenseAdd (nee: noteArrayWriteHole) no longer exists
-  bool isAdd = index == initLength;
+  // Optimize if:
+  // a) we're adding an element inside capacity, or one element past.
+  // b) we're writing to a hole inside initLength.
+  bool isAdd = index >= initLength && index <= capacity;
   bool isHoleInBounds =
       index < initLength && !nobj->containsDenseElement(index);
   if (!isAdd && !isHoleInBounds) {
@@ -7425,6 +7422,38 @@ InlinableNativeIRGenerator::tryAttachIsCrossRealmArrayConstructor() {
   writer.returnFromIC();
 
   trackAttached("IsCrossRealmArrayConstructor");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachCanOptimizeArraySpecies() {
+  // Self-hosted code calls this with an object argument.
+  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(args_[0].isObject());
+
+  SharedShape* shape = GlobalObject::getArrayShapeWithDefaultProto(cx_);
+  if (!shape) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  initializeInputOperand();
+
+  // Note: we don't need to call emitNativeCalleeGuard for intrinsics.
+
+  if (cx_->realm()->realmFuses.optimizeArraySpeciesFuse.intact()) {
+    ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
+    ObjOperandId objId = writer.guardToObject(argId);
+    writer.guardFuse(RealmFuses::FuseIndex::OptimizeArraySpeciesFuse);
+    writer.hasShapeResult(objId, shape);
+    writer.returnFromIC();
+    trackAttached("CanOptimizeArraySpecies.Optimized");
+  } else {
+    writer.loadBooleanResult(false);
+    writer.returnFromIC();
+    trackAttached("CanOptimizeArraySpecies.Deoptimized");
+  }
+
   return AttachDecision::Attach;
 }
 
@@ -12291,6 +12320,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachIsConstructor();
     case InlinableNative::IntrinsicIsCrossRealmArrayConstructor:
       return tryAttachIsCrossRealmArrayConstructor();
+    case InlinableNative::IntrinsicCanOptimizeArraySpecies:
+      return tryAttachCanOptimizeArraySpecies();
     case InlinableNative::IntrinsicGuardToArrayIterator:
     case InlinableNative::IntrinsicGuardToMapIterator:
     case InlinableNative::IntrinsicGuardToSetIterator:

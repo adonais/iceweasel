@@ -37,6 +37,7 @@ gecko_metrics = [
     "dom/metrics.yaml",
     "dom/notification/metrics.yaml",
     "dom/performance/metrics.yaml",
+    "dom/power/metrics.yaml",
     "dom/push/metrics.yaml",
     "dom/quota/metrics.yaml",
     "dom/security/metrics.yaml",
@@ -64,7 +65,6 @@ gecko_metrics = [
     "services/common/metrics.yaml",
     "services/sync/modules/metrics.yaml",
     "toolkit/components/antitracking/bouncetrackingprotection/metrics.yaml",
-    "toolkit/components/antitracking/imageinputmetadatastripper/metrics.yaml",
     "toolkit/components/antitracking/metrics.yaml",
     "toolkit/components/captchadetection/metrics.yaml",
     "toolkit/components/cookiebanners/metrics.yaml",
@@ -75,6 +75,7 @@ gecko_metrics = [
     "toolkit/components/glean/metrics.yaml",
     "toolkit/components/mediasniffer/metrics.yaml",
     "toolkit/components/messaging-system/metrics.yaml",
+    "toolkit/components/ml/metrics.yaml",
     "toolkit/components/normandy/metrics.yaml",
     "toolkit/components/passwordmgr/metrics.yaml",
     "toolkit/components/pdfjs/metrics.yaml",
@@ -89,6 +90,7 @@ gecko_metrics = [
     "toolkit/components/url-classifier/metrics.yaml",
     "toolkit/content/metrics.yaml",
     "toolkit/content/widgets/metrics.yaml",
+    "toolkit/modules/gecko_metrics.yaml",
     "toolkit/mozapps/extensions/metrics.yaml",
     "toolkit/mozapps/extensions/metrics_legacy.yaml",
     "toolkit/mozapps/handling/metrics.yaml",
@@ -102,6 +104,7 @@ gecko_metrics = [
 # Metrics that are sent by Firefox Desktop
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 firefox_desktop_metrics = [
+    "browser/actors/metrics.yaml",
     "browser/components/asrouter/metrics.yaml",
     "browser/components/backup/metrics.yaml",
     "browser/components/doh/metrics.yaml",
@@ -241,6 +244,7 @@ pings_by_app_or_lib_id = {
     "firefox.desktop.background.update": gecko_pings
     + background_update_pings
     + test_pings,
+    "firefox.desktop.background.tasks": gecko_pings + background_tasks_pings,
     # Not an _actual_ app ID in use,
     # but needed to differentiate ping registration in geckoview builds
     "gecko": gecko_pings + test_pings,

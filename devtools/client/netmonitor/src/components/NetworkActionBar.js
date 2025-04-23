@@ -7,7 +7,7 @@
 const {
   Component,
   createFactory,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const {
   connect,
 } = require("resource://devtools/client/shared/vendor/react-redux.js");
@@ -22,13 +22,15 @@ const {
   PANELS,
 } = require("resource://devtools/client/netmonitor/src/constants.js");
 
-const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 
 const Tabbar = createFactory(
   require("resource://devtools/client/shared/components/tabs/TabBar.js")
 );
 const TabPanel = createFactory(
-  require("resource://devtools/client/shared/components/tabs/Tabs.js").TabPanel
+  ChromeUtils.importESModule(
+    "resource://devtools/client/shared/components/tabs/Tabs.mjs"
+  ).TabPanel
 );
 
 loader.lazyGetter(this, "SearchPanel", function () {

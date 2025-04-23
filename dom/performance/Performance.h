@@ -36,6 +36,7 @@ class PerformanceService;
 class PerformanceStorage;
 class PerformanceTiming;
 class PerformanceEventTiming;
+class PerformanceInteractionMetrics;
 class WorkerGlobalScope;
 class EventCounts;
 
@@ -148,11 +149,17 @@ class Performance : public DOMEventTargetHelper {
 
   virtual class EventCounts* EventCounts() = 0;
 
+  virtual uint64_t InteractionCount() = 0;
+
   virtual void QueueNavigationTimingEntry() = 0;
 
   virtual void UpdateNavigationTimingEntry() = 0;
 
   virtual void DispatchPendingEventTimingEntries() = 0;
+
+  virtual PerformanceInteractionMetrics& GetPerformanceInteractionMetrics() = 0;
+
+  virtual Maybe<uint64_t> ComputeInteractionId(const WidgetEvent* aEvent) = 0;
 
   void QueueNotificationObserversTask();
 

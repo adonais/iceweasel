@@ -2270,6 +2270,12 @@ class AddonDetails extends HTMLElement {
     this.querySelector(".addon-detail-sitepermissions").hidden =
       addon.type !== "sitepermission";
 
+    // Set the add-on for the mlmodel details.
+    this.mlModelDetails = this.querySelector("addon-mlmodel-details");
+    this.mlModelDetails.addon = addon.type == "mlmodel" ? addon : null;
+    this.querySelector(".addon-detail-mlmodel").hidden =
+      addon.type != "mlmodel";
+
     // Set the add-on for the preferences section.
     this.inlineOptions = this.querySelector("inline-options-browser");
     this.inlineOptions.setAddon(addon);
@@ -3456,9 +3462,8 @@ class AddonList extends HTMLElement {
   }
 
   updateSectionIfEmpty(section) {
-    // The header is added before any add-on cards, so if there's only one
-    // child then it's the header. In that case we should empty out the section.
-    if (section.children.length == 1) {
+    // Clear the entire list if there are no `addon-card` childrens.
+    if (!section.querySelectorAll("addon-card").length) {
       section.textContent = "";
     }
   }
@@ -3666,8 +3671,9 @@ class AddonList extends HTMLElement {
       section.setAttribute("class", sectionClass);
     }
 
-    // Render the heading and add-ons if there are any.
-    if (addons.length) {
+    // Render the heading and add-ons if there are any, except for mlmodel list
+    // view which only shows installed models.
+    if (this.type != "mlmodel" && addons.length) {
       section.appendChild(this.createSectionHeading(index));
     }
 
@@ -3695,18 +3701,26 @@ class AddonList extends HTMLElement {
     }
     frag.appendChild(this.pendingUninstallStack);
 
+    if (this.type == "mlmodel") {
+      frag.appendChild(document.createElement("mlmodel-list-intro"));
+    }
+
     // Render the sections.
     for (let i = 0; i < sectionedAddons.length; i++) {
       this.sections[i].node = this.renderSection(sectionedAddons[i], i);
       frag.appendChild(this.sections[i].node);
     }
 
-    // Render the placeholder that is shown when all sections are empty.
-    // This call is after rendering the sections, because its visibility
-    // is controlled through the general sibling combinator relative to
-    // the sections (section ~).
-    let message = this.createEmptyListMessage();
-    frag.appendChild(message);
+    // Add the "empty list message" elements (but omit it in the list view
+    // related to the "mlmodel" type).
+    if (this.type != "mlmodel") {
+      // Render the placeholder that is shown when all sections are empty.
+      // This call is after rendering the sections, because its visibility
+      // is controlled through the general sibling combinator relative to
+      // the sections (section ~).
+      let message = this.createEmptyListMessage();
+      frag.appendChild(message);
+    }
 
     // Make sure fluent has set all the strings before we render. This will
     // avoid the height changing as strings go from 0 height to having text.

@@ -5,11 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "vm/RealmFuses.h"
 
+#include "builtin/MapObject.h"
+#include "builtin/Promise.h"
+#include "builtin/WeakMapObject.h"
+#include "builtin/WeakSetObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/NativeObject.h"
 #include "vm/ObjectOperations.h"
 #include "vm/Realm.h"
 #include "vm/SelfHosting.h"
+
+#include "vm/JSObject-inl.h"
+
+using namespace js;
 
 void js::InvalidatingRealmFuse::popFuse(JSContext* cx, RealmFuses& realmFuses) {
   InvalidatingFuse::popFuse(cx);
@@ -115,6 +123,100 @@ bool js::OptimizeArrayIteratorPrototypeFuse::checkInvariant(JSContext* cx) {
          realmFuses.objectPrototypeHasNoReturnProperty.intact();
 }
 
+static bool ObjectHasDataProperty(NativeObject* obj, PropertyKey key,
+                                  Value* val) {
+  mozilla::Maybe<PropertyInfo> prop = obj->lookupPure(key);
+  if (prop.isNothing() || !prop->isDataProperty()) {
+    return false;
+  }
+  *val = obj->getSlot(prop->slot());
+  return true;
+}
+
+// Returns true if `obj` has a data property with the given `key` and its value
+// is `expectedValue`.
+static bool ObjectHasDataPropertyValue(NativeObject* obj, PropertyKey key,
+                                       const Value& expectedValue) {
+  Value v;
+  if (!ObjectHasDataProperty(obj, key, &v)) {
+    return false;
+  }
+  return v == expectedValue;
+}
+
+// Returns true if `obj` has a data property with the given `key` and its value
+// is a native function that matches `expectedFunction`.
+static bool ObjectHasDataPropertyFunction(NativeObject* obj, PropertyKey key,
+                                          JSNative expectedFunction) {
+  Value v;
+  if (!ObjectHasDataProperty(obj, key, &v)) {
+    return false;
+  }
+  if (!IsNativeFunction(v, expectedFunction)) {
+    return false;
+  }
+  if (obj->realm() != v.toObject().as<JSFunction>().realm()) {
+    return false;
+  }
+  return true;
+}
+
+// Returns true if `obj` has a data property with the given `key` and its value
+// is a self-hosted function with `selfHostedName`.
+static bool ObjectHasDataPropertyFunction(NativeObject* obj, PropertyKey key,
+                                          PropertyName* selfHostedName) {
+  Value v;
+  if (!ObjectHasDataProperty(obj, key, &v)) {
+    return false;
+  }
+  if (!IsSelfHostedFunctionWithName(v, selfHostedName)) {
+    return false;
+  }
+  if (obj->realm() != v.toObject().as<JSFunction>().realm()) {
+    return false;
+  }
+  return true;
+}
+
+static bool ObjectHasGetterProperty(NativeObject* obj, PropertyKey key,
+                                    JSFunction** getter) {
+  mozilla::Maybe<PropertyInfo> prop = obj->lookupPure(key);
+  if (prop.isNothing() || !prop->isAccessorProperty()) {
+    return false;
+  }
+  JSObject* getterObject = obj->getGetter(*prop);
+  if (!getterObject || !getterObject->is<JSFunction>()) {
+    return false;
+  }
+  if (obj->realm() != getterObject->as<JSFunction>().realm()) {
+    return false;
+  }
+  *getter = &getterObject->as<JSFunction>();
+  return true;
+}
+
+// Returns true if `obj` has an accessor property with the given `key` and the
+// getter is a native function that matches `expectedFunction`.
+static bool ObjectHasGetterFunction(NativeObject* obj, PropertyKey key,
+                                    JSNative expectedGetter) {
+  JSFunction* getter;
+  if (!ObjectHasGetterProperty(obj, key, &getter)) {
+    return false;
+  }
+  return IsNativeFunction(getter, expectedGetter);
+}
+
+// Returns true if `obj` has an accessor property with the given `key` and the
+// getter is a self-hosted function with `selfHostedName`.
+static bool ObjectHasGetterFunction(NativeObject* obj, PropertyKey key,
+                                    PropertyName* selfHostedName) {
+  JSFunction* getter;
+  if (!ObjectHasGetterProperty(obj, key, &getter)) {
+    return false;
+  }
+  return IsSelfHostedFunctionWithName(getter, selfHostedName);
+}
+
 bool js::ArrayPrototypeIteratorFuse::checkInvariant(JSContext* cx) {
   // Prototype must be Array.prototype.
   auto* proto = cx->global()->maybeGetArrayPrototype();
@@ -127,19 +229,8 @@ bool js::ArrayPrototypeIteratorFuse::checkInvariant(JSContext* cx) {
       PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
 
   // Ensure that Array.prototype's @@iterator slot is unchanged.
-  mozilla::Maybe<PropertyInfo> prop = proto->lookupPure(iteratorKey);
-  if (prop.isNothing() || !prop->isDataProperty()) {
-    return false;
-  }
-
-  auto slot = prop->slot();
-  const Value& iterVal = proto->getSlot(slot);
-  if (!iterVal.isObject() || !iterVal.toObject().is<JSFunction>()) {
-    return false;
-  }
-
-  auto* iterFun = &iterVal.toObject().as<JSFunction>();
-  return IsSelfHostedFunctionWithName(iterFun, cx->names().dollar_ArrayValues_);
+  return ObjectHasDataPropertyFunction(proto, iteratorKey,
+                                       cx->names().dollar_ArrayValues_);
 }
 
 /* static */
@@ -152,22 +243,8 @@ bool js::ArrayPrototypeIteratorNextFuse::checkInvariant(JSContext* cx) {
   }
 
   // Ensure that %ArrayIteratorPrototype%'s "next" slot is unchanged.
-  mozilla::Maybe<PropertyInfo> prop = proto->lookupPure(cx->names().next);
-  if (prop.isNothing() || !prop->isDataProperty()) {
-    // Next property has been modified, return false, invariant no longer holds.
-    return false;
-  }
-
-  auto slot = prop->slot();
-
-  const Value& nextVal = proto->getSlot(slot);
-  if (!nextVal.isObject() || !nextVal.toObject().is<JSFunction>()) {
-    // Next property has been modified, return false, invariant no longer holds.
-    return false;
-  }
-
-  auto* nextFun = &nextVal.toObject().as<JSFunction>();
-  return IsSelfHostedFunctionWithName(nextFun, cx->names().ArrayIteratorNext);
+  return ObjectHasDataPropertyFunction(proto, NameToId(cx->names().next),
+                                       cx->names().ArrayIteratorNext);
 }
 
 static bool HasNoReturnName(JSContext* cx, JS::HandleObject proto) {
@@ -248,4 +325,171 @@ bool js::IteratorPrototypeHasObjectProto::checkInvariant(JSContext* cx) {
 bool js::ObjectPrototypeHasNoReturnProperty::checkInvariant(JSContext* cx) {
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
   return HasNoReturnName(cx, proto);
+}
+
+void js::OptimizeArraySpeciesFuse::popFuse(JSContext* cx,
+                                           RealmFuses& realmFuses) {
+  InvalidatingRealmFuse::popFuse(cx, realmFuses);
+  MOZ_ASSERT(cx->global());
+  cx->runtime()->setUseCounter(cx->global(),
+                               JSUseCounter::OPTIMIZE_ARRAY_SPECIES_FUSE);
+}
+
+bool js::OptimizeArraySpeciesFuse::checkInvariant(JSContext* cx) {
+  // Prototype must be Array.prototype.
+  auto* proto = cx->global()->maybeGetArrayPrototype();
+  if (!proto) {
+    // No proto, invariant still holds
+    return true;
+  }
+
+  auto* ctor = cx->global()->maybeGetConstructor<NativeObject>(JSProto_Array);
+  MOZ_ASSERT(ctor);
+
+  // Ensure Array.prototype's `constructor` slot is the `Array` constructor.
+  if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
+                                  ObjectValue(*ctor))) {
+    return false;
+  }
+
+  // Ensure Array's `@@species` slot is the $ArraySpecies getter.
+  PropertyKey speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
+  return ObjectHasGetterFunction(ctor, speciesKey,
+                                 cx->names().dollar_ArraySpecies_);
+}
+
+void js::OptimizePromiseLookupFuse::popFuse(JSContext* cx,
+                                            RealmFuses& realmFuses) {
+  InvalidatingRealmFuse::popFuse(cx, realmFuses);
+  MOZ_ASSERT(cx->global());
+  cx->runtime()->setUseCounter(cx->global(),
+                               JSUseCounter::OPTIMIZE_PROMISE_LOOKUP_FUSE);
+}
+
+bool js::OptimizePromiseLookupFuse::checkInvariant(JSContext* cx) {
+  // Prototype must be Promise.prototype.
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_Promise);
+  if (!proto) {
+    // No proto, invariant still holds.
+    return true;
+  }
+
+  auto* ctor = cx->global()->maybeGetConstructor<NativeObject>(JSProto_Promise);
+  MOZ_ASSERT(ctor);
+
+  // Ensure Promise.prototype's `constructor` slot is the `Promise` constructor.
+  if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
+                                  ObjectValue(*ctor))) {
+    return false;
+  }
+
+  // Ensure Promise.prototype's `then` slot is the original function.
+  if (!ObjectHasDataPropertyFunction(proto, NameToId(cx->names().then),
+                                     js::Promise_then)) {
+    return false;
+  }
+
+  // Ensure Promise's `@@species` slot is the original getter.
+  PropertyKey speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
+  if (!ObjectHasGetterFunction(ctor, speciesKey, js::Promise_static_species)) {
+    return false;
+  }
+
+  // Ensure Promise's `resolve` slot is the original function.
+  if (!ObjectHasDataPropertyFunction(ctor, NameToId(cx->names().resolve),
+                                     js::Promise_static_resolve)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool js::OptimizeMapObjectIteratorFuse::checkInvariant(JSContext* cx) {
+  // Ensure Map.prototype's @@iterator slot is unchanged.
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_Map);
+  if (!proto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  PropertyKey iteratorKey =
+      PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
+  if (!ObjectHasDataPropertyFunction(proto, iteratorKey, MapObject::entries)) {
+    return false;
+  }
+
+  // Ensure %MapIteratorPrototype%'s `next` slot is unchanged.
+  auto* iterProto = cx->global()->maybeBuiltinProto(
+      GlobalObject::ProtoKind::MapIteratorProto);
+  if (!iterProto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  return ObjectHasDataPropertyFunction(&iterProto->as<NativeObject>(),
+                                       NameToId(cx->names().next),
+                                       cx->names().MapIteratorNext);
+}
+
+bool js::OptimizeSetObjectIteratorFuse::checkInvariant(JSContext* cx) {
+  // Ensure Set.prototype's @@iterator slot is unchanged.
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_Set);
+  if (!proto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  PropertyKey iteratorKey =
+      PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
+  if (!ObjectHasDataPropertyFunction(proto, iteratorKey, SetObject::values)) {
+    return false;
+  }
+
+  // Ensure %SetIteratorPrototype%'s `next` slot is unchanged.
+  auto* iterProto = cx->global()->maybeBuiltinProto(
+      GlobalObject::ProtoKind::SetIteratorProto);
+  if (!iterProto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  return ObjectHasDataPropertyFunction(&iterProto->as<NativeObject>(),
+                                       NameToId(cx->names().next),
+                                       cx->names().SetIteratorNext);
+}
+
+bool js::OptimizeMapPrototypeSetFuse::checkInvariant(JSContext* cx) {
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_Map);
+  if (!proto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  return ObjectHasDataPropertyFunction(proto, NameToId(cx->names().set),
+                                       MapObject::set);
+}
+
+bool js::OptimizeSetPrototypeAddFuse::checkInvariant(JSContext* cx) {
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_Set);
+  if (!proto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  return ObjectHasDataPropertyFunction(proto, NameToId(cx->names().add),
+                                       SetObject::add);
+}
+
+bool js::OptimizeWeakMapPrototypeSetFuse::checkInvariant(JSContext* cx) {
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_WeakMap);
+  if (!proto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  return ObjectHasDataPropertyFunction(proto, NameToId(cx->names().set),
+                                       WeakMapObject::set);
+}
+
+bool js::OptimizeWeakSetPrototypeAddFuse::checkInvariant(JSContext* cx) {
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_WeakSet);
+  if (!proto) {
+    // No proto, invariant still holds
+    return true;
+  }
+  return ObjectHasDataPropertyFunction(proto, NameToId(cx->names().add),
+                                       WeakSetObject::add);
 }

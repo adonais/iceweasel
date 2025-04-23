@@ -48,6 +48,7 @@ perf:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1862939
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892231
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1923894
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1954216
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1759744#c5
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1799727#c4
@@ -98,6 +99,11 @@ perf:
         type: quantity
         description:
           "Time spent in redirections for the top level document."
+        unit: ms
+      tls_handshake_time:
+        type: quantity
+        description:
+          "Time spent in TLS handshake for the top level document."
         unit: ms
       redirect_count:
         description:
@@ -814,3 +820,74 @@ dom.parentprocess:
       - alissy@mozilla.com
     expires: never
     telemetry_mirror: DOM_PARENTPROCESS_PROCESS_LAUNCH_ERRORS
+
+dom.textfragment:
+  find_directives:
+    type: timing_distribution
+    description: |
+      Time spent in TextDirectiveFinder::FindTextDirectivesInDocument() per page load
+    time_unit: millisecond
+    expires: never
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1942117
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1942117
+    notification_emails:
+      - dom-core@mozilla.com
+      - jjaschke@mozilla.com
+
+  create_directive:
+    type: timing_distribution
+    description: |
+      Time spent in FragmentDirective::CreateTextDirective()
+    time_unit: millisecond
+    expires: never
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1942117
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1942117
+    notification_emails:
+      - dom-core@mozilla.com
+      - jjaschke@mozilla.com
+
+glam_experiment:
+  protect_time:
+    type: timing_distribution
+    disabled: true
+    time_unit: millisecond
+    description: >
+      Duplicate of:
+      `javascript_pageload.protect_time`
+
+      Intended for the purpose of testing client side sampling of data. This
+      metric is disabled by default and will be enabled only for the purpose
+      of the experiment. See Bug 1947604 for more information.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1947604
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1709139#c4
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - tlong@mozilla.com
+      - efilho@mozilla.com
+    expires: 146
+  largest_contentful_paint:
+    type: timing_distribution
+    disabled: true
+    time_unit: millisecond
+    description: >
+      Duplicate of:
+      `perf.largest_contentful_paint`
+
+      Intended for the purpose of testing client side sampling of data. This
+      metric is disabled by default and will be enabled only for the purpose
+      of the experiment. See Bug 1947604 for more information.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1947604
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862939#c5
+    notification_emails:
+      - tlong@mozilla.com
+      - efilho@mozilla.com
+    expires: 146

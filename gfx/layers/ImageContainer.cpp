@@ -371,17 +371,22 @@ void ImageContainer::SetCurrentImages(const nsTArray<NonOwningImage>& aImages) {
   SetCurrentImageInternal(aImages);
 }
 
-void ImageContainer::ClearAllImages() {
+void ImageContainer::ClearImagesInHost(ClearImagesType aType) {
+  MOZ_ASSERT(mIsAsync);
+  if (!mIsAsync) {
+    return;
+  }
+
   mRecursiveMutex.Lock();
   if (mImageClient) {
     RefPtr<ImageClient> imageClient = mImageClient;
     mRecursiveMutex.Unlock();
 
-    // Let ImageClient release all TextureClients. This doesn't return
-    // until ImageBridge has called ClearCurrentImageFromImageBridge.
+    // Let ImageClient clear Images(TextureClients). This doesn't return
+    // until ImageBridge has called ImageClient::ClearImagesInHost.
     if (RefPtr<ImageBridgeChild> imageBridge =
             ImageBridgeChild::GetSingleton()) {
-      imageBridge->FlushAllImages(imageClient, this);
+      imageBridge->ClearImagesInHost(imageClient, this, aType);
     }
     return;
   }
@@ -647,6 +652,42 @@ Maybe<PlanarYCbCrData> PlanarYCbCrData::From(
                        << ", " << yuvDesc.cbCrSize().width << ","
                        << yuvDesc.cbCrSize().height << ", " << yuvData.mYStride
                        << "," << yuvData.mCbCrStride << ", "
+                       << yuvData.mYChannel << "," << yuvData.mCbChannel << ","
+                       << yuvData.mCrChannel;
+    return {};
+  }
+
+  return Some(yuvData);
+}
+
+Maybe<PlanarYCbCrData> PlanarYCbCrData::From(
+    const VideoData::YCbCrBuffer& yuvDesc) {
+  constexpr int YPlane = 0;
+  constexpr int CbPlane = 1;
+  constexpr int CrPlane = 2;
+
+  PlanarYCbCrData yuvData;
+  yuvData.mYStride = yuvDesc.mPlanes[YPlane].mStride;
+  yuvData.mCbCrStride = yuvDesc.mPlanes[CbPlane].mStride;
+  yuvData.mYSkip = yuvDesc.mPlanes[YPlane].mSkip;
+  yuvData.mCbSkip = yuvDesc.mPlanes[CbPlane].mSkip;
+  yuvData.mCrSkip = yuvDesc.mPlanes[CrPlane].mSkip;
+  yuvData.mPictureRect = gfx::IntRect(0, 0, yuvDesc.mPlanes[YPlane].mWidth,
+                                      yuvDesc.mPlanes[YPlane].mHeight);
+  yuvData.mColorDepth = yuvDesc.mColorDepth;
+  yuvData.mYUVColorSpace = yuvDesc.mYUVColorSpace;
+  yuvData.mColorRange = yuvDesc.mColorRange;
+  yuvData.mChromaSubsampling = yuvDesc.mChromaSubsampling;
+  yuvData.mYChannel = yuvDesc.mPlanes[YPlane].mData;
+  yuvData.mCbChannel = yuvDesc.mPlanes[CbPlane].mData;
+  yuvData.mCrChannel = yuvDesc.mPlanes[CrPlane].mData;
+
+  if (yuvData.mYSkip || yuvData.mCbSkip || yuvData.mCrSkip ||
+      yuvData.mYStride < 0 || yuvData.mCbCrStride < 0 || !yuvData.mYChannel ||
+      !yuvData.mCbChannel || !yuvData.mCrChannel) {
+    gfxCriticalError() << "Unusual PlanarYCbCrData: " << yuvData.mYSkip << ","
+                       << yuvData.mCbSkip << "," << yuvData.mCrSkip << ","
+                       << yuvData.mYStride << "," << yuvData.mCbCrStride << ", "
                        << yuvData.mYChannel << "," << yuvData.mCbChannel << ","
                        << yuvData.mCrChannel;
     return {};

@@ -49,6 +49,7 @@ import mozilla.components.feature.search.ext.waitForSelectedOrDefaultSearchEngin
 import mozilla.components.feature.syncedtabs.commands.GlobalSyncedTabsCommandsProvider
 import mozilla.components.feature.top.sites.TopSitesFrecencyConfig
 import mozilla.components.feature.top.sites.TopSitesProviderConfig
+import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.service.sync.logins.LoginsApiException
@@ -114,6 +115,7 @@ import org.mozilla.fenix.wallpapers.Wallpaper
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
+import mozilla.appservices.init_rust_components.initialize as InitializeRustComponents
 
 private const val RAM_THRESHOLD_MEGABYTES = 1024
 private const val BYTES_TO_MEGABYTES_CONVERSION = 1024.0 * 1024.0
@@ -520,7 +522,10 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
      * thread, early in the app startup sequence.
      */
     private fun beginSetupMegazord() {
-        // Note: Megazord.init() must be called as soon as possible ...
+        // Rust components must be initialized at the very beginning, before any other Rust call, ...
+        InitializeRustComponents()
+
+        // ... then Megazord.init() must be called as soon as possible, ...
         Megazord.init()
 
         initializeRustErrors(components.analytics.crashReporter)
@@ -639,6 +644,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
     }
 
+    @Suppress("ForbiddenComment")
     private fun initializeWebExtensionSupport() {
         try {
             GlobalAddonDependencyProvider.initialize(
@@ -672,6 +678,15 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                 onExtensionsLoaded = { extensions ->
                     components.addonUpdater.registerForFutureUpdates(extensions)
                     subscribeForNewAddonsIfNeeded(components.supportedAddonsChecker, extensions)
+
+                    // Bug 1948634 - Make sure the webcompat-reporter extension is fully uninstalled.
+                    // This is added here because we need gecko to load the extension first.
+                    //
+                    // TODO: Bug 1953359 - remove the code below in the next release.
+                    if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
+                        logger.debug("Attempting to uninstall the WebCompat Reporter extension")
+                        WebCompatReporterFeature.uninstall(components.core.engine)
+                    }
                 },
                 onUpdatePermissionRequest = components.addonUpdater::onUpdatePermissionRequest,
             )

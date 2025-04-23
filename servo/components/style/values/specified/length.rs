@@ -1748,6 +1748,23 @@ impl LengthPercentage {
     }
 
     /// Parses allowing the unitless length quirk, as well as allowing
+    /// anchor-positioning related function, `anchor-size()`.
+    #[inline]
+    fn parse_quirky_with_anchor_size_function<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        allow_quirks: AllowQuirks,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_internal(
+            context,
+            input,
+            AllowedNumericType::All,
+            allow_quirks,
+            AllowAnchorPositioningFunctions::AllowAnchorSize,
+        )
+    }
+
+    /// Parses allowing the unitless length quirk, as well as allowing
     /// anchor-positioning related functions, `anchor()` and `anchor-size()`.
     #[inline]
     pub fn parse_quirky_with_anchor_functions<'i, 't>(
@@ -2008,17 +2025,13 @@ macro_rules! parse_size_non_length {
     ($size:ident, $input:expr, $auto_or_none:expr => $auto_or_none_ident:ident) => {{
         let size = $input.try_parse(|input| {
             Ok(try_match_ident_ignore_ascii_case! { input,
-                #[cfg(feature = "gecko")]
                 "min-content" | "-moz-min-content" => $size::MinContent,
-                #[cfg(feature = "gecko")]
                 "max-content" | "-moz-max-content" => $size::MaxContent,
-                #[cfg(feature = "gecko")]
                 "fit-content" | "-moz-fit-content" => $size::FitContent,
                 #[cfg(feature = "gecko")]
                 "-moz-available" => $size::MozAvailable,
                 #[cfg(feature = "gecko")]
                 "-webkit-fill-available" if is_webkit_fill_available_keyword_enabled() => $size::WebkitFillAvailable,
-                #[cfg(feature = "gecko")]
                 "stretch" if is_stretch_enabled() => $size::Stretch,
                 $auto_or_none => $size::$auto_or_none_ident,
             })
@@ -2033,18 +2046,12 @@ macro_rules! parse_size_non_length {
 fn is_webkit_fill_available_keyword_enabled() -> bool {
     static_prefs::pref!("layout.css.webkit-fill-available.enabled")
 }
-#[cfg(feature = "gecko")]
 fn is_stretch_enabled() -> bool {
     static_prefs::pref!("layout.css.stretch-size-keyword.enabled")
 }
 
-#[cfg(feature = "gecko")]
 fn is_fit_content_function_enabled() -> bool {
     static_prefs::pref!("layout.css.fit-content-function.enabled")
-}
-#[cfg(feature = "servo")]
-fn is_fit_content_function_enabled() -> bool {
-    false
 }
 
 macro_rules! parse_fit_content_function {
@@ -2140,8 +2147,9 @@ impl Margin {
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(l) = input.try_parse(|i| LengthPercentage::parse_quirky(context, i, allow_quirks))
-        {
+        if let Ok(l) = input.try_parse(|i| {
+            LengthPercentage::parse_quirky_with_anchor_size_function(context, i, allow_quirks)
+        }) {
             return Ok(Self::LengthPercentage(l));
         }
         if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {

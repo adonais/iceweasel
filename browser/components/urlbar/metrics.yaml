@@ -154,7 +154,7 @@ urlbar:
         description: >
           Comma separated list of actions keys in the order they were shown to
           the user. Possible keys are: `addons`, `bookmarks`, `clear`, `downloads`,
-          `extensions`, `inspect`, `logins`, `plugins`, `print`, `private`,
+          `extensions`, `inspect`, `logins`, `print`, `private`,
           `refresh`, `restart`, `savepdf`, `screenshot`, `settings`, `tabswitch`,
           `themes`, `update`, `viewsource`.
           If there is no action shown in a position that is denoted with `none`.
@@ -422,7 +422,7 @@ urlbar:
         description: >
           Comma separated list of actions keys in the order they were shown to
           the user. Possible keys are: `addons`, `bookmarks`, `clear`, `downloads`,
-          `extensions`, `inspect`, `logins`, `plugins`, `print`, `private`,
+          `extensions`, `inspect`, `logins`, `print`, `private`,
           `refresh`, `restart`, `savepdf`, `screenshot`, `settings`, `tabswitch`,
           `themes`, `update`, `viewsource`.
           If there is no action shown in a position that is denoted with `none`.
@@ -686,6 +686,42 @@ urlbar:
     expires: never
     telemetry_mirror: URLBAR_AUTOFILL_DELETION
 
+  autocomplete_first_result_time:
+    type: timing_distribution
+    description: >
+      PLACES: Time for first autocomplete result if > 50ms (ms)
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950710
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950710
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - adw@mozilla.com
+    expires: never
+    telemetry_mirror: PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS
+
+  autocomplete_sixth_result_time:
+    type: timing_distribution
+    description: >
+      PLACES: Time for the 6 first autocomplete results (ms)
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1489524
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1489524
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - adw@mozilla.com
+    expires: never
+    telemetry_mirror: PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS
+
 # Replacement for PingCentre "quicksuggest-block|impression|click" pings.
 quick_suggest:
   ping_type:
@@ -946,14 +982,14 @@ suggest:
     time_unit: microsecond
     labels:
       - icon
-      - data
+      - amp
+      - wikipedia
       - amo-suggestions
       - pocket-suggestions
       - yelp-suggestions
       - mdn-suggestions
       - weather
       - configuration
-      - amp-mobile-suggestions
       - fakespot-suggestions
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1908397
@@ -972,14 +1008,14 @@ suggest:
     time_unit: microsecond
     labels:
       - icon
-      - data
+      - amp
+      - wikipedia
       - amo-suggestions
       - pocket-suggestions
       - yelp-suggestions
       - mdn-suggestions
       - weather
       - configuration
-      - amp-mobile-suggestions
       - fakespot-suggestions
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1908397
@@ -998,7 +1034,6 @@ suggest:
     time_unit: microsecond
     labels:
       - amp
-      - ampmobile
       - wikipedia
       - amo
       - pocket
@@ -1036,7 +1071,7 @@ suggest_relevance:
     notification_emails:
       - disco-team@mozilla.com
       - najiang@mozilla.com
-    expires: 139
+    expires: 147
     data_sensitivity:
       - technical
   outcome:
@@ -1056,106 +1091,9 @@ suggest_relevance:
     notification_emails:
       - disco-team@mozilla.com
       - najiang@mozilla.com
-    expires: 139
+    expires: 147
     data_sensitivity:
       - technical
-
-urlbar.impression:
-  autofill_about:
-    type: counter
-    description: >
-      Counts how many times about-page type was autofilled per engagement.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.impression.autofill_about.
-    bugs:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    data_reviews:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: URLBAR_IMPRESSION_AUTOFILL_ABOUT
-    no_lint:
-      - COMMON_PREFIX
-
-  autofill_adaptive:
-    type: counter
-    description: >
-      Counts how many times adaptive history type was autofilled per
-      engagement.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.impression.autofill_adaptive.
-    bugs:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    data_reviews:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: URLBAR_IMPRESSION_AUTOFILL_ADAPTIVE
-    no_lint:
-      - COMMON_PREFIX
-
-  autofill_origin:
-    type: counter
-    description: >
-      Counts how many times origin type was autofilled per engagement.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.impression.autofill_origin.
-    bugs:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    data_reviews:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: URLBAR_IMPRESSION_AUTOFILL_ORIGIN
-    no_lint:
-      - COMMON_PREFIX
-
-  autofill_other:
-    type: counter
-    description: >
-      Counts how many times other type was autofilled per engagement.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.impression.autofill_other.
-    bugs:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    data_reviews:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: URLBAR_IMPRESSION_AUTOFILL_OTHER
-    no_lint:
-      - COMMON_PREFIX
-
-  autofill_url:
-    type: counter
-    description: >
-      Counts how many times url type was autofilled per engagement.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.impression.autofill_url.
-    bugs:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    data_reviews:
-      - https://bugzil.la/1774305
-      - https://bugzil.la/1780188
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: URLBAR_IMPRESSION_AUTOFILL_URL
-    no_lint:
-      - COMMON_PREFIX
 
 urlbar.trending:
   block:

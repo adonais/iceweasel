@@ -22,7 +22,6 @@
 pref("security.tls.insecure_fallback_hosts", "");
 
 pref("security.default_personal_cert",   "Ask Every Time");
-pref("security.remember_cert_checkbox_default_setting", true);
 
 // This preference controls what signature algorithms are accepted for signed
 // apps (i.e. add-ons). The number is interpreted as a bit mask with the
@@ -263,11 +262,7 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   pref("media.navigator.video.default_height",0); // adaptive default
   pref("media.navigator.video.max_fs", 12288); // Enough for 2048x1536
   pref("media.navigator.video.max_fr", 60);
-  #ifdef NIGHTLY_BUILD
-    pref("media.navigator.video.disable_h264_baseline", false);
-  #else
-    pref("media.navigator.video.disable_h264_baseline", true);
-  #endif
+  pref("media.navigator.video.disable_h264_baseline", false);
   pref("media.navigator.video.h264.level", 31); // 0x42E01f - level 3.1
   pref("media.navigator.video.h264.max_br", 0);
   pref("media.navigator.video.h264.max_mbps", 0);
@@ -704,6 +699,13 @@ pref("devtools.performance.recording.power.external-url", "");
 pref("devtools.performance.recording.markers.external-url", "");
 // The popup will display some introductory text the first time it is displayed.
 pref("devtools.performance.popup.intro-displayed", false);
+// This preference controls whether the "more actions" menu in about:profiling
+// contains entries that help Firefox developers.
+#if defined(NIGHTLY_BUILD) || !defined(MOZILLA_OFFICIAL)
+  pref("devtools.performance.aboutprofiling.has-developer-options", true);
+#else
+  pref("devtools.performance.aboutprofiling.has-developer-options", false);
+#endif
 
 // Compatibility preferences
 // Stringified array of target browsers that users investigate.
@@ -1478,9 +1480,6 @@ pref("network.proxy.autoconfig_url.include_path", false);
 pref("network.proxy.autoconfig_retry_interval_min", 5);    // 5 seconds
 pref("network.proxy.autoconfig_retry_interval_max", 300);  // 5 minutes
 pref("network.proxy.enable_wpad_over_dhcp", true);
-
-// Use the HSTS preload list by default
-pref("network.stricttransportsecurity.preloadlist", true);
 
 pref("converter.html2txt.structs",          true); // Output structured phrases (strong, em, code, sub, sup, b, i, u)
 pref("converter.html2txt.header_strategy",  1); // 0 = no indention; 1 = indention, increased with header level; 2 = numbering and slight indention
@@ -2983,15 +2982,15 @@ pref("font.size.monospace.x-math", 13);
 
   pref("font.name-list.serif.zh-CN", "Charis SIL Compact, Noto Serif CJK SC, Noto Serif, Droid Serif, Droid Sans Fallback");
   pref("font.name-list.sans-serif.zh-CN", "Roboto, Google Sans, Droid Sans, Noto Sans SC, Noto Sans CJK SC, SEC CJK SC, Droid Sans Fallback");
-  pref("font.name-list.monospace.zh-CN", "Droid Sans Mono, Noto Sans Mono CJK SC, SEC Mono CJK SC, MiSans VF, Droid Sans Fallback");
+  pref("font.name-list.monospace.zh-CN", "Droid Sans Mono, Noto Sans Mono CJK SC, SEC Mono CJK SC, Noto Sans CJK SC, MiSans VF, MiSans, Droid Sans Fallback");
 
   pref("font.name-list.serif.zh-HK", "Charis SIL Compact, Noto Serif CJK TC, Noto Serif, Droid Serif, Droid Sans Fallback");
   pref("font.name-list.sans-serif.zh-HK", "Roboto, Google Sans, Droid Sans, Noto Sans TC, Noto Sans SC, Noto Sans CJK TC, SEC CJK TC, Droid Sans Fallback");
-  pref("font.name-list.monospace.zh-HK", "Droid Sans Mono, Noto Sans Mono CJK TC, SEC Mono CJK TC, MiSans TC VF, Droid Sans Fallback");
+  pref("font.name-list.monospace.zh-HK", "Droid Sans Mono, Noto Sans Mono CJK TC, SEC Mono CJK TC, Noto Sans CJK TC, MiSans TC VF, MiSans TC, Droid Sans Fallback");
 
   pref("font.name-list.serif.zh-TW", "Charis SIL Compact, Noto Serif CJK TC, Noto Serif, Droid Serif, Droid Sans Fallback");
   pref("font.name-list.sans-serif.zh-TW", "Roboto, Google Sans, Droid Sans, Noto Sans TC, Noto Sans SC, Noto Sans CJK TC, SEC CJK TC, Droid Sans Fallback");
-  pref("font.name-list.monospace.zh-TW", "Droid Sans Mono, Noto Sans Mono CJK TC, SEC Mono CJK TC, MiSans TC VF, Droid Sans Fallback");
+  pref("font.name-list.monospace.zh-TW", "Droid Sans Mono, Noto Sans Mono CJK TC, SEC Mono CJK TC, Noto Sans CJK TC, MiSans TC VF, MiSans TC, Droid Sans Fallback");
 
   pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Charis SIL Compact");
   pref("font.name-list.sans-serif.x-math", "Roboto, Google Sans");
@@ -3181,9 +3180,6 @@ pref("network.buffer.cache.size",  32768);
 // Web Notification
 pref("dom.webnotifications.requireinteraction.count", 3);
 
-// Show favicons in web notifications.
-pref("alerts.showFavicons", false);
-
 // DOM full-screen API.
 #ifdef XP_MACOSX
   // Whether to use macOS native full screen for Fullscreen API
@@ -3332,9 +3328,11 @@ pref("urlclassifier.features.emailtracking.blocklistTables", "base-email-track-d
 pref("urlclassifier.features.emailtracking.allowlistTables", "mozstd-trackwhite-digest256");
 pref("urlclassifier.features.emailtracking.datacollection.blocklistTables", "base-email-track-digest256,content-email-track-digest256");
 pref("urlclassifier.features.emailtracking.datacollection.allowlistTables", "mozstd-trackwhite-digest256");
+pref("urlclassifier.features.consentmanager.annotate.blocklistTables", "consent-manager-track-digest256");
+pref("urlclassifier.features.consentmanager.annotate.allowlistTables", "mozstd-trackwhite-digest256");
 
 // These tables will never trigger a gethash call.
-pref("urlclassifier.disallow_completions", "goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256");
+pref("urlclassifier.disallow_completions", "goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256,consent-manager-track-digest256");
 
 // Workaround for Google Recaptcha
 pref("urlclassifier.trackingAnnotationSkipURLs", "google.com/recaptcha/,*.google.com/recaptcha/,d3vox9szr7t2nm.cloudfront.net");
@@ -3411,7 +3409,7 @@ pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozil
 
 // Mozilla Safe Browsing provider (for tracking protection and plugin blocking)
 pref("browser.safebrowsing.provider.mozilla.pver", "2.2");
-pref("browser.safebrowsing.provider.mozilla.lists", "base-track-digest256,mozstd-trackwhite-digest256,google-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256");
+pref("browser.safebrowsing.provider.mozilla.lists", "base-track-digest256,mozstd-trackwhite-digest256,google-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256,consent-manager-track-digest256");
 pref("browser.safebrowsing.provider.mozilla.updateURL", "moz-sbrs:://antitracking");
 pref("browser.safebrowsing.provider.mozilla.gethashURL", "https://shavar.services.mozilla.com/gethash?client=SAFEBROWSING_ID&appver=%MAJOR_VERSION%&pver=2.2");
 // Set to a date in the past to force immediate download in new profiles.
@@ -3445,6 +3443,9 @@ pref("browser.search.suggest.enabled.private", false);
 pref("browser.search.separatePrivateDefault", true);
 pref("browser.search.separatePrivateDefault.ui.enabled", false);
 pref("browser.search.removeEngineInfobar.enabled", true);
+// Temporary preference to allow switching between the Rust based search engine
+// selector and the JavaScript one (bug 1914143).
+pref("browser.search.rustSelector.featureGate", false);
 
 // GMPInstallManager prefs
 
@@ -3587,8 +3588,6 @@ pref("toolkit.pageThumbs.screenSizeDivisor", 7);
 pref("toolkit.pageThumbs.minWidth", 0);
 pref("toolkit.pageThumbs.minHeight", 0);
 
-pref("webextensions.tests", false);
-
 // 16MB default non-parseable upload limit for requestBody.raw.bytes
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
@@ -3661,11 +3660,7 @@ pref("browser.translations.chaos.errors", false);
 pref("browser.translations.chaos.timeoutMS", 0);
 
 // Enable the experimental machine learning inference engine.
-#ifdef NIGHTLY_BUILD
-  pref("browser.ml.enable", true);
-#else
-  pref("browser.ml.enable", false);
-#endif
+pref("browser.ml.enable", true);
 // Set to "All" to see all logs, which are useful for debugging.
 pref("browser.ml.logLevel", "Error");
 // Model hub root URL used to download models.
@@ -3678,17 +3673,10 @@ pref("browser.ml.modelCacheMaxSize", 4);
 pref("browser.ml.modelCacheTimeout", 120000);
 // Minimal Physical RAM required in GiB
 pref("browser.ml.minimumPhysicalMemory", 4);
-// Default memory usage for a model in GiB
-pref("browser.ml.defaultModelMemoryUsage", 1);
 // Check for memory before running
-pref("browser.ml.checkForMemory", false);
-// Maximum memory pressure (%)
-pref("browser.ml.maximumMemoryPressure", 80);
-// Queue wait timeout in seconds
-pref("browser.ml.queueWaitTimeout", 60);
-// Queue wait checks interval in seconds
-pref("browser.ml.queueWaitInterval", 1);
-
+pref("browser.ml.checkForMemory", true);
+// Allowed overrides for various ml features
+pref("browser.ml.overridePipelineOptions", "{}");
 
 // When a user cancels this number of authentication dialogs coming from
 // a single web page in a row, all following authentication dialogs will
@@ -4039,6 +4027,11 @@ pref("extensions.formautofill.loglevel", "Warn");
 // Temporary prefs that we will be removed if the telemetry data (added in Fx123) does not show any problems with the new heuristics.
 pref("extensions.formautofill.heuristics.captureOnFormRemoval", true);
 pref("extensions.formautofill.heuristics.captureOnPageNavigation", true);
+
+pref("extensions.formautofill.heuristics.detectDynamicFormChanges", true);
+pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges", true);
+// Note: The greater the timeout value the higher the risk of automatically filling fields after a non-script/user action.
+pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges.timeout", 1000);
 
 pref("extensions.formautofill.heuristics.autofillSameOriginWithTop", true);
 

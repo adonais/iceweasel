@@ -94,15 +94,30 @@ add_task(async function test_expanded_state_for_always_show() {
     component = sidebarMain,
     button = toolbarButton
   ) => {
-    await TestUtils.waitForCondition(
-      () => Boolean(component.expanded) == expanded,
-      expanded ? "Sidebar is expanded." : "Sidebar is collapsed."
+    info(
+      `Waiting for component to become ${expanded ? "expanded" : "collapsed"}`
     );
-    await TestUtils.waitForCondition(
-      () => Boolean(button.checked) == expanded,
+    await BrowserTestUtils.waitForMutationCondition(
+      component,
+      { attributes: true, attributeFilter: ["expanded"] },
+      () => Boolean(component.expanded) == expanded
+    );
+    ok(true, expanded ? "Sidebar is expanded." : "Sidebar is collapsed.");
+    info(
+      `Waiting for button to become ${expanded ? "highlighted" : "not highlighted"}`
+    );
+    await BrowserTestUtils.waitForMutationCondition(
+      button,
+      { attributes: true, attributeFilter: ["checked", "expanded"] },
+      () =>
+        Boolean(button.checked) == expanded &&
+        button.hasAttribute("expanded") == expanded
+    );
+    ok(
+      true,
       expanded
-        ? "Toolbar button is highlighted."
-        : "Toolbar button is not highlighted."
+        ? "Toolbar button is highlighted and expanded attribute is present.."
+        : "Toolbar button is not highlighted and expanded attribute is absent."
     );
     Assert.deepEqual(
       document.l10n.getAttributes(button),
@@ -117,12 +132,6 @@ add_task(async function test_expanded_state_for_always_show() {
       },
       "Toolbar button has the correct tooltip."
     );
-    await TestUtils.waitForCondition(
-      () => button.hasAttribute("expanded") == expanded,
-      expanded
-        ? "Toolbar button expanded attribute is present."
-        : "Toolbar button expanded attribute is absent."
-    );
   };
 
   await checkExpandedState(true);
@@ -133,26 +142,50 @@ add_task(async function test_expanded_state_for_always_show() {
   await checkExpandedState(false);
 
   info("Don't collapse the sidebar by loading a tool.");
-  await SidebarController.initializeUIState({ launcherExpanded: true });
-  await SidebarController.waitUntilStable();
+  await SidebarController.initializeUIState({
+    launcherExpanded: true,
+    command: "",
+  });
+  info("Waiting to re-initialize UI state to make the launcher expanded");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebarMain,
+    { attributes: true, attributeFilter: ["expanded"] },
+    () => Boolean(sidebarMain.expanded)
+  );
 
   const toolButton = sidebarMain.toolButtons[0];
   EventUtils.synthesizeMouseAtCenter(toolButton, {}, window);
-  await SidebarController.waitUntilStable();
   await checkExpandedState(true);
+  SidebarController.hide();
 
   info("Load and unload a tool with the sidebar collapsed to begin with.");
-  await SidebarController.initializeUIState({ launcherExpanded: false });
-  await SidebarController.waitUntilStable();
+  await SidebarController.initializeUIState({
+    launcherExpanded: false,
+    command: "",
+  });
+  info("Waiting to re-initialize UI state to make the launcher collapsed");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebarMain,
+    { attributes: true, attributeFilter: ["expanded"] },
+    () => !sidebarMain.expanded
+  );
 
   EventUtils.synthesizeMouseAtCenter(toolButton, {}, window);
-  await SidebarController.waitUntilStable();
   await checkExpandedState(false);
+  SidebarController.hide();
+
+  await SidebarController.initializeUIState({
+    launcherExpanded: true,
+    command: "",
+  });
+  info("Waiting to re-initialize UI state to make the launcher expanded");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebarMain,
+    { attributes: true, attributeFilter: ["expanded"] },
+    () => Boolean(sidebarMain.expanded)
+  );
 
   info("Check expanded state on a new window.");
-  await SidebarController.initializeUIState({ launcherExpanded: true });
-  await SidebarController.waitUntilStable();
-
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   await waitForTabstripOrientation("vertical", newWin);
   await checkExpandedState(
@@ -171,6 +204,9 @@ add_task(async function test_states_for_hide_sidebar() {
   });
   await waitForTabstripOrientation("horizontal");
 
+  const { SidebarController } = window;
+  const { sidebarContainer, sidebarMain, toolbarButton } = SidebarController;
+
   Assert.equal(
     Services.prefs.getStringPref(SIDEBAR_VISIBILITY_PREF),
     "hide-sidebar",
@@ -178,18 +214,13 @@ add_task(async function test_states_for_hide_sidebar() {
   );
   // The sidebar launcher should be initially visible when visibility is "hide-sidebar"
   Assert.ok(
-    !window.SidebarController.sidebarContainer.hidden,
+    !SidebarController.sidebarContainer.hidden,
     "The launcher is initially visible"
   );
   Assert.ok(
-    window.SidebarController.toolbarButton.checked,
+    SidebarController.toolbarButton.checked,
     "The toolbar button is initially checked"
   );
-
-  const win = await BrowserTestUtils.openNewBrowserWindow();
-  const { SidebarController } = win;
-  const { sidebarContainer, sidebarMain, toolbarButton } = SidebarController;
-  await waitForTabstripOrientation("horizontal", win);
 
   const checkStates = async (
     { hidden },
@@ -197,17 +228,34 @@ add_task(async function test_states_for_hide_sidebar() {
     component = sidebarMain,
     button = toolbarButton
   ) => {
-    await TestUtils.waitForCondition(
-      () => container.hidden == hidden,
-      "Hidden state is correct."
+    info(`Waiting for container to become ${hidden ? "hidden" : "not hidden"}`);
+    await BrowserTestUtils.waitForMutationCondition(
+      container,
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => container.hidden == hidden
     );
-    await TestUtils.waitForCondition(
-      () => !component.expanded,
-      "Expanded state is correct."
+    ok(
+      true,
+      hidden ? "Sidebar container is hidden." : "Sidebar container is shown."
     );
-    await TestUtils.waitForCondition(
-      () => button.checked == !hidden,
-      "Toolbar button state is correct."
+    info("Waiting for component to be not expanded");
+    await BrowserTestUtils.waitForMutationCondition(
+      component,
+      { attributes: true, attributeFilter: ["expanded"] },
+      () => !component.expanded
+    );
+    ok(true, "Sidebar should not be expanded");
+    info(
+      `Waiting for button to be ${hidden ? "not highlighted" : "highlighted"}`
+    );
+    await BrowserTestUtils.waitForMutationCondition(
+      button,
+      { attributes: true, attributeFilter: ["checked", "expanded"] },
+      () => button.checked == !hidden && !button.hasAttribute("expanded")
+    );
+    ok(
+      true,
+      "Toolbar button checked state is correct and expanded attribute is absent."
     );
     Assert.deepEqual(
       document.l10n.getAttributes(button),
@@ -222,17 +270,14 @@ add_task(async function test_states_for_hide_sidebar() {
       },
       "Toolbar button has the correct tooltip."
     );
-    await TestUtils.waitForCondition(
-      () => !button.hasAttribute("expanded"),
-      "Toolbar button expanded attribute is absent."
-    );
   };
 
   info("Check the launcher is initially visible");
   await checkStates({ hidden: false });
 
   info("Hide sidebar using the toolbar button.");
-  EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, win);
+  await SimpleTest.promiseFocus(window);
+  EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, window);
   await checkStates({ hidden: true });
   Assert.ok(
     !toolbarButton.checked,
@@ -253,7 +298,6 @@ add_task(async function test_states_for_hide_sidebar() {
     "The toolbar button in the new window is unchecked when the launcher is hidden"
   );
 
-  await BrowserTestUtils.closeWindow(win);
   await BrowserTestUtils.closeWindow(newWin);
   await SpecialPowers.popPrefEnv();
   await waitForTabstripOrientation("vertical");
@@ -285,17 +329,37 @@ add_task(async function test_states_for_hide_sidebar_vertical() {
     component = sidebarMain,
     button = toolbarButton
   ) => {
-    await TestUtils.waitForCondition(
-      () => container.hidden == hidden,
-      "Hidden state is correct."
+    info(`Waiting for container to become ${hidden ? "hidden" : "not hidden"}`);
+    await BrowserTestUtils.waitForMutationCondition(
+      container,
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => container.hidden == hidden
     );
-    await TestUtils.waitForCondition(
-      () => component.expanded == expanded,
-      "Expanded state is correct."
+    ok(
+      true,
+      hidden ? "Sidebar container is hidden." : "Sidebar container is shown."
     );
-    await TestUtils.waitForCondition(
-      () => button.checked == !hidden,
-      "Toolbar button state is correct."
+    info(
+      `Waiting for component to be ${expanded ? "expanded" : "not expanded"}`
+    );
+    await BrowserTestUtils.waitForMutationCondition(
+      component,
+      { attributes: true, attributeFilter: ["expanded"] },
+      () => Boolean(component.expanded) == expanded
+    );
+    ok(true, expanded ? "Sidebar is expanded." : "Sidebar is collapsed.");
+    info(
+      `Waiting for button to be ${hidden ? "not highlighted" : "highlighted"}`
+    );
+    await BrowserTestUtils.waitForMutationCondition(
+      button,
+      { attributes: true, attributeFilter: ["checked", "expanded"] },
+      () =>
+        button.checked == !hidden && button.hasAttribute("expanded") == expanded
+    );
+    ok(
+      true,
+      `Toolbar button checked state is correct and expanded attribute is ${expanded ? "present" : "absent"}.`
     );
     Assert.deepEqual(
       document.l10n.getAttributes(button),
@@ -309,12 +373,6 @@ add_task(async function test_states_for_hide_sidebar_vertical() {
             : { shortcut: "Alt+Ctrl+Z" },
       },
       "Toolbar button has the correct tooltip."
-    );
-    await TestUtils.waitForCondition(
-      () => button.hasAttribute("expanded") == expanded,
-      expanded
-        ? "Toolbar button expanded attribute is present."
-        : "Toolbar button expanded attribute is absent."
     );
   };
 
@@ -330,20 +388,19 @@ add_task(async function test_states_for_hide_sidebar_vertical() {
   const toolButton = sidebarMain.toolButtons[0];
   EventUtils.synthesizeMouseAtCenter(toolButton, {}, win);
 
-  await TestUtils.waitForCondition(
-    () => SidebarController.isOpen,
-    "Panel is open"
-  );
   await checkStates({ hidden: false, expanded: true });
+  ok(SidebarController.isOpen, "Panel is open.");
 
   info("Close a panel using the toolbar button.");
   EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, win);
-  ok(!SidebarController.isOpen, "Panel is closed.");
-  await checkStates({ hidden: true, expanded: true });
 
-  info("Check states on a new window.");
+  await checkStates({ hidden: true, expanded: false });
+  ok(!SidebarController.isOpen, "Panel is closed.");
+
   EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, win);
   await checkStates({ hidden: false, expanded: true });
+
+  info("Check states on a new window.");
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   await checkStates(
     { hidden: false, expanded: true },
@@ -397,23 +454,29 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
     "Sidebar button should not be checked when old sidebar is not showing."
   );
   await SpecialPowers.popPrefEnv();
-
-  // When the button was removed, "hide-sidebar" was set automatically. Revert for the next test.
-  // Expanded is the default when "hide-sidebar" is set - revert to collapsed for the next test.
-  await SpecialPowers.pushPrefEnv({
-    set: [[SIDEBAR_VISIBILITY_PREF, "always-show"]],
-  });
-  await SidebarController.initializeUIState({ expanded: false });
+  await SidebarController.waitUntilStable();
 });
 
 /**
  * Check that keyboard shortcut toggles sidebar
  */
 add_task(async function test_keyboard_shortcut() {
+  // When the button was removed, "hide-sidebar" was set automatically. Revert for this test.
+  // Expanded is the default when "hide-sidebar" is set - revert to collapsed.
+  await SpecialPowers.pushPrefEnv({
+    set: [[SIDEBAR_VISIBILITY_PREF, "always-show"]],
+  });
+  await SidebarController.initializeUIState({ launcherExpanded: false });
+
   const sidebar = document.querySelector("sidebar-main");
   const key = document.getElementById("toggleSidebarKb");
 
-  Assert.ok(!sidebar.expanded, "Sidebar collapsed by default");
+  Assert.equal(
+    Services.prefs.getStringPref("sidebar.visibility"),
+    "always-show",
+    "Got expected visibility value"
+  );
+  Assert.ok(!sidebar.expanded, "Sidebar initially not expanded");
 
   key.doCommand();
 

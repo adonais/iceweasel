@@ -611,10 +611,7 @@ void PointerEventHandler::InitPointerEventFromMouse(
                                : aMouseEvent->mButton;
 
   aPointerEvent->mButtons = aMouseEvent->mButtons;
-  aPointerEvent->mPressure =
-      aPointerEvent->mButtons
-          ? aMouseEvent->mPressure ? aMouseEvent->mPressure : 0.5f
-          : 0.0f;
+  aPointerEvent->mPressure = aMouseEvent->ComputeMouseButtonPressure();
 }
 
 /* static */
@@ -863,6 +860,11 @@ void PointerEventHandler::NotifyDestroyPresContext(
 }
 
 bool PointerEventHandler::IsDragAndDropEnabled(WidgetMouseEvent& aEvent) {
+  // We shouldn't start a drag session if the event is synthesized one because
+  // aEvent doesn't have enough information for initializing the ePointerCancel.
+  if (!aEvent.IsReal()) {
+    return false;
+  }
 #ifdef XP_WIN
   if (StaticPrefs::dom_w3c_pointer_events_dispatch_by_pointer_messages()) {
     // WM_POINTER does not support drag and drop, see bug 1692277

@@ -270,51 +270,175 @@ bool Watchtower::watchProtoChangeSlow(JSContext* cx, HandleObject obj) {
   return true;
 }
 
-static void MaybePopArrayIteratorFuse(JSContext* cx, NativeObject* obj,
-                                      jsid id) {
-  if (!id.isWellKnownSymbol(JS::SymbolCode::iterator)) {
+static void MaybePopArrayConstructorFuses(JSContext* cx, NativeObject* obj,
+                                          jsid id) {
+  if (obj != obj->global().maybeGetConstructor(JSProto_Array)) {
     return;
   }
-
-  JSObject* originalArrayPrototype = obj->global().maybeGetArrayPrototype();
-  if (!originalArrayPrototype) {
-    return;
+  if (id.isWellKnownSymbol(JS::SymbolCode::species)) {
+    obj->realm()->realmFuses.optimizeArraySpeciesFuse.popFuse(
+        cx, obj->realm()->realmFuses);
   }
-
-  if (obj != originalArrayPrototype) {
-    return;
-  }
-
-  obj->realm()->realmFuses.arrayPrototypeIteratorFuse.popFuse(
-      cx, obj->realm()->realmFuses);
 }
 
-static void MaybePopArrayIteratorPrototypeNextFuse(JSContext* cx,
-                                                   NativeObject* obj, jsid id) {
-  JSObject* originalArrayIteratorPrototoype =
-      obj->global().maybeGetArrayIteratorPrototype();
-  if (!originalArrayIteratorPrototoype) {
+static void MaybePopArrayPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                        jsid id) {
+  if (obj != obj->global().maybeGetArrayPrototype()) {
     return;
   }
+  if (id.isWellKnownSymbol(JS::SymbolCode::iterator)) {
+    obj->realm()->realmFuses.arrayPrototypeIteratorFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+  if (id.isAtom(cx->names().constructor)) {
+    obj->realm()->realmFuses.optimizeArraySpeciesFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
 
-  if (obj != originalArrayIteratorPrototoype) {
+static void MaybePopArrayIteratorPrototypeFuses(JSContext* cx,
+                                                NativeObject* obj, jsid id) {
+  if (obj != obj->global().maybeGetArrayIteratorPrototype()) {
     return;
   }
+  if (id.isAtom(cx->names().next)) {
+    obj->realm()->realmFuses.arrayPrototypeIteratorNextFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
 
-  PropertyKey nextId = NameToId(cx->names().next);
-  if (id != nextId) {
+static void MaybePopMapPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                      jsid id) {
+  if (obj != obj->global().maybeGetPrototype(JSProto_Map)) {
     return;
   }
+  if (id.isWellKnownSymbol(JS::SymbolCode::iterator)) {
+    obj->realm()->realmFuses.optimizeMapObjectIteratorFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+  if (id.isAtom(cx->names().set)) {
+    obj->realm()->realmFuses.optimizeMapPrototypeSetFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
 
-  obj->realm()->realmFuses.arrayPrototypeIteratorNextFuse.popFuse(
-      cx, obj->realm()->realmFuses);
+static void MaybePopMapIteratorPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                              jsid id) {
+  if (obj != obj->global().maybeBuiltinProto(
+                 GlobalObject::ProtoKind::MapIteratorProto)) {
+    return;
+  }
+  if (id.isAtom(cx->names().next)) {
+    obj->realm()->realmFuses.optimizeMapObjectIteratorFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopSetPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                      jsid id) {
+  if (obj != obj->global().maybeGetPrototype(JSProto_Set)) {
+    return;
+  }
+  if (id.isWellKnownSymbol(JS::SymbolCode::iterator)) {
+    obj->realm()->realmFuses.optimizeSetObjectIteratorFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+  if (id.isAtom(cx->names().add)) {
+    obj->realm()->realmFuses.optimizeSetPrototypeAddFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopSetIteratorPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                              jsid id) {
+  if (obj != obj->global().maybeBuiltinProto(
+                 GlobalObject::ProtoKind::SetIteratorProto)) {
+    return;
+  }
+  if (id.isAtom(cx->names().next)) {
+    obj->realm()->realmFuses.optimizeSetObjectIteratorFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopWeakMapPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                          jsid id) {
+  if (obj != obj->global().maybeGetPrototype(JSProto_WeakMap)) {
+    return;
+  }
+  if (id.isAtom(cx->names().set)) {
+    obj->realm()->realmFuses.optimizeWeakMapPrototypeSetFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopWeakSetPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                          jsid id) {
+  if (obj != obj->global().maybeGetPrototype(JSProto_WeakSet)) {
+    return;
+  }
+  if (id.isAtom(cx->names().add)) {
+    obj->realm()->realmFuses.optimizeWeakSetPrototypeAddFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopPromiseConstructorFuses(JSContext* cx, NativeObject* obj,
+                                            jsid id) {
+  if (obj != obj->global().maybeGetConstructor(JSProto_Promise)) {
+    return;
+  }
+  if (id.isWellKnownSymbol(JS::SymbolCode::species) ||
+      id.isAtom(cx->names().resolve)) {
+    obj->realm()->realmFuses.optimizePromiseLookupFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopPromisePrototypeFuses(JSContext* cx, NativeObject* obj,
+                                          jsid id) {
+  if (obj != obj->global().maybeGetPrototype(JSProto_Promise)) {
+    return;
+  }
+  if (id.isAtom(cx->names().constructor) || id.isAtom(cx->names().then)) {
+    obj->realm()->realmFuses.optimizePromiseLookupFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
 }
 
 static void MaybePopFuses(JSContext* cx, NativeObject* obj, jsid id) {
-  // Handle a write to Array.prototype[@@iterator]
-  MaybePopArrayIteratorFuse(cx, obj, id);
-  // Handle a write to Array.prototype[@@iterator].next
-  MaybePopArrayIteratorPrototypeNextFuse(cx, obj, id);
+  // Handle writes to Array constructor fuse properties.
+  MaybePopArrayConstructorFuses(cx, obj, id);
+
+  // Handle writes to Array.prototype fuse properties.
+  MaybePopArrayPrototypeFuses(cx, obj, id);
+
+  // Handle writes to %ArrayIteratorPrototype% fuse properties.
+  MaybePopArrayIteratorPrototypeFuses(cx, obj, id);
+
+  // Handle writes to Map.prototype fuse properties.
+  MaybePopMapPrototypeFuses(cx, obj, id);
+
+  // Handle writes to %MapIteratorPrototype% fuse properties.
+  MaybePopMapIteratorPrototypeFuses(cx, obj, id);
+
+  // Handle writes to Set.prototype fuse properties.
+  MaybePopSetPrototypeFuses(cx, obj, id);
+
+  // Handle writes to %SetIteratorPrototype% fuse properties.
+  MaybePopSetIteratorPrototypeFuses(cx, obj, id);
+
+  // Handle writes to WeakMap.prototype fuse properties.
+  MaybePopWeakMapPrototypeFuses(cx, obj, id);
+
+  // Handle writes to WeakSet.prototype fuse properties.
+  MaybePopWeakSetPrototypeFuses(cx, obj, id);
+
+  // Handle writes to Promise constructor fuse properties.
+  MaybePopPromiseConstructorFuses(cx, obj, id);
+
+  // Handle writes to Promise.prototype fuse properties.
+  MaybePopPromisePrototypeFuses(cx, obj, id);
 }
 
 // static

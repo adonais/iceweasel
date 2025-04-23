@@ -2224,7 +2224,9 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       newInnerGlobal = newInnerWindow->GetWrapper();
     } else {
       newInnerWindow = nsGlobalWindowInner::Create(this, thisChrome, aActor);
-      if (StaticPrefs::dom_timeout_defer_during_load()) {
+      if (StaticPrefs::dom_timeout_defer_during_load() &&
+          !aDocument->NodePrincipal()->IsURIInPrefList(
+              "dom.timeout.defer_during_load.force-disable")) {
         // ensure the initial loading state is known
         newInnerWindow->SetActiveLoadingState(
             aDocument->GetReadyStateEnum() ==
@@ -3299,10 +3301,10 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::IndexedGetterOuter(
   BrowsingContext* bc = GetBrowsingContext();
   NS_ENSURE_TRUE(bc, nullptr);
 
-  Span<RefPtr<BrowsingContext>> children = bc->NonSyntheticChildren();
+  BrowsingContext* child = bc->NonSyntheticLightDOMChildAt(aIndex);
 
-  if (aIndex < children.Length()) {
-    return WindowProxyHolder(children[aIndex]);
+  if (child) {
+    return WindowProxyHolder(child);
   }
   return nullptr;
 }
@@ -3799,7 +3801,8 @@ double nsGlobalWindowOuter::GetScrollYOuter() { return GetScrollXY(false).y; }
 
 uint32_t nsGlobalWindowOuter::Length() {
   BrowsingContext* bc = GetBrowsingContext();
-  return bc ? bc->NonSyntheticChildren().Length() : 0;
+  NS_ENSURE_TRUE(bc, 0);
+  return bc->NonSyntheticLightDOMChildrenCount();
 }
 
 Nullable<WindowProxyHolder> nsGlobalWindowOuter::GetTopOuter() {
@@ -6933,6 +6936,13 @@ nsresult nsGlobalWindowOuter::OpenInternal(
 void nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI) {
   nsGlobalWindowInner* inner = GetCurrentInnerWindowInternal(this);
   if (NS_WARN_IF(!inner)) {
+    return;
+  }
+
+  // Don't trigger the heuristic for third-party trackers.
+  if (StaticPrefs::
+          privacy_restrict3rdpartystorage_heuristic_exclude_third_party_trackers() &&
+      nsContentUtils::IsThirdPartyTrackingResourceWindow(inner)) {
     return;
   }
 

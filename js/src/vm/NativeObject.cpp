@@ -447,7 +447,6 @@ bool NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj) {
   // IC code calls this directly.
   AutoUnsafeCallWithABI unsafe;
 
-  MOZ_ASSERT(obj->getDenseInitializedLength() == obj->getDenseCapacity());
   MOZ_ASSERT(obj->isExtensible());
   MOZ_ASSERT(!obj->isIndexed());
   MOZ_ASSERT(!obj->is<TypedArrayObject>());
@@ -546,9 +545,13 @@ bool NativeObject::willBeSparseElements(uint32_t requiredCapacity,
     return true;
   }
 
-  uint32_t len = getDenseInitializedLength();
+  uint32_t initLen = getDenseInitializedLength();
+  if (denseElementsArePacked()) {
+    return minimalDenseCount > initLen;
+  }
+
   const Value* elems = getDenseElements();
-  for (uint32_t i = 0; i < len; i++) {
+  for (uint32_t i = 0; i < initLen; i++) {
     if (!elems[i].isMagic(JS_ELEMENTS_HOLE) && !--minimalDenseCount) {
       return false;
     }

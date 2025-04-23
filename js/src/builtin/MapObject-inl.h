@@ -17,23 +17,14 @@
 
 namespace js {
 
-template <JSProtoKey ProtoKey>
-[[nodiscard]] static bool IsOptimizableInitForMapOrSet(
-    JSNative addOrSetNative, NativeObject* mapOrSetObject,
-    const Value& iterable, JSContext* cx) {
-  constexpr bool isMap = ProtoKey == JSProto_Map || ProtoKey == JSProto_WeakMap;
-  constexpr bool isSet = ProtoKey == JSProto_Set || ProtoKey == JSProto_WeakSet;
-  static_assert(isMap != isSet, "must be either a Map or a Set");
+enum class MapOrSet { Map, Set };
 
-  if (!iterable.isObject()) {
+template <MapOrSet IsMapOrSet>
+[[nodiscard]] static bool IsOptimizableArrayForMapOrSetCtor(JSObject* iterable,
+                                                            JSContext* cx) {
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(iterable, cx)) {
     return false;
   }
-
-  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(&iterable.toObject(),
-                                                     cx)) {
-    return false;
-  }
-  ArrayObject* array = &iterable.toObject().as<ArrayObject>();
 
   // For the Map and WeakMap constructors, ensure the elements are also packed
   // arrays with at least two elements (key and value).
@@ -41,7 +32,8 @@ template <JSProtoKey ProtoKey>
   // Limit this to relatively short arrays to avoid adding overhead for large
   // arrays in the worst case, when this check fails for one of the last
   // elements.
-  if constexpr (isMap) {
+  if constexpr (IsMapOrSet == MapOrSet::Map) {
+    ArrayObject* array = &iterable->as<ArrayObject>();
     size_t len = array->length();
     static constexpr size_t MaxLength = 100;
     if (len > MaxLength) {
@@ -59,11 +51,48 @@ template <JSProtoKey ProtoKey>
     }
   }
 
+  return true;
+}
+
+template <JSProtoKey ProtoKey>
+[[nodiscard]] static bool CanOptimizeMapOrSetCtorWithIterable(
+    JSNative addOrSetNative, NativeObject* mapOrSetObject, JSContext* cx) {
+  constexpr bool isMap = ProtoKey == JSProto_Map || ProtoKey == JSProto_WeakMap;
+  constexpr bool isSet = ProtoKey == JSProto_Set || ProtoKey == JSProto_WeakSet;
+  static_assert(isMap != isSet, "must be either a Map or a Set");
+
   // Ensures mapOrSetObject's prototype is the canonical prototype.
   JSObject* proto = mapOrSetObject->staticPrototype();
   MOZ_ASSERT(proto);
   if (proto != cx->global()->maybeGetPrototype(ProtoKey)) {
     return false;
+  }
+
+  // Ensure the 'add' or 'set' method on the prototype is unchanged. Use a fast
+  // path based on fuses.
+  switch (ProtoKey) {
+    case JSProto_Map:
+      if (cx->realm()->realmFuses.optimizeMapPrototypeSetFuse.intact()) {
+        return true;
+      }
+      break;
+    case JSProto_Set:
+      if (cx->realm()->realmFuses.optimizeSetPrototypeAddFuse.intact()) {
+        return true;
+      }
+      break;
+    case JSProto_WeakMap:
+      if (cx->realm()->realmFuses.optimizeWeakMapPrototypeSetFuse.intact()) {
+        return true;
+      }
+      break;
+    case JSProto_WeakSet:
+      if (cx->realm()->realmFuses.optimizeWeakSetPrototypeAddFuse.intact()) {
+        return true;
+      }
+      break;
+    default:
+      MOZ_CRASH("Unexpected ProtoKey");
   }
 
   // Look up the 'add' or 'set' property on the prototype object.
@@ -77,11 +106,7 @@ template <JSProtoKey ProtoKey>
   // Get the property value and ensure it's the canonical 'add' or 'set'
   // function.
   Value propVal = nproto->getSlot(prop->slot());
-  if (!IsNativeFunction(propVal, addOrSetNative)) {
-    return false;
-  }
-
-  return true;
+  return IsNativeFunction(propVal, addOrSetNative);
 }
 
 }  // namespace js

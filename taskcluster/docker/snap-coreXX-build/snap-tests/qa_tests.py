@@ -136,14 +136,17 @@ class QATests(SnapTestsBase):
         self._driver.execute_script(
             "arguments[0].volume = arguments[1]", video, ref_volume * 0.25
         )
+        new_volume = video.get_property("volume")
         assert (
-            video.get_property("volume") == ref_volume * 0.25
-        ), "<video> sound volume increased"
+            new_volume == ref_volume * 0.25
+        ), "<video> sound volume increased from {} to {} but got {}".format(
+            ref_volume, ref_volume * 0.25, new_volume
+        )
 
         self._logger.info("find video: done")
 
     def _test_audio_video_playback(self, url):
-        iframe_css_selector = "#ucc-1"
+        iframe_css_selector = "iframe[id*=ucc-]"
         self._logger.info("open url {}".format(url))
         self.open_tab(url)
         self._logger.info("find thumbnail")
@@ -191,16 +194,6 @@ class QATests(SnapTestsBase):
         """
         C95233
         """
-
-        if (
-            self.update_channel() in ("release")
-            and self.version_major() >= "134"
-            and self.is_debug_build()
-        ):
-            self._logger.info(
-                "Skip test due to https://bugzilla.mozilla.org/show_bug.cgi?id=1934358"
-            )
-            return True
 
         self._test_audio_video_playback(
             "https://drive.google.com/file/d/0BwxFVkl63-lEY3l3ODJReDg3RzQ/view?resourcekey=0-5kDw2QbFk9eLrWE1N9M1rQ&hl=en-US"
@@ -427,11 +420,19 @@ class QATests(SnapTestsBase):
             self._logger.info("click button for {}".format(menu_id))
             button_to_test.click()
 
-            # rotation does not close the menu?:
-            if self.is_esr_128() and menu_id in ("pageRotateCw", "pageRotateCcw"):
-                secondary_menu.click()
-
-            time.sleep(0.75)
+            try:
+                self._wait.until(
+                    EC.invisibility_of_element_located((By.ID, "secondaryToolbar"))
+                )
+            except TimeoutException:
+                # Menu does not close itself on those??
+                if menu_id in ("pageRotateCw", "pageRotateCcw"):
+                    self._logger.info("force close menu for {}".format(menu_id))
+                    secondary_menu.click()
+                    self._logger.info("wait menu disappear for {}".format(menu_id))
+                    self._wait.until(
+                        EC.invisibility_of_element_located((By.ID, "secondaryToolbar"))
+                    )
 
             self._logger.info("assert {}".format(menu_id))
             self.assert_rendering(exp[menu_id], self._driver)
@@ -732,7 +733,32 @@ class QATests(SnapTestsBase):
                 (By.CSS_SELECTOR, ".download-state .downloadProgress")
             )
         )
-        self._wait.until(lambda d: download_progress.get_property("value") == 100)
+        self._logger.info(
+            "Download process {}".format(download_progress.get_property("value"))
+        )
+
+        try:
+            self._wait.until(lambda d: download_progress.get_property("value") == 100)
+        except TimeoutException as ex:
+            details_normal = self._wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".download-state .downloadDetailsNormal")
+                )
+            )
+            self._logger.info(
+                "Download details normal {}".format(
+                    details_normal.get_property("value")
+                )
+            )
+            details_hover = self._wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".download-state .downloadDetailsHover")
+                )
+            )
+            self._logger.info(
+                "Download details hover {}".format(details_hover.get_property("value"))
+            )
+            raise ex
 
         # back to page
         self._driver.set_context("content")
@@ -756,7 +782,16 @@ class QATests(SnapTestsBase):
             download_dir_pref == new
         ), "download directory from pref should match new directory"
 
+    def enable_downloads_debug(self):
+        self._driver.set_context("chrome")
+        self._logger.info("Setting downloads loglevel to Debug")
+        self._driver.execute_script(
+            "return Services.prefs.setStringPref('browser.download.loglevel', 'Debug');"
+        )
+        self._driver.set_context("content")
+
     def open_lafibre(self):
+        self.enable_downloads_debug()
         download_site = self.open_tab("https://ip.lafibre.info/connectivite.php")
         return download_site
 

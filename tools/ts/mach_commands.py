@@ -120,10 +120,18 @@ def update(ctx):
 
 
 @SubCommand("ts", "glean", description="Build Glean bindings.")
-@CommandArgument("path", help="Path to a (dir with) metrics.yaml.")
+@CommandArgument("path", help="Path to a metrics.yaml or pings.yaml file.")
 def glean(ctx, path):
     maybe_setup(ctx)
     return node(ctx, "build_glean", ctx.topsrcdir, path, "tools/@types")
+
+
+@SubCommand("ts", "paths", description="Build module path mapping.")
+def paths(ctx):
+    maybe_setup(ctx)
+    lib = mozpath.join(ctx.topsrcdir, "tools/@types/tspaths.json")
+    lazy = mozpath.join(ctx.topsrcdir, "tools/@types/lib.gecko.modules.d.ts")
+    return node(ctx, "build_paths", ctx.topsrcdir, lib, lazy)
 
 
 def node(ctx, script, *args):

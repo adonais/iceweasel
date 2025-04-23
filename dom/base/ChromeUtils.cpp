@@ -1281,25 +1281,6 @@ void ChromeUtils::ClearRecentJSDevError(GlobalObject&) {
 }
 #endif  // NIGHTLY_BUILD
 
-void ChromeUtils::ClearStyleSheetCacheByPrincipal(GlobalObject&,
-                                                  nsIPrincipal* aForPrincipal) {
-  SharedStyleSheetCache::Clear(Nothing(), Some(aForPrincipal));
-}
-
-void ChromeUtils::ClearStyleSheetCacheBySite(
-    GlobalObject&, const nsACString& aSchemelessSite,
-    const dom::OriginAttributesPatternDictionary& aPattern) {
-  SharedStyleSheetCache::Clear(Nothing(), Nothing(),
-                               Some(nsCString(aSchemelessSite)),
-                               Some(OriginAttributesPattern(aPattern)));
-}
-
-void ChromeUtils::ClearStyleSheetCache(GlobalObject&,
-                                       const Optional<bool>& aChrome) {
-  SharedStyleSheetCache::Clear(aChrome.WasPassed() ? Some(aChrome.Value())
-                                                   : Nothing());
-}
-
 void ChromeUtils::ClearMessagingLayerSecurityStateByPrincipal(
     GlobalObject&, nsIPrincipal* aPrincipal, ErrorResult& aRv) {
   MOZ_LOG(gMlsLog, LogLevel::Debug,
@@ -1594,31 +1575,137 @@ void ChromeUtils::ClearMessagingLayerSecurityState(GlobalObject&,
   MOZ_LOG(gMlsLog, LogLevel::Debug, ("Successfully cleared all MLS state"));
 }
 
-void ChromeUtils::ClearScriptCacheByPrincipal(GlobalObject&,
-                                              nsIPrincipal* aForPrincipal) {
-  SharedScriptCache::Clear(Nothing(), Some(aForPrincipal));
-}
+void ChromeUtils::ClearResourceCache(
+    GlobalObject& aGlobal, const dom::ClearResourceCacheOptions& aOptions,
+    ErrorResult& aRv) {
+  bool clearStyleSheet = false;
+  bool clearScript = false;
+  bool clearImage = false;
 
-void ChromeUtils::ClearScriptCacheBySite(
-    GlobalObject&, const nsACString& aSchemelessSite,
-    const dom::OriginAttributesPatternDictionary& aPattern) {
-  SharedScriptCache::Clear(Nothing(), Nothing(),
-                           Some(nsCString(aSchemelessSite)), Some(aPattern));
-}
+  if (aOptions.mTypes.WasPassed()) {
+    for (const auto& type : aOptions.mTypes.Value()) {
+      switch (type) {
+        case ResourceCacheType::Stylesheet:
+          clearStyleSheet = true;
+          break;
+        case ResourceCacheType::Script:
+          clearScript = true;
+          break;
+        case ResourceCacheType::Image:
+          clearImage = true;
+          break;
+      }
+    }
+  } else {
+    clearStyleSheet = true;
+    clearScript = true;
+    clearImage = true;
+  }
 
-void ChromeUtils::ClearScriptCache(GlobalObject&,
-                                   const Optional<bool>& aChrome) {
-  SharedScriptCache::Clear(aChrome.WasPassed() ? Some(aChrome.Value())
-                                               : Nothing());
-}
+  int filterCount = 0;
+  if (aOptions.mTarget.WasPassed()) {
+    filterCount++;
+  }
+  if (aOptions.mPrincipal.WasPassed()) {
+    filterCount++;
+  }
+  if (aOptions.mSchemelessSite.WasPassed()) {
+    filterCount++;
+  }
+  if (aOptions.mUrl.WasPassed()) {
+    filterCount++;
+  }
+  if (filterCount > 1) {
+    aRv.ThrowInvalidStateError(
+        "target, principal, schemelessSite, and url properties are mutually "
+        "exclusive");
+    return;
+  }
 
-void ChromeUtils::ClearResourceCache(GlobalObject&,
-                                     const Optional<bool>& aChrome) {
-  Maybe<bool> chrome = aChrome.WasPassed() ? Some(aChrome.Value()) : Nothing();
-  SharedStyleSheetCache::Clear(chrome);
-  SharedScriptCache::Clear(chrome);
-  imgLoader::PrivateBrowsingLoader()->ClearCache(chrome);
-  imgLoader::NormalLoader()->ClearCache(chrome);
+  if (aOptions.mTarget.WasPassed()) {
+    Maybe<bool> chrome;
+    switch (aOptions.mTarget.Value()) {
+      case ResourceCacheTarget::Chrome:
+        chrome.emplace(true);
+        break;
+      case ResourceCacheTarget::Content:
+        chrome.emplace(false);
+        break;
+    }
+
+    if (clearStyleSheet) {
+      SharedStyleSheetCache::Clear(chrome);
+    }
+    if (clearScript) {
+      SharedScriptCache::Clear(chrome);
+    }
+    if (clearImage) {
+      imgLoader::ClearCache(Nothing(), chrome);
+    }
+    return;
+  }
+
+  if (aOptions.mPrincipal.WasPassed()) {
+    nsCOMPtr<nsIPrincipal> principal = aOptions.mPrincipal.Value().get();
+
+    if (clearStyleSheet) {
+      SharedStyleSheetCache::Clear(Nothing(), Some(principal));
+    }
+    if (clearScript) {
+      SharedScriptCache::Clear(Nothing(), Some(principal));
+    }
+    if (clearImage) {
+      imgLoader::ClearCache(Nothing(), Nothing(), Some(principal));
+    }
+    return;
+  }
+
+  if (aOptions.mSchemelessSite.WasPassed()) {
+    nsCString schemelessSite(aOptions.mSchemelessSite.Value());
+    mozilla::OriginAttributesPattern pattern(aOptions.mPattern);
+
+    if (clearStyleSheet) {
+      SharedStyleSheetCache::Clear(Nothing(), Nothing(), Some(schemelessSite),
+                                   Some(pattern));
+    }
+    if (clearScript) {
+      SharedScriptCache::Clear(Nothing(), Nothing(), Some(schemelessSite),
+                               Some(pattern));
+    }
+    if (clearImage) {
+      imgLoader::ClearCache(Nothing(), Nothing(), Nothing(),
+                            Some(schemelessSite), Some(pattern));
+    }
+    return;
+  }
+
+  if (aOptions.mUrl.WasPassed()) {
+    nsCString url(aOptions.mUrl.Value());
+
+    if (clearStyleSheet) {
+      SharedStyleSheetCache::Clear(Nothing(), Nothing(), Nothing(), Nothing(),
+                                   Some(url));
+    }
+    if (clearScript) {
+      SharedScriptCache::Clear(Nothing(), Nothing(), Nothing(), Nothing(),
+                               Some(url));
+    }
+    if (clearImage) {
+      imgLoader::ClearCache(Nothing(), Nothing(), Nothing(), Nothing(),
+                            Nothing(), Some(url));
+    }
+    return;
+  }
+
+  if (clearStyleSheet) {
+    SharedStyleSheetCache::Clear();
+  }
+  if (clearScript) {
+    SharedScriptCache::Clear();
+  }
+  if (clearImage) {
+    imgLoader::ClearCache();
+  }
 }
 
 #define PROCTYPE_TO_WEBIDL_CASE(_procType, _webidl) \

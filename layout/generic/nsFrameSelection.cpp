@@ -93,6 +93,23 @@ using namespace mozilla::dom;
 
 static LazyLogModule sFrameSelectionLog("FrameSelection");
 
+std::ostream& operator<<(std::ostream& aStream,
+                         const nsFrameSelection& aFrameSelection) {
+  return aStream << "{ mPresShell=" << aFrameSelection.mPresShell
+                 << ", mLimiters={ mIndependentSelectionRootElement="
+                 << aFrameSelection.mLimiters.mIndependentSelectionRootElement
+                 << ", mAncestorLimiter="
+                 << aFrameSelection.mLimiters.mAncestorLimiter
+                 << "}, IsBatching()=" << std::boolalpha
+                 << aFrameSelection.IsBatching()
+                 << ", IsInTableSelectionMode()=" << std::boolalpha
+                 << aFrameSelection.IsInTableSelectionMode()
+                 << ", GetDragState()=" << std::boolalpha
+                 << aFrameSelection.GetDragState()
+                 << ", HighlightSelectionCount()="
+                 << aFrameSelection.HighlightSelectionCount() << " }";
+}
+
 namespace mozilla {
 extern LazyLogModule sSelectionAPILog;
 extern void LogStackForSelectionAPI();
@@ -214,12 +231,14 @@ NO limiter all points are valid since you are in a topmost iframe. (browser
 or composer)
 */
 bool nsFrameSelection::NodeIsInLimiters(const nsINode* aContainerNode) const {
-  return NodeIsInLimiters(aContainerNode, GetLimiter(), GetAncestorLimiter());
+  return NodeIsInLimiters(aContainerNode, GetIndependentSelectionRootElement(),
+                          GetAncestorLimiter());
 }
 
 // static
 bool nsFrameSelection::NodeIsInLimiters(
-    const nsINode* aContainerNode, const Element* aSelectionLimiter,
+    const nsINode* aContainerNode,
+    const Element* aIndependentSelectionLimiterElement,
     const Element* aSelectionAncestorLimiter) {
   if (!aContainerNode) {
     return false;
@@ -229,14 +248,15 @@ bool nsFrameSelection::NodeIsInLimiters(
   // control.  The <div> should have only one Text and/or a <br>.  Therefore,
   // when it's non-nullptr, selection range containers must be the container or
   // the Text in it.
-  if (aSelectionLimiter) {
-    MOZ_ASSERT(aSelectionLimiter->GetPseudoElementType() ==
+  if (aIndependentSelectionLimiterElement) {
+    MOZ_ASSERT(aIndependentSelectionLimiterElement->GetPseudoElementType() ==
                PseudoStyleType::mozTextControlEditingRoot);
-    MOZ_ASSERT(aSelectionLimiter->IsHTMLElement(nsGkAtoms::div));
-    if (aSelectionLimiter == aContainerNode) {
+    MOZ_ASSERT(
+        aIndependentSelectionLimiterElement->IsHTMLElement(nsGkAtoms::div));
+    if (aIndependentSelectionLimiterElement == aContainerNode) {
       return true;
     }
-    if (aSelectionLimiter == aContainerNode->GetParent()) {
+    if (aIndependentSelectionLimiterElement == aContainerNode->GetParent()) {
       NS_WARNING_ASSERTION(aContainerNode->IsText(),
                            ToString(*aContainerNode).c_str());
       MOZ_ASSERT(aContainerNode->IsText());
@@ -413,7 +433,7 @@ nsFrameSelection::nsFrameSelection(
                     PseudoStyleType::mozTextControlEditingRoot);
   MOZ_ASSERT_IF(aEditorRootAnonymousDiv,
                 aEditorRootAnonymousDiv->IsHTMLElement(nsGkAtoms::div));
-  mLimiters.mLimiter = aEditorRootAnonymousDiv;
+  mLimiters.mIndependentSelectionRootElement = aEditorRootAnonymousDiv;
 
   // This should only ever be initialized on the main thread, so we are OK here.
   MOZ_ASSERT(NS_IsMainThread());
@@ -445,7 +465,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsFrameSelection)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTableSelection.mAppendStartSelectedCell)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTableSelection.mUnselectCellOnMouseUp)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mMaintainedRange.mRange)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mLimiters.mLimiter)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mLimiters.mIndependentSelectionRootElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLimiters.mAncestorLimiter)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsFrameSelection)
@@ -470,7 +490,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsFrameSelection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTableSelection.mAppendStartSelectedCell)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTableSelection.mUnselectCellOnMouseUp)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMaintainedRange.mRange)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLimiters.mLimiter)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLimiters.mIndependentSelectionRootElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLimiters.mAncestorLimiter)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -573,11 +593,10 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
 
   NS_ENSURE_STATE(mPresShell);
   RefPtr<PresShell> presShell = mPresShell;
-  nsIContent* anchorRoot =
-      anchorContent
-          ->GetSelectionRootContent(
-              presShell,
-              StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() /* aAllowCrossShadowBoundary */);
+  nsIContent* anchorRoot = anchorContent->GetSelectionRootContent(
+      presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+      static_cast<nsINode::AllowCrossShadowBoundary>(
+          StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()));
   NS_ENSURE_TRUE(anchorRoot, NS_ERROR_UNEXPECTED);
 
   //
@@ -587,10 +606,10 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
   nsCOMPtr<nsIContent> content = aFrame->GetContent();
 
   if (content) {
-    nsIContent* contentRoot =
-        content->GetSelectionRootContent(
-            presShell, StaticPrefs::
-                           dom_shadowdom_selection_across_boundary_enabled() /* aAllowCrossShadowBoundary */);
+    nsIContent* contentRoot = content->GetSelectionRootContent(
+        presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+        static_cast<nsINode::AllowCrossShadowBoundary>(
+            StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()));
     NS_ENSURE_TRUE(contentRoot, NS_ERROR_UNEXPECTED);
 
     if (anchorRoot == contentRoot) {
@@ -615,8 +634,10 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
         nsCOMPtr<nsIContent> cursorContent = cursorFrame->GetContent();
         NS_ENSURE_TRUE(cursorContent, NS_ERROR_FAILURE);
         nsIContent* cursorContentRoot = cursorContent->GetSelectionRootContent(
-            presShell, StaticPrefs::
-                           dom_shadowdom_selection_across_boundary_enabled() /* aAllowCrossShadowBoundary */);
+            presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+            static_cast<nsINode::AllowCrossShadowBoundary>(
+                StaticPrefs::
+                    dom_shadowdom_selection_across_boundary_enabled()));
         NS_ENSURE_TRUE(cursorContentRoot, NS_ERROR_UNEXPECTED);
         if (cursorContentRoot == anchorRoot) {
           *aRetFrame = cursorFrame;
@@ -1047,7 +1068,8 @@ Result<Element*, nsresult> nsFrameSelection::GetAncestorLimiterForCaretMove(
 nsPrevNextBidiLevels nsFrameSelection::GetPrevNextBidiLevels(
     nsIContent* aNode, uint32_t aContentOffset, bool aJumpLines) const {
   return SelectionMovementUtils::GetPrevNextBidiLevels(
-      aNode, aContentOffset, mCaret.mHint, aJumpLines);
+      aNode, aContentOffset, mCaret.mHint, aJumpLines,
+      GetAncestorLimiterOrIndependentSelectionRootElement());
 }
 
 nsresult nsFrameSelection::MaintainSelection(nsSelectionAmount aAmount) {
@@ -1074,8 +1096,9 @@ void nsFrameSelection::BidiLevelFromMove(PresShell* aPresShell,
     case eSelectEndLine:
     case eSelectNoAmount: {
       nsPrevNextBidiLevels levels =
-          SelectionMovementUtils::GetPrevNextBidiLevels(aNode, aContentOffset,
-                                                        aHint, false);
+          SelectionMovementUtils::GetPrevNextBidiLevels(
+              aNode, aContentOffset, aHint, false,
+              GetAncestorLimiterOrIndependentSelectionRootElement());
 
       SetCaretBidiLevelAndMaybeSchedulePaint(
           aHint == CaretAssociationHint::Before ? levels.mLevelBefore
@@ -1304,8 +1327,9 @@ void nsFrameSelection::HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint) {
   }
 
   mMaintainedRange.AdjustContentOffsets(
-      offsets, mLimiters.mLimiter ? MaintainedRange::StopAtScroller::Yes
-                                  : MaintainedRange::StopAtScroller::No);
+      offsets, mLimiters.mIndependentSelectionRootElement
+                   ? MaintainedRange::StopAtScroller::Yes
+                   : MaintainedRange::StopAtScroller::No);
 
   // TODO: no click has happened, rename `HandleClick`.
   HandleClick(MOZ_KnownLive(offsets.content) /* bug 1636889 */, offsets.offset,
@@ -1384,7 +1408,10 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
            __FUNCTION__, &aNewFocus, aContentOffset, aContentEndOffset,
            static_cast<int>(aHint), static_cast<int>(aFocusMode)));
 
-  mPresShell->FrameSelectionWillTakeFocus(*this);
+  mPresShell->FrameSelectionWillTakeFocus(
+      *this, aNewFocus.CanStartSelectionAsWebCompatHack()
+                 ? PresShell::CanMoveLastSelectionForToString::Yes
+                 : PresShell::CanMoveLastSelectionForToString::No);
 
   // Clear all table selection data
   mTableSelection.mMode = TableSelectionMode::None;
@@ -1479,10 +1506,10 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
         // Start selecting in the cell we were in before
         ParentAndOffset parentAndOffset{
             *mTableSelection.mClosestInclusiveTableCellAncestor};
-        if (parentAndOffset.mParent) {
-          const nsresult result = HandleTableSelection(
-              parentAndOffset.mParent, parentAndOffset.mOffset,
-              TableSelectionMode::Cell, &event);
+        if (const nsCOMPtr<nsINode> previousParent = parentAndOffset.mParent) {
+          const nsresult result =
+              HandleTableSelection(previousParent, parentAndOffset.mOffset,
+                                   TableSelectionMode::Cell, &event);
           if (NS_WARN_IF(NS_FAILED(result))) {
             return result;
           }
@@ -1494,13 +1521,13 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
         // XXXX We need to REALLY get the current key shift state
         //  (we'd need to add event listener -- let's not bother for now)
         event.mModifiers &= ~MODIFIER_SHIFT;  // aExtendSelection;
-        if (parentAndOffset.mParent) {
+        if (const nsCOMPtr<nsINode> newParent = parentAndOffset.mParent) {
           mTableSelection.mClosestInclusiveTableCellAncestor =
               inclusiveTableCellAncestor;
           // Continue selection into next cell
-          const nsresult result = HandleTableSelection(
-              parentAndOffset.mParent, parentAndOffset.mOffset,
-              TableSelectionMode::Cell, &event);
+          const nsresult result =
+              HandleTableSelection(newParent, parentAndOffset.mOffset,
+                                   TableSelectionMode::Cell, &event);
           if (NS_WARN_IF(NS_FAILED(result))) {
             return result;
           }
@@ -1726,8 +1753,9 @@ nsIFrame* nsFrameSelection::GetFrameToPageSelect() const {
   }
 
   nsIFrame* rootFrameToSelect;
-  if (mLimiters.mLimiter) {
-    rootFrameToSelect = mLimiters.mLimiter->GetPrimaryFrame();
+  if (mLimiters.mIndependentSelectionRootElement) {
+    rootFrameToSelect =
+        mLimiters.mIndependentSelectionRootElement->GetPrimaryFrame();
     if (NS_WARN_IF(!rootFrameToSelect)) {
       return nullptr;
     }
@@ -2062,9 +2090,9 @@ nsFrameSelection::CreateRangeExtendedToSomewhere(
                : ForceEditableRegion::No;
   }();
   Result<PeekOffsetOptions, nsresult> options =
-      CreatePeekOffsetOptionsForCaretMove(aLimitersAndCaretData.mLimiter,
-                                          forceEditableRegion,
-                                          ExtendSelection::Yes, aMovementStyle);
+      CreatePeekOffsetOptionsForCaretMove(
+          aLimitersAndCaretData.mIndependentSelectionRootElement,
+          forceEditableRegion, ExtendSelection::Yes, aMovementStyle);
   if (MOZ_UNLIKELY(options.isErr())) {
     return options.propagateErr();
   }
@@ -2339,7 +2367,8 @@ nsresult nsFrameSelection::TableSelection::HandleDragSelecting(
       }
 
       // Reselect block of cells to new end location
-      return SelectBlockOfCells(mStartSelectedCell, aChildContent,
+      const nsCOMPtr<nsIContent> startSelectedCell = mStartSelectedCell;
+      return SelectBlockOfCells(startSelectedCell, aChildContent,
                                 aNormalSelection);
     }
   }
@@ -2457,7 +2486,9 @@ nsresult nsFrameSelection::TableSelection::HandleMouseUpOrDown(
       // Shift key is down: append a block selection
       mDragSelectingCells = false;
 
-      return SelectBlockOfCells(mAppendStartSelectedCell, aChildContent,
+      const OwningNonNull<nsIContent> appendStartSelectedCell =
+          *mAppendStartSelectedCell;
+      return SelectBlockOfCells(appendStartSelectedCell, aChildContent,
                                 aNormalSelection);
     }
 
@@ -2867,8 +2898,10 @@ nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
       mStartSelectedCell = firstAndLastCell.inspect().mFirst;
     }
 
-    rv = SelectBlockOfCells(mStartSelectedCell,
-                            firstAndLastCell.inspect().mLast, aNormalSelection);
+    const nsCOMPtr<nsIContent> startSelectedCell = mStartSelectedCell;
+    rv = SelectBlockOfCells(startSelectedCell,
+                            MOZ_KnownLive(firstAndLastCell.inspect().mLast),
+                            aNormalSelection);
 
     // This gets set to the cell at end of row/col,
     //   but we need it to be the cell under cursor
@@ -3085,7 +3118,14 @@ void nsFrameSelection::DisconnectFromPresShell() {
     MOZ_ASSERT(mDomSelections[i]);
     mDomSelections[i]->Clear(nullptr);
   }
-  mPresShell = nullptr;
+
+  if (auto* presshell = mPresShell) {
+    if (const nsFrameSelection* sel = presshell->GetLastSelectionForToString();
+        sel == this) {
+      presshell->UpdateLastSelectionForToString(nullptr);
+    }
+    mPresShell = nullptr;
+  }
 }
 
 #ifdef XP_MACOSX

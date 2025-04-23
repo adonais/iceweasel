@@ -124,10 +124,12 @@
     <string name="pref_key_show_clipboard_suggestions" translatable="false">pref_key_show_clipboard_suggestions</string>
     <string name="pref_key_search_browsing_history" translatable="false">pref_key_search_browsing_history</string>
     <string name="pref_key_search_bookmarks" translatable="false">pref_key_search_bookmarks</string>
+    <string name="pref_key_show_shortcuts_suggestions" translatable="false">pref_key_show_shortcuts_suggestions</string>
     <string name="pref_key_search_synced_tabs" translatable="false">pref_key_search_synced_tabs</string>
     <string name="pref_key_show_search_suggestions_in_private" translatable="false">pref_key_show_search_suggestions_in_private</string>
     <string name="pref_key_show_search_suggestions_in_private_onboarding" translatable="false">pref_key_show_search_suggestions_in_privateonboarding</string>
     <string name="pref_key_show_trending_search_suggestions" translatable="false">pref_key_show_trending_search_suggestions</string>
+    <string name="pref_key_show_recent_search_suggestions" translatable="false">pref_key_show_recent_search_suggestions</string>
     <string name="pref_key_show_voice_search" translatable="false">pref_key_show_voice_search</string>
     <string name="pref_key_enable_autocomplete_urls" translatable="false">pref_key_enable_domain_autocomplete</string>
     <string name="pref_key_show_sponsored_suggestions" translatable="false">pref_key_show_sponsored_suggestions</string>
@@ -199,6 +201,10 @@
 
     <!-- DNS Over HTTPS Settings -->
     <string name="pref_key_doh_settings" translatable="false">pref_key_doh_settings</string>
+    <string name="pref_key_doh_settings_mode" translatable="false">pref_key_doh_settings_mode</string>
+    <string name="pref_key_doh_provider_uri" translatable="false">pref_key_doh_provider_uri</string>
+    <string name="pref_key_doh_default_provider_uri" translatable="false">pref_key_doh_default_provider_uri</string>
+    <string name="pref_key_doh_exceptions_list_string" translatable="false">pref_key_doh_exceptions_list_string</string>
 
     <!-- Tracking Protection Settings -->
     <string name="pref_key_etp_learn_more" translatable="false">pref_key_etp_learn_more</string>
@@ -328,6 +334,8 @@
     <string name="pref_key_open_tabs_count" translatable="false">pref_key_open_tabs_count</string>
     <string name="pref_key_open_private_tabs_count" translatable="false">pref_key_open_private_tabs_count</string>
 
+    <string name="pref_key_tab_strip" translatable="false">pref_key_tab_strip</string>
+
     <!-- Add-on Metrics Values -->
     <string name="pref_key_installed_addons_count" translatable="false">pref_key_installed_addons_count</string>
     <string name="pref_key_installed_addons_list" translatable="false">pref_key_installed_addons_list</string>
@@ -398,10 +406,14 @@
     <string name="pref_key_custom_sponsored_stories_city" translatable="false">pref_key_custom_sponsored_stories_city</string>
     <string name="pref_key_enable_compose_top_sites" translatable="false">pref_key_enable_compose_top_sites</string>
     <string name="pref_key_enable_compose_homepage" translatable="false">pref_key_enable_compose_homepage</string>
+    <string name="pref_key_enable_homepage_searchbar" translatable="false">pref_key_enable_homepage_searchbar</string>
+    <string name="pref_key_enable_compose_logins" translatable="false">pref_key_enable_compose_logins</string>
     <string name="pref_key_enable_menu_redesign" translatable="false">pref_key_enable_menu_redesign</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
     <string name="pref_key_enable_trending_searches" translatable="false">pref_key_enable_trending_searches</string>
+    <string name="pref_key_enable_recent_searches" translatable="false">pref_key_enable_recent_searches</string>
+    <string name="pref_key_enable_shortcuts_suggestions" translatable="false">pref_key_enable_shortcuts_suggestions</string>
 
     <!-- Growth Data -->
     <string name="pref_key_growth_set_as_default" translatable="false">pref_key_growth_set_as_default</string>
@@ -424,7 +436,6 @@
     <string name="pref_key_application_exit_info_last_handled_time" translatable="false">pref_key_application_exit_info_last_handled_time</string>
 
     <!-- Set as default browser prompt for existing users -->
-    <string name="pref_key_set_as_default_browser_prompt_enabled" translatable="false">pref_key_set_as_default_browser_prompt_enabled</string>
     <string name="pref_key_last_set_as_default_prompt_shown_time" translatable="false">pref_key_last_set_as_default_prompt_shown_time</string>
     <string name="pref_key_number_of_set_as_default_prompt_shown_times" translatable="false">pref_key_number_of_set_as_default_prompt_shown_times</string>
     <string name="pref_key_app_cold_start_count" translatable="false">pref_key_app_cold_start_count</string>
@@ -441,10 +452,16 @@
     <!-- Bookmarks -->
     <string name="pref_key_use_new_bookmarks_ui" translatable="false">pref_key_use_new_bookmarks_ui</string>
     <string name="pref_last_folder_saved_in" translatable="false">pref_last_folder_saved_in</string>
+    <string name="pref_key_bookmark_list_sort_order" translatable="false">pref_key_bookmark_list_sort_order</string>
 
     <!-- DNS over HTTPS Secret settings -->
     <string name="pref_key_doh_settings_enabled" translatable="false">pref_key_doh_settings_enabled</string>
 
     <!-- Glean usage profile id -->
     <string name="pref_key_glean_usage_profile_id" translatable="false">pref_key_glean_usage_profile_id</string>
+
+    <!-- Setup steps completed -->
+    <string name="pref_key_setup_step_toolbar" translatable="false">pref_key_setup_step_toolbar</string>
+    <string name="pref_key_setup_step_theme" translatable="false">pref_key_setup_step_theme</string>
+    <string name="pref_key_setup_step_extensions" translatable="false">pref_key_setup_step_extensions</string>
 </resources>

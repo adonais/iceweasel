@@ -78,6 +78,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 ChromeUtils.defineESModuleGetters(this, {
   DoHConfigController: "resource:///modules/DoHConfig.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
 });
 
 const SANITIZE_ON_SHUTDOWN_MAPPINGS = {
@@ -942,6 +944,7 @@ var gPrivacyPane = {
     this.networkCookieBehaviorReadPrefs();
     this._initTrackingProtectionExtensionControl();
     this._initThirdPartyCertsToggle();
+    this._initProfilesInfo();
 
     Preferences.get("privacy.trackingprotection.enabled").on(
       "change",
@@ -1187,14 +1190,15 @@ var gPrivacyPane = {
     this.initDataCollection();
 
     if (AppConstants.MOZ_DATA_REPORTING) {
-      if (AppConstants.MOZ_CRASHREPORTER) {
-        this.initSubmitCrashes();
-      }
-      this.initSubmitHealthReport();
+      this.updateSubmitHealthReportFromPref();
+      Preferences.get(PREF_UPLOAD_ENABLED).on(
+        "change",
+        gPrivacyPane.updateSubmitHealthReportFromPref
+      );
       setEventListener(
         "submitHealthReportBox",
         "command",
-        gPrivacyPane.updateSubmitHealthReport
+        gPrivacyPane.updateSubmitHealthReportToPref
       );
       if (AppConstants.MOZ_NORMANDY) {
         this.initOptOutStudyCheckbox();
@@ -3374,13 +3378,6 @@ var gPrivacyPane = {
     this.initPrivacySegmentation();
   },
 
-  initSubmitCrashes() {
-    this._setupLearnMoreLink(
-      "toolkit.crashreporter.infoURL",
-      "crashReporterLearnMore"
-    );
-  },
-
   initPrivacySegmentation() {
     // Section visibility
     let section = document.getElementById("privacySegmentationSection");
@@ -3421,15 +3418,11 @@ var gPrivacyPane = {
   },
 
   /**
-   * Initialize the health report service reference and checkbox.
+   * Update the health report service checkbox from preference.
    */
-  initSubmitHealthReport() {
-    this._setupLearnMoreLink(
-      "datareporting.healthreport.infoURL",
-      "FHRLearnMore"
-    );
-
+  updateSubmitHealthReportFromPref() {
     let checkbox = document.getElementById("submitHealthReportBox");
+    let telemetryContainer = document.getElementById("telemetry-container");
 
     // Telemetry is only sending data if MOZ_TELEMETRY_REPORTING is defined.
     // We still want to display the preferences panel if that's not the case, but
@@ -3445,12 +3438,13 @@ var gPrivacyPane = {
     checkbox.checked =
       Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED) &&
       AppConstants.MOZ_TELEMETRY_REPORTING;
+    telemetryContainer.hidden = checkbox.checked;
   },
 
   /**
    * Update the health report preference with state from checkbox.
    */
-  updateSubmitHealthReport() {
+  updateSubmitHealthReportToPref() {
     let checkbox = document.getElementById("submitHealthReportBox");
     let telemetryContainer = document.getElementById("telemetry-container");
 
@@ -3544,5 +3538,25 @@ var gPrivacyPane = {
         gPrivacyPane.updateDoHStatus();
         break;
     }
+  },
+
+  _initProfilesInfo() {
+    setEventListener(
+      "dataCollectionViewProfiles",
+      "click",
+      gMainPane.manageProfiles
+    );
+
+    let listener = () => gPrivacyPane.updateProfilesPrivacyInfo();
+    SelectableProfileService.on("enableChanged", listener);
+    window.addEventListener("unload", () =>
+      SelectableProfileService.off("enableChanged", listener)
+    );
+    this.updateProfilesPrivacyInfo();
+  },
+
+  updateProfilesPrivacyInfo() {
+    let profilesInfo = document.getElementById("preferences-privacy-profiles");
+    profilesInfo.hidden = !SelectableProfileService.isEnabled;
   },
 };

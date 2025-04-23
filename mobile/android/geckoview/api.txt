@@ -1101,6 +1101,7 @@ package org.mozilla.geckoview {
     method @AnyThread @NonNull public GeckoResult<InputStream> saveAsPdf();
     method @AnyThread @Deprecated @DeprecationSchedule(id="session-shopping",version=139) @NonNull public GeckoResult<Boolean> sendClickAttributionEvent(@NonNull String);
     method @AnyThread @Deprecated @DeprecationSchedule(id="session-shopping",version=139) @NonNull public GeckoResult<Boolean> sendImpressionAttributionEvent(@NonNull String);
+    method @AnyThread @NonNull public GeckoResult<Void> sendMoreWebCompatInfo(@NonNull JSONObject);
     method @AnyThread @Deprecated @DeprecationSchedule(id="session-shopping",version=139) @NonNull public GeckoResult<Boolean> sendPlacementAttributionEvent(@NonNull String);
     method @AnyThread public void setActive(boolean);
     method @UiThread public void setAutofillDelegate(@Nullable Autofill.Delegate);
@@ -1279,6 +1280,7 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoSession.Loader referrer(@NonNull GeckoSession);
     method @NonNull public GeckoSession.Loader referrer(@NonNull Uri);
     method @NonNull public GeckoSession.Loader referrer(@NonNull String);
+    method @NonNull public GeckoSession.Loader textDirectiveUserActivation(boolean);
     method @NonNull public GeckoSession.Loader uri(@NonNull String);
     method @NonNull public GeckoSession.Loader uri(@NonNull Uri);
   }
@@ -1464,10 +1466,12 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onCreditCardSelect(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.CreditCardSelectOption>);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onDateTimePrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.DateTimePrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onFilePrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.FilePrompt);
+    method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onFolderUploadPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.FolderUploadPrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onLoginSave(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.LoginSaveOption>);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onLoginSelect(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.LoginSelectOption>);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onPopupPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.PopupPrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onRepostConfirmPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.RepostConfirmPrompt);
+    method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onRequestCertificate(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.CertificateRequest);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onSelectIdentityCredentialAccount(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onSelectIdentityCredentialProvider(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onSharePrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.SharePrompt);
@@ -1558,6 +1562,12 @@ package org.mozilla.geckoview {
     field public static final int POSITIVE = 0;
   }
 
+  public static class GeckoSession.PromptDelegate.CertificateRequest extends GeckoSession.PromptDelegate.BasePrompt {
+    ctor protected CertificateRequest(@NonNull String, GeckoSession.PromptDelegate.BasePrompt.Observer, String);
+    method @NonNull @UiThread public GeckoSession.PromptDelegate.PromptResponse confirm(@Nullable String);
+    field @NonNull public final String host;
+  }
+
   public static class GeckoSession.PromptDelegate.ChoicePrompt extends GeckoSession.PromptDelegate.BasePrompt {
     ctor protected ChoicePrompt(@NonNull String, @Nullable String, @Nullable String, int, @NonNull GeckoSession.PromptDelegate.ChoicePrompt.Choice[], @NonNull GeckoSession.PromptDelegate.BasePrompt.Observer);
     method @NonNull @UiThread public GeckoSession.PromptDelegate.PromptResponse confirm(@NonNull String);
@@ -1643,8 +1653,15 @@ package org.mozilla.geckoview {
 
   public static class GeckoSession.PromptDelegate.FilePrompt.Type {
     ctor protected Type();
+    field public static final int FOLDER = 3;
     field public static final int MULTIPLE = 2;
     field public static final int SINGLE = 1;
+  }
+
+  public static class GeckoSession.PromptDelegate.FolderUploadPrompt extends GeckoSession.PromptDelegate.BasePrompt {
+    ctor protected FolderUploadPrompt(@NonNull String, @Nullable String, @NonNull GeckoSession.PromptDelegate.BasePrompt.Observer);
+    method @NonNull @UiThread public GeckoSession.PromptDelegate.PromptResponse confirm(@Nullable AllowOrDeny);
+    field @Nullable public final String directoryName;
   }
 
   public static final class GeckoSession.PromptDelegate.IdentityCredential {

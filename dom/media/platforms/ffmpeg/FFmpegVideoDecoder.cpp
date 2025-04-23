@@ -257,7 +257,7 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CreateVAAPIDeviceContext() {
     return false;
   }
 
-  mDisplay = displayHolder->mDisplay;
+  mDisplay = displayHolder->Display();
   hwctx->user_opaque = displayHolder.forget().take();
   hwctx->free = VAAPIDisplayReleaseCallback;
 
@@ -542,6 +542,17 @@ bool FFmpegVideoDecoder<LIBAV_VER>::ShouldEnableLinuxHWDecoding() const {
 }
 #endif
 
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
+bool FFmpegVideoDecoder<LIBAV_VER>::UploadSWDecodeToDMABuf() const {
+  // Use direct DMABuf upload for GL backend Wayland compositor only.
+  return mImageAllocator && (mImageAllocator->GetCompositorBackendType() ==
+                                 layers::LayersBackend::LAYERS_WR &&
+                             !mImageAllocator->UsingSoftwareWebRender() &&
+                             mImageAllocator->GetWebRenderCompositorType() ==
+                                 layers::WebRenderCompositor::WAYLAND);
+}
+#endif
+
 FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
     FFmpegLibWrapper* aLib, const VideoInfo& aConfig,
     KnowsCompositor* aAllocator, ImageContainer* aImageContainer,
@@ -567,6 +578,9 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
   // initialization.
   mExtraData = new MediaByteBuffer;
   mExtraData->AppendElements(*aConfig.mExtraData);
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
+  mUploadSWDecodeToDMABuf = UploadSWDecodeToDMABuf();
+#endif
 #ifdef MOZ_USE_HWDECODE
   InitHWDecoderIfAllowed();
 #endif  // MOZ_USE_HWDECODE
@@ -693,6 +707,16 @@ static bool IsYUV420Sampling(const AVPixelFormat& aFormat) {
          aFormat == AV_PIX_FMT_YUV420P10LE || aFormat == AV_PIX_FMT_YUV420P12LE;
 }
 
+#  if defined(MOZ_WIDGET_GTK)
+bool FFmpegVideoDecoder<LIBAV_VER>::IsLinuxHDR() const {
+  if (!mInfo.mColorPrimaries || !mInfo.mTransferFunction) {
+    return false;
+  }
+  return mInfo.mColorPrimaries.value() == gfx::ColorSpace2::BT2020 &&
+         mInfo.mTransferFunction.value() == gfx::TransferFunction::PQ;
+}
+#  endif
+
 layers::TextureClient*
 FFmpegVideoDecoder<LIBAV_VER>::AllocateTextureClientForImage(
     struct AVCodecContext* aCodecContext, PlanarYCbCrImage* aImage) {
@@ -801,6 +825,13 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
   if (IsHardwareAccelerated()) {
     return AVERROR(EINVAL);
   }
+
+#  if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
+  if (mUploadSWDecodeToDMABuf) {
+    FFMPEG_LOG("DMABuf upload doesn't use shm buffers");
+    return AVERROR(EINVAL);
+  }
+#  endif
 
   if (!IsColorFormatSupportedForUsingCustomizedBuffer(aCodecContext->pix_fmt)) {
     FFMPEG_LOG("Not support color format %d", aCodecContext->pix_fmt);
@@ -1453,7 +1484,7 @@ gfx::SurfaceFormat FFmpegVideoDecoder<LIBAV_VER>::GetSurfaceFormat() const {
 
 MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
     int64_t aOffset, int64_t aPts, int64_t aDuration,
-    MediaDataDecoder::DecodedData& aResults) const {
+    MediaDataDecoder::DecodedData& aResults) {
   FFMPEG_LOG("Got one frame output with pts=%" PRId64 " dts=%" PRId64
              " duration=%" PRId64,
              aPts, mFrame->pkt_dts, aDuration);
@@ -1545,6 +1576,39 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
         mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
         TimeUnit::FromMicroseconds(aDuration), wrapper->AsImage(),
         !!mFrame->key_frame, TimeUnit::FromMicroseconds(-1));
+  }
+#endif
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
+  if (mUploadSWDecodeToDMABuf) {
+    MOZ_DIAGNOSTIC_ASSERT(!v);
+    if (!mVideoFramePool) {
+      mVideoFramePool = MakeUnique<VideoFramePool<LIBAV_VER>>(10);
+    }
+    const auto yuvData = layers::PlanarYCbCrData::From(b);
+    if (yuvData) {
+      auto surface =
+          mVideoFramePool->GetVideoFrameSurface(*yuvData, mCodecContext);
+      if (surface) {
+        FFMPEG_LOGV("Uploaded video data to DMABuf surface UID %d HDR %d",
+                    surface->GetDMABufSurface()->GetUID(), IsLinuxHDR());
+        surface->SetYUVColorSpace(GetFrameColorSpace());
+        surface->SetColorRange(GetFrameColorRange());
+        if (mInfo.mColorPrimaries) {
+          surface->SetColorPrimaries(mInfo.mColorPrimaries.value());
+        }
+        if (mInfo.mTransferFunction) {
+          surface->SetTransferFunction(mInfo.mTransferFunction.value());
+        }
+        v = VideoData::CreateFromImage(
+            mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
+            TimeUnit::FromMicroseconds(aDuration), surface->GetAsImage(),
+            !!mFrame->key_frame, TimeUnit::FromMicroseconds(-1));
+      } else {
+        FFMPEG_LOG("Failed to uploaded video data to DMABuf");
+      }
+    } else {
+      FFMPEG_LOG("Failed to convert PlanarYCbCrData");
+    }
   }
 #endif
   if (!v) {
@@ -1744,7 +1808,13 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
 #endif
 #ifdef MOZ_ENABLE_D3D11VA
   if (IsHardwareAccelerated()) {
+    AVHWDeviceContext* hwctx =
+        reinterpret_cast<AVHWDeviceContext*>(mD3D11VADeviceContext->data);
+    AVD3D11VADeviceContext* d3d11vactx =
+        reinterpret_cast<AVD3D11VADeviceContext*>(hwctx->hwctx);
+    d3d11vactx->device = nullptr;
     mLib->av_buffer_unref(&mD3D11VADeviceContext);
+    mD3D11VADeviceContext = nullptr;
   }
 #endif
   FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown();
@@ -1981,7 +2051,13 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitD3D11VADecoder() {
       mLib->av_freep(&mCodecContext);
     }
     if (mD3D11VADeviceContext) {
+      AVHWDeviceContext* hwctx =
+          reinterpret_cast<AVHWDeviceContext*>(mD3D11VADeviceContext->data);
+      AVD3D11VADeviceContext* d3d11vactx =
+          reinterpret_cast<AVD3D11VADeviceContext*>(hwctx->hwctx);
+      d3d11vactx->device = nullptr;
       mLib->av_buffer_unref(&mD3D11VADeviceContext);
+      mD3D11VADeviceContext = nullptr;
     }
     mDXVA2Manager.reset();
   });
@@ -2017,51 +2093,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitD3D11VADecoder() {
   }
 
   mCodecContext->hw_device_ctx = mLib->av_buffer_ref(mD3D11VADeviceContext);
-
-  FFMPEG_LOG("  creating hwframe context");
-  AVBufferRef* hwFrameContext = nullptr;
-  hwFrameContext = mLib->av_hwframe_ctx_alloc(mD3D11VADeviceContext);
-  if (!hwFrameContext) {
-    FFMPEG_LOG("  av_hwframe_ctx_alloc failed.");
-    return NS_ERROR_DOM_MEDIA_FATAL_ERR;
-  }
-
-  AVHWFramesContext* framesContext = (AVHWFramesContext*)hwFrameContext->data;
-  framesContext->format = AV_PIX_FMT_D3D11;
-  if (mInfo.mColorDepth == gfx::ColorDepth::COLOR_10) {
-    framesContext->sw_format = AV_PIX_FMT_P010;
-  } else {
-    MOZ_ASSERT(mInfo.mColorDepth == gfx::ColorDepth::COLOR_8);
-    framesContext->sw_format = AV_PIX_FMT_NV12;
-  }
-
-  // See
-  // https://github.com/FFmpeg/FFmpeg/blob/a234e5cd80224c95a205c1f3e297d8c04a1374c3/libavcodec/dxva2.c#L621-L627
-  framesContext->initial_pool_size = 9;
-
-  // See
-  // https://github.com/FFmpeg/FFmpeg/blob/a234e5cd80224c95a205c1f3e297d8c04a1374c3/libavcodec/dxva2.c#L609-L616
-  if (mCodecID == AV_CODEC_ID_AV1) {
-    mTextureAlignment = 128;
-  } else {
-    mTextureAlignment = 16;
-  }
-  framesContext->width = FFALIGN(mCodecContext->width, mTextureAlignment);
-  framesContext->height = FFALIGN(mCodecContext->height, mTextureAlignment);
-
-  AVD3D11VAFramesContext* d3d11vaFramesContext =
-      (AVD3D11VAFramesContext*)framesContext->hwctx;
-  d3d11vaFramesContext->BindFlags |= D3D11_BIND_DECODER;
-  if (CanUseZeroCopyVideoFrame()) {
-    d3d11vaFramesContext->BindFlags |= D3D11_BIND_SHADER_RESOURCE;
-  }
-
-  int err = mLib->av_hwframe_ctx_init(hwFrameContext);
-  if (err < 0) {
-    FFMPEG_LOG("  av_hwframe_ctx_init failed. err=%d", err);
-    return NS_ERROR_DOM_MEDIA_FATAL_ERR;
-  }
-
   MediaResult ret = AllocateExtraData();
   if (NS_FAILED(ret)) {
     FFMPEG_LOG("  failed to allocate extradata.");

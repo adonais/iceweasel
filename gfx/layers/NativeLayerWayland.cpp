@@ -102,23 +102,6 @@ void NativeLayerRootWayland::Init() {
   mTmpBuffer = widget::WaylandBufferSHM::Create(LayoutDeviceIntSize(1, 1));
   mDRMFormat = new DRMFormat(GBM_FORMAT_ARGB8888);
 
-  // Would be great to use synced commit to subsurfaces but we can't do it now.
-  // We're getting frame callbacks from subsurfaces with the same timestamp
-  // like:
-  //
-  // frame callback layer 1 time 49873
-  // frame callback layer 2 time 49873
-  // frame callback layer 3 time 49873
-  // frame callback layer 4 time 49873
-  // ...
-  //
-  // But we don't know which one is the last to perform commit to
-  // parent surface to reflect all changes.
-
-  // Request force commit to parent surface on frame callback to
-  // sync rendering of child subsurfaces.
-  // mSurface->RequestFrameCallbackForceCommitLocked(lock);
-
   // Unmap all layers if nsWindow is unmapped
   WaylandSurfaceLock lock(mSurface);
   mSurface->SetUnmapCallbackLocked(lock, [this, self = RefPtr{this}]() -> void {
@@ -475,14 +458,21 @@ bool NativeLayerRootWayland::CommitToScreenLocked(
 // Ready-to-paint signal from root or child surfaces. Route it to
 // root WaylandSurface (owned by nsWindow) where it's used to fire VSync.
 void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
-  if (aTime <= aLastFrameCallbackTime) {
+  {
+    // Child layer wl_subsurface already requested next frame callback
+    // and we need to commit to root surface too as we're in
+    // wl_subsurface synced mode.
+    WaylandSurfaceLock lock(mSurface, /* force commit */ true);
+  }
+
+  if (aTime <= mLastFrameCallbackTime) {
     LOGVERBOSE(
         "NativeLayerRootWayland::FrameCallbackHandler() ignoring redundant "
         "callback %d",
         aTime);
     return;
   }
-  aLastFrameCallbackTime = aTime;
+  mLastFrameCallbackTime = aTime;
 
   LOGVERBOSE("NativeLayerRootWayland::FrameCallbackHandler() time %d", aTime);
   mSurface->FrameCallbackHandler(nullptr, aTime,

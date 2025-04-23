@@ -343,7 +343,9 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
                                Element& aEditorRootAnonymousDiv);
 
   void SetScrollContainerFrame(ScrollContainerFrame* aScrollContainerFrame);
-  nsFrameSelection* GetConstFrameSelection() { return mFrameSelection; }
+  nsFrameSelection* GetIndependentFrameSelection() const {
+    return mFrameSelection;
+  }
   // Will return null if !mFrameSelection.
   Selection* GetSelection(SelectionType aSelectionType);
 
@@ -355,9 +357,9 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   NS_IMETHOD GetSelectionFromScript(RawSelectionType aRawSelectionType,
                                     Selection** aSelection) override;
   Selection* GetSelection(RawSelectionType aRawSelectionType) override;
-  NS_IMETHOD ScrollSelectionIntoView(RawSelectionType aRawSelectionType,
-                                     SelectionRegion aRegion,
-                                     ControllerScrollFlags aFlags) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD ScrollSelectionIntoView(
+      RawSelectionType aRawSelectionType, SelectionRegion aRegion,
+      ControllerScrollFlags aFlags) override;
   NS_IMETHOD RepaintSelection(RawSelectionType aRawSelectionType) override;
   nsresult RepaintSelection(nsPresContext* aPresContext,
                             SelectionType aSelectionType);
@@ -366,15 +368,16 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   NS_IMETHOD GetCaretEnabled(bool* _retval) override;
   NS_IMETHOD GetCaretVisible(bool* _retval) override;
   NS_IMETHOD SetCaretVisibilityDuringSelection(bool aVisibility) override;
-  NS_IMETHOD PhysicalMove(int16_t aDirection, int16_t aAmount,
-                          bool aExtend) override;
-  NS_IMETHOD CharacterMove(bool aForward, bool aExtend) override;
-  NS_IMETHOD WordMove(bool aForward, bool aExtend) override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD LineMove(bool aForward,
-                                                  bool aExtend) override;
-  NS_IMETHOD IntraLineMove(bool aForward, bool aExtend) override;
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD PageMove(bool aForward, bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD PhysicalMove(int16_t aDirection,
+                                             int16_t aAmount,
+                                             bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD CharacterMove(bool aForward,
+                                              bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD WordMove(bool aForward, bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD LineMove(bool aForward, bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD IntraLineMove(bool aForward,
+                                              bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD PageMove(bool aForward, bool aExtend) override;
   NS_IMETHOD CompleteScroll(bool aForward) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD CompleteMove(bool aForward,
                                              bool aExtend) override;
@@ -690,13 +693,14 @@ TextInputSelectionController::CompleteMove(bool aForward, bool aExtend) {
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
 
   // grab the parent / root DIV for this text widget
-  nsIContent* parentDIV = frameSelection->GetLimiter();
+  Element* const parentDIV =
+      frameSelection->GetIndependentSelectionRootElement();
   if (!parentDIV) {
     return NS_ERROR_UNEXPECTED;
   }
 
   // make the caret be either at the very beginning (0) or the very end
-  int32_t offset = 0;
+  uint32_t offset = 0;
   CaretAssociationHint hint = CaretAssociationHint::Before;
   if (aForward) {
     offset = parentDIV->GetChildCount();
@@ -704,7 +708,7 @@ TextInputSelectionController::CompleteMove(bool aForward, bool aExtend) {
     // Prevent the caret from being placed after the last
     // BR node in the content tree!
 
-    if (offset > 0) {
+    if (offset) {
       nsIContent* child = parentDIV->GetLastChild();
 
       if (child->IsHTMLElement(nsGkAtoms::br)) {
@@ -714,7 +718,7 @@ TextInputSelectionController::CompleteMove(bool aForward, bool aExtend) {
     }
   }
 
-  const RefPtr<nsIContent> pinnedParentDIV{parentDIV};
+  const OwningNonNull<Element> pinnedParentDIV(*parentDIV);
   const nsFrameSelection::FocusMode focusMode =
       aExtend ? nsFrameSelection::FocusMode::kExtendSelection
               : nsFrameSelection::FocusMode::kCollapseToNewPoint;
@@ -760,7 +764,13 @@ TextInputSelectionController::ScrollCharacter(bool aRight) {
 void TextInputSelectionController::SelectionWillTakeFocus() {
   if (mFrameSelection) {
     if (PresShell* shell = mFrameSelection->GetPresShell()) {
-      shell->FrameSelectionWillTakeFocus(*mFrameSelection);
+      // text input selection always considers to move the
+      // selection.
+      shell->FrameSelectionWillTakeFocus(
+          *mFrameSelection,
+          StaticPrefs::dom_selection_mimic_chrome_tostring_enabled()
+              ? PresShell::CanMoveLastSelectionForToString::Yes
+              : PresShell::CanMoveLastSelectionForToString::No);
     }
   }
 }
@@ -1526,8 +1536,8 @@ void TextControlState::Traverse(nsCycleCollectionTraversalCallback& cb) {
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextEditor)
 }
 
-nsFrameSelection* TextControlState::GetConstFrameSelection() {
-  return mSelCon ? mSelCon->GetConstFrameSelection() : nullptr;
+nsFrameSelection* TextControlState::GetIndependentFrameSelection() const {
+  return mSelCon ? mSelCon->GetIndependentFrameSelection() : nullptr;
 }
 
 TextEditor* TextControlState::GetTextEditor() {
@@ -1691,7 +1701,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
     return NS_OK;
   }
 
-  AutoHideSelectionChanges hideSelectionChanges(GetConstFrameSelection());
+  AutoHideSelectionChanges hideSelectionChanges(GetIndependentFrameSelection());
 
   if (mHandlingState) {
     // Don't attempt to initialize recursively!
@@ -2293,7 +2303,9 @@ void TextControlState::SetRangeText(const nsAString& aReplacement,
   Selection* selection =
       mSelCon ? mSelCon->GetSelection(SelectionType::eNormal) : nullptr;
   SelectionBatcher selectionBatcher(
-      selection, __FUNCTION__,
+      // `selection` will be grabbed by selectionBatcher itself.  Thus, we don't
+      // need to grab it by ourselves.
+      MOZ_KnownLive(selection), __FUNCTION__,
       nsISelectionListener::JS_REASON);  // no-op if nullptr
 
   MOZ_ASSERT(aStart <= aEnd);
@@ -2531,7 +2543,9 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap,
     // XXXbz if we could just get the textContent of our anonymous content (eg
     // if plaintext editor didn't create <br> nodes all over), we wouldn't need
     // this.
-    { /* Scope for AutoNoJSAPI. */
+    // XXX If mTextEditor has not been initialized yet, ComputeTextValue()
+    // anyway returns empty string. Is this always expected here?
+    if (mEditorInitialized) {
       AutoNoJSAPI nojsapi;
 
       DebugOnly<nsresult> rv = mTextEditor->ComputeTextValue(flags, aValue);
@@ -2786,7 +2800,10 @@ bool TextControlState::SetValueWithTextEditor(
   // FYI: It's safe to use raw pointer for selection here because
   //      SelectionBatcher will grab it with RefPtr.
   Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
-  SelectionBatcher selectionBatcher(selection, __FUNCTION__);
+  SelectionBatcher selectionBatcher(
+      // `selection` will be grabbed by selectionBatcher itself.  Thus, we don't
+      // need to grab it by ourselves.
+      MOZ_KnownLive(selection), __FUNCTION__);
 
   // get the flags, remove readonly, disabled and max-length,
   // set the value, restore flags

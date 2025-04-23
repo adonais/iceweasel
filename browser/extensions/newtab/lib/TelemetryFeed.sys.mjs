@@ -789,7 +789,12 @@ export class TelemetryFeed {
     }
 
     // Make sure the callback endpoint is allowed
-    const allowed = this._prefs.get(PREF_ENDPOINTS).split(",");
+    const allowed =
+      this._prefs
+        .get(PREF_ENDPOINTS)
+        .split(",")
+        .map(item => item.trim())
+        .filter(item => item) || [];
     if (!allowed.some(prefix => data.url.startsWith(prefix))) {
       throw new Error(
         `[Unified ads callback] Not one of allowed prefixes (${allowed})`
@@ -1037,11 +1042,12 @@ export class TelemetryFeed {
     if (session) {
       switch (action.type) {
         case "INLINE_SELECTION_CLICK": {
-          const { topic, topic_position, position, is_followed } = action.data;
+          const { topic, section_position, position, is_followed } =
+            action.data;
           Glean.newtab.inlineSelectionClick.record({
             newtab_visit_id: session.session_id,
             topic,
-            topic_position,
+            section_position,
             position,
             is_followed,
           });
@@ -1050,7 +1056,7 @@ export class TelemetryFeed {
         case "INLINE_SELECTION_IMPRESSION":
           Glean.newtab.inlineSelectionImpression.record({
             newtab_visit_id: session.session_id,
-            position: action.data.position,
+            section_position: action.data.section_position,
           });
           break;
       }
@@ -1151,13 +1157,18 @@ export class TelemetryFeed {
         break;
       case "WALLPAPER_CLICK":
         {
-          const { selected_wallpaper, had_previous_wallpaper } = data;
+          const {
+            selected_wallpaper,
+            had_previous_wallpaper,
+            had_uploaded_previously,
+          } = data;
 
           // if either of the wallpaper prefs are truthy, they had a previous wallpaper
           Glean.newtab.wallpaperClick.record({
             newtab_visit_id: session.session_id,
             selected_wallpaper,
             had_previous_wallpaper,
+            had_uploaded_previously,
           });
         }
         break;
@@ -1171,18 +1182,6 @@ export class TelemetryFeed {
           newtab_visit_id: session.session_id,
         });
         break;
-      case "WALLPAPER_UPLOAD":
-        {
-          const { had_uploaded_previously, had_previous_wallpaper } = data;
-
-          Glean.newtab.wallpaperUpload.record({
-            newtab_visit_id: session.session_id,
-            had_previous_wallpaper,
-            had_uploaded_previously,
-          });
-        }
-        break;
-
       default:
         break;
     }

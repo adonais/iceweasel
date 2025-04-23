@@ -541,8 +541,11 @@ class Document : public nsINode,
                  public DocumentOrShadowRoot,
                  public nsSupportsWeakReference,
                  public nsIScriptObjectPrincipal,
-                 public SupportsWeakPtr {
+                 public SupportsWeakPtr,
+                 private LinkedListElement<Document> {
   friend class DocumentOrShadowRoot;
+  friend class LinkedList<Document>;
+  friend class LinkedListElement<Document>;
 
  protected:
   explicit Document(const char* aContentType);
@@ -1403,6 +1406,12 @@ class Document : public nsINode,
   // Returns the cookie jar settings for this and sub contexts.
   nsICookieJarSettings* CookieJarSettings();
 
+  // Set the cookieJarSettings to the document.
+  void SetCookieJarSettings(nsICookieJarSettings* aCookieJarSettings) {
+    MOZ_ASSERT(aCookieJarSettings);
+    mCookieJarSettings = aCookieJarSettings;
+  }
+
   // Returns whether this document is using unpartitioned cookies
   bool UsingStorageAccess();
 
@@ -1811,6 +1820,9 @@ class Document : public nsINode,
   void RemoveFromIdTable(Element* aElement, nsAtom* aId);
   void AddToNameTable(Element* aElement, nsAtom* aName);
   void RemoveFromNameTable(Element* aElement, nsAtom* aName);
+  void AddToDocumentNameTable(nsGenericHTMLElement* aElement, nsAtom* aName);
+  void RemoveFromDocumentNameTable(nsGenericHTMLElement* aElement,
+                                   nsAtom* aName);
 
   /**
    * Returns all elements in the top layer in the insertion order.
@@ -2750,10 +2762,19 @@ class Document : public nsINode,
   }
 
   void MaybeScheduleFrameRequestCallbacks();
+  // If this function changes make sure to call
+  // MaybeScheduleFrameRequestCallbacks at the right places.
   bool ShouldFireFrameRequestCallbacks() const {
-    // If this condition changes make sure to call
-    // MaybeScheduleFrameRequestCallbacks at the right places.
-    return mPresShell && IsEventHandlingEnabled();
+    if (!mPresShell) {
+      return false;
+    }
+    if (!IsEventHandlingEnabled()) {
+      return false;
+    }
+    if (mRenderingSuppressedForViewTransitions) {
+      return false;
+    }
+    return true;
   }
 
   void DecreaseEventSuppression() {
@@ -3473,7 +3494,11 @@ class Document : public nsINode,
   bool Hidden() const { return mVisibilityState != VisibilityState::Visible; }
   dom::VisibilityState VisibilityState() const { return mVisibilityState; }
 
- public:
+  bool RenderingSuppressedForViewTransitions() const {
+    return mRenderingSuppressedForViewTransitions;
+  }
+  void SetRenderingSuppressedForViewTransitions(bool);
+
   void GetSelectedStyleSheetSet(nsAString& aSheetSet);
   void SetSelectedStyleSheetSet(const nsAString& aSheetSet);
   void GetLastStyleSheetSet(nsAString& aSheetSet) {
@@ -3866,9 +3891,12 @@ class Document : public nsINode,
     return mActiveViewTransition;
   }
   void ClearActiveViewTransition();
-  void PerformPendingViewTransitionOperations();
+  MOZ_CAN_RUN_SCRIPT void PerformPendingViewTransitionOperations();
   void EnsureViewTransitionOperationsHappen();
   void MaybeSkipTransitionAfterVisibilityChange();
+
+  void ScheduleViewTransitionUpdateCallback(ViewTransition* aVt);
+  MOZ_CAN_RUN_SCRIPT void FlushViewTransitionUpdateCallbackQueue();
 
   // Getter for PermissionDelegateHandler. Performs lazy initialization.
   PermissionDelegateHandler* GetPermissionDelegateHandler();
@@ -4226,6 +4254,14 @@ class Document : public nsINode,
   bool MayHaveDOMActivateListeners() const;
 
   void DropStyleSet();
+
+  // Get a list of all Document objects which are present in the current
+  // process. This should not be used in hot code paths.
+  //
+  // NOTE: This includes both primary and data documents, as well as documents
+  // which have not yet been fully initialized.
+  static void GetAllInProcessDocuments(
+      nsTArray<RefPtr<Document>>& aAllDocuments);
 
  protected:
   // Returns the WindowContext for the document that we will contribute
@@ -4679,6 +4715,9 @@ class Document : public nsINode,
   bool mUpgradeInsecureRequests : 1;
   bool mUpgradeInsecurePreloads : 1;
   bool mDevToolsWatchingDOMMutations : 1;
+
+  // https://drafts.csswg.org/css-view-transitions-1/#document-rendering-suppression-for-view-transitions
+  bool mRenderingSuppressedForViewTransitions : 1;
 
   // True if BIDI is enabled.
   bool mBidiEnabled : 1;
@@ -5412,8 +5451,12 @@ class Document : public nsINode,
 
   RefPtr<HTMLAllCollection> mAll;
 
+  // The active view transition.
   // https://drafts.csswg.org/css-view-transitions-1/#document-active-view-transition
   RefPtr<ViewTransition> mActiveViewTransition;
+  // The update callback queue.
+  // https://drafts.csswg.org/css-view-transitions-1/#document-update-callback-queue
+  nsTArray<RefPtr<ViewTransition>> mViewTransitionUpdateCallbacks;
 
   nsTHashSet<RefPtr<WorkerDocumentListener>> mWorkerListeners;
 

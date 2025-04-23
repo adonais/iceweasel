@@ -171,9 +171,7 @@ MACH_COMMANDS = {
         "python/mozperftest/mozperftest/mach_commands.py"
     ),
     "power": MachCommandReference("tools/power/mach_commands.py"),
-    "prettier-format": MachCommandReference(
-        "python/mozbuild/mozbuild/code_analysis/mach_commands.py"
-    ),
+    "prettier": MachCommandReference("tools/lint/mach_commands.py"),
     "puppeteer-test": MachCommandReference("remote/mach_commands.py"),
     "python": MachCommandReference("python/mach_commands.py"),
     "python-test": MachCommandReference("python/mach_commands.py"),
@@ -223,6 +221,8 @@ MACH_COMMANDS = {
     "update-glean-tags": MachCommandReference(
         "toolkit/components/glean/build_scripts/mach_commands.py"
     ),
+    "update-test": MachCommandReference("testing/update/mach_commands.py"),
+    "use-moz-src": MachCommandReference("tools/use-moz-src/mach_commands.py"),
     "valgrind-test": MachCommandReference("build/valgrind/mach_commands.py"),
     "vcs-setup": MachCommandReference(
         "python/mozboot/mozboot/mach_commands.py",

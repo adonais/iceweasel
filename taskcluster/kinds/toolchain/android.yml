@@ -231,14 +231,17 @@ linux64-android-gradle-dependencies:
         script: android-gradle-dependencies.sh
         sparse-profile: null
         resources:
-            - 'taskcluster/scripts/misc/android-gradle-dependencies/**'
             - '*.gradle'
+            - 'gradle.properties'
+            - 'gradle/**'
             - 'mobile/android/**/*.gradle'
+            - 'mobile/android/**/gradle.properties'
+            - 'mobile/android/android-components/plugins/dependencies/src/main/java/ApplicationServices.kt'
+            - 'mobile/android/android-components/plugins/dependencies/src/main/java/DependenciesPlugin.kt'
             - 'mobile/android/config/mozconfigs/android-arm-gradle-dependencies/**'
             - 'mobile/android/config/mozconfigs/common*'
             - 'mobile/android/gradle.configure'
-            - 'mobile/android/android-components/plugins/dependencies/src/main/java/DependenciesPlugin.kt'
-            - 'mobile/android/android-components/plugins/dependencies/src/main/java/ApplicationServices.kt'
+            - 'taskcluster/scripts/misc/android-gradle-dependencies/**'
         toolchain-artifact: public/build/android-gradle-dependencies.tar.zst
         toolchain-alias: android-gradle-dependencies
     fetches:
@@ -263,14 +266,17 @@ linux64-android-gradle-dependencies-lite:
         script: android-gradle-dependencies-lite.sh
         sparse-profile: null
         resources:
-            - 'taskcluster/scripts/misc/android-gradle-dependencies/**'
             - '*.gradle'
+            - 'gradle.properties'
+            - 'gradle/**'
             - 'mobile/android/**/*.gradle'
+            - 'mobile/android/**/gradle.properties'
+            - 'mobile/android/android-components/plugins/dependencies/src/main/java/ApplicationServices.kt'
+            - 'mobile/android/android-components/plugins/dependencies/src/main/java/DependenciesPlugin.kt'
             - 'mobile/android/config/mozconfigs/android-arm-gradle-dependencies/**'
             - 'mobile/android/config/mozconfigs/common*'
             - 'mobile/android/gradle.configure'
-            - 'mobile/android/android-components/plugins/dependencies/src/main/java/DependenciesPlugin.kt'
-            - 'mobile/android/android-components/plugins/dependencies/src/main/java/ApplicationServices.kt'
+            - 'taskcluster/scripts/misc/android-gradle-dependencies/**'
         toolchain-artifact: public/build/android-gradle-dependencies.tar.zst
         toolchain-alias: android-gradle-dependencies-lite
     fetches:

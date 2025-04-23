@@ -13,11 +13,19 @@ pluginManagement {
     repositories {
         gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
             maven {
-                url repository
+                url = repository
                 if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
                     allowInsecureProtocol = true
                 }
             }
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            from(files("../../../../../gradle/libs.versions.toml"))
         }
     }
 }

@@ -4,7 +4,7 @@
 
 "use strict";
 
-/* globals browser, module, UAHelpers */
+/* globals browser, UAHelpers */
 
 const GOOGLE_TLDS = [
   "com",
@@ -210,6 +210,12 @@ const GOOGLE_TLDS = [
 
 var InterventionHelpers = {
   skip_if_functions: {
+    InstallTrigger_defined: () => {
+      return "InstallTrigger" in window;
+    },
+    InstallTrigger_undefined: () => {
+      return !("InstallTrigger" in window);
+    },
     text_event_supported: () => {
       return !!window.TextEvent;
     },
@@ -258,15 +264,42 @@ var InterventionHelpers = {
     mimic_Android_Hotspot2_device: ua => {
       return UAHelpers.androidHotspot2Device(ua);
     },
+    reduce_firefox_version_by_one: ua => {
+      const [head, fx, tail] = ua.split(/(firefox\/)/i);
+      if (!fx || !tail) {
+        return ua;
+      }
+      const major = parseInt(tail);
+      if (!major) {
+        return ua;
+      }
+      return `${head}${fx}${major - 1}${tail.slice(major.toString().length)}`;
+    },
     Safari: (ua, config) => {
       return UAHelpers.safari(config);
     },
   },
 
   valid_platforms: ["all", "android", "desktop", "linux", "mac", "windows"],
+  valid_channels: ["beta", "esr", "nightly", "stable"],
 
-  shouldSkip(intervention, firefoxVersion) {
-    const { bug, max_version, min_version, skip_if } = intervention;
+  shouldSkip(intervention, firefoxVersion, firefoxChannel) {
+    const {
+      bug,
+      max_version,
+      min_version,
+      not_channels,
+      only_channels,
+      skip_if,
+    } = intervention;
+    if (firefoxChannel) {
+      if (only_channels && !only_channels.includes(firefoxChannel)) {
+        return true;
+      }
+      if (not_channels?.includes(firefoxChannel)) {
+        return true;
+      }
+    }
     if (min_version && firefoxVersion < min_version) {
       return true;
     }
@@ -382,5 +415,3 @@ var InterventionHelpers = {
     return InterventionHelpers.matchPatternsForTLDs(base, suffix, GOOGLE_TLDS);
   },
 };
-
-module.exports = InterventionHelpers;

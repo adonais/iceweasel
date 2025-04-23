@@ -121,6 +121,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                                 activity = requireActivity(),
                                 filename = filename.value,
                                 contentSize = contentSize.value,
+                                fileSizeFormatter = requireComponents.core.fileSizeFormatter,
                                 positiveButtonAction = positiveAction.value,
                                 negativeButtonAction = negativeAction.value,
                             ).onDismiss {
@@ -284,6 +285,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
         requireComponents.core.store.dispatch(CustomTabListAction.AddCustomTabAction(session as CustomTabSessionState))
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     final override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -333,6 +335,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
             } else {
                 val dynamicDownloadDialog = DynamicDownloadDialog(
                     context = safeContext,
+                    fileSizeFormatter = requireComponents.core.fileSizeFormatter,
                     downloadState = downloadState,
                     didFail = downloadJobStatus == DownloadState.Status.FAILED,
                     tryAgain = tryAgain,

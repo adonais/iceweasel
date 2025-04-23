@@ -15,7 +15,8 @@ const SCALAR_SEARCHMODE = "browser.engagement.navigation.urlbar_searchmode";
 const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 
 ChromeUtils.defineESModuleGetters(this, {
-  SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  SearchSERPTelemetry:
+    "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
 });
 
 function searchInAwesomebar(value, win = window) {
@@ -144,9 +145,7 @@ add_setup(async function () {
 add_task(async function test_simpleQuery() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  clearSAPTelemetry();
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -173,18 +172,13 @@ add_task(async function test_simpleQuery() {
     "This search must only increment one entry in the scalar."
   );
 
-  // SEARCH_COUNTS should be incremented, but only the urlbar source since an
-  // internal @search keyword was not used.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    1
-  );
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.alias",
-    undefined
-  );
+  // SAP counts are incremented only for the urlbar source, since the internal
+  // @search keyword was not used.
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 1,
+  });
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -226,9 +220,7 @@ add_task(async function test_searchMode_enter() {
 add_task(async function test_oneOff_enter() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  clearSAPTelemetry();
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -270,18 +262,13 @@ add_task(async function test_oneOff_enter() {
     "This search must only increment one entry in the scalar."
   );
 
-  // SEARCH_COUNTS should be incremented, but only the urlbar-searchmode source
+  // SAP counts should be incremented, but only the urlbar-searchmode source
   // since aliases aren't counted separately in search mode.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar-searchmode",
-    1
-  );
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.alias",
-    undefined
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar-searchmode",
+    count: 1,
+  });
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -291,9 +278,7 @@ add_task(async function test_suggestion_click() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
   await UrlbarTestUtils.formHistory.clear();
-
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  clearSAPTelemetry();
 
   await withNewSearchEngine(async function (engine) {
     let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -322,13 +307,11 @@ add_task(async function test_suggestion_click() {
       "This search must only increment one entry in the scalar."
     );
 
-    // SEARCH_COUNTS should be incremented.
-    let searchEngineId = "other-" + engine.name;
-    TelemetryTestUtils.assertKeyedHistogramSum(
-      search_hist,
-      searchEngineId + ".urlbar",
-      1
-    );
+    await SearchUITestUtils.assertSAPTelemetry({
+      engineName: engine.name,
+      source: "urlbar",
+      count: 1,
+    });
 
     BrowserTestUtils.removeTab(tab);
   });
@@ -339,9 +322,7 @@ add_task(async function test_suggestion_click() {
 add_task(async function test_searchmode_suggestion_click() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  clearSAPTelemetry();
 
   await withNewSearchEngine(async function (engine) {
     let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -373,13 +354,11 @@ add_task(async function test_searchmode_suggestion_click() {
       "This search must only increment one entry in the scalar."
     );
 
-    // SEARCH_COUNTS should be incremented.
-    let searchEngineId = "other-" + engine.name;
-    TelemetryTestUtils.assertKeyedHistogramSum(
-      search_hist,
-      searchEngineId + ".urlbar-searchmode",
-      1
-    );
+    await SearchUITestUtils.assertSAPTelemetry({
+      engineName: engine.name,
+      source: "urlbar-searchmode",
+      count: 1,
+    });
 
     BrowserTestUtils.removeTab(tab);
   });
@@ -389,15 +368,13 @@ add_task(async function test_searchmode_suggestion_click() {
 add_task(async function test_formHistory_click() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  clearSAPTelemetry();
   await UrlbarTestUtils.formHistory.clear();
   await UrlbarTestUtils.formHistory.add(["foobar"]);
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.maxHistoricalSearchSuggestions", 1]],
   });
-
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   await withNewSearchEngine(async engine => {
     let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -426,13 +403,11 @@ add_task(async function test_formHistory_click() {
       "This search must only increment one entry in the scalar."
     );
 
-    // SEARCH_COUNTS should be incremented.
-    let searchEngineId = "other-" + engine.name;
-    TelemetryTestUtils.assertKeyedHistogramSum(
-      search_hist,
-      searchEngineId + ".urlbar",
-      1
-    );
+    await SearchUITestUtils.assertSAPTelemetry({
+      engineName: engine.name,
+      source: "urlbar",
+      count: 1,
+    });
 
     BrowserTestUtils.removeTab(tab);
     await UrlbarTestUtils.formHistory.clear();
@@ -449,7 +424,7 @@ add_task(async function test_privateWindow() {
   });
 
   // Override the search telemetry search provider info to
-  // count in-content SEARCH_COUNTs telemetry for our test engine.
+  // count in-content SAP telemetry for our test engine.
   SearchSERPTelemetry.overrideSearchTelemetryForTests([
     {
       telemetryId: "example",
@@ -458,8 +433,7 @@ add_task(async function test_privateWindow() {
     },
   ]);
 
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  clearSAPTelemetry();
 
   // First, do a bunch of searches in a private window.
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
@@ -470,12 +444,11 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    1
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 1,
+  });
   let scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,
@@ -491,12 +464,12 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should *not* be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    1
-  );
+  // SAP counts should not be incremented.
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 1,
+  });
   scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,
@@ -512,12 +485,11 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    2
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 2,
+  });
   scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,
@@ -533,12 +505,11 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    3
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 3,
+  });
   scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,
@@ -559,12 +530,11 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    4
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 4,
+  });
   scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,
@@ -580,12 +550,11 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    5
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 5,
+  });
   scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,
@@ -601,12 +570,11 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    6
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 6,
+  });
   scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,
@@ -622,12 +590,11 @@ add_task(async function test_privateWindow() {
   EventUtils.synthesizeKey("KEY_Enter", undefined, win);
   await p;
 
-  // SEARCH_COUNTS should be incremented.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.urlbar",
-    7
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "urlbar",
+    count: 7,
+  });
   scalars = TelemetryTestUtils.getProcessScalars("parent", true);
   TelemetryTestUtils.assertKeyedScalar(
     scalars,

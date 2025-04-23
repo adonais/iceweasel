@@ -28,6 +28,11 @@ class LoginLine extends MozLitElement {
     };
   }
 
+  static lineTypeIdMap = {
+    password: "contextual-manager-check-icon-password",
+    username: "contextual-manager-check-icon-username",
+  };
+
   #canCopy() {
     return this.lineType !== "origin";
   }
@@ -98,7 +103,7 @@ class LoginLine extends MozLitElement {
               this.alert,
               () =>
                 html` <img
-                  data-l10n-id="alert-icon"
+                  data-l10n-id="contextual-manager-alert-icon"
                   class="alert-icon"
                   src="chrome://global/skin/icons/warning-fill-12.svg"
                 />`
@@ -109,7 +114,7 @@ class LoginLine extends MozLitElement {
               this.favIcon,
               () =>
                 html` <img
-                  data-l10n-id="website-icon"
+                  data-l10n-id="contextual-manager-website-icon"
                   class="fav-icon"
                   src=${this.favIcon}
                 />`
@@ -127,12 +132,14 @@ class LoginLine extends MozLitElement {
           return html`
             <div class="copy-container">
               <img
-                data-l10n-id="copy-icon"
+                data-l10n-id="contextual-manager-copy-icon"
                 class="copy-icon"
                 src="chrome://global/skin/icons/edit-copy.svg"
               />
               <img
-                data-l10n-id="check-icon"
+                data-l10n-id=${ifDefined(
+                  LoginLine.lineTypeIdMap[this.lineType]
+                )}
                 class="check-icon"
                 src="chrome://global/skin/icons/check-filled.svg"
               />
@@ -172,7 +179,9 @@ class ConcealedLoginLine extends MozLitElement {
   }
 
   get #revealBtnLabel() {
-    return !this.visible ? "show-password-button" : "hide-password-button";
+    return !this.visible
+      ? "contextual-manager-show-password-button"
+      : "contextual-manager-hide-password-button";
   }
 
   #revealIconSrc() {
@@ -193,8 +202,8 @@ class ConcealedLoginLine extends MozLitElement {
 
   render() {
     const dataL10nId = this.alert
-      ? "password-login-line-with-alert"
-      : "password-login-line";
+      ? "contextual-manager-password-login-line-with-alert"
+      : "contextual-manager-password-login-line";
     return html` <link
         rel="stylesheet"
         href="chrome://global/content/megalist/components/login-line/login-line.css"

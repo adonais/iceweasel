@@ -75,8 +75,6 @@ class WaylandSurface final {
   bool SetEGLWindowSize(nsIntSize aScaledSize);
   bool HasEGLWindow() const { return !!mEGLWindow; }
 
-  bool DoesCommitToParentSurface() const { return mCommitToParentSurface; }
-
   // Read to draw means we got frame callback from parent surface
   // where we attached to.
   bool IsReadyToDraw() const { return mIsReadyToDraw; }
@@ -95,7 +93,7 @@ class WaylandSurface final {
   // Mapped as direct surface of MozContainer
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  wl_surface* aParentWLSurface,
-                 gfx::IntPoint aSubsurfacePosition, bool aCommitToParent);
+                 gfx::IntPoint aSubsurfacePosition);
   // Mapped as child of WaylandSurface (used by layers)
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
@@ -137,12 +135,7 @@ class WaylandSurface final {
 
   // Called from Wayland compostor async handler when wl_buffer is
   // detached or deleted.
-  // For deleted wl_buffer call we use WaylandBuffer as an argument
-  // as wl_buffer is already deleted.
-  // For detach event we pass wl_buffer as it's provided by Wayland compositor
-  // directly.
-  void BufferFreeCallbackHandler(WaylandBuffer* aWaylandBuffer,
-                                 wl_buffer* aWlBuffer);
+  void BufferFreeCallbackHandler(uintptr_t aWlBufferID, bool aWlBufferDelete);
 
   // CommitLocked() is needed to call after some of *Locked() method
   // to submit the action to Wayland compositor by wl_surface_commit().
@@ -250,10 +243,6 @@ class WaylandSurface final {
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(void)>& aGdkCommitCB);
   void ClearGdkCommitCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-  void RequestFrameCallbackForceCommitLocked(
-      const WaylandSurfaceLock& aProofOfLock) {
-    mFrameCallbackForceCommit = true;
-  }
 
   RefPtr<DMABufFormats> GetDMABufFormats() const { return mFormats; }
 
@@ -267,10 +256,10 @@ class WaylandSurface final {
   bool EnableColorManagementLocked(const WaylandSurfaceLock& aProofOfLock);
 
   static void ImageDescriptionFailed(
-      void* aData, struct xx_image_description_v4* aImageDescription,
+      void* aData, struct wp_image_description_v1* aImageDescription,
       uint32_t aCause, const char* aMsg);
   static void ImageDescriptionReady(
-      void* aData, struct xx_image_description_v4* aImageDescription,
+      void* aData, struct wp_image_description_v1* aImageDescription,
       uint32_t aIdentity);
 
  private:
@@ -279,8 +268,8 @@ class WaylandSurface final {
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  wl_surface* aParentWLSurface,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
-                 gfx::IntPoint aSubsurfacePosition, bool aCommitToParent,
-                 bool aSubsurfaceDesync, bool aUseReadyToDrawCallback = true);
+                 gfx::IntPoint aSubsurfacePosition, bool aSubsurfaceDesync,
+                 bool aUseReadyToDrawCallback = true);
 
   void SetSizeLocked(const WaylandSurfaceLock& aProofOfLock,
                      gfx::IntSize aSizeScaled, gfx::IntSize aUnscaledSize);
@@ -296,20 +285,14 @@ class WaylandSurface final {
   // delete with wayland compostor.
   void ReleaseAllWaylandBuffersLocked(WaylandSurfaceLock& aSurfaceLock);
 
-  void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
-                                  bool aRequestEmulated);
+  void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
   void ClearFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-  bool IsEmulatedFrameCallbackPendingLocked(
+  bool HasEmulatedFrameCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock) const;
 
   void ClearReadyToDrawCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
 
   void ClearScaleLocked(const WaylandSurfaceLock& aProofOfLock);
-
-  ssize_t FindBufferLocked(const WaylandSurfaceLock& aProofOfLock,
-                           wl_buffer* aWlBuffer);
-  ssize_t FindBufferLocked(const WaylandSurfaceLock& aProofOfLock,
-                           WaylandBuffer* aWaylandBuffer);
 
   // Weak ref to owning widget (nsWindow or NativeLayerWayland),
   // used for diagnostics/logging only.
@@ -369,15 +352,6 @@ class WaylandSurface final {
   // (when EGL is used).
   mozilla::Atomic<bool, mozilla::Relaxed> mBufferAttached{false};
 
-  // It's kind of special case here where mSurface equal to mParentSurface
-  // so we directly paint to parent surface without subsurface.
-  // It's used when Wayland compositor doesn't support subsurfaces like D&D
-  // popups. This rendering setup is fragile and we want to use it as less as
-  // possible because we usually don't have control over parent surface.
-  // Calling code needs to make sure mParentSurface is valid and not
-  // used by Gtk/GtkWidget for instance.
-  bool mCommitToParentSurface = false;
-
   mozilla::Atomic<wl_egl_window*, mozilla::Relaxed> mEGLWindow{nullptr};
 
   bool mViewportFollowsSizeChanges = true;
@@ -396,10 +370,6 @@ class WaylandSurface final {
 
   // Frame callbacks of this surface
   wl_callback* mFrameCallback = nullptr;
-
-  // Request force commit at end of frame callback handler.
-  // That's useful for synced subsurfaces to perform all changes once.
-  bool mFrameCallbackForceCommit = false;
 
   struct FrameCallback {
     std::function<void(wl_callback*, uint32_t)> mCb;
@@ -482,8 +452,8 @@ class WaylandSurface final {
 
   // HDR support
   bool mHDRSet = false;
-  xx_color_management_surface_v4* mColorSurface = nullptr;
-  xx_image_description_v4* mImageDescription = nullptr;
+  wp_color_management_surface_v1* mColorSurface = nullptr;
+  wp_image_description_v1* mImageDescription = nullptr;
 };
 
 }  // namespace mozilla::widget

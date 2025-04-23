@@ -9,15 +9,15 @@
 const {
   createFactory,
   Component,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const {
   div,
   span,
 } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
   findDOMNode,
-} = require("resource://devtools/client/shared/vendor/react-dom.js");
+} = require("resource://devtools/client/shared/vendor/react-dom.mjs");
 const {
   connect,
 } = require("resource://devtools/client/shared/vendor/react-redux.js");
@@ -47,10 +47,9 @@ const VirtualizedTree = createFactory(
   require("resource://devtools/client/shared/components/VirtualizedTree.js")
 );
 // Reps
-const {
-  REPS,
-  MODE,
-} = require("resource://devtools/client/shared/components/reps/index.js");
+const { REPS, MODE } = ChromeUtils.importESModule(
+  "resource://devtools/client/shared/components/reps/index.mjs"
+);
 const { Rep, ElementNode, Accessible: AccessibleRep, Obj } = REPS;
 
 const {

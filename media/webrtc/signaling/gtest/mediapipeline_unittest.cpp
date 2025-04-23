@@ -290,7 +290,7 @@ class TestAgent {
 
   void UpdateTransport_s(const std::string& aTransportId,
                          UniquePtr<MediaPipelineFilter>&& aFilter) {
-    audio_pipeline_->UpdateTransport_s(aTransportId, std::move(aFilter));
+    audio_pipeline_->UpdateTransport_s(aTransportId, std::move(aFilter), false);
   }
 
   void Stop() {
@@ -380,7 +380,7 @@ class TestAgentSend : public TestAgent {
 
     audio_pipeline->SetSendTrackOverride(audio_track_);
     control_.Update([](auto& aControl) { aControl.mTransmitting = true; });
-    audio_pipeline->UpdateTransport_m(aTransportId, nullptr);
+    audio_pipeline->UpdateTransport_m(aTransportId, nullptr, true);
     audio_pipeline_ = audio_pipeline;
   }
 };
@@ -411,7 +411,8 @@ class TestAgentReceive : public TestAgent {
     }));
 
     control_.Update([](auto& aControl) { aControl.mReceiving = true; });
-    audio_pipeline->UpdateTransport_m(aTransportId, std::move(bundle_filter_));
+    audio_pipeline->UpdateTransport_m(aTransportId, std::move(bundle_filter_),
+                                      true);
     audio_pipeline_ = audio_pipeline;
   }
 
@@ -421,7 +422,7 @@ class TestAgentReceive : public TestAgent {
 
   void UpdateTransport_s(const std::string& aTransportId,
                          UniquePtr<MediaPipelineFilter>&& filter) {
-    audio_pipeline_->UpdateTransport_s(aTransportId, std::move(filter));
+    audio_pipeline_->UpdateTransport_s(aTransportId, std::move(filter), false);
   }
 
  private:
@@ -614,8 +615,8 @@ TEST_F(MediaPipelineFilterTest, TestSSRCFilterOverridesPayloadTypeFilter) {
   MediaPipelineFilter filter;
   filter.AddRemoteSSRC(555);
   filter.AddUniqueReceivePT(110);
-  // We have a configured ssrc; do not allow payload type matching.
-  EXPECT_FALSE(Filter(filter, 556, 110));
+  // We have a configured ssrc but still need to allow payload type matching.
+  EXPECT_TRUE(Filter(filter, 556, 110));
   EXPECT_TRUE(Filter(filter, 555, 110));
 }
 
@@ -653,9 +654,9 @@ TEST_F(MediaPipelineFilterTest, TestPayloadTypeFilter) {
   EXPECT_FALSE(Filter(filter, 556, 111));
   // Matching based on unique payload type causes us to learn the ssrc.
   EXPECT_TRUE(Filter(filter, 555, 98));
-  // Once we have learned an SSRC, do _not_ learn new ones based on payload
-  // type.
-  EXPECT_FALSE(Filter(filter, 557, 110));
+  // Once we have learned an SSRC we still need to learn new ones
+  // based on payload type.
+  EXPECT_TRUE(Filter(filter, 557, 110));
 }
 
 TEST_F(MediaPipelineFilterTest, TestSSRCMovedWithMid) {
@@ -684,7 +685,7 @@ TEST_F(MediaPipelineFilterTest, TestRemoteSDPNoSSRCs) {
   // Update but remember binding./
   MediaPipelineFilter filter2;
 
-  filter.Update(filter2);
+  filter.Update(filter2, true);
 
   // Ensure that the old SSRC still works.
   EXPECT_TRUE(Filter(filter, 555, 110));
@@ -692,7 +693,7 @@ TEST_F(MediaPipelineFilterTest, TestRemoteSDPNoSSRCs) {
   // Forget the previous binding
   MediaPipelineFilter filter3;
   filter3.SetRemoteMediaStreamId(Some(std::string("mid1")));
-  filter.Update(filter3);
+  filter.Update(filter3, true);
 
   ASSERT_FALSE(Filter(filter, 555, 110));
 }

@@ -17,14 +17,17 @@ import { Weather } from "content-src/components/Weather/Weather";
 import { Notifications } from "content-src/components/Notifications/Notifications";
 import { TopicSelection } from "content-src/components/DiscoveryStreamComponents/TopicSelection/TopicSelection";
 import { WallpaperFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight";
+import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
-const WALLPAPER_HIGHLIGHT_DISMISSED_PREF =
-  "newtabWallpapers.highlightDismissed";
 const PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 const PREF_THUMBS_UP_DOWN_LAYOUT_ENABLED =
   "discoverystream.thumbsUpDown.searchTopsitesCompact";
+const PREF_INFERRED_PERSONALIZATION_SYSTEM =
+  "discoverystream.sections.personalization.inferred.enabled";
+const PREF_INFERRED_PERSONALIZATION_USER =
+  "discoverystream.sections.personalization.inferred.user.enabled";
 
 export const PrefsButton = ({ onClick, icon }) => (
   <div className="prefs-button">
@@ -378,9 +381,29 @@ export class BaseContent extends React.PureComponent {
 
   async updateWallpaper() {
     const prefs = this.props.Prefs.values;
-
     const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
-    const { wallpaperList } = this.props.Wallpapers;
+    const { wallpaperList, uploadedWallpaper } = this.props.Wallpapers;
+
+    if (selectedWallpaper === "custom" && uploadedWallpaper) {
+      // revoke ObjectURL to prevent memory leaks
+      if (this.uploadedWallpaperUrl) {
+        URL.revokeObjectURL(this.uploadedWallpaperUrl);
+      }
+
+      const uploadedWallpaperUrl = URL.createObjectURL(uploadedWallpaper);
+
+      global.document?.body.style.setProperty(
+        "--newtab-wallpaper",
+        `url(${uploadedWallpaperUrl})`
+      );
+
+      global.document?.body.style.setProperty(
+        "--newtab-wallpaper-color",
+        "transparent"
+      );
+
+      return;
+    }
 
     if (wallpaperList) {
       let wallpaper = wallpaperList.find(wp => wp.title === selectedWallpaper);
@@ -448,47 +471,12 @@ export class BaseContent extends React.PureComponent {
     }
   }
 
-  // Contains all the logic to show the wallpapers Feature Highlight
   shouldShowWallpapersHighlight() {
-    const prefs = this.props.Prefs.values;
-
-    // If wallpapers (or v2 wallpapers) are not enabled, don't show the highlight.
-    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
-    if (!wallpapersV2Enabled) {
+    if (!this.props.Messages?.messageData) {
       return false;
     }
-
-    // If user has interacted/dismissed the highlight, don't show
-    const wallpapersHighlightDismissed =
-      prefs[WALLPAPER_HIGHLIGHT_DISMISSED_PREF];
-    if (wallpapersHighlightDismissed) {
-      return false;
-    }
-
-    // If the user has selected a wallpaper, don't show the pop-up
-    const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
-
-    if (activeWallpaper) {
-      this.props.dispatch(ac.SetPref(WALLPAPER_HIGHLIGHT_DISMISSED_PREF, true));
-      return false;
-    }
-
-    // If the user has seen* the highlight more than three times
-    // *Seen means they loaded HNT page and the highlight was observed for more than 3 seconds
-    const { highlightSeenCounter } = this.props.Wallpapers;
-    if (highlightSeenCounter.value > 3) {
-      return false;
-    }
-
-    // Show the highlight if available
-    const wallpapersHighlightEnabled =
-      prefs["newtabWallpapers.highlightEnabled"];
-    if (wallpapersHighlightEnabled) {
-      return true;
-    }
-
-    // Default return value
-    return false;
+    const { messageData } = this.props.Messages;
+    return messageData?.content?.messageType === "CustomWallpaperHighlight";
   }
 
   getRGBColors(input) {
@@ -592,9 +580,8 @@ export class BaseContent extends React.PureComponent {
     const enabledSections = {
       topSitesEnabled: prefs["feeds.topsites"],
       pocketEnabled: prefs["feeds.section.topstories"],
-      highlightsEnabled: prefs["feeds.section.highlights"],
-      showSponsoredTopSitesEnabled: prefs.showSponsoredTopSites,
-      showSponsoredPocketEnabled: prefs.showSponsored,
+      showInferredPersonalizationEnabled:
+        prefs[PREF_INFERRED_PERSONALIZATION_USER],
       showRecentSavesEnabled: prefs.showRecentSaves,
       topSitesRowsCount: prefs.topSitesRows,
       weatherEnabled: prefs.showWeather,
@@ -602,6 +589,8 @@ export class BaseContent extends React.PureComponent {
 
     const pocketRegion = prefs["feeds.system.topstories"];
     const mayHaveSponsoredStories = prefs["system.showSponsored"];
+    const mayHaveInferredPersonalization =
+      prefs[PREF_INFERRED_PERSONALIZATION_SYSTEM];
     const mayHaveWeather = prefs["system.showWeather"];
     const { mayHaveSponsoredTopSites } = prefs;
     const supportUrl = prefs["support.url"];
@@ -671,15 +660,18 @@ export class BaseContent extends React.PureComponent {
             mayHaveTopicSections={mayHaveTopicSections}
             mayHaveSponsoredTopSites={mayHaveSponsoredTopSites}
             mayHaveSponsoredStories={mayHaveSponsoredStories}
+            mayHaveInferredPersonalization={mayHaveInferredPersonalization}
             mayHaveWeather={mayHaveWeather}
             spocMessageVariant={spocMessageVariant}
             showing={customizeMenuVisible}
           />
           {this.shouldShowWallpapersHighlight() && (
-            <WallpaperFeatureHighlight
-              position="inset-block-end inset-inline-start"
-              dispatch={this.props.dispatch}
-            />
+            <MessageWrapper dispatch={this.props.dispatch}>
+              <WallpaperFeatureHighlight
+                position="inset-block-start inset-inline-start"
+                dispatch={this.props.dispatch}
+              />
+            </MessageWrapper>
           )}
         </menu>
         <div className="weatherWrapper">
@@ -751,6 +743,7 @@ export const Base = connect(state => ({
   Prefs: state.Prefs,
   Sections: state.Sections,
   DiscoveryStream: state.DiscoveryStream,
+  Messages: state.Messages,
   Notifications: state.Notifications,
   Search: state.Search,
   Wallpapers: state.Wallpapers,

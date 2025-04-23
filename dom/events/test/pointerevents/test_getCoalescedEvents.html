@@ -5,6 +5,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1303957
 -->
 <head>
   <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test for Bug 1303957</title>
   <script src="/tests/SimpleTest/EventUtils.js"></script>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,7 +19,10 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1303957
 SimpleTest.waitForExplicitFinish();
 
 SimpleTest.waitForFocus(async () => {
-  await SpecialPowers.pushPrefEnv({"set": [["dom.events.coalesce.mousemove", true]]});
+  await SpecialPowers.pushPrefEnv({"set": [
+    ["dom.events.coalesce.mousemove", true],
+    ["test.events.async.enabled", true],
+  ]});
 
   const target0 = window.document.getElementById("target0");
   const utils = SpecialPowers.getDOMWindowUtils(window);
@@ -41,9 +45,12 @@ SimpleTest.waitForFocus(async () => {
           return aNewOffset >= roundedOffset - 1 && aNewOffset <= roundedOffset + 1;
         }
         let candidateOffset = aPrevOffset + 5;
+        const toleranceError = navigator.userAgent.includes("Android") ? 0.31 : 0.1;
         while (candidateOffset < 25) {
-          // Allow rounding issue.
-          if (aNewOffset >= candidateOffset - 0.1 && aNewOffset <= candidateOffset + 0.1) {
+          if (
+            aNewOffset >= candidateOffset - toleranceError &&
+            aNewOffset <= candidateOffset + toleranceError
+          ) {
             return true;
           }
           candidateOffset += 5;
@@ -63,6 +70,8 @@ SimpleTest.waitForFocus(async () => {
         is(coalescedEvent.eventPhase, Event.NONE, "getCoalescedEvents()[" + i + "].eventPhase");
         is(coalescedEvent.cancelable, false, "getCoalescedEvents()[" + i + "].cancelable");
         is(coalescedEvent.bubbles, false, "getCoalescedEvents()[" + i + "].bubbles");
+        is(coalescedEvent.buttons, 0, `getCoalescedEvents()[${i}].buttons should be 0`);
+        is(coalescedEvent.pressure, 0, `getCoalescedEvents()[${i}].pressure should be 0 when buttons is 0`);
 
         ok(
           isExpectedOffset(coalescedEvent.offsetX, prevOffsetX),
@@ -98,11 +107,11 @@ SimpleTest.waitForFocus(async () => {
   } catch (e) {}
   info(`target0.getBoundingClientRect()={${target0.getBoundingClientRect().x}, ${target0.getBoundingClientRect().y}}`);
 
-  info("Synthesizing native mouse moves....");
-  await promiseNativeMouseEvent({ type: "mousemove", target: target0, offsetX: 5, offsetY: 5 });
-  await promiseNativeMouseEvent({ type: "mousemove", target: target0, offsetX: 10, offsetY: 10 });
-  await promiseNativeMouseEvent({ type: "mousemove", target: target0, offsetX: 15, offsetY: 15 });
-  await promiseNativeMouseEvent({ type: "mousemove", target: target0, offsetX: 20, offsetY: 20 });
+  info("Synthesizing mouse moves....");
+  synthesizeMouse(target0, 5, 5, {type: "mousemove"});
+  synthesizeMouse(target0, 10, 10, {type: "mousemove"});
+  synthesizeMouse(target0, 15, 15, {type: "mousemove"});
+  synthesizeMouse(target0, 20, 20, {type: "mousemove"});
   utils.restoreNormalRefresh();
   await waitForPointerMove;
 
@@ -110,8 +119,8 @@ SimpleTest.waitForFocus(async () => {
     SimpleTest.finish();
   }, { once: true });
 
-  info("Synthesizing a native click....");
-  synthesizeNativeMouseEvent({ type: "click", target: target0, offsetX: 20, offsetY: 20 });
+  info("Synthesizing a click....");
+  synthesizeMouse(target0, 20, 20, {});
 });
 
 </script>

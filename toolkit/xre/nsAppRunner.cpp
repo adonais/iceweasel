@@ -221,6 +221,7 @@
 
 #ifdef DEBUG
 #  include "mozilla/Logging.h"
+#  include "mozilla/StaticPrefs_toolkit.h"
 #endif
 
 #include "nsExceptionHandler.h"
@@ -1567,7 +1568,6 @@ nsXULAppInfo::GetRestartedByOS(bool* aResult) {
 
 NS_IMETHODIMP
 nsXULAppInfo::GetChromeColorSchemeIsDark(bool* aResult) {
-  PreferenceSheet::EnsureInitialized();
   *aResult = PreferenceSheet::ColorSchemeForChrome() == ColorScheme::Dark;
   return NS_OK;
 }
@@ -1686,6 +1686,30 @@ nsXULAppInfo::GetUserCanElevate(bool* aUserCanElevate) {
 }
 #endif
 
+// Get the CrashReporter::Annotation referred to by the `aKey` string. This
+// wraps `CrashReporter::AnnotationFromString` to assert the annotation string
+// is valid in debug builds, and otherwise returns an NS_ERROR_INVALID_ARG if
+// it is invalid.
+static Result<CrashReporter::Annotation, nsresult> GetCrashAnnotation(
+    const nsACString& aKey) {
+  auto maybeAnnotation = CrashReporter::AnnotationFromString(aKey);
+#ifdef DEBUG
+  if (!maybeAnnotation.isSome()) {
+    std::string warning = "Annotation identifier not found: \"";
+    warning += aKey.View();
+    warning += "\"";
+    NS_WARNING(warning.c_str());
+  }
+  if (!StaticPrefs::toolkit_crash_annotation_testing_validation()) {
+    MOZ_ASSERT(maybeAnnotation.isSome(),
+               "Invalid annotation identifier; ensure it exists in "
+               "CrashAnnotations.yaml");
+  }
+#endif
+  NS_ENSURE_TRUE(maybeAnnotation.isSome(), Err(NS_ERROR_INVALID_ARG));
+  return maybeAnnotation.extract();
+}
+
 NS_IMETHODIMP
 nsXULAppInfo::GetCrashReporterEnabled(bool* aEnabled) {
   *aEnabled = CrashReporter::GetEnabled();
@@ -1799,14 +1823,14 @@ nsXULAppInfo::GetExtraFileForID(const nsAString& aId, nsIFile** aExtraFile) {
 NS_IMETHODIMP
 nsXULAppInfo::AnnotateCrashReport(const nsACString& key,
                                   JS::Handle<JS::Value> data, JSContext* cx) {
-  auto annotation = CrashReporter::AnnotationFromString(key);
-  NS_ENSURE_TRUE(annotation.isSome(), NS_ERROR_INVALID_ARG);
+  CrashReporter::Annotation annotation;
+  MOZ_TRY_VAR(annotation, GetCrashAnnotation(key));
   switch (data.type()) {
     case JS::ValueType::Int32:
-      CrashReporter::RecordAnnotationU32(*annotation, data.toInt32());
+      CrashReporter::RecordAnnotationU32(annotation, data.toInt32());
       break;
     case JS::ValueType::Boolean:
-      CrashReporter::RecordAnnotationBool(*annotation, data.toBoolean());
+      CrashReporter::RecordAnnotationBool(annotation, data.toBoolean());
       break;
     case JS::ValueType::String: {
       JSString* value = data.toString();
@@ -1824,7 +1848,7 @@ nsXULAppInfo::AnnotateCrashReport(const nsACString& key,
 
       buffer.SetLength(written);
 
-      CrashReporter::RecordAnnotationNSCString(*annotation, buffer);
+      CrashReporter::RecordAnnotationNSCString(annotation, buffer);
     } break;
     default:
       return NS_ERROR_INVALID_ARG;
@@ -1834,19 +1858,34 @@ nsXULAppInfo::AnnotateCrashReport(const nsACString& key,
 
 NS_IMETHODIMP
 nsXULAppInfo::RemoveCrashReportAnnotation(const nsACString& key) {
-  auto annotation = CrashReporter::AnnotationFromString(key);
-  NS_ENSURE_TRUE(annotation.isSome(), NS_ERROR_INVALID_ARG);
-  CrashReporter::UnrecordAnnotation(*annotation);
+  CrashReporter::Annotation annotation;
+  MOZ_TRY_VAR(annotation, GetCrashAnnotation(key));
+  CrashReporter::UnrecordAnnotation(annotation);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::IsAnnotationValid(const nsACString& aValue, bool* aIsValid) {
+  auto annotation = CrashReporter::AnnotationFromString(aValue);
+  *aIsValid = annotation.isSome();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsXULAppInfo::IsAnnotationAllowedForPing(const nsACString& aValue,
                                          bool* aIsAllowed) {
-  auto annotation = CrashReporter::AnnotationFromString(aValue);
-  NS_ENSURE_TRUE(annotation.isSome(), NS_ERROR_INVALID_ARG);
-  *aIsAllowed = CrashReporter::IsAnnotationAllowedForPing(*annotation);
+  CrashReporter::Annotation annotation;
+  MOZ_TRY_VAR(annotation, GetCrashAnnotation(aValue));
+  *aIsAllowed = CrashReporter::IsAnnotationAllowedForPing(annotation);
+  return NS_OK;
+}
 
+NS_IMETHODIMP
+nsXULAppInfo::IsAnnotationAllowedForReport(const nsACString& aValue,
+                                           bool* aIsAllowed) {
+  CrashReporter::Annotation annotation;
+  MOZ_TRY_VAR(annotation, GetCrashAnnotation(aValue));
+  *aIsAllowed = CrashReporter::IsAnnotationAllowedForReport(annotation);
   return NS_OK;
 }
 
@@ -3962,6 +4001,26 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
 
   StartupTimeline::Record(StartupTimeline::MAIN);
 
+  // On Windows, to get working console arrangements so help/version/etc
+  // print something, we need to initialize the native app support.
+  nsresult rv = NS_CreateNativeAppSupport(getter_AddRefs(mNativeApp));
+  if (NS_FAILED(rv)) return 1;
+
+  // Handle --*version arguments early to avoid initializing full XPCOM.
+  // Note: we *cannot* handle --help here, as it requires more components
+  // to be initialized.
+  if (CheckArg("v") || CheckArg("version")) {
+    DumpVersion();
+    *aExitFlag = true;
+    return 0;
+  }
+
+  if (CheckArg("full-version")) {
+    DumpFullVersion();
+    *aExitFlag = true;
+    return 0;
+  }
+
   if (CheckForUserMismatch()) {
     return 1;
   }
@@ -4066,7 +4125,6 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   }
 #endif
 
-  nsresult rv;
   ArgResult ar;
 
 #ifdef DEBUG
@@ -4420,27 +4478,12 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
     mOriginToForceQUIC.Assign(origin);
   }
 
-  // On Windows, to get working console arrangements so help/version/etc
-  // print something, we need to initialize the native app support.
-  rv = NS_CreateNativeAppSupport(getter_AddRefs(mNativeApp));
-  if (NS_FAILED(rv)) return 1;
-
-  // Handle --help, --full-version and --version command line arguments.
-  // They should return quickly, so we deal with them here.
+  // Handle --help command line argument.
+  // It should return rather quickly, so we deal with it here.
+  // Note: we *cannot* handle the argument as early as --*version because it
+  // requires ScopedXPCOMStartup and other components be registered.
   if (CheckArg("h") || CheckArg("help") || CheckArg("?")) {
     DumpHelp();
-    *aExitFlag = true;
-    return 0;
-  }
-
-  if (CheckArg("v") || CheckArg("version")) {
-    DumpVersion();
-    *aExitFlag = true;
-    return 0;
-  }
-
-  if (CheckArg("full-version")) {
-    DumpFullVersion();
     *aExitFlag = true;
     return 0;
   }

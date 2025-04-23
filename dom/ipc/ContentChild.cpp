@@ -652,9 +652,9 @@ NS_INTERFACE_MAP_END
 mozilla::ipc::IPCResult ContentChild::RecvSetXPCOMProcessAttributes(
     XPCOMInitData&& aXPCOMInit, const StructuredCloneData& aInitialData,
     FullLookAndFeel&& aLookAndFeelData, dom::SystemFontList&& aFontList,
-    Maybe<SharedMemoryHandle>&& aSharedUASheetHandle,
+    Maybe<mozilla::ipc::ReadOnlySharedMemoryHandle>&& aSharedUASheetHandle,
     const uintptr_t& aSharedUASheetAddress,
-    nsTArray<SharedMemoryHandle>&& aSharedFontListBlocks,
+    nsTArray<mozilla::ipc::ReadOnlySharedMemoryHandle>&& aSharedFontListBlocks,
     const bool& aIsReadyForBackgroundProcessing) {
   if (!sShutdownCanary) {
     return IPC_OK();
@@ -666,6 +666,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetXPCOMProcessAttributes(
 
   gfx::gfxVars::SetValuesForInitialize(aXPCOMInit.gfxNonDefaultVarUpdates());
   PerfStats::SetCollectionMask(aXPCOMInit.perfStatsMask());
+  LookAndFeel::EnsureInit();
   InitSharedUASheets(std::move(aSharedUASheetHandle), aSharedUASheetAddress);
   InitXPCOM(std::move(aXPCOMInit), aInitialData,
             aIsReadyForBackgroundProcessing);
@@ -679,16 +680,6 @@ mozilla::ipc::IPCResult ContentChild::RecvSetXPCOMProcessAttributes(
   }
   return IPC_OK();
 }
-
-class nsGtkNativeInitRunnable : public Runnable {
- public:
-  nsGtkNativeInitRunnable() : Runnable("nsGtkNativeInitRunnable") {}
-
-  NS_IMETHOD Run() override {
-    LookAndFeel::NativeInit();
-    return NS_OK;
-  }
-};
 
 void ContentChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
                         const char* aParentBuildID, bool aIsForBrowser) {
@@ -1332,8 +1323,9 @@ void ContentChild::InitGraphicsDeviceData(const ContentDeviceData& aData) {
   gfxPlatform::InitChild(aData);
 }
 
-void ContentChild::InitSharedUASheets(Maybe<SharedMemoryHandle>&& aHandle,
-                                      uintptr_t aAddress) {
+void ContentChild::InitSharedUASheets(
+    Maybe<mozilla::ipc::ReadOnlySharedMemoryHandle>&& aHandle,
+    uintptr_t aAddress) {
   MOZ_ASSERT_IF(!aHandle, !aAddress);
 
   if (!aAddress) {
@@ -1350,14 +1342,6 @@ void ContentChild::InitXPCOM(
     XPCOMInitData&& aXPCOMInit,
     const mozilla::dom::ipc::StructuredCloneData& aInitialData,
     bool aIsReadyForBackgroundProcessing) {
-#ifdef MOZ_WIDGET_GTK
-  // LookAndFeel::NativeInit takes a long time to run on Linux, here we schedule
-  // it as soon as possible after BackgroundChild::Startup to give
-  // it chance to run ahead of ConstructBrowser
-  nsCOMPtr<nsIRunnable> event = new nsGtkNativeInitRunnable();
-  NS_DispatchToMainThreadQueue(event.forget(), EventQueuePriority::Idle);
-#endif
-
 #if defined(XP_WIN)
   // DLL services untrusted modules processing depends on
   // BackgroundChild::Startup having been called
@@ -2092,48 +2076,31 @@ mozilla::ipc::IPCResult ContentChild::RecvRegisterChromeItem(
 mozilla::ipc::IPCResult ContentChild::RecvClearStyleSheetCache(
     const Maybe<bool>& aChrome, const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
     const Maybe<nsCString>& aSchemelessSite,
-    const Maybe<OriginAttributesPattern>& aPattern) {
-  SharedStyleSheetCache::Clear(aChrome, aPrincipal, aSchemelessSite, aPattern);
+    const Maybe<OriginAttributesPattern>& aPattern,
+    const Maybe<nsCString>& aURL) {
+  SharedStyleSheetCache::Clear(aChrome, aPrincipal, aSchemelessSite, aPattern,
+                               aURL);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvClearScriptCache(
     const Maybe<bool>& aChrome, const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
     const Maybe<nsCString>& aSchemelessSite,
-    const Maybe<OriginAttributesPattern>& aPattern) {
-  SharedScriptCache::Clear(aChrome, aPrincipal, aSchemelessSite, aPattern);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentChild::RecvClearImageCacheFromPrincipal(
-    nsIPrincipal* aPrincipal) {
-  imgLoader* loader;
-  if (aPrincipal->OriginAttributesRef().IsPrivateBrowsing()) {
-    loader = imgLoader::PrivateBrowsingLoader();
-  } else {
-    loader = imgLoader::NormalLoader();
-  }
-
-  loader->RemoveEntriesInternal(Some(aPrincipal), Nothing(), Nothing());
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentChild::RecvClearImageCacheFromSite(
-    const nsCString& aSchemelessSite, const OriginAttributesPattern& aPattern) {
-  imgLoader::NormalLoader()->RemoveEntriesInternal(
-      Nothing(), Some(aSchemelessSite), Some(aPattern));
-  imgLoader::PrivateBrowsingLoader()->RemoveEntriesInternal(
-      Nothing(), Some(aSchemelessSite), Some(aPattern));
-
+    const Maybe<OriginAttributesPattern>& aPattern,
+    const Maybe<nsCString>& aURL) {
+  SharedScriptCache::Clear(aChrome, aPrincipal, aSchemelessSite, aPattern,
+                           aURL);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvClearImageCache(
-    const bool& privateLoader, const mozilla::Maybe<bool>& chrome) {
-  imgLoader* loader = privateLoader ? imgLoader::PrivateBrowsingLoader()
-                                    : imgLoader::NormalLoader();
-
-  loader->ClearCache(chrome);
+    const Maybe<bool>& aPrivateLoader, const Maybe<bool>& aChrome,
+    const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
+    const Maybe<nsCString>& aSchemelessSite,
+    const Maybe<OriginAttributesPattern>& aPattern,
+    const Maybe<nsCString>& aURL) {
+  imgLoader::ClearCache(aPrincipal, aChrome, aPrincipal, aSchemelessSite,
+                        aPattern, aURL);
   return IPC_OK();
 }
 
@@ -2349,7 +2316,7 @@ mozilla::ipc::IPCResult ContentChild::RecvRegisterStringBundles(
 
   for (auto& descriptor : aDescriptors) {
     stringBundleService->RegisterContentBundle(
-        descriptor.bundleURL(), descriptor.mapHandle(), descriptor.mapSize());
+        descriptor.bundleURL(), std::move(descriptor.mapHandle()));
   }
 
   return IPC_OK();
@@ -2369,7 +2336,7 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateL10nFileSources(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvUpdateSharedData(
-    SharedMemoryHandle&& aMapHandle, const uint32_t& aMapSize,
+    mozilla::ipc::ReadOnlySharedMemoryHandle&& aMapHandle,
     nsTArray<IPCBlob>&& aBlobs, nsTArray<nsCString>&& aChangedKeys) {
   nsTArray<RefPtr<BlobImpl>> blobImpls(aBlobs.Length());
   for (auto& ipcBlob : aBlobs) {
@@ -2377,12 +2344,12 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateSharedData(
   }
 
   if (mSharedData) {
-    mSharedData->Update(std::move(aMapHandle), aMapSize, std::move(blobImpls),
+    mSharedData->Update(std::move(aMapHandle), std::move(blobImpls),
                         std::move(aChangedKeys));
   } else {
     mSharedData =
         new SharedMap(ContentProcessMessageManager::Get()->GetParentObject(),
-                      std::move(aMapHandle), aMapSize, std::move(blobImpls));
+                      std::move(aMapHandle), std::move(blobImpls));
   }
 
   return IPC_OK();
@@ -2443,7 +2410,7 @@ mozilla::ipc::IPCResult ContentChild::RecvRebuildFontList(
 
 mozilla::ipc::IPCResult ContentChild::RecvFontListShmBlockAdded(
     const uint32_t& aGeneration, const uint32_t& aIndex,
-    SharedMemoryHandle&& aHandle) {
+    mozilla::ipc::ReadOnlySharedMemoryHandle&& aHandle) {
   if (gfxPlatform::Initialized()) {
     gfxPlatformFontList::PlatformFontList()->ShmBlockAdded(aGeneration, aIndex,
                                                            std::move(aHandle));
@@ -2796,13 +2763,16 @@ mozilla::ipc::IPCResult ContentChild::RecvNotifyProcessPriorityChanged(
                       "ipc:process-priority-changed", nullptr);
   if (StaticPrefs::
           dom_memory_foreground_content_processes_have_larger_page_cache()) {
+#ifdef MOZ_MEMORY
     if (mProcessPriority >= hal::PROCESS_PRIORITY_FOREGROUND) {
       // Note: keep this in sync with the JS shell (js/src/shell/js.cpp).
       moz_set_max_dirty_page_modifier(4);
-    } else if (mProcessPriority == hal::PROCESS_PRIORITY_BACKGROUND) {
+    }
+#endif
+    if (mProcessPriority == hal::PROCESS_PRIORITY_BACKGROUND) {
+#ifdef MOZ_MEMORY
       moz_set_max_dirty_page_modifier(-2);
 
-#if defined(MOZ_MEMORY)
       if (StaticPrefs::dom_memory_memory_pressure_on_background() == 1) {
         jemalloc_free_dirty_pages();
       }
@@ -2814,9 +2784,10 @@ mozilla::ipc::IPCResult ContentChild::RecvNotifyProcessPriorityChanged(
         nsCOMPtr<nsIObserverService> obsServ = services::GetObserverService();
         obsServ->NotifyObservers(nullptr, "memory-pressure", u"low-memory");
       }
-
+#ifdef MOZ_MEMORY
     } else {
       moz_set_max_dirty_page_modifier(0);
+#endif
     }
   }
 
@@ -3690,9 +3661,15 @@ mozilla::ipc::IPCResult ContentChild::RecvDiscardBrowsingContext(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
-    uint64_t aGroupId, nsTArray<SyncedContextInitializer>&& aInits) {
+    uint64_t aGroupId, nsTArray<SyncedContextInitializer>&& aInits,
+    nsTArray<OriginAgentClusterInitializer>&& aUseOriginAgentCluster) {
   RefPtr<BrowsingContextGroup> group =
       BrowsingContextGroup::GetOrCreate(aGroupId);
+
+  for (auto& entry : aUseOriginAgentCluster) {
+    group->SetUseOriginAgentClusterFromIPC(entry.principal(),
+                                           entry.useOriginAgentCluster());
+  }
 
   // Each of the initializers in aInits is sorted in pre-order, so our parent
   // should always be available before the element itself.
@@ -3739,6 +3716,14 @@ mozilla::ipc::IPCResult ContentChild::RecvDestroyBrowsingContextGroup(
           BrowsingContextGroup::GetExisting(aGroupId)) {
     group->ChildDestroy();
   }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvSetUseOriginAgentCluster(
+    uint64_t aGroupId, nsIPrincipal* aPrincipal, bool aUseOriginAgentCluster) {
+  RefPtr<BrowsingContextGroup> group =
+      BrowsingContextGroup::GetOrCreate(aGroupId);
+  group->SetUseOriginAgentClusterFromIPC(aPrincipal, aUseOriginAgentCluster);
   return IPC_OK();
 }
 

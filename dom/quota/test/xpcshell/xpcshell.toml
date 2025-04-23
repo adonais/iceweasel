@@ -71,6 +71,8 @@ skip-if = ["true"] # Only used for recreating unsetLastAccessTime_profile.zip
 
 ["test_getUsageForPrincipal.js"]
 
+["test_groupInitializationStarted.js"]
+
 ["test_groupMismatch.js"]
 skip-if = ["true"] # The group is now always empty, so metadata can't differ anymore.
 
@@ -78,6 +80,13 @@ skip-if = ["true"] # The group is now always empty, so metadata can't differ any
 
 ["test_initTemporaryStorage.js"]
 skip-if = ["condprof"] # frequent perma fail, then goes away.
+
+["test_initializeAllTemporaryOrigins.js"]
+# The test cannot function correctly with incremental origin initialization
+# enabled  because incremental origin initialization automatically triggers
+# lazy initialization of all temporary origins after temporary storage
+# initialization is complete.
+skip-if = ["inc_origin_init"]
 
 ["test_initializePersistentClient.js"]
 
@@ -105,6 +114,8 @@ skip-if = ["inc_origin_init"]
 
 ["test_originWithCaret.js"]
 
+["test_originInitializationStarted.js"]
+
 ["test_orpahnedQuotaObject.js"]
 
 ["test_persist.js"]
@@ -122,6 +133,20 @@ skip-if = ["inc_origin_init"]
 ["test_removeLocalStorage.js"]
 
 ["test_simpledb.js"]
+
+["test_shutdownDuringAllTemporaryOriginsInitialization.js"]
+# The test cannot function correctly with incremental origin initialization
+# enabled  because incremental origin initialization automatically triggers
+# lazy initialization of all temporary origins after temporary storage
+# initialization is complete.
+skip-if = ["inc_origin_init"]
+
+["test_shutdownDuringAllTemporaryOriginsInitialization2.js"]
+# The test cannot function correctly with incremental origin initialization
+# enabled  because incremental origin initialization automatically triggers
+# lazy initialization of all temporary origins after temporary storage
+# initialization is complete.
+skip-if = ["inc_origin_init"]
 
 ["test_specialOrigins.js"]
 

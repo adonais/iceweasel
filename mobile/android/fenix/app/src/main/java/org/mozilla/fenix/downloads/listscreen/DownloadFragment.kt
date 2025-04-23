@@ -17,7 +17,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.MainScope
@@ -37,6 +36,13 @@ import org.mozilla.fenix.compose.ComposeFragment
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.downloads.dialog.DynamicDownloadDialog
+import org.mozilla.fenix.downloads.listscreen.middleware.DownloadTelemetryMiddleware
+import org.mozilla.fenix.downloads.listscreen.middleware.DownloadUIMapperMiddleware
+import org.mozilla.fenix.downloads.listscreen.middleware.DownloadUIShareMiddleware
+import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
+import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
+import org.mozilla.fenix.downloads.listscreen.store.DownloadUIStore
+import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.requireComponents
@@ -53,13 +59,16 @@ import org.mozilla.fenix.utils.allowUndo
 class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider {
 
     private val downloadStore by lazyStore { viewModelScope ->
-        DownloadFragmentStore(
-            initialState = DownloadFragmentState.INITIAL,
+        DownloadUIStore(
+            initialState = DownloadUIState.INITIAL,
             middleware = listOf(
-                DownloadFragmentDataMiddleware(
+                DownloadUIMapperMiddleware(
                     browserStore = requireComponents.core.store,
+                    fileSizeFormatter = requireComponents.core.fileSizeFormatter,
                     scope = viewModelScope,
                 ),
+                DownloadUIShareMiddleware(applicationContext = requireContext().applicationContext),
+                DownloadTelemetryMiddleware(),
             ),
         )
     }
@@ -70,7 +79,7 @@ class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider
             DownloadsScreen(
                 downloadsStore = downloadStore,
                 onItemClick = { openItem(it) },
-                onItemDeleteClick = { deleteDownloadItems(setOf(it)) },
+                onItemDeleteClick = { deleteFileItems(setOf(it)) },
             )
         }
     }
@@ -84,16 +93,16 @@ class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider
      * Note: When tapping on a download item's "trash" button
      * (itemView.overflow_menu) this [items].size() will be 1.
      */
-    private fun deleteDownloadItems(items: Set<DownloadItem>) {
+    private fun deleteFileItems(items: Set<FileItem>) {
         updatePendingDownloadToDelete(items)
         MainScope().allowUndo(
             requireActivity().getRootView()!!,
             getMultiSelectSnackBarMessage(items),
-            getString(R.string.bookmark_undo_deletion),
+            getString(R.string.download_undo_delete_snackbar_action),
             onCancel = {
                 undoPendingDeletion(items)
             },
-            operation = getDeleteDownloadItemsOperation(items),
+            operation = getDeleteFileItemsOperation(items),
         )
     }
 
@@ -112,7 +121,7 @@ class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider
                 .collect { mode ->
                     invalidateOptionsMenu()
                     when (mode) {
-                        is DownloadFragmentState.Mode.Editing -> {
+                        is DownloadUIState.Mode.Editing -> {
                             updateToolbarForSelectingMode(
                                 title = getString(
                                     R.string.download_multi_select_title,
@@ -121,7 +130,7 @@ class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider
                             )
                         }
 
-                        DownloadFragmentState.Mode.Normal -> {
+                        DownloadUIState.Mode.Normal -> {
                             updateToolbarForNormalMode(title = getString(R.string.library_downloads))
                         }
                     }
@@ -136,31 +145,26 @@ class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider
 
     override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
         val menuRes = when (downloadStore.state.mode) {
-            is DownloadFragmentState.Mode.Normal -> R.menu.library_menu
-            is DownloadFragmentState.Mode.Editing -> R.menu.download_select_multi
+            is DownloadUIState.Mode.Normal -> return
+            is DownloadUIState.Mode.Editing -> R.menu.download_select_multi
         }
         inflater.inflate(menuRes, menu)
 
         menu.findItem(R.id.delete_downloads_multi_select)?.title =
-            SpannableString(getString(R.string.download_delete_item_1)).apply {
+            SpannableString(getString(R.string.download_delete_item)).apply {
                 setTextColor(requireContext(), R.attr.textCritical)
             }
     }
 
     override fun onMenuItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        R.id.close_history -> {
-            findNavController().popBackStack()
-            true
-        }
-
         R.id.delete_downloads_multi_select -> {
-            deleteDownloadItems(downloadStore.state.mode.selectedItems)
-            downloadStore.dispatch(DownloadFragmentAction.ExitEditMode)
+            deleteFileItems(downloadStore.state.mode.selectedItems)
+            downloadStore.dispatch(DownloadUIAction.ExitEditMode)
             true
         }
 
         R.id.select_all_downloads_multi_select -> {
-            downloadStore.dispatch(DownloadFragmentAction.AddAllItemsForRemoval)
+            downloadStore.dispatch(DownloadUIAction.AddAllItemsForRemoval)
             true
         }
         // other options are not handled by this menu provider
@@ -170,27 +174,27 @@ class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider
     /**
      * Provides a message to the Undo snackbar.
      */
-    private fun getMultiSelectSnackBarMessage(downloadItems: Set<DownloadItem>): String {
-        return if (downloadItems.size > 1) {
-            getString(R.string.download_delete_multiple_items_snackbar_1)
+    private fun getMultiSelectSnackBarMessage(fileItems: Set<FileItem>): String {
+        return if (fileItems.size > 1) {
+            getString(R.string.download_delete_multiple_items_snackbar_2, fileItems.size)
         } else {
             String.format(
-                requireContext().getString(R.string.download_delete_single_item_snackbar),
-                downloadItems.first().fileName,
+                requireContext().getString(R.string.download_delete_single_item_snackbar_2),
+                fileItems.first().fileName,
             )
         }
     }
 
     override fun onBackPressed(): Boolean {
-        return if (downloadStore.state.mode is DownloadFragmentState.Mode.Editing) {
-            downloadStore.dispatch(DownloadFragmentAction.ExitEditMode)
+        return if (downloadStore.state.mode is DownloadUIState.Mode.Editing) {
+            downloadStore.dispatch(DownloadUIAction.ExitEditMode)
             true
         } else {
             false
         }
     }
 
-    private fun openItem(item: DownloadItem, mode: BrowsingMode? = null) {
+    private fun openItem(item: FileItem, mode: BrowsingMode? = null) {
         mode?.let { (activity as HomeActivity).browsingModeManager.mode = it }
         context?.let {
             val downloadState = DownloadState(
@@ -221,30 +225,29 @@ class DownloadFragment : ComposeFragment(), UserInteractionHandler, MenuProvider
         }
     }
 
-    private fun getDeleteDownloadItemsOperation(
-        items: Set<DownloadItem>,
+    private fun getDeleteFileItemsOperation(
+        items: Set<FileItem>,
     ): (suspend (context: Context) -> Unit) {
         return { context ->
             CoroutineScope(IO).launch {
-                downloadStore.dispatch(DownloadFragmentAction.EnterDeletionMode)
                 context.let {
                     for (item in items) {
                         it.components.useCases.downloadUseCases.removeDownload(item.id)
+                        downloadStore.dispatch(DownloadUIAction.FileItemDeletedSuccessfully)
                     }
                 }
-                downloadStore.dispatch(DownloadFragmentAction.ExitDeletionMode)
             }
         }
     }
 
-    private fun updatePendingDownloadToDelete(items: Set<DownloadItem>) {
+    private fun updatePendingDownloadToDelete(items: Set<FileItem>) {
         val ids = items.map { item -> item.id }.toSet()
-        downloadStore.dispatch(DownloadFragmentAction.AddPendingDeletionSet(ids))
+        downloadStore.dispatch(DownloadUIAction.AddPendingDeletionSet(ids))
     }
 
-    private fun undoPendingDeletion(items: Set<DownloadItem>) {
+    private fun undoPendingDeletion(items: Set<FileItem>) {
         val ids = items.map { item -> item.id }.toSet()
-        downloadStore.dispatch(DownloadFragmentAction.UndoPendingDeletionSet(ids))
+        downloadStore.dispatch(DownloadUIAction.UndoPendingDeletionSet(ids))
     }
 
     private fun updateToolbarForNormalMode(title: String?) {

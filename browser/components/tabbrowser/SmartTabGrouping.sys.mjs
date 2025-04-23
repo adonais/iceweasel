@@ -9,18 +9,21 @@ import {
 } from "chrome://global/content/ml/NLPUtils.sys.mjs";
 
 import {
-  kmeansPlusPlus,
   computeCentroidFrom2DArray,
-  euclideanDistance,
-  silhouetteCoefficients,
-  getAccuracyStats,
   computeRandScore,
+  euclideanDistance,
+  getAccuracyStats,
+  kmeansPlusPlus,
+  silhouetteCoefficients,
 } from "chrome://global/content/ml/ClusterAlgos.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   NLP: "resource://gre/modules/NLP.sys.mjs",
+  MLEngineParent: "resource://gre/actors/MLEngineParent.sys.mjs",
+  MultiProgressAggregator: "chrome://global/content/ml/Utils.sys.mjs",
+  Progress: "chrome://global/content/ml/Utils.sys.mjs",
 });
 
 const EMBED_TEXT_KEY = "combined_text";
@@ -46,30 +49,34 @@ export const SUGGEST_OTHER_TABS_METHODS = {
   NEAREST_NEIGHBOR: "NEAREST_NEIGHBOR",
 };
 
+const EXPECTED_TOPIC_MODEL_OBJECTS = 6;
+const EXPECTED_EMBEDDING_MODEL_OBJECTS = 4;
+
 export const DIM_REDUCTION_METHODS = {};
 const MISSING_ANCHOR_IN_CLUSTER_PENALTY = 0.2;
-const NEAREST_NEIGHBOR_DEFAULT_THRESHOLD = 0.225;
-const DISSIMILAR_TAB_LABEL = "None";
+const NEAREST_NEIGHBOR_DEFAULT_THRESHOLD = 0.275;
 const MAX_NN_GROUPED_TABS = 4;
+const MAX_SUGGESTED_TABS = 10;
+
+const DISSIMILAR_TAB_LABEL = "none";
+const ADULT_TAB_LABEL = "adult content";
+const LABELS_TO_EXCLUDE = [DISSIMILAR_TAB_LABEL, ADULT_TAB_LABEL];
 
 const ML_TASK_FEATURE_EXTRACTION = "feature-extraction";
 const ML_TASK_TEXT2TEXT = "text2text-generation";
 
-const ML_SMART_TAB_EMBEDDING_ENGINE_ID = "smart-tab-embedding-engine";
-const ML_SMART_TAB_TOPIC_ENGINE_ID = "smart-tab-topic-engine";
-
 const SMART_TAB_GROUPING_CONFIG = {
   embedding: {
-    engineId: ML_SMART_TAB_EMBEDDING_ENGINE_ID,
     dtype: "q8",
     timeoutMS: 2 * 60 * 1000, // 2 minutes
     taskName: ML_TASK_FEATURE_EXTRACTION,
+    featureId: "smart-tab-embedding",
   },
   topicGeneration: {
-    engineId: ML_SMART_TAB_TOPIC_ENGINE_ID,
     dtype: "q8",
     timeoutMS: 2 * 60 * 1000, // 2 minutes
     taskName: ML_TASK_TEXT2TEXT,
+    featureId: "smart-tab-topic",
   },
   dataConfig: {
     titleKey: "label",
@@ -85,6 +92,14 @@ const SMART_TAB_GROUPING_CONFIG = {
     suggestOtherTabsMethod: SUGGEST_OTHER_TABS_METHODS.NEAREST_NEIGHBOR,
   },
 };
+
+const TAB_URLS_TO_EXCLUDE = [
+  "about:newtab",
+  "about:home",
+  "about:privatebrowsing",
+  "chrome://browser/content/blanktab.html",
+  "about:firefoxview",
+];
 
 /**
  * For a given set of clusters represented by indices, returns the index of the cluster
@@ -128,24 +143,15 @@ export class SmartTabGroupingManager {
   async smartTabGroupingForGroup(group, tabs) {
     // Add tabs to suggested group
     const groupTabs = group.tabs;
-
-    const uniqueSpecs = new Set();
     const allTabs = tabs.filter(tab => {
       // Don't include tabs already pinned
       if (tab.pinned) {
         return false;
       }
-
-      const spec = tab?.linkedBrowser?.currentURI?.spec;
-      if (!spec) {
+      if (!tab?.linkedBrowser?.currentURI?.spec) {
         return false;
       }
-      if (!uniqueSpecs.has(spec)) {
-        uniqueSpecs.add(spec);
-        return true;
-      }
-
-      return false;
+      return true;
     });
 
     // find tabs that are part of the group
@@ -185,13 +191,39 @@ export class SmartTabGroupingManager {
       case SUGGEST_OTHER_TABS_METHODS.NEAREST_NEIGHBOR:
       default:
         // find nearest neighbors to current group
-        suggestedTabs = await this.findNearestNeighbors(
+        suggestedTabs = await this.findNearestNeighbors({
           allTabs,
-          groupIndices,
-          alreadyGroupedIndices
-        );
+          groupedIndices: groupIndices,
+          alreadyGroupedIndices,
+          groupLabel: group?.label,
+        });
     }
-    return suggestedTabs;
+    return suggestedTabs.slice(0, MAX_SUGGESTED_TABS);
+  }
+
+  /**
+   * Get tabs that need to be included in suggestions
+   * @param {array} allTabs all tabs that are part of the window
+   * @param {array} groupedIndices indices of tabs that are already part of the group
+   * @param {array} alreadyGroupedIndices indices of tabs that are part of other groups
+   * @returns {array} tabs indices to be considered for suggestions
+   */
+  getTabsToSuggest(allTabs, groupedIndices, alreadyGroupedIndices) {
+    // tabs to be excluded
+    // indices of all tabs that should be excluded (with duplicates)
+    const tabURLIndicesToExclude = allTabs
+      .map((at, index) => (TAB_URLS_TO_EXCLUDE.includes(at.url) ? index : -1))
+      .filter(index => index !== -1);
+    const excludedTabIndices = [
+      ...groupedIndices,
+      ...alreadyGroupedIndices,
+      ...tabURLIndicesToExclude,
+    ];
+
+    // tabs to be included
+    return allTabs
+      .map((_, index) => index)
+      .filter(i => !excludedTabIndices.includes(i));
   }
 
   /*
@@ -199,59 +231,81 @@ export class SmartTabGroupingManager {
    * @param {array} allTabs all tabs that are part of the window
    * @param {array} groupedIndices indices of tabs that are already part of the group
    * @param {array} alreadyGroupedIndices indices of tabs that are part of other groups
+   * @param {string} groupLabel name of group if present
    * @param {number} threshold for nearest neighbor similarity
    * @returns a list of suggested tabs that are similar to the groupedIndices tabs
    */
-  async findNearestNeighbors(
+  async findNearestNeighbors({
     allTabs,
     groupedIndices,
     alreadyGroupedIndices,
-    threshold = NEAREST_NEIGHBOR_DEFAULT_THRESHOLD
-  ) {
-    // get tabs in group first
-    const tabsInGroup = groupedIndices.map(i => allTabs[i]);
-    const tabsInGroupData = await this._prepareTabData(tabsInGroup);
-    const tabsInGroupEmbeddings = await this._generateEmbeddings(
-      tabsInGroupData.map(a => a[EMBED_TEXT_KEY])
+    groupLabel = "",
+    threshold = NEAREST_NEIGHBOR_DEFAULT_THRESHOLD,
+    precomputedEmbeddings = [],
+    depth = 0,
+  }) {
+    // get embeddings for all the tabs
+    const tabData = await this._prepareTabData(allTabs);
+    let embeddings = precomputedEmbeddings;
+    if (precomputedEmbeddings.length === 0) {
+      embeddings = await this._generateEmbeddings(
+        tabData.map((td, index) => {
+          let text = SmartTabGroupingManager.preprocessText(td[EMBED_TEXT_KEY]);
+          // augment with group name if it's present
+          if (groupLabel && groupedIndices.includes(index)) {
+            text = `${groupLabel.slice(0, 100)}. ${td[EMBED_TEXT_KEY]}`;
+          }
+          return text;
+        })
+      );
+    }
+
+    // tabs that need to be assigned after filtering
+    const tabsToAssignIndices = this.getTabsToSuggest(
+      tabData,
+      groupedIndices,
+      alreadyGroupedIndices
     );
 
-    // get tabs that we need to assign
-    const groupedTabIndices = groupedIndices.concat(alreadyGroupedIndices);
-    const tabsToAssign = allTabs.filter(
-      (_, index) => !groupedTabIndices.includes(index)
-    );
-    const tabsToAssignData = await this._prepareTabData(tabsToAssign);
-    const tabsToAssignEmbeddings = await this._generateEmbeddings(
-      tabsToAssignData.map(a => a[EMBED_TEXT_KEY])
-    );
-
-    // find closest tabs
-    // if any tab is close to a tab in the existing group, add to list
-    const closestTabs = [];
-
-    // select MAX_NN_GROUPED_TABS so too many tabs in same group won't cause performance issues
-    for (let i = 0; i < tabsToAssign.length; i++) {
+    let closestTabs = [];
+    const similarTabsIndices = [];
+    for (let i = 0; i < tabsToAssignIndices.length; i++) {
       let closestScore = null;
       for (
         let j = 0;
-        j < Math.min(tabsInGroup.length, MAX_NN_GROUPED_TABS);
+        j < Math.min(groupedIndices.length, MAX_NN_GROUPED_TABS);
         j++
       ) {
         const cosineSim = cosSim(
-          tabsToAssignEmbeddings[i],
-          tabsInGroupEmbeddings[j]
+          embeddings[tabsToAssignIndices[i]],
+          embeddings[groupedIndices[j]]
         );
         if (!closestScore || cosineSim > closestScore) {
           closestScore = cosineSim;
         }
       }
       if (closestScore > threshold) {
-        closestTabs.push([tabsToAssign[i], closestScore]);
+        closestTabs.push([allTabs[tabsToAssignIndices[i]], closestScore]);
+        similarTabsIndices.push(tabsToAssignIndices[i]);
       }
     }
-    // sort and return by tabs that are most similar
     closestTabs.sort((a, b) => b[1] - a[1]);
-    return closestTabs.map(t => t[0]);
+    closestTabs = closestTabs.map(t => t[0]);
+    // recurse once if the initial call only had a single tab
+    // and we found at least 1 similar tab - this improves recall
+    if (groupedIndices.length === 1 && !!closestTabs.length && depth === 1) {
+      const recurseSimilarTabs = await this.findNearestNeighbors({
+        allTabs,
+        groupedIndices: similarTabsIndices,
+        alreadyGroupedIndices: alreadyGroupedIndices.concat(groupedIndices),
+        groupLabel,
+        threshold,
+        precomputedEmbeddings: embeddings,
+        depth: depth - 1,
+      });
+      closestTabs = closestTabs.concat(recurseSimilarTabs);
+    }
+    return closestTabs;
   }
 
   /**
@@ -313,15 +367,24 @@ export class SmartTabGroupingManager {
   /**
    * Logs to the appropriate place for debugging. Console for now
    * @param {string} msg Message to log
+   * @param {boolean} useDescription Whether to add description to the final text
    */
   log(_msg) {}
 
-  async _prepareTabData(tabList) {
+  /**
+   * Prepares data to be used by the ml models
+   * @param {Object[]} tabList list of tabs in the current window
+   * @param {boolean} useDescription whether we should combined the title and description
+   * @return {Promise<*[Object]>}
+   * @private
+   */
+  async _prepareTabData(tabList, useDescription = false) {
     const titleKey = this.config.dataConfig.titleKey;
     const descriptionKey = this.config.dataConfig.descriptionKey;
     const structuredData = [];
     for (let tab of tabList) {
-      const description = descriptionKey && tab[descriptionKey];
+      const description =
+        useDescription && descriptionKey && tab[descriptionKey];
 
       let textToEmbed;
       if (description) {
@@ -343,9 +406,10 @@ export class SmartTabGroupingManager {
   /**
    * Creates an ML engine for a given config.
    * @param {*} engineConfig
+   * @param {function} progressCallback
    * @returns MLEngine
    */
-  async _createMLEngine(engineConfig) {
+  async _createMLEngine(engineConfig, progressCallback) {
     const {
       featureId,
       engineId,
@@ -364,7 +428,7 @@ export class SmartTabGroupingManager {
       modelId,
       modelRevision,
     };
-    return await createEngine(initData);
+    return await createEngine(initData, progressCallback);
   }
 
   /**
@@ -595,6 +659,69 @@ export class SmartTabGroupingManager {
     });
   }
 
+  /***
+   * Utility function that loads all required engines for Smart Tab Grouping and any dependent models
+   * @param {(progress: { percentage: number }) => void} progressCallback callback function to call.
+   * Callback passes a dict with percentage indicating best effort 0.0-100.0 progress in model download.
+   */
+  async preloadAllModels(progressCallback) {
+    let previousProgress = -1;
+    const expectedObjects =
+      EXPECTED_TOPIC_MODEL_OBJECTS + EXPECTED_EMBEDDING_MODEL_OBJECTS;
+    // TODO - Find a way to get these fields. Add as a transformers js callback or within remotesettings
+
+    const UPDATE_THRESHOLD_PERCENTAGE = 0.5;
+    const ONE_MB = 1024 * 1024;
+    const START_THRESHOLD_BYTES = ONE_MB * 0.2;
+
+    const mutliProgressAggregator = new lazy.MultiProgressAggregator({
+      progressCallback: ({ progress, totalLoaded, metadata }) => {
+        if (totalLoaded < START_THRESHOLD_BYTES) {
+          progress = 0.0;
+        } else {
+          const numObjSeen = metadata.totalObjectsSeen || 0;
+          if (numObjSeen > 0 && numObjSeen < expectedObjects) {
+            // When starting to download we may still be getting configs and not have all the data
+            progress *= numObjSeen / expectedObjects;
+          }
+          if (progress > 100) {
+            progress = 100;
+          }
+        }
+        if (
+          Math.abs(previousProgress - progress) > UPDATE_THRESHOLD_PERCENTAGE
+        ) {
+          // Update only once changes are above a threshold to avoid throttling the UI with events.
+          progressCallback({
+            percentage: progress,
+          });
+          previousProgress = progress;
+        }
+      },
+      watchedTypes: [
+        lazy.Progress.ProgressType.DOWNLOAD,
+        lazy.Progress.ProgressType.LOAD_FROM_CACHE,
+      ],
+    });
+
+    const [topicEngine, embeddingEngine] = await Promise.all([
+      this._createMLEngine(
+        this.config.topicGeneration,
+        mutliProgressAggregator?.aggregateCallback.bind(
+          mutliProgressAggregator
+        ) || null
+      ),
+      this._createMLEngine(
+        this.config.embedding,
+        mutliProgressAggregator?.aggregateCallback.bind(
+          mutliProgressAggregator
+        ) || null
+      ),
+    ]);
+    this.topicEngine = topicEngine;
+    this.embeddingEngine = embeddingEngine;
+  }
+
   /**
    * Generate model input from keywords and documents
    * @param {string []} keywords
@@ -605,6 +732,84 @@ export class SmartTabGroupingManager {
       return `Topic from keywords: titles: \n${documents.join(" \n")}`;
     }
     return `Topic from keywords: ${keywords.join(", ")}. titles: \n${documents.join(" \n")}`;
+  }
+
+  /**
+   * One artifact of the LLM output is that sometimes words are duplicated
+   * This function cuts the phrase when it sees the first duplicate word.
+   * Handles simple singluar / plural duplicates (-s only).
+   * @param {string} phrase Input phrase
+   * @returns {string} phrase cut before any duplicate word
+   */
+  static cutAtDuplicateWords(phrase) {
+    if (!phrase.length) {
+      return phrase;
+    }
+    const wordsSet = new Set();
+    const wordList = phrase.split(" ");
+    for (let i = 0; i < wordList.length; i++) {
+      let baseWord = wordList[i].toLowerCase();
+      if (baseWord.length > 3) {
+        if (baseWord.slice(-1) === "s") {
+          baseWord = baseWord.slice(0, -1);
+        }
+      }
+      if (wordsSet.has(baseWord)) {
+        // We are seeing a baseWord word. Exit with just the words so far and don't
+        // add any new words
+        return wordList.slice(0, i).join(" ");
+      }
+      wordsSet.add(baseWord);
+    }
+    return phrase; // return original phrase
+  }
+
+  /**
+   * Removes trailing domain-related text such as '... - Mail' or '... | News'
+   * If there's not enough information remaining after, we keep the text as is
+   * @param {string} text tab title with potential domain information
+   * @return {string}
+   */
+  static preprocessText(text) {
+    // Matches 'xyz - Domain' or 'xyz | Domain'
+    // with a space before and after delimiter
+    // or if there are multiple delimiters next to each other
+    const delimiters = /(?<=\s)[|–-]+(?=\s)/;
+    const splitText = text.split(delimiters);
+
+    // ensure there's enough info without the last element
+    const hasEnoughInfo =
+      !!splitText.length && splitText.slice(0, -1).join(" ").length > 5;
+
+    // domain related texts are usually shorter, this takes care of the most common cases
+    const isPotentialDomainInfo =
+      splitText.length > 1 && splitText[splitText.length - 1].length < 20;
+
+    // If both conditions are met, remove the last chunk, filter out empty strings,
+    // join on space, trim, and lowercase
+    if (hasEnoughInfo && isPotentialDomainInfo) {
+      return splitText
+        .slice(0, -1) // everything except the last element
+        .map(t => t.trim())
+        .filter(Boolean) // remove empty strings
+        .join(" ") // join with spaces
+        .trim(); // remove leading/trailing spaces
+    }
+
+    // Otherwise, just return the text
+    return text;
+  }
+
+  /**
+   * Postprocessing of raw output from Topic Model ML Engine
+   * @param {string | undefined} topic Raw topic phrase from topic model or undefined in case of an error
+   */
+  static processTopicModelResult(topic) {
+    let basicResult = (topic || "").trim();
+    if (LABELS_TO_EXCLUDE.includes(basicResult.toLowerCase())) {
+      return "";
+    }
+    return SmartTabGroupingManager.cutAtDuplicateWords(basicResult);
   }
 
   /**
@@ -647,11 +852,9 @@ export class SmartTabGroupingManager {
     genLabelResults.forEach((genResult, genResultIndex) => {
       groupingResult.clusterRepresentations[
         genResultIndex
-      ].predictedTopicLabel = (
-        (genResult.generated_text || "").trim() === DISSIMILAR_TAB_LABEL
-          ? ""
-          : genResult.generated_text || ""
-      ).trim();
+      ].predictedTopicLabel = SmartTabGroupingManager.processTopicModelResult(
+        genResult.generated_text
+      );
     });
   }
 
@@ -663,17 +866,28 @@ export class SmartTabGroupingManager {
    * @param {number} numTabsInGroup Number of tabs used to generate the label
    * @param {string} mlLabel ML generated label for the tab group
    * @param {string} userLabel User saved label for the tab group
+   * @param {string} id The id of the group
    */
-  handleLabelTelemetry({ action, numTabsInGroup, mlLabel, userLabel }) {
-    Glean.browserMlInteraction.smartTabTopic.record({
+  async handleLabelTelemetry({
+    action,
+    numTabsInGroup,
+    mlLabel,
+    userLabel,
+    id = "",
+  }) {
+    const { [ML_TASK_TEXT2TEXT]: topicEngineConfig } =
+      await this.getEngineConfigs();
+    Glean.tabgroup.smartTabTopic.record({
       action,
-      num_tabs_in_group: numTabsInGroup,
+      tabs_in_group: numTabsInGroup,
       ml_label_length: (mlLabel || "").length,
       user_label_length: (userLabel || "").length,
       levenshtein_distance: lazy.NLP.levenshtein(
         userLabel || "",
         mlLabel || ""
       ),
+      model_revision: topicEngineConfig.modelRevision || "",
+      id,
     });
   }
 
@@ -687,23 +901,54 @@ export class SmartTabGroupingManager {
    * @param {number} numTabsSuggested Number of tabs suggested by the model
    * @param {number} numTabsApproved Number of tabs approved by the user
    * @param {number} numTabsRemoved Number of tabs removed by the user
+   * @param {string} id The id of the group
    */
-  handleSuggestTelemetry({
+  async handleSuggestTelemetry({
     action,
     numTabsInWindow,
     numTabsInGroup,
     numTabsSuggested,
     numTabsApproved,
     numTabsRemoved,
+    id = "",
   }) {
-    Glean.browserMlInteraction.smartTabSuggest.record({
+    const { [ML_TASK_FEATURE_EXTRACTION]: embeddingEngineConfig } =
+      await this.getEngineConfigs();
+    Glean.tabgroup.smartTabSuggest.record({
       action,
-      num_tabs_in_window: numTabsInWindow,
-      num_tabs_in_group: numTabsInGroup,
-      num_tabs_suggested: numTabsSuggested,
-      num_tabs_approved: numTabsApproved,
-      num_tabs_removed: numTabsRemoved,
+      tabs_in_window: numTabsInWindow,
+      tabs_in_group: numTabsInGroup,
+      tabs_suggested: numTabsSuggested,
+      tabs_approved: numTabsApproved,
+      tabs_removed: numTabsRemoved,
+      model_revision: embeddingEngineConfig.modelRevision || "",
+      id,
     });
+  }
+
+  /**
+   * Gets config that engine was initialized with
+   *
+   * @return {Promise<{"[ML_TASK_TEXT2TEXT]", "[ML_TASK_FEATURE_EXTRACTION]"}>}
+   */
+  async getEngineConfigs() {
+    if (!this.topicEngineConfig) {
+      this.topicEngineConfig = await lazy.MLEngineParent.getInferenceOptions(
+        this.config.topicGeneration.featureId,
+        this.config.topicGeneration.taskName
+      );
+    }
+    if (!this.embeddingEngineConfig) {
+      this.embeddingEngineConfig =
+        await lazy.MLEngineParent.getInferenceOptions(
+          this.config.embedding.featureId,
+          this.config.embedding.taskName
+        );
+    }
+    return {
+      [ML_TASK_TEXT2TEXT]: this.topicEngineConfig,
+      [ML_TASK_FEATURE_EXTRACTION]: this.embeddingEngineConfig,
+    };
   }
 }
 

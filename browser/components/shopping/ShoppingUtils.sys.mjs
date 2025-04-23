@@ -10,7 +10,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   isProductURL: "chrome://global/content/shopping/ShoppingProduct.mjs",
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  getProductIdFromURL: "chrome://global/content/shopping/ShoppingProduct.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
 });
@@ -26,14 +26,13 @@ const AUTO_OPEN_ENABLED_PREF =
   "browser.shopping.experience2023.autoOpen.enabled";
 const AUTO_OPEN_USER_ENABLED_PREF =
   "browser.shopping.experience2023.autoOpen.userEnabled";
-const AUTO_CLOSE_USER_ENABLED_PREF =
-  "browser.shopping.experience2023.autoClose.userEnabled";
 const SIDEBAR_CLOSED_COUNT_PREF =
   "browser.shopping.experience2023.sidebarClosedCount";
 
 const CFR_FEATURES_PREF =
   "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features";
 
+const ENABLED_PREF = "browser.shopping.experience2023.enabled";
 const INTEGRATED_SIDEBAR_PREF =
   "browser.shopping.experience2023.integratedSidebar";
 
@@ -41,26 +40,33 @@ export const ShoppingUtils = {
   initialized: false,
   registered: false,
   handledAutoActivate: false,
-  nimbusEnabled: false,
-  nimbusControl: false,
+  enabled: false,
+  integratedSidebar: false,
   everyWindowCallbackId: `shoppingutils-${Services.uuid.generateUUID()}`,
   managers: new WeakMap(),
 
-  _updateNimbusVariables() {
-    this.nimbusEnabled =
-      lazy.NimbusFeatures.shopping2023.getVariable("enabled");
-    this.nimbusControl =
-      lazy.NimbusFeatures.shopping2023.getVariable("control");
+  _updatePrefVariables() {
+    this.integratedSidebar = Services.prefs.getBoolPref(
+      INTEGRATED_SIDEBAR_PREF,
+      false
+    );
+    this.enabled =
+      this.integratedSidebar || Services.prefs.getBoolPref(ENABLED_PREF, false);
   },
 
-  onNimbusUpdate() {
-    this._updateNimbusVariables();
-    if (this.nimbusEnabled) {
+  onPrefUpdate(_subject, topic) {
+    if (topic !== "nsPref:changed") {
+      return;
+    }
+    if (this.initialized) {
+      ShoppingUtils.uninit(true);
+      Glean.shoppingSettings.nimbusDisabledShopping.set(true);
+    }
+    this._updatePrefVariables();
+
+    if (this.enabled) {
       ShoppingUtils.init();
       Glean.shoppingSettings.nimbusDisabledShopping.set(false);
-    } else {
-      ShoppingUtils.uninit();
-      Glean.shoppingSettings.nimbusDisabledShopping.set(true);
     }
   },
 
@@ -71,22 +77,22 @@ export const ShoppingUtils = {
     if (this.initialized) {
       return;
     }
-    this.onNimbusUpdate = this.onNimbusUpdate.bind(this);
+    this.onPrefUpdate = this.onPrefUpdate.bind(this);
     this.onActiveUpdate = this.onActiveUpdate.bind(this);
-    this.onIntegratedSidebarUpdate = this.onIntegratedSidebarUpdate.bind(this);
     this._addManagerForWindow = this._addManagerForWindow.bind(this);
     this._removeManagerForWindow = this._removeManagerForWindow.bind(this);
 
     if (!this.registered) {
       // Note (bug 1855545): we must set `this.registered` before calling
-      // `onUpdate`, as it will immediately invoke `this.onNimbusUpdate`,
+      // `onUpdate`, as it will immediately invoke `this.onPrefUpdate`,
       // which in turn calls `ShoppingUtils.init`, creating an infinite loop.
       this.registered = true;
-      lazy.NimbusFeatures.shopping2023.onUpdate(this.onNimbusUpdate);
-      this._updateNimbusVariables();
+      Services.prefs.addObserver(ENABLED_PREF, this.onPrefUpdate);
+      Services.prefs.addObserver(INTEGRATED_SIDEBAR_PREF, this.onPrefUpdate);
+      this._updatePrefVariables();
     }
 
-    if (!this.nimbusEnabled) {
+    if (!this.enabled) {
       return;
     }
 
@@ -97,29 +103,31 @@ export const ShoppingUtils = {
     this.recordUserAdsPreference();
     this.recordUserAutoOpenPreference();
 
-    if (this.isAutoOpenEligible()) {
-      Services.prefs.setBoolPref(ACTIVE_PREF, true);
+    if (this.integratedSidebar) {
+      this._addReviewCheckerManagers();
+    } else {
+      if (this.isAutoOpenEligible()) {
+        Services.prefs.setBoolPref(ACTIVE_PREF, true);
+      }
+      Services.prefs.addObserver(ACTIVE_PREF, this.onActiveUpdate);
     }
-    Services.prefs.addObserver(ACTIVE_PREF, this.onActiveUpdate);
-
-    Services.prefs.addObserver(
-      INTEGRATED_SIDEBAR_PREF,
-      this.onIntegratedSidebarUpdate
-    );
 
     Services.prefs.setIntPref(SIDEBAR_CLOSED_COUNT_PREF, 0);
-
-    if (ShoppingUtils.integratedSidebar) {
-      this._addReviewCheckerManagers();
-    }
 
     this.initialized = true;
   },
 
-  // Runs once per session:
-  // * when the user is unenrolled from the Nimbus experiment,
-  // * or at shutdown, after quit-application-granted.
-  uninit() {
+  /**
+   * Runs when:
+   * - the shopping2023 enabled or integratedSidebar prefs are changed,
+   * - the user is unenrolled from the Nimbus experiment,
+   * - or at shutdown, after quit-application-granted.
+   *
+   * @param {boolean} soft
+   *    If this is a soft uninit, for a pref change, we want to keep the
+   *    pref listeners around incase they are changed again.
+   */
+  uninit(soft) {
     if (!this.initialized) {
       return;
     }
@@ -129,10 +137,11 @@ export const ShoppingUtils = {
 
     Services.prefs.removeObserver(ACTIVE_PREF, this.onActiveUpdate);
 
-    Services.prefs.removeObserver(
-      INTEGRATED_SIDEBAR_PREF,
-      this.onIntegratedSidebarUpdate
-    );
+    if (!soft) {
+      this.registered = false;
+      Services.prefs.removeObserver(ENABLED_PREF, this.onPrefUpdate);
+      Services.prefs.removeObserver(INTEGRATED_SIDEBAR_PREF, this.onPrefUpdate);
+    }
 
     if (this.managers.size) {
       this._removeReviewCheckerManagers();
@@ -183,10 +192,57 @@ export const ShoppingUtils = {
     );
   },
 
-  // For users in either the nimbus control or treatment groups, increment a
+  /**
+   * Similar to isProductPageNavigation but compares the
+   * current location URI to a previous location URI and
+   * checks if the URI and product has changed.
+   *
+   * This lets us avoid issues with over-counting products
+   * that have multiple loads or history changes.
+   *
+   * @param {nsIURI} aLocationURI
+   *    The current location.
+   * @param {integer} aFlags
+   *    The load flags or null.
+   * @param {nsIURI} aPreviousURI
+   *    A previous product URI or null.
+   * @returns {boolean} isNewProduct
+   */
+  hasLocationChanged(aLocationURI, aFlags, aPreviousURI) {
+    let isReload = aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD;
+    let isSessionRestore =
+      aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SESSION_STORE;
+
+    // If we have reloaded, restored or there isn't a previous URI
+    // this is a location change.
+    if (isReload || isSessionRestore || !aPreviousURI) {
+      return true;
+    }
+
+    let isCurrentLocationProduct = lazy.isProductURL(aLocationURI);
+    let isPrevLocationProduct = lazy.isProductURL(aPreviousURI);
+
+    // If the locations are not products, we can just compare URIs.
+    if (!isCurrentLocationProduct && !isPrevLocationProduct) {
+      return aLocationURI.equalsExceptRef(aPreviousURI);
+    }
+
+    // If one of the URIs is not a product url, but the other is
+    // this is a location change.
+    if (!isCurrentLocationProduct || !isPrevLocationProduct) {
+      return true;
+    }
+
+    // If URIs are both products we will need to check,
+    // if the product have changed by comparing them.
+    let isSameProduct = this.isSameProduct(aLocationURI, aPreviousURI);
+    return !isSameProduct;
+  },
+
+  // For enabled users, increment a
   // counter when they visit supported product pages.
   recordExposure() {
-    if (this.nimbusEnabled || this.nimbusControl) {
+    if (this.enabled) {
       Glean.shopping.productPageVisits.add(1);
     }
   },
@@ -204,20 +260,6 @@ export const ShoppingUtils = {
     Glean.shoppingSettings.autoOpenUserDisabled.set(
       !ShoppingUtils.autoOpenUserEnabled
     );
-  },
-
-  recordUserAutoClosePreference() {
-    Glean.shoppingSettings.autoCloseUserDisabled.set(
-      !ShoppingUtils.autoCloseUserEnabled
-    );
-  },
-
-  onIntegratedSidebarUpdate(_pref, _prev, current) {
-    if (current && !this.managers.size) {
-      this._addReviewCheckerManagers();
-    } else if (this.managers.size) {
-      this._removeReviewCheckerManagers();
-    }
   },
 
   /**
@@ -302,17 +344,71 @@ export const ShoppingUtils = {
     );
 
     if (isProductPageNavigation) {
-      this.recordExposure(aLocationURI, aFlags);
+      this.recordExposure();
     }
 
     if (
-      !ShoppingUtils.integratedSidebar &&
+      !this.integratedSidebar &&
       this.isAutoOpenEligible() &&
       this.resetActiveOnNextProductPage &&
       isProductPageNavigation
     ) {
       this.resetActiveOnNextProductPage = false;
       Services.prefs.setBoolPref(ACTIVE_PREF, true);
+    }
+  },
+
+  /**
+   * Check if two URIs represent the same product by
+   * comparing URLs and then parsed product ID.
+   *
+   * @param {nsIURI} aURI
+   * @param {nsIURI} bURI
+   *
+   * @returns {boolean}
+   */
+  isSameProduct(aURI, bURI) {
+    if (!aURI || !bURI) {
+      return false;
+    }
+
+    // Check if the URIs are equal and are products.
+    if (aURI.equalsExceptRef(bURI)) {
+      return lazy.isProductURL(aURI);
+    }
+
+    // Check if the product ids are the same:
+    let aProductID = lazy.getProductIdFromURL(aURI);
+    let bProductID = lazy.getProductIdFromURL(bURI);
+
+    if (!aProductID || !bProductID) {
+      return false;
+    }
+
+    return aProductID === bProductID;
+  },
+
+  /**
+   * Removes browser `reviewCheckerWasClosed` flag that indicates the
+   * Review Checker sidebar was closed by a user action.
+   *
+   * @param {browser} browser
+   */
+  clearWasClosedFlag(browser) {
+    if (browser.reviewCheckerWasClosed) {
+      delete browser.reviewCheckerWasClosed;
+    }
+  },
+
+  /**
+   * Removes browser `isDistinctProductPageVisit` flag that indicates
+   * a tab has an unhandled product navigation.
+   *
+   * @param {browser} browser
+   */
+  clearIsDistinctProductPageVisitFlag(browser) {
+    if (browser.isDistinctProductPageVisit) {
+      delete browser.isDistinctProductPageVisit;
     }
   },
 
@@ -380,19 +476,4 @@ XPCOMUtils.defineLazyPreferenceGetter(
   AUTO_OPEN_USER_ENABLED_PREF,
   false,
   ShoppingUtils.recordUserAutoOpenPreference
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  ShoppingUtils,
-  "autoCloseUserEnabled",
-  AUTO_CLOSE_USER_ENABLED_PREF,
-  true,
-  ShoppingUtils.recordUserAutoClosePreference
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  ShoppingUtils,
-  "integratedSidebar",
-  INTEGRATED_SIDEBAR_PREF,
-  false
 );

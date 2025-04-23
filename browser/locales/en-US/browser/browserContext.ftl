@@ -366,6 +366,10 @@ main-context-menu-keyword =
     .label = Add a Keyword for this Search…
     .accesskey = K
 
+main-context-menu-add-engine =
+    .label = Add Search Engine
+    .accesskey = S
+
 main-context-menu-link-send-to-device =
     .label = Send Link to Device
     .accesskey = n

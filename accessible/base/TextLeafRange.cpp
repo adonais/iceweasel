@@ -24,6 +24,7 @@
 #include "mozilla/TextEditor.h"
 #include "nsAccUtils.h"
 #include "nsBlockFrame.h"
+#include "nsFocusManager.h"
 #include "nsFrameSelection.h"
 #include "nsIAccessiblePivot.h"
 #include "nsILineIterator.h"
@@ -1064,18 +1065,24 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
     RefPtr<nsFrameSelection> sel = frame ? frame->GetFrameSelection() : nullptr;
     if (sel && sel->GetHint() == CaretAssociationHint::Before) {
       // CaretAssociationHint::Before can mean that the caret is at the end of
-      // a line. However, it can also mean that the caret is before the start
-      // of a node in the middle of a line. This happens when moving the cursor
-      // forward to a new node.
-      if (point.mOffset == 0) {
-        // The caret is before the start of a node. The caret is at the end of a
-        // line if the node is at the start of a line but not at the start of a
-        // paragraph.
+      // a line. However, this can also occur in a few other situations:
+      // 1. The caret is before the start of a node in the middle of a line.
+      // This happens when moving the cursor forward to a new node.
+      // 2. The user clicks the mouse on a character other than the first in a
+      // node.
+      // 3. The caret is somewhere other than the start of a line and the user
+      // presses down or up arrow to move by line.
+      if (point.mOffset <
+          static_cast<int32_t>(nsAccUtils::TextLength(point.mAcc))) {
+        // The caret is at the end of a line if the point is at the start of a
+        // line but not at the start of a paragraph.
         point.mIsEndOfLineInsertionPoint =
-            IsLocalAccAtLineStart(point.mAcc->AsLocal()) &&
+            point.FindPrevLineStartSameLocalAcc(/* aIncludeOrigin */ true) ==
+                point &&
             !point.IsParagraphStart();
       } else {
-        // This isn't the start of a node, so we must be at the end of a line.
+        // This is the end of a node. CaretAssociationHint::Before is only used
+        // at the end of a node if the caret is at the end of a line.
         point.mIsEndOfLineInsertionPoint = true;
       }
     }
@@ -2093,7 +2100,11 @@ bool TextLeafRange::Crop(Accessible* aContainer) {
 }
 
 LayoutDeviceIntRect TextLeafRange::Bounds() const {
-  // Walk all the lines and union them into the result rectangle.
+  // We can't simply query the first and last character, and union their bounds.
+  // They might reside on different lines, so a simple union may yield an
+  // incorrect width. We should use the length of the longest spanned line for
+  // our width. To achieve this, walk all the lines and union them into the
+  // result rectangle.
   LayoutDeviceIntRect result = TextLeafPoint{mStart}.CharBounds();
   const bool succeeded = WalkLineRects(
       [&result](TextLeafRange aLine, LayoutDeviceIntRect aLineRect) {
@@ -2174,7 +2185,6 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
       !reversed ? mStart.ToDOMPoint(false) : mEnd.ToDOMPoint(false);
   auto [endContent, endContentOffset] =
       !reversed ? mEnd.ToDOMPoint(false) : mStart.ToDOMPoint(false);
-
   if (!startContent || !endContent) {
     return false;
   }
@@ -2184,9 +2194,52 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
     return false;
   }
 
-  uint32_t rangeCount = domSel->RangeCount();
+  HyperTextAccessible* hyp = nullptr;
+  if (mStart.mAcc->IsHyperText()) {
+    hyp = mStart.mAcc->AsLocal()->AsHyperText();
+  } else {
+    Accessible* parent = mStart.mAcc->Parent();
+    if (parent) {
+      hyp = parent->AsLocal()->AsHyperText();
+      // Note that hyp will still be null here if the parent is not a HyperText.
+      // That's okay.
+    }
+  }
+
+  // Before setting the selection range, we need to ensure that the editor
+  // is initialized. (See bug 804927.)
+  // Otherwise, it's possible that lazy editor initialization will override
+  // the selection we set here and leave the caret at the end of the text.
+  // By calling GetEditor here, we ensure that editor initialization is
+  // completed before we set the selection.
+  RefPtr<EditorBase> editor;
+  if (hyp) {
+    editor = hyp->GetEditor();
+  }
+
+  // XXX isFocusable will be false if mStart is not a direct child of the
+  // contentEditable. However, contentEditables generally don't mess with
+  // selection when they are focused. This has also been our behavior for a very
+  // long time.
+  const bool isFocusable = hyp && hyp->InteractiveState() & states::FOCUSABLE;
+  // If the Accessible is focusable, focus it before setting the selection to
+  // override the control's own selection changes on focus if any; e.g. inputs
+  // that do select all on focus. This also ensures that the user can interact
+  // with wherever they've moved the caret. See bug 524115.
+  if (isFocusable) {
+    hyp->TakeFocus();
+  }
+
+  uint32_t rangeCount = 0;
+  if (aSelectionNum == kRemoveAllExistingSelectedRanges) {
+    domSel->RemoveAllRanges(IgnoreErrors());
+  } else {
+    rangeCount = domSel->RangeCount();
+  }
   RefPtr<nsRange> domRange = nullptr;
-  if (aSelectionNum == static_cast<int32_t>(rangeCount) || aSelectionNum < 0) {
+  const bool newRange =
+      aSelectionNum == static_cast<int32_t>(rangeCount) || aSelectionNum < 0;
+  if (newRange) {
     domRange = nsRange::Create(startContent);
   } else {
     domRange = domSel->GetRangeAt(AssertedCast<uint32_t>(aSelectionNum));
@@ -2200,21 +2253,42 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
 
   // If this is not a new range, notify selection listeners that the existing
   // selection range has changed. Otherwise, just add the new range.
-  if (aSelectionNum != static_cast<int32_t>(rangeCount)) {
+  if (!newRange) {
     domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*domRange,
                                                            IgnoreErrors());
   }
 
   IgnoredErrorResult err;
   domSel->AddRangeAndSelectFramesAndNotifyListeners(*domRange, err);
-  if (!err.Failed()) {
-    // Changing the direction of the selection assures that the caret
-    // will be at the logical end of the selection.
-    domSel->SetDirection(reversed ? eDirPrevious : eDirNext);
-    return true;
+  if (err.Failed()) {
+    return false;
   }
 
-  return false;
+  // Changing the direction of the selection assures that the caret
+  // will be at the logical end of the selection.
+  domSel->SetDirection(reversed ? eDirPrevious : eDirNext);
+
+  // Make sure the selection is visible. See bug 1170242.
+  domSel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
+                         ScrollAxis(), ScrollAxis(),
+                         ScrollFlags::ScrollOverflowHidden);
+
+  if (mStart == mEnd && !isFocusable) {
+    // We're moving the caret. Notify nsFocusManager so that the focus position
+    // is correct. See bug 546068.
+    if (nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager()) {
+      MOZ_ASSERT(mStart.mAcc->AsLocal()->Document());
+      dom::Document* domDoc =
+          mStart.mAcc->AsLocal()->Document()->DocumentNode();
+      MOZ_ASSERT(domDoc);
+      nsCOMPtr<nsPIDOMWindowOuter> window = domDoc->GetWindow();
+      RefPtr<dom::Element> result;
+      DOMFocusManager->MoveFocus(
+          window, nullptr, nsIFocusManager::MOVEFOCUS_CARET,
+          nsIFocusManager::FLAG_BYMOVEFOCUS, getter_AddRefs(result));
+    }
+  }
+  return true;
 }
 
 /* static */
@@ -2307,19 +2381,31 @@ bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
 
   // Union the first and last chars of each line to create a line rect.
   while (!locatedFinalLine) {
-    // Fetch the last point in the current line by getting the
-    // start of the next line and going back one char. We don't
-    // use BOUNDARY_LINE_END here because it is equivalent to LINE_START when
-    // the line doesn't end with a line feed character.
     TextLeafPoint nextLineStartPoint = currPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_LINE_START, eDirNext);
+    // If currPoint is at the end of the document, nextLineStartPoint will be
+    // equal to currPoint. However, this can only happen if mEnd is also the end
+    // of the document.
+    MOZ_ASSERT(nextLineStartPoint != currPoint || nextLineStartPoint == mEnd);
+    if (mEnd <= nextLineStartPoint) {
+      // nextLineStart is past the end of the range. Constrain this last line to
+      // the end of the range.
+      nextLineStartPoint = mEnd;
+      locatedFinalLine = true;
+    }
+    // Fetch the last point in the current line by going back one char from the
+    // start of the next line.
     TextLeafPoint lastPointInLine = nextLineStartPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-    // If currPoint is the end of the document, nextLineStartPoint will be equal
-    // to currPoint and we would be in an endless loop.
-    if (nextLineStartPoint == currPoint || mEnd <= lastPointInLine) {
-      lastPointInLine = mEnd;
-      locatedFinalLine = true;
+    MOZ_ASSERT(currPoint <= lastPointInLine);
+
+    if (lastPointInLine != currPoint && lastPointInLine.IsLineFeedChar()) {
+      // The line feed character at the end of a line in pre-formatted text
+      // doesn't have a useful rect. Use the previous character. Otherwise,
+      // the rect we provide won't span the line of text and we'll miss
+      // characters.
+      lastPointInLine = lastPointInLine.FindBoundary(
+          nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
     }
 
     LayoutDeviceIntRect currLineRect = currPoint.CharBounds();

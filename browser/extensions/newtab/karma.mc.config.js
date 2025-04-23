@@ -174,6 +174,19 @@ module.exports = function (config) {
                 functions: 0,
                 branches: 0,
               },
+            "content-src/components/DiscoveryStreamComponents/FeatureHighlight/FeatureHighlight.jsx":
+              {
+                statements: 88,
+                lines: 88,
+                functions: 80,
+              },
+            "content-src/components/DiscoveryStreamComponents/ReportContent/ReportContent.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
             /**
              * TopicSelection.jsx is tested via an xpcshell test
              */
@@ -196,17 +209,17 @@ module.exports = function (config) {
               },
             "content-src/components/DiscoveryStreamComponents/DSCard/DSCard.jsx":
               {
-                statements: 96.69,
-                lines: 96.62,
-                functions: 95.45,
+                statements: 95.39,
+                lines: 95.3,
+                functions: 9.91,
                 branches: 72.95,
               },
             "content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx":
               {
-                statements: 90.82,
-                lines: 90.53,
-                functions: 87.5,
-                branches: 60,
+                statements: 86.55,
+                lines: 86.09,
+                functions: 81.48,
+                branches: 57.97,
               },
             "content-src/components/DiscoveryStreamComponents/SectionContextMenu/SectionContextMenu.jsx":
               {
@@ -217,7 +230,14 @@ module.exports = function (config) {
               },
             "content-src/components/DiscoveryStreamComponents/AdBanner/AdBanner.jsx":
               {
-                branches: 62.5,
+                branches: 60,
+              },
+            "content-src/components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu.jsx":
+              {
+                statements: 80,
+                lines: 80,
+                functions: 75,
+                branches: 75,
               },
             "content-src/components/DiscoveryStreamComponents/**/*.jsx": {
               statements: 90.48,
@@ -278,6 +298,12 @@ module.exports = function (config) {
             },
             "content-src/lib/utils.jsx": {
               branches: 60,
+            },
+            "content-src/components/MessageWrapper/MessageWrapper.jsx": {
+              lines: 50,
+              statements: 51.1,
+              functions: 31.2,
+              branches: 31.2,
             },
             "content-src/components/**/*.jsx": {
               statements: 51.1,

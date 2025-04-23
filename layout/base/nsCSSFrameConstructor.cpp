@@ -221,7 +221,7 @@ nsIFrame* NS_NewXULImageFrame(PresShell*, ComputedStyle*);
 nsIFrame* NS_NewImageFrameForContentProperty(PresShell*, ComputedStyle*);
 nsIFrame* NS_NewImageFrameForGeneratedContentIndex(PresShell*, ComputedStyle*);
 nsIFrame* NS_NewImageFrameForListStyleImage(PresShell*, ComputedStyle*);
-nsIFrame* NS_NewImageFrameForViewTransitionOld(PresShell*, ComputedStyle*);
+nsIFrame* NS_NewImageFrameForViewTransition(PresShell*, ComputedStyle*);
 
 // Returns true if aFrame is an anonymous flex/grid item.
 static inline bool IsAnonymousItem(const nsIFrame* aFrame) {
@@ -3493,10 +3493,11 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
         return &sComboboxLabelData;
       }
     }
-    if (aElement.GetPseudoElementType() == PseudoStyleType::viewTransitionOld) {
-      static constexpr FrameConstructionData sViewTransitionOldData(
-          NS_NewImageFrameForViewTransitionOld);
-      return &sViewTransitionOldData;
+    if (aStyle.GetPseudoType() == PseudoStyleType::viewTransitionOld ||
+        aStyle.GetPseudoType() == PseudoStyleType::viewTransitionNew) {
+      static constexpr FrameConstructionData sViewTransitionData(
+          NS_NewImageFrameForViewTransition);
+      return &sViewTransitionData;
     }
   }
 
@@ -4631,35 +4632,35 @@ nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
   }
 
   static constexpr FrameConstructionDataByTag sMathMLData[] = {
-      SIMPLE_MATHML_CREATE(annotation_, NS_NewMathMLTokenFrame),
-      SIMPLE_MATHML_CREATE(annotation_xml_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(mi_, NS_NewMathMLTokenFrame),
-      SIMPLE_MATHML_CREATE(mn_, NS_NewMathMLTokenFrame),
-      SIMPLE_MATHML_CREATE(ms_, NS_NewMathMLTokenFrame),
-      SIMPLE_MATHML_CREATE(mtext_, NS_NewMathMLTokenFrame),
-      SIMPLE_MATHML_CREATE(mo_, NS_NewMathMLmoFrame),
-      SIMPLE_MATHML_CREATE(mfrac_, NS_NewMathMLmfracFrame),
-      SIMPLE_MATHML_CREATE(msup_, NS_NewMathMLmmultiscriptsFrame),
-      SIMPLE_MATHML_CREATE(msub_, NS_NewMathMLmmultiscriptsFrame),
-      SIMPLE_MATHML_CREATE(msubsup_, NS_NewMathMLmmultiscriptsFrame),
-      SIMPLE_MATHML_CREATE(munder_, NS_NewMathMLmunderoverFrame),
-      SIMPLE_MATHML_CREATE(mover_, NS_NewMathMLmunderoverFrame),
-      SIMPLE_MATHML_CREATE(munderover_, NS_NewMathMLmunderoverFrame),
-      SIMPLE_MATHML_CREATE(mphantom_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(mpadded_, NS_NewMathMLmpaddedFrame),
-      SIMPLE_MATHML_CREATE(mspace_, NS_NewMathMLmspaceFrame),
+      SIMPLE_MATHML_CREATE(annotation, NS_NewMathMLTokenFrame),
+      SIMPLE_MATHML_CREATE(annotation_xml, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(mi, NS_NewMathMLTokenFrame),
+      SIMPLE_MATHML_CREATE(mn, NS_NewMathMLTokenFrame),
+      SIMPLE_MATHML_CREATE(ms, NS_NewMathMLTokenFrame),
+      SIMPLE_MATHML_CREATE(mtext, NS_NewMathMLTokenFrame),
+      SIMPLE_MATHML_CREATE(mo, NS_NewMathMLmoFrame),
+      SIMPLE_MATHML_CREATE(mfrac, NS_NewMathMLmfracFrame),
+      SIMPLE_MATHML_CREATE(msup, NS_NewMathMLmmultiscriptsFrame),
+      SIMPLE_MATHML_CREATE(msub, NS_NewMathMLmmultiscriptsFrame),
+      SIMPLE_MATHML_CREATE(msubsup, NS_NewMathMLmmultiscriptsFrame),
+      SIMPLE_MATHML_CREATE(munder, NS_NewMathMLmunderoverFrame),
+      SIMPLE_MATHML_CREATE(mover, NS_NewMathMLmunderoverFrame),
+      SIMPLE_MATHML_CREATE(munderover, NS_NewMathMLmunderoverFrame),
+      SIMPLE_MATHML_CREATE(mphantom, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(mpadded, NS_NewMathMLmpaddedFrame),
+      SIMPLE_MATHML_CREATE(mspace, NS_NewMathMLmspaceFrame),
       SIMPLE_MATHML_CREATE(none, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(mprescripts_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(mfenced_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(mmultiscripts_, NS_NewMathMLmmultiscriptsFrame),
-      SIMPLE_MATHML_CREATE(mstyle_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(msqrt_, NS_NewMathMLmrootFrame),
-      SIMPLE_MATHML_CREATE(mroot_, NS_NewMathMLmrootFrame),
-      SIMPLE_MATHML_CREATE(maction_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(mrow_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(merror_, NS_NewMathMLmrowFrame),
-      SIMPLE_MATHML_CREATE(menclose_, NS_NewMathMLmencloseFrame),
-      SIMPLE_MATHML_CREATE(semantics_, NS_NewMathMLmrowFrame)};
+      SIMPLE_MATHML_CREATE(mprescripts, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(mfenced, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(mmultiscripts, NS_NewMathMLmmultiscriptsFrame),
+      SIMPLE_MATHML_CREATE(mstyle, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(msqrt, NS_NewMathMLmrootFrame),
+      SIMPLE_MATHML_CREATE(mroot, NS_NewMathMLmrootFrame),
+      SIMPLE_MATHML_CREATE(maction, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(mrow, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(merror, NS_NewMathMLmrowFrame),
+      SIMPLE_MATHML_CREATE(menclose, NS_NewMathMLmencloseFrame),
+      SIMPLE_MATHML_CREATE(semantics, NS_NewMathMLmrowFrame)};
 
   return FindDataByTag(aElement, aStyle, sMathMLData, std::size(sMathMLData));
 }
@@ -6635,7 +6636,7 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
                           frameList);
     // That moved things into line frames as needed, reparenting their
     // styles.  Nothing else needs to be done.
-  } else if (parentFrame->Style()->HasPseudoElementData()) {
+  } else if (parentFrame->Style()->IsInFirstLineSubtree()) {
     // parentFrame might be inside a ::first-line frame.  Check whether it is,
     // and if so fix up our styles.
     CheckForFirstLineInsertion(parentFrame, frameList);
@@ -7105,7 +7106,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     // frame. Look at it and see...
     AppendFirstLineFrames(state, containingBlock->GetContent(), containingBlock,
                           frameList);
-  } else if (insertion.mParentFrame->Style()->HasPseudoElementData()) {
+  } else if (insertion.mParentFrame->Style()->IsInFirstLineSubtree()) {
     CheckForFirstLineInsertion(insertion.mParentFrame, frameList);
     CheckForFirstLineInsertion(insertion.mParentFrame, captionList);
   }
@@ -9890,7 +9891,7 @@ void nsCSSFrameConstructor::AppendFirstLineFrames(
 
 void nsCSSFrameConstructor::CheckForFirstLineInsertion(
     nsIFrame* aParentFrame, nsFrameList& aFrameList) {
-  MOZ_ASSERT(aParentFrame->Style()->HasPseudoElementData(),
+  MOZ_ASSERT(aParentFrame->Style()->IsInFirstLineSubtree(),
              "Why were we called?");
 
   if (aFrameList.IsEmpty()) {
@@ -9907,7 +9908,7 @@ void nsCSSFrameConstructor::CheckForFirstLineInsertion(
   // tree; in particular it might be past our containing block.
   nsIFrame* ancestor = aParentFrame;
   while (ancestor) {
-    if (!ancestor->Style()->HasPseudoElementData()) {
+    if (!ancestor->Style()->IsInFirstLineSubtree()) {
       // We know we won't find a ::first-line now.
       return;
     }

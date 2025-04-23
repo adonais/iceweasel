@@ -8,9 +8,8 @@ To do so, we use the `Perfherder <https://wiki.mozilla.org/Perfherder>`_ infrast
 to gather the performance metrics.
 
 Adding a new performance test is done in two steps:
-1. make it work locally
+1. making it work locally
 2. add it in perfherder
-
 
 Run locally
 -----------
@@ -67,39 +66,54 @@ Then add the file in `perftest.toml` and rebuild with `./mach build`.
 
 The test downloads models it uses from the local disk, so you need to prepare them.
 
-- Create a directory with a subdirectory called `onnx-models`.
-- Download all the models in the subdirectory
-
-The directory follows a `organization/name/revision` structure.
-To make the previous example work, it would require you to download
-the model files locally under `<ROOT>/onnx-models/Xenova/all-MiniLM-L6-v2/main`
-
-Example:
+We provide a script to automate this.
 
 .. code-block:: bash
 
-  cd ROOT/onnx-models
-  git lfs install
-  git clone -b main https://huggingface.co/Xenova/all-MiniLM-L6-v2 onnx-models/Xenova/all-MiniLM-L6-v2/main/
+  $ mach python toolkit/components/ml/tests/tools/create_local_hub.py --list-models
+  Available git-based models from the YAML:
+
+  - xenova-all-minilm-l6-v2 -> path-prefix: onnx-models/Xenova/all-MiniLM-L6-v2/main/
+  - mozilla-ner -> path-prefix: onnx-models/Mozilla/distilbert-uncased-NER-LoRA/main/
+  - mozilla-intent -> path-prefix: onnx-models/Mozilla/mobilebert-uncased-finetuned-LoRA-intent-classifier/main/
+  - mozilla-autofill -> path-prefix: onnx-models/Mozilla/tinybert-uncased-autofill/main/
+  - distilbart-cnn-12-6 -> path-prefix: onnx-models/Mozilla/distilbart-cnn-12-6/main/
+  - qwen2.5-0.5-instruct -> path-prefix: onnx-models/Mozilla/Qwen2.5-0.5B-Instruct/main/
+  - mozilla-smart-tab-topic -> path-prefix: onnx-models/Mozilla/smart-tab-topic/main/
+  - mozilla-smart-tab-emb -> path-prefix: onnx-models/Mozilla/smart-tab-embedding/main/
+
+  (Use `--model <key>` to clone one of these repositories.)
+
+You can then use `--model` to download locally models, by specifying the local
+`MOZ_FETCHES_DIR` directory, via the env var or command line argument :
+
+.. code-block:: bash
+
+  $ mach python toolkit/components/ml/tests/tools/create_local_hub.py --model mozilla-smart-tab-emb --fetches-dir ~/ml-fetches
+  Found existing file /Users/tarekziade/Dev/fetches/ort-wasm-simd-threaded.jsep.wasm, verifying checksum...
+  Existing file's checksum matches. Skipping download.
+  Updated Git hooks.
+  Git LFS initialized.
+  Cloning https://huggingface.co/Mozilla/smart-tab-embedding into '/Users/tarekziade/Dev/fetches/onnx-models/Mozilla/smart-tab-embedding/main...
+  Cloning in '/Users/tarekziade/Dev/fetches/onnx-models/Mozilla/smart-tab-embedding/main'...
+  Checked out revision '2278e76f67ada584cfd3149fd2661dad03674e4d' in '/Users/tarekziade/Dev/fetches/onnx-models/Mozilla/smart-tab-embedding/main'.
 
 Once done, you should then be able to run it locally with :
 
 .. code-block:: bash
 
-   MOZ_FETCHES_DIR=/Users/tarekziade/Dev/fetches ./mach perftest toolkit/components/ml/tests/browser/browser_ml_engine_perf.js --mochitest-extra-args=headless
+   $ MOZ_FETCHES_DIR=~/ml-fetches ./mach perftest toolkit/components/ml/tests/browser/browser_ml_engine_perf.js --mochitest-extra-args=headless
 
 Notice that `MOZ_FETCHES_DIR` is an absolute path to the `root` directory.
-
 
 Add in the CI
 -------------
 
-
 To add the test in the CI you need to add an entry in
 
-- taskcluster/kinds/perftest/linux.yml
-- taskcluster/kinds/perftest/windows11.yml
-- taskcluster/kinds/perftest/macos.yml
+- `taskcluster/kinds/perftest/linux.yml`
+- `taskcluster/kinds/perftest/windows11.yml`
+- `taskcluster/kinds/perftest/macos.yml`
 
 With a unique name that starts with `ml-perf`
 
@@ -140,7 +154,7 @@ Once this is done, try it out with:
 
 .. code-block:: bash
 
-   ./mach try perf --single-run --full --artifact
+   $ ./mach try perf --single-run --full --artifact
 
 
 You should then see the results in treeherder.

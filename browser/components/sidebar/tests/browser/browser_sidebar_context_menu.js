@@ -10,13 +10,17 @@ add_setup(async () => {
   });
 });
 
+const initialTabDirection = Services.prefs.getBoolPref("sidebar.verticalTabs")
+  ? "vertical"
+  : "horizontal";
+
 add_task(async function test_extension_context_menu() {
   const win = await BrowserTestUtils.openNewBrowserWindow();
   await waitForBrowserWindowActive(win);
   const { document } = win;
   const sidebar = document.querySelector("sidebar-main");
   await sidebar.updateComplete;
-  ok(sidebar, "Sidebar is shown.");
+  ok(BrowserTestUtils.isVisible(sidebar), "Sidebar is shown.");
 
   const manageStub = sinon.stub(sidebar, "manageExtension");
   const reportStub = sinon.stub(sidebar, "reportExtension");
@@ -178,14 +182,20 @@ add_task(async function test_extension_context_menu() {
 
   sinon.restore();
   await extension.unload();
+  ok(
+    BrowserTestUtils.isVisible(sidebar),
+    "Unloading the extension does not cause the sidebar launcher to hide"
+  );
   await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_sidebar_context_menu() {
   const { document, SidebarController } = window;
   const { sidebarMain, sidebarContainer } = SidebarController;
-  await sidebarMain.updateComplete;
-  ok(sidebarMain, "Sidebar is shown.");
+  await SidebarController.initializeUIState({
+    launcherVisible: true,
+  });
+  ok(BrowserTestUtils.isVisible(sidebarMain), "Sidebar is shown.");
 
   const contextMenu = document.getElementById("sidebar-context-menu");
   is(contextMenu.state, "closed", "Checking if context menu is closed");
@@ -241,9 +251,10 @@ add_task(async function test_sidebar_context_menu() {
   });
   ok(
     Services.prefs.getBoolPref("sidebar.verticalTabs", false),
-    "Vertical tabs enabled"
+    "Vertical tabs disabled"
   );
   Services.prefs.clearUserPref("sidebar.verticalTabs");
+  await waitForTabstripOrientation(initialTabDirection);
 
   is(contextMenu.state, "closed", "Context menu closed for vertical tabs");
 });
@@ -277,10 +288,8 @@ add_task(async function test_toggle_vertical_tabs_from_sidebar_button() {
     toggleMenuItem.click();
   });
   await waitForTabstripOrientation("vertical");
-  await TestUtils.waitForCondition(
-    () => gBrowser.tabContainer.verticalMode,
-    "Vertical tabs are enabled."
-  );
+  ok(gBrowser.tabContainer.verticalMode, "Vertical tabs are enabled.");
+
   Assert.equal(
     Services.prefs.getStringPref("sidebar.visibility"),
     "always-show",
@@ -308,10 +317,7 @@ add_task(async function test_toggle_vertical_tabs_from_sidebar_button() {
     toggleMenuItem.click();
   });
   await waitForTabstripOrientation("horizontal");
-  await TestUtils.waitForCondition(
-    () => !gBrowser.tabContainer.verticalMode,
-    "Vertical tabs are disabled."
-  );
+  ok(!gBrowser.tabContainer.verticalMode, "Vertical tabs are disabled.");
   Assert.equal(
     Services.prefs.getStringPref("sidebar.visibility"),
     "hide-sidebar",
@@ -320,4 +326,5 @@ add_task(async function test_toggle_vertical_tabs_from_sidebar_button() {
 
   window.SidebarController.hide();
   await SpecialPowers.popPrefEnv();
+  await window.SidebarController.waitUntilStable();
 });

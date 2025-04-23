@@ -137,6 +137,96 @@ struct ObjectPrototypeHasNoReturnProperty final
   virtual bool checkInvariant(JSContext* cx) override;
 };
 
+// Fuse used to optimize @@species lookups for arrays. If this fuse is intact,
+// the following invariants must hold:
+//
+// - The builtin `Array.prototype` object has a `constructor` property that's
+//   the builtin `Array` constructor.
+// - This `Array` constructor has a `Symbol.species` property that's the
+//   original accessor.
+struct OptimizeArraySpeciesFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override { return "OptimizeArraySpeciesFuse"; }
+  virtual bool checkInvariant(JSContext* cx) override;
+  virtual void popFuse(JSContext* cx, RealmFuses& realmFuses) override;
+};
+
+// Fuse used to optimize various property lookups for promises. If this fuse is
+// intact, the following invariants must hold:
+//
+// - The builtin `Promise.prototype` object has unchanged `constructor` and
+//   `then` properties.
+// - The builtin `Promise` constructor has unchanged `Symbol.species` and
+//   `resolve` properties.
+struct OptimizePromiseLookupFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override { return "OptimizePromiseLookupFuse"; }
+  virtual bool checkInvariant(JSContext* cx) override;
+  virtual void popFuse(JSContext* cx, RealmFuses& realmFuses) override;
+};
+
+// Guard used to optimize iterating over Map objects. If this fuse is intact,
+// the following invariants must hold:
+//
+// - The builtin `Map.prototype` object has a `Symbol.iterator` property that's
+//   the original `%Map.prototype.entries%` function.
+// - The builtin `%MapIteratorPrototype%` object has a `next` property that's
+//   the original `MapIteratorNext` self-hosted function.
+//
+// Note: because this doesn't guard against `return` properties on the iterator
+// prototype, this should only be used in places where we don't have to call
+// `IteratorClose`.
+struct OptimizeMapObjectIteratorFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeMapObjectIteratorFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+// Guard used to optimize iterating over Set objects. If this fuse is intact,
+// the following invariants must hold:
+//
+// - The builtin `Set.prototype` object has a `Symbol.iterator` property that's
+//   the original `%Set.prototype.values%` function.
+// - The builtin `%SetIteratorPrototype%` object has a `next` property that's
+//   the original `SetIteratorNext` self-hosted function.
+//
+// Note: because this doesn't guard against `return` properties on the iterator
+// prototype, this should only be used in places where we don't have to call
+// `IteratorClose`.
+struct OptimizeSetObjectIteratorFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeSetObjectIteratorFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+// This fuse is popped when the `Map.prototype.set` property is mutated.
+struct OptimizeMapPrototypeSetFuse final : public RealmFuse {
+  virtual const char* name() override { return "OptimizeMapPrototypeSetFuse"; }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+// This fuse is popped when the `Set.prototype.add` property is mutated.
+struct OptimizeSetPrototypeAddFuse final : public RealmFuse {
+  virtual const char* name() override { return "OptimizeSetPrototypeAddFuse"; }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+// This fuse is popped when the `WeakMap.prototype.set` property is mutated.
+struct OptimizeWeakMapPrototypeSetFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeWeakMapPrototypeSetFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+// This fuse is popped when the `WeakSet.prototype.add` property is mutated.
+struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeWeakSetPrototypeAddFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
 #define FOR_EACH_REALM_FUSE(FUSE)                                              \
   FUSE(OptimizeGetIteratorFuse, optimizeGetIteratorFuse)                       \
   FUSE(OptimizeArrayIteratorPrototypeFuse, optimizeArrayIteratorPrototypeFuse) \
@@ -149,7 +239,15 @@ struct ObjectPrototypeHasNoReturnProperty final
   FUSE(ArrayIteratorPrototypeHasIteratorProto,                                 \
        arrayIteratorPrototypeHasIteratorProto)                                 \
   FUSE(IteratorPrototypeHasObjectProto, iteratorPrototypeHasObjectProto)       \
-  FUSE(ObjectPrototypeHasNoReturnProperty, objectPrototypeHasNoReturnProperty)
+  FUSE(ObjectPrototypeHasNoReturnProperty, objectPrototypeHasNoReturnProperty) \
+  FUSE(OptimizeArraySpeciesFuse, optimizeArraySpeciesFuse)                     \
+  FUSE(OptimizePromiseLookupFuse, optimizePromiseLookupFuse)                   \
+  FUSE(OptimizeMapObjectIteratorFuse, optimizeMapObjectIteratorFuse)           \
+  FUSE(OptimizeSetObjectIteratorFuse, optimizeSetObjectIteratorFuse)           \
+  FUSE(OptimizeMapPrototypeSetFuse, optimizeMapPrototypeSetFuse)               \
+  FUSE(OptimizeSetPrototypeAddFuse, optimizeSetPrototypeAddFuse)               \
+  FUSE(OptimizeWeakMapPrototypeSetFuse, optimizeWeakMapPrototypeSetFuse)       \
+  FUSE(OptimizeWeakSetPrototypeAddFuse, optimizeWeakSetPrototypeAddFuse)
 
 struct RealmFuses {
   RealmFuses() = default;
@@ -195,6 +293,23 @@ struct RealmFuses {
 
   static int32_t offsetOfFuseWordRelativeToRealm(FuseIndex index);
   static const char* getFuseName(FuseIndex index);
+
+#ifdef DEBUG
+  static bool isInvalidatingFuse(FuseIndex index) {
+    switch (index) {
+#  define FUSE(Name, LowerName)                                      \
+    case FuseIndex::Name:                                            \
+      static_assert(std::is_base_of_v<RealmFuse, Name> ||            \
+                    std::is_base_of_v<InvalidatingRealmFuse, Name>); \
+      return std::is_base_of_v<InvalidatingRealmFuse, Name>;
+      FOR_EACH_REALM_FUSE(FUSE)
+#  undef FUSE
+      default:
+        break;
+    }
+    MOZ_CRASH("Fuse Not Found");
+  }
+#endif
 };
 
 }  // namespace js

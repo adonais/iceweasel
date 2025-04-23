@@ -44,8 +44,6 @@
   <string name="tab_tray_close_multiselect_content_description">ᱢᱟᱹᱞᱴᱤᱥᱤᱞᱮᱠᱼᱴ ᱢᱳᱰ ᱵᱟᱹᱰ</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">ᱵᱟᱪᱷᱟᱣᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱛᱩᱢᱟᱹᱞ ᱥᱟᱺᱪᱟᱣ ᱢᱮ</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱟᱪᱷᱟᱣᱮᱱᱟ</string>
   <!--
     Home - Bookmarks
 
@@ -127,9 +125,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar.
   -->
-  <string name="address_bar_swipe_cfr_title">ᱴᱮᱵᱽ ᱵᱚᱫᱚᱞ ᱞᱟᱹᱜᱤᱫ ᱴᱩᱞᱵᱟᱨ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ</string>
+  <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">ᱴᱮᱵᱽ ᱵᱚᱫᱚᱞ ᱞᱟᱹᱜᱤᱫ ᱴᱩᱞᱵᱟᱨ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-  <string name="address_bar_swipe_cfr_message">ᱵᱚᱫᱚᱞ ᱞᱟᱹᱜᱤᱫ ᱞᱮᱝᱜᱟ ᱥᱮ ᱡᱚᱡᱚᱢ ᱥᱮᱫ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ ᱾ᱱᱟᱶᱟ ᱴᱮᱵᱽ ᱡᱷᱤᱡᱽ ᱞᱟᱹᱜᱤᱫ ᱟᱢᱟᱜ ᱢᱩᱪᱟᱹᱫ ᱴᱮᱵᱽ ᱨᱮ ᱞᱮᱝᱜᱟ ᱥᱮᱫ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ ᱾</string>
+  <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">ᱵᱚᱫᱚᱞ ᱞᱟᱹᱜᱤᱫ ᱞᱮᱝᱜᱟ ᱥᱮ ᱡᱚᱡᱚᱢ ᱥᱮᱫ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ ᱾ᱱᱟᱶᱟ ᱴᱮᱵᱽ ᱡᱷᱤᱡᱽ ᱞᱟᱹᱜᱤᱫ ᱟᱢᱟᱜ ᱢᱩᱪᱟᱹᱫ ᱴᱮᱵᱽ ᱨᱮ ᱞᱮᱝᱜᱟ ᱥᱮᱫ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ ᱾</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">ᱴᱮᱵᱽ ᱵᱚᱫᱚᱞ ᱞᱟᱹᱜᱤᱫ ᱴᱩᱞᱵᱟᱨ ᱞᱮᱸᱜᱟ ᱥᱮ ᱡᱚᱡᱚᱢ ᱥᱮᱫ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ ᱾</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">ᱠᱚᱢᱨᱟ ᱵᱮᱵᱷᱟᱨ ᱫᱚᱨᱠᱟᱨ ᱾ ᱮᱸᱰᱨᱚᱭᱮᱰ ᱥᱟᱡᱟᱣ ᱛᱮ ᱪᱟᱹᱞᱟᱜ ᱢᱮ, ᱪᱷᱟᱹᱲ ᱨᱮ ᱚᱛᱟᱭ ᱢᱮ , ᱟᱨ ᱮᱞᱞᱟᱣ ᱨᱮ ᱚᱛᱟᱭ ᱢᱮ ᱾</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -360,8 +360,12 @@
   <string name="browser_tools_menu_handlebar_content_description">ᱦᱟᱹᱛᱤᱭᱟᱨ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">ᱠᱟᱥᱴᱚᱢ ᱴᱮᱵᱽ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
+  <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu when the "Report broken site" feature is available -->
+  <string name="browser_menu_tools_description_with_translate_with_report_site_2">ᱯᱟᱲᱦᱟᱣᱤᱭᱟᱹ ᱧᱮᱞ, ᱛᱚᱨᱡᱚᱢᱟ, ᱨᱟᱹᱯᱩᱫ ᱥᱟᱭᱤᱴ ᱠᱷᱚᱵᱚᱨ ᱢᱮ, ᱪᱷᱟᱯᱟ, ᱦᱟᱹᱴᱤᱧ, ᱮᱯ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
   <string name="browser_menu_tools_description_with_translate_without_report_site">ᱯᱟᱲᱦᱟᱣᱤᱭᱟᱹ ᱧᱮᱞ, ᱛᱚᱨᱡᱚᱢᱟ, ᱪᱷᱟᱯᱟ, ᱦᱟᱹᱴᱤᱧ, ᱮᱯ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
+  <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu when the "Report broken site" feature is available -->
+  <string name="browser_menu_tools_description_with_report_site_2">ᱯᱟᱲᱦᱟᱣᱤᱭᱟᱹ ᱧᱮᱞ, ᱨᱟᱹᱯᱩᱫ ᱥᱟᱭᱤᱴ ᱨᱤᱯᱚᱨᱴ, ᱪᱷᱟᱯᱟ, ᱦᱟᱹᱴᱤᱧ, ᱮᱯ ᱡᱷᱤᱡᱽ ᱢᱮ ᱾</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
   <string name="browser_menu_tools_description_without_report_site">ᱯᱟᱲᱦᱟᱣᱤᱭᱟᱹ ᱧᱮᱞ, ᱪᱷᱟᱯᱟ, ᱦᱟᱹᱴᱤᱧ, ᱮᱯ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
   <!--
@@ -381,8 +385,12 @@
   <string name="browser_menu_turn_on_reader_view">ᱯᱟᱲᱦᱟᱣ ᱧᱮᱞᱡᱚᱝ ᱞᱮᱠᱷᱟ ᱮᱢ ᱪᱷᱚᱭ ᱢᱮ</string>
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
   <string name="browser_menu_turn_off_reader_view">ᱯᱟᱲᱦᱟᱣ ᱧᱮᱞᱡᱚᱝ ᱞᱮᱠᱷᱟ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
+  <!-- Browser menu button that reopens a private tab as a regular tab -->
+  <string name="browser_menu_open_in_normal_tab">ᱵᱤᱱ-ᱯᱨᱟᱭᱣᱮᱴ ᱴᱮᱵᱽ ᱛᱮ ᱩᱪᱟᱹᱲ ᱢᱮ</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page">ᱥᱟᱦᱴᱟ ᱛᱚᱨᱡᱚᱢᱟᱭ ᱢᱮ…</string>
+  <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
+  <string name="browser_menu_webcompat_reporter">ᱨᱟᱹᱯᱩᱫ ᱥᱟᱭᱤᱴ ᱠᱷᱚᱵᱚᱨ ᱢᱮ …</string>
   <!--
     Browser menu label that is displayed when the current page has been translated by the translation feature.
     %1$s is the name of the language that page was translated to (e.g. English).
@@ -469,6 +477,12 @@
     %s is the search engine name (for example: DuckDuckGo).
   -->
   <string name="search_engine_icon_content_description_1">ᱥᱮᱸᱫᱽᱨᱟ ᱤᱧᱡᱤᱱ : %s</string>
+  <!--
+    Content description (not visible, for screen readers etc.) of the search engine selector from the search toolbar.
+    %s is the search engine name (for example: DuckDuckGo).
+    The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
+  -->
+  <string name="search_engine_selector_content_description">%s: ᱥᱮᱸᱫᱽᱨᱟ ᱤᱧᱡᱤᱱ ᱵᱟᱪᱷᱟᱣᱤᱭᱟᱹ</string>
   <!--
     Home onboarding
 
@@ -603,16 +617,89 @@
   <string name="onboarding_preferences_dialog_crash_reporting_title">ᱟᱡ ᱛᱮ ᱰᱤᱜᱟᱹᱣ ᱠᱷᱚᱵᱚᱨ ᱵᱷᱮᱡᱟᱭᱟ</string>
   <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_description">ᱠᱨᱟᱥ ᱨᱤᱯᱚᱨᱴ ᱟᱞᱮ ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱨᱮᱭᱟᱜ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱠᱚ ᱵᱤᱰᱟᱹᱣ ᱟᱨ ᱥᱟᱹᱛ ᱨᱮᱭᱟᱜ ᱫᱟᱣ ᱮ ᱮᱢᱟ ᱞᱮᱭᱟ ᱾ ᱠᱷᱚᱵᱚᱨ ᱨᱮ ᱯᱚᱨᱥᱚᱱᱟᱞ ᱵᱟᱝᱠᱷᱟᱱ ᱥᱮᱱᱥᱮᱴᱤᱵᱷ ᱰᱟᱴᱟ ᱥᱮᱞᱮᱫ ᱛᱟᱦᱮᱸ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
+  <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">Mozilla ᱨᱮ ᱴᱮᱠᱱᱤᱠᱟᱞ ᱟᱨ ᱤᱱᱴᱟᱨᱮᱠᱥᱚᱱ ᱰᱟᱴᱟ ᱵᱷᱮᱡᱟᱭ ᱢᱮ</string>
-  <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
-  <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">ᱟᱢᱟᱜ ᱥᱟᱫᱷᱚᱱ, ᱦᱟᱨᱰᱣᱮᱭᱟᱨ ᱠᱚᱱᱯᱷᱤᱜᱟᱨᱮᱥᱚᱱ, ᱟᱨ ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ ᱯᱷᱟᱭᱟᱨᱯᱷᱚᱠᱥ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟᱢ ᱚᱱᱟ ᱵᱟᱵᱚᱛ ᱰᱟᱴᱟ ᱥᱟᱱᱟᱢ ᱡᱟᱭᱜᱟ ᱨᱮ ᱵᱮᱵᱷᱟᱨᱤᱭᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱯᱷᱤᱪᱟᱨ, ᱠᱟᱹᱢᱤᱦᱚᱨᱟ ᱟᱨ ᱥᱴᱮᱵᱤᱞᱤᱴᱤ ᱥᱩᱫᱷᱟᱹᱨ ᱨᱮ ᱜᱚᱲᱚ ᱮᱢᱟᱭᱟ ᱾</string>
-  <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱮᱵᱷᱟᱨ ᱰᱟᱴᱟ ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ</string>
+  <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">ᱟᱢᱟᱜ ᱰᱤᱵᱷᱟᱭᱤᱥ ᱵᱟᱵᱚᱛ ᱰᱟᱴᱟ, ᱦᱟᱰᱣᱮᱨ ᱠᱚᱱᱯᱷᱤᱜᱟᱨᱮᱥᱚᱱ, ᱟᱨ ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ  ᱵᱮᱵᱷᱟᱨᱮᱫᱟ ᱚᱱᱟ ᱫᱚ ᱡᱚᱛᱚ ᱦᱚᱲ ᱞᱟᱹᱜᱤᱫ ᱯᱷᱤᱪᱟᱨ, ᱠᱟᱹᱢᱤᱦᱚᱨᱟ ᱟᱨ ᱥᱴᱮᱵᱤᱞᱤᱴᱤ ᱥᱩᱫᱷᱟᱹᱨ ᱨᱮ ᱜᱚᱲᱚ ᱮᱢᱟᱭᱟ ᱾</string>
+  <string name="onboarding_preferences_dialog_usage_data_learn_more_2">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">ᱦᱩᱭᱮᱱᱟ</string>
-  <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">ᱵᱟᱹᱰᱨᱟᱹ</string>
+  <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
+  <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Firefox ᱨᱮ ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ</string>
+  <!-- Terms of service sub header label. -->
+  <string name="onboarding_terms_of_service_sub_header_2">ᱩᱥᱟᱹᱨᱟ ᱟᱨ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱣᱮᱵᱽ ᱵᱽᱨᱟᱣᱩᱡᱤᱝ</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label">ᱨᱮᱵᱮᱱ ᱢᱮ ᱟᱨ ᱞᱟᱦᱟᱜ ᱢᱮ</string>
+  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+  <string name="onboarding_term_of_service_line_one_2">ᱞᱟᱦᱟᱜ ᱠᱟᱛᱮ, ᱟᱢ %1$s ᱨᱮᱢ ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟ ᱾</string>
+  <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+  <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefox ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
+  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+  <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox ᱟᱢᱟᱜ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚᱱ ᱤᱫᱤᱭᱟᱭ ᱾ ᱟᱞᱮᱭᱟᱜ %1$s ᱨᱮ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ ᱾</string>
+  <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
+  <string name="onboarding_term_of_service_line_two_link_text">ᱫᱟᱱᱟᱝ ᱠᱷᱚᱵᱚᱨ</string>
+  <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
+  <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱥᱩᱫᱷᱨᱟᱹᱣ ᱜᱚᱲᱚ ᱞᱟᱹᱜᱤᱫ, Firefox ᱫᱚ Mozilla ᱴᱷᱮᱱ ᱰᱟᱭᱜᱽᱱᱚᱥᱴᱤᱠ ᱟᱨ ᱜᱟᱯᱟᱞᱢᱟᱨᱟᱣ ᱰᱟᱴᱟ ᱠᱩᱞᱟ ᱾ %1$s</string>
+  <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
+  <string name="onboarding_term_of_service_line_three_link_text">ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Firefox ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟ ᱞᱮᱢ</string>
+  <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ᱛᱤᱱ ᱨᱮ ᱟᱢ Firefox ᱪᱮᱫ ᱞᱮᱠᱟᱢ ᱧᱟᱢ ᱠᱮᱫᱟ ᱟᱨ ᱚᱱᱟᱢ ᱵᱮᱵᱷᱟᱨ ᱠᱮᱫᱟ, ᱟᱢ ᱟᱞᱮ ᱵᱽᱨᱟᱣᱡᱚᱨ ᱵᱟᱹᱲᱛᱤ ᱦᱚᱲ ᱥᱟᱶ ᱩᱯᱨᱩᱢ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟᱞᱮᱭᱟ ᱾</string>
+  <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱴᱮᱠᱱᱚᱞᱚᱡᱤ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶᱛᱮ ᱠᱚᱢ ᱠᱷᱚᱱ ᱠᱚᱢ ᱰᱟᱴᱟ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱹᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱥᱮ ᱰᱷᱟᱶᱨᱟ ᱫᱮᱠᱷᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱵᱟᱭ ᱟᱹᱠᱷᱨᱤᱧᱚᱜᱼᱟ ᱾</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">ᱟᱵᱚ ᱰᱟᱴᱟ ᱪᱮᱫ ᱞᱮᱠᱟ ᱵᱚᱱ ᱵᱮᱵᱷᱟᱨᱮᱫᱟ</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">ᱴᱷᱟᱹᱣᱠᱟᱹ ᱢᱮ ᱟᱨ ᱵᱽᱨᱟᱣᱡᱽ ᱮᱦᱚᱵ ᱢᱮ</string>
+  <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
+  <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">ᱢᱤᱫ ᱢᱩᱪᱟᱹᱫ ᱠᱟᱛᱷᱟ</string>
+  <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾</string>
+  <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">ᱨᱮᱵᱮᱱ ᱢᱮ ᱟᱨ ᱵᱽᱨᱟᱣᱩᱡᱽ ᱮᱦᱚᱵ ᱢᱮ</string>
+  <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
+  <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">ᱢᱤᱫᱴᱟᱹᱝ ᱴᱩᱞᱵᱟᱨ ᱯᱞᱮᱥᱢᱮᱱᱴ ᱨᱟᱠᱟᱵᱽ ᱢᱮ</string>
+  <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
+  <string name="onboarding_customize_toolbar_description" tools:ignore="UnusedResources">ᱥᱮᱸᱫᱽᱨᱟ ᱫᱚ ᱥᱮᱴᱮᱨ ᱵᱷᱤᱛᱨᱤ ᱨᱮ ᱫᱚᱦᱚ ᱠᱟᱜ ᱢᱮ ᱾</string>
+  <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
+  <string name="onboarding_save_and_continue_button">ᱥᱮᱴ ᱢᱮ ᱟᱨ ᱞᱟᱦᱟᱜ ᱢᱮ</string>
+  <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
+  <string name="onboarding_customize_toolbar_top_option">ᱪᱮᱛᱟᱱ</string>
+  <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
+  <string name="onboarding_customize_toolbar_bottom_option">ᱞᱟᱛᱟᱨ</string>
+  <!-- Onboarding toolbar selection card content description for the main image. -->
+  <string name="onboarding_customize_toolbar_main_image_content_description">ᱴᱩᱞᱵᱟᱨ ᱵᱟᱪᱷᱟᱣ ᱧᱮᱞ ᱨᱮᱭᱟᱜ ᱢᱟᱨᱟᱝ ᱦᱮᱰᱟᱨ ᱪᱤᱛᱟᱹᱨ ᱢᱤᱫ ᱪᱤᱛᱟᱹᱨ ᱴᱩᱞᱵᱟᱨ ᱩᱫᱩᱜ ᱮᱫᱟᱭ ᱾</string>
+  <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
+  <string name="onboarding_customize_toolbar_placement_bottom_content_description">ᱞᱟᱛᱟᱨ ᱴᱩᱞᱵᱟᱨ ᱨᱮᱭᱟᱜ ᱪᱤᱛᱟᱹᱨ</string>
+  <string name="onboarding_customize_toolbar_placement_top_content_description">ᱪᱮᱛᱟᱱ ᱴᱩᱞᱵᱟᱨ ᱨᱮᱭᱟᱜ ᱪᱤᱛᱟᱹᱨ</string>
+  <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_toolbar_a11y_action_label_select">ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
+  <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
+  <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">ᱢᱤᱫᱴᱟᱹᱝ ᱛᱷᱤᱢ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
+  <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
+  <string name="onboarding_customize_theme_description" tools:ignore="UnusedResources">ᱣᱮᱵᱽ ᱥᱚᱨᱮᱥ ᱢᱟᱨᱥᱟᱞ ᱨᱮ ᱧᱮᱞ ᱢᱮ᱾</string>
+  <!-- Onboarding label for 'Save and start browsing' button, used by Nimbus experiments. -->
+  <string name="onboarding_save_and_start_button">ᱥᱟᱸᱪᱟᱣ ᱢᱮ ᱟᱨ ᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱮᱦᱚᱵ ᱢᱮ</string>
+  <!-- Onboarding theme selection card label for 'dark' option, used by Nimbus experiments. -->
+  <string name="onboarding_customize_theme_dark_option">ᱧᱩᱛ</string>
+  <!-- Onboarding theme selection card label for 'light' option, used by Nimbus experiments. -->
+  <string name="onboarding_customize_theme_light_option">ᱢᱟᱨᱥᱟᱞ</string>
+  <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
+  <string name="onboarding_customize_theme_system_option">ᱥᱤᱥᱴᱚᱢ ᱟᱡ ᱛᱮ</string>
+  <!-- Onboarding theme selection card content description for the main image. -->
+  <string name="onboarding_customize_theme_main_image_content_description">ᱪᱤᱛᱟᱹᱨ ᱠᱟᱹᱨᱤᱜᱚᱞᱨ ᱟᱨ ᱵᱤᱞᱰᱟᱨ ᱥᱟᱯᱟᱵ ᱠᱚ ᱩᱫᱩᱜ ᱛᱷᱤᱢ ᱵᱟᱪᱷᱟᱣ ᱧᱮᱞ ᱨᱮᱭᱟᱜ ᱢᱟᱨᱟᱝ ᱦᱮᱰᱟᱨ ᱪᱤᱛᱟᱹᱨ ᱾</string>
+  <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
+  <string name="onboarding_customize_theme_content_description">%1$s ᱛᱷᱤᱢ ᱨᱮᱭᱟᱜ ᱪᱤᱛᱟᱹᱨ</string>
+  <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_theme_a11y_action_label_select">ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
+  <!--
+    Widget Picker
+
+    Widget description for widget picker screen
+  -->
+  <string name="widget_picket_description">ᱩᱥᱟᱹᱨᱟ ᱥᱮᱸᱫᱽᱨᱟ ᱮᱦᱚᱵ ᱢᱮ</string>
   <!--
     Search Widget
 
@@ -684,6 +771,10 @@
   <string name="preferences_add_private_browsing_shortcut">ᱱᱤᱡᱮᱨᱟᱜ ᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱠᱷᱟᱴᱚᱢᱟᱪᱷᱟ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">ᱠᱷᱟᱹᱞᱤᱼHTTPS ᱢᱳᱰ</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">ᱯᱨᱟᱭᱣᱮᱴ ᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱨᱮ ᱴᱮᱵᱽ ᱩᱠᱩ ᱞᱟᱹᱜᱤᱫ ᱥᱠᱨᱤᱱ ᱞᱚᱠ ᱵᱮᱵᱷᱟᱨ ᱢᱮ</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary">ᱠᱟᱹᱴᱩᱵ ᱪᱤᱛᱟᱹᱨ, ᱪᱮᱦᱨᱟ ᱠᱟᱹᱴᱷᱤ, ᱵᱟᱝᱠᱷᱟᱱ PIN ᱥᱟᱶ ᱴᱮᱵᱽ ᱧᱮᱞ ᱢᱮ ᱾</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">ᱠᱩᱠᱤ ᱵᱮᱱᱚᱨ ᱟᱠᱚᱴᱤᱭᱟᱹ</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -1026,12 +1117,6 @@
   <string name="preference_usage_data_1" tools:ignore="UnusedResources" moz:removedIn="138">ᱴᱮᱠᱱᱤᱠᱟᱞ ᱟᱨ ᱤᱱᱴᱟᱨᱮᱠᱥᱚᱱ ᱰᱟᱴᱟ</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">ᱟᱢᱟᱜ ᱵᱨᱟᱣᱡᱟᱚᱨ ᱨᱮᱭᱟᱜ ᱠᱟᱹᱢᱤ, ᱭᱩᱥᱮᱡ, ᱦᱟᱰᱣᱮᱨ ᱟᱨ ᱠᱟᱹᱥᱴᱚᱢᱟᱭᱡᱮᱥᱚᱱ ᱰᱟᱴᱟ ᱠᱚ Mozilla ᱥᱟᱞᱟᱜ ᱦᱟᱹᱴᱤᱧᱚᱜ ᱠᱟᱱᱟ ᱚᱠᱟ ᱫᱚ %1$s ᱵᱮᱥ ᱛᱮᱭᱟᱜ ᱨᱮ ᱜᱚᱲᱚ ᱮᱢᱟᱭ</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">ᱢᱟᱨᱠᱮᱴᱤᱝ ᱰᱟᱴᱟ</string>
-  <string name="preferences_automatically_submit_crashes_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱡ ᱛᱮ ᱠᱨᱟᱥ ᱠᱷᱚᱵᱚᱨ ᱡᱚᱢᱟᱭ ᱢᱮ</string>
-  <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">ᱰᱤᱜᱟᱹᱣ ᱦᱩᱭᱮᱱ ᱛᱟᱭᱚᱢ Mozilla ᱫᱚ ᱮᱛᱦᱚᱵ ᱡᱷᱚᱜ ᱟᱡ ᱛᱮᱜᱮ ᱰᱤᱜᱟᱹᱣ ᱰᱟᱴᱟ ᱦᱟᱹᱴᱤᱧ ᱟ</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">ᱠᱨᱟᱥ ᱨᱤᱯᱚᱨᱴ ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ</string>
   <!-- Title for studies preferences -->
@@ -1219,18 +1304,8 @@
   <string name="studies_remove">ᱚᱪᱚᱜ ᱢᱮ</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">ᱩᱥᱨᱟᱹᱣ</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s ᱵᱚᱦᱟᱞ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱟᱨ ᱥᱚᱢᱚᱭ ᱠᱷᱚᱱ ᱥᱚᱢᱚᱨ ᱯᱟᱲᱦᱟᱣ ᱠᱚ ᱪᱟᱹᱞᱩᱜᱼᱟ ᱾</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
-  <!--
-    Sessions
-
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱯᱨᱟᱭᱣᱮᱴ ᱴᱮᱵᱽ ᱠᱚ</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱥᱭᱝᱠᱼᱰ ᱴᱮᱵᱽ ᱠᱚ</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">ᱴᱮᱵᱽ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1321,18 +1396,91 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">ᱰᱟᱣᱱᱞᱚᱰᱠᱚ ᱚᱪᱚᱜᱮᱱᱟ</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">ᱰᱟᱣᱱᱞᱚᱰᱠᱚ ᱚᱪᱚᱜᱮᱱᱟ</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">%1$s ᱚᱪᱚᱜᱮᱱᱟ</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s ᱚᱪᱚᱜᱮᱱᱟ</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">ᱵᱤᱵᱨᱚᱬ ᱠᱚ</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar" tools:ignore="UnusedResources">ᱰᱟᱣᱱᱞᱚᱰ ᱯᱩᱨᱟᱹᱣᱮᱱᱟ</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open" tools:ignore="UnusedResources">ᱡᱷᱤᱡᱽ ᱢᱮ</string>
+  <!-- Text for the snackbar action button to undo deleting a download. -->
+  <string name="download_undo_delete_snackbar_action">ᱨᱩᱣᱟᱹᱲ</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">ᱱᱚᱰᱮ ᱰᱟᱣᱱᱞᱚᱰ ᱟᱠᱟᱱ ᱨᱮᱫ ᱠᱚ ᱵᱚᱱᱩᱜ-ᱟ</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">ᱱᱚᱰᱮ ᱰᱟᱣᱱᱞᱚᱰ ᱟᱠᱟᱱ ᱨᱮᱫ ᱠᱚ ᱵᱚᱱᱩᱜ-ᱟ</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">ᱱᱚᱰᱮ ᱰᱟᱩᱱᱞᱳᱰᱠᱚ ᱵᱚᱱᱩᱜ-ᱟ</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">ᱟᱢ ᱰᱟᱩᱱᱞᱳᱰ ᱟᱠᱟᱫ ᱨᱮᱫᱽᱠᱚ ᱱᱚᱸᱰᱮ ᱧᱮᱞᱚᱜᱼᱟ ᱾</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d ᱵᱟᱪᱷᱟᱣᱮᱱᱟ</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">ᱚᱪᱚᱜᱽ</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">ᱚᱪᱚᱜᱽ</string>
+  <!-- Text for the button to delete a single downloaded file item -->
+  <string name="download_delete_item">ᱢᱮᱴᱟᱣ ᱢᱮ</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">URL ᱦᱟᱹᱴᱤᱧ ᱢᱮ</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">ᱨᱮᱫᱽ ᱦᱟᱹᱴᱤᱧ ᱢᱮ</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">ᱪᱮᱫ ᱟᱢ ᱴᱷᱟᱹᱣᱠᱟᱹ ᱜᱮᱭᱟᱢ ᱟᱢ ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱ ᱡᱤᱱᱤᱥ ᱠᱚ ᱢᱮᱴᱟᱣ ᱥᱟᱱᱟᱭᱮᱫ ᱢᱮᱭᱟ ?</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
+  <string name="download_delete_multi_select_dialog_confirm">ᱢᱮᱴᱟᱣ ᱢᱮ</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
+  <string name="download_delete_multi_select_dialog_cancel">ᱵᱟᱹᱰᱨᱟᱹ</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress" tools:ignore="UnusedResources">ᱨᱮ ᱞᱟᱦᱟᱜ ᱠᱟᱱᱟ</string>
+  <!-- Text for the header that groups the downloads for yesterday -->
+  <string name="download_time_period_yesterday">ᱦᱚᱞᱟ</string>
+  <!-- Text for the header that groups the downloads the past 7 days -->
+  <string name="download_time_period_last_7_days">7 ᱫᱤᱱ ᱢᱟᱲᱟᱝ</string>
+  <!-- Text for the header that groups the downloads the past 30 days -->
+  <string name="download_time_period_last_30_days">30 ᱫᱤᱱ ᱢᱟᱲᱟᱝ</string>
+  <!-- Text for the header that groups the downloads older than other groups -->
+  <string name="download_time_period_older">ᱢᱟᱨᱮᱭᱟᱜ</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • %3$s ᱥᱟᱨᱮᱡ ᱠᱟᱱᱟ</string>
+  <!-- Text to indicate that an in progress download is paused. -->
+  <string name="download_item_status_paused" tools:ignore="UnusedResources">ᱛᱷᱩᱢ</string>
+  <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
+  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">ᱛᱟᱹᱝᱜᱤᱨᱮ</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed" tools:ignore="UnusedResources">ᱰᱟᱣᱱᱞᱚᱰ ᱰᱤᱜᱟᱹᱣᱮᱱᱟ</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder" tools:ignore="UnusedResources">ᱰᱟᱩᱱᱞᱚᱰ ᱯᱟᱱᱛᱮ ᱢᱮ</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found" tools:ignore="UnusedResources">ᱪᱮᱫ ᱛᱮᱞᱟ ᱵᱟᱭ ᱧᱟᱢ ᱞᱮᱱᱟ</string>
+  <!--
+    Downloads Content Type Filters
+
+    Text for the filter button to show all files in the downloads list
+  -->
+  <string name="download_content_type_filter_all">ᱡᱷᱚᱛᱚ</string>
+  <!-- Text for the filter button to show only images in the downloads list -->
+  <string name="download_content_type_filter_image">ᱪᱤᱛᱟᱹᱨᱠᱚ</string>
+  <!-- Text for the filter button to show only video files in the downloads list -->
+  <string name="download_content_type_filter_video">ᱣᱤᱰᱤᱭᱚᱠᱚ</string>
+  <!-- Text for the filter button to show only documents in the downloads list -->
+  <string name="download_content_type_filter_document">ᱫᱚᱞᱤᱞᱠᱚ</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other" moz:removedIn="138" tools:ignore="UnusedResources">ᱮᱴᱟᱜᱟᱜᱠᱚ</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">ᱮᱴᱟᱜᱟᱜ</string>
+  <!--
+    Description of a downloaded item, displayed in the downloads list.
+    %1$s: The size of the downloaded file.
+    %2$s: The URL of the downloaded file.
+  -->
+  <string name="download_item_description" moz:removedIn="138" tools:ignore="UnusedResources">%1$s • %2$s</string>
   <!--
     WebCompat Reporter
 
@@ -1345,8 +1493,6 @@
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">ᱫᱟᱭᱟ ᱠᱟᱛᱮ ᱢᱤᱫ ᱢᱟᱱᱭᱟ URL ᱮᱢ ᱢᱮ</string>
-  <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">ᱪᱮᱫ ᱨᱟᱹᱯᱩᱫ ᱮᱱᱟ ? (ᱟᱯᱱᱟᱨ ᱢᱚᱱᱮ ᱛᱮᱭᱟᱜ)</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason">ᱠᱟᱨᱚᱬ ᱵᱟᱛᱟᱣ ᱢᱮ</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
@@ -1431,6 +1577,14 @@
   <string name="bookmark_menu_delete_button">ᱢᱮᱴᱟᱣ ᱢᱮ</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">ᱥᱟᱺᱪᱟᱣ ᱢᱮ</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">ᱱᱟᱣᱟ ᱞᱮᱠᱟᱛᱮ ᱥᱮᱴ ᱢᱮ</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">ᱢᱟᱨᱮ ᱞᱮᱠᱟᱛᱮ ᱥᱮᱴ ᱢᱮ</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">A ᱠᱷᱚᱱ Z ᱞᱮᱠᱟᱛᱮ ᱥᱮᱴ ᱢᱮ</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">Z ᱠᱷᱚᱱ A ᱞᱮᱠᱟᱛᱮ ᱥᱮᱴ ᱢᱮ</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1704,6 +1858,10 @@
   <string name="sync_add_new_device_learn_button">ᱴᱮᱵᱽ ᱠᱚ ᱮᱢᱟᱱ ᱵᱷᱮᱡᱟ ᱵᱟᱵᱚᱛ ᱵᱟᱰᱟᱭ ᱢᱮ…</string>
   <!-- Text for the button to connect another device -->
   <string name="sync_add_new_device_connect_button">ᱚᱞᱜᱟ ᱥᱟᱫᱷᱚᱱ ᱡᱩᱰᱟᱹᱣ ᱢᱮ…</string>
+  <!-- A message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+  <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\n %2$s ᱠᱷᱚᱱ ᱠᱩᱞ ᱟᱠᱟᱱᱟ 🦊 ᱢᱚᱵᱟᱭᱤᱞ ᱵᱽᱨᱟᱣᱡᱚᱨ ᱪᱮᱥᱴᱟᱭ ᱢᱮ: %3$s</string>
+  <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+  <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nᱠᱷᱚᱱ ᱵᱷᱮᱡᱟ ᱠᱟᱱᱟ %2$s 🦊 %3$s</string>
   <!--
     Notifications
 
@@ -2042,6 +2200,36 @@
     Enhanced tracking protection exception preference icon for ETP settings.
   -->
   <string name="preference_etp_exceptions_icon_description">ᱵᱟᱲᱦᱟᱣᱟᱠᱟᱱ ᱯᱟᱸᱡᱟ ᱨᱚᱯᱷᱟ ᱵᱟᱹᱨᱜᱤᱞ ᱠᱩᱥᱤ ᱪᱤᱱᱦᱟᱹ</string>
+  <!--
+    DNS Over HTTPS (DoH)
+
+    Preference title for DNS over HTTPS settings
+  -->
+  <string name="preference_doh_title">HTTPS ᱪᱮᱛᱟᱱ ᱨᱮ DNS</string>
+  <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_summary">HTTPS ᱛᱮ Domain Name System (DNS) ᱫᱚ ᱟᱢᱟᱜ ᱰᱚᱢᱮᱱ ᱧᱩᱛᱩᱢ ᱞᱟᱹᱜᱤᱫ ᱟᱢᱟᱜ ᱟᱨᱡᱟᱣ ᱫᱚ ᱮᱱᱠᱨᱤᱯᱴ ᱠᱚᱱᱮᱠᱥᱚᱱ ᱛᱮ ᱵᱷᱮᱡᱟᱭᱟ, ᱚᱱᱟ ᱛᱮ ᱨᱟᱠᱷᱟ DNS ᱮᱢ ᱫᱟᱲᱮᱭᱟᱜ-ᱟ ᱟᱨ ᱮᱴᱟᱜ ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱟᱢ ᱚᱠᱟ ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱮᱢ ᱥᱮᱱᱚᱜ ᱠᱟᱱᱟ ᱚᱱᱟ ᱧᱮᱞ ᱫᱚ ᱟᱹᱰᱤ ᱜᱮ ᱢᱩᱥᱠᱤᱞ ᱠᱟᱱᱟ ᱾ %1$s</string>
+  <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
+  <string name="preference_doh_learn_more">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="preference_doh_up_description">ᱪᱮᱛᱟᱱ ᱥᱮᱱ ᱱᱮᱣᱤᱜᱮᱴ ᱢᱮ</string>
+  <!-- Content description for the "Exceptions" button -->
+  <string name="preference_doh_exceptions_description">ᱪᱷᱟᱰᱟ ᱠᱚ</string>
+  <!-- Content description for the "Info" button -->
+  <string name="preference_doh_info_description">ᱵᱤᱵᱨᱚᱬ</string>
+  <!-- Content description for the "Add Site" button -->
+  <string name="preference_doh_add_site_description">ᱥᱟᱭᱤᱴ ᱥᱮᱞᱮᱫ ᱢᱮ</string>
+  <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection">ᱢᱩᱞ ᱨᱩᱠᱷᱤᱭᱟᱹ</string>
+  <!-- Summary displayed for "Default Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_doh_default_protection_summary">%1$s ᱫᱚ ᱟᱢᱟᱜ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱨᱩᱨᱷᱤᱭᱟᱹ ᱞᱟᱹᱜᱤᱫ ᱛᱤᱱ ᱠᱚᱛᱮ ᱨᱩᱠᱷᱤᱭᱟᱹ DNS ᱵᱷᱵᱟᱨᱟᱭ ᱴᱷᱟᱹᱣᱠᱟᱹᱭᱟᱭ ᱾</string>
+  <!-- Bullet point 1 for "Default Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection_info_1">ᱟᱢ ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱ ᱯᱨᱚᱵᱷᱟᱭᱰᱚᱨ ᱵᱮᱵᱷᱟᱨ ᱢᱮ</string>
+  <!-- Bullet point 2 for "Default Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection_info_2">ᱨᱩᱠᱷᱤᱭᱟᱹ DNS ᱮᱱᱮᱢᱤᱭᱟᱹ ᱥᱟᱞᱟᱜ ᱛᱮ ᱡᱩᱫᱤ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱢᱮᱱᱟᱜ ᱠᱷᱟᱱ ᱟᱢᱟᱜ ᱢᱩᱞ DNS ᱨᱤᱥᱚᱞᱵᱷᱚᱨ ᱵᱮᱵᱷᱟᱨ ᱢᱮ</string>
+  <!-- Bullet point 3 for "Default Protection" information page under "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_default_protection_info_3">ᱡᱩᱫᱤ ᱦᱩᱭ ᱫᱟᱲᱮᱭᱟᱜ ᱠᱷᱟᱱ, ᱢᱤᱫᱴᱟᱝ ᱥᱩᱨ ᱯᱨᱚᱵᱷᱟᱭᱰᱚᱨ ᱵᱮᱵᱷᱟᱨ ᱢᱮ ᱾ %1$s</string>
+  <!-- Bullet point 4 for "Default Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection_info_4">VPN, ᱜᱷᱟᱨᱚᱧᱡᱽ ᱠᱚᱵᱽᱡᱟ, ᱟᱨᱵᱟᱝ ᱮᱱᱴᱚᱨᱯᱨᱟᱭᱡᱽ ᱱᱤᱛᱤ ᱛᱟᱦᱮᱱ ᱠᱷᱟᱱ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- About page link text to open support link -->
   <string name="about_support">ᱜᱚᱲᱚ</string>
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
@@ -2050,6 +2238,8 @@
   <string name="about_privacy_notice">ᱱᱤᱥᱚᱱ ᱨᱮᱭᱟᱜ ᱱᱚᱴᱤᱥ</string>
   <!-- About page link text to open know your rights link -->
   <string name="about_know_your_rights">ᱟᱢᱟᱜ ᱦᱚᱠ ᱠᱚ ᱵᱟᱲᱟᱭ ᱛᱟᱢ</string>
+  <!-- About page link text to open terms of use link -->
+  <string name="about_terms_of_use" tools:ignore="UnusedResources">ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
   <!-- About page link text to open licensing information link -->
   <string name="about_licensing_information">ᱞᱟᱭᱥᱮᱸᱱᱥ ᱨᱮᱭᱟᱜ ᱠᱷᱚᱵᱚᱨ</string>
   <!-- About page link text to open a screen with libraries that are used -->
@@ -2544,153 +2734,13 @@
   <!--
     Review quality check feature
 
-    Name for the review quality check feature used as title for the panel.
+    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
   -->
-  <string name="review_quality_check_feature_name_2" moz:removedIn="136" tools:ignore="UnusedResources">ᱫᱩᱦᱲᱟᱹ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣᱤᱭᱟᱹ</string>
-  <!-- Summary for grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_a_b_description" moz:removedIn="136" tools:ignore="UnusedResources">ᱴᱷᱤᱠ ᱵᱟᱛᱟᱣᱟᱜᱠᱚ</string>
-  <!-- Summary for grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_c_description" moz:removedIn="136" tools:ignore="UnusedResources">ᱴᱷᱤᱠ ᱵᱟᱛᱟᱣᱟᱜ ᱟᱨ ᱵᱤᱱᱥᱨᱚᱛ ᱢᱮᱥᱟᱢᱤᱥᱤ ᱧᱮᱞᱵᱤᱲᱟᱹᱣᱟᱜᱠᱚ</string>
-  <!-- Summary for grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_d_f_description" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱤᱱᱥᱨᱚᱛ ᱧᱮᱞᱵᱤᱲᱟᱹᱣ</string>
-  <!-- Text for title presenting the reliability of a product's reviews. -->
-  <string name="review_quality_check_grade_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱚᱶᱟ ᱧᱮᱞᱵᱤᱲᱟᱹᱣᱠᱚ ᱛᱤᱱᱟᱹᱜ ᱵᱷᱚᱨᱥᱟ ᱫᱮᱲᱮᱭᱟᱜᱼᱟᱢ ?</string>
-  <!-- Title for when the rating has been updated by the review checker -->
-  <string name="review_quality_check_adjusted_rating_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱨᱮᱴᱤᱝ ᱥᱚᱢᱚᱡᱚᱥ ᱮᱱᱟ</string>
-  <!-- Description for a product's adjusted star rating. The text presents that the product's reviews which were evaluated as unreliable were removed from the adjusted rating. -->
-  <string name="review_quality_check_adjusted_rating_description_2" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱷᱚᱨᱥᱟᱡᱚᱱᱚᱠ ᱧᱮᱞᱵᱤᱲᱟᱹᱣ ᱪᱮᱛᱟᱱ ᱨᱮ</string>
-  <!-- Title for list of highlights from a product's review emphasizing a product's important traits. -->
-  <string name="review_quality_check_highlights_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜᱟᱜ ᱧᱮᱞᱵᱤᱲᱟᱹᱣ ᱠᱷᱚᱱ ᱛᱤᱱᱟᱹᱜ ᱜᱟᱱ ᱪᱤᱱᱦᱟᱹᱦᱟᱜ</string>
-  <!-- Title for section explaining how we analyze the reliability of a product's reviews. -->
-  <string name="review_quality_check_explanation_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱞᱮ ᱫᱚ ᱧᱮᱞᱵᱤᱲᱟᱹᱣᱟᱜ ᱜᱩᱱ ᱫᱚ ᱪᱮᱫ ᱞᱮᱠᱷᱟ ᱞᱮ ᱵᱟᱲᱟᱭ ᱮᱫᱟ</string>
-  <!-- Paragraph explaining how we analyze the reliability of a product's reviews. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_explanation_body_reliability" moz:removedIn="136" tools:ignore="UnusedResources">Mozilla  ᱯᱟᱦᱴᱟ ᱠᱷᱚᱱ %s ᱠᱷᱚᱱ AI ᱴᱮᱠᱱᱚᱞᱚᱡᱤ ᱵᱮᱵᱷᱟᱨ ᱠᱟᱛᱮᱜ ᱟᱞᱮ ᱯᱨᱚᱰᱚᱠᱴ ᱨᱤᱵᱷᱤᱭᱩ ᱨᱮᱱᱟᱜ ᱥᱟᱹᱨᱤᱜᱟᱱᱤ ᱧᱮᱞ ᱵᱤᱰᱟᱹᱣᱜ ᱮᱫᱟ ᱞᱮ ᱾ ᱱᱚᱶᱟ ᱫᱚ ᱧᱮᱞ ᱵᱤᱰᱟᱣᱜ ᱜᱩᱱ ᱵᱟᱲᱟᱭ ᱪᱷᱚ ᱨ ᱜᱚᱲᱚ ᱮᱢ ᱫᱟᱲᱮᱭᱟᱢᱟ, ᱯᱨᱚᱰᱚᱠᱴ ᱨᱮᱭᱟᱜ ᱢᱩᱞ ᱜᱩᱱ ᱵᱟᱵᱚᱛ ᱫᱚ ᱵᱟᱝᱟ ᱾</string>
-  <!-- Paragraph explaining the grading system we use to classify the reliability of a product's reviews. -->
   <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱞᱮ ᱫᱚ ᱯᱨᱚᱰᱚᱠᱴ ᱨᱮᱭᱟᱜ ᱧᱮᱞ ᱵᱤᱰᱟᱣᱜ ᱫᱚ &lt;b&gt;ᱪᱤᱠᱤ ᱜᱽᱨᱮᱰ&lt;/b&gt; A ᱠᱷᱚᱱ F ᱫᱷᱟᱹᱵᱤᱡ ᱞᱮ ᱮᱢ ᱮᱫᱟ ᱾</string>
-  <!-- Description explaining grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_AB" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱷᱚᱨᱥᱟ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚ ᱾ ᱟᱞᱮ ᱵᱩᱡᱷᱟᱹᱣ ᱨᱮ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱫᱚ ᱥᱟᱹᱨᱤ ᱦᱚᱲᱴᱷᱮᱱᱠᱷᱚᱱ ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱᱟ, ᱟᱨ ᱱᱤᱥᱪᱟᱞ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚ ᱠᱟᱱᱟ ᱾</string>
-  <!-- Description explaining grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_C" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱞᱮ ᱵᱩᱡᱷᱟᱹᱣ ᱨᱮ ᱢᱮᱥᱟ ᱟᱨ ᱵᱟᱝ ᱴᱷᱤᱠ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱢᱮᱱᱟᱜ ᱠᱟᱫᱟ ᱾</string>
-  <!-- Description explaining grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_DF" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱤᱥᱪᱷᱚᱞ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚ ᱾ ᱟᱞᱮ ᱵᱩᱡᱷᱟᱹᱣ ᱨᱮ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚᱫᱚ ᱪᱷᱚᱞ ᱥᱮ ᱠᱤᱨᱤᱧ ᱧᱮᱞᱯᱚᱨᱚᱠᱷᱤᱭᱟᱹ ᱠᱟᱱᱟᱠᱚ ᱾</string>
   <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
   <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources">&lt;b&gt;ᱨᱮᱴᱤᱝ&lt;/b&gt; ᱫᱚ ᱪᱷᱚᱞ ᱜᱮᱭᱟ ᱡᱟᱦᱟᱸᱫᱚ ᱟᱞᱮ ᱵᱩᱡᱷᱟᱹᱣ ᱨᱮ ᱴᱷᱤᱠ ᱜᱮᱭᱟ ᱾</string>
   <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
   <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources">&lt;b&gt;ᱪᱤᱱᱦᱟᱹᱠᱚ&lt;/b&gt;ᱫᱚ %s ᱧᱮᱞᱯᱚᱨᱚᱠᱷ ᱠᱷᱚᱱ ᱢᱩᱪᱟᱹᱫ 80 ᱢᱟᱦᱟᱸ ᱨᱮᱭᱟᱜ ᱠᱟᱱᱟ ᱡᱟᱦᱟᱸᱭ ᱫᱚ ᱟᱞᱮ ᱦᱤᱥᱟᱹᱵᱽ ᱛᱮ ᱵᱷᱚᱨᱥᱟ ᱜᱮᱭᱟ ᱾</string>
-  <!-- Text for learn more caption presenting a link with information about review quality. %s is a link using review_quality_check_info_learn_more_link as text. -->
-  <string name="review_quality_check_info_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">%s ᱵᱟᱵᱚᱛ ᱰᱷᱮᱨ ᱵᱟᱰᱟᱭ ᱢᱮ ᱾</string>
-  <!-- Clickable text that links to review quality check SuMo page. %s is "Fakespot". -->
-  <string name="review_quality_check_info_learn_more_link_2" moz:removedIn="136" tools:ignore="UnusedResources">%s ᱫᱚ ᱧᱮᱞᱵᱤᱲᱟᱹᱣᱟᱜ ᱜᱩᱱ ᱫᱚ ᱪᱮᱫ ᱞᱮᱠᱷᱟ ᱵᱟᱲᱟᱭ ᱮᱫᱟ</string>
-  <!-- Text for title of settings section. -->
-  <string name="review_quality_check_settings_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱥᱟᱡᱟᱣᱠᱚ</string>
-  <!-- Text for label for switch preference to show recommended products from review quality check settings section. -->
-  <string name="review_quality_check_settings_recommended_products" moz:removedIn="136" tools:ignore="UnusedResources">ᱫᱩᱦᱲᱟᱹ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣᱤᱭᱟᱹ ᱨᱮ ᱫᱷᱟᱶᱨᱟ ᱫᱮᱠᱷᱟᱣ ᱢᱮ</string>
-  <!-- Description for switch preference to show recommended products from review quality check settings section. %s is a link using review_quality_check_settings_recommended_products_learn_more as text. -->
-  <string name="review_quality_check_settings_recommended_products_description_2" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱢ ᱫᱚ ᱛᱤᱱᱛᱤᱱᱡᱷᱚᱜ ᱠᱚᱨᱮ ᱵᱟᱪᱷᱟᱣ ᱡᱤᱱᱤᱥᱠᱚᱢ ᱧᱮᱞ ᱜᱮᱭᱟ ᱾ ᱟᱞᱮ ᱫᱚ ᱚᱱᱟ ᱡᱤᱱᱤᱥᱠᱚᱜᱮ ᱰᱷᱟᱶᱨᱟᱜᱼᱟ ᱞᱮ ᱡᱟᱦᱟᱸ ᱫᱚ ᱡᱟᱹᱥᱛᱤ ᱵᱷᱚᱨᱥᱟ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱛᱟᱦᱮᱸᱱᱟ ᱾%s
-</string>
-  <!-- Clickable text that links to review quality check recommended products support article. -->
-  <string name="review_quality_check_settings_recommended_products_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
-  <!-- Text for turning sidebar off button from review quality check settings section. -->
-  <string name="review_quality_check_settings_turn_off" moz:removedIn="136" tools:ignore="UnusedResources">ᱫᱩᱦᱲᱟᱹ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣᱤᱭᱟᱹ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
-  <!-- Text for title of recommended product section. This is displayed above a product image, suggested as an alternative to the product reviewed. -->
-  <string name="review_quality_check_ad_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱰᱷᱮᱨ ᱮᱢ ᱧᱮᱞᱟ</string>
-  <!-- Caption for recommended product section indicating this is an ad by Fakespot. %s is "Fakespot". -->
-  <string name="review_quality_check_ad_caption" moz:removedIn="136" tools:ignore="UnusedResources">ᱰᱷᱟᱶᱨᱟᱤᱭᱟᱹ ᱫᱚ %s</string>
-  <!-- Caption for review quality check panel. %s is a link using review_quality_check_powered_by_link as text. -->
-  <string name="review_quality_check_powered_by_2" moz:removedIn="136" tools:ignore="UnusedResources">ᱫᱩᱦᱲᱟᱹ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣᱤᱭᱟᱹ ᱫᱚ %s ᱜᱚᱲᱚ ᱥᱟᱦᱚᱫ ᱮᱢ ᱠᱟᱜᱼᱟᱭ</string>
-  <!-- Clickable text that links to Fakespot.com. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_powered_by_link" moz:removedIn="136" tools:ignore="UnusedResources">%s Mozilla ᱛᱮ</string>
-  <!-- Text for title of warning card informing the user that the current analysis is outdated. -->
-  <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱧᱮᱞ ᱞᱟᱹᱜᱤᱫ ᱱᱚᱶᱟ ᱵᱤᱵᱨᱚᱬ</string>
-  <!-- Text for button from warning card informing the user that the current analysis is outdated. Clicking this should trigger the product's re-analysis. -->
-  <string name="review_quality_check_outdated_analysis_warning_action" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱧᱮᱞ ᱢᱮ</string>
-  <!-- Title for warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱩᱱᱟᱹᱜ ᱧᱮᱞᱵᱤᱲᱟᱹᱣ ᱵᱟᱹᱱᱩᱜ ᱠᱟᱫᱟ</string>
-  <!-- Text for body of warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱛᱤᱧ ᱡᱷᱚᱜ ᱡᱤᱱᱤᱥ ᱨᱮ ᱡᱟᱹᱥᱛᱤ ᱧᱮᱞᱵᱤᱲᱟᱹᱣ ᱛᱟᱦᱮᱸᱱᱟ, ᱟᱞᱮ ᱫᱚ ᱚᱱᱟ ᱨᱮᱭᱟᱜ ᱜᱩᱱ ᱵᱚᱵᱚᱛ ᱞᱮ ᱢᱮᱱ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
-  <!-- Title for warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱡᱤᱱᱤᱥ ᱫᱚ ᱵᱟᱹᱱᱩᱜ ᱠᱟᱫᱟ</string>
-  <!-- Text for the body of warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱡᱩᱫᱤ ᱥᱴᱚᱠ ᱛᱮ ᱡᱤᱱᱤᱥ ᱦᱮᱡ ᱞᱮᱠᱷᱟᱢ ᱵᱩᱡᱷᱟᱹᱣ ᱠᱮᱫ ᱠᱷᱟᱱ, ᱟᱞᱮ ᱴᱷᱮᱱ ᱠᱷᱚᱵᱚᱨ ᱮᱢ ᱠᱟᱜ ᱢᱮ ᱟᱞᱮ ᱫᱚ ᱧᱮᱞᱵᱤᱲᱟᱹᱣᱠᱚᱞᱮ ᱧᱮᱞ ᱟ ᱾</string>
-  <!-- Clickable text for warning card informing the user that the current product is currently not available. Clicking this should inform the server that the product is available. -->
-  <string name="review_quality_check_product_availability_warning_action_2" moz:removedIn="136" tools:ignore="UnusedResources">ᱠᱷᱚᱵᱚᱨ ᱢᱮ ᱡᱮ ᱡᱤᱱᱤᱥ ᱫᱚ ᱥᱴᱚᱠ ᱨᱮ ᱦᱮᱡ ᱦᱩᱭ ᱮᱱᱟ</string>
-  <!-- Title for warning card informing the user that the current product's analysis is still processing. %s is the percentage progress (0-100%) of the analysis process (e.g. 56%). -->
-  <string name="review_quality_check_analysis_in_progress_warning_title_2" moz:removedIn="136" tools:ignore="UnusedResources">ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣ ᱜᱩᱱ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣ ᱮᱫᱟ (%s)</string>
-  <!-- Text for body of warning card informing the user that the current product's analysis is still processing. -->
-  <string name="review_quality_check_analysis_in_progress_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱚᱶᱟ ᱫᱚ 60 ᱴᱤᱡ ᱜᱟᱱ ᱚᱠᱛᱚ ᱤᱫᱤᱭᱟᱭ ᱾</string>
-  <!-- Title for info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱠᱷᱚᱵᱚᱨ ᱮᱢ ᱞᱟᱹᱜᱤᱫ ᱟᱹᱰᱤ ᱥᱟᱯᱲᱟᱣ!</string>
-  <!-- Text for body of info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱞᱮ ᱴᱷᱮᱱ ᱫᱚ ᱱᱚᱶᱟ ᱡᱤᱱᱤᱥ ᱵᱚᱵᱛ ᱧᱮᱞ ᱵᱤᱰᱟᱣᱜ 24 ᱴᱟᱲᱟᱝ ᱜᱟᱱ ᱞᱟᱣᱟ ᱞᱮᱭᱟ ᱾ ᱫᱟᱭᱟᱠᱟᱛᱮ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣ ᱢᱮ ᱾</string>
-  <!-- Title for info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱞᱮ ᱫᱚ ᱱᱚᱶᱟ ᱵᱟᱞᱮ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ </string>
-  <!-- Text for body of info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱫᱩᱨᱵᱷᱟᱜᱽ ᱛᱮ, ᱟᱞᱮ ᱫᱚ ᱡᱷᱚᱛᱚ ᱡᱤᱱᱤᱥ ᱠᱚᱨᱮᱭᱟᱜ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱵᱟᱞᱮ ᱫᱟᱲᱮᱭᱟᱫᱼᱟ ᱾ ᱡᱮᱢᱚᱱ, ᱜᱤᱯᱷᱴ ᱠᱟᱨᱰ ᱟᱨ ᱥᱴᱨᱤᱢᱤᱝ ᱣᱤᱰᱤᱭᱳ, ᱥᱮᱨᱮᱧ, ᱟᱨ ᱠᱷᱮᱞᱠᱚ ᱾</string>
-  <!-- Title for info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱤᱵᱨᱚᱬ ᱞᱚᱜᱚᱱ ᱜᱮ ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱᱟ</string>
-  <!-- Text for body of info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱞᱮ ᱴᱷᱮᱱ ᱫᱚ ᱱᱚᱶᱟ ᱡᱤᱱᱤᱥ ᱵᱚᱵᱛ ᱧᱮᱞ ᱵᱤᱰᱟᱣᱜ 24 ᱴᱟᱲᱟᱝ ᱜᱟᱱ ᱞᱟᱣᱟ ᱞᱮᱭᱟ ᱾ ᱫᱟᱭᱟᱠᱟᱛᱮ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣ ᱢᱮ ᱾</string>
-  <!-- Title for info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱯᱚᱨᱚᱠ ᱨᱮᱭᱟᱜ ᱦᱟᱹᱞᱤᱭᱟᱹᱠ ᱴᱷᱤᱠ ᱜᱭᱟ</string>
-  <!-- Text for the action button from info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_action" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱩᱡᱷᱟᱹᱣ ᱠᱮᱫᱟ</string>
-  <!-- Title for error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱪᱮᱫ ᱦᱚᱸ ᱵᱤᱵᱨᱚᱬ ᱵᱟᱹᱱᱩᱜ ᱠᱟᱫᱼᱟ</string>
-  <!-- Text for body of error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱚᱶᱟ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱥᱩᱫᱷᱟᱨ ᱞᱟᱹᱜᱤᱫ ᱠᱟᱹᱢᱤ ᱪᱟᱹᱞᱩ ᱠᱟᱱᱟ ᱾ ᱫᱟᱭᱟᱠᱟᱛᱮ ᱛᱟᱭᱚᱢ ᱛᱮ ᱫᱩᱦᱲᱟᱹ ᱧᱮᱞ ᱦᱟᱹᱡᱩᱜ ᱢᱮ ᱾</string>
-  <!-- Title for error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱮᱴᱣᱟᱨᱠ ᱡᱩᱲᱟᱹᱣ ᱫᱚ ᱵᱟᱹᱱᱩᱜᱼᱟ</string>
-  <!-- Text for body of error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱢᱟᱜ ᱱᱮᱴᱣᱟᱨᱠ ᱡᱩᱲᱟᱹᱣ ᱧᱮᱞ ᱛᱟᱢ ᱟᱨ ᱥᱟᱦᱴᱟ ᱫᱩᱦᱲᱟᱹ ᱞᱟᱫᱮ ᱞᱟᱹᱜᱤᱫ ᱪᱮᱥᱴᱟᱭ ᱢᱮ ᱾</string>
-  <!-- Title for card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱚᱶᱟ ᱧᱮᱞᱯᱚᱨᱚᱠᱷ ᱞᱟᱹᱜᱤᱫ ᱪᱮᱫ ᱵᱤᱵᱨᱚᱬ ᱵᱟᱹᱱᱩᱜᱼᱟ</string>
-  <!-- Text for the body of card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_body" moz:removedIn="136" tools:ignore="UnusedResources">ᱡᱩᱫᱤ ᱟᱢ ᱵᱟᱲᱟᱭ ᱥᱮᱱ ᱢᱮ ᱠᱟᱱᱟ ᱱᱚᱶᱟ ᱡᱤᱱᱤᱥ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚ ᱵᱟᱵᱚᱛ, ᱢᱮᱱᱠᱷᱟᱱ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱜᱩᱱ ᱧᱮᱞ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱫᱚ 60 ᱴᱤᱡ ᱤᱫᱤᱭᱟᱭ ᱾</string>
-  <!-- Text for button from body of card displayed to the user for products whose reviews were not analyzed yet. Clicking this should trigger a product analysis. -->
-  <string name="review_quality_check_no_analysis_link" moz:removedIn="136" tools:ignore="UnusedResources">ᱧᱮᱞᱯᱚᱨᱚᱠ ᱜᱩᱱ ᱧᱮᱞ ᱢᱮ</string>
-  <!-- Headline for review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_title" moz:removedIn="136" tools:ignore="UnusedResources">ᱡᱤᱱᱤᱥ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚ ᱨᱮ ᱟᱞᱮᱭᱟᱜ ᱵᱷᱚᱨᱥᱟ ᱜᱚᱲᱚᱠᱚ ᱪᱮᱥᱴᱟ ᱰᱤᱲᱟᱹᱣ ᱢᱮ
-</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s, %3$s and %4$s are for retailer names (e.g. Amazon, Walmart). %2$s% is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description" moz:removedIn="136" tools:ignore="UnusedResources">%1$s ᱨᱮ ᱠᱤᱨᱤᱧ ᱢᱟᱲᱟᱝ ᱨᱮ ᱧᱮᱞᱢᱮ ᱡᱤᱱᱤᱥ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚᱫᱚ ᱪᱮᱫ ᱞᱮᱠᱷᱟ ᱢᱮᱱᱟᱜ ᱠᱟᱫᱟ ᱾ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱧᱮᱧᱮᱞᱤᱭᱟᱹ, %2$s ᱠᱷᱚᱱ ᱢᱤᱫᱴᱟᱹᱝ ᱮᱠᱥᱯᱮᱨᱤᱢᱮᱱᱴᱟᱞ ᱯᱷᱤᱪᱚᱨ, ᱱᱚᱶᱟ ᱫᱚ ᱵᱽᱨᱟᱣᱡᱚᱨ ᱪᱮᱛᱟᱱ ᱨᱮ ᱛᱮᱭᱟᱨ ᱠᱟᱱᱟ ᱾ ᱱᱚᱶᱟ ᱫᱚ %3$s ᱟᱨ %4$s ᱨᱮ ᱦᱚᱸ ᱠᱟᱹᱢᱤᱭᱟᱭ ᱾</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s is for retailer name (e.g. Amazon). %2$s is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description_one_vendor" moz:removedIn="136" tools:ignore="UnusedResources">%1$s ᱨᱮ ᱠᱤᱨᱤᱧ ᱢᱟᱲᱟᱝ ᱨᱮ ᱧᱮᱞᱢᱮ ᱡᱤᱱᱤᱥ ᱧᱮᱞᱯᱚᱨᱚᱠᱠᱚᱫᱚ ᱪᱮᱫ ᱞᱮᱠᱷᱟ ᱢᱮᱱᱟᱜ ᱠᱟᱫᱟ ᱾ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱧᱮᱧᱮᱞᱤᱭᱟᱹ, %2$s ᱠᱷᱚᱱ ᱢᱤᱫᱴᱟᱹᱝ ᱮᱠᱥᱯᱮᱨᱤᱢᱮᱱᱴᱟᱞ ᱯᱷᱤᱪᱚᱨ, ᱱᱚᱶᱟ ᱫᱚ ᱵᱽᱨᱟᱣᱡᱚᱨ ᱪᱮᱛᱟᱱ ᱨᱮ ᱛᱮᱭᱟᱨ ᱠᱟᱱᱟ ᱾</string>
-  <!-- Paragraph presenting review quality check feature. %1$s is "Fakespot". %2$s is a link using review_quality_check_contextual_onboarding_learn_more_link as text. In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Mozilla ᱛᱮ %1$s ᱨᱮᱭᱟᱜ ᱯᱟᱣᱟᱨ ᱵᱮᱵᱷᱟᱨ,‌ ᱟᱞᱮ ᱫᱚ ᱠᱤᱨᱤᱧ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱟᱨ ᱵᱟᱝ ᱴᱷᱟᱹᱣᱠᱟᱹ ᱧᱮᱞᱯᱚᱨᱚᱠ ᱵᱟᱲᱟᱭ ᱨᱮ ᱜᱚᱲᱚ ᱮᱢᱚᱜᱟᱭ ᱾ ᱟᱞᱮᱭᱟᱜ AI ᱢᱳᱰᱮᱞ ᱫᱚ ᱟᱢ ᱡᱟᱦᱟᱱᱟᱜ ᱠᱤᱨᱤᱧ ᱥᱩᱫᱷᱨᱟᱹᱣ ᱨᱮ ᱜᱚᱲᱚ ᱮᱢ ᱮᱫᱟᱭ ᱾%2$s</string>
-  <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
-  <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. %1$s is the name of the app (for example "Firefox"), %3$s is "Fakespot". %2$s and %4$s are links using review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use as text. -->
-  <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">ᱟᱢ ᱫᱚ “ᱦᱚᱭ, ᱪᱮᱥᱴᱟᱭ ᱢᱮ” ᱨᱮ ᱚᱛᱟ ᱠᱟᱛᱮ %1$s ᱦᱟᱜ %2$s ᱟᱨ %3$s ᱦᱟᱜ %4$s ᱥᱟᱞᱟᱜ ᱦᱮᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟᱢ ᱾</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
-  <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱤᱥᱚᱱ ᱨᱮᱭᱟᱜ ᱱᱚᱴᱤᱥ</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
-  <string name="review_quality_check_contextual_onboarding_terms_use" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
-  <!-- Text for opt-in button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_primary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">ᱦᱚᱭ, ᱪᱮᱥᱴᱟᱭ ᱢᱮ</string>
-  <!-- Text for opt-out button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_secondary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ</string>
-  <!-- Content description (not visible, for screen readers etc.) for opening browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_open_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">ᱫᱩᱦᱲᱟᱹ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣᱤᱭᱟᱹ ᱠᱷᱩᱞᱟᱹᱭ ᱢᱮ</string>
-  <!-- Content description (not visible, for screen readers etc.) for closing browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_close_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">ᱫᱩᱦᱲᱟᱹ ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣᱤᱭᱟᱹ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
-  <!-- Content description (not visible, for screen readers etc.) for review quality check star rating. %1$s is the number of stars (1-5) representing the rating. -->
-  <string name="review_quality_check_star_rating_content_description" moz:removedIn="136" tools:ignore="UnusedResources">5 ᱠᱷᱚᱱ %1$s ᱤᱯᱤᱞᱠᱚ</string>
-  <!-- Text for minimize button from highlights card. When clicked the highlights card should reduce its size. -->
-  <string name="review_quality_check_highlights_show_less" moz:removedIn="136" tools:ignore="UnusedResources">ᱠᱚᱢ ᱫᱮᱠᱷᱟᱣ ᱢᱮ</string>
-  <!-- Text for maximize button from highlights card. When clicked the highlights card should expand to its full size. -->
-  <string name="review_quality_check_highlights_show_more" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱚᱲᱛᱤ ᱫᱮᱠᱷᱟᱣ ᱢᱮ</string>
-  <!-- Text for highlights card quality category header. Reviews shown under this header should refer the product's quality. -->
-  <string name="review_quality_check_highlights_type_quality" moz:removedIn="136" tools:ignore="UnusedResources">ᱜᱩᱱ</string>
-  <!-- Text for highlights card price category header. Reviews shown under this header should refer the product's price. -->
-  <string name="review_quality_check_highlights_type_price" moz:removedIn="136" tools:ignore="UnusedResources">ᱜᱚᱱᱚᱝ</string>
-  <!-- Text for highlights card shipping category header. Reviews shown under this header should refer the product's shipping. -->
-  <string name="review_quality_check_highlights_type_shipping" moz:removedIn="136" tools:ignore="UnusedResources">ᱵᱷᱮᱡᱟ</string>
-  <!-- Text for highlights card packaging and appearance category header. Reviews shown under this header should refer the product's packaging and appearance. -->
-  <string name="review_quality_check_highlights_type_packaging_appearance" moz:removedIn="136" tools:ignore="UnusedResources">ᱯᱚᱠᱮᱡᱽ ᱟᱨ ᱧᱮᱞᱠᱚ</string>
-  <!-- Text for highlights card competitiveness category header. Reviews shown under this header should refer the product's competitiveness. -->
-  <string name="review_quality_check_highlights_type_competitiveness" moz:removedIn="136" tools:ignore="UnusedResources">ᱠᱚᱢᱯᱮᱴᱤᱴᱤᱵᱷ</string>
-  <!-- Text that is surrounded by quotes. %s is the actual text that is in quotes. An example of that text could be: Excellent craftsmanship, and that is displayed as “Excellent craftsmanship”. The text comes from a buyer's review that the feature is highlighting" -->
-  <string name="surrounded_with_quotes" moz:removedIn="136" tools:ignore="UnusedResources">“%s”</string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -2956,6 +3006,15 @@
   <string name="download_language_file_dialog_positive_button_text_all_languages">ᱰᱟᱣᱱᱞᱳᱰ ᱟᱨ ᱛᱚᱨᱡᱚᱢᱟ</string>
   <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
   <string name="download_language_file_dialog_negative_button_text">ᱵᱟᱹᱰᱨᱟᱹ</string>
+  <!-- Text for the connection security panel when the site is secure. -->
+  <string name="connection_security_panel_secure">ᱡᱟᱹᱯᱛᱤ ᱡᱚᱱᱚᱲᱟᱣ</string>
+  <!-- Text for the connection security panel when the site is not secure. -->
+  <string name="connection_security_panel_not_secure">ᱡᱩᱲᱟᱹᱣ ᱵᱟᱭ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱜᱮᱭᱟ</string>
+  <!--
+    Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket
+  -->
+  <string name="connection_security_panel_verified_by">ᱫᱟᱨᱟᱭ ᱛᱮ ᱧᱮᱞ ᱢᱮᱲᱟᱣ %s</string>
   <!--
     Debug drawer
 
@@ -3083,6 +3142,14 @@
   <!-- Content description for delete button. %s is the username of the login. -->
   <string name="debug_drawer_logins_delete_login_button_content_description">ᱵᱮᱵᱷᱟᱨᱤᱭᱟᱹᱧᱩᱛᱩᱢ %s ᱥᱟᱶᱛᱮ ᱵᱚᱞᱚ ᱢᱮᱴᱟᱣ ᱢᱮ</string>
   <!--
+    Debug drawer addresses
+
+    The title of the Addresses feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_addresses_title">ᱴᱷᱤᱠᱬᱟᱹᱠᱚ</string>
+  <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+  <string name="debug_drawer_addresses_debug_locales_header">ᱮᱢᱪᱷᱚ ᱞᱟᱹᱜᱤᱫ ᱞᱚᱠᱟᱞ ᱰᱮᱵᱩᱜ ᱢᱮ</string>
+  <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 
     The title of the CFR Tools feature in the Debug Drawer
@@ -3116,4 +3183,16 @@
     Text shown as a label or tag to indicate a feature or area is still undergoing active development. Note that here "Beta" should not be translated, as it is used as an icon styled element.
   -->
   <string name="beta_feature">BETA</string>
+  <!--
+    Root certificate expiration warnings
+
+    These strings for homepage cards and push notifications to be pushed to users running outdated versions of Firefox. We want to encourage these users to update to the latest version so their extensions and other features don't stop working when Firefox's old root certificate expires on 2025-03-14. For more information, see this SUMO article: https://support.mozilla.org/kb/root-certificate-expiration !
+
+    Homepage card button to open Google Play Store. "Update" is a verb.
+  -->
+  <string name="certificate_warning_homepage_card_update_now_button" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱦᱟᱹᱞᱤᱭᱟᱹᱠ ᱢᱮ</string>
+  <!-- Homepage card title about old Firefox version. "Update" is a verb. Note: The word "Firefox" should NOT be translated. -->
+  <string name="certificate_warning_homepage_card_hca1_title" tools:ignore="BrandUsage,UnusedResources">ᱟᱢᱟᱜ Firefox ᱵᱽᱨᱟᱣᱡᱚᱨ ᱦᱟᱹᱞᱤᱭᱟᱹᱠ ᱛᱟᱢ</string>
+  <!-- Homepage card message about old Firefox version -->
+  <string name="certificate_warning_homepage_card_hca1_message" tools:ignore="UnusedResources">ᱢᱤᱫ ᱨᱩᱴ ᱥᱮᱨᱴᱤᱯᱷᱤᱠᱮᱴ ᱢᱩᱪᱟᱹᱫᱚᱜᱼᱟ, ᱚᱱᱟ ᱠᱷᱟᱹᱛᱤᱨ ᱛᱮ ᱛᱤᱱᱟᱹᱜ ᱜᱟᱱ ᱯᱷᱤᱪᱟᱨ ᱠᱚ ᱑᱔ ᱢᱟᱨᱪ ᱦᱤᱞᱚᱜ ᱠᱟᱹᱢᱤ ᱵᱚᱱᱫᱚᱭᱟᱭ ᱾</string>
 </resources>

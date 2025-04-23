@@ -17,12 +17,8 @@
 #include "nsIWorkerDebuggerManager.h"
 #include "nsTArray.h"
 
-#define WORKERDEBUGGERMANAGER_CID                    \
-  {                                                  \
-    0x62ec8731, 0x55ad, 0x4246, {                    \
-      0xb2, 0xea, 0xf2, 0x6c, 0x1f, 0xe1, 0x9d, 0x2d \
-    }                                                \
-  }
+#define WORKERDEBUGGERMANAGER_CID \
+  {0x62ec8731, 0x55ad, 0x4246, {0xb2, 0xea, 0xf2, 0x6c, 0x1f, 0xe1, 0x9d, 0x2d}}
 #define WORKERDEBUGGERMANAGER_CONTRACTID \
   "@mozilla.org/dom/workers/workerdebuggermanager;1"
 

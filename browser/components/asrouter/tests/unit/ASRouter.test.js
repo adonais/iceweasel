@@ -872,12 +872,9 @@ describe("ASRouter", () => {
       assertRouterContainsMessages(FAKE_LOCAL_MESSAGES);
     });
     it("should parse the triggers in the messages and register the trigger listeners", async () => {
-      sandbox.spy(
-        ASRouterTriggerListeners.get("openURL"),
-        "init"
-      ); /* eslint-disable object-property-newline */
+      sandbox.spy(ASRouterTriggerListeners.get("openURL"), "init");
 
-      /* eslint-disable object-curly-newline */ await createRouterAndInit([
+      await createRouterAndInit([
         {
           id: "foo",
           type: "local",
@@ -906,10 +903,8 @@ describe("ASRouter", () => {
             },
           ],
         },
-      ]); /* eslint-enable object-property-newline */
-      /* eslint-enable object-curly-newline */ assert.calledTwice(
-        ASRouterTriggerListeners.get("openURL").init
-      );
+      ]);
+      assert.calledTwice(ASRouterTriggerListeners.get("openURL").init);
       assert.calledWithExactly(
         ASRouterTriggerListeners.get("openURL").init,
         Router._triggerHandler,
@@ -931,10 +926,10 @@ describe("ASRouter", () => {
           enabled: true,
           messages: [
             {
-              id: "bar3",
+              id: "foo",
               template: "simple_template",
               trigger: { id: "messagesLoaded" },
-              content: { title: "Bar3", body: "Bar123" },
+              content: { title: "Foo", body: "Bar123" },
             },
           ],
         },
@@ -948,6 +943,26 @@ describe("ASRouter", () => {
         sandbox.match({ id: "messagesLoaded" }),
         true
       );
+    });
+    it("should not register a trigger listener in automation for a message with skip_in_tests", async () => {
+      sandbox.spy(ASRouterTriggerListeners.get("openURL"), "init");
+      await createRouterAndInit([
+        {
+          id: "foo",
+          type: "local",
+          enabled: true,
+          messages: [
+            {
+              id: "foo",
+              template: "simple_template",
+              trigger: { id: "openURL" },
+              content: { title: "Foo", body: "Foo123" },
+              skip_in_tests: "testing",
+            },
+          ],
+        },
+      ]);
+      assert.notCalled(ASRouterTriggerListeners.get("openURL").init);
     });
     it("should gracefully handle messages loading before a window or browser exists", async () => {
       sandbox.stub(global, "gBrowser").value(undefined);
@@ -1363,6 +1378,15 @@ describe("ASRouter", () => {
       assert.lengthOf(result, 1);
       assert.deepEqual(result[0], message1);
     });
+    it("should filter out messages with skip_in_tests when in automation", async () => {
+      await Router.setState(() => ({
+        messages: [
+          { id: "foo", provider: "cfr", skip_in_tests: "testing", groups: [] },
+        ],
+      }));
+      const result = await Router.handleMessageRequest({ provider: "cfr" });
+      assert.isNull(result);
+    });
   });
 
   describe("#uninit", () => {
@@ -1628,7 +1652,6 @@ describe("ASRouter", () => {
       Router.loadMessagesFromAllProviders.onFirstCall().resolves();
 
       await Router.sendTriggerMessage({
-        tabId: 0,
         browser: gBrowser.selectedBrowser,
         id: "firstRun",
       });
@@ -1644,35 +1667,24 @@ describe("ASRouter", () => {
       );
     });
     it("should record telemetry information", async () => {
-      const startTelemetryStopwatch = sandbox.stub(
-        global.TelemetryStopwatch,
-        "start"
+      const fakeTimerId = 42;
+      const start = sandbox
+        .stub(global.Glean.messagingSystem.messageRequestTime, "start")
+        .returns(fakeTimerId);
+      const stopAndAccumulate = sandbox.stub(
+        global.Glean.messagingSystem.messageRequestTime,
+        "stopAndAccumulate"
       );
-      const finishTelemetryStopwatch = sandbox.stub(
-        global.TelemetryStopwatch,
-        "finish"
-      );
-
-      const tabId = 123;
 
       await Router.sendTriggerMessage({
-        tabId,
         browser: {},
         id: "firstRun",
       });
 
-      assert.calledTwice(startTelemetryStopwatch);
-      assert.calledWithExactly(
-        startTelemetryStopwatch,
-        "MS_MESSAGE_REQUEST_TIME_MS",
-        { tabId }
-      );
-      assert.calledTwice(finishTelemetryStopwatch);
-      assert.calledWithExactly(
-        finishTelemetryStopwatch,
-        "MS_MESSAGE_REQUEST_TIME_MS",
-        { tabId }
-      );
+      assert.calledTwice(start);
+      assert.calledWithExactly(start);
+      assert.calledTwice(stopAndAccumulate);
+      assert.calledWithExactly(stopAndAccumulate, fakeTimerId);
     });
     it("should have previousSessionEnd in the message context", () => {
       assert.propertyVal(
@@ -1713,7 +1725,6 @@ describe("ASRouter", () => {
       sandbox.spy(Glean.messagingExperiments.reachCfr, "record");
 
       await Router.sendTriggerMessage({
-        tabId: 0,
         browser: {},
         id: "foo",
       });
@@ -1736,7 +1747,6 @@ describe("ASRouter", () => {
       sandbox.spy(Glean.messagingExperiments.reachCfr, "record");
 
       await Router.sendTriggerMessage({
-        tabId: 0,
         browser: {},
         id: "foo",
       });
@@ -1766,7 +1776,6 @@ describe("ASRouter", () => {
           sandbox.stub(Router, "handleMessageRequest").resolves(messages);
 
           await Router.sendTriggerMessage({
-            tabId: 0,
             browser: {},
             id: "foo",
           });

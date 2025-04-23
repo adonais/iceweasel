@@ -81,7 +81,7 @@ fn get_safearea_inset_right(device: &Device, url_data: &UrlExtraData) -> Variabl
 
 #[cfg(feature = "gecko")]
 fn get_content_preferred_color_scheme(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    use crate::gecko::media_features::PrefersColorScheme;
+    use crate::queries::values::PrefersColorScheme;
     let prefers_color_scheme = unsafe {
         crate::gecko_bindings::bindings::Gecko_MediaFeatures_PrefersColorScheme(
             device.document(),
@@ -1828,11 +1828,10 @@ fn substitute_references_if_needed_and_apply(
 
     let inherited = computed_context.inherited_custom_properties();
     let url_data = &value.url_data;
-    let value = match substitute_internal(
+    let substitution = match substitute_internal(
         value,
         custom_properties,
         stylist,
-        registration,
         computed_context,
     ) {
         Ok(v) => v,
@@ -1840,16 +1839,18 @@ fn substitute_references_if_needed_and_apply(
             handle_invalid_at_computed_value_time(name, custom_properties, computed_context);
             return;
         },
-    }
-    .into_value(url_data);
+    };
 
     // If variable fallback results in a wide keyword, deal with it now.
     {
-        let css = value.to_variable_value().css;
-        let mut input = ParserInput::new(&css);
-        let mut input = Parser::new(&mut input);
+        let css = &substitution.css;
+        let css_wide_kw = {
+            let mut input = ParserInput::new(&css);
+            let mut input = Parser::new(&mut input);
+            input.try_parse(CSSWideKeyword::parse)
+        };
 
-        if let Ok(kw) = input.try_parse(CSSWideKeyword::parse) {
+        if let Ok(kw) = css_wide_kw {
             // TODO: It's unclear what this should do for revert / revert-layer, see
             // https://github.com/w3c/csswg-drafts/issues/9131. For now treating as unset
             // seems fine?
@@ -1886,81 +1887,60 @@ fn substitute_references_if_needed_and_apply(
         }
     }
 
+    let value = match substitution.into_value(url_data, registration, computed_context) {
+        Ok(v) => v,
+        Err(()) => {
+            handle_invalid_at_computed_value_time(name, custom_properties, computed_context);
+            return;
+        }
+    };
+
     custom_properties.insert(registration, name, value);
 }
 
-enum Substitution<'a> {
-    Universal(UniversalSubstitution<'a>),
-    Computed(ComputedRegisteredValue),
-}
-
-impl<'a> Default for Substitution<'a> {
-    fn default() -> Self {
-        Self::Universal(UniversalSubstitution::default())
-    }
-}
-
 #[derive(Default)]
-struct UniversalSubstitution<'a> {
+struct Substitution<'a> {
     css: Cow<'a, str>,
     first_token_type: TokenSerializationType,
     last_token_type: TokenSerializationType,
 }
 
-impl<'a> UniversalSubstitution<'a> {
+impl<'a> Substitution<'a> {
     fn from_value(v: VariableValue) -> Self {
-        UniversalSubstitution {
-            css: Cow::from(v.css),
+        Substitution {
+            css: v.css.into(),
             first_token_type: v.first_token_type,
             last_token_type: v.last_token_type,
         }
     }
-}
 
-impl<'a> Substitution<'a> {
+    fn into_value(
+        self,
+        url_data: &UrlExtraData,
+        registration: &PropertyRegistrationData,
+        computed_context: &computed::Context,
+    ) -> Result<ComputedRegisteredValue, ()> {
+        if registration.syntax.is_universal() {
+            return Ok(ComputedRegisteredValue::universal(Arc::new(VariableValue {
+                css: self.css.into_owned(),
+                first_token_type: self.first_token_type,
+                last_token_type: self.last_token_type,
+                url_data: url_data.clone(),
+                references: Default::default(),
+            })))
+        }
+        compute_value(&self.css, url_data, registration, computed_context)
+    }
+
     fn new(
         css: &'a str,
         first_token_type: TokenSerializationType,
         last_token_type: TokenSerializationType,
     ) -> Self {
-        Self::Universal(UniversalSubstitution {
+        Self {
             css: Cow::Borrowed(css),
             first_token_type,
             last_token_type,
-        })
-    }
-
-    fn into_universal(self) -> UniversalSubstitution<'a> {
-        match self {
-            Substitution::Universal(substitution) => substitution,
-            Substitution::Computed(computed) => {
-                UniversalSubstitution::from_value(computed.to_variable_value())
-            },
-        }
-    }
-
-    fn from_value(v: VariableValue) -> Self {
-        debug_assert!(
-            !v.has_references(),
-            "Computed values shouldn't have references"
-        );
-        let substitution = UniversalSubstitution::from_value(v);
-        Self::Universal(substitution)
-    }
-
-    fn into_value(self, url_data: &UrlExtraData) -> ComputedRegisteredValue {
-        match self {
-            Substitution::Universal(substitution) => {
-                let value = Arc::new(VariableValue {
-                    css: substitution.css.into_owned(),
-                    first_token_type: substitution.first_token_type,
-                    last_token_type: substitution.last_token_type,
-                    url_data: url_data.clone(),
-                    references: Default::default(),
-                });
-                ComputedRegisteredValue::universal(value)
-            },
-            Substitution::Computed(computed) => computed,
         }
     }
 }
@@ -2006,7 +1986,6 @@ fn do_substitute_chunk<'a>(
     last_token_type: TokenSerializationType,
     url_data: &UrlExtraData,
     custom_properties: &'a ComputedCustomProperties,
-    registration: &PropertyRegistrationData,
     stylist: &Stylist,
     computed_context: &computed::Context,
     references: &mut std::iter::Peekable<std::slice::Iter<VarOrEnvReference>>,
@@ -2021,10 +2000,6 @@ fn do_substitute_chunk<'a>(
         .map_or(true, |reference| reference.end > end)
     {
         let result = &css[start..end];
-        if !registration.syntax.is_universal() {
-            let computed_value = compute_value(result, url_data, registration, computed_context)?;
-            return Ok(Substitution::Computed(computed_value));
-        }
         return Ok(Substitution::new(result, first_token_type, last_token_type));
     }
 
@@ -2049,11 +2024,10 @@ fn do_substitute_chunk<'a>(
             computed_context,
             references,
         )?;
-        let substitution = substitution.into_universal();
 
         // Optimize the property: var(--...) case to avoid allocating at all.
-        if reference.start == start && reference.end == end && registration.syntax.is_universal() {
-            return Ok(Substitution::Universal(substitution));
+        if reference.start == start && reference.end == end {
+            return Ok(substitution);
         }
 
         substituted.push(
@@ -2068,11 +2042,6 @@ fn do_substitute_chunk<'a>(
     if cur_pos != end {
         substituted.push(&css[cur_pos..end], next_token_type, last_token_type)?;
     }
-    if !registration.syntax.is_universal() {
-        let computed_value =
-            compute_value(&substituted.css, url_data, registration, computed_context)?;
-        return Ok(Substitution::Computed(computed_value));
-    }
     Ok(Substitution::from_value(substituted))
 }
 
@@ -2085,41 +2054,17 @@ fn substitute_one_reference<'a>(
     computed_context: &computed::Context,
     references: &mut std::iter::Peekable<std::slice::Iter<VarOrEnvReference>>,
 ) -> Result<Substitution<'a>, ()> {
-    let registration;
     if reference.is_var {
-        registration = stylist.get_custom_property_registration(&reference.name);
+        let registration = stylist.get_custom_property_registration(&reference.name);
         if let Some(v) = custom_properties.get(registration, &reference.name) {
-            #[cfg(debug_assertions)]
-            debug_assert!(v.is_parsed(registration), "Should be already computed");
-            if registration.syntax.is_universal() {
-                // Skip references that are inside the outer variable (in fallback for example).
-                while references
-                    .next_if(|next_ref| next_ref.end <= reference.end)
-                    .is_some()
-                {}
-            } else {
-                // We need to validate the fallback if any, since invalid fallback should
-                // invalidate the whole variable.
-                if let Some(ref fallback) = reference.fallback {
-                    let _ = do_substitute_chunk(
-                        css,
-                        fallback.start.get(),
-                        reference.end - 1, // Don't include the closing parenthesis.
-                        fallback.first_token_type,
-                        fallback.last_token_type,
-                        url_data,
-                        custom_properties,
-                        registration,
-                        stylist,
-                        computed_context,
-                        references,
-                    )?;
-                }
-            }
-            return Ok(Substitution::Computed(v.clone()));
+            // Skip references that are inside the outer variable (in fallback for example).
+            while references
+                .next_if(|next_ref| next_ref.end <= reference.end)
+                .is_some()
+            {}
+            return Ok(Substitution::from_value(v.to_variable_value()))
         }
     } else {
-        registration = PropertyRegistrationData::unregistered();
         let device = stylist.device();
         if let Some(v) = device.environment().get(&reference.name, device, url_data) {
             while references
@@ -2142,7 +2087,6 @@ fn substitute_one_reference<'a>(
         fallback.last_token_type,
         url_data,
         custom_properties,
-        registration,
         stylist,
         computed_context,
         references,
@@ -2154,7 +2098,6 @@ fn substitute_internal<'a>(
     variable_value: &'a VariableValue,
     custom_properties: &'a ComputedCustomProperties,
     stylist: &Stylist,
-    registration: &PropertyRegistrationData,
     computed_context: &computed::Context,
 ) -> Result<Substitution<'a>, ()> {
     let mut refs = variable_value.references.refs.iter().peekable();
@@ -2166,7 +2109,6 @@ fn substitute_internal<'a>(
         variable_value.last_token_type,
         &variable_value.url_data,
         custom_properties,
-        registration,
         stylist,
         computed_context,
         &mut refs,
@@ -2185,9 +2127,7 @@ pub fn substitute<'a>(
         variable_value,
         custom_properties,
         stylist,
-        PropertyRegistrationData::unregistered(),
         computed_context,
     )?;
-    let v = v.into_universal();
     Ok(v.css)
 }

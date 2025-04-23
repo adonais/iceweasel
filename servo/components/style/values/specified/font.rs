@@ -519,6 +519,18 @@ impl FontSizeKeyword {
     pub fn html_size(self) -> u8 {
         self as u8
     }
+
+    /// Returns true if the font size is the math keyword
+    #[cfg(feature = "gecko")]
+    pub fn is_math(self) -> bool {
+        matches!(self, Self::Math)
+    }
+
+    /// Returns true if the font size is the math keyword
+    #[cfg(feature = "servo")]
+    pub fn is_math(self) -> bool {
+        false
+    }
 }
 
 impl Default for FontSizeKeyword {
@@ -582,7 +594,8 @@ impl KeywordInfo {
         #[cfg(feature="gecko")]
         debug_assert_ne!(self.kw, FontSizeKeyword::Math);
         let base = context.maybe_zoom_text(self.kw.to_length(context).0);
-        base * self.factor + context.maybe_zoom_text(self.offset)
+        let zoom_factor = context.style().effective_zoom.value();
+        CSSPixelLength::new(base.px() * self.factor * zoom_factor) + context.maybe_zoom_text(self.offset)
     }
 
     /// Given a parent keyword info (self), apply an additional factor/offset to
@@ -773,47 +786,38 @@ pub const FONT_MEDIUM_LINE_HEIGHT_PX: f32 = FONT_MEDIUM_PX * 1.2;
 
 impl FontSizeKeyword {
     #[inline]
-    #[cfg(feature = "servo")]
-    fn to_length(&self, _: &Context) -> NonNegativeLength {
-        let medium = Length::new(FONT_MEDIUM_PX);
-        // https://drafts.csswg.org/css-fonts-3/#font-size-prop
-        NonNegative(match *self {
-            FontSizeKeyword::XXSmall => medium * 3.0 / 5.0,
-            FontSizeKeyword::XSmall => medium * 3.0 / 4.0,
-            FontSizeKeyword::Small => medium * 8.0 / 9.0,
-            FontSizeKeyword::Medium => medium,
-            FontSizeKeyword::Large => medium * 6.0 / 5.0,
-            FontSizeKeyword::XLarge => medium * 3.0 / 2.0,
-            FontSizeKeyword::XXLarge => medium * 2.0,
-            FontSizeKeyword::XXXLarge => medium * 3.0,
-            FontSizeKeyword::Math | FontSizeKeyword::None => unreachable!(),
-        })
-    }
-
-    #[cfg(feature = "gecko")]
-    #[inline]
     fn to_length(&self, cx: &Context) -> NonNegativeLength {
         let font = cx.style().get_font();
+
+        #[cfg(feature = "servo")]
+        let family = &font.font_family.families;
+        #[cfg(feature = "gecko")]
         let family = &font.mFont.family.families;
+
         let generic = family
             .single_generic()
             .unwrap_or(computed::GenericFontFamily::None);
+
+        #[cfg(feature = "gecko")]
         let base_size = unsafe {
             Atom::with(font.mLanguage.mRawPtr, |language| {
                 cx.device().base_size_for_generic(language, generic)
             })
         };
+        #[cfg(feature = "servo")]
+        let base_size = cx.device().base_size_for_generic(generic);
+
         self.to_length_without_context(cx.quirks_mode, base_size)
     }
 
     /// Resolve a keyword length without any context, with explicit arguments.
-    #[cfg(feature = "gecko")]
     #[inline]
     pub fn to_length_without_context(
         &self,
         quirks_mode: QuirksMode,
         base_size: Length,
     ) -> NonNegativeLength {
+        #[cfg(feature = "gecko")]
         debug_assert_ne!(*self, FontSizeKeyword::Math);
         // The tables in this function are originally from
         // nsRuleNode::CalcFontPointSize in Gecko:
@@ -933,10 +937,12 @@ impl FontSize {
                 calc.resolve(base_size.resolve(context).computed_size())
             },
             FontSize::Keyword(i) => {
-                if i.kw == FontSizeKeyword::Math {
+                if i.kw.is_math() {
                     // Scaling is done in recompute_math_font_size_if_needed().
                     info = compose_keyword(1.);
-                    info.kw = FontSizeKeyword::Math;
+                    // i.kw will always be FontSizeKeyword::Math here. But writing it this
+                    // allows this code to compile for servo where the Math variant is cfg'd out.
+                    info.kw = i.kw;
                     FontRelativeLength::Em(1.).to_computed_value(
                         context,
                         base_size,

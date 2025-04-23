@@ -3632,6 +3632,9 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         error = "blockedByCOEP";
         errorDescriptionID = "blockedByCORP";
         break;
+      case NS_ERROR_DOM_INVALID_HEADER_VALUE:
+        error = "invalidHeaderValue";
+        break;
       case NS_ERROR_NET_HTTP2_SENT_GOAWAY:
       case NS_ERROR_NET_HTTP3_PROTOCOL_ERROR:
         // HTTP/2 or HTTP/3 stack detected a protocol error
@@ -6112,7 +6115,8 @@ nsresult nsDocShell::FilterStatusForErrorPage(
        aStatus == NS_ERROR_MALFORMED_URI ||
        aStatus == NS_ERROR_BLOCKED_BY_POLICY ||
        aStatus == NS_ERROR_DOM_COOP_FAILED ||
-       aStatus == NS_ERROR_DOM_COEP_FAILED) &&
+       aStatus == NS_ERROR_DOM_COEP_FAILED ||
+       aStatus == NS_ERROR_DOM_INVALID_HEADER_VALUE) &&
       (aIsTopFrame || aUseErrorPages)) {
     return aStatus;
   }
@@ -6440,6 +6444,13 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
 
   // mDocumentViewer->PermitUnload may release |this| docshell.
   nsCOMPtr<nsIDocShell> kungFuDeathGrip(this);
+
+  // Ensure that UsesOriginAgentCluster has been initialized for this
+  // BrowsingContextGroup/principal pair before creating the document.
+  if (aPrincipal) {
+    mBrowsingContext->Group()->EnsureUsesOriginAgentClusterInitialized(
+        aPrincipal);
+  }
 
   AutoRestore<bool> creatingDocument(mCreatingDocument);
   mCreatingDocument = true;
@@ -11342,6 +11353,20 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
   }  // end of same-origin check
 
+  // https://html.spec.whatwg.org/#shared-history-push/replace-state-steps
+  // Step 8
+  if (nsCOMPtr<nsPIDOMWindowInner> window = document->GetInnerWindow()) {
+    if (RefPtr<Navigation> navigation = window->Navigation();
+        navigation &&
+        navigation->FirePushReplaceReloadNavigateEvent(
+            aReplace ? NavigationType::Replace : NavigationType::Push, newURI,
+            /* aIsSameDocument */ true, /* aUserInvolvement */ Nothing(),
+            /* aSourceElement */ nullptr, /* aFormDataEntryList */ Nothing(),
+            /* aNavigationAPIState */ nullptr, scContainer)) {
+      return NS_OK;
+    }
+  }
+
   // Step 8: call "URL and history update steps"
   rv = UpdateURLAndHistory(document, newURI, scContainer,
                            aReplace ? NavigationHistoryBehavior::Replace
@@ -13634,6 +13659,11 @@ bool nsDocShell::GetIsAttemptingToNavigate() {
   }
 
   return mCheckingSessionHistory;
+}
+
+mozilla::dom::SessionHistoryInfo* nsDocShell::GetActiveSessionHistoryInfo()
+    const {
+  return mActiveEntry.get();
 }
 
 void nsDocShell::SetLoadingSessionHistoryInfo(

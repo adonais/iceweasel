@@ -307,7 +307,6 @@ class Decoder {
   const size_t offsetInModule_;
   UniqueChars* error_;
   UniqueCharsVector* warnings_;
-  bool resilientMode_;
 
   template <class T>
   [[nodiscard]] bool read(T* out) {
@@ -400,27 +399,24 @@ class Decoder {
 
  public:
   Decoder(const uint8_t* begin, const uint8_t* end, size_t offsetInModule,
-          UniqueChars* error, UniqueCharsVector* warnings = nullptr,
-          bool resilientMode = false)
+          UniqueChars* error, UniqueCharsVector* warnings = nullptr)
       : beg_(begin),
         end_(end),
         cur_(begin),
         offsetInModule_(offsetInModule),
         error_(error),
-        warnings_(warnings),
-        resilientMode_(resilientMode) {
+        warnings_(warnings) {
     MOZ_ASSERT(begin <= end);
   }
-  explicit Decoder(const Bytes& bytes, size_t offsetInModule = 0,
+  explicit Decoder(BytecodeSpan span, size_t offsetInModule = 0,
                    UniqueChars* error = nullptr,
                    UniqueCharsVector* warnings = nullptr)
-      : beg_(bytes.begin()),
-        end_(bytes.end()),
-        cur_(bytes.begin()),
+      : beg_(span.data()),
+        end_(span.data() + span.size()),
+        cur_(span.data()),
         offsetInModule_(offsetInModule),
         error_(error),
-        warnings_(warnings),
-        resilientMode_(false) {}
+        warnings_(warnings) {}
 
   // These convenience functions use currentOffset() as the errorOffset.
   bool fail(const char* msg) { return fail(currentOffset(), msg); }
@@ -442,7 +438,6 @@ class Decoder {
     MOZ_ASSERT(cur_ <= end_);
     return cur_ == end_;
   }
-  bool resilientMode() const { return resilientMode_; }
 
   size_t bytesRemain() const {
     MOZ_ASSERT(end_ >= cur_);
@@ -577,7 +572,8 @@ class Decoder {
     return startCustomSection(name, NameSizeWith0 - 1, codeMeta, range);
   }
 
-  void finishCustomSection(const char* name, const BytecodeRange& range);
+  [[nodiscard]] bool finishCustomSection(const char* name,
+                                         const BytecodeRange& range);
   void skipAndFinishCustomSection(const BytecodeRange& range);
 
   [[nodiscard]] bool skipCustomSection(CodeMetadata* codeMeta);

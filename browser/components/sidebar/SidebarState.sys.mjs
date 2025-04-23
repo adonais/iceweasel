@@ -17,14 +17,19 @@ XPCOMUtils.defineLazyPreferenceGetter(
  *
  * @typedef {object} SidebarStateProps
  *
+ * @property {boolean} command
+ *   The id of the current sidebar panel. The panel may be closed and still have a command value.
+ *   Re-opening the sidebar panel will then load the current command id.
  * @property {boolean} panelOpen
  *   Whether there is an open panel.
  * @property {number} panelWidth
  *   Current width of the sidebar panel.
  * @property {boolean} launcherVisible
  *   Whether the launcher is visible.
+ *   This is always true when the sidebar.visibility pref value is "always-show", and toggle between true/false when visibility is "hide-sidebar"
  * @property {boolean} launcherExpanded
  *   Whether the launcher is expanded.
+ *   When sidebar.visibility pref value is "always-show", the toolbar button serves to toggle this property
  * @property {boolean} launcherDragActive
  *   Whether the launcher is currently being dragged.
  * @property {boolean} launcherHoverActive
@@ -32,9 +37,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
  * @property {number} launcherWidth
  *   Current width of the sidebar launcher.
  * @property {number} expandedLauncherWidth
- *   Width that the sidebar launcher should expand to.
- * @property {number} collapsedLauncherWidth
- *   Width that the sidebar launcher should collapse to.
  */
 
 const LAUNCHER_MINIMUM_WIDTH = 100;
@@ -42,6 +44,7 @@ const SIDEBAR_MAXIMUM_WIDTH = "75vw";
 
 const LEGACY_USED_PREF = "sidebar.old-sidebar.has-used";
 const REVAMP_USED_PREF = "sidebar.new-sidebar.has-used";
+const DEFAULT_LAUNCHER_VISIBLE_PREF = "sidebar.revamp.defaultLauncherVisible";
 
 /**
  * A reactive data store for the sidebar's UI state. Similar to Lit's
@@ -52,14 +55,18 @@ export class SidebarState {
   #controller = null;
   /** @type {SidebarStateProps} */
   #props = {
-    panelOpen: false,
-    launcherVisible: true,
-    launcherExpanded: false,
-    launcherDragActive: false,
-    launcherHoverActive: false,
-    collapsedLauncherWidth: undefined,
+    ...SidebarState.defaultProperties,
   };
-  #previousLauncherVisible = undefined;
+
+  /** @type {SidebarStateProps} */
+  static defaultProperties = Object.freeze({
+    command: "",
+    launcherDragActive: false,
+    launcherExpanded: false,
+    launcherHoverActive: false,
+    launcherVisible: false,
+    panelOpen: false,
+  });
 
   /**
    * Construct a new SidebarState.
@@ -73,6 +80,10 @@ export class SidebarState {
     this.#controller = controller;
     this.revampEnabled = controller.sidebarRevampEnabled;
     this.revampVisibility = controller.sidebarRevampVisibility;
+
+    if (this.revampEnabled) {
+      this.#props.launcherVisible = this.defaultLauncherVisible;
+    }
   }
 
   /**
@@ -128,7 +139,7 @@ export class SidebarState {
       // Don't show launcher if we're in a popup window.
       this.launcherVisible = false;
     } else {
-      this.launcherVisible = true;
+      this.launcherVisible = this.defaultLauncherVisible;
     }
 
     // Explicitly trigger effects to ensure that the UI is kept up to date.
@@ -146,6 +157,11 @@ export class SidebarState {
    *   New properties to overwrite the default state with.
    */
   loadInitialState(props) {
+    // Override any initial launcher visible state when the pref is defined
+    if (Services.prefs.prefHasUserValue(DEFAULT_LAUNCHER_VISIBLE_PREF)) {
+      props.launcherVisible = this.defaultLauncherVisible;
+      delete props.hidden;
+    }
     for (const [key, value] of Object.entries(props)) {
       if (value === undefined) {
         // `undefined` means we should use the default value.
@@ -153,7 +169,7 @@ export class SidebarState {
       }
       switch (key) {
         case "command":
-          this.#controller.showInitially(value);
+          this.command = value;
           break;
         case "panelWidth":
           this.#panelEl.style.width = `${value}px`;
@@ -167,10 +183,28 @@ export class SidebarState {
         case "hidden":
           this.launcherVisible = !value;
           break;
+        case "panelOpen":
+          // we need to know if we have a command value before finalizing panelOpen
+          break;
         default:
           this[key] = value;
       }
     }
+
+    if (this.command && !props.hasOwnProperty("panelOpen")) {
+      // legacy state saved before panelOpen was a thing
+      props.panelOpen = true;
+    }
+    if (!this.command) {
+      props.panelOpen = false;
+    }
+    this.panelOpen = !!props.panelOpen;
+    if (this.command && this.panelOpen) {
+      this.launcherVisible = true;
+      // show() is async, so make sure we return its promise here
+      return this.#controller.showInitially(this.command);
+    }
+    return this.#controller.hide();
   }
 
   /**
@@ -192,16 +226,13 @@ export class SidebarState {
    */
   getProperties() {
     return {
-      command: this.#controller.currentID,
+      command: this.command,
+      panelOpen: this.panelOpen,
       panelWidth: this.panelWidth,
       launcherWidth: convertToInt(this.launcherWidth),
       expandedLauncherWidth: convertToInt(this.expandedLauncherWidth),
       launcherExpanded: this.launcherExpanded,
       launcherVisible: this.launcherVisible,
-      collapsedLauncherWidth:
-        typeof this.collapsedLauncherWidth === "number"
-          ? Math.round(this.collapsedLauncherWidth)
-          : this.collapsedLauncherWidth,
     };
   }
 
@@ -210,31 +241,51 @@ export class SidebarState {
   }
 
   set panelOpen(open) {
-    this.#props.panelOpen = open;
+    if (this.#props.panelOpen == open) {
+      return;
+    }
+    this.#props.panelOpen = !!open;
     if (open) {
       // Launcher must be visible to open a panel.
-      this.#previousLauncherVisible = this.launcherVisible;
       this.launcherVisible = true;
+
       Services.prefs.setBoolPref(
         this.revampEnabled ? REVAMP_USED_PREF : LEGACY_USED_PREF,
         true
       );
-    } else if (this.revampVisibility === "hide-sidebar") {
-      this.launcherExpanded = lazy.verticalTabsEnabled
-        ? this.#previousLauncherVisible
-        : false;
-      this.launcherVisible = this.#previousLauncherVisible;
     }
+
+    const mainEl = this.#controller.sidebarContainer;
+    const boxEl = this.#controller._box;
+    const contentAreaEl =
+      this.#controllerGlobal.document.getElementById("tabbrowser-tabbox");
+    if (mainEl?.toggleAttribute) {
+      mainEl.toggleAttribute("sidebar-panel-open", open);
+    }
+    boxEl.toggleAttribute("sidebar-panel-open", open);
+    contentAreaEl.toggleAttribute("sidebar-panel-open", open);
   }
 
   get panelWidth() {
     // Use the value from `style`. This is a more accurate user preference, as
     // opposed to what the resize observer gives us.
-    return convertToInt(this.#panelEl.style.width);
+    return convertToInt(this.#panelEl?.style.width);
   }
 
   set panelWidth(width) {
     this.#launcherContainerEl.style.maxWidth = `calc(${SIDEBAR_MAXIMUM_WIDTH} - ${width}px)`;
+  }
+
+  get defaultLauncherVisible() {
+    if (!this.revampEnabled) {
+      return false;
+    }
+
+    // default/fallback value for vertical tabs is to always be visible initially
+    if (lazy.verticalTabsEnabled) {
+      return true;
+    }
+    return this.#controller.revampDefaultLauncherVisible;
   }
 
   get launcherVisible() {
@@ -242,59 +293,30 @@ export class SidebarState {
   }
 
   /**
-   * Update the launcher `visible` and `expanded` states to handle the
-   * following scenarios:
-   *
-   * - Toggling "Hide tabs and sidebar" from the customize panel.
-   * - Clicking sidebar button from the toolbar.
-   * - Removing sidebar button from the toolbar.
-   * - Force expand value
+   * Update the launcher `visible` and `expanded` states
    *
    * @param {boolean} visible
-   * @param {boolean} onUserToggle
-   * @param {boolean} onToolbarButtonRemoval
+   *                  Show or hide the launcher. Defaults to the value returned by the defaultLauncherVisible getter
    * @param {boolean} forceExpandValue
    */
   updateVisibility(
-    visible,
-    onUserToggle = false,
-    onToolbarButtonRemoval = false,
+    visible = this.defaultLauncherVisible,
     forceExpandValue = null
   ) {
     switch (this.revampVisibility) {
       case "hide-sidebar":
-        if (onToolbarButtonRemoval) {
-          // If we are hiding the sidebar because we removed the toolbar button, close everything
-          this.#previousLauncherVisible = false;
-          this.launcherVisible = false;
-          this.launcherExpanded = false;
-
-          if (this.panelOpen) {
-            this.#controller.hide();
-          }
-          return;
-        }
-        // we need this set to verticalTabsEnabled to ensure it has the correct state when toggling the sidebar button
-        this.launcherExpanded = lazy.verticalTabsEnabled && visible;
-        if (!visible && this.panelOpen) {
-          if (onUserToggle) {
-            // Hiding the launcher with the toolbar button or context menu should also close out any open panels and resets panelOpen
-            this.#controller.hide();
-          } else {
-            // Hide the launcher when the pref is set to hide-sidebar
-            this.launcherVisible = false;
-            this.#previousLauncherVisible = false;
-            return;
-          }
+        if (lazy.verticalTabsEnabled) {
+          forceExpandValue = visible;
         }
         this.launcherVisible = visible;
         break;
       case "always-show":
       case "expand-on-hover":
         this.launcherVisible = true;
-        this.launcherExpanded =
-          forceExpandValue !== null ? forceExpandValue : !this.launcherExpanded;
         break;
+    }
+    if (forceExpandValue !== null) {
+      this.launcherExpanded = forceExpandValue;
     }
   }
 
@@ -331,7 +353,18 @@ export class SidebarState {
     // Marking the tab container element as expanded or not simplifies the CSS logic
     // and selectors considerably.
     const { tabContainer } = this.#controllerGlobal.gBrowser;
+    const mainEl = this.#controller.sidebarContainer;
+    const splitterEl = this.#controller._launcherSplitter;
+    const boxEl = this.#controller._box;
+    const contentAreaEl =
+      this.#controllerGlobal.document.getElementById("tabbrowser-tabbox");
     tabContainer.toggleAttribute("expanded", expanded);
+    if (mainEl?.toggleAttribute) {
+      mainEl.toggleAttribute("sidebar-launcher-expanded", expanded);
+    }
+    splitterEl?.toggleAttribute("sidebar-launcher-expanded", expanded);
+    boxEl?.toggleAttribute("sidebar-launcher-expanded", expanded);
+    contentAreaEl.toggleAttribute("sidebar-launcher-expanded", expanded);
     this.#controller.updateToolbarButton();
     if (!this.launcherDragActive) {
       this.#updateLauncherWidth();
@@ -346,6 +379,12 @@ export class SidebarState {
     this.#props.launcherDragActive = active;
     if (active) {
       this.#launcherEl.toggleAttribute("customWidth", true);
+      if (
+        this.launcherExpanded &&
+        this.#controller.sidebarRevampVisibility === "expand-on-hover"
+      ) {
+        this.#controller.toggleExpandOnHover(false);
+      }
     } else if (this.launcherWidth < LAUNCHER_MINIMUM_WIDTH) {
       // Snap back to collapsed state when the new width is too narrow.
       this.launcherExpanded = false;
@@ -355,7 +394,12 @@ export class SidebarState {
     } else {
       // Store the user-preferred launcher width.
       this.expandedLauncherWidth = this.launcherWidth;
+      if (this.#controller.sidebarRevampVisibility === "expand-on-hover") {
+        this.#controller.toggleExpandOnHover(true, true);
+      }
     }
+    const rootEl = this.#controllerGlobal.document.documentElement;
+    rootEl.toggleAttribute("sidebar-launcher-drag-active", active);
   }
 
   get launcherHoverActive() {
@@ -391,14 +435,6 @@ export class SidebarState {
     this.#updateLauncherWidth();
   }
 
-  get collapsedLauncherWidth() {
-    return this.#props.collapsedLauncherWidth;
-  }
-
-  set collapsedLauncherWidth(width) {
-    this.#props.collapsedLauncherWidth = width;
-  }
-
   /**
    * If the sidebar is expanded, resize the launcher to the user-preferred
    * width (if available). If it is collapsed, reset the launcher width.
@@ -419,6 +455,24 @@ export class SidebarState {
     this.#controllerGlobal.document
       .getElementById("tabbrowser-tabbox")
       .toggleAttribute("sidebar-shown", isSidebarShown);
+  }
+
+  get command() {
+    return this.#props.command || "";
+  }
+
+  set command(id) {
+    if (id && !this.#controller.sidebars.has(id)) {
+      throw new Error("Setting command to an invalid value");
+    }
+    if (id && id !== this.#props.command) {
+      this.#props.command = id;
+      // We need the attribute to mirror the command property as its used as a CSS hook
+      this.#controller._box.setAttribute("sidebarcommand", id);
+    } else if (!id) {
+      delete this.#props.command;
+      this.#controller._box.setAttribute("sidebarcommand", "");
+    }
   }
 }
 

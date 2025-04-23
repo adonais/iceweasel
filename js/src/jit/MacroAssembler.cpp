@@ -74,47 +74,40 @@ TrampolinePtr MacroAssembler::preBarrierTrampoline(MIRType type) {
 }
 
 template <typename T>
-static void StoreToTypedFloatArray(MacroAssembler& masm, Scalar::Type arrayType,
-                                   FloatRegister value, const T& dest,
-                                   Register temp,
-                                   LiveRegisterSet volatileLiveRegs) {
+void MacroAssembler::storeToTypedFloatArray(Scalar::Type arrayType,
+                                            FloatRegister value, const T& dest,
+                                            Register temp,
+                                            LiveRegisterSet volatileLiveRegs) {
   switch (arrayType) {
     case Scalar::Float16:
-      masm.storeFloat16(value, dest, temp, volatileLiveRegs);
+      storeFloat16(value, dest, temp, volatileLiveRegs);
       break;
     case Scalar::Float32: {
       if (value.isDouble()) {
-        ScratchFloat32Scope fpscratch(masm);
-        masm.convertDoubleToFloat32(value, fpscratch);
-        masm.storeFloat32(fpscratch, dest);
+        ScratchFloat32Scope fpscratch(*this);
+        convertDoubleToFloat32(value, fpscratch);
+        storeFloat32(fpscratch, dest);
       } else {
         MOZ_ASSERT(value.isSingle());
-        masm.storeFloat32(value, dest);
+        storeFloat32(value, dest);
       }
       break;
     }
     case Scalar::Float64:
       MOZ_ASSERT(value.isDouble());
-      masm.storeDouble(value, dest);
+      storeDouble(value, dest);
       break;
     default:
       MOZ_CRASH("Invalid typed array type");
   }
 }
 
-void MacroAssembler::storeToTypedFloatArray(Scalar::Type arrayType,
-                                            FloatRegister value,
-                                            const BaseIndex& dest,
-                                            Register temp,
-                                            LiveRegisterSet volatileLiveRegs) {
-  StoreToTypedFloatArray(*this, arrayType, value, dest, temp, volatileLiveRegs);
-}
-void MacroAssembler::storeToTypedFloatArray(Scalar::Type arrayType,
-                                            FloatRegister value,
-                                            const Address& dest, Register temp,
-                                            LiveRegisterSet volatileLiveRegs) {
-  StoreToTypedFloatArray(*this, arrayType, value, dest, temp, volatileLiveRegs);
-}
+template void MacroAssembler::storeToTypedFloatArray(
+    Scalar::Type arrayType, FloatRegister value, const BaseIndex& dest,
+    Register temp, LiveRegisterSet volatileLiveRegs);
+template void MacroAssembler::storeToTypedFloatArray(
+    Scalar::Type arrayType, FloatRegister value, const Address& dest,
+    Register temp, LiveRegisterSet volatileLiveRegs);
 
 void MacroAssembler::boxUint32(Register source, ValueOperand dest,
                                Uint32Mode mode, Label* fail) {
@@ -7266,58 +7259,12 @@ void MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject, Register src,
 }
 
 void MacroAssembler::wasmNewStructObject(Register instance, Register result,
-                                         Register typeDefData, Register temp1,
-                                         Register temp2, Label* fail,
-                                         gc::AllocKind allocKind,
+                                         Register allocSite, Register temp,
+                                         size_t offsetOfTypeDefData,
+                                         Label* fail, gc::AllocKind allocKind,
                                          bool zeroFields) {
-  // Don't execute the inline path if GC probes are built in.
-#ifdef JS_GC_PROBES
-  jump(fail);
-#endif
+  MOZ_ASSERT(instance != result);
 
-#ifdef JS_GC_ZEAL
-  // Don't execute the inline path if gc zeal or tracing are active.
-  loadPtr(Address(instance, wasm::Instance::offsetOfAddressOfGCZealModeBits()),
-          temp1);
-  loadPtr(Address(temp1, 0), temp1);
-  branch32(Assembler::NotEqual, temp1, Imm32(0), fail);
-#endif
-
-  // If the alloc site is long lived, immediately fall back to the OOL path,
-  // which will handle that.
-  loadPtr(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite()),
-          temp1);
-  branchTestPtr(Assembler::NonZero,
-                Address(temp1, gc::AllocSite::offsetOfScriptAndState()),
-                Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
-
-  size_t sizeBytes = gc::Arena::thingSize(allocKind);
-  wasmBumpPointerAllocate(instance, result, typeDefData, temp1, temp2, fail,
-                          sizeBytes);
-  loadPtr(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfShape()),
-          temp1);
-  loadPtr(Address(typeDefData,
-                  wasm::TypeDefInstanceData::offsetOfSuperTypeVector()),
-          temp2);
-  storePtr(temp1, Address(result, WasmStructObject::offsetOfShape()));
-  storePtr(temp2, Address(result, WasmStructObject::offsetOfSuperTypeVector()));
-  storePtr(ImmWord(0),
-           Address(result, WasmStructObject::offsetOfOutlineData()));
-
-  if (zeroFields) {
-    MOZ_ASSERT(sizeBytes % sizeof(void*) == 0);
-    for (size_t i = WasmStructObject::offsetOfInlineData(); i < sizeBytes;
-         i += sizeof(void*)) {
-      storePtr(ImmWord(0), Address(result, i));
-    }
-  }
-}
-
-void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
-                                        Register numElements,
-                                        Register typeDefData, Register temp,
-                                        Label* fail, uint32_t elemSize,
-                                        bool zeroFields) {
   // Don't execute the inline path if GC probes are built in.
 #ifdef JS_GC_PROBES
   jump(fail);
@@ -7333,10 +7280,58 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 
   // If the alloc site is long lived, immediately fall back to the OOL path,
   // which will handle that.
-  loadPtr(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite()),
-          temp);
   branchTestPtr(Assembler::NonZero,
-                Address(temp, gc::AllocSite::offsetOfScriptAndState()),
+                Address(allocSite, gc::AllocSite::offsetOfScriptAndState()),
+                Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
+
+  size_t sizeBytes = gc::Arena::thingSize(allocKind);
+  wasmBumpPointerAllocate(instance, result, allocSite, temp, fail, sizeBytes);
+
+  loadPtr(Address(instance, offsetOfTypeDefData +
+                                wasm::TypeDefInstanceData::offsetOfShape()),
+          temp);
+  storePtr(temp, Address(result, WasmArrayObject::offsetOfShape()));
+  loadPtr(Address(instance,
+                  offsetOfTypeDefData +
+                      wasm::TypeDefInstanceData::offsetOfSuperTypeVector()),
+          temp);
+  storePtr(temp, Address(result, WasmArrayObject::offsetOfSuperTypeVector()));
+  storePtr(ImmWord(0),
+           Address(result, WasmStructObject::offsetOfOutlineData()));
+
+  if (zeroFields) {
+    MOZ_ASSERT(sizeBytes % sizeof(void*) == 0);
+    for (size_t i = WasmStructObject::offsetOfInlineData(); i < sizeBytes;
+         i += sizeof(void*)) {
+      storePtr(ImmWord(0), Address(result, i));
+    }
+  }
+}
+
+void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
+                                        Register numElements,
+                                        Register allocSite, Register temp,
+                                        size_t offsetOfTypeDefData, Label* fail,
+                                        uint32_t elemSize, bool zeroFields) {
+  MOZ_ASSERT(instance != result);
+
+  // Don't execute the inline path if GC probes are built in.
+#ifdef JS_GC_PROBES
+  jump(fail);
+#endif
+
+#ifdef JS_GC_ZEAL
+  // Don't execute the inline path if gc zeal or tracing are active.
+  loadPtr(Address(instance, wasm::Instance::offsetOfAddressOfGCZealModeBits()),
+          temp);
+  loadPtr(Address(temp, 0), temp);
+  branch32(Assembler::NotEqual, temp, Imm32(0), fail);
+#endif
+
+  // If the alloc site is long lived, immediately fall back to the OOL path,
+  // which will handle that.
+  branchTestPtr(Assembler::NonZero,
+                Address(allocSite, gc::AllocSite::offsetOfScriptAndState()),
                 Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
 
   // Ensure that the numElements is small enough to fit in inline storage.
@@ -7383,15 +7378,17 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
   static_assert(sizeof(gc::slotsToAllocKindBytes[0]) == 4);
   load32(BaseIndex(temp, numElements, Scale::TimesFour), numElements);
 
-  wasmBumpPointerAllocateDynamic(instance, result, typeDefData,
+  wasmBumpPointerAllocateDynamic(instance, result, allocSite,
                                  /*size=*/numElements, temp, &popAndFail);
 
   // Initialize the shape and STV
-  loadPtr(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfShape()),
+  loadPtr(Address(instance, offsetOfTypeDefData +
+                                wasm::TypeDefInstanceData::offsetOfShape()),
           temp);
   storePtr(temp, Address(result, WasmArrayObject::offsetOfShape()));
-  loadPtr(Address(typeDefData,
-                  wasm::TypeDefInstanceData::offsetOfSuperTypeVector()),
+  loadPtr(Address(instance,
+                  offsetOfTypeDefData +
+                      wasm::TypeDefInstanceData::offsetOfSuperTypeVector()),
           temp);
   storePtr(temp, Address(result, WasmArrayObject::offsetOfSuperTypeVector()));
 
@@ -7468,13 +7465,12 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
   bind(&done);
 }
 
-void MacroAssembler::wasmNewArrayObjectFixed(Register instance, Register result,
-                                             Register typeDefData,
-                                             Register temp1, Register temp2,
-                                             Label* fail, uint32_t numElements,
-                                             uint32_t storageBytes,
-                                             bool zeroFields) {
+void MacroAssembler::wasmNewArrayObjectFixed(
+    Register instance, Register result, Register allocSite, Register temp1,
+    Register temp2, size_t offsetOfTypeDefData, Label* fail,
+    uint32_t numElements, uint32_t storageBytes, bool zeroFields) {
   MOZ_ASSERT(storageBytes <= WasmArrayObject_MaxInlineBytes);
+  MOZ_ASSERT(instance != result);
 
   // Don't execute the inline path if GC probes are built in.
 #ifdef JS_GC_PROBES
@@ -7491,20 +7487,20 @@ void MacroAssembler::wasmNewArrayObjectFixed(Register instance, Register result,
 
   // If the alloc site is long lived, immediately fall back to the OOL path,
   // which will handle that.
-  loadPtr(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite()),
-          temp1);
   branchTestPtr(Assembler::NonZero,
-                Address(temp1, gc::AllocSite::offsetOfScriptAndState()),
+                Address(allocSite, gc::AllocSite::offsetOfScriptAndState()),
                 Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
 
   gc::AllocKind allocKind = WasmArrayObject::allocKindForIL(storageBytes);
   uint32_t totalSize = gc::Arena::thingSize(allocKind);
-  wasmBumpPointerAllocate(instance, result, typeDefData, temp1, temp2, fail,
-                          totalSize);
-  loadPtr(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfShape()),
+  wasmBumpPointerAllocate(instance, result, allocSite, temp1, fail, totalSize);
+
+  loadPtr(Address(instance, offsetOfTypeDefData +
+                                wasm::TypeDefInstanceData::offsetOfShape()),
           temp1);
-  loadPtr(Address(typeDefData,
-                  wasm::TypeDefInstanceData::offsetOfSuperTypeVector()),
+  loadPtr(Address(instance,
+                  offsetOfTypeDefData +
+                      wasm::TypeDefInstanceData::offsetOfSuperTypeVector()),
           temp2);
   storePtr(temp1, Address(result, WasmArrayObject::offsetOfShape()));
   storePtr(temp2, Address(result, WasmArrayObject::offsetOfSuperTypeVector()));
@@ -7542,8 +7538,7 @@ void MacroAssembler::wasmNewArrayObjectFixed(Register instance, Register result,
 }
 
 void MacroAssembler::wasmBumpPointerAllocate(Register instance, Register result,
-                                             Register typeDefData,
-                                             Register temp1, Register temp2,
+                                             Register allocSite, Register temp1,
                                              Label* fail, uint32_t size) {
   MOZ_ASSERT(size >= gc::MinCellSize);
 
@@ -7554,12 +7549,9 @@ void MacroAssembler::wasmBumpPointerAllocate(Register instance, Register result,
   int32_t endOffset = Nursery::offsetOfCurrentEndFromPosition();
 
   // Bail to OOL code if the alloc site needs to be pushed onto the active
-  // list. Keep allocCount in temp2 for later.
-  computeEffectiveAddress(
-      Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite()),
-      temp1);
-  load32(Address(temp1, gc::AllocSite::offsetOfNurseryAllocCount()), temp2);
-  branch32(Assembler::Equal, temp2,
+  // list.
+  load32(Address(allocSite, gc::AllocSite::offsetOfNurseryAllocCount()), temp1);
+  branch32(Assembler::Equal, temp1,
            Imm32(js::gc::NormalSiteAttentionThreshold - 1), fail);
 
   // Bump allocate in the nursery, bailing if there is not enough room.
@@ -7573,19 +7565,16 @@ void MacroAssembler::wasmBumpPointerAllocate(Register instance, Register result,
 
   // Increment the alloc count in the allocation site and store pointer in the
   // nursery cell header. See NurseryCellHeader::MakeValue.
-  computeEffectiveAddress(
-      Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite()),
-      temp1);
-  add32(Imm32(1), temp2);
-  store32(temp2, Address(temp1, gc::AllocSite::offsetOfNurseryAllocCount()));
+  add32(Imm32(1),
+        Address(allocSite, gc::AllocSite::offsetOfNurseryAllocCount()));
   // Because JS::TraceKind::Object is zero, there is no need to explicitly set
   // it in the nursery cell header.
   static_assert(int(JS::TraceKind::Object) == 0);
-  storePtr(temp1, Address(result, -js::Nursery::nurseryCellHeaderSize()));
+  storePtr(allocSite, Address(result, -js::Nursery::nurseryCellHeaderSize()));
 }
 
 void MacroAssembler::wasmBumpPointerAllocateDynamic(
-    Register instance, Register result, Register typeDefData, Register size,
+    Register instance, Register result, Register allocSite, Register size,
     Register temp1, Label* fail) {
 #ifdef DEBUG
   // Replaces MOZ_ASSERT(size >= gc::MinCellSize);
@@ -7603,9 +7592,7 @@ void MacroAssembler::wasmBumpPointerAllocateDynamic(
   int32_t endOffset = Nursery::offsetOfCurrentEndFromPosition();
 
   // Bail to OOL code if the alloc site needs to be initialized.
-  load32(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite() +
-                                  gc::AllocSite::offsetOfNurseryAllocCount()),
-         temp1);
+  load32(Address(allocSite, gc::AllocSite::offsetOfNurseryAllocCount()), temp1);
   branch32(Assembler::Equal, temp1,
            Imm32(js::gc::NormalSiteAttentionThreshold - 1), fail);
 
@@ -7622,17 +7609,13 @@ void MacroAssembler::wasmBumpPointerAllocateDynamic(
 
   // Increment the alloc count in the allocation site and store pointer in the
   // nursery cell header. See NurseryCellHeader::MakeValue.
-  int32_t offsetOfNurseryAllocCount =
-      wasm::TypeDefInstanceData::offsetOfAllocSite() +
-      gc::AllocSite::offsetOfNurseryAllocCount();
-  add32(Imm32(1), Address(typeDefData, offsetOfNurseryAllocCount));
+
+  add32(Imm32(1),
+        Address(allocSite, gc::AllocSite::offsetOfNurseryAllocCount()));
   // Because JS::TraceKind::Object is zero, there is no need to explicitly set
   // it in the nursery cell header.
   static_assert(int(JS::TraceKind::Object) == 0);
-  computeEffectiveAddress(
-      Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite()),
-      temp1);
-  storePtr(temp1, Address(result, -js::Nursery::nurseryCellHeaderSize()));
+  storePtr(allocSite, Address(result, -js::Nursery::nurseryCellHeaderSize()));
 }
 
 // Unboxing is branchy and contorted because of Spectre mitigations - we don't
@@ -8370,9 +8353,8 @@ void MacroAssembler::storeFloat16(FloatRegister src, const T& dest,
 
   if (src.isDouble()) {
     if (MacroAssembler::SupportsFloat64To16()) {
-      canonicalizeDoubleIfDeterministic(src);
       convertDoubleToFloat16(src, fpscratch);
-      storeUncanonicalizedFloat16(fpscratch, dest, temp);
+      storeFloat16(fpscratch, dest, temp);
       return;
     }
 
@@ -8382,13 +8364,11 @@ void MacroAssembler::storeFloat16(FloatRegister src, const T& dest,
   MOZ_ASSERT(src.isSingle());
 
   if (MacroAssembler::SupportsFloat32To16()) {
-    canonicalizeFloatIfDeterministic(src);
     convertFloat32ToFloat16(src, fpscratch);
-    storeUncanonicalizedFloat16(fpscratch, dest, temp);
+    storeFloat16(fpscratch, dest, temp);
     return;
   }
 
-  canonicalizeFloatIfDeterministic(src);
   moveFloat16ToGPR(src, temp, volatileLiveRegs);
   store16(temp, dest);
 }
@@ -9308,6 +9288,90 @@ void MacroAssembler::registerIterator(Register enumeratorsList, Register iter,
 
   // list->prev = iter
   storePtr(iter, Address(enumeratorsList, NativeIterator::offsetOfPrev()));
+}
+
+void MacroAssembler::prepareOOBStoreElement(Register object, Register index,
+                                            Register elements,
+                                            Register maybeTemp, Label* failure,
+                                            LiveRegisterSet volatileLiveRegs) {
+  Address length(elements, ObjectElements::offsetOfLength());
+  Address initLength(elements, ObjectElements::offsetOfInitializedLength());
+  Address capacity(elements, ObjectElements::offsetOfCapacity());
+  Address flags(elements, ObjectElements::offsetOfFlags());
+
+  // If index < capacity, we can add a dense element inline. If not, we
+  // need to allocate more elements.
+  Label allocElement, enoughCapacity;
+  spectreBoundsCheck32(index, capacity, maybeTemp, &allocElement);
+  jump(&enoughCapacity);
+
+  bind(&allocElement);
+
+  // We currently only support storing one past the current capacity.
+  // We could add support for stores beyond that point by calling a different
+  // function, but then we'd have to think carefully about when to go sparse.
+  branch32(Assembler::NotEqual, capacity, index, failure);
+
+  volatileLiveRegs.takeUnchecked(elements);
+  if (maybeTemp != InvalidReg) {
+    volatileLiveRegs.takeUnchecked(maybeTemp);
+  }
+  PushRegsInMask(volatileLiveRegs);
+
+  // Use `elements` as a scratch register because we're about to reallocate it.
+  using Fn = bool (*)(JSContext* cx, NativeObject* obj);
+  setupUnalignedABICall(elements);
+  loadJSContext(elements);
+  passABIArg(elements);
+  passABIArg(object);
+  callWithABI<Fn, NativeObject::addDenseElementPure>();
+  storeCallPointerResult(elements);
+
+  PopRegsInMask(volatileLiveRegs);
+  branchIfFalseBool(elements, failure);
+
+  // Load the reallocated elements pointer.
+  loadPtr(Address(object, NativeObject::offsetOfElements()), elements);
+
+  bind(&enoughCapacity);
+
+  // If our caller couldn't give us a temp register, use `object`.
+  Register temp;
+  if (maybeTemp == InvalidReg) {
+    push(object);
+    temp = object;
+  } else {
+    temp = maybeTemp;
+  }
+
+  // Load the index of the first uninitialized element into `temp`.
+  load32(initLength, temp);
+
+  // If it is not `index`, mark this elements array as non-packed.
+  Label noHoles, loop, done;
+  branch32(Assembler::Equal, temp, index, &noHoles);
+  or32(Imm32(ObjectElements::NON_PACKED), flags);
+
+  // Loop over intermediate elements and fill them with the magic hole value.
+  bind(&loop);
+  storeValue(MagicValue(JS_ELEMENTS_HOLE), BaseValueIndex(elements, temp));
+  add32(Imm32(1), temp);
+  branch32(Assembler::NotEqual, temp, index, &loop);
+
+  bind(&noHoles);
+
+  // The new initLength is index + 1. Update it.
+  add32(Imm32(1), temp);
+  store32(temp, initLength);
+
+  // If necessary, update length as well.
+  branch32(Assembler::Above, length, temp, &done);
+  store32(temp, length);
+  bind(&done);
+
+  if (maybeTemp == InvalidReg) {
+    pop(object);
+  }
 }
 
 void MacroAssembler::toHashableNonGCThing(ValueOperand value,

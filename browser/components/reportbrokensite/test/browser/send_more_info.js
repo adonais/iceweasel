@@ -34,6 +34,8 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
   const { devicePixelRatio, hasTouchScreen } = graphics;
   const { antitracking, languages, useragentString } = tabInfo;
 
+  const addons = overrides.addons || [];
+  const experiments = overrides.experiments || [];
   const atOverrides = overrides.antitracking;
   const blockList = atOverrides?.blockList ?? antitracking.blockList;
   const hasMixedActiveContentBlocked =
@@ -66,6 +68,8 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
     forcedAcceleratedLayers: "layers.acceleration.force-enabled",
     globalPrivacyControlEnabled: "privacy.globalprivacycontrol.enabled",
     installtriggerEnabled: "extensions.InstallTrigger.enabled",
+    h1InSectionUseragentStylesEnabled:
+      "layout.css.h1-in-section-ua-styles.enabled",
     opaqueResponseBlocking: "browser.opaqueResponseBlocking",
     resistFingerprintingEnabled: "privacy.resistFingerprinting",
     softwareWebrender: "gfx.webrender.software",
@@ -83,10 +87,12 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
     blockList,
     details: {
       additionalData: {
+        addons,
         applicationName,
         blockList,
         buildId: snapshot.application.buildID,
         devicePixelRatio: parseInt(devicePixelRatio),
+        experiments,
         finalUserAgent: useragentString,
         fissionEnabled,
         gfxData: {
@@ -223,13 +229,41 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
   let rbs = await menu.openAndPrefillReportBrokenSite(url, description);
 
   const receivedData = await rbs.clickSendMoreInfo();
-  const { message } = receivedData;
+  await checkWebcompatComPayload(
+    tab,
+    url,
+    description,
+    expectedOverrides,
+    receivedData
+  );
 
+  // re-opening the panel, the url and description should be reset
+  rbs = await menu.openReportBrokenSite();
+  rbs.isMainViewResetToCurrentTab();
+  rbs.close();
+}
+
+async function testWebcompatComFallback(tab, menu) {
+  const url = menu.win.gBrowser.currentURI.spec;
+  const receivedData =
+    await menu.clickReportBrokenSiteAndAwaitWebCompatTabData();
+  await checkWebcompatComPayload(tab, url, "", {}, receivedData);
+  menu.close();
+}
+
+async function checkWebcompatComPayload(
+  tab,
+  url,
+  description,
+  expectedOverrides,
+  receivedData
+) {
   const expected = await reformatExpectedWebCompatInfo(tab, expectedOverrides);
   expected.url = url;
   expected.description = description;
 
   // sanity checks
+  const { message } = receivedData;
   const { details } = message;
   const { additionalData } = details;
   ok(message.url?.length, "Got a URL");
@@ -255,10 +289,7 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
     ok(isScreenshotValid, "Got a valid screenshot");
   }
 
-  ok(areObjectsEqual(message, expected), "sent info matches expectations");
+  filterFrameworkDetectorFails(message.details, expected.details);
 
-  // re-opening the panel, the url and description should be reset
-  rbs = await menu.openReportBrokenSite();
-  rbs.isMainViewResetToCurrentTab();
-  rbs.close();
+  ok(areObjectsEqual(message, expected), "sent info matches expectations");
 }

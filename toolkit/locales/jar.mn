@@ -8,6 +8,7 @@
   services                                         (%services/**/*.ftl)
   toolkit                                          (%toolkit/**/*.ftl)
   locales-preview/aboutTranslations.ftl            (../locales-preview/aboutTranslations.ftl)
+  locales-preview/localModelManagement.ftl         (../locales-preview/localModelManagement.ftl)
 #ifdef MOZ_LAYOUT_DEBUGGER
   layoutdebug/layoutdebug.ftl                      (../../layout/tools/layout-debug/ui/content/layoutdebug.ftl)
 #endif
@@ -19,7 +20,6 @@
 % locale global @AB_CD@ %locale/@AB_CD@/global/
   locale/@AB_CD@/global/aboutStudies.properties         (%chrome/global/aboutStudies.properties)
   locale/@AB_CD@/global/autocomplete.properties         (%chrome/global/autocomplete.properties)
-  locale/@AB_CD@/global/browser.properties              (%chrome/global/browser.properties)
   locale/@AB_CD@/global/commonDialogs.properties        (%chrome/global/commonDialogs.properties)
   locale/@AB_CD@/global/contentAreaCommands.properties  (%chrome/global/contentAreaCommands.properties)
   locale/@AB_CD@/global/extensions.properties           (%chrome/global/extensions.properties)

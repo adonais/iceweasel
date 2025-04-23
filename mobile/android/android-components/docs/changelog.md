@@ -4,10 +4,48 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 137.0 (In Development)
+# 138.0 (In Development)
+* **support-ktx**
+  * ⚠️ **Breaking change**: `Window.setupPersistentInsets()` will only work on Android 13+ to avoid framework insets inconsistencies on lower versions of Android. [Bug 1946404](https://bugzilla.mozilla.org/show_bug.cgi?id=1946404)
+  * ⚠️ **Breaking change**: `ImeInsetsSynchronizer` will only work on Android 13+ to avoid framework insets inconsistencies on lower versions of Android. [Bug 1946404](https://bugzilla.mozilla.org/show_bug.cgi?id=1946404)
+
+* **browser-state**, **concept-engine**
+  * ⚠️ **Breaking change**: Added new `origins` parameter to `WebExtensionDelegate.onOptionalPermissionsRequest` and `WebExtensionPromptRequest.AfterInstallation.Permissions.Optional`. [Bug 1935680](https://bugzilla.mozilla.org/show_bug.cgi?id=1935680).
+* **support-webextensions**
+  * Renamed `WebExtensionController` to `BuiltInWebExtensionController`. [Bug 1950422](https://bugzilla.mozilla.org/show_bug.cgi?id=1950422).
+
+* **browser-toolbar**
+  * Rename `securityIconSecure` and `securityIconInsecure` to `siteIconSecure` and `siteIconInsecure`. See [Bug 1920085](https://bugzilla.mozilla.org/show_bug.cgi?id=1920085).
+  * Adds `siteIconLocalPdf` ColorInt to to `DisplayToolbar.Colors`. See [Bug 1920085](https://bugzilla.mozilla.org/show_bug.cgi?id=1920085).
+
+* **concept-toolbar**
+  * Rename `Toolbar.siteSecure` property to `Toolbar.siteInfo`. See [Bug 1920085](https://bugzilla.mozilla.org/show_bug.cgi?id=1920085).
+  * Rename `Toolbar.SiteSecurity` enum to `Toolbar.SiteInfo` and adds `LOCAL_PDF` enum value. See [Bug 1920085](https://bugzilla.mozilla.org/show_bug.cgi?id=1920085).
+  * Rename `DisplayToolbarViews.securityIndicator` and `DisplayToolbarViews.setOnSiteSecurityClickedListener` to `DisplayToolbarViews.siteInfoIndicator` and `DisplayToolbarViews.setOnSiteInfoClickedListener`. See [Bug 1920085](https://bugzilla.mozilla.org/show_bug.cgi?id=1920085).
+
+* **feature-toolbar**
+  * When showing a local PDF, the site security icon will display the `mozac_ic_page_portrait_24` icon. See [Bug 1920085](https://bugzilla.mozilla.org/show_bug.cgi?id=1920085).
+
+* **ui-icons**
+  * Adds a `mozac_ic_page_portrait_24` icon to be used as a security icon when browsing a local pdf. See [Bug 1920085](https://bugzilla.mozilla.org/show_bug.cgi?id=1920085).
+
+* **feature-addons**
+  * Added `AddonManager.getAddonByID` method to allow querying a specific add-on. This is more efficient than calling `AddonManager.getAddons()` and selecting a specific result. See [Bug 1949963](https://bugzilla.mozilla.org/show_bug.cgi?id=1949963).
+
+* **feature-prompts**
+  * Added support for selecting a client authentication certificate using `CertificatePicker`. [Bug 1813930](https://bugzilla.mozilla.org/show_bug.cgi?id=1813930).
+
+* **feature-downloads**
+  * Added `FileSizeFormatter` to help with displaying file sizes in a localized manner. See [Bug 1951907](https://bugzilla.mozilla.org/show_bug.cgi?id=1951907).
+  * Deprecated `Long.toMegabyteOrKilobyteString`. Use `FileSizeFormatter` instead. See [Bug 1951907](https://bugzilla.mozilla.org/show_bug.cgi?id=1951907).
+
+# 137.0
 * **support-ktx**
   * 🌟 Added `String.isContentUrl` method that checks if the string is a content URL. [Bug 1944084](https://bugzilla.mozilla.org/show_bug.cgi?id=1944084).
   * 🌟 Added `String.isAboutUrl` method that checks if the string is an about URL. [Bug 1944084](https://bugzilla.mozilla.org/show_bug.cgi?id=1944084).
+* **browser-state**, **concept-engine**, **feature-addons**
+  * ⚠️ **Breaking change**: Added new `origins` parameter to `PermissionsDialogFragment.newInstance`. [Bug 1911999](https://bugzilla.mozilla.org/show_bug.cgi?id=1911999).
+  * ⚠️ **Breaking change**: Added new `origins` parameter to `WebExtensionDelegate.onInstallPermissionsRequest` and `WebExtensionPromptRequest.AfterInstallation.Permissions.Required`. [Bug 1911999](https://bugzilla.mozilla.org/show_bug.cgi?id=1911999).
 
 # 136.0
 * **support-ktx**

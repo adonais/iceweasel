@@ -161,6 +161,90 @@ class APZScrollHandoffTesterMock : public APZScrollHandoffTester {
   APZScrollHandoffTesterMock() { CreateMockHitTester(); }
 };
 
+class APZCNestedFlingScrollHandoffTester : public APZCTreeManagerTester {
+ protected:
+  void SetUp() {
+    APZCTreeManagerTester::SetUp();
+    const char* treeShape = "x(x)";
+    LayerIntRect layerVisibleRect[] = {
+        LayerIntRect(0, 0, 800, 1000),
+        LayerIntRect(0, 0, 100, 100),
+    };
+
+    CreateScrollData(treeShape, layerVisibleRect);
+
+    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
+                              CSSRect(0, 0, 800, 50000));
+    SetScrollableFrameMetrics(layers[1],
+                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+                              CSSRect(0, 0, 800, 100));
+
+    SetScrollHandoff(layers[1], root);
+
+    // Scroll somewhere into the middle of the scroll range, so that we have
+    // lots of space to scroll in both directions.
+    ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
+      aMetrics.SetVisualScrollUpdateType(
+          FrameMetrics::ScrollOffsetUpdateType::eMainThread);
+      aMetrics.SetVisualDestination(CSSPoint(0, 25000));
+    });
+
+    registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+    UpdateHitTestingTree();
+
+    subframeApzc = ApzcOf(layers[1]);
+  }
+
+  void ExecuteDirectionChangingPanGesture(
+      const ScreenIntPoint& aStartPoint,
+      std::initializer_list<int32_t> aXDeltas,
+      std::initializer_list<int32_t> aYDeltas) {
+    APZEventResult result = TouchDown(subframeApzc, aStartPoint, mcc->Time());
+
+    // Allowed touch behaviours must be set after sending touch-start.
+    if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
+      SetDefaultAllowedTouchBehavior(subframeApzc, result.mInputBlockId);
+    }
+
+    const TimeDuration kTouchTimeDelta100Hz =
+        TimeDuration::FromMilliseconds(10);
+
+    ScreenIntPoint currentLocation = aStartPoint;
+    for (int32_t delta : aXDeltas) {
+      mcc->AdvanceBy(kTouchTimeDelta100Hz);
+      if (delta != 0) {
+        currentLocation.x += delta;
+        Unused << TouchMove(subframeApzc, currentLocation, mcc->Time());
+      }
+    }
+
+    ExecuteWait(TimeDuration::FromMilliseconds(255));
+
+    for (int32_t delta : aYDeltas) {
+      mcc->AdvanceBy(kTouchTimeDelta100Hz);
+      if (delta != 0) {
+        currentLocation.y += delta;
+        Unused << TouchMove(subframeApzc, currentLocation, mcc->Time());
+      }
+    }
+
+    Unused << TouchUp(subframeApzc, currentLocation, mcc->Time());
+  }
+
+  void ExecuteWait(const TimeDuration& aDuration) {
+    TimeDuration remaining = aDuration;
+    const TimeDuration TIME_BETWEEN_FRAMES =
+        TimeDuration::FromSeconds(1) / int64_t(60);
+    while (remaining.ToMilliseconds() > 0) {
+      mcc->AdvanceBy(TIME_BETWEEN_FRAMES);
+      subframeApzc->AdvanceAnimations(mcc->GetSampleTime());
+      remaining -= TIME_BETWEEN_FRAMES;
+    }
+  }
+
+  RefPtr<TestAsyncPanZoomController> subframeApzc;
+  UniquePtr<ScopedLayerTreeRegistration> registration;
+};
 #ifndef MOZ_WIDGET_ANDROID  // Currently fails on Android
 // Here we test that if the processing of a touch block is deferred while we
 // wait for content to send a prevent-default message, overscroll is still
@@ -443,32 +527,32 @@ TEST_F(APZScrollHandoffTester, OpposingConstrainedAxes_Bug1201098) {
 }
 #endif
 
-// Test that flinging in a direction where one component of the fling goes into
-// overscroll but the other doesn't, results in just the one component being
-// handed off to the parent, while the original APZC continues flinging in the
-// other direction.
-TEST_F(APZScrollHandoffTesterMock, PartialFlingHandoff) {
+// Test the behaviour when flinging diagonally and there is room to scroll in
+// one direction but not the other. In the direction where there is room to
+// scroll, the fling should continue. In the direction where there is no room
+// to scroll, the fling should stop without being handed off to the parent.
+TEST_F(APZScrollHandoffTesterMock, DiagonalFlingNoHandoff) {
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
 
   CreateScrollHandoffLayerTree1();
 
   // Fling up and to the left. The child APZC has room to scroll up, but not
-  // to the left, so the horizontal component of the fling should be handed
-  // off to the parent APZC.
+  // to the left.
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   Pan(manager, ScreenIntPoint(90, 90), ScreenIntPoint(55, 55));
 
   RefPtr<TestAsyncPanZoomController> parent = ApzcOf(layers[0]);
   RefPtr<TestAsyncPanZoomController> child = ApzcOf(layers[1]);
 
-  // Advance the child's fling animation once to give the partial handoff
+  // Advance the child's fling animation once to give any potential handoff
   // a chance to occur.
   mcc->AdvanceByMillis(10);
   child->AdvanceAnimations(mcc->GetSampleTime());
 
-  // Assert that partial handoff has occurred.
+  // Assert that the child is still flinging but the parent is not (no handoff
+  // occurred).
   child->AssertStateIsFling();
-  parent->AssertStateIsFling();
+  parent->AssertStateIsReset();
 }
 
 // Here we test that if two flings are happening simultaneously, overscroll
@@ -796,4 +880,25 @@ TEST_F(APZScrollHandoffTesterMock, ScrollJump_Bug1812227) {
     CSSCoord after = rootYScrollPositions[i + 1];
     EXPECT_LE(before, after);
   }
+}
+
+TEST_F(APZCNestedFlingScrollHandoffTester, FlingInOppositeDirection) {
+  RefPtr<TestAsyncPanZoomController> rootApzc = ApzcOf(root);
+
+  ParentLayerPoint startRootOffset = rootApzc->GetCurrentAsyncScrollOffset(
+      AsyncTransformConsumer::eForEventHandling);
+  ExecuteDirectionChangingPanGesture(
+      ScreenIntPoint{569, 710},
+      {-11, -2, -107, -18, -148, -57, -133, -159, -21}, {11, 2, 42, 107, 148});
+  // Let any animation start and run for a few frames
+  ExecuteWait(TimeDuration::FromMilliseconds(154));
+  auto vel = subframeApzc->GetVelocityVector();
+
+  ParentLayerPoint endRootOffset = rootApzc->GetCurrentAsyncScrollOffset(
+      AsyncTransformConsumer::eForEventHandling);
+
+  EXPECT_EQ(vel.y, 0.0);
+  rootApzc->AssertStateIsReset();
+  subframeApzc->AssertStateIsReset();
+  EXPECT_EQ(startRootOffset.y, endRootOffset.y);
 }

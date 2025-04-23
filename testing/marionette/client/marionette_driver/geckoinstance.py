@@ -409,10 +409,11 @@ class GeckoInstance(object):
             }
         )
 
+        extra_args = ["-marionette", "-remote-allow-system-access"]
         args = {
             "binary": self.binary,
             "profile": self.profile,
-            "cmdargs": ["-marionette"] + self.app_args,
+            "cmdargs": extra_args + self.app_args,
             "env": env,
             "symbols_path": self.symbols_path,
             "process_args": process_args,
@@ -685,7 +686,11 @@ class ThunderbirdInstance(GeckoInstance):
             from .thunderbirdinstance import thunderbird_prefs
         except ImportError:
             try:
-                # Coming from source tree through virtualenv
+                # Directly from the source tree
+                here = os.path.dirname(__file__)
+                sys.path.append(
+                    os.path.join(here, "../../../../comm/testing/marionette")
+                )
                 from thunderbirdinstance import thunderbird_prefs
             except ImportError:
                 thunderbird_prefs = {}

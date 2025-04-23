@@ -325,6 +325,12 @@ class WindowGlobalParent final : public WindowContext,
   mozilla::ipc::IPCResult RecvStoreIdentityCredential(
       const IPCIdentityCredential& aCredential,
       const StoreIdentityCredentialResolver& aResolver);
+  mozilla::ipc::IPCResult RecvDisconnectIdentityCredential(
+      const IdentityCredentialDisconnectOptions& aOptions,
+      const DisconnectIdentityCredentialResolver& aResolver);
+  mozilla::ipc::IPCResult RecvSetLoginStatus(
+      LoginStatus aStatus, const SetLoginStatusResolver& aResolver);
+
   mozilla::ipc::IPCResult RecvPreventSilentAccess(
       const PreventSilentAccessResolver& aResolver);
 

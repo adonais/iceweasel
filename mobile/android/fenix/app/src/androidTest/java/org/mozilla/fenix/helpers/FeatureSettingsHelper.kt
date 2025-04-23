@@ -104,14 +104,19 @@ interface FeatureSettingsHelper {
     var isMicrosurveyEnabled: Boolean
 
     /**
-     * Enable or disable the "Set as default browser" dialog.
-     */
-    var isSetAsDefaultBrowserPromptEnabled: Boolean
-
-    /**
      * Enable or disable bottom toolbar position.
      */
     var shouldUseBottomToolbar: Boolean
+
+    /**
+     * Enable or disable the onboarding feature.
+     */
+    var onboardingFeatureEnabled: Boolean
+
+    /**
+     * Enable or disable the compose home screen feature.
+     */
+    var isComposeHomepageEnabled: Boolean
 
     /**
      * Enable or disable the translations prompt after a page that can be translated is loaded.

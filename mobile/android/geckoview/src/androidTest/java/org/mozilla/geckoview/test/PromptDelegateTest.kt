@@ -5,11 +5,12 @@
 package org.mozilla.geckoview.test
 
 import android.view.KeyEvent
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.Matchers.* // ktlint-disable no-wildcard-imports
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.AllowOrDeny
@@ -111,18 +112,23 @@ class PromptDelegateTest : BaseSessionTest(
         mainSession.waitForRoundTrip()
     }
 
-    @Ignore // TODO: Reenable when 1501574 is fixed.
     @Test
     fun alertTest() {
-        mainSession.evaluateJS("alert('Alert!');")
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        sessionRule.waitForPageStop()
 
-        sessionRule.waitUntilCalled(object : PromptDelegate {
+        val result = GeckoResult<Void>()
+        sessionRule.delegateDuringNextWait(object : PromptDelegate {
             @AssertCalled(count = 1)
             override fun onAlertPrompt(session: GeckoSession, prompt: PromptDelegate.AlertPrompt): GeckoResult<PromptDelegate.PromptResponse> {
                 assertThat("Message should match", "Alert!", equalTo(prompt.message))
+                result.complete(null)
                 return GeckoResult.fromValue(prompt.dismiss())
             }
         })
+
+        mainSession.evaluateJS("alert('Alert!');")
+        sessionRule.waitForResult(result)
     }
 
     // This test checks that saved logins are returned to the app when calling onAuthPrompt
@@ -1098,6 +1104,7 @@ class PromptDelegateTest : BaseSessionTest(
                 assertThat("First accept attribute should match", "image/*", equalTo(prompt.mimeTypes?.get(0)))
                 assertThat("Second accept attribute should match", ".pdf", equalTo(prompt.mimeTypes?.get(1)))
                 assertThat("Capture attribute should match", PromptDelegate.FilePrompt.Capture.USER, equalTo(prompt.capture))
+                assertThat("Type should match", prompt.type, equalTo(PromptDelegate.FilePrompt.Type.SINGLE))
                 return GeckoResult.fromValue(prompt.dismiss())
             }
         })
@@ -1123,6 +1130,44 @@ class PromptDelegateTest : BaseSessionTest(
                 assertThat("Capture attribute should match", PromptDelegate.FilePrompt.Capture.NONE, equalTo(prompt.capture))
                 assertThat("Type should match", prompt.type, equalTo(PromptDelegate.FilePrompt.Type.MULTIPLE))
                 return GeckoResult.fromValue(prompt.dismiss())
+            }
+        })
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun directoryTest() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "dom.disable_open_during_load" to false,
+                "dom.webkitBlink.dirPicker.enabled" to true,
+            ),
+        )
+
+        mainSession.loadTestPath(PROMPT_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        sessionRule.delegateUntilTestEnd(object : PromptDelegate {
+            @AssertCalled(count = 1)
+            override fun onFilePrompt(session: GeckoSession, prompt: PromptDelegate.FilePrompt): GeckoResult<PromptDelegate.PromptResponse> {
+                assertThat("Type should match", prompt.type, equalTo(PromptDelegate.FilePrompt.Type.FOLDER))
+                return GeckoResult.fromValue(
+                    prompt.confirm(
+                        InstrumentationRegistry.getInstrumentation().targetContext,
+                        "file:///storage/emulated/0/Download".toUri(),
+                    ),
+                )
+            }
+        })
+
+        mainSession.evaluateJS("document.addEventListener('click', () => document.getElementById('direxample').click(), { once: true });")
+        mainSession.synthesizeTap(1, 1)
+
+        sessionRule.waitUntilCalled(object : PromptDelegate {
+            @AssertCalled(count = 1)
+            override fun onFolderUploadPrompt(session: GeckoSession, prompt: PromptDelegate.FolderUploadPrompt): GeckoResult<PromptDelegate.PromptResponse>? {
+                assertThat("directoryName should match", prompt.directoryName, equalTo("Download"))
+                return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
             }
         })
     }

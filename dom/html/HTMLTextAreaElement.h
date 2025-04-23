@@ -88,7 +88,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   MOZ_CAN_RUN_SCRIPT TextEditor* GetTextEditor() override;
   TextEditor* GetExtantTextEditor() const override;
   nsISelectionController* GetSelectionController() override;
-  nsFrameSelection* GetConstFrameSelection() override;
+  nsFrameSelection* GetIndependentFrameSelection() const override;
   TextControlState* GetTextControlState() const override { return mState; }
   nsresult BindToFrame(nsTextControlFrame* aFrame) override;
   MOZ_CAN_RUN_SCRIPT void UnbindFromFrame(nsTextControlFrame* aFrame) override;
@@ -167,10 +167,12 @@ class HTMLTextAreaElement final : public TextControlElement,
                                 ValidityStateType aType) override;
 
   // Web IDL binding methods
-  void GetAutocomplete(DOMString& aValue);
+  void GetAutocomplete(nsAString& aValue);
   void SetAutocomplete(const nsAString& aValue, ErrorResult& aRv) {
     SetHTMLAttr(nsGkAtoms::autocomplete, aValue, aRv);
   }
+  void GetAutocompleteInfo(AutocompleteInfo& aInfo);
+
   uint32_t Cols() { return GetColsOrDefault(); }
   void SetCols(uint32_t aCols, ErrorResult& aError) {
     uint32_t cols = aCols ? aCols : DEFAULT_COLS;
@@ -319,6 +321,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   bool mIsPreviewEnabled = false;
 
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
+  nsContentUtils::AutocompleteAttrState mAutocompleteInfoState;
 
   void FireChangeEventIfNeeded();
 

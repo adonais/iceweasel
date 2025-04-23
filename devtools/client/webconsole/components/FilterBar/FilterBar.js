@@ -7,7 +7,7 @@
 const {
   Component,
   createFactory,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const {
   connect,
 } = require("resource://devtools/client/shared/vendor/react-redux.js");
@@ -246,21 +246,21 @@ class FilterBar extends Component {
         dispatch,
       }),
       FilterButton({
-        active: filter[FILTERS.LOG],
-        label: getLabel(
-          l10n.getStr("webconsole.logsFilterButton.label"),
-          FILTERS.LOG
-        ),
-        filterKey: FILTERS.LOG,
-        dispatch,
-      }),
-      FilterButton({
         active: filter[FILTERS.INFO],
         label: getLabel(
           l10n.getStr("webconsole.infoFilterButton.label"),
           FILTERS.INFO
         ),
         filterKey: FILTERS.INFO,
+        dispatch,
+      }),
+      FilterButton({
+        active: filter[FILTERS.LOG],
+        label: getLabel(
+          l10n.getStr("webconsole.logsFilterButton.label"),
+          FILTERS.LOG
+        ),
+        filterKey: FILTERS.LOG,
         dispatch,
       }),
       FilterButton({

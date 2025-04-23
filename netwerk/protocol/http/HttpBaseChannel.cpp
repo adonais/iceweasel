@@ -3271,6 +3271,16 @@ bool HttpBaseChannel::ShouldBlockOpaqueResponse() const {
     }
   }
 
+  // Exclude no_cors web-identity
+  if (extContentPolicyType == ExtContentPolicy::TYPE_WEB_IDENTITY) {
+    if (securityMode ==
+        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT) {
+      printf("Allowing ORB for web-identity\n");
+      LOGORB("No block: System web-identity");
+      return false;
+    }
+  }
+
   uint32_t httpsOnlyStatus = mLoadInfo->GetHttpsOnlyStatus();
   if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_BYPASS_ORB) {
     LOGORB("No block: HTTPS_ONLY_BYPASS_ORB");
@@ -6430,6 +6440,38 @@ HttpBaseChannel::HasCrossOriginOpenerPolicyMismatch(bool* aIsMismatch) {
   MOZ_ASSERT(XRE_IsParentProcess());
   *aIsMismatch = LoadHasCrossOriginOpenerPolicyMismatch();
   return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetOriginAgentClusterHeader(bool* aValue) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!mResponseHead) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsAutoCString content;
+  nsresult rv = mResponseHead->GetHeader(nsHttp::OriginAgentCluster, content);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  // Origin-Agent-Cluster = <boolean>
+  nsCOMPtr<nsISFVService> sfv = GetSFVService();
+  nsCOMPtr<nsISFVItem> item;
+  rv = sfv->ParseItem(content, getter_AddRefs(item));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  nsCOMPtr<nsISFVBareItem> value;
+  rv = item->GetValue(getter_AddRefs(value));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  nsCOMPtr<nsISFVBool> flag = do_QueryInterface(value);
+  if (!flag) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  return flag->GetValue(aValue);
 }
 
 void HttpBaseChannel::MaybeFlushConsoleReports() {

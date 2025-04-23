@@ -129,11 +129,11 @@ aboutprivatebrowsing:
     record_in_processes: ["content"]
     description: >
       This is recorded when a user clicks a link on the private browsing newtab.
-    bug_numbers: [1709344, 1754635, 1781973, 1811146, 1841925, 1871197, 1922596]
+    bug_numbers: [1709344, 1754635, 1781973, 1811146, 1841925, 1871197, 1922596, 1952111]
     notification_emails:
       - "emz@mozilla.com"
       - "tihuang@mozilla.com"
-    expiry_version: "139"
+    expiry_version: "145"
     products:
       - "firefox"
 
@@ -816,11 +816,31 @@ normandy:
     record_in_processes: ["main"]
     description: >
       This records when validation of a recipe fails.
-    bug_numbers: [1762652]
-    notification_emails: ["beth@mozilla.com"]
+    bug_numbers:
+      - 1762652
+      - 1821092
+      - 1928476
+    notification_emails:
+      - beth@mozilla.com
+      - project-nimbus@mozilla.com
     expiry_version: never
     extra_keys:
-      reason: Why validation failed (one of "invalid-recipe", "invalid-branch", or "invalid-reason").
+      reason: >
+        Why the validation failed.
+
+        This will be one of the following reasons:
+
+        - "invalid-recipe": the recipe failed schema validation;
+        - "invalid-branch": a branch value failed schema validation;
+        - "invalid-feature": the recipe uses an unknown feature;
+        - "l10n-missing-locale": the recipe is missing localizations for a
+          specific locale;
+        - "l10n-missing-entry": the recipe is missing specific localization
+          entries for a specific locale;
+        - "unsupported-feature": the recipe uses a feature that exists but is
+          not supported by this specific application (e.g., a feature that is
+          only for the background task runner);
+
       branch: If reason == invalid-branch, the branch that failed validation.
       feature: If reason == invalid-feature, the invalid feature ID.
       locale: >
@@ -831,6 +851,9 @@ normandy:
       l10n_ids: >
         If reason == missing-l10n-entry, a comma-separated list of missing
         localization entries.
+      feature_ids: >
+        If reason == unsupported-feature, a comma-separated list of the
+        unsupported feature IDs.
 
 browser.launched_to_handle:
   system_notification:
@@ -3312,6 +3335,7 @@ mfcdm:
       audio_codec: The audio codec was being used when the error or crash happened
       resolution: The video resolution was being used when the error or crash happened
       key_system: The key system was being used when the error or crash happened
+      platform_error: The platform specific error code, eg. HResult on Windows
 
 installation:
   first_seen:

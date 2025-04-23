@@ -168,11 +168,15 @@ class MediaDecoderStateMachineBase {
 
   virtual RefPtr<SetCDMPromise> SetCDMProxy(CDMProxy* aProxy);
 
-  virtual bool IsCDMProxySupported(CDMProxy* aProxy) = 0;
+  virtual nsresult IsCDMProxySupported(CDMProxy* aProxy) = 0;
 
   virtual bool IsExternalEngineStateMachine() const { return false; }
 
   bool IsLiveStream() const;
+
+#ifdef DEBUG
+  bool HasNotifiedPlaybackError() const { return mHasNotifiedPlaybackError; }
+#endif
 
  protected:
   virtual ~MediaDecoderStateMachineBase() = default;
@@ -316,6 +320,10 @@ class MediaDecoderStateMachineBase {
 
  private:
   WatchManager<MediaDecoderStateMachineBase> mWatchManager;
+
+#ifdef DEBUG
+  bool mHasNotifiedPlaybackError = false;
+#endif
 };
 
 }  // namespace mozilla

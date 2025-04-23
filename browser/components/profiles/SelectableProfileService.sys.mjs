@@ -13,14 +13,19 @@ const lazy = {};
 // This is used to keep the icon controllers alive for as long as their windows are alive.
 const TASKBAR_ICON_CONTROLLERS = new WeakMap();
 const PROFILES_PREF_NAME = "browser.profiles.enabled";
+const GROUPID_PREF_NAME = "toolkit.telemetry.cachedProfileGroupID";
+const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
+  ClientID: "resource://gre/modules/ClientID.sys.mjs",
   CryptoUtils: "resource://services-crypto/utils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
+  TelemetryUtils: "resource://gre/modules/TelemetryUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "profilesLocalization", () => {
@@ -104,9 +109,25 @@ class SelectableProfileServiceClass extends EventEmitter {
   #windowActivated = null;
   #isEnabled = false;
 
-  // The initial preferences that will be shared amongst profiles. Only used during database
-  // creation, after that the set in the database is used.
-  static initialSharedPrefs = ["toolkit.telemetry.cachedProfileGroupID"];
+  // The preferences that must be permanently stored in the database and kept
+  // consistent amongst profiles.
+  static permanentSharedPrefs = [
+    "app.shield.optoutstudies.enabled",
+    "browser.crashReports.unsubmittedCheck.autoSubmit2",
+    "browser.discovery.enabled",
+    "browser.urlbar.quicksuggest.dataCollection.enabled",
+    "datareporting.healthreport.uploadEnabled",
+    "datareporting.policy.currentPolicyVersion",
+    "datareporting.policy.dataSubmissionEnabled",
+    "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
+    "datareporting.policy.dataSubmissionPolicyBypassNotification",
+    "datareporting.policy.dataSubmissionPolicyNotifiedTime",
+    "datareporting.policy.minimumPolicyVersion",
+    "datareporting.policy.minimumPolicyVersion.channel-beta",
+    "datareporting.usage.uploadEnabled",
+    GROUPID_PREF_NAME,
+  ];
+
   // Preferences that were previously shared but should now be ignored.
   static ignoredSharedPrefs = [
     "browser.profiles.enabled",
@@ -118,6 +139,7 @@ class SelectableProfileServiceClass extends EventEmitter {
 
     this.onNimbusUpdate = this.onNimbusUpdate.bind(this);
     this.themeObserver = this.themeObserver.bind(this);
+    this.matchMediaObserver = this.matchMediaObserver.bind(this);
     this.prefObserver = (subject, topic, prefName) =>
       this.flushSharedPrefToDatabase(prefName);
     this.#profileService = Cc[
@@ -404,6 +426,10 @@ class SelectableProfileServiceClass extends EventEmitter {
       "lightweight-theme-styling-update"
     );
 
+    let window = Services.wm.getMostRecentBrowserWindow();
+    let prefersDarkQuery = window?.matchMedia("(prefers-color-scheme: dark)");
+    prefersDarkQuery?.addEventListener("change", this.matchMediaObserver);
+
     this.#initialized = true;
 
     // this.#currentProfile is unset in the case that the database has only just been created. We
@@ -581,7 +607,10 @@ class SelectableProfileServiceClass extends EventEmitter {
       this.#observedPrefs.add(prefName);
     }
 
-    if (!Services.prefs.prefHasUserValue(prefName)) {
+    if (
+      !SelectableProfileServiceClass.permanentSharedPrefs.includes(prefName) &&
+      !Services.prefs.prefHasUserValue(prefName)
+    ) {
       await this.#deleteDBPref(prefName);
       return;
     }
@@ -663,36 +692,51 @@ class SelectableProfileServiceClass extends EventEmitter {
   // App session lifecycle methods and multi-process support
 
   /*
-   * Helper that returns an inited Firefox executable process (nsIProcess).
-   * Mostly useful for mocking in unit testing.
+   * Helper that executes a new Firefox process. Mostly useful for mocking in
+   * unit testing.
    */
-  getExecutableProcess() {
+  execProcess(aArgs) {
+    let executable = SelectableProfileServiceClass.getDirectory("XREExeF");
+
+    if (AppConstants.platform == "macosx") {
+      // Use the application bundle if possible.
+      let appBundle = executable.parent.parent.parent;
+      if (appBundle.path.endsWith(".app")) {
+        executable = appBundle;
+
+        Cc["@mozilla.org/widget/macdocksupport;1"]
+          .getService(Ci.nsIMacDockSupport)
+          .launchAppBundle(appBundle, aArgs, { addsToRecentItems: false });
+        return;
+      }
+    }
+
     let process = Cc["@mozilla.org/process/util;1"].createInstance(
       Ci.nsIProcess
     );
-    let executable = SelectableProfileServiceClass.getDirectory("XREExeF");
     process.init(executable);
-    return process;
+    process.runw(false, aArgs, aArgs.length);
   }
 
   /**
    * Launch a new Firefox instance using the given selectable profile.
    *
    * @param {SelectableProfile} aProfile The profile to launch
-   * @param {string} url A url to open in launched profile
+   * @param {string} aUrl A url to open in launched profile
    */
-  launchInstance(aProfile, url) {
-    let process = this.getExecutableProcess();
+  launchInstance(aProfile, aUrl) {
     let args = ["--profile", aProfile.path];
     if (Services.appinfo.OS === "Darwin") {
       args.unshift("-foreground");
     }
-    if (url) {
-      args.push("-url", url);
+
+    if (aUrl) {
+      args.push("-url", aUrl);
     } else {
       args.push(`--${COMMAND_LINE_ACTIVATE}`);
     }
-    process.runw(false, args, args.length);
+
+    this.execProcess(args);
   }
 
   /**
@@ -806,6 +850,35 @@ class SelectableProfileServiceClass extends EventEmitter {
   }
 
   /**
+   * The default theme uses `light-dark` color function which doesn't apply
+   * correctly to the taskbar avatar icon. We use `InspectorUtils.colorToRGBA`
+   * to get the current rgba values for a theme. This way the color values can
+   * be correctly applied to the taskbar avatar icon.
+   *
+   * @returns {object}
+   *  themeBg {string}: the background color in rgba(r, g, b, a) format
+   *  themeFg {string}: the foreground color in rgba(r, g, b, a) format
+   */
+  getColorsForDefaultTheme() {
+    let window = Services.wm.getMostRecentBrowserWindow();
+    // The computedStyles object is a live CSSStyleDeclaration.
+    let computedStyles = window.getComputedStyle(
+      window.document.documentElement
+    );
+
+    let themeFgColor = computedStyles.getPropertyValue("--toolbar-color");
+    let themeBgColor = computedStyles.getPropertyValue("--toolbar-bgcolor");
+
+    let bg = InspectorUtils.colorToRGBA(themeBgColor, window.document);
+    let themeBg = `rgba(${bg.r}, ${bg.r}, ${bg.b}, ${bg.a})`;
+
+    let fg = InspectorUtils.colorToRGBA(themeFgColor, window.document);
+    let themeFg = `rgba(${fg.r}, ${fg.g}, ${fg.b}, ${fg.a})`;
+
+    return { themeBg, themeFg };
+  }
+
+  /**
    * The observer function that watches for theme changes and updates the
    * current profile of a theme change.
    *
@@ -832,17 +905,11 @@ class SelectableProfileServiceClass extends EventEmitter {
     let themeFg = theme.toolbar_text;
     let themeBg = theme.toolbarColor;
 
-    if (theme.id === "default-theme@mozilla.org" || !themeFg || !themeBg) {
-      // The computedStyles object is a live CSSStyleDeclaration.
-      let computedStyles = window.getComputedStyle(
-        window.document.documentElement
-      );
-
+    if (theme.id === DEFAULT_THEME_ID || !themeFg || !themeBg) {
       window.addEventListener(
         "windowlwthemeupdate",
         () => {
-          themeFg = computedStyles.getPropertyValue("--toolbar-color");
-          themeBg = computedStyles.getPropertyValue("--toolbar-bgcolor");
+          ({ themeBg, themeFg } = this.getColorsForDefaultTheme());
 
           this.currentProfile.theme = {
             themeId: theme.id,
@@ -864,6 +931,26 @@ class SelectableProfileServiceClass extends EventEmitter {
   }
 
   /**
+   * The observer function that watches for OS theme changes and updates the
+   * current profile of a theme change.
+   */
+  matchMediaObserver() {
+    // If the current theme isn't the default theme, we can just return because
+    // we already got the theme colors from the theme change in `themeObserver`
+    if (this.currentProfile.theme.themeId !== DEFAULT_THEME_ID) {
+      return;
+    }
+
+    let { themeBg, themeFg } = this.getColorsForDefaultTheme();
+
+    this.currentProfile.theme = {
+      themeId: this.currentProfile.theme.themeId,
+      themeFg,
+      themeBg,
+    };
+  }
+
+  /**
    * Fetch all prefs from the DB and write to the current instance.
    */
   async loadSharedPrefsFromDatabase() {
@@ -876,6 +963,18 @@ class SelectableProfileServiceClass extends EventEmitter {
 
     for (let { name, value, type } of await this.getAllDBPrefs()) {
       if (SelectableProfileServiceClass.ignoredSharedPrefs.includes(name)) {
+        continue;
+      }
+
+      // If the user has disabled then re-enabled data collection in another
+      // profile in the group, an extra step is needed to ensure each profile
+      // uses the same profile group ID.
+      if (
+        name === GROUPID_PREF_NAME &&
+        value !== lazy.TelemetryUtils.knownProfileGroupID &&
+        value !== Services.prefs.getCharPref(GROUPID_PREF_NAME)
+      ) {
+        await lazy.ClientID.setProfileGroupID(value); // Sets the pref for us.
         continue;
       }
 
@@ -926,7 +1025,7 @@ class SelectableProfileServiceClass extends EventEmitter {
    *
    * @param {boolean} shouldShow Whether or not we should show the profile selector
    */
-  async showProfileSelectorWindow(shouldShow) {
+  async setShowProfileSelectorWindow(shouldShow) {
     this.groupToolkitProfile.showProfileSelector = shouldShow;
     await this.#attemptFlushProfileService();
   }
@@ -960,13 +1059,19 @@ class SelectableProfileServiceClass extends EventEmitter {
         PathUtils.join(
           SelectableProfileServiceClass.getDirectory("DefProfRt").path,
           profileDir
-        )
+        ),
+        {
+          permissions: 0o700,
+        }
       ),
       IOUtils.makeDirectory(
         PathUtils.join(
           SelectableProfileServiceClass.getDirectory("DefProfLRt").path,
           profileDir
-        )
+        ),
+        {
+          permissions: 0o700,
+        }
       ),
     ]);
 
@@ -1085,7 +1190,7 @@ class SelectableProfileServiceClass extends EventEmitter {
       // different name.
       name: nextProfileNumber == 0 ? originalName.value : defaultName.value,
       avatar: this.#defaultAvatars[randomIndex],
-      themeId: "default-theme@mozilla.org",
+      themeId: DEFAULT_THEME_ID,
       themeFg: isDark ? "rgb(255,255,255)" : "rgb(21,20,26)",
       themeBg: isDark ? "rgb(28, 27, 34)" : "rgb(240, 240, 244)",
     };
@@ -1117,7 +1222,7 @@ class SelectableProfileServiceClass extends EventEmitter {
     await this.init();
 
     // Flush our shared prefs into the database.
-    for (let prefName of SelectableProfileServiceClass.initialSharedPrefs) {
+    for (let prefName of SelectableProfileServiceClass.permanentSharedPrefs) {
       await this.flushSharedPrefToDatabase(prefName);
     }
 
@@ -1128,7 +1233,30 @@ class SelectableProfileServiceClass extends EventEmitter {
       this.#currentProfile = await this.#createProfile(path);
 
       // And also set the profile selector window to show at startup (bug 1933911).
-      this.showProfileSelectorWindow(true);
+      this.setShowProfileSelectorWindow(true);
+
+      // For first-run dark mode macOS users, the original profile's dock icon
+      // disappears after creating and launching an additional profile for the
+      // first time. Here we hack around this problem.
+      //
+      // Wait a full second, which seems to be enough time for the newly-
+      // launched second Firefox instance's dock animation to complete. Then
+      // trigger redrawing the original profile's badged icon (by setting the
+      // avatar to its current value, a no-op change which redraws the dock
+      // icon as a side effect).
+      //
+      // Shorter timeouts don't work, perhaps because they trigger the update
+      // before the dock bouncing animation completes for the other instance?
+      //
+      // We haven't figured out the lower-level bug that's causing this, but
+      // hope to someday find that better solution (bug 1952338).
+      if (Services.appinfo.OS === "Darwin") {
+        lazy.setTimeout(() => {
+          // To avoid displeasing the linter, assign to a temporary variable.
+          let avatar = SelectableProfileService.currentProfile.avatar;
+          SelectableProfileService.currentProfile.avatar = avatar;
+        }, 1000);
+      }
     }
   }
 
@@ -1218,19 +1346,16 @@ class SelectableProfileServiceClass extends EventEmitter {
   }
 
   /**
-   * Close all active instances running the current profile
-   */
-  closeActiveProfileInstances() {}
-
-  /**
    * Schedule deletion of the current SelectableProfile as a background task.
    */
   async deleteCurrentProfile() {
     let profiles = await this.getAllProfiles();
 
-    // Refuse to delete the last profile.
     if (profiles.length <= 1) {
-      return;
+      await this.createNewProfile();
+      await this.setShowProfileSelectorWindow(false);
+
+      profiles = await this.getAllProfiles();
     }
 
     // TODO: (Bug 1923980) How should we choose the new default profile?
@@ -1578,8 +1703,7 @@ export class CommandLineHandler {
       cmdLine.removeArguments(0, cmdLine.length - 1);
       cmdLine.preventDefault = true;
 
-      let process = SelectableProfileService.getExecutableProcess();
-      process.runw(false, args, args.length);
+      SelectableProfileService.execProcess(args);
     }
   }
 }

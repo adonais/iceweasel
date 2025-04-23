@@ -6,6 +6,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PanelMultiView: "resource:///modules/PanelMultiView.sys.mjs",
+  TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
 });
 
 const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
@@ -21,6 +22,9 @@ function setAttributes(element, attrs) {
 }
 
 class TabsListBase {
+  /** @type {boolean} */
+  #domRefreshPending = false;
+
   constructor({
     className,
     filterFn,
@@ -157,8 +161,14 @@ class TabsListBase {
   }
 
   _refreshDOM() {
-    this._cleanupDOM();
-    this._populateDOM();
+    if (!this.#domRefreshPending) {
+      this.#domRefreshPending = true;
+      this.containerNode.ownerGlobal.requestAnimationFrame(() => {
+        this.#domRefreshPending = false;
+        this._cleanupDOM();
+        this._populateDOM();
+      });
+    }
   }
 
   _setupListeners() {
@@ -226,6 +236,9 @@ class TabsListBase {
     }
   }
 
+  /**
+   * @param {MozTabbrowserTab} tab
+   */
   _moveTab(tab) {
     let item = this.tabToElement.get(tab);
     if (item) {
@@ -306,7 +319,9 @@ export class TabsPanel extends TabsListBase {
           break;
         }
         if (event.target.classList.contains("all-tabs-close-button")) {
-          this.gBrowser.removeTab(event.target.tab);
+          this.gBrowser.removeTab(event.target.tab, {
+            telemetrySource: lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
+          });
           break;
         }
         if ("tabGroupId" in event.target.dataset) {
@@ -395,16 +410,18 @@ export class TabsPanel extends TabsListBase {
     muteButton.tab = tab;
     row.appendChild(muteButton);
 
-    let closeButton = doc.createXULElement("toolbarbutton");
-    closeButton.classList.add(
-      "all-tabs-close-button",
-      "all-tabs-secondary-button",
-      "subviewbutton"
-    );
-    closeButton.setAttribute("closemenu", "none");
-    doc.l10n.setAttributes(closeButton, "tabbrowser-manager-close-tab");
-    closeButton.tab = tab;
-    row.appendChild(closeButton);
+    if (!tab.pinned) {
+      let closeButton = doc.createXULElement("toolbarbutton");
+      closeButton.classList.add(
+        "all-tabs-close-button",
+        "all-tabs-secondary-button",
+        "subviewbutton"
+      );
+      closeButton.setAttribute("closemenu", "none");
+      doc.l10n.setAttributes(closeButton, "tabbrowser-manager-close-tab");
+      closeButton.tab = tab;
+      row.appendChild(closeButton);
+    }
 
     this._setRowAttributes(row, tab);
 
@@ -578,7 +595,7 @@ export class TabsPanel extends TabsListBase {
     } else {
       pos = targetTab._tPos + this.dropTargetDirection + 1;
     }
-    this.gBrowser.moveTabTo(draggedTab, pos);
+    this.gBrowser.moveTabTo(draggedTab, { tabIndex: pos });
 
     this._clearDropTarget();
   }

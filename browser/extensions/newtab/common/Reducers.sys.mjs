@@ -102,6 +102,19 @@ export const INITIAL_STATE = {
     isUserLoggedIn: false,
     recentSavesEnabled: false,
     showTopicSelection: false,
+    report: {
+      visible: false,
+      data: {},
+    },
+  },
+  // Messages received from ASRouter to render in newtab
+  Messages: {
+    // messages received from ASRouter are initially visible
+    isHidden: false,
+    // portID for that tab that was sent the message
+    portID: "",
+    // READONLY Message data received from ASRouter
+    messageData: {},
   },
   Notifications: {
     showNotifications: false,
@@ -128,6 +141,7 @@ export const INITIAL_STATE = {
     wallpaperList: [],
     highlightSeenCounter: 0,
     categories: [],
+    uploadedWallpaper: "",
   },
   Weather: {
     initialized: false,
@@ -533,6 +547,24 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
   }
 }
 
+function Messages(prevState = INITIAL_STATE.Messages, action) {
+  switch (action.type) {
+    case at.MESSAGE_SET:
+      if (prevState.messageData.messageType) {
+        return prevState;
+      }
+      return {
+        ...prevState,
+        messageData: action.data.message,
+        portID: action.data.portID || "",
+      };
+    case at.MESSAGE_TOGGLE_VISIBILITY:
+      return { ...prevState, isHidden: action.data };
+    default:
+      return prevState;
+  }
+}
+
 function Pocket(prevState = INITIAL_STATE.Pocket, action) {
   switch (action.type) {
     case at.POCKET_WAITING_FOR_SPOC:
@@ -864,6 +896,22 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         showBlockSectionConfirmation: true,
         sectionData: action.data,
       };
+    case at.REPORT_OPEN:
+      return {
+        ...prevState,
+        report: {
+          ...prevState.report,
+          visible: true,
+        },
+      };
+    case at.REPORT_CLOSE:
+      return {
+        ...prevState,
+        report: {
+          ...prevState.report,
+          visible: false,
+        },
+      };
     default:
       return prevState;
   }
@@ -896,6 +944,8 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
       };
     case at.WALLPAPERS_CATEGORY_SET:
       return { ...prevState, categories: action.data };
+    case at.WALLPAPERS_CUSTOM_SET:
+      return { ...prevState, uploadedWallpaper: action.data };
     default:
       return prevState;
   }
@@ -976,6 +1026,7 @@ export const reducers = {
   Prefs,
   Dialog,
   Sections,
+  Messages,
   Notifications,
   Pocket,
   Personalization,

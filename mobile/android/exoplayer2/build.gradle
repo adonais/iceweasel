@@ -1,5 +1,3 @@
-buildDir "${topobjdir}/gradle/build/mobile/android/exoplayer2"
-
 apply plugin: 'com.android.library'
 
 dependencies {
@@ -7,18 +5,18 @@ dependencies {
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
     compileOnly "org.checkerframework:checker-compat-qual:2.5.0"
     compileOnly "org.checkerframework:checker-qual:2.5.0"
-    compileOnly "org.jetbrains.kotlin:kotlin-annotations-jvm:${Versions.kotlin}"
+    compileOnly libs.kotlin.annotations.jvm
 
-    implementation ComponentsDependencies.androidx_annotation
+    implementation libs.androidx.annotation
 }
 
 android {
-    buildToolsVersion project.ext.buildToolsVersion
-    compileSdkVersion project.ext.compileSdkVersion
+    buildToolsVersion = project.ext.buildToolsVersion
+    compileSdkVersion = project.ext.compileSdkVersion
 
     defaultConfig {
-        targetSdkVersion project.ext.targetSdkVersion
-        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion = project.ext.targetSdkVersion
+        minSdkVersion = project.ext.minSdkVersion
 
         versionCode project.ext.versionCode
         versionName project.ext.versionName
@@ -36,7 +34,7 @@ android {
         singleVariant("debug")
     }
 
-    namespace 'org.mozilla.geckoview.thirdparty'
+    namespace = 'org.mozilla.geckoview.thirdparty'
 }
 
 apply plugin: 'maven-publish'

@@ -8,31 +8,31 @@ apply plugin: 'com.google.devtools.ksp'
 
 android {
     defaultConfig {
-        minSdkVersion config.minSdkVersion
-        compileSdk config.compileSdkVersion
-        targetSdkVersion config.targetSdkVersion
+        minSdkVersion = config.minSdkVersion
+        compileSdk = config.compileSdkVersion
+        targetSdkVersion = config.targetSdkVersion
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
 
-    namespace 'mozilla.components.ui.tabcounter'
+    namespace = 'mozilla.components.ui.tabcounter'
 }
 
 dependencies {
-    implementation platform(ComponentsDependencies.androidx_compose_bom)
+    implementation platform(libs.androidx.compose.bom)
     implementation project(':support-ktx')
     implementation project(':support-utils')
 
-    implementation ComponentsDependencies.androidx_core_ktx
+    implementation libs.androidx.core.ktx
     implementation project(':concept-menu')
     implementation project(':browser-menu2')
     implementation project(':support-base')
@@ -41,8 +41,8 @@ dependencies {
 
     testImplementation project(":support-test")
 
-    testImplementation ComponentsDependencies.androidx_test_junit
-    testImplementation ComponentsDependencies.testing_robolectric
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.testing.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

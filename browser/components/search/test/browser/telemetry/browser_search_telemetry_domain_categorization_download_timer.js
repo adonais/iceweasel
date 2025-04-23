@@ -11,9 +11,9 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   TELEMETRY_CATEGORIZATION_DOWNLOAD_SETTINGS:
-    "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  SearchSERPDomainToCategoriesMap:
-    "resource:///modules/SearchSERPTelemetry.sys.mjs",
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
+  SERPDomainToCategoriesMap:
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
 });
 
@@ -233,7 +233,7 @@ add_task(async function test_download_after_multiple_failures() {
   Assert.equal(consoleObserved, false, "Encountered download failure");
   Assert.equal(timeout, true, "Timeout occured");
 
-  Assert.ok(SearchSERPDomainToCategoriesMap.empty, "Map is empty");
+  Assert.ok(SERPDomainToCategoriesMap.empty, "Map is empty");
 
   // Clean up.
   await SpecialPowers.popPrefEnv();
@@ -285,7 +285,7 @@ add_task(async function test_cancel_download_timer() {
   await Promise.race([firstPromise, secondPromise]);
   Assert.equal(consoleObserved, false, "Encountered download failure");
   Assert.equal(timeout, true, "Timeout occured");
-  Assert.ok(SearchSERPDomainToCategoriesMap.empty, "Map is empty");
+  Assert.ok(SERPDomainToCategoriesMap.empty, "Map is empty");
 
   // Clean up.
   await resetCategorizationCollection(record);

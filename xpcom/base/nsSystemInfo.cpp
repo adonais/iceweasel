@@ -41,6 +41,7 @@
 #  include "nsDirectoryServiceDefs.h"
 #  include "nsDirectoryServiceUtils.h"
 #  include "nsWindowsHelpers.h"
+#  include "nsIWindowsRegKey.h"
 #  include "WinUtils.h"
 #  include "mozilla/NotNull.h"
 
@@ -565,6 +566,49 @@ static nsresult ProcessIsRosettaTranslated(bool& isRosetta) {
     isRosetta = (ret == 1);
   }
 #  endif
+  return NS_OK;
+}
+#endif
+
+#ifdef XP_WIN
+static nsresult GetWinModelId(nsAutoString& aModelId) {
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_GetService("@mozilla.org/windows-registry-key;1");
+  NS_ENSURE_TRUE(regKey, NS_ERROR_FAILURE);
+  const nsString regPath(
+      u"SYSTEM\\CurrentControlSet\\Control\\SystemInformation");
+  nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE, regPath,
+                             nsIWindowsRegKey::ACCESS_READ);
+  NS_ENSURE_SUCCESS(rv, rv);
+  auto defer = mozilla::MakeScopeExit([&] { regKey->Close(); });
+  return regKey->ReadStringValue(u"SystemProductName"_ns, aModelId);
+}
+#endif
+
+#if defined(XP_LINUX)
+static nsresult GetLinuxProductName(nsAutoCString& aProductName) {
+  std::ifstream input("/sys/devices/virtual/dmi/id/product_name");
+  if (!input.is_open()) {
+    return NS_ERROR_FAILURE;
+  }
+  std::string line;
+  if (!std::getline(input, line)) {
+    return NS_ERROR_FAILURE;
+  }
+  aProductName = line.c_str();
+  return NS_OK;
+}
+
+static nsresult GetLinuxProductSku(nsAutoCString& aProductSku) {
+  std::ifstream input("/sys/devices/virtual/dmi/id/product_sku");
+  if (!input.is_open()) {
+    return NS_ERROR_FAILURE;
+  }
+  std::string line;
+  if (!std::getline(input, line)) {
+    return NS_ERROR_FAILURE;
+  }
+  aProductSku = line.c_str();
   return NS_OK;
 }
 #endif
@@ -1488,6 +1532,28 @@ nsresult nsSystemInfo::Init() {
   bool isRosetta;
   if (NS_SUCCEEDED(ProcessIsRosettaTranslated(isRosetta))) {
     rv = SetPropertyAsBool(u"rosettaStatus"_ns, isRosetta);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+#endif
+
+#if defined(XP_WIN)
+  nsAutoString modelId;
+  if (NS_SUCCEEDED(GetWinModelId(modelId))) {
+    rv = SetPropertyAsAString(u"winModelId"_ns, modelId);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+#endif
+
+#if defined(XP_LINUX)
+  nsAutoCString productName;
+  if (NS_SUCCEEDED(GetLinuxProductName(productName))) {
+    rv = SetPropertyAsACString(u"linuxProductName"_ns, productName);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsAutoCString productSku;
+  if (NS_SUCCEEDED(GetLinuxProductSku(productSku))) {
+    rv = SetPropertyAsACString(u"linuxProductSku"_ns, productSku);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 #endif

@@ -10,19 +10,32 @@ import mozilla.components.compose.browser.toolbar.concept.Action as ToolbarActio
 /**
  * [Action]s for updating the [BrowserToolbarState] via [BrowserToolbarStore].
  */
-sealed class BrowserToolbarAction : Action {
+sealed interface BrowserToolbarAction : Action {
     /**
      * Updates whether the toolbar is in "display" or "edit" mode.
      *
      * @property editMode Whether or not the toolbar is in "edit" mode.
      */
-    data class ToggleEditMode(val editMode: Boolean) : BrowserToolbarAction()
+    data class ToggleEditMode(val editMode: Boolean) : BrowserToolbarAction
+
+    /**
+     * Initialize the toolbar with the provided data.
+     *
+     * @property mode The initial mode of the toolbar.
+     * @property displayState The initial state of the display toolbar.
+     * @property editState The initial state of the edit toolbar.
+     */
+    data class Init(
+        val mode: Mode = Mode.DISPLAY,
+        val displayState: DisplayState = DisplayState(),
+        val editState: EditState = EditState(),
+    ) : BrowserToolbarAction
 }
 
 /**
  * [BrowserToolbarAction] implementations related to updating the browser display toolbar.
  */
-sealed class BrowserDisplayToolbarAction : BrowserToolbarAction() {
+sealed class BrowserDisplayToolbarAction : BrowserToolbarAction {
     /**
      * Adds a navigation [Action] to be displayed to the left side of the URL of the display toolbar
      * (outside of the URL bounding box).
@@ -45,12 +58,19 @@ sealed class BrowserDisplayToolbarAction : BrowserToolbarAction() {
      * @property action The [Action] to be added.
      */
     data class AddBrowserAction(val action: ToolbarAction) : BrowserDisplayToolbarAction()
+
+    /**
+     * Replaces the currently displayed list of browser actions with the provided list of actions.
+     *
+     * @property actions The new list of [ToolbarAction]s.
+     */
+    data class UpdateBrowserActions(val actions: List<ToolbarAction>) : BrowserDisplayToolbarAction()
 }
 
 /**
  * [BrowserToolbarAction] implementations related to updating the browser edit toolbar.
  */
-sealed class BrowserEditToolbarAction : BrowserToolbarAction() {
+sealed class BrowserEditToolbarAction : BrowserToolbarAction {
     /**
      * Updates the text of the toolbar that is currently being edited (in "edit" mode).
      *

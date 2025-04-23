@@ -44,8 +44,6 @@
   <string name="tab_tray_close_multiselect_content_description">Esẽ poravoha hekoetáva ayvúgui</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Eñongatu tendayke poravopyre mbyatyhápe</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Poravopyre</string>
   <!--
     Home - Bookmarks
 
@@ -128,9 +126,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar.
   -->
-  <string name="address_bar_swipe_cfr_title">Embosyryry tembiporu renda emoambue hag̃ua tendayke</string>
+  <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Embosyryry tembiporu renda emoambue hag̃ua tendayke</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-  <string name="address_bar_swipe_cfr_message">Embosyryry asu térã akatúa gotyo emoambue hag̃ua. Embosyryry asu gotyo tendayke pahaguápe embojuruja hag̃ua ipyahúva.</string>
+  <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Embosyryry asu térã akatúa gotyo emoambue hag̃ua. Embosyryry asu gotyo tendayke pahaguápe embojuruja hag̃ua ipyahúva.</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">Embosyryry tembiporu renda asu térã akatúa gotyo emoambue hag̃ua tendayke.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Eikotevẽ eike ta’ãngamýime. Eho Android ñembohekópe, eukutu ñemoneĩ ha moneĩ.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -622,34 +622,20 @@
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Kuaave</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">Emondo mba’ekuaarã aporekogua ha ñomongeta Mozilla-pe</string>
-  <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
-  <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Umi mba’ekuaarã ne mba’e’okapegua, hardware ñemboheko ha Firefox jeporu oipytyvõ tembiapoite porãverã, ijeporureko ha hekopyta opaite poruhára arapy tuichakuépe.</string>
   <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Umi mba’ekuaarã mba’e’oka rehegua, hardware ñemboheko ha Firefox jeporu oipytyvõ tembiapoite porãverã, ijeporureko ha hekopyta opaite poruhárape g̃uarã.</string>
-  <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Eikuaave mba’ekuaarã ojeporúva rehegua</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Kuaave</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Apopyre</string>
-  <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Heja</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Eg̃uahẽporãite Firefox-pe</string>
-  <!-- Terms of service sub header label. -->
-  <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Ñeikundaha pya’e ha hekorosãva.</string>
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Ñeikundaha pya’e ha hekorosãva</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label">Emoneĩ ha eku’ejey</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
-  <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Eku’ejeývo, emoneĩmbáma umi %1$s Firefox.</string>
-  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Eku’ejeývo, emoneĩmbáma umi %1$s.</string>
-  <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
-  <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Mba’epytyvõrã ñemboguata</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefox jeporukuaa rape</string>
-  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
-  <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox omomba’e nde rekoñemi. Emoñe’ẽve ore %1$s rupive.</string>
   <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox ojepy’apy nde rekoñemíre. Emoñe’ẽve ore %1$s rupi.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
@@ -660,6 +646,8 @@
   <string name="onboarding_term_of_service_line_three_link_text">Ñangareko</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Orepytyvõ Firefox oiko porãve hag̃ua</string>
+  <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Eikuaaukávo mba’éichapa eikuaára’e Firefox ha ijeporu, orepytyvõ emoherakuã hag̃ua ore kundahára hetave tapichápe.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Mba’éichapa jaiporu umi mba’ekuaarã</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
@@ -681,8 +669,8 @@
   <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
   <string name="onboarding_customize_toolbar_placement_bottom_content_description">Ta’ãnga rembiporu rupa michĩvéva</string>
   <string name="onboarding_customize_toolbar_placement_top_content_description">Ta’ãnga rembiporu rupa tuichavéva</string>
-  <!-- Onboarding toolbar selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Ani ko’ág̃a</string>
+  <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_toolbar_a11y_action_label_select">eiporavo</string>
   <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Eiporavo peteĩ téma</string>
   <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
@@ -697,8 +685,8 @@
   <string name="onboarding_customize_theme_system_option">Ijeheguíva apopyvusu rehegua</string>
   <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
   <string name="onboarding_customize_theme_content_description">Téma ra’ãnga %1$s</string>
-  <!-- Onboarding theme selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Ani ko’ág̃a</string>
+  <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_theme_a11y_action_label_select">eiporavo</string>
   <!--
     Widget Picker
 
@@ -776,6 +764,10 @@
   <string name="preferences_add_private_browsing_shortcut">Embojuaju jeike pya’eha tendayke ñemiguáre</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">HTTPS ayvúpe añoite</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">Eiporu mba’erechaha jokoha eñomi hag̃ua tendayke ñeikundaha ñemiguápe</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary">Ehecha tendayke kuã hũ ndive, tovara’ãnga joko’oha térã PIN.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Ejoko Banner kookie rehegua</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -1133,12 +1125,8 @@
   <string name="preference_usage_data_2">Mba’ekuaarã aporekogua ha ñomongetarã</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more">Eikuaave</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Emoherakuã mba’ekuaarã apopy, jeporu, hardware ha kundahára mboava Mozilla ndive orepytyvõ hag̃ua oikoporãvévo %1$s</string>
   <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
   <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">Umi mba’ekuaarã mba’e’oka rehegua, hardware ñemboheko ha Firefox jeporu oipytyvõ tembiapoite porãverã, ijeporureko ha hekopyta.</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Mba’ekuaarã jehepyme’ẽrã</string>
   <!-- Preference switch for campaign measurement data (marketing data) collection -->
   <string name="preferences_marketing_data_2">Tembiapokue ñeha’ãrã mba’ekuaarã</string>
   <!-- Learn more link for marketing data preference -->
@@ -1149,10 +1137,8 @@
   <string name="preferences_daily_usage_ping_learn_more">Eikuaave ñe’ẽñemi eiporuvéva rehegua</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title">Emondo marandu jejavy rehegua</string>
-  <string name="preferences_automatically_submit_crashes_title" moz:removedIn="136" tools:ignore="UnusedResources">Emondo marandu jejavy rehegua</string>
   <!-- Preference switch description for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_description">Kóva ore pytyvõ roikuaa ha romyatyrõvo apañuái kundahára ndive. Umi marandu’ípe oĩkuaa mba’ekuaarã nemba’ete ha ñemiguáva.</string>
-  <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Emoherakuã, ijehegui oñepyrũvo, mba’ekuaarã jejavy rehegua Mozilla ndive oiko rire jejavy</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Eikuaave marandu jejavy rehegua</string>
   <!-- Title for studies preferences -->
@@ -1339,8 +1325,6 @@
   <string name="studies_remove">Mboguete</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Myandy</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s ikatu omohenda ha omongu’e kuaara’ã sapy’apy’a.</string>
   <!-- Description for studies -->
   <string name="studies_description_3">Eiporu tembiapoite ha temimo’ã opavavete oiporukuaa mboyve.</string>
   <!-- Title of the Studies data preference -->
@@ -1350,16 +1334,10 @@
   <!--
     Sessions
 
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Tendayke ñemiguáva</string>
-  <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Tendayke ñemi ijurujáva: %1$s. Eikutu emoambue hag̃ua tendayke.</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Tendayke mbojuehepyre</string>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1393,6 +1371,8 @@
   <string name="tab_tray_multiselect_share_content_description">Emoherakuã tendayke mbosa’ypyre</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Tendayke poravorã mbosa’ypyre</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">Kuatiarogue ñepyrũha</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Embogue tendayke mbyatypyregua</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1455,18 +1435,57 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">Ñemboguejy Mboguetepyre</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Ñemboguejy Mboguetepyre</string>
+  <!--
+    Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
+    %1$d is the number of items deleted.
+  -->
+  <string name="download_delete_multiple_items_snackbar_2">Mba’e mboguepyre: %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">Emboguete %1$s</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Emboguete %1$s</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">Emboguete “%1$s”</string>
+  <!-- Text for the snackbar to confirm that downloads are in progress. -->
+  <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">Oguejyvahína…</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">Mba’emimi</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar" tools:ignore="UnusedResources">Oguejypáma</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open" tools:ignore="UnusedResources">Mbojuruja</string>
+  <!-- Text for the snackbar action button to undo deleting a download. -->
+  <string name="download_undo_delete_snackbar_action">Mboguevi</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">Ndaipóri marandurenda mboguejypyre</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Ndaipóri marandurenda mboguejypyre</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">Noñemboguejýi gueteri</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">Umi marandurenda emboguejýva oĩta ko’ápe.</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d poravopyre</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">Mboguete</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Mboguete</string>
+  <!-- Text for the button to delete a single downloaded file item -->
+  <string name="download_delete_item">Mboguete</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">Eikundaha tapykuévo</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description">Eikundaha yvatévo</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">Emoherakuã URL</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">Emoherakuã marandurenda</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">Emboguesépa añetehápe ko’ã mba’e jeporavopyréva</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
+  <string name="download_delete_multi_select_dialog_confirm">Mboguete</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
+  <string name="download_delete_multi_select_dialog_cancel">Heja</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress" tools:ignore="UnusedResources">Oñemohendavahína</string>
   <!--
     Time period headers for downloads
 
@@ -1482,6 +1501,47 @@
   <!-- Text for the header that groups the downloads older than other groups -->
   <string name="download_time_period_older">Itujavéva</string>
   <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • %3$s asu</string>
+  <!-- Text to indicate that an in progress download is paused. -->
+  <string name="download_item_status_paused" tools:ignore="UnusedResources">pytapyre</string>
+  <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
+  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">aporãva</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed" tools:ignore="UnusedResources">Ñemboguejy ojavy</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder" tools:ignore="UnusedResources">Ñemboguejy jeheka</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Ndaipóri tembiapokue</string>
+  <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
+  <string name="download_select_all_items">Mbosa’ypa</string>
+  <!--
+    Downloads Content Type Filters
+
+    Text for the filter button to show all files in the downloads list
+  -->
+  <string name="download_content_type_filter_all">Opavave</string>
+  <!-- Text for the filter button to show only images in the downloads list -->
+  <string name="download_content_type_filter_image">Ta’ãnga</string>
+  <!-- Text for the filter button to show only video files in the downloads list -->
+  <string name="download_content_type_filter_video">Ta’ãngamýi</string>
+  <!-- Text for the filter button to show only documents in the downloads list -->
+  <string name="download_content_type_filter_document">Kuatiaite</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other" moz:removedIn="138" tools:ignore="UnusedResources">Ambue</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">Ambue</string>
+  <!--
+    Description of a downloaded item, displayed in the downloads list.
+    %1$s: The size of the downloaded file.
+    %2$s: The URL of the downloaded file.
+  -->
+  <string name="download_item_description" moz:removedIn="138" tools:ignore="UnusedResources">%1$s • %2$s</string>
+  <!--
     WebCompat Reporter
 
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
@@ -1493,8 +1553,6 @@
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">Emoinge peteĩ URL oikóva</string>
-  <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Mba’épa oñembyai (eipotárõ)</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">¿Mba’épa apañuái?</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
@@ -1587,6 +1645,14 @@
   <string name="bookmark_menu_delete_button">Mboguete</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Ñongatu</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">Emboysýi ipyahuvéva</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">Emoĩ itujavévagui</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">Emoĩ A guive Z peve</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">Emoĩ Z guive A peve</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2208,6 +2274,8 @@
     Preference title for DNS over HTTPS settings
   -->
   <string name="preference_doh_title">DNS HTTPS rehegua</string>
+  <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_summary">Pe apopyvusu rendatee réra (DNS) HTTPS rupive omondo mba’ejerure tendatee réra jeike ipapapýva rupive, omoheñóiva peteĩ DNS hekorosãva ha ombohasyve ambuépe ohechávo mba’ete ñanduti rendápepa ojeikepota. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Eikuaave</string>
   <!-- Content description for the toolbar "Navigate up" button -->
@@ -2230,6 +2298,8 @@
   <string name="preference_doh_default_protection_info_3">Eiporu me’ẽhára ag̃uigua, ikatúrõ. %1$s</string>
   <!-- Bullet point 4 for "Default Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection_info_4">Eipe’a pe VPN, pehẽngue jehecharã térã mba’apohaguasu oñemyandývo</string>
+  <!-- Bullet point 5 for "Default Protection" information page under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). %2$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_default_protection_info_5">Eipe’a peteĩ red he’íva %1$s-pe ndoiporuiva’erãha DNS hekorosãva. %2$s</string>
   <!-- Title displayed for "Increased Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_increased_protection">Ñemo’ã Tuichavéva</string>
   <!-- Summary displayed for "Increased Protection" option under "DNS over HTTPS" -->
@@ -2801,151 +2871,13 @@
   <!--
     Review quality check feature
 
-    Name for the review quality check feature used as title for the panel.
+    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
   -->
-  <string name="review_quality_check_feature_name_2" moz:removedIn="136" tools:ignore="UnusedResources">Marandu’i rechajeyha</string>
-  <!-- Summary for grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_a_b_description" moz:removedIn="136" tools:ignore="UnusedResources">Marandu’i jeroviaha</string>
-  <!-- Summary for grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_c_description" moz:removedIn="136" tools:ignore="UnusedResources">Ojehe’a hechajey jerovia ha jerovia’ỹva</string>
-  <!-- Summary for grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_d_f_description" moz:removedIn="136" tools:ignore="UnusedResources">Hechajeyha jerovia’ỹva</string>
-  <!-- Text for title presenting the reliability of a product's reviews. -->
-  <string name="review_quality_check_grade_title" moz:removedIn="136" tools:ignore="UnusedResources">Ejerovia añetépa ko’ã hechajeýre</string>
-  <!-- Title for when the rating has been updated by the review checker -->
-  <string name="review_quality_check_adjusted_rating_title" moz:removedIn="136" tools:ignore="UnusedResources">Ñeha’ãmby ha’etéva</string>
-  <!-- Description for a product's adjusted star rating. The text presents that the product's reviews which were evaluated as unreliable were removed from the adjusted rating. -->
-  <string name="review_quality_check_adjusted_rating_description_2" moz:removedIn="136" tools:ignore="UnusedResources">Oiko hechajey jeroviahápe</string>
-  <!-- Title for list of highlights from a product's review emphasizing a product's important traits. -->
-  <string name="review_quality_check_highlights_title" moz:removedIn="136" tools:ignore="UnusedResources">Mba’e iporãva marandu’i osẽramóvare</string>
-  <!-- Title for section explaining how we analyze the reliability of a product's reviews. -->
-  <string name="review_quality_check_explanation_title" moz:removedIn="136" tools:ignore="UnusedResources">Mba’éichapa jaikuaáta marandu’i iporãha</string>
-  <!-- Paragraph explaining how we analyze the reliability of a product's reviews. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_explanation_body_reliability" moz:removedIn="136" tools:ignore="UnusedResources">Roiporu tembiporupyahu IA %s Mozilla rupive rohesa’ỹijo hag̃ua iporãpa marandu’i apopyregua. Ñehesa’ỹijo oipytyvõta roha’ã hag̃ua marandu’i porãngue, ndaha’éi apopyre porãngue.</string>
-  <!-- Paragraph explaining the grading system we use to classify the reliability of a product's reviews. -->
   <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources">Rome’ẽ marandu’i peteĩteĩva apopyrépe &lt;b&gt;papapy tai ndive&lt;/b&gt; A guive F peve.</string>
-  <!-- Description explaining grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_AB" moz:removedIn="136" tools:ignore="UnusedResources">Hechajey jeroviaha. Roguerovia marandu’i ouha joguaharaitégui ohejáva umi marandu’i oñanduháicha ha ñaña’ỹre.</string>
-  <!-- Description explaining grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_C" moz:removedIn="136" tools:ignore="UnusedResources">Roikuaa oĩha marandu’i jeroviaha ha jerovia’ỹha.</string>
-  <!-- Description explaining grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_DF" moz:removedIn="136" tools:ignore="UnusedResources">Marandu’i jerovia’iveha. Roikuaa marandu’i ikatuha japu térã ou hechajeyhára iñañávagui.</string>
   <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
   <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources">&lt;b&gt;ñeha’ã oikóva&lt;/b&gt; oma’ẽ marandu’i rohecháva ojegueroviaha añoite.</string>
   <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
   <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources">Umi &lt;b&gt;kyta mba’eguasúva&lt;/b&gt; ou marandu’i %s 80 ára ohasaramóvagui ikatuha ejerovia.</string>
-  <!-- Text for learn more caption presenting a link with information about review quality. %s is a link using review_quality_check_info_learn_more_link as text. -->
-  <string name="review_quality_check_info_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Eikuaave ko’ãvare %s.</string>
-  <!-- Clickable text that links to review quality check SuMo page. %s is "Fakespot". -->
-  <string name="review_quality_check_info_learn_more_link_2" moz:removedIn="136" tools:ignore="UnusedResources">mba’éicha %s oikuaa marandu’i iporãha</string>
-  <!-- Text for title of settings section. -->
-  <string name="review_quality_check_settings_title" moz:removedIn="136" tools:ignore="UnusedResources">Ñemboheko</string>
-  <!-- Text for label for switch preference to show recommended products from review quality check settings section. -->
-  <string name="review_quality_check_settings_recommended_products" moz:removedIn="136" tools:ignore="UnusedResources">Ehechauka ñemurã marandu’i rechajeyhápe</string>
-  <!-- Description for switch preference to show recommended products from review quality check settings section. %s is a link using review_quality_check_settings_recommended_products_learn_more as text. -->
-  <string name="review_quality_check_settings_recommended_products_description_2" moz:removedIn="136" tools:ignore="UnusedResources">Ehecháta ñemurã sapy’apy’a apopyre oikóva rehegua. Romoasãi ñemurã apopyre jeroviaha añoite. %s</string>
-  <!-- Clickable text that links to review quality check recommended products support article. -->
-  <string name="review_quality_check_settings_recommended_products_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Eikuaave</string>
-  <!-- Text for turning sidebar off button from review quality check settings section. -->
-  <string name="review_quality_check_settings_turn_off" moz:removedIn="136" tools:ignore="UnusedResources">Eipe’a marandu’i rechajeyha</string>
-  <!-- Text for title of recommended product section. This is displayed above a product image, suggested as an alternative to the product reviewed. -->
-  <string name="review_quality_check_ad_title" moz:removedIn="136" tools:ignore="UnusedResources">Ehecha emomba’e hag̃ua</string>
-  <!-- Caption for recommended product section indicating this is an ad by Fakespot. %s is "Fakespot". -->
-  <string name="review_quality_check_ad_caption" moz:removedIn="136" tools:ignore="UnusedResources">Ñemurã %s</string>
-  <!-- Caption for review quality check panel. %s is a link using review_quality_check_powered_by_link as text. -->
-  <string name="review_quality_check_powered_by_2" moz:removedIn="136" tools:ignore="UnusedResources">Marandu’i rechajeyhápe oiko %s rupive.</string>
-  <!-- Clickable text that links to Fakespot.com. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_powered_by_link" moz:removedIn="136" tools:ignore="UnusedResources">%s Mozilla mba’e</string>
-  <!-- Text for title of warning card informing the user that the current analysis is outdated. -->
-  <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Marandu pyahu ehechajey hag̃ua</string>
-  <!-- Text for button from warning card informing the user that the current analysis is outdated. Clicking this should trigger the product's re-analysis. -->
-  <string name="review_quality_check_outdated_analysis_warning_action" moz:removedIn="136" tools:ignore="UnusedResources">Ehechajey ko’ág̃a</string>
-  <!-- Title for warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Noĩri gueteri heta marandu’i</string>
-  <!-- Text for body of warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Ko apopyre ojehecha hetajey rire, rohesa’ỹijóta iporãngue.</string>
-  <!-- Title for warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Apopyre ndojeporukuaái</string>
-  <!-- Text for the body of warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Ehechárõ ko apopyre ojejoguakuaajeýma, oremomarandu ha romba’apóta hekopyahu hag̃ua ñehesa’ijo.</string>
-  <!-- Clickable text for warning card informing the user that the current product is currently not available. Clicking this should inform the server that the product is available. -->
-  <string name="review_quality_check_product_availability_warning_action_2" moz:removedIn="136" tools:ignore="UnusedResources">Emomarandu apopyre ojeporukuaaha</string>
-  <!-- Title for warning card informing the user that the current product's analysis is still processing. %s is the percentage progress (0-100%) of the analysis process (e.g. 56%). -->
-  <string name="review_quality_check_analysis_in_progress_warning_title_2" moz:removedIn="136" tools:ignore="UnusedResources">Ehechajey marandu’i porãngue (%s)</string>
-  <!-- Text for body of warning card informing the user that the current product's analysis is still processing. -->
-  <string name="review_quality_check_analysis_in_progress_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Kóva ipukukuaa 60 aravo’ive rupi.</string>
-  <!-- Title for info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_title" moz:removedIn="136" tools:ignore="UnusedResources">¡Aguyje emomarandúre!</string>
-  <!-- Text for body of info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Oĩva’erã marandu ko apopyre jehechajey rehegua 24 aravo oútavape. Ehechajey uperire.</string>
-  <!-- Title for info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Ndorohechajeykuaái ko marandu’i.</string>
-  <!-- Text for body of info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Rombyasy, ndorohechajeykuaái marandu’i porãngue peteĩchagua apopyrépe. Techapyrã, jopói kuatia’atã ha ta’ãngamýi ñemoasãi, purahéi ha ñembosarái.</string>
-  <!-- Title for info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Marandu ojeporupotáma</string>
-  <!-- Text for body of info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Oĩva’erã marandu ko apopyre jehechajey rehegua 24 aravo oútavape. Ehechajey upéi.</string>
-  <!-- Title for info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_title" moz:removedIn="136" tools:ignore="UnusedResources">Ñehesa’ỹijo hekopyahúma</string>
-  <!-- Text for the action button from info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_action" moz:removedIn="136" tools:ignore="UnusedResources">Aikũmby</string>
-  <!-- Title for error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_title" moz:removedIn="136" tools:ignore="UnusedResources">Ndaipóri marandu ko’ág̃aite</string>
-  <!-- Text for body of error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_body" moz:removedIn="136" tools:ignore="UnusedResources">Romba’apo opa hag̃ua apañuái. Ikatúpiko, eha’ãjey ag̃ave.</string>
-  <!-- Title for error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_title" moz:removedIn="136" tools:ignore="UnusedResources">Ndaikatúi eike ñandutípe</string>
-  <!-- Text for body of error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_body" moz:removedIn="136" tools:ignore="UnusedResources">Ehechajey nde jeikekatu ñandutípe ha emyanyhẽjey kuatiarogue.</string>
-  <!-- Title for card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_title" moz:removedIn="136" tools:ignore="UnusedResources">Ndaipóri mba’eve ko’ã marandu’i rehegua</string>
-  <!-- Text for the body of card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_body" moz:removedIn="136" tools:ignore="UnusedResources">Eikuaa hag̃ua ko apopyre marandu’i jeroviahápa, ehechajey iporãpa marandu’i. Hi’aréta 60 aravo’ive rupi.</string>
-  <!-- Text for button from body of card displayed to the user for products whose reviews were not analyzed yet. Clicking this should trigger a product analysis. -->
-  <string name="review_quality_check_no_analysis_link" moz:removedIn="136" tools:ignore="UnusedResources">Ehechajey marandu’i porãngue</string>
-  <!-- Headline for review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_title" moz:removedIn="136" tools:ignore="UnusedResources">Eiporu ore marandu’i jeguataha rechajey jeroviápe</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s, %3$s and %4$s are for retailer names (e.g. Amazon, Walmart). %2$s% is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description" moz:removedIn="136" tools:ignore="UnusedResources">Ehechajey iporãha umi marandu’i apopyre rehegua %1$s ndive ejogua mboyve. Pe marandu’i rechajeyha, %2$s mba’epyahúva, ojuaju kundahaite ndive. Avei ojeporu %3$s ha %4$s ndive.</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s is for retailer name (e.g. Amazon). %2$s is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description_one_vendor" moz:removedIn="136" tools:ignore="UnusedResources">Ehechajey iporãha umi marandu’i apopyre rehegua %1$s ndive ejogua mboyve. Pe marandu’i rechajeyha, %2$s mba’epyahúva, ojuaju kundahára ndive.</string>
-  <!-- Paragraph presenting review quality check feature. %1$s is "Fakespot". %2$s is a link using review_quality_check_contextual_onboarding_learn_more_link as text. In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Erekóvo tembiporupyahu %1$s Mozilla mba’e, roipytyvõta emboyke hag̃ua marandu’ivai ha hekotee’ỹva. Ore IA iporãmeme ñemo’ã hag̃ua emba’ejogua aja. %2$s</string>
-  <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">Eikuaave</string>
-  <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. %1$s is the name of the app (for example "Firefox"), %3$s is "Fakespot". %2$s and %4$s are links using review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use as text. -->
-  <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">Eiporavóvo “Héẽ, eiporu”, emoneĩ %2$s %1$s-gua ha %4$s %3$s mba’e.</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
-  <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">marandu’i ñemiguáva</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
-  <string name="review_quality_check_contextual_onboarding_terms_use" moz:removedIn="136" tools:ignore="UnusedResources">temiñemi jeporurã</string>
-  <!-- Text for opt-in button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_primary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Héẽ, eiporu</string>
-  <!-- Text for opt-out button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_secondary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Ani ko’ág̃a</string>
-  <!-- Content description (not visible, for screen readers etc.) for opening browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_open_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Embojuruja marandu’i rechajeyha</string>
-  <!-- Content description (not visible, for screen readers etc.) for closing browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_close_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Emboty marandu’i rechajeyha</string>
-  <!-- Content description (not visible, for screen readers etc.) for review quality check star rating. %1$s is the number of stars (1-5) representing the rating. -->
-  <string name="review_quality_check_star_rating_content_description" moz:removedIn="136" tools:ignore="UnusedResources">%1$s 5 mbyjáva</string>
-  <!-- Text for minimize button from highlights card. When clicked the highlights card should reduce its size. -->
-  <string name="review_quality_check_highlights_show_less" moz:removedIn="136" tools:ignore="UnusedResources">Ehechauka’ive</string>
-  <!-- Text for maximize button from highlights card. When clicked the highlights card should expand to its full size. -->
-  <string name="review_quality_check_highlights_show_more" moz:removedIn="136" tools:ignore="UnusedResources">Ehechaukave</string>
-  <!-- Text for highlights card quality category header. Reviews shown under this header should refer the product's quality. -->
-  <string name="review_quality_check_highlights_type_quality" moz:removedIn="136" tools:ignore="UnusedResources">Mba’eporã</string>
-  <!-- Text for highlights card price category header. Reviews shown under this header should refer the product's price. -->
-  <string name="review_quality_check_highlights_type_price" moz:removedIn="136" tools:ignore="UnusedResources">Tepy</string>
-  <!-- Text for highlights card shipping category header. Reviews shown under this header should refer the product's shipping. -->
-  <string name="review_quality_check_highlights_type_shipping" moz:removedIn="136" tools:ignore="UnusedResources">Ñemuhaguasu</string>
-  <!-- Text for highlights card packaging and appearance category header. Reviews shown under this header should refer the product's packaging and appearance. -->
-  <string name="review_quality_check_highlights_type_packaging_appearance" moz:removedIn="136" tools:ignore="UnusedResources">Mbyapeha ha jehecharã</string>
-  <!-- Text for highlights card competitiveness category header. Reviews shown under this header should refer the product's competitiveness. -->
-  <string name="review_quality_check_highlights_type_competitiveness" moz:removedIn="136" tools:ignore="UnusedResources">Katupyryrasa</string>
-  <!-- Text that is surrounded by quotes. %s is the actual text that is in quotes. An example of that text could be: Excellent craftsmanship, and that is displayed as “Excellent craftsmanship”. The text comes from a buyer's review that the feature is highlighting" -->
-  <string name="surrounded_with_quotes" moz:removedIn="136" tools:ignore="UnusedResources">“%s”</string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3262,6 +3194,11 @@
     %d is a placeholder for the number of trackers blocked.
   -->
   <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+  <!--
+    Description text for a dialog confirming whether the user wants to delete all data for current site.
+    %s is a placeholder for the base domain of website.
+  -->
+  <string name="clear_site_data_dialog_description">Embogue kookie tenda mba’ekuaarã &lt;b&gt;%s&lt;/b&gt; omboty hag̃ua jeike ñanduti roguépe ha taipotĩ karro’i jejoguaha.</string>
   <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
   <string name="clear_site_data_dialog_positive_button_text">Mopotĩ</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
@@ -3432,6 +3369,26 @@
   -->
   <string name="glean_debug_tools_title">Tembiporu mopotĩha Glean</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">Tembiporu tendaguasúpe</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">Omyengovia sapy’arãicha mba’eporã tendaguasugua ñepyrũ ha ag̃aguáva oñeha’ã hag̃ua.</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">Tendaguasu reñoiha</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">Tendaguasu ag̃agua</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Emyengovia tendaguasu reñoiha</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Emyengovia tendaguasu ag̃agua</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Emyengovia tendaguasu ñepyrũ ha ag̃agua</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3482,7 +3439,91 @@
 
     The default content description for the eye trailing icon button in TextField
   -->
-  <string name="text_field_eye_trailing_icon_default_content_description">Ehechauka moñe’ẽrã kañymby</string>
+  <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Ehechauka moñe’ẽrã kañymby</string>
   <!-- The default content description for the cross trailing icon button in TextField -->
-  <string name="text_field_cross_trailing_icon_default_content_description">Embogue moñe’ẽrã</string>
+  <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Embogue moñe’ẽrã</string>
+  <!--
+    Setup checklist feature
+
+    ===== Setup checklist feature: Title =====
+
+    Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_title_state_incomplete">Embohekopaite %1$s</string>
+  <!-- Title for the setup checklist feature when the state is 'completed' -->
+  <string name="setup_checklist_title_state_completed">¡Vy’apavẽmante!</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">Ejapo ko’ã 3 jeku’e emboheko hag̃ua %1$s eime porãve hag̃ua eikundahakuévo.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">¡Eñepyrũ porã! Emoĩmba 1 pe 3 jeku’égui.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">¡Oĩpotaite! Mokõi jeku’e hu’ãmava ha 1 hemby.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 6 steps =====
+
+    Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_6_steps_initial_state">Ejapo ko’ã 6 jeku’e emboheko hag̃ua %1$s eime porãve hag̃ua eikundahakuévo.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_first_step">¡Eñepyrũ porã! Emoĩmba 1 pe 6 jeku’égui.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_second_step">Emoĩmba 2 pe 6 jeku’égui. ¡Tuicha emotenonde!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_6_steps_third_step">¡Eiméma tape ku’ápe! Mbohapy jeku’e hu’ãma ha 3 hemby.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fourth_step">Emohu’ãma 4 jeku’e. ¡Mokõintema opyta!</string>
+  <!--
+    ===== Setup checklist feature: Task titles =====
+
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">Ejapo kundahára ijypyguávarõ</string>
+  <!-- The title of the sign-in task for the setup checklist -->
+  <string name="setup_checklist_task_account_sync">Eike ne mba’etépe</string>
+  <!-- The title of the theme selection task for the setup checklist -->
+  <string name="setup_checklist_task_theme_selection">Eiporavo peteĩ téma</string>
+  <!-- The title of the toolbar selection task for the setup checklist -->
+  <string name="setup_checklist_task_toolbar_selection">Eiporavo tendaite tembiporu rupápe</string>
+  <!-- The title of the explore extensions task for the setup checklist -->
+  <string name="setup_checklist_task_explore_extensions">Ejeporekave jepysokuére</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget">Emohenda widget jehekaha</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">%1$s ojeikuaa’ỹva</string>
+  <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_group_customize">Emboheraite %1$s</string>
+  <!-- The title of the 'helpful tools' group in the setup checklist -->
+  <string name="setup_checklist_group_helpful_tools">Tembiporu oikóva</string>
+  <!--
+    ===== Setup checklist feature: Button =====
+
+    Text for the 'remove' button for the setup checklist
+  -->
+  <string name="setup_checklist_button_remove">Embogue jehechajeyha rysýi</string>
+  <!--
+    ===== Setup checklist feature: Accessibility =====
+
+    Accessibility description for a check mark on a completed task
+  -->
+  <string name="a11y_completed_task_description">Tembiapo opámava</string>
+  <!-- Accessibility description for the task icon -->
+  <string name="a11y_task_icon_description">Tembiapo ra’ãnga’i</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">Esẽ tendayke ñemiguágui</string>
+  <!-- Label for the primary action button to unlock private tabs -->
+  <string name="pbm_authentication_unlock">Mbojera</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">Embojera tendayke ñemigua</string>
 </resources>

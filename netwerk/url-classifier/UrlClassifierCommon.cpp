@@ -516,6 +516,31 @@ void UrlClassifierCommon::AnnotateChannel(nsIChannel* aChannel,
 }
 
 // static
+void UrlClassifierCommon::AnnotateChannelWithoutNotifying(
+    nsIChannel* aChannel, uint32_t aClassificationFlags) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aChannel);
+
+  nsCOMPtr<nsIURI> chanURI;
+  nsresult rv = aChannel->GetURI(getter_AddRefs(chanURI));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  RefPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  bool isThirdPartyWithTopLevelWinURI =
+      loadInfo->GetIsThirdPartyContextToTopWindow();
+
+  SetClassificationFlagsHelper(aChannel, aClassificationFlags,
+                               isThirdPartyWithTopLevelWinURI);
+
+  if (isThirdPartyWithTopLevelWinURI &&
+      StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
+    LowerPriorityHelper(aChannel);
+  }
+}
+
+// static
 bool UrlClassifierCommon::IsAllowListed(nsIChannel* aChannel) {
   nsCOMPtr<nsIHttpChannelInternal> channel = do_QueryInterface(aChannel);
   if (NS_WARN_IF(!channel)) {
@@ -666,6 +691,37 @@ bool UrlClassifierCommon::IsPassiveContent(nsIChannel* aChannel) {
          contentType == ExtContentPolicy::TYPE_MEDIA ||
          (contentType == ExtContentPolicy::TYPE_OBJECT_SUBREQUEST &&
           !StaticPrefs::security_mixed_content_block_object_subrequest());
+}
+
+/* static */
+bool UrlClassifierCommon::ShouldProcessWithProtectionFeature(
+    nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+
+  bool shouldProcess = true;
+
+  if (!(StaticPrefs::privacy_trackingprotection_consentmanager_skip_enabled() ||
+        (StaticPrefs::
+             privacy_trackingprotection_consentmanager_skip_pbmode_enabled() &&
+         NS_UsePrivateBrowsing(aChannel)))) {
+    return shouldProcess;
+  }
+
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel);
+
+  if (classifiedChannel) {
+    shouldProcess =
+        !(classifiedChannel->GetClassificationFlags() &
+          nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_CONSENTMANAGER);
+
+    UC_LOG(
+        ("UrlClassifierCommon::ShouldProcessWithProtectionFeature - "
+         "shouldProcess=%d for channel %p",
+         shouldProcess, aChannel));
+  }
+
+  return shouldProcess;
 }
 
 }  // namespace net

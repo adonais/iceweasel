@@ -44,8 +44,6 @@
   <string name="tab_tray_close_multiselect_content_description">ബഹുതിരഞ്ഞെടുപ്പു് രീതി നിന്നു് പുറത്തുകടക്കുക</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">തിരഞ്ഞെടുത്ത ടാബുകൾ ശേഖരത്തിൽ കരുതിവയ്ക്കുക</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">തിരഞ്ഞെടുത്ത</string>
   <!--
     Home - Bookmarks
 
@@ -126,9 +124,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar.
   -->
-  <string name="address_bar_swipe_cfr_title">ടാബുകൾ മാറാൻ കരുപ്പട്ട സ്വൈപ്പുചെയ്യുക</string>
+  <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">ടാബുകൾ മാറാൻ കരുപ്പട്ട സ്വൈപ്പുചെയ്യുക</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-  <string name="address_bar_swipe_cfr_message">മാറാൻ ഇടത്തോട്ടോ വലത്തോട്ടോ സ്വൈപ്പ് ചെയ്യുക. ഒരു പുതിയ ടാബ് തുറക്കാൻ താങ്ങളുടെ അവസാന ടാബിൽ ഇടത്തേക്ക് സ്വൈപ്പ് ചെയ്യുക.</string>
+  <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">മാറാൻ ഇടത്തോട്ടോ വലത്തോട്ടോ സ്വൈപ്പ് ചെയ്യുക. ഒരു പുതിയ ടാബ് തുറക്കാൻ താങ്ങളുടെ അവസാന ടാബിൽ ഇടത്തേക്ക് സ്വൈപ്പ് ചെയ്യുക.</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">ടാബുകൾ മാറാൻ കരുപ്പട്ട ഇടത്തോട്ടോ വലത്തോട്ടോ അവയെ മാറ്റുക.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">ക്യാമറ അനുമതി ആവശ്യമാണ്. ആണ്ട്രൊയിടു് ക്രമീകരണങ്ങളിലേക്ക് പോവുക, അനുമതികൾ അമർത്തുക, അനുവദിക്കുക എന്നു് അമർത്തുക.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -611,31 +611,19 @@
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">കൂടുതല്‍ അറിയുക</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">സാങ്കേതികയും ഇടപാടുനീയ ദത്ത മോസില്ലയ്ക്കു അയക്കുക</string>
-  <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">ഉപയോഗദത്തയെപ്പറ്റി കൂടുതൽ അറിയുക</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">കൂടുതല്‍ അറിയുക</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">ചെയ്തു</string>
-  <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">റദ്ദാക്കുക</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">ഫയര്‍ഫോക്സിലേക്കു് സ്വാഗതം</string>
-  <!-- Terms of service sub header label. -->
-  <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">വേഗതയേറിയതും സുരക്ഷിതവുമായ വെബ് തിരയൽ.</string>
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">വേഗതയേറിയതും സുരക്ഷിതവുമായ വെബ് തിരയൽ</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label">സമ്മതിച്ച് തുടരുക</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
-  <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">തുടരുന്നതിലൂടെ, താങ്ങൾ ഫയർഫോക്സ് %1$s അംഗീകരിക്കുന്നു.</string>
-  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">തുടരുന്നതിലൂടെ, താങ്ങൾ %1$s അംഗീകരിക്കുന്നു.</string>
-  <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
-  <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">സേവന നിബന്ധനകള്‍</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefox ഉപയോഗനിബന്ധനകൾ</string>
-  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
-  <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">താങ്ങളുടെ സ്വകാര്യതക്കു് ഫയർഫോക്സു് ശ്രദ്ധിക്കാരുണ്ടു്. ഞങ്ങളുടെ %1$s-ൽ കൂടുതൽ വായക്കുക.</string>
   <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">താങ്ങളുടെ സ്വകാര്യതക്കു് ഫയർഫോക്സു് ശ്രദ്ധിക്കാരുണ്ടു്. ഞങ്ങളുടെ %1$s-ൽ കൂടുതൽ അറിയുക.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
@@ -669,8 +657,8 @@
   <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
   <string name="onboarding_customize_toolbar_placement_bottom_content_description">കീഴ്ക്കരുപ്പട്ടയിന്റെ ചിത്രം</string>
   <string name="onboarding_customize_toolbar_placement_top_content_description">മേൽക്കരുപ്പട്ടയിന്റെ ചിത്രം</string>
-  <!-- Onboarding toolbar selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">ഇപ്പോഴല്ല</string>
+  <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_toolbar_a11y_action_label_select">തിരഞ്ഞെടുക്കുക</string>
   <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">ഒരു അലങ്കാരം തിരഞ്ഞെടുക്കുക</string>
   <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
@@ -687,8 +675,8 @@
   <string name="onboarding_customize_theme_main_image_content_description">ചിത്രീകരിച്ച കലാകാരന്മാരുടെയും രചയിതാക്കന്മാരുടെയും കരുരളും കാണിക്കുന്ന അലങ്കാരം തിരഞ്ഞെടുക്കൽ കാഴ്ചയുടെ വലിയ തലക്കെട്ട് ചിത്രം.</string>
   <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
   <string name="onboarding_customize_theme_content_description">%1$s അലങ്കാരത്തിന്റെ ചിത്രം</string>
-  <!-- Onboarding theme selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">ഇപ്പോഴല്ല</string>
+  <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_theme_a11y_action_label_select">തിരഞ്ഞെടുക്കുക</string>
   <!--
     Widget Picker
 
@@ -766,6 +754,8 @@
   <string name="preferences_add_private_browsing_shortcut">സ്വകാര്യ തിരച്ചിൽ കുറുക്കുവഴി ചേർക്കുക</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">HTTPS-മാത്രം രീതി</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">സ്വകാര്യ തിരച്ചിലിൽ ടാബുകളെ മറയ്ക്കാൻ വേണ്ടി പ്രതലത്താഴു് ഉപയോഗിക്കുക </string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">കുക്കീസു് പൊന്തുവരൽ തടയൽയന്ത്രം</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -881,6 +871,8 @@
   <string name="preferences_show_nonsponsored_suggestions">%1$s-ൽ നിന്നുള്ള നിർദ്ദേശങ്ങൾ</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">കണ്ണി പങ്കിടൽ</string>
+  <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_title">വാറ്റ്സാപ്പിൽ പങ്കിടുമ്പോഴു് %1$s ഇറക്കിവയ്ക്കാനുള്ള കണ്ണിയും ഉൾപ്പെടുത്തുക</string>
   <!-- Snackbar message shown when user shares a link -->
   <string name="link_shared_snackbar_message">കണ്ണി പങ്കിട്ടു</string>
   <!-- Snackbar action label shown when user shares a link -->
@@ -986,6 +978,8 @@
     Title of the Nimbus message for extension general availability
   -->
   <string name="addon_ga_message_title_2" tools:ignore="UnusedResources">പുതിയ വിപുലീകരണങ്ങൾ ഇപ്പോൾ ലഭ്യമാണ്</string>
+  <!-- Body of the Nimbus message for add-ons general availability. 'Firefox' intentionally hardcoded here -->
+  <string name="addon_ga_message_body" tools:ignore="BrandUsage,UnusedResources">ഫയൎഫോക്സു് ഇഷ്ടാനുസൃതമാക്കാൻ ഉപയോഗിക്കാവുന്ന 100+ പുതിയ വിപുലീകരണങ്ങൾ ആരായുക.</string>
   <!-- Button text of the Nimbus message for extensions general availability. -->
   <string name="addon_ga_message_button_2" tools:ignore="UnusedResources">വിപുലീകരണങ്ങൾ കാണുക</string>
   <!--
@@ -1084,17 +1078,11 @@
   <string name="preference_usage_data_2">സാങ്കേതിയും ഇടപാടുനീയ ദത്ത അയയ്ക്കുക</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more">കൂടുതലറിയുക</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">പ്രകടനം, ഉപയോഗം, ഹാർഡ്‌വെയർ തുടങ്ങിയ വിവരങ്ങൾ മോഡില്ലയുമായിമായി പങ്കു വെച്ച്  %1$s മെച്ചപ്പെടുത്തുവാൻ സഹായിക്കുക</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">വിപണനത്തിനായുള്ള ഡാറ്റ</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">വില്പനദത്തയെ കുറിച്ചു് കൂടുതൽ അറിയുക</string>
   <string name="preferences_daily_usage_ping_description">സജീവ ഉപയോക്താക്കളുടെ കണക്കെടുക്കാൻ ഇതു് മോസ്സില്ലയെ സഹായിക്കുന്നു.</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title">തകർച്ച വിവരങ്ങൾ തന്നെതാന്നെ അയയ്ക്കുക</string>
-  <string name="preferences_automatically_submit_crashes_title" moz:removedIn="136" tools:ignore="UnusedResources">തകർച്ച വിവരങ്ങൾ തന്നെതാന്നെ അയയ്ക്കുക</string>
-  <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">തകർച്ച സംഭവിച്ചു് ശേഷം വീണ്ടും പ്രയോഗം തുടങ്ങുമ്പോഴു് തകർച്ചദത്ത തന്നെതാനെ മോസ്സില്ലയ്ക്കു് പങ്കിടുന്നു</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">തകർച്ചവിവരങ്ങളെ കുറിച്ചു് അറിയുക</string>
   <!-- Title for studies preferences -->
@@ -1276,8 +1264,6 @@
   <string name="studies_remove">മാറ്റുക</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">സജീവം</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s ചിലപ്പോൾ പഠനങ്ങൾ വല്ലപ്പോഴു് സ്ഥാപിച്ചുനടത്തും.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title">പാഠനങ്ങൾ സ്ഥാപിച്ചിട്ടു് അവയെ നടത്തുക</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
@@ -1285,16 +1271,10 @@
   <!--
     Sessions
 
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">സ്വകാര്യ ടാബുകൾ</string>
-  <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">തുറന്നിരിപ്പുണ്ട സ്വകാര്യ ടാബുകൾ: %1$s. ടാബുമാറാൻ അമൎത്തുക.</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">സമന്വയിപ്പിച്ച ടാബുകള്‍</string>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1328,6 +1308,8 @@
   <string name="tab_tray_multiselect_share_content_description">തിരഞ്ഞെടുത്ത ടാബുകൾ പങ്കിടുക</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">തിരഞ്ഞെടുത്ത ടാബുകളുടെ കുറിപ്പടികട്ട</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">ആമുഖതാൾ</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">ശേഖരത്തിൽ നിന്ന് ടാബ് നീക്കം ചെയ്യുക</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1390,18 +1372,57 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">ഇറക്കിവയ്ക്കലുകൾ മാറ്റി</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">ഇറക്കിവയ്ക്കലുകൾ മാറ്റി</string>
+  <!--
+    Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
+    %1$d is the number of items deleted.
+  -->
+  <string name="download_delete_multiple_items_snackbar_2">മായ്ച ഇനങ്ങൾ: %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">%1$s മാറ്റി</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s മാറ്റി</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">“%1$s”-നെ മായ്ചു</string>
+  <!-- Text for the snackbar to confirm that downloads are in progress. -->
+  <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">ഇറക്കിവയ്ക്കൽ നടപ്പിലാണു്…</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">വിശദാംശങ്ങൾ</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar" tools:ignore="UnusedResources">ഇറക്കിവയ്ക്കൽ കഴിഞ്ഞു</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open" tools:ignore="UnusedResources">തുറക്കുക</string>
+  <!-- Text for the snackbar action button to undo deleting a download. -->
+  <string name="download_undo_delete_snackbar_action">പഴയപടിയാക്കുക</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">ഇറക്കിവച്ച ഫയലുകളൊന്നുമില്ല</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">ഇറക്കിവച്ച ഫയലുകളൊന്നുമില്ല</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">ഇതുവരെ ഒന്നും ഇറക്കിവച്ചിട്ടില്ല</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">താങ്ങൾ ഇറക്കിവയ്ക്കുന്ന ഫയലുകളെല്ലാം ഇവിടെ കാണപ്പെടും</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d തിരഞ്ഞെടുത്തിരിക്കുന്നു</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">മാറ്റുക</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">മാറ്റുക</string>
+  <!-- Text for the button to delete a single downloaded file item -->
+  <string name="download_delete_item">മായ്ക്കുക</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">പുറകോട്ട് ചെല്ലുക</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description">മുകളിലേക്ക്  ചെല്ലുക</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">കണ്ണി പങ്കിടുക</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">ഫയൽ പങ്കിടുക</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">തിരഞ്ഞെടുക്കപ്പെട്ട ഇനങ്ങൾ മായ്ക്കണമെന്നു് ഉറപ്പുണ്ടോ?</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
+  <string name="download_delete_multi_select_dialog_confirm">മായ്ക്കുക</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
+  <string name="download_delete_multi_select_dialog_cancel">റദ്ദാക്കുക</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress" tools:ignore="UnusedResources">നടപ്പിലാണു്</string>
   <!--
     Time period headers for downloads
 
@@ -1417,6 +1438,25 @@
   <!-- Text for the header that groups the downloads older than other groups -->
   <string name="download_time_period_older">പഴയതു്</string>
   <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • %3$s  ഒഴിഞ്ഞിരിപ്പുണ്ടു്</string>
+  <!-- Text to indicate that an in progress download is paused. -->
+  <string name="download_item_status_paused" tools:ignore="UnusedResources">താല്ക്കാലം നിറുത്തി</string>
+  <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
+  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">ഒഴിഞ്ഞിരിക്കുന്നതു്</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed" tools:ignore="UnusedResources">ഇറക്കിവയ്ക്കൽ തോറ്റു</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder" tools:ignore="UnusedResources">ഇറക്കിവച്ചതിലു് തിരയുക</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found" tools:ignore="UnusedResources">ഫലങ്ങളൊന്നും കിട്ടിയില്ല</string>
+  <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
+  <string name="download_select_all_items">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
+  <!--
     Downloads Content Type Filters
 
     Text for the filter button to show all files in the downloads list
@@ -1429,13 +1469,15 @@
   <!-- Text for the filter button to show only documents in the downloads list -->
   <string name="download_content_type_filter_document">രേഖകളും</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
-  <string name="download_content_type_filter_other">വേറെ</string>
+  <string name="download_content_type_filter_other" moz:removedIn="138" tools:ignore="UnusedResources">വേറെ</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">മറ്റുള്ളവ</string>
   <!--
     Description of a downloaded item, displayed in the downloads list.
     %1$s: The size of the downloaded file.
     %2$s: The URL of the downloaded file.
   -->
-  <string name="download_item_description">%1$s • %2$s</string>
+  <string name="download_item_description" moz:removedIn="138" tools:ignore="UnusedResources">%1$s • %2$s</string>
   <!--
     WebCompat Reporter
 
@@ -1448,8 +1490,6 @@
   <string name="webcompat_reporter_label_url">യുആര്‍എല്‍</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">ശരിയായൊരു യുആര്‍എല്‍ നല്‍കുക</string>
-  <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">കേഡു് എന്തിനാണു് ഉണ്ടായതു് (ഉത്തരവു് നല്കാൻ ആവശ്യമല്ല)</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">എന്താണു് തകൎന്നപോയതു്?</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
@@ -1542,6 +1582,14 @@
   <string name="bookmark_menu_delete_button">നീക്കം ചെയ്യുക</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">സൂക്ഷിക്കുക</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">ഏറ്റവും പുതിയത് അനുസരിച്ച് അടുക്കുക</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">ഏറ്റവും പഴയത് അനുസരിച്ച് അടുക്കുക</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">അക്ഷരമുറയിൽ അടുക്കുക</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">തിരിച്ചക്ഷരമുറയിൽ അടുക്കുക</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1854,6 +1902,8 @@
   <string name="notification_re_engagement_A_text">%1$s-ൽ സ്വകാര്യ തിരച്ചിൽ താങ്ങളുടെ വിവരങ്ങൾ കരുതിവയ്ക്കാരില്ല.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
   <string name="notification_re_engagement_B_title">താങ്ങളുടെ ആദ്യ തിരയൽ ആരംഭിക്കുക</string>
+  <!-- Text B shown in the notification that pops up to re-engage the user -->
+  <string name="notification_re_engagement_B_text">അടുത്തെന്തെങ്കിലും കണ്ടുപിടിക്കുക അല്ലെങ്കിൽ രസകരമായ എന്തെങ്കിലും ആരായുക.</string>
   <!--
     Survey
 
@@ -2127,6 +2177,17 @@
   <string name="etp_known_fingerprinters_title">അറിയപ്പെട്ട വിരലടയാളപ്പിന്തുടൎച്ചയന്ത്രം</string>
   <!-- Text displayed that links to website about enhanced tracking protection SmartBlock -->
   <string name="preference_etp_smartblock_learn_more">കൂടുതലറിയുക</string>
+  <!--
+    Content description (not visible, for screen readers etc.):
+    Enhanced tracking protection exception preference icon for ETP settings.
+  -->
+  <string name="preference_etp_exceptions_icon_description">മെച്ചപ്പെടുത്തിയ പിന്തുടൎച്ച പരിരക്ഷണ ഒഴിവാക്കൽ മുൻഗണന അടയാളം</string>
+  <!--
+    DNS Over HTTPS (DoH)
+
+    Preference title for DNS over HTTPS settings
+  -->
+  <string name="preference_doh_title">HTTPS മീതെ DNS</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">കൂടുതലറിയുക</string>
   <!-- Content description for the toolbar "Navigate up" button -->
@@ -2483,6 +2544,8 @@
   <string name="quick_settings_sheet_secure_connection_2">സുരക്ഷിതമായ സമ്പർക്കം</string>
   <!-- Label that indicates a site is using a insecure connection -->
   <string name="quick_settings_sheet_insecure_connection_2">അസുരക്ഷിതമായ സമ്പർക്കം</string>
+  <!-- Label that indicates a site is displaying a local document -->
+  <string name="quick_settings_sheet_local_page">താങ്ങളുടെ ഉപകരണത്തിൽ ഈ താൾ സംഭരിച്ചിരിക്കുന്നു.</string>
   <!-- Label to clear site data -->
   <string name="clear_site_data">കുക്കികളും വെബ്ത്ഥാന ദത്തയും മായ്ക്കുക</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
@@ -2628,6 +2691,8 @@
   <string name="inactive_tabs_auto_close_message_header" tools:ignore="UnusedResources">ഒരു മാസത്തിന് ശേഷം തന്നെതാനെ അടയ്ക്കണോ?</string>
   <!-- A description below the header to notify the user what the inactive tabs auto-close feature is. -->
   <string name="inactive_tabs_auto_close_message_description" tools:ignore="BrandUsage,UnusedResources">കഴിഞ്ഞ ഒരു മാസത്തോളമായി താങ്ങൾ ശ്രദ്ധിക്കാത്ത ടാബുകൾ ഫയർഫോക്സിന് അടയ്ക്കാനാവും.</string>
+  <!-- A call to action below the description to allow the user to turn on the auto closing of inactive tabs. -->
+  <string name="inactive_tabs_auto_close_message_action" tools:ignore="UnusedResources">താനെയടക്കൽ അണയ്ക്കുക</string>
   <!-- Text for the snackbar to confirm auto-close is enabled for inactive tabs -->
   <string name="inactive_tabs_auto_close_message_snackbar">തന്നെതാനെ അടയ്ക്കൽ പ്രവർത്തനക്ഷമമാക്കി</string>
   <!--
@@ -2648,6 +2713,8 @@
     Default browser card title
   -->
   <string name="default_browser_experiment_card_title">താങ്ങളുടെ തനുതായ അന്വേഷിയന്ത്രം മാറുക</string>
+  <!-- Default browser card text -->
+  <string name="default_browser_experiment_card_text" tools:ignore="BrandUsage">വെബിടങ്ങളിലും ഇതപാലുകളിലും സന്ദേശങ്ങളിലും നിന്നുള്ള കണ്ണികൾ തന്നെതാനെ ഫയൎഫോക്സിൽ തുറക്കണമെന്നാക്കി വയ്ക്കുക.</string>
   <!-- Content description for close button in collection placeholder. -->
   <string name="remove_home_collection_placeholder_content_description">മാറ്റുക</string>
   <!-- Content description radio buttons with a link to more information -->
@@ -2676,68 +2743,6 @@
   <string name="pocket_stories_sponsor_indication">പണം കൊണ്ടു് പ്രചരിപ്പിച്ചതു്</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">ക്രമീകരണങ്ങളിലേക്കു പോവുക</string>
-  <!-- Text for learn more caption presenting a link with information about review quality. %s is a link using review_quality_check_info_learn_more_link as text. -->
-  <string name="review_quality_check_info_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">%s നെക്കുറിച്ചു് കൂടുതലറിയുക.</string>
-  <!-- Text for title of settings section. -->
-  <string name="review_quality_check_settings_title" moz:removedIn="136" tools:ignore="UnusedResources">ക്രമീകരണങ്ങള്‍</string>
-  <!-- Text for label for switch preference to show recommended products from review quality check settings section. -->
-  <string name="review_quality_check_settings_recommended_products" moz:removedIn="136" tools:ignore="UnusedResources">അവലോകന പരിശോധനക്കരുയിൽ പരസ്യങ്ങൾ കാണിക്കുക</string>
-  <!-- Clickable text that links to review quality check recommended products support article. -->
-  <string name="review_quality_check_settings_recommended_products_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">കൂടുതലറിയുക</string>
-  <!-- Text for title of recommended product section. This is displayed above a product image, suggested as an alternative to the product reviewed. -->
-  <string name="review_quality_check_ad_title" moz:removedIn="136" tools:ignore="UnusedResources">പരിഗണിക്കാൻ കൂടുതൽ</string>
-  <!-- Caption for recommended product section indicating this is an ad by Fakespot. %s is "Fakespot". -->
-  <string name="review_quality_check_ad_caption" moz:removedIn="136" tools:ignore="UnusedResources">%s-ന്റെ പരസ്യം</string>
-  <!-- Clickable text that links to Fakespot.com. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_powered_by_link" moz:removedIn="136" tools:ignore="UnusedResources">മോസില്ല അവതരിപ്പിച്ചതു്: %s</string>
-  <!-- Text for title of warning card informing the user that the current analysis is outdated. -->
-  <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">നോക്കാൻ പുതിയ വിവരങ്ങൾ</string>
-  <!-- Text for button from warning card informing the user that the current analysis is outdated. Clicking this should trigger the product's re-analysis. -->
-  <string name="review_quality_check_outdated_analysis_warning_action" moz:removedIn="136" tools:ignore="UnusedResources">ഇപ്പോൾ പരിശോധിക്കുക</string>
-  <!-- Title for warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">ഉൽപ്പണം ലഭ്യമല്ല</string>
-  <!-- Text for body of warning card informing the user that the current product's analysis is still processing. -->
-  <string name="review_quality_check_analysis_in_progress_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">ഇതു് ചിലപ്പോൾ 60 സെക്കണ്ടുകൾ എടുക്കും.</string>
-  <!-- Title for info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_title" moz:removedIn="136" tools:ignore="UnusedResources">വിവരം അറിയിക്കുന്നതിനു് നന്ദി!</string>
-  <!-- Title for info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_title" moz:removedIn="136" tools:ignore="UnusedResources">വിവരം ഉടൻ വരുന്നു</string>
-  <!-- Title for info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_title" moz:removedIn="136" tools:ignore="UnusedResources">വിശകലനം കാലികമാണു്</string>
-  <!-- Text for the action button from info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_action" moz:removedIn="136" tools:ignore="UnusedResources">മനസ്സിലായി</string>
-  <!-- Title for error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_title" moz:removedIn="136" tools:ignore="UnusedResources">ഇപ്പോൾ വിവരങ്ങളൊന്നും ലഭ്യമല്ല</string>
-  <!-- Text for body of error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_body" moz:removedIn="136" tools:ignore="UnusedResources">കുഴപ്പം പരിഹരിക്കാൻ ഞങ്ങൾ ശ്രമിക്കുന്നു. ദയവായി ഇച്ചിരി നേരം കഴിഞ്ഞു് വീണ്ടും നോക്കുക.</string>
-  <!-- Title for error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_title" moz:removedIn="136" tools:ignore="UnusedResources">ഗോളാന്തരവല സമ്പർക്കമില്ല</string>
-  <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">കൂടുതലറിയുക</string>
-  <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. %1$s is the name of the app (for example "Firefox"), %3$s is "Fakespot". %2$s and %4$s are links using review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use as text. -->
-  <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">"അതെ, ഇതു് പരീക്ഷിച്ചു് നോക്കാം" തിരഞ്ഞെടുക്കുന്നതിലൂടെ താങ്ങൾ %1$s-ന്റെ %2$s, %3$s-ന്റെ %4$s എന്നിവ അംഗീകരിക്കുന്നു.</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
-  <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">സ്വകാര്യത അറിയിപ്പ്</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
-  <string name="review_quality_check_contextual_onboarding_terms_use" moz:removedIn="136" tools:ignore="UnusedResources">ഉപയോഗനിബന്ധനകള്‍</string>
-  <!-- Text for opt-in button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_primary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">അതെ, ശ്രമിച്ചു് നോക്കൂ</string>
-  <!-- Text for opt-out button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_secondary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">ഇപ്പോഴല്ല</string>
-  <!-- Content description (not visible, for screen readers etc.) for review quality check star rating. %1$s is the number of stars (1-5) representing the rating. -->
-  <string name="review_quality_check_star_rating_content_description" moz:removedIn="136" tools:ignore="UnusedResources">5 താരചിഹ്നങ്ങളിൽ %1$s</string>
-  <!-- Text for minimize button from highlights card. When clicked the highlights card should reduce its size. -->
-  <string name="review_quality_check_highlights_show_less" moz:removedIn="136" tools:ignore="UnusedResources">കുറച്ച് കാണിക്കുക</string>
-  <!-- Text for maximize button from highlights card. When clicked the highlights card should expand to its full size. -->
-  <string name="review_quality_check_highlights_show_more" moz:removedIn="136" tools:ignore="UnusedResources">കൂടുതൽ കാണിക്കുക</string>
-  <!-- Text for highlights card quality category header. Reviews shown under this header should refer the product's quality. -->
-  <string name="review_quality_check_highlights_type_quality" moz:removedIn="136" tools:ignore="UnusedResources">ഗുണനിലവാരം</string>
-  <!-- Text for highlights card price category header. Reviews shown under this header should refer the product's price. -->
-  <string name="review_quality_check_highlights_type_price" moz:removedIn="136" tools:ignore="UnusedResources">വില</string>
-  <!-- Text for highlights card shipping category header. Reviews shown under this header should refer the product's shipping. -->
-  <string name="review_quality_check_highlights_type_shipping" moz:removedIn="136" tools:ignore="UnusedResources">വിതരണം</string>
-  <!-- Text that is surrounded by quotes. %s is the actual text that is in quotes. An example of that text could be: Excellent craftsmanship, and that is displayed as “Excellent craftsmanship”. The text comes from a buyer's review that the feature is highlighting" -->
-  <string name="surrounded_with_quotes" moz:removedIn="136" tools:ignore="UnusedResources">"%s"</string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -2835,6 +2840,8 @@
   <string name="translation_option_bottom_sheet_never_translate_site">ഒരിക്കലും ഈ വെബ്സ്ഥാനിന്റെ വിവർത്തനം ചെയ്യരുതു്</string>
   <!-- Toggle switch description that will appear under the "Never translate these sites" settings toggle switch to provide more information on how this setting interacts with other settings. -->
   <string name="translation_option_bottom_sheet_switch_never_translate_site_description">മറ്റു എല്ലാ ക്രമീകരണങ്ങളെയും തള്ളാറുണ്ടു്</string>
+  <!-- Toggle switch description that will appear under the "Never translate" and "Always translate" toggle switch settings to provide more information on how these  settings interacts with other settings. -->
+  <string name="translation_option_bottom_sheet_switch_description">വിവൎത്തനം ചെയ്യാനുള്ള വാഗ്ദാനങ്ങളെയെല്ലാം തള്ളും</string>
   <!-- Button text for the button that will take the user to the translation settings dialog. -->
   <string name="translation_option_bottom_sheet_translation_settings">വിവർത്തന ക്രമീകരണങ്ങൾ</string>
   <!-- Button text for the button that will take the user to a website to learn more about how translations works in the given app. %1$s is the name of the app (for example "Firefox"). -->
@@ -3214,6 +3221,20 @@
   -->
   <string name="glean_debug_tools_title">ഗ്ലീൻ തെറ്റുതിരുത്തല്ക്കരുകൾ</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">പ്രദേശ്യം സംബന്ധിച്ച കരുകൾ</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">സ്വദേശം</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">നിലവിലെ ഇടം</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">നിലവിലെ പ്രദേശം അസാധുവാക്കുക</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3272,15 +3293,75 @@
 
     The default content description for the eye trailing icon button in TextField
   -->
-  <string name="text_field_eye_trailing_icon_default_content_description">മറഞ്ഞിരിക്കുന്ന വാചകം കാണിക്കുക</string>
+  <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">മറഞ്ഞിരിക്കുന്ന വാചകം കാണിക്കുക</string>
   <!-- The default content description for the cross trailing icon button in TextField -->
-  <string name="text_field_cross_trailing_icon_default_content_description">എഴുത്തു് വേൎപ്പെടുത്തുക</string>
+  <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">എഴുത്തു് വേൎപ്പെടുത്തുക</string>
   <!--
-    Setup checklist component
+    Setup checklist feature
+
+    ===== Setup checklist feature: Title =====
+
+    Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_title_state_incomplete">%1$s സജ്ജീകരിക്കുന്നതു് തീൎക്കുക</string>
+  <!-- Title for the setup checklist feature when the state is 'completed' -->
+  <string name="setup_checklist_title_state_completed">അഭിനന്ദനങ്ങള്‍!</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">ഏതാണ്ടു് തീരാറായി! രണ്ടു പടി കഴിഞ്ഞിരിക്കുന്നു, ഇനി ഒരു പടി കൂടെ മിച്ചമിരിപ്പുണ്ടു്.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_first_step">നല്ല തുടക്കം. താങ്ങൾ 6-ൽ 1 പടി തീൎത്തു.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_second_step">6-ൽ 2 എണ്ണം കിഴിഞ്ഞു. നല്ലോണം പോയിക്കൊണ്ടിരിക്കുന്നു!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_6_steps_third_step">പകുതി കഴിഞ്ഞു, ഇനിയും 3 പടികൾ മാത്രം മിച്ചമിരിപ്പുണ്ടു്.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fourth_step">4 പടികൾ കഴിഞ്ഞിരിക്കുന്നു. ഇനി രണ്ടു പടി മാത്രം മിച്ചം!</string>
+  <!--
+    ===== Setup checklist feature: Task titles =====
+
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">തനിമട്ടായ അന്വേഷിയായി വയ്ക്കുക</string>
+  <!-- The title of the sign-in task for the setup checklist -->
+  <string name="setup_checklist_task_account_sync">അക്കൗണ്ടിലേക്കു് പ്രവേശിക്കുക</string>
+  <!-- The title of the theme selection task for the setup checklist -->
+  <string name="setup_checklist_task_theme_selection">അലങ്കാരം തിരഞ്ഞെടുക്കുക</string>
+  <!-- The title of the toolbar selection task for the setup checklist -->
+  <string name="setup_checklist_task_toolbar_selection">കരുപ്പട്ട ഇടം തിരഞ്ഞെടുക്കുക</string>
+  <!-- The title of the explore extensions task for the setup checklist -->
+  <string name="setup_checklist_task_explore_extensions">വിപുലീകരണങ്ങൾ കാണുക</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">%1$s ആവശ്യസാധനങ്ങൾ</string>
+  <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_group_customize">%1$s ഇഷ്ടാനുസൃതമാക്കുക</string>
+  <!-- The title of the 'helpful tools' group in the setup checklist -->
+  <string name="setup_checklist_group_helpful_tools">തുണയ്ക്കുന്ന കരുകൾ</string>
+  <!--
+    ===== Setup checklist feature: Button =====
+
+    Text for the 'remove' button for the setup checklist
+  -->
+  <string name="setup_checklist_button_remove">പട്ടിക മാറ്റുക</string>
+  <!--
+    ===== Setup checklist feature: Accessibility =====
 
     Accessibility description for a check mark on a completed task
   -->
   <string name="a11y_completed_task_description">തീൎത്ത പണി</string>
   <!-- Accessibility description for the task icon -->
   <string name="a11y_task_icon_description">പണി അടയാളം</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">സ്വകാര്യ ടാബുകൾ വിട്ടേച്ചു് പോവുക</string>
+  <!-- Label for the primary action button to unlock private tabs -->
+  <string name="pbm_authentication_unlock">പൂട്ടുതുറക്കുക</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">സ്വകാര്യ ടാബുകളിലുള്ള പൂട്ടുതുറക്കുക</string>
 </resources>

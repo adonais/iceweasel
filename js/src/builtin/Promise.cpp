@@ -30,7 +30,6 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/PlainObject.h"    // js::PlainObject
-#include "vm/PromiseLookup.h"  // js::PromiseLookup
 #include "vm/PromiseObject.h"  // js::PromiseObject, js::PromiseSlot_*
 #include "vm/SelfHosting.h"
 #include "vm/Warnings.h"  // js::WarnNumberASCII
@@ -387,6 +386,32 @@ namespace {
 // Generator used by PromiseObject::getID.
 mozilla::Atomic<uint64_t> gIDGenerator(0);
 }  // namespace
+
+// Returns true if the following properties haven't been mutated:
+// - On the original Promise.prototype object: "constructor" and "then"
+// - On the original Promise constructor: "resolve" and @@species
+static bool HasDefaultPromiseProperties(JSContext* cx) {
+  return cx->realm()->realmFuses.optimizePromiseLookupFuse.intact();
+}
+
+static bool IsPromiseWithDefaultProperties(PromiseObject* promise,
+                                           JSContext* cx) {
+  if (!HasDefaultPromiseProperties(cx)) {
+    return false;
+  }
+
+  // Ensure the promise's prototype is the original Promise.prototype object.
+  JSObject* proto = cx->global()->maybeGetPrototype(JSProto_Promise);
+  if (!proto || promise->staticPrototype() != proto) {
+    return false;
+  }
+
+  // Ensure `promise` doesn't define any own properties. This serves as a
+  // quick check to make sure `promise` doesn't define an own "constructor"
+  // or "then" property which may shadow Promise.prototype.constructor or
+  // Promise.prototype.then.
+  return promise->empty();
+}
 
 class PromiseDebugInfo : public NativeObject {
  private:
@@ -1217,14 +1242,14 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
 
 // This is used to get the 'then' property off of an object, and report some
 // information back for telemetry purposes. When we no longer need this
-// telemetry this function can be removed and replaced with GetProperty (just
-// back this patch out).
+// telemetry this function can be removed and replaced with GetProperty
 bool GetThenValue(JSContext* cx, JS::Handle<JSObject*> obj,
                   JS::Handle<JS::Value> reciever,
                   JS::MutableHandle<Value> thenVal, bool* isOnProto,
-                  bool* isOnStandardProto) {
+                  bool* isOnStandardProto, bool* isOnObjectProto) {
   MOZ_ASSERT(isOnProto && *isOnProto == false);
   MOZ_ASSERT(isOnStandardProto && *isOnStandardProto == false);
+  MOZ_ASSERT(isOnObjectProto && *isOnObjectProto == false);
 
   NativeObject* holder;
   PropertyResult prop;
@@ -1255,6 +1280,9 @@ bool GetThenValue(JSContext* cx, JS::Handle<JSObject*> obj,
             maybeOnPromiseProto = true;
           } else {
             *isOnStandardProto = true;
+            if (key == JSProto_Object) {
+              *isOnObjectProto = true;
+            }
           }
         }
       }
@@ -1272,7 +1300,8 @@ bool GetThenValue(JSContext* cx, JS::Handle<JSObject*> obj,
   return true;
 }
 
-void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto) {
+void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto,
+                    bool isOnObjectProto) {
   cx->runtime()->setUseCounter(cx->global(), JSUseCounter::THENABLE_USE);
 
   if (isOnProto) {
@@ -1285,6 +1314,12 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto) {
     cx->runtime()->setUseCounter(cx->global(),
                                  JSUseCounter::THENABLE_USE_STANDARD_PROTO);
     JS_LOG(thenable, Info, "Thenable on standard proto");
+  }
+
+  if (isOnObjectProto) {
+    cx->runtime()->setUseCounter(cx->global(),
+                                 JSUseCounter::THENABLE_USE_OBJECT_PROTO);
+    JS_LOG(thenable, Info, "Thenable on Object.prototype");
   }
 }
 
@@ -1330,8 +1365,9 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto) {
   RootedValue thenVal(cx);
   bool isOnProto = false;
   bool isOnStandardProto = false;
+  bool isOnObjectProto = false;
   bool status = GetThenValue(cx, resolution, resolutionVal, &thenVal,
-                             &isOnProto, &isOnStandardProto);
+                             &isOnProto, &isOnStandardProto, &isOnObjectProto);
 
   RootedValue error(cx);
   Rooted<SavedFrame*> errorStack(cx);
@@ -1389,7 +1425,7 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto) {
   }
 
   if (!isBuiltinThen) {
-    ReportThenable(cx, isOnProto, isOnStandardProto);
+    ReportThenable(cx, isOnProto, isOnStandardProto, isOnObjectProto);
 
     RootedValue promiseVal(cx, ObjectValue(*promise));
     if (!EnqueuePromiseResolveThenableJob(cx, promiseVal, resolutionVal,
@@ -3079,8 +3115,7 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
       return false;
     }
 
-    PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
-    if (C != promiseCtor || !promiseLookup.isDefaultPromiseState(cx)) {
+    if (C != promiseCtor || !HasDefaultPromiseProperties(cx)) {
       // Step 3. Let promiseResolve be GetPromiseResolve(C).
 
       // GetPromiseResolve
@@ -3575,13 +3610,11 @@ template <typename T>
   // during the iteration.
   bool iterationMayHaveSideEffects = !iterator.isOptimizedDenseArrayIteration();
 
-  PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
-
   // Try to optimize when the Promise object is in its default state, guarded
   // by |C == promiseCtor| because we can only perform this optimization
   // for the builtin Promise constructor.
   bool isDefaultPromiseState =
-      C == promiseCtor && promiseLookup.isDefaultPromiseState(cx);
+      C == promiseCtor && HasDefaultPromiseProperties(cx);
   bool validatePromiseState = iterationMayHaveSideEffects;
 
   RootedValue CVal(cx, ObjectValue(*C));
@@ -3626,7 +3659,7 @@ template <typename T>
     bool getThen = true;
 
     if (isDefaultPromiseState && validatePromiseState) {
-      isDefaultPromiseState = promiseLookup.isDefaultPromiseState(cx);
+      isDefaultPromiseState = HasDefaultPromiseProperties(cx);
     }
 
     RootedValue& nextPromise = nextValueOrNextPromise;
@@ -3637,8 +3670,7 @@ template <typename T>
       }
 
       if (nextValuePromise &&
-          promiseLookup.isDefaultInstanceWhenPromiseStateIsSane(
-              cx, nextValuePromise)) {
+          IsPromiseWithDefaultProperties(nextValuePromise, cx)) {
         // The below steps don't produce any side-effects, so we can
         // skip the Promise state revalidation in the next iteration
         // when the iterator itself also doesn't produce any
@@ -3737,12 +3769,13 @@ template <typename T>
     bool isBuiltinThen;
     bool isOnProto = false;
     bool isOnStandardProto = false;
+    bool isOnObjectProto = false;
     if (getThen) {
       // We don't use the Promise lookup cache here, because this code
       // is only called when we had a lookup cache miss, so it's likely
       // we'd get another cache miss when trying to use the cache here.
       if (!GetThenValue(cx, nextPromiseObj, nextPromise, &thenVal, &isOnProto,
-                        &isOnStandardProto)) {
+                        &isOnStandardProto, &isOnObjectProto)) {
         return false;
       }
 
@@ -3813,7 +3846,7 @@ template <typename T>
         return false;
       }
     } else {
-      ReportThenable(cx, isOnProto, isOnStandardProto);
+      ReportThenable(cx, isOnProto, isOnStandardProto, isOnObjectProto);
 
       RootedValue& ignored = thenVal;
       if (!Call(cx, thenVal, nextPromise, resolveFunVal, rejectFunVal,
@@ -5446,8 +5479,8 @@ static bool PromiseThenNewPromiseCapability(
 static bool CanCallOriginalPromiseThenBuiltin(JSContext* cx,
                                               HandleValue promise) {
   return promise.isObject() && promise.toObject().is<PromiseObject>() &&
-         cx->realm()->promiseLookup.isDefaultInstance(
-             cx, &promise.toObject().as<PromiseObject>());
+         IsPromiseWithDefaultProperties(&promise.toObject().as<PromiseObject>(),
+                                        cx);
 }
 
 static MOZ_ALWAYS_INLINE bool IsPromiseThenOrCatchRetValImplicitlyUsed(
@@ -6000,11 +6033,12 @@ static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
   RootedObject thisObj(cx, ToObject(cx, thisVal));
   bool isOnProto = false;
   bool isOnStandardProto = false;
+  bool isOnObjectProto = false;
   if (!thisObj) {
     return false;
   }
   if (!GetThenValue(cx, thisObj, thisVal, &thenVal, &isOnProto,
-                    &isOnStandardProto)) {
+                    &isOnStandardProto, &isOnObjectProto)) {
     return false;
   }
 
@@ -6014,7 +6048,7 @@ static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
                              rvalExplicitlyUsed);
   }
 
-  ReportThenable(cx, isOnProto, isOnStandardProto);
+  ReportThenable(cx, isOnProto, isOnStandardProto, isOnObjectProto);
   return Call(cx, thenVal, thisVal, UndefinedHandleValue, onRejected,
               args.rval());
 }
@@ -7071,8 +7105,7 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
     return true;
   }
 
-  PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
-  if (!promiseLookup.isDefaultInstance(cx, promise)) {
+  if (!IsPromiseWithDefaultProperties(promise, cx)) {
     *canSkip = false;
     return true;
   }
@@ -7187,6 +7220,7 @@ static const ClassSpec PromiseObjectClassSpec = {
     promise_static_properties,
     promise_methods,
     promise_properties,
+    GenericFinishInit<WhichHasFuseProperty::ProtoAndCtor>,
 };
 
 const JSClass PromiseObject::class_ = {

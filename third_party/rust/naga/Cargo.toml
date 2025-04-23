@@ -11,7 +11,7 @@
 
 [package]
 edition = "2021"
-rust-version = "1.76"
+rust-version = "1.82.0"
 name = "naga"
 version = "24.0.0"
 authors = ["gfx-rs developers"]
@@ -53,6 +53,7 @@ default = []
 deserialize = [
     "dep:serde",
     "bitflags/serde",
+    "half/serde",
     "hashbrown/serde",
     "indexmap/serde",
 ]
@@ -66,6 +67,7 @@ msl-out-if-target-apple = []
 serialize = [
     "dep:serde",
     "bitflags/serde",
+    "half/serde",
     "hashbrown/serde",
     "indexmap/serde",
 ]
@@ -89,6 +91,7 @@ path = "src/lib.rs"
 
 [dependencies]
 log = "0.4"
+num-traits = "0.2.16"
 
 [dependencies.arbitrary]
 version = "1.4"
@@ -104,10 +107,17 @@ version = "0.8"
 default-features = false
 
 [dependencies.bitflags]
-version = "2.7"
+version = "2.9"
 
 [dependencies.codespan-reporting]
 version = "0.11.0"
+
+[dependencies.half]
+version = "2.5"
+features = [
+    "arbitrary",
+    "num-traits",
+]
 
 [dependencies.hashbrown]
 version = "0.14.5"
@@ -138,7 +148,7 @@ version = "1"
 default-features = false
 
 [dependencies.serde]
-version = "1.0.218"
+version = "1.0.219"
 features = [
     "default",
     "derive",
@@ -211,3 +221,8 @@ version = "2"
 
 [build-dependencies.cfg_aliases]
 version = "0.2.1"
+
+[lints.clippy]
+alloc_instead_of_core = "warn"
+std_instead_of_alloc = "warn"
+std_instead_of_core = "warn"

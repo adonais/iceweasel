@@ -23,18 +23,13 @@ use sql_support::{
 ///     `clear_database()` by adding their names to `conditional_tables`, unless
 ///     they are cleared via a deletion trigger or there's some other good
 ///     reason not to do so.
-pub const VERSION: u32 = 32;
+pub const VERSION: u32 = 34;
 
 /// The current Suggest database schema.
 pub const SQL: &str = "
 CREATE TABLE meta(
     key TEXT PRIMARY KEY,
     value NOT NULL
-) WITHOUT ROWID;
-
-CREATE TABLE rs_cache(
-    collection TEXT PRIMARY KEY,
-    data TEXT NOT NULL
 ) WITHOUT ROWID;
 
 CREATE TABLE ingested_records(
@@ -270,14 +265,8 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
 
     fn prepare(&self, conn: &Connection, _db_empty: bool) -> open_database::Result<()> {
         self.load_extensions(conn)?;
-        let initial_pragmas = "
-            -- Use in-memory storage for TEMP tables.
-            PRAGMA temp_store = 2;
-
-            PRAGMA journal_mode = WAL;
-            PRAGMA foreign_keys = ON;
-        ";
-        conn.execute_batch(initial_pragmas)?;
+        sql_support::setup_sqlite_defaults(conn)?;
+        conn.execute("PRAGMA foreign_keys = ON", ())?;
         sql_support::debug_tools::define_debug_functions(conn)?;
 
         Ok(())
@@ -299,9 +288,9 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
             16 => {
                 tx.execute(
                     "
-CREATE TABLE dismissed_suggestions (
-    url_hash INTEGER PRIMARY KEY
-) WITHOUT ROWID;",
+                    CREATE TABLE dismissed_suggestions (
+                        url_hash INTEGER PRIMARY KEY
+                    ) WITHOUT ROWID;",
                     (),
                 )?;
                 Ok(())
@@ -309,10 +298,10 @@ CREATE TABLE dismissed_suggestions (
             17 => {
                 tx.execute(
                     "
-DROP TABLE dismissed_suggestions;
-CREATE TABLE dismissed_suggestions (
-    url TEXT PRIMARY KEY
-) WITHOUT ROWID;",
+                    DROP TABLE dismissed_suggestions;
+                    CREATE TABLE dismissed_suggestions (
+                        url TEXT PRIMARY KEY
+                    ) WITHOUT ROWID;",
                     (),
                 )?;
                 Ok(())
@@ -320,9 +309,9 @@ CREATE TABLE dismissed_suggestions (
             18 => {
                 tx.execute_batch(
                     "
-CREATE TABLE IF NOT EXISTS dismissed_suggestions (
-    url TEXT PRIMARY KEY
-) WITHOUT ROWID;",
+                    CREATE TABLE IF NOT EXISTS dismissed_suggestions (
+                        url TEXT PRIMARY KEY
+                    ) WITHOUT ROWID;",
                 )?;
                 Ok(())
             }
@@ -332,31 +321,31 @@ CREATE TABLE IF NOT EXISTS dismissed_suggestions (
                 clear_database(tx)?;
                 tx.execute_batch(
                     "
--- Recreate the various keywords table to drop the foreign keys.
-DROP TABLE keywords;
-DROP TABLE full_keywords;
-DROP TABLE prefix_keywords;
-CREATE TABLE keywords(
-    keyword TEXT NOT NULL,
-    suggestion_id INTEGER NOT NULL,
-    full_keyword_id INTEGER NULL,
-    rank INTEGER NOT NULL,
-    PRIMARY KEY (keyword, suggestion_id)
-) WITHOUT ROWID;
-CREATE TABLE full_keywords(
-    id INTEGER PRIMARY KEY,
-    suggestion_id INTEGER NOT NULL,
-    full_keyword TEXT NOT NULL
-);
-CREATE TABLE prefix_keywords(
-    keyword_prefix TEXT NOT NULL,
-    keyword_suffix TEXT NOT NULL DEFAULT '',
-    confidence INTEGER NOT NULL DEFAULT 0,
-    rank INTEGER NOT NULL,
-    suggestion_id INTEGER NOT NULL,
-    PRIMARY KEY (keyword_prefix, keyword_suffix, suggestion_id)
-) WITHOUT ROWID;
-CREATE UNIQUE INDEX keywords_suggestion_id_rank ON keywords(suggestion_id, rank);
+                    -- Recreate the various keywords table to drop the foreign keys.
+                    DROP TABLE keywords;
+                    DROP TABLE full_keywords;
+                    DROP TABLE prefix_keywords;
+                    CREATE TABLE keywords(
+                        keyword TEXT NOT NULL,
+                        suggestion_id INTEGER NOT NULL,
+                        full_keyword_id INTEGER NULL,
+                        rank INTEGER NOT NULL,
+                        PRIMARY KEY (keyword, suggestion_id)
+                    ) WITHOUT ROWID;
+                    CREATE TABLE full_keywords(
+                        id INTEGER PRIMARY KEY,
+                        suggestion_id INTEGER NOT NULL,
+                        full_keyword TEXT NOT NULL
+                    );
+                    CREATE TABLE prefix_keywords(
+                        keyword_prefix TEXT NOT NULL,
+                        keyword_suffix TEXT NOT NULL DEFAULT '',
+                        confidence INTEGER NOT NULL DEFAULT 0,
+                        rank INTEGER NOT NULL,
+                        suggestion_id INTEGER NOT NULL,
+                        PRIMARY KEY (keyword_prefix, keyword_suffix, suggestion_id)
+                    ) WITHOUT ROWID;
+                    CREATE UNIQUE INDEX keywords_suggestion_id_rank ON keywords(suggestion_id, rank);
                     ",
                 )?;
                 Ok(())
@@ -371,30 +360,30 @@ CREATE UNIQUE INDEX keywords_suggestion_id_rank ON keywords(suggestion_id, rank)
             20 => {
                 tx.execute_batch(
                     "
-CREATE TABLE fakespot_custom_details(
-    suggestion_id INTEGER PRIMARY KEY,
-    fakespot_grade TEXT NOT NULL,
-    product_id TEXT NOT NULL,
-    rating REAL NOT NULL,
-    total_reviews INTEGER NOT NULL,
-    FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
-);
--- Create the Fakespot FTS table.
--- The `tokenize` param is hard to read.  The effect is that dashes and apostrophes are
--- considered valid tokens in a word, rather than separators.
-CREATE VIRTUAL TABLE IF NOT EXISTS fakespot_fts USING FTS5(
-  title,
-  prefix='4 5 6 7 8 9 10 11',
-  content='',
-  contentless_delete=1,
-  tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
-);
-CREATE TRIGGER fakespot_ai AFTER INSERT ON fakespot_custom_details BEGIN
-  INSERT INTO fakespot_fts(rowid, title)
-    SELECT id, title
-    FROM suggestions
-    WHERE id = new.suggestion_id;
-END;
+                CREATE TABLE fakespot_custom_details(
+                    suggestion_id INTEGER PRIMARY KEY,
+                    fakespot_grade TEXT NOT NULL,
+                    product_id TEXT NOT NULL,
+                    rating REAL NOT NULL,
+                    total_reviews INTEGER NOT NULL,
+                    FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
+                );
+                -- Create the Fakespot FTS table.
+                -- The `tokenize` param is hard to read.  The effect is that dashes and apostrophes are
+                -- considered valid tokens in a word, rather than separators.
+                CREATE VIRTUAL TABLE IF NOT EXISTS fakespot_fts USING FTS5(
+                  title,
+                  prefix='4 5 6 7 8 9 10 11',
+                  content='',
+                  contentless_delete=1,
+                  tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
+                );
+                CREATE TRIGGER fakespot_ai AFTER INSERT ON fakespot_custom_details BEGIN
+                  INSERT INTO fakespot_fts(rowid, title)
+                    SELECT id, title
+                    FROM suggestions
+                    WHERE id = new.suggestion_id;
+                END;
                 ",
                 )?;
                 Ok(())
@@ -403,22 +392,22 @@ END;
                 // Drop and re-create the fakespot_custom_details to add the icon_id column.
                 tx.execute_batch(
                     "
-DROP TABLE fakespot_custom_details;
-CREATE TABLE fakespot_custom_details(
-    suggestion_id INTEGER PRIMARY KEY,
-    fakespot_grade TEXT NOT NULL,
-    product_id TEXT NOT NULL,
-    rating REAL NOT NULL,
-    total_reviews INTEGER NOT NULL,
-    icon_id TEXT,
-    FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
-);
-CREATE TRIGGER fakespot_ai AFTER INSERT ON fakespot_custom_details BEGIN
-  INSERT INTO fakespot_fts(rowid, title)
-    SELECT id, title
-    FROM suggestions
-    WHERE id = new.suggestion_id;
-END;
+                    DROP TABLE fakespot_custom_details;
+                    CREATE TABLE fakespot_custom_details(
+                        suggestion_id INTEGER PRIMARY KEY,
+                        fakespot_grade TEXT NOT NULL,
+                        product_id TEXT NOT NULL,
+                        rating REAL NOT NULL,
+                        total_reviews INTEGER NOT NULL,
+                        icon_id TEXT,
+                        FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
+                    );
+                    CREATE TRIGGER fakespot_ai AFTER INSERT ON fakespot_custom_details BEGIN
+                      INSERT INTO fakespot_fts(rowid, title)
+                        SELECT id, title
+                        FROM suggestions
+                        WHERE id = new.suggestion_id;
+                    END;
                     ",
                 )?;
                 Ok(())
@@ -427,13 +416,13 @@ END;
                 // Drop and re-create the fakespot_fts table to remove the prefix index param
                 tx.execute_batch(
                     "
-DROP TABLE fakespot_fts;
-CREATE VIRTUAL TABLE fakespot_fts USING FTS5(
-  title,
-  content='',
-  contentless_delete=1,
-  tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
-);
+                    DROP TABLE fakespot_fts;
+                    CREATE VIRTUAL TABLE fakespot_fts USING FTS5(
+                      title,
+                      content='',
+                      contentless_delete=1,
+                      tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
+                    );
                     ",
                 )?;
                 Ok(())
@@ -444,24 +433,24 @@ CREATE VIRTUAL TABLE fakespot_fts USING FTS5(
                 clear_database(tx)?;
                 tx.execute_batch(
                     "
-DROP TABLE fakespot_custom_details;
-CREATE TABLE fakespot_custom_details(
-    suggestion_id INTEGER PRIMARY KEY,
-    fakespot_grade TEXT NOT NULL,
-    product_id TEXT NOT NULL,
-    keywords TEXT NOT NULL,
-    product_type TEXT NOT NULL,
-    rating REAL NOT NULL,
-    total_reviews INTEGER NOT NULL,
-    icon_id TEXT,
-    FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
-);
-CREATE TRIGGER fakespot_ai AFTER INSERT ON fakespot_custom_details BEGIN
-  INSERT INTO fakespot_fts(rowid, title)
-    SELECT id, title
-    FROM suggestions
-    WHERE id = new.suggestion_id;
-END;
+                    DROP TABLE fakespot_custom_details;
+                    CREATE TABLE fakespot_custom_details(
+                        suggestion_id INTEGER PRIMARY KEY,
+                        fakespot_grade TEXT NOT NULL,
+                        product_id TEXT NOT NULL,
+                        keywords TEXT NOT NULL,
+                        product_type TEXT NOT NULL,
+                        rating REAL NOT NULL,
+                        total_reviews INTEGER NOT NULL,
+                        icon_id TEXT,
+                        FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
+                    );
+                    CREATE TRIGGER fakespot_ai AFTER INSERT ON fakespot_custom_details BEGIN
+                      INSERT INTO fakespot_fts(rowid, title)
+                        SELECT id, title
+                        FROM suggestions
+                        WHERE id = new.suggestion_id;
+                    END;
                     ",
                 )?;
                 Ok(())
@@ -471,17 +460,17 @@ END;
                 clear_database(tx)?;
                 tx.execute_batch(
                     "
-CREATE TABLE rs_cache(
-    collection TEXT PRIMARY KEY,
-    data TEXT NOT NULL
-) WITHOUT ROWID;
-CREATE TABLE ingested_records(
-    id TEXT,
-    collection TEXT,
-    type TEXT NOT NULL,
-    last_modified INTEGER NOT NULL,
-    PRIMARY KEY (id, collection)
-) WITHOUT ROWID;
+                    CREATE TABLE rs_cache(
+                        collection TEXT PRIMARY KEY,
+                        data TEXT NOT NULL
+                    ) WITHOUT ROWID;
+                    CREATE TABLE ingested_records(
+                        id TEXT,
+                        collection TEXT,
+                        type TEXT NOT NULL,
+                        last_modified INTEGER NOT NULL,
+                        PRIMARY KEY (id, collection)
+                    ) WITHOUT ROWID;
                     ",
                 )?;
                 Ok(())
@@ -490,12 +479,12 @@ CREATE TABLE ingested_records(
                 // Create the exposure suggestions table and index.
                 tx.execute_batch(
                     "
-CREATE TABLE exposure_custom_details(
-    suggestion_id INTEGER PRIMARY KEY,
-    type TEXT NOT NULL,
-    FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
-);
-CREATE INDEX exposure_custom_details_type ON exposure_custom_details(type);
+                    CREATE TABLE exposure_custom_details(
+                        suggestion_id INTEGER PRIMARY KEY,
+                        type TEXT NOT NULL,
+                        FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
+                    );
+                    CREATE INDEX exposure_custom_details_type ON exposure_custom_details(type);
                     ",
                 )?;
                 Ok(())
@@ -504,38 +493,38 @@ CREATE INDEX exposure_custom_details_type ON exposure_custom_details(type);
                 // Create tables related to city-based weather.
                 tx.execute_batch(
                     "
-CREATE TABLE keywords_metrics(
-    record_id TEXT NOT NULL PRIMARY KEY,
-    provider INTEGER NOT NULL,
-    max_length INTEGER NOT NULL,
-    max_word_count INTEGER NOT NULL
-) WITHOUT ROWID;
+                    CREATE TABLE keywords_metrics(
+                        record_id TEXT NOT NULL PRIMARY KEY,
+                        provider INTEGER NOT NULL,
+                        max_length INTEGER NOT NULL,
+                        max_word_count INTEGER NOT NULL
+                    ) WITHOUT ROWID;
 
-CREATE TABLE geonames(
-    id INTEGER PRIMARY KEY,
-    record_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    feature_class TEXT NOT NULL,
-    feature_code TEXT NOT NULL,
-    country_code TEXT NOT NULL,
-    admin1_code TEXT NOT NULL,
-    population INTEGER
-);
-CREATE INDEX geonames_feature_class ON geonames(feature_class);
-CREATE INDEX geonames_feature_code ON geonames(feature_code);
+                    CREATE TABLE geonames(
+                        id INTEGER PRIMARY KEY,
+                        record_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        feature_class TEXT NOT NULL,
+                        feature_code TEXT NOT NULL,
+                        country_code TEXT NOT NULL,
+                        admin1_code TEXT NOT NULL,
+                        population INTEGER
+                    );
+                    CREATE INDEX geonames_feature_class ON geonames(feature_class);
+                    CREATE INDEX geonames_feature_code ON geonames(feature_code);
 
-CREATE TABLE geonames_alternates(
-    name TEXT NOT NULL,
-    geoname_id INTEGER NOT NULL,
-    PRIMARY KEY (name, geoname_id),
-    FOREIGN KEY(geoname_id) REFERENCES geonames(id) ON DELETE CASCADE
-) WITHOUT ROWID;
+                    CREATE TABLE geonames_alternates(
+                        name TEXT NOT NULL,
+                        geoname_id INTEGER NOT NULL,
+                        PRIMARY KEY (name, geoname_id),
+                        FOREIGN KEY(geoname_id) REFERENCES geonames(id) ON DELETE CASCADE
+                    ) WITHOUT ROWID;
 
-CREATE TABLE geonames_metrics(
-    record_id TEXT NOT NULL PRIMARY KEY,
-    max_name_length INTEGER NOT NULL,
-    max_name_word_count INTEGER NOT NULL
-) WITHOUT ROWID;
+                    CREATE TABLE geonames_metrics(
+                        record_id TEXT NOT NULL PRIMARY KEY,
+                        max_name_length INTEGER NOT NULL,
+                        max_name_word_count INTEGER NOT NULL
+                    ) WITHOUT ROWID;
                     ",
                 )?;
                 Ok(())
@@ -546,23 +535,23 @@ CREATE TABLE geonames_metrics(
                 clear_database(tx)?;
                 tx.execute_batch(
                     "
-DROP INDEX geonames_feature_class;
-DROP INDEX geonames_feature_code;
-DROP TABLE geonames;
-CREATE TABLE geonames(
-    id INTEGER PRIMARY KEY,
-    record_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    latitude REAL NOT NULL,
-    longitude REAL NOT NULL,
-    feature_class TEXT NOT NULL,
-    feature_code TEXT NOT NULL,
-    country_code TEXT NOT NULL,
-    admin1_code TEXT NOT NULL,
-    population INTEGER NOT NULL
-);
-CREATE INDEX geonames_feature_class ON geonames(feature_class);
-CREATE INDEX geonames_feature_code ON geonames(feature_code);
+                    DROP INDEX geonames_feature_class;
+                    DROP INDEX geonames_feature_code;
+                    DROP TABLE geonames;
+                    CREATE TABLE geonames(
+                        id INTEGER PRIMARY KEY,
+                        record_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        latitude REAL NOT NULL,
+                        longitude REAL NOT NULL,
+                        feature_class TEXT NOT NULL,
+                        feature_code TEXT NOT NULL,
+                        country_code TEXT NOT NULL,
+                        admin1_code TEXT NOT NULL,
+                        population INTEGER NOT NULL
+                    );
+                    CREATE INDEX geonames_feature_class ON geonames(feature_class);
+                    CREATE INDEX geonames_feature_code ON geonames(feature_code);
                     ",
                 )?;
                 Ok(())
@@ -573,17 +562,17 @@ CREATE INDEX geonames_feature_code ON geonames(feature_code);
                 clear_database(tx)?;
                 tx.execute_batch(
                     "
-DROP TABLE geonames_alternates;
-CREATE TABLE geonames_alternates(
-    name TEXT NOT NULL,
-    geoname_id INTEGER NOT NULL,
-    -- The value of the `iso_language` field for the alternate. This will be
-    -- null for the alternate we artificially create for the `name` in the
-    -- corresponding geoname record.
-    iso_language TEXT,
-    PRIMARY KEY (name, geoname_id),
-    FOREIGN KEY(geoname_id) REFERENCES geonames(id) ON DELETE CASCADE
-) WITHOUT ROWID;
+                    DROP TABLE geonames_alternates;
+                    CREATE TABLE geonames_alternates(
+                        name TEXT NOT NULL,
+                        geoname_id INTEGER NOT NULL,
+                        -- The value of the `iso_language` field for the alternate. This will be
+                        -- null for the alternate we artificially create for the `name` in the
+                        -- corresponding geoname record.
+                        iso_language TEXT,
+                        PRIMARY KEY (name, geoname_id),
+                        FOREIGN KEY(geoname_id) REFERENCES geonames(id) ON DELETE CASCADE
+                    ) WITHOUT ROWID;
                     ",
                 )?;
                 Ok(())
@@ -600,7 +589,7 @@ CREATE TABLE geonames_alternates(
                 clear_database(tx)?;
                 tx.execute_batch(
                     "
-CREATE INDEX geonames_alternates_geoname_id ON geonames_alternates(geoname_id);
+                    CREATE INDEX geonames_alternates_geoname_id ON geonames_alternates(geoname_id);
                     ",
                 )?;
                 Ok(())
@@ -610,16 +599,29 @@ CREATE INDEX geonames_alternates_geoname_id ON geonames_alternates(geoname_id);
                 clear_database(tx)?;
                 tx.execute_batch(
                     "
-CREATE VIRTUAL TABLE IF NOT EXISTS amp_fts USING FTS5(
-  full_keywords,
-  title,
-  content='',
-  contentless_delete=1,
-  tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
-);
+                    CREATE VIRTUAL TABLE IF NOT EXISTS amp_fts USING FTS5(
+                      full_keywords,
+                      title,
+                      content='',
+                      contentless_delete=1,
+                      tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
+                    );
 
                     ",
                 )?;
+                Ok(())
+            }
+            32 => {
+                // Drop rs_cache since it's no longer needed.
+                tx.execute_batch("DROP TABLE rs_cache;")?;
+                Ok(())
+            }
+            33 => {
+                // This migration is due to the replacement of the
+                // `quicksuggest` collection with `quicksuggest-amp` and
+                // `quicksuggest-other`. Clear the DB so that records from the
+                // old collection don't stick around. See bug 1953945.
+                clear_database(tx)?;
                 Ok(())
             }
             _ => Err(open_database::Error::IncompatibleVersion(version)),
@@ -649,7 +651,6 @@ pub fn clear_database(db: &Connection) -> rusqlite::Result<()> {
         "geonames_metrics",
         "ingested_records",
         "keywords_metrics",
-        "rs_cache",
     ];
     for t in conditional_tables {
         let table_exists = db.exists("SELECT 1 FROM sqlite_master WHERE name = ?", [t])?;
@@ -798,19 +799,14 @@ PRAGMA user_version=16;
         let db_file =
             MigratedDatabaseFile::new(SuggestConnectionInitializer::default(), V16_SCHEMA);
 
-        // Upgrade to v25, the first version with with `ingested_records` and
-        // `rs_cache` tables.
+        // Upgrade to v25, the first version with with `ingested_records` tables.
         db_file.upgrade_to(25);
 
-        // Insert some ingested records and cache data.
+        // Insert some ingested records.
         let conn = db_file.open();
         conn.execute(
             "INSERT INTO ingested_records(id, collection, type, last_modified) VALUES(?, ?, ?, ?)",
             ("record-id", "quicksuggest", "record-type", 1),
-        )?;
-        conn.execute(
-            "INSERT INTO rs_cache(collection, data) VALUES(?, ?)",
-            ("quicksuggest", "some data"),
         )?;
         conn.close().expect("Connection should be closed");
 
@@ -818,17 +814,12 @@ PRAGMA user_version=16;
         db_file.upgrade_to(VERSION);
         db_file.assert_schema_matches_new_database();
 
-        // `ingested_records` and `rs_cache` should be empty.
+        // `ingested_records` should be empty.
         let conn = db_file.open();
         assert_eq!(
             conn.query_one::<i32>("SELECT count(*) FROM ingested_records")?,
             0,
             "ingested_records should be empty"
-        );
-        assert_eq!(
-            conn.query_one::<i32>("SELECT count(*) FROM rs_cache")?,
-            0,
-            "rs_cache should be empty"
         );
         conn.close().expect("Connection should be closed");
 

@@ -746,12 +746,25 @@ UiaTextRange::GetEnclosingElement(
     return CO_E_OBJNOTCONNECTED;
   }
   RemoveExcludedAccessiblesFromRange(range);
-  if (Accessible* enclosing =
-          range.Start().mAcc->GetClosestCommonInclusiveAncestor(
-              range.End().mAcc)) {
-    RefPtr<IRawElementProviderSimple> uia = MsaaAccessible::GetFrom(enclosing);
-    uia.forget(aRetVal);
+  Accessible* enclosing =
+      range.Start().mAcc->GetClosestCommonInclusiveAncestor(range.End().mAcc);
+  if (!enclosing) {
+    return S_OK;
   }
+  for (Accessible* acc = enclosing; acc && !acc->IsDoc(); acc = acc->Parent()) {
+    if (nsAccUtils::MustPrune(acc) ||
+        // Bug 1950535: Narrator won't report a link correctly when navigating
+        // by character or word if we return a child text leaf. However, if
+        // there is more than a single text leaf, we need to return the child
+        // because it might have semantic significance; e.g. an embedded image.
+        (acc->Role() == roles::LINK && acc->ChildCount() == 1 &&
+         acc->FirstChild()->IsText())) {
+      enclosing = acc;
+      break;
+    }
+  }
+  RefPtr<IRawElementProviderSimple> uia = MsaaAccessible::GetFrom(enclosing);
+  uia.forget(aRetVal);
   return S_OK;
 }
 
@@ -874,17 +887,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY STDMETHODIMP UiaTextRange::Select() {
   if (!range) {
     return CO_E_OBJNOTCONNECTED;
   }
-  NotNull<Accessible*> container = GetSelectionContainer(range);
-  nsTArray<TextLeafRange> ranges;
-  TextLeafRange::GetSelection(container, ranges);
-  HyperTextAccessibleBase* conHyp = container->AsHyperTextBase();
-  MOZ_ASSERT(conHyp);
-  // Remove all ranges from the selection.
-  for (int32_t s = ranges.Length() - 1; s >= 0; --s) {
-    conHyp->RemoveFromSelection(s);
-  }
-  // Select just this range.
-  if (!range.SetSelection(0)) {
+  if (!range.SetSelection(TextLeafRange::kRemoveAllExistingSelectedRanges)) {
     return UIA_E_INVALIDOPERATION;
   }
   return S_OK;

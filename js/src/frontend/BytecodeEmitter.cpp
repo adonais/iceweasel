@@ -12023,7 +12023,15 @@ bool BytecodeEmitter::emitClass(
       return false;
     }
   } else {
-    if (!ce.emitClass(innerName, nameForAnonymousClass, hasNameOnStack)) {
+    int membersCount = 0;
+    for (ParseNode* node : classMembers->contents()) {
+      if (node->getKind() == ParseNodeKind::ClassField) {
+        membersCount++;
+      }
+    }
+    membersCount = (membersCount > 255) ? 255 : membersCount;
+    if (!ce.emitClass(innerName, nameForAnonymousClass, hasNameOnStack,
+                      uint8_t(membersCount))) {
       //            [stack] HOMEOBJ
       return false;
     }

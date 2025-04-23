@@ -752,6 +752,10 @@ static bool OwnerAllowsFullscreen(const Element& aEmbedder) {
 void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
   mEmbeddedByThisProcess = true;
 
+  if (RefPtr<WindowContext> parent = GetParentWindowContext()) {
+    parent->ClearLightDOMChildren();
+  }
+
   // Update embedder-element-specific fields in a shared transaction.
   // Don't do this when clearing our embedder, as we're being destroyed either
   // way.
@@ -1218,6 +1222,21 @@ Span<RefPtr<BrowsingContext>> BrowsingContext::NonSyntheticChildren() const {
     return current->NonSyntheticChildren();
   }
   return Span<RefPtr<BrowsingContext>>();
+}
+
+BrowsingContext* BrowsingContext::NonSyntheticLightDOMChildAt(
+    uint32_t aIndex) const {
+  if (WindowContext* current = mCurrentWindowContext) {
+    return current->NonSyntheticLightDOMChildAt(aIndex);
+  }
+  return nullptr;
+}
+
+uint32_t BrowsingContext::NonSyntheticLightDOMChildrenCount() const {
+  if (WindowContext* current = mCurrentWindowContext) {
+    return current->NonSyntheticLightDOMChildrenCount();
+  }
+  return 0;
 }
 
 void BrowsingContext::GetWindowContexts(
@@ -2265,8 +2284,8 @@ PopupBlocker::PopupControlState BrowsingContext::RevisePopupAbuseLevel(
     case PopupBlocker::openAllowed:
       break;
     case PopupBlocker::openBlocked:
-      if (IsPopupAllowed() || (StaticPrefs::dom_popup_experimental() && doc &&
-                               doc->HasValidTransientUserGestureActivation())) {
+      if (IsPopupAllowed() ||
+          (doc && doc->HasValidTransientUserGestureActivation())) {
         // Go down one state enum step:
         //   openBlocked (2) -> openControlled (1)
         abuse = PopupBlocker::openControlled;
@@ -3492,8 +3511,16 @@ void BrowsingContext::DidSet(FieldIndex<IDX_FullZoom>, float aOldValue) {
     }
 
     for (BrowsingContext* child : Children()) {
+      // When passing the outer document's full-zoom down to the inner
+      // document, scale by the effective CSS 'zoom' on the embedder element:
+      auto fullZoom = GetFullZoom();
+      if (auto* elem = child->GetEmbedderElement()) {
+        if (auto* frame = elem->GetPrimaryFrame()) {
+          fullZoom = frame->Style()->EffectiveZoom().Zoom(fullZoom);
+        }
+      }
       // Setting full zoom on a discarded context has no effect.
-      Unused << child->SetFullZoom(GetFullZoom());
+      Unused << child->SetFullZoom(fullZoom);
     }
   }
 

@@ -1921,9 +1921,11 @@ class ScrollContainerFrame::AsyncSmoothMSDScroll final
   }
 
   void SetDestination(const nsPoint& aDestination,
+                      UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
                       ScrollTriggeredByScript aTriggeredByScript) {
     mXAxisModel.SetDestination(static_cast<int32_t>(aDestination.x));
     mYAxisModel.SetDestination(static_cast<int32_t>(aDestination.y));
+    mSnapTargetIds = std::move(aSnapTargetIds);
     mTriggeredByScript = aTriggeredByScript;
   }
 
@@ -2032,11 +2034,9 @@ class ScrollContainerFrame::AsyncScroll final : public nsARefreshObserver {
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::TimeDuration TimeDuration;
 
-  explicit AsyncScroll(UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
-                       ScrollTriggeredByScript aTriggeredByScript)
+  explicit AsyncScroll(ScrollTriggeredByScript aTriggeredByScript)
       : mOrigin(ScrollOrigin::NotSpecified),
         mCallee(nullptr),
-        mSnapTargetIds(std::move(aSnapTargetIds)),
         mTriggeredByScript(aTriggeredByScript) {}
 
  private:
@@ -2046,11 +2046,14 @@ class ScrollContainerFrame::AsyncScroll final : public nsARefreshObserver {
  public:
   void InitSmoothScroll(TimeStamp aTime, nsPoint aInitialPosition,
                         nsPoint aDestination, ScrollOrigin aOrigin,
-                        const nsRect& aRange, const nsSize& aCurrentVelocity);
-  void Init(nsPoint aInitialPosition, const nsRect& aRange) {
+                        const nsRect& aRange, const nsSize& aCurrentVelocity,
+                        UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
+  void Init(nsPoint aInitialPosition, const nsRect& aRange,
+            UniquePtr<ScrollSnapTargetIds> aSnapTargetIds) {
     mAnimationPhysics = nullptr;
     mRange = aRange;
     mStartPosition = aInitialPosition;
+    mSnapTargetIds = std::move(aSnapTargetIds);
   }
 
   bool IsSmoothScroll() { return mAnimationPhysics != nullptr; }
@@ -2154,8 +2157,8 @@ class ScrollContainerFrame::AsyncScroll final : public nsARefreshObserver {
 
 void ScrollContainerFrame::AsyncScroll::InitSmoothScroll(
     TimeStamp aTime, nsPoint aInitialPosition, nsPoint aDestination,
-    ScrollOrigin aOrigin, const nsRect& aRange,
-    const nsSize& aCurrentVelocity) {
+    ScrollOrigin aOrigin, const nsRect& aRange, const nsSize& aCurrentVelocity,
+    UniquePtr<ScrollSnapTargetIds> aSnapTargetIds) {
   switch (aOrigin) {
     case ScrollOrigin::NotSpecified:
     case ScrollOrigin::Restore:
@@ -2193,6 +2196,7 @@ void ScrollContainerFrame::AsyncScroll::InitSmoothScroll(
   mRange = aRange;
 
   mAnimationPhysics->Update(aTime, aDestination, aCurrentVelocity);
+  mSnapTargetIds = std::move(aSnapTargetIds);
 }
 
 /*
@@ -2507,8 +2511,8 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
       // A previous smooth MSD scroll is still in progress, so we just need to
       // update its range and destination.
       mAsyncSmoothMSDScroll->SetRange(GetLayoutScrollRange());
-      mAsyncSmoothMSDScroll->SetDestination(mDestination,
-                                            aParams.mTriggeredByScript);
+      mAsyncSmoothMSDScroll->SetDestination(
+          mDestination, std::move(snapTargetIds), aParams.mTriggeredByScript);
     }
 
     return;
@@ -2528,16 +2532,16 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
       return;
     }
 
-    mAsyncScroll =
-        new AsyncScroll(std::move(snapTargetIds), aParams.mTriggeredByScript);
+    mAsyncScroll = new AsyncScroll(aParams.mTriggeredByScript);
     mAsyncScroll->SetRefreshObserver(this);
   }
 
   if (isSmoothScroll) {
     mAsyncScroll->InitSmoothScroll(now, GetScrollPosition(), mDestination,
-                                   aParams.mOrigin, range, currentVelocity);
+                                   aParams.mOrigin, range, currentVelocity,
+                                   std::move(snapTargetIds));
   } else {
-    mAsyncScroll->Init(GetScrollPosition(), range);
+    mAsyncScroll->Init(GetScrollPosition(), range, std::move(snapTargetIds));
   }
 }
 
@@ -3664,6 +3668,25 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
   if (!mIsRoot) {
     return;
   }
+  nsIFrame* rootStyleFrame = GetFrameForStyle();
+
+  nsDisplayList rootResultList(aBuilder);
+  bool serializedList = false;
+  auto SerializeList = [&] {
+    if (!serializedList) {
+      serializedList = true;
+      aSet.SerializeWithCorrectZOrder(&rootResultList, GetContent());
+    }
+  };
+
+  if (rootStyleFrame &&
+      rootStyleFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
+      StaticPrefs::dom_viewTransitions_live_capture()) {
+    SerializeList();
+    rootResultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
+        aBuilder, this, &rootResultList, aBuilder->CurrentActiveScrolledRoot(),
+        /* aIsRoot = */ true);
+  }
 
   // Create any required items for the 'top layer' and check if they'll be
   // opaque over the entire area of the viewport. If they are, then we can
@@ -3681,24 +3704,19 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
       // data implicitly for the root content document in the process, but
       // subdocuments etc need their display items to generate it, so we can't
       // cull those.
-      if (topLayerIsOpaque && PresContext()->IsRootContentDocumentInProcess()) {
+      if (topLayerIsOpaque && !serializedList &&
+          PresContext()->IsRootContentDocumentInProcess()) {
         aSet.DeleteAll(aBuilder);
       }
-      aSet.PositionedDescendants()->AppendToTop(topLayerWrapList);
+      if (serializedList) {
+        rootResultList.AppendToTop(topLayerWrapList);
+      } else {
+        aSet.PositionedDescendants()->AppendToTop(topLayerWrapList);
+      }
     }
   }
 
-  nsDisplayList rootResultList(aBuilder);
-
-  bool serializedList = false;
-  auto SerializeList = [&] {
-    if (!serializedList) {
-      serializedList = true;
-      aSet.SerializeWithCorrectZOrder(&rootResultList, GetContent());
-    }
-  };
-
-  if (nsIFrame* rootStyleFrame = GetFrameForStyle()) {
+  if (rootStyleFrame) {
     bool usingBackdropFilter =
         rootStyleFrame->StyleEffects()->HasBackdropFilters() &&
         rootStyleFrame->IsVisibleForPainting();
@@ -5472,7 +5490,7 @@ already_AddRefed<Element> ScrollContainerFrame::MakeScrollbar(
   if (mIsRoot) {
     e->SetProperty(nsGkAtoms::docLevelNativeAnonymousContent,
                    reinterpret_cast<void*>(true));
-    e->SetAttr(kNameSpaceID_None, nsGkAtoms::root_, u"true"_ns, false);
+    e->SetAttr(kNameSpaceID_None, nsGkAtoms::root, u"true"_ns, false);
 
     // Don't bother making style caching take [root="true"] styles into account.
     aKey = AnonymousContentKey::None;
@@ -5632,7 +5650,7 @@ nsresult ScrollContainerFrame::CreateAnonymousContent(
       mScrollCornerContent->SetProperty(
           nsGkAtoms::docLevelNativeAnonymousContent,
           reinterpret_cast<void*>(true));
-      mScrollCornerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::root_,
+      mScrollCornerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::root,
                                     u"true"_ns, false);
 
       // Don't bother making style caching take [root="true"] styles into

@@ -37,6 +37,8 @@ private const val KEY_DIALOG_GRAVITY = "KEY_DIALOG_GRAVITY"
 private const val KEY_DIALOG_WIDTH_MATCH_PARENT = "KEY_DIALOG_WIDTH_MATCH_PARENT"
 private const val KEY_POSITIVE_BUTTON_BACKGROUND_COLOR = "KEY_POSITIVE_BUTTON_BACKGROUND_COLOR"
 private const val KEY_POSITIVE_BUTTON_TEXT_COLOR = "KEY_POSITIVE_BUTTON_TEXT_COLOR"
+private const val KEY_POSITIVE_BUTTON_DISABLED_BACKGROUND_COLOR = "KEY_POSITIVE_BUTTON_DISABLED_BACKGROUND_COLOR"
+private const val KEY_POSITIVE_BUTTON_DISABLED_TEXT_COLOR = "KEY_POSITIVE_BUTTON_DISABLED_TEXT_COLOR"
 private const val KEY_POSITIVE_BUTTON_RADIUS = "KEY_POSITIVE_BUTTON_RADIUS"
 private const val KEY_LEARN_MORE_LINK_TEXT_COLOR = "KEY_LEARN_MORE_LINK_TEXT_COLOR"
 private const val KEY_FOR_OPTIONAL_PERMISSIONS = "KEY_FOR_OPTIONAL_PERMISSIONS"
@@ -98,6 +100,19 @@ class PermissionsDialogFragment : AddonDialogFragment() {
         get() =
             safeArguments.getInt(
                 KEY_POSITIVE_BUTTON_TEXT_COLOR,
+                DEFAULT_VALUE,
+            )
+    internal val positiveButtonDisabledBackgroundColor
+        get() =
+            safeArguments.getInt(
+                KEY_POSITIVE_BUTTON_DISABLED_BACKGROUND_COLOR,
+                DEFAULT_VALUE,
+            )
+
+    internal val positiveButtonDisabledTextColor
+        get() =
+            safeArguments.getInt(
+                KEY_POSITIVE_BUTTON_DISABLED_TEXT_COLOR,
                 DEFAULT_VALUE,
             )
 
@@ -201,6 +216,11 @@ class PermissionsDialogFragment : AddonDialogFragment() {
             hostPermissions.wildcards + hostPermissions.sites
         }
 
+        // "userScripts" can only be requested without other permissions, and
+        // only with forOptionalPermissions=true. This is enforced at the Gecko
+        // layer, in ext-permissions.js (via OptionalOnlyPermission).
+        val isUserScriptsPermission = permissions.size == 1 && permissions[0] == "userScripts"
+
         val listPermissions = buildPermissionsList(allUrlsPermissionFound)
         rootView.findViewById<TextView>(R.id.optional_or_required_text).text =
             buildOptionalOrRequiredText(
@@ -217,14 +237,25 @@ class PermissionsDialogFragment : AddonDialogFragment() {
         val allowedInPrivateBrowsing =
             rootView.findViewById<AppCompatCheckBox>(R.id.allow_in_private_browsing)
 
+        var extraPermissionWarning: String? = null
+        if (isUserScriptsPermission) {
+            extraPermissionWarning = requireContext()
+                .getString(R.string.mozac_feature_addons_permissions_user_scripts_extra_warning)
+        }
+
         permissionsRecyclerView.adapter = RequiredPermissionsAdapter(
             permissions = listPermissions,
+            permissionRequiresOptIn = isUserScriptsPermission,
+            onPermissionOptInChanged = { enabled ->
+                setButtonEnabled(positiveButton, enabled)
+            },
             domains = displayDomainList,
             domainsHeaderText = requireContext()
                 .getString(
                     R.string.mozac_feature_addons_permissions_all_domain_count_description,
                     displayDomainList.size,
                 ),
+            extraPermissionWarning = extraPermissionWarning,
         )
         permissionsRecyclerView.layoutManager = LinearLayoutManager(context)
 
@@ -246,28 +277,12 @@ class PermissionsDialogFragment : AddonDialogFragment() {
             dismiss()
         }
 
-        if (positiveButtonBackgroundColor != DEFAULT_VALUE) {
-            val backgroundTintList =
-                ContextCompat.getColorStateList(requireContext(), positiveButtonBackgroundColor)
-            positiveButton.backgroundTintList = backgroundTintList
-        }
-
-        if (positiveButtonTextColor != DEFAULT_VALUE) {
-            val color = ContextCompat.getColor(requireContext(), positiveButtonTextColor)
-            positiveButton.setTextColor(color)
-        }
-
-        if (positiveButtonRadius != DEFAULT_VALUE.toFloat()) {
-            val shape = GradientDrawable()
-            shape.shape = GradientDrawable.RECTANGLE
-            shape.setColor(
-                ContextCompat.getColor(
-                    requireContext(),
-                    positiveButtonBackgroundColor,
-                ),
-            )
-            shape.cornerRadius = positiveButtonRadius
-            positiveButton.background = shape
+        if (isUserScriptsPermission) {
+            // "userScripts" permission requires double-confirmation.
+            // Disable "Allow" button until the user confirmed via opt-in.
+            setButtonEnabled(positiveButton, false)
+        } else {
+            setButtonEnabled(positiveButton, true)
         }
 
         negativeButton.setOnClickListener {
@@ -342,6 +357,43 @@ class PermissionsDialogFragment : AddonDialogFragment() {
         return optionalOrRequiredText
     }
 
+    internal fun setButtonEnabled(button: Button, enabled: Boolean) {
+        button.isEnabled = enabled
+
+        val backgroundColor = if (enabled) {
+            positiveButtonBackgroundColor
+        } else {
+            positiveButtonDisabledBackgroundColor
+        }
+        val textColor = if (enabled) {
+            positiveButtonTextColor
+        } else {
+            positiveButtonDisabledTextColor
+        }
+        if (backgroundColor != DEFAULT_VALUE) {
+            val backgroundTintList =
+                ContextCompat.getColorStateList(requireContext(), backgroundColor)
+            button.backgroundTintList = backgroundTintList
+        }
+
+        if (textColor != DEFAULT_VALUE) {
+            val color = ContextCompat.getColor(requireContext(), textColor)
+            button.setTextColor(color)
+        }
+        if (positiveButtonRadius != DEFAULT_VALUE.toFloat()) {
+            val shape = GradientDrawable()
+            shape.shape = GradientDrawable.RECTANGLE
+            shape.setColor(
+                ContextCompat.getColor(
+                    requireContext(),
+                    backgroundColor,
+                ),
+            )
+            shape.cornerRadius = positiveButtonRadius
+            button.background = shape
+        }
+    }
+
     companion object {
         /**
          * Returns a new instance of [PermissionsDialogFragment].
@@ -349,6 +401,7 @@ class PermissionsDialogFragment : AddonDialogFragment() {
          * @param forOptionalPermissions Whether to show a permission dialog for optional permissions
          * requested by the extension.
          * @param permissions The permissions requested by the extension.
+         * @param origins The host permissions requested by the extension.
          * @param promptsStyling Styling properties for the dialog.
          * @param onPositiveButtonClicked A lambda called when the allow button is clicked.
          * @param onNegativeButtonClicked A lambda called when the deny button is clicked.
@@ -387,6 +440,12 @@ class PermissionsDialogFragment : AddonDialogFragment() {
                 }
                 promptsStyling?.confirmButtonTextColor?.apply {
                     putInt(KEY_POSITIVE_BUTTON_TEXT_COLOR, this)
+                }
+                promptsStyling?.confirmButtonDisabledBackgroundColor?.apply {
+                    putInt(KEY_POSITIVE_BUTTON_DISABLED_BACKGROUND_COLOR, this)
+                }
+                promptsStyling?.confirmButtonDisabledTextColor?.apply {
+                    putInt(KEY_POSITIVE_BUTTON_DISABLED_TEXT_COLOR, this)
                 }
                 promptsStyling?.learnMoreLinkTextColor?.apply {
                     putInt(KEY_LEARN_MORE_LINK_TEXT_COLOR, this)

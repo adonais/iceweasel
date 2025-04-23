@@ -265,12 +265,10 @@ const GPU_TAG_COMPOSITE: GpuProfileTag = GpuProfileTag {
     color: debug_colors::TOMATO,
 };
 
-#[derive(Debug)]
 // Defines the content that we will draw to a given swapchain / layer, calculated
 // after occlusion culling.
 struct SwapChainLayer {
-    opaque_items: Vec<occlusion::Item<usize>>,
-    alpha_items: Vec<occlusion::Item<usize>>,
+    occlusion: occlusion::FrontToBackBuilder<usize>,
     clear_tiles: Vec<occlusion::Item<usize>>,
 }
 
@@ -1469,7 +1467,7 @@ impl Renderer {
         &mut self,
         doc_id: DocumentId,
         active_doc: &mut RenderedDocument,
-        device_size: Option<DeviceIntSize>,
+        mut device_size: Option<DeviceIntSize>,
         buffer_age: usize,
     ) -> Result<RenderResults, Vec<RendererError>> {
         profile_scope!("render");
@@ -1536,6 +1534,12 @@ impl Renderer {
 
             frame_id
         };
+
+        if !active_doc.frame.present {
+            // Setting device_size to None is what ensures compositing/presenting
+            // the frame is skipped in the rest of this module.
+            device_size = None;
+        }
 
         if let Some(device_size) = device_size {
             // Inform the client that we are starting a composition transaction if native
@@ -3377,7 +3381,6 @@ impl Renderer {
         projection: &default::Transform3D<f32>,
         results: &mut RenderResults,
         partial_present_mode: Option<PartialPresentMode>,
-        occlusion: &occlusion::FrontToBackBuilder<usize>,
         layer: &SwapChainLayer,
     ) {
         self.device.bind_draw_target(draw_target);
@@ -3404,7 +3407,7 @@ impl Renderer {
                 // on Mali-G77 we have observed artefacts when calling glClear (even with
                 // the empty scissor rect set) after calling eglSetDamageRegion with an
                 // empty damage region. So avoid clearing in that case. See bug 1709548.
-                if !dirty_rect.is_empty() && occlusion.test(&dirty_rect) {
+                if !dirty_rect.is_empty() && layer.occlusion.test(&dirty_rect) {
                     // We have a single dirty rect, so clear only that
                     self.device.clear_target(clear_color,
                                              None,
@@ -3420,11 +3423,12 @@ impl Renderer {
         }
 
         // Draw opaque tiles
-        if !layer.opaque_items.is_empty() {
+        let opaque_items = layer.occlusion.opaque_items();
+        if !opaque_items.is_empty() {
             let opaque_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_OPAQUE);
             self.set_blend(false, FramebufferKind::Main);
             self.draw_tile_list(
-                layer.opaque_items.iter(),
+                opaque_items.iter(),
                 &composite_state,
                 &composite_state.external_surfaces,
                 projection,
@@ -3449,12 +3453,13 @@ impl Renderer {
         }
 
         // Draw alpha tiles
-        if !layer.alpha_items.is_empty() {
+        let alpha_items = layer.occlusion.alpha_items();
+        if !alpha_items.is_empty() {
             let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
             self.set_blend(true, FramebufferKind::Main);
             self.set_blend_mode_premultiplied_alpha(FramebufferKind::Main);
             self.draw_tile_list(
-                layer.alpha_items.iter(),
+                alpha_items.iter().rev(),
                 &composite_state,
                 &composite_state.external_surfaces,
                 projection,
@@ -3480,6 +3485,13 @@ impl Renderer {
         let _gm = self.gpu_profiler.start_marker("framebuffer");
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
 
+        // We are only interested in tiles backed with actual cached pixels so we don't
+        // count clear tiles here.
+        let num_tiles = composite_state.tiles
+            .iter()
+            .filter(|tile| tile.kind != TileKind::Clear).count();
+        self.profile.set(profiler::PICTURE_TILES, num_tiles);
+
         let window_is_opaque = match self.compositor_config.layer_compositor() {
             Some(ref compositor) => {
                 let props = compositor.get_window_properties();
@@ -3491,20 +3503,10 @@ impl Renderer {
         let mut input_layers: Vec<CompositorInputLayer> = Vec::new();
         let mut swapchain_layers = Vec::new();
         let cap = composite_state.tiles.len();
-        let mut occlusion = occlusion::FrontToBackBuilder::with_capacity(cap, cap);
-        let mut clear_tiles = Vec::new();
 
-        // We are only interested in tiles backed with actual cached pixels so we don't
-        // count clear tiles here.
-        let num_tiles = composite_state.tiles
-            .iter()
-            .filter(|tile| tile.kind != TileKind::Clear).count();
-        self.profile.set(profiler::PICTURE_TILES, num_tiles);
-
+        // NOTE: Tiles here are being iterated in front-to-back order by
+        //       z-id, due to the sort in composite_state.end_frame()
         for (idx, tile) in composite_state.tiles.iter().enumerate() {
-            // Clear tiles overwrite whatever is under them, so they are treated as opaque.
-            let is_opaque = tile.kind != TileKind::Alpha;
-
             let device_tile_box = composite_state.get_device_rect(
                 &tile.local_rect,
                 tile.transform_index
@@ -3529,30 +3531,6 @@ impl Renderer {
             if rect.is_empty() {
                 continue;
             }
-
-            // For normal tiles, add to occlusion tracker. For clear tiles, add directly
-            // to the swapchain tile list
-            match tile.kind {
-                TileKind::Opaque | TileKind::Alpha => {
-                    // Store (index of tile, index of layer) so we can segment them below
-                    occlusion.add(&rect, is_opaque, idx);
-                }
-                TileKind::Clear => {
-                    // Clear tiles are specific to how we render the window buttons on
-                    // Windows 8. They clobber what's under them so they can be treated as opaque,
-                    // but require a different blend state so they will be rendered after the opaque
-                    // tiles and before transparent ones.
-                    clear_tiles.push(occlusion::Item { rectangle: rect, key: idx });
-                }
-            }
-        }
-
-        assert_eq!(swapchain_layers.len(), input_layers.len());
-
-        for item in occlusion.opaque_items().iter().chain(occlusion.alpha_items().iter().rev()) {
-            let tile = &composite_state.tiles[item.key];
-            // Clear tiles overwrite whatever is under them, so they are treated as opaque.
-            let is_opaque = tile.kind != TileKind::Alpha;
 
             // Determine if the tile is an external surface or content
             let usage = match tile.surface {
@@ -3632,7 +3610,7 @@ impl Renderer {
                         (
                             DeviceIntPoint::zero(),
                             device_size.into(),
-                            input_layers.is_empty() && window_is_opaque,
+                            false,      // Assume not opaque, we'll calculate this later
                         )
                     }
                     CompositorSurfaceUsage::External { .. } => {
@@ -3642,6 +3620,7 @@ impl Renderer {
                         );
 
                         let clip_rect = tile.device_clip_rect.to_i32();
+                        let is_opaque = tile.kind != TileKind::Alpha;
 
                         (rect.min.to_i32(), clip_rect, is_opaque)
                     }
@@ -3656,41 +3635,69 @@ impl Renderer {
                 });
 
                 swapchain_layers.push(SwapChainLayer {
-                    opaque_items: Vec::new(),
-                    alpha_items: Vec::new(),
                     clear_tiles: Vec::new(),
+                    occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
                 })
             }
 
-            let item = occlusion::Item {
-                rectangle: item.rectangle,
-                key: item.key,
-            };
-
+            // For normal tiles, add to occlusion tracker. For clear tiles, add directly
+            // to the swapchain tile list
             let layer = swapchain_layers.last_mut().unwrap();
-            if is_opaque {
-                layer.opaque_items.push(item);
-            } else {
-                layer.alpha_items.push(item);
+
+            // Clear tiles overwrite whatever is under them, so they are treated as opaque.
+            match tile.kind {
+                TileKind::Opaque => {
+                    // Store (index of tile, index of layer) so we can segment them below
+                    layer.occlusion.add(&rect, true, idx);
+                }
+                TileKind::Alpha => {
+                    // Store (index of tile, index of layer) so we can segment them below
+                    layer.occlusion.add(&rect, false, idx);
+                }
+                TileKind::Clear => {
+                    // Clear tiles are specific to how we render the window buttons on
+                    // Windows 8. They clobber what's under them so they can be treated as opaque,
+                    // but require a different blend state so they will be rendered after the opaque
+                    // tiles and before transparent ones.
+                    layer.clear_tiles.push(occlusion::Item { rectangle: rect, key: idx });
+                }
             }
         }
 
-        // If no tiles were present, and we expect an opaque window,
-        // ddd an empty layer to force a composite that clears the screen,
-        // to match existing semantics.
-        if window_is_opaque && input_layers.is_empty() {
-            input_layers.push(CompositorInputLayer {
-                usage: CompositorSurfaceUsage::Content,
-                is_opaque: true,
-                offset: DeviceIntPoint::zero(),
-                clip_rect: device_size.into(),
-            });
+        // Reverse the layers - we're now working in back-to-front order from here onwards
+        assert_eq!(swapchain_layers.len(), input_layers.len());
+        input_layers.reverse();
+        swapchain_layers.reverse();
 
-            swapchain_layers.push(SwapChainLayer {
-                opaque_items: Vec::new(),
-                alpha_items: Vec::new(),
-                clear_tiles: Vec::new(),
-            })
+        if window_is_opaque {
+            match input_layers.first_mut() {
+                Some(_layer) => {
+                    // If the window is opaque, and the first layer is a content layer
+                    // then mark that as opaque.
+                    // TODO(gw): This causes flickering in some cases when changing
+                    //           layer count. We need to find out why so we can enable
+                    //           selecting an opaque swapchain where possible.
+                    // if let CompositorSurfaceUsage::Content = layer.usage {
+                    //     layer.is_opaque = true;
+                    // }
+                }
+                None => {
+                    // If no tiles were present, and we expect an opaque window,
+                    // add an empty layer to force a composite that clears the screen,
+                    // to match existing semantics.
+                    input_layers.push(CompositorInputLayer {
+                        usage: CompositorSurfaceUsage::Content,
+                        is_opaque: true,
+                        offset: DeviceIntPoint::zero(),
+                        clip_rect: device_size.into(),
+                    });
+
+                    swapchain_layers.push(SwapChainLayer {
+                        clear_tiles: Vec::new(),
+                        occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
+                    });
+                }
+            }
         }
 
         // Add a debug overlay request if enabled
@@ -3705,10 +3712,9 @@ impl Renderer {
             });
 
             swapchain_layers.push(SwapChainLayer {
-                opaque_items: Vec::new(),
-                alpha_items: Vec::new(),
                 clear_tiles: Vec::new(),
-            })
+                occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
+            });
         }
 
         // Start compositing if using OS compositor
@@ -3762,7 +3768,6 @@ impl Renderer {
                 projection,
                 results,
                 partial_present_mode,
-                &occlusion,
                 swapchain_layer,
             );
 

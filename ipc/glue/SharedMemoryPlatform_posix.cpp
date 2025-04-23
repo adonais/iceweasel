@@ -175,7 +175,7 @@ static Maybe<unsigned> HaveMemfd() {
 #endif  // USE_MEMFD_CREATE
 }
 
-static bool AppendPosixShmPrefix(std::string* aStr, pid_t aPid) {
+bool AppendPosixShmPrefix(std::string* aStr, pid_t aPid) {
   if (HaveMemfd()) {
     return false;
   }
@@ -325,10 +325,12 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
   return Some(std::move(fd));
 }
 
-bool Platform::Create(Handle& aHandle, size_t aSize) {
+bool UsingPosixShm() { return !HaveMemfd(); }
+
+bool Platform::Create(MutableHandle& aHandle, size_t aSize) {
   if (auto ph = CreateImpl(aSize, nullptr)) {
     aHandle.mHandle = std::move(*ph);
-    aHandle.mSize = aSize;
+    aHandle.SetSize(aSize);
     return true;
   }
   return false;
@@ -337,7 +339,7 @@ bool Platform::Create(Handle& aHandle, size_t aSize) {
 bool Platform::CreateFreezable(FreezableHandle& aHandle, size_t aSize) {
   if (auto ph = CreateImpl(aSize, &aHandle.mFrozenFile)) {
     aHandle.mHandle = std::move(*ph);
-    aHandle.mSize = aSize;
+    aHandle.SetSize(aSize);
     return true;
   }
   return false;
@@ -447,8 +449,12 @@ bool Platform::Protect(char* aAddr, size_t aSize, Access aAccess) {
 }
 
 void* Platform::FindFreeAddressSpace(size_t aSize) {
-  void* memory = mmap(nullptr, aSize, PROT_NONE,
-                      MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE, -1, 0);
+#ifndef __FreeBSD__
+  constexpr int flags = MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE;
+#else
+  constexpr int flags = MAP_ANONYMOUS | MAP_PRIVATE;
+#endif
+  void* memory = mmap(nullptr, aSize, PROT_NONE, flags, -1, 0);
   if (memory == MAP_FAILED) {
     return nullptr;
   }

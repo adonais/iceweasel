@@ -494,7 +494,7 @@ static bool MustReresolveStyle(const ComputedStyle* aStyle) {
 
   // TODO(emilio): We may want to avoid re-resolving pseudo-element styles
   // more often.
-  return aStyle->HasPseudoElementData() && !aStyle->IsPseudoElement();
+  return aStyle->IsInFirstLineSubtree() && !aStyle->IsPseudoElement();
 }
 
 static bool IsInFlatTree(const Element& aElement) {
@@ -923,17 +923,6 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
       return style->StyleDisplay()->mTransformOrigin.HasPercent();
     case eCSSProperty_transform:
       return style->StyleDisplay()->mTransform.HasPercent();
-    case eCSSProperty_border_top_width:
-    case eCSSProperty_border_bottom_width:
-    case eCSSProperty_border_left_width:
-    case eCSSProperty_border_right_width:
-      // FIXME(emilio): This should return false per spec (bug 1551000), but
-      // themed borders don't make that easy, so for now flush for that case.
-      //
-      // TODO(emilio): If we make GetUsedBorder() stop returning 0 for an
-      // unreflowed frame, or something of that sort, then we can stop flushing
-      // layout for themed frames.
-      return style->StyleDisplay()->HasAppearance();
     case eCSSProperty_top:
     case eCSSProperty_right:
     case eCSSProperty_bottom:
@@ -1114,9 +1103,6 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
 
     SetResolvedComputedStyle(std::move(resolvedComputedStyle),
                              currentGeneration);
-    NS_ASSERTION(mPseudo.mType != PseudoStyleType::NotPseudo ||
-                     !mComputedStyle->HasPseudoElementData(),
-                 "should not have pseudo-element data");
   }
 
   // mExposeVisitedStyle is set to true only by testing APIs that
@@ -2055,14 +2041,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetPaddingWidthFor(
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetBorderWidthFor(
     mozilla::Side aSide) {
-  nscoord width;
-  if (mInnerFrame && mComputedStyle->StyleDisplay()->HasAppearance()) {
-    AssertFlushedPendingReflows();
-    width = mInnerFrame->GetUsedBorder().Side(aSide);
-  } else {
-    width = StyleBorder()->GetComputedBorderWidth(aSide);
-  }
-  return AppUnitsToCSSValue(width);
+  return AppUnitsToCSSValue(StyleBorder()->GetComputedBorderWidth(aSide));
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetMarginFor(Side aSide) {

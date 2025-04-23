@@ -20,7 +20,7 @@ internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = 
     )
     is BookmarksLoaded -> state.copy(
         currentFolder = action.folder,
-        bookmarkItems = action.bookmarkItems,
+        bookmarkItems = action.bookmarkItems.sortedWith(state.sortOrder.comparator),
     )
     is RecursiveSelectionCountLoaded -> state.copy(recursiveSelectedCount = action.count)
     is BookmarkLongClicked -> state.toggleSelectionOf(action.item)
@@ -230,9 +230,37 @@ private fun BookmarksState.respondToBackClick(): BookmarksState = when {
     }
     bookmarksEditFolderState != null -> copy(bookmarksEditFolderState = null)
     bookmarksEditBookmarkState != null -> copy(bookmarksEditBookmarkState = null)
+    selectedItems.isNotEmpty() -> copy(selectedItems = listOf())
     else -> this
 }
 
+private fun BookmarksState.handleSortMenuAction(action: BookmarksListMenuAction.SortMenu): BookmarksState =
+    when (action) {
+        BookmarksListMenuAction.SortMenu.SortMenuButtonClicked -> copy(
+            sortMenuShown = !sortMenuShown,
+        )
+        BookmarksListMenuAction.SortMenu.SortMenuDismissed -> copy(
+            sortMenuShown = false,
+        )
+        BookmarksListMenuAction.SortMenu.NewestClicked -> copy(
+            sortOrder = BookmarksListSortOrder.Created(true),
+        )
+        BookmarksListMenuAction.SortMenu.OldestClicked -> copy(
+            sortOrder = BookmarksListSortOrder.Created(false),
+        )
+        BookmarksListMenuAction.SortMenu.AtoZClicked -> copy(
+            sortOrder = BookmarksListSortOrder.Alphabetical(true),
+        )
+        BookmarksListMenuAction.SortMenu.ZtoAClicked -> copy(
+            sortOrder = BookmarksListSortOrder.Alphabetical(false),
+        )
+    }.let {
+        it.copy(
+            bookmarkItems = it.bookmarkItems.sortedWith(it.sortOrder.comparator),
+        )
+    }
+
+@Suppress("CyclomaticComplexMethod")
 private fun BookmarksState.handleListMenuAction(action: BookmarksListMenuAction): BookmarksState =
     when (action) {
         is BookmarksListMenuAction.Bookmark.EditClicked -> this.copy(
@@ -288,14 +316,14 @@ private fun BookmarksState.handleListMenuAction(action: BookmarksListMenuAction)
                 destination = currentFolder.guid,
             ),
         )
+        is BookmarksListMenuAction.SortMenu -> handleSortMenuAction(action)
         else -> this
     }.let { updatedState ->
-        if (action is BookmarksListMenuAction.MultiSelect) {
-            updatedState.copy(
+        when (action) {
+            is BookmarksListMenuAction.MultiSelect -> updatedState.copy(
                 selectedItems = listOf(),
                 recursiveSelectedCount = null,
             )
-        } else {
-            updatedState
+            else -> updatedState
         }
     }

@@ -137,7 +137,7 @@ pub extern "C" fn wgpu_server_new(owner: *mut c_void, use_dxc: bool) -> *mut Glo
         wgt::Dx12Compiler::DynamicDxc {
             dxc_path: "dxcompiler.dll".into(),
             dxil_path: "dxil.dll".into(),
-            max_shader_model: wgt::DxcShaderModel::V6_6
+            max_shader_model: wgt::DxcShaderModel::V6_6,
         }
     } else {
         wgt::Dx12Compiler::Fxc
@@ -300,7 +300,7 @@ fn support_use_external_texture_in_swap_chain(
                 global.adapter_as_hal::<wgc::api::Vulkan, _, bool>(self_id, |hal_adapter| {
                     let hal_adapter = match hal_adapter {
                         None => {
-                            let msg = CString::new(format!("Vulkan adapter is invalid")).unwrap();
+                            let msg = c"Vulkan adapter is invalid";
                             gfx_critical_note(msg.as_ptr());
                             return false;
                         }
@@ -408,18 +408,23 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
     new_queue_id: id::QueueId,
     mut error_buf: ErrorBuffer,
 ) {
-    let desc: wgc::device::DeviceDescriptor = bincode::deserialize(byte_buf.as_slice()).unwrap();
-    let trace_string = std::env::var("WGPU_TRACE").ok().map(|s| {
-        let idx = TRACE_IDX.fetch_add(1, Ordering::Relaxed);
-        let path = format!("{}/{}/", s, idx);
+    let mut desc: wgc::device::DeviceDescriptor =
+        bincode::deserialize(byte_buf.as_slice()).unwrap();
 
-        if std::fs::create_dir_all(&path).is_err() {
-            log::warn!("Failed to create directory {:?} for wgpu recording.", path);
+    desc.trace = match desc.trace {
+        wgt::Trace::Directory(s) => {
+            let idx = TRACE_IDX.fetch_add(1, Ordering::Relaxed);
+            let path = s.join(idx.to_string());
+
+            if std::fs::create_dir_all(&path).is_err() {
+                log::warn!("Failed to create directory {:?} for wgpu recording.", path);
+            }
+
+            wgt::Trace::Directory(path)
         }
+        other => other,
+    };
 
-        path
-    });
-    let trace_path = trace_string.as_deref();
     // TODO: in https://github.com/gfx-rs/wgpu/pull/3626/files#diff-033343814319f5a6bd781494692ea626f06f6c3acc0753a12c867b53a646c34eR97
     // which introduced the queue id parameter, the queue id is also the device id. I don't know how applicable this is to
     // other situations (this one in particular).
@@ -430,7 +435,7 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
             global.adapter_as_hal::<wgc::api::Vulkan, _, bool>(self_id, |hal_adapter| {
                 let hal_adapter = match hal_adapter {
                     None => {
-                        let msg = CString::new(format!("Vulkan adapter is invalid")).unwrap();
+                        let msg = c"Vulkan adapter is invalid";
                         gfx_critical_note(msg.as_ptr());
                         return false;
                     }
@@ -452,8 +457,7 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
                     |hal_adapter| {
                         let hal_adapter = match hal_adapter {
                             None => {
-                                let msg =
-                                    CString::new(format!("Vulkan adapter is invalid")).unwrap();
+                                let msg = c"Vulkan adapter is invalid";
                                 gfx_critical_note(msg.as_ptr());
                                 return None;
                             }
@@ -487,9 +491,7 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
 
                         let queue_family_index = match queue_family_index {
                             None => {
-                                let msg =
-                                    CString::new(format!("Vulkan device has no graphics queue"))
-                                        .unwrap();
+                                let msg = c"Vulkan device has no graphics queue";
                                 gfx_critical_note(msg.as_ptr());
                                 return None;
                             }
@@ -554,7 +556,6 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
                 self_id,
                 hal_device.into(),
                 &desc,
-                trace_path,
                 Some(new_device_id),
                 Some(new_queue_id),
             );
@@ -565,13 +566,8 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
         }
     }
 
-    let res = global.adapter_request_device(
-        self_id,
-        &desc,
-        trace_path,
-        Some(new_device_id),
-        Some(new_queue_id),
-    );
+    let res =
+        global.adapter_request_device(self_id, &desc, Some(new_device_id), Some(new_queue_id));
     if let Err(err) = res {
         error_buf.init(err);
     }
@@ -835,6 +831,7 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     mut error_buf: ErrorBuffer,
 ) {
     let closure = Box::new(move |result| {
+        let _ = &closure;
         let status = match result {
             Ok(_) => BufferMapAsyncStatus::Success,
             Err(BufferAccessError::Device(_)) => BufferMapAsyncStatus::ContextLost,
@@ -1036,7 +1033,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
             |hal_device| {
                 let hal_device = match hal_device {
                     None => {
-                        let msg = CString::new(format!("Vulkan device is invalid")).unwrap();
+                        let msg = c"Vulkan device is invalid";
                         gfx_critical_note(msg.as_ptr());
                         return None;
                     }
@@ -1062,9 +1059,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
                 };
 
                 if count == 0 {
-                    let msg =
-                        CString::new(format!("get_physical_device_format_properties2() failed"))
-                            .unwrap();
+                    let msg = c"get_physical_device_format_properties2() failed";
                     gfx_critical_note(msg.as_ptr());
                     return None;
                 }
@@ -1099,8 +1094,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
                 });
 
                 if modifier_props.is_empty() {
-                    let msg =
-                        CString::new(format!("format not supported for dmabuf import")).unwrap();
+                    let msg = c"format not supported for dmabuf import";
                     gfx_critical_note(msg.as_ptr());
                     return None;
                 }
@@ -1114,8 +1108,8 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
                     .drm_format_modifiers(&modifiers);
 
                 let extent = vk::Extent3D {
-                    width: width,
-                    height: height,
+                    width,
+                    height,
                     depth: 1,
                 };
 
@@ -1187,8 +1181,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
                 let index = match index {
                     None => {
-                        let msg = CString::new(format!("Failed to get DEVICE_LOCAL memory index"))
-                            .unwrap();
+                        let msg = c"Failed to get DEVICE_LOCAL memory index";
                         gfx_critical_note(msg.as_ptr());
                         return None;
                     }
@@ -1229,7 +1222,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
                 });
                 let modifier_prop = match modifier_prop {
                     None => {
-                        let msg = CString::new(format!("failed to find modifier_prop")).unwrap();
+                        let msg = c"failed to find modifier_prop";
                         gfx_critical_note(msg.as_ptr());
                         return None;
                     }
@@ -1253,8 +1246,8 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
                 Some(VkImageHandle {
                     device: device.handle(),
-                    image: image,
-                    memory: memory,
+                    image,
+                    memory,
                     memory_size: memory_req.size,
                     memory_type_index: index as u32,
                     modifier: image_modifier_properties.drm_format_modifier,
@@ -1301,7 +1294,7 @@ pub extern "C" fn wgpu_vkimage_get_file_descriptor(
         global.device_as_hal::<wgc::api::Vulkan, _, i32>(device_id, |hal_device| {
             let hal_device = match hal_device {
                 None => {
-                    let msg = CString::new(format!("Vulkan device is invalid")).unwrap();
+                    let msg = c"Vulkan device is invalid";
                     gfx_critical_note(msg.as_ptr());
                     return -1;
                 }
@@ -1563,7 +1556,7 @@ impl Global {
         };
 
         if dx12_device.is_none() {
-            let msg = CString::new(format!("dx12 device is none")).unwrap();
+            let msg = c"dx12 device is none";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1584,7 +1577,7 @@ impl Global {
             )
         };
         if ret != true {
-            let msg = CString::new(format!("Failed to create external texture")).unwrap();
+            let msg = c"Failed to create external texture";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1593,7 +1586,7 @@ impl Global {
 
         let handle = unsafe { wgpu_server_get_external_texture_handle(self.owner, texture_id) };
         if handle.is_null() {
-            let msg = CString::new(format!("Failed to get external texture handle")).unwrap();
+            let msg = c"Failed to get external texture handle";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1603,7 +1596,7 @@ impl Global {
         let res =
             unsafe { dx12_device.OpenSharedHandle(Foundation::HANDLE(handle), &mut resource) };
         if res.is_err() || resource.is_none() {
-            let msg = CString::new(format!("Failed to open shared handle")).unwrap();
+            let msg = c"Failed to open shared handle";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1656,7 +1649,7 @@ impl Global {
             )
         };
         if ret != true {
-            let msg = CString::new(format!("Failed to create external texture")).unwrap();
+            let msg = c"Failed to create external texture";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1665,7 +1658,7 @@ impl Global {
 
         let handle = unsafe { wgpu_server_get_vk_image_handle(self.owner, texture_id) };
         if handle.is_null() {
-            let msg = CString::new(format!("Failed to get VkImageHandle")).unwrap();
+            let msg = c"Failed to get VkImageHandle";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1676,7 +1669,7 @@ impl Global {
 
         let fd = unsafe { wgpu_server_get_dma_buf_fd(self.owner, texture_id) };
         if fd < 0 {
-            let msg = CString::new(format!("Failed to get DMABuf fd")).unwrap();
+            let msg = c"Failed to get DMABuf fd";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1692,7 +1685,7 @@ impl Global {
                 |hal_device| {
                     let hal_device = match hal_device {
                         None => {
-                            let msg = CString::new(format!("Vulkan device is invalid")).unwrap();
+                            let msg = c"Vulkan device is invalid";
                             gfx_critical_note(msg.as_ptr());
                             return None;
                         }
@@ -1739,7 +1732,7 @@ impl Global {
 
                     let memory_req = device.get_image_memory_requirements(image);
                     if memory_req.size > vk_image_wrapper.memory_size {
-                        let msg = CString::new(format!("Invalid memory size")).unwrap();
+                        let msg = c"Invalid memory size";
                         gfx_critical_note(msg.as_ptr());
                         return None;
                     }
@@ -1777,8 +1770,8 @@ impl Global {
 
                     Some(VkImageHolder {
                         device: device.handle(),
-                        image: image,
-                        memory: memory,
+                        image,
+                        memory,
                         fn_destroy_image: device.fp_v1_0().destroy_image,
                         fn_free_memory: device.fp_v1_0().free_memory,
                     })
@@ -1788,7 +1781,7 @@ impl Global {
 
         let image_holder = match image_holder {
             None => {
-                let msg = CString::new(format!("Failed to get vk::Image")).unwrap();
+                let msg = c"Failed to get vk::Image";
                 unsafe {
                     gfx_critical_note(msg.as_ptr());
                 }
@@ -1856,7 +1849,7 @@ impl Global {
             )
         };
         if ret != true {
-            let msg = CString::new(format!("Failed to create external texture")).unwrap();
+            let msg = c"Failed to create external texture";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1866,7 +1859,7 @@ impl Global {
         let io_surface_id =
             unsafe { wgpu_server_get_external_io_surface_id(self.owner, texture_id) };
         if io_surface_id == 0 {
-            let msg = CString::new(format!("Failed to get io surface id")).unwrap();
+            let msg = c"Failed to get io surface id";
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
@@ -1883,7 +1876,7 @@ impl Global {
                 |hal_device| {
                     let hal_device = match hal_device {
                         None => {
-                            let msg = CString::new(format!("metal device is invalid")).unwrap();
+                            let msg = c"metal device is invalid";
                             gfx_critical_note(msg.as_ptr());
                             return None;
                         }
@@ -1913,7 +1906,7 @@ impl Global {
                         plane:0];
 
                         if raw_texture.as_ptr().is_null() {
-                            let msg = CString::new(format!("Failed to create metal::Texture for swap chain")).unwrap();
+                            let msg = c"Failed to create metal::Texture for swap chain";
                             gfx_critical_note(msg.as_ptr());
                             return None;
                         }
@@ -1975,6 +1968,21 @@ impl Global {
                     error_buf.init(ErrMsg {
                         message: "Out of memory",
                         r#type: ErrorBufferType::OutOfMemory,
+                    });
+                    return;
+                }
+
+                if [
+                    desc.size.width,
+                    desc.size.height,
+                    desc.size.depth_or_array_layers,
+                ]
+                .contains(&0)
+                {
+                    self.create_texture_error(Some(id), &desc);
+                    error_buf.init(ErrMsg {
+                        message: "size is zero",
+                        r#type: ErrorBufferType::Validation,
                     });
                     return;
                 }
@@ -2525,13 +2533,129 @@ pub struct SubmittedWorkDoneClosure {
 }
 unsafe impl Send for SubmittedWorkDoneClosure {}
 
+#[derive(Debug)]
+#[cfg(target_os = "linux")]
+pub struct VkSemaphoreHandle {
+    pub semaphore: vk::Semaphore,
+}
+
+#[allow(dead_code)]
+fn emit_critical_invalid_note_if_none<T>(what: &'static str, t: Option<T>) -> Option<T> {
+    if t.is_none() {
+        // SAFETY: We ensure that the pointer provided is not null.
+        let msg = CString::new(format!("{what} is invalid")).unwrap();
+        unsafe { gfx_critical_note(msg.as_ptr()) }
+    }
+    t
+}
+
+#[no_mangle]
+#[cfg(target_os = "linux")]
+pub extern "C" fn wgpu_vksemaphore_create_signal_semaphore(
+    global: &Global,
+    queue_id: id::QueueId,
+) -> *mut VkSemaphoreHandle {
+    let semaphore_handle = unsafe {
+        global.queue_as_hal::<wgc::api::Vulkan, _, Option<VkSemaphoreHandle>>(
+            queue_id,
+            |hal_queue| {
+                let hal_queue = emit_critical_invalid_note_if_none("Vulkan queue", hal_queue)?;
+                let device = hal_queue.raw_device();
+
+                let mut export_semaphore_create_info = vk::ExportSemaphoreCreateInfo::default()
+                    .handle_types(vk::ExternalSemaphoreHandleTypeFlags::OPAQUE_FD);
+                let create_info =
+                    vk::SemaphoreCreateInfo::default().push_next(&mut export_semaphore_create_info);
+                let semaphore = match device.create_semaphore(&create_info, None) {
+                    Err(err) => {
+                        let msg =
+                            CString::new(format!("create_semaphore() failed: {:?}", err)).unwrap();
+                        gfx_critical_note(msg.as_ptr());
+                        return None;
+                    }
+                    Ok(semaphore) => semaphore,
+                };
+
+                hal_queue.add_signal_semaphore(semaphore, None);
+
+                Some(VkSemaphoreHandle { semaphore })
+            },
+        )
+    };
+
+    match semaphore_handle {
+        None => ptr::null_mut(),
+        Some(semaphore_handle) => Box::into_raw(Box::new(semaphore_handle)),
+    }
+}
+
+#[no_mangle]
+#[cfg(target_os = "linux")]
+pub unsafe extern "C" fn wgpu_vksemaphore_get_file_descriptor(
+    global: &Global,
+    device_id: id::DeviceId,
+    handle: &VkSemaphoreHandle,
+) -> i32 {
+    let file_descriptor = unsafe {
+        global.device_as_hal::<wgc::api::Vulkan, _, Option<i32>>(device_id, |hal_device| {
+            let hal_device = emit_critical_invalid_note_if_none("Vulkan device", hal_device)?;
+            let device = hal_device.raw_device();
+            let instance = hal_device.shared_instance().raw_instance();
+
+            let external_semaphore_fd = khr::external_semaphore_fd::Device::new(instance, device);
+            let get_fd_info = vk::SemaphoreGetFdInfoKHR::default()
+                .semaphore(handle.semaphore)
+                .handle_type(vk::ExternalSemaphoreHandleTypeFlags::OPAQUE_FD);
+
+            external_semaphore_fd.get_semaphore_fd(&get_fd_info).ok()
+        })
+    };
+
+    // From [Wikipedia](https://en.wikipedia.org/wiki/File_descriptor):
+    //
+    // > File descriptors typically have non-negative integer values, with negative values
+    // > being reserved to indicate "no value" or error conditions.
+    file_descriptor.unwrap_or(-1)
+}
+
+#[no_mangle]
+#[cfg(target_os = "linux")]
+pub unsafe extern "C" fn wgpu_vksemaphore_destroy(
+    global: &Global,
+    device_id: id::DeviceId,
+    handle: &VkSemaphoreHandle,
+) {
+    unsafe {
+        global.device_as_hal::<wgc::api::Vulkan, _, ()>(device_id, |hal_device| {
+            let hal_device = emit_critical_invalid_note_if_none("Vulkan device", hal_device);
+            let hal_device = match hal_device {
+                None => {
+                    return;
+                }
+                Some(hal_device) => hal_device,
+            };
+            let device = hal_device.raw_device();
+            device.destroy_semaphore(handle.semaphore, None);
+        })
+    };
+}
+
+#[no_mangle]
+#[cfg(target_os = "linux")]
+pub unsafe extern "C" fn wgpu_vksemaphore_delete(handle: *mut VkSemaphoreHandle) {
+    let _ = Box::from_raw(handle);
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_on_submitted_work_done(
     global: &Global,
     self_id: id::QueueId,
     closure: SubmittedWorkDoneClosure,
 ) {
-    let closure = Box::new(move || (closure.callback)(closure.user_data));
+    let closure = Box::new(move || {
+        let _ = &closure;
+        (closure.callback)(closure.user_data)
+    });
     global.queue_on_submitted_work_done(self_id, closure);
 }
 
@@ -2549,7 +2673,13 @@ pub unsafe extern "C" fn wgpu_server_queue_write_action(
     mut error_buf: ErrorBuffer,
 ) {
     let action: QueueWriteAction = bincode::deserialize(byte_buf.as_slice()).unwrap();
-    let data = slice::from_raw_parts(data, data_length);
+    // It is undefined behavior to pass a null pointer to `slice::from_raw_parts`, so in the case
+    // of a null pointer (which occurs if `data_length` is 0), we use a dangling pointer.
+    let data = ptr::NonNull::new(data as *mut u8).unwrap_or_else(|| {
+        assert!(data_length == 0);
+        ptr::NonNull::dangling()
+    });
+    let data = slice::from_raw_parts(data.as_ptr(), data_length);
     let result = match action {
         QueueWriteAction::Buffer { dst, offset } => {
             global.queue_write_buffer(self_id, dst, offset, data)

@@ -540,6 +540,10 @@ https_first_disabled = true
 
 ["browser_ext_tabs_goBack_goForward.js"]
 
+["browser_ext_tabs_groupId.js"]
+
+["browser_ext_tabs_group_ungroup.js"]
+
 ["browser_ext_tabs_hide.js"]
 https_first_disabled = true
 
@@ -580,6 +584,8 @@ skip-if = [
 ["browser_ext_tabs_onUpdated.js"]
 
 ["browser_ext_tabs_onUpdated_filter.js"]
+
+["browser_ext_tabs_onUpdated_groupId.js"]
 
 ["browser_ext_tabs_opener.js"]
 

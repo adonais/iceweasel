@@ -18,12 +18,14 @@ mod writer;
 
 pub use spirv::{Capability, SourceLanguage};
 
-use crate::arena::{Handle, HandleVec};
-use crate::proc::{BoundsCheckPolicies, TypeResolution};
+use alloc::{string::String, vec::Vec};
+use core::ops;
 
 use spirv::Word;
-use std::ops;
 use thiserror::Error;
+
+use crate::arena::{Handle, HandleVec};
+use crate::proc::{BoundsCheckPolicies, TypeResolution};
 
 #[derive(Clone)]
 struct PhysicalLayout {
@@ -73,6 +75,8 @@ pub enum Error {
     Validation(&'static str),
     #[error("overrides should not be present at this stage")]
     Override,
+    #[error(transparent)]
+    ResolveArraySizeError(#[from] crate::proc::ResolveArraySizeError),
 }
 
 #[derive(Default)]
@@ -147,12 +151,17 @@ struct Function {
     /// List of local variables used as a counters to ensure that all loops are bounded.
     force_loop_bounding_vars: Vec<LocalVariable>,
 
-    /// A map taking an expression that yields a composite value (array, matrix)
-    /// to the temporary variables we have spilled it to, if any. Spilling
-    /// allows us to render an arbitrary chain of [`Access`] and [`AccessIndex`]
-    /// expressions as an `OpAccessChain` and an `OpLoad` (plus bounds checks).
-    /// This supports dynamic indexing of by-value arrays and matrices, which
-    /// SPIR-V does not.
+    /// A map from a Naga expression to the temporary SPIR-V variable we have
+    /// spilled its value to, if any.
+    ///
+    /// Naga IR lets us apply [`Access`] expressions to expressions whose value
+    /// is an array or matrix---not a pointer to such---but SPIR-V doesn't have
+    /// instructions that can do the same. So when we encounter such code, we
+    /// spill the expression's value to a generated temporary variable. That, we
+    /// can obtain a pointer to, and then use an `OpAccessChain` instruction to
+    /// do whatever series of [`Access`] and [`AccessIndex`] operations we need
+    /// (with bounds checks). Finally, we generate an `OpLoad` to get the final
+    /// value.
     ///
     /// [`Access`]: crate::Expression::Access
     /// [`AccessIndex`]: crate::Expression::AccessIndex
@@ -341,9 +350,9 @@ impl NumericType {
 /// never synthesizes new struct types, so `LocalType` has nothing for that.
 ///
 /// Each `LocalType` variant should be handled identically to its analogous
-/// `TypeInner` variant. You can use the [`LocalType::from_inner`] function to
-/// help with this, by converting everything possible to a `LocalType` before
-/// inspecting it.
+/// `TypeInner` variant. You can use the [`Writer::localtype_from_inner`]
+/// function to help with this, by converting everything possible to a
+/// `LocalType` before inspecting it.
 ///
 /// ## `LocalType` equality and SPIR-V `OpType` uniqueness
 ///
@@ -363,8 +372,10 @@ impl NumericType {
 /// variant, is designed to help us deduplicate `OpTypeImage` instructions. See
 /// its documentation for details.
 ///
-/// `LocalType` also includes variants like `Pointer` that do not need to be
-/// unique - but it is harmless to avoid the duplication.
+/// SPIR-V does not require pointer types to be unique - but different
+/// SPIR-V ids are considered to be distinct pointer types. Since Naga
+/// uses structural type equality, we need to represent each Naga
+/// equivalence class with a single SPIR-V `OpTypePointer`.
 ///
 /// As it always must, the `Hash` implementation respects the `Eq` relation.
 ///
@@ -373,12 +384,8 @@ impl NumericType {
 enum LocalType {
     /// A numeric type.
     Numeric(NumericType),
-    LocalPointer {
-        base: NumericType,
-        class: spirv::StorageClass,
-    },
     Pointer {
-        base: Handle<crate::Type>,
+        base: Word,
         class: spirv::StorageClass,
     },
     Image(LocalImageType),
@@ -386,16 +393,6 @@ enum LocalType {
         image_type_id: Word,
     },
     Sampler,
-    /// Equivalent to a [`LocalType::Pointer`] whose `base` is a Naga IR [`BindingArray`]. SPIR-V
-    /// permits duplicated `OpTypePointer` ids, so it's fine to have two different [`LocalType`]
-    /// representations for pointer types.
-    ///
-    /// [`BindingArray`]: crate::TypeInner::BindingArray
-    PointerToBindingArray {
-        base: Handle<crate::Type>,
-        size: u32,
-        space: crate::AddressSpace,
-    },
     BindingArray {
         base: Handle<crate::Type>,
         size: u32,
@@ -442,52 +439,6 @@ impl From<LocalType> for LookupType {
 struct LookupFunctionType {
     parameter_type_ids: Vec<Word>,
     return_type_id: Word,
-}
-
-impl LocalType {
-    fn from_inner(inner: &crate::TypeInner) -> Option<Self> {
-        Some(match *inner {
-            crate::TypeInner::Scalar(_)
-            | crate::TypeInner::Atomic(_)
-            | crate::TypeInner::Vector { .. }
-            | crate::TypeInner::Matrix { .. } => {
-                // We expect `NumericType::from_inner` to handle all
-                // these cases, so unwrap.
-                LocalType::Numeric(NumericType::from_inner(inner).unwrap())
-            }
-            crate::TypeInner::Pointer { base, space } => LocalType::Pointer {
-                base,
-                class: helpers::map_storage_class(space),
-            },
-            crate::TypeInner::ValuePointer {
-                size: Some(size),
-                scalar,
-                space,
-            } => LocalType::LocalPointer {
-                base: NumericType::Vector { size, scalar },
-                class: helpers::map_storage_class(space),
-            },
-            crate::TypeInner::ValuePointer {
-                size: None,
-                scalar,
-                space,
-            } => LocalType::LocalPointer {
-                base: NumericType::Scalar(scalar),
-                class: helpers::map_storage_class(space),
-            },
-            crate::TypeInner::Image {
-                dim,
-                arrayed,
-                class,
-            } => LocalType::Image(LocalImageType::from_inner(dim, arrayed, class)),
-            crate::TypeInner::Sampler { comparison: _ } => LocalType::Sampler,
-            crate::TypeInner::AccelerationStructure => LocalType::AccelerationStructure,
-            crate::TypeInner::RayQuery => LocalType::RayQuery,
-            crate::TypeInner::Array { .. }
-            | crate::TypeInner::Struct { .. }
-            | crate::TypeInner::BindingArray { .. } => return None,
-        })
-    }
 }
 
 #[derive(Debug)]
@@ -741,6 +692,10 @@ impl BlockContext<'_> {
         self.writer.get_type_id(lookup_type)
     }
 
+    fn get_handle_type_id(&mut self, handle: Handle<crate::Type>) -> Word {
+        self.writer.get_handle_type_id(handle)
+    }
+
     fn get_expression_type_id(&mut self, tr: &TypeResolution) -> Word {
         self.writer.get_expression_type_id(tr)
     }
@@ -754,8 +709,12 @@ impl BlockContext<'_> {
             .get_constant_scalar(crate::Literal::I32(scope as _))
     }
 
-    fn get_pointer_id(&mut self, handle: Handle<crate::Type>, class: spirv::StorageClass) -> Word {
-        self.writer.get_pointer_id(handle, class)
+    fn get_pointer_type_id(&mut self, base: Word, class: spirv::StorageClass) -> Word {
+        self.writer.get_pointer_type_id(base, class)
+    }
+
+    fn get_numeric_type_id(&mut self, numeric: NumericType) -> Word {
+        self.writer.get_numeric_type_id(numeric)
     }
 }
 
@@ -852,7 +811,7 @@ pub struct BindingInfo {
 }
 
 // Using `BTreeMap` instead of `HashMap` so that we can hash itself.
-pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
+pub type BindingMap = alloc::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ZeroInitializeWorkgroupMemoryMode {

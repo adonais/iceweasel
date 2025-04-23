@@ -64,6 +64,12 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/sourceeditor/scope-utils.js"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "lezerUtils",
+  "resource://devtools/client/shared/sourceeditor/lezer-utils.js"
+);
+
 const { OS } = Services.appinfo;
 
 // CM_BUNDLE and CM_IFRAME represent the HTML and JavaScript that is
@@ -163,15 +169,6 @@ class Editor extends EventEmitter {
     wasm: { name: "wasm" },
   };
 
-  static #symbolTypes = {
-    functions: new Set([
-      "FunctionExpression",
-      "FunctionDeclaration",
-      "ArrowFunction",
-      "MethodDeclaration",
-    ]),
-  };
-
   container = null;
   version = null;
   config = null;
@@ -206,6 +203,8 @@ class Editor extends EventEmitter {
   // for the source and the values are the scroll snapshots for the sources.
   #scrollSnapshots = new Map();
   #updateListener = null;
+
+  #sources = new Map();
 
   constructor(config) {
     super();
@@ -1048,7 +1047,8 @@ class Editor extends EventEmitter {
           // investigate further Bug 1890895.
           event.target.ownerGlobal.setTimeout(() => {
             const view = editor.viewState;
-            const cursorPos = this.#posToLineColumn(
+            const cursorPos = lezerUtils.positionToLocation(
+              view.state.doc,
               view.state.selection.main.head
             );
             handler(event, view, cursorPos.line, cursorPos.column);
@@ -1869,12 +1869,16 @@ class Editor extends EventEmitter {
       const {
         codemirrorLanguage: { syntaxTree },
       } = this.#CodeMirror6;
-      const lineObject = cm.state.doc.line(line);
-      const pos = lineObject.from + column;
-      const token = syntaxTree(cm.state).resolve(pos, 1);
+
+      const token = lezerUtils.getTreeNodeAtLocation(
+        cm.state.doc,
+        syntaxTree(cm.state),
+        { line, column }
+      );
       if (!token) {
         return null;
       }
+
       return {
         startColumn: column,
         endColumn: token.to - token.from,
@@ -2151,7 +2155,10 @@ class Editor extends EventEmitter {
         handle: {
           markedSpans: markedSpans
             ? markedSpans.map(span => {
-                const { column } = this.#posToLineColumn(cm.posAtDOM(span));
+                const { column } = lezerUtils.positionToLocation(
+                  cm.state.doc,
+                  cm.posAtDOM(span)
+                );
                 return {
                   marker: { className: span.className },
                   from: column,
@@ -2171,6 +2178,137 @@ class Editor extends EventEmitter {
   }
 
   /**
+   * Get the functions symbols for the current source loaded in the
+   * the editor.
+   *
+   * @param {Number} maxResults - The maximum no of results to display
+   */
+  async getFunctionSymbols(maxResults) {
+    const cm = editors.get(this);
+    const { codemirrorLanguage } = this.#CodeMirror6;
+
+    const functionSymbols = [];
+    let resultsCount = 0;
+    await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      filterSet: lezerUtils.nodeTypeSets.functionsDeclAndExpr,
+      enterVisitor: node => {
+        if (resultsCount == maxResults) {
+          return;
+        }
+        const syntaxNode = node.node;
+        const name = lezerUtils.getFunctionName(cm.state.doc, syntaxNode);
+        // Ignore anonymous functions
+        if (name == null) {
+          return;
+        }
+
+        functionSymbols.push({
+          name,
+          klass: lezerUtils.getFunctionClass(cm.state.doc, syntaxNode),
+          location: {
+            start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+            end: lezerUtils.positionToLocation(cm.state.doc, node.to),
+          },
+          parameterNames: lezerUtils.getFunctionParameterNames(
+            cm.state.doc,
+            syntaxNode
+          ),
+          identifier: null,
+          index: node.index,
+        });
+        resultsCount++;
+      },
+      forceParseTo: cm.state.doc.length,
+    });
+
+    return functionSymbols;
+  }
+
+  /**
+   * Get the class symbols for the current source loaded in the the editor.
+   *
+   * @returns
+   */
+  async getClassSymbols() {
+    const cm = editors.get(this);
+    const { codemirrorLanguage } = this.#CodeMirror6;
+
+    const classSymbols = [];
+    await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      filterSet: lezerUtils.nodeTypeSets.classes,
+      enterVisitor: node => {
+        const classVarDefNode = node.node.firstChild.nextSibling;
+        classSymbols.push({
+          name: cm.state.doc.sliceString(
+            classVarDefNode.from,
+            classVarDefNode.to
+          ),
+          location: {
+            start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+            end: lezerUtils.positionToLocation(cm.state.doc, node.to),
+          },
+        });
+      },
+      forceParseTo: cm.state.doc.length,
+    });
+
+    return classSymbols;
+  }
+
+  /**
+   * Finds the best function name for the location specified.
+   * This is used to map original function names to their corresponding
+   * generated functions.
+   *
+   * @param {Object} location
+   * @returns
+   */
+  async getClosestFunctionName(location) {
+    const cm = editors.get(this);
+    const {
+      codemirrorLangJavascript: { javascriptLanguage },
+      codemirrorLanguage: { forceParsing, syntaxTree },
+    } = this.#CodeMirror6;
+
+    let doc, tree;
+    // If the specified source is already loaded in the editor,
+    // codemirror has likely parsed most or all the source needed,
+    // just leverage that
+    const sourceId = location.source.id;
+    if (this.#currentDocumentId === sourceId) {
+      doc = cm.state.doc;
+      // Parse the rest of the if needed.
+      await forceParsing(cm, doc.length, 10000);
+
+      tree = syntaxTree(cm.state);
+    } else {
+      // If the source is not currently loaded in the editor we will need
+      // to explicitly parse its source text.
+      // Note: The `loadSourceText` actions is called before this util `getClosestFunctionName`
+      // to make sure source content is available to use.
+      const sourceContent = this.#sources.get(location.source.id);
+      if (!sourceContent) {
+        console.error(
+          `Can't find source content for ${location.source.id}, no function name can be determined`
+        );
+        return "";
+      }
+
+      // Create a codemirror document for the current source text.
+      doc = cm.state.toText(sourceContent);
+      tree = lezerUtils.getTree(javascriptLanguage, sourceId, sourceContent);
+    }
+
+    const token = lezerUtils.getTreeNodeAtLocation(doc, tree, location);
+    if (!token) {
+      return null;
+    }
+
+    const enclosingScope = lezerUtils.getEnclosingFunction(doc, token);
+    return enclosingScope ? enclosingScope.funcName : "";
+  }
+
+  /**
    * Traverse the syntaxTree and return expressions
    * which best match the specified token location is on our
    * list of accepted symbol types.
@@ -2180,44 +2318,33 @@ class Editor extends EventEmitter {
    */
   async findBestMatchExpressions(tokenLocation) {
     const cm = editors.get(this);
-    const {
-      codemirrorLanguage: { syntaxTree },
-    } = this.#CodeMirror6;
+    const { codemirrorLanguage } = this.#CodeMirror6;
 
-    function matchPosition(node, position) {
-      return node.from <= position && node.to >= position;
-    }
     const expressions = [];
-    const symbolTypes = new Set([
-      "MemberExpression",
-      "VariableDefinition",
-      "VariableName",
-      "this",
-      "PropertyName",
-    ]);
 
     const line = cm.state.doc.line(tokenLocation.line);
     const tokPos = line.from + tokenLocation.column;
 
-    await syntaxTree(cm.state).iterate({
-      enter: node => {
-        if (symbolTypes.has(node.name) && matchPosition(node, tokPos)) {
+    await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      filterSet: lezerUtils.nodeTypeSets.expressions,
+      enterVisitor: node => {
+        if (node.from <= tokPos && node.to >= tokPos) {
           expressions.push({
             type: node.name,
             // Computed member expressions not currently supported
             computed: false,
             expression: cm.state.doc.sliceString(node.from, node.to),
             location: {
-              start: this.#posToLineColumn(node.from),
-              end: this.#posToLineColumn(node.to),
+              start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+              end: lezerUtils.positionToLocation(cm.state.doc, node.to),
             },
             from: node.from,
             to: node.to,
           });
         }
       },
-      from: line.from,
-      to: line.to,
+      walkFrom: line.from,
+      walkTo: line.to,
     });
 
     // There might be multiple expressions which are within the locations.
@@ -2257,9 +2384,7 @@ class Editor extends EventEmitter {
    */
   async getInScopeLines(location) {
     const cm = editors.get(this);
-    const {
-      codemirrorLanguage: { syntaxTree, forceParsing },
-    } = this.#CodeMirror6;
+    const { codemirrorLanguage } = this.#CodeMirror6;
 
     // Converts the CM6 position to a source line
     function posToLine(view, pos) {
@@ -2268,20 +2393,17 @@ class Editor extends EventEmitter {
     }
 
     const functionLocations = [];
-    // Force parsing the source up to the end of the current viewport,
-    // Also increasing the timeout threshold so we make sure
-    // all required content is parsed (this is mostly needed for larger sources).
-    await forceParsing(cm, cm.viewport.to, 10000);
-    await syntaxTree(cm.state).iterate({
-      enter: node => {
-        if (Editor.#symbolTypes.functions.has(node.name)) {
-          functionLocations.push({
-            name: node.name,
-            startLine: posToLine(cm, node.from),
-            endLine: posToLine(cm, node.to),
-          });
-        }
+
+    await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      filterSet: lezerUtils.nodeTypeSets.functions,
+      enterVisitor: node => {
+        functionLocations.push({
+          name: node.name,
+          startLine: posToLine(cm, node.from),
+          endLine: posToLine(cm, node.to),
+        });
       },
+      forceParseTo: cm.viewport.to,
     });
 
     // Sort based on the start locations so the scopes
@@ -2325,6 +2447,73 @@ class Editor extends EventEmitter {
     // Finally we need to remove any undefined values, i.e. the ones that were matching
     // out of scope lines.
     return sourceLines.filter(i => i != undefined);
+  }
+
+  /**
+   * Gets the location and meta details of all the references
+   * (within the scope of the immediate enclosing function of the specified location)
+   * which are related to the bindings specified.
+   *
+   * @param {Object} location
+   * @param {Array<String>} bindings -  list of binding names
+   * @returns {Function}
+   **/
+  async getBindingReferences(location, bindings) {
+    const cm = editors.get(this);
+    const {
+      codemirrorLanguage: { syntaxTree },
+    } = this.#CodeMirror6;
+
+    const token = lezerUtils.getTreeNodeAtLocation(
+      cm.state.doc,
+      syntaxTree(cm.state),
+      location
+    );
+    if (!token) {
+      return null;
+    }
+
+    const enclosingScope = lezerUtils.getEnclosingFunction(
+      cm.state.doc,
+      token,
+      { includeAnonymousFunctions: true }
+    );
+
+    if (!enclosingScope) {
+      return null;
+    }
+
+    const bindingReferences = {};
+    // This should find location and meta information for the binding name specified.
+    await lezerUtils.walkCursor(enclosingScope.node.cursor(), {
+      filterSet: lezerUtils.nodeTypeSets.bindingReferences,
+      enterVisitor: node => {
+        const bindingName = cm.state.doc.sliceString(node.from, node.to);
+        if (!bindings.includes(bindingName)) {
+          return;
+        }
+        const ref = {
+          start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+          end: lezerUtils.positionToLocation(cm.state.doc, node.to),
+        };
+        const syntaxNode = node.node;
+        // Previews for member expressions are built of the meta property which is
+        // reference of the child property and so on. e.g a.b.c
+        if (syntaxNode.parent.name == lezerUtils.nodeTypes.MemberExpression) {
+          ref.meta = lezerUtils.getMetaBindings(
+            cm.state.doc,
+            syntaxNode.parent
+          );
+        }
+
+        if (!bindingReferences[bindingName]) {
+          bindingReferences[bindingName] = { refs: [] };
+        }
+        bindingReferences[bindingName].refs.push(ref);
+      },
+    });
+
+    return bindingReferences;
   }
 
   /**
@@ -2421,6 +2610,26 @@ class Editor extends EventEmitter {
     }
 
     this.resetIndentUnit();
+  }
+
+  addSource(id, sourceText) {
+    this.#sources.set(id, sourceText);
+  }
+
+  clearSources(ids) {
+    if (ids) {
+      for (const id of ids) {
+        this.#sources.delete(id);
+      }
+    } else {
+      this.#sources.clear();
+      lezerUtils.clear();
+    }
+  }
+
+  /* Currently used only in tests */
+  sourcesCount() {
+    return this.#sources.size;
   }
 
   /**
@@ -3234,23 +3443,17 @@ class Editor extends EventEmitter {
       if (pos == null) {
         return false;
       }
+      // `coordsAtPos` returns the absolute position of the line/column location
+      // so that we have to ensure comparing with same absolute position for
+      // CodeMirror DOM Element.
       const coords = cm.coordsAtPos(pos);
       if (!coords) {
         return false;
       }
-      const { scrollTop, scrollLeft, clientHeight, clientWidth } = cm.scrollDOM;
+      const { x, y, width, height } = cm.dom.getBoundingClientRect();
 
-      // Note: cm.coordsAtPos does not take scrolling into consideration
-      inXView = withinBounds(
-        coords.left + scrollLeft,
-        scrollLeft,
-        scrollLeft + clientWidth
-      );
-      inYView = withinBounds(
-        coords.top + scrollTop,
-        scrollTop,
-        scrollTop + clientHeight
-      );
+      inXView = withinBounds(coords.left - x, 0, width);
+      inYView = coords.top > y && coords.bottom < y + height;
     } else {
       const { top, left } = cm.charCoords({ line, ch: column }, "local");
       const scrollArea = cm.getScrollInfo();
@@ -3272,27 +3475,6 @@ class Editor extends EventEmitter {
       );
     }
     return inXView && inYView;
-  }
-
-  /**
-   * Determines the line and column values the map to the codemirror offset specified.
-   * Used only for CM6
-   * @param {Number} pos - Codemirror offset
-   * @returns {Object} - Line column related to the position
-   */
-  #posToLineColumn(pos) {
-    const cm = editors.get(this);
-    if (pos == null) {
-      return {
-        line: null,
-        column: null,
-      };
-    }
-    const line = cm.state.doc.lineAt(pos);
-    return {
-      line: line.number,
-      column: pos - line.from,
-    };
   }
 
   /**
@@ -3495,7 +3677,10 @@ class Editor extends EventEmitter {
         return { text: "", line: -1, column: -1 };
       }
 
-      const cursorPosition = this.#posToLineColumn(cursor.to);
+      const cursorPosition = lezerUtils.positionToLocation(
+        cm.state.doc,
+        cursor.to
+      );
       // The lines in CM6 are 1 based while CM5 is  0 based
       return {
         text: cursor.match[0],
@@ -3578,6 +3763,7 @@ class Editor extends EventEmitter {
     this.#lineGutterMarkers.clear();
     this.#lineContentMarkers.clear();
     this.#scrollSnapshots.clear();
+    this.clearSources();
 
     if (this.#prefObserver) {
       this.#prefObserver.off(KEYMAP_PREF, this.setKeyMap);

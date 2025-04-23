@@ -292,7 +292,7 @@ nsresult nsTextControlFrame::EnsureEditorInitialized() {
     // Hide selection changes during the initialization, as webpages should not
     // be aware of these initializations
     AutoHideSelectionChanges hideSelectionChanges(
-        textControlElement->GetConstFrameSelection());
+        textControlElement->GetIndependentFrameSelection());
 
     nsAutoScriptBlocker scriptBlocker;
 

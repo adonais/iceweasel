@@ -4,13 +4,12 @@
 
 package org.mozilla.focus.utils
 
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.view.accessibility.AccessibilityManager
 import androidx.annotation.VisibleForTesting
+import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
@@ -37,26 +36,6 @@ class Settings(
         const val DEFAULT_COOKIE_OPTION_INDEX = 3
         const val NO_VALUE = "no value"
     }
-
-    private val accessibilityManager =
-        context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager?
-
-    /**
-     * Check each active accessibility service to see if it can perform gestures, if any can,
-     * then it is *likely* a switch service is enabled.
-     */
-    private val switchServiceIsEnabled: Boolean
-        get() {
-            accessibilityManager?.getEnabledAccessibilityServiceList(0)?.let { activeServices ->
-                for (service in activeServices) {
-                    if (service.capabilities.and(AccessibilityServiceInfo.CAPABILITY_CAN_PERFORM_GESTURES) == 1) {
-                        return true
-                    }
-                }
-            }
-
-            return false
-        }
 
     fun createTrackingProtectionPolicy(
         shouldBlockCookiesValue: String = shouldBlockCookiesValue(),
@@ -178,36 +157,36 @@ class Settings(
             true,
         )
         set(value) {
-            preferences.edit()
-                .putBoolean(
+            preferences.edit {
+                putBoolean(
                     getPreferenceKey(R.string.pref_cfr_visibility_for_cookie_banner),
                     value,
                 )
-                .apply()
+            }
         }
 
     var shouldShowCfrForTrackingProtection: Boolean
         get() = preferences.getBoolean(getPreferenceKey(R.string.pref_cfr_visibility_for_tracking_protection), true)
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.pref_cfr_visibility_for_tracking_protection), value)
-                .apply()
+            preferences.edit {
+                putBoolean(getPreferenceKey(R.string.pref_cfr_visibility_for_tracking_protection), value)
+            }
         }
 
     var shouldShowStartBrowsingCfr: Boolean
         get() = preferences.getBoolean(getPreferenceKey(R.string.pref_cfr_visibility_for_start_browsing), true)
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.pref_cfr_visibility_for_start_browsing), value)
-                .apply()
+            preferences.edit {
+                putBoolean(getPreferenceKey(R.string.pref_cfr_visibility_for_start_browsing), value)
+            }
         }
 
     var isFirstRun: Boolean
         get() = preferences.getBoolean(getPreferenceKey(R.string.firstrun_shown), true)
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.firstrun_shown), value)
-                .apply()
+            preferences.edit {
+                putBoolean(getPreferenceKey(R.string.firstrun_shown), value)
+            }
         }
 
     /**
@@ -220,17 +199,17 @@ class Settings(
             FocusNimbus.features.onboarding.value().isEnabled,
         )
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.new_onboarding_enabled), value)
-                .apply()
+            preferences.edit {
+                putBoolean(getPreferenceKey(R.string.new_onboarding_enabled), value)
+            }
         }
 
     var shouldShowPrivacySecuritySettingsToolTip: Boolean
         get() = preferences.getBoolean(getPreferenceKey(R.string.pref_tool_tip_privacy_security_settings), true)
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.pref_tool_tip_privacy_security_settings), value)
-                .apply()
+            preferences.edit {
+                putBoolean(getPreferenceKey(R.string.pref_tool_tip_privacy_security_settings), value)
+            }
         }
 
     fun shouldEnableRemoteDebugging(): Boolean =
@@ -267,9 +246,9 @@ class Settings(
         )!!
 
     private fun setBlockCookiesValue(newValue: String) {
-        preferences.edit()
-            .putString(getPreferenceKey(R.string.pref_key_performance_enable_cookies), newValue)
-            .apply()
+        preferences.edit {
+            putString(getPreferenceKey(R.string.pref_key_performance_enable_cookies), newValue)
+        }
     }
 
     fun shouldUseBiometrics(): Boolean =
@@ -279,9 +258,9 @@ class Settings(
         preferences.getBoolean(getPreferenceKey(R.string.pref_key_secure), false)
 
     fun setDefaultSearchEngineByName(name: String) {
-        preferences.edit()
-            .putString(getPreferenceKey(R.string.pref_key_search_engine), name)
-            .apply()
+        preferences.edit {
+            putString(getPreferenceKey(R.string.pref_key_search_engine), name)
+        }
     }
 
     fun shouldAutocompleteFromShippedDomainList() =
@@ -325,12 +304,6 @@ class Settings(
             getPreferenceKey(R.string.pref_key_privacy_block_other3),
             false,
         )
-
-    /**
-     * This is automatically inferred based on the current system status. Not a setting in our app.
-     */
-    fun isAccessibilityEnabled() =
-        accessibilityManager?.isTouchExplorationEnabled ?: false || switchServiceIsEnabled
 
     fun userHasToggledSearchSuggestions(): Boolean =
         preferences.getBoolean(SearchSuggestionsPreferences.TOGGLED_SUGGESTIONS_PREF, false)
@@ -401,25 +374,25 @@ class Settings(
     var shouldUseNimbusPreview: Boolean
         get() = preferences.getBoolean(getPreferenceKey(R.string.pref_key_use_nimbus_preview), false)
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.pref_key_use_nimbus_preview), value)
-                .commit()
+            preferences.edit(commit = true) {
+                putBoolean(getPreferenceKey(R.string.pref_key_use_nimbus_preview), value)
+            }
         }
 
     var useProductionRemoteSettingsServer: Boolean
         get() = preferences.getBoolean(getPreferenceKey(R.string.pref_key_remote_server_prod), true)
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.pref_key_remote_server_prod), value)
-                .commit()
+            preferences.edit(commit = true) {
+                putBoolean(getPreferenceKey(R.string.pref_key_remote_server_prod), value)
+            }
         }
 
     fun addSearchWidgetInstalled(count: Int) {
         val key = getPreferenceKey(R.string.pref_key_search_widget_installed)
         val newValue = preferences.getInt(key, 0) + count
-        preferences.edit()
-            .putInt(key, newValue)
-            .apply()
+        preferences.edit {
+            putInt(key, newValue)
+        }
     }
 
     val searchWidgetInstalled: Boolean
@@ -435,9 +408,9 @@ class Settings(
     fun addClearBrowsingSessions(count: Int) {
         val key = getPreferenceKey(R.string.pref_key_clear_browsing_sessions)
         val newValue = preferences.getInt(key, 0) + count
-        preferences.edit()
-            .putInt(key, newValue)
-            .apply()
+        preferences.edit {
+            putInt(key, newValue)
+        }
     }
 
     fun getClearBrowsingSessions() = preferences.getInt(
@@ -464,19 +437,20 @@ class Settings(
             FocusNimbus.features.cookieBanner.value().isCookieHandlingEnabled,
         )
         set(value) {
-            preferences.edit()
-                .putBoolean(getPreferenceKey(R.string.pref_key_cookie_banner_enabled), value)
-                .apply()
+            preferences.edit {
+                putBoolean(getPreferenceKey(R.string.pref_key_cookie_banner_enabled), value)
+            }
         }
 
     fun saveCurrentCookieBannerOptionInSharePref(
         cookieBannerOption: CookieBannerOption,
     ) {
-        preferences.edit()
-            .putString(
+        preferences.edit {
+            putString(
                 context.getString(R.string.pref_key_cookie_banner_settings),
                 context.getString(cookieBannerOption.prefKeyId),
-            ).apply()
+            )
+        }
     }
 
     fun getCurrentCookieBannerOptionFromSharePref(): CookieBannerOption {

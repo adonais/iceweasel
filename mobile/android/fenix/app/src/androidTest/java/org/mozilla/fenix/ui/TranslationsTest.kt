@@ -27,7 +27,6 @@ class TranslationsTest : TestSetup() {
                 skipOnboarding = true,
                 isNavigationToolbarEnabled = false,
                 isNavigationBarCFREnabled = false,
-                isSetAsDefaultBrowserPromptEnabled = false,
                 isMenuRedesignEnabled = false,
                 isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = true,
@@ -120,7 +119,7 @@ class TranslationsTest : TestSetup() {
     @Test
     fun verifyTheTranslationIsDisplayedAutomaticallyTest() {
         val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = "https://support.mozilla.org/de/"
+        val secondTestPage = "https://mozilla-mobile.github.io/testapp/v2.0/germanForeignWebPage.html"
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -132,8 +131,10 @@ class TranslationsTest : TestSetup() {
         browserScreen {
         }.openTabDrawer(composeTestRule) {
         }.openNewTab {
-        }.submitQuery(secondTestPage) {
-            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
+        }.dismissSearchBar {
+        }
+        navigationToolbar {
+        }.enterURL(secondTestPage.toUri()) {
         }
         translationsRobot(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
@@ -164,7 +165,7 @@ class TranslationsTest : TestSetup() {
     @Test
     fun verifyTheNeverTranslateOptionTest() {
         val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = "https://support.mozilla.org/fr/"
+        val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -188,7 +189,7 @@ class TranslationsTest : TestSetup() {
         browserScreen {
         }.openTabDrawer(composeTestRule) {
         }.openNewTab {
-        }.submitQuery(secondTestPage) {
+        }.submitQuery(secondTestPage.url.toString()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }
         translationsRobot(composeTestRule) {
@@ -285,7 +286,7 @@ class TranslationsTest : TestSetup() {
     @Test
     fun verifyTheAlwaysOfferToTranslateOptionTest() {
         val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = "https://support.mozilla.org/fr/"
+        val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -296,18 +297,19 @@ class TranslationsTest : TestSetup() {
             verifyAlwaysOfferToTranslateOptionIsChecked(isChecked = true)
             clickAlwaysOfferToTranslateOption()
             verifyAlwaysOfferToTranslateOptionIsChecked(isChecked = false)
+            clickGoBackTranslationSheetButton()
         }.swipeCloseTranslationsSheet {
             verifyPageContent(firstTestPage.content)
         }
         navigationToolbar {
-        }.enterURL(secondTestPage.toUri()) {
-            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
+            verifyTranslationButton(isPageTranslated = false)
+        }
+
+        navigationToolbar {
+        }.enterURL(secondTestPage.url) {
         }
         translationsRobot(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = false)
-        }
-        navigationToolbar {
-            verifyTranslationButton(isPageTranslated = false)
         }
     }
 

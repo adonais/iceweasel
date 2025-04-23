@@ -223,6 +223,14 @@ urlbar:
     autoFillAdaptiveHistoryUseCountThreshold:
       type: string
       description: This value assumes float expression like "0.47". Threshold for use count of input history that we handle as adaptive history autofill. If the use count is this value or more, it will be a candidate.
+    deduplicationEnabled:
+      type: boolean
+      setPref:
+        pref: browser.urlbar.deduplication.enabled
+        branch: user
+      description: >-
+        Feature gate that controls whether result deduplication in the urlbar
+        is enabled.
     fakespotFeatureGate:
       type: boolean
       fallbackPref: browser.urlbar.fakespot.featureGate
@@ -754,6 +762,11 @@ preonboarding:
       fallbackPref: datareporting.policy.firstRunURL
       description: >-
         URL of browser tab to be opened on first run instead of infobar.
+    onTrainRolloutEnabled:
+      type: boolean
+      fallbackPref: browser.preonboarding.onTrainRolloutEnabled
+      description: >-
+        If an on-train limited rollout is enabled for Mac, Linux, and Windows MSIX
     onTrainRolloutPopulation:
       type: int
       fallbackPref: browser.preonboarding.onTrainRolloutPopulation
@@ -910,7 +923,7 @@ newtabSpocsCache:
 newtabAdSizingExperiment:
   description: >-
     Change the default ad size and UI for certain ad formats.
-  owner: achurchwell@mozilla.com, sdowne@mozilla.com
+  owner: achurchwell@mozilla.com, sdowne@mozilla.com, mcrawford@mozilla.com
   hasExposure: false
   variables:
     variantA:
@@ -955,6 +968,13 @@ newtabAdSizingExperiment:
         pref: browser.newtabpage.activity-stream.newtabAdSize.billboard.position
       description: >-
         Billboard row position.
+    medium_rectangle:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.newtabpage.activity-stream.newtabAdSize.mediumRectangle
+      description: >-
+        Medium rectangle (MREC) ad size and UI.
 
 newtabInlineTopicSelection:
   description: >-
@@ -1012,6 +1032,20 @@ newtabCustomWallpaper:
         pref: browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled
       description: >-
         Turns on and off background color picker.
+    maxFileSizeEnabled:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.fileSize.enabled
+      description: >-
+        Turns on and off maximum file size for uploaded images
+    maxFileSize:
+      type: int
+      setPref:
+        branch: user
+        pref: browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.fileSize
+      description: >-
+        Maximum file size (in MB) a user can upload
 
 newtabShortcutsExperiment:
   description: >-
@@ -1190,6 +1224,13 @@ newTabSectionsExperiment:
         pref:  browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.enabled
       description: >-
         Enable the inferred personalization for topics
+    reportContentEnabled:
+      type: boolean
+      setPref:
+        branch: user
+        pref:  browser.newtabpage.activity-stream.discoverystream.reportContent.enabled
+      description: >-
+        Enable reporting for ads and content
     localeSectionstConfig:
       type: string
       setPref:
@@ -2279,6 +2320,12 @@ dohPrefs:
       setPref:
         branch: default
         pref: "doh-rollout.provider-list"
+    dohProviderSteeringList:
+      description: An override of the rollout steering provider-list json
+      type: string
+      setPref:
+        branch: default
+        pref: "doh-rollout.provider-steering.provider-list"
     nativeHTTPSRecords:
       description: Whether we can perform native DNS HTTPS lookups
       type: boolean
@@ -2417,18 +2464,6 @@ networking:
       setPref:
         branch: default
         pref: "network.http.speculative-parallel-limit"
-    chipsEnabled:
-      description: Whether CHIPS is enabled or not
-      type: boolean
-      setPref:
-        branch: default
-        pref: "network.cookie.CHIPS.enabled"
-    chipsMigrationTarget:
-      description: What CHIPS migration count target the browser should reach.
-      type: int
-      setPref:
-        branch: default
-        pref: "network.cookie.CHIPS.migrateDatabaseTarget"
     chipsPartitionLimitEnabled:
       description: Whether we enforce CHIPS partition limit
       type: boolean
@@ -2465,6 +2500,18 @@ networking:
       setPref:
         branch: default
         pref: "network.http.http3.use_nspr_for_io"
+
+essentialFallbackDomains:
+  description: "Whether to retry failing system requests with a backup domain"
+  owner: vgosu@mozilla.com
+  hasExposure: false
+  variables:
+    essentialDomainsEnabled:
+      description: Whether to retry with a backup domain indicated in remote-settings
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.essential_domains_fallback"
 
 disableHttp3:
   description: "Whether HTTP/3 is disabled"
@@ -3554,13 +3601,21 @@ shopping2023:
     the shopping feature.
   variables:
     enabled:
-      description: True if the experience is enabled (experimental treatment group)
+      description: True if the shopping sidebar is enabled (experimental treatment group)
       type: boolean
-      fallbackPref: browser.shopping.experience2023.enabled
+      setPref:
+        branch: default
+        pref: browser.shopping.experience2023.enabled
     control:
       description: True if the experiment is enabled but experience is disabled (experimental control group)
       type: boolean
       fallbackPref: browser.shopping.experience2023.control
+    integratedSidebar:
+      description: True if the integrated sidebar is enabled.
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.shopping.experience2023.integratedSidebar
     adsEnabled:
       description: True if showing recommended products is enabled
       type: boolean
@@ -4260,17 +4315,32 @@ chatbot:
         sub-pref and values objects indicating the desired branch and value
         defaulting to clearing the user branch value.
 
+linkPreviews:
+  description: Enabling the link previews feature
+  owner: elee@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.ml.linkPreview.enabled
+      description: If true, will show previews when over link and keyboard shortcut is pressed
+
 sidebar:
   description: Sidebar feature configuration
   owner: elee@mozilla.com
   hasExposure: false
   variables:
+    defaultLauncherVisible:
+      type: boolean
+      setPref:
+        branch: user
+        pref: sidebar.revamp.defaultLauncherVisible
+      description: Change the initial visibleness of the sidebar launcher with horizontal tabs; true to make the launcher visible by default
     minVersion:
       type: string
       description: Minimum Firefox version to apply prefs
-    main.tools:
-      type: string
-      description: sidebar.main.tools pref value to set on user branch; which tools for sidebar panels show in the launcher
     revamp:
       type: boolean
       description: sidebar.revamp pref value to set on user branch; true for new experience
@@ -4345,6 +4415,18 @@ tabGroups:
         pref: browser.tabs.groups.enabled
       description: Controls whether users can create new tab groups via drag and drop or the tab context menu
 
+smartTabGroups:
+  description: Prefs to control Smart Tab Groups
+  owner: rrando@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.tabs.groups.smart.enabled
+      description: Controls whether users can use ml features for suggesting tab group names or similar tabs
+
 smartblockEmbeds:
   description: Pref to control Smartblock Embeds
   owner: emz@mozilla.com
@@ -4414,6 +4496,25 @@ storageAccessHeuristics:
         Do we grant cookie access to a tracker third party when it has been interacted with in the
         recent past and redirects itself to another top level site?
 
+partitioned-cookie-attribute:
+  description: Control the enablment and migration of cookies to the Partitioned attribute, rather than TCP
+  owner: bvandersloot@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: network.cookie.CHIPS.enabled
+      description: >-
+        Do we respect the Partitioned attribute?
+    chipsMigrationTarget:
+      description: What CHIPS migration count target the browser should reach.
+      type: int
+      setPref:
+        branch: default
+        pref: network.cookie.CHIPS.migrateDatabaseTarget
+
 auto-pip:
   description: "Automatic Picture-in-Picture"
   owner: mconley@mozilla.com
@@ -4473,6 +4574,18 @@ css-masonry:
       setPref:
         branch: user
         pref: "layout.css.grid-template-masonry-value.enabled"
+
+contextual-password-manager:
+  description: Enabling the contextual password manager feature
+  owner: issozi@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.contextual-password-manager.enabled
+      description: If true, we will allow user to add the contextual password manager feature to the sidebar.
 
 h1-in-section-styles:
   description: "H1 in section user agent styles"

@@ -18,6 +18,7 @@ import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.tabstrip.isTabStripEligible
 import org.mozilla.fenix.debugsettings.data.DefaultDebugSettingsRepository
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
@@ -78,6 +79,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_compose_logins).apply {
+            isChecked = context.settings().enableComposeLogins
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreference>(R.string.pref_key_enable_compose_homepage).apply {
             isChecked = context.settings().enableComposeHomepage
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -86,6 +92,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_enable_menu_redesign).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableMenuRedesign
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_homepage_searchbar).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = context.settings().enableHomepageSearchBar
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -122,8 +134,20 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_trending_searches).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isTrendingSearchesVisible
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_recent_searches).apply {
+            isVisible = true
+            isChecked = context.settings().isRecentSearchesVisible
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_shortcuts_suggestions).apply {
+            isVisible = true
+            isChecked = context.settings().isShortcutSuggestionsVisible
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -149,7 +173,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_doh_settings_enabled).apply {
-            isVisible = Config.channel.isDebug
+            isVisible = true
             isChecked = context.settings().showDohEntryPoint
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -194,14 +218,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(
-            R.string.pref_key_set_as_default_browser_prompt_enabled,
-        ).apply {
-            isVisible = true
-            isChecked = context.settings().setAsDefaultBrowserPromptForExistingUsersEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_persistent_debug_menu).apply {
             isVisible = true
             // We look up the actual value of the pref, not the `showSecretDebugMenuThisSession` setting because
@@ -211,6 +227,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                 context.getPreferenceKey(R.string.pref_key_persistent_debug_menu),
                 false,
             )
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_tab_strip).apply {
+            isVisible = Config.channel.isNightlyOrDebug && !context.isTabStripEligible()
+            isChecked = context.settings().tabStripEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }

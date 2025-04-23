@@ -56,7 +56,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginFormFactory: "resource://gre/modules/shared/LoginFormFactory.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   LoginRecipesContent: "resource://gre/modules/LoginRecipes.sys.mjs",
-  LoginManagerTelemetry: "resource://gre/modules/LoginManagerTelemetry.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -1402,19 +1401,19 @@ export class LoginManagerChild extends JSWindowActorChild {
         break;
       }
       case "PasswordManager:OnFieldAutoComplete": {
-        const { focusedInput } = lazy.gFormFillService;
+        const { focusedElement } = lazy.gFormFillService;
         const login = lazy.LoginHelper.vanillaObjectToLogin(msg.data);
-        this.onFieldAutoComplete(focusedInput, login);
+        this.onFieldAutoComplete(focusedElement, login);
         break;
       }
       case "PasswordManager:FillGeneratedPassword": {
-        const { focusedInput } = lazy.gFormFillService;
-        this.filledWithGeneratedPassword(focusedInput);
+        const { focusedElement } = lazy.gFormFillService;
+        this.filledWithGeneratedPassword(focusedElement);
         break;
       }
       case "PasswordManager:FillRelayUsername": {
-        const { focusedInput } = lazy.gFormFillService;
-        this.fillRelayUsername(focusedInput, msg.data);
+        const { focusedElement } = lazy.gFormFillService;
+        this.fillRelayUsername(focusedElement, msg.data);
         break;
       }
     }
@@ -1429,7 +1428,7 @@ export class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
-    if (inputElement != lazy.gFormFillService.focusedInput) {
+    if (inputElement != lazy.gFormFillService.focusedElement) {
       lazy.log("Could not open popup on input that's no longer focused.");
       return;
     }
@@ -1820,9 +1819,7 @@ export class LoginManagerChild extends JSWindowActorChild {
       this._fetchLoginsFromParentAndFillForm(formLike);
     }
 
-    Services.telemetry
-      .getHistogramById("PWMGR_IS_USERNAME_ONLY_FORM")
-      .add(!!usernameField);
+    Glean.pwmgr.isUsernameOnlyForm[usernameField ? "true" : "false"].add();
   }
 
   #onDOMInputPasswordAdded(event) {
@@ -3041,10 +3038,10 @@ export class LoginManagerChild extends JSWindowActorChild {
       if (!userTriggered) {
         // Ignore fills as a result of user action for this probe.
 
-        lazy.LoginManagerTelemetry.recordAutofillResult(autofillResult);
+        Glean.pwmgr.formAutofillResult[autofillResult].add(1);
 
         if (usernameField) {
-          let focusedElement = lazy.gFormFillService.focusedInput;
+          let focusedElement = lazy.gFormFillService.focusedElement;
           if (
             usernameField == focusedElement &&
             ![

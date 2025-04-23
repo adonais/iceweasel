@@ -140,7 +140,6 @@ export class EditProfileCard extends MozLitElement {
     this.themes = themes;
 
     this.setFavicon();
-    this.focusInput();
   }
 
   async getUpdateComplete() {
@@ -153,13 +152,6 @@ export class EditProfileCard extends MozLitElement {
     await this.mozCard.updateComplete;
 
     return result;
-  }
-
-  async focusInput() {
-    await this.getUpdateComplete();
-    this.nameInput.focus();
-    this.nameInput.value = "";
-    this.nameInput.value = this.profile.name;
   }
 
   setFavicon() {
@@ -295,7 +287,10 @@ export class EditProfileCard extends MozLitElement {
   }
 
   headerTemplate() {
-    return html`<h2 data-l10n-id="edit-profile-page-header"></h2>`;
+    return html`<h1
+      id="profile-header"
+      data-l10n-id="edit-profile-page-header"
+    ></h1>`;
   }
 
   nameInputTemplate() {
@@ -323,7 +318,7 @@ export class EditProfileCard extends MozLitElement {
             id="error-icon"
             src="chrome://global/skin/icons/info.svg"
           />
-          <span id="error-message"></span>
+          <span id="error-message" role="alert"></span>
         </span>
         <span class="message" hidden
           ><img
@@ -449,7 +444,7 @@ export class EditProfileCard extends MozLitElement {
         href="chrome://global/skin/in-content/common.css"
       />
       <moz-card
-        ><div id="edit-profile-card">
+        ><div id="edit-profile-card" aria-labelledby="profile-header">
           <img
             id="header-avatar"
             data-l10n-id=${this.profile.avatarL10nId}

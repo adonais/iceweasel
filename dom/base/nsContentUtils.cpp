@@ -148,6 +148,7 @@
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/CallbackFunction.h"
 #include "mozilla/dom/CallbackObject.h"
+#include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/ChromeMessageBroadcaster.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentFrameMessageManager.h"
@@ -220,7 +221,6 @@
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/widget/IMEData.h"
@@ -944,20 +944,14 @@ static constexpr nsLiteralCString kRfpPrefs[] = {
 };
 
 static void RecomputeResistFingerprintingAllDocs(const char*, void*) {
-  AutoTArray<RefPtr<BrowsingContextGroup>, 5> bcGroups;
-  BrowsingContextGroup::GetAllGroups(bcGroups);
-  for (auto& bcGroup : bcGroups) {
-    AutoTArray<DocGroup*, 5> docGroups;
-    bcGroup->GetDocGroups(docGroups);
-    for (auto* docGroup : docGroups) {
-      for (Document* doc : *docGroup) {
-        if (doc->RecomputeResistFingerprinting()) {
-          if (auto* pc = doc->GetPresContext()) {
-            pc->MediaFeatureValuesChanged(
-                {MediaFeatureChangeReason::PreferenceChange},
-                MediaFeatureChangePropagation::JustThisDocument);
-          }
-        }
+  AutoTArray<RefPtr<Document>, 64> allDocuments;
+  Document::GetAllInProcessDocuments(allDocuments);
+  for (auto& doc : allDocuments) {
+    if (doc->RecomputeResistFingerprinting()) {
+      if (auto* pc = doc->GetPresContext()) {
+        pc->MediaFeatureValuesChanged(
+            {MediaFeatureChangeReason::PreferenceChange},
+            MediaFeatureChangePropagation::JustThisDocument);
       }
     }
   }
@@ -1050,6 +1044,9 @@ nsresult nsContentUtils::Init() {
     RunOnShutdown(
         [&] { glean_pings::UseCounters.Submit("app_shutdown_confirmed"_ns); },
         ShutdownPhase::AppShutdownConfirmed);
+
+    // On child process, this is initialized in ContentChild.
+    LookAndFeel::EnsureInit();
   }
 
   RefPtr<UserInteractionObserver> uio = new UserInteractionObserver();
@@ -1311,15 +1308,20 @@ nsresult nsContentUtils::Atob(const nsAString& aAsciiBase64String,
   return rv;
 }
 
-bool nsContentUtils::IsAutocompleteEnabled(
-    mozilla::dom::HTMLInputElement* aInput) {
-  MOZ_ASSERT(aInput, "aInput should not be null!");
+bool nsContentUtils::IsAutocompleteEnabled(mozilla::dom::Element* aElement) {
+  MOZ_ASSERT(aElement, "aElement should not be null!");
 
   nsAutoString autocomplete;
-  aInput->GetAutocomplete(autocomplete);
+
+  if (auto* input = HTMLInputElement::FromNodeOrNull(aElement)) {
+    input->GetAutocomplete(autocomplete);
+  } else if (auto* textarea = HTMLTextAreaElement::FromNodeOrNull(aElement)) {
+    textarea->GetAutocomplete(autocomplete);
+  }
 
   if (autocomplete.IsEmpty()) {
-    auto* form = aInput->GetForm();
+    auto* control = nsGenericHTMLFormControlElement::FromNode(aElement);
+    auto* form = control->GetForm();
     if (!form) {
       return true;
     }
@@ -2957,16 +2959,22 @@ bool nsContentUtils::ContentIsHostIncludingDescendantOf(
   MOZ_ASSERT(aPossibleDescendant, "The possible descendant is null!");
   MOZ_ASSERT(aPossibleAncestor, "The possible ancestor is null!");
 
-  do {
-    if (aPossibleDescendant == aPossibleAncestor) return true;
-    if (aPossibleDescendant->IsDocumentFragment()) {
-      aPossibleDescendant =
-          aPossibleDescendant->AsDocumentFragment()->GetHost();
-    } else {
-      aPossibleDescendant = aPossibleDescendant->GetParentNode();
+  while (true) {
+    if (aPossibleDescendant == aPossibleAncestor) {
+      return true;
     }
-  } while (aPossibleDescendant);
-
+    if (nsINode* parent = aPossibleDescendant->GetParentNode()) {
+      aPossibleDescendant = parent;
+      continue;
+    }
+    if (auto* df = DocumentFragment::FromNode(aPossibleDescendant)) {
+      if (nsINode* host = df->GetHost()) {
+        aPossibleDescendant = host;
+        continue;
+      }
+    }
+    break;
+  }
   return false;
 }
 
@@ -3192,17 +3200,6 @@ Element* nsContentUtils::GetCommonFlattenedTreeAncestorForStyle(
 }
 
 /* static */
-bool nsContentUtils::PositionIsBefore(nsINode* aNode1, nsINode* aNode2,
-                                      Maybe<uint32_t>* aNode1Index,
-                                      Maybe<uint32_t>* aNode2Index) {
-  // Note, CompareDocumentPosition takes the latter params in different order.
-  return (aNode2->CompareDocumentPosition(*aNode1, aNode2Index, aNode1Index) &
-          (Node_Binding::DOCUMENT_POSITION_PRECEDING |
-           Node_Binding::DOCUMENT_POSITION_DISCONNECTED)) ==
-         Node_Binding::DOCUMENT_POSITION_PRECEDING;
-}
-
-/* static */
 Maybe<int32_t> nsContentUtils::CompareChildNodes(
     const nsINode* aChild1, const nsINode* aChild2,
     NodeIndexCache* aIndexCache /* = nullptr */) {
@@ -3259,11 +3256,11 @@ Maybe<int32_t> nsContentUtils::CompareChildNodes(
   // may need to compute the index again.  In such cases, the cache saves the
   // computation cost.
   if (commonParentNode.MaybeCachesComputedIndex()) {
-    Maybe<uint32_t> child1Index;
-    Maybe<uint32_t> child2Index;
+    Maybe<int32_t> child1Index;
+    Maybe<int32_t> child2Index;
     if (aIndexCache) {
-      aIndexCache->ComputeIndicesOf(&commonParentNode, aChild1, aChild2,
-                                    child1Index, child2Index);
+      aIndexCache->ComputeIndicesOf<TreeKind::DOM>(
+          &commonParentNode, aChild1, aChild2, child1Index, child2Index);
     } else {
       child1Index = commonParentNode.ComputeIndexOf(aChild1);
       child2Index = commonParentNode.ComputeIndexOf(aChild2);
@@ -3365,15 +3362,16 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
   if (&aChild2 == &lastChild) {
     return Some(aOffset1 == parentNode.GetChildCount() - 1 ? 0 : -1);
   }
-
-  const Maybe<uint32_t> child2Index =
-      aIndexCache ? aIndexCache->ComputeIndexOf(&parentNode, &aChild2)
-                  : parentNode.ComputeIndexOf(&aChild2);
+  const Maybe<int32_t> child2Index =
+      aIndexCache
+          ? aIndexCache->ComputeIndexOf<TreeKind::DOM>(&parentNode, &aChild2)
+          : GetIndexInParent<TreeKind::DOM>(&parentNode, &aChild2);
   if (NS_WARN_IF(child2Index.isNothing())) {
     return Some(1);
   }
-  return Some(aOffset1 == *child2Index ? 0
-                                       : (aOffset1 < *child2Index ? -1 : 1));
+  return Some(aOffset1 == uint32_t(*child2Index)
+                  ? 0
+                  : (aOffset1 < uint32_t(*child2Index) ? -1 : 1));
 }
 
 /* static */
@@ -4151,7 +4149,7 @@ bool nsContentUtils::IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID) {
   //  font-face-format
   //  font-face-name
   //  missing-glyph
-  return aName != nsGkAtoms::annotation_xml_ &&
+  return aName != nsGkAtoms::annotation_xml &&
          aName != nsGkAtoms::colorProfile && aName != nsGkAtoms::font_face &&
          aName != nsGkAtoms::font_face_src &&
          aName != nsGkAtoms::font_face_uri &&
@@ -5041,6 +5039,16 @@ EventMessage nsContentUtils::GetEventMessage(nsAtom* aName) {
   }
 
   return eUnidentifiedEvent;
+}
+
+// static
+void nsContentUtils::ForEachEventAttributeName(
+    int32_t aType, const FunctionRef<void(nsAtom*)> aFunc) {
+  for (auto iter = sAtomEventTable->ConstIter(); !iter.Done(); iter.Next()) {
+    if (iter.Data().mType & aType) {
+      aFunc(iter.Key());
+    }
+  }
 }
 
 // static
@@ -11873,25 +11881,84 @@ template <TreeKind aKind>
 MOZ_ALWAYS_INLINE const nsINode* GetParent(const nsINode* aNode) {
   if constexpr (aKind == TreeKind::DOM) {
     return aNode->GetParentNode();
-  } else {
-    return aNode->GetFlattenedTreeParentNode();
   }
+  if constexpr (aKind == TreeKind::ShadowIncludingDOM) {
+    return aNode->GetParentOrShadowHostNode();
+  }
+  return aNode->GetFlattenedTreeParentNode();
 }
 
 template <TreeKind aKind>
-MOZ_ALWAYS_INLINE Maybe<uint32_t> GetIndexInParent(const nsINode* aParent,
-                                                   const nsINode* aNode) {
-  if constexpr (aKind == TreeKind::DOM) {
-    return aParent->ComputeIndexOf(aNode);
+Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
+                                                const nsINode* aNode) {
+  Maybe<uint32_t> idx;
+  if constexpr (aKind == TreeKind::DOM ||
+                aKind == TreeKind::ShadowIncludingDOM) {
+    idx = aParent->ComputeIndexOf(aNode);
   } else {
-    return aParent->ComputeFlatTreeIndexOf(aNode);
+    idx = aParent->ComputeFlatTreeIndexOf(aNode);
   }
+
+  if (idx) {
+    return idx.map([](auto i) { return AssertedCast<int32_t>(i); });
+  }
+
+  if constexpr (aKind == TreeKind::ShadowIncludingDOM) {
+    if (const auto* sr = ShadowRoot::FromNode(aNode)) {
+      return sr->GetHost() == aParent ? Some(-1) : Nothing();
+    }
+  }
+
+  // Handle pseudo-element and anonymous node ordering:
+  //   ::marker -> ::before -> regular siblings -> all other NAC -> ::after
+  // This matches the order of AllChildrenIterator.
+  if (NS_WARN_IF(!aNode->IsRootOfNativeAnonymousSubtree())) {
+    // If aNode is mid unbind, we can reach this.
+    return Nothing();
+  }
+
+  if (NS_WARN_IF(aNode->GetParentNode() != aParent)) {
+    // We can't be an anon child if not correctly parented.
+    return Nothing();
+  }
+
+  if (aNode->IsGeneratedContentContainerForMarker()) {
+    return Some(-3);
+  }
+
+  if (aNode->IsGeneratedContentContainerForBefore()) {
+    return Some(-2);
+  }
+
+  AutoTArray<nsIContent*, 8> anonKids;
+
+  int32_t siblingCount = aKind == TreeKind::DOM
+                             ? aParent->GetChildCount()
+                             : FlattenedChildIterator::GetLength(aParent);
+
+  MOZ_ASSERT(aParent->MayHaveAnonymousChildren());
+  MOZ_ASSERT(aParent->IsContent());
+  nsContentUtils::AppendNativeAnonymousChildren(aParent->AsContent(), anonKids,
+                                                nsIContent::eAllChildren);
+
+  if (aNode->IsGeneratedContentContainerForAfter()) {
+    return Some(int32_t(siblingCount + anonKids.Length()));
+  }
+  auto index = anonKids.IndexOf(aNode);
+  if (index == anonKids.NoIndex) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Missing parent -> child link somehow?"
+        "Potentially unstable ordering");
+    return Nothing();
+  }
+  return Some(siblingCount + int32_t(index));
 }
 
 template <TreeKind aTreeKind>
 int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
                                             const nsINode* aNode2,
-                                            const nsINode* aCommonAncestor) {
+                                            const nsINode* aCommonAncestor,
+                                            NodeIndexCache* aCache) {
   MOZ_ASSERT(aNode1, "aNode1 must not be null");
   MOZ_ASSERT(aNode2, "aNode2 must not be null");
 
@@ -11900,7 +11967,8 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
   }
 
   // TODO: Maybe handle flat tree too or other common cases?
-  if constexpr (aTreeKind == TreeKind::DOM) {
+  if constexpr (aTreeKind == TreeKind::DOM ||
+                aTreeKind == TreeKind::ShadowIncludingDOM) {
     if (aNode1->GetNextSibling() == aNode2) {
       return -1;
     }
@@ -11930,7 +11998,7 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
   if (!c2 && aCommonAncestor) {
     // So, it turns out aCommonAncestor was not an ancestor of c2.
     // We need to retry with no common ancestor hint.
-    return CompareTreePosition<aTreeKind>(aNode1, aNode2, nullptr);
+    return CompareTreePosition<aTreeKind>(aNode1, aNode2, nullptr, aCache);
   }
 
   int last1 = node1Ancestors.Length() - 1;
@@ -11957,67 +12025,27 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
     // aContent2 is an ancestor of aContent1
     return 1;
   }
-
   // node1Ancestor != node2Ancestor, so they must be siblings with the
   // same parent
   const nsINode* parent = GetParent<aTreeKind>(node1Ancestor);
   if (NS_WARN_IF(!parent)) {  // different documents??
     return 0;
   }
-
-  const Maybe<uint32_t> index1 =
-      GetIndexInParent<aTreeKind>(parent, node1Ancestor);
-  const Maybe<uint32_t> index2 =
-      GetIndexInParent<aTreeKind>(parent, node2Ancestor);
-
-  // None of the nodes are anonymous, just do a regular comparison.
-  if (index1.isSome() && index2.isSome()) {
-    return static_cast<int32_t>(static_cast<int64_t>(*index1) - *index2);
+  Maybe<int32_t> index1;
+  Maybe<int32_t> index2;
+  if (aCache) {
+    aCache->ComputeIndicesOf<aTreeKind>(parent, node1Ancestor, node2Ancestor,
+                                        index1, index2);
+  } else {
+    index1 = GetIndexInParent<aTreeKind>(parent, node1Ancestor);
+    index2 = GetIndexInParent<aTreeKind>(parent, node2Ancestor);
   }
-
-  bool gotAnonKids = false;
-  AutoTArray<nsIContent*, 8> anonKids;
-
-  // Otherwise handle pseudo-element and anonymous node ordering:
-  //   ::marker -> ::before -> regular siblings -> all other NAC -> ::after
-  // This matches the order of AllChildrenIterator.
-  auto PseudoIndex = [&](const nsINode* aNode,
-                         const Maybe<uint32_t>& aNodeIndex) -> int32_t {
-    if (aNodeIndex.isSome()) {
-      return -1;  // Not a pseudo.
-    }
-    if (NS_WARN_IF(!aNode->IsRootOfNativeAnonymousSubtree())) {
-      // If aNode is mid unbind, we can reach this.
-      return 0;
-    }
-    if (aNode->IsGeneratedContentContainerForMarker()) {
-      return -3;
-    }
-    if (aNode->IsGeneratedContentContainerForBefore()) {
-      return -2;
-    }
-    if (!gotAnonKids) {
-      MOZ_ASSERT(parent->MayHaveAnonymousChildren());
-      MOZ_ASSERT(parent->IsContent());
-      nsContentUtils::AppendNativeAnonymousChildren(
-          parent->AsContent(), anonKids, nsIContent::eAllChildren);
-      gotAnonKids = true;
-    }
-    if (aNode->IsGeneratedContentContainerForAfter()) {
-      return int32_t(anonKids.Length());
-    }
-    auto index = anonKids.IndexOf(aNode);
-    if (index == anonKids.NoIndex) {
-      MOZ_ASSERT_UNREACHABLE(
-          "Missing parent -> child link somehow?"
-          "Potentially unstable ordering");
-      return 0;
-    }
-    return int32_t(index);
-  };
-
-  return PseudoIndex(node1Ancestor, index1) -
-         PseudoIndex(node2Ancestor, index2);
+  if (NS_WARN_IF(index1.isNothing()) || NS_WARN_IF(index2.isNothing())) {
+    // This should generally never happen, but can happen mid-unbind or in other
+    // edge cases, deal with it somewhat reasonably.
+    return 0;
+  }
+  return static_cast<int32_t>(static_cast<int64_t>(*index1) - *index2);
 }
 
 nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(nsIContent* aHost,
@@ -12049,6 +12077,9 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(nsIContent* aHost,
 }
 
 template int32_t nsContentUtils::CompareTreePosition<TreeKind::DOM>(
-    const nsINode*, const nsINode*, const nsINode*);
+    const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);
 template int32_t nsContentUtils::CompareTreePosition<TreeKind::Flat>(
-    const nsINode*, const nsINode*, const nsINode*);
+    const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);
+template int32_t
+nsContentUtils::CompareTreePosition<TreeKind::ShadowIncludingDOM>(
+    const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);

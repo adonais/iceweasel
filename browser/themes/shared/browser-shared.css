@@ -38,10 +38,13 @@ body {
 :root {
   user-select: none;
   color-scheme: light dark;
-  accent-color: var(--color-accent-primary);
   text-rendering: optimizeLegibility;
   min-height: 95px;
   min-width: 95px;
+
+  @media not (forced-colors) {
+    accent-color: var(--color-accent-primary);
+  }
 
   &:-moz-locale-dir(rtl) {
     direction: rtl;
@@ -55,8 +58,21 @@ body {
     @media -moz-pref("sidebar.verticalTabs") {
       min-width: 732px;
 
+      /* If the Content Analysis icon is showing, we don't
+         want to collapse it, so make a little more room. */
+      &[contentanalysisactive] {
+        min-width: 768px;
+      }
+
       @media (-moz-platform: macos) {
         min-width: 670px;
+
+        /* If the Content Analysis icon is showing, we don't
+          want to collapse it, so make a little more room. */
+        /* stylelint-disable max-nesting-depth */
+        &[contentanalysisactive] {
+          min-width: 706px;
+        }
       }
     }
   }
@@ -1219,8 +1235,8 @@ popupnotificationcontent {
   }
 }
 
-#historySwipeAnimationPreviousArrow:-moz-locale-dir(rtl),
-#historySwipeAnimationNextArrow:-moz-locale-dir(ltr) {
+.swipe-nav-icon:-moz-locale-dir(rtl),
+#historySwipeAnimationNextArrow {
   transform: scaleX(-1);
 }
 

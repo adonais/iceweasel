@@ -5,7 +5,7 @@ buildscript {
     repositories {
         gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
             maven {
-                url repository
+                url = repository
                 if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
                     allowInsecureProtocol = true
                 }
@@ -14,35 +14,35 @@ buildscript {
     }
 
     dependencies {
-        classpath ComponentsDependencies.plugin_serialization
+        classpath libs.plugin.serialization
     }
 }
 
 plugins {
-    id "com.jetbrains.python.envs" version "$python_envs_plugin"
-    id "com.google.protobuf" version "$protobuf_plugin"
-}
-
-if (findProject(":geckoview") != null) {
-    buildDir "${topobjdir}/gradle/build/mobile/android/fenix"
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.python.envs.plugin)
+    alias(libs.plugins.protobuf.plugin)
 }
 
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
 apply plugin: 'jacoco'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
-apply plugin: 'com.google.android.gms.oss-licenses-plugin'
 apply plugin: 'kotlinx-serialization'
 
+if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {
+    apply plugin: 'com.google.android.gms.oss-licenses-plugin'
+}
+
 import groovy.json.JsonOutput
-import org.gradle.internal.logging.text.StyledTextOutput.Style
-import org.gradle.internal.logging.text.StyledTextOutputFactory
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 apply from: 'benchmark.gradle'
+
+def isAppBundle = gradle.startParameter.taskNames.any { it.toLowerCase().contains("bundle") }
 
 android {
     project.maybeConfigForJetpackBenchmark(it)
@@ -54,9 +54,9 @@ android {
 
     defaultConfig {
         applicationId "org.mozilla"
-        minSdkVersion config.minSdkVersion
-        compileSdk config.compileSdkVersion
-        targetSdkVersion config.targetSdkVersion
+        minSdkVersion = config.minSdkVersion
+        compileSdk = config.compileSdkVersion
+        targetSdkVersion = config.targetSdkVersion
         versionCode 1
         versionName Config.generateDebugVersionName()
         vectorDrawables.useSupportLibrary = true
@@ -112,9 +112,9 @@ android {
     def releaseTemplate = {
         // We allow disabling optimization by passing `-PdisableOptimization` to gradle. This is used
         // in automation for UI testing non-debug builds.
-        shrinkResources !project.hasProperty("disableOptimization")
-        minifyEnabled !project.hasProperty("disableOptimization")
-        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        shrinkResources = !project.hasProperty("disableOptimization")
+        minifyEnabled = !project.hasProperty("disableOptimization")
+        proguardFiles = [getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro']
         matchingFallbacks = ['release'] // Use on the "release" build type in dependencies (AARs)
 
         // Changing the build config can cause files that depend on BuildConfig.java to recompile
@@ -122,25 +122,27 @@ android {
         if (gradle.ext.vcsHashFileContent) {
             buildConfigField "String", "VCS_HASH", "\"hg-${gradle.ext.vcsHashFileContent}\""
         } else {
-            buildConfigField "String", "VCS_HASH", "\"${Config.vcsHash}\""
+            buildConfigField "String", "VCS_HASH", "\"${Config.getVcsHash(project)}\""
         }
 
-        if (gradle.hasProperty("localProperties.autosignReleaseWithDebugKey")) {
+        if (gradle.hasProperty("localProperties.autosignReleaseWithDebugKey") ||
+            gradle.mozconfig.substs.DEVELOPER_OPTIONS) {
             signingConfig signingConfigs.debug
         }
 
-        if (gradle.hasProperty("localProperties.debuggable")) {
+        if (gradle.hasProperty("localProperties.debuggable") ||
+            gradle.mozconfig.substs.MOZ_ANDROID_DEBUGGABLE) {
             debuggable true
         }
     }
 
     buildTypes {
         debug {
-            shrinkResources false
-            minifyEnabled false
+            shrinkResources = false
+            minifyEnabled = false
             applicationIdSuffix ".fenix.debug"
             resValue "bool", "IS_DEBUG", "true"
-            pseudoLocalesEnabled true
+            pseudoLocalesEnabled = true
         }
         nightly releaseTemplate >> {
             applicationIdSuffix ".fenix"
@@ -188,14 +190,14 @@ android {
         benchmark releaseTemplate >> {
             initWith buildTypes.nightly
             applicationIdSuffix ".fenix"
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
             debuggable false
         }
     }
 
     buildFeatures {
-        viewBinding true
-        buildConfig true
+        viewBinding = true
+        buildConfig = true
     }
 
     androidResources {
@@ -207,11 +209,11 @@ android {
 
         // manifest.template.json is converted to manifest.json at build time.
         // No need to package the template in the APK.
-        ignoreAssetsPattern "manifest.template.json"
+        ignoreAssetsPattern = "manifest.template.json"
     }
 
     testOptions {
-        execution 'ANDROIDX_TEST_ORCHESTRATOR'
+        execution = 'ANDROIDX_TEST_ORCHESTRATOR'
         unitTests.includeAndroidResources = true
         animationsDisabled = true
     }
@@ -237,7 +239,7 @@ android {
 
     splits {
         abi {
-            enable true
+            enable = !isAppBundle
 
             reset()
 
@@ -256,7 +258,7 @@ android {
         // Profiler issues require us to temporarily package native code compressed to
         // match the previous APK packaging.
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1865634
-        packagingOptions {
+        packaging {
             jniLibs {
                 it.useLegacyPackaging = true
             }
@@ -270,16 +272,17 @@ android {
     }
 
     lint {
-        lintConfig file("lint.xml")
-        baseline file("lint-baseline.xml")
+        lintConfig = file("lint.xml")
+        baseline = file("lint-baseline.xml")
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1952578
+        disable 'UseKtx'
     }
-    packagingOptions {
+    packaging {
         resources {
-            excludes += ['MANIFEST.MF', 'META-INF/atomicfu.kotlin_module', 'META-INF/AL2.0',
-                         'META-INF/LGPL2.1', 'META-INF/LICENSE.md', 'META-INF/LICENSE-notice.md']
+            excludes += ["META-INF/LICENSE.md", "META-INF/LICENSE-notice.md"]
         }
         jniLibs {
-            useLegacyPackaging true
+            useLegacyPackaging = true
         }
     }
 
@@ -299,14 +302,14 @@ android {
     }
 
     buildFeatures {
-        compose true
+        compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = Versions.compose_compiler
+    compileOptions{
+        coreLibraryDesugaringEnabled = true
     }
 
-    namespace 'org.mozilla.fenix'
+    namespace = 'org.mozilla.fenix'
 }
 
 android.applicationVariants.configureEach { variant ->
@@ -338,12 +341,14 @@ android.applicationVariants.configureEach { variant ->
         variant.outputs.each { output ->
             def isMozillaOnline = project.hasProperty("mozillaOnline") || gradle.hasProperty("localProperties.mozillaOnline")
             def abi = output.getFilter(FilterConfiguration.FilterType.ABI.name())
+            if (isAppBundle) {
+                abi = "AAB"
+            }
             // If it is a Mozilla Online build, use a unified version code of armeabi-v7a
             def arch = (isMozillaOnline) ? "armeabi-v7a" : abi
-            def aab = project.hasProperty("aab")
             // We use the same version code generator, that we inherited from Fennec, across all channels - even on
             // channels that never shipped a Fennec build.
-            def versionCodeOverride = Config.generateFennecVersionCode(arch, aab)
+            def versionCodeOverride = Config.generateFennecVersionCode(arch, isAppBundle )
 
             project.logger.debug("versionCode for $abi = $versionCodeOverride, isMozillaOnline = $isMozillaOnline")
 
@@ -559,18 +564,20 @@ tasks.withType(KotlinCompile).configureEach {
 }
 
 dependencies {
-    implementation ComponentsDependencies.kotlin_json
+    coreLibraryDesugaring libs.desugar.jdk.libs
+    implementation libs.kotlin.json
 
     implementation project(':browser-engine-gecko')
 
-    implementation ComponentsDependencies.kotlin_coroutines
-    testImplementation ComponentsDependencies.testing_coroutines
-    implementation ComponentsDependencies.accompanist_drawablepainter
+    implementation libs.kotlin.coroutines
+    testImplementation libs.testing.coroutines
+    implementation libs.accompanist.drawablepainter
 
-    implementation ComponentsDependencies.thirdparty_sentry
+    implementation libs.thirdparty.sentry
 
     implementation project(':compose-awesomebar')
     implementation project(':compose-base')
+    implementation project(':compose-browser-toolbar')
     implementation project(':compose-cfr')
 
     implementation project(':concept-awesomebar')
@@ -636,12 +643,13 @@ dependencies {
     implementation project(':service-sync-logins')
     implementation project(':service-firefox-accounts')
     implementation project(':service-glean')
-    implementation ComponentsDependencies.mozilla_glean
+    implementation libs.mozilla.glean
     implementation project(':service-location')
     implementation project(':service-nimbus')
 
     implementation project(':support-webextensions')
     implementation project(':support-base')
+    implementation project(':support-remotesettings')
     implementation project(':support-rusterrors')
     implementation project(':support-images')
     implementation project(':support-ktx')
@@ -662,98 +670,97 @@ dependencies {
     implementation project(':lib-dataprotect')
     testImplementation project(':support-test-fakes')
 
-    debugImplementation ComponentsDependencies.leakcanary
-    debugImplementation ComponentsDependencies.androidx_compose_ui_tooling
+    debugImplementation libs.leakcanary
+    debugImplementation libs.androidx.compose.ui.tooling
 
-    implementation ComponentsDependencies.androidx_activity
-    implementation ComponentsDependencies.androidx_activity_ktx
-    implementation ComponentsDependencies.androidx_annotation
-    implementation ComponentsDependencies.androidx_appcompat
-    implementation ComponentsDependencies.androidx_biometric
+    implementation libs.androidx.activity
+    implementation libs.androidx.activity.ktx
+    implementation libs.androidx.annotation
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.biometric
 
-    implementation platform(ComponentsDependencies.androidx_compose_bom)
-    androidTestImplementation platform(ComponentsDependencies.androidx_compose_bom)
-    implementation ComponentsDependencies.androidx_compose_animation
-    implementation ComponentsDependencies.androidx_compose_foundation
-    implementation ComponentsDependencies.androidx_compose_material
-    implementation ComponentsDependencies.androidx_compose_ui
-    implementation ComponentsDependencies.androidx_compose_ui_tooling_preview
+    implementation platform(libs.androidx.compose.bom)
+    androidTestImplementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.compose.animation
+    implementation libs.androidx.compose.foundation
+    implementation libs.androidx.compose.material
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.tooling.preview
 
-    implementation ComponentsDependencies.androidx_constraintlayout
-    implementation ComponentsDependencies.androidx_coordinatorlayout
-    implementation ComponentsDependencies.androidx_core
-    implementation ComponentsDependencies.androidx_core_ktx
-    implementation ComponentsDependencies.androidx_core_splashscreen
-    implementation ComponentsDependencies.androidx_datastore
-    implementation ComponentsDependencies.androidx_datastore_preferences
-    implementation ComponentsDependencies.androidx_fragment
-    implementation ComponentsDependencies.androidx_lifecycle_common
-    implementation ComponentsDependencies.androidx_lifecycle_livedata
-    implementation ComponentsDependencies.androidx_lifecycle_process
-    implementation ComponentsDependencies.androidx_lifecycle_runtime
-    implementation ComponentsDependencies.androidx_lifecycle_service
-    implementation ComponentsDependencies.androidx_lifecycle_viewmodel
-    implementation ComponentsDependencies.androidx_navigation_compose
-    implementation ComponentsDependencies.androidx_navigation_fragment
-    implementation ComponentsDependencies.androidx_navigation_ui
-    implementation ComponentsDependencies.androidx_paging
-    implementation ComponentsDependencies.androidx_preferences
-    implementation ComponentsDependencies.androidx_profileinstaller
-    implementation ComponentsDependencies.androidx_recyclerview
-    implementation ComponentsDependencies.androidx_swiperefreshlayout
-    implementation ComponentsDependencies.androidx_transition
-    implementation ComponentsDependencies.androidx_viewpager2
-    implementation ComponentsDependencies.androidx_work_runtime
+    implementation libs.androidx.constraintlayout
+    implementation libs.androidx.coordinatorlayout
+    implementation libs.androidx.core
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core.splashscreen
+    implementation libs.androidx.datastore
+    implementation libs.androidx.datastore.preferences
+    implementation libs.androidx.fragment
+    implementation libs.androidx.lifecycle.common
+    implementation libs.androidx.lifecycle.livedata
+    implementation libs.androidx.lifecycle.process
+    implementation libs.androidx.lifecycle.runtime
+    implementation libs.androidx.lifecycle.service
+    implementation libs.androidx.lifecycle.viewmodel
+    implementation libs.androidx.navigation.compose
+    implementation libs.androidx.navigation.fragment
+    implementation libs.androidx.navigation.ui
+    implementation libs.androidx.paging
+    implementation libs.androidx.preferences
+    implementation libs.androidx.profileinstaller
+    implementation libs.androidx.recyclerview
+    implementation libs.androidx.swiperefreshlayout
+    implementation libs.androidx.transition
+    implementation libs.androidx.viewpager2
+    implementation libs.androidx.work.runtime
 
-    implementation ComponentsDependencies.protobuf_javalite
-    implementation ComponentsDependencies.google_material
+    implementation libs.protobuf.javalite
+    implementation libs.google.material
 
     implementation(libs.adjust)
     implementation(libs.installreferrer)
 
     // Required for the Google Advertising ID
-    implementation ComponentsDependencies.play_services_ads_id
+    implementation libs.play.services.ads.id
 
     // Required for in-app reviews
-    implementation ComponentsDependencies.play_review
-    implementation ComponentsDependencies.play_review_ktx
+    implementation libs.play.review
+    implementation libs.play.review.ktx
 
-    androidTestImplementation ComponentsDependencies.testing_fastlane
-    androidTestImplementation ComponentsDependencies.testing_falcon
+    implementation ComponentsDependencies.mozilla_appservices_init_rust_components
 
-    androidTestImplementation(ComponentsDependencies.androidx_espresso_contrib) {
+    androidTestImplementation(libs.androidx.espresso.contrib) {
         exclude module: 'protobuf-lite'
     }
-    androidTestImplementation ComponentsDependencies.androidx_espresso_core
-    androidTestImplementation ComponentsDependencies.androidx_espresso_idling_resource
-    androidTestImplementation ComponentsDependencies.androidx_espresso_intents
-    androidTestImplementation ComponentsDependencies.androidx_test_core
-    androidTestImplementation ComponentsDependencies.androidx_test_junit
-    androidTestImplementation ComponentsDependencies.androidx_test_monitor
-    androidTestImplementation ComponentsDependencies.androidx_test_rules
-    androidTestImplementation ComponentsDependencies.androidx_test_runner
-    androidTestImplementation ComponentsDependencies.androidx_test_uiautomator
-    androidTestUtil ComponentsDependencies.androidx_test_orchestrator
-    androidTestImplementation ComponentsDependencies.testing_leakcanary
+    androidTestImplementation libs.androidx.espresso.core
+    androidTestImplementation libs.androidx.espresso.idling.resource
+    androidTestImplementation libs.androidx.espresso.intents
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.androidx.test.monitor
+    androidTestImplementation libs.androidx.test.rules
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.uiautomator
+    androidTestUtil libs.androidx.test.orchestrator
+    androidTestImplementation libs.testing.leakcanary
 
-    androidTestImplementation ComponentsDependencies.androidx_benchmark_junit4
-    androidTestImplementation ComponentsDependencies.androidx_compose_ui_test
-    androidTestImplementation ComponentsDependencies.androidx_work_testing
-    androidTestImplementation ComponentsDependencies.testing_mockwebserver
+    androidTestImplementation libs.androidx.benchmark.junit4
+    androidTestImplementation libs.androidx.compose.ui.test
+    androidTestImplementation libs.androidx.work.testing
+    androidTestImplementation libs.testing.mockwebserver
     testImplementation project(':support-test')
     testImplementation project(':support-test-libstate')
-    testImplementation ComponentsDependencies.androidx_test_junit
-    testImplementation ComponentsDependencies.androidx_work_testing
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.androidx.work.testing
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
-    testImplementation (ComponentsDependencies.testing_robolectric) {
+    testImplementation (libs.testing.robolectric) {
         exclude group: 'org.apache.maven'
     }
 
-    testImplementation ComponentsDependencies.testing_maven_ant_tasks
+    testImplementation libs.testing.maven.ant.tasks
     implementation project(':support-rusthttp')
 
-    androidTestImplementation ComponentsDependencies.testing_mockk_android
-    testImplementation ComponentsDependencies.testing_mockk
+    androidTestImplementation libs.testing.mockk.android
+    testImplementation libs.testing.mockk
 
     // For the initial release of Glean 19, we require consumer applications to
     // depend on a separate library for unit tests. This will be removed in future releases.
@@ -765,7 +772,7 @@ dependencies {
 
 protobuf {
     protoc {
-        artifact = ComponentsDependencies.protobuf_compiler
+        artifact = libs.protobuf.compiler.get()
     }
 
     // Generates the java Protobuf-lite code for the Protobufs in this project. See
@@ -789,7 +796,7 @@ if (project.hasProperty("coverage")) {
     }
 
     jacoco {
-        toolVersion = Versions.jacoco
+        toolVersion = libs.versions.jacoco.get()
     }
 
     android.applicationVariants.configureEach { variant ->
@@ -831,17 +838,18 @@ if (project.hasProperty("coverage")) {
 // Usage: "./gradlew printVariants
 // -------------------------------------------------------------------------------------------------
 tasks.register('printVariants') {
-    doLast {
-        def variants = android.applicationVariants.collect { variant -> [
+    def variants = project.provider {
+        android.applicationVariants.collect { variant -> [
             apks: variant.outputs.collect { output -> [
-                abi: output.getFilter(FilterConfiguration.FilterType.ABI.name()),
-                fileName: output.outputFile.name
+                    abi: output.getFilter(FilterConfiguration.FilterType.ABI.name()),
+                    fileName: output.outputFile.name
             ]},
             build_type: variant.buildType.name,
             name: variant.name,
-        ]}
+    ]}}
+    doLast {
         // AndroidTest is a special case not included above
-        variants.add([
+        variants.get().add([
             apks: [[
                 abi: 'noarch',
                 fileName: 'app-debug-androidTest.apk',
@@ -849,7 +857,7 @@ tasks.register('printVariants') {
             build_type: 'androidTest',
             name: 'androidTest',
         ])
-        println 'variants: ' + JsonOutput.toJson(variants)
+        println 'variants: ' + JsonOutput.toJson(variants.get())
     }
 }
 
@@ -862,38 +870,36 @@ afterEvaluate {
 
         testLogging.events = []
 
-        def out = services.get(StyledTextOutputFactory).create("tests")
-
         beforeSuite { descriptor ->
             if (descriptor.getClassName() != null) {
-                out.style(Style.Header).println("\nSUITE: " + descriptor.getClassName())
+                println("\nSUITE: " + descriptor.getClassName())
             }
         }
 
         beforeTest { descriptor ->
-            out.style(Style.Description).println("  TEST: " + descriptor.getName())
+            println("  TEST: " + descriptor.getName())
         }
 
         onOutput { descriptor, event ->
-            logger.lifecycle("    " + event.message.trim())
+            it.logger.lifecycle("    " + event.message.trim())
         }
 
         afterTest { descriptor, result ->
             switch (result.getResultType()) {
                 case ResultType.SUCCESS:
-                    out.style(Style.Success).println("  SUCCESS")
+                    println("  SUCCESS")
                     break
 
                 case ResultType.FAILURE:
                     def testId = descriptor.getClassName() + "." + descriptor.getName()
-                    out.style(Style.Failure).println("  TEST-UNEXPECTED-FAIL | " + testId + " | " + result.getException())
+                    println("  TEST-UNEXPECTED-FAIL | " + testId + " | " + result.getException())
                     break
 
                 case ResultType.SKIPPED:
-                    out.style(Style.Info).println("  SKIPPED")
+                    println("  SKIPPED")
                     break
             }
-            logger.lifecycle("")
+            it.logger.lifecycle("")
         }
     }
 }

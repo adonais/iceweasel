@@ -62,7 +62,6 @@ export class ShoppingContainer extends MozLitElement {
     isOverflow: { type: Boolean },
     autoOpenEnabled: { type: Boolean },
     autoOpenEnabledByUser: { type: Boolean },
-    autoCloseEnabledByUser: { type: Boolean },
     showingKeepClosedMessage: { type: Boolean },
     isProductPage: { type: Boolean },
     isSupportedSite: { type: Boolean },
@@ -115,7 +114,6 @@ export class ShoppingContainer extends MozLitElement {
     window.document.addEventListener("UpdateRecommendations", this);
     window.document.addEventListener("UpdateAnalysisProgress", this);
     window.document.addEventListener("autoOpenEnabledByUserChanged", this);
-    window.document.addEventListener("autoCloseEnabledByUserChanged", this);
     window.document.addEventListener("ShowKeepClosedMessage", this);
     window.document.addEventListener("HideKeepClosedMessage", this);
     window.document.addEventListener("ShowNewPositionCard", this);
@@ -175,7 +173,6 @@ export class ShoppingContainer extends MozLitElement {
     focusCloseButton,
     autoOpenEnabled,
     autoOpenEnabledByUser,
-    autoCloseEnabledByUser,
     isProductPage,
     isSupportedSite,
     supportedDomains,
@@ -197,8 +194,6 @@ export class ShoppingContainer extends MozLitElement {
     this.autoOpenEnabled = autoOpenEnabled ?? this.autoOpenEnabled;
     this.autoOpenEnabledByUser =
       autoOpenEnabledByUser ?? this.autoOpenEnabledByUser;
-    this.autoCloseEnabledByUser =
-      autoCloseEnabledByUser ?? this.autoCloseEnabledByUser;
     this.isProductPage = isProductPage ?? true;
     this.isSupportedSite = isSupportedSite;
     this.supportedDomains = supportedDomains ?? this.supportedDomains;
@@ -257,9 +252,6 @@ export class ShoppingContainer extends MozLitElement {
         break;
       case "autoOpenEnabledByUserChanged":
         this.autoOpenEnabledByUser = event.detail?.autoOpenEnabledByUser;
-        break;
-      case "autoCloseEnabledByUserChanged":
-        this.autoCloseEnabledByUser = event.detail?.autoCloseEnabledByUser;
         break;
       case "ShowKeepClosedMessage":
         this.showingKeepClosedMessage = true;
@@ -620,7 +612,6 @@ export class ShoppingContainer extends MozLitElement {
       ?adsEnabledByUser=${this.adsEnabledByUser}
       ?autoOpenEnabled=${this.autoOpenEnabled}
       ?autoOpenEnabledByUser=${this.autoOpenEnabledByUser}
-      ?autoCloseEnabledByUser=${this.autoCloseEnabledByUser}
       .hostname=${hostname}
       class=${className}
     ></shopping-settings>`;
@@ -646,10 +637,10 @@ export class ShoppingContainer extends MozLitElement {
       this.showNewPositionCard &&
       this.isSidebarStartPosition &&
       // Set fallback value to true to prevent weird flickering UI when switching tabs
-      !RPMGetBoolPref(HAS_SEEN_POSITION_NOTIFICATION_CARD_PREF, true);
+      !RPMGetBoolPref(HAS_SEEN_POSITION_NOTIFICATION_CARD_PREF, true) &&
+      this.isProductPage;
     let canShowKeepClosedMessage =
-      this.showingKeepClosedMessage &&
-      RPMGetBoolPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, true);
+      this.showingKeepClosedMessage && this.isProductPage;
 
     if (canShowNotificationCard) {
       return this.newPositionNotificationCardTemplate();
@@ -702,6 +693,18 @@ export class ShoppingContainer extends MozLitElement {
   handleCloseButtonClick() {
     let canShowKeepClosedMessage;
 
+    let showingNewPositionCard =
+      RPMGetBoolPref(INTEGRATED_SIDEBAR_PREF, false) &&
+      this.showNewPositionCard &&
+      !RPMGetBoolPref(HAS_SEEN_POSITION_NOTIFICATION_CARD_PREF, true);
+
+    // Consider the notification card as seen if the user closes RC with the X button
+    // when the card is already rendered.
+    if (showingNewPositionCard) {
+      this.showNewPositionCard = false;
+      RPMSetPref(HAS_SEEN_POSITION_NOTIFICATION_CARD_PREF, true);
+    }
+
     if (this.autoOpenEnabled && this.autoOpenEnabledByUser) {
       canShowKeepClosedMessage =
         this._canShowKeepClosedMessageOnCloseButtonClick();
@@ -738,7 +741,9 @@ export class ShoppingContainer extends MozLitElement {
 
     if (
       yetToSeeNotificationCard ||
-      !RPMGetBoolPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, false)
+      !RPMGetBoolPref(SHOW_KEEP_SIDEBAR_CLOSED_MESSAGE_PREF, false) ||
+      this.showOnboarding ||
+      !this.isProductPage
     ) {
       return false;
     }

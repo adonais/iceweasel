@@ -1,9 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.settings.doh
 
-import DohSettingsMiddleware
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +17,7 @@ import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.databinding.FragmentDohSettingsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -48,7 +49,8 @@ internal class DohSettingsFragment : Fragment() {
                         navController = this@DohSettingsFragment.findNavController(),
                         composeNavController = navController,
                         settingsProvider = DefaultDohSettingsProvider(
-                            requireContext().components.core.engine,
+                            engine = requireContext().components.core.engine,
+                            settings = requireContext().settings(),
                         ),
                         homeActivity = (requireActivity() as HomeActivity),
                     )
@@ -69,7 +71,8 @@ internal class DohSettingsFragment : Fragment() {
                     this.navController = this@DohSettingsFragment.findNavController()
                     this.composeNavController = navController
                     this.settingsProvider = DefaultDohSettingsProvider(
-                        requireContext().components.core.engine,
+                        engine = requireContext().components.core.engine,
+                        settings = requireContext().settings(),
                     )
                     this.homeActivity = (requireActivity() as HomeActivity)
                 }

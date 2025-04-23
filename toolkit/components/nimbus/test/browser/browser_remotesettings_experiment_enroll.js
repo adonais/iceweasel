@@ -6,15 +6,6 @@ const { RemoteSettings } = ChromeUtils.importESModule(
 const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
   "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
 );
-const { ExperimentAPI } = ChromeUtils.importESModule(
-  "resource://nimbus/ExperimentAPI.sys.mjs"
-);
-const { ExperimentManager } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/ExperimentManager.sys.mjs"
-);
-const { ExperimentFakes } = ChromeUtils.importESModule(
-  "resource://testing-common/NimbusTestUtils.sys.mjs"
-);
 
 let rsClient;
 
@@ -29,6 +20,9 @@ add_setup(async function () {
       ["app.shield.optoutstudies.enabled", true],
     ],
   });
+
+  await ExperimentAPI.ready();
+  await RemoteSettingsExperimentLoader.finishedUpdating();
 
   registerCleanupFunction(async () => {
     await SpecialPowers.popPrefEnv();
@@ -53,13 +47,7 @@ add_task(async function test_experimentEnrollment() {
     clear: true,
   });
 
-  let waitForExperimentEnrollment = ExperimentFakes.waitForExperimentUpdate(
-    ExperimentAPI,
-    recipe.slug
-  );
-  RemoteSettingsExperimentLoader.updateRecipes("mochitest");
-
-  await waitForExperimentEnrollment;
+  await RemoteSettingsExperimentLoader.updateRecipes("mochitest");
 
   let experiment = ExperimentAPI.getExperiment({
     slug: recipe.slug,
@@ -67,20 +55,15 @@ add_task(async function test_experimentEnrollment() {
 
   Assert.ok(experiment.active, "Should be enrolled in the experiment");
 
-  let waitForExperimentUnenrollment = ExperimentFakes.waitForExperimentUpdate(
-    ExperimentAPI,
-    recipe.slug
-  );
   ExperimentManager.unenroll(recipe.slug, "mochitest-cleanup");
-
-  await waitForExperimentUnenrollment;
 
   experiment = ExperimentAPI.getExperiment({
     slug: recipe.slug,
   });
 
   Assert.ok(!experiment.active, "Experiment is no longer active");
-  ExperimentAPI._store._deleteForTests(recipe.slug);
+
+  assertEmptyStore(ExperimentManager.store);
 });
 
 add_task(async function test_experimentEnrollment_startup() {

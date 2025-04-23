@@ -773,6 +773,7 @@ bool PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell) {
 PresShell::PresShell(Document* aDocument)
     : mDocument(aDocument),
       mViewManager(nullptr),
+      mLastSelectionForToString(nullptr),
       mAutoWeakFrames(nullptr),
 #ifdef ACCESSIBILITY
       mDocAccessible(nullptr),
@@ -1539,7 +1540,8 @@ bool PresShell::FixUpFocus() {
 
 void PresShell::SelectionWillTakeFocus() {
   if (mSelection) {
-    FrameSelectionWillTakeFocus(*mSelection);
+    FrameSelectionWillTakeFocus(*mSelection,
+                                CanMoveLastSelectionForToString::No);
   }
 }
 
@@ -1584,11 +1586,20 @@ void PresShell::FrameSelectionWillLoseFocus(nsFrameSelection& aFrameSelection) {
   }
 
   if (mSelection) {
-    FrameSelectionWillTakeFocus(*mSelection);
+    FrameSelectionWillTakeFocus(*mSelection,
+                                CanMoveLastSelectionForToString::No);
   }
 }
 
-void PresShell::FrameSelectionWillTakeFocus(nsFrameSelection& aFrameSelection) {
+void PresShell::FrameSelectionWillTakeFocus(
+    nsFrameSelection& aFrameSelection,
+    CanMoveLastSelectionForToString aCanMoveLastSelectionForToString) {
+  if (StaticPrefs::dom_selection_mimic_chrome_tostring_enabled()) {
+    if (aCanMoveLastSelectionForToString ==
+        CanMoveLastSelectionForToString::Yes) {
+      UpdateLastSelectionForToString(&aFrameSelection);
+    }
+  }
   if (mFocusedFrameSelection == &aFrameSelection) {
 #ifdef XP_MACOSX
     // FIXME: Mac needs to update the global selection cache, even if the
@@ -1613,6 +1624,13 @@ void PresShell::FrameSelectionWillTakeFocus(nsFrameSelection& aFrameSelection) {
       nsISelectionController::SELECTION_ON) {
     aFrameSelection.SetDisplaySelection(nsISelectionController::SELECTION_ON);
     RepaintNormalSelectionWhenSafe(aFrameSelection);
+  }
+}
+
+void PresShell::UpdateLastSelectionForToString(
+    const nsFrameSelection* aFrameSelection) {
+  if (mLastSelectionForToString != aFrameSelection) {
+    mLastSelectionForToString = aFrameSelection;
   }
 }
 
@@ -3727,8 +3745,11 @@ static nsMargin GetScrollMargin(const nsIFrame* aFrame) {
   // TODO: This is also a bit of an issue for delegated focus, see
   // https://github.com/whatwg/html/issues/7033.
   if (aFrame->GetContent() && aFrame->GetContent()->ChromeOnlyAccess()) {
+    // XXX Should we use nsIContent::FindFirstNonChromeOnlyAccessContent()
+    // instead of nsINode::GetClosestNativeAnonymousSubtreeRootParentOrHost()?
     if (const nsIContent* userContent =
-            aFrame->GetContent()->GetChromeOnlyAccessSubtreeRootParent()) {
+            aFrame->GetContent()
+                ->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
       if (const nsIFrame* frame = userContent->GetPrimaryFrame()) {
         return frame->StyleMargin()->GetScrollMargin();
       }
@@ -3838,8 +3859,14 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
     if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
       return;
     }
-
-    aDestination = Some(aPositionFixedRect.TopLeft());
+    // Offset the position:fixed element position by the layout scroll
+    // position because the position:fixed origin (0, 0) is the layout scroll
+    // position. Otherwise if we've already scrolled, this scrollIntoView
+    // operaiton will jump back to near (0, 0) position.
+    // Bug 1947470: We need to calculate the destination with `WhereToScroll`
+    // options.
+    const nsPoint layoutOffset = rootScrollContainer->GetScrollPosition();
+    aDestination = Some(aPositionFixedRect.TopLeft() + layoutOffset);
   }
 
   // NOTE: It seems chrome doesn't respect the root element's
@@ -3920,6 +3947,11 @@ bool PresShell::ScrollFrameIntoView(
 
   nsIFrame* container = aTargetFrame;
 
+  bool inPositionFixedSubtree = false;
+  auto isPositionFixed = [&](const nsIFrame* aFrame) -> bool {
+    return aFrame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+           nsLayoutUtils::IsReallyFixedPos(aFrame);
+  };
   // This function needs to work even if rect has a width or height of 0.
   nsRect rect = [&] {
     if (aKnownRectRelativeToTarget) {
@@ -3927,6 +3959,9 @@ bool PresShell::ScrollFrameIntoView(
     }
     MaybeSkipPaddingSides(aTargetFrame);
     while (nsIFrame* parent = container->GetParent()) {
+      if (isPositionFixed(container)) {
+        inPositionFixedSubtree = true;
+      }
       container = parent;
       if (container->IsScrollContainerOrSubclass()) {
         // We really just need a non-fragmented frame so that we can accumulate
@@ -3964,16 +3999,13 @@ bool PresShell::ScrollFrameIntoView(
 
     return targetFrameBounds;
   }();
-
   bool didScroll = false;
-  bool inPositionFixedSubtree = false;
   const nsIFrame* target = aTargetFrame;
   Maybe<nsPoint> rootScrollDestination;
   // Walk up the frame hierarchy scrolling the rect into view and
   // keeping rect relative to container
   do {
-    if (container->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
-        nsLayoutUtils::IsReallyFixedPos(container)) {
+    if (isPositionFixed(container)) {
       inPositionFixedSubtree = true;
     }
 
@@ -5488,43 +5520,12 @@ already_AddRefed<SourceSurface> PresShell::RenderSelection(
                              aScreenRect, aFlags);
 }
 
-void AddDisplayItemToBottom(nsDisplayListBuilder* aBuilder,
-                            nsDisplayList* aList, nsDisplayItem* aItem) {
-  if (!aItem) {
-    return;
-  }
-
+static void AddDisplayItemToBottom(nsDisplayListBuilder* aBuilder,
+                                   nsDisplayList* aList, nsDisplayItem* aItem) {
   nsDisplayList list(aBuilder);
   list.AppendToTop(aItem);
   list.AppendToTop(aList);
   aList->AppendToTop(&list);
-}
-
-static bool AddCanvasBackgroundColor(const nsDisplayList* aList,
-                                     nsIFrame* aCanvasFrame, nscolor aColor,
-                                     bool aCSSBackgroundColor) {
-  for (nsDisplayItem* i : *aList) {
-    const DisplayItemType type = i->GetType();
-
-    if (i->Frame() == aCanvasFrame &&
-        type == DisplayItemType::TYPE_CANVAS_BACKGROUND_COLOR) {
-      auto* bg = static_cast<nsDisplayCanvasBackgroundColor*>(i);
-      bg->SetExtraBackgroundColor(aColor);
-      return true;
-    }
-
-    const bool isBlendContainer =
-        type == DisplayItemType::TYPE_BLEND_CONTAINER ||
-        type == DisplayItemType::TYPE_TABLE_BLEND_CONTAINER;
-
-    nsDisplayList* sublist = i->GetSameCoordinateSystemChildren();
-    if (sublist && !(isBlendContainer && !aCSSBackgroundColor) &&
-        AddCanvasBackgroundColor(sublist, aCanvasFrame, aColor,
-                                 aCSSBackgroundColor)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
@@ -5536,52 +5537,39 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
     return;
   }
   const bool isViewport = aFrame->IsViewportFrame();
-  nscolor canvasColor;
+  const SingleCanvasBackground* canvasBg;
   if (isViewport) {
-    canvasColor = mCanvasBackground.mViewportColor;
+    canvasBg = &mCanvasBackground.mViewport;
   } else if (aFrame->IsPageContentFrame()) {
-    canvasColor = mCanvasBackground.mPageColor;
+    canvasBg = &mCanvasBackground.mPage;
   } else {
     // We don't want to add an item for the canvas background color if the frame
     // (sub)tree we are painting doesn't include any canvas frames.
     return;
   }
-  const nscolor bgcolor = NS_ComposeColors(aBackstopColor, canvasColor);
+
+  const nscolor bgcolor = NS_ComposeColors(aBackstopColor, canvasBg->mColor);
   if (NS_GET_A(bgcolor) == 0) {
     return;
   }
 
-  // To make layers work better, we want to avoid having a big non-scrolled
-  // color background behind a scrolled transparent background. Instead, we'll
-  // try to move the color background into the scrolled content by making
-  // nsDisplayCanvasBackground paint it.
-  bool addedScrollingBackgroundColor = false;
-  if (isViewport) {
-    if (ScrollContainerFrame* sf = GetRootScrollContainerFrame()) {
-      nsCanvasFrame* canvasFrame = do_QueryFrame(sf->GetScrolledFrame());
-      if (canvasFrame && canvasFrame->IsVisibleForPainting()) {
-        // TODO: We should be able to set canvas background color during display
-        // list building to avoid calling this function.
-        addedScrollingBackgroundColor = AddCanvasBackgroundColor(
-            aList, canvasFrame, bgcolor, mCanvasBackground.mCSSSpecified);
-      }
-    }
-  }
-
   // With async scrolling, we'd like to have two instances of the background
-  // color: one that scrolls with the content (for the reasons stated above),
-  // and one underneath which does not scroll with the content, but which can
-  // be shown during checkerboarding and overscroll and the dynamic toolbar
-  // movement.
-  // We can only do that if the color is opaque.
-  bool forceUnscrolledItem =
+  // color: one that scrolls with the content and one underneath which does not
+  // scroll with the content, but which can be shown during checkerboarding and
+  // overscroll and the dynamic toolbar movement. We can only do that if the
+  // color is opaque.
+  //
+  // We also need to paint the background if CSS hasn't specified it (since
+  // otherwise nsCanvasFrame might not paint it). Note that non-CSS-specified
+  // backgrounds shouldn't ever be semi-transparent.
+  const bool forceUnscrolledItem =
       nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255;
-
-  if (!addedScrollingBackgroundColor || forceUnscrolledItem) {
+  if (!canvasBg->mCSSSpecified || forceUnscrolledItem) {
+    MOZ_ASSERT(NS_GET_A(bgcolor) == 255);
     const bool isRootContentDocumentCrossProcess =
         mPresContext->IsRootContentDocumentCrossProcess();
     MOZ_ASSERT_IF(
-        !aFrame->GetParent() && isRootContentDocumentCrossProcess &&
+        isViewport && isRootContentDocumentCrossProcess &&
             mPresContext->HasDynamicToolbar(),
         aBounds.Size() ==
             nsLayoutUtils::ExpandHeightForDynamicToolbar(
@@ -5589,7 +5577,7 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
 
     nsDisplaySolidColor* item = MakeDisplayItem<nsDisplaySolidColor>(
         aBuilder, aFrame, aBounds, bgcolor);
-    if (addedScrollingBackgroundColor && isRootContentDocumentCrossProcess) {
+    if (canvasBg->mCSSSpecified && isRootContentDocumentCrossProcess) {
       item->SetIsCheckerboardBackground();
     }
     AddDisplayItemToBottom(aBuilder, aList, item);
@@ -5668,11 +5656,6 @@ void PresShell::UpdateCanvasBackground() {
   mCanvasBackground = ComputeCanvasBackground();
 }
 
-struct SingleCanvasBackground {
-  nscolor mColor = 0;
-  bool mCSSSpecified = false;
-};
-
 static SingleCanvasBackground ComputeSingleCanvasBackground(nsIFrame* aCanvas) {
   MOZ_ASSERT(aCanvas->IsCanvasFrame());
   const nsIFrame* bgFrame = nsCSSRendering::FindBackgroundFrame(aCanvas);
@@ -5698,7 +5681,7 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
     // If the root element of the document (ie html) has style 'display: none'
     // then the document's background color does not get drawn; return the color
     // we actually draw.
-    return {color, color, false};
+    return {{color, false}, {color, false}};
   }
 
   auto viewportBg = ComputeSingleCanvasBackground(canvas);
@@ -5706,7 +5689,7 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
     viewportBg.mColor =
         NS_ComposeColors(GetDefaultBackgroundColorToDraw(), viewportBg.mColor);
   }
-  nscolor pageColor = viewportBg.mColor;
+  auto pageBg = viewportBg;
   nsCanvasFrame* docElementCb =
       mFrameConstructor->GetDocElementContainingBlock();
   if (canvas != docElementCb) {
@@ -5714,9 +5697,9 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
     // canvas background. Compute the doc element containing block background
     // too.
     MOZ_ASSERT(mPresContext->IsRootPaginatedDocument());
-    pageColor = ComputeSingleCanvasBackground(docElementCb).mColor;
+    pageBg = ComputeSingleCanvasBackground(docElementCb);
   }
-  return {viewportBg.mColor, pageColor, viewportBg.mCSSSpecified};
+  return {viewportBg, pageBg};
 }
 
 nscolor PresShell::ComputeBackstopColor(nsView* aDisplayRoot) {
@@ -6567,6 +6550,9 @@ void PresShell::PaintAndRequestComposite(nsView* aView, PaintFlags aFlags) {
   if (aFlags & PaintFlags::PaintSyncDecodeImages) {
     flags |= PaintInternalFlags::PaintSyncDecodeImages;
   }
+  if (aFlags & PaintFlags::PaintCompositeOffscreen) {
+    flags |= PaintInternalFlags::PaintCompositeOffscreen;
+  }
   PaintInternal(aView, flags);
 }
 
@@ -6657,6 +6643,9 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
     mIsFirstPaint = false;
   }
 
+  const bool offscreen =
+      bool(aFlags & PaintInternalFlags::PaintCompositeOffscreen);
+
   if (!renderer->BeginTransaction(url)) {
     return;
   }
@@ -6696,6 +6685,9 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
       StaticPrefs::image_testing_decode_sync_enabled()) {
     flags |= PaintFrameFlags::SyncDecodeImages;
   }
+  if (aFlags & PaintInternalFlags::PaintCompositeOffscreen) {
+    flags |= PaintFrameFlags::CompositeOffscreen;
+  }
   if (renderer->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
     flags |= PaintFrameFlags::ForWebRender;
   }
@@ -6708,7 +6700,7 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
     return;
   }
 
-  bgcolor = NS_ComposeColors(bgcolor, mCanvasBackground.mViewportColor);
+  bgcolor = NS_ComposeColors(bgcolor, mCanvasBackground.mViewport.mColor);
 
   if (renderer->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
     LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(
@@ -6718,8 +6710,8 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
     WrFiltersHolder wrFilters;
 
     layerManager->SetTransactionIdAllocator(presContext->RefreshDriver());
-    layerManager->EndTransactionWithoutLayer(nullptr, nullptr,
-                                             std::move(wrFilters), &data, 0);
+    layerManager->EndTransactionWithoutLayer(
+        nullptr, nullptr, std::move(wrFilters), &data, 0, offscreen);
     return;
   }
 
@@ -8839,9 +8831,7 @@ nsresult PresShell::EventHandler::DispatchEvent(
     // new mouse/pointer boundary event feature.  However, they stop dispatching
     // "pointermove" in the same case.  Therefore, for now, we should do this
     // only for eMouseMove.
-    if (StaticPrefs::
-            dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed() &&
-        eventContent && aEvent->mMessage == eMouseMove &&
+    if (eventContent && aEvent->mMessage == eMouseMove &&
         (!eventContent->IsInComposedDoc() ||
          eventContent->OwnerDoc() != mPresShell->GetDocument())) {
       const OverOutElementsWrapper* const boundaryEventTargets =
@@ -10232,7 +10222,6 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   LogicalSize reflowSize(wm, size.ISize(wm), NS_UNCONSTRAINEDSIZE);
   ReflowInput reflowInput(mPresContext, target, rcx.get(), reflowSize,
                           ReflowInput::InitFlag::CallerWillInit);
-  reflowInput.mOrthogonalLimit = size.BSize(wm);
 
   if (isRoot) {
     reflowInput.Init(mPresContext);

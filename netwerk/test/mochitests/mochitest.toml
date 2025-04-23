@@ -59,10 +59,7 @@ support-files = [
   "test2.css",
   "test2.css^headers^",
 ]
-prefs = [
-  "javascript.options.large_arraybuffers=true",
-  "javascript.options.experimental.import_attributes=true",
-]
+prefs = [ "javascript.options.large_arraybuffers=true" ]
 
 ["test_1331680.html"]
 skip-if = ["xorigin"]
@@ -103,6 +100,9 @@ support-files = [
 support-files = ["test_accept_header.sjs", "test_import_json_module.mjs"]
 
 ["test_anchor_query_encoding.html"]
+
+["test_android_content_uri.html"]
+skip-if = ["os != 'android'"]
 
 ["test_arraybufferinputstream.html"]
 

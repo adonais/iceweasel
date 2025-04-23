@@ -6,9 +6,9 @@
 
 const {
   Component,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 
 const {
   L10N,
@@ -57,7 +57,7 @@ module.exports = class RequestListColumnWaterfall extends Component {
 
   // FIXME: https://bugzilla.mozilla.org/show_bug.cgi?id=1774507
   UNSAFE_componentWillReceiveProps(nextProps) {
-    if (nextProps.isVisible && nextProps.item.totalTime) {
+    if (nextProps.isVisible && typeof nextProps.item.totalTime === "number") {
       const { connector, item } = nextProps;
       fetchNetworkUpdatePacket(connector.requestData, item, ["eventTimings"]);
     }

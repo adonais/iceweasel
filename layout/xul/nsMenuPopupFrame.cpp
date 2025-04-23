@@ -755,15 +755,15 @@ static FlipType FlipFromAttribute(nsMenuPopupFrame* aFrame) {
   nsAutoString flip;
   aFrame->PopupElement().GetAttr(nsGkAtoms::flip, flip);
   if (flip.EqualsLiteral("none")) {
-    return FlipType_None;
+    return FlipType::None;
   }
   if (flip.EqualsLiteral("both")) {
-    return FlipType_Both;
+    return FlipType::Both;
   }
   if (flip.EqualsLiteral("slide")) {
-    return FlipType_Slide;
+    return FlipType::Slide;
   }
-  return FlipType_Default;
+  return FlipType::Default;
 }
 
 void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
@@ -930,7 +930,7 @@ void nsMenuPopupFrame::InitializePopupAsNativeContextMenu(
   mScreenRect =
       nsRect(CSSPixel::ToAppUnits(CSSIntPoint(aXPos, aYPos)), nsSize());
   mExtraMargin = {};
-  mFlip = FlipType_Default;
+  mFlip = FlipType::Default;
   mPopupAnchor = POPUPALIGNMENT_NONE;
   mPopupAlignment = POPUPALIGNMENT_NONE;
   mPosition = POPUPPOSITION_UNKNOWN;
@@ -1215,22 +1215,22 @@ nsPoint nsMenuPopupFrame::AdjustPositionForAnchorAlign(
   switch (popupAnchor) {
     case POPUPALIGNMENT_LEFTCENTER:
     case POPUPALIGNMENT_RIGHTCENTER:
-      aHFlip = FlipStyle_Outside;
-      aVFlip = FlipStyle_Inside;
+      aHFlip = FlipStyle::Outside;
+      aVFlip = FlipStyle::Inside;
       break;
     case POPUPALIGNMENT_TOPCENTER:
     case POPUPALIGNMENT_BOTTOMCENTER:
-      aHFlip = FlipStyle_Inside;
-      aVFlip = FlipStyle_Outside;
+      aHFlip = FlipStyle::Inside;
+      aVFlip = FlipStyle::Outside;
       break;
     default: {
       FlipStyle anchorEdge =
-          mFlip == FlipType_Both ? FlipStyle_Inside : FlipStyle_None;
-      aHFlip = (popupAnchor == -popupAlign) ? FlipStyle_Outside : anchorEdge;
+          mFlip == FlipType::Both ? FlipStyle::Inside : FlipStyle::None;
+      aHFlip = (popupAnchor == -popupAlign) ? FlipStyle::Outside : anchorEdge;
       if (((popupAnchor > 0) == (popupAlign > 0)) ||
           (popupAnchor == POPUPALIGNMENT_TOPLEFT &&
            popupAlign == POPUPALIGNMENT_TOPLEFT)) {
-        aVFlip = FlipStyle_Outside;
+        aVFlip = FlipStyle::Outside;
       } else {
         aVFlip = anchorEdge;
       }
@@ -1290,10 +1290,11 @@ nscoord nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
   if (aScreenPoint < aScreenBegin) {
     // at its current position, the popup would extend past the left or top
     // edge of the screen, so it will have to be moved or resized.
-    if (aFlip) {
+    if (aFlip != FlipStyle::None) {
       // for inside flips, we flip on the opposite side of the anchor
-      nscoord startpos = aFlip == FlipStyle_Outside ? aAnchorBegin : aAnchorEnd;
-      nscoord endpos = aFlip == FlipStyle_Outside ? aAnchorEnd : aAnchorBegin;
+      nscoord startpos =
+          aFlip == FlipStyle::Outside ? aAnchorBegin : aAnchorEnd;
+      nscoord endpos = aFlip == FlipStyle::Outside ? aAnchorEnd : aAnchorBegin;
 
       // check whether there is more room to the left and right (or top and
       // bottom) of the anchor and put the popup on the side with more room.
@@ -1323,10 +1324,11 @@ nscoord nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
   } else if (aScreenPoint + aSize > aScreenEnd) {
     // at its current position, the popup would extend past the right or
     // bottom edge of the screen, so it will have to be moved or resized.
-    if (aFlip) {
+    if (aFlip != FlipStyle::None) {
       // for inside flips, we flip on the opposite side of the anchor
-      nscoord startpos = aFlip == FlipStyle_Outside ? aAnchorBegin : aAnchorEnd;
-      nscoord endpos = aFlip == FlipStyle_Outside ? aAnchorEnd : aAnchorBegin;
+      nscoord startpos =
+          aFlip == FlipStyle::Outside ? aAnchorBegin : aAnchorEnd;
+      nscoord endpos = aFlip == FlipStyle::Outside ? aAnchorEnd : aAnchorBegin;
 
       // check whether there is more room to the left and right (or top and
       // bottom) of the anchor and put the popup on the side with more room.
@@ -1431,7 +1433,8 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
                "rootFrame's view is not our view's parent???");
 
   // Indicators of whether the popup should be flipped or resized.
-  FlipStyle hFlip = FlipStyle_None, vFlip = FlipStyle_None;
+  FlipStyle hFlip = FlipStyle::None;
+  FlipStyle vFlip = FlipStyle::None;
 
   const nsMargin margin = GetMargin();
 
@@ -1507,17 +1510,21 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
       result.mUsedRect.MoveBy(margin.left, margin.top);
     }
 #ifdef XP_MACOSX
-    // OSX tooltips follow standard flip rule but other popups flip horizontally
-    // not vertically
+    // On macOS, tooltips follow standard flip rule but other popups like
+    // context menus flip horizontally, not vertically.
     if (mPopupType == PopupType::Tooltip) {
-      vFlip = FlipStyle_Outside;
+      vFlip = FlipStyle::Outside;
     } else {
-      hFlip = FlipStyle_Outside;
+      hFlip = FlipStyle::Outside;
     }
 #else
-    // Other OS screen positioned popups can be flipped vertically but never
-    // horizontally
-    vFlip = FlipStyle_Outside;
+    // On Windows and Linux, other OS screen positioned popups can be flipped
+    // vertically. Only the context menu can be flipped horizontally as well, in
+    // order to avoid showing the context menu accidentally under the mouse.
+    vFlip = FlipStyle::Outside;
+    if (mIsContextMenu) {
+      hFlip = FlipStyle::Outside;
+    }
 #endif  // #ifdef XP_MACOSX
   }
 
@@ -1531,7 +1538,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
   // If a panel has flip="none", don't constrain or flip it.
   // Also, always do this for content shells, so that the popup doesn't extend
   // outside the containing frame.
-  if (mInContentShell || mFlip != FlipType_None) {
+  if (mInContentShell || mFlip != FlipType::None) {
     const Maybe<nsRect> constraintRect =
         GetConstraintRect(result.mAnchorRect, rootScreenRect, popupLevel);
 
@@ -1589,7 +1596,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
       // but we can only slide on one axis - the other axis must be "flipped or
       // resized" as normal.
       bool slideHorizontal = false, slideVertical = false;
-      if (mFlip == FlipType_Slide) {
+      if (mFlip == FlipType::Slide) {
         int8_t position = GetAlignmentPosition();
         slideHorizontal = position >= POPUPPOSITION_BEFORESTART &&
                           position <= POPUPPOSITION_AFTEREND;

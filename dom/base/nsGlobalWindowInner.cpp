@@ -2721,6 +2721,13 @@ bool nsGlobalWindowInner::CrossOriginIsolated() const {
   return bc->CrossOriginIsolated();
 }
 
+bool nsGlobalWindowInner::OriginAgentCluster() const {
+  if (DocGroup* docGroup = GetDocGroup()) {
+    return docGroup->IsOriginKeyed();
+  }
+  return false;
+}
+
 WindowContext* TopWindowContext(nsPIDOMWindowInner& aWindow) {
   WindowContext* wc = aWindow.GetWindowContext();
   if (!wc) {
@@ -6274,8 +6281,8 @@ bool nsGlobalWindowInner::RunTimeoutHandler(Timeout* aTimeout) {
   // timeouts from repeatedly opening poups.
   timeout->mPopupState = PopupBlocker::openAbused;
 
-  uint32_t nestingLevel = mTimeoutManager->GetNestingLevel();
-  mTimeoutManager->SetNestingLevel(timeout->mNestingLevel);
+  uint32_t nestingLevel = mTimeoutManager->GetNestingLevelForWindow();
+  mTimeoutManager->SetNestingLevelForWindow(timeout->mNestingLevel);
 
   const char* reason = GetTimeoutReasonString(timeout);
 
@@ -6326,7 +6333,7 @@ bool nsGlobalWindowInner::RunTimeoutHandler(Timeout* aTimeout) {
   // point anyway, and the script context should have already reported
   // the script error in the usual way - so we just drop it.
 
-  mTimeoutManager->SetNestingLevel(nestingLevel);
+  mTimeoutManager->SetNestingLevelForWindow(nestingLevel);
 
   mTimeoutManager->EndRunningTimeout(last_running_timeout);
   timeout->mRunning = false;
@@ -7734,7 +7741,6 @@ nsPIDOMWindowInner::nsPIDOMWindowInner(nsPIDOMWindowOuter* aOuterWindow,
       mIsDocumentLoaded(false),
       mIsHandlingResizeEvent(false),
       mMayHaveDOMActivateEventListeners(false),
-      mMayHavePaintEventListener(false),
       mMayHaveTouchEventListener(false),
       mMayHaveSelectionChangeEventListener(false),
       mMayHaveFormSelectEventListener(false),

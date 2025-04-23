@@ -15,12 +15,15 @@ import {
   kBlendOperations } from
 '../../../capability_info.js';
 import { GPUConst } from '../../../constants.js';
-import { kRegularTextureFormats, kTextureFormatInfo } from '../../../format_info.js';
-import { GPUTest, TextureTestMixin } from '../../../gpu_test.js';
+import {
+
+  kPossibleColorRenderableTextureFormats } from
+'../../../format_info.js';
+import { AllFeaturesMaxLimitsGPUTest, TextureTestMixin } from '../../../gpu_test.js';
 import { clamp } from '../../../util/math.js';
 import { TexelView } from '../../../util/texture/texel_view.js';
 
-class BlendingTest extends GPUTest {
+class BlendingTest extends AllFeaturesMaxLimitsGPUTest {
   createRenderPipelineForTest(colorTargetState) {
     return this.device.createRenderPipeline({
       layout: 'auto',
@@ -202,15 +205,13 @@ expand('blendConstant', (p) => {
   return needsBlendConstant ? [{ r: 0.91, g: 0.82, b: 0.73, a: 0.64 }] : [undefined];
 })
 ).
-beforeAllSubcases((t) => {
+fn((t) => {
   if (
   IsDualSourceBlendingFactor(t.params.srcFactor) ||
   IsDualSourceBlendingFactor(t.params.dstFactor))
   {
-    t.selectDeviceOrSkipTestCase('dual-source-blending');
+    t.skipIfDeviceDoesNotHaveFeature('dual-source-blending');
   }
-}).
-fn((t) => {
   const textureFormat = kBlendingGPUBlendComponentFormat;
   const srcColor = t.params.srcColor;
   const srcColor1 = t.params.srcColor1;
@@ -378,11 +379,6 @@ struct FragOutput {
   );
 });
 
-const kBlendableFormats = kRegularTextureFormats.filter((f) => {
-  const info = kTextureFormatInfo[f];
-  return info.colorRender && info.color.type === 'float';
-});
-
 g.test('blending,formats').
 desc(
   `Test blending results works for all formats that support it, and that blending is not applied
@@ -390,13 +386,13 @@ desc(
 ).
 params((u) =>
 u //
-.combine('format', kBlendableFormats)
+.combine('format', kPossibleColorRenderableTextureFormats)
 ).
-beforeAllSubcases((t) => {
-  t.skipIfTextureFormatNotSupported(t.params.format);
-}).
 fn((t) => {
   const { format } = t.params;
+  t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatNotUsableAsRenderAttachment(format);
+  t.skipIfTextureFormatNotBlendable(format);
 
   const pipeline = t.device.createRenderPipeline({
     layout: 'auto',
@@ -457,7 +453,10 @@ fn((t) => {
   t.device.queue.submit([commandEncoder.finish()]);
 
   const expColor = { R: 0.6, G: 0.6, B: 0.6, A: 0.6 };
-  const expTexelView = TexelView.fromTexelsAsColors(format, (_coords) => expColor);
+  const expTexelView = TexelView.fromTexelsAsColors(
+    format,
+    (_coords) => expColor
+  );
   t.expectTexelViewComparisonIsOkInTexture({ texture: renderTarget }, expTexelView, [1, 1, 1]);
 });
 

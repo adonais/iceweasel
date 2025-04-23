@@ -58,6 +58,7 @@ import {
   setDocument,
   resetLineNumberFormat,
   getEditor,
+  removeEditor,
   lineAtHeight,
   toSourceLine,
   getDocument,
@@ -219,7 +220,7 @@ class Editor extends PureComponent {
   };
 
   setupEditor() {
-    const editor = getEditor(features.codemirrorNext);
+    const editor = getEditor();
 
     // disables the default search shortcuts
     editor._initShortcuts = () => {};
@@ -422,6 +423,7 @@ class Editor extends PureComponent {
       }
       editor.destroy();
       this.setState({ editor: null });
+      removeEditor();
     }
   }
 

@@ -4,13 +4,15 @@
 
 
 :root {
-  --breakpoint-active-color: rgba(44,187,15,.2);
-  --breakpoint-active-color-hover: rgba(44,187,15,.5);
-}
+  --breakpoint-active-color: light-dark(rgba(44,187,15,.2), rgba(0,255,175,.4));
+  --breakpoint-active-color-hover: light-dark(rgba(44,187,15,.5), rgba(0,255,175,.7););
+  --gutter-background-color: var(--theme-sidebar-background);
+  --gutter-border-color: light-dark(var(--theme-splitter-color), var(--theme-toolbar-background));
 
-.theme-dark:root {
-  --breakpoint-active-color: rgba(0,255,175,.4);
-  --breakpoint-active-color-hover: rgba(0,255,175,.7);
+  &[forced-colors-active] {
+    /* overriding variable in HCM so the border is actually visible (see Bug 1953376) */
+    --gutter-border-color: var(--theme-splitter-color);
+  }
 }
 
 /* We don't want the focus style to be displayed on the CodeMirror scrollbars.
@@ -96,6 +98,12 @@
   cursor: default;
 }
 
+.cm-s-mozilla .CodeMirror-gutters,
+.cm-editor .cm-gutters { /* vertical line next to line numbers */
+  border-right-color: var(--gutter-border-color);
+  background-color: var(--gutter-background-color);
+}
+
 .cm-trailingspace {
   background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAYAAAB/qH1jAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3QUXCToH00Y1UgAAACFJREFUCNdjPMDBUc/AwNDAAAFMTAwMDA0OP34wQgX/AQBYgwYEx4f9lQAAAABJRU5ErkJggg==");
   opacity: 0.75;
@@ -111,6 +119,11 @@
   /* Use the translucent yellow background, because we want the text selection
      background (CodeMirror-selected) to show through this. */
   background-color: var(--theme-contrast-background-alpha);
+
+  :root[forced-colors-active] & {
+    border-bottom-width: 2px;
+    color: var(--theme-contrast-color);
+  }
 }
 
 /* CodeMirror 5 search addon input */
@@ -135,6 +148,42 @@
   }
 }
 
+.cm5-search-replace-input {
+  width: 10em;
+
+  &:focus {
+    outline: var(--theme-focus-outline) !important;
+  }
+}
+
+.cm5-search-replace-hint {
+  color: var(--theme-text-color-alt);
+  margin-inline-start: 8px;
+}
+
+/* CodeMirror 5 vim addon prompt/input */
+.cm5-vim-prompt {
+  font-family: monospace;
+  white-space: pre;
+
+  /* When there's a label, add some space before the input */
+  & label input {
+    margin-inline-start: 8px;
+  }
+
+  & input:focus {
+    outline: var(--theme-focus-outline) !important;
+  }
+}
+
+.cm5-vim-prompt-description {
+  color: var(--theme-text-color-alt);
+  margin-inline-start: 8px;
+}
+
+.cm5-vim-notification-error {
+  color: var(--theme-text-color-error);
+}
 
 /* CodeMirror dialogs styling */
 
@@ -333,6 +382,12 @@
   border-radius: 2px;
   /* Override cm6 inline */
   background-color: transparent !important;
+}
+
+/* Make the outline a bit more visible in High Contrast Mode */
+:root[forced-colors-active] .cm-matchhighlight {
+  outline-width: 2px;
+  outline-offset: 2px;
 }
 
 .cm-non-printable-char {

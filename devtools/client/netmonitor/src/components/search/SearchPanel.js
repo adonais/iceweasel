@@ -8,21 +8,25 @@ const {
   Component,
   createRef,
   createFactory,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const { div, span } = dom;
 const Actions = require("resource://devtools/client/netmonitor/src/actions/index.js");
 const {
   PANELS,
 } = require("resource://devtools/client/netmonitor/src/constants.js");
-const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
   connect,
 } = require("resource://devtools/client/shared/vendor/react-redux.js");
-const TreeViewClass = require("resource://devtools/client/shared/components/tree/TreeView.js");
+const TreeViewClass = ChromeUtils.importESModule(
+  "resource://devtools/client/shared/components/tree/TreeView.mjs"
+).default;
 const TreeView = createFactory(TreeViewClass);
 const LabelCell = createFactory(
-  require("resource://devtools/client/shared/components/tree/LabelCell.js")
+  ChromeUtils.importESModule(
+    "resource://devtools/client/shared/components/tree/LabelCell.mjs"
+  ).default
 );
 const {
   SearchProvider,

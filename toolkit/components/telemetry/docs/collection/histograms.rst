@@ -273,16 +273,6 @@ Note that ``nsITelemetry.getHistogramById()`` will throw an ``NS_ERROR_FAILURE``
 
   Adding a new Telemetry probe is not possible with Artifact builds. A full build is needed.
 
-For histograms measuring time, TelemetryStopwatch can be used to avoid working with Dates manually:
-
-.. code-block:: js
-
-  TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_E10S_MS");
-  TelemetryStopwatch.finish("FX_TAB_SWITCH_TOTAL_E10S_MS");
-
-  TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_MS");
-  TelemetryStopwatch.cancel("FX_TAB_SWITCH_TOTAL_MS");
-
 Adding a C++ Probe
 ==================
 
@@ -348,15 +338,3 @@ Probes in native code can also use the `nsITelemetry <https://searchfox.org/mozi
 .. warning::
 
   Telemetry accumulations are designed to be cheap, not free. If you wish to accumulate values in a performance-sensitive piece of code, store the accumualtions locally and accumulate after the performance-sensitive piece ("hot path") has completed.
-
-The ``Telemetry.h`` header also declares the helper classes ``AutoTimer`` and ``AutoCounter``. Objects of these types automatically record a histogram value when they go out of scope:
-
-.. code-block:: cpp
-
-  nsresult
-  nsPluginHost::StopPluginInstance(nsNPAPIPluginInstance* aInstance)
-  {
-    Telemetry::AutoTimer<Telemetry::PLUGIN_SHUTDOWN_MS> timer;
-    ...
-    return NS_OK;
-  }

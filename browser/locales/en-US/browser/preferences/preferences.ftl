@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 do-not-track-removal = We no longer support the “Do Not Track” signal
-do-not-track-learn-more = Learn more
 
 global-privacy-control-description =
     .label = Tell websites not to sell or share my data
@@ -156,9 +155,6 @@ windows-launch-on-login =
 windows-launch-on-login-disabled = This preference has been disabled in Windows. To change, visit <a data-l10n-name="startup-link">Startup Apps</a> in System settings.
 windows-launch-on-login-profile-disabled = Enable this preference by checking “{ profile-manager-use-selected.label }” in the “Choose User Profile” window.
 
-startup-restore-warn-on-quit =
-    .label = Warn you when quitting the browser
-
 disable-extension =
     .label = Disable Extension
 
@@ -309,9 +305,21 @@ preferences-web-appearance-override-warning2 =
 # to adapt to your language, but should not be changed.
 preferences-web-appearance-footer = Manage { -brand-short-name } themes in <a data-l10n-name="themes-link">Extensions & Themes</a>
 
-preferences-colors-header = Colors
+preferences-contrast-control-header = Contrast Control
 
-preferences-colors-description = Override { -brand-short-name }’s default colors for text, website backgrounds, and links.
+preferences-contrast-control-description = Websites have a variety of foreground and background colors. Configure { -brand-short-name } to use the same colors across websites for improved readability.
+
+preferences-contrast-control-use-platform-settings =
+    .label = Automatic (use system settings)
+    .accesskey = A
+
+preferences-contrast-control-off =
+    .label = Off
+    .accesskey = O
+
+preferences-contrast-control-custom =
+    .label = Custom
+    .accesskey = C
 
 preferences-colors-manage-button =
     .label = Manage Colors…
@@ -536,10 +544,6 @@ update-application-check-choose =
     .label = Check for updates but let you choose to install them
     .accesskey = C
 
-update-application-manual =
-    .label = Never check for updates (not recommended)
-    .accesskey = N
-
 update-application-background-enabled =
     .label = When { -brand-short-name } is not running
     .accesskey = W
@@ -637,13 +641,9 @@ browsing-picture-in-picture-toggle-enabled =
     .label = Enable Picture-in-Picture video controls
     .accesskey = E
 
-browsing-picture-in-picture-learn-more = Learn more
-
 browsing-media-control =
     .label = Control media via keyboard, headset, or virtual interface
     .accesskey = v
-
-browsing-media-control-learn-more = Learn more
 
 browsing-cfr-recommendations =
     .label = Recommend extensions as you browse
@@ -651,8 +651,6 @@ browsing-cfr-recommendations =
 browsing-cfr-features =
     .label = Recommend features as you browse
     .accesskey = f
-
-browsing-cfr-recommendations-learn-more = Learn more
 
 ## General Section - Proxy
 
@@ -741,8 +739,6 @@ home-prefs-highlights-options-bookmarks =
     .label = Bookmarks
 home-prefs-highlights-option-most-recent-download =
     .label = Most recent download
-home-prefs-highlights-option-saved-to-pocket =
-    .label = Pages saved to { -pocket-brand-name }
 
 home-prefs-recent-activity-header =
     .label = Recent activity
@@ -1183,19 +1179,6 @@ sitedata-delete-on-close =
 
 sitedata-delete-on-close-private-browsing2 = Based on your history settings, { -brand-short-name } deletes cookies and site data from your session when you close the browser.
 
-sitedata-allow-cookies-option =
-    .label = Accept cookies and site data
-    .accesskey = A
-
-sitedata-disallow-cookies-option =
-    .label = Block cookies and site data
-    .accesskey = B
-
-# This label means 'type of content that is blocked', and is followed by a drop-down list with content types below.
-# The list items are the strings named sitedata-block-*-option*.
-sitedata-block-desc = Type blocked
-    .accesskey = T
-
 sitedata-option-block-cross-site-trackers =
     .label = Cross-site trackers
 sitedata-option-block-cross-site-tracking-cookies =
@@ -1478,6 +1461,8 @@ collection-header2 = { -brand-short-name } Data Collection and Use
 
 preferences-collection-description = We strive to provide you with choices and collect only the minimal data necessary to improve { -brand-product-name } for everyone.
 preferences-collection-privacy-notice = View Privacy Notice
+preferences-across-profiles = These settings apply to every { -brand-product-name } profile on this device.
+preferences-view-profiles = View all profiles
 
 collection-health-report-telemetry-disabled = You’re no longer allowing { -vendor-short-name } to capture technical and interaction data. All past data will be deleted within 30 days.
 collection-health-report-telemetry-disabled-link = Learn more

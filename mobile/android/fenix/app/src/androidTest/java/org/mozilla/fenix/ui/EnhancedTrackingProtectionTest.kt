@@ -17,6 +17,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getEnhancedTrackingProtectionAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -81,6 +82,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
             openExceptionsLearnMoreLink()
         }
         browserScreen {
+            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
             verifyETPLearnMoreURL()
         }
     }
@@ -498,8 +500,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
         // With Standard TrackingProtection settings
         val genericWebPage = getGenericAsset(mockWebServer, 1)
         val testPage = mockWebServer.url("pages/cross-site-cookies.html").toString().toUri()
-        val originSite = "https://mozilla-mobile.github.io"
-        val currentSite = "http://localhost:${mockWebServer.port}"
+        val originHost = "mozilla-mobile.github.io"
+        val currentHost = "localhost"
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericWebPage.url) {
@@ -508,7 +510,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
         }.enterURLAndEnterToBrowser(testPage) {
             waitForPageToLoad()
         }.clickRequestStorageAccessButton {
-            verifyCrossOriginCookiesPermissionPrompt(originSite, currentSite)
+            verifyCrossOriginCookiesPermissionPrompt(originHost, currentHost)
         }.clickPagePermissionButton(allow = false) {
             verifyPageContent("access denied")
         }
@@ -521,8 +523,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
         // With Standard TrackingProtection settings
         val genericWebPage = getGenericAsset(mockWebServer, 1)
         val testPage = mockWebServer.url("pages/cross-site-cookies.html").toString().toUri()
-        val originSite = "https://mozilla-mobile.github.io"
-        val currentSite = "http://localhost:${mockWebServer.port}"
+        val originHost = "mozilla-mobile.github.io"
+        val currentHost = "localhost"
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericWebPage.url) {
@@ -531,7 +533,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
         }.enterURLAndEnterToBrowser(testPage) {
             waitForPageToLoad()
         }.clickRequestStorageAccessButton {
-            verifyCrossOriginCookiesPermissionPrompt(originSite, currentSite)
+            verifyCrossOriginCookiesPermissionPrompt(originHost, currentHost)
         }.clickPagePermissionButton(allow = true) {
             verifyPageContent("access granted")
         }

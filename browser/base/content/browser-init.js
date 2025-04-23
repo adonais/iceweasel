@@ -101,6 +101,17 @@ var gBrowserInit = {
       );
       toolbarMenubar.setAttribute("data-l10n-attrs", "toolbarname");
     }
+    // If opening a Taskbar Tab window, add an attribute to the top-level element
+    // to inform window styling.
+    if (window.arguments && window.arguments[1]) {
+      let extraOptions = window.arguments[1];
+      if (
+        extraOptions instanceof Ci.nsIWritablePropertyBag2 &&
+        extraOptions.hasKey("taskbartab")
+      ) {
+        window.document.documentElement.setAttribute("taskbartab", "");
+      }
+    }
 
     // Run menubar initialization first, to avoid CustomTitlebar code picking
     // up mutations from it and causing a reflow.
@@ -221,7 +232,10 @@ var gBrowserInit = {
     // have been initialized.
     Services.obs.notifyObservers(window, "browser-window-before-show");
 
-    if (!window.toolbar.visible) {
+    if (
+      !window.toolbar.visible ||
+      window.document.documentElement.hasAttribute("taskbartab")
+    ) {
       // adjust browser UI for popups
       gURLBar.readOnly = true;
     }
@@ -231,6 +245,7 @@ var gBrowserInit = {
     Win10TabletModeUpdater.init();
     CombinedStopReload.ensureInitialized();
     gPrivateBrowsingUI.init();
+    TaskbarTabUI.init(window);
     BrowserPageActions.init();
     if (gToolbarKeyNavEnabled) {
       ToolbarKeyboardNavigator.init();
@@ -255,22 +270,26 @@ var gBrowserInit = {
       gURLBar.removeAttribute("focused");
 
       let swapBrowsers = () => {
-        try {
+        if (gBrowser.isTabGroupLabel(tabToAdopt)) {
+          gBrowser.adoptTabGroup(tabToAdopt.group, 0);
+          gBrowser.removeTab(gBrowser.selectedTab);
+        } else {
           gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToAdopt);
-        } catch (e) {
-          console.error(e);
         }
 
         // Clear the reference to the tab once its adoption has been completed.
         this._clearTabToAdopt();
       };
-      if (tabToAdopt.linkedBrowser.isRemoteBrowser) {
+      if (
+        gBrowser.isTab(tabToAdopt) &&
+        !tabToAdopt.linkedBrowser.isRemoteBrowser
+      ) {
+        swapBrowsers();
+      } else {
         // For remote browsers, wait for the paint event, otherwise the tabs
         // are not yet ready and focus gets confused because the browser swaps
         // out while tabs are switching.
         addEventListener("MozAfterPaint", swapBrowsers, { once: true });
-      } else {
-        swapBrowsers();
       }
     }
 
@@ -465,6 +484,7 @@ var gBrowserInit = {
     });
 
     window.addEventListener("mousemove", MousePosTracker);
+    window.addEventListener("mouseout", MousePosTracker);
     window.addEventListener("dragover", MousePosTracker);
 
     gNavToolbox.addEventListener("customizationstarting", CustomizationHandler);
@@ -1024,6 +1044,11 @@ var gBrowserInit = {
     if (gToolbarKeyNavEnabled) {
       ToolbarKeyboardNavigator.uninit();
     }
+
+    // Bug 1952900 to allow switching to unload category without leaking
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
+    ).LinkPreview.teardown(window);
 
     FirefoxViewHandler.uninit();
 

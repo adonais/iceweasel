@@ -2615,6 +2615,12 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
     case JSMetric::DESERIALIZE_US:
       glean::performance_clone_deserialize::time.AccumulateRawDuration(
           TimeDuration::FromMicroseconds(sample));
+      // GLAM EXPERIMENT
+      // This metric is temporary, disabled by default, and will be enabled only
+      // for the purpose of experimenting with client-side sampling of data for
+      // GLAM use. See Bug 1947604 for more information.
+      glean::glam_experiment::time.AccumulateRawDuration(
+          TimeDuration::FromMicroseconds(sample));
       break;
 #endif  // MOZ_WIDGET_ANDROID
     case JSMetric::GC_MS:
@@ -2887,6 +2893,12 @@ static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
     case JSUseCounter::OPTIMIZE_GET_ITERATOR_FUSE:
       SetUseCounter(obj, eUseCounter_custom_JS_optimizeGetIterator_fuse);
       return;
+    case JSUseCounter::OPTIMIZE_ARRAY_SPECIES_FUSE:
+      SetUseCounter(obj, eUseCounter_custom_JS_optimizeArraySpecies_fuse);
+      return;
+    case JSUseCounter::OPTIMIZE_PROMISE_LOOKUP_FUSE:
+      SetUseCounter(obj, eUseCounter_custom_JS_optimizePromiseLookup_fuse);
+      return;
     case JSUseCounter::THENABLE_USE:
       SetUseCounter(obj, eUseCounter_custom_JS_thenable);
       return;
@@ -2895,6 +2907,9 @@ static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
       return;
     case JSUseCounter::THENABLE_USE_STANDARD_PROTO:
       SetUseCounter(obj, eUseCounter_custom_JS_thenable_standard_proto);
+      return;
+    case JSUseCounter::THENABLE_USE_OBJECT_PROTO:
+      SetUseCounter(obj, eUseCounter_custom_JS_thenable_object_proto);
       return;
     case JSUseCounter::LEGACY_LANG_SUBTAG:
       SetUseCounter(obj, eUseCounter_custom_JS_legacy_lang_subtag);

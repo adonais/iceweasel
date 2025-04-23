@@ -1284,9 +1284,11 @@ static int tone_lpc(const opus_val16 *x, int len, int delay, opus_val32 *lpc) {
 #endif
    num1 = MULT32_32_Q31(r02,r11) - MULT32_32_Q31(r01,r12);
    if (num1 >= den) lpc[1] = QCONST32(1.f, 29);
+   else if (num1 <= -den) lpc[1] = -QCONST32(1.f, 29);
    else lpc[1] = frac_div32_q29(num1, den);
    num0 = MULT32_32_Q31(r00,r12) - MULT32_32_Q31(r02,r01);
-   if (HALF32(num0) >= den) lpc[0] = QCONST32(1.999f, 29);
+   if (HALF32(num0) >= den) lpc[0] = QCONST32(1.999999f, 29);
+   else if (HALF32(num0) <= -den) lpc[0] = -QCONST32(1.999999f, 29);
    else lpc[0] = frac_div32_q29(num0, den);
    /*printf("%f %f\n", lpc[0], lpc[1]);*/
    return 0;
@@ -1319,7 +1321,7 @@ static opus_val16 tone_detect(const celt_sig *in, const celt_sig *prefilter_mem,
       fail = tone_lpc(x, N+overlap, delay, lpc);
    }
    /* Check that our filter has complex roots. */
-   if (!fail && MULT32_32_Q31(lpc[0],lpc[0]) + MULT32_32_Q31(QCONST32(4.f, 29), lpc[1]) < 0) {
+   if (!fail && MULT32_32_Q31(lpc[0],lpc[0]) + MULT32_32_Q31(QCONST32(3.999999, 29), lpc[1]) < 0) {
       /* Squared radius of the poles. */
       *toneishness = -lpc[1];
 #ifdef FIXED_POINT
@@ -2377,7 +2379,7 @@ int celt_encode_with_ec(CELTEncoder * OPUS_RESTRICT st, const opus_res * pcm, in
    ALLOC(fine_priority, nbEBands, int);
 
    /* bits =           packet size                    - where we are - safety*/
-   bits = (((opus_int32)nbCompressedBytes*8)<<BITRES) - ec_tell_frac(enc) - 1;
+   bits = (((opus_int32)nbCompressedBytes*8)<<BITRES) - (opus_int32)ec_tell_frac(enc) - 1;
    anti_collapse_rsv = isTransient&&LM>=2&&bits>=((LM+2)<<BITRES) ? (1<<BITRES) : 0;
    bits -= anti_collapse_rsv;
    signalBandwidth = end-1;

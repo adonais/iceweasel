@@ -17,20 +17,18 @@ XPCOM_MANIFESTS += [
 
 EXPORTS.mozilla.dom += [
     "Notification.h",
-    "NotificationEvent.h",
 ]
 
 EXPORTS.mozilla.dom.notification += [
     "IPCUtils.h",
     "NotificationChild.h",
     "NotificationParent.h",
-    "NotificationUtils.h",  # Exported for ContentParent for now
+    "NotificationUtils.h",
 ]
 
 UNIFIED_SOURCES += [
     "Notification.cpp",
     "NotificationChild.cpp",
-    "NotificationEvent.cpp",
     "NotificationParent.cpp",
     "NotificationUtils.cpp",
 ]

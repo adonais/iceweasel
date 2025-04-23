@@ -49,7 +49,6 @@
 #  include "mozilla/a11y/LocalAccessible.h"
 #endif
 
-#include "nsUXThemeData.h"
 #include "nsIUserIdleServiceInternal.h"
 
 #include "IMMHandler.h"
@@ -134,7 +133,8 @@ void SetWindowStyles(HWND, const WindowStyles&);
 
 }  // namespace mozilla::widget
 
-class nsWindow final : public nsBaseWidget {
+class nsWindow final : public nsBaseWidget,
+                       public mozilla::SupportsThreadSafeWeakPtr<nsWindow> {
  public:
   using Styles = mozilla::widget::WindowStyles;
   using WindowHook = mozilla::widget::WindowHook;
@@ -142,6 +142,7 @@ class nsWindow final : public nsBaseWidget {
   using WidgetEventTime = mozilla::WidgetEventTime;
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(nsWindow)
 
   explicit nsWindow(bool aIsChildWindow = false);
 

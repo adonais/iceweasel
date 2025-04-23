@@ -461,30 +461,6 @@ nsCString WebCodecsConfigurationChangeList::ToString() const {
   return rv;
 }
 
-using CodecChange = StrongTypedef<nsString, struct CodecChangeTypeWebCodecs>;
-using DimensionsChange =
-    StrongTypedef<gfx::IntSize, struct DimensionsChangeTypeWebCodecs>;
-using DisplayDimensionsChange =
-    StrongTypedef<Maybe<gfx::IntSize>,
-                  struct DisplayDimensionsChangeTypeWebCodecs>;
-using BitrateChange =
-    StrongTypedef<Maybe<uint32_t>, struct BitrateChangeTypeWebCodecs>;
-using FramerateChange =
-    StrongTypedef<Maybe<double>, struct FramerateChangeTypeWebCodecs>;
-using HardwareAccelerationChange =
-    StrongTypedef<dom::HardwareAcceleration,
-                  struct HardwareAccelerationChangeTypeWebCodecs>;
-using AlphaChange =
-    StrongTypedef<dom::AlphaOption, struct AlphaChangeTypeWebCodecs>;
-using ScalabilityModeChange =
-    StrongTypedef<Maybe<nsString>, struct ScalabilityModeChangeTypeWebCodecs>;
-using BitrateModeChange = StrongTypedef<dom::VideoEncoderBitrateMode,
-                                        struct BitrateModeChangeTypeWebCodecs>;
-using LatencyModeChange =
-    StrongTypedef<dom::LatencyMode, struct LatencyModeTypeChangeTypeWebCodecs>;
-using ContentHintChange =
-    StrongTypedef<Maybe<nsString>, struct ContentHintTypeTypeWebCodecs>;
-
 bool WebCodecsConfigurationChangeList::CanAttemptReconfigure() const {
   for (const auto& change : mChanges) {
     if (change.is<CodecChange>() || change.is<HardwareAccelerationChange>() ||
@@ -631,7 +607,7 @@ bool IsSupportedVideoCodec(const nsAString& aCodec) {
     if (IsH265CodecString(aCodec)) {
       // H265 is supported only on MacOS in Nightly for now.
       return StaticPrefs::dom_media_webcodecs_h265_enabled() &&
-             StaticPrefs::media_hevc_enabled() && IsOnMacOS();
+             StaticPrefs::media_hevc_enabled() && (IsOnMacOS() || IsOnLinux());
     }
     return false;
   }

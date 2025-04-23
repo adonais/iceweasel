@@ -50,6 +50,7 @@ dom/media/webspeech/recognition/energy_endpointer.h
 dom/media/webspeech/recognition/energy_endpointer_params.cc
 dom/media/webspeech/recognition/energy_endpointer_params.h
 dom/media/webvtt/vtt.sys.mjs
+dom/security/sanitizer/safe-default-configuration.json
 dom/tests/mochitest/ajax/
 dom/tests/mochitest/dom-level1-core/
 dom/tests/mochitest/dom-level2-core/
@@ -168,6 +169,7 @@ testing/gtest/gtest/
 testing/mochitest/pywebsocket3/
 testing/modules/sinon-7.2.7.js
 testing/mozbase/mozproxy/mozproxy/backends/mitm/scripts/catapult/
+testing/performance/mobile-startup/newssite-nuxt/
 testing/talos/talos/tests/devtools/addon/content/pages/
 testing/talos/talos/tests/dromaeo/
 testing/talos/talos/tests/kraken/

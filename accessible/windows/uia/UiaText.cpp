@@ -6,7 +6,7 @@
 
 #include "UiaText.h"
 
-#include "ia2AccessibleHypertext.h"
+#include "MsaaAccessible.h"
 #include "mozilla/a11y/States.h"
 #include "TextLeafRange.h"
 #include "UiaTextRange.h"
@@ -34,12 +34,14 @@ static SAFEARRAY* TextLeafRangesToUiaRanges(
   return uiaRanges;
 }
 
+// IUnknown
+IMPL_IUNKNOWN1(UiaText, ITextProvider)
+
 // UiaText
 
-Accessible* UiaText::Acc() const {
-  auto* hyp = static_cast<const ia2AccessibleHypertext*>(this);
-  return hyp->Acc();
-}
+UiaText::UiaText(MsaaAccessible* aMsaa) : mMsaa(aMsaa) {}
+
+Accessible* UiaText::Acc() const { return mMsaa->Acc(); }
 
 // ITextProvider methods
 
@@ -163,7 +165,12 @@ UiaText::get_SupportedTextSelection(
   if (!acc) {
     return CO_E_OBJNOTCONNECTED;
   }
-  if (acc->State() & states::SELECTABLE_TEXT) {
+  if (!acc->IsHyperText()) {
+    // Currently, the SELECTABLE_TEXT state is only exposed on HyperText
+    // Accessibles.
+    acc = acc->Parent();
+  }
+  if (acc && acc->State() & states::SELECTABLE_TEXT) {
     *aRetVal = SupportedTextSelection_Multiple;
   } else {
     *aRetVal = SupportedTextSelection_None;

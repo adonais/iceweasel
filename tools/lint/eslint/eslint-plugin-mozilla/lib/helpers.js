@@ -718,13 +718,13 @@ module.exports = {
 
   get globalScriptPaths() {
     return [
-      path.join(this.rootDir, "browser", "base", "content", "browser.xhtml"),
+      path.join(this.rootDir, "browser", "base", "content", "browser-main.js"),
       path.join(
         this.rootDir,
         "browser",
         "base",
         "content",
-        "global-scripts.inc"
+        "global-scripts.js"
       ),
     ];
   },
@@ -793,39 +793,5 @@ module.exports = {
       return node.name;
     }
     return null;
-  },
-
-  /**
-   * Gets the scope for a node taking account of where the scope function
-   * is available (supports node versions earlier than 8.37.0).
-   *
-   * @param {object} context
-   *   The context passed from ESLint.
-   * @param {object} node
-   *   The node to get the scope for.
-   * returns {function}
-   *   The getScope function object.
-   */
-  getScope(context, node) {
-    return context.sourceCode?.getScope
-      ? context.sourceCode.getScope(node)
-      : context.getScope();
-  },
-
-  /**
-   * Gets the ancestors for a node taking account of where the ancestors function
-   * is available (supports node versions earlier than 8.38.0).
-   *
-   * @param {object} context
-   *   The context passed from ESLint.
-   * @param {object} node
-   *   The node to get the scope for.
-   * returns {function}
-   *   The getScope function object.
-   */
-  getAncestors(context, node) {
-    return context.sourceCode?.getAncestors
-      ? context.sourceCode.getAncestors(node)
-      : context.getAncestors();
   },
 };

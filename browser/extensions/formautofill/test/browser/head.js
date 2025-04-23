@@ -84,6 +84,20 @@ const ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS =
   "address/capture_address_on_page_navigation.html";
 const FORM_IFRAME_SANDBOXED_URL =
   "https://example.org" + HTTP_TEST_PATH + "autocomplete_iframe_sandboxed.html";
+const FORMS_WITH_DYNAMIC_FORM_CHANGE =
+  "https://example.org" + HTTP_TEST_PATH + "dynamic_forms.html";
+const FORM_WITH_USER_INITIATED_FORM_CHANGE =
+  "https://example.org" +
+  HTTP_TEST_PATH +
+  "dynamic_form_changing_on_user_interaction.html";
+const FORMLESS_FIELDS_WITH_DYNAMIC_FORM_CHANGE_AFTER_NODE_MUTATIONS =
+  "https://example.org" +
+  HTTP_TEST_PATH +
+  "dynamic_formless_fields_updated_due_to_node_mutations.html";
+const FORMLESS_FIELDS_WITH_DYNAMIC_FORM_CHANGE_AFTER_VISIBILITY_STATE_CHANGE =
+  "https://example.org" +
+  HTTP_TEST_PATH +
+  "dynamic_formless_fields_updated_due_to_visiblity_state_change.html";
 const CREDITCARD_FORM_URL =
   "https://example.org" +
   HTTP_TEST_PATH +
@@ -378,6 +392,28 @@ async function waitForStorageChangedEvents(...eventTypes) {
 }
 
 /**
+ * Sets up a promise that resolves when the FormAutofillParent sends out a notification
+ * that the field detection processes have completed in all FormAutofill children.
+ *
+ * @returns {Promise}
+ */
+async function getFieldDetectionCompletedPromiseResolver() {
+  let fieldDetectionCompletedPromiseResolver;
+  const fieldDetectionCompletedObserver = {
+    fieldDetectionCompleted() {
+      info(`All fields detected.`);
+      fieldDetectionCompletedPromiseResolver();
+      FormAutofillParent.removeMessageObserver(fieldDetectionCompletedObserver);
+    },
+  };
+
+  return new Promise(resolve => {
+    fieldDetectionCompletedPromiseResolver = resolve;
+    FormAutofillParent.addMessageObserver(fieldDetectionCompletedObserver);
+  });
+}
+
+/**
  * Wait until the element found matches the expected autofill value
  *
  * @param {object} target
@@ -488,7 +524,10 @@ async function focusUpdateSubmitForm(target, args, submit = true) {
 
     for (const [selector, value] of Object.entries(obj.newValues)) {
       element = form.querySelector(selector);
-      if (content.HTMLInputElement.isInstance(element)) {
+      if (
+        content.HTMLInputElement.isInstance(element) ||
+        content.HTMLTextAreaElement.isInstance(element)
+      ) {
         element.setUserInput(value);
       } else if (
         content.HTMLSelectElement.isInstance(element) &&
@@ -975,7 +1014,7 @@ function verifySectionAutofillResult(section, result, expectedSection) {
 function getSelectorFromFieldDetail(fieldDetail) {
   // identifier is set with `${element.id}/${element.name}`;
   const id = fieldDetail.identifier.split("/")[0];
-  return `input#${id}, select#${id}`;
+  return `input#${id}, select#${id}, textarea#${id}`;
 }
 
 /**
@@ -1092,7 +1131,11 @@ async function findContext(browser, selector) {
         // TODO: replace the following with an approach that can precisely find the
         // element we want without basing on visibility.
         const e = content.document.querySelector(selector);
-        if (e && content.HTMLInputElement.isInstance(e)) {
+        if (
+          e &&
+          (content.HTMLInputElement.isInstance(e) ||
+            content.HTMLTextAreaElement.isInstance(e))
+        ) {
           return !!(
             e.checkVisibility({
               checkOpacity: true,

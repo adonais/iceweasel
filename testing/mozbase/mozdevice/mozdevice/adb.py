@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 import traceback
+from shutil import copy2 as shutil_copy2
 from shutil import copytree
 from threading import Thread
 
@@ -1162,14 +1163,15 @@ class ADBDevice(ADBCommand):
             devices = ADBHost(
                 adb=self._adb_path, adb_host=self._adb_host, adb_port=self._adb_port
             ).devices()
-            if len(devices) > 1:
+            ready_devices = [d for d in devices if d["state"] == "device"]
+            if len(ready_devices) > 1:
                 raise ValueError(
                     "ADBDevice called with multiple devices "
-                    "attached and no device specified"
+                    "available and no device specified"
                 )
-            if len(devices) == 0:
-                raise ADBError("No connected devices found.")
-            device = devices[0]
+            if len(ready_devices) == 0:
+                raise ADBError("No ready devices found.")
+            device = ready_devices[0]
 
         # Allow : in device serial if it matches a tcpip device serial.
         re_device_serial_tcpip = re.compile(r"[^:]+:[0-9]+$")
@@ -3009,7 +3011,28 @@ class ADBDevice(ADBCommand):
             temp_parent = tempfile.mkdtemp()
             remote_name = os.path.basename(remote)
             new_local = os.path.join(temp_parent, remote_name)
-            copytree(local, new_local)
+
+            # The build system puts the tests in objdir, as symlinks pointing
+            # to the actual file in the source tree. When the symlink target is
+            # removed (e.g. by updating the checkout), the symlink itself is
+            # not removed by `./mach build`. By default, shutil.copytree tries
+            # to read symlinks and raises an error in this case (bug 1950855).
+            # Ignore dangling symlinks to avoid this issue.
+            #
+            # shutil.copytree's ignore_dangling_symlinks=True should be used,
+            # but https://bugzilla.mozilla.org/show_bug.cgi?id=1950855#c1 shows
+            # that it is buggy. As an alternative, customize copy_function:
+            def copy_ignore_broken_link(src, dst):
+                try:
+                    return shutil_copy2(src, dst)
+                except OSError as e:
+                    if e.errno == 2 and os.path.islink(src):
+                        self._logger.debug("Ignoring broken symlink: %s" % src)
+                    else:
+                        raise e
+
+            copytree(local, new_local, copy_function=copy_ignore_broken_link)
+
             local = new_local
             # See do_sync_push in
             # https://android.googlesource.com/platform/system/core/+/master/adb/file_sync_client.cpp
@@ -4063,6 +4086,57 @@ class ADBDevice(ADBCommand):
         if replace:
             cmd.append("-r")
         cmd.append(apk_path)
+        data = self.command_output(cmd, timeout=timeout)
+        if data.find("Success") == -1:
+            raise ADBError(f"install failed for {apk_path}. Got: {data}")
+        packages_after = set(self.shell_output(dump_packages, attempts=3).split("\n"))
+        packages_diff = packages_after - packages_before
+        package_name = None
+        re_pkg = re.compile(r"\s+pkg=Package{[^ ]+ (.*)}")
+        for diff in packages_diff:
+            match = re_pkg.match(diff)
+            if match:
+                package_name = match.group(1)
+                break
+        return package_name
+
+    def install_app_baseline_profile(self, apk_path, replace=False, timeout=None):
+        """Installs an app on the device. Utilize profgen to first extract out the
+        .dm profile and use `adb install-multiple` to properly install the apk along
+        with the generated baseline profile.
+
+        :param str apk_path: The apk file name to be installed.
+        :param bool replace: If True, replace existing application.
+        :param int timeout: The maximum time in
+            seconds for any spawned adb process to complete before
+            throwing an ADBTimeoutError.
+            This timeout is per adb call. The total time spent
+            may exceed this value. If it is not specified, the value
+            set in the ADB constructor is used.
+        :return: string - name of installed package.
+        :raises: :exc:`ADBTimeoutError`
+                 :exc:`ADBError`
+        """
+        # dm files will always share the same stem as the apk file.
+        dm_path = apk_path[:-3] + "dm"
+        command = [
+            "profgen",
+            "extractProfile",
+            "--apk",
+            apk_path,
+            "--output-dex-metadata",
+            dm_path,
+            "--profile-format",
+            "V0_1_5_S",
+        ]
+        subprocess.run(command, check=True)
+        dump_packages = "dumpsys package packages"
+        packages_before = set(self.shell_output(dump_packages, attempts=3).split("\n"))
+        cmd = ["install-multiple"]
+        if replace:
+            cmd.append("-r")
+        cmd.append(apk_path)
+        cmd.append(dm_path)
         data = self.command_output(cmd, timeout=timeout)
         if data.find("Success") == -1:
             raise ADBError(f"install failed for {apk_path}. Got: {data}")

@@ -126,9 +126,9 @@
 
   #vertical-pinned-tabs-container &,
   #tabbrowser-tabs[orient="vertical"] & {
-    height: 100%;
-    margin: 0 -2px;
+    height: auto;
     width: 2px;
+    margin: 3px 0;
   }
 }
 

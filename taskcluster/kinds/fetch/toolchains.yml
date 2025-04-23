@@ -72,6 +72,20 @@ gcc-11.4.0:
         strip-components: 1
         add-prefix: gcc-source/
 
+gcc-14.2.0:
+    description: GCC 14.2.0 source code
+    fetch:
+        type: static-url
+        url: https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz
+        sha256: a7b39bc69cbf9e25826c5a60ab26477001f7c08d85cec04bc0e29cabed6f3cc9
+        size: 92306460
+        gpg-signature:
+            sig-url: "{url}.sig"
+            key-path: build/unix/build-gcc/D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62.key
+        artifact-name: gcc-source.tar.zst
+        strip-components: 1
+        add-prefix: gcc-source/
+
 gmp-6.1.0:
     description: GMP 6.1.0 source code
     fetch:
@@ -212,12 +226,12 @@ wine:
         strip-components: 1
         add-prefix: wine-source/
 
-cbindgen-0.26.0:
+cbindgen-0.28.0:
     description: cbindgen source code
     fetch:
         type: git
         repo: https://github.com/mozilla/cbindgen
-        revision: 703b53c06f9fe2dbc0193d67626558cfa84a0f62
+        revision: bd78bbe59b10eda6ef1255e4acda95c56c6d0279
 
 cctools-port:
     description: cctools-port source code
@@ -362,11 +376,11 @@ clang-19:
         revision: cd708029e0b2869e80abe31ddb175f7c35361f90
 
 clang-20:
-    description: clang 20.1.0-rc2 source code
+    description: clang 20.1.0 source code
     fetch:
         type: git
         repo: https://github.com/llvm/llvm-project
-        revision: 20621e2609ac49dcf01c4353dbfd69626cea3015
+        revision: 24a30daaa559829ad079f2ff7f73eb4e18095f88
 
 clang-trunk:
     description: clang main branch source code
@@ -463,11 +477,11 @@ dump-syms:
         revision: ca31661882b190c97a6869c0add73b27000c92c5
 
 rust-minidump:
-    description: rust-minidump 0.23.0 source code (for minidump-stackwalk)
+    description: rust-minidump 0.25.0 source code (for minidump-stackwalk)
     fetch:
         type: git
         repo: https://github.com/rust-minidump/rust-minidump/
-        revision: fdb2c98a659a54b0077e5bad7f7dfa28a55c5f1d
+        revision: 4bc0e1bb3a19f22d5b7c4057112197ac5f6ea2d9
 
 fix-stacks:
     description: fix-stacks source code
@@ -658,7 +672,7 @@ symbol-scrapers:
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: 04f906fe8585b31d03d8baf6044a01654808c96a
+        revision: d820461a3f542bb9383b8d90983d4e99c9ef7591
 
 xz-5.4.4:
     description: xz 5.4.4 source code

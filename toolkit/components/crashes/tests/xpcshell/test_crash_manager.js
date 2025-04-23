@@ -286,7 +286,7 @@ add_task(async function test_main_crash_event_file() {
     TelemetrySessionId: sessionId,
     MinidumpSha256Hash: sha256Hash,
     StackTraces: stackTraces,
-    ThisShouldNot: "end-up-in-the-ping",
+    TestKey: "this-should-not-end-up-in-the-ping",
   });
 
   await m.createEventsFile(
@@ -327,7 +327,7 @@ add_task(async function test_main_crash_event_file() {
     "The saved environment should be present"
   );
   Assert.equal(
-    found.payload.metadata.ThisShouldNot,
+    found.payload.metadata.TestKey,
     undefined,
     "Non-allowed fields should be filtered out"
   );
@@ -732,7 +732,7 @@ add_task(async function test_child_process_crash_ping() {
       StackTraces: stackTraces,
       MinidumpSha256Hash: sha256Hash,
       ipc_channel_error: "ShutDownKill",
-      ThisShouldNot: "end-up-in-the-ping",
+      TestKey: "this-should-not-end-up-in-the-ping",
     });
     await m._pingPromise;
 
@@ -753,7 +753,7 @@ add_task(async function test_child_process_crash_ping() {
     );
 
     Assert.equal(
-      found.payload.metadata.ThisShouldNot,
+      found.payload.metadata.TestKey,
       undefined,
       "Non-allowed fields should be filtered out"
     );
@@ -776,7 +776,7 @@ add_task(async function test_child_process_crash_ping() {
     await m.addCrash(p, m.CRASH_TYPE_CRASH, id, DUMMY_DATE, {
       StackTraces: stackTraces,
       MinidumpSha256Hash: sha256Hash,
-      ThisShouldNot: "end-up-in-the-ping",
+      TestKey: "this-should-not-end-up-in-the-ping",
     });
     await m._pingPromise;
 
@@ -975,10 +975,6 @@ add_task(async function test_glean_crash_ping() {
     ]);
     Assert.equal(Glean.dllBlocklist.initFailed.testGetValue(), true);
     Assert.equal(Glean.dllBlocklist.user32LoadedBefore.testGetValue(), true);
-    Assert.deepEqual(Glean.environment.experimentalFeatures.testGetValue(), [
-      "feature 1",
-      "feature 2",
-    ]);
     Assert.equal(Glean.environment.headlessMode.testGetValue(), true);
     Assert.deepEqual(Glean.environment.nimbusEnrollments.testGetValue(), [
       "foo:control",
@@ -1022,7 +1018,6 @@ add_task(async function test_glean_crash_ping() {
       BlockedDllList: "Foo.dll;bar.dll;rawr.dll",
       BlocklistInitFailed: "1",
       EventLoopNestingLevel: 5,
-      ExperimentalFeatures: "feature 1,feature 2",
       FontName: "Helvetica",
       GPUProcessLaunchCount: 10,
       HeadlessMode: "1",

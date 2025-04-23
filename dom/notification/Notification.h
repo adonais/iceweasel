@@ -8,10 +8,9 @@
 #define mozilla_dom_notification_h__
 
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/NotificationBinding.h"
 #include "mozilla/dom/notification/NotificationChild.h"
-#include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/dom/quota/QuotaCommon.h"
 
 #include "nsISupports.h"
 
@@ -75,41 +74,35 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
       const NotificationOptions& aOption, ErrorResult& aRv);
 
   /**
-   * Used when dispatching the ServiceWorkerEvent.
-   *
-   * Does not initialize the Notification's behavior.
-   * This is because:
-   * 1) The Notification is not shown to the user and so the behavior
-   *    parameters don't matter.
-   * 2) The default binding requires main thread for parsing the JSON from the
-   *    string behavior.
-   */
-  static Result<already_AddRefed<Notification>, QMResult> ConstructFromFields(
-      nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
-      const nsAString& aDir, const nsAString& aLang, const nsAString& aBody,
-      const nsAString& aTag, const nsAString& aIcon, const nsAString& aData,
-      const nsAString& aServiceWorkerRegistrationScope);
-
-  /**
    * Used when retrieving notification objects from the parent process.
    */
-  static Result<already_AddRefed<Notification>, QMResult> ConstructFromIPC(
+  static Result<already_AddRefed<Notification>, nsresult> ConstructFromIPC(
       nsIGlobalObject* aGlobal, const IPCNotification& aIPCNotification,
       const nsAString& aServiceWorkerRegistrationScope);
 
-  void GetID(nsAString& aRetval) { aRetval = mID; }
+  void GetID(nsAString& aRetval) { aRetval = mIPCNotification.id(); }
 
-  void GetTitle(nsAString& aRetval) { aRetval = mTitle; }
+  void GetTitle(nsAString& aRetval) {
+    aRetval = mIPCNotification.options().title();
+  }
 
-  NotificationDirection Dir() { return mDir; }
+  NotificationDirection Dir() { return mIPCNotification.options().dir(); }
 
-  void GetLang(nsAString& aRetval) { aRetval = mLang; }
+  void GetLang(nsAString& aRetval) {
+    aRetval = mIPCNotification.options().lang();
+  }
 
-  void GetBody(nsAString& aRetval) { aRetval = mBody; }
+  void GetBody(nsAString& aRetval) {
+    aRetval = mIPCNotification.options().body();
+  }
 
-  void GetTag(nsAString& aRetval) { aRetval = mTag; }
+  void GetTag(nsAString& aRetval) {
+    aRetval = mIPCNotification.options().tag();
+  }
 
-  void GetIcon(nsAString& aRetval) { aRetval = mIconUrl; }
+  void GetIcon(nsAString& aRetval) {
+    aRetval = mIPCNotification.options().icon();
+  }
 
   void MaybeNotifyClose();
 
@@ -124,14 +117,7 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   static NotificationPermission GetPermission(const GlobalObject& aGlobal,
                                               ErrorResult& aRv);
 
-  static already_AddRefed<Promise> Get(nsPIDOMWindowInner* aWindow,
-                                       const GetNotificationOptions& aFilter,
-                                       const nsAString& aScope,
-                                       ErrorResult& aRv);
-
-  static already_AddRefed<Promise> WorkerGet(
-      WorkerPrivate* aWorkerPrivate, const GetNotificationOptions& aFilter,
-      const nsAString& aScope, ErrorResult& aRv);
+  static uint32_t MaxActions(const GlobalObject& aGlobal);
 
   // Notification implementation of
   // ServiceWorkerRegistration.showNotification.
@@ -158,10 +144,7 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   void GetData(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval);
 
-  void InitFromJSVal(JSContext* aCx, JS::Handle<JS::Value> aData,
-                     ErrorResult& aRv);
-
-  Result<Ok, QMResult> InitFromBase64(const nsAString& aData);
+  void GetActions(nsTArray<NotificationAction>& aRetVal);
 
   static NotificationPermission GetPermission(
       nsIGlobalObject* aGlobal, notification::PermissionCheckPurpose aPurpose,
@@ -172,16 +155,9 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   nsresult DispatchToMainThread(already_AddRefed<nsIRunnable>&& aRunnable);
 
  protected:
-  Notification(nsIGlobalObject* aGlobal, const nsAString& aID,
-               const nsAString& aTitle, const nsAString& aBody,
-               NotificationDirection aDir, const nsAString& aLang,
-               const nsAString& aTag, const nsAString& aIconUrl,
-               bool aRequireInteraction, bool aSilent,
-               nsTArray<uint32_t>&& aVibrate);
-
-  static already_AddRefed<Notification> CreateInternal(
-      nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
-      const NotificationOptions& aOptions, ErrorResult& aRv);
+  Notification(nsIGlobalObject* aGlobal,
+               const IPCNotification& aIPCNotification,
+               const nsAString& aScope);
 
   void Deactivate();
 
@@ -189,26 +165,9 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
       nsPIDOMWindowInner* aWindow,
       notification::PermissionCheckPurpose aPurpose, ErrorResult& rv);
 
-  void SetScope(const nsAString& aScope) {
-    MOZ_ASSERT(mScope.IsEmpty());
-    mScope = aScope;
-  }
-
   WeakPtr<notification::NotificationChild> mActor;
 
-  // An existing ID loaded from NotificationDB. Leave it empty if we are
-  // creating a new notification.
-  const nsString mID;
-  const nsString mTitle;
-  const nsString mBody;
-  const NotificationDirection mDir;
-  const nsString mLang;
-  const nsString mTag;
-  const nsString mIconUrl;
-  const bool mRequireInteraction;
-  const bool mSilent;
-  nsTArray<uint32_t> mVibrate;
-  nsString mDataAsBase64;
+  const IPCNotification mIPCNotification;
 
   // It's null until GetData is first called
   JS::Heap<JS::Value> mData;
@@ -227,7 +186,7 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   //
   // Note that aCx may not be in the compartment of aGlobal, but aOptions will
   // have its JS things in the compartment of aCx.
-  static already_AddRefed<Notification> Create(
+  static already_AddRefed<Notification> ValidateAndCreate(
       JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aTitle,
       const NotificationOptions& aOptions, const nsAString& aScope,
       ErrorResult& aRv);

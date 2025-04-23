@@ -112,15 +112,28 @@ class OwningElementRef final {
     return mTarget == aOther.mTarget;
   }
 
-  bool LessThan(Maybe<uint32_t>& aChildIndex, const OwningElementRef& aOther,
-                Maybe<uint32_t>& aOtherChildIndex) const {
+  int32_t Compare(const OwningElementRef& aOther,
+                  nsContentUtils::NodeIndexCache& aCache) const {
     MOZ_ASSERT(mTarget.mElement && aOther.mTarget.mElement,
                "Elements to compare should not be null");
 
     if (mTarget.mElement != aOther.mTarget.mElement) {
-      return nsContentUtils::PositionIsBefore(mTarget.mElement,
-                                              aOther.mTarget.mElement,
-                                              &aChildIndex, &aOtherChildIndex);
+      const bool connected = mTarget.mElement->IsInComposedDoc();
+      if (connected != aOther.mTarget.mElement->IsInComposedDoc()) {
+        // Disconnected elements sort last.
+        return connected ? -1 : 1;
+      }
+      if (!connected) {
+        auto* thisRoot = mTarget.mElement->SubtreeRoot();
+        auto* otherRoot = aOther.mTarget.mElement->SubtreeRoot();
+        if (thisRoot != otherRoot) {
+          // We need some consistent ordering across disconnected subtrees. This
+          // is kind of arbitrary.
+          return uintptr_t(thisRoot) < uintptr_t(otherRoot) ? -1 : 1;
+        }
+      }
+      return nsContentUtils::CompareTreePosition<TreeKind::ShadowIncludingDOM>(
+          mTarget.mElement, aOther.mTarget.mElement, nullptr, &aCache);
     }
 
     enum SortingIndex : uint8_t {
@@ -161,8 +174,23 @@ class OwningElementRef final {
           return SortingIndex::Other;
       }
     };
-    return sortingIndex(mTarget.mPseudoRequest) <
-           sortingIndex(aOther.mTarget.mPseudoRequest);
+    auto cmp = sortingIndex(mTarget.mPseudoRequest) -
+               sortingIndex(aOther.mTarget.mPseudoRequest);
+    if (cmp != 0) {
+      return cmp;
+    }
+    auto* ident = mTarget.mPseudoRequest.mIdentifier.get();
+    auto* otherIdent = aOther.mTarget.mPseudoRequest.mIdentifier.get();
+    MOZ_ASSERT(!!ident == !!otherIdent);
+    if (ident == otherIdent) {
+      return 0;
+    }
+    // FIXME(emilio, bug 1956219): This compares ::view-transition-* pseudos
+    // with string comparison, which is not terrible but probably not quite
+    // intended? It seems we should probably compare the pseudo-element tree
+    // position or something if available, at least...
+    return nsDependentAtomString(ident) < nsDependentAtomString(otherIdent) ? -1
+                                                                            : 1;
   }
 
   bool IsSet() const { return !!mTarget.mElement; }

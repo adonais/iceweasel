@@ -23,15 +23,32 @@ typedef struct _GVariant GVariant;
 
 namespace mozilla {
 enum class StyleGtkThemeFamily : uint8_t;
-}
+
+namespace widget {
+
+enum class NativeChangeKind : uint8_t {
+  None = 0,
+  GtkTheme = 1 << 0,
+  OtherSettings = 1 << 1,
+  All = GtkTheme | OtherSettings,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(NativeChangeKind)
+
+}  // namespace widget
+}  // namespace mozilla
 
 class nsLookAndFeel final : public nsXPLookAndFeel {
+  using NativeChangeKind = mozilla::widget::NativeChangeKind;
+
  public:
   nsLookAndFeel();
   virtual ~nsLookAndFeel();
 
+  void RecordChange(NativeChangeKind aKind) {
+    mPendingChanges |= aKind;
+  }
   void NativeInit() final;
-  void RefreshImpl() override;
   nsresult NativeGetInt(IntID aID, int32_t& aResult) override;
   nsresult NativeGetFloat(FloatID aID, float& aResult) override;
   nsresult NativeGetColor(ColorID, ColorScheme, nscolor& aResult) override;
@@ -40,6 +57,12 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
   char16_t GetPasswordCharacterImpl() override;
   bool GetEchoPasswordImpl() override;
+
+  void RefreshImpl() override {
+    // When calling Refresh(), we don't need to reload all our GTK theme info,
+    // but we might need to change our effective theme.
+    RecordChange(NativeChangeKind::OtherSettings);
+  }
 
   bool GetDefaultDrawInTitlebar() override;
 
@@ -87,6 +110,7 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     bool mIsDark = false;
     bool mHighContrast = false;
     bool mPreferDarkTheme = false;
+    bool mIsDefaultThemeFallback = false;
 
     ThemeFamily mFamily{0};
 
@@ -203,8 +227,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   bool mCSDCloseButton = false;
   bool mCSDReversedPlacement = false;
   bool mPrefersReducedMotion = false;
-  bool mInitialized = false;
   bool mSystemThemeOverridden = false;
+  NativeChangeKind mPendingChanges = NativeChangeKind::All;
   int32_t mCSDMaximizeButtonPosition = 0;
   int32_t mCSDMinimizeButtonPosition = 0;
   int32_t mCSDCloseButtonPosition = 0;
@@ -217,7 +241,7 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   void ClearRoundedCornerProvider();
 
   void EnsureInit() {
-    if (mInitialized) {
+    if (mPendingChanges == NativeChangeKind::None) {
       return;
     }
     Initialize();
@@ -231,7 +255,7 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   bool ConfigureAltTheme();
   void ConfigureAndInitializeAltTheme();
   void ConfigureFinalEffectiveTheme();
-  void MaybeApplyAdwaitaOverrides();
+  void MaybeApplyColorOverrides();
 };
 
 #endif

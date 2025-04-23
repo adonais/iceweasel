@@ -32,6 +32,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsTHashMap.h"
 #include "TimeUnits.h"
+#include "MediaData.h"
 
 #ifdef XP_WIN
 struct ID3D10Texture2D;
@@ -293,6 +294,8 @@ class ImageContainerListener final {
   ImageContainer* mImageContainer MOZ_GUARDED_BY(mLock);
 };
 
+enum class ClearImagesType { All, CacheOnly };
+
 /**
  * A class that manages Images for an ImageLayer. The only reason
  * we need a separate class here is that ImageLayers aren't threadsafe
@@ -397,11 +400,11 @@ class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
   void SetCurrentImages(const nsTArray<NonOwningImage>& aImages);
 
   /**
-   * Clear all images. Let ImageClient release all TextureClients. Because we
-   * may release the lock after acquiring it in this method, it cannot be called
-   * with the lock held.
+   * Clear images in host. It could be used only with async ImageContainer.
+   * Because we may release the lock after acquiring it in this method, it
+   * cannot be called with the lock held.
    */
-  void ClearAllImages() MOZ_EXCLUDES(mRecursiveMutex);
+  void ClearImagesInHost(ClearImagesType aType) MOZ_EXCLUDES(mRecursiveMutex);
 
   /**
    * Clear any resources that are not immediately necessary. This may be called
@@ -782,6 +785,7 @@ struct PlanarYCbCrData {
   }
 
   static Maybe<PlanarYCbCrData> From(const SurfaceDescriptorBuffer&);
+  static Maybe<PlanarYCbCrData> From(const VideoData::YCbCrBuffer&);
 };
 
 /****** Image subtypes for the different formats ******/

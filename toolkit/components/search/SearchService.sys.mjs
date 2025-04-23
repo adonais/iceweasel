@@ -51,6 +51,7 @@ XPCOMUtils.defineLazyServiceGetter(
  * @typedef {import("SearchEngine.sys.mjs").SearchEngine} SearchEngine
  * @typedef {import("SearchEngineSelector.sys.mjs").RefinedConfig} RefinedConfig
  * @typedef {import("SearchEngineSelector.sys.mjs").SearchEngineSelector} SearchEngineSelector
+ * @typedef {import("UserSearchEngine.sys.mjs").FormInfo} FormInfo
  */
 
 /**
@@ -391,11 +392,24 @@ export class SearchService {
     return this._engines.get(engineId) || null;
   }
 
+  /**
+   * Returns the first search engine matching the provided alias
+   * (case-insensitive).
+   *
+   * @param {string} alias
+   *  The alias to look for.
+   * @returns {Promise<?SearchEngine>}
+   *  The first search engine matching the alias or null.
+   */
   async getEngineByAlias(alias) {
     await this.init();
-    for (var engine of this._engines.values()) {
-      if (engine && engine.aliases.includes(alias)) {
-        return engine;
+    alias = alias.toLocaleLowerCase();
+
+    for (let engine of this._engines.values()) {
+      for (let engineAlias of engine.aliases) {
+        if (engineAlias.toLocaleLowerCase() == alias) {
+          return engine;
+        }
       }
     }
     return null;
@@ -638,21 +652,18 @@ export class SearchService {
   /**
    * Adds a search engine that is specified by the user.
    *
-   * @param {string} name
-   *   The name of the search engine
-   * @param {string} url
-   *   The url that the search engine uses for searches
-   * @param {string} alias
-   *   An alias for the search engine
+   * @param {FormInfo} formInfo
+   *   General information about the search engine.
+   * @returns {nsISearchEngine}
+   *   The generated search engine object.
    */
-  async addUserEngine(name, url, alias) {
+  async addUserEngine(formInfo) {
     await this.init();
 
-    let newEngine = new lazy.UserSearchEngine({
-      details: { name, url, alias },
-    });
-    lazy.logConsole.debug(`Adding ${newEngine.name}`);
+    let newEngine = new lazy.UserSearchEngine({ formInfo });
+    lazy.logConsole.debug(`Adding ${formInfo.name}`);
     this.#addEngineToStore(newEngine);
+    return newEngine;
   }
 
   async addSearchEngine(engine) {
@@ -1142,7 +1153,7 @@ export class SearchService {
    * Used in #parseSubmissionMap
    *
    * @typedef {object} submissionMapEntry
-   * @property {nsISearchEngine} engine
+   * @property {SearchEngine} engine
    *   The search engine.
    * @property {string} termsParameterName
    *   The search term parameter name.
@@ -1344,9 +1355,7 @@ export class SearchService {
       lazy.SearchUtils.BROWSER_SEARCH_PREF + "experiment",
       "",
       () => {
-        Services.search.wrappedJSObject._maybeReloadEngines(
-          Ci.nsISearchService.CHANGE_REASON_EXPERIMENT
-        );
+        this._maybeReloadEngines(Ci.nsISearchService.CHANGE_REASON_EXPERIMENT);
       }
     );
   }
@@ -3034,9 +3043,9 @@ export class SearchService {
    *   If true, sets the default engine for private browsing mode, otherwise
    *   sets the default engine for the normal mode. Note, this function does not
    *   check the "separatePrivateDefault" preference - that is up to the caller.
-   * @param {nsISearchEngine} newEngine
+   * @param {SearchEngine} newEngine
    *   The search engine to select
-   * @param {REASON_CHANGE_MAP} changeSource
+   * @param {nsISearchService.DefaultEngineChangeReason} changeSource
    *   The source of the change of engine.
    */
   #setEngineDefault(privateMode, newEngine, changeSource) {
@@ -3197,21 +3206,6 @@ export class SearchService {
       name: engine.name ? engine.name : "",
     };
 
-    if (engine.isAppProvided) {
-      engineData.origin = "default";
-    } else {
-      let currentHash = engine.getAttr("loadPathHash");
-      if (!currentHash) {
-        engineData.origin = "unverified";
-      } else {
-        let loadPathHash = lazy.SearchUtils.getVerificationHash(
-          engine._loadPath
-        );
-        engineData.origin =
-          currentHash == loadPathHash ? "verified" : "invalid";
-      }
-    }
-
     // For privacy, we only collect the submission URL for default engines...
     let sendSubmissionURL = engine.isAppProvided;
 
@@ -3262,9 +3256,9 @@ export class SearchService {
    *
    * @param {boolean} isPrivate
    *   True if this is a event about a private engine.
-   * @param {SearchEngine} [previousEngine]
+   * @param {nsISearchEngine} [previousEngine]
    *   The previously default search engine.
-   * @param {SearchEngine} [newEngine]
+   * @param {nsISearchEngine} [newEngine]
    *   The new default search engine.
    * @param {number} changeSource
    *   The source of the change of default.
@@ -3326,7 +3320,6 @@ export class SearchService {
     Glean.searchEngineDefault.submissionUrl.set(
       info.defaultSearchEngineData.submissionURL ?? "blank:"
     );
-    Glean.searchEngineDefault.verified.set(info.defaultSearchEngineData.origin);
 
     Glean.searchEnginePrivate.engineId.set(
       info.defaultPrivateSearchEngine ?? ""
@@ -3342,14 +3335,10 @@ export class SearchService {
       Glean.searchEnginePrivate.submissionUrl.set(
         info.defaultPrivateSearchEngineData.submissionURL ?? "blank:"
       );
-      Glean.searchEnginePrivate.verified.set(
-        info.defaultPrivateSearchEngineData.origin
-      );
     } else {
       Glean.searchEnginePrivate.displayName.set("");
       Glean.searchEnginePrivate.loadPath.set("");
       Glean.searchEnginePrivate.submissionUrl.set("blank:");
-      Glean.searchEnginePrivate.verified.set("");
     }
   }
 

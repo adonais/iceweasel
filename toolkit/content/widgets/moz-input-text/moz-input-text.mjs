@@ -13,6 +13,7 @@ import { MozBaseInputElement } from "../lit-utils.mjs";
  * @property {string} name - The name of the input control
  * @property {string} value - The value of the input control
  * @property {boolean} disabled - The disabled state of the input control
+ * @property {boolean} readonly - The readonly state of the input control
  * @property {string} iconSrc - The src for an optional icon
  * @property {string} description - The text for the description element that helps describe the input control
  * @property {string} supportPage - Name of the SUMO support page to link to.
@@ -21,12 +22,14 @@ import { MozBaseInputElement } from "../lit-utils.mjs";
 export default class MozInputText extends MozBaseInputElement {
   static properties = {
     placeholder: { type: String, fluent: true },
+    readonly: { type: Boolean, mapped: true },
   };
   static inputLayout = "block";
 
   constructor() {
     super();
     this.value = "";
+    this.readonly = false;
   }
 
   inputStylesTemplate() {
@@ -40,14 +43,19 @@ export default class MozInputText extends MozBaseInputElement {
     this.value = e.target.value;
   }
 
-  inputTemplate() {
+  inputTemplate(options = {}) {
+    let { type = "text", classes, styles, inputValue } = options;
+
     return html`
       <input
         id="input"
-        type="text"
+        type=${type}
+        class=${ifDefined(classes)}
+        style=${ifDefined(styles)}
         name=${this.name}
-        value=${this.value}
-        ?disabled=${this.disabled}
+        value=${inputValue || this.value}
+        ?disabled=${this.disabled || this.parentDisabled}
+        ?readonly=${this.readonly}
         accesskey=${ifDefined(this.accessKey)}
         placeholder=${ifDefined(this.placeholder)}
         aria-describedby="description"

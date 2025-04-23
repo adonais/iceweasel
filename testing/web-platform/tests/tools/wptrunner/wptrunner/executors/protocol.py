@@ -355,7 +355,8 @@ class BidiBluetoothProtocolPart(ProtocolPart):
     @abstractmethod
     async def simulate_adapter(self,
                                context: str,
-                               state: str) -> None:
+                               state: str,
+                               type_: str) -> None:
         """
         Creates a simulated bluetooth adapter.
         :param context: Browsing context to set the simulated adapter to.
@@ -1008,9 +1009,19 @@ class VirtualPressureSourceProtocolPart(ProtocolPart):
         pass
 
     @abstractmethod
-    def update_virtual_pressure_source(self, source_type, sample):
+    def update_virtual_pressure_source(self, source_type, sample, own_contribution_estimate):
         pass
 
     @abstractmethod
     def remove_virtual_pressure_source(self, source_type):
+        pass
+
+class ProtectedAudienceProtocolPart(ProtocolPart):
+    """Protocol part for Protected Audience"""
+    __metaclass__ = ABCMeta
+
+    name = "protected_audience"
+
+    @abstractmethod
+    def set_k_anonymity(self, owner, name, hashes):
         pass

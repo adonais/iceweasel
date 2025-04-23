@@ -225,9 +225,10 @@ AnimationValue CSSTransition::ToValue() const {
   return mTransitionToValue;
 }
 
-bool CSSTransition::HasLowerCompositeOrderThan(
+int32_t CSSTransition::CompareCompositeOrder(
     const Maybe<EventContext>& aContext, const CSSTransition& aOther,
-    const Maybe<EventContext>& aOtherContext) const {
+    const Maybe<EventContext>& aOtherContext,
+    nsContentUtils::NodeIndexCache& aCache) const {
   MOZ_ASSERT((IsTiedToMarkup() || aContext) &&
                  (aOther.IsTiedToMarkup() || aOtherContext),
              "Should only be called for CSS transitions that are sorted "
@@ -236,34 +237,35 @@ bool CSSTransition::HasLowerCompositeOrderThan(
 
   // 0. Object-equality case
   if (&aOther == this) {
-    return false;
+    return 0;
   }
 
   // 1. Sort by document order
   const OwningElementRef& owningElement1 =
-      aContext ? OwningElementRef(aContext->mTarget) : mOwningElement;
+      IsTiedToMarkup() ? mOwningElement : OwningElementRef(aContext->mTarget);
   const OwningElementRef& owningElement2 =
-      aOtherContext ? OwningElementRef(aOtherContext->mTarget)
-                    : aOther.mOwningElement;
+      aOther.IsTiedToMarkup() ? aOther.mOwningElement
+                              : OwningElementRef(aOtherContext->mTarget);
   if (!owningElement1.Equals(owningElement2)) {
-    return owningElement1.LessThan(
-        const_cast<CSSTransition*>(this)->CachedChildIndexRef(), owningElement2,
-        const_cast<CSSTransition*>(&aOther)->CachedChildIndexRef());
+    return owningElement1.Compare(owningElement2, aCache);
   }
 
   // 2. (Same element and pseudo): Sort by transition generation
-  const uint64_t& index1 = aContext ? aContext->mIndex : mAnimationIndex;
-  const uint64_t& index2 =
-      aOtherContext ? aOtherContext->mIndex : aOther.mAnimationIndex;
+  const uint64_t index1 = IsTiedToMarkup() ? mAnimationIndex : aContext->mIndex;
+  const uint64_t index2 =
+      aOther.IsTiedToMarkup() ? aOther.mAnimationIndex : aOtherContext->mIndex;
   if (index1 != index2) {
-    return index1 < index2;
+    return index1 < index2 ? -1 : 1;
   }
 
   // 3. (Same transition generation): Sort by transition property
+  if (mTransitionProperty == aOther.mTransitionProperty) {
+    return 0;
+  }
   nsAutoString name, otherName;
   GetTransitionProperty(name);
   aOther.GetTransitionProperty(otherName);
-  return name < otherName;
+  return name < otherName ? -1 : 1;
 }
 
 /* static */

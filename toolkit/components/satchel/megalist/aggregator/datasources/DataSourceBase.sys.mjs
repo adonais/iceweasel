@@ -80,10 +80,12 @@ export class DataSourceBase {
     this.#aggregatorApi.discardChangesConfirmed();
   }
 
-  formatMessages = createFormatMessages("preview/contextual-manager.ftl");
+  // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+  formatMessages = createFormatMessages("browser/contextual-manager.ftl");
   static ftl = new Localization([
     "branding/brand.ftl",
-    "preview/contextual-manager.ftl",
+    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+    "browser/contextual-manager.ftl",
   ]);
 
   async localizeStrings(strings) {
@@ -216,12 +218,10 @@ export class DataSourceBase {
   /**
    * Creates collapsible section header line.
    *
-   * @param {string} label for the section
    * @returns {object} section header line
    */
-  createHeaderLine(label, tooltip) {
+  createHeaderLine() {
     const result = {
-      label,
       value: {},
       collapsed: false,
       start: true,
@@ -239,11 +239,7 @@ export class DataSourceBase {
 
       lineIsReady: () => true,
 
-      commands: [{ id: "Toggle", label: "command-toggle" }],
-
-      get toggleTooltip() {
-        return this.collapsed ? tooltip.expand : tooltip.collapse;
-      },
+      commands: [{ id: "Toggle" }],
 
       executeToggle() {
         this.collapsed = !this.collapsed;

@@ -10,7 +10,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
-  BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.sys.mjs",
+  BrowserSearchTelemetry:
+    "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
@@ -19,9 +20,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  ReaderMode: "resource://gre/modules/ReaderMode.sys.mjs",
+  ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   SearchModeSwitcher: "resource:///modules/SearchModeSwitcher.sys.mjs",
-  SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
   UrlbarController: "resource:///modules/UrlbarController.sys.mjs",
   UrlbarEventBufferer: "resource:///modules/UrlbarEventBufferer.sys.mjs",
@@ -2957,7 +2958,7 @@ export class UrlbarInput {
       "browser.search.totalSearches"
     );
     const totalSearchesCap = 100;
-    if (totalSearches <= totalSearchesCap) {
+    if (totalSearches < totalSearchesCap) {
       Services.prefs.setIntPref(
         "browser.search.totalSearches",
         totalSearches + 1
@@ -3777,14 +3778,18 @@ export class UrlbarInput {
         { name: engineName }
       );
     } else if (source) {
+      const messageIDs = {
+        actions: "urlbar-placeholder-search-mode-other-actions",
+        bookmarks: "urlbar-placeholder-search-mode-other-bookmarks",
+        engine: "urlbar-placeholder-search-mode-other-engine",
+        history: "urlbar-placeholder-search-mode-other-history",
+        tabs: "urlbar-placeholder-search-mode-other-tabs",
+      };
       let sourceName = lazy.UrlbarUtils.getResultSourceName(source);
       let l10nID = `urlbar-search-mode-${sourceName}`;
       this.document.l10n.setAttributes(this._searchModeIndicatorTitle, l10nID);
       this.document.l10n.setAttributes(this._searchModeLabel, l10nID);
-      this.document.l10n.setAttributes(
-        this.inputField,
-        `urlbar-placeholder-search-mode-other-${sourceName}`
-      );
+      this.document.l10n.setAttributes(this.inputField, messageIDs[sourceName]);
     }
 
     this.toggleAttribute("searchmode", true);
@@ -4451,7 +4456,7 @@ export class UrlbarInput {
       event.stopImmediatePropagation();
 
       const value = oldStart + pasteData + oldEnd;
-      this._setValue(value);
+      this._setValue(value, { valueIsTyped: true });
       this.window.gBrowser.userTypedValue = value;
 
       this.toggleAttribute("usertyping", this._untrimmedValue);

@@ -685,6 +685,10 @@ void NotificationController::ProcessMutationEvents() {
 
 void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   AUTO_PROFILER_MARKER_UNTYPED("NotificationController::WillRefresh", A11Y, {});
+
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_WillRefresh>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
   auto timer = glean::a11y::tree_update_timing.Measure();
   // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
 
@@ -816,9 +820,13 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
         0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
         nsIFrame::TrailingWhitespace::DontTrim);
 
-    // Remove text accessible if rendered text is empty.
     if (textAcc) {
-      if (text.mString.IsEmpty()) {
+      // Remove the TextLeafAccessible if:
+      // 1. The rendered text is empty; or
+      // 2. The text is invisible, semantically irrelevant whitespace before a
+      // hard line break.
+      if (text.mString.IsEmpty() ||
+          nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(textFrame)) {
 #ifdef A11Y_LOG
         if (logging::IsEnabled(logging::eTree | logging::eText)) {
           logging::MsgBegin("TREE", "text node lost its content; doc: %p",

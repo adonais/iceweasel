@@ -30,8 +30,6 @@
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 
-const { FIELD_STATES } = FormAutofillUtils;
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -62,7 +60,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", () =>
 const { ENABLED_AUTOFILL_ADDRESSES_PREF, ENABLED_AUTOFILL_CREDITCARDS_PREF } =
   FormAutofill;
 
-const { ADDRESSES_COLLECTION_NAME, CREDITCARDS_COLLECTION_NAME } =
+const { ADDRESSES_COLLECTION_NAME, CREDITCARDS_COLLECTION_NAME, FIELD_STATES } =
   FormAutofillUtils;
 
 let gMessageObservers = new Set();
@@ -328,10 +326,26 @@ export class FormAutofillParent extends JSWindowActorParent {
         break;
 
       case "FormAutofill:OnFieldsDetected":
-        await this.onFieldsDetected(data);
+        await this.onFieldsDetected(
+          data,
+          "FormAutofill:onFieldsDetectedComplete"
+        );
+        break;
+      case "FormAutofill:OnFieldsUpdated":
+        await this.onFieldsDetected(
+          data,
+          "FormAutofill:onFieldsUpdatedComplete"
+        );
         break;
       case "FormAutofill:FieldFilledModified": {
         this.onFieldFilledModified(data);
+        break;
+      }
+      case "FormAutofill:FillFieldsOnFormChange": {
+        // TODO bug 1953231: The parent should introduce profile ids, so that
+        // the child can simply send a profile id instead of the whole profile data
+        const { elementId, profile } = data;
+        this.onFillOnFormChange(elementId, profile);
         break;
       }
 
@@ -491,8 +505,11 @@ export class FormAutofillParent extends JSWindowActorParent {
    *
    * @param {Array} fieldsIncludeIframe
    *        Array of FieldDetail objects of detected fields (include iframes).
+   * @param {string} message that is sent to the children
+   *                          - On initial fields detection: "FormAutofill:onFieldsDetectedComplete"
+   *                          - On dynamic form change detection:  "FormAutofill:onFieldsUpdatedComplete"
    */
-  async onFieldsDetected(fieldsIncludeIframe) {
+  async onFieldsDetected(fieldsIncludeIframe, message) {
     // If the detected fields are not in the top-level, identify the <iframe> in
     // the top-level that contains the detected fields. This is necessary to determine
     // the root element of this form. For non-top-level frames, the focused <iframe>
@@ -535,12 +552,12 @@ export class FormAutofillParent extends JSWindowActorParent {
     for (const [bcId, fds] of Object.entries(detailsByBC)) {
       try {
         const actor = FormAutofillParent.getActor(BrowsingContext.get(bcId));
-        await actor.sendQuery("FormAutofill:onFieldsDetectedComplete", {
+        await actor.sendQuery(message, {
           fds,
         });
       } catch (e) {
         console.error(
-          "There was an error sending 'onFieldsDetectedComplete' msg",
+          `There was an error sending ${message} message`,
           e.message
         );
       }
@@ -549,6 +566,45 @@ export class FormAutofillParent extends JSWindowActorParent {
     // This is for testing purpose only which sends a notification to indicate that the
     // form has been identified, and ready to open popup.
     this.notifyMessageObservers("fieldsIdentified");
+
+    // This is for testing purposes, to know that the fields were
+    // identified after a form change
+    this.notifyMessageObservers("fieldDetectionCompleted");
+  }
+
+  /**
+   * Re-filling fields after a form change occured
+   * immediately after the last filling process
+   *
+   * @param {string} elementId element id of focused element that triggered
+   *                           the initial autocompletion process
+   * @param {object} profile that was used for the previous autofill action
+   *                         causing the form change
+   */
+  async onFillOnFormChange(elementId, profile) {
+    const section = this.getSectionByElementId(elementId);
+    const msg = "FormAutofill:FillFieldsOnFormChange";
+    const fields = section.getAutofillFields();
+    const result = await this.#triggerAutofillActionInChildren(
+      msg,
+      elementId,
+      fields,
+      profile
+    );
+    result.forEach((value, key) => {
+      const filledField = this.filledResult.get(key);
+      const isFilledOnFieldsUpdate =
+        !filledField || filledField.filledState != FIELD_STATES.AUTO_FILLED;
+      this.filledResult.set(key, value);
+      value.isFilledOnFieldsUpdate = isFilledOnFieldsUpdate;
+    });
+    section.onFilledOnFieldsUpdate(result);
+
+    // For testing only
+    Services.obs.notifyObservers(
+      null,
+      "formautofill-fill-after-form-change-complete"
+    );
   }
 
   /**
@@ -629,6 +685,17 @@ export class FormAutofillParent extends JSWindowActorParent {
       } else {
         throw new Error("Unknown section type");
       }
+    }
+
+    try {
+      // The child is ignoring any detected field updates during a form submission.
+      // So we're notifying the child that the form submission is completed. Additionally the child
+      // disconnects any form change observers from the submitted form/fields.
+      this.sendAsyncMessage("FormAutofill:onFormSubmissionComplete", {
+        rootElementId,
+      });
+    } catch (e) {
+      // The child might be destroyed immediately after submission
     }
 
     const browser = this.manager?.browsingContext.top.embedderElement;
@@ -1056,17 +1123,19 @@ export class FormAutofillParent extends JSWindowActorParent {
    *        action.
    * @param {string} focusedId
    *        The ID of the element that initially triggers the autofill action.
-   * @param {object} section
-   *        The section that contains fields to be autofilled.
+   * @param {Array<FieldDetails>} fieldDetails
+   *        An array of fieldDetails to be autocompleted/previewed/cleared.
    * @param {object} profile
    *        The profile data used for autofilling the fields.
    */
-  async #triggerAutofillActionInChildren(message, focusedId, section, profile) {
-    const autofillFields = section.getAutofillFields();
+  async #triggerAutofillActionInChildren(
+    message,
+    focusedId,
+    fieldDetails,
+    profile
+  ) {
     const detailsByBC =
-      lazy.FormAutofillSection.groupFieldDetailsByBrowsingContext(
-        autofillFields
-      );
+      lazy.FormAutofillSection.groupFieldDetailsByBrowsingContext(fieldDetails);
 
     const result = new Map();
     const entries = Object.entries(detailsByBC);
@@ -1090,6 +1159,11 @@ export class FormAutofillParent extends JSWindowActorParent {
       const ids = fieldDetails
         .filter(detail => this.shouldAutofill(bc, detail))
         .map(detail => detail.elementId);
+
+      if (!ids.length) {
+        // No elements in this browsing context to trigger the action on
+        continue;
+      }
 
       try {
         const actor = FormAutofillParent.getActor(bc);
@@ -1127,10 +1201,11 @@ export class FormAutofillParent extends JSWindowActorParent {
     }
 
     const msg = "FormAutofill:PreviewFields";
+    const fields = section.getAutofillFields();
     await this.#triggerAutofillActionInChildren(
       msg,
       elementId,
-      section,
+      fields,
       profile
     );
 
@@ -1155,14 +1230,18 @@ export class FormAutofillParent extends JSWindowActorParent {
     }
 
     const msg = "FormAutofill:FillFields";
+    const fields = section.getAutofillFields();
     const result = await this.#triggerAutofillActionInChildren(
       msg,
       elementId,
-      section,
+      fields,
       profile
     );
 
-    result.forEach((value, key) => this.filledResult.set(key, value));
+    result.forEach((value, key) => {
+      this.filledResult.set(key, value);
+      value.isFilledOnFieldsUpdate = false;
+    });
     section.onFilled(result);
 
     // For testing only
@@ -1188,7 +1267,11 @@ export class FormAutofillParent extends JSWindowActorParent {
     });
 
     const msg = "FormAutofill:ClearFilledFields";
-    await this.#triggerAutofillActionInChildren(msg, elementId, section);
+    // On a form clearing action, we don't use section.getAutofillFields to retrieve
+    // the elements that are about to be cleared, but we consider all fieldDetails regardless
+    // of their visiblity state in order to also clear invisible but previously autocompleted fields
+    const fields = section.fieldDetails;
+    await this.#triggerAutofillActionInChildren(msg, elementId, fields);
 
     // For testing only
     Services.obs.notifyObservers(null, "formautofill-clear-form-complete");

@@ -95,9 +95,17 @@ const KEY_APP_DISTRIBUTION = "XREAppDist";
 const KEY_APP_FEATURES = "XREAppFeat";
 
 const KEY_APP_PROFILE = "app-profile";
+// Location of add-ons included in the omni jar and listed in built_in_addons.json.
+// TODO: consider renaming to `KEY_APP_BUILTIN_ADDONS` when `KEY_APP_BUILTINS`
+// has been removed (since it would be confusing to have two similar `KEY_APP_`
+// constants while `KEY_APP_BUILTINS` is still defined).
+const KEY_APP_SYSTEM_BUILTINS = "app-builtin-addons";
 const KEY_APP_SYSTEM_PROFILE = "app-system-profile";
+// Location of add-on xpi files signed with a system signature downloaded from balrog.
 const KEY_APP_SYSTEM_ADDONS = "app-system-addons";
+// Location of add-on xpi files part of the application directry and listed in built_in_addons.json.
 const KEY_APP_SYSTEM_DEFAULTS = "app-system-defaults";
+// Location of add-ons included in the omni jar and manually installed through maybeInstallBuiltinAddon method.
 const KEY_APP_BUILTINS = "app-builtin";
 const KEY_APP_GLOBAL = "app-global";
 const KEY_APP_SYSTEM_LOCAL = "app-system-local";
@@ -590,7 +598,10 @@ class XPIState {
       // than whatever value it may have cached.
       mtime = aFile.clone().lastModifiedTime;
     } catch (e) {
-      logger.warn("Can't get modified time of ${path}", aFile, e);
+      logger.warn("Can't get modified time of ${path} ${e}", {
+        path: aFile?.path,
+        e,
+      });
     }
 
     let changed = mtime != this.lastModifiedTime;
@@ -975,6 +986,76 @@ var BuiltInLocation = new (class _BuiltInLocation extends XPIStateLocation {
 })();
 
 /**
+ * A "location" for system addons installed from assets packaged into the app.
+ */
+var SystemBuiltInLocation =
+  new (class _SystemBuiltInLocation extends XPIStateLocation {
+    constructor() {
+      super(KEY_APP_SYSTEM_BUILTINS, null, AddonManager.SCOPE_APPLICATION);
+      // This location is locked and system addons are added and removed
+      // from this location through XPIProvider.scanForChanges and
+      // XPIDatabaseReconcile.processFileChanges based on what readAddons
+      // methods return.
+      this.locked = true;
+    }
+
+    // The installer object is responsible for moving files around on disk
+    // when (un)installing an addon.  Since this location handles only addons
+    // that are embedded within the browser, these are no-ops.
+    makeInstaller() {
+      return {
+        installAddon() {},
+        uninstallAddon() {},
+      };
+    }
+
+    /**
+     * Finds all the add-ons installed in this location.
+     *
+     * @returns {Map<AddonID, {builtin: { addon_version: String, res_url: String}}>}
+     *        A map of add-ons present in this location.
+     */
+    readAddons() {
+      let addons = new Map();
+
+      let manifest = XPIProvider.builtInAddons;
+
+      if (!("builtins" in manifest)) {
+        logger.debug("No list of valid builtins add-ons found.");
+        return addons;
+      }
+
+      for (let { addon_id, addon_version, res_url } of manifest.builtins) {
+        addons.set(addon_id, { builtin: { addon_version, res_url } });
+      }
+
+      return addons;
+    }
+
+    get hidden() {
+      return true;
+    }
+
+    get isBuiltin() {
+      return true;
+    }
+
+    get isSystem() {
+      return true;
+    }
+
+    get enumerable() {
+      return true;
+    }
+
+    // Builtin addons are never linked, return false
+    // here for correct behavior elsewhere.
+    isLinkedAddon(/* aId */) {
+      return false;
+    }
+  })();
+
+/**
  * An object which identifies a directory install location for add-ons. The
  * location consists of a directory which contains the add-ons installed in the
  * location.
@@ -1136,7 +1217,7 @@ class DirectoryLocation extends XPIStateLocation {
  *
  * This location should point either to a XPI, or a directory in a local build.
  */
-class SystemAddonDefaults extends DirectoryLocation {
+class LegacySystemDefaultsLocation extends DirectoryLocation {
   /**
    * Read the manifest of allowed add-ons and build a mapping between ID and URI
    * for each.
@@ -1443,6 +1524,7 @@ var XPIStates = {
     let oldLocations = new Set(Object.keys(oldState));
 
     let startupScanScopes;
+    let buildIdChanged = false;
     if (
       Services.appinfo.appBuildID ==
       Services.prefs.getCharPref(PREF_EM_LAST_APP_BUILD_ID, "")
@@ -1452,6 +1534,7 @@ var XPIStates = {
         0
       );
     } else {
+      buildIdChanged = true;
       // If the build id has changed, we need to do a full scan on first startup.
       Services.prefs.setCharPref(
         PREF_EM_LAST_APP_BUILD_ID,
@@ -1477,15 +1560,24 @@ var XPIStates = {
         continue;
       }
 
+      const isEnumerableBuiltin = loc.enumerable && loc.isBuiltin;
+
       // Don't bother scanning scopes where we don't have addons installed if they
       // do not allow sideloading new addons.  Once we have an addon in one of those
       // locations, we need to check the location for changes (updates/deletions).
-      if (!loc.size && !(loc.scope & lazy.AddonSettings.SCOPES_SIDELOAD)) {
+      if (
+        !isEnumerableBuiltin &&
+        !loc.size &&
+        !(loc.scope & lazy.AddonSettings.SCOPES_SIDELOAD)
+      ) {
         continue;
       }
 
       let knownIds = new Set(loc.keys());
-      for (let [id, file] of loc.readAddons()) {
+
+      // readAddons() returns a Map of entries. These entries can be nsIFile or
+      // objects with a rel_url string property.
+      for (let [id, entry] of loc.readAddons()) {
         knownIds.delete(id);
 
         let xpiState = loc.get(id);
@@ -1502,14 +1594,32 @@ var XPIStates = {
           logger.debug("New add-on ${id} in ${loc}", { id, loc: loc.name });
 
           changed = true;
-          xpiState = loc.addFile(id, file);
+          if (entry instanceof Ci.nsIFile) {
+            xpiState = loc.addFile(id, entry);
+            xpiState.getModTime(xpiState.file);
+          } else {
+            xpiState = loc._addState(id, {
+              enabled: false,
+              rootURI: entry.builtin.res_url,
+            });
+          }
           if (!loc.isSystem) {
             this.sideLoadedAddons.set(id, xpiState);
           }
         } else {
-          let addonChanged =
-            xpiState.getModTime(file) || file.path != xpiState.path;
-          xpiState.file = file.clone();
+          let addonChanged = false;
+          if (entry instanceof Ci.nsIFile) {
+            addonChanged =
+              xpiState.getModTime(entry) || entry.path != xpiState.path;
+            xpiState.file = entry.clone();
+          } else {
+            addonChanged =
+              buildIdChanged ||
+              entry.builtin.addon_version != xpiState.version ||
+              entry.builtin.res_url != xpiState.rootURI;
+            xpiState.version = entry.builtin.addon_version;
+            xpiState.rootURI = entry.builtin.res_url;
+          }
 
           if (addonChanged) {
             changed = true;
@@ -2304,13 +2414,13 @@ export var XPIProvider = {
       return new DirectoryLocation(aName, dir, aScope, aLocked, aIsSystem);
     }
 
-    function SystemDefaultsLoc(name, scope, key, paths) {
+    function LegacySystemDefaultsLoc(name, scope, key, paths) {
       try {
         var dir = lazy.FileUtils.getDir(key, paths);
       } catch (e) {
         return null;
       }
-      return new SystemAddonDefaults(name, dir, scope);
+      return new LegacySystemDefaultsLocation(name, dir, scope);
     }
 
     function SystemLoc(aName, aScope, aKey, aPaths) {
@@ -2361,7 +2471,13 @@ export var XPIProvider = {
       ],
 
       [
-        SystemDefaultsLoc,
+        () => SystemBuiltInLocation,
+        KEY_APP_SYSTEM_BUILTINS,
+        AddonManager.SCOPE_APPLICATION,
+      ],
+
+      [
+        LegacySystemDefaultsLoc,
         KEY_APP_SYSTEM_DEFAULTS,
         AddonManager.SCOPE_PROFILE,
         KEY_APP_FEATURES,
@@ -2554,12 +2670,15 @@ export var XPIProvider = {
           AddonManagerPrivate.notifyAddonChanged(null, "theme")
         );
       }
-      // Keep version in sync with toolkit/mozapps/extensions/default-theme/manifest.json
-      this.maybeInstallBuiltinAddon(
-        "default-theme@mozilla.org",
-        "1.4.1",
-        "resource://default-theme/"
-      );
+
+      if (AppConstants.platform != "android") {
+        // Keep version in sync with toolkit/mozapps/extensions/default-theme/manifest.json
+        this.maybeInstallBuiltinAddon(
+          "default-theme@mozilla.org",
+          "1.4.1",
+          "resource://default-theme/"
+        );
+      }
 
       resolveProviderReady(Promise.all(this.startupPromises));
 
@@ -3385,10 +3504,12 @@ export var XPIInternal = {
   DB_SCHEMA,
   DIR_STAGE,
   DIR_TRASH,
+  KEY_APP_BUILTINS,
   KEY_APP_PROFILE,
-  KEY_APP_SYSTEM_PROFILE,
   KEY_APP_SYSTEM_ADDONS,
+  KEY_APP_SYSTEM_BUILTINS,
   KEY_APP_SYSTEM_DEFAULTS,
+  KEY_APP_SYSTEM_PROFILE,
   PREF_BRANCH_INSTALLED_ADDON,
   PREF_SYSTEM_ADDON_SET,
   SystemAddonLocation,

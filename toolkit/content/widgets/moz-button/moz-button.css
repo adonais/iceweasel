@@ -15,7 +15,9 @@ button {
   /* HTML button gets `font: -moz-button` from UA styles,
    * but we want it to match the root font styling. */
   font: inherit;
-  color: var(--button-text-color);
+  /* Overridden on button-background, but still need to unset to not get the
+   * UA styles */
+  color: inherit;
   width: 100%;
 
   &:focus-visible {
@@ -28,12 +30,19 @@ button {
   padding-block-end: var(--button-outer-padding-block-end, var(--button-outer-padding-block));
 }
 
+@media not ((prefers-contrast) or (forced-colors)) {
+  button.badged::after {
+    background-color: var(--button-attention-dot-color, var(--attention-dot-color));
+  }
+}
+
 .button-background {
   box-sizing: border-box;
   min-height: var(--button-min-height);
   border: var(--button-border);
   border-radius: var(--button-border-radius);
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   padding: var(--button-padding);
   font-weight: var(--button-font-weight);
   /* Ensure font-size isn't overridden by widget styling (e.g. in forms.css) */
@@ -41,10 +50,22 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 
   &[size=small] {
     min-height: var(--button-min-height-small);
     font-size: var(--button-font-size-small);
+  }
+
+  &.badged::after {
+    content: "";
+    position: absolute;
+    height: 6px;
+    width: 6px;
+    inset-block-start: var(--space-xxsmall);
+    inset-inline-end: var(--space-xxsmall);
+    background-color: var(--attention-dot-color);
+    border-radius: var(--border-radius-circle);
   }
 
   button:hover > & {

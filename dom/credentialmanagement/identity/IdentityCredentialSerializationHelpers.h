@@ -11,6 +11,7 @@
 #include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/IdentityCredentialBinding.h"
 #include "mozilla/dom/CredentialManagementBinding.h"
+#include "mozilla/dom/LoginStatusBinding.h"
 
 namespace IPC {
 
@@ -42,6 +43,23 @@ struct ParamTraits<mozilla::dom::IdentityProviderConfig> {
 };
 
 template <>
+struct ParamTraits<mozilla::dom::IdentityCredentialDisconnectOptions> {
+  typedef mozilla::dom::IdentityCredentialDisconnectOptions paramType;
+
+  static void Write(MessageWriter* aWriter, const paramType& aParam) {
+    WriteParam(aWriter, aParam.mConfigURL);
+    WriteParam(aWriter, aParam.mClientId);
+    WriteParam(aWriter, aParam.mAccountHint);
+  }
+
+  static bool Read(MessageReader* aReader, paramType* aResult) {
+    return ReadParam(aReader, &aResult->mConfigURL) &&
+           ReadParam(aReader, &aResult->mClientId) &&
+           ReadParam(aReader, &aResult->mAccountHint);
+  }
+};
+
+template <>
 struct ParamTraits<mozilla::dom::IdentityLoginTargetType>
     : public mozilla::dom::WebIDLEnumSerializer<
           mozilla::dom::IdentityLoginTargetType> {};
@@ -63,6 +81,10 @@ struct ParamTraits<mozilla::dom::IdentityCredentialRequestOptions> {
     return ReadParam(aReader, &aResult->mProviders);
   }
 };
+
+template <>
+struct ParamTraits<mozilla::dom::LoginStatus>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::LoginStatus> {};
 
 }  // namespace IPC
 

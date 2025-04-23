@@ -24,7 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
-  UITour: "resource:///modules/UITour.sys.mjs",
+  UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
 });
 
 export const SpecialMessageActions = {
@@ -205,6 +205,7 @@ export const SpecialMessageActions = {
       "browser.migrate.content-modal.import-all.enabled",
       "browser.migrate.preferences-entrypoint.enabled",
       "browser.shell.checkDefaultBrowser",
+      "browser.shell.setDefaultGuidanceNotifications",
       "browser.shopping.experience2023.active",
       "browser.shopping.experience2023.optedIn",
       "browser.shopping.experience2023.survey.optedInTime",
@@ -227,6 +228,10 @@ export const SpecialMessageActions = {
       "sidebar.visibility",
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "datareporting.healthreport.uploadEnabled",
+      "datareporting.policy.currentPolicyVersion",
+      "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
+      "datareporting.policy.dataSubmissionPolicyNotifiedTime",
+      "datareporting.policy.minimumPolicyVersion",
     ];
 
     if (
@@ -238,6 +243,12 @@ export const SpecialMessageActions = {
     // If pref has no value, reset it, otherwise set it to desired value
     switch (typeof pref.value) {
       case "object":
+        if (pref.value.timestamp) {
+          Services.prefs.setStringPref(pref.name, Date.now().toString());
+        } else {
+          Services.prefs.clearUserPref(pref.name);
+        }
+        break;
       case "undefined":
         Services.prefs.clearUserPref(pref.name);
         break;

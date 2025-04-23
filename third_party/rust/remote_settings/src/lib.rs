@@ -19,7 +19,6 @@ pub mod service;
 pub(crate) mod signatures;
 pub mod storage;
 
-#[cfg(feature = "jexl")]
 pub(crate) mod jexl_filter;
 mod macros;
 
@@ -103,12 +102,8 @@ impl RemoteSettingsService {
 
     /// Create a new Remote Settings client
     #[handle_error(Error)]
-    pub fn make_client(
-        &self,
-        collection_name: String,
-        app_context: Option<RemoteSettingsContext>,
-    ) -> ApiResult<Arc<RemoteSettingsClient>> {
-        self.internal.make_client(collection_name, app_context)
+    pub fn make_client(&self, collection_name: String) -> ApiResult<Arc<RemoteSettingsClient>> {
+        self.internal.make_client(collection_name)
     }
 
     /// Sync collections for all active clients
@@ -200,8 +195,13 @@ impl RemoteSettingsClient {
     ///   - This method will throw if there is a network or other error when fetching the
     ///     attachment data.
     #[handle_error(Error)]
-    pub fn get_attachment(&self, record: RemoteSettingsRecord) -> ApiResult<Vec<u8>> {
+    pub fn get_attachment(&self, record: &RemoteSettingsRecord) -> ApiResult<Vec<u8>> {
         self.internal.get_attachment(record)
+    }
+
+    #[handle_error(Error)]
+    pub fn sync(&self) -> ApiResult<()> {
+        self.internal.sync()
     }
 }
 
@@ -212,7 +212,7 @@ impl RemoteSettingsClient {
         base_url: Url,
         bucket_name: String,
         collection_name: String,
-        #[cfg(feature = "jexl")] context: Option<RemoteSettingsContext>,
+        #[allow(unused)] context: Option<RemoteSettingsContext>,
         storage: Storage,
     ) -> Result<Self> {
         Ok(Self {
@@ -220,7 +220,6 @@ impl RemoteSettingsClient {
                 base_url,
                 bucket_name,
                 collection_name,
-                #[cfg(feature = "jexl")]
                 context,
                 storage,
             )?,

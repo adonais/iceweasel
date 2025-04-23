@@ -5,6 +5,10 @@
 
 /* import-globals-from head.js */
 
+// withReviewCheckerSidebar calls SpecialPowers.spawn, which injects
+// ContentTaskUtils in the scope of the callback. Eslint doesn't know about
+// that.
+/* global ContentTaskUtils */
 const CONTENT_PAGE = "https://example.com";
 
 add_setup(async function setup() {
@@ -12,7 +16,7 @@ add_setup(async function setup() {
     set: [
       ["sidebar.revamp", true],
       ["browser.shopping.experience2023.integratedSidebar", true],
-      ["browser.shopping.experience2023.shoppingSidebar", false],
+      ["browser.shopping.experience2023.enabled", false],
       ["sidebar.main.tools", "aichat,reviewchecker,syncedtabs,history"],
       ["toolkit.shopping.ohttpRelayURL", ""],
       ["toolkit.shopping.ohttpConfigURL", ""],

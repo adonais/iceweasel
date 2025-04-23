@@ -10,7 +10,7 @@ tab-group-editor-smart-suggest-button-edit=
 # Button appearing during creation of new tab group.
 # Clicking will suggest tabs to group together in the tab group.
 tab-group-editor-smart-suggest-button-create=
-  .label = Suggest tabs to group
+  .label = Suggest more of my tabs
 
 tab-group-editor-suggestions-header = Suggested Tabs
 
@@ -22,7 +22,26 @@ tab-group-editor-deselect-suggestions =
 tab-group-editor-select-suggestions =
   .label = Select all
 
-tab-group-editor-no-tabs-found =
-    .label = As you open similar tabs, { -brand-short-name } will suggest them for this group.
+tab-group-editor-no-tabs-found-title =
+    .label = No suggestions found
 
-tab-group-suggestions-disclaimer = { -brand-short-name } uses AI to <a data-l10n-name="support">suggest tabs and group names.</a> Some suggestions may be inaccurate.
+tab-group-editor-no-tabs-found-message = Open similar tabs, and AI will suggest a name and group them with this window’s tabs.
+
+# Message is shown to the user whenever there are smart tags suggest
+tab-group-editor-information-message = AI suggests names and tabs based on similar open tabs in this window.
+
+# Title appears when user is shown the optin flow to use smart tab grouping
+tab-group-suggestions-optin-title = Suggest more of my tabs
+
+# Message appears when user is shown the optin flow to use smart tab grouping
+tab-group-suggestions-optin-message = { -brand-short-name } uses AI to read your open tabs’ titles and descriptions to suggest more tabs and group names. This happens on your device.
+
+tab-group-suggestions-optin-title-download = Finding suggestions…
+
+tab-group-suggestions-optin-message-download = This may take a moment.
+
+tab-group-suggestions-optin-message-footer = Customize AI in <a data-l10n-name="settings">settings</a>
+
+# This is the label for the User setting for turning on/off Smart Tab Grouping. The label belongs in preferences/preferences.ftl
+settings-tabs-show-group-and-tab-suggestions =
+    .label = Use AI to suggest tabs and a name for tab groups

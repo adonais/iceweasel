@@ -4,7 +4,7 @@
 "use strict";
 
 let { AboutHomeStartupCache } = ChromeUtils.importESModule(
-  "resource:///modules/BrowserGlue.sys.mjs"
+  "resource:///modules/AboutHomeStartupCache.sys.mjs"
 );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -157,7 +157,7 @@ async function simulateRestart(
   info("Waiting for AboutHomeStartupCacheChild to uninit");
   await SpecialPowers.spawn(browser, [], async () => {
     let { AboutHomeStartupCacheChild } = ChromeUtils.importESModule(
-      "resource:///modules/AboutNewTabService.sys.mjs"
+      "resource:///modules/AboutNewTabRedirector.sys.mjs"
     );
     AboutHomeStartupCacheChild.uninit();
   });
@@ -179,7 +179,7 @@ async function simulateRestart(
       info("Ensuring cache bytes are available");
       await SpecialPowers.spawn(browser, [], async () => {
         let { AboutHomeStartupCacheChild } = ChromeUtils.importESModule(
-          "resource:///modules/AboutNewTabService.sys.mjs"
+          "resource:///modules/AboutNewTabRedirector.sys.mjs"
         );
         let pageStream = AboutHomeStartupCacheChild._pageInputStream;
         let scriptStream = AboutHomeStartupCacheChild._scriptInputStream;

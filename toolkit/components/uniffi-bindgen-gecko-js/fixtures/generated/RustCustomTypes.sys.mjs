@@ -327,7 +327,7 @@ export class FfiConverterString extends FfiConverter {
  * CustomTypesDemo
  */
 export class CustomTypesDemo {
-    constructor({ url, handle }) {
+    constructor({ url, handle } = { url: undefined, handle: undefined }) {
         try {
             FfiConverterTypeUrl.checkType(url)
         } catch (e) {
@@ -513,7 +513,7 @@ export function getCustomTypesDemo(demo) {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                99, // custom_types:uniffi_uniffi_custom_types_fn_func_get_custom_types_demo
+                103, // custom_types:uniffi_uniffi_custom_types_fn_func_get_custom_types_demo
                 FfiConverterOptionalTypeCustomTypesDemo.lower(demo),
             )
         }

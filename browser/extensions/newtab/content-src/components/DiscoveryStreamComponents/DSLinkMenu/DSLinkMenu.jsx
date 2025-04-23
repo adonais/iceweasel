@@ -6,36 +6,41 @@ import { LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
 import { ContextMenuButton } from "content-src/components/ContextMenu/ContextMenuButton";
 import { actionCreators as ac } from "common/Actions.mjs";
 import React from "react";
+import { connect } from "react-redux";
 
-export class DSLinkMenu extends React.PureComponent {
+export class _DSLinkMenu extends React.PureComponent {
   render() {
     const { index, dispatch } = this.props;
-    let pocketMenuOptions = [];
-    let TOP_STORIES_CONTEXT_MENU_OPTIONS = [
-      "OpenInNewWindow",
-      "OpenInPrivateWindow",
-    ];
-    if (!this.props.isRecentSave) {
-      // Show Pocket context menu options if applicable.
-      // Additionally, show these menu options for all section cards.
-      if (
-        this.props.pocket_button_enabled &&
-        (this.props.saveToPocketCard || this.props.isSectionsCard)
-      ) {
-        pocketMenuOptions = ["CheckSavedToPocket"];
-      }
+    let TOP_STORIES_CONTEXT_MENU_OPTIONS;
+    const PREF_REPORT_CONTENT_ENABLED = "discoverystream.reportContent.enabled";
+    const prefs = this.props.Prefs.values;
+    const showReporting = prefs[PREF_REPORT_CONTENT_ENABLED];
+    const isSpoc = this.props.card_type === "spoc";
+
+    if (isSpoc) {
+      TOP_STORIES_CONTEXT_MENU_OPTIONS = [
+        "BlockUrl",
+        ...(showReporting ? ["ReportAd"] : []),
+        "ManageSponsoredContent",
+        "OurSponsorsAndYourPrivacy",
+      ];
+    } else {
+      const saveToPocketOptions = this.props.pocket_button_enabled
+        ? ["CheckArchiveFromPocket", "CheckSavedToPocket"]
+        : [];
+
       TOP_STORIES_CONTEXT_MENU_OPTIONS = [
         "CheckBookmark",
-        "CheckArchiveFromPocket",
-        ...pocketMenuOptions,
+        ...(showReporting ? ["ReportContent"] : []),
+        ...saveToPocketOptions,
         "Separator",
         "OpenInNewWindow",
         "OpenInPrivateWindow",
         "Separator",
         "BlockUrl",
-        ...(this.props.showPrivacyInfo ? ["ShowPrivacyInfo"] : []),
       ];
     }
+
     const type = this.props.type || "DISCOVERY_STREAM";
     const title = this.props.title || this.props.source;
 
@@ -87,3 +92,7 @@ export class DSLinkMenu extends React.PureComponent {
     );
   }
 }
+
+export const DSLinkMenu = connect(state => ({
+  Prefs: state.Prefs,
+}))(_DSLinkMenu);

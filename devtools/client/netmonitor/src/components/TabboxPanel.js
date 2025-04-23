@@ -7,8 +7,8 @@
 const {
   Component,
   createFactory,
-} = require("resource://devtools/client/shared/vendor/react.js");
-const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
   connect,
 } = require("resource://devtools/client/shared/vendor/react-redux.js");
@@ -27,7 +27,9 @@ const Tabbar = createFactory(
   require("resource://devtools/client/shared/components/tabs/TabBar.js")
 );
 const TabPanel = createFactory(
-  require("resource://devtools/client/shared/components/tabs/Tabs.js").TabPanel
+  ChromeUtils.importESModule(
+    "resource://devtools/client/shared/components/tabs/Tabs.mjs"
+  ).TabPanel
 );
 const CookiesPanel = createFactory(
   require("resource://devtools/client/netmonitor/src/components/request-details/CookiesPanel.js")

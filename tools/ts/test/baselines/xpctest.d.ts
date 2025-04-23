@@ -46,9 +46,7 @@ interface nsIXPCTestBug809674 extends nsISupports {
 
 }  // global
 
-declare namespace nsIXPCTestCEnums {
-
-enum testFlagsExplicit {
+declare enum nsIXPCTestCEnums_testFlagsExplicit {
   shouldBe1Explicit = 1,
   shouldBe2Explicit = 2,
   shouldBe4Explicit = 4,
@@ -56,7 +54,7 @@ enum testFlagsExplicit {
   shouldBe12Explicit = 12,
 }
 
-enum testFlagsImplicit {
+declare enum nsIXPCTestCEnums_testFlagsImplicit {
   shouldBe0Implicit = 0,
   shouldBe1Implicit = 1,
   shouldBe2Implicit = 2,
@@ -67,11 +65,14 @@ enum testFlagsImplicit {
   shouldBe3AgainImplicit = 3,
 }
 
-}
-
 declare global {
 
-interface nsIXPCTestCEnums extends nsISupports, Enums<typeof nsIXPCTestCEnums.testFlagsExplicit & typeof nsIXPCTestCEnums.testFlagsImplicit> {
+namespace nsIXPCTestCEnums {
+  type testFlagsExplicit = nsIXPCTestCEnums_testFlagsExplicit;
+  type testFlagsImplicit = nsIXPCTestCEnums_testFlagsImplicit;
+}
+
+interface nsIXPCTestCEnums extends nsISupports, Enums<typeof nsIXPCTestCEnums_testFlagsExplicit & typeof nsIXPCTestCEnums_testFlagsImplicit> {
   readonly testConst?: 1;
 
   testCEnumInput(abc: nsIXPCTestCEnums.testFlagsExplicit): void;
@@ -121,15 +122,15 @@ interface nsIXPCTestParams extends nsISupports {
   testJsvalSequence(a: any[], b: InOutParam<any[]>): any[];
   testSequenceSequence(a: i16[][], b: InOutParam<i16[][]>): i16[][];
   testOptionalSequence(arr?: u8[]): u8[];
-  testShortArray(aLength: u32, a: i16[], bLength: InOutParam<u32>, b: InOutParam<i16[]>, rvLength: OutParam<u32>): OutParam<i16[]>;
-  testDoubleArray(aLength: u32, a: double[], bLength: InOutParam<u32>, b: InOutParam<double[]>, rvLength: OutParam<u32>): OutParam<double[]>;
-  testStringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): OutParam<string[]>;
-  testWstringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): OutParam<string[]>;
-  testInterfaceArray(aLength: u32, a: nsIXPCTestInterfaceA[], bLength: InOutParam<u32>, b: InOutParam<nsIXPCTestInterfaceA[]>, rvLength: OutParam<u32>): OutParam<nsIXPCTestInterfaceA[]>;
+  testShortArray(aLength: u32, a: i16[], bLength: InOutParam<u32>, b: InOutParam<i16[]>, rvLength: OutParam<u32>): i16[];
+  testDoubleArray(aLength: u32, a: double[], bLength: InOutParam<u32>, b: InOutParam<double[]>, rvLength: OutParam<u32>): double[];
+  testStringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): string[];
+  testWstringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): string[];
+  testInterfaceArray(aLength: u32, a: nsIXPCTestInterfaceA[], bLength: InOutParam<u32>, b: InOutParam<nsIXPCTestInterfaceA[]>, rvLength: OutParam<u32>): nsIXPCTestInterfaceA[];
   testByteArrayOptionalLength(a: u8[], aLength?: u32): u32;
-  testSizedString(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): OutParam<string>;
-  testSizedWstring(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): OutParam<string>;
-  testJsvalArray(aLength: u32, a: any[], bLength: InOutParam<u32>, b: InOutParam<any[]>, rvLength: OutParam<u32>): OutParam<any[]>;
+  testSizedString(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): string;
+  testSizedWstring(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): string;
+  testJsvalArray(aLength: u32, a: any[], bLength: InOutParam<u32>, b: InOutParam<any[]>, rvLength: OutParam<u32>): any[];
   testOutAString(o: OutParam<string>): void;
   testStringArrayOptionalSize(a: string[], aLength?: u32): string;
   testOmittedOptionalOut(aJSObj: nsIXPCTestParams, aOut?: OutParam<nsIURI>): void;
@@ -170,7 +171,7 @@ interface nsIXPCComponents_Interfaces {
   nsIXPCTestObjectReadOnly: nsJSIID<nsIXPCTestObjectReadOnly>;
   nsIXPCTestObjectReadWrite: nsJSIID<nsIXPCTestObjectReadWrite>;
   nsIXPCTestBug809674: nsJSIID<nsIXPCTestBug809674>;
-  nsIXPCTestCEnums: nsJSIID<nsIXPCTestCEnums, typeof nsIXPCTestCEnums.testFlagsExplicit & typeof nsIXPCTestCEnums.testFlagsImplicit>;
+  nsIXPCTestCEnums: nsJSIID<nsIXPCTestCEnums, typeof nsIXPCTestCEnums_testFlagsExplicit & typeof nsIXPCTestCEnums_testFlagsImplicit>;
   nsIXPCTestInterfaceA: nsJSIID<nsIXPCTestInterfaceA>;
   nsIXPCTestInterfaceB: nsJSIID<nsIXPCTestInterfaceB>;
   nsIXPCTestInterfaceC: nsJSIID<nsIXPCTestInterfaceC>;

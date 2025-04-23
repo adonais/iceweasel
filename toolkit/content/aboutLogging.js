@@ -114,7 +114,7 @@ const gLoggingPresets = {
   },
   "media-playback": {
     modules:
-      "HTMLMediaElement:4,HTMLMediaElementEvents:4,cubeb:5,PlatformDecoderModule:5,AudioSink:5,AudioSinkWrapper:5,MediaDecoderStateMachine:4,MediaDecoder:4,MediaFormatReader:5,GMP:5,EME:5,MediaSource:5,MediaSourceSamples:5,Autoplay:5",
+      "HTMLMediaElement:4,HTMLMediaElementEvents:4,cubeb:5,PlatformDecoderModule:5,AudioSink:5,AudioSinkWrapper:5,MediaDecoderStateMachine:4,MediaDecoder:4,MediaFormatReader:5,GMP:5,EME:5,MediaSource:5,MediaSourceSamples:5,Autoplay:5,MFMediaEngine:5",
     l10nIds: {
       label: "about-logging-preset-media-playback-label",
       description: "about-logging-preset-media-playback-description",
@@ -746,18 +746,7 @@ function startLogging() {
 
     // Force displaying the profiler button in the navbar if not preset, so
     // that there is a visual indication profiling is in progress.
-    if (!ProfilerMenuButton.isInNavbar()) {
-      // Ensure the widget is enabled.
-      Services.prefs.setBoolPref(
-        "devtools.performance.popup.feature-flag",
-        true
-      );
-      // Enable the profiler menu button.
-      ProfilerMenuButton.addToNavbar();
-      // Dispatch the change event manually, so that the shortcuts will also be
-      // added.
-      CustomizableUI.dispatchToolboxEvent("customizationchange");
-    }
+    ProfilerMenuButton.ensureButtonInNavbar();
 
     gProfilerPromise = Services.profiler.StartProfiler(
       entries,

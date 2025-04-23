@@ -7,6 +7,11 @@
 const { debounce } = require("resource://devtools/shared/debounce.js");
 const isMacOS = Services.appinfo.OS === "Darwin";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  getFocusableElements: "resource://devtools/client/shared/focus.mjs",
+});
+
 loader.lazyRequireGetter(this, "Debugger", "Debugger");
 loader.lazyRequireGetter(
   this,
@@ -37,12 +42,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "getFocusableElements",
-  "resource://devtools/client/shared/focus.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "l10n",
   "resource://devtools/client/webconsole/utils/messages.js",
   true
@@ -63,7 +62,7 @@ loader.lazyRequireGetter(
 const {
   Component,
   createFactory,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const {
   connect,
@@ -687,9 +686,9 @@ class JSTerm extends Component {
       // We only want to get visible focusable element, and for that we can assert that
       // the offsetParent isn't null. We can do that because we don't have fixed position
       // element in the console.
-      const items = getFocusableElements(el).filter(
-        ({ offsetParent }) => offsetParent !== null
-      );
+      const items = lazy
+        .getFocusableElements(el)
+        .filter(({ offsetParent }) => offsetParent !== null);
       const inputIndex = items.indexOf(inputField);
 
       if (items.length === 0 || (inputIndex > -1 && items.length === 1)) {

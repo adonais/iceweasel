@@ -42,8 +42,6 @@
   <string name="tab_tray_close_multiselect_content_description">Wylyź ze trybu multiwyboru</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Spamiyntej ôbrane karty we kolekcyji</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Ôbrane</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s produkuje Mozilla.</string>
   <!--
@@ -112,6 +110,8 @@
   <string name="home_screen_shortcut_open_new_tab_2">Nowo karta</string>
   <!-- Shortcut action to open new private tab -->
   <string name="home_screen_shortcut_open_new_private_tab_2">Nowo prywatno karta</string>
+  <!-- Shortcut action to open Passwords screen -->
+  <string name="home_screen_shortcut_passwords">Hasła</string>
   <!--
     Recent Tabs
 
@@ -159,6 +159,8 @@
   <string name="browser_menu_refresh">Ôdświyż</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
   <string name="browser_menu_stop">Sztopnij</string>
+  <!-- Browser menu button that opens the extensions manager -->
+  <string name="browser_menu_extensions">Rozszyrzynia</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Infōrmacyje ô kōncie</string>
   <!-- Browser menu button that sends a user to help articles -->
@@ -210,6 +212,8 @@
   <string name="browser_menu_edit">Edytuj</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
   <string name="browser_menu_customize_home_1">Przipasuj dōmowo strōna</string>
+  <!-- Browser menu label that navigates to the Password screen -->
+  <string name="browser_menu_passwords">Hasła</string>
   <!--
     Browser Toolbar
 
@@ -393,6 +397,8 @@
   <string name="preferences_account_sync_error">Połōncz sie zaś, coby durch synchrōnizować</string>
   <!-- Preference for language -->
   <string name="preferences_language">Godka</string>
+  <!-- Preference for translations -->
+  <string name="preferences_translations">Przekłady</string>
   <!-- Preference for data choices -->
   <string name="preferences_data_choices">Możności udostympnianio</string>
   <!-- Preference for data collection -->
@@ -431,6 +437,8 @@
   <string name="preferences_enable_gecko_logs">Załōncz protokōł Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
   <string name="quit_application">Zawiyranie aplikacyje, coby przidać zmiany…</string>
+  <!-- Preference for extensions -->
+  <string name="preferences_extensions">Rozszyrzynia</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">Powiadōmiynia</string>
   <!-- Summary for notification preference indicating notifications are allowed -->
@@ -506,6 +514,8 @@
   <string name="preferences_sync_history">Historyjo</string>
   <!-- Preference for syncing bookmarks -->
   <string name="preferences_sync_bookmarks">Zokłodki</string>
+  <!-- Preference for syncing passwords -->
+  <string name="preferences_sync_logins_2">Hasła</string>
   <!-- Preference for syncing tabs -->
   <string name="preferences_sync_tabs_2">Ôtwarte karty</string>
   <!-- Preference for signing out -->
@@ -530,6 +540,8 @@
     and %3$s is the device model.
   -->
   <string name="default_device_name_2">%1$s na %2$s %3$s</string>
+  <!-- Preference for syncing payment methods -->
+  <string name="preferences_sync_credit_cards_2">Metody płatności</string>
   <!-- Preference for syncing addresses -->
   <string name="preferences_sync_address">Adresy</string>
   <!--
@@ -556,10 +568,6 @@
   <string name="exceptions_empty_message_description">Z wyjōntkami możesz zastawić ôchrōna ôd śledzynio na ôbranych strōnach.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Przewiydz sie wiyncyj</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Udostympnio Mozilli dane ô przeglōndarce: sprowności, używaniu, sprzyńcie i sztalōnkach, coby my mogli polepszać aplikacyjo %1$s</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Marketingowe dane</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Badania</string>
   <!-- Summary for studies preferences -->
@@ -734,18 +742,8 @@
   <string name="studies_remove">Skasuj</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Aktywne</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s może roz za czas insztalować i kludzić podszukōnki.</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Przewiydz sie wiyncyj</string>
-  <!--
-    Sessions
-
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Prywatne karty</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Synchrōnizowane karty</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Przidej karta</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -836,18 +834,18 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">Pobrane sōm skasowane</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Pobrane sōm skasowane</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">Skasowane zbiory: %1$s</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Skasowane zbiory: %1$s</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">Niy ma żodnych pobranych zbiorōw</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Niy ma żodnych pobranych zbiorōw</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">Ôbrane: %1$d</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">Skasuj</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Skasuj</string>
   <!--
     Crashes
 
@@ -1413,11 +1411,36 @@
   <string name="add_to_homescreen_text_placeholder">Miano ôd skrōtu</string>
   <!-- Describes the add to homescreen functionality -->
   <string name="add_to_homescreen_description_2">Idzie leko przidać ta strōna na dōmowy ekran swojij masziny, coby mieć snadny dostymp i gibcyj przeglōndać internet choby bez aplikacyjo.</string>
+  <!-- Preference for managing the settings for logins and passwords in Fenix -->
+  <string name="preferences_passwords_logins_and_passwords_2">Hasła</string>
   <!-- Preference option for asking to save passwords in Fenix -->
   <string name="preferences_passwords_save_logins_ask_to_save">Pytej sie przed spamiyntaniym</string>
   <!-- Preference option for never saving passwords in Fenix -->
   <string name="preferences_passwords_save_logins_never_save">Żodyn roz niy spamiyntuj</string>
   <!-- Preference for autofilling saved logins in Firefox (in web content), %1$s will be replaced with the app name -->
   <string name="preferences_passwords_autofill2">Autōmatycznie wypōłnianie w aplikacyji %1$s</string>
+  <!-- Preference option for adding a password -->
+  <string name="preferences_logins_add_login_2">Przidej hasło</string>
+  <!-- Preference to access list of saved passwords -->
+  <string name="preferences_passwords_saved_logins_2">Spamiyntane hasła</string>
+  <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
+  <string name="logins_biometric_prompt_message_2">Ôdblokuj, żeby wejzdrzeć na swoje hasła</string>
+  <!-- Saved logins sorting strategy menu item -by name- (if selected, it will sort saved logins alphabetically) -->
+  <string name="saved_logins_sort_strategy_alphabetically">Miano (A-Z)</string>
+  <!-- Saved logins sorting strategy menu item -by last used- (if selected, it will sort saved logins by last used) -->
+  <string name="saved_logins_sort_strategy_last_used">Ôstatnie użyte</string>
+  <!-- Preference and title for managing the settings for payment methods -->
+  <string name="preferences_credit_cards_2">Metody płatności</string>
+  <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their saved credit cards -->
+  <string name="credit_cards_biometric_prompt_message">Ôdblokuj, żeby wejzdrzeć na spamiyntane karty</string>
+  <!-- The page title for adding new password. -->
+  <string name="add_login_2">Przidej hasło</string>
   <!-- Translations feature -->
+
+  <!--
+    Translation settings dialog
+
+    Title of the translation settings dialog that allows a user to set their preferred translation settings.
+  -->
+  <string name="translation_settings_toolbar_title">Przekłady</string>
 </resources>

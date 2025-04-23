@@ -200,12 +200,12 @@ conditioned_profile:
     replace:
         chunks: 8
 
-cm6:
-    description: "{description} with codemirror 6 enabled"
+cm5:
+    description: "{description} with codemirror 5 enabled"
     component: "DevTools::Framework"
-    expiration: "2025-03-01"
-    suffix: "cm6"
-    mozinfo: "cm6"
+    expiration: "2025-06-01"
+    suffix: "cm5"
+    mozinfo: "cm5"
     replace:
         tier: 3
     when:
@@ -213,7 +213,7 @@ cm6:
     merge:
         mozharness:
             extra-options:
-                - "--setpref=devtools.debugger.features.codemirror-next=true"
+                - "--setpref=devtools.debugger.features.codemirror-next=false"
 
 socketprocess:
     description: "{description} with socket process enabled"
@@ -511,26 +511,10 @@ draw-snapshot:
             extra-options:
                 - "--setpref=reftest.use-draw-snapshot=true"
 
-os-integration:
-    description: >-
-        {description} limited to tests identified as good candidates for validating the test environment.
-    component: Release Engineering::Firefox-CI Administration
-    expiration: never
-    suffix: osint
-    when:
-        $eval: >-
-            "debug" in task["test-platform"]
-            && !("macosx" in task["test-platform"])
-            && !("android-hw" in task["test-platform"])
-    merge:
-        worker:
-            env:
-                MOZHARNESS_TEST_TAG: ["os_integration"]
-
 async-event-dispatching:
     description: "{description} with async parent process event dispatching"
     component: "Remote Protocol::Agent"
-    expiration: "2025-04-01"
+    expiration: "2025-10-01"
     suffix: "async"
     mozinfo: "remote_async"
     replace:

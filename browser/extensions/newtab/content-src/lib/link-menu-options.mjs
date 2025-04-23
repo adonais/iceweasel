@@ -151,6 +151,28 @@ export const LinkMenuOptions = {
     userEvent: "BLOCK",
   }),
 
+  // This is the "Dismiss" action for leaderboard/billboard ads.
+  BlockAdUrl: (site, pos, eventSource) => ({
+    id: "newtab-menu-dismiss",
+    icon: "dismiss",
+    action: ac.AlsoToMain({
+      type: at.BLOCK_URL,
+      data: [site],
+    }),
+    impression: ac.ImpressionStats({
+      source: eventSource,
+      block: 0,
+      tiles: [
+        {
+          id: site.guid,
+          pos,
+          ...(site.shim && site.shim.save ? { shim: site.shim.save } : {}),
+        },
+      ],
+    }),
+    userEvent: "BLOCK",
+  }),
+
   // This is an option for web extentions which will result in remove items from
   // memory and notify the web extenion, rather than using the built-in block list.
   WebExtDismiss: (site, index, eventSource) => ({
@@ -489,5 +511,28 @@ export const LinkMenuOptions = {
         event_source: "CONTEXT_MENU",
       },
     }),
+  }),
+  ManageSponsoredContent: () => ({
+    id: "newtab-menu-manage-sponsored-content",
+    action: ac.OnlyToMain({ type: at.SETTINGS_OPEN }),
+    userEvent: "OPEN_NEWTAB_PREFS",
+  }),
+  OurSponsorsAndYourPrivacy: () => ({
+    id: "newtab-menu-our-sponsors-and-your-privacy",
+    action: ac.OnlyToMain({
+      type: at.OPEN_LINK,
+      data: {
+        url: "https://support.mozilla.org/kb/pocket-sponsored-stories-new-tabs",
+      },
+    }),
+    userEvent: "CLICK_PRIVACY_INFO",
+  }),
+  ReportAd: () => ({
+    id: "newtab-menu-report-this-ad",
+    action: ac.BroadcastToContent({ type: at.REPORT_OPEN }),
+  }),
+  ReportContent: () => ({
+    id: "newtab-menu-report-content",
+    action: ac.BroadcastToContent({ type: at.REPORT_OPEN }),
   }),
 };

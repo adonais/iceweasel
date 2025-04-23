@@ -8,28 +8,18 @@
 
 #include <utility>
 
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Components.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/EventStateManager.h"
 #include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
-#include "mozilla/dom/PromiseWorkerProxy.h"
-#include "mozilla/dom/QMResult.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ServiceWorkerGlobalScopeBinding.h"
-#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
-#include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/glean/DomNotificationMetrics.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
@@ -38,21 +28,10 @@
 #include "NotificationUtils.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
-#include "nsFocusManager.h"
-#include "nsIAlertsService.h"
 #include "nsIContentPermissionPrompt.h"
-#include "nsILoadContext.h"
-#include "nsINotificationStorage.h"
-#include "nsIPermission.h"
-#include "nsIPermissionManager.h"
 #include "nsIScriptError.h"
-#include "nsIServiceWorkerManager.h"
 #include "nsNetUtil.h"
-#include "nsProxyRelease.h"
-#include "nsServiceManagerUtils.h"
 #include "nsStructuredCloneContainer.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
 
 namespace mozilla::dom {
 
@@ -68,122 +47,6 @@ struct NotificationStrings {
   const nsString mIcon;
   const nsString mData;
   const nsString mServiceWorkerRegistrationScope;
-};
-
-class GetCallbackBase : public nsINotificationStorageCallback {
- public:
-  NS_IMETHOD Handle(const nsAString& aID, const nsAString& aTitle,
-                    const nsAString& aDir, const nsAString& aLang,
-                    const nsAString& aBody, const nsAString& aTag,
-                    const nsAString& aIcon, const nsAString& aData,
-                    const nsAString& aServiceWorkerRegistrationScope) final {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(!aID.IsEmpty());
-
-    NotificationStrings strings = {
-        nsString(aID),
-        nsString(aTitle),
-        nsString(aDir),
-        nsString(aLang),
-        nsString(aBody),
-        nsString(aTag),
-        nsString(aIcon),
-        nsString(aData),
-        nsString(aServiceWorkerRegistrationScope),
-    };
-
-    mStrings.AppendElement(std::move(strings));
-    return NS_OK;
-  }
-
-  NS_IMETHOD Done() override = 0;
-
- protected:
-  virtual ~GetCallbackBase() = default;
-
-  nsTArray<NotificationStrings> mStrings;
-};
-
-class NotificationStorageCallback final : public GetCallbackBase {
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(NotificationStorageCallback)
-
-  NotificationStorageCallback(nsIGlobalObject* aWindow, Promise* aPromise)
-      : mWindow(aWindow), mPromise(aPromise) {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(aWindow);
-    MOZ_ASSERT(aPromise);
-  }
-
-  NS_IMETHOD Done() final {
-    nsTArray<RefPtr<Notification>> notifications(mStrings.Length());
-
-    for (const NotificationStrings& strings : mStrings) {
-      auto result = Notification::ConstructFromFields(
-          mWindow, strings.mID, strings.mTitle, strings.mDir, strings.mLang,
-          strings.mBody, strings.mTag, strings.mIcon, strings.mData,
-          strings.mServiceWorkerRegistrationScope);
-      if (result.isErr()) {
-        continue;
-      }
-      RefPtr<Notification> n = result.unwrap();
-      notifications.AppendElement(n.forget());
-    }
-
-    mPromise->MaybeResolve(notifications);
-    return NS_OK;
-  }
-
- private:
-  virtual ~NotificationStorageCallback() = default;
-
-  nsCOMPtr<nsIGlobalObject> mWindow;
-  RefPtr<Promise> mPromise;
-  const nsString mScope;
-};
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(NotificationStorageCallback)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(NotificationStorageCallback)
-NS_IMPL_CYCLE_COLLECTION(NotificationStorageCallback, mWindow, mPromise);
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NotificationStorageCallback)
-  NS_INTERFACE_MAP_ENTRY(nsINotificationStorageCallback)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-class NotificationGetRunnable final : public Runnable {
-  bool mIsPrivate;
-  const nsString mOrigin;
-  const nsString mScope;
-  const nsString mTag;
-  nsCOMPtr<nsINotificationStorageCallback> mCallback;
-
- public:
-  NotificationGetRunnable(const nsAString& aOrigin, const nsAString& aScope,
-                          const nsAString& aTag,
-                          nsINotificationStorageCallback* aCallback,
-                          bool aIsPrivate)
-      : Runnable("NotificationGetRunnable"),
-        mIsPrivate(aIsPrivate),
-        mOrigin(aOrigin),
-        mScope(aScope),
-        mTag(aTag),
-        mCallback(aCallback) {}
-
-  NS_IMETHOD
-  Run() override {
-    nsCOMPtr<nsINotificationStorage> notificationStorage =
-        GetNotificationStorage(mIsPrivate);
-    if (NS_WARN_IF(!notificationStorage)) {
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    nsresult rv = notificationStorage->Get(mOrigin, mScope, mTag, mCallback);
-    // XXXnsm Is it guaranteed mCallback will be called in case of failure?
-    Unused << NS_WARN_IF(NS_FAILED(rv));
-    return rv;
-  }
 };
 
 class NotificationPermissionRequest : public ContentPermissionRequestBase,
@@ -260,31 +123,6 @@ class GetPermissionRunnable final : public WorkerMainThreadRunnable {
 };
 
 }  // anonymous namespace
-
-// Subclass that can be directly dispatched to child workers from the main
-// thread.
-class NotificationWorkerRunnable : public MainThreadWorkerRunnable {
- protected:
-  explicit NotificationWorkerRunnable(
-      WorkerPrivate* aWorkerPrivate,
-      const char* aName = "NotificationWorkerRunnable")
-      : MainThreadWorkerRunnable(aName) {}
-
-  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
-    aWorkerPrivate->AssertIsOnWorkerThread();
-    // WorkerScope might start dying at the moment. And WorkerRunInternal()
-    // should not be executed once WorkerScope is dying, since
-    // WorkerRunInternal() might access resources which already been freed
-    // during WorkerRef::Notify().
-    if (aWorkerPrivate->GlobalScope() &&
-        !aWorkerPrivate->GlobalScope()->IsDying()) {
-      WorkerRunInternal(aWorkerPrivate);
-    }
-    return true;
-  }
-
-  virtual void WorkerRunInternal(WorkerPrivate* aWorkerPrivate) = 0;
-};
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(NotificationPermissionRequest,
                                    ContentPermissionRequestBase, mCallback)
@@ -402,24 +240,13 @@ bool Notification::PrefEnabled(JSContext* aCx, JSObject* aObj) {
   return StaticPrefs::dom_webnotifications_enabled();
 }
 
-Notification::Notification(nsIGlobalObject* aGlobal, const nsAString& aID,
-                           const nsAString& aTitle, const nsAString& aBody,
-                           NotificationDirection aDir, const nsAString& aLang,
-                           const nsAString& aTag, const nsAString& aIconUrl,
-                           bool aRequireInteraction, bool aSilent,
-                           nsTArray<uint32_t>&& aVibrate)
+Notification::Notification(nsIGlobalObject* aGlobal,
+                           const IPCNotification& aIPCNotification,
+                           const nsAString& aScope)
     : DOMEventTargetHelper(aGlobal),
-      mID(aID),
-      mTitle(aTitle),
-      mBody(aBody),
-      mDir(aDir),
-      mLang(aLang),
-      mTag(aTag),
-      mIconUrl(aIconUrl),
-      mRequireInteraction(aRequireInteraction),
-      mSilent(aSilent),
-      mVibrate(std::move(aVibrate)),
-      mData(JS::NullValue()) {
+      mIPCNotification(aIPCNotification),
+      mData(JS::NullValue()),
+      mScope(aScope) {
   KeepAliveIfHasListenersFor(nsGkAtoms::onclick);
   KeepAliveIfHasListenersFor(nsGkAtoms::onshow);
   KeepAliveIfHasListenersFor(nsGkAtoms::onerror);
@@ -442,8 +269,8 @@ already_AddRefed<Notification> Notification::Constructor(
   }
 
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<Notification> notification =
-      Create(aGlobal.Context(), global, aTitle, aOptions, u""_ns, aRv);
+  RefPtr<Notification> notification = ValidateAndCreate(
+      aGlobal.Context(), global, aTitle, aOptions, u""_ns, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -473,60 +300,33 @@ already_AddRefed<Notification> Notification::Constructor(
   return notification.forget();
 }
 
-// static
-Result<already_AddRefed<Notification>, QMResult>
-Notification::ConstructFromFields(
-    nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
-    const nsAString& aDir, const nsAString& aLang, const nsAString& aBody,
-    const nsAString& aTag, const nsAString& aIcon, const nsAString& aData,
-    const nsAString& aServiceWorkerRegistrationScope) {
-  MOZ_ASSERT(aGlobal);
-
-  RootedDictionary<NotificationOptions> options(RootingCx());
-  options.mDir = StringToEnum<NotificationDirection>(aDir).valueOr(
-      NotificationDirection::Auto);
-  options.mLang = aLang;
-  options.mBody = aBody;
-  options.mTag = aTag;
-  options.mIcon = aIcon;
-  IgnoredErrorResult rv;
-  RefPtr<Notification> notification =
-      CreateInternal(aGlobal, aID, aTitle, options, rv);
-  if (NS_WARN_IF(rv.Failed())) {
-    return Err(ToQMResult(NS_ERROR_FAILURE));
+// NOTE(krosylight): Maybe move this check to the parent process?
+Result<Ok, nsresult> ValidateBase64Data(const nsAString& aData) {
+  if (aData.IsEmpty()) {
+    return Ok();
   }
 
-  QM_TRY(notification->InitFromBase64(aData));
+  // To and from to ensure it is valid base64.
+  RefPtr<nsStructuredCloneContainer> container =
+      new nsStructuredCloneContainer();
+  MOZ_TRY(container->InitFromBase64(aData, JS_STRUCTURED_CLONE_VERSION));
 
-  notification->SetScope(aServiceWorkerRegistrationScope);
+  nsString result;
+  MOZ_TRY(container->GetDataAsBase64(result));
 
-  return notification.forget();
+  return Ok();
 }
 
 // static
-Result<already_AddRefed<Notification>, QMResult> Notification::ConstructFromIPC(
+Result<already_AddRefed<Notification>, nsresult> Notification::ConstructFromIPC(
     nsIGlobalObject* aGlobal, const IPCNotification& aIPCNotification,
     const nsAString& aServiceWorkerRegistrationScope) {
   MOZ_ASSERT(aGlobal);
 
-  const IPCNotificationOptions& ipcOptions = aIPCNotification.options();
+  MOZ_TRY(ValidateBase64Data(aIPCNotification.options().dataSerialized()));
 
-  RootedDictionary<NotificationOptions> options(RootingCx());
-  options.mDir = ipcOptions.dir();
-  options.mLang = ipcOptions.lang();
-  options.mBody = ipcOptions.body();
-  options.mTag = ipcOptions.tag();
-  options.mIcon = ipcOptions.icon();
-  IgnoredErrorResult rv;
-  RefPtr<Notification> notification = CreateInternal(
-      aGlobal, aIPCNotification.id(), ipcOptions.title(), options, rv);
-  if (NS_WARN_IF(rv.Failed())) {
-    return Err(ToQMResult(NS_ERROR_FAILURE));
-  }
-
-  QM_TRY(notification->InitFromBase64(ipcOptions.dataSerialized()));
-
-  notification->SetScope(aServiceWorkerRegistrationScope);
+  RefPtr<Notification> notification = new Notification(
+      aGlobal, aIPCNotification, aServiceWorkerRegistrationScope);
 
   return notification.forget();
 }
@@ -539,11 +339,39 @@ void Notification::MaybeNotifyClose() {
   DispatchTrustedEvent(u"close"_ns);
 }
 
+static Result<nsString, nsresult> SerializeDataAsBase64(
+    JSContext* aCx, JS::Handle<JS::Value> aData) {
+  if (aData.isNull()) {
+    return nsString();
+  }
+  RefPtr<nsStructuredCloneContainer> dataObjectContainer =
+      new nsStructuredCloneContainer();
+  MOZ_TRY(dataObjectContainer->InitFromJSVal(aData, aCx));
+
+  nsString result;
+  MOZ_TRY(dataObjectContainer->GetDataAsBase64(result));
+
+  return result;
+}
+
+/* static */
 // https://notifications.spec.whatwg.org/#create-a-notification
-already_AddRefed<Notification> Notification::CreateInternal(
-    nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
-    const NotificationOptions& aOptions, ErrorResult& aRv) {
-  // Step 20: Set notification’s silent preference to options["silent"].
+already_AddRefed<Notification> Notification::ValidateAndCreate(
+    JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aTitle,
+    const NotificationOptions& aOptions, const nsAString& aScope,
+    ErrorResult& aRv) {
+  MOZ_ASSERT(aGlobal);
+
+  // Step 4: Set notification’s data to
+  // StructuredSerializeForStorage(options["data"]).
+  JS::Rooted<JS::Value> data(aCx, aOptions.mData);
+  Result<nsString, nsresult> dataResult = SerializeDataAsBase64(aCx, data);
+  if (dataResult.isErr()) {
+    aRv = dataResult.unwrapErr();
+    return nullptr;
+  }
+
+  // Step 17: Set notification’s silent preference to options["silent"].
   bool silent = false;
   if (StaticPrefs::dom_webnotifications_silent_enabled()) {
     silent = aOptions.mSilent;
@@ -552,7 +380,7 @@ already_AddRefed<Notification> Notification::CreateInternal(
   nsTArray<uint32_t> vibrate;
   if (StaticPrefs::dom_webnotifications_vibrate_enabled() &&
       aOptions.mVibrate.WasPassed()) {
-    // Step 4: If options["silent"] is true and options["vibrate"] exists, then
+    // Step 2: If options["silent"] is true and options["vibrate"] exists, then
     // throw a TypeError.
     if (silent) {
       aRv.ThrowTypeError(
@@ -560,7 +388,7 @@ already_AddRefed<Notification> Notification::CreateInternal(
       return nullptr;
     }
 
-    // Step 17: If options["vibrate"] exists, then validate and normalize it and
+    // Step 14: If options["vibrate"] exists, then validate and normalize it and
     // set notification’s vibration pattern to the return value.
     const OwningUnsignedLongOrUnsignedLongSequence& value =
         aOptions.mVibrate.Value();
@@ -573,16 +401,43 @@ already_AddRefed<Notification> Notification::CreateInternal(
     }
   }
 
-  // Step 15: If options["icon"] exists, then parse it using baseURL, and if
+  // Step 12: If options["icon"] exists, then parse it using baseURL, and if
   // that does not return failure, set notification’s icon URL to the return
   // value. (Otherwise icon URL is not set.)
   nsString iconUrl = aOptions.mIcon;
   ResolveIconURL(aGlobal, iconUrl);
 
-  RefPtr<Notification> notification = new Notification(
-      aGlobal, aID, aTitle, aOptions.mBody, aOptions.mDir, aOptions.mLang,
-      aOptions.mTag, iconUrl, aOptions.mRequireInteraction, silent,
-      std::move(vibrate));
+  // Step 19: Set notification’s actions to « ».
+  nsTArray<IPCNotificationAction> actions;
+  if (StaticPrefs::dom_webnotifications_actions_enabled()) {
+    // Step 20: For each entry in options["actions"], up to the maximum number
+    // of actions supported (skip any excess entries):
+    for (const auto& entry : aOptions.mActions) {
+      // Step 20.1: Let action be a new notification action.
+      IPCNotificationAction action;
+      // Step 20.2: Set action’s name to entry["action"].
+      action.name() = entry.mAction;
+      // Step 20.3: Set action’s title to entry["title"].
+      action.title() = entry.mTitle;
+      // Step 20.4: (Skipping icon support, see
+      // https://github.com/whatwg/notifications/issues/233)
+      // Step 20.5: Append action to notification’s actions.
+      actions.AppendElement(std::move(action));
+      if (actions.Length() == kMaxActions) {
+        break;
+      }
+    }
+  }
+
+  IPCNotification ipcNotification(
+      nsString(), IPCNotificationOptions(
+                      nsString(aTitle), aOptions.mDir, nsString(aOptions.mLang),
+                      nsString(aOptions.mBody), nsString(aOptions.mTag),
+                      iconUrl, aOptions.mRequireInteraction, silent, vibrate,
+                      nsString(dataResult.unwrap()), std::move(actions)));
+
+  RefPtr<Notification> notification =
+      new Notification(aGlobal, ipcNotification, aScope);
   return notification.forget();
 }
 
@@ -713,6 +568,10 @@ NotificationPermission Notification::GetPermissionInternal(
                                    aWindow->IsSecureContext(), aPurpose);
 }
 
+uint32_t Notification::MaxActions(const GlobalObject& aGlobal) {
+  return kMaxActions;
+}
+
 nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
                                       nsString& aIconUrl) {
   nsresult rv = NS_OK;
@@ -797,200 +656,6 @@ nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
   return rv;
 }
 
-already_AddRefed<Promise> Notification::Get(
-    nsPIDOMWindowInner* aWindow, const GetNotificationOptions& aFilter,
-    const nsAString& aScope, ErrorResult& aRv) {
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aWindow);
-
-  nsCOMPtr<Document> doc = aWindow->GetExtantDoc();
-  if (!doc) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  nsString origin;
-  aRv = GetOrigin(doc->NodePrincipal(), origin);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  RefPtr<Promise> promise = Promise::Create(aWindow->AsGlobal(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsINotificationStorageCallback> callback =
-      new NotificationStorageCallback(aWindow->AsGlobal(), promise);
-
-  RefPtr<NotificationGetRunnable> r = new NotificationGetRunnable(
-      origin, aScope, aFilter.mTag, callback, doc->IsInPrivateBrowsing());
-
-  aRv = aWindow->AsGlobal()->Dispatch(r.forget());
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  return promise.forget();
-}
-
-class WorkerGetResultRunnable final : public NotificationWorkerRunnable {
-  RefPtr<PromiseWorkerProxy> mPromiseProxy;
-  const nsTArray<NotificationStrings> mStrings;
-
- public:
-  WorkerGetResultRunnable(WorkerPrivate* aWorkerPrivate,
-                          PromiseWorkerProxy* aPromiseProxy,
-                          nsTArray<NotificationStrings>&& aStrings)
-      : NotificationWorkerRunnable(aWorkerPrivate, "WorkerGetResultRunnable"),
-        mPromiseProxy(aPromiseProxy),
-        mStrings(std::move(aStrings)) {}
-
-  void WorkerRunInternal(WorkerPrivate* aWorkerPrivate) override {
-    RefPtr<Promise> workerPromise = mPromiseProxy->GetWorkerPromise();
-    // Once Worker had already started shutdown, workerPromise would be nullptr
-    if (!workerPromise) {
-      return;
-    }
-
-    nsTArray<RefPtr<Notification>> notifications(mStrings.Length());
-    for (const NotificationStrings& strings : mStrings) {
-      auto result = Notification::ConstructFromFields(
-          aWorkerPrivate->GlobalScope(), strings.mID, strings.mTitle,
-          strings.mDir, strings.mLang, strings.mBody, strings.mTag,
-          strings.mIcon, strings.mData,
-          /* strings.mBehavior, not
-           * supported */
-          strings.mServiceWorkerRegistrationScope);
-      if (result.isErr()) {
-        continue;
-      }
-      RefPtr<Notification> n = result.unwrap();
-      notifications.AppendElement(n.forget());
-    }
-
-    workerPromise->MaybeResolve(notifications);
-    mPromiseProxy->CleanUp();
-  }
-};
-
-class WorkerGetCallback final : public GetCallbackBase {
-  RefPtr<PromiseWorkerProxy> mPromiseProxy;
-
- public:
-  NS_DECL_ISUPPORTS
-
-  explicit WorkerGetCallback(PromiseWorkerProxy* aProxy)
-      : mPromiseProxy(aProxy) {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(aProxy);
-  }
-
-  NS_IMETHOD Done() final {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(mPromiseProxy, "Was Done() called twice?");
-
-    RefPtr<PromiseWorkerProxy> proxy = std::move(mPromiseProxy);
-    MutexAutoLock lock(proxy->Lock());
-    if (proxy->CleanedUp()) {
-      return NS_OK;
-    }
-
-    RefPtr<WorkerGetResultRunnable> r = new WorkerGetResultRunnable(
-        proxy->GetWorkerPrivate(), proxy, std::move(mStrings));
-
-    r->Dispatch(proxy->GetWorkerPrivate());
-    return NS_OK;
-  }
-
- private:
-  ~WorkerGetCallback() = default;
-};
-
-NS_IMPL_ISUPPORTS(WorkerGetCallback, nsINotificationStorageCallback)
-
-class WorkerGetRunnable final : public Runnable {
-  RefPtr<PromiseWorkerProxy> mPromiseProxy;
-  const nsString mTag;
-  const nsString mScope;
-
- public:
-  WorkerGetRunnable(PromiseWorkerProxy* aProxy, const nsAString& aTag,
-                    const nsAString& aScope)
-      : Runnable("WorkerGetRunnable"),
-        mPromiseProxy(aProxy),
-        mTag(aTag),
-        mScope(aScope) {
-    MOZ_ASSERT(mPromiseProxy);
-  }
-
-  NS_IMETHOD
-  Run() override {
-    AssertIsOnMainThread();
-
-    MutexAutoLock lock(mPromiseProxy->Lock());
-    if (mPromiseProxy->CleanedUp()) {
-      return NS_OK;
-    }
-
-    auto* principal = mPromiseProxy->GetWorkerPrivate()->GetPrincipal();
-    auto isPrivate = principal->GetIsInPrivateBrowsing();
-
-    nsCOMPtr<nsINotificationStorageCallback> callback =
-        new WorkerGetCallback(mPromiseProxy);
-
-    nsCOMPtr<nsINotificationStorage> notificationStorage =
-        GetNotificationStorage(isPrivate);
-    if (NS_WARN_IF(!notificationStorage)) {
-      callback->Done();
-      return NS_ERROR_UNEXPECTED;
-    }
-    nsString origin;
-    nsresult rv = GetOrigin(principal, origin);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      callback->Done();
-      return rv;
-    }
-
-    rv = notificationStorage->Get(origin, mScope, mTag, callback);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      callback->Done();
-      return rv;
-    }
-
-    return NS_OK;
-  }
-
- private:
-  ~WorkerGetRunnable() = default;
-};
-
-// static
-already_AddRefed<Promise> Notification::WorkerGet(
-    WorkerPrivate* aWorkerPrivate, const GetNotificationOptions& aFilter,
-    const nsAString& aScope, ErrorResult& aRv) {
-  MOZ_ASSERT(aWorkerPrivate);
-  aWorkerPrivate->AssertIsOnWorkerThread();
-  RefPtr<Promise> p = Promise::Create(aWorkerPrivate->GlobalScope(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  RefPtr<PromiseWorkerProxy> proxy =
-      PromiseWorkerProxy::Create(aWorkerPrivate, p);
-  if (!proxy) {
-    aRv.Throw(NS_ERROR_DOM_ABORT_ERR);
-    return nullptr;
-  }
-
-  RefPtr<WorkerGetRunnable> r =
-      new WorkerGetRunnable(proxy, aFilter.mTag, aScope);
-  // Since this is called from script via
-  // ServiceWorkerRegistration::GetNotifications, we can assert dispatch.
-  MOZ_ALWAYS_SUCCEEDS(aWorkerPrivate->DispatchToMainThread(r.forget()));
-  return p.forget();
-}
-
 JSObject* Notification::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
   return mozilla::dom::Notification_Binding::Wrap(aCx, this, aGivenProto);
@@ -1008,21 +673,26 @@ void Notification::Close() {
   }
 }
 
-bool Notification::RequireInteraction() const { return mRequireInteraction; }
+bool Notification::RequireInteraction() const {
+  return mIPCNotification.options().requireInteraction();
+}
 
-bool Notification::Silent() const { return mSilent; }
+bool Notification::Silent() const {
+  return mIPCNotification.options().silent();
+}
 
 void Notification::GetVibrate(nsTArray<uint32_t>& aRetval) const {
-  aRetval = mVibrate.Clone();
+  aRetval = mIPCNotification.options().vibrate().Clone();
 }
 
 void Notification::GetData(JSContext* aCx,
                            JS::MutableHandle<JS::Value> aRetval) {
-  if (mData.isNull() && !mDataAsBase64.IsEmpty()) {
+  const nsString& dataSerialized = mIPCNotification.options().dataSerialized();
+  if (mData.isNull() && !dataSerialized.IsEmpty()) {
     nsresult rv;
     RefPtr<nsStructuredCloneContainer> container =
         new nsStructuredCloneContainer();
-    rv = container->InitFromBase64(mDataAsBase64, JS_STRUCTURED_CLONE_VERSION);
+    rv = container->InitFromBase64(dataSerialized, JS_STRUCTURED_CLONE_VERSION);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aRetval.setNull();
       return;
@@ -1048,39 +718,15 @@ void Notification::GetData(JSContext* aCx,
   aRetval.set(mData);
 }
 
-void Notification::InitFromJSVal(JSContext* aCx, JS::Handle<JS::Value> aData,
-                                 ErrorResult& aRv) {
-  if (!mDataAsBase64.IsEmpty() || aData.isNull()) {
-    return;
+void Notification::GetActions(nsTArray<NotificationAction>& aRetVal) {
+  aRetVal.Clear();
+  for (const IPCNotificationAction& entry :
+       mIPCNotification.options().actions()) {
+    RootedDictionary<NotificationAction> action(RootingCx());
+    action.mAction = entry.name();
+    action.mTitle = entry.title();
+    aRetVal.AppendElement(action);
   }
-  RefPtr<nsStructuredCloneContainer> dataObjectContainer =
-      new nsStructuredCloneContainer();
-  aRv = dataObjectContainer->InitFromJSVal(aData, aCx);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  aRv = dataObjectContainer->GetDataAsBase64(mDataAsBase64);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-}
-
-Result<Ok, QMResult> Notification::InitFromBase64(const nsAString& aData) {
-  MOZ_ASSERT(mDataAsBase64.IsEmpty());
-  if (aData.IsEmpty()) {
-    // No data; skipping
-    return Ok();
-  }
-
-  // To and fro to ensure it is valid base64.
-  RefPtr<nsStructuredCloneContainer> container =
-      new nsStructuredCloneContainer();
-  QM_TRY(QM_TO_RESULT(
-      container->InitFromBase64(aData, JS_STRUCTURED_CLONE_VERSION)));
-  QM_TRY(QM_TO_RESULT(container->GetDataAsBase64(mDataAsBase64)));
-
-  return Ok();
 }
 
 // Steps 2-5 of
@@ -1122,7 +768,7 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   // normalization steps. It would be nice to export that and skip creating
   // object here.
   RefPtr<Notification> notification =
-      Create(aCx, aGlobal, aTitle, aOptions, aScope, aRv);
+      ValidateAndCreate(aCx, aGlobal, aTitle, aOptions, aScope, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -1134,37 +780,9 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   return p.forget();
 }
 
-/* static */
-already_AddRefed<Notification> Notification::Create(
-    JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aTitle,
-    const NotificationOptions& aOptions, const nsAString& aScope,
-    ErrorResult& aRv) {
-  MOZ_ASSERT(aGlobal);
-
-  RefPtr<Notification> notification =
-      CreateInternal(aGlobal, u""_ns, aTitle, aOptions, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  // Make a structured clone of the aOptions.mData object
-  JS::Rooted<JS::Value> data(aCx, aOptions.mData);
-  notification->InitFromJSVal(aCx, data, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  notification->SetScope(aScope);
-
-  return notification.forget();
-}
-
 bool Notification::CreateActor() {
   mozilla::ipc::PBackgroundChild* backgroundActor =
       mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
-  IPCNotificationOptions options(mTitle, mDir, mLang, mBody, mTag, mIconUrl,
-                                 mRequireInteraction, mSilent, mVibrate,
-                                 mDataAsBase64);
 
   // Note: We are not using the typical PBackground managed actor here as we
   // want the actor to be in the main thread of the main process. Instead we
@@ -1206,8 +824,8 @@ bool Notification::CreateActor() {
 
   (void)backgroundActor->SendCreateNotificationParent(
       std::move(parentEndpoint), WrapNotNull(principal),
-      WrapNotNull(effectiveStoragePrincipal), isSecureContext, mID, mScope,
-      options);
+      WrapNotNull(effectiveStoragePrincipal), isSecureContext, mScope,
+      mIPCNotification);
 
   return true;
 }

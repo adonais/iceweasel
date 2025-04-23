@@ -139,7 +139,7 @@ using mozilla::dom::BrowsingContextInitializer from "mozilla/dom/BrowsingContext
 using mozilla::dom::PermitUnloadResult from "nsIDocumentViewer.h";
 using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 using mozilla::dom::WindowContextTransaction from "mozilla/dom/WindowContext.h";
-[MoveOnly] using mozilla::ipc::SharedMemoryHandle from "mozilla/ipc/SharedMemory.h";
+[MoveOnly] using mozilla::ipc::ReadOnlySharedMemoryHandle from "mozilla/ipc/SharedMemoryHandle.h";
 using gfxSparseBitSet from "gfxFontUtils.h";
 using FontVisibility from "gfxFontEntry.h";
 using mozilla::dom::MediaControlAction from "mozilla/dom/MediaControlKeySource.h";
@@ -289,7 +289,7 @@ struct BlobURLRegistrationData
 {
   nsCString url;
   IPCBlob blob;
-  nullable nsIPrincipal principal;
+  nsIPrincipal principal;
   nsCString partitionKey;
   bool revoked;
 };
@@ -400,8 +400,7 @@ struct VisitedQueryResult
 struct StringBundleDescriptor
 {
     nsCString bundleURL;
-    SharedMemoryHandle mapHandle;
-    uint32_t mapSize;
+    ReadOnlySharedMemoryHandle mapHandle;
 };
 
 struct IPCURLClassifierFeature
@@ -429,6 +428,12 @@ union SyncedContextInitializer
 {
     BrowsingContextInitializer;
     WindowContextInitializer;
+};
+
+struct OriginAgentClusterInitializer
+{
+    nsIPrincipal principal;
+    bool useOriginAgentCluster;
 };
 
 union BlobURLDataRequestResult
@@ -649,21 +654,24 @@ child:
                          OverrideMapping[] overrides, nsCString locale, bool reset);
     async RegisterChromeItem(ChromeRegistryItem item);
 
-    async ClearImageCacheFromPrincipal(nullable nsIPrincipal aPrincipal);
-
-    async ClearImageCacheFromSite(nsCString aSchemelessSite, OriginAttributesPattern aPattern);
-
-    async ClearImageCache(bool privateLoader, bool? chrome);
+    async ClearImageCache(bool? privateLoader,
+                          bool? aChrome,
+                          nullable nsIPrincipal? aPrincipal,
+                          nsCString? aSchemelessSite,
+                          OriginAttributesPattern? aPattern,
+                          nsCString? aURL);
 
     async ClearStyleSheetCache(bool? aChrome,
                                nullable nsIPrincipal? aPrincipal,
                                nsCString? aSchemelessSite,
-                               OriginAttributesPattern? aPattern);
+                               OriginAttributesPattern? aPattern,
+                               nsCString? aURL);
 
     async ClearScriptCache(bool? aChrome,
                            nullable nsIPrincipal? aPrincipal,
                            nsCString? aSchemelessSite,
-                           OriginAttributesPattern? aPattern);
+                           OriginAttributesPattern? aPattern,
+                           nsCString? aURL);
 
     async SetOffline(bool offline);
     async SetConnectivity(bool connectivity);
@@ -715,7 +723,7 @@ child:
      * should map the new block and add to its index.
      */
     async FontListShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
-                                SharedMemoryHandle aHandle);
+                                ReadOnlySharedMemoryHandle aHandle);
 
     async UpdateAppLocales(nsCString[] appLocales);
     async UpdateRequestedLocales(nsCString[] requestedLocales);
@@ -732,7 +740,7 @@ child:
 
     async SimpleURIUnknownRemoteSchemes(nsCString[] remoteSchemes);
 
-    async UpdateSharedData(SharedMemoryHandle aMapHandle, uint32_t aSize,
+    async UpdateSharedData(ReadOnlySharedMemoryHandle aMapHandle,
                            IPCBlob[] blobs,
                            nsCString[] changedKeys);
 
@@ -803,9 +811,9 @@ child:
                                     FullLookAndFeel lookAndFeeldata,
                                     /* used on MacOSX/Linux/Android only: */
                                     SystemFontList systemFontList,
-                                    SharedMemoryHandle? sharedUASheetHandle,
+                                    ReadOnlySharedMemoryHandle? sharedUASheetHandle,
                                     uintptr_t sharedUASheetAddress,
-                                    SharedMemoryHandle[] sharedFontListBlocks,
+                                    ReadOnlySharedMemoryHandle[] sharedFontListBlocks,
                                     bool aIsStartingUp);
 
     // Notify child that last-pb-context-exited notification was observed
@@ -975,7 +983,9 @@ child:
 
     // Begin subscribing to a new BrowsingContextGroup, sending down the current
     // value for every individual BrowsingContext.
-    async RegisterBrowsingContextGroup(uint64_t aGroupId, SyncedContextInitializer[] aInits);
+    async RegisterBrowsingContextGroup(uint64_t aGroupId,
+                                       SyncedContextInitializer[] aInits,
+                                       OriginAgentClusterInitializer[] aUseOriginAgentCluster);
 
     // The BrowsingContextGroup has been destroyed in the parent process. The
     // content process won't destroy the group until it receives this message or
@@ -984,6 +994,11 @@ child:
     // When the content process receives this message, all contexts in the group
     // should have already been destroyed.
     async DestroyBrowsingContextGroup(uint64_t aGroupId);
+
+    // Set the "use origin agent cluster" flag on the given BrowsingContextGroup
+    // for the given principal.
+    async SetUseOriginAgentCluster(uint64_t aGroupId, nsIPrincipal aPrincipal,
+                                   bool aUseOriginAgentCluster);
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
     // Initialize top-level actor for testing content process sandbox.
@@ -1377,7 +1392,7 @@ parent:
      * until it has mapped the font-list memory.
      */
     sync GetFontListShmBlock(uint32_t aGeneration, uint32_t aIndex)
-        returns (SharedMemoryHandle aHandle);
+        returns (ReadOnlySharedMemoryHandle aHandle);
 
     /**
      * Ask the parent to initialize a given font family, so that face metadata
@@ -1495,7 +1510,7 @@ parent:
      * @param aLoaded
      *   Returns the size in bytes of the resource.
      */
-    sync GetHyphDict(nullable nsIURI aURI) returns (SharedMemoryHandle aHandle, uint32_t aSize);
+    sync GetHyphDict(nullable nsIURI aURI) returns (ReadOnlySharedMemoryHandle aHandle);
 
     async CreateWindow(PBrowser aThisTab,
                        MaybeDiscardedBrowsingContext aParent,

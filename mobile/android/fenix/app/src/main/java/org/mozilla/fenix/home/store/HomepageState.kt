@@ -26,6 +26,8 @@ import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.topsites.TopSiteColors
+import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.nimbus.HomeScreenSection
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.WallpaperState
@@ -70,6 +72,7 @@ internal sealed class HomepageState {
      * @property showBookmarks Whether to show bookmarks.
      * @property showRecentlyVisited Whether to show recent history section.
      * @property showPocketStories Whether to show the pocket stories section.
+     * @property showSearchBar Whether to show the search bar.
      * @property topSiteColors The color set defined by [TopSiteColors] used to style a top site.
      * @property cardBackgroundColor Background color for card items.
      * @property buttonBackgroundColor Background [Color] for buttons.
@@ -93,6 +96,7 @@ internal sealed class HomepageState {
         val showBookmarks: Boolean,
         val showRecentlyVisited: Boolean,
         val showPocketStories: Boolean,
+        val showSearchBar: Boolean,
         val topSiteColors: TopSiteColors,
         val cardBackgroundColor: Color,
         val buttonBackgroundColor: Color,
@@ -158,10 +162,11 @@ internal sealed class HomepageState {
                         showTopSites = settings.showTopSitesFeature && topSites.isNotEmpty(),
                         showRecentTabs = shouldShowRecentTabs(settings),
                         showBookmarks = settings.showBookmarksHomeFeature && bookmarks.isNotEmpty(),
-                        showRecentSyncedTab = shouldShowRecentSyncedTabs(),
+                        showRecentSyncedTab = shouldShowRecentSyncedTabs() && showSyncedTab,
                         showRecentlyVisited = settings.historyMetadataUIFeature && recentHistory.isNotEmpty(),
                         showPocketStories = settings.showPocketRecommendationsFeature &&
                             recommendationState.pocketStories.isNotEmpty() && firstFrameDrawn,
+                        showSearchBar = settings.enableHomepageSearchBar,
                         topSiteColors = TopSiteColors.colors(wallpaperState = wallpaperState),
                         cardBackgroundColor = wallpaperState.cardBackgroundColor,
                         buttonBackgroundColor = wallpaperState.buttonBackgroundColor,
@@ -174,6 +179,9 @@ internal sealed class HomepageState {
         }
     }
 }
+
+private val showSyncedTab: Boolean
+    get() = FxNimbus.features.homescreen.value().sectionsEnabled[HomeScreenSection.SYNCED_TABS] == true
 
 @Composable
 private fun WallpaperState.customizeHomeButtonBackgroundColor(): Color {

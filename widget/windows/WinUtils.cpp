@@ -29,11 +29,13 @@
 #include "mozilla/ProfilerThreadSleep.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/Unused.h"
 #include "nsIContentPolicy.h"
 #include "WindowsUIUtils.h"
 #include "nsContentUtils.h"
+#include "nsLookAndFeel.h"
 
 #include "mozilla/Logging.h"
 
@@ -2007,6 +2009,7 @@ bool WinUtils::GetTimezoneName(wchar_t* aBuffer) {
 static constexpr nsLiteralCString kMicaPrefs[] = {
     "widget.windows.mica"_ns,
     "widget.windows.mica.popups"_ns,
+    "widget.windows.mica.toplevel-backdrop"_ns,
 };
 
 static BOOL CALLBACK UpdateMicaInHwnd(HWND aHwnd, LPARAM aLParam) {
@@ -2016,7 +2019,7 @@ static BOOL CALLBACK UpdateMicaInHwnd(HWND aHwnd, LPARAM aLParam) {
   return TRUE;
 }
 
-static void UpdateMicaInAllWindows(const char*, void*) {
+void WinUtils::UpdateMicaInAllWindows() {
   ::EnumWindows(&UpdateMicaInHwnd, 0);
   LookAndFeel::NotifyChangedAllWindows(
       widget::ThemeChangeKind::MediaQueriesOnly);
@@ -2028,7 +2031,8 @@ bool WinUtils::MicaAvailable() {
       return false;
     }
     for (const auto& pref : kMicaPrefs) {
-      Preferences::RegisterCallback(UpdateMicaInAllWindows, pref);
+      Preferences::RegisterCallback(
+          [](const char*, void*) { WinUtils::UpdateMicaInAllWindows(); }, pref);
     }
     return true;
   }();
@@ -2040,7 +2044,19 @@ bool WinUtils::MicaEnabled() {
 }
 
 bool WinUtils::MicaPopupsEnabled() {
-  return MicaAvailable() && StaticPrefs::widget_windows_mica_popups();
+  if (!MicaAvailable()) {
+    return false;
+  }
+  switch (StaticPrefs::widget_windows_mica_popups()) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    default:
+      break;
+  }
+  auto* lf = static_cast<nsLookAndFeel*>(nsLookAndFeel::GetInstance());
+  return !lf->NeedsMicaWorkaround();
 }
 
 // There are undocumented APIs to query/change the system DPI settings found by

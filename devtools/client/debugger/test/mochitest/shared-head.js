@@ -254,16 +254,8 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
       }
 
       const selectedFrame = getSelectedFrame(getCurrentThread());
-      // Only when we are paused on that specific source
-      const isPausedInSource =
-        selectedFrame?.location.source.id == location.source.id;
-      // Wait for symbols/AST to be parsed only when CM5 is enabled or
-      // when paused in original sources, as parserWorker.getClosestFunctionName
-      // is called when mapping original frames (TODO: Remove when Bug 1943945 is fixed)
-      const hasSymbols =
-        !isCm6Enabled || selectedFrame?.location.source.isOriginal
-          ? getSymbols(location)
-          : true;
+      // Wait for symbols/AST to be parsed only when CM5 is enabled
+      const hasSymbols = !isCm6Enabled ? getSymbols(location) : true;
       // And this isn't a WASM source (which has no AST)
       if (
         // Only when we are paused on that specific source
@@ -411,22 +403,24 @@ async function _assertDebugLine(dbg, line, column) {
     return;
   }
 
+  // Consider pausing on error also as being paused
   ok(
-    lineInfo?.wrapClass.includes("new-debug-line"),
+    lineInfo?.wrapClass.includes("paused-line") ||
+      lineInfo?.wrapClass.includes("new-debug-line-error"),
     `Line ${line} is not highlighted as paused`
   );
 
-  const debugLine =
-    findElement(dbg, "debugLine") || findElement(dbg, "debugErrorLine");
+  const pausedLine =
+    findElement(dbg, "pausedLine") || findElement(dbg, "debugErrorLine");
 
   is(
-    findAllElements(dbg, "debugLine").length +
+    findAllElements(dbg, "pausedLine").length +
       findAllElements(dbg, "debugErrorLine").length,
     1,
     "There is only one line"
   );
 
-  ok(isVisibleInEditor(dbg, debugLine), "debug line is visible");
+  ok(isVisibleInEditor(dbg, pausedLine), "debug line is visible");
 
   const markedSpans = lineInfo.handle.markedSpans;
   if (markedSpans && markedSpans.length && !isWasmBinarySource(source)) {
@@ -590,7 +584,10 @@ function assertPaused(dbg, msg = "client is paused") {
 async function waitForPaused(
   dbg,
   url,
-  options = { shouldWaitForLoadedScopes: true }
+  options = {
+    shouldWaitForLoadedScopes: true,
+    shouldWaitForInlinePreviews: true,
+  }
 ) {
   info("Waiting for the debugger to pause");
   const { getSelectedScope, getCurrentThread, getCurrentThreadFrames } =
@@ -598,7 +595,7 @@ async function waitForPaused(
 
   await waitForState(
     dbg,
-    () => isPaused(dbg) && !!getSelectedScope(getCurrentThread()),
+    () => isPaused(dbg) && !!getSelectedScope(),
     "paused"
   );
 
@@ -611,6 +608,10 @@ async function waitForPaused(
   // Note that this will wait for symbols (when CM5 is enabled),
   // which are fetched on pause
   await waitForSelectedSource(dbg, url);
+
+  if (options.shouldWaitForInlinePreviews) {
+    await waitForInlinePreviews(dbg);
+  }
 }
 
 /**
@@ -855,10 +856,25 @@ function waitForLoadedSource(dbg, url) {
  *
  * @param {Object} dbg
  * @param {String} filename - The filename for the specific source
- * @param {Number} sourcePosition - The source node postion in the tree
- * @param {String} message - The info message to display
  */
-async function selectSourceFromSourceTree(
+async function selectSourceFromSourceTree(dbg, fileName) {
+  info(`Selecting '${fileName}' source from source tree`);
+  // Ensure that the source is visible in the tree before trying to click on it
+  const elt = await waitForSourceInSourceTree(dbg, fileName);
+  elt.scrollIntoView();
+  clickDOMElement(dbg, elt);
+  await waitForSelectedSource(dbg, fileName);
+  await waitFor(
+    () => getEditorContent(dbg) !== `Loading…`,
+    "Wait for source to completely load"
+  );
+}
+
+/**
+ * Similar to selectSourceFromSourceTree, but with a precise location
+ * in the source tree.
+ */
+async function selectSourceFromSourceTreeWithIndex(
   dbg,
   fileName,
   sourcePosition,
@@ -1921,7 +1937,7 @@ const selectors = {
   highlightLine: isCm6Enabled
     ? ".cm-content > .highlight-line"
     : ".CodeMirror-code > .highlight-line",
-  debugLine: ".new-debug-line",
+  pausedLine: ".paused-line",
   debugErrorLine: ".new-debug-line-error",
   codeMirror: isCm6Enabled ? ".cm-editor" : ".CodeMirror",
   resume: ".resume.active",
@@ -2415,12 +2431,13 @@ async function scrollEditorIntoView(dbg, line, column, yAlign) {
  * Wrapper around source editor api to check if a scrolled position is visible
  *
  * @param {*} dbg
- * @param {Number} line
+ * @param {Number} line 1-based
  * @param {Number} column
  * @returns
  */
 function isScrolledPositionVisible(dbg, line, column = 0) {
-  line = isCm6Enabled ? line + 1 : line;
+  // CodeMirror 6 uses 1-based lines whereas 5 uses 0-based.
+  line = isCm6Enabled ? line : line - 1;
   return getCMEditor(dbg).isPositionVisible(line, column);
 }
 
@@ -2450,9 +2467,9 @@ function getCoordsFromPosition(dbg, line, ch) {
 
 async function getTokenFromPosition(dbg, { line, column = 0 }) {
   info(`Get token at ${line}:${column}`);
+  await scrollEditorIntoView(dbg, line, column);
   line = isCm6Enabled ? line : line - 1;
   column = isCm6Enabled ? column : column - 1;
-  await scrollEditorIntoView(dbg, line, column);
 
   if (isCm6Enabled) {
     return getCMEditor(dbg).getElementAtPos(line, column);
@@ -2497,8 +2514,8 @@ async function waitForScrolling(dbg, { useTimeoutFallback = true } = {}) {
 async function codeMirrorGutterElement(dbg, line) {
   info(`CodeMirror line ${line}`);
 
-  line = isCm6Enabled ? line : line - 1;
   await scrollEditorIntoView(dbg, line, 0);
+  line = isCm6Enabled ? line : line - 1;
 
   const coords = getCoordsFromPosition(dbg, line);
 
@@ -3039,18 +3056,46 @@ async function waitForSourceTreeThreadsCount(dbg, i) {
   });
 }
 
+function getDisplayedSourceElements(dbg) {
+  return [...findAllElements(dbg, "sourceTreeFiles")];
+}
+
+function getDisplayedSources(dbg) {
+  return getDisplayedSourceElements(dbg).map(e => {
+    // Replace some non visible space characters that prevents Array.includes from working correctly
+    return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
+  });
+}
+
+/**
+ * Wait for a single source to be visible in the Source Tree.
+ */
+async function waitForSourceInSourceTree(dbg, fileName) {
+  return waitFor(
+    async () => {
+      await expandSourceTree(dbg);
+
+      return getDisplayedSourceElements(dbg).find(e => {
+        // Replace some non visible space characters that prevents Array.includes from working correctly
+        return e.textContent.trim().replace(/^[\s\u200b]*/g, "") == fileName;
+      });
+    },
+    null,
+    100,
+    50
+  );
+}
+
+/**
+ * Wait for a precise list of sources to be shown in the Source Tree.
+ * No more, no less than the list.
+ */
 async function waitForSourcesInSourceTree(
   dbg,
   sources,
   { noExpand = false } = {}
 ) {
   info(`waiting for ${sources.length} files in the source tree`);
-  function getDisplayedSources() {
-    // Replace some non visible space characters that prevents Array.includes from working correctly
-    return [...findAllElements(dbg, "sourceTreeFiles")].map(e => {
-      return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
-    });
-  }
   try {
     // Use custom timeout and retry count for waitFor as the test method is slow to resolve
     // and default value makes the timeout unecessarily long
@@ -3059,7 +3104,7 @@ async function waitForSourcesInSourceTree(
         if (!noExpand) {
           await expandSourceTree(dbg);
         }
-        const displayedSources = getDisplayedSources();
+        const displayedSources = getDisplayedSources(dbg);
         return (
           displayedSources.length == sources.length &&
           sources.every(source => displayedSources.includes(source))

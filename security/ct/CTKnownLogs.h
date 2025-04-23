@@ -14,7 +14,7 @@
 
 #include <stddef.h>
 
-static const PRTime kCTExpirationTime = INT64_C(1748862969000000);
+static const PRTime kCTExpirationTime = INT64_C(1751282256000000);
 
 namespace mozilla::ct {
 
@@ -151,8 +151,8 @@ const CTLogInfo kCTLogList[] = {
      "\x95\x24\x7c\xd8\x91\x98\x48\x3b\xf0\xf0\xdf\x21\xf1\xb0\x81\x5a\x59\x25"
      "\x43",
      91},
-    {"DigiCert Nessie2025 Log", CTLogState::Admissible,
-     1667328840000,  // 2022-11-01T18:54:00Z
+    {"DigiCert Nessie2025 Log", CTLogState::Retired,
+     1744758000000,  // 2025-04-15T23:00:00Z
      2,              // operated by DigiCert
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xf2\xf0\xf0\xa7\x8b\x81\x2e\x09\x39"
@@ -161,8 +161,8 @@ const CTLogInfo kCTLogList[] = {
      "\x75\x80\xb7\x53\xa7\x85\xd5\xbc\xab\x47\x06\x55\xdb\xb5\xdf\x88\xa1\x6f"
      "\x38",
      91},
-    {"DigiCert 'Wyvern2025h1' Log", CTLogState::Admissible,
-     1724900983000,  // 2024-08-29T03:09:43Z
+    {"DigiCert 'Wyvern2025h1' Log", CTLogState::Retired,
+     1744670000000,  // 2025-04-14T22:33:20Z
      2,              // operated by DigiCert
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xa7\xcb\x80\x61\x86\x1b\x1f\xb5\xab"
@@ -201,8 +201,8 @@ const CTLogInfo kCTLogList[] = {
      "\xde\x9b\x8c\x13\x92\xb7\xad\x3d\x0f\xa1\x9c\x8f\x48\xce\x74\x27\x18\x23"
      "\x99",
      91},
-    {"DigiCert 'Sphinx2025h1' Log", CTLogState::Admissible,
-     1724900983000,  // 2024-08-29T03:09:43Z
+    {"DigiCert 'Sphinx2025h1' Log", CTLogState::Retired,
+     1744670000000,  // 2025-04-14T22:33:20Z
      2,              // operated by DigiCert
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xe3\x2f\x1f\x4d\x89\x05\x75\x29\x78"

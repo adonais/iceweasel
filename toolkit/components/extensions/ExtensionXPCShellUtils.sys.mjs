@@ -789,8 +789,6 @@ export var ExtensionTestUtils = {
    * @param {string} [options.redirectUrl]
    *        An optional URL that the initial page is expected to
    *        redirect to.
-   *
-   * @returns {XPCShellContentUtils.ContentPage}
    */
   loadContentPage(url, options) {
     return XPCShellContentUtils.loadContentPage(url, options);

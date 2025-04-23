@@ -28,9 +28,6 @@ add_task(async function test_edit_profile_delete() {
     ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
     return;
   }
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.require_user_interaction_for_beforeunload", false]],
-  });
   await setup();
   is(
     null,
@@ -108,12 +105,6 @@ add_task(async function test_edit_profile_name() {
           );
 
           await editProfileCard.getUpdateComplete();
-
-          Assert.equal(
-            Services.focus.focusedElement.id,
-            editProfileCard.nameInput.id,
-            "Name input is focused"
-          );
 
           let nameInput = editProfileCard.nameInput;
           nameInput.value = newProfileName;
@@ -588,11 +579,6 @@ add_task(async function test_edit_profile_system_theme() {
   );
   await defaultTheme.enable();
 
-  let computedStyles = window.getComputedStyle(window.document.documentElement);
-
-  let themeFg = computedStyles.getPropertyValue("--toolbar-color");
-  let themeBg = computedStyles.getPropertyValue("--toolbar-bgcolor");
-
   // Set to light theme so we can select the system theme in the page
   let lightTheme = await lazy.AddonManager.getAddonByID(
     "firefox-compact-light@mozilla.org"
@@ -636,7 +622,11 @@ add_task(async function test_edit_profile_system_theme() {
         await new Promise(resolve => content.setTimeout(resolve, 100));
       });
 
+      await themePromise;
+
       let curProfile = await SelectableProfileService.getProfile(profile.id);
+
+      let themeColors = SelectableProfileService.getColorsForDefaultTheme();
 
       Assert.equal(
         curProfile.theme.themeId,
@@ -650,17 +640,15 @@ add_task(async function test_edit_profile_system_theme() {
         "Current profile theme was updated"
       );
 
-      await themePromise;
-
       Assert.equal(
-        computedStyles.getPropertyValue("--toolbar-bgcolor"),
-        themeBg,
-        "Theme background color is expected: " + themeBg
+        SelectableProfileService.currentProfile.theme.themeBg,
+        themeColors.themeBg,
+        "Theme background color is expected: " + themeColors.themeBg
       );
       Assert.equal(
-        computedStyles.getPropertyValue("--toolbar-color"),
-        themeFg,
-        "Theme  color is expected: " + themeFg
+        SelectableProfileService.currentProfile.theme.themeFg,
+        themeColors.themeFg,
+        "Theme  color is expected: " + themeColors.themeFg
       );
     }
   );

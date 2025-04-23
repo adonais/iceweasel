@@ -44,8 +44,6 @@
   <string name="tab_tray_close_multiselect_content_description">Avsluta flervalsläge</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Spara valda flikar i samlingen</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Markerad</string>
   <!--
     Home - Bookmarks
 
@@ -128,9 +126,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar.
   -->
-  <string name="address_bar_swipe_cfr_title">Dra över verktygsfältet för att växla flikar</string>
+  <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Dra över verktygsfältet för att växla flikar</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-  <string name="address_bar_swipe_cfr_message">Dra åt vänster eller höger för att växla. Svep åt vänster på din senaste flik för att öppna en ny flik.</string>
+  <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Dra åt vänster eller höger för att växla. Svep åt vänster på din senaste flik för att öppna en ny flik.</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">Dra verktygsfältet åt vänster eller höger för att växla mellan flikar.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Kameraåtkomst behövs. Gå till Android-inställningar, tryck på behörigheter och tryck på tillåt.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -622,34 +622,20 @@
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Läs mer</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">Skicka teknisk information och interaktionsdata till Mozilla</string>
-  <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
-  <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Data om din enhet, hårdvarukonfiguration och hur du använder Firefox hjälper till att förbättra funktioner, prestanda och stabilitet för användare överallt.</string>
   <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Data om din enhet, hårdvarukonfiguration och hur du använder Firefox hjälper till att förbättra funktioner, prestanda och stabilitet för alla.</string>
-  <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Läs mer om användningsdata</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Läs mer</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Klar</string>
-  <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Avbryt</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Välkommen till Firefox</string>
-  <!-- Terms of service sub header label. -->
-  <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Snabb och säker webbläsning.</string>
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Snabb och säker webbläsning</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label">Godkänn och fortsätt</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
-  <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Genom att fortsätta godkänner du Firefox %1$s.</string>
-  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Genom att fortsätta godkänner du %1$s.</string>
-  <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
-  <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Användarvillkor</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">användarvillkor för Firefox</string>
-  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
-  <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox bryr sig om din integritet. Läs mer i vår %1$s.</string>
   <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox bryr sig om din integritet. Läs mer i våra %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
@@ -689,8 +675,8 @@
   <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
   <string name="onboarding_customize_toolbar_placement_bottom_content_description">Bild av det nedre verktygsfältet</string>
   <string name="onboarding_customize_toolbar_placement_top_content_description">Bild på det översta verktygsfältet</string>
-  <!-- Onboarding toolbar selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Inte nu</string>
+  <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_toolbar_a11y_action_label_select">välj</string>
   <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Välj ett tema</string>
   <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
@@ -707,8 +693,8 @@
   <string name="onboarding_customize_theme_main_image_content_description">Stor huvudbild av vyn för val av tema som visar illustrerade konstnärs- och byggverktyg.</string>
   <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
   <string name="onboarding_customize_theme_content_description">Bild på temat %1$s</string>
-  <!-- Onboarding theme selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Inte nu</string>
+  <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_theme_a11y_action_label_select">välj</string>
   <!--
     Widget Picker
 
@@ -786,6 +772,10 @@
   <string name="preferences_add_private_browsing_shortcut">Lägg till genväg för privat surfning</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Endast HTTPS-läge</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">Använd skärmlås för att dölja flikar i privat surfning</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary">Visa flikar med fingeravtryck, ansiktslås eller PIN-kod.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Blockering av kakbanners</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -1145,16 +1135,10 @@
   <string name="preference_usage_data_2">Skicka teknisk data och interaktionsdata</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more">Läs mer</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Delar prestanda, användning, hårdvara och anpassningsdata om din webbläsare med Mozilla för att hjälpa oss att göra %1$s bättre</string>
   <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
   <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">Data om din enhet, hårdvarukonfiguration och användning hjälper oss att förbättra Firefox funktioner, prestanda och stabilitet.</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Marknadsföringsdata</string>
   <!-- Preference switch for campaign measurement data (marketing data) collection -->
   <string name="preferences_marketing_data_2">Mätdata för kampanj</string>
-  <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-  <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Dela information om hur du upptäckte Firefox med Mozillas marknadsföringspartners. Detta hjälper oss att utveckla Firefox och bygga ett bättre internet</string>
   <!--
     Preference description for marketing data collection.
     Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for.
@@ -1168,10 +1152,8 @@
   <string name="preferences_daily_usage_ping_learn_more">Läs mer om ping för daglig användning</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title">Skicka automatiskt kraschrapporter</string>
-  <string name="preferences_automatically_submit_crashes_title" moz:removedIn="136" tools:ignore="UnusedResources">Skicka kraschrapporter automatiskt</string>
   <!-- Preference switch description for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_description">Det här hjälper oss att diagnostisera och lösa problem med webbläsaren. Rapporter kan innehålla personliga eller känsliga uppgifter.</string>
-  <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Delar kraschdata automatiskt vid start av Mozilla efter krascher har inträffat</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Läs mer om kraschrapporter</string>
   <!-- Title for studies preferences -->
@@ -1358,8 +1340,6 @@
   <string name="studies_remove">Ta bort</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Aktiv</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s kan installera och köra undersökningar då och då.</string>
   <!-- Description for studies -->
   <string name="studies_description_3">Testa funktioner och idéer innan de släpps till alla.</string>
   <!-- Title of the Studies data preference -->
@@ -1369,16 +1349,10 @@
   <!--
     Sessions
 
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Privata flikar</string>
-  <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Öppna privata flikar: %1$s. Peka här för att växla mellan flikar.</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Synkade flikar</string>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1412,6 +1386,8 @@
   <string name="tab_tray_multiselect_share_content_description">Dela valda flikar</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Meny för valda flikar</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">Startsida</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Ta bort flik från samlingen</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1474,18 +1450,57 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">Nedladdningar har tagits bort</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Nedladdningar har tagits bort</string>
+  <!--
+    Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
+    %1$d is the number of items deleted.
+  -->
+  <string name="download_delete_multiple_items_snackbar_2">Borttagna objekt: %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">Tog bort %1$s</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Tog bort %1$s</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">Tog bort “%1$s”</string>
+  <!-- Text for the snackbar to confirm that downloads are in progress. -->
+  <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">Hämtning pågår…</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">Detaljer</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar" tools:ignore="UnusedResources">Hämtning slutförd</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open" tools:ignore="UnusedResources">Öppna</string>
+  <!-- Text for the snackbar action button to undo deleting a download. -->
+  <string name="download_undo_delete_snackbar_action">Ångra</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">Inga nedladdade filer</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Inga nedladdade filer</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">Inga hämtningar ännu</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">Filer du hämtar visas här.</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d markerade</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">Ta bort</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Ta bort</string>
+  <!-- Text for the button to delete a single downloaded file item -->
+  <string name="download_delete_item">Ta bort</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">Navigera bakåt</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description">Navigera uppåt</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">Dela URL</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">Dela fil</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">Är du säker på att du vill ta bort de markerade objekten?</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
+  <string name="download_delete_multi_select_dialog_confirm">Ta bort</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
+  <string name="download_delete_multi_select_dialog_cancel">Avbryt</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress" tools:ignore="UnusedResources">Pågår</string>
   <!--
     Time period headers for downloads
 
@@ -1501,6 +1516,25 @@
   <!-- Text for the header that groups the downloads older than other groups -->
   <string name="download_time_period_older">Äldre</string>
   <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • %3$s kvar</string>
+  <!-- Text to indicate that an in progress download is paused. -->
+  <string name="download_item_status_paused" tools:ignore="UnusedResources">pausad</string>
+  <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
+  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">väntande</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed" tools:ignore="UnusedResources">Nedladdning misslyckades</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder" tools:ignore="UnusedResources">Sök nedladdningar</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Inga resultat hittades</string>
+  <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
+  <string name="download_select_all_items">Markera allt</string>
+  <!--
     Downloads Content Type Filters
 
     Text for the filter button to show all files in the downloads list
@@ -1513,13 +1547,15 @@
   <!-- Text for the filter button to show only documents in the downloads list -->
   <string name="download_content_type_filter_document">Dokument</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
-  <string name="download_content_type_filter_other">Övrigt</string>
+  <string name="download_content_type_filter_other" moz:removedIn="138" tools:ignore="UnusedResources">Övrigt</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">Övriga</string>
   <!--
     Description of a downloaded item, displayed in the downloads list.
     %1$s: The size of the downloaded file.
     %2$s: The URL of the downloaded file.
   -->
-  <string name="download_item_description">%1$s • %2$s</string>
+  <string name="download_item_description" moz:removedIn="138" tools:ignore="UnusedResources">%1$s • %2$s</string>
   <!--
     WebCompat Reporter
 
@@ -1532,8 +1568,6 @@
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">Ange en giltig URL</string>
-  <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Vad är trasigt? (valfritt)</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Vad är trasigt?</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
@@ -1626,6 +1660,14 @@
   <string name="bookmark_menu_delete_button">Ta bort</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Spara</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">Sortera efter senaste</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">Sortera efter äldst</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">Sortera från A till Ö</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">Sortera från Ö till A</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2845,151 +2887,13 @@
   <!--
     Review quality check feature
 
-    Name for the review quality check feature used as title for the panel.
+    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
   -->
-  <string name="review_quality_check_feature_name_2" moz:removedIn="136" tools:ignore="UnusedResources">Recensionsgranskare</string>
-  <!-- Summary for grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_a_b_description" moz:removedIn="136" tools:ignore="UnusedResources">Pålitliga recensioner</string>
-  <!-- Summary for grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_c_description" moz:removedIn="136" tools:ignore="UnusedResources">Blandning av pålitliga och opålitliga recensioner</string>
-  <!-- Summary for grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_d_f_description" moz:removedIn="136" tools:ignore="UnusedResources">Opålitliga recensioner</string>
-  <!-- Text for title presenting the reliability of a product's reviews. -->
-  <string name="review_quality_check_grade_title" moz:removedIn="136" tools:ignore="UnusedResources">Hur pålitliga är dessa recensioner?</string>
-  <!-- Title for when the rating has been updated by the review checker -->
-  <string name="review_quality_check_adjusted_rating_title" moz:removedIn="136" tools:ignore="UnusedResources">Justerat betyg</string>
-  <!-- Description for a product's adjusted star rating. The text presents that the product's reviews which were evaluated as unreliable were removed from the adjusted rating. -->
-  <string name="review_quality_check_adjusted_rating_description_2" moz:removedIn="136" tools:ignore="UnusedResources">Baserat på tillförlitliga recensioner</string>
-  <!-- Title for list of highlights from a product's review emphasizing a product's important traits. -->
-  <string name="review_quality_check_highlights_title" moz:removedIn="136" tools:ignore="UnusedResources">Höjdpunkter från de senaste recensionerna</string>
-  <!-- Title for section explaining how we analyze the reliability of a product's reviews. -->
-  <string name="review_quality_check_explanation_title" moz:removedIn="136" tools:ignore="UnusedResources">Hur bestäms recensionens kvalitet</string>
-  <!-- Paragraph explaining how we analyze the reliability of a product's reviews. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_explanation_body_reliability" moz:removedIn="136" tools:ignore="UnusedResources">Vi använder AI-teknik från %s av Mozilla för att kontrollera pålitligheten av produktrecensioner. Detta hjälper dig bara att bedöma recensionens kvalitet, inte produktkvaliteten.</string>
-  <!-- Paragraph explaining the grading system we use to classify the reliability of a product's reviews. -->
   <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources">Vi tilldelar varje produkts recensioner ett &lt;b&gt;bokstavsbetyg&lt;/b&gt; från A till F.</string>
-  <!-- Description explaining grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_AB" moz:removedIn="136" tools:ignore="UnusedResources">Pålitliga recensioner. Vi tror att recensionerna troligen kommer från riktiga kunder som lämnat ärliga, opartiska recensioner.</string>
-  <!-- Description explaining grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_C" moz:removedIn="136" tools:ignore="UnusedResources">Vi tror att det finns en blandning av pålitliga och opålitliga recensioner.</string>
-  <!-- Description explaining grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_DF" moz:removedIn="136" tools:ignore="UnusedResources">Opålitliga recensioner. Vi tror att recensionerna sannolikt är falska eller från partiska granskare.</string>
   <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
   <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources">Det &lt;b&gt;justerade betyget&lt;/b&gt; baseras endast på recensioner som vi anser vara pålitliga.</string>
   <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
   <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources">&lt;b&gt;Höjdpunkter&lt;/b&gt; är från %s recensioner under de senaste 80 dagarna som vi tror är pålitliga.</string>
-  <!-- Text for learn more caption presenting a link with information about review quality. %s is a link using review_quality_check_info_learn_more_link as text. -->
-  <string name="review_quality_check_info_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Läs mer om %s.</string>
-  <!-- Clickable text that links to review quality check SuMo page. %s is "Fakespot". -->
-  <string name="review_quality_check_info_learn_more_link_2" moz:removedIn="136" tools:ignore="UnusedResources">hur %s bestämmer recensionens kvalitet</string>
-  <!-- Text for title of settings section. -->
-  <string name="review_quality_check_settings_title" moz:removedIn="136" tools:ignore="UnusedResources">Inställningar</string>
-  <!-- Text for label for switch preference to show recommended products from review quality check settings section. -->
-  <string name="review_quality_check_settings_recommended_products" moz:removedIn="136" tools:ignore="UnusedResources">Visa annonser i recensionsgranskaren</string>
-  <!-- Description for switch preference to show recommended products from review quality check settings section. %s is a link using review_quality_check_settings_recommended_products_learn_more as text. -->
-  <string name="review_quality_check_settings_recommended_products_description_2" moz:removedIn="136" tools:ignore="UnusedResources">Du ser då och då annonser för relevanta produkter. Vi annonserar endast produkter med pålitliga recensioner. %s</string>
-  <!-- Clickable text that links to review quality check recommended products support article. -->
-  <string name="review_quality_check_settings_recommended_products_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Läs mer</string>
-  <!-- Text for turning sidebar off button from review quality check settings section. -->
-  <string name="review_quality_check_settings_turn_off" moz:removedIn="136" tools:ignore="UnusedResources">Stäng av recensionsgranskaren</string>
-  <!-- Text for title of recommended product section. This is displayed above a product image, suggested as an alternative to the product reviewed. -->
-  <string name="review_quality_check_ad_title" moz:removedIn="136" tools:ignore="UnusedResources">Mer att tänka på</string>
-  <!-- Caption for recommended product section indicating this is an ad by Fakespot. %s is "Fakespot". -->
-  <string name="review_quality_check_ad_caption" moz:removedIn="136" tools:ignore="UnusedResources">Annons av %s</string>
-  <!-- Caption for review quality check panel. %s is a link using review_quality_check_powered_by_link as text. -->
-  <string name="review_quality_check_powered_by_2" moz:removedIn="136" tools:ignore="UnusedResources">Recensionsgranskaren drivs av %s</string>
-  <!-- Clickable text that links to Fakespot.com. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_powered_by_link" moz:removedIn="136" tools:ignore="UnusedResources">%s av Mozilla</string>
-  <!-- Text for title of warning card informing the user that the current analysis is outdated. -->
-  <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Ny info att kontrollera</string>
-  <!-- Text for button from warning card informing the user that the current analysis is outdated. Clicking this should trigger the product's re-analysis. -->
-  <string name="review_quality_check_outdated_analysis_warning_action" moz:removedIn="136" tools:ignore="UnusedResources">Kontrollera nu</string>
-  <!-- Title for warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Inte tillräckligt med recensioner ännu</string>
-  <!-- Text for body of warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">När den här produkten har fler recensioner kan vi kontrollera deras kvalitet.</string>
-  <!-- Title for warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Produkten är inte tillgänglig</string>
-  <!-- Text for the body of warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Om du ser att den här produkten finns i lager igen, rapportera det så jobbar vi med att kontrollera recensionerna.</string>
-  <!-- Clickable text for warning card informing the user that the current product is currently not available. Clicking this should inform the server that the product is available. -->
-  <string name="review_quality_check_product_availability_warning_action_2" moz:removedIn="136" tools:ignore="UnusedResources">Rapportera att produkten finns i lager</string>
-  <!-- Title for warning card informing the user that the current product's analysis is still processing. %s is the percentage progress (0-100%) of the analysis process (e.g. 56%). -->
-  <string name="review_quality_check_analysis_in_progress_warning_title_2" moz:removedIn="136" tools:ignore="UnusedResources">Kontrollerar recensionskvalitet (%s)</string>
-  <!-- Text for body of warning card informing the user that the current product's analysis is still processing. -->
-  <string name="review_quality_check_analysis_in_progress_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Detta kan ta uppåt 60 sekunder.</string>
-  <!-- Title for info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Tack för att du rapporterade!</string>
-  <!-- Text for body of info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Vi bör ha information om denna produkts recensioner inom 24 timmar. Kom tillbaka snart.</string>
-  <!-- Title for info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Vi kan inte kontrollera dessa recensioner</string>
-  <!-- Text for body of info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Tyvärr kan vi inte kontrollera recensionskvaliteten för vissa typer av produkter. Till exempel presentkort och strömmande video, musik och spel.</string>
-  <!-- Title for info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Info kommer snart</string>
-  <!-- Text for body of info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Vi bör ha information om denna produkts recensioner inom 24 timmar. Kom tillbaka snart.</string>
-  <!-- Title for info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_title" moz:removedIn="136" tools:ignore="UnusedResources">Analysen är aktuell</string>
-  <!-- Text for the action button from info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_action" moz:removedIn="136" tools:ignore="UnusedResources">Jag förstår</string>
-  <!-- Title for error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_title" moz:removedIn="136" tools:ignore="UnusedResources">Ingen information tillgänglig just nu</string>
-  <!-- Text for body of error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_body" moz:removedIn="136" tools:ignore="UnusedResources">Vi jobbar på att lösa problemet. Kom tillbaka snart.</string>
-  <!-- Title for error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_title" moz:removedIn="136" tools:ignore="UnusedResources">Ingen nätverksanslutning</string>
-  <!-- Text for body of error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_body" moz:removedIn="136" tools:ignore="UnusedResources">Kontrollera din nätverksanslutning och försök sedan ladda om sidan.</string>
-  <!-- Title for card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_title" moz:removedIn="136" tools:ignore="UnusedResources">Ingen information om dessa recensioner ännu</string>
-  <!-- Text for the body of card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_body" moz:removedIn="136" tools:ignore="UnusedResources">För att veta om denna produkts recensioner är pålitliga, kontrollera recensionens kvalitet. Det tar bara cirka 60 sekunder.</string>
-  <!-- Text for button from body of card displayed to the user for products whose reviews were not analyzed yet. Clicking this should trigger a product analysis. -->
-  <string name="review_quality_check_no_analysis_link" moz:removedIn="136" tools:ignore="UnusedResources">Kontrollera recensionens kvalitet</string>
-  <!-- Headline for review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_title" moz:removedIn="136" tools:ignore="UnusedResources">Prova vår pålitliga guide till produktrecensioner</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s, %3$s and %4$s are for retailer names (e.g. Amazon, Walmart). %2$s% is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description" moz:removedIn="136" tools:ignore="UnusedResources">Se hur tillförlitliga produktrecensioner är på %1$s innan du köper. Recensionsgranskaren, en experimentell funktion från %2$s, är inbyggd direkt i webbläsaren. Den fungerar på %3$s och %4$s också.</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s is for retailer name (e.g. Amazon). %2$s is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description_one_vendor" moz:removedIn="136" tools:ignore="UnusedResources">Se hur tillförlitliga produktrecensioner är på %1$s innan du köper. Recensionsgranskaren, en experimentell funktion från %2$s, är inbyggd direkt i webbläsaren.</string>
-  <!-- Paragraph presenting review quality check feature. %1$s is "Fakespot". %2$s is a link using review_quality_check_contextual_onboarding_learn_more_link as text. In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Med kraften i %1$s från Mozilla hjälper vi dig att undvika partiska och oäkta recensioner. Vår AI-modell förbättras alltid för att skydda dig när du handlar. %2$s</string>
-  <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">Läs mer</string>
-  <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. %1$s is the name of the app (for example "Firefox"), %3$s is "Fakespot". %2$s and %4$s are links using review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use as text. -->
-  <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">Genom att välja "Ja, prova den" godkänner du %1$s %2$s och %3$s %4$s.</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
-  <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">sekretessmeddelande</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
-  <string name="review_quality_check_contextual_onboarding_terms_use" moz:removedIn="136" tools:ignore="UnusedResources">användarvillkor</string>
-  <!-- Text for opt-in button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_primary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Ja, prova den</string>
-  <!-- Text for opt-out button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_secondary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Inte nu</string>
-  <!-- Content description (not visible, for screen readers etc.) for opening browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_open_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Öppna recensionsgranskaren</string>
-  <!-- Content description (not visible, for screen readers etc.) for closing browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_close_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Stäng recensionsgranskaren</string>
-  <!-- Content description (not visible, for screen readers etc.) for review quality check star rating. %1$s is the number of stars (1-5) representing the rating. -->
-  <string name="review_quality_check_star_rating_content_description" moz:removedIn="136" tools:ignore="UnusedResources">%1$s av 5 stjärnor</string>
-  <!-- Text for minimize button from highlights card. When clicked the highlights card should reduce its size. -->
-  <string name="review_quality_check_highlights_show_less" moz:removedIn="136" tools:ignore="UnusedResources">Visa mindre</string>
-  <!-- Text for maximize button from highlights card. When clicked the highlights card should expand to its full size. -->
-  <string name="review_quality_check_highlights_show_more" moz:removedIn="136" tools:ignore="UnusedResources">Visa mer</string>
-  <!-- Text for highlights card quality category header. Reviews shown under this header should refer the product's quality. -->
-  <string name="review_quality_check_highlights_type_quality" moz:removedIn="136" tools:ignore="UnusedResources">Kvalitet</string>
-  <!-- Text for highlights card price category header. Reviews shown under this header should refer the product's price. -->
-  <string name="review_quality_check_highlights_type_price" moz:removedIn="136" tools:ignore="UnusedResources">Pris</string>
-  <!-- Text for highlights card shipping category header. Reviews shown under this header should refer the product's shipping. -->
-  <string name="review_quality_check_highlights_type_shipping" moz:removedIn="136" tools:ignore="UnusedResources">Frakt</string>
-  <!-- Text for highlights card packaging and appearance category header. Reviews shown under this header should refer the product's packaging and appearance. -->
-  <string name="review_quality_check_highlights_type_packaging_appearance" moz:removedIn="136" tools:ignore="UnusedResources">Paketering och utseende</string>
-  <!-- Text for highlights card competitiveness category header. Reviews shown under this header should refer the product's competitiveness. -->
-  <string name="review_quality_check_highlights_type_competitiveness" moz:removedIn="136" tools:ignore="UnusedResources">Konkurrenskraft</string>
-  <!-- Text that is surrounded by quotes. %s is the actual text that is in quotes. An example of that text could be: Excellent craftsmanship, and that is displayed as “Excellent craftsmanship”. The text comes from a buyer's review that the feature is highlighting" -->
-  <string name="surrounded_with_quotes" moz:removedIn="136" tools:ignore="UnusedResources">"%s"</string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3481,6 +3385,26 @@
   -->
   <string name="glean_debug_tools_title">Glean felsökningsverktyg</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">Regionverktyg</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">Överskrider tillfälligt värden för hem och aktuell region för testning.</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">Hemregion</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">Aktuell region</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Åsidosätt hemregion</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Åsidosätt aktuell region</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Åsidosätt hem och aktuell region</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3539,15 +3463,97 @@
 
     The default content description for the eye trailing icon button in TextField
   -->
-  <string name="text_field_eye_trailing_icon_default_content_description">Visa dold text</string>
+  <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Visa dold text</string>
   <!-- The default content description for the cross trailing icon button in TextField -->
-  <string name="text_field_cross_trailing_icon_default_content_description">Rensa text</string>
+  <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Rensa text</string>
   <!--
-    Setup checklist component
+    Setup checklist feature
+
+    ===== Setup checklist feature: Title =====
+
+    Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_title_state_incomplete">Slutför konfigureringen av %1$s</string>
+  <!-- Title for the setup checklist feature when the state is 'completed' -->
+  <string name="setup_checklist_title_state_completed">Gratulerar!</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">Slutför dessa tre steg för att konfigurera %1$s för den bästa webbupplevelsen.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">Bra start! Du har slutfört 1 av 3 steg.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">Nästan där! Två steg färdiga och 1 kvar.</string>
+  <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_3_steps_completed_state">Du har slutfört alla 3 stegen. Njut av hastigheten, integriteten och säkerheten i %1$s.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 6 steps =====
+
+    Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_6_steps_initial_state">Slutför alla 6 steg för att konfigurera %1$s för den bästa webbupplevelsen.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_first_step">Bra start! Du har slutfört 1 av 6 steg.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_second_step">Du har slutfört 2 av 6 steg. Stora framsteg!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_6_steps_third_step">Du är halvvägs! Tre steg slutförda och tre kvar.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fourth_step">Du är fyra steg in. Bara två kvar!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fifth_step">Nästan där! Du är bara 1 steg från mål.</string>
+  <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_6_steps_completed_state">Du har slutfört alla 6 installationsstegen. Njut av hastigheten, integriteten och säkerheten i %1$s.</string>
+  <!--
+    ===== Setup checklist feature: Task titles =====
+
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">Ange som standardwebbläsare</string>
+  <!-- The title of the sign-in task for the setup checklist -->
+  <string name="setup_checklist_task_account_sync">Logga in på ditt konto</string>
+  <!-- The title of the theme selection task for the setup checklist -->
+  <string name="setup_checklist_task_theme_selection">Välj ett tema</string>
+  <!-- The title of the toolbar selection task for the setup checklist -->
+  <string name="setup_checklist_task_toolbar_selection">Välj placering av verktygsfältet</string>
+  <!-- The title of the explore extensions task for the setup checklist -->
+  <string name="setup_checklist_task_explore_extensions">Utforska tillägg</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget">Installera sökwidget</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">%1$s väsentligheter</string>
+  <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_group_customize">Anpassa %1$s</string>
+  <!-- The title of the 'helpful tools' group in the setup checklist -->
+  <string name="setup_checklist_group_helpful_tools">Hjälpsamma verktyg</string>
+  <!--
+    ===== Setup checklist feature: Button =====
+
+    Text for the 'remove' button for the setup checklist
+  -->
+  <string name="setup_checklist_button_remove">Ta bort checklista</string>
+  <!--
+    ===== Setup checklist feature: Accessibility =====
 
     Accessibility description for a check mark on a completed task
   -->
   <string name="a11y_completed_task_description">Slutförd uppgift</string>
   <!-- Accessibility description for the task icon -->
   <string name="a11y_task_icon_description">Uppgiftsikon</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">Lämna privata flikar</string>
+  <!-- Label for the primary action button to unlock private tabs -->
+  <string name="pbm_authentication_unlock">Lås upp</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">Lås upp privata flikar</string>
 </resources>

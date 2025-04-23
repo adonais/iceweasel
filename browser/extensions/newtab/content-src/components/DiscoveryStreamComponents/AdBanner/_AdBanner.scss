@@ -33,35 +33,11 @@
   .ad-banner-inner {
     margin-inline: auto;
 
-    .ad-banner-dismiss {
-      // Contrast fix for users who have wallpapers set
-      @include wallpaper-contrast-fix;
-
-      margin-block: 0 var(--space-small);
-      margin-inline: 0 var(--space-xxsmall);
-      text-align: end;
-
-      .icon-dismiss {
-        background-size: var(--size-item-small);
-        border: 0;
-      }
-
-      .icon-dismiss:hover {
-        background-color: var(--newtab-button-hover-background);
-      }
-    }
-
     &.leaderboard {
       max-width: var(--leaderboard-width);
 
-      .ad-banner-dismiss {
-        width: var(--leaderboard-width);
-      }
-
       .ad-banner-content {
         height: var(--leaderboard-height);
-        width: var(--leaderboard-width);
-        margin: 0 auto;
       }
 
       .ad-banner-sponsored {
@@ -74,12 +50,10 @@
     }
 
     &.billboard {
-      min-width: var(--billboard-width);
+      width: var(--billboard-width);
 
       .ad-banner-content {
         height: var(--billboard-height);
-        width: var(--billboard-width);
-        margin: 0 auto;
       }
 
       .ad-banner-sponsored {
@@ -89,6 +63,10 @@
       @media (width <= 1015px) {
         display: none;
       }
+    }
+
+    .ad-banner-link {
+      display: inline-block;
     }
 
     .ad-banner-sponsored {

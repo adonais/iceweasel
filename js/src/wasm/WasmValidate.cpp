@@ -3832,6 +3832,10 @@ bool wasm::StartsCodeSection(const uint8_t* begin, const uint8_t* end,
     }
 
     if (id == uint8_t(SectionId::Code)) {
+      if (range.size > MaxCodeSectionBytes) {
+        return false;
+      }
+
       *codeSection = range;
       return true;
     }
@@ -3927,7 +3931,9 @@ static bool DecodeBranchHintingSection(Decoder& d, CodeMetadata* codeMeta) {
     codeMeta->branchHints.setFailedAndClear();
   }
 
-  d.finishCustomSection(BranchHintingSectionName, *range);
+  if (!d.finishCustomSection(BranchHintingSectionName, *range)) {
+    codeMeta->branchHints.setFailedAndClear();
+  }
   return true;
 }
 #endif
@@ -4167,9 +4173,9 @@ static bool DecodeModuleNameSubsection(Decoder& d,
     return d.fail("failed to read module name length");
   }
 
-  MOZ_ASSERT(d.currentOffset() >= nameSection.payloadOffset);
+  MOZ_ASSERT(d.currentOffset() >= nameSection.payload.start);
   moduleName.offsetInNamePayload =
-      d.currentOffset() - nameSection.payloadOffset;
+      d.currentOffset() - nameSection.payload.start;
 
   const uint8_t* bytes;
   if (!d.readBytes(moduleName.length, &bytes)) {
@@ -4181,7 +4187,7 @@ static bool DecodeModuleNameSubsection(Decoder& d,
   }
 
   // Only save the module name if the whole subsection validates.
-  codeMeta->moduleName.emplace(moduleName);
+  codeMeta->nameSection->moduleName = moduleName;
   return true;
 }
 
@@ -4229,9 +4235,9 @@ static bool DecodeFunctionNameSubsection(Decoder& d,
       return false;
     }
 
-    MOZ_ASSERT(d.currentOffset() >= nameSection.payloadOffset);
+    MOZ_ASSERT(d.currentOffset() >= nameSection.payload.start);
     funcName.offsetInNamePayload =
-        d.currentOffset() - nameSection.payloadOffset;
+        d.currentOffset() - nameSection.payload.start;
 
     if (!d.readBytes(funcName.length)) {
       return d.fail("unable to read function name bytes");
@@ -4244,9 +4250,8 @@ static bool DecodeFunctionNameSubsection(Decoder& d,
     return false;
   }
 
-  // To encourage fully valid function names subsections; only save names if
-  // the entire subsection decoded correctly.
-  codeMeta->funcNames = std::move(funcNames);
+  // Only save names if the entire subsection decoded correctly.
+  codeMeta->nameSection->funcNames = std::move(funcNames);
   return true;
 }
 
@@ -4260,8 +4265,10 @@ static bool DecodeNameSection(Decoder& d, CodeMetadata* codeMeta,
     return true;
   }
 
-  codeMeta->nameCustomSectionIndex =
-      Some(codeMeta->customSectionRanges.length() - 1);
+  codeMeta->nameSection.emplace((NameSection){
+      .customSectionIndex =
+          uint32_t(codeMeta->customSectionRanges.length() - 1),
+  });
   const CustomSectionRange& nameSection = codeMeta->customSectionRanges.back();
 
   // Once started, custom sections do not report validation errors.
@@ -4281,7 +4288,9 @@ static bool DecodeNameSection(Decoder& d, CodeMetadata* codeMeta,
   }
 
 finish:
-  d.finishCustomSection(NameSectionName, *range);
+  if (!d.finishCustomSection(NameSectionName, *range)) {
+    codeMeta->nameSection = mozilla::Nothing();
+  }
   return true;
 }
 
@@ -4297,10 +4306,6 @@ bool wasm::DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
 
   while (!d.done()) {
     if (!d.skipCustomSection(codeMeta)) {
-      if (d.resilientMode()) {
-        d.clearError();
-        return true;
-      }
       return false;
     }
   }
@@ -4310,10 +4315,8 @@ bool wasm::DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
 
 // Validate algorithm.
 
-bool wasm::Validate(JSContext* cx, const ShareableBytes& bytecode,
+bool wasm::Validate(JSContext* cx, const BytecodeSource& bytecode,
                     const FeatureOptions& options, UniqueChars* error) {
-  Decoder d(bytecode.vector, 0, error);
-
   FeatureArgs features = FeatureArgs::build(cx, options);
   SharedCompileArgs compileArgs = CompileArgs::buildForValidation(features);
   if (!compileArgs) {
@@ -4325,16 +4328,46 @@ bool wasm::Validate(JSContext* cx, const ShareableBytes& bytecode,
   }
   MutableCodeMetadata codeMeta = moduleMeta->codeMeta;
 
-  if (!DecodeModuleEnvironment(d, codeMeta, moduleMeta)) {
+  Decoder envDecoder(bytecode.envSpan(), bytecode.envRange().start, error);
+  if (!DecodeModuleEnvironment(envDecoder, codeMeta, moduleMeta)) {
     return false;
   }
 
-  if (!DecodeCodeSection(d, codeMeta)) {
-    return false;
-  }
+  if (bytecode.hasCodeSection()) {
+    // DecodeModuleEnvironment will stop and return true if there is an unknown
+    // section before the code section. We must check this and return an error.
+    if (!moduleMeta->codeMeta->codeSectionRange) {
+      envDecoder.fail("unknown section before code section");
+      return false;
+    }
 
-  if (!DecodeModuleTail(d, codeMeta, moduleMeta)) {
-    return false;
+    // Our pre-parse that split the module should ensure that after we've
+    // parsed the environment there are no bytes left.
+    MOZ_RELEASE_ASSERT(envDecoder.done());
+
+    Decoder codeDecoder(bytecode.codeSpan(), bytecode.codeRange().start, error);
+    if (!DecodeCodeSection(codeDecoder, codeMeta)) {
+      return false;
+    }
+    // Our pre-parse that split the module should ensure that after we've
+    // parsed the code section there are no bytes left.
+    MOZ_RELEASE_ASSERT(codeDecoder.done());
+
+    Decoder tailDecoder(bytecode.tailSpan(), bytecode.tailRange().start, error);
+    if (!DecodeModuleTail(tailDecoder, codeMeta, moduleMeta)) {
+      return false;
+    }
+    // Decoding the module tail should consume all remaining bytes.
+    MOZ_RELEASE_ASSERT(tailDecoder.done());
+  } else {
+    if (!DecodeCodeSection(envDecoder, codeMeta)) {
+      return false;
+    }
+    if (!DecodeModuleTail(envDecoder, codeMeta, moduleMeta)) {
+      return false;
+    }
+    // Decoding the module tail should consume all remaining bytes.
+    MOZ_RELEASE_ASSERT(envDecoder.done());
   }
 
   MOZ_ASSERT(!*error, "unreported error in decoding");

@@ -525,6 +525,15 @@ class TabBase {
   }
 
   /**
+   * @property {integer} groupId
+   *        @readonly
+   *        @abstract
+   */
+  get groupId() {
+    throw new Error("Not implemented");
+  }
+
+  /**
    * Returns true if this tab matches the the given query info object. Omitted
    * or null have no effect on the match.
    *
@@ -565,6 +574,8 @@ class TabBase {
    *        than an exact value match, and will do so in the future.
    * @param {MatchPattern} [queryInfo.url]
    *        Requires the tab's URL to match the given MatchPattern object.
+   * @param {integer} [queryInfo.groupId]
+   *        Matches against the exact value of the tab's `groupId` attribute.
    *
    * @returns {boolean}
    *        True if the tab matches the query.
@@ -581,6 +592,7 @@ class TabBase {
       "openerTabId",
       "pinned",
       "status",
+      "groupId",
     ];
 
     function checkProperty(prop, obj) {
@@ -665,6 +677,7 @@ class TabBase {
       isInReaderMode: this.isInReaderMode,
       sharingState: this.sharingState,
       successorTabId: this.successorTabId,
+      groupId: this.groupId,
       cookieStoreId: this.cookieStoreId,
     };
 

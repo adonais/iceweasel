@@ -16,6 +16,9 @@ const { ExperimentFakes, ExperimentTestUtils } = ChromeUtils.importESModule(
 const { ExperimentManager } = ChromeUtils.importESModule(
   "resource://nimbus/lib/ExperimentManager.sys.mjs"
 );
+const { NimbusTelemetry } = ChromeUtils.importESModule(
+  "resource://nimbus/lib/Telemetry.sys.mjs"
+);
 const { ASRouterTelemetry } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouterTelemetry.sys.mjs"
 );
@@ -256,10 +259,9 @@ add_task(async function test_exposure_ping() {
 
   await assertMessageInState("xman_test_message");
 
-  const exposureSpy = sinon.spy(ExperimentAPI, "recordExposureEvent");
+  const exposureSpy = sinon.spy(NimbusTelemetry, "recordExposure");
 
   await ASRouter.sendTriggerMessage({
-    tabId: 1,
     browser: gBrowser.selectedBrowser,
     id: "openURL",
     param: { host: "messenger.com" },

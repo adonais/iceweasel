@@ -33,6 +33,7 @@
 #include "Theme.h"
 #include "nsPresContext.h"
 #include "nsRect.h"
+#include "nsUXThemeConstants.h"
 #include "nsSize.h"
 #include "nsStyleConsts.h"
 #include "nsTransform2D.h"
@@ -58,8 +59,6 @@ nsNativeThemeWin::nsNativeThemeWin()
       mMinimumWidgetSizeCacheValid(),
       mGutterSizeCacheValid(false) {}
 
-nsNativeThemeWin::~nsNativeThemeWin() { nsUXThemeData::Invalidate(); }
-
 bool nsNativeThemeWin::IsWidgetAlwaysNonNative(nsIFrame* aFrame,
                                                StyleAppearance aAppearance) {
   return Theme::IsWidgetAlwaysNonNative(aFrame, aAppearance) ||
@@ -68,9 +67,8 @@ bool nsNativeThemeWin::IsWidgetAlwaysNonNative(nsIFrame* aFrame,
          aAppearance == StyleAppearance::MozMenulistArrowButton;
 }
 
-auto nsNativeThemeWin::IsWidgetNonNative(nsIFrame* aFrame,
-                                         StyleAppearance aAppearance)
-    -> NonNative {
+auto nsNativeThemeWin::IsWidgetNonNative(
+    nsIFrame* aFrame, StyleAppearance aAppearance) -> NonNative {
   if (IsWidgetAlwaysNonNative(aFrame, aAppearance)) {
     return NonNative::Always;
   }
@@ -394,9 +392,10 @@ void nsNativeThemeWin::DrawThemedProgressMeter(
 }
 
 LayoutDeviceIntMargin nsNativeThemeWin::GetCachedWidgetBorder(
-    HTHEME aTheme, nsUXThemeClass aThemeClass, StyleAppearance aAppearance,
+    HTHEME aTheme, UXThemeClass aThemeClass, StyleAppearance aAppearance,
     int32_t aPart, int32_t aState) {
-  int32_t cacheIndex = aThemeClass * THEME_PART_DISTINCT_VALUE_COUNT + aPart;
+  int32_t cacheIndex =
+      int32_t(aThemeClass) * THEME_PART_DISTINCT_VALUE_COUNT + aPart;
   int32_t cacheBitIndex = cacheIndex / 8;
   uint8_t cacheBit = 1u << (cacheIndex % 8);
 
@@ -431,9 +430,9 @@ LayoutDeviceIntMargin nsNativeThemeWin::GetCachedWidgetBorder(
 }
 
 nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(
-    nsIFrame* aFrame, HANDLE aTheme, nsUXThemeClass aThemeClass,
+    nsIFrame* aFrame, HANDLE aTheme, UXThemeClass aThemeClass,
     StyleAppearance aAppearance, int32_t aPart, int32_t aState,
-    THEMESIZE aSizeReq, mozilla::LayoutDeviceIntSize* aResult) {
+    int32_t aSizeReq, mozilla::LayoutDeviceIntSize* aResult) {
   int32_t cachePart = aPart;
 
   if (aAppearance == StyleAppearance::Button && aSizeReq == TS_MIN) {
@@ -446,7 +445,7 @@ nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(
 
   MOZ_ASSERT(aPart < THEME_PART_DISTINCT_VALUE_COUNT);
   int32_t cacheIndex =
-      aThemeClass * THEME_PART_DISTINCT_VALUE_COUNT + cachePart;
+      int32_t(aThemeClass) * THEME_PART_DISTINCT_VALUE_COUNT + cachePart;
   int32_t cacheBitIndex = cacheIndex / 8;
   uint8_t cacheBit = 1u << (cacheIndex % 8);
 
@@ -461,7 +460,8 @@ nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(
   }
 
   SIZE sz;
-  GetThemePartSize(aTheme, hdc, aPart, aState, nullptr, aSizeReq, &sz);
+  GetThemePartSize(aTheme, hdc, aPart, aState, nullptr, THEMESIZE(aSizeReq),
+                   &sz);
   aResult->width = sz.cx;
   aResult->height = sz.cy;
 
@@ -473,34 +473,33 @@ nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(
   return NS_OK;
 }
 
-mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
+mozilla::Maybe<UXThemeClass> nsNativeThemeWin::GetThemeClass(
     StyleAppearance aAppearance) {
   switch (aAppearance) {
     case StyleAppearance::Button:
-      return Some(eUXButton);
+      return Some(UXThemeClass::Button);
     case StyleAppearance::NumberInput:
     case StyleAppearance::PasswordInput:
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
-      return Some(eUXEdit);
+      return Some(UXThemeClass::Edit);
     case StyleAppearance::Toolbarbutton:
     case StyleAppearance::Separator:
-      return Some(eUXToolbar);
+      return Some(UXThemeClass::Toolbar);
     case StyleAppearance::ProgressBar:
     case StyleAppearance::Progresschunk:
-      return Some(eUXProgress);
+      return Some(UXThemeClass::Progress);
     case StyleAppearance::Tab:
     case StyleAppearance::Tabpanel:
     case StyleAppearance::Tabpanels:
-      return Some(eUXTab);
+      return Some(UXThemeClass::Tab);
     case StyleAppearance::Range:
     case StyleAppearance::RangeThumb:
-      return Some(eUXTrackbar);
+      return Some(UXThemeClass::Trackbar);
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton:
-      return Some(eUXCombobox);
+      return Some(UXThemeClass::Combobox);
     case StyleAppearance::Listbox:
-      return Some(eUXListview);
+      return Some(UXThemeClass::Listview);
     default:
       return Nothing();
   }
@@ -508,11 +507,11 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
 
 HANDLE
 nsNativeThemeWin::GetTheme(StyleAppearance aAppearance) {
-  mozilla::Maybe<nsUXThemeClass> themeClass = GetThemeClass(aAppearance);
+  mozilla::Maybe<UXThemeClass> themeClass = GetThemeClass(aAppearance);
   if (themeClass.isNothing()) {
     return nullptr;
   }
-  return nsUXThemeData::GetTheme(themeClass.value());
+  return nsLookAndFeel::GetTheme(themeClass.value());
 }
 
 int32_t nsNativeThemeWin::StandardGetState(nsIFrame* aFrame,
@@ -747,7 +746,6 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
 
       return NS_OK;
     }
-    case StyleAppearance::MenulistButton:
     case StyleAppearance::Menulist: {
       nsIContent* content = aFrame->GetContent();
       bool useDropBorder = content && content->IsHTMLElement();
@@ -790,8 +788,8 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
 
 static bool AssumeThemePartAndStateAreTransparent(int32_t aPart,
                                                   int32_t aState) {
-  if (!nsUXThemeData::IsHighContrastOn() && aPart == MENU_POPUPITEM &&
-      aState == MBI_NORMAL) {
+  if (!LookAndFeel::GetInt(LookAndFeel::IntID::UseAccessibilityTheme) &&
+      aPart == MENU_POPUPITEM && aState == MBI_NORMAL) {
     return true;
   }
   return false;
@@ -1039,10 +1037,10 @@ LayoutDeviceIntMargin nsNativeThemeWin::GetWidgetBorder(
   }
 
   LayoutDeviceIntMargin result;
-  mozilla::Maybe<nsUXThemeClass> themeClass = GetThemeClass(aAppearance);
-  HTHEME theme = NULL;
-  if (!themeClass.isNothing()) {
-    theme = nsUXThemeData::GetTheme(themeClass.value());
+  mozilla::Maybe<UXThemeClass> themeClass = GetThemeClass(aAppearance);
+  HTHEME theme = nullptr;
+  if (themeClass.isSome()) {
+    theme = nsLookAndFeel::GetTheme(themeClass.value());
   }
   if (!theme) {
     result = ClassicGetWidgetBorder(aContext, aFrame, aAppearance);
@@ -1121,8 +1119,7 @@ bool nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
     ScaleForFrameDPI(aResult, aFrame);
     return ok;
   } else if (IsHTMLContent(aFrame) &&
-             (aAppearance == StyleAppearance::Menulist ||
-              aAppearance == StyleAppearance::MenulistButton)) {
+             aAppearance == StyleAppearance::Menulist) {
     /* For content menulist controls, we need an extra pixel so that we have
      * room to draw our focus rectangle stuff. Otherwise, the focus rect might
      * overlap the control's border.
@@ -1169,36 +1166,6 @@ bool nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext,
     return Theme::GetWidgetOverflow(aContext, aFrame, aAppearance,
                                     aOverflowRect);
   }
-
-  /* This is disabled for now, because it causes invalidation problems --
-   * see bug 420381.  The effect of not updating the overflow area is that
-   * for dropdown buttons in content areas, there is a 1px border on 3 sides
-   * where, if invalidated, the dropdown control probably won't be repainted.
-   * This is fairly minor, as by default there is nothing in that area, and
-   * a border only shows up if the widget is being hovered.
-   *
-   * TODO(jwatt): Figure out what do to about
-   * StyleAppearance::MozMenulistArrowButton too.
-   */
-#if 0
-  /* We explicitly draw dropdown buttons in HTML content 1px bigger up, right,
-   * and bottom so that they overlap the dropdown's border like they're
-   * supposed to.
-   */
-  if (aAppearance == StyleAppearance::MenulistButton &&
-      IsHTMLContent(aFrame) &&
-      !IsWidgetStyled(aFrame->GetParent()->PresContext(),
-                      aFrame->GetParent(),
-                      StyleAppearance::Menulist))
-  {
-    int32_t p2a = aContext->AppUnitsPerDevPixel();
-    /* Note: no overflow on the left */
-    nsMargin m(p2a, p2a, p2a, 0);
-    aOverflowRect->Inflate (m);
-    return true;
-  }
-#endif
-
   return false;
 }
 
@@ -1209,10 +1176,10 @@ LayoutDeviceIntSize nsNativeThemeWin::GetMinimumWidgetSize(
     return Theme::GetMinimumWidgetSize(aPresContext, aFrame, aAppearance);
   }
 
-  mozilla::Maybe<nsUXThemeClass> themeClass = GetThemeClass(aAppearance);
+  mozilla::Maybe<UXThemeClass> themeClass = GetThemeClass(aAppearance);
   HTHEME theme = NULL;
   if (!themeClass.isNothing()) {
-    theme = nsUXThemeData::GetTheme(themeClass.value());
+    theme = nsLookAndFeel::GetTheme(themeClass.value());
   }
   if (!theme) {
     auto result = ClassicGetMinimumWidgetSize(aFrame, aAppearance);
@@ -1305,7 +1272,6 @@ bool nsNativeThemeWin::WidgetAttributeChangeRequiresRepaint(
 
 NS_IMETHODIMP
 nsNativeThemeWin::ThemeChanged() {
-  nsUXThemeData::Invalidate();
   memset(mBorderCacheValid, 0, sizeof(mBorderCacheValid));
   memset(mMinimumWidgetSizeCacheValid, 0, sizeof(mMinimumWidgetSizeCacheValid));
   mGutterSizeCacheValid = false;
@@ -1337,7 +1303,6 @@ bool nsNativeThemeWin::ThemeDrawsFocusForWidget(nsIFrame* aFrame,
   }
   switch (aAppearance) {
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton:
     case StyleAppearance::Textarea:
     case StyleAppearance::Textfield:
     case StyleAppearance::NumberInput:
@@ -1400,7 +1365,6 @@ bool nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
     case StyleAppearance::Range:
     case StyleAppearance::RangeThumb:
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton:
     case StyleAppearance::Listbox:
     case StyleAppearance::ProgressBar:
     case StyleAppearance::Progresschunk:
@@ -1422,7 +1386,6 @@ LayoutDeviceIntMargin nsNativeThemeWin::ClassicGetWidgetBorder(
       break;
     case StyleAppearance::Listbox:
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton:
     case StyleAppearance::Tab:
     case StyleAppearance::NumberInput:
     case StyleAppearance::PasswordInput:
@@ -1469,7 +1432,6 @@ LayoutDeviceIntSize nsNativeThemeWin::ClassicGetMinimumWidgetSize(
       break;
     }
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton:
     case StyleAppearance::Button:
     case StyleAppearance::Listbox:
     case StyleAppearance::NumberInput:
@@ -1535,7 +1497,6 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton:
     case StyleAppearance::Range:
     case StyleAppearance::RangeThumb:
     case StyleAppearance::Progresschunk:
@@ -1727,8 +1688,7 @@ RENDER_AGAIN:
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
     case StyleAppearance::Listbox:
-    case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton: {
+    case StyleAppearance::Menulist: {
       // Draw inset edge
       ::DrawEdge(hdc, &widgetRect, EDGE_SUNKEN, BF_RECT | BF_ADJUST);
 
@@ -1855,7 +1815,6 @@ uint32_t nsNativeThemeWin::GetWidgetNativeDrawingFlags(
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton:
       return gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
              gfxWindowsNativeDrawing::CAN_AXIS_ALIGNED_SCALE |
              gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;

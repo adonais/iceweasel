@@ -154,6 +154,19 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
   mFlags.mCanHaveClassABreakpoints = false;
 }
 
+static nsSize GetICBSize(const nsPresContext* aPresContext,
+                         const nsIFrame* aFrame) {
+  if (!aPresContext->IsPaginated()) {
+    return aPresContext->GetVisibleArea().Size();
+  }
+  for (const nsIFrame* f = aFrame->GetParent(); f; f = f->GetParent()) {
+    if (f->IsPageContentFrame()) {
+      return f->GetSize();
+    }
+  }
+  return aPresContext->GetPageSize();
+}
+
 // Initialize a reflow input for a child frame's reflow. Some state
 // is copied from the parent reflow input; the remaining state is
 // computed.
@@ -186,14 +199,53 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   MOZ_ASSERT(!mFlags.mSpecialBSizeReflow || !aFrame->IsSubtreeDirty(),
              "frame should be clean when getting special bsize reflow");
 
-  if (mWritingMode.IsOrthogonalTo(aParentReflowInput.GetWritingMode())) {
-    // If we're setting up for an orthogonal flow, and the parent reflow input
-    // had a constrained ComputedBSize, we can use that as our AvailableISize
-    // in preference to leaving it unconstrained.
-    if (AvailableISize() == NS_UNCONSTRAINEDSIZE &&
-        aParentReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
-      SetAvailableISize(aParentReflowInput.ComputedBSize());
+  if (mWritingMode.IsOrthogonalTo(mParentReflowInput->GetWritingMode())) {
+    // If the block establishes an orthogonal flow, set up its AvailableISize
+    // per https://drafts.csswg.org/css-writing-modes/#orthogonal-auto
+
+    auto GetISizeConstraint = [this](const nsIFrame* aFrame) -> nscoord {
+      nscoord limit = NS_UNCONSTRAINEDSIZE;
+      const auto* pos = aFrame->StylePosition();
+      if (auto size =
+              nsLayoutUtils::GetAbsoluteSize(pos->ISize(mWritingMode))) {
+        limit = size.value();
+      } else if (auto maxSize = nsLayoutUtils::GetAbsoluteSize(
+                     pos->MaxISize(mWritingMode))) {
+        limit = maxSize.value();
+      }
+      if (limit != NS_UNCONSTRAINEDSIZE) {
+        if (auto minSize =
+                nsLayoutUtils::GetAbsoluteSize(pos->MinISize(mWritingMode))) {
+          limit = std::max(limit, minSize.value());
+        }
+      }
+      return limit;
+    };
+
+    // See if the containing block has a fixed size we should respect:
+    const nsIFrame* cb = mFrame->GetContainingBlock();
+    nscoord cbLimit = GetISizeConstraint(cb);
+
+    nscoord scLimit = NS_UNCONSTRAINEDSIZE;
+    // If the containing block was not a scroll container itself, look up the
+    // parent chain for a scroller size that we should respect.
+    // XXX Could maybe use nsLayoutUtils::GetNearestScrollContainerFrame here,
+    // but unsure if we need the additional complexity it supports?
+    if (!cb->IsScrollContainerFrame()) {
+      for (const nsIFrame* p = mFrame->GetParent(); p; p = p->GetParent()) {
+        if (p->IsScrollContainerFrame()) {
+          scLimit = GetISizeConstraint(p);
+          // Only the closest ancestor scroller is relevant, so quit as soon as
+          // we've found one (whether or not it had fixed sizing).
+          break;
+        }
+      }
     }
+
+    LogicalSize icbSize(mWritingMode, GetICBSize(aPresContext, mFrame));
+    nscoord icbLimit = icbSize.ISize(mWritingMode);
+
+    SetAvailableISize(std::min(icbLimit, std::min(scLimit, cbLimit)));
   }
 
   // Note: mFlags was initialized as a copy of aParentReflowInput.mFlags up in
@@ -376,19 +428,6 @@ void ReflowInput::Init(nsPresContext* aPresContext,
                        const Maybe<LogicalSize>& aContainingBlockSize,
                        const Maybe<LogicalMargin>& aBorder,
                        const Maybe<LogicalMargin>& aPadding) {
-  if (AvailableISize() == NS_UNCONSTRAINEDSIZE) {
-    // Look up the parent chain for an orthogonal inline limit,
-    // and reset AvailableISize() if found.
-    for (const ReflowInput* parent = mParentReflowInput; parent != nullptr;
-         parent = parent->mParentReflowInput) {
-      if (parent->GetWritingMode().IsOrthogonalTo(mWritingMode) &&
-          parent->mOrthogonalLimit != NS_UNCONSTRAINEDSIZE) {
-        SetAvailableISize(parent->mOrthogonalLimit);
-        break;
-      }
-    }
-  }
-
   LAYOUT_WARN_IF_FALSE(AvailableISize() != NS_UNCONSTRAINEDSIZE,
                        "have unconstrained inline-size; this should only "
                        "result from very large sizes, not attempts at "
@@ -866,9 +905,9 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
   // moves the boxes to the end of the line, and 'inlineEnd' moves the
   // boxes to the start of the line. The computed values are always:
   // inlineStart=-inlineEnd
-  const auto& inlineStart = position->GetAnchorResolvedInset(
+  const auto inlineStart = position->GetAnchorResolvedInset(
       LogicalSide::IStart, aWM, positionProperty);
-  const auto& inlineEnd = position->GetAnchorResolvedInset(
+  const auto inlineEnd = position->GetAnchorResolvedInset(
       LogicalSide::IEnd, aWM, positionProperty);
   bool inlineStartIsAuto = inlineStart->IsAuto();
   bool inlineEndIsAuto = inlineEnd->IsAuto();
@@ -889,7 +928,9 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
           inlineEnd->IsAuto()
               ? 0
               : nsLayoutUtils::ComputeCBDependentValue(
-                    aCBSize.ISize(aWM), inlineEnd->AsLengthPercentage());
+                    aCBSize.ISize(aWM),
+                    ToStylePhysicalAxis(aWM.PhysicalAxis(LogicalAxis::Inline)),
+                    positionProperty, inlineEnd);
 
       // Computed value for 'inlineStart' is minus the value of 'inlineEnd'
       offsets.IStart(aWM) = -offsets.IEnd(aWM);
@@ -900,7 +941,9 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
 
     // 'InlineStart' isn't 'auto' so compute its value
     offsets.IStart(aWM) = nsLayoutUtils::ComputeCBDependentValue(
-        aCBSize.ISize(aWM), inlineStart->AsLengthPercentage());
+        aCBSize.ISize(aWM),
+        ToStylePhysicalAxis(aWM.PhysicalAxis(LogicalAxis::Inline)),
+        positionProperty, inlineStart);
 
     // Computed value for 'inlineEnd' is minus the value of 'inlineStart'
     offsets.IEnd(aWM) = -offsets.IStart(aWM);
@@ -910,10 +953,10 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
   // and 'blockEnd' properties move relatively positioned elements in
   // the block progression direction. They also must be each other's
   // negative
-  const auto& blockStart = position->GetAnchorResolvedInset(
+  const auto blockStart = position->GetAnchorResolvedInset(
       LogicalSide::BStart, aWM, positionProperty);
-  const auto& blockEnd = position->GetAnchorResolvedInset(
-      LogicalSide::BEnd, aWM, positionProperty);
+  const auto blockEnd = position->GetAnchorResolvedInset(LogicalSide::BEnd, aWM,
+                                                         positionProperty);
   bool blockStartIsAuto = blockStart->IsAuto();
   bool blockEndIsAuto = blockEnd->IsAuto();
 
@@ -943,7 +986,9 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
           blockEnd->IsAuto()
               ? 0
               : nsLayoutUtils::ComputeCBDependentValue(
-                    aCBSize.BSize(aWM), blockEnd->AsLengthPercentage());
+                    aCBSize.BSize(aWM),
+                    ToStylePhysicalAxis(aWM.PhysicalAxis(LogicalAxis::Block)),
+                    positionProperty, blockEnd);
 
       // Computed value for 'blockStart' is minus the value of 'blockEnd'
       offsets.BStart(aWM) = -offsets.BEnd(aWM);
@@ -954,7 +999,9 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
 
     // 'blockStart' isn't 'auto' so compute its value
     offsets.BStart(aWM) = nsLayoutUtils::ComputeCBDependentValue(
-        aCBSize.BSize(aWM), blockStart->AsLengthPercentage());
+        aCBSize.BSize(aWM),
+        ToStylePhysicalAxis(aWM.PhysicalAxis(LogicalAxis::Block)),
+        positionProperty, blockStart);
 
     // Computed value for 'blockEnd' is minus the value of 'blockStart'
     offsets.BEnd(aWM) = -offsets.BStart(aWM);
@@ -1582,13 +1629,13 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   NS_ASSERTION(mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Why are we here?");
 
-  const auto& iStartOffset = mStylePosition->GetAnchorResolvedInset(
+  const auto iStartOffset = mStylePosition->GetAnchorResolvedInset(
       LogicalSide::IStart, cbwm, StylePositionProperty::Absolute);
-  const auto& iEndOffset = mStylePosition->GetAnchorResolvedInset(
+  const auto iEndOffset = mStylePosition->GetAnchorResolvedInset(
       LogicalSide::IEnd, cbwm, StylePositionProperty::Absolute);
-  const auto& bStartOffset = mStylePosition->GetAnchorResolvedInset(
+  const auto bStartOffset = mStylePosition->GetAnchorResolvedInset(
       LogicalSide::BStart, cbwm, StylePositionProperty::Absolute);
-  const auto& bEndOffset = mStylePosition->GetAnchorResolvedInset(
+  const auto bEndOffset = mStylePosition->GetAnchorResolvedInset(
       LogicalSide::BEnd, cbwm, StylePositionProperty::Absolute);
   bool iStartIsAuto = iStartOffset->IsAuto();
   bool iEndIsAuto = iEndOffset->IsAuto();

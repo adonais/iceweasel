@@ -30,6 +30,10 @@ from threading import Event, Thread, Timer, current_thread
 
 import mozdebug
 import six
+from mozgeckoprofiler import (
+    symbolicate_profile_json,
+    view_gecko_profile,
+)
 from mozserve import Http3Server
 
 try:
@@ -224,6 +228,7 @@ class XPCShellTestThread(Thread):
         self.timeoutAsPass = kwargs.get("timeoutAsPass")
         self.crashAsPass = kwargs.get("crashAsPass")
         self.conditionedProfileDir = kwargs.get("conditionedProfileDir")
+        self.profiler = kwargs.get("profiler")
         if self.runFailures:
             self.retry = False
 
@@ -486,6 +491,24 @@ class XPCShellTestThread(Thread):
         # Return the root prefsFile if there is no other prefs to merge.
         # This is the path set by buildPrefsFile.
         return self.rootPrefsFile
+
+    def updateTestEnvironment(self):
+        # Add additional environment variables from the Manifest file
+        extraEnv = {}
+        if "environment" in self.test_object:
+            extraEnv = self.test_object["environment"].strip().split()
+            self.log.info(
+                "The following extra environment variables will be set:\n  {}".format(
+                    "\n  ".join(extraEnv)
+                )
+            )
+            self.env.update(
+                dict(
+                    parse_key_value(
+                        extraEnv, context="environment variables in manifest"
+                    )
+                )
+            )
 
     @property
     def conditioned_profile_copy(self):
@@ -808,6 +831,9 @@ class XPCShellTestThread(Thread):
         # Setup per-manifest prefs and write them into the tempdir.
         self.prefsFile = self.updateTestPrefsFile()
 
+        # Setup per-manifest env variables
+        self.updateTestEnvironment()
+
         # The order of the command line is important:
         # 1) Arguments for xpcshell itself
         self.command = self.buildXpcsCmd()
@@ -835,12 +861,20 @@ class XPCShellTestThread(Thread):
             self.env["PYTHON"] = sys.executable
             self.env["BREAKPAD_SYMBOLS_PATH"] = self.symbolsPath
 
-        if self.test_object.get("snap") == "true":
-            self.env["SNAP_NAME"] = "firefox"
-            self.env["SNAP_INSTANCE_NAME"] = "firefox"
-
         if self.test_object.get("subprocess") == "true":
             self.env["PYTHON"] = sys.executable
+
+        if self.profiler:
+            if not self.singleFile:
+                self.log.error(
+                    "The --profiler flag is currently only supported when running a single test"
+                )
+            else:
+                self.env["MOZ_PROFILER_STARTUP"] = "1"
+                profile_path = os.path.join(
+                    self.profileDir, "profile_" + os.path.basename(name) + ".json"
+                )
+                self.env["MOZ_PROFILER_SHUTDOWN"] = profile_path
 
         if (
             self.test_object.get("headless", "true" if self.headless else None)
@@ -1024,6 +1058,9 @@ class XPCShellTestThread(Thread):
 
         finally:
             self.postCheck(proc)
+            if self.profiler and self.singleFile:
+                symbolicate_profile_json(profile_path, self.symbolsPath)
+                view_gecko_profile(profile_path)
             self.clean_temp_dirs(path)
 
         if gotSIGINT:
@@ -1815,6 +1852,7 @@ class XPCShellTests(object):
         self.conditionedProfile = options.get("conditionedProfile")
         self.repeat = options.get("repeat", 0)
         self.variant = options.get("variant", "")
+        self.profiler = options.get("profiler")
 
         if self.variant == "msix":
             self.appPath = options.get("msixAppPath")
@@ -1982,6 +2020,7 @@ class XPCShellTests(object):
             "crashAsPass": self.crashAsPass,
             "conditionedProfileDir": self.conditioned_profile_dir,
             "repeat": self.repeat,
+            "profiler": self.profiler,
         }
 
         if self.sequential:

@@ -39,6 +39,9 @@ const ON_TRAIN_ROLLOUT_SUPPORTED_PLATFORM =
   (AppConstants.platform === "win" &&
     Services.sysinfo.getProperty("hasWinPackageId", false));
 
+const ON_TRAIN_ROLLOUT_ENABLED_PREF =
+  "browser.preonboarding.onTrainRolloutEnabled";
+
 const ON_TRAIN_ROLLOUT_POPULATION_PREF =
   "browser.preonboarding.onTrainRolloutPopulation";
 
@@ -714,6 +717,7 @@ const getOnTrainRolloutModalStub = async ({
   isFirstRun,
   isEnrolled,
 }) => {
+  Services.prefs.setBoolPref(ON_TRAIN_ROLLOUT_ENABLED_PREF, true);
   Services.prefs.setIntPref(
     ON_TRAIN_ROLLOUT_POPULATION_PREF,
     ON_TRAIN_TEST_RECIPE.bucketConfig.count
@@ -736,6 +740,7 @@ const getOnTrainRolloutModalStub = async ({
   const doCleanup = () => {
     sinon.restore();
     fakeResetAcceptedPolicy();
+    Services.prefs.clearUserPref(ON_TRAIN_ROLLOUT_ENABLED_PREF);
     Services.prefs.clearUserPref(ON_TRAIN_ROLLOUT_POPULATION_PREF);
     Services.prefs.clearUserPref(ON_TRAIN_ROLLOUT_ENROLLMENT_PREF);
   };

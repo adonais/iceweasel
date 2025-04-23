@@ -406,10 +406,13 @@ bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
           aContent, BlockInlineCheck::UseComputedDisplayStyle)) {
     return true;
   }
-  if (aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::iframe,
-                                   nsGkAtoms::img, nsGkAtoms::meter,
-                                   nsGkAtoms::progress, nsGkAtoms::select,
-                                   nsGkAtoms::textarea)) {
+  // <br> element may not have a frame, but it always affects surrounding
+  // content.  Therefore, it should be treated as visible.  The others which are
+  // checked here are replace elements which provide something visible content.
+  if (aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::br,
+                                   nsGkAtoms::iframe, nsGkAtoms::img,
+                                   nsGkAtoms::meter, nsGkAtoms::progress,
+                                   nsGkAtoms::select, nsGkAtoms::textarea)) {
     return true;
   }
   if (const HTMLInputElement* inputElement =
@@ -846,24 +849,35 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
         point.IsStartOfContainer()) {
       return true;
     }
-    const WSScanResult previousThing =
-        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes, preferredPaddingLineBreakPoint,
+    // We need to scan previous `Text` which may ends with invisible white-space
+    // because we want to make it visible.  Therefore, we cannot use
+    // WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() here.
+    nsIContent* const previousVisibleLeafOrChildBlock =
+        HTMLEditUtils::GetPreviousNonEmptyLeafContentOrPreviousBlockElement(
+            preferredPaddingLineBreakPoint,
+            {LeafNodeType::LeafNodeOrChildBlock},
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
-    if (previousThing.ContentIsText()) {
-      if (MOZ_UNLIKELY(!previousThing.TextPtr()->TextDataLength())) {
-        return false;
-      }
-      auto atLastChar = EditorRawDOMPointInText(
-          previousThing.TextPtr(),
-          previousThing.TextPtr()->TextDataLength() - 1);
-      if (atLastChar.IsCharCollapsibleASCIISpace()) {
-        preferredPaddingLineBreakPoint.SetAfter(previousThing.TextPtr());
-        return true;
-      }
+    if (!previousVisibleLeafOrChildBlock) {
+      // Reached current block.
+      return true;
+    }
+    if (HTMLEditUtils::IsBlockElement(
+            *previousVisibleLeafOrChildBlock,
+            BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+      // We reached previous child block.
+      return true;
+    }
+    Text* const previousVisibleText =
+        Text::FromNode(previousVisibleLeafOrChildBlock);
+    if (!previousVisibleText) {
+      // We reached visible inline element.
       return false;
     }
-    return previousThing.ReachedBlockBoundary();
+    MOZ_ASSERT(previousVisibleText->TextDataLength());
+    // We reached previous (currently) invisible white-space or visible
+    // character.
+    return EditorRawDOMPoint::AtEndOf(*previousVisibleText)
+        .IsPreviousCharASCIISpace();
   }();
   if (!followingBlockBoundaryOrCollapsibleWhiteSpace) {
     return EditorDOMPoint();
@@ -920,12 +934,6 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
         return nextContent->AsElement();
       }
 
-      // If there is a visible content which generates something visible,
-      // stop scanning.
-      if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent)) {
-        return nullptr;
-      }
-
       if (nextContent->IsHTMLElement(nsGkAtoms::br)) {
         // If aContent is a <br> element, another <br> element prevents the
         // block boundary special handling.
@@ -943,6 +951,12 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
         // start of the text node are invisible.  In this case, we return
         // the found <br> element.
         return nextContent->AsElement();
+      }
+
+      // If there is a visible content which generates something visible,
+      // stop scanning.
+      if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent)) {
+        return nullptr;
       }
 
       continue;
@@ -1243,6 +1257,131 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
     unnecessaryLineBreak.reset();
   }
   return unnecessaryLineBreak;
+}
+
+uint32_t HTMLEditUtils::GetFirstVisibleCharOffset(const Text& aText) {
+  const nsTextFragment& textFragment = aText.TextFragment();
+  if (!textFragment.GetLength() || !EditorRawDOMPointInText(&aText, 0u)
+                                        .IsCharCollapsibleASCIISpaceOrNBSP()) {
+    return 0u;
+  }
+  const WSScanResult previousThingOfText =
+      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+          WSRunScanner::Scan::All, EditorRawDOMPoint(&aText),
+          BlockInlineCheck::UseComputedDisplayStyle);
+  if (!previousThingOfText.ReachedLineBoundary()) {
+    return 0u;
+  }
+  return HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(aText, 0u)
+      .valueOr(textFragment.GetLength());
+}
+
+uint32_t HTMLEditUtils::GetOffsetAfterLastVisibleChar(const Text& aText) {
+  const nsTextFragment& textFragment = aText.TextFragment();
+  if (!textFragment.GetLength()) {
+    return 0u;
+  }
+  if (!EditorRawDOMPointInText::AtLastContentOf(aText)
+           .IsCharCollapsibleASCIISpaceOrNBSP()) {
+    return textFragment.GetLength();
+  }
+  const WSScanResult nextThingOfText =
+      WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+          WSRunScanner::Scan::All, EditorRawDOMPoint::After(aText),
+          BlockInlineCheck::UseComputedDisplayStyle);
+  if (!nextThingOfText.ReachedLineBoundary()) {
+    return textFragment.GetLength();
+  }
+  const Maybe<uint32_t> lastNonCollapsibleCharOffset =
+      HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
+          aText, textFragment.GetLength());
+  if (lastNonCollapsibleCharOffset.isNothing()) {
+    return 0u;
+  }
+  if (*lastNonCollapsibleCharOffset == textFragment.GetLength() - 1u) {
+    return textFragment.GetLength();
+  }
+  const uint32_t firstTrailingWhiteSpaceOffset =
+      *lastNonCollapsibleCharOffset + 1u;
+  MOZ_ASSERT(firstTrailingWhiteSpaceOffset < textFragment.GetLength());
+  if (nextThingOfText.ReachedBlockBoundary()) {
+    return firstTrailingWhiteSpaceOffset;
+  }
+  // If followed by <br> or preformatted line break, one white-space is
+  // rendered.
+  return firstTrailingWhiteSpaceOffset + 1u;
+}
+
+uint32_t HTMLEditUtils::GetInvisibleWhiteSpaceCount(
+    const Text& aText, uint32_t aOffset /* = 0u */,
+    uint32_t aLength /* = UINT32_MAX */) {
+  const nsTextFragment& textFragment = aText.TextFragment();
+  if (!aLength || textFragment.GetLength() <= aOffset) {
+    return 0u;
+  }
+  const uint32_t endOffset = static_cast<uint32_t>(
+      std::min(static_cast<uint64_t>(aOffset) + aLength,
+               static_cast<uint64_t>(textFragment.GetLength())));
+  const auto firstVisibleOffset = [&]() -> uint32_t {
+    // If the white-space sequence follows a preformatted linebreak, ASCII
+    // spaces at start are invisible.
+    if (aOffset &&
+        textFragment.CharAt(aOffset - 1u) == HTMLEditUtils::kNewLine) {
+      MOZ_ASSERT(EditorUtils::IsNewLinePreformatted(aText));
+      for (const uint32_t offset : IntegerRange(aOffset, endOffset)) {
+        if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
+          return offset;
+        }
+      }
+      return endOffset;  // all white-spaces are invisible.
+    }
+    if (aOffset) {
+      return aOffset - 1u;
+    }
+    return HTMLEditUtils::GetFirstVisibleCharOffset(aText);
+  }();
+  if (firstVisibleOffset >= endOffset) {
+    return endOffset - aOffset;  // All white-spaces are invisible.
+  }
+  const auto afterLastVisibleOffset = [&]() -> uint32_t {
+    // If the white-spaces are followed by a preformatted line break, ASCII
+    // spaces at end are invisible.
+    if (endOffset < textFragment.GetLength() &&
+        textFragment.CharAt(endOffset) == HTMLEditUtils::kNewLine) {
+      MOZ_ASSERT(EditorUtils::IsNewLinePreformatted(aText));
+      for (const uint32_t offset : Reversed(IntegerRange(aOffset, endOffset))) {
+        if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
+          return offset + 1u;
+        }
+      }
+      return aOffset;  // all white-spaces are invisible.
+    }
+    if (endOffset < textFragment.GetLength() - 1u) {
+      return endOffset;
+    }
+    return HTMLEditUtils::GetOffsetAfterLastVisibleChar(aText);
+  }();
+  if (aOffset >= afterLastVisibleOffset) {
+    return endOffset - aOffset;  // All white-spaces are invisible.
+  }
+  enum class PrevChar { NotChar, Space, NBSP };
+  PrevChar prevChar = PrevChar::NotChar;
+  uint32_t invisibleChars = 0u;
+  for (const uint32_t offset : IntegerRange(aOffset, endOffset)) {
+    if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
+      prevChar = PrevChar::NBSP;
+      continue;
+    }
+    MOZ_ASSERT(
+        EditorRawDOMPointInText(&aText, offset).IsCharCollapsibleASCIISpace());
+    if (offset < firstVisibleOffset || offset >= afterLastVisibleOffset ||
+        // white-space after another white-space is invisible
+        prevChar == PrevChar::Space) {
+      invisibleChars++;
+    }
+    prevChar = PrevChar::Space;
+  }
+  return invisibleChars;
 }
 
 bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
@@ -3020,6 +3159,13 @@ bool HTMLEditUtils::IsSameCSSColorValue(const nsTSubstring<CharType>& aColorA,
     return isACurrentColor && isBCurrentColor;
   }
   return colorA == colorB;
+}
+
+bool HTMLEditUtils::IsTransparentCSSColor(const nsAString& aColor) {
+  nsAutoString normalizedCSSColorValue;
+  return GetNormalizedCSSColorValue(aColor, ZeroAlphaColor::TransparentKeyword,
+                                    normalizedCSSColorValue) &&
+         normalizedCSSColorValue.EqualsASCII("transparent");
 }
 
 /******************************************************************************

@@ -540,6 +540,8 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "GPUError", nightly: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "GPUExternalTexture", nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "GPUInternalError", nightly: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "GPUMapMode", nightly: true },
@@ -905,7 +907,7 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "MouseScrollEvent", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "MutationEvent", insecureContext: true },
+  { name: "MutationEvent", insecureContext: true, nightly: false },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "MutationObserver", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -934,6 +936,8 @@ let interfaceNamesInGlobalScope = [
   "NavigationPreloadManager",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Navigator", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  "NavigatorLogin",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "NetworkInformation", insecureContext: true, disabled: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -1934,6 +1938,8 @@ let interfaceNamesInGlobalScope = [
   { name: "orientation", insecureContext: true, android: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "origin", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "originAgentCluster", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "outerHeight", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!

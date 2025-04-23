@@ -13,6 +13,10 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
   });
 });
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
+});
+
 const HAS_UNSUBMITTED_DATA_PREF = "captchadetection.hasUnsubmittedData";
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -89,6 +93,13 @@ export class CaptchaDetectionPingUtils {
       return;
     }
 
+    if (!CaptchaDetectionPingUtils.profileIsOpen) {
+      lazy.console.debug(
+        "Not submitting ping because profile is closing or already closed."
+      );
+      return;
+    }
+
     lazy.console.debug("Flushing ping.");
     GleanPings.captchaDetection.submit();
 
@@ -103,6 +114,13 @@ export class CaptchaDetectionPingUtils {
   }
 
   static maybeSubmitPing(setHasUnsubmittedDataFlag = true) {
+    if (!CaptchaDetectionPingUtils.profileIsOpen) {
+      lazy.console.debug(
+        "Not submitting ping because profile is closing or already closed."
+      );
+      return;
+    }
+
     if (setHasUnsubmittedDataFlag) {
       CaptchaDetectionPingUtils.#setHasUnsubmittedDataFlag();
     }
@@ -130,7 +148,6 @@ export class CaptchaDetectionPingUtils {
     CaptchaDetectionPingUtils.flushPing();
   }
 
-  static hasPrefObservers = false;
   static prefsOfInterest = {
     networkCookieCookiebehavior: {
       type: "Int",
@@ -177,8 +194,12 @@ export class CaptchaDetectionPingUtils {
       name: "privacy.resistFingerprinting.pbmode",
     },
   };
+
+  static initialized = false;
+  static profileIsOpen = true;
+
   static init() {
-    if (CaptchaDetectionPingUtils.hasPrefObservers) {
+    if (CaptchaDetectionPingUtils.initialized) {
       return;
     }
 
@@ -196,7 +217,23 @@ export class CaptchaDetectionPingUtils {
       );
     }
 
-    this.hasPrefObservers = true;
+    this.initialized = true;
+    try {
+      lazy.AsyncShutdown.profileBeforeChange.addBlocker(
+        "CaptchaDetectionPingUtils: Don't submit pings after shutdown",
+        async () => {
+          this.profileIsOpen = false;
+        }
+      );
+    } catch (e) {
+      // This is not a critical error, so we just log it.
+      // According to https://searchfox.org/mozilla-central/rev/d5baa11e35e0186c3c867f4948010f0742198467/toolkit/components/asyncshutdown/nsIAsyncShutdown.idl#82-103
+      // this error can happen if it is too late to add a blocker.
+      lazy.console.error(
+        "Failed to add blocker for profileBeforeChange: " + e.message
+      );
+      this.profileIsOpen = false;
+    }
   }
 }
 
@@ -204,4 +241,5 @@ export class CaptchaDetectionPingUtils {
  * @typedef lazy
  * @type {object}
  * @property {ConsoleInstance} console - console instance.
+ * @property {AsyncShutdown} AsyncShutdown - AsyncShutdown module.
  */

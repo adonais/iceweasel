@@ -39,7 +39,9 @@ const VirtualizedTree = require("resource://devtools/client/shared/components/Vi
 const FrameView = createFactory(
   require("resource://devtools/client/shared/components/Frame.js")
 );
-import Reps from "devtools/client/shared/components/reps/index";
+const Reps = ChromeUtils.importESModule(
+  "resource://devtools/client/shared/components/reps/index.mjs"
+);
 const {
   REPS: { Rep },
   MODE,
@@ -51,10 +53,10 @@ const {
   HTMLTooltip,
 } = require("resource://devtools/client/shared/widgets/tooltip/HTMLTooltip.js");
 
-const {
-  TabPanel,
-  Tabs,
-} = require("resource://devtools/client/shared/components/tabs/Tabs.js");
+const { TabPanel, Tabs } = ChromeUtils.importESModule(
+  "resource://devtools/client/shared/components/tabs/Tabs.mjs",
+  { global: "current" }
+);
 
 import actions from "../../actions/index";
 

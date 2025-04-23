@@ -1120,8 +1120,15 @@ Toolbox.prototype = {
       // While the exception stack is correctly printed in the Browser console when
       // passing `e` to console.error, it is not on the stdout, so print it via dump.
       dump(error.stack + "\n");
-      if (error.serverStack) {
-        dump("Server stack:" + error.serverStack + "\n");
+      if (error.clientPacket) {
+        dump(
+          "Client packet:" + JSON.stringify(error.clientPacket, null, 2) + "\n"
+        );
+      }
+      if (error.serverPacket) {
+        dump(
+          "Server packet:" + JSON.stringify(error.serverPacket, null, 2) + "\n"
+        );
       }
 
       try {
@@ -1136,7 +1143,8 @@ Toolbox.prototype = {
             errorMsg: error.toString(),
             errorStack: error.stack,
             errorInfo: {
-              serverStack: error.serverStack,
+              clientPacket: error.clientPacket,
+              serverPacket: error.serverPacket,
             },
             toolbox: this,
           });
@@ -4052,14 +4060,16 @@ Toolbox.prototype = {
 
     /**
      * Return a promise wich resolves with a reference to the Inspector panel.
+     *
+     * @param {Object} options: Options that will be passed to the inspector initialization
      */
-    const _getInspector = async () => {
+    const _getInspector = async options => {
       const inspector = this.getPanel("inspector");
       if (inspector) {
         return inspector;
       }
 
-      return this.loadTool("inspector");
+      return this.loadTool("inspector", options);
     };
 
     /**
@@ -4101,7 +4111,13 @@ Toolbox.prototype = {
             return null;
           }
 
-          const inspector = await _getInspector();
+          const inspector = await _getInspector({
+            // if the inspector wasn't initialized yet, this will ensure that we select
+            // the highlighted node; otherwise the default selected node might be in
+            // another thread, which will ultimately select this other thread in the
+            // debugger, and might confuse users (see Bug 1837480)
+            defaultStartupNode: nodeFront,
+          });
           return inspector.highlighters.showHighlighterTypeForNode(
             inspector.highlighters.TYPES.BOXMODEL,
             nodeFront,

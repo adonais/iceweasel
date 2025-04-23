@@ -144,7 +144,6 @@ namespace mozilla {
 
 SheetLoadDataHashKey::SheetLoadDataHashKey(const css::SheetLoadData& aLoadData)
     : mURI(aLoadData.mURI),
-      mPrincipal(aLoadData.mTriggeringPrincipal),
       mLoaderPrincipal(aLoadData.mLoader->LoaderPrincipal()),
       mPartitionPrincipal(aLoadData.mLoader->PartitionedPrincipal()),
       mEncodingGuess(aLoadData.mGuessedEncoding),
@@ -154,7 +153,6 @@ SheetLoadDataHashKey::SheetLoadDataHashKey(const css::SheetLoadData& aLoadData)
       mIsLinkRelPreloadOrEarlyHint(aLoadData.IsLinkRelPreloadOrEarlyHint()) {
   MOZ_COUNT_CTOR(SheetLoadDataHashKey);
   MOZ_ASSERT(mURI);
-  MOZ_ASSERT(mPrincipal);
   MOZ_ASSERT(mLoaderPrincipal);
   MOZ_ASSERT(mPartitionPrincipal);
   aLoadData.mSheet->GetIntegrity(mSRIMetadata);
@@ -180,20 +178,9 @@ bool SheetLoadDataHashKey::KeyEquals(const SheetLoadDataHashKey& aKey) const {
     return true;
   }
 
-  if (!mPrincipal->Equals(aKey.mPrincipal)) {
-    LOG((" > Principal mismatch\n"));
+  if (!mPartitionPrincipal->Equals(aKey.mPartitionPrincipal)) {
+    LOG((" > Partition principal mismatch\n"));
     return false;
-  }
-
-  // We only check for partition principal equality if any of the loads are
-  // triggered by a document rather than e.g. an extension (which have different
-  // origins than the loader principal).
-  if (mPrincipal->Equals(mLoaderPrincipal) ||
-      aKey.mPrincipal->Equals(aKey.mLoaderPrincipal)) {
-    if (!mPartitionPrincipal->Equals(aKey.mPartitionPrincipal)) {
-      LOG((" > Partition principal mismatch\n"));
-      return false;
-    }
   }
 
   if (mCORSMode != aKey.mCORSMode) {
@@ -431,8 +418,14 @@ void SheetLoadData::SetLoadCompleted() {
   mIsLoading = false;
   // Belts and suspenders just in case.
   if (MOZ_LIKELY(!mLoadStart.IsNull())) {
+    TimeDuration rawDuration = TimeStamp::Now() - mLoadStart;
     glean::performance_pageload::async_sheet_load.AccumulateRawDuration(
-        TimeStamp::Now() - mLoadStart);
+        rawDuration);
+    // GLAM EXPERIMENT
+    // This metric is temporary, disabled by default, and will be enabled only
+    // for the purpose of experimenting with client-side sampling of data for
+    // GLAM use. See Bug 1947604 for more information.
+    glean::glam_experiment::async_sheet_load.AccumulateRawDuration(rawDuration);
   }
 }
 
@@ -941,8 +934,7 @@ Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
   }
 
   if (mSheets) {
-    SheetLoadDataHashKey key(aURI, aTriggeringPrincipal, LoaderPrincipal(),
-                             PartitionedPrincipal(),
+    SheetLoadDataHashKey key(aURI, LoaderPrincipal(), PartitionedPrincipal(),
                              GetFallbackEncoding(*this, aLinkingContent,
                                                  aPreloadOrParentDataEncoding),
                              aCORSMode, aParsingMode, CompatMode(aPreloadKind),

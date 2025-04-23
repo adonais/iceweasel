@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-02-28T14:45:57.795264+00:00'
+updated_at: '2025-03-26T03:42:10.702051+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -830,6 +830,10 @@ people:
     bmo_id: 534482
     name: Nika Layzell
     nick: nika
+  - &nikkis
+    bmo_id: 725309
+    name: Nikki Sharpley
+    nick: nikkis
   - &niklas
     bmo_id: 690738
     name: Niklas Baumgardner
@@ -886,10 +890,6 @@ people:
     bmo_id: 697076
     name: Perry McManis
     nick: perry.mcmanis
-  - &peterv
-    bmo_id: 24295
-    name: Peter Van der Beken
-    nick: peterv
   - &prathiksha
     bmo_id: 580428
     name: ''
@@ -970,6 +970,10 @@ people:
     bmo_id: 430165
     name: Sam Foster
     nick: sfoster
+  - &sfriedberger
+    bmo_id: 704251
+    name: Simon Friedberger
+    nick: sfriedberger
   - &shravanrn
     bmo_id: 639827
     name: Shravan Narayan
@@ -1088,10 +1092,6 @@ people:
     bmo_id: 415378
     name: Valentin Gosu
     nick: valentin
-  - &wchen
-    bmo_id: 414438
-    name: William Chen
-    nick: wchen
   - &whimboo
     bmo_id: 76551
     name: Henrik Skupin
@@ -1240,7 +1240,7 @@ modules:
     meta:
       group: dev-platform
       components:
-        - Core::DOM::Animation
+        - 'Core::DOM: Animation'
         - Core::CSS Transitions and Animations
       peers_emeritus:
         - Matt Woodrow
@@ -1433,6 +1433,7 @@ modules:
       - *dveditz
       - *freddy
       - *tschuster
+      - *sfriedberger
     machine_name: core_content_security
 
   - name: 'Core: Cookies'
@@ -1547,13 +1548,13 @@ modules:
     meta:
       peers_emeritus:
         - David Baron
+        - Peter Van der Beken
       group: dev-platform
       components:
         - Core::Cycle Collector
     owners:
       - *mccr8
     peers:
-      - *peterv
       - *smaug
     machine_name: core_cycle_collector
 
@@ -1589,6 +1590,7 @@ modules:
         - Justin Lebar
         - Samael Wang
         - Kyle Machulis
+        - Peter Van der Beken
       group: dev-platform
       components:
         - 'Core::DOM: Navigation'
@@ -1596,7 +1598,6 @@ modules:
       - *smaug
       - *nika
     peers:
-      - *peterv
       - *farre
     machine_name: core_docshell
 
@@ -1608,6 +1609,7 @@ modules:
     meta:
       owners_emeritus:
         - Johnny Stenback
+        - Peter Van der Beken
       peers_emeritus:
         - Justin Lebar
         - Jonas Sicking
@@ -1620,20 +1622,21 @@ modules:
         - Kyle Machulis
         - Boris Zbarsky
         - Ehsan Akhgari
-      group: dev-tech-dom
+        - Axel Hecht
+        - Eric Rahm
       url: http://developer.mozilla.org/en/docs/DOM
       components:
         - Core::DOM
         - 'Core::DOM: Core & HTML'
+        - Core::XSLT
       review_group: dom-core
     owners:
-      - *peterv
+      - *mccr8
     peers:
       - *smaug
       - *hsivonen
       - *bholley
       - *baku
-      - *mccr8
       - *nika
       - *farre
       - *emilio
@@ -1688,7 +1691,7 @@ modules:
       group: dev-platform
       url: :ref:`Editor`
       components:
-        - Core::Editor
+        - 'Core::DOM: Editor'
     owners:
       - *masayuki
     peers:
@@ -1882,11 +1885,11 @@ modules:
       group: dev-platform
       url: http://about.validator.nu/
       components:
-        - 'Core::HTML: Parser'
+        - 'Core::DOM: HTML Parser'
+      peers_emeritus:
+        - William Chen
     owners:
       - *hsivonen
-    peers:
-      - *wchen
     machine_name: core_html_parser
 
   - name: 'Core: I18N Library'
@@ -1990,7 +1993,9 @@ modules:
   - name: 'Core: JavaScript'
     description: JavaScript engine (SpiderMonkey)
     includes:
-      - js/src/**/*
+      - js/**/*
+    excludes:
+      - js/xpconnect/**/*
     meta:
       owners_emeritus:
         - Brendan Eich
@@ -2000,6 +2005,7 @@ modules:
       peers_emeritus:
         - Andreas Gal
         - Ashley Hauck
+        - Benjamin Bouvier
         - Bill McCloskey
         - Blake Kaplan
         - Brian Hackett
@@ -2015,11 +2021,13 @@ modules:
         - Nicholas Nethercote
         - Nick Fitzgerald
         - Niko Matsakis
+        - Sean Stangl
         - Shu-yu Guo
         - Till Schneidereit
       url: https://spidermonkey.dev/
       components:
         - Core::JavaScript Engine
+        - 'Core::JavaScript Engine: JIT'
         - 'Core::JavaScript: GC'
         - 'Core::JavaScript: Internationalization API'
         - 'Core::JavaScript: Standard Library'
@@ -2047,35 +2055,6 @@ modules:
       - *yulia
       - *yury
     machine_name: core_javascript
-
-  - name: 'Core: JavaScript JIT'
-    description: JavaScript engine's JIT compilers (IonMonkey, Baseline)
-    includes:
-      - js/src/jit/**/*
-    meta:
-      peers_emeritus:
-        - Benjamin Bouvier
-        - Brian Hackett
-        - Caroline Cullen
-        - David Anderson
-        - Hannes Verschore
-        - Kannan Vijayan
-        - Luke Wagner
-        - Shu-yu Guo
-        - Sean Stangl
-      url: https://spidermonkey.dev/
-      components:
-        - 'Core::JavaScript Engine: JIT'
-    owners:
-      - *jandem
-    peers:
-      - *anba
-      - *tcampbell
-      - *mgaudet
-      - *iain
-      - *nbp
-      - *evilpie
-    machine_name: core_javascript_jit
 
   - name: 'Core: Layout Engine'
     description: rendering tree construction, layout (reflow), etc.
@@ -2135,6 +2114,7 @@ modules:
       peers_emeritus:
         - Johnny Stenback
         - David Baron
+        - Peter Van der Beken
       owners_emeritus:
         - Blake Kaplan
       url: http://www.mozilla.org/newlayout/doc/parser.html
@@ -2142,7 +2122,6 @@ modules:
         - 'Core::HTML: Parser'
     owners: []
     peers:
-      - *peterv
       - *rbs
     machine_name: core_legacy_html_parser
 
@@ -2617,6 +2596,20 @@ modules:
     peers: []
     machine_name: core_push_subscriptions
 
+  - machine_name: core_quota_manager
+    name: 'Core: Quota Manager'
+    description: Centralized quota tracked storage management and implementation of
+      StorageManager.
+    includes:
+      - dom/quota/**/*
+      - dom/simpledb/**/*
+    excludes: []
+    owners:
+      - *janv
+    peers:
+      - *asuth
+      - *jstutte
+    meta:
   - name: 'Core: Sandboxing (Linux)'
     description: Sandboxing for the Linux platform
     includes:
@@ -2967,6 +2960,7 @@ modules:
       group: dev-platform
       url: https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Using_web_workers
       components:
+        - 'Core::DOM: Service Workers'
         - 'Core::DOM: Workers'
       review_group: dom-worker-reviewers
     owners:
@@ -2984,9 +2978,7 @@ modules:
       - dom/webgpu/**/*
       - gfx/wgpu_bindings/**/*
       - third_party/rust/naga/**/*
-      - third_party/rust/wgpu-core/**/*
-      - third_party/rust/wgpu-hal/**/*
-      - third_party/rust/wgpu-types/**/*
+      - third_party/rust/wgpu-*/**/*
       - testing/web-platform/tests/webgpu/**/*
       - testing/web-platform/meta/webgpu/**/*
       - testing/web-platform/mozilla/tests/webgpu/**/*
@@ -3218,6 +3210,8 @@ modules:
       - dom/xml/**/*
       - parser/expat/**/*
     meta:
+      owners_emeritus:
+        - Peter Van der Beken
       peers_emeritus:
         - Jonas Sicking
         - Johnny Stenback
@@ -3227,7 +3221,8 @@ modules:
       components:
         - Core::XML
     owners:
-      - *peterv
+      - *hsivonen
+      - *mccr8
     peers: []
     machine_name: core_xml
 
@@ -3297,12 +3292,12 @@ modules:
         - Andreas Gal
         - Johnny Stenback
         - Gabor Krizsanits
+        - Peter Van der Beken
       components:
         - Core::XPConnect
     owners:
       - *bholley
     peers:
-      - *peterv
       - *mccr8
       - *kmag
       - *nika
@@ -3327,24 +3322,6 @@ modules:
     peers:
       - *mccr8
     machine_name: core_xpidl
-
-  - name: 'Core: XSLT Processor'
-    description: XSLT transformations processor
-    includes:
-      - dom/xslt/**/*
-    meta:
-      peers_emeritus:
-        - Jonas Sicking
-        - Axel Hecht
-        - Eric Rahm
-      group: dev-tech-xslt
-      url: https://developer.mozilla.org/docs/Web/XSLT
-      components:
-        - Core::XSLT
-    owners:
-      - *peterv
-    peers: []
-    machine_name: core_xslt_processor
 
   - name: Desktop Firefox
     description: Standalone Web Browser.
@@ -3759,7 +3736,6 @@ modules:
       - name: Screenshots
         description: Code relating to Screenshots functionality
         includes:
-          - browser/extensions/screenshots/**/*
           - browser/components/screenshots/**/*
         meta:
           owners_emeritus:
@@ -3839,7 +3815,9 @@ modules:
           - *sfoster
           - *farre
         peers:
-          - *dao
+          - *dwalker
+          - *nikkis
+          - *jswinarton
         machine_name: session_restore
 
       - name: Settings UI
@@ -3879,6 +3857,7 @@ modules:
           - *mak
           - *mconley
           - *dwalker
+          - *nikkis
           - *niklas
           - *jswinarton
           - *sthompson
@@ -4451,7 +4430,6 @@ modules:
         description: Compatibility interventions (webcompat system addon) and bug
           reporting capabilities (Report Site Issue addon).
         includes:
-          - browser/extensions/report-site-issue
           - browser/extensions/webcompat
           - mobile/android/android-components/components/feature/webcompat
           - mobile/android/android-components/components/feature/webcompat-reporter
@@ -4562,5 +4540,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 32176ba85f50c207367d5bba928627f0d05cbae5
-  export: 9960fb38fd7ce09737a754985ddbeb3080831001
+  config: 67ba7c16fafd3456d27a3d7cbf1bf741bc7afc87
+  export: df3168a61c61e5945f0312688eb917cc58bc14fc

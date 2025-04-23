@@ -13,6 +13,10 @@ import {
 
 let lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  ShoppingUtils: "resource:///modules/ShoppingUtils.sys.mjs",
+});
+
 let gAllActors = new Set();
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -57,17 +61,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   function autoOpenEnabledByUserChanged() {
     for (let actor of gAllActors) {
       actor.autoOpenEnabledByUserChanged();
-    }
-  }
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "autoCloseEnabledByUser",
-  "browser.shopping.experience2023.autoClose.userEnabled",
-  true,
-  function autoCloseEnabledByUserChanged() {
-    for (let actor of gAllActors) {
-      actor.autoCloseEnabledByUserChanged();
     }
   }
 );
@@ -129,10 +122,6 @@ export class ReviewCheckerChild extends RemotePageChild {
 
   get autoOpenEnabledByUser() {
     return lazy.autoOpenEnabledByUser;
-  }
-
-  get autoCloseEnabledByUser() {
-    return lazy.autoCloseEnabledByUser;
   }
 
   get isSidebarStartPosition() {
@@ -255,42 +244,6 @@ export class ReviewCheckerChild extends RemotePageChild {
   }
 
   /**
-   * Check check if URIs represent the same product by
-   * comparing URLs and then parsed product ID.
-   *
-   * @param {nsIURI} newURI
-   * @param {nsIURI} currentURI
-   * @returns {boolean}
-   */
-  isSameProduct(newURI, currentURI) {
-    if (!newURI || !currentURI) {
-      return false;
-    }
-
-    // Check if the URIs are equal:
-    if (currentURI.equalsExceptRef(newURI)) {
-      return true;
-    }
-
-    let product = this.getProductForURI(currentURI);
-    if (!product) {
-      return false;
-    }
-
-    // If the current ShoppingProduct has product info set,
-    // check if the product ids are the same:
-    let currentProduct = product.product;
-    if (currentProduct) {
-      let newProduct = ShoppingProduct.fromURL(URL.fromURI(newURI));
-      if (newProduct.id === currentProduct.id) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
    * Reset the content and update for the current URI.
    *
    * @returns {Promise<undefined>}
@@ -333,14 +286,6 @@ export class ReviewCheckerChild extends RemotePageChild {
   }
 
   /**
-   * Update auto-close to user's pref value.
-   *
-   */
-  autoCloseEnabledByUserChanged() {
-    this.updateAutoCloseEnabledByUser(this.autoCloseEnabledByUser);
-  }
-
-  /**
    * Get current URL for the parent and update the location to it.
    *
    * @returns {Promise<undefined>}
@@ -348,12 +293,6 @@ export class ReviewCheckerChild extends RemotePageChild {
   async setLocation() {
     // check if can fetch and show data
     let url = await this.sendQuery("GetCurrentURL");
-
-    // Bail out if we opted out in the meantime, or don't have a URI.
-    if (!this.canContinue(null, false)) {
-      return;
-    }
-
     await this.locationChanged({ url });
   }
 
@@ -370,7 +309,7 @@ export class ReviewCheckerChild extends RemotePageChild {
    *
    * @returns {Promise<undefined>}
    */
-  async locationChanged({ url, isReload } = {}) {
+  async locationChanged({ url, isReload, isSimulated } = {}) {
     let uri = url ? Services.io.newURI(url) : null;
 
     // If we're going from null to null, bail out:
@@ -380,16 +319,47 @@ export class ReviewCheckerChild extends RemotePageChild {
 
     // If we haven't reloaded, check if the URIs represent the same product
     // as sites might change the URI after they have loaded (Bug 1852099).
-    if (!isReload && this.isSameProduct(uri, this.#currentURI)) {
+    // However we should skip this check on tab switches to the same product,
+    // as there may be new updates to show.
+    if (
+      !isReload &&
+      !isSimulated &&
+      lazy.ShoppingUtils.isSameProduct(uri, this.#currentURI)
+    ) {
       return;
     }
 
     this.#product?.uninit();
     this.#product = null;
 
+    if (!isSimulated) {
+      lazy.ShoppingUtils.recordExposure();
+      this.#recordSurfaceDisplayedGleanEvent(uri);
+    }
+
     this.#currentURI = uri;
 
     await this.updateContent(uri);
+  }
+
+  /**
+   * Records Glean.shopping.surface_displayed. For migrated Review Checker,
+   * record if:
+   *  - the foregrounded tab navigates to a page with RC panel visible,
+   *  - a tab loaded in the background is foregrounded with RC panel visible,
+   *  - a foregrounded product page tab was loaded with the sidebar hidden and
+   *    now the sidebar has been shown.
+   *
+   * @param {nsIURI} uri
+   */
+  #recordSurfaceDisplayedGleanEvent(uri) {
+    let isProductPage = isProductURL(uri);
+    let isSupportedSite = isSupportedSiteURL(uri);
+    Glean.shopping.surfaceDisplayed.record({
+      isProductPage,
+      isSupportedSite,
+      isIntegratedSidebar: true,
+    });
   }
 
   /**
@@ -657,8 +627,7 @@ export class ReviewCheckerChild extends RemotePageChild {
       adsEnabledByUser: lazy.adsEnabledByUser,
       autoOpenEnabled: lazy.autoOpenEnabled,
       autoOpenEnabledByUser: lazy.autoOpenEnabledByUser,
-      autoCloseEnabledByUser: lazy.autoCloseEnabledByUser,
-      showOnboarding: !this.canFetchAndShowData,
+      showOnboarding: false,
       data: null,
       recommendationData: null,
       focusCloseButton,
@@ -775,17 +744,6 @@ export class ReviewCheckerChild extends RemotePageChild {
   updateAutoOpenEnabledByUser(autoOpenEnabledByUser) {
     this.sendToContent("autoOpenEnabledByUserChanged", {
       autoOpenEnabledByUser,
-    });
-  }
-
-  /**
-   * Updates if auto close has been enabled or disable in the content settings.
-   *
-   * @param {bool} autoCloseEnabledByUser
-   */
-  updateAutoCloseEnabledByUser(autoCloseEnabledByUser) {
-    this.sendToContent("autoCloseEnabledByUserChanged", {
-      autoCloseEnabledByUser,
     });
   }
 

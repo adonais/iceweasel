@@ -139,6 +139,8 @@
   --undo-button-bg-color-hover:rgb(21 20 26 / 0.14);
   --undo-button-bg-color-active:rgb(21 20 26 / 0.21);
 
+  --undo-button-border:1px solid #0060df;
+
   --undo-button-fg-color:var(--message-bar-fg-color);
   --undo-button-fg-color-hover:var(--undo-button-fg-color);
   --undo-button-fg-color-active:var(--undo-button-fg-color);
@@ -153,6 +155,8 @@
     --undo-button-bg-color:rgb(255 255 255 / 0.08);
     --undo-button-bg-color-hover:rgb(255 255 255 / 0.14);
     --undo-button-bg-color-active:rgb(255 255 255 / 0.21);
+
+    --undo-button-border:1px solid #0df;
   }
 
   @media screen and (forced-colors: active){
@@ -169,6 +173,8 @@
     --undo-button-fg-color:ButtonFace;
     --undo-button-fg-color-hover:SelectedItemText;
     --undo-button-fg-color-active:SelectedItemText;
+
+    --undo-button-border:none;
   }
 
   position:fixed;
@@ -194,7 +200,7 @@
     font-weight:590;
     line-height:19.5px;
     color:var(--undo-button-fg-color);
-    border:none;
+    border:var(--undo-button-border);
     padding:4px 16px;
     margin-inline-start:8px;
     height:32px;
@@ -2187,6 +2193,10 @@
             gap:4px;
             flex:1 0 0;
 
+            &:has(input:disabled) > label{
+              opacity:0.4;
+            }
+
             > label{
               width:auto;
             }
@@ -4173,7 +4183,7 @@
 }
 
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:where(:not(.is-light)){
     --main-color:rgb(249 249 250);
     --body-bg-color:rgb(42 42 46);
     --progressBar-color:rgb(0 96 223);
@@ -4211,6 +4221,44 @@
     --dialog-button-hover-bg-color:rgb(115 115 115);
   }
 }
+
+:root:where(.is-dark){
+    --main-color:rgb(249 249 250);
+    --body-bg-color:rgb(42 42 46);
+    --progressBar-color:rgb(0 96 223);
+    --progressBar-bg-color:rgb(40 40 43);
+    --progressBar-blend-color:rgb(20 68 133);
+    --scrollbar-color:rgb(121 121 123);
+    --scrollbar-bg-color:rgb(35 35 39);
+    --toolbar-icon-bg-color:rgb(255 255 255);
+    --toolbar-icon-hover-bg-color:rgb(255 255 255);
+
+    --sidebar-narrow-bg-color:rgb(42 42 46 / 0.9);
+    --sidebar-toolbar-bg-color:rgb(50 50 52);
+    --toolbar-bg-color:rgb(56 56 61);
+    --toolbar-border-color:rgb(12 12 13);
+    --toggled-btn-color:rgb(255 255 255);
+    --toggled-btn-bg-color:rgb(0 0 0 / 0.3);
+    --toggled-hover-active-btn-color:rgb(0 0 0 / 0.4);
+    --dropdown-btn-bg-color:rgb(74 74 79);
+    --separator-color:rgb(0 0 0 / 0.3);
+    --field-color:rgb(250 250 250);
+    --field-bg-color:rgb(64 64 68);
+    --field-border-color:rgb(115 115 115);
+    --treeitem-color:rgb(255 255 255 / 0.8);
+    --treeitem-bg-color:rgb(255 255 255 / 0.15);
+    --treeitem-hover-color:rgb(255 255 255 / 0.9);
+    --treeitem-selected-color:rgb(255 255 255 / 0.9);
+    --treeitem-selected-bg-color:rgb(255 255 255 / 0.25);
+    --thumbnail-hover-color:rgb(255 255 255 / 0.1);
+    --thumbnail-selected-color:rgb(255 255 255 / 0.2);
+    --doorhanger-bg-color:#42414d;
+    --doorhanger-border-color:rgb(39 39 43);
+    --doorhanger-hover-color:rgb(249 249 250);
+    --doorhanger-separator-color:rgb(92 92 97);
+    --dialog-button-bg-color:rgb(92 92 97);
+    --dialog-button-hover-bg-color:rgb(115 115 115);
+  }
 
 @media screen and (forced-colors: active){
   :root{

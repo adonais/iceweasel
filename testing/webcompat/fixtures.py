@@ -30,6 +30,8 @@ SHIMS_PREF = "extensions.webcompat.enable_shims"
 STRICT_ETP_PREF = "privacy.trackingprotection.enabled"
 UA_OVERRIDES_PREF = "extensions.webcompat.perform_ua_overrides"
 SYSTEM_ADDON_UPDATES_PREF = "extensions.systemAddon.update.enabled"
+DOWNLOAD_TO_TEMP_PREF = "browser.download.start_downloads_in_tmp_dir"
+DELETE_DOWNLOADS_PREF = "browser.helperApps.deleteTempFileOnExit"
 
 
 class WebDriver:
@@ -109,6 +111,11 @@ class FirefoxWebDriver(WebDriver):
         # prevent "allow notifications for?" popups by setting the
         # default permission for notificaitons to PERM_DENY_ACTION.
         prefs[NOTIFICATIONS_PERMISSIONS_PREF] = 2
+
+        # if any downloads happen, put them in a temporary folder.
+        prefs[DOWNLOAD_TO_TEMP_PREF] = True
+        # also delete those files afterward.
+        prefs[DELETE_DOWNLOADS_PREF] = True
 
         fx_options = {"prefs": prefs}
 
@@ -337,6 +344,18 @@ def platform(session):
 
 
 @pytest.fixture(autouse=True)
+def channel(session):
+    ver = session.capabilities["browserVersion"]
+    if "a" in ver:
+        return "nightly"
+    elif "b" in ver:
+        return "beta"
+    elif "esr" in ver:
+        return "esr"
+    return "stable"
+
+
+@pytest.fixture(autouse=True)
 def check_visible_scrollbars(session):
     plat = session.capabilities["platformName"]
     if plat == "android":
@@ -397,4 +416,27 @@ def skip_platforms(bug_number, platform, request, session):
             if skipped == platform:
                 pytest.skip(
                     f"Bug #{bug_number} skipped on platform ({platform}, test skipped for {' and '.join(plats)})"
+                )
+
+
+@pytest.fixture(autouse=True)
+def only_channels(bug_number, channel, request, session):
+    if request.node.get_closest_marker("only_channels"):
+        channels = request.node.get_closest_marker("only_channels").args
+        for only in channels:
+            if only == channel:
+                return
+        pytest.skip(
+            f"Bug #{bug_number} skipped on channel ({channel}, test only for {' or '.join(channels)})"
+        )
+
+
+@pytest.fixture(autouse=True)
+def skip_channels(bug_number, channel, request, session):
+    if request.node.get_closest_marker("skip_channels"):
+        channels = request.node.get_closest_marker("skip_channels").args
+        for skipped in channels:
+            if skipped == channel:
+                pytest.skip(
+                    f"Bug #{bug_number} skipped on channel ({channel}, test skipped for {' and '.join(channels)})"
                 )

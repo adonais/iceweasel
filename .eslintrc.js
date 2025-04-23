@@ -4,10 +4,7 @@
 
 "use strict";
 
-const xpcshellTestConfig = require("eslint-plugin-mozilla/lib/configs/xpcshell-test.js");
-const browserTestConfig = require("eslint-plugin-mozilla/lib/configs/browser-test.js");
-const mochitestTestConfig = require("eslint-plugin-mozilla/lib/configs/mochitest-test.js");
-const chromeTestConfig = require("eslint-plugin-mozilla/lib/configs/chrome-test.js");
+const mozilla = require("eslint-plugin-mozilla");
 const globalIgnores = require("./.eslintrc-ignores.js");
 const { testPaths } = require("./.eslintrc-test-paths.js");
 const { rollouts } = require("./.eslintrc-rollouts.js");
@@ -50,6 +47,10 @@ const httpTestingPaths = [
 module.exports = {
   settings: {
     "import/extensions": [".mjs"],
+    "import/resolver": {
+      [path.resolve(__dirname, "srcdir-resolver.js")]: {},
+      node: {},
+    },
   },
   ignorePatterns,
   // Ignore eslint configurations in parent directories.
@@ -108,6 +109,8 @@ module.exports = {
         // *.config.js files are generally assumed to be configuration files
         // based for node.
         "*.config.?(m)js",
+        // The resolver for moz-src for eslint, vscode etc.
+        "srcdir-resolver.js",
       ],
       env: {
         node: true,
@@ -177,7 +180,7 @@ module.exports = {
       extends: ["plugin:mozilla/general-test"],
     },
     {
-      ...xpcshellTestConfig,
+      ...mozilla.configs["xpcshell-test"],
       files: testPaths.xpcshell.map(filePath => `${filePath}**`),
       excludedFiles: ["**/*.mjs", "**/*.sjs"],
     },
@@ -216,12 +219,12 @@ module.exports = {
       },
     },
     {
-      ...browserTestConfig,
+      ...mozilla.configs["browser-test"],
       files: testPaths.browser.map(filePath => `${filePath}**`),
       excludedFiles: ["**/*.mjs", "**/*.sjs"],
     },
     {
-      ...mochitestTestConfig,
+      ...mozilla.configs["mochitest-test"],
       files: testPaths.mochitest.map(filePath => `${filePath}**`),
       excludedFiles: [
         "**/*.mjs",
@@ -229,7 +232,7 @@ module.exports = {
       ],
     },
     {
-      ...chromeTestConfig,
+      ...mozilla.configs["chrome-test"],
       files: testPaths.chrome.map(filePath => `${filePath}**`),
       excludedFiles: ["**/*.mjs", "**/*.sjs"],
     },

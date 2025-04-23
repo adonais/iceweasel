@@ -7,6 +7,11 @@
 // This is loaded into chrome windows with the subscript loader. Wrap in
 // a block to prevent accidentally leaking globals onto `window`.
 {
+  const lazy = {};
+  ChromeUtils.defineESModuleGetters(lazy, {
+    TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
+  });
+
   class MozTabbrowserTab extends MozElements.MozTab {
     static markup = `
       <stack class="tab-stack" flex="1">
@@ -89,7 +94,7 @@
         ".tab-icon-pending":
           "fadein,pinned,busy,progress,selected=visuallyselected,pendingicon",
         ".tab-icon-image":
-          "src=image,triggeringprincipal=iconloadingprincipal,requestcontextid,fadein,pinned,selected=visuallyselected,busy,crashed,sharing,pictureinpicture,pending",
+          "src=image,triggeringprincipal=iconloadingprincipal,requestcontextid,fadein,pinned,selected=visuallyselected,busy,crashed,sharing,pictureinpicture,pending,discarded",
         ".tab-sharing-icon-overlay": "sharing,selected=visuallyselected,pinned",
         ".tab-icon-overlay":
           "sharing,pictureinpicture,crashed,busy,soundplaying,soundplaying-scheduledremoval,pinned,muted,blocked,selected=visuallyselected,activemedia-blocked",
@@ -131,6 +136,9 @@
 
     #elementIndex;
     get elementIndex() {
+      if (!this.visible) {
+        throw new Error("Tab is not visible, so does not have an elementIndex");
+      }
       // Make sure the index is up to date.
       this.container.ariaFocusableItems;
       return this.#elementIndex;
@@ -542,11 +550,14 @@
 
       if (event.target.classList.contains("tab-close-button")) {
         if (this.multiselected) {
-          gBrowser.removeMultiSelectedTabs();
+          gBrowser.removeMultiSelectedTabs({
+            telemetrySource: lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP,
+          });
         } else {
           gBrowser.removeTab(this, {
             animate: true,
             triggeringEvent: event,
+            telemetrySource: lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP,
           });
         }
         // This enables double-click protection for the tab container

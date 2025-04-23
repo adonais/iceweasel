@@ -4,57 +4,67 @@
 "use strict";
 
 /* import-globals-from head.js */
+// withReviewCheckerSidebar calls SpecialPowers.spawn, which injects
+// ContentTaskUtils in the scope of the callback. Eslint doesn't know about
+// that.
+/* global ContentTaskUtils */
 
 const CONTENT_PAGE = "https://example.com";
+const NON_PDP_PAGE = "about:about";
+
+const HAS_SEEN_PREF = "browser.shopping.experience2023.newPositionCard.hasSeen";
+const SIDEBAR_POSITION_START_PREF = "sidebar.position_start";
 
 async function testMoveToRight() {
-  await withReviewCheckerSidebar(async _args => {
-    let card;
-    let shoppingContainer = await ContentTaskUtils.waitForCondition(
-      () =>
-        content.document.querySelector("shopping-container")?.wrappedJSObject,
-      "Review Checker is loaded."
-    );
-    await ContentTaskUtils.waitForCondition(
-      () => typeof shoppingContainer.showNewPositionCard !== "undefined",
-      "showNewPositionCard is set."
-    );
-    await shoppingContainer.updateComplete;
+  await withReviewCheckerSidebar(
+    async sidebarStartPref => {
+      let card;
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded."
+      );
+      await ContentTaskUtils.waitForCondition(
+        () => typeof shoppingContainer.showNewPositionCard !== "undefined",
+        "showNewPositionCard is set."
+      );
+      await shoppingContainer.updateComplete;
 
-    Assert.ok(
-      shoppingContainer.showNewPositionCard,
-      "showNewPositionCard is true"
-    );
+      Assert.ok(
+        shoppingContainer.showNewPositionCard,
+        "showNewPositionCard is true"
+      );
 
-    card = shoppingContainer.newPositionNotificationCardEl;
-    Assert.ok(card, "new-position-notification-card is visible");
-    Assert.ok(card.moveRightButtonEl, "Card has 'Move right' button");
-
-    let buttonChangePromise = ContentTaskUtils.waitForCondition(() => {
       card = shoppingContainer.newPositionNotificationCardEl;
-      return !!card.moveLeftButtonEl;
-    }, "Button changed to 'Move to left'");
+      Assert.ok(card, "new-position-notification-card is visible");
+      Assert.ok(card.moveRightButtonEl, "Card has 'Move right' button");
 
-    const { TestUtils } = ChromeUtils.importESModule(
-      "resource://testing-common/TestUtils.sys.mjs"
-    );
-    let positionStartPrefUpdated = TestUtils.waitForPrefChange(
-      "sidebar.position_start"
-    );
+      let buttonChangePromise = ContentTaskUtils.waitForCondition(() => {
+        card = shoppingContainer.newPositionNotificationCardEl;
+        return !!card.moveLeftButtonEl;
+      }, "Button changed to 'Move to left'");
 
-    card.moveRightButtonEl.click();
+      const { TestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/TestUtils.sys.mjs"
+      );
+      let positionStartPrefUpdated =
+        TestUtils.waitForPrefChange(sidebarStartPref);
 
-    await card.updateComplete;
-    await buttonChangePromise;
-    await positionStartPrefUpdated;
+      card.moveRightButtonEl.click();
 
-    card = shoppingContainer.newPositionNotificationCardEl;
-    Assert.ok(card.moveLeftButtonEl, "Card has 'Move to left' button");
-    Assert.ok(
-      !card.moveRightButtonEl,
-      "Card no longer has 'Move to right' button"
-    );
-  });
+      await card.updateComplete;
+      await buttonChangePromise;
+      await positionStartPrefUpdated;
+
+      card = shoppingContainer.newPositionNotificationCardEl;
+      Assert.ok(card.moveLeftButtonEl, "Card has 'Move to left' button");
+      Assert.ok(
+        !card.moveRightButtonEl,
+        "Card no longer has 'Move to right' button"
+      );
+    },
+    [SIDEBAR_POSITION_START_PREF]
+  );
 }
 
 async function testMoveToLeft() {
@@ -91,7 +101,7 @@ add_setup(async function setup() {
     set: [
       ["sidebar.revamp", true],
       ["browser.shopping.experience2023.integratedSidebar", true],
-      ["browser.shopping.experience2023.shoppingSidebar", false],
+      ["browser.shopping.experience2023.enabled", false],
       ["browser.shopping.experience2023.autoOpen.enabled", true],
       ["browser.shopping.experience2023.autoOpen.userEnabled", true],
       ["sidebar.main.tools", "aichat,reviewchecker,syncedtabs,history"],
@@ -106,21 +116,22 @@ add_setup(async function setup() {
 
 /**
  * Tests that the new position notification card is visible after auto open on a product page
- * and is correctly rendered.
+ * and is correctly rendered. Also tests that the card is not visible on non PDPs after the
+ * initial render.
  */
 add_task(async function test_new_position_notification_card_visibility() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.shopping.experience2023.newPositionCard.hasSeen", false],
-      ["sidebar.position_start", true],
+      [HAS_SEEN_PREF, false],
+      [SIDEBAR_POSITION_START_PREF, true],
     ],
   });
   /* First, load a non PDP so that we can then make RC auto open once we
    * navigate to an actual PDP. Make sure the card is not visible on a non PDP. */
-  await BrowserTestUtils.withNewTab("about:about", async _browser => {
+  await BrowserTestUtils.withNewTab(NON_PDP_PAGE, async _browser => {
     await SidebarController.show("viewReviewCheckerSidebar");
     info("Waiting for sidebar to update.");
-    await reviewCheckerSidebarUpdated("about:about");
+    await reviewCheckerSidebarUpdated(NON_PDP_PAGE);
 
     await withReviewCheckerSidebar(async () => {
       let shoppingContainer = await ContentTaskUtils.waitForCondition(
@@ -157,7 +168,7 @@ add_task(async function test_new_position_notification_card_visibility() {
     info("Switching tabs now");
     await BrowserTestUtils.switchTab(gBrowser, newProductTab);
 
-    Assert.ok(true, "Browser is laoded");
+    Assert.ok(true, "Browser is loaded");
 
     info("Waiting for shown");
     await shownPromise;
@@ -192,9 +203,29 @@ add_task(async function test_new_position_notification_card_visibility() {
       Assert.ok(card.dismissButtonEl, "Card has dismiss button");
     });
 
-    let hasSeen = Services.prefs.getBoolPref(
-      "browser.shopping.experience2023.newPositionCard.hasSeen"
+    // Load a non PDP for the new tab
+    BrowserTestUtils.startLoadingURIString(newProductBrowser, NON_PDP_PAGE);
+    browserLoadedPromise = BrowserTestUtils.browserLoaded(
+      newProductBrowser,
+      false,
+      NON_PDP_PAGE
     );
+    await browserLoadedPromise;
+
+    await SidebarController.show("viewReviewCheckerSidebar");
+
+    await withReviewCheckerSidebar(async _args => {
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded."
+      );
+
+      let card = shoppingContainer.newPositionNotificationCardEl;
+      Assert.ok(!card, "Card is no longer visible");
+    });
+
+    let hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
 
     // We check that the pref is still false here since there is no further user action.
     Assert.ok(
@@ -215,8 +246,8 @@ add_task(async function test_new_position_notification_card_visibility() {
 add_task(async function test_new_position_notification_card_change_position() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.shopping.experience2023.newPositionCard.hasSeen", false],
-      ["sidebar.position_start", true],
+      [HAS_SEEN_PREF, false],
+      [SIDEBAR_POSITION_START_PREF, true],
     ],
   });
   await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async _browser => {
@@ -228,30 +259,26 @@ add_task(async function test_new_position_notification_card_change_position() {
 
     await TestUtils.waitForTick();
 
-    let hasSeen = Services.prefs.getBoolPref(
-      "browser.shopping.experience2023.newPositionCard.hasSeen"
-    );
+    let hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
     Assert.ok(
       !hasSeen,
       "browser.shopping.experience2023.newPositionCard.hasSeen is false after reverse position"
     );
 
-    let startPosition = Services.prefs.getBoolPref("sidebar.position_start");
+    let startPosition = Services.prefs.getBoolPref(SIDEBAR_POSITION_START_PREF);
     Assert.ok(!startPosition, "sidebar.position_start is false");
 
     await testMoveToLeft();
 
     await TestUtils.waitForTick();
 
-    hasSeen = Services.prefs.getBoolPref(
-      "browser.shopping.experience2023.newPositionCard.hasSeen"
-    );
+    hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
     Assert.ok(
       !hasSeen,
       "browser.shopping.experience2023.newPositionCard.hasSeen is still false after undoing reverse position"
     );
 
-    startPosition = Services.prefs.getBoolPref("sidebar.position_start");
+    startPosition = Services.prefs.getBoolPref(SIDEBAR_POSITION_START_PREF);
     Assert.ok(startPosition, "sidebar.position_start is now true");
   });
   SidebarController.hide();
@@ -264,8 +291,8 @@ add_task(async function test_new_position_notification_card_change_position() {
 add_task(async function test_new_position_notification_card_dismiss() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.shopping.experience2023.newPositionCard.hasSeen", false],
-      ["sidebar.position_start", true],
+      [HAS_SEEN_PREF, false],
+      [SIDEBAR_POSITION_START_PREF, true],
     ],
   });
   await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async _browser => {
@@ -306,15 +333,13 @@ add_task(async function test_new_position_notification_card_dismiss() {
 
     await TestUtils.waitForTick();
 
-    let hasSeen = Services.prefs.getBoolPref(
-      "browser.shopping.experience2023.newPositionCard.hasSeen"
-    );
+    let hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
     Assert.ok(
       hasSeen,
       "browser.shopping.experience2023.newPositionCard.hasSeen is true"
     );
 
-    let startPosition = Services.prefs.getBoolPref("sidebar.position_start");
+    let startPosition = Services.prefs.getBoolPref(SIDEBAR_POSITION_START_PREF);
     Assert.ok(startPosition, "sidebar.position_start is still true");
   });
   SidebarController.hide();
@@ -328,8 +353,8 @@ add_task(async function test_new_position_notification_card_dismiss() {
 add_task(async function test_new_position_notification_card_show_settings() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.shopping.experience2023.newPositionCard.hasSeen", false],
-      ["sidebar.position_start", true],
+      [HAS_SEEN_PREF, false],
+      [SIDEBAR_POSITION_START_PREF, true],
     ],
   });
   await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async _browser => {
@@ -371,17 +396,148 @@ add_task(async function test_new_position_notification_card_show_settings() {
       "The sidebar settings panel is open"
     );
 
-    let hasSeen = Services.prefs.getBoolPref(
-      "browser.shopping.experience2023.newPositionCard.hasSeen"
-    );
+    let hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
     Assert.ok(
       hasSeen,
       "browser.shopping.experience2023.newPositionCard.hasSeen is true"
     );
 
-    let startPosition = Services.prefs.getBoolPref("sidebar.position_start");
+    let startPosition = Services.prefs.getBoolPref(SIDEBAR_POSITION_START_PREF);
     Assert.ok(startPosition, "sidebar.position_start is still true");
   });
   SidebarController.hide();
   await SpecialPowers.popPrefEnv();
 });
+
+/**
+ * Tests that the notification card starts with "Move to left" if window is in RTL and
+ * correctly switches to "Move to right" when changing positions.
+ */
+add_task(async function test_new_position_notification_card_rtl() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [HAS_SEEN_PREF, false],
+      [SIDEBAR_POSITION_START_PREF, true],
+      // Mock RTL
+      ["intl.l10n.pseudo", "bidi"],
+    ],
+  });
+  await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async _browser => {
+    await SidebarController.show("viewReviewCheckerSidebar");
+    info("Waiting for sidebar to update.");
+    await reviewCheckerSidebarUpdated(PRODUCT_TEST_URL);
+
+    await withReviewCheckerSidebar(async _args => {
+      let card;
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded."
+      );
+
+      card = shoppingContainer.newPositionNotificationCardEl;
+      Assert.ok(card.moveLeftButtonEl, "Card has 'Move left' button for RTL");
+    });
+
+    await testMoveToLeft();
+
+    await TestUtils.waitForTick();
+
+    let hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
+    Assert.ok(
+      !hasSeen,
+      "browser.shopping.experience2023.newPositionCard.hasSeen is false after reverse position"
+    );
+
+    let startPosition = Services.prefs.getBoolPref(SIDEBAR_POSITION_START_PREF);
+    Assert.ok(!startPosition, "sidebar.position_start is false");
+
+    await withReviewCheckerSidebar(async _args => {
+      let card;
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded."
+      );
+
+      card = shoppingContainer.newPositionNotificationCardEl;
+      Assert.ok(card.moveRightButtonEl, "Card has 'Move right' button for RTL");
+    });
+
+    await testMoveToRight();
+
+    await TestUtils.waitForTick();
+
+    hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
+    Assert.ok(
+      !hasSeen,
+      "browser.shopping.experience2023.newPositionCard.hasSeen is still false after undoing reverse position"
+    );
+
+    startPosition = Services.prefs.getBoolPref(SIDEBAR_POSITION_START_PREF);
+    Assert.ok(startPosition, "sidebar.position_start is now true");
+  });
+  SidebarController.hide();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Tests that notification card is considered seen once the RC panel is closed via the X button.
+ */
+add_task(
+  async function test_new_position_notification_card_hasSeen_close_with_X() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [HAS_SEEN_PREF, false],
+        [SIDEBAR_POSITION_START_PREF, true],
+      ],
+    });
+    await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async _browser => {
+      await SidebarController.show("viewReviewCheckerSidebar");
+      info("Waiting for sidebar to update.");
+      await reviewCheckerSidebarUpdated(PRODUCT_TEST_URL);
+
+      let prefChangedPromise = TestUtils.waitForPrefChange(HAS_SEEN_PREF);
+
+      await withReviewCheckerSidebar(async _args => {
+        let card;
+        let shoppingContainer = await ContentTaskUtils.waitForCondition(
+          () =>
+            content.document.querySelector("shopping-container")
+              ?.wrappedJSObject,
+          "Review Checker is loaded."
+        );
+
+        await ContentTaskUtils.waitForCondition(
+          () => typeof shoppingContainer.showNewPositionCard !== "undefined",
+          "showNewPositionCard is set."
+        );
+        await shoppingContainer.updateComplete;
+
+        Assert.ok(
+          shoppingContainer.showNewPositionCard,
+          "showNewPositionCard is true"
+        );
+
+        card = shoppingContainer.newPositionNotificationCardEl;
+        Assert.ok(card, "new-position-notification-card is visible");
+        Assert.ok(
+          shoppingContainer.closeButtonEl,
+          "Sidebar close button is visible"
+        );
+
+        shoppingContainer.closeButtonEl.click();
+      });
+
+      await prefChangedPromise;
+
+      let hasSeen = Services.prefs.getBoolPref(HAS_SEEN_PREF);
+      Assert.ok(
+        hasSeen,
+        "browser.shopping.experience2023.newPositionCard.hasSeen is true"
+      );
+    });
+    SidebarController.hide();
+    await SpecialPowers.popPrefEnv();
+  }
+);

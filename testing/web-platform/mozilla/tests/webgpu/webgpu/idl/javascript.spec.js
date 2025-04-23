@@ -16,19 +16,12 @@ Examples:
     - do spread to array
     - can be copied to set
     - can be passed to requestAdapter as requiredFeatures
-`;
-import { makeTestGroup } from '../../common/framework/test_group.js';
+`;import { makeTestGroup } from '../../common/framework/test_group.js';
 import { keysOf } from '../../common/util/data_tables.js';
 import { getGPU } from '../../common/util/navigator_gpu.js';
 import { assert, objectEquals, unreachable } from '../../common/util/util.js';
-import { getDefaultLimitsForAdapter, kLimits } from '../capability_info.js';
-import {
-
-  GPUTest,
-  GPUTestSubcaseBatchState,
-  initUncanonicalizedDeviceDescriptor } from
-'../gpu_test.js';
-
+import { getDefaultLimitsForDevice, kLimits } from '../capability_info.js';
+import { AllFeaturesMaxLimitsGPUTest } from '../gpu_test.js';
 
 // MAINTENANCE_TODO: Remove this filter when these limits are added to the spec.
 const isUnspecifiedLimit = (limit) =>
@@ -36,53 +29,9 @@ const isUnspecifiedLimit = (limit) =>
 
 const kSpecifiedLimits = kLimits.filter((s) => !isUnspecifiedLimit(s));
 
-function addAllFeatures(adapter, desc) {
-  const descWithMaxLimits = {
-    defaultQueue: {},
-    ...desc,
-    requiredFeatures: [...adapter.features],
-    requiredLimits: { ...(desc?.requiredLimits ?? {}) }
-  };
-  return descWithMaxLimits;
-}
 
-/**
- * Used to request a device with all the max limits of the adapter.
- */
-class AllFeaturesGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
-  requestDeviceWithRequiredParametersOrSkip(
-  descriptor,
-  descriptorModifier)
-  {
-    const mod = {
-      descriptorModifier(adapter, desc) {
-        desc = descriptorModifier?.descriptorModifier ?
-        descriptorModifier.descriptorModifier(adapter, desc) :
-        desc;
-        return addAllFeatures(adapter, desc);
-      },
-      keyModifier(baseKey) {
-        return `${baseKey}:AllFeaturesTest`;
-      }
-    };
-    super.requestDeviceWithRequiredParametersOrSkip(
-      initUncanonicalizedDeviceDescriptor(descriptor),
-      mod
-    );
-  }
-}
 
-/**
- * A Test that requests all the max limits from the adapter on the device.
- */
-class AllFeaturesTest extends GPUTest {
-  static MakeSharedState(
-  recorder,
-  params)
-  {
-    return new AllFeaturesGPUTestSubcaseBatchState(recorder, params);
-  }
-}
+
 
 
 
@@ -99,7 +48,8 @@ const kResourceInfo = {
     requiredKeys: ['wgslLanguageFeatures', 'requestAdapter'],
     getters: ['wgslLanguageFeatures'],
     settable: [],
-    sameObject: ['wgslLanguageFeatures']
+    sameObject: ['wgslLanguageFeatures'],
+    skipInCompatibility: true
   },
   buffer: {
     create(t) {
@@ -271,12 +221,15 @@ b)
   }
 }
 
-export const g = makeTestGroup(AllFeaturesTest);
+export const g = makeTestGroup(AllFeaturesMaxLimitsGPUTest);
 g.test('obj,Object_keys').
 desc('tests returns nothing for Object.keys()').
 params((u) => u.combine('type', kResources)).
 fn((t) => {
   const { type } = t.params;
+  const { skipInCompatibility } = kResourceInfo[type];
+  t.skipIf(t.isCompatibility && !!skipInCompatibility, 'skipped in compatibility mode');
+
   const obj = createResource(t, type);
   t.expect(objectEquals([...Object.keys(obj)], []), `[...Object.keys(${type})] === []`);
 });
@@ -286,6 +239,9 @@ desc('does not spread').
 params((u) => u.combine('type', kResources)).
 fn((t) => {
   const { type } = t.params;
+  const { skipInCompatibility } = kResourceInfo[type];
+  t.skipIf(t.isCompatibility && !!skipInCompatibility, 'skipped in compatibility mode');
+
   const obj = createResource(t, type);
   t.expect(objectEquals({ ...obj }, {}), `{ ...${type} ] === {}`);
 });
@@ -315,6 +271,9 @@ desc('Object.getOwnPropertyDescriptors returns {}').
 params((u) => u.combine('type', kResources)).
 fn((t) => {
   const { type } = t.params;
+  const { skipInCompatibility } = kResourceInfo[type];
+  t.skipIf(t.isCompatibility && !!skipInCompatibility, 'skipped in compatibility mode');
+
   const obj = createResource(t, type);
   t.expect(
     objectEquals(Object.getOwnPropertyDescriptors(obj), {}),
@@ -391,7 +350,7 @@ fn(async (t) => {
   const device = await t.requestDeviceTracked(adapter, {
     requiredLimits: obj.limits
   });
-  const defaultLimits = getDefaultLimitsForAdapter(adapter);
+  const defaultLimits = getDefaultLimitsForDevice(device);
   for (const [key, { default: defaultLimit }] of Object.entries(defaultLimits)) {
     if (isUnspecifiedLimit(key)) {
       continue;
@@ -508,7 +467,9 @@ desc(
 params((u) => u.combine('type', kResources)).
 fn((t) => {
   const { type } = t.params;
-  const { requiredKeys, getters } = kResourceInfo[type];
+  const { requiredKeys, getters, skipInCompatibility } = kResourceInfo[type];
+  t.skipIf(t.isCompatibility && !!skipInCompatibility, 'skipped in compatibility mode');
+
   const gettersSet = new Set(getters);
   const methods = requiredKeys.filter((k) => !gettersSet.has(k));
 

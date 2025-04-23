@@ -70,6 +70,7 @@
 #include "IPv4Parser.h"
 #include "ssl.h"
 #include "StaticComponents.h"
+#include "SuspendableChannelWrapper.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include <regex>
@@ -903,7 +904,7 @@ nsresult nsIOService::AsyncOnChannelRedirect(
 
 bool nsIOService::UsesExternalProtocolHandler(const nsACString& aScheme) {
   if (aScheme == "file"_ns || aScheme == "chrome"_ns ||
-      aScheme == "resource"_ns) {
+      aScheme == "resource"_ns || aScheme == "moz-src"_ns) {
     // Don't allow file:, chrome: or resource: URIs to be handled with
     // nsExternalProtocolHandler, since internally we rely on being able to
     // use and read from these URIs.
@@ -1285,6 +1286,17 @@ nsIOService::NewChannel(const nsACString& aSpec, const char* aCharset,
   return NewChannelFromURI(uri, aLoadingNode, aLoadingPrincipal,
                            aTriggeringPrincipal, aSecurityFlags,
                            aContentPolicyType, result);
+}
+
+NS_IMETHODIMP
+nsIOService::NewSuspendableChannelWrapper(
+    nsIChannel* aInnerChannel, nsISuspendableChannelWrapper** result) {
+  NS_ENSURE_ARG_POINTER(aInnerChannel);
+
+  nsCOMPtr<nsISuspendableChannelWrapper> wrapper =
+      new SuspendableChannelWrapper(aInnerChannel);
+  wrapper.forget(result);
+  return NS_OK;
 }
 
 NS_IMETHODIMP

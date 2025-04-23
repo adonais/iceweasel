@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 const BASE_DOMAIN_A = "example.com";
 const ORIGIN_A = `https://${BASE_DOMAIN_A}`;
 const ORIGIN_A_HTTP = `http://${BASE_DOMAIN_A}`;
@@ -125,7 +127,9 @@ add_task(async function test_deleteByPrincipal() {
 
   // Cleanup
   cleanupTestTabs();
-  ChromeUtils.clearStyleSheetCache();
+  ChromeUtils.clearResourceCache({
+    types: ["stylesheet"],
+  });
 });
 
 add_task(async function test_deleteBySite() {
@@ -158,7 +162,7 @@ add_task(async function test_deleteBySite() {
 
   // Cleanup
   cleanupTestTabs();
-  ChromeUtils.clearStyleSheetCache();
+  ChromeUtils.clearResourceCache(["stylesheet"]);
 });
 
 add_task(async function test_deleteBySite_oa_pattern() {
@@ -192,5 +196,5 @@ add_task(async function test_deleteBySite_oa_pattern() {
 
   // Cleanup
   cleanupTestTabs();
-  ChromeUtils.clearStyleSheetCache();
+  ChromeUtils.clearResourceCache(["stylesheet"]);
 });

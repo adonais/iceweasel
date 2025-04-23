@@ -6,7 +6,7 @@ buildscript {
     repositories {
         gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
             maven {
-                url repository
+                url = repository
                 if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
                     allowInsecureProtocol = true
                 }
@@ -14,35 +14,29 @@ buildscript {
         }
     }
 
-    ext {
-        detekt_plugin = Versions.detekt
-        python_envs_plugin = Versions.python_envs_plugin
-        ksp_plugin = Versions.ksp_plugin
-
-        // Used in mobile/android/fenix/app/build.gradle
-        protobuf_plugin = Versions.protobuf_plugin
-    }
-
     dependencies {
-        classpath 'org.mozilla.apilint:apilint:0.5.3'
-        classpath ComponentsDependencies.tools_androidgradle
-        classpath 'org.apache.commons:commons-exec:1.3'
-        classpath 'com.diffplug.spotless:spotless-plugin-gradle:6.25.0'
-        classpath 'org.tomlj:tomlj:1.1.0'
-        classpath ComponentsDependencies.tools_kotlingradle
+        classpath libs.apilint
+        classpath libs.tools.androidgradle
+        classpath libs.commons.exec
+        classpath libs.spotless
+        classpath libs.tomlj
 
         // Used in mobile/android/fenix/app/build.gradle
-        classpath ComponentsDependencies.androidx_navigation_safeargs
-        classpath ComponentsDependencies.osslicenses_plugin
-        classpath ComponentsDependencies.tools_benchmarkgradle
-        classpath "org.mozilla.telemetry:glean-gradle-plugin:${Versions.mozilla_glean}"
+        classpath libs.androidx.navigation.safeargs
+        classpath libs.osslicenses.plugin
+        classpath libs.tools.benchmarkgradle
+        classpath libs.glean.gradle.plugin
         classpath "${ApplicationServicesConfig.groupId}:tooling-nimbus-gradle:${ApplicationServicesConfig.version}"
     }
 }
 
 plugins {
-    id("io.gitlab.arturbosch.detekt").version("$detekt_plugin")
-    id("com.google.devtools.ksp").version("$ksp_plugin")
+    id 'ApkSizePlugin'
+    id "mozac.ConfigPlugin"
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ksp)
 }
 
 def tryInt = { string ->
@@ -60,7 +54,7 @@ abstract class VerifyGleanVersionTask extends DefaultTask {
     final RegularFileProperty source = project.objects.fileProperty().convention(project.layout.projectDirectory.file("Cargo.lock"))
 
     @Input
-    String expectedVersion = Versions.mozilla_glean
+    String expectedVersion = project.ext.gleanVersion
 
     @OutputFiles
     FileCollection outputFiles = project.objects.fileCollection()
@@ -103,7 +97,7 @@ allprojects {
         topsrcdir = gradle.mozconfig.topsrcdir
         topobjdir = gradle.mozconfig.topobjdir
 
-        gleanVersion = Versions.mozilla_glean // Verification done in verifyGleanVersion task
+        gleanVersion = libs.versions.mozilla.glean.get() // Verification done in verifyGleanVersion task
 
         artifactSuffix = getArtifactSuffix()
         versionName = getVersionName()
@@ -136,7 +130,7 @@ allprojects {
     repositories {
         gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
             maven {
-                url repository
+                url = repository
                 if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
                     allowInsecureProtocol = true
                 }
@@ -145,10 +139,9 @@ allprojects {
     }
 
     // Use the semanticdb-javac and semanticdb-kotlinc plugins to generate semanticdb files for Searchfox
+    // NOTE: Kotlin code indexing is currently removed due to lack of Kotlin 2.x support (see bug 1938622)
     if (mozconfig.substs.ENABLE_MOZSEARCH_PLUGIN || mozconfig.substs.DOWNLOAD_ALL_GRADLE_DEPENDENCIES) {
         def targetRoot = new File(topobjdir, "mozsearch_java_index")
-        def semanticdbJavacVersion = "com.sourcegraph:semanticdb-javac:0.10.3"
-        def semanticdbKotlincVersion = "com.sourcegraph:semanticdb-kotlinc:0.4.0"
 
         afterEvaluate {
             def addDependencyToConfigurationIfExists = { configurationName, dependency ->
@@ -158,10 +151,9 @@ allprojects {
                 }
             }
 
-            addDependencyToConfigurationIfExists("compileOnly", semanticdbJavacVersion)
-            addDependencyToConfigurationIfExists("testCompileOnly", semanticdbJavacVersion)
-            addDependencyToConfigurationIfExists("androidTestCompileOnly", semanticdbJavacVersion)
-            addDependencyToConfigurationIfExists("kotlinCompilerPluginClasspath", semanticdbKotlincVersion)
+            addDependencyToConfigurationIfExists("compileOnly", libs.semanticdb.java)
+            addDependencyToConfigurationIfExists("testCompileOnly", libs.semanticdb.java)
+            addDependencyToConfigurationIfExists("androidTestCompileOnly", libs.semanticdb.java)
         }
 
         tasks.withType(JavaCompile) {
@@ -169,17 +161,10 @@ allprojects {
                 "-Xplugin:semanticdb -sourceroot:${topsrcdir} -targetroot:${targetRoot}",
             ]
         }
-
-        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-            compilerOptions.freeCompilerArgs.addAll([
-                "-P", "plugin:semanticdb-kotlinc:sourceroot=${topsrcdir}",
-                "-P", "plugin:semanticdb-kotlinc:targetroot=${targetRoot}",
-            ])
-        }
     }
 
     task downloadDependencies() {
-        description 'Download all dependencies to the Gradle cache'
+        description = 'Download all dependencies to the Gradle cache'
         doLast {
             configurations.each { configuration ->
                 if (configuration.canBeResolved) {
@@ -208,55 +193,18 @@ allprojects {
     }
 }
 
-buildDir "${topobjdir}/gradle/build"
-
-// A stream that processes bytes line by line, prepending a tag before sending
-// each line to Gradle's logging.
-class TaggedLogOutputStream extends org.apache.commons.exec.LogOutputStream {
-    String tag
-    Logger logger
-
-    TaggedLogOutputStream(tag, logger) {
-        this.tag = tag
-        this.logger = logger
+import  org.gradle.api.services.BuildServiceParameters
+abstract class MozconfigService implements BuildService<MozconfigService.Params>, AutoCloseable {
+    interface Params extends BuildServiceParameters {
+        MapProperty<String, Object> getMozconfigParam()
     }
 
-    void processLine(String line, int level) {
-        logger.lifecycle("${this.tag} ${line}")
-    }
-}
-
-ext.geckoBinariesOnlyIf = { task ->
-    // Never when Gradle was invoked within `mach build`.
-    if ('1' == System.env.GRADLE_INVOKED_WITHIN_MACH_BUILD) {
-        rootProject.logger.lifecycle("Skipping task ${task.path} because: within `mach build`")
-        return false
+    void close() {
     }
 
-    // Never for official builds.
-    if (mozconfig.substs.MOZILLA_OFFICIAL) {
-        rootProject.logger.lifecycle("Skipping task ${task.path} because: MOZILLA_OFFICIAL")
-        return false
+    Object getMozconfig() {
+        return parameters.mozconfigParam.get()
     }
-
-    // Multi-l10n builds set `AB_CD=multi`, which isn't a valid locale, and
-    // `MOZ_CHROME_MULTILOCALE`.  To avoid failures, if Gradle is invoked with
-    // either, we don't invoke Make at all; this allows a multi-locale omnijar
-    // to be consumed without modification.
-    if ('multi' == System.env.AB_CD || System.env.MOZ_CHROME_MULTILOCALE) {
-        rootProject.logger.lifecycle("Skipping task ${task.path} because: AB_CD=multi")
-        return false
-    }
-
-    // Single-locale l10n repacks set `IS_LANGUAGE_REPACK=1` and handle resource
-    // and code generation themselves.
-    if ('1' == System.env.IS_LANGUAGE_REPACK) {
-        rootProject.logger.lifecycle("Skipping task ${task.path} because: IS_LANGUAGE_REPACK")
-        return false
-    }
-
-    rootProject.logger.lifecycle("Executing task ${task.path}")
-    return true
 }
 
 // Non-official versions are like "61.0a1" or "61.0b1", where "a1" and "b1"
@@ -340,10 +288,47 @@ class MachExec extends Exec {
         environment project.ext.mozconfig.orig_mozconfig.env.unmodified
         environment 'MOZCONFIG', project.ext.mozconfig.substs.MOZCONFIG
     }
+
+    static def geckoBinariesOnlyIf(task, mozconfig) {
+        // Never when Gradle was invoked within `mach build`.
+        if ('1' == System.env.GRADLE_INVOKED_WITHIN_MACH_BUILD) {
+            task.logger.lifecycle("Skipping task ${task.path} because: within `mach build`")
+            return false
+        }
+
+        // Never for official builds.
+        if (mozconfig.substs.MOZILLA_OFFICIAL) {
+            task.logger.lifecycle("Skipping task ${task.path} because: MOZILLA_OFFICIAL")
+            return false
+        }
+
+        // Multi-l10n builds set `AB_CD=multi`, which isn't a valid locale, and
+        // `MOZ_CHROME_MULTILOCALE`.  To avoid failures, if Gradle is invoked with
+        // either, we don't invoke Make at all; this allows a multi-locale omnijar
+        // to be consumed without modification.
+        if ('multi' == System.env.AB_CD || System.env.MOZ_CHROME_MULTILOCALE) {
+            task.logger.lifecycle("Skipping task ${task.path} because: AB_CD=multi")
+            return false
+        }
+
+        // Single-locale l10n repacks set `IS_LANGUAGE_REPACK=1` and handle resource
+        // and code generation themselves.
+        if ('1' == System.env.IS_LANGUAGE_REPACK) {
+            task.logger.lifecycle("Skipping task ${task.path} because: IS_LANGUAGE_REPACK")
+            return false
+        }
+
+        task.logger.lifecycle("Executing task ${task.path}")
+        return true
+    }
 }
 
 task machBuildFaster(type: MachExec) {
-    onlyIf rootProject.ext.geckoBinariesOnlyIf
+    def mozconfigProvider = gradle.sharedServices.registerIfAbsent("mozconfig", MozconfigService) {
+        parameters.mozconfigParam.set(project.ext.mozconfig)
+    }
+    usesService(mozconfigProvider)
+    onlyIf { task -> MachExec.geckoBinariesOnlyIf(task, mozconfigProvider.get().getMozconfig()) }
 
     workingDir "${topsrcdir}"
 
@@ -357,14 +342,16 @@ task machBuildFaster(type: MachExec) {
         args '-v'
     }
 
-    // `path` is like `:machBuildFaster`.
-    standardOutput = new TaggedLogOutputStream("${path}>", logger)
-    errorOutput = standardOutput
+    standardOutput = System.out
+    errorOutput = System.err
 }
 
 task machStagePackage(type: MachExec) {
-    onlyIf rootProject.ext.geckoBinariesOnlyIf
-
+    def mozconfigProvider = gradle.sharedServices.registerIfAbsent("mozconfig", MozconfigService) {
+        parameters.mozconfigParam.set(project.ext.mozconfig)
+    }
+    usesService(mozconfigProvider)
+    onlyIf { task -> MachExec.geckoBinariesOnlyIf(task, mozconfigProvider.get().getMozconfig()) }
     dependsOn rootProject.machBuildFaster
 
     workingDir "${topobjdir}"
@@ -384,9 +371,8 @@ task machStagePackage(type: MachExec) {
     // Force running `stage-package`.
     outputs.upToDateWhen { false }
 
-    // `path` is like `:machStagePackage`.
-    standardOutput = new TaggedLogOutputStream("${path}>", logger)
-    errorOutput = standardOutput
+    standardOutput = System.out
+    errorOutput = System.err
 }
 
 afterEvaluate {
@@ -426,13 +412,13 @@ afterEvaluate {
                 if (details.requested.group == 'org.mozilla.telemetry'
                         && details.requested.name.contains('glean') ) {
                     def requested = details.requested.version.tokenize(".")
-                        def defined = Versions.mozilla_glean.tokenize(".")
+                        def defined = libs.versions.mozilla.glean.get().tokenize(".")
                         // Check the major version
                         if (requested[0] != defined[0]) {
-                            throw new AssertionError("Cannot resolve to a single Glean version. Requested: ${details.requested.version}, A-C uses: ${Versions.mozilla_glean}")
+                            throw new AssertionError("Cannot resolve to a single Glean version. Requested: ${details.requested.version}, A-C uses: ${libs.mozilla.glean}")
                         } else {
                             // Enforce that all (transitive) dependencies are using the defined Glean version
-                            details.useVersion Versions.mozilla_glean
+                            details.useVersion libs.versions.mozilla.glean.get()
                         }
                 }
             }
@@ -503,7 +489,7 @@ subprojects { project ->
                     include '**/*.kt'
                     exclude '**/thirdparty/**'
                 }
-                ktlint('0.49.1')
+                ktlint("${libs.versions.ktlint.get()}")
             }
         }
     }

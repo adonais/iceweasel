@@ -203,6 +203,7 @@
 ; Modules
 @RESPATH@/browser/modules/*
 @RESPATH@/modules/*
+@RESPATH@/moz-src/*
 @RESPATH@/browser/actors/*
 @RESPATH@/actors/*
 
@@ -230,7 +231,6 @@
 @RESPATH@/browser/chrome/icons/default/default64.png
 @RESPATH@/browser/chrome/icons/default/default128.png
 #endif
-@RESPATH@/browser/features/*
 
 ; [DevTools Startup Files]
 @RESPATH@/browser/chrome/devtools-startup@JAREXT@

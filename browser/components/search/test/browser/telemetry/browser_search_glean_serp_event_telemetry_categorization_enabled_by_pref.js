@@ -9,8 +9,8 @@ const TELEMETRY_PREF =
   "browser.search.serpEventTelemetryCategorization.enabled";
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  SearchSERPDomainToCategoriesMap:
-    "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  SERPDomainToCategoriesMap:
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -166,7 +166,7 @@ add_task(async function test_enable_experiment_when_pref_is_not_enabled() {
   );
 
   Assert.ok(
-    lazy.SearchSERPDomainToCategoriesMap.empty,
+    lazy.SERPDomainToCategoriesMap.empty,
     "Domain to categories map should be empty."
   );
 

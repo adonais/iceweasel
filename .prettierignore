@@ -12,6 +12,10 @@
 **/test*/**/*.xhtml
 **/test*/**/*.html
 
+# Include Widget test files in formatting
+!toolkit/content/tests/widgets/*.xhtml
+!toolkit/content/tests/widgets/*.html
+
 # This should be re-enabled in bug 1827456.
 js/src/builtin
 
@@ -1174,11 +1178,11 @@ services/fxaccounts/FxAccountsPairingChannel.sys.mjs
 servo/
 
 # Rust/Cargo output from running `cargo` directly
-target/
-servo/ports/geckolib/target/
-dom/base/rust/target/
-servo/components/style/target/
-dom/webgpu/tests/cts/vendor/target/
+/target/
+/servo/ports/geckolib/target/
+/dom/base/rust/target/
+/servo/components/style/target/
+/dom/webgpu/tests/cts/vendor/target/
 
 # Test files that we don't want to lint (preprocessed, minified etc)
 testing/condprofile/condprof/tests/profile
@@ -1293,6 +1297,7 @@ dom/media/webspeech/recognition/energy_endpointer.h
 dom/media/webspeech/recognition/energy_endpointer_params.cc
 dom/media/webspeech/recognition/energy_endpointer_params.h
 dom/media/webvtt/vtt.sys.mjs
+dom/security/sanitizer/safe-default-configuration.json
 dom/tests/mochitest/ajax/
 dom/tests/mochitest/dom-level1-core/
 dom/tests/mochitest/dom-level2-core/
@@ -1411,6 +1416,7 @@ testing/gtest/gtest/
 testing/mochitest/pywebsocket3/
 testing/modules/sinon-7.2.7.js
 testing/mozbase/mozproxy/mozproxy/backends/mitm/scripts/catapult/
+testing/performance/mobile-startup/newssite-nuxt/
 testing/talos/talos/tests/devtools/addon/content/pages/
 testing/talos/talos/tests/dromaeo/
 testing/talos/talos/tests/kraken/
@@ -1480,6 +1486,7 @@ devtools/client/aboutdebugging/test/jest/node_modules/
 devtools/client/application/test/components/node_modules/
 devtools/client/debugger/node_modules/
 dom/base/use_counter_metrics.yaml
+dom/security/sanitizer/SanitizerDefaultConfig.h
 dom/tests/ajax/jquery/
 dom/tests/ajax/mochikit/
 gradle/wrapper/
@@ -1558,6 +1565,7 @@ toolkit/components/pdfjs/PdfJsOverridePrefs.js
 toolkit/components/uniffi-js/UniFFIGeneratedScaffolding.cpp
 toolkit/components/uniffi-js/UniFFIFixtureScaffolding.cpp
 toolkit/components/uniffi-bindgen-gecko-js/fixtures/generated
+tools/@types/tspaths.json
 tools/browsertime/package.json
 tools/browsertime/package-lock.json
 tools/ts/error_list.json

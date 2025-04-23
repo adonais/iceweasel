@@ -4,7 +4,7 @@
 
 const perfMetadata = {
   owner: "GenAI Team",
-  name: "ML Suggest Feature",
+  name: "browser_ml_suggest_feature_perf.js",
   description: "Template test for latency for ML suggest Feature",
   options: {
     default: {
@@ -33,7 +33,6 @@ requestLongerTimeout(120);
 const CUSTOM_INTENT_OPTIONS = {
   taskName: "text-classification",
   featureId: "suggest-intent-classification",
-  engineId: "ml-suggest-intent",
   modelId: "Mozilla/mobilebert-uncased-finetuned-LoRA-intent-classifier",
   modelHubUrlTemplate: "{model}/{revision}",
   dtype: "q8",
@@ -45,7 +44,6 @@ const CUSTOM_INTENT_OPTIONS = {
 const CUSTOM_NER_OPTIONS = {
   taskName: "token-classification",
   featureId: "suggest-NER",
-  engineId: "ml-suggest-ner",
   modelId: "Mozilla/distilbert-uncased-NER-LoRA",
   modelHubUrlTemplate: "{model}/{revision}",
   dtype: "q8",
@@ -53,6 +51,7 @@ const CUSTOM_NER_OPTIONS = {
   numThreads: 2,
   timeoutMS: -1,
 };
+
 const journal = {};
 const runInference2 = async () => {
   ChromeUtils.defineESModuleGetters(this, {
@@ -80,6 +79,13 @@ const runInference2 = async () => {
   const numIterations = 10;
   let query = "restaurants in seattle, wa";
   let names = ["intent", "ner"];
+
+  // expected output from MLSuggest model
+  const EXPECTED_INTENT = "yelp_intent";
+  const EXPECTED_CITY = "seattle";
+  const EXPECTED_STATE = "wa";
+  const EXPECTED_SUBJECT = "restaurants";
+
   let addColdStart = false;
   for (let name of names) {
     name = name.toUpperCase();
@@ -102,14 +108,22 @@ const runInference2 = async () => {
     for (let metric of METRICS) {
       journal[metric] = [];
     }
+    journal["SUGGEST-model-run-latency"] = [];
   }
   for (let i = 0; i < numIterations; i++) {
+    const startTime = performance.now();
     const res = await MLSuggest.makeSuggestions(query);
+    const endTime = performance.now();
+    const diff = Math.round(endTime - startTime);
     let intent_metrics = fetchMetrics(res.metrics.intent, false);
     let ner_metrics = fetchMetrics(res.metrics.ner, false);
     let memUsage = await getTotalMemoryUsage();
     intent_metrics[`${TOTAL_MEMORY_USAGE}`] = memUsage;
     ner_metrics[`${TOTAL_MEMORY_USAGE}`] = memUsage;
+    Assert.equal(res.intent, EXPECTED_INTENT);
+    Assert.equal(res.location.city, EXPECTED_CITY);
+    Assert.equal(res.location.state, EXPECTED_STATE);
+    Assert.equal(res.subject, EXPECTED_SUBJECT);
 
     for (let [metricName, metricVal] of Object.entries(intent_metrics)) {
       if (metricVal === null || metricVal === undefined || metricVal < 0) {
@@ -123,6 +137,7 @@ const runInference2 = async () => {
       }
       journal[`NER-${metricName}`].push(metricVal);
     }
+    journal[`SUGGEST-model-run-latency`].push(diff);
   }
   await MLSuggest.shutdown();
   Assert.ok(true);
@@ -131,7 +146,7 @@ const runInference2 = async () => {
 };
 
 /**
- * Tests remote ML Suggest feature
+ * Tests remote ML Suggest feature performance
  */
 add_task(async function test_ml_suggest_feature() {
   await runInference2();

@@ -139,8 +139,8 @@ add_task(async function test_showOnboarding_notOptedIn() {
           "message is shown"
         );
 
-        ok(
-          content.document.querySelector(".FS_OPT_IN"),
+        await ContentTaskUtils.waitForCondition(
+          () => content.document.querySelector(".FS_OPT_IN"),
           "Rendered correct message"
         );
       });
@@ -211,7 +211,7 @@ add_task(async function test_hideOnboarding_onClose() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.shopping.experience2023.integratedSidebar", false],
-      ["browser.shopping.experience2023.shoppingSidebar", true],
+      ["browser.shopping.experience2023.enabled", true],
     ],
   });
 

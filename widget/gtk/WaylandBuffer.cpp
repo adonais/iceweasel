@@ -16,6 +16,7 @@
 #include "gfxPlatform.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/gfx/Tools.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
 #include "nsGtkUtils.h"
 #include "nsPrintfCString.h"
 #include "prenv.h"  // For PR_GetEnv
@@ -54,15 +55,16 @@ RefPtr<WaylandShmPool> WaylandShmPool::Create(nsWaylandDisplay* aWaylandDisplay,
 
   RefPtr<WaylandShmPool> shmPool = new WaylandShmPool();
 
-  shmPool->mShm = MakeRefPtr<ipc::SharedMemory>();
-  if (!shmPool->mShm->Create(aSize)) {
+  auto handle = ipc::shared_memory::Create(aSize);
+  if (!handle) {
     NS_WARNING("WaylandShmPool: Unable to allocate shared memory!");
     return nullptr;
   }
 
-  shmPool->mSize = aSize;
-  shmPool->mShmPool = wl_shm_create_pool(
-      aWaylandDisplay->GetShm(), shmPool->mShm->CloneHandle().get(), aSize);
+  shmPool->mShmHandle = handle.Clone();
+  shmPool->mShmPool =
+      wl_shm_create_pool(aWaylandDisplay->GetShm(),
+                         handle.Clone().TakePlatformHandle().get(), aSize);
   if (!shmPool->mShmPool) {
     NS_WARNING("WaylandShmPool: Unable to allocate shared memory pool!");
     return nullptr;
@@ -72,15 +74,14 @@ RefPtr<WaylandShmPool> WaylandShmPool::Create(nsWaylandDisplay* aWaylandDisplay,
 }
 
 void* WaylandShmPool::GetImageData() {
-  if (mImageData) {
-    return mImageData;
+  if (!mShm) {
+    mShm = mShmHandle.Map();
+    if (!mShm) {
+      NS_WARNING("WaylandShmPool: Failed to map Shm!");
+      return nullptr;
+    }
   }
-  if (!mShm->Map(mSize)) {
-    NS_WARNING("WaylandShmPool: Failed to map Shm!");
-    return nullptr;
-  }
-  mImageData = mShm->Memory();
-  return mImageData;
+  return mShm.Address();
 }
 
 WaylandShmPool::~WaylandShmPool() {
@@ -153,8 +154,8 @@ static void BufferDeleteSyncFinished(void* aData, struct wl_callback* callback,
       ref->mSurface.get(), ref->mBuffer.get());
 
   ref->mBuffer->ClearSyncHandler();
-  ref->mSurface->BufferFreeCallbackHandler(ref->mBuffer,
-                                           /* wl_buffer */ nullptr);
+  ref->mSurface->BufferFreeCallbackHandler(ref->mBuffer->GetWlBufferID(),
+                                           /* aWlBufferDelete */ true);
 }
 
 static const struct wl_callback_listener sBufferDeleteSyncListener = {
@@ -233,10 +234,13 @@ bool WaylandBufferSHM::CreateWlBuffer() {
   if (mWLBuffer) {
     return true;
   }
-  LOGWAYLAND("WaylandBufferSHM::CreateWlBuffer() [%p]", (void*)this);
   mWLBuffer = wl_shm_pool_create_buffer(mShmPool->GetShmPool(), 0, mSize.width,
                                         mSize.height, mSize.width * BUFFER_BPP,
                                         WL_SHM_FORMAT_ARGB8888);
+  mWLBufferID = reinterpret_cast<uintptr_t>(mWLBuffer);
+  LOGWAYLAND("WaylandBufferSHM::CreateWlBuffer() [%p] wl_buffer [%p]",
+             (void*)this, mWLBuffer);
+
   return !!mWLBuffer;
 }
 
@@ -302,8 +306,8 @@ already_AddRefed<WaylandBufferDMABUF> WaylandBufferDMABUF::CreateRGBA(
   RefPtr<WaylandBufferDMABUF> buffer = new WaylandBufferDMABUF(aSize);
 
   buffer->mDMABufSurface = DMABufSurfaceRGBA::CreateDMABufSurface(
-      aSize.width, aSize.height, aFormat,
-      DMABUF_SCANOUT | DMABUF_USE_MODIFIERS);
+      aGL, aSize.width, aSize.height, DMABUF_SCANOUT | DMABUF_USE_MODIFIERS,
+      aFormat);
   if (!buffer->mDMABufSurface || !buffer->mDMABufSurface->CreateTexture(aGL)) {
     LOGWAYLAND("  failed to create texture");
     return nullptr;
@@ -335,10 +339,12 @@ bool WaylandBufferDMABUF::CreateWlBuffer() {
     return mWLBuffer;
   }
 
-  LOGWAYLAND("WaylandBufferDMABUF::CreateWlBuffer() [%p] UID %d", (void*)this,
-             mDMABufSurface->GetUID());
-
   mWLBuffer = mDMABufSurface->CreateWlBuffer();
+  mWLBufferID = reinterpret_cast<uintptr_t>(mWLBuffer);
+
+  LOGWAYLAND("WaylandBufferDMABUF::CreateWlBuffer() [%p] UID %d wl_buffer [%p]",
+             (void*)this, mDMABufSurface->GetUID(), mWLBuffer);
+
   return !!mWLBuffer;
 }
 

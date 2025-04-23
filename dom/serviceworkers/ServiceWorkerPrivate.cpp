@@ -189,6 +189,24 @@ ServiceWorkerPrivate::PendingFunctionalEvent::~PendingFunctionalEvent() {
   AssertIsOnMainThread();
 }
 
+ServiceWorkerPrivate::PendingCookieChangeEvent::PendingCookieChangeEvent(
+    ServiceWorkerPrivate* aOwner,
+    RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+    ServiceWorkerCookieChangeEventOpArgs&& aArgs)
+    : PendingFunctionalEvent(aOwner, std::move(aRegistration)),
+      mArgs(std::move(aArgs)) {
+  AssertIsOnMainThread();
+}
+
+nsresult ServiceWorkerPrivate::PendingCookieChangeEvent::Send() {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(mOwner);
+  MOZ_ASSERT(mOwner->mInfo);
+
+  return mOwner->SendCookieChangeEventInternal(std::move(mRegistration),
+                                               std::move(mArgs));
+}
+
 ServiceWorkerPrivate::PendingPushEvent::PendingPushEvent(
     ServiceWorkerPrivate* aOwner,
     RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
@@ -640,7 +658,6 @@ nsresult ServiceWorkerPrivate::Initialize() {
     }
   }
 
-  // Firefox doesn't support service workers in PBM.
   bool isPBM = principal->GetIsInPrivateBrowsing();
   if (ContentBlockingAllowList::Check(principal, isPBM)) {
     net::CookieJarSettings::Cast(cookieJarSettings)
@@ -915,6 +932,51 @@ nsresult ServiceWorkerPrivate::SendLifeCycleEvent(
       });
 }
 
+nsresult ServiceWorkerPrivate::SendCookieChangeEvent(
+    const nsAString& aCookieName, const nsAString& aCookieValue,
+    bool aCookieDeleted, RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(mInfo);
+  MOZ_ASSERT(aRegistration);
+
+  ServiceWorkerCookieChangeEventOpArgs args;
+  args.name() = aCookieName;
+  args.value() = aCookieValue;
+  args.deleted() = aCookieDeleted;
+
+  if (mInfo->State() == ServiceWorkerState::Activating) {
+    UniquePtr<PendingFunctionalEvent> pendingEvent =
+        MakeUnique<PendingCookieChangeEvent>(this, std::move(aRegistration),
+                                             std::move(args));
+
+    mPendingFunctionalEvents.AppendElement(std::move(pendingEvent));
+
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(mInfo->State() == ServiceWorkerState::Activated);
+
+  return SendCookieChangeEventInternal(std::move(aRegistration),
+                                       std::move(args));
+}
+
+nsresult ServiceWorkerPrivate::SendCookieChangeEventInternal(
+    RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+    ServiceWorkerCookieChangeEventOpArgs&& aArgs) {
+  MOZ_ASSERT(aRegistration);
+
+  return ExecServiceWorkerOp(
+      std::move(aArgs), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
+      [registration = aRegistration](ServiceWorkerOpResult&& aResult) {
+        MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
+
+        registration->MaybeScheduleTimeCheckAndUpdate();
+      },
+      [registration = aRegistration]() {
+        registration->MaybeScheduleTimeCheckAndUpdate();
+      });
+}
+
 nsresult ServiceWorkerPrivate::SendPushEvent(
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
@@ -984,20 +1046,32 @@ nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent(
       });
 }
 
-nsresult ServiceWorkerPrivate::SendNotificationEvent(
-    const nsAString& aEventName, const nsAString& aScope, const nsAString& aId,
-    const IPCNotificationOptions& aOptions) {
+nsresult ServiceWorkerPrivate::SendNotificationClickEvent(
+    const nsAString& aScope, const IPCNotification& aNotification,
+    const nsAString& aAction) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!aEventName.EqualsLiteral(NOTIFICATION_CLICK_EVENT_NAME) &&
-      !aEventName.EqualsLiteral(NOTIFICATION_CLOSE_EVENT_NAME)) {
-    MOZ_ASSERT_UNREACHABLE("Invalid notification event name");
-    return NS_ERROR_FAILURE;
-  }
+  ServiceWorkerNotificationClickEventOpArgs clickArgs;
+  clickArgs.notification() = aNotification;
+  clickArgs.action() = aAction;
 
-  ServiceWorkerNotificationEventOpArgs args;
-  args.eventName() = nsString(aEventName);
-  args.notification() = IPCNotification(nsString(aId), aOptions);
+  ServiceWorkerNotificationEventOpArgs args(std::move(clickArgs));
+
+  return ExecServiceWorkerOp(
+      std::move(args), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
+      [](ServiceWorkerOpResult&& aResult) {
+        MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
+      });
+}
+
+nsresult ServiceWorkerPrivate::SendNotificationCloseEvent(
+    const nsAString& aScope, const IPCNotification& aNotification) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  ServiceWorkerNotificationCloseEventOpArgs closeArgs;
+  closeArgs.notification() = aNotification;
+
+  ServiceWorkerNotificationEventOpArgs args(std::move(closeArgs));
 
   return ExecServiceWorkerOp(
       std::move(args), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),

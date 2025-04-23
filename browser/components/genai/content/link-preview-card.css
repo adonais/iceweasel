@@ -1,0 +1,76 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.og-card {
+    --og-main-font-size: 1.4rem;
+    background-color: light-dark(rgba(0,0,0,0.05), rgba(255,255,255,0.05));
+    font-size: 1.2em;
+}
+
+.og-card-img {
+    border-radius: var(--border-radius-small);
+    height: 100px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.og-card-content {
+    background-color: var(--panel-background);
+    border-bottom: 1px solid var(--panel-border-color);
+    border-radius: var(--panel-border-radius);
+    color: var(--text-color-deemphasized);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-large);
+    padding: var(--og-padding);
+}
+
+.og-card-title {
+    font-size: var(--og-main-font-size);
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+}
+
+.og-card-description {
+    font-size: var(--og-main-font-size);
+    margin: 0;
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+}
+
+.og-error-message {
+  font-size: var(--og-main-font-size);
+  margin-block: 0 var(--space-medium);
+}
+
+.ai-content {
+    padding: var(--og-padding);
+
+    > h3 {
+        font-size: var(--og-main-font-size);
+        font-weight: var(--font-weight-bold);
+        margin: 0;
+    }
+
+    > ul {
+        font-size: var(--og-main-font-size);
+        padding-inline-start: var(--space-large);
+    }
+
+    li {
+        margin-block: var(--space-medium);
+    }
+
+    > hr {
+        border-color: var(--border-color-card);
+    }
+
+    > p {
+        margin-block: var(--space-medium) 0;
+    }
+}

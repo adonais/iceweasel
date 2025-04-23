@@ -46,12 +46,15 @@ ChromeUtils.defineESModuleGetters(this, {
   LoginManagerParent: "resource://gre/modules/LoginManagerParent.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
-  NewTabPagePreloading: "resource:///modules/NewTabPagePreloading.sys.mjs",
+  NewTabPagePreloading:
+    "moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   nsContextMenu: "chrome://browser/content/nsContextMenu.sys.mjs",
-  OpenInTabsUtils: "resource:///modules/OpenInTabsUtils.sys.mjs",
-  OpenSearchManager: "resource:///modules/OpenSearchManager.sys.mjs",
+  OpenInTabsUtils:
+    "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
+  OpenSearchManager:
+    "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   PageActions: "resource:///modules/PageActions.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
   PanelMultiView: "resource:///modules/PanelMultiView.sys.mjs",
@@ -65,15 +68,16 @@ ChromeUtils.defineESModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.sys.mjs",
   PromptUtils: "resource://gre/modules/PromptUtils.sys.mjs",
-  ReaderMode: "resource://gre/modules/ReaderMode.sys.mjs",
+  ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   ResetPBMPanel: "resource:///modules/ResetPBMPanel.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SaveToPocket: "chrome://pocket/content/SaveToPocket.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
-  SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  SharingUtils: "resource:///modules/SharingUtils.sys.mjs",
   ShoppingSidebarParent: "resource:///actors/ShoppingSidebarParent.sys.mjs",
   ShoppingSidebarManager: "resource:///actors/ShoppingSidebarParent.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
@@ -84,10 +88,12 @@ ChromeUtils.defineESModuleGetters(this, {
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
   TabsSetupFlowManager:
     "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs",
+  TaskbarTabUI: "resource:///modules/TaskbarTabUI.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   ToolbarContextMenu: "resource:///modules/ToolbarContextMenu.sys.mjs",
+  ToolbarDropHandler: "resource:///modules/ToolbarDropHandler.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
-  UITour: "resource:///modules/UITour.sys.mjs",
+  UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
   UrlbarInput: "resource:///modules/UrlbarInput.sys.mjs",
@@ -799,6 +805,7 @@ function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
 
   const mainWindowEl = document.documentElement;
   const fxaPanelEl = PanelMultiView.getViewNode(document, "PanelUI-fxa");
+  const taskbarTab = mainWindowEl.hasAttribute("taskbartab");
 
   // To minimize the toolbar button flickering or appearing/disappearing during startup,
   // we use this pref to anticipate the likely FxA status.
@@ -813,7 +820,7 @@ function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
 
   fxaPanelEl.addEventListener("ViewShowing", gSync.updateSendToDeviceTitle);
 
-  if (enable && syncEnabled) {
+  if (enable && syncEnabled && !taskbarTab) {
     mainWindowEl.setAttribute("fxatoolbarmenu", "visible");
 
     // We have to manually update the sync state UI when toggling the FxA toolbar
@@ -1526,169 +1533,6 @@ function PageProxyClickHandler(aEvent) {
   }
 }
 
-var browserDragAndDrop = {
-  canDropLink: aEvent => Services.droppedLinkHandler.canDropLink(aEvent, true),
-
-  dragOver(aEvent) {
-    if (this.canDropLink(aEvent)) {
-      aEvent.preventDefault();
-    }
-  },
-
-  getTriggeringPrincipal(aEvent) {
-    return Services.droppedLinkHandler.getTriggeringPrincipal(aEvent);
-  },
-
-  getCsp(aEvent) {
-    return Services.droppedLinkHandler.getCsp(aEvent);
-  },
-
-  validateURIsForDrop(aEvent, aURIs) {
-    return Services.droppedLinkHandler.validateURIsForDrop(aEvent, aURIs);
-  },
-
-  dropLinks(aEvent, aDisallowInherit) {
-    return Services.droppedLinkHandler.dropLinks(aEvent, aDisallowInherit);
-  },
-};
-
-var homeButtonObserver = {
-  onDrop(aEvent) {
-    // disallow setting home pages that inherit the principal
-    let links = browserDragAndDrop.dropLinks(aEvent, true);
-    if (links.length) {
-      let urls = [];
-      for (let link of links) {
-        if (link.url.includes("|")) {
-          urls.push(...link.url.split("|"));
-        } else {
-          urls.push(link.url);
-        }
-      }
-
-      try {
-        browserDragAndDrop.validateURIsForDrop(aEvent, urls);
-      } catch (e) {
-        return;
-      }
-
-      setTimeout(openHomeDialog, 0, urls.join("|"));
-    }
-  },
-
-  onDragOver(aEvent) {
-    if (HomePage.locked) {
-      return;
-    }
-    browserDragAndDrop.dragOver(aEvent);
-    aEvent.dropEffect = "link";
-  },
-};
-
-function openHomeDialog(aURL) {
-  var promptTitle = gNavigatorBundle.getString("droponhometitle");
-  var promptMsg;
-  if (aURL.includes("|")) {
-    promptMsg = gNavigatorBundle.getString("droponhomemsgMultiple");
-  } else {
-    promptMsg = gNavigatorBundle.getString("droponhomemsg");
-  }
-
-  var pressedVal = Services.prompt.confirmEx(
-    window,
-    promptTitle,
-    promptMsg,
-    Services.prompt.STD_YES_NO_BUTTONS,
-    null,
-    null,
-    null,
-    null,
-    { value: 0 }
-  );
-
-  if (pressedVal == 0) {
-    HomePage.set(aURL).catch(console.error);
-  }
-}
-
-var newTabButtonObserver = {
-  onDragOver(aEvent) {
-    browserDragAndDrop.dragOver(aEvent);
-  },
-  async onDrop(aEvent) {
-    let links = browserDragAndDrop.dropLinks(aEvent);
-    if (
-      links.length >=
-      Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
-    ) {
-      // Sync dialog cannot be used inside drop event handler.
-      let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(
-        links.length,
-        window
-      );
-      if (!answer) {
-        return;
-      }
-    }
-
-    let where = aEvent.shiftKey ? "tabshifted" : "tab";
-    let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
-    let csp = browserDragAndDrop.getCsp(aEvent);
-    for (let link of links) {
-      if (link.url) {
-        let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
-        // Allow third-party services to fixup this URL.
-        openLinkIn(data.url, where, {
-          postData: data.postData,
-          allowThirdPartyFixup: true,
-          triggeringPrincipal,
-          csp,
-        });
-      }
-    }
-  },
-};
-
-var newWindowButtonObserver = {
-  onDragOver(aEvent) {
-    browserDragAndDrop.dragOver(aEvent);
-  },
-  async onDrop(aEvent) {
-    let links = browserDragAndDrop.dropLinks(aEvent);
-    if (
-      links.length >=
-      Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
-    ) {
-      // Sync dialog cannot be used inside drop event handler.
-      let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(
-        links.length,
-        window
-      );
-      if (!answer) {
-        return;
-      }
-    }
-
-    let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
-    let csp = browserDragAndDrop.getCsp(aEvent);
-    for (let link of links) {
-      if (link.url) {
-        let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
-        // Allow third-party services to fixup this URL.
-        openLinkIn(data.url, "window", {
-          // TODO fix allowInheritPrincipal
-          // (this is required by javascript: drop to the new window) Bug 1475201
-          allowInheritPrincipal: true,
-          postData: data.postData,
-          allowThirdPartyFixup: true,
-          triggeringPrincipal,
-          csp,
-        });
-      }
-    }
-  },
-};
-
 function CreateContainerTabMenu(event) {
   // Do not open context menus within menus.
   // Note that triggerNode is null if we're opened by long press.
@@ -1879,8 +1723,7 @@ function toOpenWindowByType(inType, uri, features) {
  * @return a reference to the new window.
  */
 function OpenBrowserWindow(options = {}) {
-  let telemetryObj = {};
-  TelemetryStopwatch.start("FX_NEW_WINDOW_MS", telemetryObj);
+  let timerId = Glean.browserTimings.newWindow.start();
 
   let win = BrowserWindowTracker.openWindow({
     openerWindow: window,
@@ -1890,7 +1733,7 @@ function OpenBrowserWindow(options = {}) {
   win.addEventListener(
     "MozAfterPaint",
     () => {
-      TelemetryStopwatch.finish("FX_NEW_WINDOW_MS", telemetryObj);
+      Glean.browserTimings.newWindow.stopAndAccumulate(timerId);
     },
     { once: true }
   );
@@ -2048,221 +1891,12 @@ let gFileMenu = {
     this.updateImportCommandEnabledState();
     this.updateTabCloseCountState();
     if (AppConstants.platform == "macosx") {
-      gShareUtils.updateShareURLMenuItem(
+      SharingUtils.updateShareURLMenuItem(
         gBrowser.selectedBrowser,
         document.getElementById("menu_savePage")
       );
     }
     PrintUtils.updatePrintSetupMenuHiddenState();
-  },
-};
-
-let gShareUtils = {
-  /**
-   * Updates a sharing item in a given menu, creating it if necessary.
-   */
-  updateShareURLMenuItem(browser, insertAfterEl) {
-    if (!Services.prefs.getBoolPref("browser.menu.share_url.allow", true)) {
-      return;
-    }
-
-    // We only support "share URL" on macOS and on Windows:
-    if (AppConstants.platform != "macosx" && AppConstants.platform != "win") {
-      return;
-    }
-
-    let shareURL = insertAfterEl.nextElementSibling;
-    if (!shareURL?.matches(".share-tab-url-item")) {
-      shareURL = this._createShareURLMenuItem(insertAfterEl);
-    }
-
-    shareURL.browserToShare = Cu.getWeakReference(browser);
-    if (AppConstants.platform == "win") {
-      // We disable the item on Windows, as there's no submenu.
-      // On macOS, we handle this inside the menupopup.
-      shareURL.hidden = !BrowserUtils.getShareableURL(browser.currentURI);
-    }
-  },
-
-  /**
-   * Creates and returns the "Share" menu item.
-   */
-  _createShareURLMenuItem(insertAfterEl) {
-    let menu = insertAfterEl.parentNode;
-    let shareURL = null;
-    if (AppConstants.platform == "win") {
-      shareURL = this._buildShareURLItem(menu.id);
-    } else if (AppConstants.platform == "macosx") {
-      shareURL = this._buildShareURLMenu(menu.id);
-    }
-    shareURL.className = "share-tab-url-item";
-
-    let l10nID =
-      menu.id == "tabContextMenu"
-        ? "tab-context-share-url"
-        : "menu-file-share-url";
-    document.l10n.setAttributes(shareURL, l10nID);
-
-    menu.insertBefore(shareURL, insertAfterEl.nextSibling);
-    return shareURL;
-  },
-
-  /**
-   * Returns a menu item specifically for accessing Windows sharing services.
-   */
-  _buildShareURLItem() {
-    let shareURLMenuItem = document.createXULElement("menuitem");
-    shareURLMenuItem.addEventListener("command", this);
-    return shareURLMenuItem;
-  },
-
-  /**
-   * Returns a menu specifically for accessing macOSx sharing services .
-   */
-  _buildShareURLMenu() {
-    let menu = document.createXULElement("menu");
-    let menuPopup = document.createXULElement("menupopup");
-    menuPopup.addEventListener("popupshowing", this);
-    menu.appendChild(menuPopup);
-    return menu;
-  },
-
-  /**
-   * Get the sharing data for a given DOM node.
-   */
-  getDataToShare(node) {
-    let browser = node.browserToShare?.get();
-    let urlToShare = null;
-    let titleToShare = null;
-
-    if (browser) {
-      let maybeToShare = BrowserUtils.getShareableURL(browser.currentURI);
-      if (maybeToShare) {
-        urlToShare = maybeToShare;
-        titleToShare = browser.contentTitle;
-      }
-    }
-    return { urlToShare, titleToShare };
-  },
-
-  /**
-   * Populates the "Share" menupopup on macOSx.
-   */
-  initializeShareURLPopup(menuPopup) {
-    if (AppConstants.platform != "macosx") {
-      return;
-    }
-
-    // Empty menupopup
-    while (menuPopup.firstChild) {
-      menuPopup.firstChild.remove();
-    }
-
-    let { urlToShare } = this.getDataToShare(menuPopup.parentNode);
-
-    // If we can't share the current URL, we display the items disabled,
-    // but enable the "more..." item at the bottom, to allow the user to
-    // change sharing preferences in the system dialog.
-    let shouldEnable = !!urlToShare;
-    if (!urlToShare) {
-      // Fake it so we can ask the sharing service for services:
-      urlToShare = makeURI("https://mozilla.org/");
-    }
-
-    let sharingService = gBrowser.MacSharingService;
-    let currentURI = gURLBar.makeURIReadable(urlToShare).displaySpec;
-    let services = sharingService.getSharingProviders(currentURI);
-
-    services.forEach(share => {
-      let item = document.createXULElement("menuitem");
-      item.classList.add("menuitem-iconic");
-      item.setAttribute("label", share.menuItemTitle);
-      item.setAttribute("share-name", share.name);
-      item.setAttribute("image", share.image);
-      if (!shouldEnable) {
-        item.setAttribute("disabled", "true");
-      }
-      menuPopup.appendChild(item);
-    });
-    menuPopup.appendChild(document.createXULElement("menuseparator"));
-    let moreItem = document.createXULElement("menuitem");
-    document.l10n.setAttributes(moreItem, "menu-share-more");
-    moreItem.classList.add("menuitem-iconic", "share-more-button");
-    menuPopup.appendChild(moreItem);
-
-    menuPopup.addEventListener("command", this);
-    menuPopup.parentNode
-      .closest("menupopup")
-      .addEventListener("popuphiding", this);
-    menuPopup.setAttribute("data-initialized", true);
-  },
-
-  onShareURLCommand(event) {
-    // Only call sharing services for the "Share" menu item. These services
-    // are accessed from a submenu popup for MacOS or the "Share" menu item
-    // for Windows. Use .closest() as a hack to find either the item itself
-    // or a parent with the right class.
-    let target = event.target.closest(".share-tab-url-item");
-    if (!target) {
-      return;
-    }
-
-    // urlToShare/titleToShare may be null, in which case only the "more"
-    // item is enabled, so handle that case first:
-    if (event.target.classList.contains("share-more-button")) {
-      gBrowser.MacSharingService.openSharingPreferences();
-      return;
-    }
-
-    let { urlToShare, titleToShare } = this.getDataToShare(target);
-    let currentURI = gURLBar.makeURIReadable(urlToShare).displaySpec;
-
-    if (AppConstants.platform == "win") {
-      WindowsUIUtils.shareUrl(currentURI, titleToShare);
-      return;
-    }
-
-    // On macOSX platforms
-    let shareName = event.target.getAttribute("share-name");
-
-    if (shareName) {
-      gBrowser.MacSharingService.shareUrl(shareName, currentURI, titleToShare);
-    }
-  },
-
-  onPopupHiding(event) {
-    // We don't want to rebuild the contents of the "Share" menupopup if only its submenu is
-    // hidden. So bail if this isn't the top menupopup in the DOM tree:
-    if (event.target.parentNode.closest("menupopup")) {
-      return;
-    }
-    // Otherwise, clear its "data-initialized" attribute.
-    let menupopup = event.target.querySelector(
-      ".share-tab-url-item"
-    )?.menupopup;
-    menupopup?.removeAttribute("data-initialized");
-
-    event.target.removeEventListener("popuphiding", this);
-  },
-
-  onPopupShowing(event) {
-    if (!event.target.hasAttribute("data-initialized")) {
-      this.initializeShareURLPopup(event.target);
-    }
-  },
-
-  handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "command":
-        this.onShareURLCommand(aEvent);
-        break;
-      case "popuphiding":
-        this.onPopupHiding(aEvent);
-        break;
-      case "popupshowing":
-        this.onPopupShowing(aEvent);
-        break;
-    }
   },
 };
 
@@ -2354,6 +1988,12 @@ var XULBrowserWindow = {
    *   passed on to LinkTargetDisplay.
    */
   setOverLink(url, options = undefined) {
+    window.dispatchEvent(
+      new CustomEvent("OverLink", {
+        detail: { url },
+      })
+    );
+
     if (url) {
       url = Services.textToSubURI.unEscapeURIForUI(url);
 
@@ -3270,52 +2910,53 @@ var TabsProgressListener = {
       aWebProgress.isTopLevel &&
       (!aRequest.originalURI || aRequest.originalURI.scheme != "about")
     ) {
-      let histogram = "FX_PAGE_LOAD_MS_2";
-      let recordLoadTelemetry = true;
+      let metricName = "pageLoad";
 
       if (aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_RELOAD) {
         // loadType is constructed by shifting loadFlags, this is why we need to
         // do the same shifting here.
         // https://searchfox.org/mozilla-central/rev/11cfa0462a6b5d8c5e2111b8cfddcf78098f0141/docshell/base/nsDocShellLoadTypes.h#22
         if (aWebProgress.loadType & (kSkipCacheFlags << 16)) {
-          histogram = "FX_PAGE_RELOAD_SKIP_CACHE_MS";
+          metricName = "pageReloadSkipCache";
         } else if (aWebProgress.loadType == Ci.nsIDocShell.LOAD_CMD_RELOAD) {
-          histogram = "FX_PAGE_RELOAD_NORMAL_MS";
+          metricName = "pageReloadNormal";
         } else {
-          recordLoadTelemetry = false;
+          metricName = "";
         }
       }
 
-      let stopwatchRunning = TelemetryStopwatch.running(histogram, aBrowser);
+      const timerIdField = `_${metricName}TimerId`;
       if (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW) {
         if (aStateFlags & Ci.nsIWebProgressListener.STATE_START) {
-          if (stopwatchRunning) {
-            // Oops, we're seeing another start without having noticed the previous stop.
-            if (recordLoadTelemetry) {
-              TelemetryStopwatch.cancel(histogram, aBrowser);
+          if (metricName) {
+            if (aBrowser[timerIdField]) {
+              // Oops, we're seeing another start without having noticed the previous stop.
+              Glean.browserTimings[metricName].cancel(aBrowser[timerIdField]);
             }
+            aBrowser[timerIdField] = Glean.browserTimings[metricName].start();
           }
-          if (recordLoadTelemetry) {
-            TelemetryStopwatch.start(histogram, aBrowser);
-          }
-          Services.telemetry.getHistogramById("FX_TOTAL_TOP_VISITS").add(true);
+          Glean.browserEngagement.totalTopVisits.true.add();
         } else if (
           aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
-          stopwatchRunning /* we won't see STATE_START events for pre-rendered tabs */
+          /* we won't see STATE_START events for pre-rendered tabs */
+          metricName &&
+          aBrowser[timerIdField]
         ) {
-          if (recordLoadTelemetry) {
-            TelemetryStopwatch.finish(histogram, aBrowser);
-            BrowserTelemetryUtils.recordSiteOriginTelemetry(browserWindows());
-          }
+          Glean.browserTimings[metricName].stopAndAccumulate(
+            aBrowser[timerIdField]
+          );
+          aBrowser[timerIdField] = null;
+          BrowserTelemetryUtils.recordSiteOriginTelemetry(browserWindows());
         }
       } else if (
         aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+        /* we won't see STATE_START events for pre-rendered tabs */
         aStatus == Cr.NS_BINDING_ABORTED &&
-        stopwatchRunning /* we won't see STATE_START events for pre-rendered tabs */
+        metricName &&
+        aBrowser[timerIdField]
       ) {
-        if (recordLoadTelemetry) {
-          TelemetryStopwatch.cancel(histogram, aBrowser);
-        }
+        Glean.browserTimings[metricName].cancel(aBrowser[timerIdField]);
+        aBrowser[timerIdField] = null;
       }
     }
   },
@@ -4160,7 +3801,7 @@ var CanvasPermissionPromptHelper = {
       browser = aSubject;
     }
 
-    if (gBrowser.selectedBrowser !== browser) {
+    if (browser?.ownerGlobal !== window) {
       // Must belong to some other window.
       return;
     }
@@ -4817,14 +4458,6 @@ var MailIntegration = {
   },
 };
 
-function AddKeywordForSearchField() {
-  if (!gContextMenu) {
-    throw new Error("Context menu doesn't seem to be open.");
-  }
-
-  gContextMenu.addKeywordForSearchField();
-}
-
 /**
  * Applies only to the cmd|ctrl + shift + T keyboard shortcut
  * Undo the last action that was taken - either closing the last tab or closing the last window;
@@ -4900,7 +4533,10 @@ function undoCloseTab(aIndex, sourceWindowSSId) {
     if (SessionStore.getSavedTabGroup(lastClosedTabGroupId)) {
       group = SessionStore.openSavedTabGroup(
         lastClosedTabGroupId,
-        targetWindow
+        targetWindow,
+        {
+          source: "recent",
+        }
       );
     } else {
       group = SessionStore.undoCloseTabGroup(
@@ -4946,22 +4582,6 @@ function undoCloseWindow(aIndex) {
   }
 
   return window;
-}
-
-/**
- * This is a temporary hack to connect a Help menu item for reporting
- * site issues to the WebCompat team's Site Compatability Reporter
- * WebExtension, which ships by default and is enabled on pre-release
- * channels.
- *
- * Once we determine if Help is the right place for it, we'll do something
- * slightly better than this.
- *
- * See bug 1690573.
- */
-function ReportSiteIssue() {
-  let subject = { wrappedJSObject: gBrowser.selectedTab };
-  Services.obs.notifyObservers(subject, "report-site-issue");
 }
 
 /**
@@ -5215,8 +4835,10 @@ function switchToTabHavingURI(
         if (doAdopt) {
           const newTab = window.gBrowser.adoptTab(
             aWindow.gBrowser.getTabForBrowser(browser),
-            window.gBrowser.tabContainer.selectedIndex + 1,
-            /* aSelectTab = */ true
+            {
+              tabIndex: window.gBrowser.tabContainer.selectedIndex + 1,
+              selectTab: true,
+            }
           );
           if (!newTab) {
             doAdopt = false;
@@ -5400,6 +5022,9 @@ function duplicateTabIn(aTab, where, delta) {
       });
       break;
   }
+  if (aTab.group) {
+    Glean.tabgroup.tabInteractions.duplicate.add();
+  }
 }
 
 var MousePosTracker = {
@@ -5445,6 +5070,10 @@ var MousePosTracker = {
   },
 
   handleEvent(event) {
+    if (event.type === "mouseout" && event.currentTarget !== window) {
+      return;
+    }
+
     this._x = event.screenX - window.mozInnerScreenX;
     this._y = event.screenY - window.mozInnerScreenY;
 

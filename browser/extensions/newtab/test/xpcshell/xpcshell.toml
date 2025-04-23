@@ -1,5 +1,6 @@
 [DEFAULT]
 firefox-appdir = "browser"
+head = "head.js"
 skip-if = ["os == 'android'"] # bug 1730213
 prefs = [
   "browser.startup.homepage.abouthome_cache.enabled=true",
@@ -15,6 +16,8 @@ skip-if = ["socketprocess_networking"] # Bug 1759035
 ["test_AdsFeed.js"]
 
 ["test_HighlightsFeed.js"]
+
+["test_NewTabMessaging.js"]
 
 ["test_PlacesFeed.js"]
 

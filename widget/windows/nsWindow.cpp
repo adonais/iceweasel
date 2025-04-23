@@ -701,8 +701,6 @@ nsWindow::nsWindow(bool aIsChildWindow)
     }
     NS_ASSERTION(sIsOleInitialized, "***** OLE is not initialized!\n");
     MouseScrollHandler::Initialize();
-    // Init theme data
-    nsUXThemeData::UpdateNativeThemeInfo();
     RedirectedKeyDownMessageManager::Forget();
   }  // !sInstanceCount
 
@@ -2146,9 +2144,14 @@ void nsWindow::AsyncUpdateWorkspaceID(Desktop& aDesktop) {
           mSelf(aSelf) {}
 
     TaskResult Run() override {
-      auto desktop = mSelf->mDesktopId.Lock();
+      RefPtr<nsWindow> self(mSelf);
+      // If the window is not alive anymore, no need to do anything
+      if (!self) {
+        return TaskResult::Complete;
+      }
+      auto desktop = self->mDesktopId.Lock();
       if (desktop->mUpdateIsQueued) {
-        DoGetWorkspaceID(mSelf->mWnd, &desktop->mID);
+        DoGetWorkspaceID(self->mWnd, &desktop->mID);
         desktop->mUpdateIsQueued = false;
       }
       return TaskResult::Complete;
@@ -2161,7 +2164,9 @@ void nsWindow::AsyncUpdateWorkspaceID(Desktop& aDesktop) {
     }
 #endif
 
-    RefPtr<nsWindow> mSelf;
+    // Only hold a weak pointer so this structure can't keep the window alive
+    // and possibly Release() it on the wrong thread (bug 1824697)
+    ThreadSafeWeakPtr<nsWindow> mSelf;
   };
 
   if (aDesktop.mUpdateIsQueued) {
@@ -2546,7 +2551,18 @@ void nsWindow::UpdateMicaBackdrop(bool aForce) {
     if (!useBackdrop) {
       return DWMSBT_AUTO;
     }
-    return IsPopup() ? DWMSBT_TRANSIENTWINDOW : DWMSBT_TABBEDWINDOW;
+    if (IsPopup()) {
+      return DWMSBT_TRANSIENTWINDOW;
+    }
+    switch (StaticPrefs::widget_windows_mica_toplevel_backdrop()) {
+      case 1:
+        return DWMSBT_MAINWINDOW;
+      case 2:
+        return DWMSBT_TRANSIENTWINDOW;
+      case 3:
+      default:
+        return DWMSBT_TABBEDWINDOW;
+    }
   }();
   ::DwmSetWindowAttribute(mWnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop,
                           sizeof backdrop);
@@ -4840,10 +4856,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_THEMECHANGED: {
       // Update non-client margin offsets
       UpdateNonClientMargins();
-      nsUXThemeData::UpdateNativeThemeInfo();
-
-      // Invalidate the window so that the repaint will
-      // pick up the new theme.
+      // Invalidate the window so that the repaint will pick up the new theme.
       Invalidate(true, true, true);
     } break;
 
@@ -6987,10 +7000,14 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
 
   if (mResizeState != RESIZING &&
       mFrameState->GetSizeMode() == nsSizeMode_Normal) {
-    // Limit the position (if not in the middle of a drag-move) & size,
-    // if it would overflow the destination screen
-    nsCOMPtr<nsIScreenManager> sm = do_GetService(sScreenManagerContractID);
-    if (sm) {
+    if (nsCOMPtr<nsIScreenManager> sm =
+            do_GetService(sScreenManagerContractID)) {
+      // Before getting the screen which will contain this window, we need to
+      // refresh the screens because WM_DPICHANGED is sent before
+      // WM_DISPLAYCHANGE.
+      ScreenHelperWin::RefreshScreens();
+      // Limit the position (if not in the middle of a drag-move) & size,
+      // if it would overflow the destination screen
       nsCOMPtr<nsIScreen> screen;
       sm->ScreenForRect(x, y, width, height, getter_AddRefs(screen));
       if (screen) {

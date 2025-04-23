@@ -401,6 +401,11 @@ class HTMLEditor final : public EditorBase,
   bool IsCSSEnabled() const { return mIsCSSPrefChecked; }
 
   /**
+   * Return true when editing host is not plaintext-only.
+   */
+  [[nodiscard]] bool IsStyleEditable() const;
+
+  /**
    * Enable/disable object resizers for <img> elements, <table> elements,
    * absolute positioned elements (required absolute position editor enabled).
    */
@@ -418,7 +423,9 @@ class HTMLEditor final : public EditorBase,
     mIsObjectResizingEnabled = aEnable;
     RefreshEditingUI();
   }
-  bool IsObjectResizerEnabled() const { return mIsObjectResizingEnabled; }
+  bool IsObjectResizerEnabled() const {
+    return mIsObjectResizingEnabled && IsStyleEditable();
+  }
 
   Element* GetResizerTarget() const { return mResizedObject; }
 
@@ -441,7 +448,7 @@ class HTMLEditor final : public EditorBase,
     RefreshEditingUI();
   }
   bool IsInlineTableEditorEnabled() const {
-    return mIsInlineTableEditingEnabled;
+    return mIsInlineTableEditingEnabled && IsStyleEditable();
   }
 
   /**
@@ -464,7 +471,7 @@ class HTMLEditor final : public EditorBase,
     RefreshEditingUI();
   }
   bool IsAbsolutePositionEditorEnabled() const {
-    return mIsAbsolutelyPositioningEnabled;
+    return mIsAbsolutelyPositioningEnabled && IsStyleEditable();
   }
 
   /**
@@ -719,7 +726,7 @@ class HTMLEditor final : public EditorBase,
    * NotifyEditingHostMaybeChanged() is called when new element becomes
    * contenteditable when the document already had contenteditable elements.
    */
-  void NotifyEditingHostMaybeChanged();
+  MOZ_CAN_RUN_SCRIPT void NotifyEditingHostMaybeChanged();
 
   /** Insert a string as quoted text
    * (whose representation is dependant on the editor type),
@@ -843,6 +850,27 @@ class HTMLEditor final : public EditorBase,
   ReplaceTextWithTransaction(dom::Text& aTextNode, uint32_t aOffset,
                              uint32_t aLength,
                              const nsAString& aStringToInsert);
+
+  struct NormalizedStringToInsertText;
+
+  /**
+   * Insert text to aPointToInsert or replace text in the range stored by aData
+   * in the text node specified by aPointToInsert with the normalized string
+   * stored by aData.  So, aPointToInsert must be in a `Text` node if
+   * aData.ReplaceLength() is not 0.
+   */
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
+  InsertOrReplaceTextWithTransaction(const EditorDOMPoint& aPointToInsert,
+                                     const NormalizedStringToInsertText& aData);
+
+  struct ReplaceWhiteSpacesData;
+
+  /**
+   * Replace or insert white-spaces of aData to aTextNode.
+   */
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
+  ReplaceTextWithTransaction(dom::Text& aTextNode,
+                             const ReplaceWhiteSpacesData& aData);
 
   /**
    * Insert aStringToInsert to aPointToInsert.  If the point is not editable,
@@ -1685,10 +1713,9 @@ class HTMLEditor final : public EditorBase,
                                  const Element& aEditingHost);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  DeleteRangesWithTransaction(
-      nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers,
-      const AutoClonedRangeArray& aRangesToDelete) override;
+  DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
+                              nsIEditor::EStripWrappers aStripWrappers,
+                              AutoClonedRangeArray& aRangesToDelete) override;
 
   /**
    * SplitParagraphWithTransaction() splits the parent block, aParentDivOrP, at
@@ -2204,6 +2231,50 @@ class HTMLEditor final : public EditorBase,
       TreatEmptyTextNodes aTreatEmptyTextNodes,
       DeleteDirection aDeleteDirection, const Element& aEditingHost);
 
+  enum class NormalizeSurroundingWhiteSpaces : bool { No, Yes };
+  friend constexpr bool operator!(NormalizeSurroundingWhiteSpaces aValue) {
+    return !static_cast<bool>(aValue);
+  }
+
+  /**
+   * Return a normalized string.  If aPointToInsert is in a `Text` node,
+   * this returns a range in the `Text` to replace surrounding white-spaces at
+   * aPointToInsert with the normalized string if white-spaces are collapsible
+   * and aNormalizeSurroundingWhiteSpaces is "Yes".
+   */
+  NormalizedStringToInsertText NormalizeWhiteSpacesToInsertText(
+      const EditorDOMPoint& aPointToInsert, const nsAString& aStringToInsert,
+      NormalizeSurroundingWhiteSpaces aNormalizeSurroundingWhiteSpaces) const;
+
+  /**
+   * Return normalized white-spaces of a white-space sequence which contains
+   * aPoint.  This returns new offset of aPoint.Offset() after replacing the
+   * white-space sequence with normalized white-spaces.
+   */
+  ReplaceWhiteSpacesData GetNormalizedStringAt(
+      const EditorDOMPointInText& aPoint) const;
+
+  /**
+   * Return normalized white-spaces after aPointToSplit if there are some
+   * collapsible white-spaces after the point.
+   */
+  ReplaceWhiteSpacesData GetFollowingNormalizedStringToSplitAt(
+      const EditorDOMPointInText& aPointToSplit) const;
+
+  /**
+   * Return normalized white-spaces before aPointToSplit if there are some
+   * collapsible white-spaces before the point.
+   */
+  ReplaceWhiteSpacesData GetPrecedingNormalizedStringToSplitAt(
+      const EditorDOMPointInText& aPointToSplit) const;
+
+  /**
+   * Return normalized surrounding white-spaces of the given range in aTextNode
+   * if there are some collapsible white-spaces.
+   */
+  ReplaceWhiteSpacesData GetSurroundingNormalizedStringToDelete(
+      const Text& aTextNode, uint32_t aOffset, uint32_t aLength) const;
+
   /**
    * ExtendRangeToDeleteWithNormalizingWhiteSpaces() is a helper method of
    * DeleteTextAndNormalizeSurroundingWhiteSpaces().  This expands
@@ -2227,8 +2298,8 @@ class HTMLEditor final : public EditorBase,
    */
   void ExtendRangeToDeleteWithNormalizingWhiteSpaces(
       EditorDOMPointInText& aStartToDelete, EditorDOMPointInText& aEndToDelete,
-      nsAString& aNormalizedWhiteSpacesInStartNode,
-      nsAString& aNormalizedWhiteSpacesInEndNode) const;
+      nsString& aNormalizedWhiteSpacesInStartNode,
+      nsString& aNormalizedWhiteSpacesInEndNode) const;
 
   /**
    * CharPointType let the following helper methods of
@@ -2265,20 +2336,16 @@ class HTMLEditor final : public EditorBase,
    */
   class MOZ_STACK_CLASS CharPointData final {
    public:
+    CharPointData() = delete;
+
     static CharPointData InDifferentTextNode(CharPointType aCharPointType) {
-      CharPointData result;
-      result.mIsInDifferentTextNode = true;
-      result.mType = aCharPointType;
-      return result;
+      return {aCharPointType, true};
     }
     static CharPointData InSameTextNode(CharPointType aCharPointType) {
-      CharPointData result;
       // Let's mark this as in different text node if given one indicates
       // that there is end of text because it means that adjacent content
       // from point of text node view is another element.
-      result.mIsInDifferentTextNode = aCharPointType == CharPointType::TextEnd;
-      result.mType = aCharPointType;
-      return result;
+      return {aCharPointType, aCharPointType == CharPointType::TextEnd};
     }
 
     bool AcrossTextNodeBoundary() const { return mIsInDifferentTextNode; }
@@ -2289,7 +2356,8 @@ class HTMLEditor final : public EditorBase,
     CharPointType Type() const { return mType; }
 
    private:
-    CharPointData() = default;
+    CharPointData(CharPointType aType, bool aIsInDifferentTextNode)
+        : mType(aType), mIsInDifferentTextNode(aIsInDifferentTextNode) {}
 
     CharPointType mType;
     bool mIsInDifferentTextNode;
@@ -2306,12 +2374,24 @@ class HTMLEditor final : public EditorBase,
   CharPointData GetInclusiveNextCharPointDataForNormalizingWhiteSpaces(
       const EditorDOMPointInText& aPoint) const;
 
+  enum class Linefeed : bool { Collapsible, Preformatted };
+
+  /**
+   * Normalize all white-spaces in aResult. aPreviousCharPointData is used only
+   * when the first character of aResult is an ASCII space or an NBSP.
+   * aNextCharPointData is used only when the last character of aResult is an
+   * ASCII space or an NBSP.
+   */
+  static void NormalizeAllWhiteSpaceSequences(
+      nsString& aResult, const CharPointData& aPreviousCharPointData,
+      const CharPointData& aNextCharPointData, Linefeed aLinefeed);
+
   /**
    * GenerateWhiteSpaceSequence() generates white-space sequence which won't
    * be collapsed.
    *
    * @param aResult             [out] White space sequence which won't be
-   *                            collapsed, but wrapable.
+   *                            collapsed, but wrappable.
    * @param aLength             Length of generating white-space sequence.
    *                            Must be 1 or larger.
    * @param aPreviousCharPointData
@@ -2323,11 +2403,20 @@ class HTMLEditor final : public EditorBase,
    *                            different text nodes white-space.
    * @param aNextCharPointData  Specify the next char point where it'll be
    *                            inserted.  Same as aPreviousCharPointData,
-   *                            this must node indidate white-space in same
+   *                            this must node indicate white-space in same
    *                            text node.
    */
   static void GenerateWhiteSpaceSequence(
-      nsAString& aResult, uint32_t aLength,
+      nsString& aResult, uint32_t aLength,
+      const CharPointData& aPreviousCharPointData,
+      const CharPointData& aNextCharPointData);
+
+  /**
+   * Replace characters starting from aOffset in aResult with normalized
+   * white-space sequence.
+   */
+  static void ReplaceStringWithNormalizedWhiteSpaceSequence(
+      nsString& aResult, uint32_t aOffset, uint32_t aLength,
       const CharPointData& aPreviousCharPointData,
       const CharPointData& aNextCharPointData);
 
@@ -3484,8 +3573,22 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult ReplaceHeadContentsWithSourceWithTransaction(
       const nsAString& aSourceToInsert);
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetCSSBackgroundColorState(
-      bool* aMixed, nsAString& aOutColor, bool aBlockLevel);
+  enum class RetrievingBackgroundColorOption {
+    // Ignore inline styles, i.e., return only background color of ancestor
+    // blocks.
+    OnlyBlockBackgroundColor,
+    // Stop at nearest inclusive ancestor block.
+    StopAtInclusiveAncestorBlock,
+    // Return default background color for the document if there is no ancestor
+    // elements which have background color.
+    DefaultColorIfNoSpecificBackgroundColor,
+  };
+  using RetrievingBackgroundColorOptions =
+      EnumSet<RetrievingBackgroundColorOption>;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
+                             RetrievingBackgroundColorOptions aOptions);
+
   nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
 
   /**
@@ -3539,6 +3642,13 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MaybeCollapseSelectionAtFirstEditableNode(
       bool aIgnoreIfSelectionInEditingHost) const;
+
+  /**
+   * Join aLeftText and aRightText with normalizing white-spaces at the joining
+   * point if it's required.  aRightText must be the next sibling of aLeftText.
+   */
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<JoinNodesResult, nsresult>
+  JoinTextNodesWithNormalizeWhiteSpaces(Text& aLeftText, Text& aRightText);
 
   class BlobReader final {
     using AutoEditActionDataSetter = EditorBase::AutoEditActionDataSetter;

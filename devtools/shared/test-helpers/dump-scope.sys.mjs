@@ -88,6 +88,21 @@ const getAsyncParentFrame = frame => {
  * Serialize any arbitrary object to a JSON-serializable object
  */
 function serialize(dbgObj, depth) {
+  // If the variable is initialized after calling dumpScope.
+  if (dbgObj?.uninitialized) {
+    return "(uninitialized)";
+  }
+
+  // If for any reason SpiderMonkey could not preserve the arguments.
+  if (dbgObj?.missingArguments) {
+    return "(missing arguments)";
+  }
+
+  // If the variable was optimized out by SpiderMonkey.
+  if (dbgObj?.optimizedOut) {
+    return "(optimized out)";
+  }
+
   if (dbgObj?.unsafeDereference) {
     if (dbgObj.isClassConstructor) {
       return "Class " + dbgObj.name;
@@ -215,10 +230,7 @@ function serializeFrame(frame) {
     return null;
   }
 
-  const env = frame.environment;
-  const names = env.names();
-
-  const scope = {};
+  const blocks = [];
   const obj = {
     frame: frameLocation,
     // Details will be used to build the filename for the JSON file.
@@ -227,12 +239,19 @@ function serializeFrame(frame) {
       frameScriptUrl,
       lineNumber,
     },
-    scope,
+    blocks,
   };
 
-  // Serialize each variable found in the current frame.
-  for (const name of names) {
-    scope[name] = serialize(env.getVariable(name), 0);
+  let env = frame.environment;
+  while (env && env.type == "declarative" && env.scopeKind != null) {
+    const scope = {};
+    const names = env.names();
+    // Serialize each variable found in the current frame.
+    for (const name of names) {
+      scope[name] = serialize(env.getVariable(name), 0);
+    }
+    blocks.push(scope);
+    env = env.parent;
   }
   return obj;
 }

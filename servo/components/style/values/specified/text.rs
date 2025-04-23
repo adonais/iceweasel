@@ -274,7 +274,14 @@ impl ToCss for TextOverflow {
     ToResolvedValue,
     ToShmem,
 )]
-#[css(bitflags(single = "none,spelling-error,grammar-error", mixed = "underline,overline,line-through,blink"))]
+#[cfg_attr(feature = "gecko", css(bitflags(
+    single = "none,spelling-error,grammar-error",
+    mixed = "underline,overline,line-through,blink",
+)))]
+#[cfg_attr(not(feature = "gecko"), css(bitflags(
+    single = "none",
+    mixed = "underline,overline,line-through,blink",
+)))]
 #[repr(C)]
 /// Specified keyword values for the text-decoration-line property.
 pub struct TextDecorationLine(u8);
@@ -509,7 +516,6 @@ pub enum TextAlign {
     /// Since selectors can't depend on the ancestor styles, we implement it with a
     /// magic value that computes to the right thing. Since this is an
     /// implementation detail, it shouldn't be exposed to web content.
-    #[cfg(feature = "gecko")]
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozCenterOrInherit,
 }
@@ -545,7 +551,6 @@ impl ToComputedValue for TextAlign {
                     _ => parent,
                 }
             },
-            #[cfg(feature = "gecko")]
             TextAlign::MozCenterOrInherit => {
                 let parent = _context
                     .builder

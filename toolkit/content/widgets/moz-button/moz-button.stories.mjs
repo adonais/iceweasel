@@ -25,6 +25,10 @@ export default {
       options: ["default", "primary", "destructive", "icon", "icon ghost"],
       control: { type: "select" },
     },
+    iconPosition: {
+      options: ["start", "end"],
+      control: { type: "select" },
+    },
   },
   parameters: {
     actions: {
@@ -53,6 +57,8 @@ const Template = ({
   accesskey,
   clickHandler,
   showOuterPadding,
+  attention,
+  iconPosition,
 }) => html`
   <style>
     .show-outer-padding {
@@ -68,6 +74,8 @@ const Template = ({
     ?disabled=${disabled}
     iconSrc=${ifDefined(iconSrc)}
     accesskey=${ifDefined(accesskey)}
+    ?attention=${attention}
+    iconPosition=${ifDefined(iconPosition)}
     class=${classMap({ "show-outer-padding": showOuterPadding })}
   ></moz-button>
 `;
@@ -80,6 +88,8 @@ Default.args = {
   iconSrc: "",
   disabled: false,
   showOuterPadding: false,
+  attention: false,
+  iconPosition: "start",
 };
 export const DefaultSmall = Template.bind({});
 DefaultSmall.args = {
@@ -125,6 +135,11 @@ IconText.args = {
   iconSrc: "chrome://global/skin/icons/edit-copy.svg",
   l10nId: "moz-button-labelled",
 };
+export const IconPositionEnd = Template.bind({});
+IconPositionEnd.args = {
+  ...IconText.args,
+  iconPosition: "end",
+};
 export const WithAccesskey = Template.bind({});
 WithAccesskey.args = {
   ...Default.args,
@@ -135,4 +150,10 @@ export const Toolbar = Template.bind({});
 Toolbar.args = {
   ...Default.args,
   showOuterPadding: true,
+};
+export const Badged = Template.bind({});
+Badged.args = {
+  ...Icon.args,
+  type: "icon",
+  attention: true,
 };

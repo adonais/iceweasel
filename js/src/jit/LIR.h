@@ -156,10 +156,7 @@ class LAllocation {
   bool isStackSlot() const { return kind() == STACK_SLOT; }
   bool isStackArea() const { return kind() == STACK_AREA; }
   bool isArgument() const { return kind() == ARGUMENT_SLOT; }
-  bool isRegister() const { return isGeneralReg() || isFloatReg(); }
-  bool isRegister(bool needFloat) const {
-    return needFloat ? isFloatReg() : isGeneralReg();
-  }
+  bool isAnyRegister() const { return isGeneralReg() || isFloatReg(); }
   bool isMemory() const { return isStackSlot() || isArgument(); }
   inline uint32_t memorySlot() const;
   inline LUse* toUse();
@@ -171,7 +168,7 @@ class LAllocation {
   inline const LStackArea* toStackArea() const;
   inline const LArgument* toArgument() const;
   inline const LConstantIndex* toConstantIndex() const;
-  inline AnyRegister toRegister() const;
+  inline AnyRegister toAnyRegister() const;
 
   const MConstant* toConstant() const {
     MOZ_ASSERT(isConstantValue());
@@ -1679,14 +1676,14 @@ class LSafepoint : public TempObject {
     if (alloc.isMemory()) {
       return addSlotsOrElementsSlot(alloc.isStackSlot(), alloc.memorySlot());
     }
-    MOZ_ASSERT(alloc.isRegister());
-    addSlotsOrElementsRegister(alloc.toRegister().gpr());
+    MOZ_ASSERT(alloc.isGeneralReg());
+    addSlotsOrElementsRegister(alloc.toGeneralReg()->reg());
     assertInvariants();
     return true;
   }
   bool hasSlotsOrElementsPointer(LAllocation alloc) const {
-    if (alloc.isRegister()) {
-      return slotsOrElementsRegs().has(alloc.toRegister().gpr());
+    if (alloc.isGeneralReg()) {
+      return slotsOrElementsRegs().has(alloc.toGeneralReg()->reg());
     }
     for (size_t i = 0; i < slotsOrElementsSlots_.length(); i++) {
       const SlotEntry& entry = slotsOrElementsSlots_[i];
@@ -1702,16 +1699,16 @@ class LSafepoint : public TempObject {
     if (alloc.isMemory()) {
       return addGcSlot(alloc.isStackSlot(), alloc.memorySlot());
     }
-    if (alloc.isRegister()) {
-      addGcRegister(alloc.toRegister().gpr());
+    if (alloc.isGeneralReg()) {
+      addGcRegister(alloc.toGeneralReg()->reg());
     }
     assertInvariants();
     return true;
   }
 
   bool hasGcPointer(LAllocation alloc) const {
-    if (alloc.isRegister()) {
-      return gcRegs().has(alloc.toRegister().gpr());
+    if (alloc.isGeneralReg()) {
+      return gcRegs().has(alloc.toGeneralReg()->reg());
     }
     MOZ_ASSERT(alloc.isMemory());
     for (size_t i = 0; i < gcSlots_.length(); i++) {
@@ -1742,15 +1739,15 @@ class LSafepoint : public TempObject {
     if (alloc.isMemory()) {
       return addWasmAnyRefSlot(alloc.isStackSlot(), alloc.memorySlot());
     }
-    if (alloc.isRegister()) {
-      addWasmAnyRefReg(alloc.toRegister().gpr());
+    if (alloc.isGeneralReg()) {
+      addWasmAnyRefReg(alloc.toGeneralReg()->reg());
     }
     assertInvariants();
     return true;
   }
   bool hasWasmAnyRef(LAllocation alloc) const {
-    if (alloc.isRegister()) {
-      return wasmAnyRefRegs().has(alloc.toRegister().gpr());
+    if (alloc.isGeneralReg()) {
+      return wasmAnyRefRegs().has(alloc.toGeneralReg()->reg());
     }
     MOZ_ASSERT(alloc.isMemory());
     for (size_t i = 0; i < wasmAnyRefSlots_.length(); i++) {
@@ -1880,8 +1877,8 @@ class LSafepoint : public TempObject {
   LiveGeneralRegisterSet valueRegs() const { return valueRegs_; }
 
   [[nodiscard]] bool addBoxedValue(LAllocation alloc) {
-    if (alloc.isRegister()) {
-      Register reg = alloc.toRegister().gpr();
+    if (alloc.isGeneralReg()) {
+      Register reg = alloc.toGeneralReg()->reg();
       if (!valueRegs().has(reg)) {
         addValueRegister(reg);
       }
@@ -1894,8 +1891,8 @@ class LSafepoint : public TempObject {
   }
 
   bool hasBoxedValue(LAllocation alloc) const {
-    if (alloc.isRegister()) {
-      return valueRegs().has(alloc.toRegister().gpr());
+    if (alloc.isGeneralReg()) {
+      return valueRegs().has(alloc.toGeneralReg()->reg());
     }
     return hasValueSlot(alloc.isStackSlot(), alloc.memorySlot());
   }
@@ -2099,8 +2096,8 @@ LAllocation::LAllocation(AnyRegister reg) {
   }
 }
 
-AnyRegister LAllocation::toRegister() const {
-  MOZ_ASSERT(isRegister());
+AnyRegister LAllocation::toAnyRegister() const {
+  MOZ_ASSERT(isAnyRegister());
   if (isFloatReg()) {
     return AnyRegister(toFloatReg()->reg());
   }

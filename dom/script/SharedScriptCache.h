@@ -38,7 +38,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
   explicit ScriptHashKey(const ScriptHashKey& aKey)
       : PLDHashEntryHdr(),
         mURI(aKey.mURI),
-        mPrincipal(aKey.mPrincipal),
         mLoaderPrincipal(aKey.mLoaderPrincipal),
         mPartitionPrincipal(aKey.mPartitionPrincipal),
         mCORSMode(aKey.mCORSMode),
@@ -55,7 +54,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
   ScriptHashKey(ScriptHashKey&& aKey)
       : PLDHashEntryHdr(),
         mURI(std::move(aKey.mURI)),
-        mPrincipal(std::move(aKey.mPrincipal)),
         mLoaderPrincipal(std::move(aKey.mLoaderPrincipal)),
         mPartitionPrincipal(std::move(aKey.mPartitionPrincipal)),
         mCORSMode(std::move(aKey.mCORSMode)),
@@ -87,7 +85,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
     return nsURIHashKey::HashKey(aKey->mURI);
   }
 
-  nsIPrincipal* Principal() const { return mPrincipal; }
   nsIPrincipal* LoaderPrincipal() const { return mLoaderPrincipal; }
   nsIPrincipal* PartitionPrincipal() const { return mPartitionPrincipal; }
 
@@ -97,7 +94,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
  protected:
   const nsCOMPtr<nsIURI> mURI;
-  const nsCOMPtr<nsIPrincipal> mPrincipal;
   const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
   const nsCOMPtr<nsIPrincipal> mPartitionPrincipal;
   const CORSMode mCORSMode;
@@ -201,7 +197,10 @@ class SharedScriptCache final
   static void Clear(const Maybe<bool>& aChrome = Nothing(),
                     const Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal = Nothing(),
                     const Maybe<nsCString>& aSchemelessSite = Nothing(),
-                    const Maybe<OriginAttributesPattern>& aPattern = Nothing());
+                    const Maybe<OriginAttributesPattern>& aPattern = Nothing(),
+                    const Maybe<nsCString>& aURL = Nothing());
+
+  static void PrepareForLastCC();
 
  protected:
   ~SharedScriptCache();

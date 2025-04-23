@@ -48,8 +48,6 @@ ChromeUtils.defineLazyGetter(lazy, "enrollmentSchema", () => {
 
 const { SYNC_DATA_PREF_BRANCH, SYNC_DEFAULTS_PREF_BRANCH } = ExperimentStore;
 
-const PATH = FileTestUtils.getTempFile("shared-data-map").path;
-
 async function fetchSchema(url) {
   const response = await fetch(url);
   const schema = await response.json();
@@ -170,7 +168,7 @@ export const ExperimentTestUtils = {
 export const ExperimentFakes = {
   manager(store) {
     let sandbox = lazy.sinon.createSandbox();
-    let manager = new lazy._ExperimentManager({ store: store || this.store() });
+    let manager = new lazy._ExperimentManager({ store: store ?? this.store() });
     // We want calls to `store.addEnrollment` to implicitly validate the
     // enrollment before saving to store
     let origAddExperiment = manager.store.addEnrollment.bind(manager.store);
@@ -181,16 +179,10 @@ export const ExperimentFakes = {
 
     return manager;
   },
-  store() {
-    return new ExperimentStore("FakeStore", {
-      path: PATH,
-      isParent: true,
+  store(path) {
+    return new ExperimentStore("ExperimentStoreData", {
+      path: path ?? FileTestUtils.getTempFile("test-experiment-store").path,
     });
-  },
-  waitForExperimentUpdate(ExperimentAPI, slug) {
-    return new Promise(resolve =>
-      ExperimentAPI._store.once(`update:${slug}`, resolve)
-    );
   },
   /**
    * Enroll in an experiment branch with the given feature configuration.
@@ -268,23 +260,8 @@ export const ExperimentFakes = {
     };
   },
   async cleanupAll(slugs, { manager = lazy.ExperimentAPI._manager } = {}) {
-    function unenrollCompleted(slug) {
-      return new Promise(resolve =>
-        manager.store.on(`update:${slug}`, (event, experiment) => {
-          if (!experiment.active) {
-            // Removes recipe from file storage which
-            // (normally the users archive of past experiments)
-            manager.store._deleteForTests(slug);
-            resolve();
-          }
-        })
-      );
-    }
-
     for (const slug of slugs) {
-      let promise = unenrollCompleted(slug);
       manager.unenroll(slug, "cleanup");
-      await promise;
     }
 
     if (manager.store.getAllActiveExperiments().length) {
@@ -299,9 +276,6 @@ export const ExperimentFakes = {
     } catch (e) {
       // Expected if nothing is cached
     }
-  },
-  childStore() {
-    return new ExperimentStore("FakeStore", { isParent: false });
   },
   rsLoader() {
     const loader = new lazy._RemoteSettingsExperimentLoader();
@@ -386,7 +360,9 @@ export const ExperimentFakes = {
       proposedEnrollment: 7,
       referenceBranch: "control",
       application: "firefox-desktop",
-      branches: ExperimentFakes.recipe.branches,
+      branches: props?.isRollout
+        ? [ExperimentFakes.recipe.branches[0]]
+        : ExperimentFakes.recipe.branches,
       bucketConfig: ExperimentFakes.recipe.bucketConfig,
       userFacingName: "NimbusTestUtils recipe",
       userFacingDescription: "NimbusTestUtils recipe",

@@ -19,7 +19,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1790666
     async function singleTest(testValue, description) {
       info(`Starting test: ${description}`);
 
-      let bc = new BroadcastChannel("testChannel");
+      let bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel("testChannel");
       let promise = new Promise(resolve => {
         bc.addEventListener("message", event => {
           info(`received message from testChannel: ${event.data}`);
@@ -44,8 +44,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1790666
       await SpecialPowers.pushPrefEnv({
         "set": [["dom.securecontext.allowlist", "mochi.test"]],
       });
-
-      await SimpleTest.enableLegacyUnpartitionedStorage();
 
       await singleTest("short test value", "short test value");
 

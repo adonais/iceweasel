@@ -322,6 +322,12 @@ const OPS = {
   setStrokeTransparent: 92,
   setFillTransparent: 93
 };
+const DrawOPS = {
+  moveTo: 0,
+  lineTo: 1,
+  curveTo: 2,
+  closePath: 3
+};
 const PasswordResponses = {
   NEED_PASSWORD: 1,
   INCORRECT_PASSWORD: 2
@@ -527,50 +533,6 @@ class Util {
   static makeHexColor(r, g, b) {
     return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
-  static scaleMinMax(transform, minMax) {
-    let temp;
-    if (transform[0]) {
-      if (transform[0] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[0];
-      minMax[2] *= transform[0];
-      if (transform[3] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[3];
-      minMax[3] *= transform[3];
-    } else {
-      temp = minMax[0];
-      minMax[0] = minMax[1];
-      minMax[1] = temp;
-      temp = minMax[2];
-      minMax[2] = minMax[3];
-      minMax[3] = temp;
-      if (transform[1] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[1];
-      minMax[3] *= transform[1];
-      if (transform[2] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[2];
-      minMax[2] *= transform[2];
-    }
-    minMax[0] += transform[4];
-    minMax[1] += transform[5];
-    minMax[2] += transform[4];
-    minMax[3] += transform[5];
-  }
   static transform(m1, m2) {
     return [m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1], m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3], m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]];
   }
@@ -633,6 +595,18 @@ class Util {
     }
     return [xLow, yLow, xHigh, yHigh];
   }
+  static pointBoundingBox(x, y, minMax) {
+    minMax[0] = Math.min(minMax[0], x);
+    minMax[1] = Math.min(minMax[1], y);
+    minMax[2] = Math.max(minMax[2], x);
+    minMax[3] = Math.max(minMax[3], y);
+  }
+  static rectBoundingBox(x0, y0, x1, y1, minMax) {
+    minMax[0] = Math.min(minMax[0], x0, x1);
+    minMax[1] = Math.min(minMax[1], y0, y1);
+    minMax[2] = Math.max(minMax[2], x0, x1);
+    minMax[3] = Math.max(minMax[3], y0, y1);
+  }
   static #getExtremumOnCurve(x0, x1, x2, x3, y0, y1, y2, y3, t, minMax) {
     if (t <= 0 || t >= 1) {
       return;
@@ -664,17 +638,12 @@ class Util {
     this.#getExtremumOnCurve(x0, x1, x2, x3, y0, y1, y2, y3, (-b - sqrtDelta) / a2, minMax);
   }
   static bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3, minMax) {
-    if (minMax) {
-      minMax[0] = Math.min(minMax[0], x0, x3);
-      minMax[1] = Math.min(minMax[1], y0, y3);
-      minMax[2] = Math.max(minMax[2], x0, x3);
-      minMax[3] = Math.max(minMax[3], y0, y3);
-    } else {
-      minMax = [Math.min(x0, x3), Math.min(y0, y3), Math.max(x0, x3), Math.max(y0, y3)];
-    }
+    minMax[0] = Math.min(minMax[0], x0, x3);
+    minMax[1] = Math.min(minMax[1], y0, y3);
+    minMax[2] = Math.max(minMax[2], x0, x3);
+    minMax[3] = Math.max(minMax[3], y0, y3);
     this.#getExtremum(x0, x1, x2, x3, y0, y1, y2, y3, 3 * (-x0 + 3 * (x1 - x2) + x3), 6 * (x0 - 2 * x1 + x2), 3 * (x1 - x0), minMax);
     this.#getExtremum(x0, x1, x2, x3, y0, y1, y2, y3, 3 * (-y0 + 3 * (y1 - y2) + y3), 6 * (y0 - 2 * y1 + y2), 3 * (y1 - y0), minMax);
-    return minMax;
   }
 }
 const PDFStringTranslateTable = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2d8, 0x2c7, 0x2c6, 0x2d9, 0x2dd, 0x2db, 0x2da, 0x2dc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014, 0x2013, 0x192, 0x2044, 0x2039, 0x203a, 0x2212, 0x2030, 0x201e, 0x201c, 0x201d, 0x2018, 0x2019, 0x201a, 0x2122, 0xfb01, 0xfb02, 0x141, 0x152, 0x160, 0x178, 0x17d, 0x131, 0x142, 0x153, 0x161, 0x17e, 0, 0x20ac];
@@ -756,6 +725,56 @@ function getUuid() {
   return crypto.randomUUID();
 }
 const AnnotationPrefix = "pdfjs_internal_id_";
+function _isValidExplicitDest(validRef, validName, dest) {
+  if (!Array.isArray(dest) || dest.length < 2) {
+    return false;
+  }
+  const [page, zoom, ...args] = dest;
+  if (!validRef(page) && !Number.isInteger(page)) {
+    return false;
+  }
+  if (!validName(zoom)) {
+    return false;
+  }
+  const argsLen = args.length;
+  let allowNull = true;
+  switch (zoom.name) {
+    case "XYZ":
+      if (argsLen < 2 || argsLen > 3) {
+        return false;
+      }
+      break;
+    case "Fit":
+    case "FitB":
+      return argsLen === 0;
+    case "FitH":
+    case "FitBH":
+    case "FitV":
+    case "FitBV":
+      if (argsLen > 1) {
+        return false;
+      }
+      break;
+    case "FitR":
+      if (argsLen !== 4) {
+        return false;
+      }
+      allowNull = false;
+      break;
+    default:
+      return false;
+  }
+  for (const arg of args) {
+    if (typeof arg === "number" || allowNull && arg === null) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+function MathClamp(v, min, max) {
+  return Math.min(Math.max(v, min), max);
+}
 function toHexUtil(arr) {
   if (Uint8Array.prototype.toHex) {
     return arr.toHex();
@@ -779,6 +798,11 @@ if (typeof Promise.try !== "function") {
     return new Promise(resolve => {
       resolve(fn(...args));
     });
+  };
+}
+if (typeof Math.sumPrecise !== "function") {
+  Math.sumPrecise = function (numbers) {
+    return numbers.reduce((a, b) => a + b, 0);
   };
 }
 
@@ -1587,6 +1611,1025 @@ function getSizeInBytes(x) {
   return Math.ceil(Math.ceil(Math.log2(1 + x)) / 8);
 }
 
+;// ./external/qcms/qcms_utils.js
+class QCMS {
+  static _module = null;
+  static _mustAddAlpha = false;
+  static _destBuffer = null;
+}
+function copy_result(ptr, len) {
+  const {
+    _module,
+    _mustAddAlpha,
+    _destBuffer
+  } = QCMS;
+  const result = new Uint8Array(_module.memory.buffer, ptr, len);
+  if (result.length === _destBuffer.length) {
+    _destBuffer.set(result);
+    return;
+  }
+  if (_mustAddAlpha) {
+    for (let i = 0, j = 0, ii = result.length; i < ii; i += 3, j += 4) {
+      _destBuffer[j] = result[i];
+      _destBuffer[j + 1] = result[i + 1];
+      _destBuffer[j + 2] = result[i + 2];
+      _destBuffer[j + 3] = 255;
+    }
+  } else {
+    for (let i = 0, j = 0, ii = result.length; i < ii; i += 3, j += 4) {
+      _destBuffer[j] = result[i];
+      _destBuffer[j + 1] = result[i + 1];
+      _destBuffer[j + 2] = result[i + 2];
+    }
+  }
+}
+function copy_rgb(ptr) {
+  QCMS._destBuffer.set(new Uint8Array(QCMS._module.memory.buffer, ptr, 3));
+}
+
+;// ./external/qcms/qcms.js
+
+let wasm;
+const cachedTextDecoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', {
+  ignoreBOM: true,
+  fatal: true
+}) : {
+  decode: () => {
+    throw Error('TextDecoder not available');
+  }
+};
+if (typeof TextDecoder !== 'undefined') {
+  cachedTextDecoder.decode();
+}
+;
+let cachedUint8ArrayMemory0 = null;
+function getUint8ArrayMemory0() {
+  if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {
+    cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
+  }
+  return cachedUint8ArrayMemory0;
+}
+function getStringFromWasm0(ptr, len) {
+  ptr = ptr >>> 0;
+  return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
+}
+let WASM_VECTOR_LEN = 0;
+function passArray8ToWasm0(arg, malloc) {
+  const ptr = malloc(arg.length * 1, 1) >>> 0;
+  getUint8ArrayMemory0().set(arg, ptr / 1);
+  WASM_VECTOR_LEN = arg.length;
+  return ptr;
+}
+function qcms_convert_array(transformer, src) {
+  const ptr0 = passArray8ToWasm0(src, wasm.__wbindgen_malloc);
+  const len0 = WASM_VECTOR_LEN;
+  wasm.qcms_convert_array(transformer, ptr0, len0);
+}
+function qcms_convert_one(transformer, src) {
+  wasm.qcms_convert_one(transformer, src);
+}
+function qcms_convert_three(transformer, src1, src2, src3) {
+  wasm.qcms_convert_three(transformer, src1, src2, src3);
+}
+function qcms_convert_four(transformer, src1, src2, src3, src4) {
+  wasm.qcms_convert_four(transformer, src1, src2, src3, src4);
+}
+function qcms_transformer_from_memory(mem, in_type, intent) {
+  const ptr0 = passArray8ToWasm0(mem, wasm.__wbindgen_malloc);
+  const len0 = WASM_VECTOR_LEN;
+  const ret = wasm.qcms_transformer_from_memory(ptr0, len0, in_type, intent);
+  return ret >>> 0;
+}
+function qcms_drop_transformer(transformer) {
+  wasm.qcms_drop_transformer(transformer);
+}
+const DataType = Object.freeze({
+  RGB8: 0,
+  "0": "RGB8",
+  RGBA8: 1,
+  "1": "RGBA8",
+  BGRA8: 2,
+  "2": "BGRA8",
+  Gray8: 3,
+  "3": "Gray8",
+  GrayA8: 4,
+  "4": "GrayA8",
+  CMYK: 5,
+  "5": "CMYK"
+});
+const Intent = Object.freeze({
+  Perceptual: 0,
+  "0": "Perceptual",
+  RelativeColorimetric: 1,
+  "1": "RelativeColorimetric",
+  Saturation: 2,
+  "2": "Saturation",
+  AbsoluteColorimetric: 3,
+  "3": "AbsoluteColorimetric"
+});
+async function __wbg_load(module, imports) {
+  if (typeof Response === 'function' && module instanceof Response) {
+    if (typeof WebAssembly.instantiateStreaming === 'function') {
+      try {
+        return await WebAssembly.instantiateStreaming(module, imports);
+      } catch (e) {
+        if (module.headers.get('Content-Type') != 'application/wasm') {
+          console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve Wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);
+        } else {
+          throw e;
+        }
+      }
+    }
+    const bytes = await module.arrayBuffer();
+    return await WebAssembly.instantiate(bytes, imports);
+  } else {
+    const instance = await WebAssembly.instantiate(module, imports);
+    if (instance instanceof WebAssembly.Instance) {
+      return {
+        instance,
+        module
+      };
+    } else {
+      return instance;
+    }
+  }
+}
+function __wbg_get_imports() {
+  const imports = {};
+  imports.wbg = {};
+  imports.wbg.__wbg_copyresult_b08ee7d273f295dd = function (arg0, arg1) {
+    copy_result(arg0 >>> 0, arg1 >>> 0);
+  };
+  imports.wbg.__wbg_copyrgb_d60ce17bb05d9b67 = function (arg0) {
+    copy_rgb(arg0 >>> 0);
+  };
+  imports.wbg.__wbindgen_init_externref_table = function () {
+    const table = wasm.__wbindgen_export_0;
+    const offset = table.grow(4);
+    table.set(0, undefined);
+    table.set(offset + 0, undefined);
+    table.set(offset + 1, null);
+    table.set(offset + 2, true);
+    table.set(offset + 3, false);
+  };
+  imports.wbg.__wbindgen_throw = function (arg0, arg1) {
+    throw new Error(getStringFromWasm0(arg0, arg1));
+  };
+  return imports;
+}
+function __wbg_init_memory(imports, memory) {}
+function __wbg_finalize_init(instance, module) {
+  wasm = instance.exports;
+  __wbg_init.__wbindgen_wasm_module = module;
+  cachedUint8ArrayMemory0 = null;
+  wasm.__wbindgen_start();
+  return wasm;
+}
+function initSync(module) {
+  if (wasm !== undefined) return wasm;
+  if (typeof module !== 'undefined') {
+    if (Object.getPrototypeOf(module) === Object.prototype) {
+      ({
+        module
+      } = module);
+    } else {
+      console.warn('using deprecated parameters for `initSync()`; pass a single object instead');
+    }
+  }
+  const imports = __wbg_get_imports();
+  __wbg_init_memory(imports);
+  if (!(module instanceof WebAssembly.Module)) {
+    module = new WebAssembly.Module(module);
+  }
+  const instance = new WebAssembly.Instance(module, imports);
+  return __wbg_finalize_init(instance, module);
+}
+async function __wbg_init(module_or_path) {
+  if (wasm !== undefined) return wasm;
+  if (typeof module_or_path !== 'undefined') {
+    if (Object.getPrototypeOf(module_or_path) === Object.prototype) {
+      ({
+        module_or_path
+      } = module_or_path);
+    } else {
+      console.warn('using deprecated parameters for the initialization function; pass a single object instead');
+    }
+  }
+  if (typeof module_or_path === 'undefined') {
+    module_or_path = new URL('qcms_bg.wasm', import.meta.url);
+  }
+  const imports = __wbg_get_imports();
+  if (typeof module_or_path === 'string' || typeof Request === 'function' && module_or_path instanceof Request || typeof URL === 'function' && module_or_path instanceof URL) {
+    module_or_path = fetch(module_or_path);
+  }
+  __wbg_init_memory(imports);
+  const {
+    instance,
+    module
+  } = await __wbg_load(await module_or_path, imports);
+  return __wbg_finalize_init(instance, module);
+}
+
+/* harmony default export */ const qcms = ((/* unused pure expression or super */ null && (__wbg_init)));
+;// ./src/core/colorspace.js
+
+
+function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
+  const COMPONENTS = 3;
+  alpha01 = alpha01 !== 1 ? 0 : alpha01;
+  const xRatio = w1 / w2;
+  const yRatio = h1 / h2;
+  let newIndex = 0,
+    oldIndex;
+  const xScaled = new Uint16Array(w2);
+  const w1Scanline = w1 * COMPONENTS;
+  for (let i = 0; i < w2; i++) {
+    xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
+  }
+  for (let i = 0; i < h2; i++) {
+    const py = Math.floor(i * yRatio) * w1Scanline;
+    for (let j = 0; j < w2; j++) {
+      oldIndex = py + xScaled[j];
+      dest[newIndex++] = src[oldIndex++];
+      dest[newIndex++] = src[oldIndex++];
+      dest[newIndex++] = src[oldIndex++];
+      newIndex += alpha01;
+    }
+  }
+}
+function resizeRgbaImage(src, dest, w1, h1, w2, h2, alpha01) {
+  const xRatio = w1 / w2;
+  const yRatio = h1 / h2;
+  let newIndex = 0;
+  const xScaled = new Uint16Array(w2);
+  if (alpha01 === 1) {
+    for (let i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio);
+    }
+    const src32 = new Uint32Array(src.buffer);
+    const dest32 = new Uint32Array(dest.buffer);
+    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
+    for (let i = 0; i < h2; i++) {
+      const buf = src32.subarray(Math.floor(i * yRatio) * w1);
+      for (let j = 0; j < w2; j++) {
+        dest32[newIndex++] |= buf[xScaled[j]] & rgbMask;
+      }
+    }
+  } else {
+    const COMPONENTS = 4;
+    const w1Scanline = w1 * COMPONENTS;
+    for (let i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
+    }
+    for (let i = 0; i < h2; i++) {
+      const buf = src.subarray(Math.floor(i * yRatio) * w1Scanline);
+      for (let j = 0; j < w2; j++) {
+        const oldIndex = xScaled[j];
+        dest[newIndex++] = buf[oldIndex];
+        dest[newIndex++] = buf[oldIndex + 1];
+        dest[newIndex++] = buf[oldIndex + 2];
+      }
+    }
+  }
+}
+function copyRgbaImage(src, dest, alpha01) {
+  if (alpha01 === 1) {
+    const src32 = new Uint32Array(src.buffer);
+    const dest32 = new Uint32Array(dest.buffer);
+    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
+    for (let i = 0, ii = src32.length; i < ii; i++) {
+      dest32[i] |= src32[i] & rgbMask;
+    }
+  } else {
+    let j = 0;
+    for (let i = 0, ii = src.length; i < ii; i += 4) {
+      dest[j++] = src[i];
+      dest[j++] = src[i + 1];
+      dest[j++] = src[i + 2];
+    }
+  }
+}
+class ColorSpace {
+  constructor(name, numComps) {
+    this.name = name;
+    this.numComps = numComps;
+  }
+  getRgb(src, srcOffset) {
+    const rgb = new Uint8ClampedArray(3);
+    this.getRgbItem(src, srcOffset, rgb, 0);
+    return rgb;
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    unreachable("Should not call ColorSpace.getRgbItem");
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    unreachable("Should not call ColorSpace.getRgbBuffer");
+  }
+  getOutputLength(inputLength, alpha01) {
+    unreachable("Should not call ColorSpace.getOutputLength");
+  }
+  isPassthrough(bits) {
+    return false;
+  }
+  isDefaultDecode(decodeMap, bpc) {
+    return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+  }
+  fillRgb(dest, originalWidth, originalHeight, width, height, actualHeight, bpc, comps, alpha01) {
+    const count = originalWidth * originalHeight;
+    let rgbBuf = null;
+    const numComponentColors = 1 << bpc;
+    const needsResizing = originalHeight !== height || originalWidth !== width;
+    if (this.isPassthrough(bpc)) {
+      rgbBuf = comps;
+    } else if (this.numComps === 1 && count > numComponentColors && this.name !== "DeviceGray" && this.name !== "DeviceRGB") {
+      const allColors = bpc <= 8 ? new Uint8Array(numComponentColors) : new Uint16Array(numComponentColors);
+      for (let i = 0; i < numComponentColors; i++) {
+        allColors[i] = i;
+      }
+      const colorMap = new Uint8ClampedArray(numComponentColors * 3);
+      this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc, 0);
+      if (!needsResizing) {
+        let destPos = 0;
+        for (let i = 0; i < count; ++i) {
+          const key = comps[i] * 3;
+          dest[destPos++] = colorMap[key];
+          dest[destPos++] = colorMap[key + 1];
+          dest[destPos++] = colorMap[key + 2];
+          destPos += alpha01;
+        }
+      } else {
+        rgbBuf = new Uint8Array(count * 3);
+        let rgbPos = 0;
+        for (let i = 0; i < count; ++i) {
+          const key = comps[i] * 3;
+          rgbBuf[rgbPos++] = colorMap[key];
+          rgbBuf[rgbPos++] = colorMap[key + 1];
+          rgbBuf[rgbPos++] = colorMap[key + 2];
+        }
+      }
+    } else if (!needsResizing) {
+      this.getRgbBuffer(comps, 0, width * actualHeight, dest, 0, bpc, alpha01);
+    } else {
+      rgbBuf = new Uint8ClampedArray(count * 3);
+      this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc, 0);
+    }
+    if (rgbBuf) {
+      if (needsResizing) {
+        resizeRgbImage(rgbBuf, dest, originalWidth, originalHeight, width, height, alpha01);
+      } else {
+        let destPos = 0,
+          rgbPos = 0;
+        for (let i = 0, ii = width * actualHeight; i < ii; i++) {
+          dest[destPos++] = rgbBuf[rgbPos++];
+          dest[destPos++] = rgbBuf[rgbPos++];
+          dest[destPos++] = rgbBuf[rgbPos++];
+          destPos += alpha01;
+        }
+      }
+    }
+  }
+  get usesZeroToOneRange() {
+    return shadow(this, "usesZeroToOneRange", true);
+  }
+  static isDefaultDecode(decode, numComps) {
+    if (!Array.isArray(decode)) {
+      return true;
+    }
+    if (numComps * 2 !== decode.length) {
+      warn("The decode map is not the correct length");
+      return true;
+    }
+    for (let i = 0, ii = decode.length; i < ii; i += 2) {
+      if (decode[i] !== 0 || decode[i + 1] !== 1) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+class AlternateCS extends ColorSpace {
+  constructor(numComps, base, tintFn) {
+    super("Alternate", numComps);
+    this.base = base;
+    this.tintFn = tintFn;
+    this.tmpBuf = new Float32Array(base.numComps);
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    const tmpBuf = this.tmpBuf;
+    this.tintFn(src, srcOffset, tmpBuf, 0);
+    this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    const tintFn = this.tintFn;
+    const base = this.base;
+    const scale = 1 / ((1 << bits) - 1);
+    const baseNumComps = base.numComps;
+    const usesZeroToOneRange = base.usesZeroToOneRange;
+    const isPassthrough = (base.isPassthrough(8) || !usesZeroToOneRange) && alpha01 === 0;
+    let pos = isPassthrough ? destOffset : 0;
+    const baseBuf = isPassthrough ? dest : new Uint8ClampedArray(baseNumComps * count);
+    const numComps = this.numComps;
+    const scaled = new Float32Array(numComps);
+    const tinted = new Float32Array(baseNumComps);
+    let i, j;
+    for (i = 0; i < count; i++) {
+      for (j = 0; j < numComps; j++) {
+        scaled[j] = src[srcOffset++] * scale;
+      }
+      tintFn(scaled, 0, tinted, 0);
+      if (usesZeroToOneRange) {
+        for (j = 0; j < baseNumComps; j++) {
+          baseBuf[pos++] = tinted[j] * 255;
+        }
+      } else {
+        base.getRgbItem(tinted, 0, baseBuf, pos);
+        pos += baseNumComps;
+      }
+    }
+    if (!isPassthrough) {
+      base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return this.base.getOutputLength(inputLength * this.base.numComps / this.numComps, alpha01);
+  }
+}
+class PatternCS extends ColorSpace {
+  constructor(baseCS) {
+    super("Pattern", null);
+    this.base = baseCS;
+  }
+  isDefaultDecode(decodeMap, bpc) {
+    unreachable("Should not call PatternCS.isDefaultDecode");
+  }
+}
+class IndexedCS extends ColorSpace {
+  constructor(base, highVal, lookup) {
+    super("Indexed", 1);
+    this.base = base;
+    const length = base.numComps * (highVal + 1);
+    this.lookup = new Uint8Array(length);
+    if (lookup instanceof BaseStream) {
+      const bytes = lookup.getBytes(length);
+      this.lookup.set(bytes);
+    } else if (typeof lookup === "string") {
+      for (let i = 0; i < length; ++i) {
+        this.lookup[i] = lookup.charCodeAt(i) & 0xff;
+      }
+    } else {
+      throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup}`);
+    }
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    const numComps = this.base.numComps;
+    const start = src[srcOffset] * numComps;
+    this.base.getRgbBuffer(this.lookup, start, 1, dest, destOffset, 8, 0);
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    const base = this.base;
+    const numComps = base.numComps;
+    const outputDelta = base.getOutputLength(numComps, alpha01);
+    const lookup = this.lookup;
+    for (let i = 0; i < count; ++i) {
+      const lookupPos = src[srcOffset++] * numComps;
+      base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
+      destOffset += outputDelta;
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return this.base.getOutputLength(inputLength * this.base.numComps, alpha01);
+  }
+  isDefaultDecode(decodeMap, bpc) {
+    if (!Array.isArray(decodeMap)) {
+      return true;
+    }
+    if (decodeMap.length !== 2) {
+      warn("Decode map length is not correct");
+      return true;
+    }
+    if (!Number.isInteger(bpc) || bpc < 1) {
+      warn("Bits per component is not correct");
+      return true;
+    }
+    return decodeMap[0] === 0 && decodeMap[1] === (1 << bpc) - 1;
+  }
+}
+class DeviceGrayCS extends ColorSpace {
+  constructor() {
+    super("DeviceGray", 1);
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    const c = src[srcOffset] * 255;
+    dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    const scale = 255 / ((1 << bits) - 1);
+    let j = srcOffset,
+      q = destOffset;
+    for (let i = 0; i < count; ++i) {
+      const c = scale * src[j++];
+      dest[q++] = c;
+      dest[q++] = c;
+      dest[q++] = c;
+      q += alpha01;
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return inputLength * (3 + alpha01);
+  }
+}
+class DeviceRgbCS extends ColorSpace {
+  constructor() {
+    super("DeviceRGB", 3);
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    dest[destOffset] = src[srcOffset] * 255;
+    dest[destOffset + 1] = src[srcOffset + 1] * 255;
+    dest[destOffset + 2] = src[srcOffset + 2] * 255;
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    if (bits === 8 && alpha01 === 0) {
+      dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
+      return;
+    }
+    const scale = 255 / ((1 << bits) - 1);
+    let j = srcOffset,
+      q = destOffset;
+    for (let i = 0; i < count; ++i) {
+      dest[q++] = scale * src[j++];
+      dest[q++] = scale * src[j++];
+      dest[q++] = scale * src[j++];
+      q += alpha01;
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return inputLength * (3 + alpha01) / 3 | 0;
+  }
+  isPassthrough(bits) {
+    return bits === 8;
+  }
+}
+class DeviceRgbaCS extends ColorSpace {
+  constructor() {
+    super("DeviceRGBA", 4);
+  }
+  getOutputLength(inputLength, _alpha01) {
+    return inputLength * 4;
+  }
+  isPassthrough(bits) {
+    return bits === 8;
+  }
+  fillRgb(dest, originalWidth, originalHeight, width, height, actualHeight, bpc, comps, alpha01) {
+    if (originalHeight !== height || originalWidth !== width) {
+      resizeRgbaImage(comps, dest, originalWidth, originalHeight, width, height, alpha01);
+    } else {
+      copyRgbaImage(comps, dest, alpha01);
+    }
+  }
+}
+class DeviceCmykCS extends ColorSpace {
+  constructor() {
+    super("DeviceCMYK", 4);
+  }
+  #toRgb(src, srcOffset, srcScale, dest, destOffset) {
+    const c = src[srcOffset] * srcScale;
+    const m = src[srcOffset + 1] * srcScale;
+    const y = src[srcOffset + 2] * srcScale;
+    const k = src[srcOffset + 3] * srcScale;
+    dest[destOffset] = 255 + c * (-4.387332384609988 * c + 54.48615194189176 * m + 18.82290502165302 * y + 212.25662451639585 * k + -285.2331026137004) + m * (1.7149763477362134 * m - 5.6096736904047315 * y + -17.873870861415444 * k - 5.497006427196366) + y * (-2.5217340131683033 * y - 21.248923337353073 * k + 17.5119270841813) + k * (-21.86122147463605 * k - 189.48180835922747);
+    dest[destOffset + 1] = 255 + c * (8.841041422036149 * c + 60.118027045597366 * m + 6.871425592049007 * y + 31.159100130055922 * k + -79.2970844816548) + m * (-15.310361306967817 * m + 17.575251261109482 * y + 131.35250912493976 * k - 190.9453302588951) + y * (4.444339102852739 * y + 9.8632861493405 * k - 24.86741582555878) + k * (-20.737325471181034 * k - 187.80453709719578);
+    dest[destOffset + 2] = 255 + c * (0.8842522430003296 * c + 8.078677503112928 * m + 30.89978309703729 * y - 0.23883238689178934 * k + -14.183576799673286) + m * (10.49593273432072 * m + 63.02378494754052 * y + 50.606957656360734 * k - 112.23884253719248) + y * (0.03296041114873217 * y + 115.60384449646641 * k + -193.58209356861505) + k * (-22.33816807309886 * k - 180.12613974708367);
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    this.#toRgb(src, srcOffset, 1, dest, destOffset);
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    const scale = 1 / ((1 << bits) - 1);
+    for (let i = 0; i < count; i++) {
+      this.#toRgb(src, srcOffset, scale, dest, destOffset);
+      srcOffset += 4;
+      destOffset += 3 + alpha01;
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return inputLength / 4 * (3 + alpha01) | 0;
+  }
+}
+class CalGrayCS extends ColorSpace {
+  constructor(whitePoint, blackPoint, gamma) {
+    super("CalGray", 1);
+    if (!whitePoint) {
+      throw new FormatError("WhitePoint missing - required for color space CalGray");
+    }
+    [this.XW, this.YW, this.ZW] = whitePoint;
+    [this.XB, this.YB, this.ZB] = blackPoint || [0, 0, 0];
+    this.G = gamma || 1;
+    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
+      throw new FormatError(`Invalid WhitePoint components for ${this.name}, no fallback available`);
+    }
+    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
+      info(`Invalid BlackPoint for ${this.name}, falling back to default.`);
+      this.XB = this.YB = this.ZB = 0;
+    }
+    if (this.XB !== 0 || this.YB !== 0 || this.ZB !== 0) {
+      warn(`${this.name}, BlackPoint: XB: ${this.XB}, YB: ${this.YB}, ` + `ZB: ${this.ZB}, only default values are supported.`);
+    }
+    if (this.G < 1) {
+      info(`Invalid Gamma: ${this.G} for ${this.name}, falling back to default.`);
+      this.G = 1;
+    }
+  }
+  #toRgb(src, srcOffset, dest, destOffset, scale) {
+    const A = src[srcOffset] * scale;
+    const AG = A ** this.G;
+    const L = this.YW * AG;
+    const val = Math.max(295.8 * L ** 0.3333333333333333 - 40.8, 0);
+    dest[destOffset] = val;
+    dest[destOffset + 1] = val;
+    dest[destOffset + 2] = val;
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    this.#toRgb(src, srcOffset, dest, destOffset, 1);
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    const scale = 1 / ((1 << bits) - 1);
+    for (let i = 0; i < count; ++i) {
+      this.#toRgb(src, srcOffset, dest, destOffset, scale);
+      srcOffset += 1;
+      destOffset += 3 + alpha01;
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return inputLength * (3 + alpha01);
+  }
+}
+class CalRGBCS extends ColorSpace {
+  static #BRADFORD_SCALE_MATRIX = new Float32Array([0.8951, 0.2664, -0.1614, -0.7502, 1.7135, 0.0367, 0.0389, -0.0685, 1.0296]);
+  static #BRADFORD_SCALE_INVERSE_MATRIX = new Float32Array([0.9869929, -0.1470543, 0.1599627, 0.4323053, 0.5183603, 0.0492912, -0.0085287, 0.0400428, 0.9684867]);
+  static #SRGB_D65_XYZ_TO_RGB_MATRIX = new Float32Array([3.2404542, -1.5371385, -0.4985314, -0.9692660, 1.8760108, 0.0415560, 0.0556434, -0.2040259, 1.0572252]);
+  static #FLAT_WHITEPOINT_MATRIX = new Float32Array([1, 1, 1]);
+  static #tempNormalizeMatrix = new Float32Array(3);
+  static #tempConvertMatrix1 = new Float32Array(3);
+  static #tempConvertMatrix2 = new Float32Array(3);
+  static #DECODE_L_CONSTANT = ((8 + 16) / 116) ** 3 / 8.0;
+  constructor(whitePoint, blackPoint, gamma, matrix) {
+    super("CalRGB", 3);
+    if (!whitePoint) {
+      throw new FormatError("WhitePoint missing - required for color space CalRGB");
+    }
+    const [XW, YW, ZW] = this.whitePoint = whitePoint;
+    const [XB, YB, ZB] = this.blackPoint = blackPoint || new Float32Array(3);
+    [this.GR, this.GG, this.GB] = gamma || new Float32Array([1, 1, 1]);
+    [this.MXA, this.MYA, this.MZA, this.MXB, this.MYB, this.MZB, this.MXC, this.MYC, this.MZC] = matrix || new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    if (XW < 0 || ZW < 0 || YW !== 1) {
+      throw new FormatError(`Invalid WhitePoint components for ${this.name}, no fallback available`);
+    }
+    if (XB < 0 || YB < 0 || ZB < 0) {
+      info(`Invalid BlackPoint for ${this.name} [${XB}, ${YB}, ${ZB}], ` + "falling back to default.");
+      this.blackPoint = new Float32Array(3);
+    }
+    if (this.GR < 0 || this.GG < 0 || this.GB < 0) {
+      info(`Invalid Gamma [${this.GR}, ${this.GG}, ${this.GB}] for ` + `${this.name}, falling back to default.`);
+      this.GR = this.GG = this.GB = 1;
+    }
+  }
+  #matrixProduct(a, b, result) {
+    result[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    result[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2];
+    result[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2];
+  }
+  #toFlat(sourceWhitePoint, LMS, result) {
+    result[0] = LMS[0] * 1 / sourceWhitePoint[0];
+    result[1] = LMS[1] * 1 / sourceWhitePoint[1];
+    result[2] = LMS[2] * 1 / sourceWhitePoint[2];
+  }
+  #toD65(sourceWhitePoint, LMS, result) {
+    const D65X = 0.95047;
+    const D65Y = 1;
+    const D65Z = 1.08883;
+    result[0] = LMS[0] * D65X / sourceWhitePoint[0];
+    result[1] = LMS[1] * D65Y / sourceWhitePoint[1];
+    result[2] = LMS[2] * D65Z / sourceWhitePoint[2];
+  }
+  #sRGBTransferFunction(color) {
+    if (color <= 0.0031308) {
+      return MathClamp(12.92 * color, 0, 1);
+    }
+    if (color >= 0.99554525) {
+      return 1;
+    }
+    return MathClamp((1 + 0.055) * color ** (1 / 2.4) - 0.055, 0, 1);
+  }
+  #decodeL(L) {
+    if (L < 0) {
+      return -this.#decodeL(-L);
+    }
+    if (L > 8.0) {
+      return ((L + 16) / 116) ** 3;
+    }
+    return L * CalRGBCS.#DECODE_L_CONSTANT;
+  }
+  #compensateBlackPoint(sourceBlackPoint, XYZ_Flat, result) {
+    if (sourceBlackPoint[0] === 0 && sourceBlackPoint[1] === 0 && sourceBlackPoint[2] === 0) {
+      result[0] = XYZ_Flat[0];
+      result[1] = XYZ_Flat[1];
+      result[2] = XYZ_Flat[2];
+      return;
+    }
+    const zeroDecodeL = this.#decodeL(0);
+    const X_DST = zeroDecodeL;
+    const X_SRC = this.#decodeL(sourceBlackPoint[0]);
+    const Y_DST = zeroDecodeL;
+    const Y_SRC = this.#decodeL(sourceBlackPoint[1]);
+    const Z_DST = zeroDecodeL;
+    const Z_SRC = this.#decodeL(sourceBlackPoint[2]);
+    const X_Scale = (1 - X_DST) / (1 - X_SRC);
+    const X_Offset = 1 - X_Scale;
+    const Y_Scale = (1 - Y_DST) / (1 - Y_SRC);
+    const Y_Offset = 1 - Y_Scale;
+    const Z_Scale = (1 - Z_DST) / (1 - Z_SRC);
+    const Z_Offset = 1 - Z_Scale;
+    result[0] = XYZ_Flat[0] * X_Scale + X_Offset;
+    result[1] = XYZ_Flat[1] * Y_Scale + Y_Offset;
+    result[2] = XYZ_Flat[2] * Z_Scale + Z_Offset;
+  }
+  #normalizeWhitePointToFlat(sourceWhitePoint, XYZ_In, result) {
+    if (sourceWhitePoint[0] === 1 && sourceWhitePoint[2] === 1) {
+      result[0] = XYZ_In[0];
+      result[1] = XYZ_In[1];
+      result[2] = XYZ_In[2];
+      return;
+    }
+    const LMS = result;
+    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_MATRIX, XYZ_In, LMS);
+    const LMS_Flat = CalRGBCS.#tempNormalizeMatrix;
+    this.#toFlat(sourceWhitePoint, LMS, LMS_Flat);
+    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_INVERSE_MATRIX, LMS_Flat, result);
+  }
+  #normalizeWhitePointToD65(sourceWhitePoint, XYZ_In, result) {
+    const LMS = result;
+    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_MATRIX, XYZ_In, LMS);
+    const LMS_D65 = CalRGBCS.#tempNormalizeMatrix;
+    this.#toD65(sourceWhitePoint, LMS, LMS_D65);
+    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_INVERSE_MATRIX, LMS_D65, result);
+  }
+  #toRgb(src, srcOffset, dest, destOffset, scale) {
+    const A = MathClamp(src[srcOffset] * scale, 0, 1);
+    const B = MathClamp(src[srcOffset + 1] * scale, 0, 1);
+    const C = MathClamp(src[srcOffset + 2] * scale, 0, 1);
+    const AGR = A === 1 ? 1 : A ** this.GR;
+    const BGG = B === 1 ? 1 : B ** this.GG;
+    const CGB = C === 1 ? 1 : C ** this.GB;
+    const X = this.MXA * AGR + this.MXB * BGG + this.MXC * CGB;
+    const Y = this.MYA * AGR + this.MYB * BGG + this.MYC * CGB;
+    const Z = this.MZA * AGR + this.MZB * BGG + this.MZC * CGB;
+    const XYZ = CalRGBCS.#tempConvertMatrix1;
+    XYZ[0] = X;
+    XYZ[1] = Y;
+    XYZ[2] = Z;
+    const XYZ_Flat = CalRGBCS.#tempConvertMatrix2;
+    this.#normalizeWhitePointToFlat(this.whitePoint, XYZ, XYZ_Flat);
+    const XYZ_Black = CalRGBCS.#tempConvertMatrix1;
+    this.#compensateBlackPoint(this.blackPoint, XYZ_Flat, XYZ_Black);
+    const XYZ_D65 = CalRGBCS.#tempConvertMatrix2;
+    this.#normalizeWhitePointToD65(CalRGBCS.#FLAT_WHITEPOINT_MATRIX, XYZ_Black, XYZ_D65);
+    const SRGB = CalRGBCS.#tempConvertMatrix1;
+    this.#matrixProduct(CalRGBCS.#SRGB_D65_XYZ_TO_RGB_MATRIX, XYZ_D65, SRGB);
+    dest[destOffset] = this.#sRGBTransferFunction(SRGB[0]) * 255;
+    dest[destOffset + 1] = this.#sRGBTransferFunction(SRGB[1]) * 255;
+    dest[destOffset + 2] = this.#sRGBTransferFunction(SRGB[2]) * 255;
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    this.#toRgb(src, srcOffset, dest, destOffset, 1);
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    const scale = 1 / ((1 << bits) - 1);
+    for (let i = 0; i < count; ++i) {
+      this.#toRgb(src, srcOffset, dest, destOffset, scale);
+      srcOffset += 3;
+      destOffset += 3 + alpha01;
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return inputLength * (3 + alpha01) / 3 | 0;
+  }
+}
+class LabCS extends ColorSpace {
+  constructor(whitePoint, blackPoint, range) {
+    super("Lab", 3);
+    if (!whitePoint) {
+      throw new FormatError("WhitePoint missing - required for color space Lab");
+    }
+    [this.XW, this.YW, this.ZW] = whitePoint;
+    [this.amin, this.amax, this.bmin, this.bmax] = range || [-100, 100, -100, 100];
+    [this.XB, this.YB, this.ZB] = blackPoint || [0, 0, 0];
+    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
+      throw new FormatError("Invalid WhitePoint components, no fallback available");
+    }
+    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
+      info("Invalid BlackPoint, falling back to default");
+      this.XB = this.YB = this.ZB = 0;
+    }
+    if (this.amin > this.amax || this.bmin > this.bmax) {
+      info("Invalid Range, falling back to defaults");
+      this.amin = -100;
+      this.amax = 100;
+      this.bmin = -100;
+      this.bmax = 100;
+    }
+  }
+  #fn_g(x) {
+    return x >= 6 / 29 ? x ** 3 : 108 / 841 * (x - 4 / 29);
+  }
+  #decode(value, high1, low2, high2) {
+    return low2 + value * (high2 - low2) / high1;
+  }
+  #toRgb(src, srcOffset, maxVal, dest, destOffset) {
+    let Ls = src[srcOffset];
+    let as = src[srcOffset + 1];
+    let bs = src[srcOffset + 2];
+    if (maxVal !== false) {
+      Ls = this.#decode(Ls, maxVal, 0, 100);
+      as = this.#decode(as, maxVal, this.amin, this.amax);
+      bs = this.#decode(bs, maxVal, this.bmin, this.bmax);
+    }
+    if (as > this.amax) {
+      as = this.amax;
+    } else if (as < this.amin) {
+      as = this.amin;
+    }
+    if (bs > this.bmax) {
+      bs = this.bmax;
+    } else if (bs < this.bmin) {
+      bs = this.bmin;
+    }
+    const M = (Ls + 16) / 116;
+    const L = M + as / 500;
+    const N = M - bs / 200;
+    const X = this.XW * this.#fn_g(L);
+    const Y = this.YW * this.#fn_g(M);
+    const Z = this.ZW * this.#fn_g(N);
+    let r, g, b;
+    if (this.ZW < 1) {
+      r = X * 3.1339 + Y * -1.617 + Z * -0.4906;
+      g = X * -0.9785 + Y * 1.916 + Z * 0.0333;
+      b = X * 0.072 + Y * -0.229 + Z * 1.4057;
+    } else {
+      r = X * 3.2406 + Y * -1.5372 + Z * -0.4986;
+      g = X * -0.9689 + Y * 1.8758 + Z * 0.0415;
+      b = X * 0.0557 + Y * -0.204 + Z * 1.057;
+    }
+    dest[destOffset] = Math.sqrt(r) * 255;
+    dest[destOffset + 1] = Math.sqrt(g) * 255;
+    dest[destOffset + 2] = Math.sqrt(b) * 255;
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    this.#toRgb(src, srcOffset, false, dest, destOffset);
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    const maxVal = (1 << bits) - 1;
+    for (let i = 0; i < count; i++) {
+      this.#toRgb(src, srcOffset, maxVal, dest, destOffset);
+      srcOffset += 3;
+      destOffset += 3 + alpha01;
+    }
+  }
+  getOutputLength(inputLength, alpha01) {
+    return inputLength * (3 + alpha01) / 3 | 0;
+  }
+  isDefaultDecode(decodeMap, bpc) {
+    return true;
+  }
+  get usesZeroToOneRange() {
+    return shadow(this, "usesZeroToOneRange", false);
+  }
+}
+
+;// ./src/core/icc_colorspace.js
+
+
+
+
+function fetchSync(url) {
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", url, false);
+  xhr.responseType = "arraybuffer";
+  xhr.send(null);
+  return xhr.response;
+}
+class IccColorSpace extends ColorSpace {
+  #transformer;
+  #convertPixel;
+  static #useWasm = true;
+  static #wasmUrl = null;
+  static #finalizer = new FinalizationRegistry(transformer => {
+    qcms_drop_transformer(transformer);
+  });
+  constructor(iccProfile, name, numComps) {
+    if (!IccColorSpace.isUsable) {
+      throw new Error("No ICC color space support");
+    }
+    super(name, numComps);
+    let inType;
+    switch (numComps) {
+      case 1:
+        inType = DataType.Gray8;
+        this.#convertPixel = (src, srcOffset) => qcms_convert_one(this.#transformer, src[srcOffset] * 255);
+        break;
+      case 3:
+        inType = DataType.RGB8;
+        this.#convertPixel = (src, srcOffset) => qcms_convert_three(this.#transformer, src[srcOffset] * 255, src[srcOffset + 1] * 255, src[srcOffset + 2] * 255);
+        break;
+      case 4:
+        inType = DataType.CMYK;
+        this.#convertPixel = (src, srcOffset) => qcms_convert_four(this.#transformer, src[srcOffset] * 255, src[srcOffset + 1] * 255, src[srcOffset + 2] * 255, src[srcOffset + 3] * 255);
+        break;
+      default:
+        throw new Error(`Unsupported number of components: ${numComps}`);
+    }
+    this.#transformer = qcms_transformer_from_memory(iccProfile, inType, Intent.Perceptual);
+    if (!this.#transformer) {
+      throw new Error("Failed to create ICC color space");
+    }
+    IccColorSpace.#finalizer.register(this, this.#transformer);
+  }
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    QCMS._destBuffer = dest.subarray(destOffset, destOffset + 3);
+    this.#convertPixel(src, srcOffset);
+    QCMS._destBuffer = null;
+  }
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    src = src.subarray(srcOffset, srcOffset + count * this.numComps);
+    if (bits !== 8) {
+      const scale = 255 / ((1 << bits) - 1);
+      for (let i = 0, ii = src.length; i < ii; i++) {
+        src[i] *= scale;
+      }
+    }
+    QCMS._mustAddAlpha = alpha01 && dest.buffer === src.buffer;
+    QCMS._destBuffer = dest.subarray(destOffset, destOffset + count * (3 + alpha01));
+    qcms_convert_array(this.#transformer, src);
+    QCMS._mustAddAlpha = false;
+    QCMS._destBuffer = null;
+  }
+  getOutputLength(inputLength, alpha01) {
+    return inputLength / this.numComps * (3 + alpha01) | 0;
+  }
+  static setOptions({
+    useWasm,
+    useWorkerFetch,
+    wasmUrl
+  }) {
+    if (!useWorkerFetch) {
+      this.#useWasm = false;
+      return;
+    }
+    this.#useWasm = useWasm;
+    this.#wasmUrl = wasmUrl;
+  }
+  static get isUsable() {
+    let isUsable = false;
+    if (this.#useWasm) {
+      if (this.#wasmUrl) {
+        try {
+          this._module = QCMS._module = initSync({
+            module: fetchSync(`${this.#wasmUrl}qcms_bg.wasm`)
+          });
+          isUsable = !!this._module;
+        } catch (e) {
+          warn(`ICCBased color space: "${e}".`);
+        }
+      } else {
+        warn("No ICC color space support due to missing `wasmUrl` API option");
+      }
+    }
+    return shadow(this, "isUsable", isUsable);
+  }
+}
+class CmykICCBasedCS extends IccColorSpace {
+  static #iccUrl;
+  constructor() {
+    const iccProfile = new Uint8Array(fetchSync(`${CmykICCBasedCS.#iccUrl}CGATS001Compat-v2-micro.icc`));
+    super(iccProfile, "DeviceCMYK", 4);
+  }
+  static setOptions({
+    iccUrl
+  }) {
+    this.#iccUrl = iccUrl;
+  }
+  static get isUsable() {
+    let isUsable = false;
+    if (IccColorSpace.isUsable) {
+      if (this.#iccUrl) {
+        isUsable = true;
+      } else {
+        warn("No CMYK ICC profile support due to missing `iccUrl` API option");
+      }
+    }
+    return shadow(this, "isUsable", isUsable);
+  }
+}
+
 ;// ./src/core/stream.js
 
 
@@ -1969,9 +3012,7 @@ class ChunkedStreamManager {
         }
       }
     }
-    chunksToRequest.sort(function (a, b) {
-      return a - b;
-    });
+    chunksToRequest.sort((a, b) => a - b);
     return this._requestChunks(chunksToRequest);
   }
   groupChunks(chunks) {
@@ -2693,7 +3734,244 @@ class StreamsSequenceStream extends DecodeStream {
   }
 }
 
+;// ./src/core/colorspace_utils.js
+
+
+
+
+
+class ColorSpaceUtils {
+  static parse({
+    cs,
+    xref,
+    resources = null,
+    pdfFunctionFactory,
+    globalColorSpaceCache,
+    localColorSpaceCache,
+    asyncIfNotCached = false
+  }) {
+    const options = {
+      xref,
+      resources,
+      pdfFunctionFactory,
+      globalColorSpaceCache,
+      localColorSpaceCache
+    };
+    let csName, csRef, parsedCS;
+    if (cs instanceof Ref) {
+      csRef = cs;
+      const cachedCS = globalColorSpaceCache.getByRef(csRef) || localColorSpaceCache.getByRef(csRef);
+      if (cachedCS) {
+        return cachedCS;
+      }
+      cs = xref.fetch(cs);
+    }
+    if (cs instanceof Name) {
+      csName = cs.name;
+      const cachedCS = localColorSpaceCache.getByName(csName);
+      if (cachedCS) {
+        return cachedCS;
+      }
+    }
+    try {
+      parsedCS = this.#parse(cs, options);
+    } catch (ex) {
+      if (asyncIfNotCached && !(ex instanceof MissingDataException)) {
+        return Promise.reject(ex);
+      }
+      throw ex;
+    }
+    if (csName || csRef) {
+      localColorSpaceCache.set(csName, csRef, parsedCS);
+      if (csRef) {
+        globalColorSpaceCache.set(null, csRef, parsedCS);
+      }
+    }
+    return asyncIfNotCached ? Promise.resolve(parsedCS) : parsedCS;
+  }
+  static #subParse(cs, options) {
+    const {
+      globalColorSpaceCache
+    } = options;
+    let csRef;
+    if (cs instanceof Ref) {
+      csRef = cs;
+      const cachedCS = globalColorSpaceCache.getByRef(csRef);
+      if (cachedCS) {
+        return cachedCS;
+      }
+    }
+    const parsedCS = this.#parse(cs, options);
+    if (csRef) {
+      globalColorSpaceCache.set(null, csRef, parsedCS);
+    }
+    return parsedCS;
+  }
+  static #parse(cs, options) {
+    const {
+      xref,
+      resources,
+      pdfFunctionFactory,
+      globalColorSpaceCache
+    } = options;
+    cs = xref.fetchIfRef(cs);
+    if (cs instanceof Name) {
+      switch (cs.name) {
+        case "G":
+        case "DeviceGray":
+          return this.gray;
+        case "RGB":
+        case "DeviceRGB":
+          return this.rgb;
+        case "DeviceRGBA":
+          return this.rgba;
+        case "CMYK":
+        case "DeviceCMYK":
+          return this.cmyk;
+        case "Pattern":
+          return new PatternCS(null);
+        default:
+          if (resources instanceof Dict) {
+            const colorSpaces = resources.get("ColorSpace");
+            if (colorSpaces instanceof Dict) {
+              const resourcesCS = colorSpaces.get(cs.name);
+              if (resourcesCS) {
+                if (resourcesCS instanceof Name) {
+                  return this.#parse(resourcesCS, options);
+                }
+                cs = resourcesCS;
+                break;
+              }
+            }
+          }
+          warn(`Unrecognized ColorSpace: ${cs.name}`);
+          return this.gray;
+      }
+    }
+    if (Array.isArray(cs)) {
+      const mode = xref.fetchIfRef(cs[0]).name;
+      let params, numComps, baseCS, whitePoint, blackPoint, gamma;
+      switch (mode) {
+        case "G":
+        case "DeviceGray":
+          return this.gray;
+        case "RGB":
+        case "DeviceRGB":
+          return this.rgb;
+        case "CMYK":
+        case "DeviceCMYK":
+          return this.cmyk;
+        case "CalGray":
+          params = xref.fetchIfRef(cs[1]);
+          whitePoint = params.getArray("WhitePoint");
+          blackPoint = params.getArray("BlackPoint");
+          gamma = params.get("Gamma");
+          return new CalGrayCS(whitePoint, blackPoint, gamma);
+        case "CalRGB":
+          params = xref.fetchIfRef(cs[1]);
+          whitePoint = params.getArray("WhitePoint");
+          blackPoint = params.getArray("BlackPoint");
+          gamma = params.getArray("Gamma");
+          const matrix = params.getArray("Matrix");
+          return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
+        case "ICCBased":
+          const isRef = cs[1] instanceof Ref;
+          if (isRef) {
+            const cachedCS = globalColorSpaceCache.getByRef(cs[1]);
+            if (cachedCS) {
+              return cachedCS;
+            }
+          }
+          const stream = xref.fetchIfRef(cs[1]);
+          const dict = stream.dict;
+          numComps = dict.get("N");
+          if (IccColorSpace.isUsable) {
+            try {
+              const iccCS = new IccColorSpace(stream.getBytes(), "ICCBased", numComps);
+              if (isRef) {
+                globalColorSpaceCache.set(null, cs[1], iccCS);
+              }
+              return iccCS;
+            } catch (ex) {
+              if (ex instanceof MissingDataException) {
+                throw ex;
+              }
+              warn(`ICCBased color space (${cs[1]}): "${ex}".`);
+            }
+          }
+          const altRaw = dict.getRaw("Alternate");
+          if (altRaw) {
+            const altCS = this.#subParse(altRaw, options);
+            if (altCS.numComps === numComps) {
+              return altCS;
+            }
+            warn("ICCBased color space: Ignoring incorrect /Alternate entry.");
+          }
+          if (numComps === 1) {
+            return this.gray;
+          } else if (numComps === 3) {
+            return this.rgb;
+          } else if (numComps === 4) {
+            return this.cmyk;
+          }
+          break;
+        case "Pattern":
+          baseCS = cs[1] || null;
+          if (baseCS) {
+            baseCS = this.#subParse(baseCS, options);
+          }
+          return new PatternCS(baseCS);
+        case "I":
+        case "Indexed":
+          baseCS = this.#subParse(cs[1], options);
+          const hiVal = MathClamp(xref.fetchIfRef(cs[2]), 0, 255);
+          const lookup = xref.fetchIfRef(cs[3]);
+          return new IndexedCS(baseCS, hiVal, lookup);
+        case "Separation":
+        case "DeviceN":
+          const name = xref.fetchIfRef(cs[1]);
+          numComps = Array.isArray(name) ? name.length : 1;
+          baseCS = this.#subParse(cs[2], options);
+          const tintFn = pdfFunctionFactory.create(cs[3]);
+          return new AlternateCS(numComps, baseCS, tintFn);
+        case "Lab":
+          params = xref.fetchIfRef(cs[1]);
+          whitePoint = params.getArray("WhitePoint");
+          blackPoint = params.getArray("BlackPoint");
+          const range = params.getArray("Range");
+          return new LabCS(whitePoint, blackPoint, range);
+        default:
+          warn(`Unimplemented ColorSpace object: ${mode}`);
+          return this.gray;
+      }
+    }
+    warn(`Unrecognized ColorSpace object: ${cs}`);
+    return this.gray;
+  }
+  static get gray() {
+    return shadow(this, "gray", new DeviceGrayCS());
+  }
+  static get rgb() {
+    return shadow(this, "rgb", new DeviceRgbCS());
+  }
+  static get rgba() {
+    return shadow(this, "rgba", new DeviceRgbaCS());
+  }
+  static get cmyk() {
+    if (CmykICCBasedCS.isUsable) {
+      try {
+        return shadow(this, "cmyk", new CmykICCBasedCS());
+      } catch {
+        warn("CMYK fallback: DeviceCMYK");
+      }
+    }
+    return shadow(this, "cmyk", new DeviceCmykCS());
+  }
+}
+
 ;// ./src/core/jpg.js
+
+
 
 
 
@@ -3722,31 +5000,12 @@ class JpegImage {
     return out;
   }
   _convertYcckToRgb(data) {
-    let Y, Cb, Cr, k;
-    let offset = 0;
-    for (let i = 0, length = data.length; i < length; i += 4) {
-      Y = data[i];
-      Cb = data[i + 1];
-      Cr = data[i + 2];
-      k = data[i + 3];
-      data[offset++] = -122.67195406894 + Cb * (-6.60635669420364e-5 * Cb + 0.000437130475926232 * Cr - 5.4080610064599e-5 * Y + 0.00048449797120281 * k - 0.154362151871126) + Cr * (-0.000957964378445773 * Cr + 0.000817076911346625 * Y - 0.00477271405408747 * k + 1.53380253221734) + Y * (0.000961250184130688 * Y - 0.00266257332283933 * k + 0.48357088451265) + k * (-0.000336197177618394 * k + 0.484791561490776);
-      data[offset++] = 107.268039397724 + Cb * (2.19927104525741e-5 * Cb - 0.000640992018297945 * Cr + 0.000659397001245577 * Y + 0.000426105652938837 * k - 0.176491792462875) + Cr * (-0.000778269941513683 * Cr + 0.00130872261408275 * Y + 0.000770482631801132 * k - 0.151051492775562) + Y * (0.00126935368114843 * Y - 0.00265090189010898 * k + 0.25802910206845) + k * (-0.000318913117588328 * k - 0.213742400323665);
-      data[offset++] = -20.810012546947 + Cb * (-0.000570115196973677 * Cb - 2.63409051004589e-5 * Cr + 0.0020741088115012 * Y - 0.00288260236853442 * k + 0.814272968359295) + Cr * (-1.53496057440975e-5 * Cr - 0.000132689043961446 * Y + 0.000560833691242812 * k - 0.195152027534049) + Y * (0.00174418132927582 * Y - 0.00255243321439347 * k + 0.116935020465145) + k * (-0.000343531996510555 * k + 0.24165260232407);
-    }
-    return data.subarray(0, offset);
+    this._convertYcckToCmyk(data);
+    return this._convertCmykToRgb(data);
   }
   _convertYcckToRgba(data) {
-    for (let i = 0, length = data.length; i < length; i += 4) {
-      const Y = data[i];
-      const Cb = data[i + 1];
-      const Cr = data[i + 2];
-      const k = data[i + 3];
-      data[i] = -122.67195406894 + Cb * (-6.60635669420364e-5 * Cb + 0.000437130475926232 * Cr - 5.4080610064599e-5 * Y + 0.00048449797120281 * k - 0.154362151871126) + Cr * (-0.000957964378445773 * Cr + 0.000817076911346625 * Y - 0.00477271405408747 * k + 1.53380253221734) + Y * (0.000961250184130688 * Y - 0.00266257332283933 * k + 0.48357088451265) + k * (-0.000336197177618394 * k + 0.484791561490776);
-      data[i + 1] = 107.268039397724 + Cb * (2.19927104525741e-5 * Cb - 0.000640992018297945 * Cr + 0.000659397001245577 * Y + 0.000426105652938837 * k - 0.176491792462875) + Cr * (-0.000778269941513683 * Cr + 0.00130872261408275 * Y + 0.000770482631801132 * k - 0.151051492775562) + Y * (0.00126935368114843 * Y - 0.00265090189010898 * k + 0.25802910206845) + k * (-0.000318913117588328 * k - 0.213742400323665);
-      data[i + 2] = -20.810012546947 + Cb * (-0.000570115196973677 * Cb - 2.63409051004589e-5 * Cr + 0.0020741088115012 * Y - 0.00288260236853442 * k + 0.814272968359295) + Cr * (-1.53496057440975e-5 * Cr - 0.000132689043961446 * Y + 0.000560833691242812 * k - 0.195152027534049) + Y * (0.00174418132927582 * Y - 0.00255243321439347 * k + 0.116935020465145) + k * (-0.000343531996510555 * k + 0.24165260232407);
-      data[i + 3] = 255;
-    }
-    return data;
+    this._convertYcckToCmyk(data);
+    return this._convertCmykToRgba(data);
   }
   _convertYcckToCmyk(data) {
     let Y, Cb, Cr;
@@ -3761,29 +5020,16 @@ class JpegImage {
     return data;
   }
   _convertCmykToRgb(data) {
-    let c, m, y, k;
-    let offset = 0;
-    for (let i = 0, length = data.length; i < length; i += 4) {
-      c = data[i];
-      m = data[i + 1];
-      y = data[i + 2];
-      k = data[i + 3];
-      data[offset++] = 255 + c * (-0.00006747147073602441 * c + 0.0008379262121013727 * m + 0.0002894718188643294 * y + 0.003264231057537806 * k - 1.1185611867203937) + m * (0.000026374107616089405 * m - 0.00008626949158638572 * y - 0.0002748769067499491 * k - 0.02155688794978967) + y * (-0.00003878099212869363 * y - 0.0003267808279485286 * k + 0.0686742238595345) - k * (0.0003361971776183937 * k + 0.7430659151342254);
-      data[offset++] = 255 + c * (0.00013596372813588848 * c + 0.000924537132573585 * m + 0.00010567359618683593 * y + 0.0004791864687436512 * k - 0.3109689587515875) + m * (-0.00023545346108370344 * m + 0.0002702845253534714 * y + 0.0020200308977307156 * k - 0.7488052167015494) + y * (0.00006834815998235662 * y + 0.00015168452363460973 * k - 0.09751927774728933) - k * (0.0003189131175883281 * k + 0.7364883807733168);
-      data[offset++] = 255 + c * (0.000013598650411385307 * c + 0.00012423956175490851 * m + 0.0004751985097583589 * y - 0.0000036729317476630422 * k - 0.05562186980264034) + m * (0.00016141380598724676 * m + 0.0009692239130725186 * y + 0.0007782692450036253 * k - 0.44015232367526463) + y * (5.068882914068769e-7 * y + 0.0017778369011375071 * k - 0.7591454649749609) - k * (0.0003435319965105553 * k + 0.7063770186160144);
-    }
-    return data.subarray(0, offset);
+    const count = data.length / 4;
+    ColorSpaceUtils.cmyk.getRgbBuffer(data, 0, count, data, 0, 8, 0);
+    return data.subarray(0, count * 3);
   }
   _convertCmykToRgba(data) {
-    for (let i = 0, length = data.length; i < length; i += 4) {
-      const c = data[i];
-      const m = data[i + 1];
-      const y = data[i + 2];
-      const k = data[i + 3];
-      data[i] = 255 + c * (-0.00006747147073602441 * c + 0.0008379262121013727 * m + 0.0002894718188643294 * y + 0.003264231057537806 * k - 1.1185611867203937) + m * (0.000026374107616089405 * m - 0.00008626949158638572 * y - 0.0002748769067499491 * k - 0.02155688794978967) + y * (-0.00003878099212869363 * y - 0.0003267808279485286 * k + 0.0686742238595345) - k * (0.0003361971776183937 * k + 0.7430659151342254);
-      data[i + 1] = 255 + c * (0.00013596372813588848 * c + 0.000924537132573585 * m + 0.00010567359618683593 * y + 0.0004791864687436512 * k - 0.3109689587515875) + m * (-0.00023545346108370344 * m + 0.0002702845253534714 * y + 0.0020200308977307156 * k - 0.7488052167015494) + y * (0.00006834815998235662 * y + 0.00015168452363460973 * k - 0.09751927774728933) - k * (0.0003189131175883281 * k + 0.7364883807733168);
-      data[i + 2] = 255 + c * (0.000013598650411385307 * c + 0.00012423956175490851 * m + 0.0004751985097583589 * y - 0.0000036729317476630422 * k - 0.05562186980264034) + m * (0.00016141380598724676 * m + 0.0009692239130725186 * y + 0.0007782692450036253 * k - 0.44015232367526463) + y * (5.068882914068769e-7 * y + 0.0017778369011375071 * k - 0.7591454649749609) - k * (0.0003435319965105553 * k + 0.7063770186160144);
-      data[i + 3] = 255;
+    ColorSpaceUtils.cmyk.getRgbBuffer(data, 0, data.length / 4, data, 0, 8, 1);
+    if (ColorSpaceUtils.cmyk instanceof DeviceCmykCS) {
+      for (let i = 3, ii = data.length; i < ii; i += 4) {
+        data[i] = 255;
+      }
     }
     return data;
   }
@@ -3970,7 +5216,7 @@ class JpegStream extends DecodeStream {
 
 ;// ./external/openjpeg/openjpeg.js
 var OpenJPEG = (() => {
-  var _scriptName = typeof document != 'undefined' ? document.currentScript?.src : undefined;
+  var _scriptName = import.meta.url;
   return async function (moduleArg = {}) {
     var moduleRtn;
     var Module = moduleArg;
@@ -4095,7 +5341,10 @@ var OpenJPEG = (() => {
     }
     var wasmBinaryFile;
     function findWasmBinary() {
-      return locateFile("openjpeg.wasm");
+      if (Module["locateFile"]) {
+        return locateFile("openjpeg.wasm");
+      }
+      return new URL("openjpeg.wasm", import.meta.url).href;
     }
     function getBinarySync(file) {
       if (file == wasmBinaryFile && wasmBinary) {
@@ -4695,885 +5944,6 @@ class JpxImage {
       }
     }
     throw new JpxError("No size marker found in JPX stream");
-  }
-}
-
-;// ./src/core/colorspace.js
-
-
-
-
-function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
-  const COMPONENTS = 3;
-  alpha01 = alpha01 !== 1 ? 0 : alpha01;
-  const xRatio = w1 / w2;
-  const yRatio = h1 / h2;
-  let newIndex = 0,
-    oldIndex;
-  const xScaled = new Uint16Array(w2);
-  const w1Scanline = w1 * COMPONENTS;
-  for (let i = 0; i < w2; i++) {
-    xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
-  }
-  for (let i = 0; i < h2; i++) {
-    const py = Math.floor(i * yRatio) * w1Scanline;
-    for (let j = 0; j < w2; j++) {
-      oldIndex = py + xScaled[j];
-      dest[newIndex++] = src[oldIndex++];
-      dest[newIndex++] = src[oldIndex++];
-      dest[newIndex++] = src[oldIndex++];
-      newIndex += alpha01;
-    }
-  }
-}
-function resizeRgbaImage(src, dest, w1, h1, w2, h2, alpha01) {
-  const xRatio = w1 / w2;
-  const yRatio = h1 / h2;
-  let newIndex = 0;
-  const xScaled = new Uint16Array(w2);
-  if (alpha01 === 1) {
-    for (let i = 0; i < w2; i++) {
-      xScaled[i] = Math.floor(i * xRatio);
-    }
-    const src32 = new Uint32Array(src.buffer);
-    const dest32 = new Uint32Array(dest.buffer);
-    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
-    for (let i = 0; i < h2; i++) {
-      const buf = src32.subarray(Math.floor(i * yRatio) * w1);
-      for (let j = 0; j < w2; j++) {
-        dest32[newIndex++] |= buf[xScaled[j]] & rgbMask;
-      }
-    }
-  } else {
-    const COMPONENTS = 4;
-    const w1Scanline = w1 * COMPONENTS;
-    for (let i = 0; i < w2; i++) {
-      xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
-    }
-    for (let i = 0; i < h2; i++) {
-      const buf = src.subarray(Math.floor(i * yRatio) * w1Scanline);
-      for (let j = 0; j < w2; j++) {
-        const oldIndex = xScaled[j];
-        dest[newIndex++] = buf[oldIndex];
-        dest[newIndex++] = buf[oldIndex + 1];
-        dest[newIndex++] = buf[oldIndex + 2];
-      }
-    }
-  }
-}
-function copyRgbaImage(src, dest, alpha01) {
-  if (alpha01 === 1) {
-    const src32 = new Uint32Array(src.buffer);
-    const dest32 = new Uint32Array(dest.buffer);
-    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
-    for (let i = 0, ii = src32.length; i < ii; i++) {
-      dest32[i] |= src32[i] & rgbMask;
-    }
-  } else {
-    let j = 0;
-    for (let i = 0, ii = src.length; i < ii; i += 4) {
-      dest[j++] = src[i];
-      dest[j++] = src[i + 1];
-      dest[j++] = src[i + 2];
-    }
-  }
-}
-class ColorSpace {
-  constructor(name, numComps) {
-    this.name = name;
-    this.numComps = numComps;
-  }
-  getRgb(src, srcOffset) {
-    const rgb = new Uint8ClampedArray(3);
-    this.getRgbItem(src, srcOffset, rgb, 0);
-    return rgb;
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    unreachable("Should not call ColorSpace.getRgbItem");
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    unreachable("Should not call ColorSpace.getRgbBuffer");
-  }
-  getOutputLength(inputLength, alpha01) {
-    unreachable("Should not call ColorSpace.getOutputLength");
-  }
-  isPassthrough(bits) {
-    return false;
-  }
-  isDefaultDecode(decodeMap, bpc) {
-    return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-  }
-  fillRgb(dest, originalWidth, originalHeight, width, height, actualHeight, bpc, comps, alpha01) {
-    const count = originalWidth * originalHeight;
-    let rgbBuf = null;
-    const numComponentColors = 1 << bpc;
-    const needsResizing = originalHeight !== height || originalWidth !== width;
-    if (this.isPassthrough(bpc)) {
-      rgbBuf = comps;
-    } else if (this.numComps === 1 && count > numComponentColors && this.name !== "DeviceGray" && this.name !== "DeviceRGB") {
-      const allColors = bpc <= 8 ? new Uint8Array(numComponentColors) : new Uint16Array(numComponentColors);
-      for (let i = 0; i < numComponentColors; i++) {
-        allColors[i] = i;
-      }
-      const colorMap = new Uint8ClampedArray(numComponentColors * 3);
-      this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc, 0);
-      if (!needsResizing) {
-        let destPos = 0;
-        for (let i = 0; i < count; ++i) {
-          const key = comps[i] * 3;
-          dest[destPos++] = colorMap[key];
-          dest[destPos++] = colorMap[key + 1];
-          dest[destPos++] = colorMap[key + 2];
-          destPos += alpha01;
-        }
-      } else {
-        rgbBuf = new Uint8Array(count * 3);
-        let rgbPos = 0;
-        for (let i = 0; i < count; ++i) {
-          const key = comps[i] * 3;
-          rgbBuf[rgbPos++] = colorMap[key];
-          rgbBuf[rgbPos++] = colorMap[key + 1];
-          rgbBuf[rgbPos++] = colorMap[key + 2];
-        }
-      }
-    } else if (!needsResizing) {
-      this.getRgbBuffer(comps, 0, width * actualHeight, dest, 0, bpc, alpha01);
-    } else {
-      rgbBuf = new Uint8ClampedArray(count * 3);
-      this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc, 0);
-    }
-    if (rgbBuf) {
-      if (needsResizing) {
-        resizeRgbImage(rgbBuf, dest, originalWidth, originalHeight, width, height, alpha01);
-      } else {
-        let destPos = 0,
-          rgbPos = 0;
-        for (let i = 0, ii = width * actualHeight; i < ii; i++) {
-          dest[destPos++] = rgbBuf[rgbPos++];
-          dest[destPos++] = rgbBuf[rgbPos++];
-          dest[destPos++] = rgbBuf[rgbPos++];
-          destPos += alpha01;
-        }
-      }
-    }
-  }
-  get usesZeroToOneRange() {
-    return shadow(this, "usesZeroToOneRange", true);
-  }
-  static _cache(cacheKey, xref, localColorSpaceCache, parsedColorSpace) {
-    if (!localColorSpaceCache) {
-      throw new Error('ColorSpace._cache - expected "localColorSpaceCache" argument.');
-    }
-    if (!parsedColorSpace) {
-      throw new Error('ColorSpace._cache - expected "parsedColorSpace" argument.');
-    }
-    let csName, csRef;
-    if (cacheKey instanceof Ref) {
-      csRef = cacheKey;
-      cacheKey = xref.fetch(cacheKey);
-    }
-    if (cacheKey instanceof Name) {
-      csName = cacheKey.name;
-    }
-    if (csName || csRef) {
-      localColorSpaceCache.set(csName, csRef, parsedColorSpace);
-    }
-  }
-  static getCached(cacheKey, xref, localColorSpaceCache) {
-    if (!localColorSpaceCache) {
-      throw new Error('ColorSpace.getCached - expected "localColorSpaceCache" argument.');
-    }
-    if (cacheKey instanceof Ref) {
-      const localColorSpace = localColorSpaceCache.getByRef(cacheKey);
-      if (localColorSpace) {
-        return localColorSpace;
-      }
-      try {
-        cacheKey = xref.fetch(cacheKey);
-      } catch (ex) {
-        if (ex instanceof MissingDataException) {
-          throw ex;
-        }
-      }
-    }
-    if (cacheKey instanceof Name) {
-      const localColorSpace = localColorSpaceCache.getByName(cacheKey.name);
-      if (localColorSpace) {
-        return localColorSpace;
-      }
-    }
-    return null;
-  }
-  static async parseAsync({
-    cs,
-    xref,
-    resources = null,
-    pdfFunctionFactory,
-    localColorSpaceCache
-  }) {
-    const parsedColorSpace = this._parse(cs, xref, resources, pdfFunctionFactory);
-    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
-    return parsedColorSpace;
-  }
-  static parse({
-    cs,
-    xref,
-    resources = null,
-    pdfFunctionFactory,
-    localColorSpaceCache
-  }) {
-    const cachedColorSpace = this.getCached(cs, xref, localColorSpaceCache);
-    if (cachedColorSpace) {
-      return cachedColorSpace;
-    }
-    const parsedColorSpace = this._parse(cs, xref, resources, pdfFunctionFactory);
-    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
-    return parsedColorSpace;
-  }
-  static _parse(cs, xref, resources = null, pdfFunctionFactory) {
-    cs = xref.fetchIfRef(cs);
-    if (cs instanceof Name) {
-      switch (cs.name) {
-        case "G":
-        case "DeviceGray":
-          return this.singletons.gray;
-        case "RGB":
-        case "DeviceRGB":
-          return this.singletons.rgb;
-        case "DeviceRGBA":
-          return this.singletons.rgba;
-        case "CMYK":
-        case "DeviceCMYK":
-          return this.singletons.cmyk;
-        case "Pattern":
-          return new PatternCS(null);
-        default:
-          if (resources instanceof Dict) {
-            const colorSpaces = resources.get("ColorSpace");
-            if (colorSpaces instanceof Dict) {
-              const resourcesCS = colorSpaces.get(cs.name);
-              if (resourcesCS) {
-                if (resourcesCS instanceof Name) {
-                  return this._parse(resourcesCS, xref, resources, pdfFunctionFactory);
-                }
-                cs = resourcesCS;
-                break;
-              }
-            }
-          }
-          warn(`Unrecognized ColorSpace: ${cs.name}`);
-          return this.singletons.gray;
-      }
-    }
-    if (Array.isArray(cs)) {
-      const mode = xref.fetchIfRef(cs[0]).name;
-      let params, numComps, baseCS, whitePoint, blackPoint, gamma;
-      switch (mode) {
-        case "G":
-        case "DeviceGray":
-          return this.singletons.gray;
-        case "RGB":
-        case "DeviceRGB":
-          return this.singletons.rgb;
-        case "CMYK":
-        case "DeviceCMYK":
-          return this.singletons.cmyk;
-        case "CalGray":
-          params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.getArray("WhitePoint");
-          blackPoint = params.getArray("BlackPoint");
-          gamma = params.get("Gamma");
-          return new CalGrayCS(whitePoint, blackPoint, gamma);
-        case "CalRGB":
-          params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.getArray("WhitePoint");
-          blackPoint = params.getArray("BlackPoint");
-          gamma = params.getArray("Gamma");
-          const matrix = params.getArray("Matrix");
-          return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
-        case "ICCBased":
-          const stream = xref.fetchIfRef(cs[1]);
-          const dict = stream.dict;
-          numComps = dict.get("N");
-          const alt = dict.get("Alternate");
-          if (alt) {
-            const altCS = this._parse(alt, xref, resources, pdfFunctionFactory);
-            if (altCS.numComps === numComps) {
-              return altCS;
-            }
-            warn("ICCBased color space: Ignoring incorrect /Alternate entry.");
-          }
-          if (numComps === 1) {
-            return this.singletons.gray;
-          } else if (numComps === 3) {
-            return this.singletons.rgb;
-          } else if (numComps === 4) {
-            return this.singletons.cmyk;
-          }
-          break;
-        case "Pattern":
-          baseCS = cs[1] || null;
-          if (baseCS) {
-            baseCS = this._parse(baseCS, xref, resources, pdfFunctionFactory);
-          }
-          return new PatternCS(baseCS);
-        case "I":
-        case "Indexed":
-          baseCS = this._parse(cs[1], xref, resources, pdfFunctionFactory);
-          const hiVal = Math.max(0, Math.min(xref.fetchIfRef(cs[2]), 255));
-          const lookup = xref.fetchIfRef(cs[3]);
-          return new IndexedCS(baseCS, hiVal, lookup);
-        case "Separation":
-        case "DeviceN":
-          const name = xref.fetchIfRef(cs[1]);
-          numComps = Array.isArray(name) ? name.length : 1;
-          baseCS = this._parse(cs[2], xref, resources, pdfFunctionFactory);
-          const tintFn = pdfFunctionFactory.create(cs[3]);
-          return new AlternateCS(numComps, baseCS, tintFn);
-        case "Lab":
-          params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.getArray("WhitePoint");
-          blackPoint = params.getArray("BlackPoint");
-          const range = params.getArray("Range");
-          return new LabCS(whitePoint, blackPoint, range);
-        default:
-          warn(`Unimplemented ColorSpace object: ${mode}`);
-          return this.singletons.gray;
-      }
-    }
-    warn(`Unrecognized ColorSpace object: ${cs}`);
-    return this.singletons.gray;
-  }
-  static isDefaultDecode(decode, numComps) {
-    if (!Array.isArray(decode)) {
-      return true;
-    }
-    if (numComps * 2 !== decode.length) {
-      warn("The decode map is not the correct length");
-      return true;
-    }
-    for (let i = 0, ii = decode.length; i < ii; i += 2) {
-      if (decode[i] !== 0 || decode[i + 1] !== 1) {
-        return false;
-      }
-    }
-    return true;
-  }
-  static get singletons() {
-    return shadow(this, "singletons", {
-      get gray() {
-        return shadow(this, "gray", new DeviceGrayCS());
-      },
-      get rgb() {
-        return shadow(this, "rgb", new DeviceRgbCS());
-      },
-      get rgba() {
-        return shadow(this, "rgba", new DeviceRgbaCS());
-      },
-      get cmyk() {
-        return shadow(this, "cmyk", new DeviceCmykCS());
-      }
-    });
-  }
-}
-class AlternateCS extends ColorSpace {
-  constructor(numComps, base, tintFn) {
-    super("Alternate", numComps);
-    this.base = base;
-    this.tintFn = tintFn;
-    this.tmpBuf = new Float32Array(base.numComps);
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    const tmpBuf = this.tmpBuf;
-    this.tintFn(src, srcOffset, tmpBuf, 0);
-    this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    const tintFn = this.tintFn;
-    const base = this.base;
-    const scale = 1 / ((1 << bits) - 1);
-    const baseNumComps = base.numComps;
-    const usesZeroToOneRange = base.usesZeroToOneRange;
-    const isPassthrough = (base.isPassthrough(8) || !usesZeroToOneRange) && alpha01 === 0;
-    let pos = isPassthrough ? destOffset : 0;
-    const baseBuf = isPassthrough ? dest : new Uint8ClampedArray(baseNumComps * count);
-    const numComps = this.numComps;
-    const scaled = new Float32Array(numComps);
-    const tinted = new Float32Array(baseNumComps);
-    let i, j;
-    for (i = 0; i < count; i++) {
-      for (j = 0; j < numComps; j++) {
-        scaled[j] = src[srcOffset++] * scale;
-      }
-      tintFn(scaled, 0, tinted, 0);
-      if (usesZeroToOneRange) {
-        for (j = 0; j < baseNumComps; j++) {
-          baseBuf[pos++] = tinted[j] * 255;
-        }
-      } else {
-        base.getRgbItem(tinted, 0, baseBuf, pos);
-        pos += baseNumComps;
-      }
-    }
-    if (!isPassthrough) {
-      base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return this.base.getOutputLength(inputLength * this.base.numComps / this.numComps, alpha01);
-  }
-}
-class PatternCS extends ColorSpace {
-  constructor(baseCS) {
-    super("Pattern", null);
-    this.base = baseCS;
-  }
-  isDefaultDecode(decodeMap, bpc) {
-    unreachable("Should not call PatternCS.isDefaultDecode");
-  }
-}
-class IndexedCS extends ColorSpace {
-  constructor(base, highVal, lookup) {
-    super("Indexed", 1);
-    this.base = base;
-    const length = base.numComps * (highVal + 1);
-    this.lookup = new Uint8Array(length);
-    if (lookup instanceof BaseStream) {
-      const bytes = lookup.getBytes(length);
-      this.lookup.set(bytes);
-    } else if (typeof lookup === "string") {
-      for (let i = 0; i < length; ++i) {
-        this.lookup[i] = lookup.charCodeAt(i) & 0xff;
-      }
-    } else {
-      throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup}`);
-    }
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    const numComps = this.base.numComps;
-    const start = src[srcOffset] * numComps;
-    this.base.getRgbBuffer(this.lookup, start, 1, dest, destOffset, 8, 0);
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    const base = this.base;
-    const numComps = base.numComps;
-    const outputDelta = base.getOutputLength(numComps, alpha01);
-    const lookup = this.lookup;
-    for (let i = 0; i < count; ++i) {
-      const lookupPos = src[srcOffset++] * numComps;
-      base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
-      destOffset += outputDelta;
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return this.base.getOutputLength(inputLength * this.base.numComps, alpha01);
-  }
-  isDefaultDecode(decodeMap, bpc) {
-    if (!Array.isArray(decodeMap)) {
-      return true;
-    }
-    if (decodeMap.length !== 2) {
-      warn("Decode map length is not correct");
-      return true;
-    }
-    if (!Number.isInteger(bpc) || bpc < 1) {
-      warn("Bits per component is not correct");
-      return true;
-    }
-    return decodeMap[0] === 0 && decodeMap[1] === (1 << bpc) - 1;
-  }
-}
-class DeviceGrayCS extends ColorSpace {
-  constructor() {
-    super("DeviceGray", 1);
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    const c = src[srcOffset] * 255;
-    dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    const scale = 255 / ((1 << bits) - 1);
-    let j = srcOffset,
-      q = destOffset;
-    for (let i = 0; i < count; ++i) {
-      const c = scale * src[j++];
-      dest[q++] = c;
-      dest[q++] = c;
-      dest[q++] = c;
-      q += alpha01;
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
-  }
-}
-class DeviceRgbCS extends ColorSpace {
-  constructor() {
-    super("DeviceRGB", 3);
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    dest[destOffset] = src[srcOffset] * 255;
-    dest[destOffset + 1] = src[srcOffset + 1] * 255;
-    dest[destOffset + 2] = src[srcOffset + 2] * 255;
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (bits === 8 && alpha01 === 0) {
-      dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
-      return;
-    }
-    const scale = 255 / ((1 << bits) - 1);
-    let j = srcOffset,
-      q = destOffset;
-    for (let i = 0; i < count; ++i) {
-      dest[q++] = scale * src[j++];
-      dest[q++] = scale * src[j++];
-      dest[q++] = scale * src[j++];
-      q += alpha01;
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01) / 3 | 0;
-  }
-  isPassthrough(bits) {
-    return bits === 8;
-  }
-}
-class DeviceRgbaCS extends ColorSpace {
-  constructor() {
-    super("DeviceRGBA", 4);
-  }
-  getOutputLength(inputLength, _alpha01) {
-    return inputLength * 4;
-  }
-  isPassthrough(bits) {
-    return bits === 8;
-  }
-  fillRgb(dest, originalWidth, originalHeight, width, height, actualHeight, bpc, comps, alpha01) {
-    if (originalHeight !== height || originalWidth !== width) {
-      resizeRgbaImage(comps, dest, originalWidth, originalHeight, width, height, alpha01);
-    } else {
-      copyRgbaImage(comps, dest, alpha01);
-    }
-  }
-}
-class DeviceCmykCS extends ColorSpace {
-  constructor() {
-    super("DeviceCMYK", 4);
-  }
-  #toRgb(src, srcOffset, srcScale, dest, destOffset) {
-    const c = src[srcOffset] * srcScale;
-    const m = src[srcOffset + 1] * srcScale;
-    const y = src[srcOffset + 2] * srcScale;
-    const k = src[srcOffset + 3] * srcScale;
-    dest[destOffset] = 255 + c * (-4.387332384609988 * c + 54.48615194189176 * m + 18.82290502165302 * y + 212.25662451639585 * k + -285.2331026137004) + m * (1.7149763477362134 * m - 5.6096736904047315 * y + -17.873870861415444 * k - 5.497006427196366) + y * (-2.5217340131683033 * y - 21.248923337353073 * k + 17.5119270841813) + k * (-21.86122147463605 * k - 189.48180835922747);
-    dest[destOffset + 1] = 255 + c * (8.841041422036149 * c + 60.118027045597366 * m + 6.871425592049007 * y + 31.159100130055922 * k + -79.2970844816548) + m * (-15.310361306967817 * m + 17.575251261109482 * y + 131.35250912493976 * k - 190.9453302588951) + y * (4.444339102852739 * y + 9.8632861493405 * k - 24.86741582555878) + k * (-20.737325471181034 * k - 187.80453709719578);
-    dest[destOffset + 2] = 255 + c * (0.8842522430003296 * c + 8.078677503112928 * m + 30.89978309703729 * y - 0.23883238689178934 * k + -14.183576799673286) + m * (10.49593273432072 * m + 63.02378494754052 * y + 50.606957656360734 * k - 112.23884253719248) + y * (0.03296041114873217 * y + 115.60384449646641 * k + -193.58209356861505) + k * (-22.33816807309886 * k - 180.12613974708367);
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    this.#toRgb(src, srcOffset, 1, dest, destOffset);
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    const scale = 1 / ((1 << bits) - 1);
-    for (let i = 0; i < count; i++) {
-      this.#toRgb(src, srcOffset, scale, dest, destOffset);
-      srcOffset += 4;
-      destOffset += 3 + alpha01;
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength / 4 * (3 + alpha01) | 0;
-  }
-}
-class CalGrayCS extends ColorSpace {
-  constructor(whitePoint, blackPoint, gamma) {
-    super("CalGray", 1);
-    if (!whitePoint) {
-      throw new FormatError("WhitePoint missing - required for color space CalGray");
-    }
-    [this.XW, this.YW, this.ZW] = whitePoint;
-    [this.XB, this.YB, this.ZB] = blackPoint || [0, 0, 0];
-    this.G = gamma || 1;
-    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
-      throw new FormatError(`Invalid WhitePoint components for ${this.name}, no fallback available`);
-    }
-    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
-      info(`Invalid BlackPoint for ${this.name}, falling back to default.`);
-      this.XB = this.YB = this.ZB = 0;
-    }
-    if (this.XB !== 0 || this.YB !== 0 || this.ZB !== 0) {
-      warn(`${this.name}, BlackPoint: XB: ${this.XB}, YB: ${this.YB}, ` + `ZB: ${this.ZB}, only default values are supported.`);
-    }
-    if (this.G < 1) {
-      info(`Invalid Gamma: ${this.G} for ${this.name}, falling back to default.`);
-      this.G = 1;
-    }
-  }
-  #toRgb(src, srcOffset, dest, destOffset, scale) {
-    const A = src[srcOffset] * scale;
-    const AG = A ** this.G;
-    const L = this.YW * AG;
-    const val = Math.max(295.8 * L ** 0.3333333333333333 - 40.8, 0);
-    dest[destOffset] = val;
-    dest[destOffset + 1] = val;
-    dest[destOffset + 2] = val;
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    this.#toRgb(src, srcOffset, dest, destOffset, 1);
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    const scale = 1 / ((1 << bits) - 1);
-    for (let i = 0; i < count; ++i) {
-      this.#toRgb(src, srcOffset, dest, destOffset, scale);
-      srcOffset += 1;
-      destOffset += 3 + alpha01;
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
-  }
-}
-class CalRGBCS extends ColorSpace {
-  static #BRADFORD_SCALE_MATRIX = new Float32Array([0.8951, 0.2664, -0.1614, -0.7502, 1.7135, 0.0367, 0.0389, -0.0685, 1.0296]);
-  static #BRADFORD_SCALE_INVERSE_MATRIX = new Float32Array([0.9869929, -0.1470543, 0.1599627, 0.4323053, 0.5183603, 0.0492912, -0.0085287, 0.0400428, 0.9684867]);
-  static #SRGB_D65_XYZ_TO_RGB_MATRIX = new Float32Array([3.2404542, -1.5371385, -0.4985314, -0.9692660, 1.8760108, 0.0415560, 0.0556434, -0.2040259, 1.0572252]);
-  static #FLAT_WHITEPOINT_MATRIX = new Float32Array([1, 1, 1]);
-  static #tempNormalizeMatrix = new Float32Array(3);
-  static #tempConvertMatrix1 = new Float32Array(3);
-  static #tempConvertMatrix2 = new Float32Array(3);
-  static #DECODE_L_CONSTANT = ((8 + 16) / 116) ** 3 / 8.0;
-  constructor(whitePoint, blackPoint, gamma, matrix) {
-    super("CalRGB", 3);
-    if (!whitePoint) {
-      throw new FormatError("WhitePoint missing - required for color space CalRGB");
-    }
-    const [XW, YW, ZW] = this.whitePoint = whitePoint;
-    const [XB, YB, ZB] = this.blackPoint = blackPoint || new Float32Array(3);
-    [this.GR, this.GG, this.GB] = gamma || new Float32Array([1, 1, 1]);
-    [this.MXA, this.MYA, this.MZA, this.MXB, this.MYB, this.MZB, this.MXC, this.MYC, this.MZC] = matrix || new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-    if (XW < 0 || ZW < 0 || YW !== 1) {
-      throw new FormatError(`Invalid WhitePoint components for ${this.name}, no fallback available`);
-    }
-    if (XB < 0 || YB < 0 || ZB < 0) {
-      info(`Invalid BlackPoint for ${this.name} [${XB}, ${YB}, ${ZB}], ` + "falling back to default.");
-      this.blackPoint = new Float32Array(3);
-    }
-    if (this.GR < 0 || this.GG < 0 || this.GB < 0) {
-      info(`Invalid Gamma [${this.GR}, ${this.GG}, ${this.GB}] for ` + `${this.name}, falling back to default.`);
-      this.GR = this.GG = this.GB = 1;
-    }
-  }
-  #matrixProduct(a, b, result) {
-    result[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    result[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2];
-    result[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2];
-  }
-  #toFlat(sourceWhitePoint, LMS, result) {
-    result[0] = LMS[0] * 1 / sourceWhitePoint[0];
-    result[1] = LMS[1] * 1 / sourceWhitePoint[1];
-    result[2] = LMS[2] * 1 / sourceWhitePoint[2];
-  }
-  #toD65(sourceWhitePoint, LMS, result) {
-    const D65X = 0.95047;
-    const D65Y = 1;
-    const D65Z = 1.08883;
-    result[0] = LMS[0] * D65X / sourceWhitePoint[0];
-    result[1] = LMS[1] * D65Y / sourceWhitePoint[1];
-    result[2] = LMS[2] * D65Z / sourceWhitePoint[2];
-  }
-  #sRGBTransferFunction(color) {
-    if (color <= 0.0031308) {
-      return this.#adjustToRange(0, 1, 12.92 * color);
-    }
-    if (color >= 0.99554525) {
-      return 1;
-    }
-    return this.#adjustToRange(0, 1, (1 + 0.055) * color ** (1 / 2.4) - 0.055);
-  }
-  #adjustToRange(min, max, value) {
-    return Math.max(min, Math.min(max, value));
-  }
-  #decodeL(L) {
-    if (L < 0) {
-      return -this.#decodeL(-L);
-    }
-    if (L > 8.0) {
-      return ((L + 16) / 116) ** 3;
-    }
-    return L * CalRGBCS.#DECODE_L_CONSTANT;
-  }
-  #compensateBlackPoint(sourceBlackPoint, XYZ_Flat, result) {
-    if (sourceBlackPoint[0] === 0 && sourceBlackPoint[1] === 0 && sourceBlackPoint[2] === 0) {
-      result[0] = XYZ_Flat[0];
-      result[1] = XYZ_Flat[1];
-      result[2] = XYZ_Flat[2];
-      return;
-    }
-    const zeroDecodeL = this.#decodeL(0);
-    const X_DST = zeroDecodeL;
-    const X_SRC = this.#decodeL(sourceBlackPoint[0]);
-    const Y_DST = zeroDecodeL;
-    const Y_SRC = this.#decodeL(sourceBlackPoint[1]);
-    const Z_DST = zeroDecodeL;
-    const Z_SRC = this.#decodeL(sourceBlackPoint[2]);
-    const X_Scale = (1 - X_DST) / (1 - X_SRC);
-    const X_Offset = 1 - X_Scale;
-    const Y_Scale = (1 - Y_DST) / (1 - Y_SRC);
-    const Y_Offset = 1 - Y_Scale;
-    const Z_Scale = (1 - Z_DST) / (1 - Z_SRC);
-    const Z_Offset = 1 - Z_Scale;
-    result[0] = XYZ_Flat[0] * X_Scale + X_Offset;
-    result[1] = XYZ_Flat[1] * Y_Scale + Y_Offset;
-    result[2] = XYZ_Flat[2] * Z_Scale + Z_Offset;
-  }
-  #normalizeWhitePointToFlat(sourceWhitePoint, XYZ_In, result) {
-    if (sourceWhitePoint[0] === 1 && sourceWhitePoint[2] === 1) {
-      result[0] = XYZ_In[0];
-      result[1] = XYZ_In[1];
-      result[2] = XYZ_In[2];
-      return;
-    }
-    const LMS = result;
-    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_MATRIX, XYZ_In, LMS);
-    const LMS_Flat = CalRGBCS.#tempNormalizeMatrix;
-    this.#toFlat(sourceWhitePoint, LMS, LMS_Flat);
-    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_INVERSE_MATRIX, LMS_Flat, result);
-  }
-  #normalizeWhitePointToD65(sourceWhitePoint, XYZ_In, result) {
-    const LMS = result;
-    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_MATRIX, XYZ_In, LMS);
-    const LMS_D65 = CalRGBCS.#tempNormalizeMatrix;
-    this.#toD65(sourceWhitePoint, LMS, LMS_D65);
-    this.#matrixProduct(CalRGBCS.#BRADFORD_SCALE_INVERSE_MATRIX, LMS_D65, result);
-  }
-  #toRgb(src, srcOffset, dest, destOffset, scale) {
-    const A = this.#adjustToRange(0, 1, src[srcOffset] * scale);
-    const B = this.#adjustToRange(0, 1, src[srcOffset + 1] * scale);
-    const C = this.#adjustToRange(0, 1, src[srcOffset + 2] * scale);
-    const AGR = A === 1 ? 1 : A ** this.GR;
-    const BGG = B === 1 ? 1 : B ** this.GG;
-    const CGB = C === 1 ? 1 : C ** this.GB;
-    const X = this.MXA * AGR + this.MXB * BGG + this.MXC * CGB;
-    const Y = this.MYA * AGR + this.MYB * BGG + this.MYC * CGB;
-    const Z = this.MZA * AGR + this.MZB * BGG + this.MZC * CGB;
-    const XYZ = CalRGBCS.#tempConvertMatrix1;
-    XYZ[0] = X;
-    XYZ[1] = Y;
-    XYZ[2] = Z;
-    const XYZ_Flat = CalRGBCS.#tempConvertMatrix2;
-    this.#normalizeWhitePointToFlat(this.whitePoint, XYZ, XYZ_Flat);
-    const XYZ_Black = CalRGBCS.#tempConvertMatrix1;
-    this.#compensateBlackPoint(this.blackPoint, XYZ_Flat, XYZ_Black);
-    const XYZ_D65 = CalRGBCS.#tempConvertMatrix2;
-    this.#normalizeWhitePointToD65(CalRGBCS.#FLAT_WHITEPOINT_MATRIX, XYZ_Black, XYZ_D65);
-    const SRGB = CalRGBCS.#tempConvertMatrix1;
-    this.#matrixProduct(CalRGBCS.#SRGB_D65_XYZ_TO_RGB_MATRIX, XYZ_D65, SRGB);
-    dest[destOffset] = this.#sRGBTransferFunction(SRGB[0]) * 255;
-    dest[destOffset + 1] = this.#sRGBTransferFunction(SRGB[1]) * 255;
-    dest[destOffset + 2] = this.#sRGBTransferFunction(SRGB[2]) * 255;
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    this.#toRgb(src, srcOffset, dest, destOffset, 1);
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    const scale = 1 / ((1 << bits) - 1);
-    for (let i = 0; i < count; ++i) {
-      this.#toRgb(src, srcOffset, dest, destOffset, scale);
-      srcOffset += 3;
-      destOffset += 3 + alpha01;
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01) / 3 | 0;
-  }
-}
-class LabCS extends ColorSpace {
-  constructor(whitePoint, blackPoint, range) {
-    super("Lab", 3);
-    if (!whitePoint) {
-      throw new FormatError("WhitePoint missing - required for color space Lab");
-    }
-    [this.XW, this.YW, this.ZW] = whitePoint;
-    [this.amin, this.amax, this.bmin, this.bmax] = range || [-100, 100, -100, 100];
-    [this.XB, this.YB, this.ZB] = blackPoint || [0, 0, 0];
-    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
-      throw new FormatError("Invalid WhitePoint components, no fallback available");
-    }
-    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
-      info("Invalid BlackPoint, falling back to default");
-      this.XB = this.YB = this.ZB = 0;
-    }
-    if (this.amin > this.amax || this.bmin > this.bmax) {
-      info("Invalid Range, falling back to defaults");
-      this.amin = -100;
-      this.amax = 100;
-      this.bmin = -100;
-      this.bmax = 100;
-    }
-  }
-  #fn_g(x) {
-    return x >= 6 / 29 ? x ** 3 : 108 / 841 * (x - 4 / 29);
-  }
-  #decode(value, high1, low2, high2) {
-    return low2 + value * (high2 - low2) / high1;
-  }
-  #toRgb(src, srcOffset, maxVal, dest, destOffset) {
-    let Ls = src[srcOffset];
-    let as = src[srcOffset + 1];
-    let bs = src[srcOffset + 2];
-    if (maxVal !== false) {
-      Ls = this.#decode(Ls, maxVal, 0, 100);
-      as = this.#decode(as, maxVal, this.amin, this.amax);
-      bs = this.#decode(bs, maxVal, this.bmin, this.bmax);
-    }
-    if (as > this.amax) {
-      as = this.amax;
-    } else if (as < this.amin) {
-      as = this.amin;
-    }
-    if (bs > this.bmax) {
-      bs = this.bmax;
-    } else if (bs < this.bmin) {
-      bs = this.bmin;
-    }
-    const M = (Ls + 16) / 116;
-    const L = M + as / 500;
-    const N = M - bs / 200;
-    const X = this.XW * this.#fn_g(L);
-    const Y = this.YW * this.#fn_g(M);
-    const Z = this.ZW * this.#fn_g(N);
-    let r, g, b;
-    if (this.ZW < 1) {
-      r = X * 3.1339 + Y * -1.617 + Z * -0.4906;
-      g = X * -0.9785 + Y * 1.916 + Z * 0.0333;
-      b = X * 0.072 + Y * -0.229 + Z * 1.4057;
-    } else {
-      r = X * 3.2406 + Y * -1.5372 + Z * -0.4986;
-      g = X * -0.9689 + Y * 1.8758 + Z * 0.0415;
-      b = X * 0.0557 + Y * -0.204 + Z * 1.057;
-    }
-    dest[destOffset] = Math.sqrt(r) * 255;
-    dest[destOffset + 1] = Math.sqrt(g) * 255;
-    dest[destOffset + 2] = Math.sqrt(b) * 255;
-  }
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    this.#toRgb(src, srcOffset, false, dest, destOffset);
-  }
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    const maxVal = (1 << bits) - 1;
-    for (let i = 0; i < count; i++) {
-      this.#toRgb(src, srcOffset, maxVal, dest, destOffset);
-      srcOffset += 3;
-      destOffset += 3 + alpha01;
-    }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01) / 3 | 0;
-  }
-  isDefaultDecode(decodeMap, bpc) {
-    return true;
-  }
-  get usesZeroToOneRange() {
-    return shadow(this, "usesZeroToOneRange", false);
   }
 }
 
@@ -7418,9 +7788,7 @@ function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at, d
   }
   const useskip = !!skip;
   const template = CodingTemplates[templateIndex].concat(at);
-  template.sort(function (a, b) {
-    return a.y - b.y || a.x - b.x;
-  });
+  template.sort((a, b) => a.y - b.y || a.x - b.x);
   const templateLength = template.length;
   const templateX = new Int8Array(templateLength);
   const templateY = new Int8Array(templateLength);
@@ -9292,11 +9660,9 @@ class RunLengthStream extends DecodeStream {
       }
     } else {
       n = 257 - n;
-      const b = repeatHeader[1];
       buffer = this.ensureBuffer(bufferLength + n + 1);
-      for (let i = 0; i < n; i++) {
-        buffer[bufferLength++] = b;
-      }
+      buffer.fill(repeatHeader[1], bufferLength, bufferLength + n);
+      bufferLength += n;
     }
     this.bufferLength = bufferLength;
   }
@@ -9970,7 +10336,7 @@ class Lexer {
     }
     if (ch < 0x30 || ch > 0x39) {
       const msg = `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`;
-      if (isWhiteSpace(ch) || ch === -1) {
+      if (isWhiteSpace(ch) || ch === 0x28 || ch === 0x3c || ch === -1) {
         info(`Lexer.getNumber - "${msg}".`);
         return 0;
       }
@@ -17592,6 +17958,37 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[337] = 9552;
   t[493] = 1039;
   t[494] = 1040;
+  t[570] = 1040;
+  t[571] = 1041;
+  t[572] = 1042;
+  t[573] = 1043;
+  t[574] = 1044;
+  t[575] = 1045;
+  t[576] = 1046;
+  t[577] = 1047;
+  t[578] = 1048;
+  t[579] = 1049;
+  t[580] = 1050;
+  t[581] = 1051;
+  t[582] = 1052;
+  t[583] = 1053;
+  t[584] = 1054;
+  t[585] = 1055;
+  t[586] = 1056;
+  t[587] = 1057;
+  t[588] = 1058;
+  t[589] = 1059;
+  t[590] = 1060;
+  t[591] = 1061;
+  t[592] = 1062;
+  t[593] = 1063;
+  t[594] = 1064;
+  t[595] = 1065;
+  t[596] = 1066;
+  t[597] = 1067;
+  t[598] = 1068;
+  t[599] = 1069;
+  t[600] = 1070;
   t[672] = 1488;
   t[673] = 1489;
   t[674] = 1490;
@@ -17914,6 +18311,7 @@ const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
   t[896] = 91;
   t[897] = 93;
   t[923] = 64;
+  t[940] = 163;
   t[1004] = 48;
   t[1005] = 49;
   t[1006] = 50;
@@ -21972,10 +22370,7 @@ class GlyfTable {
     }
   }
   getSize() {
-    return this.glyphs.reduce((a, g) => {
-      const size = g.getSize();
-      return a + (size + 3 & ~3);
-    }, 0);
+    return Math.sumPrecise(this.glyphs.map(g => g.getSize() + 3 & ~3));
   }
   write() {
     const totalSize = this.getSize();
@@ -22050,7 +22445,7 @@ class Glyph {
     if (!this.header) {
       return 0;
     }
-    const size = this.simple ? this.simple.getSize() : this.composites.reduce((a, c) => a + c.getSize(), 0);
+    const size = this.simple ? this.simple.getSize() : Math.sumPrecise(this.composites.map(c => c.getSize()));
     return this.header.getSize() + size;
   }
   write(pos, buf) {
@@ -23429,8 +23824,8 @@ class Type1Font {
 
 const PRIVATE_USE_AREAS = [[0xe000, 0xf8ff], [0x100000, 0x10fffd]];
 const PDF_GLYPH_SPACE_UNITS = 1000;
-const EXPORT_DATA_PROPERTIES = ["ascent", "bbox", "black", "bold", "charProcOperatorList", "composite", "cssFontInfo", "data", "defaultVMetrics", "defaultWidth", "descent", "disableFontFace", "fallbackName", "fontExtraProperties", "fontMatrix", "isInvalidPDFjsFont", "isType3Font", "italic", "loadedName", "mimetype", "missingFile", "name", "remeasure", "subtype", "systemFontInfo", "type", "vertical"];
-const EXPORT_DATA_EXTRA_PROPERTIES = ["cMap", "defaultEncoding", "differences", "isMonospace", "isSerifFont", "isSymbolicFont", "seacMap", "toFontChar", "toUnicode", "vmetrics", "widths"];
+const EXPORT_DATA_PROPERTIES = ["ascent", "bbox", "black", "bold", "charProcOperatorList", "cssFontInfo", "data", "defaultVMetrics", "defaultWidth", "descent", "disableFontFace", "fallbackName", "fontExtraProperties", "fontMatrix", "isInvalidPDFjsFont", "isType3Font", "italic", "loadedName", "mimetype", "missingFile", "name", "remeasure", "systemFontInfo", "vertical"];
+const EXPORT_DATA_EXTRA_PROPERTIES = ["cMap", "composite", "defaultEncoding", "differences", "isMonospace", "isSerifFont", "isSymbolicFont", "seacMap", "subtype", "toFontChar", "toUnicode", "type", "vmetrics", "widths"];
 function adjustWidths(properties) {
   if (!properties.fontMatrix) {
     return;
@@ -23776,9 +24171,7 @@ function getRanges(glyphs, toUnicodeExtraMap, numGlyphs) {
       glyphId: 0
     });
   }
-  codes.sort(function fontGetRangesSort(a, b) {
-    return a.fontCharCode - b.fontCharCode;
-  });
+  codes.sort((a, b) => a.fontCharCode - b.fontCharCode);
   const ranges = [];
   const length = codes.length;
   for (let n = 0; n < length;) {
@@ -24589,9 +24982,7 @@ class Font {
           hasShortCmap: false
         };
       }
-      mappings.sort(function (a, b) {
-        return a.charCode - b.charCode;
-      });
+      mappings.sort((a, b) => a.charCode - b.charCode);
       const finalMappings = [],
         seenCharCodes = new Set();
       for (const map of mappings) {
@@ -25891,19 +26282,19 @@ class Pattern {
   constructor() {
     unreachable("Cannot initialize Pattern.");
   }
-  static parseShading(shading, xref, res, pdfFunctionFactory, localColorSpaceCache) {
+  static parseShading(shading, xref, res, pdfFunctionFactory, globalColorSpaceCache, localColorSpaceCache) {
     const dict = shading instanceof BaseStream ? shading.dict : shading;
     const type = dict.get("ShadingType");
     try {
       switch (type) {
         case ShadingType.AXIAL:
         case ShadingType.RADIAL:
-          return new RadialAxialShading(dict, xref, res, pdfFunctionFactory, localColorSpaceCache);
+          return new RadialAxialShading(dict, xref, res, pdfFunctionFactory, globalColorSpaceCache, localColorSpaceCache);
         case ShadingType.FREE_FORM_MESH:
         case ShadingType.LATTICE_FORM_MESH:
         case ShadingType.COONS_PATCH_MESH:
         case ShadingType.TENSOR_PATCH_MESH:
-          return new MeshShading(shading, xref, res, pdfFunctionFactory, localColorSpaceCache);
+          return new MeshShading(shading, xref, res, pdfFunctionFactory, globalColorSpaceCache, localColorSpaceCache);
         default:
           throw new FormatError("Unsupported ShadingType: " + type);
       }
@@ -25923,7 +26314,7 @@ class BaseShading {
   }
 }
 class RadialAxialShading extends BaseShading {
-  constructor(dict, xref, resources, pdfFunctionFactory, localColorSpaceCache) {
+  constructor(dict, xref, resources, pdfFunctionFactory, globalColorSpaceCache, localColorSpaceCache) {
     super();
     this.shadingType = dict.get("ShadingType");
     let coordsLen = 0;
@@ -25936,11 +26327,12 @@ class RadialAxialShading extends BaseShading {
     if (!isNumberArray(this.coordsArr, coordsLen)) {
       throw new FormatError("RadialAxialShading: Invalid /Coords array.");
     }
-    const cs = ColorSpace.parse({
+    const cs = ColorSpaceUtils.parse({
       cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
       resources,
       pdfFunctionFactory,
+      globalColorSpaceCache,
       localColorSpaceCache
     });
     this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
@@ -25966,7 +26358,7 @@ class RadialAxialShading extends BaseShading {
     this.extendStart = extendStart;
     this.extendEnd = extendEnd;
     const fnObj = dict.getRaw("Function");
-    const fn = pdfFunctionFactory.createFromArray(fnObj);
+    const fn = pdfFunctionFactory.create(fnObj, true);
     const NUMBER_OF_SAMPLES = 840;
     const step = (t1 - t0) / NUMBER_OF_SAMPLES;
     const colorStops = this.colorStops = [];
@@ -26124,28 +26516,32 @@ class MeshStreamReader {
     return this.readBits(this.context.bitsPerFlag);
   }
   readCoordinate() {
-    const bitsPerCoordinate = this.context.bitsPerCoordinate;
+    const {
+      bitsPerCoordinate,
+      decode
+    } = this.context;
     const xi = this.readBits(bitsPerCoordinate);
     const yi = this.readBits(bitsPerCoordinate);
-    const decode = this.context.decode;
     const scale = bitsPerCoordinate < 32 ? 1 / ((1 << bitsPerCoordinate) - 1) : 2.3283064365386963e-10;
     return [xi * scale * (decode[1] - decode[0]) + decode[0], yi * scale * (decode[3] - decode[2]) + decode[2]];
   }
   readComponents() {
-    const numComps = this.context.numComps;
-    const bitsPerComponent = this.context.bitsPerComponent;
+    const {
+      bitsPerComponent,
+      colorFn,
+      colorSpace,
+      decode,
+      numComps
+    } = this.context;
     const scale = bitsPerComponent < 32 ? 1 / ((1 << bitsPerComponent) - 1) : 2.3283064365386963e-10;
-    const decode = this.context.decode;
     const components = this.tmpCompsBuf;
     for (let i = 0, j = 4; i < numComps; i++, j += 2) {
       const ci = this.readBits(bitsPerComponent);
       components[i] = ci * scale * (decode[j + 1] - decode[j]) + decode[j];
     }
     const color = this.tmpCsCompsBuf;
-    if (this.context.colorFn) {
-      this.context.colorFn(components, 0, color, 0);
-    }
-    return this.context.colorSpace.getRgb(color, 0);
+    colorFn?.(components, 0, color, 0);
+    return colorSpace.getRgb(color, 0);
   }
 }
 let bCache = Object.create(null);
@@ -26168,7 +26564,7 @@ class MeshShading extends BaseShading {
   static MIN_SPLIT_PATCH_CHUNKS_AMOUNT = 3;
   static MAX_SPLIT_PATCH_CHUNKS_AMOUNT = 20;
   static TRIANGLE_DENSITY = 20;
-  constructor(stream, xref, resources, pdfFunctionFactory, localColorSpaceCache) {
+  constructor(stream, xref, resources, pdfFunctionFactory, globalColorSpaceCache, localColorSpaceCache) {
     super();
     if (!(stream instanceof BaseStream)) {
       throw new FormatError("Mesh data is not a stream");
@@ -26176,16 +26572,17 @@ class MeshShading extends BaseShading {
     const dict = stream.dict;
     this.shadingType = dict.get("ShadingType");
     this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
-    const cs = ColorSpace.parse({
+    const cs = ColorSpaceUtils.parse({
       cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
       resources,
       pdfFunctionFactory,
+      globalColorSpaceCache,
       localColorSpaceCache
     });
     this.background = dict.has("Background") ? cs.getRgb(dict.get("Background"), 0) : null;
     const fnObj = dict.getRaw("Function");
-    const fn = fnObj ? pdfFunctionFactory.createFromArray(fnObj) : null;
+    const fn = fnObj ? pdfFunctionFactory.create(fnObj, true) : null;
     this.coords = [];
     this.colors = [];
     this.figures = [];
@@ -26545,9 +26942,9 @@ class MeshShading extends BaseShading {
     const figureMaxX = Math.max(coords[pi[0]][0], coords[pi[3]][0], coords[pi[12]][0], coords[pi[15]][0]);
     const figureMaxY = Math.max(coords[pi[0]][1], coords[pi[3]][1], coords[pi[12]][1], coords[pi[15]][1]);
     let splitXBy = Math.ceil((figureMaxX - figureMinX) * MeshShading.TRIANGLE_DENSITY / (this.bounds[2] - this.bounds[0]));
-    splitXBy = Math.max(MeshShading.MIN_SPLIT_PATCH_CHUNKS_AMOUNT, Math.min(MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitXBy));
+    splitXBy = MathClamp(splitXBy, MeshShading.MIN_SPLIT_PATCH_CHUNKS_AMOUNT, MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT);
     let splitYBy = Math.ceil((figureMaxY - figureMinY) * MeshShading.TRIANGLE_DENSITY / (this.bounds[3] - this.bounds[1]));
-    splitYBy = Math.max(MeshShading.MIN_SPLIT_PATCH_CHUNKS_AMOUNT, Math.min(MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitYBy));
+    splitYBy = MathClamp(splitYBy, MeshShading.MIN_SPLIT_PATCH_CHUNKS_AMOUNT, MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT);
     const verticesPerRow = splitXBy + 1;
     const figureCoords = new Int32Array((splitYBy + 1) * verticesPerRow);
     const figureColors = new Int32Array((splitYBy + 1) * verticesPerRow);
@@ -27312,6 +27709,25 @@ class RegionalImageCache extends BaseLocalCache {
     this._imageCache.put(ref, data);
   }
 }
+class GlobalColorSpaceCache extends BaseLocalCache {
+  constructor(options) {
+    super({
+      onlyRefs: true
+    });
+  }
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('GlobalColorSpaceCache.set - expected "ref" argument.');
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+  clear() {
+    this._imageCache.clear();
+  }
+}
 class GlobalImageCache {
   static NUM_PAGES_THRESHOLD = 2;
   static MIN_IMAGES_TO_CACHE = 10;
@@ -27420,64 +27836,34 @@ class PDFFunctionFactory {
     this.xref = xref;
     this.isEvalSupported = isEvalSupported !== false;
   }
-  create(fn) {
-    const cachedFunction = this.getCached(fn);
-    if (cachedFunction) {
-      return cachedFunction;
-    }
-    const parsedFunction = PDFFunction.parse({
-      xref: this.xref,
-      isEvalSupported: this.isEvalSupported,
-      fn: fn instanceof Ref ? this.xref.fetch(fn) : fn
-    });
-    this._cache(fn, parsedFunction);
-    return parsedFunction;
-  }
-  createFromArray(fnObj) {
-    const cachedFunction = this.getCached(fnObj);
-    if (cachedFunction) {
-      return cachedFunction;
-    }
-    const parsedFunction = PDFFunction.parseArray({
-      xref: this.xref,
-      isEvalSupported: this.isEvalSupported,
-      fnObj: fnObj instanceof Ref ? this.xref.fetch(fnObj) : fnObj
-    });
-    this._cache(fnObj, parsedFunction);
-    return parsedFunction;
-  }
-  getCached(cacheKey) {
-    let fnRef;
-    if (cacheKey instanceof Ref) {
-      fnRef = cacheKey;
-    } else if (cacheKey instanceof Dict) {
-      fnRef = cacheKey.objId;
-    } else if (cacheKey instanceof BaseStream) {
-      fnRef = cacheKey.dict?.objId;
+  create(fn, parseArray = false) {
+    let fnRef, parsedFn;
+    if (fn instanceof Ref) {
+      fnRef = fn;
+    } else if (fn instanceof Dict) {
+      fnRef = fn.objId;
+    } else if (fn instanceof BaseStream) {
+      fnRef = fn.dict?.objId;
     }
     if (fnRef) {
-      const localFunction = this._localFunctionCache.getByRef(fnRef);
-      if (localFunction) {
-        return localFunction;
+      const cachedFn = this._localFunctionCache.getByRef(fnRef);
+      if (cachedFn) {
+        return cachedFn;
       }
     }
-    return null;
-  }
-  _cache(cacheKey, parsedFunction) {
-    if (!parsedFunction) {
-      throw new Error('PDFFunctionFactory._cache - expected "parsedFunction" argument.');
-    }
-    let fnRef;
-    if (cacheKey instanceof Ref) {
-      fnRef = cacheKey;
-    } else if (cacheKey instanceof Dict) {
-      fnRef = cacheKey.objId;
-    } else if (cacheKey instanceof BaseStream) {
-      fnRef = cacheKey.dict?.objId;
+    const fnObj = this.xref.fetchIfRef(fn);
+    if (Array.isArray(fnObj)) {
+      if (!parseArray) {
+        throw new Error('PDFFunctionFactory.create - expected "parseArray" argument.');
+      }
+      parsedFn = PDFFunction.parseArray(this, fnObj);
+    } else {
+      parsedFn = PDFFunction.parse(this, fnObj);
     }
     if (fnRef) {
-      this._localFunctionCache.set(null, fnRef, parsedFunction);
+      this._localFunctionCache.set(null, fnRef, parsedFn);
     }
+    return parsedFn;
   }
   get _localFunctionCache() {
     return shadow(this, "_localFunctionCache", new LocalFunctionCache());
@@ -27518,64 +27904,30 @@ class PDFFunction {
     }
     return array;
   }
-  static parse({
-    xref,
-    isEvalSupported,
-    fn
-  }) {
+  static parse(factory, fn) {
     const dict = fn.dict || fn;
     const typeNum = dict.get("FunctionType");
     switch (typeNum) {
       case 0:
-        return this.constructSampled({
-          xref,
-          isEvalSupported,
-          fn,
-          dict
-        });
+        return this.constructSampled(factory, fn, dict);
       case 1:
         break;
       case 2:
-        return this.constructInterpolated({
-          xref,
-          isEvalSupported,
-          dict
-        });
+        return this.constructInterpolated(factory, dict);
       case 3:
-        return this.constructStiched({
-          xref,
-          isEvalSupported,
-          dict
-        });
+        return this.constructStiched(factory, dict);
       case 4:
-        return this.constructPostScript({
-          xref,
-          isEvalSupported,
-          fn,
-          dict
-        });
+        return this.constructPostScript(factory, fn, dict);
     }
     throw new FormatError("Unknown type of function");
   }
-  static parseArray({
-    xref,
-    isEvalSupported,
-    fnObj
-  }) {
-    if (!Array.isArray(fnObj)) {
-      return this.parse({
-        xref,
-        isEvalSupported,
-        fn: fnObj
-      });
-    }
+  static parseArray(factory, fnObj) {
+    const {
+      xref
+    } = factory;
     const fnArray = [];
     for (const fn of fnObj) {
-      fnArray.push(this.parse({
-        xref,
-        isEvalSupported,
-        fn: xref.fetchIfRef(fn)
-      }));
+      fnArray.push(this.parse(factory, xref.fetchIfRef(fn)));
     }
     return function (src, srcOffset, dest, destOffset) {
       for (let i = 0, ii = fnArray.length; i < ii; i++) {
@@ -27583,12 +27935,7 @@ class PDFFunction {
       }
     };
   }
-  static constructSampled({
-    xref,
-    isEvalSupported,
-    fn,
-    dict
-  }) {
+  static constructSampled(factory, fn, dict) {
     function toMultiArray(arr) {
       const inputLength = arr.length;
       const out = [];
@@ -27638,10 +27985,10 @@ class PDFFunction {
       for (i = 0; i < inputSize; ++i) {
         const domain_2i = domain[i][0];
         const domain_2i_1 = domain[i][1];
-        const xi = Math.min(Math.max(src[srcOffset + i], domain_2i), domain_2i_1);
+        const xi = MathClamp(src[srcOffset + i], domain_2i, domain_2i_1);
         let e = interpolate(xi, domain_2i, domain_2i_1, encode[i][0], encode[i][1]);
         const size_i = size[i];
-        e = Math.min(Math.max(e, 0), size_i - 1);
+        e = MathClamp(e, 0, size_i - 1);
         const e0 = e < size_i - 1 ? Math.floor(e) : e - 1;
         const n0 = e0 + 1 - e;
         const n1 = e - e0;
@@ -27665,15 +28012,11 @@ class PDFFunction {
           rj += samples[cubeVertex[i] + j] * cubeN[i];
         }
         rj = interpolate(rj, 0, 1, decode[j][0], decode[j][1]);
-        dest[destOffset + j] = Math.min(Math.max(rj, range[j][0]), range[j][1]);
+        dest[destOffset + j] = MathClamp(rj, range[j][0], range[j][1]);
       }
     };
   }
-  static constructInterpolated({
-    xref,
-    isEvalSupported,
-    dict
-  }) {
+  static constructInterpolated(factory, dict) {
     const c0 = toNumberArray(dict.getArray("C0")) || [0];
     const c1 = toNumberArray(dict.getArray("C1")) || [1];
     const n = dict.get("N");
@@ -27689,11 +28032,7 @@ class PDFFunction {
       }
     };
   }
-  static constructStiched({
-    xref,
-    isEvalSupported,
-    dict
-  }) {
+  static constructStiched(factory, dict) {
     const domain = toNumberArray(dict.getArray("Domain"));
     if (!domain) {
       throw new FormatError("No domain");
@@ -27702,27 +28041,18 @@ class PDFFunction {
     if (inputSize !== 1) {
       throw new FormatError("Bad domain for stiched function");
     }
+    const {
+      xref
+    } = factory;
     const fns = [];
     for (const fn of dict.get("Functions")) {
-      fns.push(this.parse({
-        xref,
-        isEvalSupported,
-        fn: xref.fetchIfRef(fn)
-      }));
+      fns.push(this.parse(factory, xref.fetchIfRef(fn)));
     }
     const bounds = toNumberArray(dict.getArray("Bounds"));
     const encode = toNumberArray(dict.getArray("Encode"));
     const tmpBuf = new Float32Array(1);
     return function constructStichedFn(src, srcOffset, dest, destOffset) {
-      const clip = function constructStichedFromIRClip(v, min, max) {
-        if (v > max) {
-          v = max;
-        } else if (v < min) {
-          v = min;
-        }
-        return v;
-      };
-      const v = clip(src[srcOffset], domain[0], domain[1]);
+      const v = MathClamp(src[srcOffset], domain[0], domain[1]);
       const length = bounds.length;
       let i;
       for (i = 0; i < length; ++i) {
@@ -27744,12 +28074,7 @@ class PDFFunction {
       fns[i](tmpBuf, 0, dest, destOffset);
     };
   }
-  static constructPostScript({
-    xref,
-    isEvalSupported,
-    fn,
-    dict
-  }) {
+  static constructPostScript(factory, fn, dict) {
     const domain = toNumberArray(dict.getArray("Domain"));
     const range = toNumberArray(dict.getArray("Range"));
     if (!domain) {
@@ -27761,7 +28086,7 @@ class PDFFunction {
     const lexer = new PostScriptLexer(fn);
     const parser = new PostScriptParser(lexer);
     const code = parser.parse();
-    if (isEvalSupported && FeatureTest.isEvalSupported) {
+    if (factory.isEvalSupported && FeatureTest.isEvalSupported) {
       const compiled = new PostScriptCompiler().compile(code, domain, range);
       if (compiled) {
         return new Function("src", "srcOffset", "dest", "destOffset", compiled);
@@ -28451,11 +28776,6 @@ function findUnequal(arr, start, value) {
   }
   return j;
 }
-function setValues(arr, start, end, value) {
-  for (let j = start; j < end; ++j) {
-    arr[j] = value;
-  }
-}
 function reverseValues(arr, start, end) {
   for (let i = start, j = end - 1; i < j; ++i, --j) {
     const temp = arr[i];
@@ -28609,7 +28929,7 @@ function bidi(str, startLevel = -1, vertical = false) {
         after = "R";
       }
       if (before === after) {
-        setValues(types, i, end, before);
+        types.fill(before, i, end);
       }
       i = end - 1;
     }
@@ -29534,6 +29854,12 @@ class OperatorList {
             transfers.push(arg.data.buffer);
           }
           break;
+        case OPS.constructPath:
+          const [, [data], minMax] = argsArray[i];
+          if (data) {
+            transfers.push(data.buffer, minMax.buffer);
+          }
+          break;
       }
     }
     return transfers;
@@ -29567,15 +29893,7 @@ class OperatorList {
 
 
 
-function decodeAndClamp(value, addend, coefficient, max) {
-  value = addend + value * coefficient;
-  if (value < 0) {
-    value = 0;
-  } else if (value > max) {
-    value = max;
-  }
-  return value;
-}
+
 function resizeImageMask(src, bpc, w1, h1, w2, h2) {
   const length = w2 * h2;
   let dest;
@@ -29617,6 +29935,7 @@ class PDFImage {
     mask = null,
     isMask = false,
     pdfFunctionFactory,
+    globalColorSpaceCache,
     localColorSpaceCache
   }) {
     this.image = image;
@@ -29657,9 +29976,21 @@ class PDFImage {
       warn("PDFImage - using the Width/Height of the image data, " + "rather than the image dictionary.");
       width = image.width;
       height = image.height;
-    }
-    if (width < 1 || height < 1) {
-      throw new FormatError(`Invalid image width: ${width} or height: ${height}`);
+    } else {
+      const validWidth = typeof width === "number" && width > 0,
+        validHeight = typeof height === "number" && height > 0;
+      if (!validWidth || !validHeight) {
+        if (!image.fallbackDims) {
+          throw new FormatError(`Invalid image width: ${width} or height: ${height}`);
+        }
+        warn("PDFImage - using the Width/Height of the parent image, for SMask/Mask data.");
+        if (!validWidth) {
+          width = image.fallbackDims.width;
+        }
+        if (!validHeight) {
+          height = image.fallbackDims.height;
+        }
+      }
     }
     this.width = width;
     this.height = height;
@@ -29702,11 +30033,12 @@ class PDFImage {
       } else if (this.jpxDecoderOptions?.smaskInData) {
         colorSpace = Name.get("DeviceRGBA");
       }
-      this.colorSpace = ColorSpace.parse({
+      this.colorSpace = ColorSpaceUtils.parse({
         cs: colorSpace,
         xref,
         resources: isInline ? res : null,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache
       });
       this.numComps = this.colorSpace.numComps;
@@ -29731,12 +30063,17 @@ class PDFImage {
       }
     }
     if (smask) {
+      smask.fallbackDims ??= {
+        width,
+        height
+      };
       this.smask = new PDFImage({
         xref,
         res,
         image: smask,
         isInline,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache
       });
     } else if (mask) {
@@ -29746,6 +30083,10 @@ class PDFImage {
         if (!imageMask) {
           warn("Ignoring /Mask in image without /ImageMask.");
         } else {
+          mask.fallbackDims ??= {
+            width,
+            height
+          };
           this.mask = new PDFImage({
             xref,
             res,
@@ -29753,6 +30094,7 @@ class PDFImage {
             isInline,
             isMask: true,
             pdfFunctionFactory,
+            globalColorSpaceCache,
             localColorSpaceCache
           });
         }
@@ -29767,6 +30109,7 @@ class PDFImage {
     image,
     isInline = false,
     pdfFunctionFactory,
+    globalColorSpaceCache,
     localColorSpaceCache
   }) {
     const imageData = image;
@@ -29795,6 +30138,7 @@ class PDFImage {
       smask: smaskData,
       mask: maskData,
       pdfFunctionFactory,
+      globalColorSpaceCache,
       localColorSpaceCache
     });
   }
@@ -29917,7 +30261,7 @@ class PDFImage {
     let index = 0;
     for (i = 0, ii = this.width * this.height; i < ii; i++) {
       for (let j = 0; j < numComps; j++) {
-        buffer[index] = decodeAndClamp(buffer[index], decodeAddends[j], decodeCoefficients[j], max);
+        buffer[index] = MathClamp(decodeAddends[j] + buffer[index] * decodeCoefficients[j], 0, max);
         index++;
       }
     }
@@ -30369,6 +30713,7 @@ class PDFImage {
 
 
 
+
 const DefaultPartialEvaluatorOptions = Object.freeze({
   maxImageSize: -1,
   disableFontFace: false,
@@ -30382,6 +30727,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   useWasm: true,
   useWorkerFetch: true,
   cMapUrl: null,
+  iccUrl: null,
   standardFontDataUrl: null,
   wasmUrl: null
 });
@@ -30485,6 +30831,7 @@ class PartialEvaluator {
     fontCache,
     builtInCMapCache,
     standardFontDataCache,
+    globalColorSpaceCache,
     globalImageCache,
     systemFontCache,
     options = null
@@ -30496,6 +30843,7 @@ class PartialEvaluator {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.standardFontDataCache = standardFontDataCache;
+    this.globalColorSpaceCache = globalColorSpaceCache;
     this.globalImageCache = globalImageCache;
     this.systemFontCache = systemFontCache;
     this.options = options || DefaultPartialEvaluatorOptions;
@@ -30684,21 +31032,12 @@ class PartialEvaluator {
         groupOptions.isolated = group.get("I") || false;
         groupOptions.knockout = group.get("K") || false;
         if (group.has("CS")) {
-          const cs = group.getRaw("CS");
-          const cachedColorSpace = ColorSpace.getCached(cs, this.xref, localColorSpaceCache);
-          if (cachedColorSpace) {
-            colorSpace = cachedColorSpace;
-          } else {
-            colorSpace = await this.parseColorSpace({
-              cs,
-              resources,
-              localColorSpaceCache
-            });
-          }
+          const cs = this._getColorSpace(group.getRaw("CS"), resources, localColorSpaceCache);
+          colorSpace = cs instanceof ColorSpace ? cs : await this._handleColorSpace(cs);
         }
       }
       if (smask?.backdrop) {
-        colorSpace ||= ColorSpace.singletons.rgb;
+        colorSpace ||= ColorSpaceUtils.rgb;
         smask.backdrop = colorSpace.getRgb(smask.backdrop, 0);
       }
       operatorList.addOp(OPS.beginGroup, [groupOptions]);
@@ -30849,6 +31188,7 @@ class PartialEvaluator {
           image,
           isInline,
           pdfFunctionFactory: this._pdfFunctionFactory,
+          globalColorSpaceCache: this.globalColorSpaceCache,
           localColorSpaceCache
         });
         imgData = await imageObj.createImageData(true, false);
@@ -30914,6 +31254,7 @@ class PartialEvaluator {
       image,
       isInline,
       pdfFunctionFactory: this._pdfFunctionFactory,
+      globalColorSpaceCache: this.globalColorSpaceCache,
       localColorSpaceCache
     }).then(async imageObj => {
       imgData = await imageObj.createImageData(false, this.options.isOffscreenCanvasSupported);
@@ -30972,7 +31313,9 @@ class PartialEvaluator {
       }
       smaskOptions.transferMap = transferMap;
     }
-    return this.buildFormXObject(resources, smaskContent, smaskOptions, operatorList, task, stateManager.state.clone(), localColorSpaceCache);
+    return this.buildFormXObject(resources, smaskContent, smaskOptions, operatorList, task, stateManager.state.clone({
+      newPath: true
+    }), localColorSpaceCache);
   }
   handleTransferFunction(tr) {
     let transferArray;
@@ -31049,18 +31392,9 @@ class PartialEvaluator {
   }
   async handleSetFont(resources, fontArgs, fontRef, operatorList, task, state, fallbackFontDict = null, cssFontInfo = null) {
     const fontName = fontArgs?.[0] instanceof Name ? fontArgs[0].name : null;
-    let translated = await this.loadFont(fontName, fontRef, resources, fallbackFontDict, cssFontInfo);
+    const translated = await this.loadFont(fontName, fontRef, resources, task, fallbackFontDict, cssFontInfo);
     if (translated.font.isType3Font) {
-      try {
-        await translated.loadType3Data(this, resources, task);
-        operatorList.addDependencies(translated.type3Dependencies);
-      } catch (reason) {
-        translated = new TranslatedFont({
-          loadedName: "g_font_error",
-          font: new ErrorFont(`Type3 font load error: ${reason}`),
-          dict: translated.font
-        });
-      }
+      operatorList.addDependencies(translated.type3Dependencies);
     }
     state.font = translated.font;
     translated.send(this.handler);
@@ -31107,6 +31441,12 @@ class PartialEvaluator {
         case "Type":
           break;
         case "LW":
+          if (typeof value !== "number") {
+            warn(`Invalid LW (line width): ${value}`);
+            break;
+          }
+          gStateObj.push([key, Math.abs(value)]);
+          break;
         case "LC":
         case "LJ":
         case "ML":
@@ -31172,7 +31512,7 @@ class PartialEvaluator {
       localGStateCache.set(cacheKey, gStateRef, gStateObj);
     }
   }
-  loadFont(fontName, font, resources, fallbackFontDict = null, cssFontInfo = null) {
+  loadFont(fontName, font, resources, task, fallbackFontDict = null, cssFontInfo = null) {
     const errorFont = async () => new TranslatedFont({
       loadedName: "g_font_error",
       font: new ErrorFont(`Font "${fontName}" is not available.`),
@@ -31259,96 +31599,130 @@ class PartialEvaluator {
       this.fontCache.put(font.cacheKey, promise);
     }
     font.loadedName = `${this.idFactory.getDocId()}_${fontID}`;
-    this.translateFont(preEvaluatedFont).then(translatedFont => {
-      resolve(new TranslatedFont({
+    this.translateFont(preEvaluatedFont).then(async translatedFont => {
+      const translated = new TranslatedFont({
         loadedName: font.loadedName,
         font: translatedFont,
         dict: font
-      }));
+      });
+      if (translatedFont.isType3Font) {
+        try {
+          await translated.loadType3Data(this, resources, task);
+        } catch (reason) {
+          throw new Error(`Type3 font load error: ${reason}`);
+        }
+      }
+      resolve(translated);
     }).catch(reason => {
       warn(`loadFont - translateFont failed: "${reason}".`);
       resolve(new TranslatedFont({
         loadedName: font.loadedName,
-        font: new ErrorFont(reason instanceof Error ? reason.message : reason),
+        font: new ErrorFont(reason?.message),
         dict: font
       }));
     });
     return promise;
   }
-  buildPath(operatorList, fn, args, parsingText = false) {
-    const lastIndex = operatorList.length - 1;
-    if (!args) {
-      args = [];
-    }
-    if (lastIndex < 0 || operatorList.fnArray[lastIndex] !== OPS.constructPath) {
-      if (parsingText) {
-        warn(`Encountered path operator "${fn}" inside of a text object.`);
-        operatorList.addOp(OPS.save, null);
-      }
-      let minMax;
-      switch (fn) {
-        case OPS.rectangle:
-          const x = args[0] + args[2];
-          const y = args[1] + args[3];
-          minMax = [Math.min(args[0], x), Math.min(args[1], y), Math.max(args[0], x), Math.max(args[1], y)];
+  buildPath(fn, args, state) {
+    const {
+      pathMinMax: minMax,
+      pathBuffer
+    } = state;
+    switch (fn | 0) {
+      case OPS.rectangle:
+        {
+          const x = state.currentPointX = args[0];
+          const y = state.currentPointY = args[1];
+          const width = args[2];
+          const height = args[3];
+          const xw = x + width;
+          const yh = y + height;
+          if (width === 0 || height === 0) {
+            pathBuffer.push(DrawOPS.moveTo, x, y, DrawOPS.lineTo, xw, yh, DrawOPS.closePath);
+          } else {
+            pathBuffer.push(DrawOPS.moveTo, x, y, DrawOPS.lineTo, xw, y, DrawOPS.lineTo, xw, yh, DrawOPS.lineTo, x, yh, DrawOPS.closePath);
+          }
+          Util.rectBoundingBox(x, y, xw, yh, minMax);
           break;
-        case OPS.moveTo:
-        case OPS.lineTo:
-          minMax = [args[0], args[1], args[0], args[1]];
+        }
+      case OPS.moveTo:
+        {
+          const x = state.currentPointX = args[0];
+          const y = state.currentPointY = args[1];
+          pathBuffer.push(DrawOPS.moveTo, x, y);
+          Util.pointBoundingBox(x, y, minMax);
           break;
-        default:
-          minMax = [Infinity, Infinity, -Infinity, -Infinity];
+        }
+      case OPS.lineTo:
+        {
+          const x = state.currentPointX = args[0];
+          const y = state.currentPointY = args[1];
+          pathBuffer.push(DrawOPS.lineTo, x, y);
+          Util.pointBoundingBox(x, y, minMax);
           break;
-      }
-      operatorList.addOp(OPS.constructPath, [[fn], args, minMax]);
-      if (parsingText) {
-        operatorList.addOp(OPS.restore, null);
-      }
-    } else {
-      const opArgs = operatorList.argsArray[lastIndex];
-      opArgs[0].push(fn);
-      opArgs[1].push(...args);
-      const minMax = opArgs[2];
-      switch (fn) {
-        case OPS.rectangle:
-          const x = args[0] + args[2];
-          const y = args[1] + args[3];
-          minMax[0] = Math.min(minMax[0], args[0], x);
-          minMax[1] = Math.min(minMax[1], args[1], y);
-          minMax[2] = Math.max(minMax[2], args[0], x);
-          minMax[3] = Math.max(minMax[3], args[1], y);
+        }
+      case OPS.curveTo:
+        {
+          const startX = state.currentPointX;
+          const startY = state.currentPointY;
+          const [x1, y1, x2, y2, x, y] = args;
+          state.currentPointX = x;
+          state.currentPointY = y;
+          pathBuffer.push(DrawOPS.curveTo, x1, y1, x2, y2, x, y);
+          Util.bezierBoundingBox(startX, startY, x1, y1, x2, y2, x, y, minMax);
           break;
-        case OPS.moveTo:
-        case OPS.lineTo:
-          minMax[0] = Math.min(minMax[0], args[0]);
-          minMax[1] = Math.min(minMax[1], args[1]);
-          minMax[2] = Math.max(minMax[2], args[0]);
-          minMax[3] = Math.max(minMax[3], args[1]);
+        }
+      case OPS.curveTo2:
+        {
+          const startX = state.currentPointX;
+          const startY = state.currentPointY;
+          const [x1, y1, x, y] = args;
+          state.currentPointX = x;
+          state.currentPointY = y;
+          pathBuffer.push(DrawOPS.curveTo, startX, startY, x1, y1, x, y);
+          Util.bezierBoundingBox(startX, startY, startX, startY, x1, y1, x, y, minMax);
           break;
-      }
+        }
+      case OPS.curveTo3:
+        {
+          const startX = state.currentPointX;
+          const startY = state.currentPointY;
+          const [x1, y1, x, y] = args;
+          state.currentPointX = x;
+          state.currentPointY = y;
+          pathBuffer.push(DrawOPS.curveTo, x1, y1, x, y, x, y);
+          Util.bezierBoundingBox(startX, startY, x1, y1, x, y, x, y, minMax);
+          break;
+        }
+      case OPS.closePath:
+        pathBuffer.push(DrawOPS.closePath);
+        break;
     }
   }
-  parseColorSpace({
-    cs,
-    resources,
-    localColorSpaceCache
-  }) {
-    return ColorSpace.parseAsync({
+  _getColorSpace(cs, resources, localColorSpaceCache) {
+    return ColorSpaceUtils.parse({
       cs,
       xref: this.xref,
       resources,
       pdfFunctionFactory: this._pdfFunctionFactory,
-      localColorSpaceCache
-    }).catch(reason => {
-      if (reason instanceof AbortException) {
+      globalColorSpaceCache: this.globalColorSpaceCache,
+      localColorSpaceCache,
+      asyncIfNotCached: true
+    });
+  }
+  async _handleColorSpace(csPromise) {
+    try {
+      return await csPromise;
+    } catch (ex) {
+      if (ex instanceof AbortException) {
         return null;
       }
       if (this.options.ignoreErrors) {
-        warn(`parseColorSpace - ignoring ColorSpace: "${reason}".`);
+        warn(`_handleColorSpace - ignoring ColorSpace: "${ex}".`);
         return null;
       }
-      throw reason;
-    });
+      throw ex;
+    }
   }
   parseShading({
     shading,
@@ -31362,7 +31736,7 @@ class PartialEvaluator {
     }
     let patternIR;
     try {
-      const shadingFill = Pattern.parseShading(shading, this.xref, resources, this._pdfFunctionFactory, localColorSpaceCache);
+      const shadingFill = Pattern.parseShading(shading, this.xref, resources, this._pdfFunctionFactory, this.globalColorSpaceCache, localColorSpaceCache);
       patternIR = shadingFill.getIR();
     } catch (reason) {
       if (reason instanceof AbortException) {
@@ -31528,7 +31902,6 @@ class PartialEvaluator {
     }
     const self = this;
     const xref = this.xref;
-    let parsingText = false;
     const localImageCache = new LocalImageCache();
     const localColorSpaceCache = new LocalColorSpaceCache();
     const localGStateCache = new LocalGStateCache();
@@ -31607,7 +31980,9 @@ class PartialEvaluator {
               }
               if (type.name === "Form") {
                 stateManager.save();
-                self.buildFormXObject(resources, xobj, null, operatorList, task, stateManager.state.clone(), localColorSpaceCache).then(function () {
+                self.buildFormXObject(resources, xobj, null, operatorList, task, stateManager.state.clone({
+                  newPath: true
+                }), localColorSpaceCache).then(function () {
                   stateManager.restore();
                   resolveXObject();
                 }, rejectXObject);
@@ -31646,12 +32021,6 @@ class PartialEvaluator {
               operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
             }));
             return;
-          case OPS.beginText:
-            parsingText = true;
-            break;
-          case OPS.endText:
-            parsingText = false;
-            break;
           case OPS.endInlineImage:
             const cacheKey = args[0].cacheKey;
             if (cacheKey) {
@@ -31721,33 +32090,25 @@ class PartialEvaluator {
             break;
           case OPS.setFillColorSpace:
             {
-              const cachedColorSpace = ColorSpace.getCached(args[0], xref, localColorSpaceCache);
-              if (cachedColorSpace) {
-                stateManager.state.fillColorSpace = cachedColorSpace;
+              const fillCS = self._getColorSpace(args[0], resources, localColorSpaceCache);
+              if (fillCS instanceof ColorSpace) {
+                stateManager.state.fillColorSpace = fillCS;
                 continue;
               }
-              next(self.parseColorSpace({
-                cs: args[0],
-                resources,
-                localColorSpaceCache
-              }).then(function (colorSpace) {
-                stateManager.state.fillColorSpace = colorSpace || ColorSpace.singletons.gray;
+              next(self._handleColorSpace(fillCS).then(colorSpace => {
+                stateManager.state.fillColorSpace = colorSpace || ColorSpaceUtils.gray;
               }));
               return;
             }
           case OPS.setStrokeColorSpace:
             {
-              const cachedColorSpace = ColorSpace.getCached(args[0], xref, localColorSpaceCache);
-              if (cachedColorSpace) {
-                stateManager.state.strokeColorSpace = cachedColorSpace;
+              const strokeCS = self._getColorSpace(args[0], resources, localColorSpaceCache);
+              if (strokeCS instanceof ColorSpace) {
+                stateManager.state.strokeColorSpace = strokeCS;
                 continue;
               }
-              next(self.parseColorSpace({
-                cs: args[0],
-                resources,
-                localColorSpaceCache
-              }).then(function (colorSpace) {
-                stateManager.state.strokeColorSpace = colorSpace || ColorSpace.singletons.gray;
+              next(self._handleColorSpace(strokeCS).then(colorSpace => {
+                stateManager.state.strokeColorSpace = colorSpace || ColorSpaceUtils.gray;
               }));
               return;
             }
@@ -31762,38 +32123,38 @@ class PartialEvaluator {
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillGray:
-            stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
-            args = ColorSpace.singletons.gray.getRgb(args, 0);
+            stateManager.state.fillColorSpace = ColorSpaceUtils.gray;
+            args = ColorSpaceUtils.gray.getRgb(args, 0);
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeGray:
-            stateManager.state.strokeColorSpace = ColorSpace.singletons.gray;
-            args = ColorSpace.singletons.gray.getRgb(args, 0);
+            stateManager.state.strokeColorSpace = ColorSpaceUtils.gray;
+            args = ColorSpaceUtils.gray.getRgb(args, 0);
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillCMYKColor:
-            stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
-            args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            stateManager.state.fillColorSpace = ColorSpaceUtils.cmyk;
+            args = ColorSpaceUtils.cmyk.getRgb(args, 0);
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeCMYKColor:
-            stateManager.state.strokeColorSpace = ColorSpace.singletons.cmyk;
-            args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            stateManager.state.strokeColorSpace = ColorSpaceUtils.cmyk;
+            args = ColorSpaceUtils.cmyk.getRgb(args, 0);
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillRGBColor:
-            stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
-            args = ColorSpace.singletons.rgb.getRgb(args, 0);
+            stateManager.state.fillColorSpace = ColorSpaceUtils.rgb;
+            args = ColorSpaceUtils.rgb.getRgb(args, 0);
             break;
           case OPS.setStrokeRGBColor:
-            stateManager.state.strokeColorSpace = ColorSpace.singletons.rgb;
-            args = ColorSpace.singletons.rgb.getRgb(args, 0);
+            stateManager.state.strokeColorSpace = ColorSpaceUtils.rgb;
+            args = ColorSpaceUtils.rgb.getRgb(args, 0);
             break;
           case OPS.setFillColorN:
             cs = stateManager.state.patternFillColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpace.singletons.gray.getRgb(args, 0);
+                args = ColorSpaceUtils.gray.getRgb(args, 0);
                 fn = OPS.setFillRGBColor;
                 break;
               }
@@ -31812,7 +32173,7 @@ class PartialEvaluator {
             cs = stateManager.state.patternStrokeColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpace.singletons.gray.getRgb(args, 0);
+                args = ColorSpaceUtils.gray.getRgb(args, 0);
                 fn = OPS.setStrokeRGBColor;
                 break;
               }
@@ -31906,6 +32267,16 @@ class PartialEvaluator {
               throw reason;
             }));
             return;
+          case OPS.setLineWidth:
+            {
+              const [thickness] = args;
+              if (typeof thickness !== "number") {
+                warn(`Invalid setLineWidth: ${thickness}`);
+                continue;
+              }
+              args[0] = Math.abs(thickness);
+              break;
+            }
           case OPS.moveTo:
           case OPS.lineTo:
           case OPS.curveTo:
@@ -31913,8 +32284,36 @@ class PartialEvaluator {
           case OPS.curveTo3:
           case OPS.closePath:
           case OPS.rectangle:
-            self.buildPath(operatorList, fn, args, parsingText);
+            self.buildPath(fn, args, stateManager.state);
             continue;
+          case OPS.stroke:
+          case OPS.closeStroke:
+          case OPS.fill:
+          case OPS.eoFill:
+          case OPS.fillStroke:
+          case OPS.eoFillStroke:
+          case OPS.closeFillStroke:
+          case OPS.closeEOFillStroke:
+          case OPS.endPath:
+            {
+              const {
+                state: {
+                  pathBuffer,
+                  pathMinMax
+                }
+              } = stateManager;
+              if (fn === OPS.closeStroke || fn === OPS.closeFillStroke || fn === OPS.closeEOFillStroke) {
+                pathBuffer.push(DrawOPS.closePath);
+              }
+              if (pathBuffer.length === 0) {
+                operatorList.addOp(OPS.constructPath, [fn, [null], null]);
+              } else {
+                operatorList.addOp(OPS.constructPath, [fn, [new Float32Array(pathBuffer)], pathMinMax.slice()]);
+                pathBuffer.length = 0;
+                pathMinMax.set([Infinity, Infinity, -Infinity, -Infinity], 0);
+              }
+              continue;
+            }
           case OPS.markPoint:
           case OPS.markPointProps:
           case OPS.beginCompat:
@@ -32165,12 +32564,7 @@ class PartialEvaluator {
       };
     }
     async function handleSetFont(fontName, fontRef) {
-      const translated = await self.loadFont(fontName, fontRef, resources);
-      if (translated.font.isType3Font) {
-        try {
-          await translated.loadType3Data(self, resources, task);
-        } catch {}
-      }
+      const translated = await self.loadFont(fontName, fontRef, resources, task);
       textState.loadedName = translated.loadedName;
       textState.font = translated.font;
       textState.fontMatrix = translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
@@ -33620,6 +34014,8 @@ class PartialEvaluator {
   }
 }
 class TranslatedFont {
+  #sent = false;
+  #type3Loaded = null;
   constructor({
     loadedName,
     font,
@@ -33628,15 +34024,13 @@ class TranslatedFont {
     this.loadedName = loadedName;
     this.font = font;
     this.dict = dict;
-    this.type3Loaded = null;
     this.type3Dependencies = font.isType3Font ? new Set() : null;
-    this.sent = false;
   }
   send(handler) {
-    if (this.sent) {
+    if (this.#sent) {
       return;
     }
-    this.sent = true;
+    this.#sent = true;
     handler.send("commonobj", [this.loadedName, "Font", this.font.exportData()]);
   }
   fallback(handler, evaluatorOptions) {
@@ -33647,12 +34041,14 @@ class TranslatedFont {
     PartialEvaluator.buildFontPaths(this.font, this.font.glyphCacheValues, handler, evaluatorOptions);
   }
   loadType3Data(evaluator, resources, task) {
-    if (this.type3Loaded) {
-      return this.type3Loaded;
+    if (this.#type3Loaded) {
+      return this.#type3Loaded;
     }
-    if (!this.font.isType3Font) {
-      throw new Error("Must be a Type3 font.");
-    }
+    const {
+      font,
+      type3Dependencies
+    } = this;
+    assert(font.isType3Font, "Must be a Type3 font.");
     const type3Evaluator = evaluator.clone({
       ignoreErrors: false
     });
@@ -33661,13 +34057,11 @@ class TranslatedFont {
       type3FontRefs.put(this.dict.objId);
     }
     type3Evaluator.type3FontRefs = type3FontRefs;
-    const translatedFont = this.font,
-      type3Dependencies = this.type3Dependencies;
     let loadCharProcsPromise = Promise.resolve();
     const charProcs = this.dict.get("CharProcs");
     const fontResources = this.dict.get("Resources") || resources;
     const charProcOperatorList = Object.create(null);
-    const fontBBox = Util.normalizeRect(translatedFont.bbox || [0, 0, 0, 0]),
+    const fontBBox = Util.normalizeRect(font.bbox || [0, 0, 0, 0]),
       width = fontBBox[2] - fontBBox[0],
       height = fontBBox[3] - fontBBox[1];
     const fontBBoxSize = Math.hypot(width, height);
@@ -33681,8 +34075,15 @@ class TranslatedFont {
           resources: fontResources,
           operatorList
         }).then(() => {
-          if (operatorList.fnArray[0] === OPS.setCharWidthAndBounds) {
-            this._removeType3ColorOperators(operatorList, fontBBoxSize);
+          switch (operatorList.fnArray[0]) {
+            case OPS.setCharWidthAndBounds:
+              this.#removeType3ColorOperators(operatorList, fontBBoxSize);
+              break;
+            case OPS.setCharWidth:
+              if (!fontBBoxSize) {
+                this.#guessType3FontBBox(operatorList);
+              }
+              break;
           }
           charProcOperatorList[key] = operatorList.getIR();
           for (const dependency of operatorList.dependencies) {
@@ -33695,16 +34096,16 @@ class TranslatedFont {
         });
       });
     }
-    this.type3Loaded = loadCharProcsPromise.then(() => {
-      translatedFont.charProcOperatorList = charProcOperatorList;
+    this.#type3Loaded = loadCharProcsPromise.then(() => {
+      font.charProcOperatorList = charProcOperatorList;
       if (this._bbox) {
-        translatedFont.isCharBBox = true;
-        translatedFont.bbox = this._bbox;
+        font.isCharBBox = true;
+        font.bbox = this._bbox;
       }
     });
-    return this.type3Loaded;
+    return this.#type3Loaded;
   }
-  _removeType3ColorOperators(operatorList, fontBBoxSize = NaN) {
+  #removeType3ColorOperators(operatorList, fontBBoxSize = NaN) {
     const charBBox = Util.normalizeRect(operatorList.argsArray[0].slice(2)),
       width = charBBox[2] - charBBox[0],
       height = charBBox[3] - charBBox[1];
@@ -33713,13 +34114,8 @@ class TranslatedFont {
       operatorList.fnArray.splice(0, 1);
       operatorList.argsArray.splice(0, 1);
     } else if (fontBBoxSize === 0 || Math.round(charBBoxSize / fontBBoxSize) >= 10) {
-      if (!this._bbox) {
-        this._bbox = [Infinity, Infinity, -Infinity, -Infinity];
-      }
-      this._bbox[0] = Math.min(this._bbox[0], charBBox[0]);
-      this._bbox[1] = Math.min(this._bbox[1], charBBox[1]);
-      this._bbox[2] = Math.max(this._bbox[2], charBBox[2]);
-      this._bbox[3] = Math.max(this._bbox[3], charBBox[3]);
+      this._bbox ??= [Infinity, Infinity, -Infinity, -Infinity];
+      Util.rectBoundingBox(...charBBox, this._bbox);
     }
     let i = 0,
       ii = operatorList.length;
@@ -33765,6 +34161,20 @@ class TranslatedFont {
             }
             j++;
           }
+          break;
+      }
+      i++;
+    }
+  }
+  #guessType3FontBBox(operatorList) {
+    let i = 1;
+    const ii = operatorList.length;
+    while (i < ii) {
+      switch (operatorList.fnArray[i]) {
+        case OPS.constructPath:
+          const minMax = operatorList.argsArray[i][2];
+          this._bbox ??= [Infinity, Infinity, -Infinity, -Infinity];
+          Util.rectBoundingBox(...minMax, this._bbox);
           break;
       }
       i++;
@@ -33852,10 +34262,12 @@ class EvalState {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
     this.textRenderingMode = TextRenderingMode.FILL;
-    this._fillColorSpace = ColorSpace.singletons.gray;
-    this._strokeColorSpace = ColorSpace.singletons.gray;
+    this._fillColorSpace = this._strokeColorSpace = ColorSpaceUtils.gray;
     this.patternFillColorSpace = null;
     this.patternStrokeColorSpace = null;
+    this.currentPointX = this.currentPointY = 0;
+    this.pathMinMax = new Float32Array([Infinity, Infinity, -Infinity, -Infinity]);
+    this.pathBuffer = [];
   }
   get fillColorSpace() {
     return this._fillColorSpace;
@@ -33869,8 +34281,15 @@ class EvalState {
   set strokeColorSpace(colorSpace) {
     this._strokeColorSpace = this.patternStrokeColorSpace = colorSpace;
   }
-  clone() {
-    return Object.create(this);
+  clone({
+    newPath = false
+  } = {}) {
+    const clone = Object.create(this);
+    if (newPath) {
+      clone.pathBuffer = [];
+      clone.pathMinMax = new Float32Array([Infinity, Infinity, -Infinity, -Infinity]);
+    }
+    return clone;
   }
 }
 class EvaluatorPreprocessor {
@@ -34395,13 +34814,13 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
             }
             break;
           case OPS.setFillRGBColor:
-            ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.rgb.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillGray:
-            ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillCMYKColor:
-            ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
         }
       }
@@ -34415,11 +34834,12 @@ function parseDefaultAppearance(str) {
   return new DefaultAppearanceEvaluator(str).parse();
 }
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
-  constructor(stream, evaluatorOptions, xref) {
+  constructor(stream, evaluatorOptions, xref, globalColorSpaceCache) {
     super(stream);
     this.stream = stream;
     this.evaluatorOptions = evaluatorOptions;
     this.xref = xref;
+    this.globalColorSpaceCache = globalColorSpaceCache;
     this.resources = stream.dict?.get("Resources");
   }
   parse() {
@@ -34432,7 +34852,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
       fontSize: 0,
       fontName: "",
       fontColor: new Uint8ClampedArray(3),
-      fillColorSpace: ColorSpace.singletons.gray
+      fillColorSpace: ColorSpaceUtils.gray
     };
     let breakLoop = false;
     const stack = [];
@@ -34472,11 +34892,12 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             }
             break;
           case OPS.setFillColorSpace:
-            result.fillColorSpace = ColorSpace.parse({
+            result.fillColorSpace = ColorSpaceUtils.parse({
               cs: args[0],
               xref: this.xref,
               resources: this.resources,
               pdfFunctionFactory: this._pdfFunctionFactory,
+              globalColorSpaceCache: this.globalColorSpaceCache,
               localColorSpaceCache: this._localColorSpaceCache
             });
             break;
@@ -34485,13 +34906,13 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillRGBColor:
-            ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.rgb.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillGray:
-            ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillCMYKColor:
-            ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.showText:
           case OPS.showSpacedText:
@@ -34520,8 +34941,8 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
     return shadow(this, "_pdfFunctionFactory", pdfFunctionFactory);
   }
 }
-function parseAppearanceStream(stream, evaluatorOptions, xref) {
-  return new AppearanceStreamEvaluator(stream, evaluatorOptions, xref).parse();
+function parseAppearanceStream(stream, evaluatorOptions, xref, globalColorSpaceCache) {
+  return new AppearanceStreamEvaluator(stream, evaluatorOptions, xref, globalColorSpaceCache).parse();
 }
 function getPdfColor(color, isFill) {
   if (color[0] === color[1] && color[1] === color[2]) {
@@ -35215,9 +35636,7 @@ class SimpleDOMNode {
     if (!this.childNodes) {
       return this.nodeValue || "";
     }
-    return this.childNodes.map(function (child) {
-      return child.textContent;
-    }).join("");
+    return this.childNodes.map(child => child.textContent).join("");
   }
   get children() {
     return this.childNodes || [];
@@ -35486,7 +35905,8 @@ const StructElementType = {
   ELEMENT: 5
 };
 class StructTreeRoot {
-  constructor(rootDict, rootRef) {
+  constructor(xref, rootDict, rootRef) {
+    this.xref = xref;
     this.dict = rootDict;
     this.ref = rootRef instanceof Ref ? rootRef : null;
     this.roleMap = new Map();
@@ -35601,7 +36021,6 @@ class StructTreeRoot {
   }
   async canUpdateStructTree({
     pdfManager,
-    xref,
     newAnnotationsByPage
   }) {
     if (!this.ref) {
@@ -35623,7 +36042,7 @@ class StructTreeRoot {
       warn("Cannot update the struct tree: nums isn't an array.");
       return false;
     }
-    const numberTree = new NumberTree(parentTree, xref);
+    const numberTree = new NumberTree(parentTree, this.xref);
     for (const pageIndex of newAnnotationsByPage.keys()) {
       const {
         pageDict
@@ -35644,7 +36063,7 @@ class StructTreeRoot {
       } = await pdfManager.getPage(pageIndex);
       StructTreeRoot.#collectParents({
         elements,
-        xref: this.dict.xref,
+        xref: this.xref,
         pageDict,
         numberTree
       });
@@ -35673,9 +36092,11 @@ class StructTreeRoot {
     pdfManager,
     changes
   }) {
-    const xref = this.dict.xref;
+    const {
+      ref: structTreeRootRef,
+      xref
+    } = this;
     const structTreeRoot = this.dict.clone();
-    const structTreeRootRef = this.ref;
     const cache = new RefSetCache();
     cache.put(structTreeRootRef, structTreeRoot);
     let parentTreeRef = structTreeRoot.getRaw("ParentTree");
@@ -35941,6 +36362,7 @@ class StructTreeRoot {
 class StructElementNode {
   constructor(tree, dict) {
     this.tree = tree;
+    this.xref = tree.xref;
     this.dict = dict;
     this.kids = [];
     this.parseKids();
@@ -35951,10 +36373,7 @@ class StructElementNode {
     const {
       root
     } = this.tree;
-    if (root.roleMap.has(name)) {
-      return root.roleMap.get(name);
-    }
-    return name;
+    return root.roleMap.get(name) ?? name;
   }
   parseKids() {
     let pageObjId = null;
@@ -35965,7 +36384,7 @@ class StructElementNode {
     const kids = this.dict.get("K");
     if (Array.isArray(kids)) {
       for (const kid of kids) {
-        const element = this.parseKid(pageObjId, kid);
+        const element = this.parseKid(pageObjId, this.xref.fetchIfRef(kid));
         if (element) {
           this.kids.push(element);
         }
@@ -35988,37 +36407,31 @@ class StructElementNode {
         pageObjId
       });
     }
-    let kidDict = null;
-    if (kid instanceof Ref) {
-      kidDict = this.dict.xref.fetch(kid);
-    } else if (kid instanceof Dict) {
-      kidDict = kid;
-    }
-    if (!kidDict) {
+    if (!(kid instanceof Dict)) {
       return null;
     }
-    const pageRef = kidDict.getRaw("Pg");
+    const pageRef = kid.getRaw("Pg");
     if (pageRef instanceof Ref) {
       pageObjId = pageRef.toString();
     }
-    const type = kidDict.get("Type") instanceof Name ? kidDict.get("Type").name : null;
+    const type = kid.get("Type") instanceof Name ? kid.get("Type").name : null;
     if (type === "MCR") {
       if (this.tree.pageDict.objId !== pageObjId) {
         return null;
       }
-      const kidRef = kidDict.getRaw("Stm");
+      const kidRef = kid.getRaw("Stm");
       return new StructElement({
         type: StructElementType.STREAM_CONTENT,
         refObjId: kidRef instanceof Ref ? kidRef.toString() : null,
         pageObjId,
-        mcid: kidDict.get("MCID")
+        mcid: kid.get("MCID")
       });
     }
     if (type === "OBJR") {
       if (this.tree.pageDict.objId !== pageObjId) {
         return null;
       }
-      const kidRef = kidDict.getRaw("Obj");
+      const kidRef = kid.getRaw("Obj");
       return new StructElement({
         type: StructElementType.OBJECT,
         refObjId: kidRef instanceof Ref ? kidRef.toString() : null,
@@ -36027,7 +36440,7 @@ class StructElementNode {
     }
     return new StructElement({
       type: StructElementType.ELEMENT,
-      dict: kidDict
+      dict: kid
     });
   }
 }
@@ -36050,7 +36463,8 @@ class StructElement {
 class StructTreePage {
   constructor(structTreeRoot, pageDict) {
     this.root = structTreeRoot;
-    this.rootDict = structTreeRoot ? structTreeRoot.dict : null;
+    this.xref = structTreeRoot?.xref ?? null;
+    this.rootDict = structTreeRoot?.dict ?? null;
     this.pageDict = pageDict;
     this.nodes = [];
   }
@@ -36067,7 +36481,7 @@ class StructTreePage {
       return null;
     }
     const map = new Map();
-    const numberTree = new NumberTree(parentTree, this.rootDict.xref);
+    const numberTree = new NumberTree(parentTree, this.xref);
     for (const [elemId] of ids) {
       const obj = numberTree.getRaw(elemId);
       if (obj instanceof Ref) {
@@ -36090,13 +36504,13 @@ class StructTreePage {
       return;
     }
     const map = new Map();
-    const numberTree = new NumberTree(parentTree, this.rootDict.xref);
+    const numberTree = new NumberTree(parentTree, this.xref);
     if (Number.isInteger(id)) {
       const parentArray = numberTree.get(id);
       if (Array.isArray(parentArray)) {
         for (const ref of parentArray) {
           if (ref instanceof Ref) {
-            this.addNode(this.rootDict.xref.fetch(ref), map);
+            this.addNode(this.xref.fetch(ref), map);
           }
         }
       }
@@ -36107,7 +36521,7 @@ class StructTreePage {
     for (const [elemId, type] of ids) {
       const obj = numberTree.get(elemId);
       if (obj) {
-        const elem = this.addNode(this.rootDict.xref.fetchIfRef(obj), map);
+        const elem = this.addNode(this.xref.fetchIfRef(obj), map);
         if (elem?.kids?.length === 1 && elem.kids[0].type === StructElementType.OBJECT) {
           elem.kids[0].type = type;
         }
@@ -36257,52 +36671,8 @@ class StructTreePage {
 
 
 
-function isValidExplicitDest(dest) {
-  if (!Array.isArray(dest) || dest.length < 2) {
-    return false;
-  }
-  const [page, zoom, ...args] = dest;
-  if (!(page instanceof Ref) && !Number.isInteger(page)) {
-    return false;
-  }
-  if (!(zoom instanceof Name)) {
-    return false;
-  }
-  const argsLen = args.length;
-  let allowNull = true;
-  switch (zoom.name) {
-    case "XYZ":
-      if (argsLen < 2 || argsLen > 3) {
-        return false;
-      }
-      break;
-    case "Fit":
-    case "FitB":
-      return argsLen === 0;
-    case "FitH":
-    case "FitBH":
-    case "FitV":
-    case "FitBV":
-      if (argsLen > 1) {
-        return false;
-      }
-      break;
-    case "FitR":
-      if (argsLen !== 4) {
-        return false;
-      }
-      allowNull = false;
-      break;
-    default:
-      return false;
-  }
-  for (const arg of args) {
-    if (!(typeof arg === "number" || allowNull && arg === null)) {
-      return false;
-    }
-  }
-  return true;
-}
+const isRef = v => v instanceof Ref;
+const isValidExplicitDest = _isValidExplicitDest.bind(null, isRef, isName);
 function fetchDest(dest) {
   if (dest instanceof Dict) {
     dest = dest.get("D");
@@ -36336,6 +36706,7 @@ class Catalog {
     this.fontCache = new RefSetCache();
     this.builtInCMapCache = new Map();
     this.standardFontDataCache = new Map();
+    this.globalColorSpaceCache = new GlobalColorSpaceCache();
     this.globalImageCache = new GlobalImageCache();
     this.pageKidsCountCache = new RefSetCache();
     this.pageIndexCache = new RefSetCache();
@@ -36457,7 +36828,7 @@ class Catalog {
   get structTreeRoot() {
     let structTree = null;
     try {
-      structTree = this._readStructTreeRoot();
+      structTree = this.#readStructTreeRoot();
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -36466,13 +36837,13 @@ class Catalog {
     }
     return shadow(this, "structTreeRoot", structTree);
   }
-  _readStructTreeRoot() {
+  #readStructTreeRoot() {
     const rawObj = this._catDict.getRaw("StructTreeRoot");
     const obj = this.xref.fetchIfRef(rawObj);
     if (!(obj instanceof Dict)) {
       return null;
     }
-    const root = new StructTreeRoot(obj, rawObj);
+    const root = new StructTreeRoot(this.xref, obj, rawObj);
     root.init();
     return root;
   }
@@ -36541,7 +36912,7 @@ class Catalog {
       const count = outlineDict.get("Count");
       let rgbColor = blackColor;
       if (isNumberArray(color, 3) && (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)) {
-        rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
+        rgbColor = ColorSpaceUtils.rgb.getRgb(color, 0);
       }
       const outlineItem = {
         action: data.action,
@@ -37207,15 +37578,15 @@ class Catalog {
   }
   async cleanup(manuallyTriggered = false) {
     clearGlobalCaches();
+    this.globalColorSpaceCache.clear();
     this.globalImageCache.clear(manuallyTriggered);
     this.pageKidsCountCache.clear();
     this.pageIndexCache.clear();
     this.pageDictCache.clear();
     this.nonBlendModesSet.clear();
-    const translatedFonts = await Promise.all(this.fontCache);
     for (const {
       dict
-    } of translatedFonts) {
+    } of await Promise.all(this.fontCache)) {
       delete dict.cacheKey;
     }
     this.fontCache.clear();
@@ -37472,9 +37843,7 @@ class Catalog {
         if (!found) {
           throw new FormatError("Kid reference not found in parent's kids.");
         }
-        return Promise.all(kidPromises).then(function () {
-          return [total, parentRef];
-        });
+        return Promise.all(kidPromises).then(() => [total, parentRef]);
       });
     }
     let total = 0;
@@ -38030,7 +38399,7 @@ function getRatio(data) {
       den: 1
     };
   }
-  const ratio = data.trim().split(/\s*:\s*/).map(x => parseFloat(x)).filter(x => !isNaN(x));
+  const ratio = data.split(":", 2).map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
   if (ratio.length === 1) {
     ratio.push(1);
   }
@@ -38064,7 +38433,7 @@ function getColor(data, def = [0, 0, 0]) {
       b
     };
   }
-  const color = data.trim().split(/\s*,\s*/).map(c => Math.min(Math.max(0, parseInt(c.trim(), 10)), 255)).map(c => isNaN(c) ? 0 : c);
+  const color = data.split(",", 3).map(c => MathClamp(parseInt(c.trim(), 10), 0, 255)).map(c => isNaN(c) ? 0 : c);
   if (color.length < 3) {
     return {
       r,
@@ -38089,7 +38458,7 @@ function getBBox(data) {
       height: def
     };
   }
-  const bbox = data.trim().split(/\s*,\s*/).map(m => getMeasurement(m, "-1"));
+  const bbox = data.split(",", 4).map(m => getMeasurement(m.trim(), "-1"));
   if (bbox.length < 4 || bbox[2] < 0 || bbox[3] < 0) {
     return {
       x: def,
@@ -39591,10 +39960,10 @@ const converters = {
       const colSpan = node.colSpan;
       let w;
       if (colSpan === -1) {
-        w = extra.columnWidths.slice(extra.currentColumn).reduce((a, x) => a + x, 0);
+        w = Math.sumPrecise(extra.columnWidths.slice(extra.currentColumn));
         extra.currentColumn = 0;
       } else {
-        w = extra.columnWidths.slice(extra.currentColumn, extra.currentColumn + colSpan).reduce((a, x) => a + x, 0);
+        w = Math.sumPrecise(extra.columnWidths.slice(extra.currentColumn, extra.currentColumn + colSpan));
         extra.currentColumn = (extra.currentColumn + node.colSpan) % extra.columnWidths.length;
       }
       if (!isNaN(w)) {
@@ -39792,9 +40161,9 @@ function fixDimensions(node) {
     const colSpan = node.colSpan;
     let width;
     if (colSpan === -1) {
-      width = extra.columnWidths.slice(extra.currentColumn).reduce((a, w) => a + w, 0);
+      width = Math.sumPrecise(extra.columnWidths.slice(extra.currentColumn));
     } else {
-      width = extra.columnWidths.slice(extra.currentColumn, extra.currentColumn + colSpan).reduce((a, w) => a + w, 0);
+      width = Math.sumPrecise(extra.columnWidths.slice(extra.currentColumn, extra.currentColumn + colSpan));
     }
     if (!isNaN(width)) {
       node.w = width;
@@ -39805,7 +40174,7 @@ function fixDimensions(node) {
   }
   if (node.layout === "table") {
     if (node.w === "" && Array.isArray(node.columnWidths)) {
-      node.w = node.columnWidths.reduce((a, x) => a + x, 0);
+      node.w = Math.sumPrecise(node.columnWidths);
     }
   }
 }
@@ -40040,6 +40409,7 @@ function fixURL(str) {
 ;// ./src/core/xfa/layout.js
 
 
+
 function createLine(node, children) {
   return {
     name: "div",
@@ -40120,14 +40490,14 @@ function addHTML(node, html, bbox) {
       }
     case "table":
       {
-        extra.width = Math.min(availableSpace.width, Math.max(extra.width, w));
+        extra.width = MathClamp(w, extra.width, availableSpace.width);
         extra.height += h;
         extra.children.push(html);
         break;
       }
     case "tb":
       {
-        extra.width = Math.min(availableSpace.width, Math.max(extra.width, w));
+        extra.width = MathClamp(w, extra.width, availableSpace.width);
         extra.height += h;
         extra.children.push(html);
         break;
@@ -40153,7 +40523,7 @@ function getAvailableSpace(node) {
       };
     case "rl-row":
     case "row":
-      const width = node[$extra].columnWidths.slice(node[$extra].currentColumn).reduce((a, x) => a + x);
+      const width = Math.sumPrecise(node[$extra].columnWidths.slice(node[$extra].currentColumn));
       return {
         width,
         height: availableSpace.height - marginH
@@ -44489,12 +44859,7 @@ class Text extends ContentObject {
   }
   [$getExtra]() {
     if (typeof this[$content] === "string") {
-      return this[$content].split(/[\u2029\u2028\n]/).reduce((acc, line) => {
-        if (line) {
-          acc.push(line);
-        }
-        return acc;
-      }, []).join("\n");
+      return this[$content].split(/[\u2029\u2028\n]/).filter(line => !!line).join("\n");
     }
     return this[$content][$text]();
   }
@@ -44504,15 +44869,12 @@ class Text extends ContentObject {
       if (this[$content].includes("\u2029")) {
         html.name = "div";
         html.children = [];
-        this[$content].split("\u2029").map(para => para.split(/[\u2028\n]/).reduce((acc, line) => {
-          acc.push({
-            name: "span",
-            value: line
-          }, {
-            name: "br"
-          });
-          return acc;
-        }, [])).forEach(lines => {
+        this[$content].split("\u2029").map(para => para.split(/[\u2028\n]/).flatMap(line => [{
+          name: "span",
+          value: line
+        }, {
+          name: "br"
+        }])).forEach(lines => {
           html.children.push({
             name: "p",
             children: lines
@@ -46376,7 +46738,7 @@ class Range extends ContentObject {
     super(CONFIG_NS_ID, "range");
   }
   [$finalize]() {
-    this[$content] = this[$content].trim().split(/\s*,\s*/, 2).map(range => range.split("-").map(x => parseInt(x.trim(), 10))).filter(range => range.every(x => !isNaN(x))).map(range => {
+    this[$content] = this[$content].split(",", 2).map(range => range.split("-").map(x => parseInt(x.trim(), 10))).filter(range => range.every(x => !isNaN(x))).map(range => {
       if (range.length === 1) {
         range.push(range[0]);
       }
@@ -46612,7 +46974,7 @@ class Window extends ContentObject {
     super(CONFIG_NS_ID, "window");
   }
   [$finalize]() {
-    const pair = this[$content].trim().split(/\s*,\s*/, 2).map(x => parseInt(x, 10));
+    const pair = this[$content].split(",", 2).map(x => parseInt(x.trim(), 10));
     if (pair.some(x => isNaN(x))) {
       this[$content] = [0, 0];
       return;
@@ -47615,7 +47977,7 @@ class XdpNamespace {
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
 const $richText = Symbol();
 const VALID_STYLES = new Set(["color", "font", "font-family", "font-size", "font-stretch", "font-style", "font-weight", "margin", "margin-bottom", "margin-left", "margin-right", "margin-top", "letter-spacing", "line-height", "orphans", "page-break-after", "page-break-before", "page-break-inside", "tab-interval", "tab-stop", "text-align", "text-decoration", "text-indent", "vertical-align", "widows", "kerning-mode", "xfa-font-horizontal-scale", "xfa-font-vertical-scale", "xfa-spacerun", "xfa-tab-stops"]);
-const StyleMapping = new Map([["page-break-after", "breakAfter"], ["page-break-before", "breakBefore"], ["page-break-inside", "breakInside"], ["kerning-mode", value => value === "none" ? "none" : "normal"], ["xfa-font-horizontal-scale", value => `scaleX(${Math.max(0, Math.min(parseInt(value) / 100)).toFixed(2)})`], ["xfa-font-vertical-scale", value => `scaleY(${Math.max(0, Math.min(parseInt(value) / 100)).toFixed(2)})`], ["xfa-spacerun", ""], ["xfa-tab-stops", ""], ["font-size", (value, original) => {
+const StyleMapping = new Map([["page-break-after", "breakAfter"], ["page-break-before", "breakBefore"], ["page-break-inside", "breakInside"], ["kerning-mode", value => value === "none" ? "none" : "normal"], ["xfa-font-horizontal-scale", value => `scaleX(${Math.max(0, parseInt(value) / 100).toFixed(2)})`], ["xfa-font-vertical-scale", value => `scaleY(${Math.max(0, parseInt(value) / 100).toFixed(2)})`], ["xfa-spacerun", ""], ["xfa-tab-stops", ""], ["font-size", (value, original) => {
   value = original.fontSize = Math.abs(getMeasurement(value));
   return measureToString(0.99 * value);
 }], ["letter-spacing", value => measureToString(getMeasurement(value))], ["line-height", value => measureToString(getMeasurement(value))], ["margin", value => measureToString(getMeasurement(value))], ["margin-bottom", value => measureToString(getMeasurement(value))], ["margin-left", value => measureToString(getMeasurement(value))], ["margin-right", value => measureToString(getMeasurement(value))], ["margin-top", value => measureToString(getMeasurement(value))], ["text-indent", value => measureToString(getMeasurement(value))], ["font-family", value => value], ["vertical-align", value => measureToString(getMeasurement(value))]]);
@@ -47668,7 +48030,7 @@ function checkStyle(node) {
   if (!node.style) {
     return "";
   }
-  return node.style.trim().split(/\s*;\s*/).filter(s => !!s).map(s => s.split(/\s*:\s*/, 2)).filter(([key, value]) => {
+  return node.style.split(";").filter(s => !!s.trim()).map(s => s.split(":", 2).map(t => t.trim())).filter(([key, value]) => {
     if (key === "font-family") {
       node[$globalData].usedTypefaces.add(value);
     }
@@ -48497,13 +48859,14 @@ class XFAFactory {
 
 class AnnotationFactory {
   static createGlobals(pdfManager) {
-    return Promise.all([pdfManager.ensureCatalog("acroForm"), pdfManager.ensureDoc("xfaDatasets"), pdfManager.ensureCatalog("structTreeRoot"), pdfManager.ensureCatalog("baseUrl"), pdfManager.ensureCatalog("attachments")]).then(([acroForm, xfaDatasets, structTreeRoot, baseUrl, attachments]) => ({
+    return Promise.all([pdfManager.ensureCatalog("acroForm"), pdfManager.ensureDoc("xfaDatasets"), pdfManager.ensureCatalog("structTreeRoot"), pdfManager.ensureCatalog("baseUrl"), pdfManager.ensureCatalog("attachments"), pdfManager.ensureCatalog("globalColorSpaceCache")]).then(([acroForm, xfaDatasets, structTreeRoot, baseUrl, attachments, globalColorSpaceCache]) => ({
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
       xfaDatasets,
       structTreeRoot,
       baseUrl,
-      attachments
+      attachments,
+      globalColorSpaceCache
     }), reason => {
       warn(`createGlobals: "${reason}".`);
       return null;
@@ -48801,13 +49164,13 @@ function getRgbColor(color, defaultColor = new Uint8ClampedArray(3)) {
     case 0:
       return null;
     case 1:
-      ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+      ColorSpaceUtils.gray.getRgbItem(color, 0, rgbColor, 0);
       return rgbColor;
     case 3:
-      ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+      ColorSpaceUtils.rgb.getRgbItem(color, 0, rgbColor, 0);
       return rgbColor;
     case 4:
-      ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+      ColorSpaceUtils.cmyk.getRgbItem(color, 0, rgbColor, 0);
       return rgbColor;
     default:
       return defaultColor;
@@ -49130,9 +49493,7 @@ class Annotation {
         return undefined;
       }
       const objectLoader = new ObjectLoader(resources, keys, resources.xref);
-      return objectLoader.load().then(function () {
-        return resources;
-      });
+      return objectLoader.load().then(() => resources);
     });
   }
   async getOperatorList(evaluator, task, intent, annotationStorage) {
@@ -49469,10 +49830,7 @@ class MarkupAnnotation extends Annotation {
     fillAlpha,
     pointsCallback
   }) {
-    let minX = Number.MAX_VALUE;
-    let minY = Number.MAX_VALUE;
-    let maxX = Number.MIN_VALUE;
-    let maxY = Number.MIN_VALUE;
+    const bbox = this.data.rect = [Infinity, Infinity, -Infinity, -Infinity];
     const buffer = ["q"];
     if (extra) {
       buffer.push(extra);
@@ -49485,11 +49843,8 @@ class MarkupAnnotation extends Annotation {
     }
     const pointsArray = this.data.quadPoints || Float32Array.from([this.rectangle[0], this.rectangle[3], this.rectangle[2], this.rectangle[3], this.rectangle[0], this.rectangle[1], this.rectangle[2], this.rectangle[1]]);
     for (let i = 0, ii = pointsArray.length; i < ii; i += 8) {
-      const [mX, MX, mY, MY] = pointsCallback(buffer, pointsArray.subarray(i, i + 8));
-      minX = Math.min(minX, mX);
-      maxX = Math.max(maxX, MX);
-      minY = Math.min(minY, mY);
-      maxY = Math.max(maxY, MY);
+      const points = pointsCallback(buffer, pointsArray.subarray(i, i + 8));
+      Util.rectBoundingBox(...points, bbox);
     }
     buffer.push("Q");
     const formDict = new Dict(xref);
@@ -49515,7 +49870,6 @@ class MarkupAnnotation extends Annotation {
     resources.set("XObject", formDict);
     const appearanceDict = new Dict(xref);
     appearanceDict.set("Resources", resources);
-    const bbox = this.data.rect = [minX, minY, maxX, maxY];
     appearanceDict.set("BBox", bbox);
     this.appearance = new StringStream("/GS0 gs /Fm0 Do");
     this.appearance.dict = appearanceDict;
@@ -50005,7 +50359,7 @@ class WidgetAnnotation extends Annotation {
     return initialState.font;
   }
   _getTextWidth(text, font) {
-    return font.charsToGlyphs(text).reduce((width, glyph) => width + glyph.width, 0) / 1000;
+    return Math.sumPrecise(font.charsToGlyphs(text).map(g => g.width)) / 1000;
   }
   _computeFontSize(height, width, text, font, lineCount) {
     let {
@@ -50946,6 +51300,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
     this.data.isEditable = !this.data.noHTML;
     this.data.noHTML = false;
     const {
+      annotationGlobals,
       evaluatorOptions,
       xref
     } = params;
@@ -50956,7 +51311,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
       const {
         fontColor,
         fontSize
-      } = parseAppearanceStream(this.appearance, evaluatorOptions, xref);
+      } = parseAppearanceStream(this.appearance, evaluatorOptions, xref, annotationGlobals.globalColorSpaceCache);
       this.data.defaultAppearanceData.fontColor = fontColor;
       this.data.defaultAppearanceData.fontSize = fontSize || 10;
     } else {
@@ -51174,7 +51529,7 @@ class LineAnnotation extends MarkupAnnotation {
         fillAlpha,
         pointsCallback: (buffer, points) => {
           buffer.push(`${lineCoordinates[0]} ${lineCoordinates[1]} m`, `${lineCoordinates[2]} ${lineCoordinates[3]} l`, "S");
-          return [points[0] - borderWidth, points[2] + borderWidth, points[7] - borderWidth, points[3] + borderWidth];
+          return [points[0] - borderWidth, points[7] - borderWidth, points[2] + borderWidth, points[3] + borderWidth];
         }
       });
     }
@@ -51217,7 +51572,7 @@ class SquareAnnotation extends MarkupAnnotation {
           } else {
             buffer.push("S");
           }
-          return [points[0], points[2], points[7], points[3]];
+          return [points[0], points[7], points[2], points[3]];
         }
       });
     }
@@ -51263,7 +51618,7 @@ class CircleAnnotation extends MarkupAnnotation {
           } else {
             buffer.push("S");
           }
-          return [points[0], points[2], points[7], points[3]];
+          return [points[0], points[7], points[2], points[3]];
         }
       });
     }
@@ -51292,10 +51647,7 @@ class PolylineAnnotation extends MarkupAnnotation {
         borderAdjust = 2 * borderWidth;
       const bbox = [Infinity, Infinity, -Infinity, -Infinity];
       for (let i = 0, ii = vertices.length; i < ii; i += 2) {
-        bbox[0] = Math.min(bbox[0], vertices[i] - borderAdjust);
-        bbox[1] = Math.min(bbox[1], vertices[i + 1] - borderAdjust);
-        bbox[2] = Math.max(bbox[2], vertices[i] + borderAdjust);
-        bbox[3] = Math.max(bbox[3], vertices[i + 1] + borderAdjust);
+        Util.rectBoundingBox(vertices[i] - borderAdjust, vertices[i + 1] - borderAdjust, vertices[i] + borderAdjust, vertices[i + 1] + borderAdjust, bbox);
       }
       if (!Util.intersect(this.rectangle, bbox)) {
         this.rectangle = bbox;
@@ -51310,7 +51662,7 @@ class PolylineAnnotation extends MarkupAnnotation {
             buffer.push(`${vertices[i]} ${vertices[i + 1]} ${i === 0 ? "m" : "l"}`);
           }
           buffer.push("S");
-          return [points[0], points[2], points[7], points[3]];
+          return [points[0], points[7], points[2], points[3]];
         }
       });
     }
@@ -51369,10 +51721,7 @@ class InkAnnotation extends MarkupAnnotation {
       const bbox = [Infinity, Infinity, -Infinity, -Infinity];
       for (const inkList of this.data.inkLists) {
         for (let i = 0, ii = inkList.length; i < ii; i += 2) {
-          bbox[0] = Math.min(bbox[0], inkList[i] - borderAdjust);
-          bbox[1] = Math.min(bbox[1], inkList[i + 1] - borderAdjust);
-          bbox[2] = Math.max(bbox[2], inkList[i] + borderAdjust);
-          bbox[3] = Math.max(bbox[3], inkList[i + 1] + borderAdjust);
+          Util.rectBoundingBox(inkList[i] - borderAdjust, inkList[i + 1] - borderAdjust, inkList[i] + borderAdjust, inkList[i + 1] + borderAdjust, bbox);
         }
       }
       if (!Util.intersect(this.rectangle, bbox)) {
@@ -51390,7 +51739,7 @@ class InkAnnotation extends MarkupAnnotation {
             }
             buffer.push("S");
           }
-          return [points[0], points[2], points[7], points[3]];
+          return [points[0], points[7], points[2], points[3]];
         }
       });
     }
@@ -51559,7 +51908,7 @@ class HighlightAnnotation extends MarkupAnnotation {
           fillAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(`${points[0]} ${points[1]} m`, `${points[2]} ${points[3]} l`, `${points[6]} ${points[7]} l`, `${points[4]} ${points[5]} l`, "f");
-            return [points[0], points[2], points[7], points[3]];
+            return [points[0], points[7], points[2], points[3]];
           }
         });
       }
@@ -51664,7 +52013,7 @@ class UnderlineAnnotation extends MarkupAnnotation {
           strokeAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(`${points[4]} ${points[5] + 1.3} m`, `${points[6]} ${points[7] + 1.3} l`, "S");
-            return [points[0], points[2], points[7], points[3]];
+            return [points[0], points[7], points[2], points[3]];
           }
         });
       }
@@ -51704,7 +52053,7 @@ class SquigglyAnnotation extends MarkupAnnotation {
               buffer.push(`${x} ${y + shift} l`);
             } while (x < xEnd);
             buffer.push("S");
-            return [points[4], xEnd, y - 2 * dy, y + 2 * dy];
+            return [points[4], y - 2 * dy, xEnd, y + 2 * dy];
           }
         });
       }
@@ -51733,7 +52082,7 @@ class StrikeOutAnnotation extends MarkupAnnotation {
           strokeAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(`${(points[0] + points[4]) / 2} ` + `${(points[1] + points[5]) / 2} m`, `${(points[2] + points[6]) / 2} ` + `${(points[3] + points[7]) / 2} l`, "S");
-            return [points[0], points[2], points[7], points[3]];
+            return [points[0], points[7], points[2], points[3]];
           }
         });
       }
@@ -51743,11 +52092,11 @@ class StrikeOutAnnotation extends MarkupAnnotation {
   }
 }
 class StampAnnotation extends MarkupAnnotation {
-  #savedHasOwnCanvas;
+  #savedHasOwnCanvas = null;
   constructor(params) {
     super(params);
     this.data.annotationType = AnnotationType.STAMP;
-    this.#savedHasOwnCanvas = this.data.hasOwnCanvas = this.data.noRotate;
+    this.data.hasOwnCanvas = this.data.noRotate;
     this.data.isEditable = !this.data.noHTML;
     this.data.noHTML = false;
   }
@@ -51756,11 +52105,14 @@ class StampAnnotation extends MarkupAnnotation {
       if (!this.data.isEditable) {
         return true;
       }
-      this.#savedHasOwnCanvas = this.data.hasOwnCanvas;
+      this.#savedHasOwnCanvas ??= this.data.hasOwnCanvas;
       this.data.hasOwnCanvas = true;
       return true;
     }
-    this.data.hasOwnCanvas = this.#savedHasOwnCanvas;
+    if (this.#savedHasOwnCanvas !== null) {
+      this.data.hasOwnCanvas = this.#savedHasOwnCanvas;
+      this.#savedHasOwnCanvas = null;
+    }
     return !modifiedIds?.has(this.data.id);
   }
   static async createImage(bitmap, xref) {
@@ -51946,6 +52298,507 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   }
 }
 
+;// ./src/core/calculate_md5.js
+
+const PARAMS = {
+  get r() {
+    return shadow(this, "r", new Uint8Array([7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21]));
+  },
+  get k() {
+    return shadow(this, "k", new Int32Array([-680876936, -389564586, 606105819, -1044525330, -176418897, 1200080426, -1473231341, -45705983, 1770035416, -1958414417, -42063, -1990404162, 1804603682, -40341101, -1502002290, 1236535329, -165796510, -1069501632, 643717713, -373897302, -701558691, 38016083, -660478335, -405537848, 568446438, -1019803690, -187363961, 1163531501, -1444681467, -51403784, 1735328473, -1926607734, -378558, -2022574463, 1839030562, -35309556, -1530992060, 1272893353, -155497632, -1094730640, 681279174, -358537222, -722521979, 76029189, -640364487, -421815835, 530742520, -995338651, -198630844, 1126891415, -1416354905, -57434055, 1700485571, -1894986606, -1051523, -2054922799, 1873313359, -30611744, -1560198380, 1309151649, -145523070, -1120210379, 718787259, -343485551]));
+  }
+};
+function calculateMD5(data, offset, length) {
+  let h0 = 1732584193,
+    h1 = -271733879,
+    h2 = -1732584194,
+    h3 = 271733878;
+  const paddedLength = length + 72 & ~63;
+  const padded = new Uint8Array(paddedLength);
+  let i, j;
+  for (i = 0; i < length; ++i) {
+    padded[i] = data[offset++];
+  }
+  padded[i++] = 0x80;
+  const n = paddedLength - 8;
+  if (i < n) {
+    i = n;
+  }
+  padded[i++] = length << 3 & 0xff;
+  padded[i++] = length >> 5 & 0xff;
+  padded[i++] = length >> 13 & 0xff;
+  padded[i++] = length >> 21 & 0xff;
+  padded[i++] = length >>> 29 & 0xff;
+  i += 3;
+  const w = new Int32Array(16);
+  const {
+    k,
+    r
+  } = PARAMS;
+  for (i = 0; i < paddedLength;) {
+    for (j = 0; j < 16; ++j, i += 4) {
+      w[j] = padded[i] | padded[i + 1] << 8 | padded[i + 2] << 16 | padded[i + 3] << 24;
+    }
+    let a = h0,
+      b = h1,
+      c = h2,
+      d = h3,
+      f,
+      g;
+    for (j = 0; j < 64; ++j) {
+      if (j < 16) {
+        f = b & c | ~b & d;
+        g = j;
+      } else if (j < 32) {
+        f = d & b | ~d & c;
+        g = 5 * j + 1 & 15;
+      } else if (j < 48) {
+        f = b ^ c ^ d;
+        g = 3 * j + 5 & 15;
+      } else {
+        f = c ^ (b | ~d);
+        g = 7 * j & 15;
+      }
+      const tmp = d,
+        rotateArg = a + f + k[j] + w[g] | 0,
+        rotate = r[j];
+      d = c;
+      c = b;
+      b = b + (rotateArg << rotate | rotateArg >>> 32 - rotate) | 0;
+      a = tmp;
+    }
+    h0 = h0 + a | 0;
+    h1 = h1 + b | 0;
+    h2 = h2 + c | 0;
+    h3 = h3 + d | 0;
+  }
+  return new Uint8Array([h0 & 0xFF, h0 >> 8 & 0xFF, h0 >> 16 & 0xFF, h0 >>> 24 & 0xFF, h1 & 0xFF, h1 >> 8 & 0xFF, h1 >> 16 & 0xFF, h1 >>> 24 & 0xFF, h2 & 0xFF, h2 >> 8 & 0xFF, h2 >> 16 & 0xFF, h2 >>> 24 & 0xFF, h3 & 0xFF, h3 >> 8 & 0xFF, h3 >> 16 & 0xFF, h3 >>> 24 & 0xFF]);
+}
+
+;// ./src/core/dataset_reader.js
+
+
+
+function decodeString(str) {
+  try {
+    return stringToUTF8String(str);
+  } catch (ex) {
+    warn(`UTF-8 decoding failed: "${ex}".`);
+    return str;
+  }
+}
+class DatasetXMLParser extends SimpleXMLParser {
+  constructor(options) {
+    super(options);
+    this.node = null;
+  }
+  onEndElement(name) {
+    const node = super.onEndElement(name);
+    if (node && name === "xfa:datasets") {
+      this.node = node;
+      throw new Error("Aborting DatasetXMLParser.");
+    }
+  }
+}
+class DatasetReader {
+  constructor(data) {
+    if (data.datasets) {
+      this.node = new SimpleXMLParser({
+        hasAttributes: true
+      }).parseFromString(data.datasets).documentElement;
+    } else {
+      const parser = new DatasetXMLParser({
+        hasAttributes: true
+      });
+      try {
+        parser.parseFromString(data["xdp:xdp"]);
+      } catch {}
+      this.node = parser.node;
+    }
+  }
+  getValue(path) {
+    if (!this.node || !path) {
+      return "";
+    }
+    const node = this.node.searchNode(parseXFAPath(path), 0);
+    if (!node) {
+      return "";
+    }
+    const first = node.firstChild;
+    if (first?.nodeName === "value") {
+      return node.children.map(child => decodeString(child.textContent));
+    }
+    return decodeString(node.textContent);
+  }
+}
+
+;// ./src/core/calculate_sha_other.js
+
+class Word64 {
+  constructor(highInteger, lowInteger) {
+    this.high = highInteger | 0;
+    this.low = lowInteger | 0;
+  }
+  and(word) {
+    this.high &= word.high;
+    this.low &= word.low;
+  }
+  xor(word) {
+    this.high ^= word.high;
+    this.low ^= word.low;
+  }
+  shiftRight(places) {
+    if (places >= 32) {
+      this.low = this.high >>> places - 32 | 0;
+      this.high = 0;
+    } else {
+      this.low = this.low >>> places | this.high << 32 - places;
+      this.high = this.high >>> places | 0;
+    }
+  }
+  rotateRight(places) {
+    let low, high;
+    if (places & 32) {
+      high = this.low;
+      low = this.high;
+    } else {
+      low = this.low;
+      high = this.high;
+    }
+    places &= 31;
+    this.low = low >>> places | high << 32 - places;
+    this.high = high >>> places | low << 32 - places;
+  }
+  not() {
+    this.high = ~this.high;
+    this.low = ~this.low;
+  }
+  add(word) {
+    const lowAdd = (this.low >>> 0) + (word.low >>> 0);
+    let highAdd = (this.high >>> 0) + (word.high >>> 0);
+    if (lowAdd > 0xffffffff) {
+      highAdd += 1;
+    }
+    this.low = lowAdd | 0;
+    this.high = highAdd | 0;
+  }
+  copyTo(bytes, offset) {
+    bytes[offset] = this.high >>> 24 & 0xff;
+    bytes[offset + 1] = this.high >> 16 & 0xff;
+    bytes[offset + 2] = this.high >> 8 & 0xff;
+    bytes[offset + 3] = this.high & 0xff;
+    bytes[offset + 4] = this.low >>> 24 & 0xff;
+    bytes[offset + 5] = this.low >> 16 & 0xff;
+    bytes[offset + 6] = this.low >> 8 & 0xff;
+    bytes[offset + 7] = this.low & 0xff;
+  }
+  assign(word) {
+    this.high = word.high;
+    this.low = word.low;
+  }
+}
+const calculate_sha_other_PARAMS = {
+  get k() {
+    return shadow(this, "k", [new Word64(0x428a2f98, 0xd728ae22), new Word64(0x71374491, 0x23ef65cd), new Word64(0xb5c0fbcf, 0xec4d3b2f), new Word64(0xe9b5dba5, 0x8189dbbc), new Word64(0x3956c25b, 0xf348b538), new Word64(0x59f111f1, 0xb605d019), new Word64(0x923f82a4, 0xaf194f9b), new Word64(0xab1c5ed5, 0xda6d8118), new Word64(0xd807aa98, 0xa3030242), new Word64(0x12835b01, 0x45706fbe), new Word64(0x243185be, 0x4ee4b28c), new Word64(0x550c7dc3, 0xd5ffb4e2), new Word64(0x72be5d74, 0xf27b896f), new Word64(0x80deb1fe, 0x3b1696b1), new Word64(0x9bdc06a7, 0x25c71235), new Word64(0xc19bf174, 0xcf692694), new Word64(0xe49b69c1, 0x9ef14ad2), new Word64(0xefbe4786, 0x384f25e3), new Word64(0x0fc19dc6, 0x8b8cd5b5), new Word64(0x240ca1cc, 0x77ac9c65), new Word64(0x2de92c6f, 0x592b0275), new Word64(0x4a7484aa, 0x6ea6e483), new Word64(0x5cb0a9dc, 0xbd41fbd4), new Word64(0x76f988da, 0x831153b5), new Word64(0x983e5152, 0xee66dfab), new Word64(0xa831c66d, 0x2db43210), new Word64(0xb00327c8, 0x98fb213f), new Word64(0xbf597fc7, 0xbeef0ee4), new Word64(0xc6e00bf3, 0x3da88fc2), new Word64(0xd5a79147, 0x930aa725), new Word64(0x06ca6351, 0xe003826f), new Word64(0x14292967, 0x0a0e6e70), new Word64(0x27b70a85, 0x46d22ffc), new Word64(0x2e1b2138, 0x5c26c926), new Word64(0x4d2c6dfc, 0x5ac42aed), new Word64(0x53380d13, 0x9d95b3df), new Word64(0x650a7354, 0x8baf63de), new Word64(0x766a0abb, 0x3c77b2a8), new Word64(0x81c2c92e, 0x47edaee6), new Word64(0x92722c85, 0x1482353b), new Word64(0xa2bfe8a1, 0x4cf10364), new Word64(0xa81a664b, 0xbc423001), new Word64(0xc24b8b70, 0xd0f89791), new Word64(0xc76c51a3, 0x0654be30), new Word64(0xd192e819, 0xd6ef5218), new Word64(0xd6990624, 0x5565a910), new Word64(0xf40e3585, 0x5771202a), new Word64(0x106aa070, 0x32bbd1b8), new Word64(0x19a4c116, 0xb8d2d0c8), new Word64(0x1e376c08, 0x5141ab53), new Word64(0x2748774c, 0xdf8eeb99), new Word64(0x34b0bcb5, 0xe19b48a8), new Word64(0x391c0cb3, 0xc5c95a63), new Word64(0x4ed8aa4a, 0xe3418acb), new Word64(0x5b9cca4f, 0x7763e373), new Word64(0x682e6ff3, 0xd6b2b8a3), new Word64(0x748f82ee, 0x5defb2fc), new Word64(0x78a5636f, 0x43172f60), new Word64(0x84c87814, 0xa1f0ab72), new Word64(0x8cc70208, 0x1a6439ec), new Word64(0x90befffa, 0x23631e28), new Word64(0xa4506ceb, 0xde82bde9), new Word64(0xbef9a3f7, 0xb2c67915), new Word64(0xc67178f2, 0xe372532b), new Word64(0xca273ece, 0xea26619c), new Word64(0xd186b8c7, 0x21c0c207), new Word64(0xeada7dd6, 0xcde0eb1e), new Word64(0xf57d4f7f, 0xee6ed178), new Word64(0x06f067aa, 0x72176fba), new Word64(0x0a637dc5, 0xa2c898a6), new Word64(0x113f9804, 0xbef90dae), new Word64(0x1b710b35, 0x131c471b), new Word64(0x28db77f5, 0x23047d84), new Word64(0x32caab7b, 0x40c72493), new Word64(0x3c9ebe0a, 0x15c9bebc), new Word64(0x431d67c4, 0x9c100d4c), new Word64(0x4cc5d4be, 0xcb3e42b6), new Word64(0x597f299c, 0xfc657e2a), new Word64(0x5fcb6fab, 0x3ad6faec), new Word64(0x6c44198c, 0x4a475817)]);
+  }
+};
+function ch(result, x, y, z, tmp) {
+  result.assign(x);
+  result.and(y);
+  tmp.assign(x);
+  tmp.not();
+  tmp.and(z);
+  result.xor(tmp);
+}
+function maj(result, x, y, z, tmp) {
+  result.assign(x);
+  result.and(y);
+  tmp.assign(x);
+  tmp.and(z);
+  result.xor(tmp);
+  tmp.assign(y);
+  tmp.and(z);
+  result.xor(tmp);
+}
+function sigma(result, x, tmp) {
+  result.assign(x);
+  result.rotateRight(28);
+  tmp.assign(x);
+  tmp.rotateRight(34);
+  result.xor(tmp);
+  tmp.assign(x);
+  tmp.rotateRight(39);
+  result.xor(tmp);
+}
+function sigmaPrime(result, x, tmp) {
+  result.assign(x);
+  result.rotateRight(14);
+  tmp.assign(x);
+  tmp.rotateRight(18);
+  result.xor(tmp);
+  tmp.assign(x);
+  tmp.rotateRight(41);
+  result.xor(tmp);
+}
+function littleSigma(result, x, tmp) {
+  result.assign(x);
+  result.rotateRight(1);
+  tmp.assign(x);
+  tmp.rotateRight(8);
+  result.xor(tmp);
+  tmp.assign(x);
+  tmp.shiftRight(7);
+  result.xor(tmp);
+}
+function littleSigmaPrime(result, x, tmp) {
+  result.assign(x);
+  result.rotateRight(19);
+  tmp.assign(x);
+  tmp.rotateRight(61);
+  result.xor(tmp);
+  tmp.assign(x);
+  tmp.shiftRight(6);
+  result.xor(tmp);
+}
+function calculateSHA512(data, offset, length, mode384 = false) {
+  let h0, h1, h2, h3, h4, h5, h6, h7;
+  if (!mode384) {
+    h0 = new Word64(0x6a09e667, 0xf3bcc908);
+    h1 = new Word64(0xbb67ae85, 0x84caa73b);
+    h2 = new Word64(0x3c6ef372, 0xfe94f82b);
+    h3 = new Word64(0xa54ff53a, 0x5f1d36f1);
+    h4 = new Word64(0x510e527f, 0xade682d1);
+    h5 = new Word64(0x9b05688c, 0x2b3e6c1f);
+    h6 = new Word64(0x1f83d9ab, 0xfb41bd6b);
+    h7 = new Word64(0x5be0cd19, 0x137e2179);
+  } else {
+    h0 = new Word64(0xcbbb9d5d, 0xc1059ed8);
+    h1 = new Word64(0x629a292a, 0x367cd507);
+    h2 = new Word64(0x9159015a, 0x3070dd17);
+    h3 = new Word64(0x152fecd8, 0xf70e5939);
+    h4 = new Word64(0x67332667, 0xffc00b31);
+    h5 = new Word64(0x8eb44a87, 0x68581511);
+    h6 = new Word64(0xdb0c2e0d, 0x64f98fa7);
+    h7 = new Word64(0x47b5481d, 0xbefa4fa4);
+  }
+  const paddedLength = Math.ceil((length + 17) / 128) * 128;
+  const padded = new Uint8Array(paddedLength);
+  let i, j;
+  for (i = 0; i < length; ++i) {
+    padded[i] = data[offset++];
+  }
+  padded[i++] = 0x80;
+  const n = paddedLength - 16;
+  if (i < n) {
+    i = n;
+  }
+  i += 11;
+  padded[i++] = length >>> 29 & 0xff;
+  padded[i++] = length >> 21 & 0xff;
+  padded[i++] = length >> 13 & 0xff;
+  padded[i++] = length >> 5 & 0xff;
+  padded[i++] = length << 3 & 0xff;
+  const w = new Array(80);
+  for (i = 0; i < 80; i++) {
+    w[i] = new Word64(0, 0);
+  }
+  const {
+    k
+  } = calculate_sha_other_PARAMS;
+  let a = new Word64(0, 0),
+    b = new Word64(0, 0),
+    c = new Word64(0, 0);
+  let d = new Word64(0, 0),
+    e = new Word64(0, 0),
+    f = new Word64(0, 0);
+  let g = new Word64(0, 0),
+    h = new Word64(0, 0);
+  const t1 = new Word64(0, 0),
+    t2 = new Word64(0, 0);
+  const tmp1 = new Word64(0, 0),
+    tmp2 = new Word64(0, 0);
+  let tmp3;
+  for (i = 0; i < paddedLength;) {
+    for (j = 0; j < 16; ++j) {
+      w[j].high = padded[i] << 24 | padded[i + 1] << 16 | padded[i + 2] << 8 | padded[i + 3];
+      w[j].low = padded[i + 4] << 24 | padded[i + 5] << 16 | padded[i + 6] << 8 | padded[i + 7];
+      i += 8;
+    }
+    for (j = 16; j < 80; ++j) {
+      tmp3 = w[j];
+      littleSigmaPrime(tmp3, w[j - 2], tmp2);
+      tmp3.add(w[j - 7]);
+      littleSigma(tmp1, w[j - 15], tmp2);
+      tmp3.add(tmp1);
+      tmp3.add(w[j - 16]);
+    }
+    a.assign(h0);
+    b.assign(h1);
+    c.assign(h2);
+    d.assign(h3);
+    e.assign(h4);
+    f.assign(h5);
+    g.assign(h6);
+    h.assign(h7);
+    for (j = 0; j < 80; ++j) {
+      t1.assign(h);
+      sigmaPrime(tmp1, e, tmp2);
+      t1.add(tmp1);
+      ch(tmp1, e, f, g, tmp2);
+      t1.add(tmp1);
+      t1.add(k[j]);
+      t1.add(w[j]);
+      sigma(t2, a, tmp2);
+      maj(tmp1, a, b, c, tmp2);
+      t2.add(tmp1);
+      tmp3 = h;
+      h = g;
+      g = f;
+      f = e;
+      d.add(t1);
+      e = d;
+      d = c;
+      c = b;
+      b = a;
+      tmp3.assign(t1);
+      tmp3.add(t2);
+      a = tmp3;
+    }
+    h0.add(a);
+    h1.add(b);
+    h2.add(c);
+    h3.add(d);
+    h4.add(e);
+    h5.add(f);
+    h6.add(g);
+    h7.add(h);
+  }
+  let result;
+  if (!mode384) {
+    result = new Uint8Array(64);
+    h0.copyTo(result, 0);
+    h1.copyTo(result, 8);
+    h2.copyTo(result, 16);
+    h3.copyTo(result, 24);
+    h4.copyTo(result, 32);
+    h5.copyTo(result, 40);
+    h6.copyTo(result, 48);
+    h7.copyTo(result, 56);
+  } else {
+    result = new Uint8Array(48);
+    h0.copyTo(result, 0);
+    h1.copyTo(result, 8);
+    h2.copyTo(result, 16);
+    h3.copyTo(result, 24);
+    h4.copyTo(result, 32);
+    h5.copyTo(result, 40);
+  }
+  return result;
+}
+function calculateSHA384(data, offset, length) {
+  return calculateSHA512(data, offset, length, true);
+}
+
+;// ./src/core/calculate_sha256.js
+
+const calculate_sha256_PARAMS = {
+  get k() {
+    return shadow(this, "k", [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]);
+  }
+};
+function rotr(x, n) {
+  return x >>> n | x << 32 - n;
+}
+function calculate_sha256_ch(x, y, z) {
+  return x & y ^ ~x & z;
+}
+function calculate_sha256_maj(x, y, z) {
+  return x & y ^ x & z ^ y & z;
+}
+function calculate_sha256_sigma(x) {
+  return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22);
+}
+function calculate_sha256_sigmaPrime(x) {
+  return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25);
+}
+function calculate_sha256_littleSigma(x) {
+  return rotr(x, 7) ^ rotr(x, 18) ^ x >>> 3;
+}
+function calculate_sha256_littleSigmaPrime(x) {
+  return rotr(x, 17) ^ rotr(x, 19) ^ x >>> 10;
+}
+function calculateSHA256(data, offset, length) {
+  let h0 = 0x6a09e667,
+    h1 = 0xbb67ae85,
+    h2 = 0x3c6ef372,
+    h3 = 0xa54ff53a,
+    h4 = 0x510e527f,
+    h5 = 0x9b05688c,
+    h6 = 0x1f83d9ab,
+    h7 = 0x5be0cd19;
+  const paddedLength = Math.ceil((length + 9) / 64) * 64;
+  const padded = new Uint8Array(paddedLength);
+  let i, j;
+  for (i = 0; i < length; ++i) {
+    padded[i] = data[offset++];
+  }
+  padded[i++] = 0x80;
+  const n = paddedLength - 8;
+  if (i < n) {
+    i = n;
+  }
+  i += 3;
+  padded[i++] = length >>> 29 & 0xff;
+  padded[i++] = length >> 21 & 0xff;
+  padded[i++] = length >> 13 & 0xff;
+  padded[i++] = length >> 5 & 0xff;
+  padded[i++] = length << 3 & 0xff;
+  const w = new Uint32Array(64);
+  const {
+    k
+  } = calculate_sha256_PARAMS;
+  for (i = 0; i < paddedLength;) {
+    for (j = 0; j < 16; ++j) {
+      w[j] = padded[i] << 24 | padded[i + 1] << 16 | padded[i + 2] << 8 | padded[i + 3];
+      i += 4;
+    }
+    for (j = 16; j < 64; ++j) {
+      w[j] = calculate_sha256_littleSigmaPrime(w[j - 2]) + w[j - 7] + calculate_sha256_littleSigma(w[j - 15]) + w[j - 16] | 0;
+    }
+    let a = h0,
+      b = h1,
+      c = h2,
+      d = h3,
+      e = h4,
+      f = h5,
+      g = h6,
+      h = h7,
+      t1,
+      t2;
+    for (j = 0; j < 64; ++j) {
+      t1 = h + calculate_sha256_sigmaPrime(e) + calculate_sha256_ch(e, f, g) + k[j] + w[j];
+      t2 = calculate_sha256_sigma(a) + calculate_sha256_maj(a, b, c);
+      h = g;
+      g = f;
+      f = e;
+      e = d + t1 | 0;
+      d = c;
+      c = b;
+      b = a;
+      a = t1 + t2 | 0;
+    }
+    h0 = h0 + a | 0;
+    h1 = h1 + b | 0;
+    h2 = h2 + c | 0;
+    h3 = h3 + d | 0;
+    h4 = h4 + e | 0;
+    h5 = h5 + f | 0;
+    h6 = h6 + g | 0;
+    h7 = h7 + h | 0;
+  }
+  return new Uint8Array([h0 >> 24 & 0xFF, h0 >> 16 & 0xFF, h0 >> 8 & 0xFF, h0 & 0xFF, h1 >> 24 & 0xFF, h1 >> 16 & 0xFF, h1 >> 8 & 0xFF, h1 & 0xFF, h2 >> 24 & 0xFF, h2 >> 16 & 0xFF, h2 >> 8 & 0xFF, h2 & 0xFF, h3 >> 24 & 0xFF, h3 >> 16 & 0xFF, h3 >> 8 & 0xFF, h3 & 0xFF, h4 >> 24 & 0xFF, h4 >> 16 & 0xFF, h4 >> 8 & 0xFF, h4 & 0xFF, h5 >> 24 & 0xFF, h5 >> 16 & 0xFF, h5 >> 8 & 0xFF, h5 & 0xFF, h6 >> 24 & 0xFF, h6 >> 16 & 0xFF, h6 >> 8 & 0xFF, h6 & 0xFF, h7 >> 24 & 0xFF, h7 >> 16 & 0xFF, h7 >> 8 & 0xFF, h7 & 0xFF]);
+}
+
 ;// ./src/core/decrypt_stream.js
 
 const chunkSize = 512;
@@ -51983,6 +52836,9 @@ class DecryptStream extends DecodeStream {
 }
 
 ;// ./src/core/crypto.js
+
+
+
 
 
 
@@ -52029,453 +52885,6 @@ class ARCFourCipher {
     return this.encryptBlock(data);
   }
 }
-const calculateMD5 = function calculateMD5Closure() {
-  const r = new Uint8Array([7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21]);
-  const k = new Int32Array([-680876936, -389564586, 606105819, -1044525330, -176418897, 1200080426, -1473231341, -45705983, 1770035416, -1958414417, -42063, -1990404162, 1804603682, -40341101, -1502002290, 1236535329, -165796510, -1069501632, 643717713, -373897302, -701558691, 38016083, -660478335, -405537848, 568446438, -1019803690, -187363961, 1163531501, -1444681467, -51403784, 1735328473, -1926607734, -378558, -2022574463, 1839030562, -35309556, -1530992060, 1272893353, -155497632, -1094730640, 681279174, -358537222, -722521979, 76029189, -640364487, -421815835, 530742520, -995338651, -198630844, 1126891415, -1416354905, -57434055, 1700485571, -1894986606, -1051523, -2054922799, 1873313359, -30611744, -1560198380, 1309151649, -145523070, -1120210379, 718787259, -343485551]);
-  function hash(data, offset, length) {
-    let h0 = 1732584193,
-      h1 = -271733879,
-      h2 = -1732584194,
-      h3 = 271733878;
-    const paddedLength = length + 72 & ~63;
-    const padded = new Uint8Array(paddedLength);
-    let i, j;
-    for (i = 0; i < length; ++i) {
-      padded[i] = data[offset++];
-    }
-    padded[i++] = 0x80;
-    const n = paddedLength - 8;
-    while (i < n) {
-      padded[i++] = 0;
-    }
-    padded[i++] = length << 3 & 0xff;
-    padded[i++] = length >> 5 & 0xff;
-    padded[i++] = length >> 13 & 0xff;
-    padded[i++] = length >> 21 & 0xff;
-    padded[i++] = length >>> 29 & 0xff;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    const w = new Int32Array(16);
-    for (i = 0; i < paddedLength;) {
-      for (j = 0; j < 16; ++j, i += 4) {
-        w[j] = padded[i] | padded[i + 1] << 8 | padded[i + 2] << 16 | padded[i + 3] << 24;
-      }
-      let a = h0,
-        b = h1,
-        c = h2,
-        d = h3,
-        f,
-        g;
-      for (j = 0; j < 64; ++j) {
-        if (j < 16) {
-          f = b & c | ~b & d;
-          g = j;
-        } else if (j < 32) {
-          f = d & b | ~d & c;
-          g = 5 * j + 1 & 15;
-        } else if (j < 48) {
-          f = b ^ c ^ d;
-          g = 3 * j + 5 & 15;
-        } else {
-          f = c ^ (b | ~d);
-          g = 7 * j & 15;
-        }
-        const tmp = d,
-          rotateArg = a + f + k[j] + w[g] | 0,
-          rotate = r[j];
-        d = c;
-        c = b;
-        b = b + (rotateArg << rotate | rotateArg >>> 32 - rotate) | 0;
-        a = tmp;
-      }
-      h0 = h0 + a | 0;
-      h1 = h1 + b | 0;
-      h2 = h2 + c | 0;
-      h3 = h3 + d | 0;
-    }
-    return new Uint8Array([h0 & 0xFF, h0 >> 8 & 0xFF, h0 >> 16 & 0xFF, h0 >>> 24 & 0xFF, h1 & 0xFF, h1 >> 8 & 0xFF, h1 >> 16 & 0xFF, h1 >>> 24 & 0xFF, h2 & 0xFF, h2 >> 8 & 0xFF, h2 >> 16 & 0xFF, h2 >>> 24 & 0xFF, h3 & 0xFF, h3 >> 8 & 0xFF, h3 >> 16 & 0xFF, h3 >>> 24 & 0xFF]);
-  }
-  return hash;
-}();
-class Word64 {
-  constructor(highInteger, lowInteger) {
-    this.high = highInteger | 0;
-    this.low = lowInteger | 0;
-  }
-  and(word) {
-    this.high &= word.high;
-    this.low &= word.low;
-  }
-  xor(word) {
-    this.high ^= word.high;
-    this.low ^= word.low;
-  }
-  or(word) {
-    this.high |= word.high;
-    this.low |= word.low;
-  }
-  shiftRight(places) {
-    if (places >= 32) {
-      this.low = this.high >>> places - 32 | 0;
-      this.high = 0;
-    } else {
-      this.low = this.low >>> places | this.high << 32 - places;
-      this.high = this.high >>> places | 0;
-    }
-  }
-  shiftLeft(places) {
-    if (places >= 32) {
-      this.high = this.low << places - 32;
-      this.low = 0;
-    } else {
-      this.high = this.high << places | this.low >>> 32 - places;
-      this.low <<= places;
-    }
-  }
-  rotateRight(places) {
-    let low, high;
-    if (places & 32) {
-      high = this.low;
-      low = this.high;
-    } else {
-      low = this.low;
-      high = this.high;
-    }
-    places &= 31;
-    this.low = low >>> places | high << 32 - places;
-    this.high = high >>> places | low << 32 - places;
-  }
-  not() {
-    this.high = ~this.high;
-    this.low = ~this.low;
-  }
-  add(word) {
-    const lowAdd = (this.low >>> 0) + (word.low >>> 0);
-    let highAdd = (this.high >>> 0) + (word.high >>> 0);
-    if (lowAdd > 0xffffffff) {
-      highAdd += 1;
-    }
-    this.low = lowAdd | 0;
-    this.high = highAdd | 0;
-  }
-  copyTo(bytes, offset) {
-    bytes[offset] = this.high >>> 24 & 0xff;
-    bytes[offset + 1] = this.high >> 16 & 0xff;
-    bytes[offset + 2] = this.high >> 8 & 0xff;
-    bytes[offset + 3] = this.high & 0xff;
-    bytes[offset + 4] = this.low >>> 24 & 0xff;
-    bytes[offset + 5] = this.low >> 16 & 0xff;
-    bytes[offset + 6] = this.low >> 8 & 0xff;
-    bytes[offset + 7] = this.low & 0xff;
-  }
-  assign(word) {
-    this.high = word.high;
-    this.low = word.low;
-  }
-}
-const calculateSHA256 = function calculateSHA256Closure() {
-  function rotr(x, n) {
-    return x >>> n | x << 32 - n;
-  }
-  function ch(x, y, z) {
-    return x & y ^ ~x & z;
-  }
-  function maj(x, y, z) {
-    return x & y ^ x & z ^ y & z;
-  }
-  function sigma(x) {
-    return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22);
-  }
-  function sigmaPrime(x) {
-    return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25);
-  }
-  function littleSigma(x) {
-    return rotr(x, 7) ^ rotr(x, 18) ^ x >>> 3;
-  }
-  function littleSigmaPrime(x) {
-    return rotr(x, 17) ^ rotr(x, 19) ^ x >>> 10;
-  }
-  const k = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
-  function hash(data, offset, length) {
-    let h0 = 0x6a09e667,
-      h1 = 0xbb67ae85,
-      h2 = 0x3c6ef372,
-      h3 = 0xa54ff53a,
-      h4 = 0x510e527f,
-      h5 = 0x9b05688c,
-      h6 = 0x1f83d9ab,
-      h7 = 0x5be0cd19;
-    const paddedLength = Math.ceil((length + 9) / 64) * 64;
-    const padded = new Uint8Array(paddedLength);
-    let i, j;
-    for (i = 0; i < length; ++i) {
-      padded[i] = data[offset++];
-    }
-    padded[i++] = 0x80;
-    const n = paddedLength - 8;
-    while (i < n) {
-      padded[i++] = 0;
-    }
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = length >>> 29 & 0xff;
-    padded[i++] = length >> 21 & 0xff;
-    padded[i++] = length >> 13 & 0xff;
-    padded[i++] = length >> 5 & 0xff;
-    padded[i++] = length << 3 & 0xff;
-    const w = new Uint32Array(64);
-    for (i = 0; i < paddedLength;) {
-      for (j = 0; j < 16; ++j) {
-        w[j] = padded[i] << 24 | padded[i + 1] << 16 | padded[i + 2] << 8 | padded[i + 3];
-        i += 4;
-      }
-      for (j = 16; j < 64; ++j) {
-        w[j] = littleSigmaPrime(w[j - 2]) + w[j - 7] + littleSigma(w[j - 15]) + w[j - 16] | 0;
-      }
-      let a = h0,
-        b = h1,
-        c = h2,
-        d = h3,
-        e = h4,
-        f = h5,
-        g = h6,
-        h = h7,
-        t1,
-        t2;
-      for (j = 0; j < 64; ++j) {
-        t1 = h + sigmaPrime(e) + ch(e, f, g) + k[j] + w[j];
-        t2 = sigma(a) + maj(a, b, c);
-        h = g;
-        g = f;
-        f = e;
-        e = d + t1 | 0;
-        d = c;
-        c = b;
-        b = a;
-        a = t1 + t2 | 0;
-      }
-      h0 = h0 + a | 0;
-      h1 = h1 + b | 0;
-      h2 = h2 + c | 0;
-      h3 = h3 + d | 0;
-      h4 = h4 + e | 0;
-      h5 = h5 + f | 0;
-      h6 = h6 + g | 0;
-      h7 = h7 + h | 0;
-    }
-    return new Uint8Array([h0 >> 24 & 0xFF, h0 >> 16 & 0xFF, h0 >> 8 & 0xFF, h0 & 0xFF, h1 >> 24 & 0xFF, h1 >> 16 & 0xFF, h1 >> 8 & 0xFF, h1 & 0xFF, h2 >> 24 & 0xFF, h2 >> 16 & 0xFF, h2 >> 8 & 0xFF, h2 & 0xFF, h3 >> 24 & 0xFF, h3 >> 16 & 0xFF, h3 >> 8 & 0xFF, h3 & 0xFF, h4 >> 24 & 0xFF, h4 >> 16 & 0xFF, h4 >> 8 & 0xFF, h4 & 0xFF, h5 >> 24 & 0xFF, h5 >> 16 & 0xFF, h5 >> 8 & 0xFF, h5 & 0xFF, h6 >> 24 & 0xFF, h6 >> 16 & 0xFF, h6 >> 8 & 0xFF, h6 & 0xFF, h7 >> 24 & 0xFF, h7 >> 16 & 0xFF, h7 >> 8 & 0xFF, h7 & 0xFF]);
-  }
-  return hash;
-}();
-const calculateSHA512 = function calculateSHA512Closure() {
-  function ch(result, x, y, z, tmp) {
-    result.assign(x);
-    result.and(y);
-    tmp.assign(x);
-    tmp.not();
-    tmp.and(z);
-    result.xor(tmp);
-  }
-  function maj(result, x, y, z, tmp) {
-    result.assign(x);
-    result.and(y);
-    tmp.assign(x);
-    tmp.and(z);
-    result.xor(tmp);
-    tmp.assign(y);
-    tmp.and(z);
-    result.xor(tmp);
-  }
-  function sigma(result, x, tmp) {
-    result.assign(x);
-    result.rotateRight(28);
-    tmp.assign(x);
-    tmp.rotateRight(34);
-    result.xor(tmp);
-    tmp.assign(x);
-    tmp.rotateRight(39);
-    result.xor(tmp);
-  }
-  function sigmaPrime(result, x, tmp) {
-    result.assign(x);
-    result.rotateRight(14);
-    tmp.assign(x);
-    tmp.rotateRight(18);
-    result.xor(tmp);
-    tmp.assign(x);
-    tmp.rotateRight(41);
-    result.xor(tmp);
-  }
-  function littleSigma(result, x, tmp) {
-    result.assign(x);
-    result.rotateRight(1);
-    tmp.assign(x);
-    tmp.rotateRight(8);
-    result.xor(tmp);
-    tmp.assign(x);
-    tmp.shiftRight(7);
-    result.xor(tmp);
-  }
-  function littleSigmaPrime(result, x, tmp) {
-    result.assign(x);
-    result.rotateRight(19);
-    tmp.assign(x);
-    tmp.rotateRight(61);
-    result.xor(tmp);
-    tmp.assign(x);
-    tmp.shiftRight(6);
-    result.xor(tmp);
-  }
-  const k = [new Word64(0x428a2f98, 0xd728ae22), new Word64(0x71374491, 0x23ef65cd), new Word64(0xb5c0fbcf, 0xec4d3b2f), new Word64(0xe9b5dba5, 0x8189dbbc), new Word64(0x3956c25b, 0xf348b538), new Word64(0x59f111f1, 0xb605d019), new Word64(0x923f82a4, 0xaf194f9b), new Word64(0xab1c5ed5, 0xda6d8118), new Word64(0xd807aa98, 0xa3030242), new Word64(0x12835b01, 0x45706fbe), new Word64(0x243185be, 0x4ee4b28c), new Word64(0x550c7dc3, 0xd5ffb4e2), new Word64(0x72be5d74, 0xf27b896f), new Word64(0x80deb1fe, 0x3b1696b1), new Word64(0x9bdc06a7, 0x25c71235), new Word64(0xc19bf174, 0xcf692694), new Word64(0xe49b69c1, 0x9ef14ad2), new Word64(0xefbe4786, 0x384f25e3), new Word64(0x0fc19dc6, 0x8b8cd5b5), new Word64(0x240ca1cc, 0x77ac9c65), new Word64(0x2de92c6f, 0x592b0275), new Word64(0x4a7484aa, 0x6ea6e483), new Word64(0x5cb0a9dc, 0xbd41fbd4), new Word64(0x76f988da, 0x831153b5), new Word64(0x983e5152, 0xee66dfab), new Word64(0xa831c66d, 0x2db43210), new Word64(0xb00327c8, 0x98fb213f), new Word64(0xbf597fc7, 0xbeef0ee4), new Word64(0xc6e00bf3, 0x3da88fc2), new Word64(0xd5a79147, 0x930aa725), new Word64(0x06ca6351, 0xe003826f), new Word64(0x14292967, 0x0a0e6e70), new Word64(0x27b70a85, 0x46d22ffc), new Word64(0x2e1b2138, 0x5c26c926), new Word64(0x4d2c6dfc, 0x5ac42aed), new Word64(0x53380d13, 0x9d95b3df), new Word64(0x650a7354, 0x8baf63de), new Word64(0x766a0abb, 0x3c77b2a8), new Word64(0x81c2c92e, 0x47edaee6), new Word64(0x92722c85, 0x1482353b), new Word64(0xa2bfe8a1, 0x4cf10364), new Word64(0xa81a664b, 0xbc423001), new Word64(0xc24b8b70, 0xd0f89791), new Word64(0xc76c51a3, 0x0654be30), new Word64(0xd192e819, 0xd6ef5218), new Word64(0xd6990624, 0x5565a910), new Word64(0xf40e3585, 0x5771202a), new Word64(0x106aa070, 0x32bbd1b8), new Word64(0x19a4c116, 0xb8d2d0c8), new Word64(0x1e376c08, 0x5141ab53), new Word64(0x2748774c, 0xdf8eeb99), new Word64(0x34b0bcb5, 0xe19b48a8), new Word64(0x391c0cb3, 0xc5c95a63), new Word64(0x4ed8aa4a, 0xe3418acb), new Word64(0x5b9cca4f, 0x7763e373), new Word64(0x682e6ff3, 0xd6b2b8a3), new Word64(0x748f82ee, 0x5defb2fc), new Word64(0x78a5636f, 0x43172f60), new Word64(0x84c87814, 0xa1f0ab72), new Word64(0x8cc70208, 0x1a6439ec), new Word64(0x90befffa, 0x23631e28), new Word64(0xa4506ceb, 0xde82bde9), new Word64(0xbef9a3f7, 0xb2c67915), new Word64(0xc67178f2, 0xe372532b), new Word64(0xca273ece, 0xea26619c), new Word64(0xd186b8c7, 0x21c0c207), new Word64(0xeada7dd6, 0xcde0eb1e), new Word64(0xf57d4f7f, 0xee6ed178), new Word64(0x06f067aa, 0x72176fba), new Word64(0x0a637dc5, 0xa2c898a6), new Word64(0x113f9804, 0xbef90dae), new Word64(0x1b710b35, 0x131c471b), new Word64(0x28db77f5, 0x23047d84), new Word64(0x32caab7b, 0x40c72493), new Word64(0x3c9ebe0a, 0x15c9bebc), new Word64(0x431d67c4, 0x9c100d4c), new Word64(0x4cc5d4be, 0xcb3e42b6), new Word64(0x597f299c, 0xfc657e2a), new Word64(0x5fcb6fab, 0x3ad6faec), new Word64(0x6c44198c, 0x4a475817)];
-  function hash(data, offset, length, mode384 = false) {
-    let h0, h1, h2, h3, h4, h5, h6, h7;
-    if (!mode384) {
-      h0 = new Word64(0x6a09e667, 0xf3bcc908);
-      h1 = new Word64(0xbb67ae85, 0x84caa73b);
-      h2 = new Word64(0x3c6ef372, 0xfe94f82b);
-      h3 = new Word64(0xa54ff53a, 0x5f1d36f1);
-      h4 = new Word64(0x510e527f, 0xade682d1);
-      h5 = new Word64(0x9b05688c, 0x2b3e6c1f);
-      h6 = new Word64(0x1f83d9ab, 0xfb41bd6b);
-      h7 = new Word64(0x5be0cd19, 0x137e2179);
-    } else {
-      h0 = new Word64(0xcbbb9d5d, 0xc1059ed8);
-      h1 = new Word64(0x629a292a, 0x367cd507);
-      h2 = new Word64(0x9159015a, 0x3070dd17);
-      h3 = new Word64(0x152fecd8, 0xf70e5939);
-      h4 = new Word64(0x67332667, 0xffc00b31);
-      h5 = new Word64(0x8eb44a87, 0x68581511);
-      h6 = new Word64(0xdb0c2e0d, 0x64f98fa7);
-      h7 = new Word64(0x47b5481d, 0xbefa4fa4);
-    }
-    const paddedLength = Math.ceil((length + 17) / 128) * 128;
-    const padded = new Uint8Array(paddedLength);
-    let i, j;
-    for (i = 0; i < length; ++i) {
-      padded[i] = data[offset++];
-    }
-    padded[i++] = 0x80;
-    const n = paddedLength - 16;
-    while (i < n) {
-      padded[i++] = 0;
-    }
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = 0;
-    padded[i++] = length >>> 29 & 0xff;
-    padded[i++] = length >> 21 & 0xff;
-    padded[i++] = length >> 13 & 0xff;
-    padded[i++] = length >> 5 & 0xff;
-    padded[i++] = length << 3 & 0xff;
-    const w = new Array(80);
-    for (i = 0; i < 80; i++) {
-      w[i] = new Word64(0, 0);
-    }
-    let a = new Word64(0, 0),
-      b = new Word64(0, 0),
-      c = new Word64(0, 0);
-    let d = new Word64(0, 0),
-      e = new Word64(0, 0),
-      f = new Word64(0, 0);
-    let g = new Word64(0, 0),
-      h = new Word64(0, 0);
-    const t1 = new Word64(0, 0),
-      t2 = new Word64(0, 0);
-    const tmp1 = new Word64(0, 0),
-      tmp2 = new Word64(0, 0);
-    let tmp3;
-    for (i = 0; i < paddedLength;) {
-      for (j = 0; j < 16; ++j) {
-        w[j].high = padded[i] << 24 | padded[i + 1] << 16 | padded[i + 2] << 8 | padded[i + 3];
-        w[j].low = padded[i + 4] << 24 | padded[i + 5] << 16 | padded[i + 6] << 8 | padded[i + 7];
-        i += 8;
-      }
-      for (j = 16; j < 80; ++j) {
-        tmp3 = w[j];
-        littleSigmaPrime(tmp3, w[j - 2], tmp2);
-        tmp3.add(w[j - 7]);
-        littleSigma(tmp1, w[j - 15], tmp2);
-        tmp3.add(tmp1);
-        tmp3.add(w[j - 16]);
-      }
-      a.assign(h0);
-      b.assign(h1);
-      c.assign(h2);
-      d.assign(h3);
-      e.assign(h4);
-      f.assign(h5);
-      g.assign(h6);
-      h.assign(h7);
-      for (j = 0; j < 80; ++j) {
-        t1.assign(h);
-        sigmaPrime(tmp1, e, tmp2);
-        t1.add(tmp1);
-        ch(tmp1, e, f, g, tmp2);
-        t1.add(tmp1);
-        t1.add(k[j]);
-        t1.add(w[j]);
-        sigma(t2, a, tmp2);
-        maj(tmp1, a, b, c, tmp2);
-        t2.add(tmp1);
-        tmp3 = h;
-        h = g;
-        g = f;
-        f = e;
-        d.add(t1);
-        e = d;
-        d = c;
-        c = b;
-        b = a;
-        tmp3.assign(t1);
-        tmp3.add(t2);
-        a = tmp3;
-      }
-      h0.add(a);
-      h1.add(b);
-      h2.add(c);
-      h3.add(d);
-      h4.add(e);
-      h5.add(f);
-      h6.add(g);
-      h7.add(h);
-    }
-    let result;
-    if (!mode384) {
-      result = new Uint8Array(64);
-      h0.copyTo(result, 0);
-      h1.copyTo(result, 8);
-      h2.copyTo(result, 16);
-      h3.copyTo(result, 24);
-      h4.copyTo(result, 32);
-      h5.copyTo(result, 40);
-      h6.copyTo(result, 48);
-      h7.copyTo(result, 56);
-    } else {
-      result = new Uint8Array(48);
-      h0.copyTo(result, 0);
-      h1.copyTo(result, 8);
-      h2.copyTo(result, 16);
-      h3.copyTo(result, 24);
-      h4.copyTo(result, 32);
-      h5.copyTo(result, 40);
-    }
-    return result;
-  }
-  return hash;
-}();
-function calculateSHA384(data, offset, length) {
-  return calculateSHA512(data, offset, length, true);
-}
 class NullCipher {
   decryptBlock(data) {
     return data;
@@ -52485,14 +52894,11 @@ class NullCipher {
   }
 }
 class AESBaseCipher {
+  _s = new Uint8Array([0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, 0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15, 0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75, 0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84, 0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf, 0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8, 0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2, 0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73, 0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb, 0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79, 0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08, 0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a, 0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e, 0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf, 0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16]);
+  _inv_s = new Uint8Array([0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb, 0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e, 0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, 0x76, 0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25, 0x72, 0xf8, 0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xd4, 0xa4, 0x5c, 0xcc, 0x5d, 0x65, 0xb6, 0x92, 0x6c, 0x70, 0x48, 0x50, 0xfd, 0xed, 0xb9, 0xda, 0x5e, 0x15, 0x46, 0x57, 0xa7, 0x8d, 0x9d, 0x84, 0x90, 0xd8, 0xab, 0x00, 0x8c, 0xbc, 0xd3, 0x0a, 0xf7, 0xe4, 0x58, 0x05, 0xb8, 0xb3, 0x45, 0x06, 0xd0, 0x2c, 0x1e, 0x8f, 0xca, 0x3f, 0x0f, 0x02, 0xc1, 0xaf, 0xbd, 0x03, 0x01, 0x13, 0x8a, 0x6b, 0x3a, 0x91, 0x11, 0x41, 0x4f, 0x67, 0xdc, 0xea, 0x97, 0xf2, 0xcf, 0xce, 0xf0, 0xb4, 0xe6, 0x73, 0x96, 0xac, 0x74, 0x22, 0xe7, 0xad, 0x35, 0x85, 0xe2, 0xf9, 0x37, 0xe8, 0x1c, 0x75, 0xdf, 0x6e, 0x47, 0xf1, 0x1a, 0x71, 0x1d, 0x29, 0xc5, 0x89, 0x6f, 0xb7, 0x62, 0x0e, 0xaa, 0x18, 0xbe, 0x1b, 0xfc, 0x56, 0x3e, 0x4b, 0xc6, 0xd2, 0x79, 0x20, 0x9a, 0xdb, 0xc0, 0xfe, 0x78, 0xcd, 0x5a, 0xf4, 0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07, 0xc7, 0x31, 0xb1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xec, 0x5f, 0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef, 0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61, 0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d]);
+  _mix = new Uint32Array([0x00000000, 0x0e090d0b, 0x1c121a16, 0x121b171d, 0x3824342c, 0x362d3927, 0x24362e3a, 0x2a3f2331, 0x70486858, 0x7e416553, 0x6c5a724e, 0x62537f45, 0x486c5c74, 0x4665517f, 0x547e4662, 0x5a774b69, 0xe090d0b0, 0xee99ddbb, 0xfc82caa6, 0xf28bc7ad, 0xd8b4e49c, 0xd6bde997, 0xc4a6fe8a, 0xcaaff381, 0x90d8b8e8, 0x9ed1b5e3, 0x8ccaa2fe, 0x82c3aff5, 0xa8fc8cc4, 0xa6f581cf, 0xb4ee96d2, 0xbae79bd9, 0xdb3bbb7b, 0xd532b670, 0xc729a16d, 0xc920ac66, 0xe31f8f57, 0xed16825c, 0xff0d9541, 0xf104984a, 0xab73d323, 0xa57ade28, 0xb761c935, 0xb968c43e, 0x9357e70f, 0x9d5eea04, 0x8f45fd19, 0x814cf012, 0x3bab6bcb, 0x35a266c0, 0x27b971dd, 0x29b07cd6, 0x038f5fe7, 0x0d8652ec, 0x1f9d45f1, 0x119448fa, 0x4be30393, 0x45ea0e98, 0x57f11985, 0x59f8148e, 0x73c737bf, 0x7dce3ab4, 0x6fd52da9, 0x61dc20a2, 0xad766df6, 0xa37f60fd, 0xb16477e0, 0xbf6d7aeb, 0x955259da, 0x9b5b54d1, 0x894043cc, 0x87494ec7, 0xdd3e05ae, 0xd33708a5, 0xc12c1fb8, 0xcf2512b3, 0xe51a3182, 0xeb133c89, 0xf9082b94, 0xf701269f, 0x4de6bd46, 0x43efb04d, 0x51f4a750, 0x5ffdaa5b, 0x75c2896a, 0x7bcb8461, 0x69d0937c, 0x67d99e77, 0x3daed51e, 0x33a7d815, 0x21bccf08, 0x2fb5c203, 0x058ae132, 0x0b83ec39, 0x1998fb24, 0x1791f62f, 0x764dd68d, 0x7844db86, 0x6a5fcc9b, 0x6456c190, 0x4e69e2a1, 0x4060efaa, 0x527bf8b7, 0x5c72f5bc, 0x0605bed5, 0x080cb3de, 0x1a17a4c3, 0x141ea9c8, 0x3e218af9, 0x302887f2, 0x223390ef, 0x2c3a9de4, 0x96dd063d, 0x98d40b36, 0x8acf1c2b, 0x84c61120, 0xaef93211, 0xa0f03f1a, 0xb2eb2807, 0xbce2250c, 0xe6956e65, 0xe89c636e, 0xfa877473, 0xf48e7978, 0xdeb15a49, 0xd0b85742, 0xc2a3405f, 0xccaa4d54, 0x41ecdaf7, 0x4fe5d7fc, 0x5dfec0e1, 0x53f7cdea, 0x79c8eedb, 0x77c1e3d0, 0x65daf4cd, 0x6bd3f9c6, 0x31a4b2af, 0x3fadbfa4, 0x2db6a8b9, 0x23bfa5b2, 0x09808683, 0x07898b88, 0x15929c95, 0x1b9b919e, 0xa17c0a47, 0xaf75074c, 0xbd6e1051, 0xb3671d5a, 0x99583e6b, 0x97513360, 0x854a247d, 0x8b432976, 0xd134621f, 0xdf3d6f14, 0xcd267809, 0xc32f7502, 0xe9105633, 0xe7195b38, 0xf5024c25, 0xfb0b412e, 0x9ad7618c, 0x94de6c87, 0x86c57b9a, 0x88cc7691, 0xa2f355a0, 0xacfa58ab, 0xbee14fb6, 0xb0e842bd, 0xea9f09d4, 0xe49604df, 0xf68d13c2, 0xf8841ec9, 0xd2bb3df8, 0xdcb230f3, 0xcea927ee, 0xc0a02ae5, 0x7a47b13c, 0x744ebc37, 0x6655ab2a, 0x685ca621, 0x42638510, 0x4c6a881b, 0x5e719f06, 0x5078920d, 0x0a0fd964, 0x0406d46f, 0x161dc372, 0x1814ce79, 0x322bed48, 0x3c22e043, 0x2e39f75e, 0x2030fa55, 0xec9ab701, 0xe293ba0a, 0xf088ad17, 0xfe81a01c, 0xd4be832d, 0xdab78e26, 0xc8ac993b, 0xc6a59430, 0x9cd2df59, 0x92dbd252, 0x80c0c54f, 0x8ec9c844, 0xa4f6eb75, 0xaaffe67e, 0xb8e4f163, 0xb6edfc68, 0x0c0a67b1, 0x02036aba, 0x10187da7, 0x1e1170ac, 0x342e539d, 0x3a275e96, 0x283c498b, 0x26354480, 0x7c420fe9, 0x724b02e2, 0x605015ff, 0x6e5918f4, 0x44663bc5, 0x4a6f36ce, 0x587421d3, 0x567d2cd8, 0x37a10c7a, 0x39a80171, 0x2bb3166c, 0x25ba1b67, 0x0f853856, 0x018c355d, 0x13972240, 0x1d9e2f4b, 0x47e96422, 0x49e06929, 0x5bfb7e34, 0x55f2733f, 0x7fcd500e, 0x71c45d05, 0x63df4a18, 0x6dd64713, 0xd731dcca, 0xd938d1c1, 0xcb23c6dc, 0xc52acbd7, 0xef15e8e6, 0xe11ce5ed, 0xf307f2f0, 0xfd0efffb, 0xa779b492, 0xa970b999, 0xbb6bae84, 0xb562a38f, 0x9f5d80be, 0x91548db5, 0x834f9aa8, 0x8d4697a3]);
+  _mixCol = new Uint8Array(256).map((_, i) => i < 128 ? i << 1 : i << 1 ^ 0x1b);
   constructor() {
-    this._s = new Uint8Array([0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, 0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15, 0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75, 0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84, 0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf, 0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8, 0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2, 0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73, 0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb, 0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79, 0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08, 0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a, 0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e, 0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf, 0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16]);
-    this._inv_s = new Uint8Array([0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb, 0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e, 0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, 0x76, 0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25, 0x72, 0xf8, 0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xd4, 0xa4, 0x5c, 0xcc, 0x5d, 0x65, 0xb6, 0x92, 0x6c, 0x70, 0x48, 0x50, 0xfd, 0xed, 0xb9, 0xda, 0x5e, 0x15, 0x46, 0x57, 0xa7, 0x8d, 0x9d, 0x84, 0x90, 0xd8, 0xab, 0x00, 0x8c, 0xbc, 0xd3, 0x0a, 0xf7, 0xe4, 0x58, 0x05, 0xb8, 0xb3, 0x45, 0x06, 0xd0, 0x2c, 0x1e, 0x8f, 0xca, 0x3f, 0x0f, 0x02, 0xc1, 0xaf, 0xbd, 0x03, 0x01, 0x13, 0x8a, 0x6b, 0x3a, 0x91, 0x11, 0x41, 0x4f, 0x67, 0xdc, 0xea, 0x97, 0xf2, 0xcf, 0xce, 0xf0, 0xb4, 0xe6, 0x73, 0x96, 0xac, 0x74, 0x22, 0xe7, 0xad, 0x35, 0x85, 0xe2, 0xf9, 0x37, 0xe8, 0x1c, 0x75, 0xdf, 0x6e, 0x47, 0xf1, 0x1a, 0x71, 0x1d, 0x29, 0xc5, 0x89, 0x6f, 0xb7, 0x62, 0x0e, 0xaa, 0x18, 0xbe, 0x1b, 0xfc, 0x56, 0x3e, 0x4b, 0xc6, 0xd2, 0x79, 0x20, 0x9a, 0xdb, 0xc0, 0xfe, 0x78, 0xcd, 0x5a, 0xf4, 0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07, 0xc7, 0x31, 0xb1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xec, 0x5f, 0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef, 0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61, 0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d]);
-    this._mix = new Uint32Array([0x00000000, 0x0e090d0b, 0x1c121a16, 0x121b171d, 0x3824342c, 0x362d3927, 0x24362e3a, 0x2a3f2331, 0x70486858, 0x7e416553, 0x6c5a724e, 0x62537f45, 0x486c5c74, 0x4665517f, 0x547e4662, 0x5a774b69, 0xe090d0b0, 0xee99ddbb, 0xfc82caa6, 0xf28bc7ad, 0xd8b4e49c, 0xd6bde997, 0xc4a6fe8a, 0xcaaff381, 0x90d8b8e8, 0x9ed1b5e3, 0x8ccaa2fe, 0x82c3aff5, 0xa8fc8cc4, 0xa6f581cf, 0xb4ee96d2, 0xbae79bd9, 0xdb3bbb7b, 0xd532b670, 0xc729a16d, 0xc920ac66, 0xe31f8f57, 0xed16825c, 0xff0d9541, 0xf104984a, 0xab73d323, 0xa57ade28, 0xb761c935, 0xb968c43e, 0x9357e70f, 0x9d5eea04, 0x8f45fd19, 0x814cf012, 0x3bab6bcb, 0x35a266c0, 0x27b971dd, 0x29b07cd6, 0x038f5fe7, 0x0d8652ec, 0x1f9d45f1, 0x119448fa, 0x4be30393, 0x45ea0e98, 0x57f11985, 0x59f8148e, 0x73c737bf, 0x7dce3ab4, 0x6fd52da9, 0x61dc20a2, 0xad766df6, 0xa37f60fd, 0xb16477e0, 0xbf6d7aeb, 0x955259da, 0x9b5b54d1, 0x894043cc, 0x87494ec7, 0xdd3e05ae, 0xd33708a5, 0xc12c1fb8, 0xcf2512b3, 0xe51a3182, 0xeb133c89, 0xf9082b94, 0xf701269f, 0x4de6bd46, 0x43efb04d, 0x51f4a750, 0x5ffdaa5b, 0x75c2896a, 0x7bcb8461, 0x69d0937c, 0x67d99e77, 0x3daed51e, 0x33a7d815, 0x21bccf08, 0x2fb5c203, 0x058ae132, 0x0b83ec39, 0x1998fb24, 0x1791f62f, 0x764dd68d, 0x7844db86, 0x6a5fcc9b, 0x6456c190, 0x4e69e2a1, 0x4060efaa, 0x527bf8b7, 0x5c72f5bc, 0x0605bed5, 0x080cb3de, 0x1a17a4c3, 0x141ea9c8, 0x3e218af9, 0x302887f2, 0x223390ef, 0x2c3a9de4, 0x96dd063d, 0x98d40b36, 0x8acf1c2b, 0x84c61120, 0xaef93211, 0xa0f03f1a, 0xb2eb2807, 0xbce2250c, 0xe6956e65, 0xe89c636e, 0xfa877473, 0xf48e7978, 0xdeb15a49, 0xd0b85742, 0xc2a3405f, 0xccaa4d54, 0x41ecdaf7, 0x4fe5d7fc, 0x5dfec0e1, 0x53f7cdea, 0x79c8eedb, 0x77c1e3d0, 0x65daf4cd, 0x6bd3f9c6, 0x31a4b2af, 0x3fadbfa4, 0x2db6a8b9, 0x23bfa5b2, 0x09808683, 0x07898b88, 0x15929c95, 0x1b9b919e, 0xa17c0a47, 0xaf75074c, 0xbd6e1051, 0xb3671d5a, 0x99583e6b, 0x97513360, 0x854a247d, 0x8b432976, 0xd134621f, 0xdf3d6f14, 0xcd267809, 0xc32f7502, 0xe9105633, 0xe7195b38, 0xf5024c25, 0xfb0b412e, 0x9ad7618c, 0x94de6c87, 0x86c57b9a, 0x88cc7691, 0xa2f355a0, 0xacfa58ab, 0xbee14fb6, 0xb0e842bd, 0xea9f09d4, 0xe49604df, 0xf68d13c2, 0xf8841ec9, 0xd2bb3df8, 0xdcb230f3, 0xcea927ee, 0xc0a02ae5, 0x7a47b13c, 0x744ebc37, 0x6655ab2a, 0x685ca621, 0x42638510, 0x4c6a881b, 0x5e719f06, 0x5078920d, 0x0a0fd964, 0x0406d46f, 0x161dc372, 0x1814ce79, 0x322bed48, 0x3c22e043, 0x2e39f75e, 0x2030fa55, 0xec9ab701, 0xe293ba0a, 0xf088ad17, 0xfe81a01c, 0xd4be832d, 0xdab78e26, 0xc8ac993b, 0xc6a59430, 0x9cd2df59, 0x92dbd252, 0x80c0c54f, 0x8ec9c844, 0xa4f6eb75, 0xaaffe67e, 0xb8e4f163, 0xb6edfc68, 0x0c0a67b1, 0x02036aba, 0x10187da7, 0x1e1170ac, 0x342e539d, 0x3a275e96, 0x283c498b, 0x26354480, 0x7c420fe9, 0x724b02e2, 0x605015ff, 0x6e5918f4, 0x44663bc5, 0x4a6f36ce, 0x587421d3, 0x567d2cd8, 0x37a10c7a, 0x39a80171, 0x2bb3166c, 0x25ba1b67, 0x0f853856, 0x018c355d, 0x13972240, 0x1d9e2f4b, 0x47e96422, 0x49e06929, 0x5bfb7e34, 0x55f2733f, 0x7fcd500e, 0x71c45d05, 0x63df4a18, 0x6dd64713, 0xd731dcca, 0xd938d1c1, 0xcb23c6dc, 0xc52acbd7, 0xef15e8e6, 0xe11ce5ed, 0xf307f2f0, 0xfd0efffb, 0xa779b492, 0xa970b999, 0xbb6bae84, 0xb562a38f, 0x9f5d80be, 0x91548db5, 0x834f9aa8, 0x8d4697a3]);
-    this._mixCol = new Uint8Array(256);
-    for (let i = 0; i < 256; i++) {
-      this._mixCol[i] = i < 128 ? i << 1 : i << 1 ^ 0x1b;
-    }
     this.buffer = new Uint8Array(16);
     this.bufferPosition = 0;
   }
@@ -52598,12 +53004,12 @@ class AESBaseCipher {
       state[11] = u;
       state[15] = t;
       for (let j = 0; j < 16; j += 4) {
-        const s0 = state[j + 0];
+        const s0 = state[j];
         const s1 = state[j + 1];
         const s2 = state[j + 2];
         const s3 = state[j + 3];
         t = s0 ^ s1 ^ s2 ^ s3;
-        state[j + 0] ^= t ^ this._mixCol[s0 ^ s1];
+        state[j] ^= t ^ this._mixCol[s0 ^ s1];
         state[j + 1] ^= t ^ this._mixCol[s1 ^ s2];
         state[j + 2] ^= t ^ this._mixCol[s2 ^ s3];
         state[j + 3] ^= t ^ this._mixCol[s3 ^ s0];
@@ -52713,9 +53119,7 @@ class AESBaseCipher {
     let buffer = this.buffer,
       bufferLength = this.bufferPosition;
     const result = [];
-    if (!iv) {
-      iv = new Uint8Array(16);
-    }
+    iv ||= new Uint8Array(16);
     for (let i = 0; i < sourceLength; ++i) {
       buffer[bufferLength] = data[i];
       ++bufferLength;
@@ -52746,11 +53150,11 @@ class AESBaseCipher {
   }
 }
 class AES128Cipher extends AESBaseCipher {
+  _rcon = new Uint8Array([0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d]);
   constructor(key) {
     super();
     this._cyclesOfRepetition = 10;
     this._keySize = 160;
-    this._rcon = new Uint8Array([0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d]);
     this._key = this._expandKey(key);
   }
   _expandKey(cipherKey) {
@@ -52831,71 +53235,9 @@ class AES256Cipher extends AESBaseCipher {
     return result;
   }
 }
-class PDF17 {
-  checkOwnerPassword(password, ownerValidationSalt, userBytes, ownerPassword) {
-    const hashData = new Uint8Array(password.length + 56);
-    hashData.set(password, 0);
-    hashData.set(ownerValidationSalt, password.length);
-    hashData.set(userBytes, password.length + ownerValidationSalt.length);
-    const result = calculateSHA256(hashData, 0, hashData.length);
-    return isArrayEqual(result, ownerPassword);
-  }
-  checkUserPassword(password, userValidationSalt, userPassword) {
-    const hashData = new Uint8Array(password.length + 8);
-    hashData.set(password, 0);
-    hashData.set(userValidationSalt, password.length);
-    const result = calculateSHA256(hashData, 0, hashData.length);
-    return isArrayEqual(result, userPassword);
-  }
-  getOwnerKey(password, ownerKeySalt, userBytes, ownerEncryption) {
-    const hashData = new Uint8Array(password.length + 56);
-    hashData.set(password, 0);
-    hashData.set(ownerKeySalt, password.length);
-    hashData.set(userBytes, password.length + ownerKeySalt.length);
-    const key = calculateSHA256(hashData, 0, hashData.length);
-    const cipher = new AES256Cipher(key);
-    return cipher.decryptBlock(ownerEncryption, false, new Uint8Array(16));
-  }
-  getUserKey(password, userKeySalt, userEncryption) {
-    const hashData = new Uint8Array(password.length + 8);
-    hashData.set(password, 0);
-    hashData.set(userKeySalt, password.length);
-    const key = calculateSHA256(hashData, 0, hashData.length);
-    const cipher = new AES256Cipher(key);
-    return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
-  }
-}
-class PDF20 {
+class PDFBase {
   _hash(password, input, userBytes) {
-    let k = calculateSHA256(input, 0, input.length).subarray(0, 32);
-    let e = [0];
-    let i = 0;
-    while (i < 64 || e.at(-1) > i - 32) {
-      const combinedLength = password.length + k.length + userBytes.length,
-        combinedArray = new Uint8Array(combinedLength);
-      let writeOffset = 0;
-      combinedArray.set(password, writeOffset);
-      writeOffset += password.length;
-      combinedArray.set(k, writeOffset);
-      writeOffset += k.length;
-      combinedArray.set(userBytes, writeOffset);
-      const k1 = new Uint8Array(combinedLength * 64);
-      for (let j = 0, pos = 0; j < 64; j++, pos += combinedLength) {
-        k1.set(combinedArray, pos);
-      }
-      const cipher = new AES128Cipher(k.subarray(0, 16));
-      e = cipher.encrypt(k1, k.subarray(16, 32));
-      const remainder = e.slice(0, 16).reduce((a, b) => a + b, 0) % 3;
-      if (remainder === 0) {
-        k = calculateSHA256(e, 0, e.length);
-      } else if (remainder === 1) {
-        k = calculateSHA384(e, 0, e.length);
-      } else if (remainder === 2) {
-        k = calculateSHA512(e, 0, e.length);
-      }
-      i++;
-    }
-    return k.subarray(0, 32);
+    unreachable("Abstract method `_hash` called");
   }
   checkOwnerPassword(password, ownerValidationSalt, userBytes, ownerPassword) {
     const hashData = new Uint8Array(password.length + 56);
@@ -52928,6 +53270,44 @@ class PDF20 {
     const key = this._hash(password, hashData, []);
     const cipher = new AES256Cipher(key);
     return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
+  }
+}
+class PDF17 extends PDFBase {
+  _hash(password, input, userBytes) {
+    return calculateSHA256(input, 0, input.length);
+  }
+}
+class PDF20 extends PDFBase {
+  _hash(password, input, userBytes) {
+    let k = calculateSHA256(input, 0, input.length).subarray(0, 32);
+    let e = [0];
+    let i = 0;
+    while (i < 64 || e.at(-1) > i - 32) {
+      const combinedLength = password.length + k.length + userBytes.length,
+        combinedArray = new Uint8Array(combinedLength);
+      let writeOffset = 0;
+      combinedArray.set(password, writeOffset);
+      writeOffset += password.length;
+      combinedArray.set(k, writeOffset);
+      writeOffset += k.length;
+      combinedArray.set(userBytes, writeOffset);
+      const k1 = new Uint8Array(combinedLength * 64);
+      for (let j = 0, pos = 0; j < 64; j++, pos += combinedLength) {
+        k1.set(combinedArray, pos);
+      }
+      const cipher = new AES128Cipher(k.subarray(0, 16));
+      e = cipher.encrypt(k1, k.subarray(16, 32));
+      const remainder = Math.sumPrecise(e.slice(0, 16)) % 3;
+      if (remainder === 0) {
+        k = calculateSHA256(e, 0, e.length);
+      } else if (remainder === 1) {
+        k = calculateSHA384(e, 0, e.length);
+      } else if (remainder === 2) {
+        k = calculateSHA512(e, 0, e.length);
+      }
+      i++;
+    }
+    return k.subarray(0, 32);
   }
 }
 class CipherTransform {
@@ -52968,7 +53348,9 @@ class CipherTransform {
   }
 }
 class CipherTransformFactory {
-  static #defaultPasswordBytes = new Uint8Array([0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08, 0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80, 0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a]);
+  static get _defaultPasswordBytes() {
+    return shadow(this, "_defaultPasswordBytes", new Uint8Array([0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08, 0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80, 0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a]));
+  }
   #createEncryptionKey20(revision, password, ownerPassword, ownerValidationSalt, ownerKeySalt, uBytes, userPassword, userValidationSalt, userKeySalt, ownerEncryption, userEncryption, perms) {
     if (password) {
       const passwordLength = Math.min(127, password.length);
@@ -52998,23 +53380,19 @@ class CipherTransformFactory {
     }
     j = 0;
     while (i < 32) {
-      hashData[i++] = CipherTransformFactory.#defaultPasswordBytes[j++];
+      hashData[i++] = CipherTransformFactory._defaultPasswordBytes[j++];
     }
-    for (j = 0, n = ownerPassword.length; j < n; ++j) {
-      hashData[i++] = ownerPassword[j];
-    }
+    hashData.set(ownerPassword, i);
+    i += ownerPassword.length;
     hashData[i++] = flags & 0xff;
     hashData[i++] = flags >> 8 & 0xff;
     hashData[i++] = flags >> 16 & 0xff;
     hashData[i++] = flags >>> 24 & 0xff;
-    for (j = 0, n = fileId.length; j < n; ++j) {
-      hashData[i++] = fileId[j];
-    }
+    hashData.set(fileId, i);
+    i += fileId.length;
     if (revision >= 4 && !encryptMetadata) {
-      hashData[i++] = 0xff;
-      hashData[i++] = 0xff;
-      hashData[i++] = 0xff;
-      hashData[i++] = 0xff;
+      hashData.fill(0xff, i, i + 4);
+      i += 4;
     }
     let hash = calculateMD5(hashData, 0, i);
     const keyLengthInBytes = keyLength >> 3;
@@ -53026,12 +53404,11 @@ class CipherTransformFactory {
     const encryptionKey = hash.subarray(0, keyLengthInBytes);
     let cipher, checkData;
     if (revision >= 3) {
-      for (i = 0; i < 32; ++i) {
-        hashData[i] = CipherTransformFactory.#defaultPasswordBytes[i];
-      }
-      for (j = 0, n = fileId.length; j < n; ++j) {
-        hashData[i++] = fileId[j];
-      }
+      i = 0;
+      hashData.set(CipherTransformFactory._defaultPasswordBytes, i);
+      i += 32;
+      hashData.set(fileId, i);
+      i += fileId.length;
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
@@ -53043,21 +53420,11 @@ class CipherTransformFactory {
         cipher = new ARCFourCipher(derivedKey);
         checkData = cipher.encryptBlock(checkData);
       }
-      for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] !== checkData[j]) {
-          return null;
-        }
-      }
     } else {
       cipher = new ARCFourCipher(encryptionKey);
-      checkData = cipher.encryptBlock(CipherTransformFactory.#defaultPasswordBytes);
-      for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] !== checkData[j]) {
-          return null;
-        }
-      }
+      checkData = cipher.encryptBlock(CipherTransformFactory._defaultPasswordBytes);
     }
-    return encryptionKey;
+    return checkData.every((data, k) => userPassword[k] === data) ? encryptionKey : null;
   }
   #decodeUserPassword(password, ownerPassword, revision, keyLength) {
     const hashData = new Uint8Array(32);
@@ -53068,7 +53435,7 @@ class CipherTransformFactory {
     }
     let j = 0;
     while (i < 32) {
-      hashData[i++] = CipherTransformFactory.#defaultPasswordBytes[j++];
+      hashData[i++] = CipherTransformFactory._defaultPasswordBytes[j++];
     }
     let hash = calculateMD5(hashData, 0, i);
     const keyLengthInBytes = keyLength >> 3;
@@ -53208,9 +53575,10 @@ class CipherTransformFactory {
       const perms = stringToBytes(dict.get("Perms"));
       encryptionKey = this.#createEncryptionKey20(revision, passwordBytes, ownerPassword, ownerValidationSalt, ownerKeySalt, uBytes, userPassword, userValidationSalt, userKeySalt, ownerEncryption, userEncryption, perms);
     }
-    if (!encryptionKey && !password) {
-      throw new PasswordException("No password given", PasswordResponses.NEED_PASSWORD);
-    } else if (!encryptionKey && password) {
+    if (!encryptionKey) {
+      if (!password) {
+        throw new PasswordException("No password given", PasswordResponses.NEED_PASSWORD);
+      }
       const decodedPassword = this.#decodeUserPassword(passwordBytes, ownerPassword, revision, keyLength);
       encryptionKey = this.#prepareKeyData(fileIdBytes, decodedPassword, ownerPassword, userPassword, flags, revision, keyLength, encryptMetadata);
     }
@@ -53243,63 +53611,6 @@ class CipherTransformFactory {
       return new ARCFourCipher(key);
     };
     return new CipherTransform(cipherConstructor, cipherConstructor);
-  }
-}
-
-;// ./src/core/dataset_reader.js
-
-
-
-function decodeString(str) {
-  try {
-    return stringToUTF8String(str);
-  } catch (ex) {
-    warn(`UTF-8 decoding failed: "${ex}".`);
-    return str;
-  }
-}
-class DatasetXMLParser extends SimpleXMLParser {
-  constructor(options) {
-    super(options);
-    this.node = null;
-  }
-  onEndElement(name) {
-    const node = super.onEndElement(name);
-    if (node && name === "xfa:datasets") {
-      this.node = node;
-      throw new Error("Aborting DatasetXMLParser.");
-    }
-  }
-}
-class DatasetReader {
-  constructor(data) {
-    if (data.datasets) {
-      this.node = new SimpleXMLParser({
-        hasAttributes: true
-      }).parseFromString(data.datasets).documentElement;
-    } else {
-      const parser = new DatasetXMLParser({
-        hasAttributes: true
-      });
-      try {
-        parser.parseFromString(data["xdp:xdp"]);
-      } catch {}
-      this.node = parser.node;
-    }
-  }
-  getValue(path) {
-    if (!this.node || !path) {
-      return "";
-    }
-    const node = this.node.searchNode(parseXFAPath(path), 0);
-    if (!node) {
-      return "";
-    }
-    const first = node.firstChild;
-    if (first?.nodeName === "value") {
-      return node.children.map(child => decodeString(child.textContent));
-    }
-    return decodeString(node.textContent);
   }
 }
 
@@ -54080,6 +54391,7 @@ class Page {
     fontCache,
     builtInCMapCache,
     standardFontDataCache,
+    globalColorSpaceCache,
     globalImageCache,
     systemFontCache,
     nonBlendModesSet,
@@ -54093,6 +54405,7 @@ class Page {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.standardFontDataCache = standardFontDataCache;
+    this.globalColorSpaceCache = globalColorSpaceCache;
     this.globalImageCache = globalImageCache;
     this.systemFontCache = systemFontCache;
     this.nonBlendModesSet = nonBlendModesSet;
@@ -54191,16 +54504,15 @@ class Page {
     }
     throw reason;
   }
-  getContentStream() {
-    return this.pdfManager.ensure(this, "content").then(content => {
-      if (content instanceof BaseStream) {
-        return content;
-      }
-      if (Array.isArray(content)) {
-        return new StreamsSequenceStream(content, this._onSubStreamError.bind(this));
-      }
-      return new NullStream();
-    });
+  async getContentStream() {
+    const content = await this.pdfManager.ensure(this, "content");
+    if (content instanceof BaseStream) {
+      return content;
+    }
+    if (Array.isArray(content)) {
+      return new StreamsSequenceStream(content, this._onSubStreamError.bind(this));
+    }
+    return new NullStream();
   }
   get xfaData() {
     return shadow(this, "xfaData", this.xfaFactory ? {
@@ -54252,6 +54564,7 @@ class Page {
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
       standardFontDataCache: this.standardFontDataCache,
+      globalColorSpaceCache: this.globalColorSpaceCache,
       globalImageCache: this.globalImageCache,
       systemFontCache: this.systemFontCache,
       options: this.evaluatorOptions
@@ -54280,7 +54593,7 @@ class Page {
       });
     }
   }
-  save(handler, task, annotationStorage, changes) {
+  async save(handler, task, annotationStorage, changes) {
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
@@ -54289,29 +54602,27 @@ class Page {
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
       standardFontDataCache: this.standardFontDataCache,
+      globalColorSpaceCache: this.globalColorSpaceCache,
       globalImageCache: this.globalImageCache,
       systemFontCache: this.systemFontCache,
       options: this.evaluatorOptions
     });
-    return this._parsedAnnotations.then(function (annotations) {
-      const promises = [];
-      for (const annotation of annotations) {
-        promises.push(annotation.save(partialEvaluator, task, annotationStorage, changes).catch(function (reason) {
-          warn("save - ignoring annotation data during " + `"${task.name}" task: "${reason}".`);
-          return null;
-        }));
-      }
-      return Promise.all(promises);
-    });
+    const annotations = await this._parsedAnnotations;
+    const promises = [];
+    for (const annotation of annotations) {
+      promises.push(annotation.save(partialEvaluator, task, annotationStorage, changes).catch(function (reason) {
+        warn("save - ignoring annotation data during " + `"${task.name}" task: "${reason}".`);
+        return null;
+      }));
+    }
+    return Promise.all(promises);
   }
-  loadResources(keys) {
-    this.resourcesPromise ||= this.pdfManager.ensure(this, "resources");
-    return this.resourcesPromise.then(() => {
-      const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
-      return objectLoader.load();
-    });
+  async loadResources(keys) {
+    await (this.resourcesPromise ??= this.pdfManager.ensure(this, "resources"));
+    const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
+    await objectLoader.load();
   }
-  getOperatorList({
+  async getOperatorList({
     handler,
     sink,
     task,
@@ -54330,6 +54641,7 @@ class Page {
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
       standardFontDataCache: this.standardFontDataCache,
+      globalColorSpaceCache: this.globalColorSpaceCache,
       globalImageCache: this.globalImageCache,
       systemFontCache: this.systemFontCache,
       options: this.evaluatorOptions
@@ -54375,83 +54687,80 @@ class Page {
         return AnnotationFactory.printNewAnnotations(annotationGlobals, partialEvaluator, task, newAnnots, imagePromises);
       });
     }
-    const pageListPromise = Promise.all([contentStreamPromise, resourcesPromise]).then(([contentStream]) => {
+    const pageListPromise = Promise.all([contentStreamPromise, resourcesPromise]).then(async ([contentStream]) => {
       const opList = new OperatorList(intent, sink);
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(this.resources, this.nonBlendModesSet),
         pageIndex: this.pageIndex,
         cacheKey
       });
-      return partialEvaluator.getOperatorList({
+      await partialEvaluator.getOperatorList({
         stream: contentStream,
         task,
         resources: this.resources,
         operatorList: opList
-      }).then(function () {
-        return opList;
       });
+      return opList;
     });
-    return Promise.all([pageListPromise, this._parsedAnnotations, newAnnotationsPromise]).then(function ([pageOpList, annotations, newAnnotations]) {
-      if (newAnnotations) {
-        annotations = annotations.filter(a => !(a.ref && deletedAnnotations.has(a.ref)));
-        for (let i = 0, ii = newAnnotations.length; i < ii; i++) {
-          const newAnnotation = newAnnotations[i];
-          if (newAnnotation.refToReplace) {
-            const j = annotations.findIndex(a => a.ref && isRefsEqual(a.ref, newAnnotation.refToReplace));
-            if (j >= 0) {
-              annotations.splice(j, 1, newAnnotation);
-              newAnnotations.splice(i--, 1);
-              ii--;
-            }
+    let [pageOpList, annotations, newAnnotations] = await Promise.all([pageListPromise, this._parsedAnnotations, newAnnotationsPromise]);
+    if (newAnnotations) {
+      annotations = annotations.filter(a => !(a.ref && deletedAnnotations.has(a.ref)));
+      for (let i = 0, ii = newAnnotations.length; i < ii; i++) {
+        const newAnnotation = newAnnotations[i];
+        if (newAnnotation.refToReplace) {
+          const j = annotations.findIndex(a => a.ref && isRefsEqual(a.ref, newAnnotation.refToReplace));
+          if (j >= 0) {
+            annotations.splice(j, 1, newAnnotation);
+            newAnnotations.splice(i--, 1);
+            ii--;
           }
         }
-        annotations = annotations.concat(newAnnotations);
       }
-      if (annotations.length === 0 || intent & RenderingIntentFlag.ANNOTATIONS_DISABLE) {
-        pageOpList.flush(true);
-        return {
-          length: pageOpList.totalLength
-        };
+      annotations = annotations.concat(newAnnotations);
+    }
+    if (annotations.length === 0 || intent & RenderingIntentFlag.ANNOTATIONS_DISABLE) {
+      pageOpList.flush(true);
+      return {
+        length: pageOpList.totalLength
+      };
+    }
+    const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
+      isEditing = !!(intent & RenderingIntentFlag.IS_EDITING),
+      intentAny = !!(intent & RenderingIntentFlag.ANY),
+      intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
+      intentPrint = !!(intent & RenderingIntentFlag.PRINT);
+    const opListPromises = [];
+    for (const annotation of annotations) {
+      if (intentAny || intentDisplay && annotation.mustBeViewed(annotationStorage, renderForms) && annotation.mustBeViewedWhenEditing(isEditing, modifiedIds) || intentPrint && annotation.mustBePrinted(annotationStorage)) {
+        opListPromises.push(annotation.getOperatorList(partialEvaluator, task, intent, annotationStorage).catch(function (reason) {
+          warn("getOperatorList - ignoring annotation data during " + `"${task.name}" task: "${reason}".`);
+          return {
+            opList: null,
+            separateForm: false,
+            separateCanvas: false
+          };
+        }));
       }
-      const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
-        isEditing = !!(intent & RenderingIntentFlag.IS_EDITING),
-        intentAny = !!(intent & RenderingIntentFlag.ANY),
-        intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
-        intentPrint = !!(intent & RenderingIntentFlag.PRINT);
-      const opListPromises = [];
-      for (const annotation of annotations) {
-        if (intentAny || intentDisplay && annotation.mustBeViewed(annotationStorage, renderForms) && annotation.mustBeViewedWhenEditing(isEditing, modifiedIds) || intentPrint && annotation.mustBePrinted(annotationStorage)) {
-          opListPromises.push(annotation.getOperatorList(partialEvaluator, task, intent, annotationStorage).catch(function (reason) {
-            warn("getOperatorList - ignoring annotation data during " + `"${task.name}" task: "${reason}".`);
-            return {
-              opList: null,
-              separateForm: false,
-              separateCanvas: false
-            };
-          }));
-        }
-      }
-      return Promise.all(opListPromises).then(function (opLists) {
-        let form = false,
-          canvas = false;
-        for (const {
-          opList,
-          separateForm,
-          separateCanvas
-        } of opLists) {
-          pageOpList.addOpList(opList);
-          form ||= separateForm;
-          canvas ||= separateCanvas;
-        }
-        pageOpList.flush(true, {
-          form,
-          canvas
-        });
-        return {
-          length: pageOpList.totalLength
-        };
-      });
+    }
+    const opLists = await Promise.all(opListPromises);
+    let form = false,
+      canvas = false;
+    for (const {
+      opList,
+      separateForm,
+      separateCanvas
+    } of opLists) {
+      pageOpList.addOpList(opList);
+      form ||= separateForm;
+      canvas ||= separateCanvas;
+    }
+    pageOpList.flush(true, {
+      form,
+      canvas
     });
+    return {
+      length: pageOpList.totalLength
+    };
   }
   async extractTextContent({
     handler,
@@ -54472,6 +54781,7 @@ class Page {
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
       standardFontDataCache: this.standardFontDataCache,
+      globalColorSpaceCache: this.globalColorSpaceCache,
       globalImageCache: this.globalImageCache,
       systemFontCache: this.systemFontCache,
       options: this.evaluatorOptions
@@ -54526,6 +54836,7 @@ class Page {
           fontCache: this.fontCache,
           builtInCMapCache: this.builtInCMapCache,
           standardFontDataCache: this.standardFontDataCache,
+          globalColorSpaceCache: this.globalColorSpaceCache,
           globalImageCache: this.globalImageCache,
           systemFontCache: this.systemFontCache,
           options: this.evaluatorOptions
@@ -55195,6 +55506,7 @@ class PDFDocument {
       fontCache: catalog.fontCache,
       builtInCMapCache: catalog.builtInCMapCache,
       standardFontDataCache: catalog.standardFontDataCache,
+      globalColorSpaceCache: catalog.globalColorSpaceCache,
       globalImageCache: catalog.globalImageCache,
       systemFontCache: catalog.systemFontCache,
       nonBlendModesSet: catalog.nonBlendModesSet,
@@ -55272,6 +55584,7 @@ class PDFDocument {
             fontCache: catalog.fontCache,
             builtInCMapCache: catalog.builtInCMapCache,
             standardFontDataCache: catalog.standardFontDataCache,
+            globalColorSpaceCache: this.globalColorSpaceCache,
             globalImageCache: catalog.globalImageCache,
             systemFontCache: catalog.systemFontCache,
             nonBlendModesSet: catalog.nonBlendModesSet,
@@ -55433,6 +55746,7 @@ class PDFDocument {
 
 
 
+
 function parseDocBaseUrl(url) {
   if (url) {
     const absoluteUrl = createValidAbsoluteUrl(url);
@@ -55461,10 +55775,13 @@ class BasePdfManager {
     this.evaluatorOptions = Object.freeze(evaluatorOptions);
     ImageResizer.setOptions(evaluatorOptions);
     JpegStream.setOptions(evaluatorOptions);
-    JpxImage.setOptions({
+    const options = {
       ...evaluatorOptions,
       handler
-    });
+    };
+    JpxImage.setOptions(options);
+    IccColorSpace.setOptions(options);
+    CmykICCBasedCS.setOptions(options);
   }
   get docId() {
     return this._docId;
@@ -56115,26 +56432,23 @@ function writeInt(number, size, offset, buffer) {
   return offset + size;
 }
 function writeString(string, offset, buffer) {
-  for (let i = 0, len = string.length; i < len; i++) {
+  const ii = string.length;
+  for (let i = 0; i < ii; i++) {
     buffer[offset + i] = string.charCodeAt(i) & 0xff;
   }
+  return offset + ii;
 }
 function computeMD5(filesize, xrefInfo) {
   const time = Math.floor(Date.now() / 1000);
   const filename = xrefInfo.filename || "";
-  const md5Buffer = [time.toString(), filename, filesize.toString()];
-  let md5BufferLen = md5Buffer.reduce((a, str) => a + str.length, 0);
-  for (const value of Object.values(xrefInfo.info)) {
-    md5Buffer.push(value);
-    md5BufferLen += value.length;
-  }
+  const md5Buffer = [time.toString(), filename, filesize.toString(), ...Object.values(xrefInfo.info)];
+  const md5BufferLen = Math.sumPrecise(md5Buffer.map(str => str.length));
   const array = new Uint8Array(md5BufferLen);
   let offset = 0;
   for (const str of md5Buffer) {
-    writeString(str, offset, array);
-    offset += str.length;
+    offset = writeString(str, offset, array);
   }
-  return bytesToString(calculateMD5(array));
+  return bytesToString(calculateMD5(array, 0, array.length));
 }
 function writeXFADataForAcroform(str, changes) {
   const xml = new SimpleXMLParser({
@@ -56278,7 +56592,7 @@ async function getXRefStreamTable(xrefInfo, baseOffset, newRefs, newXref, buffer
   const sizes = [1, offsetSize, maxGenSize];
   newXref.set("W", sizes);
   computeIDs(baseOffset, xrefInfo, newXref);
-  const structSize = sizes.reduce((a, x) => a + x, 0);
+  const structSize = Math.sumPrecise(sizes);
   const data = new Uint8Array(structSize * xrefTableData.length);
   const stream = new Stream(data);
   stream.dict = newXref;
@@ -56391,13 +56705,12 @@ async function incrementalUpdate({
     }
   }
   await (useXrefStream ? getXRefStreamTable(xrefInfo, baseOffset, newRefs, newXref, buffer) : getXRefTable(xrefInfo, baseOffset, newRefs, newXref, buffer));
-  const totalLength = buffer.reduce((a, str) => a + str.length, originalData.length);
+  const totalLength = originalData.length + Math.sumPrecise(buffer.map(str => str.length));
   const array = new Uint8Array(totalLength);
   array.set(originalData);
   let offset = originalData.length;
   for (const str of buffer) {
-    writeString(str, offset, array);
-    offset += str.length;
+    offset = writeString(str, offset, array);
   }
   return array;
 }
@@ -56571,7 +56884,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.0.254";
+    const workerVersion = "5.1.73";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
@@ -56808,9 +57121,7 @@ class WorkerMessageHandler {
     handler.on("GetPageJSActions", function ({
       pageIndex
     }) {
-      return pdfManager.getPage(pageIndex).then(function (page) {
-        return pdfManager.ensure(page, "jsActions");
-      });
+      return pdfManager.getPage(pageIndex).then(page => pdfManager.ensure(page, "jsActions"));
     });
     handler.on("GetOutline", function (data) {
       return pdfManager.ensureCatalog("documentOutline");
@@ -56828,9 +57139,7 @@ class WorkerMessageHandler {
       return pdfManager.ensureCatalog("markInfo");
     });
     handler.on("GetData", function (data) {
-      return pdfManager.requestLoadedStream().then(function (stream) {
-        return stream.bytes;
-      });
+      return pdfManager.requestLoadedStream().then(stream => stream.bytes);
     });
     handler.on("GetAnnotations", function ({
       pageIndex,
@@ -56881,7 +57190,6 @@ class WorkerMessageHandler {
           }
         } else if (await _structTreeRoot.canUpdateStructTree({
           pdfManager,
-          xref,
           newAnnotationsByPage
         })) {
           structTreeRoot = _structTreeRoot;
@@ -57057,9 +57365,7 @@ class WorkerMessageHandler {
       });
     });
     handler.on("GetStructTree", function (data) {
-      return pdfManager.getPage(data.pageIndex).then(function (page) {
-        return pdfManager.ensure(page, "getStructTree");
-      });
+      return pdfManager.getPage(data.pageIndex).then(page => pdfManager.ensure(page, "getStructTree"));
     });
     handler.on("FontFallback", function (data) {
       return pdfManager.fontFallback(data.id, handler);
@@ -57103,8 +57409,8 @@ class WorkerMessageHandler {
 
 ;// ./src/pdf.worker.js
 
-const pdfjsVersion = "5.0.254";
-const pdfjsBuild = "3103747c8";
+const pdfjsVersion = "5.1.73";
+const pdfjsBuild = "a6a997fe4";
 
 var __webpack_exports__WorkerMessageHandler = __webpack_exports__.WorkerMessageHandler;
 export { __webpack_exports__WorkerMessageHandler as WorkerMessageHandler };

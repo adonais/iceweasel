@@ -39,7 +39,8 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
                 Self::After |
                 Self::Marker |
                 Self::Placeholder |
-                Self::FileSelectorButton
+                Self::FileSelectorButton |
+                Self::DetailsContent
         )
     }
 
@@ -60,6 +61,13 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
         // All the named view transition pseudo-elements are the descendants of a pseudo-element
         // root.
         self.is_named_view_transition()
+    }
+
+    /// Whether this pseudo-element is "element-backed", which means that it inherits from its regular
+    /// flat tree parent, which might not be the originating element.
+    #[inline]
+    fn is_element_backed(&self) -> bool {
+        self.is_named_view_transition() || *self == PseudoElement::DetailsContent
     }
 }
 
@@ -190,12 +198,6 @@ impl PseudoElement {
         )
     }
 
-    /// Whether this pseudo-element is "part-like", which means that it inherits from its regular
-    /// flat tree parent, which might not be the originating element.
-    pub fn is_part_like(&self) -> bool {
-        self.is_named_view_transition()
-    }
-
     /// The count we contribute to the specificity from this pseudo-element.
     pub fn specificity_count(&self) -> u32 {
         match *self {
@@ -225,6 +227,9 @@ impl PseudoElement {
             Self::TargetText => pref!("dom.text_fragments.enabled"),
             Self::SliderFill | Self::SliderTrack | Self::SliderThumb => {
                 pref!("layout.css.modern-range-pseudos.enabled")
+            },
+            Self::DetailsContent => {
+                pref!("layout.css.details-content.enabled")
             },
             Self::ViewTransition |
             Self::ViewTransitionGroup(..) |

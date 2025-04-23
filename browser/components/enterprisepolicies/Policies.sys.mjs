@@ -559,6 +559,11 @@ export var Policies = {
         "ClientSignature",
         "browser.contentanalysis.client_signature"
       );
+      setPrefIfPresentAndLock(
+        param,
+        "MaxConnectionsCount",
+        "browser.contentanalysis.max_connections"
+      );
       let resultPrefs = [
         ["DefaultResult", "default_result"],
         ["TimeoutResult", "timeout_result"],
@@ -840,6 +845,9 @@ export var Policies = {
         TLS_RSA_WITH_AES_256_CBC_SHA: "security.ssl3.rsa_aes_256_sha",
         TLS_RSA_WITH_3DES_EDE_CBC_SHA:
           "security.ssl3.deprecated.rsa_des_ede3_sha",
+        TLS_CHACHA20_POLY1305_SHA256: "security.tls13.chacha20_poly1305_sha256",
+        TLS_AES_128_GCM_SHA256: "security.tls13.aes_128_gcm_sha256",
+        TLS_AES_256_GCM_SHA384: "security.tls13.aes_256_gcm_sha384",
       };
 
       for (let cipher in param) {
@@ -1042,6 +1050,7 @@ export var Policies = {
         setAndLockPref("datareporting.healthreport.uploadEnabled", false);
         setAndLockPref("datareporting.policy.dataSubmissionEnabled", false);
         setAndLockPref("toolkit.telemetry.archive.enabled", false);
+        setAndLockPref("datareporting.usage.uploadEnabled", false);
         blockAboutPage(manager, "about:telemetry");
       }
     },
@@ -2554,6 +2563,21 @@ export var Policies = {
         }
       } else {
         lazy.CustomizableUI.removeWidgetFromArea("home-button");
+      }
+    },
+  },
+
+  SkipTermsOfUse: {
+    onBeforeAddons(manager, param) {
+      if (param) {
+        setAndLockPref(
+          "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
+          999
+        );
+        setAndLockPref(
+          "datareporting.policy.dataSubmissionPolicyNotifiedTime",
+          Date.now().toString()
+        );
       }
     },
   },

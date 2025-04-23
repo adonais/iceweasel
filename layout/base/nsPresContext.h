@@ -378,6 +378,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     return mozilla::PreferenceSheet::PrefsFor(*mDocument);
   }
 
+  mozilla::StyleForcedColors ForcedColors() const { return mForcedColors; }
   bool ForcingColors() const;
 
   mozilla::ColorScheme DefaultBackgroundColorScheme() const;
@@ -1132,11 +1133,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   // has been updated, potentially affecting font selection and layout.
   void ForceReflowForFontInfoUpdate(bool aNeedsReframe);
   void ForceReflowForFontInfoUpdateFromStyle();
-
-  /**
-   * Checks for MozAfterPaint listeners on the document
-   */
-  bool MayHavePaintEventListener();
 
   void InvalidatePaintedLayers();
 

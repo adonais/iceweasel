@@ -13,8 +13,9 @@ import android.os.Build
 import android.view.accessibility.AccessibilityManager
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
+import androidx.core.content.edit
 import androidx.lifecycle.LifecycleOwner
-import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
 import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingMode
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
@@ -111,6 +112,21 @@ class Settings(private val appContext: Context) : PreferencesHolder {
          */
         const val TOP_SITES_PROVIDER_LIMIT = 2
 
+        /**
+         * Minimum number of days between Set as default Browser prompt displays in home page.
+         */
+        const val DAYS_BETWEEN_DEFAULT_BROWSER_PROMPTS: Int = 14
+
+        /**
+         * Maximum number of times the Set as default Browser prompt from home page can be displayed to the user.
+         */
+        const val MAX_NUMBER_OF_DEFAULT_BROWSER_PROMPTS: Int = 3
+
+        /**
+         * Number of app cold starts before displaying the Set as default Browser prompt from home page.
+         */
+        const val APP_COLD_STARTS_TO_SHOW_DEFAULT_PROMPT: Int = 4
+
         private fun Action.toInt() = when (this) {
             Action.BLOCKED -> BLOCKED_INT
             Action.ASK_TO_ALLOW -> ASK_TO_ALLOW_INT
@@ -136,6 +152,31 @@ class Settings(private val appContext: Context) : PreferencesHolder {
             ASK_TO_ALLOW_INT -> AutoplayAction.BLOCKED
             else -> throw InvalidParameterException("$this is not a valid SitePermissionsRules.AutoplayAction")
         }
+
+        /**
+         * DoH setting is set to "Default", corresponds to TRR_MODE_OFF (0) from GeckoView
+         */
+        private const val DOH_SETTINGS_DEFAULT = 0
+
+        /**
+         * DoH setting is set to "Increased", corresponds to TRR_MODE_FIRST (2) from GeckoView
+         */
+        private const val DOH_SETTINGS_INCREASED = 2
+
+        /**
+         * DoH setting is set to "Max", corresponds to TRR_MODE_ONLY (3) from GeckoView
+         */
+        private const val DOH_SETTINGS_MAX = 3
+
+        /**
+         * DoH is disabled, corresponds to TRR_MODE_DISABLED (5) from GeckoView
+         */
+        private const val DOH_SETTINGS_OFF = 5
+
+        /**
+         * Bug 1946867 - Currently "hardcoded" to the DoH TRR URI of Cloudflare
+         */
+        private const val CLOUDFLARE_URI = "https://mozilla.cloudflare-dns.com/dns-query"
     }
 
     @VisibleForTesting
@@ -366,6 +407,12 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = false,
     )
 
+    /**
+     * The daily usage ping is not normally tied to normal telemetry.  We set the default value to
+     * [isTelemetryEnabled] because this setting was added in early 2025 and we want to make
+     * sure that users who upgrade and had telemetry disabled don't start sending the
+     * daily usage ping telemetry.
+     */
     var isDailyUsagePingEnabled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_daily_usage_ping),
         default = isTelemetryEnabled,
@@ -425,6 +472,28 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         appContext.getPreferenceKey(R.string.pref_key_search_bookmarks),
         default = true,
     )
+
+    /**
+     * Indicates if the user has enabled shortcuts in Firefox Suggest.
+     */
+    val shortcutSuggestionsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_show_shortcuts_suggestions),
+        default = true,
+    )
+
+    /**
+     * Returns true if shortcut suggestions feature should be shown to the user.
+     */
+    val isShortcutSuggestionsVisible by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_enable_shortcuts_suggestions),
+        default = FxNimbus.features.topSitesSuggestions.value().enabled,
+    )
+
+    /**
+     * Returns true if shortcut suggestions should be shown to the user.
+     */
+    val shouldShowShortcutSuggestions: Boolean
+        get() = shortcutSuggestionsEnabled && isShortcutSuggestionsVisible
 
     val shouldShowSyncedTabsSuggestions by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_search_synced_tabs),
@@ -729,7 +798,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         val isDefaultBrowserNow = isDefaultBrowserBlocking()
         val wasDefaultBrowserOnLastResume =
             this.preferences.getBoolean(prefKey, isDefaultBrowserNow)
-        this.preferences.edit().putBoolean(prefKey, isDefaultBrowserNow).apply()
+        this.preferences.edit { putBoolean(prefKey, isDefaultBrowserNow) }
         return isDefaultBrowserNow && !wasDefaultBrowserOnLastResume
     }
 
@@ -799,14 +868,18 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     @VisibleForTesting(otherwise = PRIVATE)
     fun setStrictETP() {
-        preferences.edit().putBoolean(
-            appContext.getPreferenceKey(R.string.pref_key_tracking_protection_strict_default),
-            true,
-        ).apply()
-        preferences.edit().putBoolean(
-            appContext.getPreferenceKey(R.string.pref_key_tracking_protection_standard_option),
-            false,
-        ).apply()
+        preferences.edit {
+            putBoolean(
+                appContext.getPreferenceKey(R.string.pref_key_tracking_protection_strict_default),
+                true,
+            )
+        }
+        preferences.edit {
+            putBoolean(
+                appContext.getPreferenceKey(R.string.pref_key_tracking_protection_standard_option),
+                false,
+            )
+        }
         appContext.components.let {
             val policy = it.core.trackingProtectionPolicyFactory
                 .createTrackingProtectionPolicy()
@@ -942,12 +1015,12 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         set(value) {
             val lastKnownModeWasPrivate = (value == BrowsingMode.Private)
 
-            preferences.edit()
-                .putBoolean(
+            preferences.edit {
+                putBoolean(
                     appContext.getPreferenceKey(R.string.pref_key_last_known_mode_private),
                     lastKnownModeWasPrivate,
                 )
-                .apply()
+            }
 
             field = value
         }
@@ -1038,7 +1111,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         preferences.getBoolean(type.getPreferenceKey(appContext), false)
 
     fun setDeleteDataOnQuit(type: DeleteBrowsingDataOnQuitType, value: Boolean) {
-        preferences.edit().putBoolean(type.getPreferenceKey(appContext), value).apply()
+        preferences.edit { putBoolean(type.getPreferenceKey(appContext), value) }
     }
 
     fun shouldDeleteAnyDataOnQuit() =
@@ -1049,10 +1122,12 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         false,
     )
 
-    fun recordPasswordsEncryptionKeyGenerated() = preferences.edit().putBoolean(
-        appContext.getPreferenceKey(R.string.pref_key_encryption_key_generated),
-        true,
-    ).apply()
+    fun recordPasswordsEncryptionKeyGenerated() = preferences.edit {
+        putBoolean(
+            appContext.getPreferenceKey(R.string.pref_key_encryption_key_generated),
+            true,
+        )
+    }
 
     @VisibleForTesting(otherwise = PRIVATE)
     internal val loginsSecureWarningSyncCount = counterPreference(
@@ -1100,11 +1175,19 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Returns true if trending searches should be shown to the user.
+     * Indicates if the user have enabled recent search in the search suggestions setting preference.
      */
-    fun shouldShowTrendingSearchSuggestions(isPrivate: Boolean, searchEngine: SearchEngine?) =
-        trendingSearchSuggestionsEnabled && isTrendingSearchesVisible &&
-            searchEngine?.trendingUrl != null && (!isPrivate || shouldShowSearchSuggestionsInPrivate)
+    @VisibleForTesting
+    internal var recentSearchSuggestionsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_show_recent_search_suggestions),
+        default = true,
+    )
+
+    /**
+     * Returns true if recent searches should be shown to the user.
+     */
+    val shouldShowRecentSearchSuggestions: Boolean
+        get() = recentSearchSuggestionsEnabled && isRecentSearchesVisible
 
     var showSearchSuggestionsInPrivateOnboardingFinished by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_search_suggestions_in_private_onboarding),
@@ -1204,7 +1287,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     fun setAutoplayUserSetting(
         autoplaySetting: Int,
     ) {
-        preferences.edit().putInt(AUTOPLAY_USER_SETTING, autoplaySetting).apply()
+        preferences.edit { putInt(AUTOPLAY_USER_SETTING, autoplaySetting) }
     }
 
     /**
@@ -1230,7 +1313,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         feature: PhoneFeature,
         value: Action,
     ) {
-        preferences.edit().putInt(feature.getPreferenceKey(appContext), value.toInt()).apply()
+        preferences.edit { putInt(feature.getPreferenceKey(appContext), value.toInt()) }
     }
 
     fun getSitePermissionsCustomSettingsRules(): SitePermissionsRules {
@@ -1310,9 +1393,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     fun setSearchWidgetInstalled(installed: Boolean) {
         val key = appContext.getPreferenceKey(R.string.pref_key_search_widget_installed_2)
-        preferences.edit()
-            .putBoolean(key, installed)
-            .apply()
+        preferences.edit { putBoolean(key, installed) }
     }
 
     /**
@@ -1331,8 +1412,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
         if (installedCount > 0) {
             setSearchWidgetInstalled(true)
-            preferences.edit()
-                .remove(oldKey).apply()
+            preferences.edit { remove(oldKey) }
         }
     }
 
@@ -1765,18 +1845,28 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Returns whether onboarding should be shown to the user.
      *
+     * @param featureEnabled Boolean to indicate whether the feature is enabled.
      * @param hasUserBeenOnboarded Boolean to indicate whether the user has been onboarded.
      * @param isLauncherIntent Boolean to indicate whether the app was launched on tapping on the
      * app icon.
      */
-    fun shouldShowOnboarding(hasUserBeenOnboarded: Boolean, isLauncherIntent: Boolean): Boolean {
-        return if (!hasUserBeenOnboarded && isLauncherIntent) {
+    fun shouldShowOnboarding(
+        featureEnabled: Boolean = onboardingFeatureEnabled,
+        hasUserBeenOnboarded: Boolean,
+        isLauncherIntent: Boolean,
+    ): Boolean {
+        return if (featureEnabled && !hasUserBeenOnboarded && isLauncherIntent) {
             FxNimbus.features.junoOnboarding.recordExposure()
             true
         } else {
             false
         }
     }
+
+    /**
+     * Indicates if the onboarding feature is enabled.
+     */
+    var onboardingFeatureEnabled = FeatureFlags.onboardingFeatureEnabled
 
     /**
      * Indicates if the marketing onboarding card should be shown to the user.
@@ -1938,6 +2028,15 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Indicates if the Homepage Search Bar is enabled.
+     */
+    var enableHomepageSearchBar by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_homepage_searchbar),
+        default = { FxNimbus.features.homepageSearchBar.value().enabled },
+        featureFlag = true,
+    )
+
+    /**
      * Indicates if the Unified Trust Panel is enabled.
      */
     var enableUnifiedTrustPanel by booleanPreference(
@@ -1946,12 +2045,19 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Indicates if Trending Searches is enabled.
+     * Indicates if Trending Search Suggestions are enabled.
      */
-    var isTrendingSearchesVisible by lazyFeatureFlagPreference(
+    var isTrendingSearchesVisible by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_trending_searches),
-        default = { FxNimbus.features.trendingSearches.value().enabled },
-        featureFlag = true,
+        default = FxNimbus.features.trendingSearches.value().enabled,
+    )
+
+    /**
+     * Indicates if Recent Search Suggestions are enabled.
+     */
+    var isRecentSearchesVisible by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_recent_searches),
+        default = FxNimbus.features.recentSearches.value().enabled,
     )
 
     /**
@@ -2170,15 +2276,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Indicates if the Set as default browser prompt for existing users feature is enabled.
-     */
-    var setAsDefaultBrowserPromptForExistingUsersEnabled by lazyFeatureFlagPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_set_as_default_browser_prompt_enabled),
-        default = { FxNimbus.features.setAsDefaultPrompt.value().enabled },
-        featureFlag = true,
-    )
-
-    /**
      * Last time the Set as default Browser prompt has been displayed to the user.
      */
     var lastSetAsDefaultPromptShownTimeInMillis by longPreference(
@@ -2211,32 +2308,14 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Number of days between Set as default Browser prompts.
-     */
-    private val daysBetweenDefaultBrowserPrompts: Int
-        get() = FxNimbus.features.setAsDefaultPrompt.value().daysBetweenPrompts
-
-    /**
-     * Maximum number of times the Set as default Browser prompt can be displayed to the user.
-     */
-    private val maxNumberOfDefaultBrowserPrompts: Int
-        get() = FxNimbus.features.setAsDefaultPrompt.value().maxNumberOfTimesToDisplay
-
-    /**
-     * Number of app cold starts before displaying the Set as default Browser prompt.
-     */
-    private val appColdStartsToShowDefaultPrompt: Int
-        get() = FxNimbus.features.setAsDefaultPrompt.value().appColdStartsBetweenPrompts
-
-    /**
      * Indicates if the Set as default Browser prompt should be displayed to the user.
      */
     val shouldShowSetAsDefaultPrompt: Boolean
-        get() = setAsDefaultBrowserPromptForExistingUsersEnabled &&
+        get() =
             (System.currentTimeMillis() - lastSetAsDefaultPromptShownTimeInMillis) >
-            daysBetweenDefaultBrowserPrompts * ONE_DAY_MS &&
-            numberOfSetAsDefaultPromptShownTimes < maxNumberOfDefaultBrowserPrompts &&
-            coldStartsBetweenSetAsDefaultPrompts >= appColdStartsToShowDefaultPrompt
+                DAYS_BETWEEN_DEFAULT_BROWSER_PROMPTS * ONE_DAY_MS &&
+                numberOfSetAsDefaultPromptShownTimes < MAX_NUMBER_OF_DEFAULT_BROWSER_PROMPTS &&
+                coldStartsBetweenSetAsDefaultPrompts >= APP_COLD_STARTS_TO_SHOW_DEFAULT_PROMPT
 
     /**
      * Updates the relevant settings when the "Set as Default Browser" prompt is shown.
@@ -2292,8 +2371,13 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var useNewBookmarks by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_use_new_bookmarks_ui),
-        default = { FxNimbus.features.bookmarks.value().newComposeUi },
+        default = { true },
         featureFlag = true,
+    )
+
+    var bookmarkListSortOrder by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_bookmark_list_sort_order),
+        default = "",
     )
 
     var lastSavedInFolderGuid by stringPreference(
@@ -2302,10 +2386,114 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Indicates whether or not we should use the new compose logins UI
+     */
+    var enableComposeLogins by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_logins),
+        default = false,
+    )
+
+    /**
      * Indicates whether or not to show the entry point for the DNS over HTTPS settings
      */
     val showDohEntryPoint by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_doh_settings_enabled),
+        default = false,
+    )
+
+    /**
+     * Stores the current DoH mode as an integer preference.
+     * - 0: Default mode
+     * - 2: Increased protection
+     * - 3: Maximum protection
+     * - 5: DoH is disabled
+     */
+    private var trrMode by intPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_settings_mode),
+        default = DOH_SETTINGS_DEFAULT,
+    )
+
+    /**
+     * Stores the URI of the custom DoH provider selected by the user.
+     * Defaults to an empty string if no provider is set.
+     */
+    var dohProviderUrl by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_provider_uri),
+        default = "",
+    )
+
+    /**
+     * Stores the URI of the default DoH provider.
+     * Bug 1946867 - Currently "hardcoded" to "https://mozilla.cloudflare-dns.com/dns-query"
+     */
+    val dohDefaultProviderUrl by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_default_provider_uri),
+        default = CLOUDFLARE_URI,
+    )
+
+    /**
+     * Stores a set of domains that are excluded from using DNS over HTTPS.
+     */
+    var dohExceptionsList by stringSetPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_exceptions_list_string),
+        default = emptySet(),
+    )
+
+    /**
+     * Retrieves the current DohSettingsMode based on trrMode
+     */
+    fun getDohSettingsMode(): Engine.DohSettingsMode {
+        return when (trrMode) {
+            DOH_SETTINGS_DEFAULT -> Engine.DohSettingsMode.DEFAULT
+            DOH_SETTINGS_INCREASED -> Engine.DohSettingsMode.INCREASED
+            DOH_SETTINGS_MAX -> Engine.DohSettingsMode.MAX
+            DOH_SETTINGS_OFF -> Engine.DohSettingsMode.OFF
+            else -> Engine.DohSettingsMode.DEFAULT
+        }
+    }
+
+    /**
+     * Updates trrMode by converting the given DohSettingsMode
+     */
+    fun setDohSettingsMode(mode: Engine.DohSettingsMode) {
+        trrMode = when (mode) {
+            Engine.DohSettingsMode.DEFAULT -> DOH_SETTINGS_DEFAULT
+            Engine.DohSettingsMode.INCREASED -> DOH_SETTINGS_INCREASED
+            Engine.DohSettingsMode.MAX -> DOH_SETTINGS_MAX
+            Engine.DohSettingsMode.OFF -> DOH_SETTINGS_OFF
+        }
+    }
+
+    /**
+     * Indicates whether or not to show the tab strip.
+     */
+    var tabStripEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_tab_strip),
+        default = { FxNimbus.features.tabStrip.value().enabled },
+        featureFlag = true,
+    )
+
+    /**
+     * Indicates if the user has completed the setup step for choosing the toolbar location
+     */
+    var hasCompletedSetupStepToolbar by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_setup_step_toolbar),
+        default = false,
+    )
+
+    /**
+     * Indicates if the user has completed the setup step for choosing the theme
+     */
+    var hasCompletedSetupStepTheme by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_setup_step_theme),
+        default = false,
+    )
+
+    /**
+     * Indicates if the user has completed the setup step for exploring extensions
+     */
+    var hasCompletedSetupStepExtensions by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_setup_step_extensions),
         default = false,
     )
 }

@@ -71,8 +71,10 @@ import mozilla.components.support.ktx.android.content.hasCamera
 import mozilla.components.support.ktx.android.content.isPermissionGranted
 import mozilla.components.support.ktx.android.content.res.getSpanned
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
+import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
 import mozilla.components.support.ktx.android.view.findViewInHierarchy
 import mozilla.components.support.ktx.android.view.hideKeyboard
+import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
@@ -85,10 +87,10 @@ import org.mozilla.fenix.GleanMetrics.VoiceSearch
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
-import org.mozilla.fenix.components.Core.Companion.BOOKMARKS_SEARCH_ENGINE_ID
-import org.mozilla.fenix.components.Core.Companion.HISTORY_SEARCH_ENGINE_ID
-import org.mozilla.fenix.components.Core.Companion.TABS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentSearchDialogBinding
 import org.mozilla.fenix.databinding.SearchSuggestionsHintBinding
@@ -213,6 +215,8 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
                     this@SearchDialogFragment.onBackPressed()
                 }
             }
+
+            window?.setupPersistentInsets()
         }
     }
 
@@ -246,6 +250,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
                 activity = activity,
                 store = requireComponents.core.store,
                 tabsUseCases = requireComponents.useCases.tabsUseCases,
+                fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                 fragmentStore = store,
                 navController = findNavController(),
                 settings = requireContext().settings(),
@@ -476,19 +481,16 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
             updateAccessibilityTraversalOrder()
         }
 
+        ImeInsetsSynchronizer.setup(view)
         observeClipboardState()
         observeSuggestionProvidersState()
 
-        val isPrivate = (requireActivity() as HomeActivity).browsingModeManager.mode.isPrivate
-        if (
-            view.context.settings().shouldShowTrendingSearchSuggestions(
-                isPrivate,
-                requireComponents.core.store.state.search.selectedOrDefaultSearchEngine,
-            ) && (
-                store.state.query.isNotEmpty() ||
-                    FxNimbus.features.searchSuggestionsOnHomepage.value().enabled
-                )
-        ) {
+        val shouldShowSuggestions = store.state.run {
+            (showTrendingSearches || showRecentSearches || showShortcutsSuggestions) &&
+                (query.isNotEmpty() || FxNimbus.features.searchSuggestionsOnHomepage.value().enabled)
+        }
+
+        if (shouldShowSuggestions) {
             binding.awesomeBar.isVisible = true
         } else {
             observeAwesomeBarState()
@@ -738,8 +740,8 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
         )
     }
 
-    @Suppress("DEPRECATION")
-    // https://github.com/mozilla-mobile/fenix/issues/19920
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1813657
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,

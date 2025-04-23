@@ -14,6 +14,7 @@
 #include "mozilla/StaticPtr.h"
 
 #include "mozilla/dom/FragmentOrElement.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "DOMIntersectionObserver.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EffectSet.h"
@@ -141,12 +142,12 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE_AND_DESTROY(nsIContent,
 
 nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   // This handles also nested native anonymous content.
-  for (const nsIContent* content = this; content;
-       content = content->GetChromeOnlyAccessSubtreeRootParent()) {
+  // Oops, this function signature allows casting const to non-const.  (Then
+  // again, so does GetFirstChild()->GetParent().)
+  for (nsIContent* content = const_cast<nsIContent*>(this); content;
+       content = content->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
     if (!content->ChromeOnlyAccess()) {
-      // Oops, this function signature allows casting const to
-      // non-const.  (Then again, so does GetFirstChild()->GetParent().)
-      return const_cast<nsIContent*>(content);
+      return content;
     }
   }
   return nullptr;
@@ -739,7 +740,7 @@ static nsINode* FindChromeAccessOnlySubtreeOwnerForEvents(nsINode* aNode) {
   if (!aNode->ChromeOnlyAccessForEvents()) {
     return aNode;
   }
-  return const_cast<nsIContent*>(aNode->GetChromeOnlyAccessSubtreeRootParent());
+  return aNode->GetClosestNativeAnonymousSubtreeRootParentOrHost();
 }
 
 nsINode* FindChromeAccessOnlySubtreeOwnerForEvents(EventTarget* aTarget) {
@@ -1032,6 +1033,28 @@ Element* nsIContent::GetAutofocusDelegate(IsFocusableFlags aFlags) const {
     }
   }
   return nullptr;
+}
+
+bool nsIContent::CanStartSelectionAsWebCompatHack() const {
+  if (!StaticPrefs::dom_selection_mimic_chrome_tostring_enabled()) {
+    return true;
+  }
+
+  for (const nsIContent* content = this; content;
+       content = content->GetFlattenedTreeParent()) {
+    if (content->IsEditable()) {
+      return true;
+    }
+    nsIFrame* frame = content->GetPrimaryFrame();
+    if (!frame) {
+      return true;
+    }
+    if (!frame->IsSelectable(nullptr)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 Element* nsIContent::GetFocusDelegate(IsFocusableFlags aFlags) const {

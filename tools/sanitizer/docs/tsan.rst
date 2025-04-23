@@ -26,7 +26,7 @@ The easiest way to get Firefox builds with Thread Sanitizer is to download a
 continuous integration TSan build of mozilla-central (updated at least daily):
 
 -  mozilla-central optimized builds:
-   `linux <https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-central.latest.firefox.linux64-tsan-opt/artifacts/public/build/target.tar.bz2>`__
+   `linux <https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-central.latest.firefox.linux64-tsan-opt/artifacts/public/build/target.tar.xz>`__
 
 The fuzzing team also offers a tool called ``fuzzfetch`` to download this and many
 other CI builds. It makes downloading and unpacking these builds much easier and
@@ -231,7 +231,7 @@ silence a race while a fix is developed as well as to permanently silence a
        and think twice before attempting to suppress a race.
 
 The runtime Suppression list is directly baked into Firefox at compile-time and
-located at `mozglue/build/TsanOptions.cpp <https://searchfox.org/mozilla-central/source/mozglue/build/TsanOptions.cpp>`__.
+located at `build/sanitizers/TsanOptions.cpp <https://searchfox.org/mozilla-central/source/build/sanitizers/TsanOptions.cpp>`__.
 
 .. warning::
        **Important**: When adding a suppression, always make sure to include

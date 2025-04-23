@@ -131,6 +131,92 @@ newtab.search.ad:
     send_in_pings:
       - newtab
 
+sap:
+  counts:
+    type: event
+    description: >
+      Recorded search counts when a user initiates a search from a search access
+      point (SAP). It does not guarantee that the search engine result page was
+      loaded successfully (use SERP telemetry).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938929
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1938929
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+    extra_keys:
+      source:
+        description: >
+          The search access point from which the user initiated the search.
+          Possible values are:
+          `abouthome`, `contextmenu`, `newtab`, `searchbar`, `system`, `urlbar`,
+          `urlbar-handoff`, `urlbar-persisted`, `urlbar-searchmode`, `webextension`
+        type: string
+      provider_id:
+        description: >
+          The identifier of the search engine provider that is being used for the
+          search. Note this may be different to the identifier of the provider in
+          SERP reports. For user installed engines, this will be the string `other`.
+        type: string
+      provider_name:
+        description: >
+          The name of the search engine provider that is being used for the search.
+        type: string
+      partner_code:
+        description: >
+          The partner code, if defined/known, that is being used for the search.
+          Not all search engines have partner codes. May be empty for engines that
+          are overridden by a third-party add-on or OpenSearch engine.
+        type: string
+      overridden_by_third_party:
+        description: >
+          Set to true if the search engine has been allowed to be overridden by
+          a third-party add-on or OpenSearch engine.
+        type: boolean
+
+  deprecated_counts:
+    type: labeled_counter
+    description: >
+      This is deprecated metric that should not be incoporated into dashboards.
+      Use the `sap.counts` event instead.
+
+      This metric has been added to Glean to aid transition of
+      histograms and allow the legacy telemetry SEARCH_COUNTS to continue to be
+      recorded.
+
+      Records search counts for search access points. The format is:
+      <engine-name>.<search-access-point>. For the urlbar when in search mode,
+      the format is <engine name>.urlbar-searchmode. For the urlbar when an
+      internal @engine shortcut is used, the format is: <engine-name>.alias.
+
+      This metric was generated to correspond to the Legacy Telemetry count
+      histogram SEARCH_COUNTS.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1089670
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1475571
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1482158
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1499193
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1545172
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1572500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1654680
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1089670
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1475571
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1482158
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1499193
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1545172
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1572500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1654680
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+    telemetry_mirror: h#SEARCH_COUNTS
+
 serp:
   impression:
     type: event
@@ -1798,3 +1884,27 @@ urlbar.searchmode:
       - fx-search-telemetry@mozilla.com
     expires: never
     telemetry_mirror: URLBAR_SEARCHMODE_OTHER
+
+searchbar:
+  selected_result_method:
+    type: labeled_counter
+    description: >
+      The input method the user used to select a result in the searchbar.
+      'enter' => The user hit the Enter key without choosing a result in the
+      popup. 'enterSelection' => The user chose a result and then hit the Enter
+      key. 'click' => The user clicked a result with the mouse.
+
+      This metric was generated to correspond to the Legacy Telemetry
+      categorical histogram FX_SEARCHBAR_SELECTED_RESULT_METHOD.
+    labels:
+      - enter
+      - enterSelection
+      - click
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1334615
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1334615
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: never
+    telemetry_mirror: h#FX_SEARCHBAR_SELECTED_RESULT_METHOD

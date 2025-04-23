@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { ExtensionCommon } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionCommon.sys.mjs"
+);
+
 add_setup(() =>
   SpecialPowers.pushPrefEnv({
     set: [["layout.css.devPixelsPerPx", 1]],
@@ -59,12 +63,10 @@ add_task(async function test_extension_sidebar_actions() {
   // Panel can be updated.
   await sendMessage(extension, "set-panel", "1.html");
   const panelUrl = `moz-extension://${extension.uuid}/1.html`;
-  await TestUtils.waitForCondition(() => {
-    const browser = SidebarController.browser.contentDocument.getElementById(
-      "webext-panels-browser"
-    );
-    return browser.currentURI.spec === panelUrl;
-  }, "The new panel is visible.");
+  const browser = SidebarController.browser.contentDocument.getElementById(
+    "webext-panels-browser"
+  );
+  await BrowserTestUtils.browserLoaded(browser, false, panelUrl);
 
   await extension.unload();
   await sidebar.updateComplete;
@@ -147,9 +149,12 @@ add_task(async function test_open_new_private_window_after_install() {
   const { document } = privateWin;
   const sidebar = document.querySelector("sidebar-main");
   ok(sidebar, "Sidebar is shown.");
-  await TestUtils.waitForCondition(
-    () => sidebar.extensionButtons,
-    "Extensions container is shown."
+
+  info("Waiting for extension buttons to be present");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebar,
+    { childList: true, subTree: true },
+    () => !!sidebar.extensionButtons
   );
   is(
     sidebar.extensionButtons.length,
@@ -197,11 +202,14 @@ add_task(async function test_customize_sidebar_extensions() {
   );
 
   // Test manage extension
+  let browserLoaded = BrowserTestUtils.browserLoaded(
+    win.gBrowser,
+    false,
+    "about:addons"
+  );
   extensionLink.click();
-  await TestUtils.waitForCondition(() => {
-    let spec = win.gBrowser.selectedTab.linkedBrowser.documentURI.spec;
-    return spec.startsWith("about:addons");
-  }, "about:addons is the new opened tab");
+  await browserLoaded;
+  info("about:addons is the new opened tab");
 
   await extension.unload();
   await sidebar.updateComplete;
@@ -265,11 +273,14 @@ add_task(async function test_extensions_keyboard_navigation() {
   );
 
   info("Press Enter key.");
+  let browserLoaded = BrowserTestUtils.browserLoaded(
+    win.gBrowser,
+    false,
+    "about:addons"
+  );
   EventUtils.synthesizeKey("KEY_Enter", {}, win);
-  await TestUtils.waitForCondition(() => {
-    let spec = win.gBrowser.selectedTab.linkedBrowser.documentURI.spec;
-    return spec.startsWith("about:addons");
-  }, "about:addons is the new opened tab");
+  await browserLoaded;
+  info("about:addons is the new opened tab");
 
   await extension.unload();
   await extension2.unload();
@@ -307,4 +318,94 @@ add_task(async function test_extension_sidebar_hidpi_icon() {
   await SpecialPowers.popPrefEnv();
   await extension.unload();
   await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_extension_panel_load() {
+  const launcher = document.querySelector("sidebar-main");
+  const extension = ExtensionTestUtils.loadExtension({ ...extData });
+  let textContent;
+
+  async function waitForPanelReady() {
+    return Promise.all([
+      extension.awaitMessage("sidebar"),
+      BrowserTestUtils.waitForEvent(window, "SidebarFocused"),
+    ]);
+  }
+
+  async function getSidebarPanelContents(win = window) {
+    let sidebarBrowser = win.SidebarController.browser;
+    is(
+      sidebarBrowser.currentURI.spec,
+      "chrome://browser/content/webext-panels.xhtml",
+      "Sidebar wrapper loaded in sidebar browser"
+    );
+    let extSidebarBrowser = sidebarBrowser.contentDocument.getElementById(
+      "webext-panels-browser"
+    );
+    ok(extSidebarBrowser, "got extSidebarBrowser");
+
+    const contentResult = await SpecialPowers.spawn(
+      extSidebarBrowser,
+      [],
+      async () => {
+        const doc = content.document;
+        if (doc.readyState != "complete") {
+          await new Promise(resolve =>
+            doc.addEventListener("DOMContentLoaded", resolve, { once: true })
+          );
+        }
+        return doc.documentElement.textContent.trim();
+      }
+    );
+    return contentResult;
+  }
+
+  const extensionPanelInitialReady = waitForPanelReady();
+  await extension.startup();
+  const commandID = `${ExtensionCommon.makeWidgetId(extension.id)}-sidebar-action`;
+
+  await extensionPanelInitialReady;
+  is(launcher.extensionButtons.length, 1, "Extension is shown in the sidebar.");
+
+  ok(SidebarController.isOpen, "The sidebar panel opened on install");
+  is(
+    SidebarController.currentID,
+    commandID,
+    "The currentID is the extension's sidebarAction"
+  );
+
+  textContent = await getSidebarPanelContents();
+  is(
+    textContent,
+    "A Test Sidebar",
+    "Extension's sidebarAction loaded its document into the sidebar panel"
+  );
+
+  // check we can toggle it closed and open again
+  let panelHiddenPromise = BrowserTestUtils.waitForMutationCondition(
+    SidebarController._box,
+    { attributes: true, attributeFilter: ["hidden"] },
+    () =>
+      SidebarController._box.hidden &&
+      SidebarController.browser.getAttribute("src") == "about:blank"
+  );
+  document.getElementById("sidebar-button").click();
+  await panelHiddenPromise;
+
+  const extensionPanelReopenReady = waitForPanelReady();
+  document.getElementById("sidebar-button").click();
+
+  info("Waiting for the panel to be shown & focused");
+  await extensionPanelReopenReady;
+
+  textContent = await getSidebarPanelContents();
+  is(
+    textContent,
+    "A Test Sidebar",
+    "Extension's sidebarAction re-loaded its document into the sidebar panel"
+  );
+
+  SidebarController.hide();
+  await extension.unload();
+  await launcher.updateComplete;
 });

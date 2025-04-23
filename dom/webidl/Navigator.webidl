@@ -254,6 +254,15 @@ partial interface Navigator {
 partial interface Navigator {
   [NewObject, Func="Navigator::HasMidiSupport"]
   Promise<MIDIAccess> requestMIDIAccess(optional MIDIOptions options = {});
+
+  // Deprecated. Use mediaDevices.getUserMedia instead.
+  [Deprecated="NavigatorGetUserMedia", Throws,
+   Func="Navigator::MozGetUserMediaSupport",
+   NeedsCallerType,
+   UseCounter]
+  undefined mozGetUserMedia(MediaStreamConstraints constraints,
+                            NavigatorUserMediaSuccessCallback successCallback,
+                            NavigatorUserMediaErrorCallback errorCallback);
 };
 
 callback NavigatorUserMediaSuccessCallback = undefined (MediaStream stream);
@@ -262,15 +271,6 @@ callback NavigatorUserMediaErrorCallback = undefined (MediaStreamError error);
 partial interface Navigator {
   [Throws, Func="Navigator::HasUserMediaSupport"]
   readonly attribute MediaDevices mediaDevices;
-
-  // Deprecated. Use mediaDevices.getUserMedia instead.
-  [Deprecated="NavigatorGetUserMedia", Throws,
-   Func="Navigator::HasUserMediaSupport",
-   NeedsCallerType,
-   UseCounter]
-  undefined mozGetUserMedia(MediaStreamConstraints constraints,
-                            NavigatorUserMediaSuccessCallback successCallback,
-                            NavigatorUserMediaErrorCallback errorCallback);
 };
 
 // Service Workers/Navigation Controllers
@@ -397,4 +397,10 @@ partial interface Navigator {
 partial interface Navigator {
   [SameObject, Trial="PrivateAttributionV2"]
   readonly attribute PrivateAttribution privateAttribution;
+};
+
+// https://w3c-fedid.github.io/login-status/#login-status-javascript
+[SecureContext]
+partial interface Navigator {
+  [SameObject] readonly attribute NavigatorLogin login;
 };

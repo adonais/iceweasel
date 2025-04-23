@@ -250,6 +250,19 @@ struct CallRefMetricsRange {
   WASM_CHECK_CACHEABLE_POD(begin, length);
 };
 
+struct AllocSitesRange {
+  explicit AllocSitesRange() {}
+  explicit AllocSitesRange(uint32_t begin, uint32_t length)
+      : begin(begin), length(length) {}
+
+  uint32_t begin = 0;
+  uint32_t length = 0;
+
+  void offsetBy(uint32_t offset) { begin += offset; }
+
+  WASM_CHECK_CACHEABLE_POD(begin, length);
+};
+
 // A compact plain data summary of CallRefMetrics for use by our function
 // compilers. See CallRefMetrics in WasmInstanceData.h for more information.
 //
@@ -352,6 +365,10 @@ WASM_DECLARE_CACHEABLE_POD(CallRefMetricsRange);
 
 using CallRefMetricsRangeVector =
     Vector<CallRefMetricsRange, 0, SystemAllocPolicy>;
+
+WASM_DECLARE_CACHEABLE_POD(AllocSitesRange);
+
+using AllocSitesRangeVector = Vector<AllocSitesRange, 0, SystemAllocPolicy>;
 
 enum class BranchHint : uint8_t { Unlikely = 0, Likely = 1, Invalid = 2 };
 
@@ -671,7 +688,7 @@ struct DataSegment : AtomicRefCounted<DataSegment> {
 
   const InitExpr& offset() const { return *offsetIfActive; }
 
-  [[nodiscard]] bool init(const ShareableBytes& bytecode,
+  [[nodiscard]] bool init(const BytecodeSource& bytecode,
                           const DataSegmentRange& src) {
     memoryIndex = src.memoryIndex;
     if (src.offsetIfActive) {
@@ -681,7 +698,9 @@ struct DataSegment : AtomicRefCounted<DataSegment> {
       }
     }
     MOZ_ASSERT(bytes.length() == 0);
-    return bytes.append(bytecode.begin() + src.bytecodeOffset, src.length);
+    BytecodeSpan span =
+        bytecode.getSpan(BytecodeRange(src.bytecodeOffset, src.length));
+    return bytes.append(span.data(), span.size());
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -697,13 +716,10 @@ using DataSegmentVector = Vector<SharedDataSegment, 0, SystemAllocPolicy>;
 // compilation and stored in wasm::Module.
 
 struct CustomSectionRange {
-  uint32_t nameOffset;
-  uint32_t nameLength;
-  uint32_t payloadOffset;
-  uint32_t payloadLength;
+  BytecodeRange name;
+  BytecodeRange payload;
 
-  WASM_CHECK_CACHEABLE_POD(nameOffset, nameLength, payloadOffset,
-                           payloadLength);
+  WASM_CHECK_CACHEABLE_POD(name, payload);
 };
 
 WASM_DECLARE_CACHEABLE_POD(CustomSectionRange);
@@ -738,6 +754,18 @@ struct Name {
 WASM_DECLARE_CACHEABLE_POD(Name);
 
 using NameVector = Vector<Name, 0, SystemAllocPolicy>;
+
+struct NameSection {
+  Name moduleName;
+  NameVector funcNames;
+  // payload points at the name section's CustomSection::payload so that
+  // the Names (which are use payload-relative offsets) can be used
+  // independently of the Module without duplicating the name section.
+  SharedBytes payload;
+  uint32_t customSectionIndex;
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+};
 
 // The kind of limits to decode or convert from JS.
 

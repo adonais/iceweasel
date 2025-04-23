@@ -3,16 +3,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsIObserverService.h"
 #include "xpcpublic.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_alerts.h"
-#include "nsXULAppAPI.h"
+#include "nsServiceManagerUtils.h"
+#include "nsXULAlerts.h"
 
 #include "nsAlertsService.h"
 
-#include "nsXPCOM.h"
-#include "nsPromiseFlatString.h"
 #include "nsToolkitCompsCID.h"
 #include "nsComponentManagerUtils.h"
 
@@ -21,114 +22,35 @@
 #endif  // MOZ_PLACES
 
 #ifdef XP_WIN
+#  include <windows.h>
 #  include <shellapi.h>
 #endif
 
 using namespace mozilla;
 
-namespace {
-
-#ifdef MOZ_PLACES
-
-class IconCallback final : public nsIFaviconDataCallback {
- public:
-  NS_DECL_ISUPPORTS
-
-  IconCallback(nsIAlertsService* aBackend, nsIAlertNotification* aAlert,
-               nsIObserver* aAlertListener)
-      : mBackend(aBackend), mAlert(aAlert), mAlertListener(aAlertListener) {}
-
-  NS_IMETHOD
-  OnComplete(nsIURI* aIconURI, uint32_t aIconSize, const uint8_t* aIconData,
-             const nsACString& aMimeType, uint16_t aWidth) override {
-    nsresult rv = NS_ERROR_FAILURE;
-    if (aIconSize > 0) {
-      nsCOMPtr<nsIAlertsIconData> alertsIconData(do_QueryInterface(mBackend));
-      if (alertsIconData) {
-        rv = alertsIconData->ShowAlertWithIconData(mAlert, mAlertListener,
-                                                   aIconSize, aIconData);
-      }
-    } else if (aIconURI) {
-      nsCOMPtr<nsIAlertsIconURI> alertsIconURI(do_QueryInterface(mBackend));
-      if (alertsIconURI) {
-        rv = alertsIconURI->ShowAlertWithIconURI(mAlert, mAlertListener,
-                                                 aIconURI);
-      }
-    }
-    if (NS_FAILED(rv)) {
-      rv = mBackend->ShowAlert(mAlert, mAlertListener);
-    }
-    return rv;
-  }
-
- private:
-  virtual ~IconCallback() = default;
-
-  nsCOMPtr<nsIAlertsService> mBackend;
-  nsCOMPtr<nsIAlertNotification> mAlert;
-  nsCOMPtr<nsIObserver> mAlertListener;
-};
-
-NS_IMPL_ISUPPORTS(IconCallback, nsIFaviconDataCallback)
-
-#endif  // MOZ_PLACES
-
-nsresult ShowWithIconBackend(nsIAlertsService* aBackend,
-                             nsIAlertNotification* aAlert,
-                             nsIObserver* aAlertListener) {
-#ifdef MOZ_PLACES
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aAlert->GetURI(getter_AddRefs(uri));
-  if (NS_FAILED(rv) || !uri) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // Ensure the backend supports favicons.
-  nsCOMPtr<nsIAlertsIconData> alertsIconData(do_QueryInterface(aBackend));
-  nsCOMPtr<nsIAlertsIconURI> alertsIconURI;
-  if (!alertsIconData) {
-    alertsIconURI = do_QueryInterface(aBackend);
-  }
-  if (!alertsIconData && !alertsIconURI) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  nsCOMPtr<nsIFaviconService> favicons(
-      do_GetService("@mozilla.org/browser/favicon-service;1"));
-  NS_ENSURE_TRUE(favicons, NS_ERROR_FAILURE);
-
-  nsCOMPtr<nsIFaviconDataCallback> callback =
-      new IconCallback(aBackend, aAlert, aAlertListener);
-  if (alertsIconData) {
-    return favicons->GetFaviconDataForPage(uri, callback, 0);
-  }
-  return favicons->GetFaviconURLForPage(uri, callback, 0);
-#else
-  return NS_ERROR_NOT_IMPLEMENTED;
-#endif  // !MOZ_PLACES
-}
-
-nsresult ShowWithBackend(nsIAlertsService* aBackend,
-                         nsIAlertNotification* aAlert,
-                         nsIObserver* aAlertListener) {
-  if (Preferences::GetBool("alerts.showFavicons")) {
-    nsresult rv = ShowWithIconBackend(aBackend, aAlert, aAlertListener);
-    if (NS_SUCCEEDED(rv)) {
-      return rv;
-    }
-  }
-
-  // If favicons are disabled, or the backend doesn't support them, show the
-  // alert without one.
-  return aBackend->ShowAlert(aAlert, aAlertListener);
-}
-
-}  // anonymous namespace
-
-NS_IMPL_ISUPPORTS(nsAlertsService, nsIAlertsService, nsIAlertsDoNotDisturb)
+NS_IMPL_ISUPPORTS(nsAlertsService, nsIAlertsService, nsIAlertsDoNotDisturb,
+                  nsIObserver)
 
 nsAlertsService::nsAlertsService() : mBackend(nullptr) {
   mBackend = do_GetService(NS_SYSTEMALERTSERVICE_CONTRACTID);
+}
+
+nsresult nsAlertsService::Init() {
+  if (nsCOMPtr<nsIObserverService> obsServ =
+          mozilla::services::GetObserverService()) {
+    (void)NS_WARN_IF(
+        NS_FAILED(obsServ->AddObserver(this, "last-pb-context-exited", false)));
+  }
+
+  // The shutdown callback holds a strong reference and thus makes sure this
+  // runs at shutdown.
+  //
+  // Note that the purpose of this shutdown cleanup is to make the leak checker
+  // happy, and an early exit(0) without calling it should not break anything.
+  // (See also bug 1606879)
+  RunOnShutdown([self = RefPtr{this}]() { self->Teardown(); });
+
+  return NS_OK;
 }
 
 nsAlertsService::~nsAlertsService() = default;
@@ -207,10 +129,16 @@ NS_IMETHODIMP nsAlertsService::ShowAlert(nsIAlertNotification* aAlert,
   nsresult rv = aAlert->GetCookie(cookie);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    // Bailing out without calling alertfinished, because we do not want to
+    // propagate an error to observers during shutdown.
+    return NS_OK;
+  }
+
   // Check if there is an optional service that handles system-level
   // notifications
   if (ShouldUseSystemBackend()) {
-    rv = ShowWithBackend(mBackend, aAlert, aAlertListener);
+    rv = mBackend->ShowAlert(aAlert, aAlertListener);
     if (NS_SUCCEEDED(rv) || !ShouldFallBackToXUL()) {
       return rv;
     }
@@ -221,15 +149,16 @@ NS_IMETHODIMP nsAlertsService::ShowAlert(nsIAlertNotification* aAlert,
 
   if (!ShouldShowAlert()) {
     // Do not display the alert. Instead call alertfinished and get out.
-    if (aAlertListener)
+    if (aAlertListener) {
       aAlertListener->Observe(nullptr, "alertfinished", cookie.get());
+    }
     return NS_OK;
   }
 
   // Use XUL notifications as a fallback if above methods have failed.
   nsCOMPtr<nsIAlertsService> xulBackend(nsXULAlerts::GetInstance());
   NS_ENSURE_TRUE(xulBackend, NS_ERROR_FAILURE);
-  return ShowWithBackend(xulBackend, aAlert, aAlertListener);
+  return xulBackend->ShowAlert(aAlert, aAlertListener);
 }
 
 NS_IMETHODIMP nsAlertsService::CloseAlert(const nsAString& aAlertName,
@@ -305,4 +234,39 @@ already_AddRefed<nsIAlertsDoNotDisturb> nsAlertsService::GetDNDBackend() {
 
   nsCOMPtr<nsIAlertsDoNotDisturb> alertsDND(do_QueryInterface(backend));
   return alertsDND.forget();
+}
+
+NS_IMETHODIMP nsAlertsService::Observe(nsISupports* aSubject,
+                                       const char* aTopic,
+                                       const char16_t* aData) {
+  nsDependentCString topic(aTopic);
+  if (topic == "last-pb-context-exited"_ns) {
+    return PbmTeardown();
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsAlertsService::Teardown() {
+  nsCOMPtr<nsIAlertsService> backend;
+  // Try the system notification service.
+  if (ShouldUseSystemBackend()) {
+    backend = mBackend;
+  }
+  if (!backend) {
+    // We do not try nsXULAlerts here as it already uses ClearOnShutdown.
+    return NS_OK;
+  }
+  return backend->Teardown();
+}
+
+NS_IMETHODIMP nsAlertsService::PbmTeardown() {
+  nsCOMPtr<nsIAlertsService> backend;
+  // Try the system notification service.
+  if (ShouldUseSystemBackend()) {
+    backend = mBackend;
+  }
+  if (!backend) {
+    backend = nsXULAlerts::GetInstance();
+  }
+  return backend->PbmTeardown();
 }

@@ -120,71 +120,74 @@ pub struct ManagerProxy {
 }
 
 impl ManagerProxy {
-    pub fn new<B: ClientCertsBackend + Send + 'static>(backend: B) -> Result<ManagerProxy, Error> {
+    pub fn new<B: ClientCertsBackend + Send + 'static>(
+        name: &'static str,
+        backend: B,
+    ) -> Result<ManagerProxy, Error> {
         let (proxy_sender, manager_receiver) = channel();
         let (manager_sender, proxy_receiver) = channel();
-        let thread_handle = thread::Builder::new()
-            .name("osclientcert".into())
-            .spawn(move || {
-                let mut real_manager = Manager::new(backend);
-                while let Ok(arguments) = manager_receiver.recv() {
-                    let results = match arguments {
-                        ManagerArguments::OpenSession(slot_type) => {
-                            ManagerReturnValue::OpenSession(real_manager.open_session(slot_type))
-                        }
-                        ManagerArguments::CloseSession(session_handle) => {
-                            ManagerReturnValue::CloseSession(
-                                real_manager.close_session(session_handle),
-                            )
-                        }
-                        ManagerArguments::CloseAllSessions(slot_type) => {
-                            ManagerReturnValue::CloseAllSessions(
-                                real_manager.close_all_sessions(slot_type),
-                            )
-                        }
-                        ManagerArguments::StartSearch(session, attrs) => {
-                            ManagerReturnValue::StartSearch(
-                                real_manager.start_search(session, attrs),
-                            )
-                        }
-                        ManagerArguments::Search(session, max_objects) => {
-                            ManagerReturnValue::Search(real_manager.search(session, max_objects))
-                        }
-                        ManagerArguments::ClearSearch(session) => {
-                            ManagerReturnValue::ClearSearch(real_manager.clear_search(session))
-                        }
-                        ManagerArguments::GetAttributes(object_handle, attr_types) => {
-                            ManagerReturnValue::GetAttributes(
-                                real_manager.get_attributes(object_handle, attr_types),
-                            )
-                        }
-                        ManagerArguments::StartSign(session, key_handle, params) => {
-                            ManagerReturnValue::StartSign(
-                                real_manager.start_sign(session, key_handle, params),
-                            )
-                        }
-                        ManagerArguments::GetSignatureLength(session, data) => {
-                            ManagerReturnValue::GetSignatureLength(
-                                real_manager.get_signature_length(session, data),
-                            )
-                        }
-                        ManagerArguments::Sign(session, data) => {
-                            ManagerReturnValue::Sign(real_manager.sign(session, data))
-                        }
-                        ManagerArguments::Stop => ManagerReturnValue::Stop(Ok(())),
-                    };
-                    let stop_after_send = matches!(&results, &ManagerReturnValue::Stop(_));
-                    match manager_sender.send(results) {
-                        Ok(()) => {}
-                        Err(_) => {
-                            break;
-                        }
+        let thread_handle = thread::Builder::new().name(name.into()).spawn(move || {
+            #[cfg(not(test))]
+            gecko_profiler::register_thread(name);
+
+            let mut real_manager = Manager::new(backend);
+            while let Ok(arguments) = manager_receiver.recv() {
+                let results = match arguments {
+                    ManagerArguments::OpenSession(slot_type) => {
+                        ManagerReturnValue::OpenSession(real_manager.open_session(slot_type))
                     }
-                    if stop_after_send {
+                    ManagerArguments::CloseSession(session_handle) => {
+                        ManagerReturnValue::CloseSession(real_manager.close_session(session_handle))
+                    }
+                    ManagerArguments::CloseAllSessions(slot_type) => {
+                        ManagerReturnValue::CloseAllSessions(
+                            real_manager.close_all_sessions(slot_type),
+                        )
+                    }
+                    ManagerArguments::StartSearch(session, attrs) => {
+                        ManagerReturnValue::StartSearch(real_manager.start_search(session, attrs))
+                    }
+                    ManagerArguments::Search(session, max_objects) => {
+                        ManagerReturnValue::Search(real_manager.search(session, max_objects))
+                    }
+                    ManagerArguments::ClearSearch(session) => {
+                        ManagerReturnValue::ClearSearch(real_manager.clear_search(session))
+                    }
+                    ManagerArguments::GetAttributes(object_handle, attr_types) => {
+                        ManagerReturnValue::GetAttributes(
+                            real_manager.get_attributes(object_handle, attr_types),
+                        )
+                    }
+                    ManagerArguments::StartSign(session, key_handle, params) => {
+                        ManagerReturnValue::StartSign(
+                            real_manager.start_sign(session, key_handle, params),
+                        )
+                    }
+                    ManagerArguments::GetSignatureLength(session, data) => {
+                        ManagerReturnValue::GetSignatureLength(
+                            real_manager.get_signature_length(session, data),
+                        )
+                    }
+                    ManagerArguments::Sign(session, data) => {
+                        ManagerReturnValue::Sign(real_manager.sign(session, data))
+                    }
+                    ManagerArguments::Stop => ManagerReturnValue::Stop(Ok(())),
+                };
+                let stop_after_send = matches!(&results, &ManagerReturnValue::Stop(_));
+                match manager_sender.send(results) {
+                    Ok(()) => {}
+                    Err(_) => {
                         break;
                     }
                 }
-            });
+                if stop_after_send {
+                    break;
+                }
+            }
+
+            #[cfg(not(test))]
+            gecko_profiler::unregister_thread();
+        });
         match thread_handle {
             Ok(thread_handle) => Ok(ManagerProxy {
                 sender: proxy_sender,
@@ -410,9 +413,9 @@ pub struct Manager<B: ClientCertsBackend> {
     next_session: CK_SESSION_HANDLE,
     /// The next object handle to hand out.
     next_handle: CK_OBJECT_HANDLE,
-    /// The last time the implementation looked for new objects in the backend.
-    /// The implementation does this search no more than once every 2 seconds.
-    last_scan_time: Option<Instant>,
+    /// The last time the implementation finished looking for new objects in the backend.
+    /// The implementation does this search no more than once every 3 seconds.
+    last_scan_finished: Option<Instant>,
     backend: B,
 }
 
@@ -427,26 +430,25 @@ impl<B: ClientCertsBackend> Manager<B> {
             key_ids: BTreeSet::new(),
             next_session: 1,
             next_handle: 1,
-            last_scan_time: None,
+            last_scan_finished: None,
             backend,
         }
     }
 
-    /// When a new search session is opened (provided at least 2 seconds have elapsed since the
-    /// last session was opened), this searches for certificates and keys to expose. We
-    /// de-duplicate previously-found certificates and keys by keeping track of their IDs.
+    /// When a new search session is opened (provided at least 3 seconds have elapsed since the
+    /// last search finished), this searches for certificates and keys to expose. We de-duplicate
+    /// previously-found certificates and keys by keeping track of their IDs.
     fn maybe_find_new_objects(&mut self) -> Result<(), Error> {
-        let now = Instant::now();
-        match self.last_scan_time {
-            Some(last_scan_time) => {
-                if now.duration_since(last_scan_time) < Duration::new(2, 0) {
+        match self.last_scan_finished {
+            Some(last_scan_finished) => {
+                if Instant::now().duration_since(last_scan_finished) < Duration::new(3, 0) {
                     return Ok(());
                 }
             }
             None => {}
         }
-        self.last_scan_time = Some(now);
         let (certs, keys) = self.backend.find_objects()?;
+        self.last_scan_finished = Some(Instant::now());
         for cert in certs {
             let object = Object::Cert(cert);
             if self.cert_ids.contains(object.id()?) {

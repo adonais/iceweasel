@@ -1178,17 +1178,27 @@ class Client:
         yield
         fastclick_preload_script.stop()
 
+    async def ensure_InstallTrigger_defined(self):
+        return await self.make_preload_script("window.InstallTrigger = function() {}")
+
+    async def ensure_InstallTrigger_undefined(self):
+        return await self.make_preload_script("delete InstallTrigger")
+
     async def test_nicochannel_like_site(self, url, shouldPass=True):
         CONSENT = self.css(".MuiDialog-container button.MuiButton-containedPrimary")
+        PREMIUM = self.text(
+            "視聴するには、会員プランまたはレンタルプランを購入してください"
+        )
         BLOCKED = self.text("このブラウザはサポートされていません。")
         PLAY = self.css(".nfcp-overlay-play-lg")
 
         await self.navigate(url)
 
         while True:
-            consent, blocked, play = self.await_first_element_of(
+            consent, premium, blocked, play = self.await_first_element_of(
                 [
                     CONSENT,
+                    PREMIUM,
                     BLOCKED,
                     PLAY,
                 ],
@@ -1201,7 +1211,7 @@ class Client:
             self.await_element_hidden(CONSENT)
             continue
         if shouldPass:
-            assert play
+            assert play or premium
         else:
             assert blocked
 
@@ -1327,16 +1337,19 @@ class Client:
         if element is None:
             return False
 
-        return self.session.execute_script(
-            """
-              const e = arguments[0],
-                    s = window.getComputedStyle(e),
-                    v = s.visibility === "visible",
-                    o = Math.abs(parseFloat(s.opacity));
-              return e.getClientRects().length > 0 && v && (isNaN(o) || o === 1.0);
-          """,
-            args=[element],
-        )
+        try:
+            return self.session.execute_script(
+                """
+                  const e = arguments[0],
+                  s = window.getComputedStyle(e),
+                  v = s.visibility === "visible",
+                  o = Math.abs(parseFloat(s.opacity));
+                  return e.getClientRects().length > 0 && v && (isNaN(o) || o === 1.0);
+              """,
+                args=[element],
+            )
+        except webdriver.error.StaleElementReferenceException:
+            return False
 
     def is_one_solid_color(self, element, max_fuzz=8):
         # max_fuzz is needed as screenshots can have slight color bleeding/fringing

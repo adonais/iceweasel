@@ -1350,6 +1350,7 @@ sealed class EngineAction : BrowserAction() {
         val flags: EngineSession.LoadUrlFlags = EngineSession.LoadUrlFlags.none(),
         val additionalHeaders: Map<String, String>? = null,
         val includeParent: Boolean = false,
+        val textDirectiveUserActivation: Boolean = false,
     ) : EngineAction(), ActionWithTab
 
     /**
@@ -1713,6 +1714,14 @@ sealed class DownloadAction : BrowserAction() {
      * Restores the given [download] from the storage.
      */
     data class RestoreDownloadStateAction(val download: DownloadState) : DownloadAction()
+
+    /**
+     * [BrowserAction] to remove downloads from the storage that no longer exist on disk.
+     *
+     * This action is used to clean up the download storage by removing entries for files
+     * that have been deleted or moved from their original download location.
+     */
+    data object RemoveDeletedDownloads : DownloadAction()
 }
 
 /**
@@ -1814,6 +1823,11 @@ sealed class SearchAction : BrowserAction() {
      * distribution is a [String] that specifies a set of default search engines if available
      */
     data class SetRegionAction(val regionState: RegionState, val distribution: String? = null) : SearchAction()
+
+    /**
+     * Application Search Engines have finished loading from disk.
+     */
+    data class ApplicationSearchEnginesLoaded(val applicationSearchEngines: List<SearchEngine>) : SearchAction()
 
     /**
      * Sets the list of search engines and default search engine IDs.

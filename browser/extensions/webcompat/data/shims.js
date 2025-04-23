@@ -1003,6 +1003,57 @@ const AVAILABLE_SHIMS = [
     matches: ["*://openfpcdn.io/botd/v1"],
     onlyIfBlockedByETP: true,
   },
+  {
+    id: "SteamLogin",
+    platform: "all",
+    name: "Steam Login Shim",
+    bug: "1938299",
+    requestStorageAccessForRedirect: [
+      // allow cookies for *.steampowered.com <-> steamcommunity.com
+      ["*://store.steampowered.com/*", "*://steamcommunity.com/*"],
+      ["*://steamcommunity.com/*", "*://store.steampowered.com/*"],
+      ["*://help.steampowered.com/*", "*://steamcommunity.com/*"],
+      ["*://steamcommunity.com/*", "*://help.steampowered.com/*"],
+      ["*://checkout.steampowered.com/*", "*://steamcommunity.com/*"],
+      ["*://steamcommunity.com/*", "*://checkout.steampowered.com/*"],
+      // allow cookies for *.steampowered.com <-> steam.tv
+      ["*://store.steampowered.com/*", "*://steam.tv/*"],
+      ["*://steam.tv/*", "*://store.steampowered.com/*"],
+      ["*://help.steampowered.com/*", "*://steam.tv/*"],
+      ["*://steam.tv/*", "*://help.steampowered.com/*"],
+      ["*://checkout.steampowered.com/*", "*://steam.tv/*"],
+      ["*://steam.tv/*", "*://checkout.steampowered.com/*"],
+    ],
+  },
+  {
+    id: "TwitterEmbed",
+    platform: "desktop",
+    name: "Twitter embed placeholder",
+    bug: "1901602",
+    runFirst: "twitter-embed.js",
+    // Blank stub file just so we run the script above when the matched script
+    // files get blocked.
+    file: "empty-script.js",
+    matches: ["https://platform.twitter.com/widgets.js"],
+    logos: ["x-logo.svg"],
+    needsShimHelpers: [
+      "embedClicked",
+      "smartblockEmbedReplaced",
+      "smartblockGetFluentString",
+    ],
+    isSmartblockEmbedShim: true,
+    onlyIfBlockedByETP: true,
+    unblocksOnOptIn: [
+      "*://platform.twitter.com/*",
+      "*://syndication.twitter.com/*",
+      "*://cdn.syndication.twimg.com/*",
+      "*://pbs.twimg.com/*",
+      "*://abs.twimg.com/*",
+      "*://abs-0.twimg.com/*",
+    ],
+  },
 ];
 
-module.exports = AVAILABLE_SHIMS;
+if (typeof module !== "undefined") {
+  module.exports = AVAILABLE_SHIMS;
+}

@@ -35,7 +35,7 @@ from mozbuild.base import (
     MozbuildObject,
 )
 from mozbuild.base import MachCommandConditions as conditions
-from mozbuild.util import MOZBUILD_METRICS_PATH
+from mozbuild.util import MOZBUILD_METRICS_PATH, ForwardingArgumentParser
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -1319,8 +1319,7 @@ def install(command_context, **kwargs):
 
 def _get_android_run_parser():
     parser = argparse.ArgumentParser()
-    group = parser.add_argument_group("The compiled program")
-    group.add_argument("url", nargs="?", default=None, help="URL to open")
+    group = parser.add_argument_group("Compiled Program Environment Options")
     group.add_argument(
         "--app",
         default="org.mozilla.geckoview_example",
@@ -1357,6 +1356,13 @@ def _get_android_run_parser():
         action="store_true",
         default=False,
         help="Do not try to install application on device before running "
+        "(default: False)",
+    )
+    group.add_argument(
+        "--no-uninstall",
+        action="store_true",
+        default=False,
+        help="Do not try to uninstall application on device before reinstalling"
         "(default: False)",
     )
     group.add_argument(
@@ -1413,20 +1419,16 @@ def _get_android_run_parser():
         default=False,
         help="Select an existing process to debug.",
     )
+
+    group = parser.add_argument_group("Compiled Program Options")
+    group.add_argument("url", nargs="?", default=None, help="URL to open")
+
     return parser
 
 
 def _get_jsshell_run_parser():
-    parser = argparse.ArgumentParser()
-    group = parser.add_argument_group("the compiled program")
-    group.add_argument(
-        "params",
-        nargs="...",
-        default=[],
-        help="Command-line arguments to be passed through to the program. Not "
-        "specifying a --profile or -P option will result in a temporary profile "
-        "being used.",
-    )
+    parser = ForwardingArgumentParser()
+    group = parser.add_argument_group("Compiled Program Environment Options")
 
     group = parser.add_argument_group("debugging")
     group.add_argument(
@@ -1455,20 +1457,21 @@ def _get_jsshell_run_parser():
         help=argparse.SUPPRESS,
     )
 
+    parser.add_forwarding_group(
+        title="Compiled Program Options",
+        dest="params",
+        help="Command-line arguments to be passed through to the program. "
+        "Omitting --profile or -P results in a temporary profile being used.",
+        forwarding_help="Display the program help.",
+    )
+
     return parser
 
 
 def _get_desktop_run_parser():
-    parser = argparse.ArgumentParser()
-    group = parser.add_argument_group("the compiled program")
-    group.add_argument(
-        "params",
-        nargs="...",
-        default=[],
-        help="Command-line arguments to be passed through to the program. Not "
-        "specifying a --profile or -P option will result in a temporary profile "
-        "being used.",
-    )
+
+    parser = ForwardingArgumentParser()
+    group = parser.add_argument_group("Compiled Program Environment Options")
     group.add_argument("--packaged", action="store_true", help="Run a packaged build.")
     group.add_argument(
         "--app", help="Path to executable to run (default: output of ./mach build)"
@@ -1523,7 +1526,7 @@ def _get_desktop_run_parser():
         "option.",
     )
 
-    group = parser.add_argument_group("debugging")
+    group = parser.add_argument_group("Debugging")
     group.add_argument(
         "--debug",
         action="store_true",
@@ -1570,6 +1573,13 @@ def _get_desktop_run_parser():
         "--show-dump-stats", action="store_true", help="Show stats when doing dumps."
     )
 
+    parser.add_forwarding_group(
+        title="Compiled Program Options",
+        dest="params",
+        help="Command-line arguments to be passed through to the program. "
+        "Omitting --profile or -P results in a temporary profile being used.",
+        forwarding_help="Display the program help.",
+    )
     return parser
 
 
@@ -1607,6 +1617,7 @@ def _run_android(
     url=None,
     aab=False,
     no_install=None,
+    no_uninstall=None,
     no_wait=None,
     fail_if_running=None,
     restart=None,
@@ -1619,6 +1630,7 @@ def _run_android(
 ):
     from mozrunner.devices.android_device import (
         InstallIntent,
+        UninstallIntent,
         _get_device,
         metadata_for_app,
         verify_android_device,
@@ -1642,10 +1654,11 @@ def _run_android(
         aab=aab,
         debugger=debug,
         install=InstallIntent.NO if no_install else InstallIntent.YES,
+        uninstall=UninstallIntent.NO if no_uninstall else UninstallIntent.YES,
     )
     device_serial = os.environ.get("DEVICE_SERIAL")
     if not device_serial:
-        print("No ADB devices connected.")
+        print("Unable to find ready Android device")
         return 1
 
     device = _get_device(command_context.substs, device_serial=device_serial)

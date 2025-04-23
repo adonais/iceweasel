@@ -25,7 +25,6 @@
 #include "PipelineLayout.h"
 #include "Sampler.h"
 #include "CompilationInfo.h"
-#include "mozilla/ipc/RawShmem.h"
 #include "Utility.h"
 
 #include <utility>
@@ -256,7 +255,10 @@ void WebGPUChild::ActorDestroy(ActorDestroyReason) {
   for (const auto& targetIter : deviceMap) {
     RefPtr<Device> device = targetIter.second.get();
     MOZ_ASSERT(device);
-    ResolveLostForDeviceId(device->mId, Nothing(), u"WebGPUChild destroyed"_ns);
+    // It would be cleaner to call ResolveLostForDeviceId, but we
+    // just cleared the device map, so we have to invoke ResolveLost
+    // directly on the device.
+    device->ResolveLost(Nothing(), u"WebGPUChild destroyed"_ns);
   }
 }
 

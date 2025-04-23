@@ -21,6 +21,22 @@ features:
         type: Map<OnboardingCardKey, OnboardingCardData>
         string-alias: OnboardingCardKey
         default:
+            terms-of-service:
+              card-type: terms-of-service
+              title: onboarding_welcome_to_firefox
+              body: onboarding_terms_of_service_sub_header_2
+              ordering: 1
+              image-res: ic_firefox
+              primary-button-label: onboarding_term_of_service_agree_and_continue_button_label
+              extra-data:
+                term-of-service-data:
+                  line-one-text: onboarding_term_of_service_line_one_2
+                  line-one-link-text: onboarding_term_of_service_line_one_link_text_2
+                  line-two-text: onboarding_term_of_service_line_two_2
+                  line-two-link-text: onboarding_term_of_service_line_two_link_text
+                  line-three-text: onboarding_term_of_service_line_three
+                  line-three-link-text: onboarding_term_of_service_line_three_link_text
+
             default-browser:
               card-type: default-browser
               title: juno_onboarding_default_browser_title_nimbus_2
@@ -91,6 +107,19 @@ features:
                   - toolbar-type: toolbar-bottom
                     label: onboarding_customize_toolbar_bottom_option
                     image-res: ic_onboarding_bottom_toolbar
+
+            marketing:
+              card-type: marketing-data
+              title: onboarding_marketing_title
+              body: onboarding_marketing_body
+              ordering: 40
+              image-res: ic_onboarding_welcome
+              primary-button-label: onboarding_marketing_positive_button
+              extra-data:
+                marketing-data:
+                  body-line-one-text: onboarding_marketing_learn_more
+                  body-line-one-link-text: onboarding_marketing_learn_more
+                  body-line-two-text: onboarding_marketing_opt_in_checkbox
     defaults:
       - channel: developer
         value:
@@ -159,7 +188,6 @@ features:
               image-res: ic_pick_a_theme
               ordering: 30
               primary-button-label: onboarding_save_and_continue_button
-              secondary-button-label: onboarding_customize_theme_skip_button
               extra-data:
                 customization-theme-data:
                   - theme-type: theme-system
@@ -180,7 +208,6 @@ features:
               image-res: ic_onboarding_customize_toolbar
               ordering: 35
               primary-button-label: onboarding_save_and_start_button
-              secondary-button-label: onboarding_customize_toolbar_skip_button
               extra-data:
                 customization-toolbar-data:
                   - toolbar-type: toolbar-top

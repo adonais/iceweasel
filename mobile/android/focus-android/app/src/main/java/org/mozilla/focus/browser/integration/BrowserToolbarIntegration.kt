@@ -67,6 +67,7 @@ class BrowserToolbarIntegration(
     private val eraseActionListener: () -> Unit,
     private val tabCounterListener: () -> Unit,
     private val customTabId: String? = null,
+    isOnboardingTab: Boolean = false,
     inTesting: Boolean = false,
 ) : LifecycleAwareFeature {
     private val presenter = ToolbarPresenter(
@@ -123,7 +124,7 @@ class BrowserToolbarIntegration(
         toolbar.display.apply {
             colors = colors.copy(
                 hint = ContextCompat.getColor(toolbar.context, R.color.urlBarHintText),
-                securityIconInsecure = Color.TRANSPARENT,
+                siteInfoIconInsecure = Color.TRANSPARENT,
                 text = ContextCompat.getColor(toolbar.context, R.color.primaryText),
                 menu = ContextCompat.getColor(toolbar.context, R.color.primaryText),
             )
@@ -132,7 +133,7 @@ class BrowserToolbarIntegration(
 
             displayIndicatorSeparator = false
 
-            setOnSiteSecurityClickedListener {
+            setOnSiteInfoClickedListener {
                 TrackingProtection.toolbarShieldClicked.add()
                 fragment.initCookieBanner()
                 fragment.showTrackingProtectionPanel()
@@ -172,6 +173,7 @@ class BrowserToolbarIntegration(
                 context = fragment.requireContext(),
                 store = store,
                 currentTabId = customTabId,
+                isOnboardingTab = isOnboardingTab,
                 onItemTapped = { controller.handleMenuInteraction(it) },
             )
             customTabsFeature = CustomTabsToolbarFeature(

@@ -18,6 +18,7 @@ import re
 import subprocess
 import sys
 from io import BytesIO, StringIO
+from pathlib import Path
 
 import six
 
@@ -250,7 +251,11 @@ class FileAvoidWrite(BytesIO):
                 buf = six.ensure_binary(buf)
             else:
                 buf = six.ensure_text(buf)
-            with _open(self.name, writemode) as file:
+            path = Path(self.name)
+            if path.is_symlink():
+                # Migration to code autogeneration can encounter with existing symlinks, e.g. bug 1953858.
+                path.unlink()
+            with _open(path, writemode) as file:
                 file.write(buf)
 
         self._generate_diff(buf, old_content)
@@ -1125,6 +1130,33 @@ def expand_variables(s, variables):
             value = " ".join(value)
         result += value
     return result
+
+
+class ForwardingArgumentParser(argparse.ArgumentParser):
+    """
+    An argument parser with customized help generation when forwarding
+    arguments.
+    """
+
+    def add_forwarding_group(
+        self, title, dest, help, forwarding_help, default_type=list, **kwargs
+    ):
+        """
+        Add a group that captures all remaining arguments in order to pass them
+        down to another program.
+        """
+        group = self.add_argument_group(
+            title, description=f"-- --help {forwarding_help}", **kwargs
+        )
+
+        group.add_argument(
+            dest,
+            nargs=argparse.REMAINDER,
+            default=default_type(),
+            metavar=f"[--] {dest}...",
+            help=help,
+        )
+        return group
 
 
 class DefinesAction(argparse.Action):

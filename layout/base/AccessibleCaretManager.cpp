@@ -828,9 +828,10 @@ nsAutoString AccessibleCaretManager::StringifiedSelection() const {
   nsAutoString str;
   RefPtr<Selection> selection = GetSelection();
   if (selection) {
-    selection->Stringify(str, mLayoutFlusher.mAllowFlushing
-                                  ? Selection::FlushFrames::Yes
-                                  : Selection::FlushFrames::No);
+    selection->Stringify(str, CallerType::System,
+                         mLayoutFlusher.mAllowFlushing
+                             ? Selection::FlushFrames::Yes
+                             : Selection::FlushFrames::No);
   }
   return str;
 }
@@ -978,8 +979,7 @@ void AccessibleCaretManager::ExtendPhoneNumberSelection(
     nsAutoString oldSelectedText = StringifiedSelection();
 
     // Extend the selection by one char.
-    selection->Modify(u"extend"_ns, aDirection, u"character"_ns,
-                      IgnoreErrors());
+    selection->Modify(u"extend"_ns, aDirection, u"character"_ns);
     if (IsTerminated() == Terminated::Yes) {
       return;
     }

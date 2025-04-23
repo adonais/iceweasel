@@ -26,7 +26,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/MessageLink.h"
-#include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/ipc/Shmem.h"
 #include "nsPrintfCString.h"
 #include "nsTHashMap.h"
@@ -197,10 +196,9 @@ class IProtocol : public HasResultCodes {
   // Lookup() is forwarded directly to the toplevel protocol.
   IProtocol* Lookup(int32_t aId);
 
-  Shmem::SharedMemory* CreateSharedMemory(size_t aSize, bool aUnsafe,
-                                          int32_t* aId);
-  Shmem::SharedMemory* LookupSharedMemory(int32_t aId);
-  bool IsTrackingSharedMemory(Shmem::SharedMemory* aSegment);
+  Shmem CreateSharedMemory(size_t aSize, bool aUnsafe);
+  Shmem::Segment* LookupSharedMemory(int32_t aId);
+  bool IsTrackingSharedMemory(const Shmem::Segment* aSegment);
   bool DestroySharedMemory(Shmem& aShmem);
 
   MessageChannel* GetIPCChannel();
@@ -448,10 +446,9 @@ class IToplevelProtocol : public IRefCountedProtocol {
   // Shadows the method on IProtocol, which will forward to the top.
   IProtocol* Lookup(int32_t aId);
 
-  Shmem::SharedMemory* CreateSharedMemory(size_t aSize, bool aUnsafe,
-                                          int32_t* aId);
-  Shmem::SharedMemory* LookupSharedMemory(int32_t aId);
-  bool IsTrackingSharedMemory(Shmem::SharedMemory* aSegment);
+  Shmem CreateSharedMemory(size_t aSize, bool aUnsafe);
+  Shmem::Segment* LookupSharedMemory(int32_t aId);
+  bool IsTrackingSharedMemory(const Shmem::Segment* aSegment);
   bool DestroySharedMemory(Shmem& aShmem);
 
   MessageChannel* GetIPCChannel() { return &mChannel; }
@@ -561,7 +558,7 @@ class IToplevelProtocol : public IRefCountedProtocol {
   // Used to be on mState
   int32_t mLastLocalId;
   IDMap<RefPtr<ActorLifecycleProxy>> mActorMap;
-  IDMap<RefPtr<Shmem::SharedMemory>> mShmemMap;
+  IDMap<RefPtr<Shmem::Segment>> mShmemMap;
 
   MessageChannel mChannel;
 };

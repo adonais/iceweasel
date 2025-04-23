@@ -952,7 +952,8 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
 
   MOZ_ASSERT(!sIdleMemoryCleanupRunner ||
              !sIdleMemoryCleanupWantsLaterScheduled);
-  auto result = moz_may_purge_one_now(/* aPeekOnly */ true, reuseGracePeriod);
+  auto result =
+      moz_may_purge_now(/* aPeekOnly */ true, reuseGracePeriod, Nothing());
   switch (result) {
     case purge_result_t::Done:
       // Currently we unqueue purge requests only:
@@ -1014,13 +1015,14 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
   uint32_t reuseGracePeriod =
       StaticPrefs::memory_lazypurge_reuse_grace_period();
 
-  purge_result_t result = purge_result_t::NeedsMore;
-  while (result == purge_result_t::NeedsMore) {
-    result = moz_may_purge_one_now(/* aPeekOnly */ false, reuseGracePeriod);
-    if (!aDeadline.IsNull() && TimeStamp::Now() > aDeadline) {
-      break;
-    }
-  }
+  purge_result_t result;
+  do {
+    result = moz_may_purge_now(
+        /* aPeekOnly */ false, reuseGracePeriod, Some([aDeadline] {
+          return aDeadline.IsNull() || TimeStamp::Now() <= aDeadline;
+        }));
+  } while ((result == purge_result_t::NeedsMore) &&
+           (aDeadline.IsNull() || TimeStamp::Now() <= aDeadline));
 
   switch (result) {
     case purge_result_t::Done:

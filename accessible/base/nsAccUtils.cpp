@@ -158,7 +158,7 @@ nsStaticAtom* nsAccUtils::NormalizeARIAToken(const AttrArray* aAttrs,
 
   if (aAttr == nsGkAtoms::aria_current) {
     static AttrArray::AttrValuesArray tokens[] = {
-        nsGkAtoms::page, nsGkAtoms::step, nsGkAtoms::location_,
+        nsGkAtoms::page, nsGkAtoms::step, nsGkAtoms::location,
         nsGkAtoms::date, nsGkAtoms::time, nsGkAtoms::_true,
         nullptr};
     int32_t idx =
@@ -422,7 +422,8 @@ bool nsAccUtils::MustPrune(Accessible* aAccessible) {
   MOZ_ASSERT(aAccessible);
   roles::Role role = aAccessible->Role();
 
-  if (role == roles::SLIDER || role == roles::PROGRESSBAR) {
+  if (role == roles::SLIDER || role == roles::PROGRESSBAR ||
+      role == roles::METER) {
     // Always prune the tree for sliders and progressbars, as it doesn't make
     // sense for either to have descendants. Per the ARIA spec, children of
     // these elements are presentational. They also confuse NVDA.

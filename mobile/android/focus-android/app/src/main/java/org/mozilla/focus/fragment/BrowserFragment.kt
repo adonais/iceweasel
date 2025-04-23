@@ -20,6 +20,8 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.VisibleForTesting
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -39,6 +41,8 @@ import kotlinx.coroutines.plus
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.state.CustomTabConfig
+import mozilla.components.browser.state.state.CustomTabSessionState
+import mozilla.components.browser.state.state.ExternalAppType
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.createTab
@@ -97,6 +101,7 @@ import org.mozilla.focus.ext.components
 import org.mozilla.focus.ext.disableDynamicBehavior
 import org.mozilla.focus.ext.enableDynamicBehavior
 import org.mozilla.focus.ext.ifCustomTab
+import org.mozilla.focus.ext.isAccessibilityEnabled
 import org.mozilla.focus.ext.isCustomTab
 import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.settings
@@ -293,10 +298,10 @@ class BrowserFragment :
                 components.store,
                 tab.id,
                 components.sessionUseCases,
-                requireContext().settings,
                 binding.browserToolbar,
                 binding.statusBarBackground,
                 binding.engineView,
+                isAccessibilityEnabled = { requireContext().isAccessibilityEnabled() },
             ),
             this,
             view,
@@ -461,14 +466,17 @@ class BrowserFragment :
 
         val customTabConfig = tab.ifCustomTab()?.config
         if (customTabConfig != null) {
-            initialiseCustomTabUi(customTabConfig)
+            initialiseCustomTabUi(
+                customTabConfig,
+                requireContext().isAccessibilityEnabled(),
+            )
 
             // TODO Add custom tabs window feature support
             // We to add support for Custom Tabs here, however in order to send the window request
             // back to us through the intent system, we need to register a unique schema that we
             // can handle. For example, Fenix Nighlyt does this today with `fenix-nightly://`.
         } else {
-            initialiseNormalBrowserUi()
+            initialiseNormalBrowserUi(requireContext().isAccessibilityEnabled())
 
             windowFeature.set(
                 feature = WindowFeature(
@@ -567,7 +575,8 @@ class BrowserFragment :
             ::showShortcutAddedSnackBar,
         )
 
-        if (tab.ifCustomTab()?.config == null) {
+        val customTabSessionState = tab.ifCustomTab()
+        if (customTabSessionState?.config == null) {
             val browserMenu = DefaultBrowserMenu(
                 context = requireContext(),
                 appStore = requireComponents.appStore,
@@ -588,6 +597,7 @@ class BrowserFragment :
                 sessionUseCases = requireComponents.sessionUseCases,
                 onUrlLongClicked = ::onUrlLongClicked,
                 eraseActionListener = { erase(shouldEraseAllTabs = true) },
+                isOnboardingTab = isOnboardingTab(customTabSessionState),
                 tabCounterListener = ::tabCounterListener,
             ),
             owner = this,
@@ -595,22 +605,29 @@ class BrowserFragment :
         )
     }
 
+    @VisibleForTesting
+    internal fun isOnboardingTab(sessionState: CustomTabSessionState?) =
+        sessionState?.config?.externalAppType == ExternalAppType.ONBOARDING_CUSTOM_TAB
+
     private fun showShortcutAddedSnackBar() {
         FocusSnackbar.make(requireView())
             .setText(requireContext().getString(R.string.snackbar_added_to_shortcuts))
             .show()
     }
 
-    private fun initialiseNormalBrowserUi() {
-        if (!requireContext().settings.isAccessibilityEnabled()) {
-            binding.browserToolbar.enableDynamicBehavior(requireContext(), binding.engineView)
-        } else {
+    private fun initialiseNormalBrowserUi(accessibilityEnabled: Boolean) {
+        if (accessibilityEnabled) {
             binding.browserToolbar.showAsFixed(requireContext(), binding.engineView)
+        } else {
+            binding.browserToolbar.enableDynamicBehavior(requireContext(), binding.engineView)
         }
     }
 
-    private fun initialiseCustomTabUi(customTabConfig: CustomTabConfig) {
-        if (customTabConfig.enableUrlbarHiding && !requireContext().settings.isAccessibilityEnabled()) {
+    private fun initialiseCustomTabUi(
+        customTabConfig: CustomTabConfig,
+        accessibilityEnabled: Boolean,
+    ) {
+        if (customTabConfig.enableUrlbarHiding && !accessibilityEnabled) {
             binding.browserToolbar.enableDynamicBehavior(requireContext(), binding.engineView)
         } else {
             binding.browserToolbar.showAsFixed(requireContext(), binding.engineView)
@@ -634,6 +651,7 @@ class BrowserFragment :
         requireActivity().exitImmersiveMode()
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         promptFeature.withFeature { it.onActivityResult(requestCode, data, resultCode) }
     }
@@ -974,11 +992,9 @@ class BrowserFragment :
 
     private fun setShouldRequestDesktop(enabled: Boolean) {
         if (enabled) {
-            PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
-                .putBoolean(
-                    requireContext().getString(R.string.has_requested_desktop),
-                    true,
-                ).apply()
+            PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+                putBoolean(requireContext().getString(R.string.has_requested_desktop), true)
+            }
         }
         requireComponents.sessionUseCases.requestDesktopSite(enabled, tab.id)
     }

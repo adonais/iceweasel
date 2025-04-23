@@ -70,6 +70,9 @@ interface GPUAdapterInfo {
     readonly attribute DOMString architecture;
     readonly attribute DOMString device;
     readonly attribute DOMString description;
+    readonly attribute unsigned long subgroupMinSize;
+    readonly attribute unsigned long subgroupMaxSize;
+    readonly attribute boolean isFallbackAdapter;
 
     // Non-standard; see <https://bugzilla.mozilla.org/show_bug.cgi?id=1831994>.
     [ChromeOnly] readonly attribute DOMString wgpuName;
@@ -147,6 +150,7 @@ enum GPUFeatureName {
     "float32-blendable",
     "clip-distances",
     "dual-source-blending",
+    "subgroups",
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
@@ -440,6 +444,12 @@ enum GPUTextureFormat {
     "astc-12x12-unorm",
     "astc-12x12-unorm-srgb",
 };
+
+[Func="mozilla::webgpu::Instance::PrefEnabled",
+ Exposed=(Window, Worker), SecureContext]
+interface GPUExternalTexture {
+};
+GPUExternalTexture includes GPUObjectBase;
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, Worker), SecureContext]
@@ -924,6 +934,7 @@ dictionary GPUCopyExternalImageDestInfo
 };
 
 typedef (ImageBitmap or
+         HTMLImageElement or
          HTMLCanvasElement or
          OffscreenCanvas) GPUCopyExternalImageSource;
 
@@ -997,8 +1008,14 @@ dictionary GPUCommandEncoderDescriptor
 };
 
 interface mixin GPUBindingCommandsMixin {
+    [Throws]
     undefined setBindGroup(GPUIndex32 index, GPUBindGroup? bindGroup,
         optional sequence<GPUBufferDynamicOffset> dynamicOffsets = []);
+    [Throws]
+    undefined setBindGroup(GPUIndex32 index, GPUBindGroup? bindGroup,
+        Uint32Array dynamicOffsetsData,
+        GPUSize64 dynamicOffsetsDataStart,
+        GPUSize32 dynamicOffsetsDataLength);
 };
 
 interface mixin GPUDebugCommandsMixin {
@@ -1114,8 +1131,8 @@ dictionary GPURenderPassLayout
 interface mixin GPURenderCommandsMixin {
     undefined setPipeline(GPURenderPipeline pipeline);
 
-    undefined setIndexBuffer(GPUBuffer buffer, GPUIndexFormat indexFormat, optional GPUSize64 offset = 0, optional GPUSize64 size = 0);
-    undefined setVertexBuffer(GPUIndex32 slot, GPUBuffer buffer, optional GPUSize64 offset = 0, optional GPUSize64 size = 0);
+    undefined setIndexBuffer(GPUBuffer buffer, GPUIndexFormat indexFormat, optional GPUSize64 offset = 0, optional GPUSize64 size);
+    undefined setVertexBuffer(GPUIndex32 slot, GPUBuffer buffer, optional GPUSize64 offset = 0, optional GPUSize64 size);
 
     undefined draw(GPUSize32 vertexCount, optional GPUSize32 instanceCount = 1,
         optional GPUSize32 firstVertex = 0, optional GPUSize32 firstInstance = 0);

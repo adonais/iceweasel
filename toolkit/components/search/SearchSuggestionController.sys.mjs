@@ -19,8 +19,6 @@ const BROWSER_RICH_SUGGEST_PREF = "browser.urlbar.richSuggestions.featureGate";
 const REMOTE_TIMEOUT_PREF = "browser.search.suggest.timeout";
 const REMOTE_TIMEOUT_DEFAULT = 500; // maximum time (ms) to wait before giving up on a remote suggestions
 
-const SEARCH_TELEMETRY_LATENCY = "SEARCH_SUGGESTIONS_LATENCY_MS";
-
 /**
  * Generates an UUID.
  *
@@ -308,6 +306,7 @@ export class SearchSuggestionController {
       restrictToEngine,
       searchString: searchTerm,
       telemetryHandled: false,
+      gleanTimerId: 0,
       timer: Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer),
       userContextId,
     });
@@ -387,22 +386,28 @@ export class SearchSuggestionController {
    *   The search context.
    */
   #reportTelemetryForEngine(context) {
-    // Stop the latency stopwatch.
     if (!context.telemetryHandled) {
+      // Stop the latency stopwatch.
       if (context.abort) {
-        TelemetryStopwatch.cancelKeyed(
-          SEARCH_TELEMETRY_LATENCY,
-          context.engineId,
-          context
+        Glean.search.suggestionsLatency[context.engineId].cancel(
+          context.gleanTimerId
         );
       } else {
-        TelemetryStopwatch.finishKeyed(
-          SEARCH_TELEMETRY_LATENCY,
-          context.engineId,
-          context
+        Glean.search.suggestionsLatency[context.engineId].stopAndAccumulate(
+          context.gleanTimerId
         );
       }
+      context.gleanTimerId = 0;
       context.telemetryHandled = true;
+      if (context.engine.isAppProvided) {
+        if (context.abort) {
+          Glean.searchSuggestions.abortedRequests[context.engine.id].add();
+        } else if (context.error) {
+          Glean.searchSuggestions.failedRequests[context.engine.id].add();
+        } else {
+          Glean.searchSuggestions.successfulRequests[context.engine.id].add();
+        }
+      }
     }
   }
 
@@ -484,6 +489,7 @@ export class SearchSuggestionController {
     });
 
     request.addEventListener("error", () => {
+      this.#context.error = true;
       this.#reportTelemetryForEngine(context);
       deferredResponse.resolve("HTTP error");
     });
@@ -502,11 +508,8 @@ export class SearchSuggestionController {
       request.send();
     }
 
-    TelemetryStopwatch.startKeyed(
-      SEARCH_TELEMETRY_LATENCY,
-      context.engineId,
-      context
-    );
+    context.gleanTimerId =
+      Glean.search.suggestionsLatency[context.engineId].start();
 
     return deferredResponse.promise;
   }

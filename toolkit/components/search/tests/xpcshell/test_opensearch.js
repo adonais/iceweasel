@@ -72,11 +72,6 @@ for (const test of tests) {
     Assert.ok(engine, "Should have installed the engine.");
 
     Assert.equal(engine.name, test.name, "Should have the correct name");
-    Assert.equal(
-      engine.description,
-      test.description,
-      "Should have a description"
-    );
 
     Assert.equal(
       engine.wrappedJSObject._loadPath,
@@ -139,7 +134,6 @@ add_task(async function test_telemetry_reporting() {
       displayName: "simple",
       loadPath: "[http]localhost/simple.xml",
       submissionUrl: "blank:",
-      verified: "verified",
     },
   });
 });

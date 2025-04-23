@@ -5,85 +5,98 @@
 package mozilla.components.compose.browser.toolbar
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
-import mozilla.components.compose.browser.toolbar.concept.Action.CustomAction
+import mozilla.components.compose.browser.toolbar.concept.Action.DropdownAction
+import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.ui.SearchSelector
-import mozilla.components.ui.icons.R
+import mozilla.components.compose.browser.toolbar.ui.TabCounter
+import mozilla.components.compose.browser.toolbar.ui.ActionButton as ActionButtonComposable
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A container for displaying [Action]s.
  *
  * @param actions List of [Action]s to display in the container.
+ * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
  */
 @Composable
 fun ActionContainer(
     actions: List<Action>,
+    onInteraction: (BrowserToolbarEvent) -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         for (action in actions) {
             when (action) {
                 is ActionButton -> {
-                    ActionButton(action)
+                    ActionButtonComposable(
+                        icon = action.icon,
+                        contentDescription = action.contentDescription,
+                        tint = action.tint,
+                        onClick = action.onClick,
+                        onLongClick = action.onLongClick,
+                        onInteraction = { onInteraction(it) },
+                    )
                 }
-                is CustomAction -> {
-                    action.content()
+
+                is DropdownAction -> {
+                    SearchSelector(
+                        icon = action.icon,
+                        iconResource = action.iconResource,
+                        contentDescription = stringResource(action.contentDescription),
+                        menu = action.menu,
+                        onInteraction = { onInteraction(it) },
+                    )
+                }
+
+                is TabCounterAction -> {
+                    TabCounter(
+                        count = action.count,
+                        showPrivacyMask = action.showPrivacyMask,
+                        onClick = action.onClick,
+                        onLongClick = action.onLongClick,
+                        onInteraction = { onInteraction(it) },
+                    )
                 }
             }
         }
     }
 }
 
-@Composable
-private fun ActionButton(
-    action: ActionButton,
-) {
-    IconButton(
-        modifier = Modifier.requiredSize(40.dp),
-        onClick = { action.onClick() },
-    ) {
-        Icon(
-            painter = painterResource(action.icon),
-            contentDescription = action.contentDescription,
-            tint = Color(action.tint),
-        )
-    }
-}
-
-@PreviewLightDark
+@Preview(showBackground = true)
 @Composable
 private fun ActionContainerPreview() {
     AcornTheme {
         ActionContainer(
             actions = listOf(
-                ActionButton(
-                    icon = R.drawable.mozac_ic_microphone_24,
-                    contentDescription = null,
-                    tint = AcornTheme.colors.iconPrimary.toArgb(),
-                    onClick = {},
+                DropdownAction(
+                    icon = ContextCompat.getDrawable(LocalContext.current, iconsR.drawable.mozac_ic_search_24)!!,
+                    contentDescription = R.string.mozac_clear_button_description,
+                    menu = { emptyList() },
                 ),
-                CustomAction(
-                    content = {
-                        SearchSelector(
-                            painter = painterResource(R.drawable.mozac_ic_search_24),
-                            tint = AcornTheme.colors.iconPrimary,
-                            onClick = {},
-                        )
-                    },
+                ActionButton(
+                    icon = iconsR.drawable.mozac_ic_microphone_24,
+                    contentDescription = R.string.mozac_clear_button_description,
+                    tint = AcornTheme.colors.iconPrimary.toArgb(),
+                    onClick = object : BrowserToolbarEvent {},
+                ),
+                TabCounterAction(
+                    count = 1,
+                    contentDescription = "",
+                    showPrivacyMask = false,
+                    onClick = object : BrowserToolbarEvent {},
                 ),
             ),
+            onInteraction = {},
         )
     }
 }

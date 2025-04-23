@@ -10,11 +10,13 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.LightDarkPreview
 import mozilla.components.compose.base.button.TextButton
-import mozilla.components.feature.downloads.toMegabyteOrKilobyteString
+import mozilla.components.feature.downloads.DefaultFileSizeFormatter
+import mozilla.components.feature.downloads.FileSizeFormatter
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import java.util.Locale
@@ -24,6 +26,7 @@ import java.util.Locale
  *
  * @param language Language name that should be displayed in the dialogue title.
  * @param isAllLanguagesItemType Whether the download language file item is of type all languages.
+ * @param fileSizeFormatter [FileSizeFormatter] used to format the size of the file item.
  * @param fileSize Language file size in bytes that should be displayed in the dialogue title.
  * @param onConfirmDelete Invoked when the user clicks on the "Delete" dialog button.
  * @param onCancel Invoked when the user clicks on the "Cancel" dialog button.
@@ -32,6 +35,7 @@ import java.util.Locale
 fun DeleteLanguageFileDialog(
     language: String? = null,
     isAllLanguagesItemType: Boolean,
+    fileSizeFormatter: FileSizeFormatter,
     fileSize: Long? = null,
     onConfirmDelete: () -> Unit,
     onCancel: () -> Unit,
@@ -46,14 +50,14 @@ fun DeleteLanguageFileDialog(
             val title: String? = if (isAllLanguagesItemType) {
                 stringResource(
                     id = R.string.delete_language_all_languages_file_dialog_title,
-                    fileSize?.toMegabyteOrKilobyteString() ?: 0L,
+                    fileSizeFormatter.formatSizeInBytes(fileSize ?: 0L),
                 )
             } else {
                 language?.let {
                     stringResource(
                         id = R.string.delete_language_file_dialog_title,
                         it,
-                        fileSize?.toMegabyteOrKilobyteString() ?: 0L,
+                        fileSizeFormatter.formatSizeInBytes(fileSize ?: 0L),
                     )
                 }
             }
@@ -110,6 +114,7 @@ private fun DeleteLanguageFileDialogPreview() {
         DeleteLanguageFileDialog(
             language = Locale.CHINA.displayLanguage,
             isAllLanguagesItemType = false,
+            fileSizeFormatter = DefaultFileSizeFormatter(LocalContext.current),
             fileSize = 4000L,
             onConfirmDelete = {},
             onCancel = {},
@@ -124,6 +129,7 @@ private fun DeleteAllLanguagesFileDialogPreview() {
         DeleteLanguageFileDialog(
             language = Locale.CHINA.displayLanguage,
             isAllLanguagesItemType = true,
+            fileSizeFormatter = DefaultFileSizeFormatter(LocalContext.current),
             fileSize = 4000L,
             onConfirmDelete = {},
             onCancel = {},

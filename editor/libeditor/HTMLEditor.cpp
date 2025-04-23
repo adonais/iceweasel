@@ -6,6 +6,7 @@
 #include "HTMLEditor.h"
 #include "HTMLEditHelpers.h"
 #include "HTMLEditorInlines.h"
+#include "HTMLEditorNestedClasses.h"
 
 #include "AutoClonedRangeArray.h"
 #include "AutoSelectionRestorer.h"
@@ -483,6 +484,19 @@ void HTMLEditor::PreDestroy() {
   mPaddingBRElementForEmptyEditor = nullptr;
 
   PreDestroyInternal();
+}
+
+bool HTMLEditor::IsStyleEditable() const {
+  if (IsInDesignMode()) {
+    return true;
+  }
+  if (IsPlaintextMailComposer()) {
+    return false;
+  }
+  const Element* const editingHost = ComputeEditingHost(LimitInBodyElement::No);
+  // Let's return true if there is no focused editing host for the backward
+  // compatibility.
+  return !editingHost || !editingHost->IsContentEditablePlainTextOnly();
 }
 
 NS_IMETHODIMP HTMLEditor::GetDocumentCharacterSet(nsACString& aCharacterSet) {
@@ -2247,6 +2261,22 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     NS_WARNING("HTMLEditUtils::GetBetterInsertionPointFor() failed");
     return NS_ERROR_FAILURE;
   }
+  if (StaticPrefs::editor_white_space_normalization_blink_compatible()) {
+    Result<EditorDOMPoint, nsresult> pointToInsertOrError =
+        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+            *this, pointToInsert,
+            {WhiteSpaceVisibilityKeeper::NormalizeOption::
+                 StopIfFollowingWhiteSpacesStartsWithNBSP});
+    if (MOZ_UNLIKELY(pointToInsertOrError.isErr())) {
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
+      return pointToInsertOrError.propagateErr();
+    }
+    pointToInsert = pointToInsertOrError.unwrap();
+    if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+  }
 
   if (aOptions.contains(InsertElementOption::SplitAncestorInlineElements)) {
     if (const RefPtr<Element> topmostInlineElement = Element::FromNodeOrNull(
@@ -2673,7 +2703,11 @@ nsresult HTMLEditor::GetBackgroundColorState(bool* aMixed,
   if (IsCSSEnabled()) {
     // if we are in CSS mode, we have to check if the containing block defines
     // a background color
-    nsresult rv = GetCSSBackgroundColorState(aMixed, aOutColor, true);
+    nsresult rv = GetCSSBackgroundColorState(
+        aMixed, aOutColor,
+        {RetrievingBackgroundColorOption::OnlyBlockBackgroundColor,
+         RetrievingBackgroundColorOption::
+             DefaultColorIfNoSpecificBackgroundColor});
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::GetCSSBackgroundColorState() failed");
     return EditorBase::ToGenericNSResult(rv);
@@ -2693,7 +2727,7 @@ NS_IMETHODIMP HTMLEditor::GetHighlightColorState(bool* aMixed,
 
   *aMixed = false;
   aOutColor.AssignLiteral("transparent");
-  if (!IsCSSEnabled()) {
+  if (!IsCSSEnabled() && IsMailEditor()) {
     return NS_OK;
   }
 
@@ -2705,15 +2739,19 @@ NS_IMETHODIMP HTMLEditor::GetHighlightColorState(bool* aMixed,
   // in CSS mode, text background can be added by the Text Highlight button
   // we need to query the background of the selection without looking for
   // the block container of the ranges in the selection
-  nsresult rv = GetCSSBackgroundColorState(aMixed, aOutColor, false);
+  RetrievingBackgroundColorOptions options;
+  if (IsMailEditor()) {
+    options += RetrievingBackgroundColorOption::StopAtInclusiveAncestorBlock;
+  }
+  nsresult rv = GetCSSBackgroundColorState(aMixed, aOutColor, options);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::GetCSSBackgroundColorState() failed");
   return rv;
 }
 
-nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
-                                                nsAString& aOutColor,
-                                                bool aBlockLevel) {
+nsresult HTMLEditor::GetCSSBackgroundColorState(
+    bool* aMixed, nsAString& aOutColor,
+    RetrievingBackgroundColorOptions aOptions) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aMixed)) {
@@ -2753,7 +2791,8 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     return NS_ERROR_FAILURE;
   }
 
-  if (aBlockLevel) {
+  if (aOptions.contains(
+          RetrievingBackgroundColorOption::OnlyBlockBackgroundColor)) {
     // we are querying the block background (and not the text background), let's
     // climb to the block container.  Note that background color of ancestor
     // of editing host may be what the caller wants to know.  Therefore, we
@@ -2787,61 +2826,72 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
                            "backgroundColor) failed, but ignored");
       // look at parent if the queried color is transparent and if the node to
       // examine is not the root of the document
-      if (!aOutColor.EqualsLiteral("transparent") &&
-          !aOutColor.EqualsLiteral("rgba(0, 0, 0, 0)")) {
-        break;
+      if (!HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
+        return NS_OK;
+      }
+      if (aOptions.contains(
+              RetrievingBackgroundColorOption::StopAtInclusiveAncestorBlock)) {
+        aOutColor.AssignLiteral("transparent");
+        return NS_OK;
       }
       blockElement = std::move(nextBlockElement);
     }
 
-    if (aOutColor.EqualsLiteral("transparent") ||
-        aOutColor.EqualsLiteral("rgba(0, 0, 0, 0)")) {
-      // we have hit the root of the document and the color is still transparent
-      // ! Grumble... Let's look at the default background color because that's
-      // the color we are looking for
+    if (aOptions.contains(RetrievingBackgroundColorOption::
+                              DefaultColorIfNoSpecificBackgroundColor) &&
+        HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
       CSSEditUtils::GetDefaultBackgroundColor(aOutColor);
     }
-  } else {
-    // no, we are querying the text background for the Text Highlight button
-    if (contentToExamine->IsText()) {
-      // if the node of interest is a text node, let's climb a level
-      contentToExamine = contentToExamine->GetParent();
+    return NS_OK;
+  }
+
+  // no, we are querying the text background for the Text Highlight button
+  if (contentToExamine->IsText()) {
+    // if the node of interest is a text node, let's climb a level
+    contentToExamine = contentToExamine->GetParent();
+  }
+  // Return default value due to no parent node
+  if (!contentToExamine) {
+    return NS_OK;
+  }
+
+  for (RefPtr<Element> element :
+       contentToExamine->InclusiveAncestorsOfType<Element>()) {
+    // is the node to examine a block ?
+    if (aOptions.contains(
+            RetrievingBackgroundColorOption::StopAtInclusiveAncestorBlock) &&
+        HTMLEditUtils::IsBlockElement(
+            *element, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+      // yes it is a block; in that case, the text background color is
+      // transparent
+      aOutColor.AssignLiteral("transparent");
+      break;
     }
-    // Return default value due to no parent node
-    if (!contentToExamine) {
+
+    // no, it's not; let's retrieve the computed style of background-color
+    // for the node to examine
+    nsCOMPtr<nsINode> parentNode = element->GetParentNode();
+    DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
+        *element, *nsGkAtoms::backgroundColor, aOutColor);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (NS_WARN_IF(parentNode != element->GetParentNode())) {
+      return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
+                         "backgroundColor) failed, but ignored");
+    if (!HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
+      HTMLEditUtils::GetNormalizedCSSColorValue(
+          aOutColor, HTMLEditUtils::ZeroAlphaColor::RGBAValue, aOutColor);
       return NS_OK;
     }
-
-    for (RefPtr<Element> element =
-             contentToExamine->GetAsElementOrParentElement();
-         element; element = element->GetParentElement()) {
-      // is the node to examine a block ?
-      if (HTMLEditUtils::IsBlockElement(
-              *element, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
-        // yes it is a block; in that case, the text background color is
-        // transparent
-        aOutColor.AssignLiteral("transparent");
-        break;
-      }
-
-      // no, it's not; let's retrieve the computed style of background-color
-      // for the node to examine
-      nsCOMPtr<nsINode> parentNode = element->GetParentNode();
-      DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
-          *element, *nsGkAtoms::backgroundColor, aOutColor);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (NS_WARN_IF(parentNode != element->GetParentNode())) {
-        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-      }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
-                           "backgroundColor) failed, but ignored");
-      if (!aOutColor.EqualsLiteral("transparent")) {
-        break;
-      }
-    }
+  }
+  if (aOptions.contains(RetrievingBackgroundColorOption::
+                            DefaultColorIfNoSpecificBackgroundColor) &&
+      HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
+    CSSEditUtils::GetDefaultBackgroundColor(aOutColor);
   }
   return NS_OK;
 }
@@ -3385,7 +3435,7 @@ Element* HTMLEditor::GetInclusiveAncestorByTagNameInternal(
       if (HTMLEditUtils::IsNamedAnchor(element)) {
         return element;
       }
-    } else if (&aTagName == nsGkAtoms::list_) {
+    } else if (&aTagName == nsGkAtoms::list) {
       // Match "ol", "ul", or "dl" for lists
       if (HTMLEditUtils::IsAnyListElement(element)) {
         return element;
@@ -4108,18 +4158,20 @@ HTMLEditor::DeleteEmptyInclusiveAncestorInlineElements(
 
   const nsCOMPtr<nsIContent> nextSibling = content->GetNextSibling();
   const nsCOMPtr<nsINode> parentNode = content->GetParentNode();
+  MOZ_ASSERT(parentNode);
   nsresult rv = DeleteNodeWithTransaction(content);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
     return Err(rv);
   }
-  if (NS_WARN_IF(nextSibling && nextSibling->GetParentNode() != parentNode)) {
+  if (NS_WARN_IF(nextSibling && nextSibling->GetParentNode() != parentNode) ||
+      NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(*parentNode))) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
-  return CaretPoint(nextSibling &&
-                            HTMLEditUtils::IsSimplyEditableNode(*nextSibling)
-                        ? EditorDOMPoint(nextSibling)
-                        : EditorDOMPoint::AtEndOf(*parentNode));
+  // Note that even if nextSibling is not editable, we can put caret before it
+  // unless parentNode is not editable.
+  return CaretPoint(nextSibling ? EditorDOMPoint(nextSibling)
+                                : EditorDOMPoint::AtEndOf(*parentNode));
 }
 
 nsresult HTMLEditor::DeleteAllChildrenWithTransaction(Element& aElement) {
@@ -4188,6 +4240,23 @@ Result<CaretPoint, nsresult> HTMLEditor::DeleteTextWithTransaction(
   NS_WARNING_ASSERTION(caretPointOrError.isOk(),
                        "EditorBase::DeleteTextWithTransaction() failed");
   return caretPointOrError;
+}
+
+Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
+    dom::Text& aTextNode, const ReplaceWhiteSpacesData& aData) {
+  Result<InsertTextResult, nsresult> insertTextResultOrError =
+      ReplaceTextWithTransaction(aTextNode, aData.mReplaceStartOffset,
+                                 aData.ReplaceLength(),
+                                 aData.mNormalizedString);
+  if (MOZ_UNLIKELY(insertTextResultOrError.isErr()) ||
+      aData.mNewOffsetAfterReplace > aTextNode.TextDataLength()) {
+    return insertTextResultOrError;
+  }
+  InsertTextResult insertTextResult = insertTextResultOrError.unwrap();
+  insertTextResult.IgnoreCaretPointSuggestion();
+  EditorDOMPoint pointToPutCaret(&aTextNode, aData.mNewOffsetAfterReplace);
+  return InsertTextResult(std::move(insertTextResult),
+                          std::move(pointToPutCaret));
 }
 
 Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
@@ -4291,6 +4360,57 @@ Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
       transaction->SuggestPointToPutCaret<EditorDOMPoint>());
 }
 
+Result<InsertTextResult, nsresult>
+HTMLEditor::InsertOrReplaceTextWithTransaction(
+    const EditorDOMPoint& aPointToInsert,
+    const NormalizedStringToInsertText& aData) {
+  MOZ_ASSERT(aPointToInsert.IsInContentNodeAndValid());
+  MOZ_ASSERT_IF(aData.ReplaceLength(), aPointToInsert.IsInTextNode());
+
+  Result<InsertTextResult, nsresult> insertTextResultOrError =
+      !aData.ReplaceLength()
+          ? InsertTextWithTransaction(aData.mNormalizedString, aPointToInsert,
+                                      InsertTextTo::SpecifiedPoint)
+          : ReplaceTextWithTransaction(
+                MOZ_KnownLive(*aPointToInsert.ContainerAs<Text>()),
+                aData.mReplaceStartOffset, aData.ReplaceLength(),
+                aData.mNormalizedString);
+  if (MOZ_UNLIKELY(insertTextResultOrError.isErr())) {
+    NS_WARNING(!aData.ReplaceLength()
+                   ? "HTMLEditor::InsertTextWithTransaction() failed"
+                   : "HTMLEditor::ReplaceTextWithTransaction() failed");
+    return insertTextResultOrError;
+  }
+  InsertTextResult insertTextResult = insertTextResultOrError.unwrap();
+  if (!aData.ReplaceLength()) {
+    auto pointToPutCaret = [&]() -> EditorDOMPoint {
+      return insertTextResult.HasCaretPointSuggestion()
+                 ? insertTextResult.UnwrapCaretPoint()
+                 : insertTextResult.EndOfInsertedTextRef();
+    }();
+    return InsertTextResult(std::move(insertTextResult),
+                            std::move(pointToPutCaret));
+  }
+  insertTextResult.IgnoreCaretPointSuggestion();
+  Text* const insertedTextNode =
+      insertTextResult.EndOfInsertedTextRef().GetContainerAs<Text>();
+  if (NS_WARN_IF(!insertedTextNode) ||
+      NS_WARN_IF(!insertedTextNode->IsInComposedDoc()) ||
+      NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(*insertedTextNode))) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+  const uint32_t expectedEndOffset = aData.EndOffsetOfInsertedText();
+  if (NS_WARN_IF(expectedEndOffset > insertedTextNode->TextDataLength())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+  // We need to return end point of the insertion string instead of end of
+  // replaced following white-spaces.
+  EditorDOMPoint endOfNewString(insertedTextNode, expectedEndOffset);
+  EditorDOMPoint pointToPutCaret = endOfNewString;
+  return InsertTextResult(std::move(endOfNewString),
+                          CaretPoint(std::move(pointToPutCaret)));
+}
+
 Result<InsertTextResult, nsresult> HTMLEditor::InsertTextWithTransaction(
     const nsAString& aStringToInsert, const EditorDOMPoint& aPointToInsert,
     InsertTextTo aInsertTextTo) {
@@ -4325,12 +4445,31 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
            EditorUtils::IsNewLinePreformatted(aContent);
   };
 
+  // If we're being initialized, we cannot normalize white-spaces because the
+  // normalizer may remove invisible `Text`, but it's not allowed during the
+  // initialization.
+  // FIXME: Anyway, we should not do this at initialization. This is required
+  // only for making users can put caret into empty table cells and list items.
+  const bool canNormalizeWhiteSpaces = mInitSucceeded;
+
   if (!aPointToInsert.IsInTextNode()) {
     if (NS_WARN_IF(
             !CanInsertLineBreak(*aPointToInsert.ContainerAs<nsIContent>()))) {
       return Err(NS_ERROR_FAILURE);
     }
-    return aPointToInsert;
+    if (!canNormalizeWhiteSpaces ||
+        !StaticPrefs::editor_white_space_normalization_blink_compatible()) {
+      return aPointToInsert;
+    }
+    Result<EditorDOMPoint, nsresult> pointToInsertOrError =
+        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+            *this, aPointToInsert,
+            {WhiteSpaceVisibilityKeeper::NormalizeOption::
+                 StopIfPrecedingWhiteSpacesEndsWithNBP});
+    if (NS_WARN_IF(pointToInsertOrError.isErr())) {
+      return pointToInsertOrError.propagateErr();
+    }
+    return pointToInsertOrError.unwrap();
   }
 
   // If the text node is not in an element node, we cannot insert a line break
@@ -4342,21 +4481,37 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
     return Err(NS_ERROR_FAILURE);
   }
 
-  if (aPointToInsert.IsStartOfContainer()) {
+  Result<EditorDOMPoint, nsresult> pointToInsertOrError =
+      canNormalizeWhiteSpaces &&
+              StaticPrefs::editor_white_space_normalization_blink_compatible()
+          ? WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+                *this, aPointToInsert,
+                {WhiteSpaceVisibilityKeeper::NormalizeOption::
+                     StopIfPrecedingWhiteSpacesEndsWithNBP})
+          : aPointToInsert;
+  if (NS_WARN_IF(pointToInsertOrError.isErr())) {
+    return pointToInsertOrError.propagateErr();
+  }
+  const EditorDOMPoint pointToInsert = pointToInsertOrError.unwrap();
+  if (!pointToInsert.IsInTextNode()) {
+    return pointToInsert.ParentPoint();
+  }
+
+  if (pointToInsert.IsStartOfContainer()) {
     // Insert before the text node.
-    return aPointToInsert.ParentPoint();
+    return pointToInsert.ParentPoint();
   }
 
-  if (aPointToInsert.IsEndOfContainer()) {
+  if (pointToInsert.IsEndOfContainer()) {
     // Insert after the text node.
-    return EditorDOMPoint::After(*aPointToInsert.ContainerAs<Text>());
+    return EditorDOMPoint::After(*pointToInsert.ContainerAs<Text>());
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(aPointToInsert.IsSetAndValid());
+  MOZ_DIAGNOSTIC_ASSERT(pointToInsert.IsSetAndValid());
 
   // Unfortunately, we need to split the text node at the offset.
   Result<SplitNodeResult, nsresult> splitTextNodeResult =
-      SplitNodeWithTransaction(aPointToInsert);
+      SplitNodeWithTransaction(pointToInsert);
   if (MOZ_UNLIKELY(splitTextNodeResult.isErr())) {
     NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
     return splitTextNodeResult.propagateErr();
@@ -5172,22 +5327,13 @@ nsresult HTMLEditor::SelectAllInternal() {
       return bodyOrDocumentElement;
     }();
 
-    // If the element to be selected is <input type="text"> or <textarea>,
-    // GetSelectionRootContent() returns its anonymous <div> element, but we
-    // want to select all of the document or selection limiter.  Therefore,
-    // we should use its parent to compute the selection root.
-    if (elementToBeSelected->HasIndependentSelection()) {
-      Element* parentElement = elementToBeSelected->GetParentElement();
-      if (MOZ_LIKELY(parentElement)) {
-        elementToBeSelected = parentElement;
-      }
-    }
-
     // Then, compute the selection root content to select all including
     // elementToBeSelected.
     RefPtr<PresShell> presShell = GetPresShell();
     nsIContent* computedSelectionRootContent =
-        elementToBeSelected->GetSelectionRootContent(presShell);
+        elementToBeSelected->GetSelectionRootContent(
+            presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+            nsINode::AllowCrossShadowBoundary::No);
     if (NS_WARN_IF(!computedSelectionRootContent)) {
       return nullptr;
     }
@@ -5292,10 +5438,16 @@ nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange& aRange) {
       continue;
     }
     Result<JoinNodesResult, nsresult> joinNodesResultOrError =
-        JoinNodesWithTransaction(MOZ_KnownLive(leftTextNode),
-                                 MOZ_KnownLive(rightTextNode));
+        StaticPrefs::editor_white_space_normalization_blink_compatible()
+            ? JoinTextNodesWithNormalizeWhiteSpaces(
+                  MOZ_KnownLive(leftTextNode), MOZ_KnownLive(rightTextNode))
+            : JoinNodesWithTransaction(MOZ_KnownLive(leftTextNode),
+                                       MOZ_KnownLive(rightTextNode));
     if (MOZ_UNLIKELY(joinNodesResultOrError.isErr())) {
-      NS_WARNING("HTMLEditor::JoinNodesWithTransaction() failed");
+      NS_WARNING(
+          StaticPrefs::editor_white_space_normalization_blink_compatible()
+              ? "HTMLEditor::JoinTextNodesWithNormalizeWhiteSpaces() failed"
+              : "HTMLEditor::JoinNodesWithTransaction() failed");
       return joinNodesResultOrError.unwrapErr();
     }
   }
@@ -7372,10 +7524,12 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     }
     if (Element* focusedElementInWindow = innerWindow->GetFocusedElement()) {
       if (focusedElementInWindow->ChromeOnlyAccess()) {
-        focusedElementInWindow =
-            Element::FromNodeOrNull(const_cast<nsIContent*>(
-                focusedElementInWindow
-                    ->GetChromeOnlyAccessSubtreeRootParent()));
+        focusedElementInWindow = Element::FromNodeOrNull(
+            // XXX Should we use
+            // nsIContent::FindFirstNonChromeOnlyAccessContent() instead of
+            // nsINode::GetClosestNativeAnonymousSubtreeRootParentOrHost()?
+            focusedElementInWindow
+                ->GetClosestNativeAnonymousSubtreeRootParentOrHost());
       }
       if (focusedElementInWindow) {
         return focusedElementInWindow->IsEditable() ? focusedElementInWindow

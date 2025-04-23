@@ -218,6 +218,14 @@ export const storybookTables = {
     { value: { prefersContrast: "var(--text-color)" }, name: "--border-color" },
     {
       value: {
+        default: "color-mix(in srgb, currentColor 10%, transparent)",
+        prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
+        forcedColors: "CanvasText",
+      },
+      name: "--border-color-card",
+    },
+    {
+      value: {
         brand: {
           light: "var(--color-gray-30)",
           dark: "var(--color-gray-70)",
@@ -370,9 +378,6 @@ export const storybookTables = {
     { value: "var(--border-radius-small)", name: "--button-border-radius" },
   ],
   "border-width": [{ value: "1px", name: "--border-width" }],
-  "box-shadow": [
-    { value: "0 1px 4px var(--color-black-a10)", name: "--box-shadow-10" },
-  ],
   border: [
     {
       value: "var(--border-width) solid var(--button-border-color)",
@@ -506,7 +511,11 @@ export const storybookTables = {
       name: "--button-text-color-ghost",
     },
     {
-      value: { default: "var(--button-text-color-active)" },
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-active)",
+        forcedColors: "var(--button-text-color-active)",
+      },
       name: "--button-text-color-ghost-active",
     },
     {
@@ -520,7 +529,11 @@ export const storybookTables = {
       name: "--button-text-color-ghost-disabled",
     },
     {
-      value: { default: "var(--button-text-color-hover)" },
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-hover)",
+        forcedColors: "var(--button-text-color-hover)",
+      },
       name: "--button-text-color-ghost-hover",
     },
     {
@@ -595,7 +608,6 @@ export const storybookTables = {
   ],
   margin: [{ value: "var(--space-small)", name: "--checkbox-margin-inline" }],
   color: [
-    { value: "rgba(0, 0, 0, 0.1)", name: "--color-black-a10" },
     { value: "#73a7f3", name: "--color-blue-30" },
     { value: "#0060df", name: "--color-blue-50" },
     { value: "#0250bb", name: "--color-blue-60" },
@@ -747,7 +759,11 @@ export const storybookTables = {
     },
   ],
   "icon-size": [
-    { value: "var(--size-item-small)", name: "--icon-size-default" },
+    { value: "var(--icon-size-small)", name: "--icon-size-default" },
+    { value: "var(--size-item-small)", name: "--icon-size-small" },
+    { value: "20px", name: "--icon-size-medium" },
+    { value: "24px", name: "--icon-size-large" },
+    { value: "var(--size-item-large)", name: "--icon-size-xlarge" },
   ],
   "input-space": [
     { value: "var(--space-xsmall)", name: "--input-space-block" },
@@ -802,6 +818,64 @@ export const storybookTables = {
     { value: "calc(6 * var(--space-xsmall))", name: "--space-xlarge" },
     { value: "calc(8 * var(--space-xsmall))", name: "--space-xxlarge" },
   ],
+  "box-shadow": [
+    {
+      value:
+        "0 0 1px var(--box-shadow-color-darker-layer-1), 0 1px 2px var(--box-shadow-color-darker-layer-2)",
+      name: "--box-shadow-level-1",
+    },
+    {
+      value:
+        "0 0.25px 0.75px var(--box-shadow-color-lighter-layer-1), 0 2px 6px var(--box-shadow-color-lighter-layer-2)",
+      name: "--box-shadow-level-2",
+    },
+    {
+      value:
+        "0 0.375px 1.5px var(--box-shadow-color-lighter-layer-1), 0 3px 12px var(--box-shadow-color-lighter-layer-2)",
+      name: "--box-shadow-level-3",
+    },
+    {
+      value:
+        "0 0.5px 2px var(--box-shadow-color-lighter-layer-1), 0 4px 16px var(--box-shadow-color-lighter-layer-2)",
+      name: "--box-shadow-level-4",
+    },
+    { value: "var(--box-shadow-level-1)", name: "--box-shadow-tab" },
+    { value: "var(--box-shadow-level-2)", name: "--box-shadow-card" },
+    { value: "var(--box-shadow-level-4)", name: "--box-shadow-card-hover" },
+    { value: "var(--box-shadow-level-3)", name: "--box-shadow-popup" },
+    {
+      value: {
+        light: "rgba(0, 0, 0, 0.15)",
+        dark: "rgba(0, 0, 0, 0.2)",
+        default: "light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.2))",
+      },
+      name: "--box-shadow-color-darker-layer-1",
+    },
+    {
+      value: {
+        light: "rgba(0, 0, 0, 0.2)",
+        dark: "rgba(0, 0, 0, 0.4)",
+        default: "light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4))",
+      },
+      name: "--box-shadow-color-darker-layer-2",
+    },
+    {
+      value: {
+        light: "rgba(0, 0, 0, 0.05)",
+        dark: "rgba(0, 0, 0, 0.2)",
+        default: "light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2))",
+      },
+      name: "--box-shadow-color-lighter-layer-1",
+    },
+    {
+      value: {
+        light: "rgba(0, 0, 0, 0.1)",
+        dark: "rgba(0, 0, 0, 0.4)",
+        default: "light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4))",
+      },
+      name: "--box-shadow-color-lighter-layer-2",
+    },
+  ],
 };
 
 export const variableLookupTable = {
@@ -854,6 +928,11 @@ export const variableLookupTable = {
     default: "light-dark(var(--color-yellow-05), var(--color-yellow-80))",
   },
   "border-color": { prefersContrast: "var(--text-color)" },
+  "border-color-card": {
+    default: "color-mix(in srgb, currentColor 10%, transparent)",
+    prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
+    forcedColors: "CanvasText",
+  },
   "border-color-deemphasized": {
     brand: {
       light: "var(--color-gray-30)",
@@ -892,7 +971,6 @@ export const variableLookupTable = {
   "border-radius-small": "4px",
   "border-radius-medium": "8px",
   "border-width": "1px",
-  "box-shadow-10": "0 1px 4px var(--color-black-a10)",
   "button-background-color": {
     forcedColors: "ButtonFace",
     brand: { default: "color-mix(in srgb, currentColor 7%, transparent)" },
@@ -1069,7 +1147,9 @@ export const variableLookupTable = {
     },
   },
   "button-text-color-ghost-active": {
-    default: "var(--button-text-color-active)",
+    default: "inherit",
+    prefersContrast: "var(--button-text-color-active)",
+    forcedColors: "var(--button-text-color-active)",
   },
   "button-text-color-ghost-disabled": {
     default: "inherit",
@@ -1079,7 +1159,9 @@ export const variableLookupTable = {
     },
   },
   "button-text-color-ghost-hover": {
-    default: "var(--button-text-color-hover)",
+    default: "inherit",
+    prefersContrast: "var(--button-text-color-hover)",
+    forcedColors: "var(--button-text-color-hover)",
   },
   "button-text-color-hover": {
     default: "var(--button-text-color)",
@@ -1102,7 +1184,6 @@ export const variableLookupTable = {
   },
   "checkbox-margin-inline": "var(--space-small)",
   "checkbox-size": "var(--size-item-small)",
-  "color-black-a10": "rgba(0, 0, 0, 0.1)",
   "color-blue-30": "#73a7f3",
   "color-blue-50": "#0060df",
   "color-blue-60": "#0250bb",
@@ -1229,7 +1310,11 @@ export const variableLookupTable = {
     prefersContrast: "var(--icon-color)",
     default: "light-dark(var(--color-red-50), var(--color-red-30))",
   },
-  "icon-size-default": "var(--size-item-small)",
+  "icon-size-default": "var(--icon-size-small)",
+  "icon-size-small": "var(--size-item-small)",
+  "icon-size-medium": "20px",
+  "icon-size-large": "24px",
+  "icon-size-xlarge": "var(--size-item-large)",
   "input-text-min-height": "var(--button-min-height)",
   "input-space-block": "var(--space-xsmall)",
   "link-color": {
@@ -1270,6 +1355,38 @@ export const variableLookupTable = {
   "space-large": "calc(4 * var(--space-xsmall))",
   "space-xlarge": "calc(6 * var(--space-xsmall))",
   "space-xxlarge": "calc(8 * var(--space-xsmall))",
+  "box-shadow-level-1":
+    "0 0 1px var(--box-shadow-color-darker-layer-1), 0 1px 2px var(--box-shadow-color-darker-layer-2)",
+  "box-shadow-level-2":
+    "0 0.25px 0.75px var(--box-shadow-color-lighter-layer-1), 0 2px 6px var(--box-shadow-color-lighter-layer-2)",
+  "box-shadow-level-3":
+    "0 0.375px 1.5px var(--box-shadow-color-lighter-layer-1), 0 3px 12px var(--box-shadow-color-lighter-layer-2)",
+  "box-shadow-level-4":
+    "0 0.5px 2px var(--box-shadow-color-lighter-layer-1), 0 4px 16px var(--box-shadow-color-lighter-layer-2)",
+  "box-shadow-tab": "var(--box-shadow-level-1)",
+  "box-shadow-card": "var(--box-shadow-level-2)",
+  "box-shadow-card-hover": "var(--box-shadow-level-4)",
+  "box-shadow-popup": "var(--box-shadow-level-3)",
+  "box-shadow-color-darker-layer-1": {
+    light: "rgba(0, 0, 0, 0.15)",
+    dark: "rgba(0, 0, 0, 0.2)",
+    default: "light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.2))",
+  },
+  "box-shadow-color-darker-layer-2": {
+    light: "rgba(0, 0, 0, 0.2)",
+    dark: "rgba(0, 0, 0, 0.4)",
+    default: "light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4))",
+  },
+  "box-shadow-color-lighter-layer-1": {
+    light: "rgba(0, 0, 0, 0.05)",
+    dark: "rgba(0, 0, 0, 0.2)",
+    default: "light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2))",
+  },
+  "box-shadow-color-lighter-layer-2": {
+    light: "rgba(0, 0, 0, 0.1)",
+    dark: "rgba(0, 0, 0, 0.4)",
+    default: "light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4))",
+  },
   "table-row-background-color": { default: "var(--background-color-canvas)" },
   "table-row-background-color-alternate": {
     forcedColors: "var(--background-color-canvas)",

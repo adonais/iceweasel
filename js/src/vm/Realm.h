@@ -19,6 +19,7 @@
 #include "builtin/Array.h"
 #include "ds/IdValuePair.h"
 #include "gc/Barrier.h"
+#include "gc/WeakMap.h"
 #include "jit/BaselineCompileQueue.h"
 #include "js/GCVariant.h"
 #include "js/RealmOptions.h"
@@ -28,7 +29,6 @@
 #include "vm/GuardFuse.h"
 #include "vm/InvalidatingFuse.h"
 #include "vm/JSContext.h"
-#include "vm/PromiseLookup.h"  // js::PromiseLookup
 #include "vm/RealmFuses.h"
 #include "vm/SavedStacks.h"
 #include "wasm/WasmRealm.h"
@@ -230,7 +230,6 @@ struct IteratorHashPolicy {
 
 class DebugEnvironments;
 class NonSyntacticVariablesObject;
-class ObjectWeakMap;
 class WithEnvironmentObject;
 
 // ObjectRealm stores various tables and other state associated with particular
@@ -416,8 +415,6 @@ class JS::Realm : public JS::shadow::Realm {
   js::NewProxyCache newProxyCache;
   js::NewPlainObjectWithPropsCache newPlainObjectWithPropsCache;
   js::PlainObjectAssignCache plainObjectAssignCache;
-  js::ArraySpeciesLookup arraySpeciesLookup;
-  js::PromiseLookup promiseLookup;
 
   // Last time at which an animation was played for this realm.
   js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;

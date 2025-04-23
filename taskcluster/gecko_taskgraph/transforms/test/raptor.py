@@ -141,7 +141,9 @@ def split_raptor_subtests(config, tests):
         # test job for every subtest (i.e. split out each page-load URL into its own job)
         subtests = test["raptor"].pop("subtests", None)
         if not subtests:
-            if "macosx1400" not in test["test-platform"]:
+            if all(
+                p not in test["test-platform"] for p in ("macosx1400", "macosx1500")
+            ):
                 yield test
             continue
 
@@ -446,4 +448,23 @@ def setup_lull_schedule(config, tasks):
             # so that it can be accessible through mozci
             lull_schedule = attrs.pop("lull-schedule")
             task.setdefault("extra", {})["lull-schedule"] = lull_schedule
+        yield task
+
+
+@task_transforms.add
+def setup_lambdatest_options(config, tasks):
+    for task in tasks:
+        if task.get("worker", {}).get("os", "") == "linux-lambda":
+            commands = task["worker"]["command"]
+            modified = []
+            for command in commands:
+                modified.append(
+                    [
+                        c
+                        for c in command
+                        if not c.startswith("--conditioned-profile")
+                        and not c.startswith("--power-test")
+                    ]
+                )
+            task["worker"]["command"] = modified
         yield task

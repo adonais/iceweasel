@@ -18,6 +18,7 @@
     --background-color-warning: light-dark(var(--color-yellow-05), var(--color-yellow-80));
 
     /** Border **/
+    --border-color-card: color-mix(in srgb, currentColor 10%, transparent);
     --border-color-interactive-hover: var(--border-color-interactive);
     --border-color-interactive-active: var(--border-color-interactive);
     --border-color-interactive-disabled: var(--border-color-interactive);
@@ -27,7 +28,18 @@
     --border-width: 1px;
 
     /** Box Shadow **/
-    --box-shadow-10: 0 1px 4px var(--color-black-a10);
+    --box-shadow-card: var(--box-shadow-level-2);
+    --box-shadow-card-hover: var(--box-shadow-level-4);
+    --box-shadow-color-darker-layer-1: light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.2));
+    --box-shadow-color-darker-layer-2: light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4));
+    --box-shadow-color-lighter-layer-1: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2));
+    --box-shadow-color-lighter-layer-2: light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4));
+    --box-shadow-level-1: 0 0 1px var(--box-shadow-color-darker-layer-1), 0 1px 2px var(--box-shadow-color-darker-layer-2);
+    --box-shadow-level-2: 0 0.25px 0.75px var(--box-shadow-color-lighter-layer-1), 0 2px 6px var(--box-shadow-color-lighter-layer-2);
+    --box-shadow-level-3: 0 0.375px 1.5px var(--box-shadow-color-lighter-layer-1), 0 3px 12px var(--box-shadow-color-lighter-layer-2);
+    --box-shadow-level-4: 0 0.5px 2px var(--box-shadow-color-lighter-layer-1), 0 4px 16px var(--box-shadow-color-lighter-layer-2);
+    --box-shadow-popup: var(--box-shadow-level-3);
+    --box-shadow-tab: var(--box-shadow-level-1);
 
     /** Button **/
     --button-background-color-disabled: var(--button-background-color);
@@ -81,8 +93,8 @@
     --button-text-color-destructive-active: var(--button-text-color-destructive);
     --button-text-color-destructive-disabled: var(--button-text-color-destructive);
     --button-text-color-ghost: inherit;
-    --button-text-color-ghost-hover: var(--button-text-color-hover);
-    --button-text-color-ghost-active: var(--button-text-color-active);
+    --button-text-color-ghost-hover: inherit;
+    --button-text-color-ghost-active: inherit;
     --button-text-color-ghost-disabled: inherit;
     --button-text-color-primary-hover: var(--button-text-color-primary);
     --button-text-color-primary-active: var(--button-text-color-primary-hover);
@@ -93,7 +105,6 @@
     --checkbox-size: var(--size-item-small); /* TODO Bug 1876537: Make this em-based, probably? */
 
     /** Color **/
-    --color-black-a10: rgba(0, 0, 0, 0.1);
     --color-blue-05: #deeafc;
     --color-blue-30: #73a7f3;
     --color-blue-50: #0060df;
@@ -146,7 +157,11 @@
     --icon-color-information: light-dark(var(--color-blue-50), var(--color-blue-30));
     --icon-color-success: light-dark(var(--color-green-50), var(--color-green-30));
     --icon-color-warning: light-dark(var(--color-yellow-50), var(--color-yellow-30));
-    --icon-size-default: var(--size-item-small);
+    --icon-size-default: var(--icon-size-small);
+    --icon-size-small: var(--size-item-small);
+    --icon-size-medium: 20px;
+    --icon-size-large: 24px;
+    --icon-size-xlarge: var(--size-item-large);
 
     /** Input - Text **/
     --input-text-min-height: var(--button-min-height);
@@ -208,11 +223,14 @@
 
       /** Border **/
       --border-color: var(--text-color);
+      --border-color-card: color-mix(in srgb, currentColor 41%, transparent);
       --border-color-deemphasized: currentColor;
       --border-color-interactive: var(--text-color);
 
       /** Button **/
       --button-border-color: var(--button-text-color);
+      --button-text-color-ghost-hover: var(--button-text-color-hover);
+      --button-text-color-ghost-active: var(--button-text-color-active);
 
       /** Icon **/
       --icon-color: var(--text-color);
@@ -245,6 +263,7 @@
     :root,
     :host(.anonymous-content-host) {
       /** Border **/
+      --border-color-card: CanvasText;
       --border-color-deemphasized: ButtonText;
       --border-color-interactive: ButtonText;
       --border-color-interactive-hover: SelectedItem;
@@ -281,6 +300,8 @@
       --button-text-color-destructive-hover: var(--button-text-color-primary-hover);
       --button-text-color-destructive-active: var(--button-text-color-primary-active);
       --button-text-color-destructive-disabled: var(--button-text-color-primary-disabled);
+      --button-text-color-ghost-hover: var(--button-text-color-hover);
+      --button-text-color-ghost-active: var(--button-text-color-active);
       --button-text-color-primary: ButtonFace;
       --button-text-color-primary-hover: SelectedItemText;
 

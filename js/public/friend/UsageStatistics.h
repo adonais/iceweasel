@@ -104,6 +104,7 @@ extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
   _(THENABLE_USE, ThenableUse)                                   \
   _(THENABLE_USE_PROTO, ThenableUseProto)                        \
   _(THENABLE_USE_STANDARD_PROTO, ThenableUseStandardProto)       \
+  _(THENABLE_USE_OBJECT_PROTO, ThenableUseObjectProto)           \
   _(LEGACY_LANG_SUBTAG, LegacyLangSubtag)                        \
   _(IC_STUB_TOO_LARGE, ICStubTooLarge)                           \
   _(IC_STUB_OOM, ICStubOOM)                                      \
@@ -113,7 +114,9 @@ extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
   _(ERRORSTACK_SETTER_NONSTRING, ErrorStackSetterNonString)      \
   _(ERRORSTACK_SETTER_NO_ERRORDATA, ErrorStackSetterNoErrorData) \
   _(DATEPARSE, DateParse)                                        \
-  _(DATEPARSE_IMPL_DEF, DateParseImplDef)
+  _(DATEPARSE_IMPL_DEF, DateParseImplDef)                        \
+  _(OPTIMIZE_ARRAY_SPECIES_FUSE, OptimizeArraySpeciesFuse)       \
+  _(OPTIMIZE_PROMISE_LOOKUP_FUSE, OptimizePromiseLookupFuse)
 
 /*
  * Use counter names passed to the accumulate use counter callback.

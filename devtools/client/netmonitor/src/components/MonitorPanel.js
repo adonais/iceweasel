@@ -7,16 +7,16 @@
 const {
   Component,
   createFactory,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const { div } = dom;
-const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
   connect,
 } = require("resource://devtools/client/shared/vendor/react-redux.js");
 const {
   findDOMNode,
-} = require("resource://devtools/client/shared/vendor/react-dom.js");
+} = require("resource://devtools/client/shared/vendor/react-dom.mjs");
 const Actions = require("resource://devtools/client/netmonitor/src/actions/index.js");
 const {
   updateFormDataSections,

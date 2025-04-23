@@ -68,6 +68,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "jstypes.h"
+#include "fmt/format.h"
 #ifndef JS_WITHOUT_NSPR
 #  include "prerror.h"
 #  include "prlink.h"
@@ -384,8 +385,15 @@ void LogPrintVA(const JS::OpaqueLogger logger, mozilla::LogLevel level,
   fprintf(stderr, "\n");
 }
 
+void LogPrintFmt(const JS::OpaqueLogger logger, mozilla::LogLevel level,
+                 fmt::string_view fmt, fmt::format_args args) {
+  ShellLogModule* mod = static_cast<ShellLogModule*>(logger);
+  fmt::print(stderr, FMT_STRING("[{}] {}\n"), mod->name,
+             fmt::vformat(fmt, args));
+}
+
 JS::LoggingInterface shellLoggingInterface = {GetLoggerByName, LogPrintVA,
-                                              GetLevelRef};
+                                              LogPrintFmt, GetLevelRef};
 
 static void ToLower(const char* src, char* dest, size_t len) {
   for (size_t c = 0; c < len; c++) {
@@ -4092,7 +4100,11 @@ static bool Fuzzilli(JSContext* cx, unsigned argc, Value* vp) {
         MOZ_ASSERT(false);
         break;
       case 3:
+      #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
         __asm__("int3");
+      #elif defined(JS_CODEGEN_ARM64)
+        __asm__("brk #0");
+      #endif
         break;
       default:
         exit(1);
@@ -7040,8 +7052,9 @@ static bool WasmCompileAndSerialize(JSContext* cx) {
     return false;
   }
 
+  wasm::BytecodeSource bytecodeSource(bytecode->begin(), bytecode->length());
   wasm::Bytes serialized;
-  if (!wasm::CompileAndSerialize(cx, *bytecode, &serialized)) {
+  if (!wasm::CompileAndSerialize(cx, bytecodeSource, &serialized)) {
     return false;
   }
 
@@ -7067,7 +7080,8 @@ static bool WasmCompileInSeparateProcess(JSContext* cx, unsigned argc,
   SharedMem<uint8_t*> bytecode;
   size_t numBytes;
   if (!args[0].isObject() ||
-      !IsBufferSource(&args[0].toObject(), &bytecode, &numBytes)) {
+      !IsBufferSource(cx, &args[0].toObject(), /*allowShared*/ false,
+                      /*allowResizable*/ false, &bytecode, &numBytes)) {
     RootedObject callee(cx, &args.callee());
     ReportUsageErrorASCII(cx, callee, "Argument must be a buffer source");
     return false;
@@ -8221,7 +8235,8 @@ class StreamCacheEntryObject : public NativeObject {
     SharedMem<uint8_t*> ptr;
     size_t numBytes;
     if (!args[0].isObject() ||
-        !IsBufferSource(&args[0].toObject(), &ptr, &numBytes)) {
+        !IsBufferSource(cx, &args[0].toObject(), /*allowShared*/ true,
+                        /*allowResizable*/ true, &ptr, &numBytes)) {
       RootedObject callee(cx, &args.callee());
       ReportUsageErrorASCII(cx, callee, "Argument must be an ArrayBuffer");
       return false;
@@ -8414,7 +8429,8 @@ static bool ConsumeBufferSource(JSContext* cx, JS::HandleObject obj,
 
   SharedMem<uint8_t*> dataPointer;
   size_t byteLength;
-  if (IsBufferSource(obj, &dataPointer, &byteLength)) {
+  if (IsBufferSource(cx, obj, /*allowShared*/ true, /*allowResizable*/ true,
+                     &dataPointer, &byteLength)) {
     Uint8Vector bytes;
     if (!bytes.resize(byteLength)) {
       JS_ReportOutOfMemory(cx);
@@ -12258,9 +12274,11 @@ int main(int argc, char** argv) {
   SetOutputFile("JS_STDOUT", &rcStdout, &gOutFile);
   SetOutputFile("JS_STDERR", &rcStderr, &gErrFile);
 
+#ifdef MOZ_MEMORY
   // Use a larger jemalloc page cache. This should match the value for browser
   // foreground processes in ContentChild::RecvNotifyProcessPriorityChanged.
   moz_set_max_dirty_page_modifier(4);
+#endif
 
   OptionParser op("Usage: {progname} [options] [[script] scriptArgs*]");
   if (!InitOptionParser(op)) {
@@ -12954,15 +12972,15 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-atomics-pause")) {
     JS::Prefs::setAtStartup_experimental_atomics_pause(true);
   }
+  if (op.getBoolOption("enable-error-iserror")) {
+    JS::Prefs::set_experimental_error_iserror(true);
+  }
 #ifdef NIGHTLY_BUILD
   if (op.getBoolOption("enable-async-iterator-helpers")) {
     JS::Prefs::setAtStartup_experimental_async_iterator_helpers(true);
   }
   if (op.getBoolOption("enable-symbols-as-weakmap-keys")) {
     JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
-  }
-  if (op.getBoolOption("enable-error-iserror")) {
-    JS::Prefs::set_experimental_error_iserror(true);
   }
   if (op.getBoolOption("enable-iterator-sequencing")) {
     JS::Prefs::setAtStartup_experimental_iterator_sequencing(true);

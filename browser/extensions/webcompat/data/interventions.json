@@ -1,19 +1,4 @@
 {
-  "969844": {
-    "label": "mobile.de",
-    "bugs": {
-      "969844": {
-        "issue": "desktop-layout-not-mobile",
-        "matches": ["*://*.mobile.de/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["android"],
-        "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
   "1385206": {
     "label": "rakuten.co.jp",
     "bugs": {
@@ -531,10 +516,13 @@
     },
     "interventions": [
       {
-        "platforms": ["android"],
+        "platforms": ["linux", "android"],
         "content_scripts": {
           "all_frames": true,
-          "js": ["bug1724868-news.yahoo.co.jp-ua-override.js"]
+          "js": [
+            "lib/ua_helpers.js",
+            "bug1724868-news.yahoo.co.jp-ua-override.js"
+          ]
         }
       }
     ]
@@ -718,15 +706,12 @@
       "1821439": {
         "issue": "broken-login",
         "matches": ["*://islamionline.islamicbank.ps/*"]
-      },
-      "1930429": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://*.ambrahealth.com/*"]
       }
     },
     "interventions": [
       {
         "platforms": ["all"],
+        "skip_if": ["InstallTrigger_defined"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1774005-installtrigger-shim.js"]
@@ -803,10 +788,6 @@
   "1784199": {
     "label": "Sites based on Entrata Platform",
     "bugs": {
-      "1898912": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://*.7streetbrownstones.com/*"]
-      },
       "1898995": {
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.aptsovation.com/*"]
@@ -814,10 +795,6 @@
       "1894682": {
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.arboretumapartments.com/*"]
-      },
-      "1898956": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://*.avanabayview.com/*"]
       },
       "1898964": {
         "issue": "firefox-blocked-completely",
@@ -1306,6 +1283,10 @@
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.ozwincasino.com/*"]
       },
+      "1904935": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://*.rubyslots.com/*"]
+      },
       "1944317": {
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.captainjackcasino.com/*"]
@@ -1613,16 +1594,32 @@
         "issue": "firefox-blocked-completely",
         "matches": [
           "*://*.ado-dokidokihimitsukichi-daigakuimo.com/*",
+          "*://*.ahnbohyun-fc.com/*",
+          "*://*.banbanzai-fc.com/*",
           "*://*.canan8181.com/*",
           "*://*.gs-ch.com/*",
+          "*://*.itomiku-fc.jp/*",
+          "*://*.kawahara-no.jp/*",
           "*://*.keisuke-ueda.jp/*",
           "*://*.kemomimirefle.net/*",
+          "*://*.kyoten-waku-officialfc.com/*",
+          "*://*.maziyabacity.com/*",
           "*://*.nicochannel.jp/*",
           "*://*.p-jinriki-fc.com/*",
           "*://*.pizzaradio.jp/*",
+          "*://*.quizknock-schole.com/*",
           "*://*.rnqq.jp/*",
           "*://*.ryogomatsumaru.com/*",
+          "*://*.sae-okazaki.com/*",
+          "*://*.sakuraknights.com/*",
+          "*://*.salon-de-horizon.jp/*",
+          "*://*.serina-official.com/*",
+          "*://*.shibuya-abemas.com/*",
+          "*://*.styleparty-fc.jp/*",
+          "*://*.suzuka-ouji-officialfc.com/*",
           "*://*.takahashifumiya.com/*",
+          "*://*.tokinosora-fc.com/*",
+          "*://*.tymstorage.jp/*",
           "*://*.yamingfc.net/*"
         ]
       },
@@ -1786,6 +1783,7 @@
     "interventions": [
       {
         "platforms": ["all"],
+        "skip_if": ["InstallTrigger_undefined"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1859617-installtrigger-removal-shim.js"]
@@ -1923,23 +1921,6 @@
       {
         "platforms": ["all"],
         "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
-  "1881922": {
-    "label": "helpdeskgeek.com",
-    "bugs": {
-      "1881922": {
-        "issue": "slow-performance",
-        "matches": ["*://helpdeskgeek.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "js": ["bug1881922-disable-legacy-mutation-events.js"]
-        }
       }
     ]
   },
@@ -2091,6 +2072,38 @@
       }
     ]
   },
+  "1892898": {
+    "label": "investopedia.com",
+    "bugs": {
+      "1892898": {
+        "issue": "broken-layout",
+        "matches": ["*://*.investopedia.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "css": ["bug1892898-investopedia.com-fix-card-height.css"]
+        }
+      }
+    ]
+  },
+  "1894308": {
+    "label": "dingtalk.com",
+    "bugs": {
+      "1894308": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://*.dingtalk.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
   "1895051": {
     "label": "www.zhihu.com",
     "bugs": {
@@ -2235,6 +2248,21 @@
       }
     ]
   },
+  "1898932": {
+    "label": "account.gov.il",
+    "bugs": {
+      "1898932": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://account.gov.il/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+      }
+    ]
+  },
   "1898938": {
     "label": "conference.amwell.com",
     "bugs": {
@@ -2262,6 +2290,23 @@
       {
         "platforms": ["all"],
         "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "1898946": {
+    "label": "transcrib.io",
+    "bugs": {
+      "1898946": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://transcrib.io/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "js": ["bug1898946-transcrib.io-chrome-shim.js"]
+        }
       }
     ]
   },
@@ -2489,8 +2534,53 @@
       {
         "platforms": ["all"],
         "content_scripts": {
-          "js": ["bug1881922-disable-legacy-mutation-events.js"]
+          "js": ["bug1901780-disable-legacy-mutation-events.js"]
         }
+      }
+    ]
+  },
+  "1902382": {
+    "label": "flash.puffin.com",
+    "bugs": {
+      "1902382": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://flash.puffin.com/store/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "1902397": {
+    "label": "e-src.net",
+    "bugs": {
+      "1902397": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://www.e-src.net/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+      }
+    ]
+  },
+  "1902459": {
+    "label": "coupangplay.com",
+    "bugs": {
+      "1902459": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://*.coupangplay.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "ua_string": ["add_Chrome"]
       }
     ]
   },
@@ -2509,6 +2599,53 @@
       }
     ]
   },
+  "1902404": {
+    "label": "pss.perodua.com.my",
+    "bugs": {
+      "1902404": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://pss.perodua.com.my/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "1902406": {
+    "label": "sp.hi.co.kr",
+    "bugs": {
+      "1902406": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://sp.hi.co.kr/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "js": ["bug1902406-sp.hi.co.kr-window-chrome-shim.js"]
+        }
+      }
+    ]
+  },
+  "1902411": {
+    "label": "agent.foundi.info",
+    "bugs": {
+      "1902411": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://agent.foundi.info/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+      }
+    ]
+  },
   "1902506": {
     "label": "mp3cut.net",
     "bugs": {
@@ -2521,6 +2658,23 @@
       {
         "platforms": ["all"],
         "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "1905069": {
+    "label": "one.geekie.com.br",
+    "bugs": {
+      "1905069": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://one.geekie.com.br/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "js": ["bug1905069-one.geekie.com.br-chrome-shims.js"]
+        }
       }
     ]
   },
@@ -2569,12 +2723,30 @@
       }
     ]
   },
-  "1912923": {
-    "label": "livelesson.class.com",
+  "1911253": {
+    "label": "qq.com",
     "bugs": {
-      "1912923": {
+      "1911253": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://*.qq.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "all_frames": true,
+          "css": ["bug1911253-qq.com-unhide-checkboxes.css"]
+        }
+      }
+    ]
+  },
+  "1912923": {
+    "label": "class.com",
+    "bugs": {
+      "1951358": {
         "issue": "firefox-blocked-completely",
-        "matches": ["*://livelesson.class.com/class/*"]
+        "matches": ["*://*.class.com/*"]
       }
     },
     "interventions": [
@@ -2629,6 +2801,37 @@
       }
     ]
   },
+  "1918609": {
+    "label": "www.zara.com",
+    "bugs": {
+      "1918609": {
+        "issue": "broken-layout",
+        "matches": ["*://www.zara.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "only_channels": ["nightly"],
+        "ua_string": ["reduce_firefox_version_by_one"]
+      }
+    ]
+  },
+  "1919698": {
+    "label": "anecdotes.ai",
+    "bugs": {
+      "1919698": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://*.anecdotes.ai/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+      }
+    ]
+  },
   "1921410": {
     "label": "beta.maps.apple.com",
     "bugs": {
@@ -2658,6 +2861,21 @@
         "content_scripts": {
           "js": ["bug1923286-bing.com-image-click-fix.js"]
         }
+      }
+    ]
+  },
+  "1923656": {
+    "label": "ipmph.com",
+    "bugs": {
+      "1923656": {
+        "issue": "page-fails-to-load",
+        "matches": ["*://*.ipmph.com/#/bookPreview*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["add_Chrome"]
       }
     ]
   },
@@ -2712,6 +2930,24 @@
       }
     ]
   },
+  "1927984": {
+    "label": "modules.sms-timing.com",
+    "bugs": {
+      "1927984": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://modules.sms-timing.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "js": ["bug1927984-modules.sms-timing.com-chrome-shim.js"]
+        },
+        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+      }
+    ]
+  },
   "1928216": {
     "label": "voice.google.com",
     "bugs": {
@@ -2726,6 +2962,24 @@
         "content_scripts": {
           "js": ["bug1928216-voice.google.com-permissions.query.js"]
         }
+      }
+    ]
+  },
+  "1928941": {
+    "label": "oasis.decart.ai",
+    "bugs": {
+      "1928941": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://oasis.decart.ai/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "js": ["bug1928941-oasis.decart.ai-window-chrome-shim.js"]
+        },
+        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
       }
     ]
   },
@@ -2779,6 +3033,21 @@
         "content_scripts": {
           "css": ["bug1931538-buzzfeed.com-card-game-fix.css"]
         }
+      }
+    ]
+  },
+  "1933169": {
+    "label": "next.goalplan.com",
+    "bugs": {
+      "1933169": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://next.goalplan.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
       }
     ]
   },
@@ -2841,6 +3110,23 @@
       {
         "platforms": ["android"],
         "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+      }
+    ]
+  },
+  "1939248": {
+    "label": "rosasthai.com",
+    "bugs": {
+      "1939248": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://rosasthai.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "js": ["bug1939248-rosasthai.com-load-event-helper.js"]
+        }
       }
     ]
   },
@@ -2939,6 +3225,23 @@
       {
         "platforms": ["mac"],
         "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "1944725": {
+    "label": "homedepot.com",
+    "bugs": {
+      "1944725": {
+        "issue": "broken-layout",
+        "matches": ["*://*.homedepot.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["android"],
+        "content_scripts": {
+          "js": ["bug1944725-homedepot.com-innerWidth-fix.js"]
+        }
       }
     ]
   },
@@ -3119,6 +3422,23 @@
         "platforms": ["linux"],
         "content_scripts": {
           "js": ["bug1950282-formula1.com-platform-linux-fix.js"]
+        }
+      }
+    ]
+  },
+  "1950301": {
+    "label": "shamir.com",
+    "bugs": {
+      "1950301": {
+        "issue": "broken-layout",
+        "matches": ["*://shamir.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "js": ["bug1950301-shamir.com-ua-overrides.js"]
         }
       }
     ]

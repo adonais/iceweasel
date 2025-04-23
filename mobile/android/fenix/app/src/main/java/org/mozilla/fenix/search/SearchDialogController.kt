@@ -25,8 +25,11 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.UnifiedSearch
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.crashes.CrashListActivity
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.navigateSafe
@@ -63,6 +66,7 @@ class SearchDialogController(
     private val activity: HomeActivity,
     private val store: BrowserStore,
     private val tabsUseCases: TabsUseCases,
+    private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val fragmentStore: SearchFragmentStore,
     private val navController: NavController,
     private val settings: Settings,
@@ -121,12 +125,17 @@ class SearchDialogController(
             fragmentStore.state.tabId == null
         }
 
-        activity.openToBrowserAndLoad(
+        navController.navigateSafe(
+            R.id.searchDialogFragment,
+            SearchDialogFragmentDirections.actionGlobalBrowser(),
+        )
+
+        fenixBrowserUseCases.loadUrlOrSearch(
             searchTermOrURL = url,
             newTab = newTab,
-            from = BrowserDirection.FromSearchDialog,
-            engine = searchEngine,
             forceSearch = !isDefaultEngine,
+            private = activity.browsingModeManager.mode.isPrivate,
+            searchEngine = searchEngine,
         )
 
         if (url.isUrl() || searchEngine == null) {
@@ -232,14 +241,14 @@ class SearchDialogController(
         focusToolbar()
 
         when {
-            searchEngine.type == SearchEngine.Type.APPLICATION && searchEngine.id == Core.HISTORY_SEARCH_ENGINE_ID -> {
+            searchEngine.type == SearchEngine.Type.APPLICATION && searchEngine.id == HISTORY_SEARCH_ENGINE_ID -> {
                 fragmentStore.dispatch(SearchFragmentAction.SearchHistoryEngineSelected(searchEngine))
             }
             searchEngine.type == SearchEngine.Type.APPLICATION &&
-                searchEngine.id == Core.BOOKMARKS_SEARCH_ENGINE_ID -> {
+                searchEngine.id == BOOKMARKS_SEARCH_ENGINE_ID -> {
                 fragmentStore.dispatch(SearchFragmentAction.SearchBookmarksEngineSelected(searchEngine))
             }
-            searchEngine.type == SearchEngine.Type.APPLICATION && searchEngine.id == Core.TABS_SEARCH_ENGINE_ID -> {
+            searchEngine.type == SearchEngine.Type.APPLICATION && searchEngine.id == TABS_SEARCH_ENGINE_ID -> {
                 fragmentStore.dispatch(SearchFragmentAction.SearchTabsEngineSelected(searchEngine))
             }
             searchEngine == store.state.search.selectedOrDefaultSearchEngine -> {

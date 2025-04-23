@@ -363,15 +363,6 @@ void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
                                    ? sMouseBoundaryLog
                                    : sPointerBoundaryLog;
 
-  if (!StaticPrefs::
-          dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
-    MOZ_LOG(logModule, LogLevel::Info,
-            ("The last \"over\" event target (%p) is removed",
-             mDeepestEnterEventTarget.get()));
-    StoreOverEventTargetAndDeepestEnterEventTarget(nullptr);
-    return;
-  }
-
   if (mDispatchingOverEventTarget &&
       (mDeepestEnterEventTarget == mDispatchingOverEventTarget ||
        nsContentUtils::ContentIsFlattenedTreeDescendantOf(
@@ -522,12 +513,9 @@ void OverOutElementsWrapper::DidDispatchOverAndEnterEvent(
   // dispatching "mouseover" and "mouseenter" events and the target gets back
   // under the deepest enter event target, we should restore the "mouseover"
   // target.
-  if ((!StaticPrefs::
-           dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed() &&
-       !mDeepestEnterEventTarget) ||
-      (!LastOverEventTargetIsOutEventTarget() && mDeepestEnterEventTarget &&
-       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-           aOriginalOverTargetInComposedDoc, mDeepestEnterEventTarget))) {
+  if (!LastOverEventTargetIsOutEventTarget() && mDeepestEnterEventTarget &&
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+          aOriginalOverTargetInComposedDoc, mDeepestEnterEventTarget)) {
     StoreOverEventTargetAndDeepestEnterEventTarget(
         aOriginalOverTargetInComposedDoc);
     LogModule* const logModule = mType == BoundaryEventType::Mouse
@@ -1064,9 +1052,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
           SetClickCount(mouseEvent, aStatus);
           break;
       }
-      if (!StaticPrefs::dom_popup_experimental()) {
-        NotifyTargetUserActivation(aEvent, aTargetContent);
-      }
       break;
     }
     case eMouseUp: {
@@ -1149,14 +1134,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         PointerEventHandler::UpdateActivePointerState(mouseEvent,
                                                       aTargetContent);
         PointerEventHandler::ImplicitlyCapturePointer(aTargetFrame, aEvent);
-        if (StaticPrefs::dom_popup_experimental()) {
-          // https://html.spec.whatwg.org/multipage/interaction.html#activation-triggering-input-event
-          if (mouseEvent->mInputSource ==
-              MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
-            NotifyTargetUserActivation(aEvent, aTargetContent);
-          }
-        } else if (mouseEvent->mInputSource !=
-                   MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+        // https://html.spec.whatwg.org/multipage/interaction.html#activation-triggering-input-event
+        if (mouseEvent->mInputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
           NotifyTargetUserActivation(aEvent, aTargetContent);
         }
 
@@ -1191,8 +1170,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     case ePointerUp:
       LightDismissOpenPopovers(aEvent, aTargetContent);
       GenerateMouseEnterExit(mouseEvent);
-      if (StaticPrefs::dom_popup_experimental() &&
-          mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
+      if (mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
         NotifyTargetUserActivation(aEvent, aTargetContent);
       }
       break;
@@ -1379,11 +1357,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     case eTouchStart:
       SetGestureDownPoint(aEvent->AsTouchEvent());
       break;
-    case eTouchEnd:
-      if (!StaticPrefs::dom_popup_experimental()) {
-        NotifyTargetUserActivation(aEvent, aTargetContent);
-      }
-      break;
     default:
       break;
   }
@@ -1397,15 +1370,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 // The modifiers associated with the user activation is used for controlling
 // where the `window.open` is opened into.
 static bool CanReflectModifiersToUserActivation(WidgetInputEvent* aEvent) {
-  if (StaticPrefs::dom_popup_experimental()) {
-    MOZ_ASSERT(aEvent->mMessage == eKeyDown ||
-               aEvent->mMessage == ePointerDown ||
-               aEvent->mMessage == ePointerUp);
-  } else {
-    MOZ_ASSERT(aEvent->mMessage == eKeyDown || aEvent->mMessage == eMouseDown ||
-               aEvent->mMessage == ePointerDown ||
-               aEvent->mMessage == eTouchEnd);
-  }
+  MOZ_ASSERT(aEvent->mMessage == eKeyDown || aEvent->mMessage == ePointerDown ||
+             aEvent->mMessage == ePointerUp);
 
   WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
   if (keyEvent) {
@@ -1458,11 +1424,7 @@ void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
   // Do not treat the click on scrollbar as a user interaction with the web
   // content.
   if (StaticPrefs::dom_user_activation_ignore_scrollbars() &&
-      ((StaticPrefs::dom_popup_experimental() &&
-        (aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp)) ||
-       (!StaticPrefs::dom_popup_experimental() &&
-        (aEvent->mMessage == eMouseDown ||
-         aEvent->mMessage == ePointerDown))) &&
+      (aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp) &&
       aTargetContent->IsInNativeAnonymousSubtree()) {
     nsIContent* current = aTargetContent;
     do {
@@ -1477,17 +1439,8 @@ void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
     } while (current);
   }
 
-#ifdef DEBUG
-  if (StaticPrefs::dom_popup_experimental()) {
-    MOZ_ASSERT(aEvent->mMessage == eKeyDown ||
-               aEvent->mMessage == ePointerDown ||
-               aEvent->mMessage == ePointerUp);
-  } else {
-    MOZ_ASSERT(aEvent->mMessage == eKeyDown || aEvent->mMessage == eMouseDown ||
-               aEvent->mMessage == ePointerDown ||
-               aEvent->mMessage == eTouchEnd);
-  }
-#endif
+  MOZ_ASSERT(aEvent->mMessage == eKeyDown || aEvent->mMessage == ePointerDown ||
+             aEvent->mMessage == ePointerUp);
 
   UserActivation::Modifiers modifiers;
   if (WidgetInputEvent* inputEvent = aEvent->AsInputEvent()) {
@@ -2564,16 +2517,25 @@ void EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent) {
 }
 
 void EventStateManager::MaybeFirePointerCancel(WidgetInputEvent* aEvent) {
+  // If aEvent is a synthesized mouse event, it does not have enough information
+  // to initialize ePointerCancel.
+  MOZ_ASSERT_IF(aEvent->AsMouseEvent(), aEvent->AsMouseEvent()->IsReal());
+  // The caller must want to dispatch ePointerCancel even if an event listener
+  // of the preceding event may update the layout.  So, the caller should
+  // guarantee the target frame.
+  MOZ_ASSERT(mCurrentTarget);
+
   RefPtr<PresShell> presShell = mPresContext->GetPresShell();
   AutoWeakFrame targetFrame = mCurrentTarget;
-
   if (!presShell || !targetFrame) {
     return;
   }
 
   nsCOMPtr<nsIContent> content;
   targetFrame->GetContentForEvent(aEvent, getter_AddRefs(content));
-  if (!content) {
+  // XXX If there is no proper event target, should we retarget ePointerCancel
+  // somewhere else?
+  if (NS_WARN_IF(!content)) {
     return;
   }
 
@@ -2638,6 +2600,7 @@ bool EventStateManager::IsEventOutsideDragThreshold(
 void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
                                             WidgetInputEvent* aEvent) {
   NS_ASSERTION(aPresContext, "This shouldn't happen.");
+  MOZ_ASSERT_IF(aEvent->AsMouseEvent(), aEvent->AsMouseEvent()->IsReal());
   if (!IsTrackingDragGesture()) {
     return;
   }
@@ -5038,6 +5001,8 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
   newEvent->mRelatedTarget = aRelatedTarget;
   newEvent->mRefPoint = aMouseEvent->mRefPoint;
   newEvent->mModifiers = aMouseEvent->mModifiers;
+  // NOTE: If you need to change this if-expression, you need to update
+  // WidgetMouseEventBase::ComputeMouseButtonPressure() too.
   if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce &&
       aMouseEvent->InputSourceSupportsHover()) {
     // If we synthesize a pointer event or a mouse event from another event
@@ -5071,14 +5036,8 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
     // Adjust pressure if it does not matches with mButtons.
     // FIXME: We may use wrong pressure value if the source event has not been
     // dispatched into the DOM yet.  However, fixing this requires to store the
-    // last pressure value somewhere.
-    if (newEvent->mButtons && aMouseEvent->mPressure == 0) {
-      newEvent->mPressure = 0.5f;
-    } else if (!newEvent->mButtons && aMouseEvent->mPressure != 0) {
-      newEvent->mPressure = 0;
-    } else {
-      newEvent->mPressure = aMouseEvent->mPressure;
-    }
+    // last pressure value somewhere (bug 1953669).
+    newEvent->mPressure = newEvent->ComputeMouseButtonPressure();
   } else {
     // If the event has already been dispatched into the tree, web apps has
     // already handled the button state change, so the button state of the
@@ -5590,43 +5549,6 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
       break;
     }
     case ePointerUp: {
-      if (!StaticPrefs::
-              dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
-        // In the legacy mode, we should do nothing if the event has not been
-        // dispatched yet (i.e., called by PreHandleEvent).
-        // On the other hand, if the event was dispatched (i.e., called by
-        // PostEventHandler), we need to dispatch "pointerout" and
-        // "pointerleave" events because the pointer will be removed
-        // (invalidated) by the "pointerup" operation.
-        if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce) {
-          break;
-        }
-        MOZ_ASSERT(!aMouseEvent->InputSourceSupportsHover());
-        // Get the target content target (pointermove target == pointerover
-        // target)
-        nsCOMPtr<nsIContent> targetElement = GetEventTargetContent(aMouseEvent);
-        if (!targetElement) {
-          // We're always over the document root, even if we're only
-          // over dead space in a page (whose frame is not associated with
-          // any content) or in print preview dead space
-          targetElement = mDocument->GetRootElement();
-        }
-        if (targetElement) {
-          // XXX It's odd to override the `pointerout` event target with the
-          // content under the pointer or something because it may have never
-          // received `pointerover` event.  I think that this was required for
-          // digitizer which supports hover state (bug 985511).  However, this
-          // is now not called at ePointerUp if the device supports hover.
-          RefPtr<OverOutElementsWrapper> helper =
-              GetWrapperByEventID(aMouseEvent);
-          if (helper) {
-            helper->OverrideOverEventTarget(targetElement);
-          }
-          NotifyMouseOut(aMouseEvent, nullptr);
-        }
-        break;
-      }
-
       if (aMouseEvent->mFlags.mDispatchedAtLeastOnce) {
         // If we've already dispatched the pointerup event caused by
         // non-hoverable input device like touch, we need to synthesize

@@ -166,8 +166,8 @@ nsCOMPtr<nsINotificationStorage> GetNotificationStorage(bool isPrivate) {
                                  : NS_NOTIFICATION_STORAGE_CONTRACTID);
 }
 
-nsresult PersistNotification(nsIPrincipal* aPrincipal, const nsString& aId,
-                             const IPCNotificationOptions& aOptions,
+nsresult PersistNotification(nsIPrincipal* aPrincipal,
+                             const IPCNotification& aNotification,
                              const nsString& aScope) {
   nsCOMPtr<nsINotificationStorage> notificationStorage =
       GetNotificationStorage(aPrincipal->GetIsInPrivateBrowsing());
@@ -181,10 +181,10 @@ nsresult PersistNotification(nsIPrincipal* aPrincipal, const nsString& aId,
     return rv;
   }
 
-  rv = notificationStorage->Put(
-      origin, aId, aOptions.title(), GetEnumString(aOptions.dir()),
-      aOptions.lang(), aOptions.body(), aOptions.tag(), aOptions.icon(),
-      aOptions.dataSerialized(), aScope);
+  RefPtr<NotificationStorageEntry> entry =
+      new NotificationStorageEntry(aNotification);
+
+  rv = notificationStorage->Put(origin, entry, aScope);
 
   if (NS_FAILED(rv)) {
     return rv;
@@ -206,14 +206,11 @@ nsresult UnpersistNotification(nsIPrincipal* aPrincipal, const nsString& aId) {
   return NS_ERROR_FAILURE;
 }
 
-void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId,
-                            CloseMode aCloseMode) {
+void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId) {
   // XXX: unpersist only when explicitly closed, bug 1095073
   UnpersistNotification(aPrincipal, aId);
   if (nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service()) {
-    alertService->CloseAlert(
-        aId,
-        /* aContextClosed */ aCloseMode == CloseMode::InactiveGlobal);
+    alertService->CloseAlert(aId, /* aContextClosed */ false);
   }
 }
 
@@ -255,6 +252,128 @@ nsresult AdjustPushQuota(nsIPrincipal* aPrincipal,
     return pushQuotaManager->NotificationForOriginShown(origin.get());
   }
   return pushQuotaManager->NotificationForOriginClosed(origin.get());
+}
+
+NS_IMPL_ISUPPORTS(NotificationActionStorageEntry,
+                  nsINotificationActionStorageEntry)
+
+NS_IMETHODIMP NotificationActionStorageEntry::GetName(nsAString& aName) {
+  aName = mIPCAction.name();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationActionStorageEntry::GetTitle(nsAString& aTitle) {
+  aTitle = mIPCAction.title();
+  return NS_OK;
+}
+
+Result<IPCNotificationAction, nsresult> NotificationActionStorageEntry::ToIPC(
+    nsINotificationActionStorageEntry& aEntry) {
+  IPCNotificationAction action;
+  MOZ_TRY(aEntry.GetName(action.name()));
+  MOZ_TRY(aEntry.GetTitle(action.title()));
+  return action;
+}
+
+NS_IMPL_ISUPPORTS(NotificationStorageEntry, nsINotificationStorageEntry)
+
+NS_IMETHODIMP NotificationStorageEntry::GetId(nsAString& aId) {
+  aId = mIPCNotification.id();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetTitle(nsAString& aTitle) {
+  aTitle = mIPCNotification.options().title();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetDir(nsACString& aDir) {
+  aDir = GetEnumString(mIPCNotification.options().dir());
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetLang(nsAString& aLang) {
+  aLang = mIPCNotification.options().lang();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetBody(nsAString& aBody) {
+  aBody = mIPCNotification.options().body();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetTag(nsAString& aTag) {
+  aTag = mIPCNotification.options().tag();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetIcon(nsAString& aIcon) {
+  aIcon = mIPCNotification.options().icon();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetRequireInteraction(
+    bool* aRequireInteraction) {
+  *aRequireInteraction = mIPCNotification.options().requireInteraction();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetSilent(bool* aSilent) {
+  *aSilent = mIPCNotification.options().silent();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetDataSerialized(
+    nsAString& aDataSerialized) {
+  aDataSerialized = mIPCNotification.options().dataSerialized();
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetActions(
+    nsTArray<RefPtr<nsINotificationActionStorageEntry>>& aRetVal) {
+  nsTArray<RefPtr<nsINotificationActionStorageEntry>> actions(
+      mIPCNotification.options().actions().Length());
+
+  for (const auto& action : mIPCNotification.options().actions()) {
+    actions.AppendElement(new NotificationActionStorageEntry(action));
+  }
+
+  aRetVal = std::move(actions);
+
+  return NS_OK;
+}
+
+Result<IPCNotification, nsresult> NotificationStorageEntry::ToIPC(
+    nsINotificationStorageEntry& aEntry) {
+  IPCNotification notification;
+  IPCNotificationOptions& options = notification.options();
+  MOZ_TRY(aEntry.GetId(notification.id()));
+  MOZ_TRY(aEntry.GetTitle(options.title()));
+
+  nsCString dir;
+  MOZ_TRY(aEntry.GetDir(dir));
+  options.dir() = StringToEnum<NotificationDirection>(dir).valueOr(
+      NotificationDirection::Auto);
+
+  MOZ_TRY(aEntry.GetLang(options.lang()));
+  MOZ_TRY(aEntry.GetBody(options.body()));
+  MOZ_TRY(aEntry.GetTag(options.tag()));
+  MOZ_TRY(aEntry.GetIcon(options.icon()));
+  MOZ_TRY(aEntry.GetRequireInteraction(&options.requireInteraction()));
+  MOZ_TRY(aEntry.GetSilent(&options.silent()));
+  MOZ_TRY(aEntry.GetDataSerialized(options.dataSerialized()));
+
+  nsTArray<RefPtr<nsINotificationActionStorageEntry>> actionEntries;
+  MOZ_TRY(aEntry.GetActions(actionEntries));
+  nsTArray<IPCNotificationAction> actions(actionEntries.Length());
+  for (const auto& actionEntry : actionEntries) {
+    IPCNotificationAction action;
+    MOZ_TRY_VAR(action, NotificationActionStorageEntry::ToIPC(*actionEntry));
+    actions.AppendElement(std::move(action));
+  }
+  options.actions() = std::move(actions);
+
+  return notification;
 }
 
 }  // namespace mozilla::dom::notification

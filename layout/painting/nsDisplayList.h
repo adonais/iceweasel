@@ -3270,7 +3270,8 @@ class nsDisplayList {
     PAINT_DEFAULT = 0,
     PAINT_USE_WIDGET_LAYERS = 0x01,
     PAINT_EXISTING_TRANSACTION = 0x04,
-    PAINT_IDENTICAL_DISPLAY_LIST = 0x08
+    PAINT_IDENTICAL_DISPLAY_LIST = 0x08,
+    PAINT_COMPOSITE_OFFSCREEN = 0x10
   };
   void PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
                  uint32_t aFlags, Maybe<double> aDisplayListBuildTime);
@@ -3946,21 +3947,13 @@ class nsDisplayBorder : public nsPaintedDisplayItem {
 
 /**
  * A simple display item that just renders a solid color across the
- * specified bounds. For canvas frames (in the CSS sense) we split off the
- * drawing of the background color into this class (from nsDisplayBackground
- * via nsDisplayCanvasBackground). This is done so that we can always draw a
- * background color to avoid ugly flashes of white when we can't draw a full
- * frame tree (ie when a page is loading). The bounds can differ from the
- * frame's bounds -- this is needed when a frame/iframe is loading and there
- * is not yet a frame tree to go in the frame/iframe so we use the subdoc
- * frame of the parent document as a standin.
+ * specified bounds. The bounds can differ from the frame's bounds -- this is
+ * needed when a frame/iframe is loading and there is not yet a frame tree to go
+ * in the frame/iframe so we use the subdoc frame of the parent document as a
+ * standin.
  */
-class nsDisplaySolidColorBase : public nsPaintedDisplayItem {
+class nsDisplaySolidColor final : public nsPaintedDisplayItem {
  public:
-  nsDisplaySolidColorBase(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                          nscolor aColor)
-      : nsPaintedDisplayItem(aBuilder, aFrame), mColor(aColor) {}
-
   nsDisplayItemGeometry* AllocateGeometry(
       nsDisplayListBuilder* aBuilder) override {
     return new nsDisplaySolidColorGeometry(this, aBuilder, mColor);
@@ -3993,18 +3986,12 @@ class nsDisplaySolidColorBase : public nsPaintedDisplayItem {
     return Some(mColor);
   }
 
- protected:
-  nscolor mColor;
-};
-
-class nsDisplaySolidColor final : public nsDisplaySolidColorBase {
- public:
   nsDisplaySolidColor(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                       const nsRect& aBounds, nscolor aColor,
                       bool aCanBeReused = true)
-      : nsDisplaySolidColorBase(aBuilder, aFrame, aColor),
-        mBounds(aBounds),
-        mIsCheckerboardBackground(false) {
+      : nsPaintedDisplayItem(aBuilder, aFrame),
+        mColor(aColor),
+        mBounds(aBounds) {
     NS_ASSERTION(NS_GET_A(aColor) > 0,
                  "Don't create invisible nsDisplaySolidColors!");
     MOZ_COUNT_CTOR(nsDisplaySolidColor);
@@ -4031,15 +4018,17 @@ class nsDisplaySolidColor final : public nsDisplaySolidColorBase {
     if (mOverrideZIndex) {
       return mOverrideZIndex.value();
     }
-    return nsDisplaySolidColorBase::ZIndex();
+    return nsPaintedDisplayItem::ZIndex();
   }
 
   void SetOverrideZIndex(int32_t aZIndex) { mOverrideZIndex = Some(aZIndex); }
+  void OverrideColor(nscolor aColor) { mColor = aColor; }
 
  private:
+  nscolor mColor;
   nsRect mBounds;
-  bool mIsCheckerboardBackground;
   Maybe<int32_t> mOverrideZIndex;
+  bool mIsCheckerboardBackground = false;
 };
 
 /**
@@ -5396,7 +5385,6 @@ class nsDisplayOwnLayer : public nsDisplayWrapList {
  public:
   enum OwnLayerType {
     OwnLayerForTransformWithRoundedClip,
-    OwnLayerForStackingContext,
     OwnLayerForScrollbar,
     OwnLayerForScrollThumb,
     OwnLayerForSubdoc,
@@ -5633,6 +5621,40 @@ class nsDisplayStickyPosition final : public nsDisplayOwnLayer {
   // this does not create a WebRender ReferenceFrame, which is important
   // because sticky elements do not establish Gecko reference frames either.
   uint64_t mWrStickyAnimationId;
+};
+
+class nsDisplayViewTransitionCapture final : public nsDisplayOwnLayer {
+ public:
+  nsDisplayViewTransitionCapture(nsDisplayListBuilder* aBuilder,
+                                 nsIFrame* aFrame, nsDisplayList* aList,
+                                 const ActiveScrolledRoot* aASR, bool aIsRoot)
+      : nsDisplayOwnLayer(aBuilder, aFrame, aList, aASR), mIsRoot(aIsRoot) {
+    MOZ_COUNT_CTOR(nsDisplayViewTransitionCapture);
+  }
+
+  nsDisplayViewTransitionCapture(nsDisplayListBuilder* aBuilder,
+                                 const nsDisplayViewTransitionCapture& aOther)
+      : nsDisplayOwnLayer(aBuilder, aOther) {
+    MOZ_COUNT_CTOR(nsDisplayViewTransitionCapture);
+  }
+
+  MOZ_COUNTED_DTOR_FINAL(nsDisplayViewTransitionCapture)
+  NS_DISPLAY_DECL_NAME("VTCapture", TYPE_VT_CAPTURE)
+
+  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override {
+    GetChildren()->Paint(aBuilder, aCtx,
+                         mFrame->PresContext()->AppUnitsPerDevPixel());
+  }
+
+  bool CreateWebRenderCommands(
+      wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
+      const StackingContextHelper& aSc,
+      layers::RenderRootStateManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder) override;
+
+ private:
+  NS_DISPLAY_ALLOW_CLONING()
+  bool mIsRoot = false;
 };
 
 class nsDisplayFixedPosition : public nsDisplayOwnLayer {

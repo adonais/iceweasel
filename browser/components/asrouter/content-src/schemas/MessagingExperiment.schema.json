@@ -564,6 +564,10 @@
               "minumum": 0,
               "exclusiveMaximum": 10
             },
+            "dismissable": {
+              "description": "Should the infobar include an X dismiss button, defaults to true",
+              "type": "boolean"
+            },
             "buttons": {
               "type": "array",
               "items": {
@@ -917,6 +921,41 @@
         "template": {
           "type": "string",
           "const": "pb_newtab"
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "targeting"
+      ]
+    },
+    "NewtabMessage": {
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+      "$id": "file:///NewtabMessage.schema.json",
+      "title": "NewtabMessage",
+      "description": "A template for messages that are rendered within newtab",
+      "allOf": [
+        {
+          "$ref": "chrome://browser/content/asrouter/schemas/MessagingExperiment.schema.json#/$defs/Message"
+        }
+      ],
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "object",
+          "properties": {
+            "messageType": {
+              "type": "string",
+              "description": "The subtype of the message."
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "messageType"
+          ]
+        },
+        "template": {
+          "type": "string",
+          "const": "newtab_message"
         }
       },
       "additionalProperties": true,
@@ -1278,6 +1317,7 @@
             "infobar",
             "menu_message",
             "pb_newtab",
+            "newtab_message",
             "spotlight",
             "feature_callout",
             "toast_notification",
@@ -1521,6 +1561,25 @@
           },
           "then": {
             "$ref": "chrome://browser/content/asrouter/schemas/MessagingExperiment.schema.json#/$defs/NewtabPromoMessage"
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "template": {
+                "type": "string",
+                "enum": [
+                  "newtab_message"
+                ]
+              }
+            },
+            "required": [
+              "template"
+            ]
+          },
+          "then": {
+            "$ref": "chrome://browser/content/asrouter/schemas/MessagingExperiment.schema.json#/$defs/NewtabMessage"
           }
         },
         {

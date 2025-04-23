@@ -9,12 +9,30 @@
 
 #include <utility>
 
-#include "chrome/common/ipc_message_utils.h"
 #include "mozilla/UniquePtrExtensions.h"
+
+namespace IPC {
+template <class P>
+struct ParamTraits;
+class MessageWriter;
+class MessageReader;
+}  // namespace IPC
+
+namespace mozilla::geckoargs {
+template <typename T>
+struct CommandLineArg;
+}
 
 namespace mozilla::ipc {
 
 namespace shared_memory {
+
+enum class Type {
+  Mutable,
+  ReadOnly,
+  MutableOrReadOnly,
+  Freezable,
+};
 
 // Rust Bindgen code doesn't actually use these types, but `UniqueFileHandle`
 // and `UniqueMachSendRight` aren't defined and some headers need to type check,
@@ -27,8 +45,23 @@ using PlatformHandle = mozilla::UniqueMachSendRight;
 using PlatformHandle = mozilla::UniqueFileHandle;
 #endif
 
+template <Type T>
 struct Handle;
-struct ReadOnlyHandle;
+
+template <Type T, bool WithHandle = false>
+struct Mapping;
+
+using MutableHandle = Handle<Type::Mutable>;
+using ReadOnlyHandle = Handle<Type::ReadOnly>;
+using FreezableHandle = Handle<Type::Freezable>;
+
+using MutableMapping = Mapping<Type::Mutable>;
+using ReadOnlyMapping = Mapping<Type::ReadOnly>;
+using MutableOrReadOnlyMapping = Mapping<Type::MutableOrReadOnly>;
+using FreezableMapping = Mapping<Type::Freezable>;
+
+using MutableMappingWithHandle = Mapping<Type::Mutable, true>;
+using ReadOnlyMappingWithHandle = Mapping<Type::ReadOnly, true>;
 
 class HandleBase {
  public:
@@ -47,9 +80,19 @@ class HandleBase {
    */
   explicit operator bool() const { return (bool)mHandle; }
 
+  /**
+   * Take the platform handle.
+   *
+   * This should be used with caution, as it drops all of the guarantees of the
+   * shared memory handle classes.
+   */
+  PlatformHandle TakePlatformHandle() && { return std::move(mHandle); }
+
   friend class Platform;
-  friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::Handle>;
+  friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::MutableHandle>;
   friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::ReadOnlyHandle>;
+  friend struct mozilla::geckoargs::CommandLineArg<
+      mozilla::ipc::shared_memory::ReadOnlyHandle>;
 
  protected:
   HandleBase();
@@ -67,14 +110,14 @@ class HandleBase {
 
   HandleBase Clone() const;
 
-  template <typename Derived>
-  Derived CloneAs() const {
-    return Clone().ConvertTo<Derived>();
+  template <Type T>
+  Handle<T> CloneAs() const {
+    return Clone().ConvertTo<T>();
   }
 
-  template <typename Derived>
-  Derived ConvertTo() && {
-    Derived d;
+  template <Type T>
+  Handle<T> ConvertTo() && {
+    Handle<T> d;
     static_cast<HandleBase&>(d) = std::move(*this);
     return d;
   }
@@ -83,6 +126,14 @@ class HandleBase {
   bool FromMessageReader(IPC::MessageReader* aReader);
 
  private:
+  /**
+   * Set the size of the handle.
+   *
+   * This method must be used rather than setting `mSize` directly, as there is
+   * additional bookkeeping that goes along with this value.
+   */
+  void SetSize(uint64_t aSize);
+
   PlatformHandle mHandle = nullptr;
   uint64_t mSize = 0;
 };
@@ -90,7 +141,8 @@ class HandleBase {
 /**
  * A handle to a shared memory region.
  */
-struct Handle : HandleBase {
+template <>
+struct Handle<Type::Mutable> : HandleBase {
   /**
    * Create an empty Handle.
    */
@@ -100,45 +152,72 @@ struct Handle : HandleBase {
   /**
    * Clone the handle.
    */
-  Handle Clone() const { return CloneAs<Handle>(); }
+  Handle Clone() const { return CloneAs<Type::Mutable>(); }
+
+  /**
+   * Convert the handle to a read-only handle.
+   *
+   * Note that this doesn't enforce any sort of security or guarantees on the
+   * underlying shared memory.
+   */
+  ReadOnlyHandle ToReadOnly() &&;
+
+  /**
+   * Use the handle as a read-only handle.
+   *
+   * Note that this doesn't enforce any sort of security or guarantees on the
+   * underlying shared memory.
+   */
+  const ReadOnlyHandle& AsReadOnly() const;
 
   /**
    * Map the shared memory region into memory.
    */
-  struct Mapping Map(void* aFixedAddress = nullptr) const;
+  MutableMapping Map(void* aFixedAddress = nullptr) const;
 
   /**
    * Map a subregion of the shared memory region into memory.
    */
-  struct Mapping MapSubregion(uint64_t aOffset, size_t aSize,
+  MutableMapping MapSubregion(uint64_t aOffset, size_t aSize,
                               void* aFixedAddress = nullptr) const;
+
+  /**
+   * Map the shared memory region into memory, keeping the handle with it.
+   */
+  MutableMappingWithHandle MapWithHandle(void* aFixedAddress = nullptr) &&;
 };
 
 /**
  * A read-only handle to a shared memory region.
  */
-struct ReadOnlyHandle : HandleBase {
+template <>
+struct Handle<Type::ReadOnly> : HandleBase {
   /**
    * Create an empty ReadOnlyHandle.
    */
-  ReadOnlyHandle() = default;
-  MOZ_IMPLICIT ReadOnlyHandle(std::nullptr_t) {}
+  Handle() = default;
+  MOZ_IMPLICIT Handle(std::nullptr_t) {}
 
   /**
    * Clone the handle.
    */
-  ReadOnlyHandle Clone() const { return CloneAs<ReadOnlyHandle>(); }
+  Handle Clone() const { return CloneAs<Type::ReadOnly>(); }
 
   /**
    * Map the shared memory region into memory.
    */
-  struct ReadOnlyMapping Map(void* aFixedAddress = nullptr) const;
+  ReadOnlyMapping Map(void* aFixedAddress = nullptr) const;
 
   /**
    * Map a subregion of the shared memory region into memory.
    */
-  struct ReadOnlyMapping MapSubregion(uint64_t aOffset, size_t aSize,
-                                      void* aFixedAddress = nullptr) const;
+  ReadOnlyMapping MapSubregion(uint64_t aOffset, size_t aSize,
+                               void* aFixedAddress = nullptr) const;
+
+  /**
+   * Map the shared memory region into memory, keeping the handle with it.
+   */
+  ReadOnlyMappingWithHandle MapWithHandle(void* aFixedAddress = nullptr) &&;
 };
 
 /**
@@ -147,21 +226,22 @@ struct ReadOnlyHandle : HandleBase {
  * One cannot clone this handle, ensuring that at most one writable mapping
  * exists. After freezing, no new writable mappings can be created.
  */
-struct FreezableHandle : HandleBase {
+template <>
+struct Handle<Type::Freezable> : HandleBase {
   /**
    * Create an empty FreezableHandle.
    */
-  FreezableHandle() = default;
-  MOZ_IMPLICIT FreezableHandle(std::nullptr_t) {}
-  ~FreezableHandle();
+  Handle() = default;
+  MOZ_IMPLICIT Handle(std::nullptr_t) {}
+  ~Handle();
 
-  FreezableHandle(FreezableHandle&&) = default;
-  FreezableHandle& operator=(FreezableHandle&&) = default;
+  Handle(Handle&&) = default;
+  Handle& operator=(Handle&&) = default;
 
   /**
    * Convert to a normal handle if we will not freeze this handle.
    */
-  Handle WontFreeze() &&;
+  MutableHandle WontFreeze() &&;
 
   /**
    * Freeze this handle, returning a read-only handle.
@@ -171,13 +251,13 @@ struct FreezableHandle : HandleBase {
   /**
    * Map the shared memory region into memory.
    */
-  struct FreezableMapping Map(void* aFixedAddress = nullptr) &&;
+  FreezableMapping Map(void* aFixedAddress = nullptr) &&;
 
   /**
    * Map a subregion of the shared memory region into memory.
    */
-  struct FreezableMapping MapSubregion(uint64_t aOffset, size_t aSize,
-                                       void* aFixedAddress = nullptr) &&;
+  FreezableMapping MapSubregion(uint64_t aOffset, size_t aSize,
+                                void* aFixedAddress = nullptr) &&;
 
   friend class Platform;
 #if !defined(XP_DARWIN) && !defined(XP_WIN) && !defined(ANDROID)
@@ -189,7 +269,7 @@ struct FreezableHandle : HandleBase {
 /**
  * Create a new shared memory region.
  */
-Handle Create(uint64_t aSize);
+MutableHandle Create(uint64_t aSize);
 
 /**
  * Create a new freezable shared memory region.
@@ -203,9 +283,20 @@ Handle Create(uint64_t aSize);
  */
 FreezableHandle CreateFreezable(uint64_t aSize);
 
+#if defined(XP_LINUX)
+// If named POSIX shm is being used, append the prefix (including
+// the leading '/') that would be used by a process with the given
+// pid to the given string and return true.  If not, return false.
+// (This is public so that the Linux sandboxing code can use it.)
+bool AppendPosixShmPrefix(std::string* str, pid_t pid);
+
+// Returns whether POSIX shm is in use.
+bool UsingPosixShm();
+#endif
+
 }  // namespace shared_memory
 
-using MutableSharedMemoryHandle = shared_memory::Handle;
+using MutableSharedMemoryHandle = shared_memory::MutableHandle;
 using ReadOnlySharedMemoryHandle = shared_memory::ReadOnlyHandle;
 using FreezableSharedMemoryHandle = shared_memory::FreezableHandle;
 
@@ -214,11 +305,11 @@ using FreezableSharedMemoryHandle = shared_memory::FreezableHandle;
 namespace IPC {
 
 template <>
-struct ParamTraits<mozilla::ipc::shared_memory::Handle> {
+struct ParamTraits<mozilla::ipc::shared_memory::MutableHandle> {
   static void Write(MessageWriter* aWriter,
-                    mozilla::ipc::shared_memory::Handle&& aParam);
+                    mozilla::ipc::shared_memory::MutableHandle&& aParam);
   static bool Read(MessageReader* aReader,
-                   mozilla::ipc::shared_memory::Handle* aResult);
+                   mozilla::ipc::shared_memory::MutableHandle* aResult);
 };
 
 template <>

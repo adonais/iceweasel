@@ -78,22 +78,14 @@ struct AnimationEventInfo {
   Maybe<dom::Animation::EventContext> GetEventContext() const {
     if (mData.is<CssAnimationData>()) {
       const auto& data = mData.as<CssAnimationData>();
-      return data.mMessage == eAnimationCancel
-                 ? Some(dom::Animation::EventContext{
-                       NonOwningAnimationTarget(data.mTarget),
-                       data.mAnimationIndex})
-                 : Nothing();
+      return Some(dom::Animation::EventContext{
+          NonOwningAnimationTarget(data.mTarget), data.mAnimationIndex});
     }
-
     if (mData.is<CssTransitionData>()) {
       const auto& data = mData.as<CssTransitionData>();
-      return data.mMessage == eTransitionCancel
-                 ? Some(dom::Animation::EventContext{
-                       NonOwningAnimationTarget(data.mTarget),
-                       data.mAnimationIndex})
-                 : Nothing();
+      return Some(dom::Animation::EventContext{
+          NonOwningAnimationTarget(data.mTarget), data.mAnimationIndex});
     }
-
     return Nothing();
   }
 
@@ -152,23 +144,28 @@ struct AnimationEventInfo {
   AnimationEventInfo(AnimationEventInfo&& aOther) = default;
   AnimationEventInfo& operator=(AnimationEventInfo&& aOther) = default;
 
-  bool operator<(const AnimationEventInfo& aOther) const {
-    if (this->mScheduledEventTimeStamp != aOther.mScheduledEventTimeStamp) {
+  int32_t Compare(const AnimationEventInfo& aOther,
+                  nsContentUtils::NodeIndexCache& aCache) const {
+    if (mScheduledEventTimeStamp != aOther.mScheduledEventTimeStamp) {
       // Null timestamps sort first
-      if (this->mScheduledEventTimeStamp.IsNull() ||
-          aOther.mScheduledEventTimeStamp.IsNull()) {
-        return this->mScheduledEventTimeStamp.IsNull();
+      if (mScheduledEventTimeStamp.IsNull()) {
+        return -1;
       }
-      return this->mScheduledEventTimeStamp < aOther.mScheduledEventTimeStamp;
+      if (aOther.mScheduledEventTimeStamp.IsNull()) {
+        return 1;
+      }
+      return mScheduledEventTimeStamp < aOther.mScheduledEventTimeStamp ? -1
+                                                                        : 1;
     }
 
     // Events in the Web Animations spec are prior to CSS events.
-    if (this->IsWebAnimationEvent() != aOther.IsWebAnimationEvent()) {
-      return this->IsWebAnimationEvent();
+    if (IsWebAnimationEvent() != aOther.IsWebAnimationEvent()) {
+      return IsWebAnimationEvent() ? -1 : 1;
     }
 
-    return mAnimation->HasLowerCompositeOrderThan(
-        GetEventContext(), *aOther.mAnimation, aOther.GetEventContext());
+    return mAnimation->CompareCompositeOrder(GetEventContext(),
+                                             *aOther.mAnimation,
+                                             aOther.GetEventContext(), aCache);
   }
 
   bool IsWebAnimationEvent() const { return mData.is<WebAnimationData>(); }
@@ -309,11 +306,16 @@ class AnimationEventDispatcher final {
       return;
     }
 
-    for (auto& pending : mPendingEvents) {
-      pending.mAnimation->CachedChildIndexRef().reset();
-    }
+    struct AnimationEventInfoComparator {
+      mutable nsContentUtils::NodeIndexCache mCache;
 
-    mPendingEvents.StableSort();
+      bool LessThan(const AnimationEventInfo& aOne,
+                    const AnimationEventInfo& aOther) const {
+        return aOne.Compare(aOther, mCache) < 0;
+      }
+    };
+
+    mPendingEvents.StableSort(AnimationEventInfoComparator());
     mIsSorted = true;
   }
   void ScheduleDispatch();

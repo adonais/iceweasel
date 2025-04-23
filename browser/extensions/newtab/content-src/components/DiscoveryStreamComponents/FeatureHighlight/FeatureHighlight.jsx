@@ -31,9 +31,17 @@ export function FeatureHighlight({
       }
     };
 
+    const handleKeyDown = e => {
+      if (e.key === "Escape") {
+        outsideClickCallback();
+      }
+    };
+
     windowObj.document.addEventListener("click", handleOutsideClick);
+    windowObj.document.addEventListener("keydown", handleKeyDown);
     return () => {
       windowObj.document.removeEventListener("click", handleOutsideClick);
+      windowObj.document.removeEventListener("keydown", handleKeyDown);
     };
   }, [windowObj, outsideClickCallback]);
 
@@ -72,7 +80,7 @@ export function FeatureHighlight({
       </button>
       <div className={`feature-highlight-modal ${position} ${openedClassname}`}>
         <div className="message-icon">{icon}</div>
-        <p>{message}</p>
+        <p className="content-wrapper">{message}</p>
         <button
           data-l10n-id="feature-highlight-dismiss-button"
           className="icon icon-dismiss"

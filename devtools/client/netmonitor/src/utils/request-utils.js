@@ -10,11 +10,14 @@ const {
   getUnicodeHostname,
 } = require("resource://devtools/client/shared/unicode-url.js");
 
-loader.lazyRequireGetter(
-  this,
-  "parseJsonLossless",
-  "resource://devtools/client/shared/components/reps/reps/rep-utils.js",
-  true
+const lazy = {};
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    parseJsonLossless:
+      "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs",
+  },
+  { global: "contextual" }
 );
 
 const {
@@ -25,6 +28,7 @@ const CONTENT_MIME_TYPE_ABBREVIATIONS = {
   ecmascript: "js",
   javascript: "js",
   "x-javascript": "js",
+  "event-stream": "eventsource",
 };
 
 /**
@@ -289,6 +293,18 @@ function getUrlScheme(url) {
 }
 
 /**
+ * Helpers for getting the full path portion of a url.
+ *
+ * @param {string|URL} url - unvalidated url string or URL instance
+ * @return {string} string path of a url
+ */
+function getUrlPath(url) {
+  const href = getUrlProperty(url, "href");
+  const origin = getUrlProperty(url, "origin");
+  return href.replace(origin, "");
+}
+
+/**
  * Extract several details fields from a URL at once.
  */
 function getUrlDetails(url) {
@@ -298,6 +314,7 @@ function getUrlDetails(url) {
   const hostname = getUrlHostName(urlObject);
   const unicodeUrl = getUnicodeUrl(urlObject);
   const scheme = getUrlScheme(urlObject);
+  const path = getUrlPath(urlObject);
 
   // If the hostname contains unreadable ASCII characters, we need to do the
   // following two steps:
@@ -334,6 +351,7 @@ function getUrlDetails(url) {
     unicodeUrl,
     isLocal,
     url,
+    path,
   };
 }
 
@@ -664,7 +682,7 @@ function parseJSON(payloadUnclean) {
   let { payload, strippedChars, error } = removeXSSIString(payloadUnclean);
 
   try {
-    json = parseJsonLossless(payload);
+    json = lazy.parseJsonLossless(payload);
   } catch (err) {
     if (isBase64(payload)) {
       try {

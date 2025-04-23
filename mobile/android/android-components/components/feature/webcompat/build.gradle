@@ -9,9 +9,9 @@ apply plugin: 'kotlin-android'
 
 android {
     defaultConfig {
-        minSdkVersion config.minSdkVersion
-        compileSdk config.compileSdkVersion
-        targetSdkVersion config.targetSdkVersion
+        minSdkVersion = config.minSdkVersion
+        compileSdk = config.compileSdkVersion
+        targetSdkVersion = config.targetSdkVersion
     }
 
     sourceSets {
@@ -24,12 +24,12 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
-    namespace 'mozilla.components.feature.webcompat'
+    namespace = 'mozilla.components.feature.webcompat'
 }
 
 // We copy the webcompat extension from `browser/extensions/webcompat/` to
@@ -47,11 +47,15 @@ tasks.register("syncWebcompatExtension", Sync) {
     // webcompat adopted #include directives in Bug 1936031, which are only
     // processed for Desktop builds. The filter below pre-processes the files
     // that include these directives.
+
+    // configuration-cache doesn't allow calling file() from a groovy closure,
+    // in this case filesMatching callback, so we call file before the closure.
+    def interventionsJson = file("$topsrcdir/browser/extensions/webcompat/data/interventions.json")
     filesMatching([
         '**/run.js',
     ]) {
         filter(ReplaceTokens, beginToken: '', endToken: '', tokens: [
-            '#include data/interventions.json': file("$topsrcdir/browser/extensions/webcompat/data/interventions.json").text.trim(),
+            '#include data/interventions.json': interventionsJson.text.trim(),
         ])
     }
 }
@@ -59,16 +63,16 @@ tasks.register("syncWebcompatExtension", Sync) {
 dependencies {
     implementation project(':concept-engine')
 
-    implementation ComponentsDependencies.androidx_core_ktx
+    implementation libs.androidx.core.ktx
 
-    implementation ComponentsDependencies.kotlin_coroutines
+    implementation libs.kotlin.coroutines
 
     testImplementation project(':support-test')
     testImplementation project(':support-webextensions')
-    testImplementation ComponentsDependencies.androidx_test_core
-    testImplementation ComponentsDependencies.androidx_test_junit
-    testImplementation ComponentsDependencies.testing_robolectric
-    testImplementation ComponentsDependencies.testing_coroutines
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.testing.robolectric
+    testImplementation libs.testing.coroutines
 }
 
 apply from: '../../../android-lint.gradle'

@@ -13,6 +13,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Result.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/AudioDataBinding.h"
@@ -23,6 +24,67 @@
 #include "mozilla/dom/VideoFrameBinding.h"
 
 namespace mozilla {
+
+#define WEBCODECS_MARKER(codecType, desc, options, markerType, ...)    \
+  do {                                                                 \
+    if (profiler_is_collecting_markers()) {                            \
+      nsFmtCString marker(FMT_STRING("{}{}"), codecType, desc);        \
+      PROFILER_MARKER(                                                 \
+          ProfilerString8View::WrapNullTerminatedString(marker.get()), \
+          MEDIA_RT, options, markerType, __VA_ARGS__);                 \
+    }                                                                  \
+  } while (0)
+
+#define WEBCODECS_MARKER_INTERVAL_START(type, desc)                      \
+  WEBCODECS_MARKER(type, desc, {MarkerTiming::IntervalStart()}, Tracing, \
+                   "WebCodecs")
+#define WEBCODECS_MARKER_INTERVAL_END(type, desc)                      \
+  WEBCODECS_MARKER(type, desc, {MarkerTiming::IntervalEnd()}, Tracing, \
+                   "WebCodecs")
+
+class AutoWebCodecsMarker {
+ public:
+  AutoWebCodecsMarker(const char* aType, const char* aDesc)
+      : mType(aType), mDesc(aDesc) {
+    WEBCODECS_MARKER_INTERVAL_START(mType, mDesc);
+  }
+
+  AutoWebCodecsMarker(AutoWebCodecsMarker&& aOther) noexcept {
+    MOZ_ASSERT(!aOther.mEnded, "Ended marker should not be moved");
+    mType = std::move(aOther.mType);
+    mDesc = std::move(aOther.mDesc);
+    mEnded = std::move(aOther.mEnded);
+    aOther.mEnded = true;
+  }
+
+  AutoWebCodecsMarker& operator=(AutoWebCodecsMarker&& aOther) noexcept {
+    if (this != &aOther) {
+      MOZ_ASSERT(!aOther.mEnded, "Ended marker should not be moved");
+      mType = std::move(aOther.mType);
+      mDesc = std::move(aOther.mDesc);
+      mEnded = std::move(aOther.mEnded);
+      aOther.mEnded = true;
+    }
+    return *this;
+  }
+
+  AutoWebCodecsMarker(const AutoWebCodecsMarker& aOther) = delete;
+  AutoWebCodecsMarker& operator=(const AutoWebCodecsMarker& aOther) = delete;
+
+  ~AutoWebCodecsMarker() { End(); }
+
+  void End() {
+    if (!mEnded) {
+      WEBCODECS_MARKER_INTERVAL_END(mType, mDesc);
+      mEnded = true;
+    }
+  }
+
+ private:
+  const char* mType;
+  const char* mDesc;
+  bool mEnded = false;
+};
 
 namespace gfx {
 enum class ColorRange : uint8_t;

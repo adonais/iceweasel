@@ -34,6 +34,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/RandomNum.h"
 #include "mozilla/glean/ParserHtmlparserMetrics.h"
 
 #include "nsThreadUtils.h"
@@ -1216,7 +1217,7 @@ void nsExpatDriver::ParseChunk(const char16_t* aBuffer, uint32_t aLength,
     return parserBytesBefore;
   };
   int32_t parserBytesBefore = RLBOX_EXPAT_SAFE_MCALL(
-      XML_GetCurrentByteIndex, parserBytesBefore_verifier);
+      MOZ_XML_GetCurrentByteIndex, parserBytesBefore_verifier);
 
   if (mInternalState != NS_OK && !BlockedOrInterrupted()) {
     return;
@@ -1251,7 +1252,7 @@ void nsExpatDriver::ParseChunk(const char16_t* aBuffer, uint32_t aLength,
     return parserBytesConsumed;
   };
   int32_t parserBytesConsumed = RLBOX_EXPAT_SAFE_MCALL(
-      XML_GetCurrentByteIndex, parserBytesConsumed_verifier);
+      MOZ_XML_GetCurrentByteIndex, parserBytesConsumed_verifier);
 
   // Consumed something.
   *aConsumed += (parserBytesConsumed - parserBytesBefore) / sizeof(char16_t);
@@ -1449,7 +1450,8 @@ RLBoxExpatSandboxPool::CreateSandboxData(uint64_t aSize) {
 #ifdef MOZ_WASM_SANDBOXING_EXPAT
   const w2c_mem_capacity capacity =
       get_valid_wasm2c_memory_capacity(aSize, true /* 32-bit wasm memory*/);
-  bool create_ok = sandbox->create_sandbox(/* infallible = */ false, &capacity);
+  bool create_ok = sandbox->create_sandbox(/* shouldAbortOnFailure = */ false,
+                                           &capacity, "rlbox_wasm2c_expat");
 #else
   bool create_ok = sandbox->create_sandbox();
 #endif
@@ -1614,6 +1616,14 @@ nsresult nsExpatDriver::Initialize(nsIURI* aURI, nsIContentSink* aSink) {
   RLBOX_EXPAT_MCALL(MOZ_XML_SetParamEntityParsing,
                     XML_PARAM_ENTITY_PARSING_ALWAYS);
 #endif
+
+  rlbox_sandbox_expat::convert_to_sandbox_equivalent_nonclass_t<unsigned long>
+      salt;
+  MOZ_RELEASE_ASSERT(mozilla::GenerateRandomBytesFromOS(&salt, sizeof(salt)));
+  MOZ_RELEASE_ASSERT(
+      RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_SetHashSalt, safe_unverified<int>, salt));
+  MOZ_RELEASE_ASSERT(RLBOX_EXPAT_SAFE_MCALL(
+      MOZ_XML_SetReparseDeferralEnabled, safe_unverified<XML_Bool>, XML_FALSE));
 
   auto baseURI = GetExpatBaseURI(aURI);
   auto uri =

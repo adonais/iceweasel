@@ -59,6 +59,13 @@ class PerformanceEventTiming final
 
   bool Cancelable() const { return mCancelable; }
 
+  uint64_t InteractionId() const { return mInteractionId.valueOr(0); }
+  bool HasKnownInteractionId() const { return mInteractionId.isSome(); }
+
+  void SetInteractionId(uint64_t aInteractionId) {
+    mInteractionId = Some(aInteractionId);
+  }
+
   nsINode* GetTarget() const;
 
   void SetDuration(const DOMHighResTimeStamp aDuration) {
@@ -97,14 +104,14 @@ class PerformanceEventTiming final
 
   void BufferEntryIfNeeded() override;
 
-  void FinalizeEventTiming(EventTarget* aTarget);
+  void FinalizeEventTiming(const WidgetEvent* aEvent);
 
   EventMessage GetMessage() const { return mMessage; }
 
  private:
   PerformanceEventTiming(Performance* aPerformance, const nsAString& aName,
                          const TimeStamp& aStartTime, bool aIsCacelable,
-                         EventMessage aMessage);
+                         Maybe<uint64_t> aInteractionId, EventMessage aMessage);
 
   PerformanceEventTiming(const PerformanceEventTiming& aEventTimingEntry);
 
@@ -127,6 +134,8 @@ class PerformanceEventTiming final
   mutable Maybe<DOMHighResTimeStamp> mCachedDuration;
 
   bool mCancelable;
+
+  Maybe<uint64_t> mInteractionId;
 
   EventMessage mMessage;
 };

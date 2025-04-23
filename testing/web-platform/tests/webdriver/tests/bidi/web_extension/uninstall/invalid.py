@@ -4,7 +4,7 @@ import webdriver.bidi.error as error
 pytestmark = pytest.mark.asyncio
 
 
-async def test_uninstall_missing_addon(bidi_session):
+async def test_uninstall_missing_extension(bidi_session):
     with pytest.raises(error.NoSuchWebExtensionException):
         await bidi_session.web_extension.uninstall(
             extension="test"
@@ -20,7 +20,7 @@ async def test_params_extension_invalid_type(bidi_session, value):
 
 
 async def test_params_extension_invalid_value(bidi_session):
-    with pytest.raises(error.UnknownErrorException):
+    with pytest.raises(error.NoSuchWebExtensionException):
         await bidi_session.web_extension.uninstall(
             extension=""
         )

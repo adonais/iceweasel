@@ -593,21 +593,34 @@ void nsAccessibilityService::FireAccessibleEvent(uint32_t aEvent,
 
 void nsAccessibilityService::NotifyOfPossibleBoundsChange(
     mozilla::PresShell* aPresShell, nsIContent* aContent) {
+  if (!aContent || (!IPCAccessibilityActive() && !aContent->IsText())) {
+    return;
+  }
+  DocAccessible* document = aPresShell->GetDocAccessible();
+  if (!document) {
+    return;
+  }
+  LocalAccessible* accessible = document->GetAccessible(aContent);
+  if (!accessible && aContent == document->GetContent()) {
+    // DocAccessible::GetAccessible() won't return the document if a root
+    // element like body is passed. In that case we need the doc accessible
+    // itself.
+    accessible = document;
+  }
+  if (!accessible) {
+    return;
+  }
   if (IPCAccessibilityActive()) {
-    DocAccessible* document = aPresShell->GetDocAccessible();
-    if (document) {
-      LocalAccessible* accessible = document->GetAccessible(aContent);
-      if (!accessible && aContent == document->GetContent()) {
-        // DocAccessible::GetAccessible() won't return the document if a root
-        // element like body is passed. In that case we need the doc accessible
-        // itself.
-        accessible = document;
-      }
-
-      if (accessible) {
-        document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
-      }
-    }
+    document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
+  }
+  if (accessible->IsTextLeaf() &&
+      accessible->AsTextLeaf()->Text().EqualsLiteral(" ")) {
+    // This space might be becoming invisible, even though it still has a frame.
+    // In this case, the frame will have 0 width. Unfortunately, we can't check
+    // the frame width here because layout isn't ready yet, so we need to defer
+    // this until the refresh driver tick.
+    MOZ_ASSERT(aContent->IsText());
+    document->UpdateText(aContent);
   }
 }
 
@@ -1293,6 +1306,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     // Ignore not rendered text nodes and whitespace text nodes between table
     // cells.
     if (text.mString.IsEmpty() ||
+        nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(frame) ||
         (aContext->IsTableRow() &&
          nsCoreUtils::IsWhitespaceString(text.mString))) {
       if (aIsSubtreeHidden) *aIsSubtreeHidden = true;
@@ -1450,11 +1464,11 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       }
 
       // Fall back to text when encountering Content MathML.
-      if (!newAcc && !content->IsAnyOfMathMLElements(
-                         nsGkAtoms::annotation_, nsGkAtoms::annotation_xml_,
-                         nsGkAtoms::mpadded_, nsGkAtoms::mphantom_,
-                         nsGkAtoms::maligngroup_, nsGkAtoms::malignmark_,
-                         nsGkAtoms::mspace_, nsGkAtoms::semantics_)) {
+      if (!newAcc &&
+          !content->IsAnyOfMathMLElements(
+              nsGkAtoms::annotation, nsGkAtoms::annotation_xml,
+              nsGkAtoms::mpadded, nsGkAtoms::mphantom, nsGkAtoms::maligngroup,
+              nsGkAtoms::malignmark, nsGkAtoms::mspace, nsGkAtoms::semantics)) {
         newAcc = new HyperTextAccessible(content, document);
       }
     } else if (content->IsGeneratedContentContainerForMarker()) {
@@ -1520,6 +1534,10 @@ mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
 bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
   AUTO_PROFILER_MARKER_UNTYPED("nsAccessibilityService::Init", A11Y, {});
   // DO NOT ADD CODE ABOVE HERE: THIS CODE IS MEASURING TIMINGS.
+  PerfStats::AutoMetricRecording<
+      PerfStats::Metric::A11Y_AccessibilityServiceInit>
+      autoRecording;
+  // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
 
   // Initialize accessible document manager.
   if (!DocManager::Init()) return false;

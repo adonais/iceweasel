@@ -491,6 +491,8 @@
   <string name="onboarding_first_screen_button_text" moz:removedIn="137" tools:ignore="UnusedResources">Principià</string>
   <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue">Accettà è cuntinuà</string>
+  <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
+  <string name="a11y_link_available">Liame dispunibule</string>
   <!--
     Onboarding second screen: Title
 
@@ -679,7 +681,7 @@
   <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
   <string name="cookie_banner_exception_panel_title_state_off_for_site">Disattivà a riduzzione di e striscie di cannistrelli per %1$s ?</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_on_for_site">%1$s squasserà i canistrelli di stu situ è attualizerà a pagina. A squassatura di tutti i canistrelli puderia discunnettevi o viutà e sporte di comprera.</string>
+  <string name="cookie_banner_exception_panel_description_state_on_for_site">%1$s squasserà i canistrelli di stu situ è attualizerà a pagina. A squassatura di tutti i canistrelli puderia discunnettevi o viutà e sporte di cumprera.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="cookie_banner_exception_panel_description_state_off_for_site2">%1$s pò pruvà di righjittà autumaticamente e dumande di canistrelli.</string>
   <!-- Long text for a detail explanation indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->

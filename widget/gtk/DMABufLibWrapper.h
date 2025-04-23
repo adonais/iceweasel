@@ -8,11 +8,12 @@
 #ifndef __MOZ_DMABUF_LIB_WRAPPER_H__
 #define __MOZ_DMABUF_LIB_WRAPPER_H__
 
-#include "mozilla/widget/gbm.h"
+#include "gbm/gbm.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/widget/DMABufFormats.h"
 #include <mutex>
 
+#undef LOGDMABUF
 #ifdef MOZ_LOGGING
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"

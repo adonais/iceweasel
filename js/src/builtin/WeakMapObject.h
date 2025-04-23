@@ -48,6 +48,10 @@ class WeakMapObject : public WeakCollectionObject {
 
   [[nodiscard]] static bool construct(JSContext* cx, unsigned argc, Value* vp);
 
+  [[nodiscard]] static bool tryOptimizeCtorWithIterable(
+      JSContext* cx, Handle<WeakMapObject*> obj, Handle<Value> iterableVal,
+      bool* optimized);
+
   [[nodiscard]] static MOZ_ALWAYS_INLINE bool is(HandleValue v);
 
   [[nodiscard]] static MOZ_ALWAYS_INLINE bool has_impl(JSContext* cx,
@@ -59,6 +63,12 @@ class WeakMapObject : public WeakCollectionObject {
   [[nodiscard]] static bool delete_(JSContext* cx, unsigned argc, Value* vp);
   [[nodiscard]] static MOZ_ALWAYS_INLINE bool set_impl(JSContext* cx,
                                                        const CallArgs& args);
+#ifdef NIGHTLY_BUILD
+  [[nodiscard]] static MOZ_ALWAYS_INLINE bool getOrInsert_impl(
+      JSContext* cx, const CallArgs& args);
+  [[nodiscard]] static bool getOrInsert(JSContext* cx, unsigned argc,
+                                        Value* vp);
+#endif  // #ifdef NIGHTLY_BUILD
 };
 
 }  // namespace js

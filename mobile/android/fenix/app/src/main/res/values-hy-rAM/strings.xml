@@ -44,8 +44,6 @@
   <string name="tab_tray_close_multiselect_content_description">Փակել բազմակի ընտրման կերպը</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Պահպանել ընտրված ներդիրները հավաքածուում</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Ընտրված</string>
   <!--
     Home - Bookmarks
 
@@ -91,7 +89,7 @@
 
     Text for the Private mode shortcut CFR message for adding a private mode shortcut to open private tabs from the Home screen
   -->
-  <string name="private_mode_cfr_message_2" moz:removedIn="138" tools:ignore="UnusedResources">Թողարկեք հաջորդ անձնական ներդիրը մեկ հպումով:</string>
+  <string name="private_mode_cfr_message_2" moz:removedIn="138" tools:ignore="UnusedResources">Գործարկեք Ձեր հաջորդ գաղտնի ներդիրը մեկ հպումով:</string>
   <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
   <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Ավելացնել Տուն էկրանին</string>
   <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
@@ -127,9 +125,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar.
   -->
-  <string name="address_bar_swipe_cfr_title">Ներդիրները փոխելու համար սահեցրեք գործիքագոտին</string>
+  <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Ներդիրները փոխելու համար սահեցրեք գործիքագոտին</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-  <string name="address_bar_swipe_cfr_message">Փոխարկելու համար սահեցրեք ձախ կամ աջ: Ձեր վերջին ներդիրի վրա սահեցրեք ձախ՝ նոր ներդիր բացելու համար:</string>
+  <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Փոխարկելու համար սահեցրեք ձախ կամ աջ: Ձեր վերջին ներդիրի վրա սահեցրեք ձախ՝ նոր ներդիր բացելու համար:</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">Սահեցրեք գործիքագոտին դեպի ձախ կամ աջ՝ ներդիրները փոխարկելու համար:</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Անհրաժեշտ է հասանելիություն տեսախցիկին: Անցեք Android-ի կարգավորումներ, հպեք՝ Թույլտվություններ, այնուհետև՝ Թույլատրել:</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -209,7 +209,7 @@
   -->
   <string name="browser_menu_back">Վերադառնալ</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
-  <string name="browser_menu_forward">Փոխանցել</string>
+  <string name="browser_menu_forward">Առաջ</string>
   <!-- Content description (not visible, for screen readers etc.): Refresh current website -->
   <string name="browser_menu_refresh">Թարմացնել</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
@@ -220,7 +220,7 @@
     Browser menu banner header text for extensions onboarding.
     %s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_extensions_banner_onboarding_header">Դարձրե՛ք %s-ը ձեր սեփականը</string>
+  <string name="browser_menu_extensions_banner_onboarding_header">Դարձրե՛ք %s-ը Ձերը</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
   <string name="browser_menu_disabled_extensions_banner_onboarding_header">Դուք ունեք ընդլայնումներ տեղադրված, բայց չմիացված</string>
   <!--
@@ -265,11 +265,11 @@
   <!-- Browser menu button that reopens a private tab as a regular tab -->
   <string name="browser_menu_open_in_regular_tab">Բացել կանոնավոր ներդիրում</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
-  <string name="browser_menu_add_to_homescreen">Ավելացնել Տնային էկրանին</string>
+  <string name="browser_menu_add_to_homescreen">Ավելացնել տնային էկրանին</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
   <string name="browser_menu_add_app_to_homescreen">Հավելել հավելվածը տնային էկրանին</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
-  <string name="browser_menu_add_to_homescreen_2">Ավելացնել Տուն էկրանին…</string>
+  <string name="browser_menu_add_to_homescreen_2">Ավելացնել տնային էկրանին…</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
   <string name="browser_menu_add_app_to_homescreen_2">Հավելել հավելվածը տնային էկրանին…</string>
   <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
@@ -386,11 +386,11 @@
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
   <string name="browser_menu_turn_off_reader_view">Անջատել Ընթերցելու տեսքը</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_normal_tab">Տեղափոխել ոչ մասնավոր ներդիր</string>
+  <string name="browser_menu_open_in_normal_tab">Տեղափոխել ոչ գաղտնի ներդիր</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page">Թարգմանել էջը…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Զեկուցել խոտանված կայքի մասին…</string>
+  <string name="browser_menu_webcompat_reporter">Զեկուցել կայքի խոտանումը…</string>
   <!--
     Browser menu label that is displayed when the current page has been translated by the translation feature.
     %1$s is the name of the language that page was translated to (e.g. English).
@@ -621,34 +621,20 @@
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Իմանալ ավելին</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">Ուղարկեք տեխնիկական և փոխազդեցության տվյալները Mozilla-ին</string>
-  <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
-  <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Ձեր սարքի, սարքաշարի կազմաձևման և Firefox-ի օգտագործման տվյալներն օգնում են բարելավելու հնարավորությունները, արտադրողականությունը և կայունությունը օգտատերերի համար ամենուր:</string>
   <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Ձեր սարքի, սարքաշարի կազմաձևման և Firefox-ի օգտագործման տվյալներն օգնում են բարելավելու հնարավորությունները, արտադրողականությունը և կայունությունը օգտատերերի համար ամենուր:</string>
-  <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Իմանալ ավելին տվյալների օգտագործման մասին</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Իմանալ ավելին</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Պատրաստ է</string>
-  <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Չեղարկել</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Բարի գալուստ Firefox</string>
-  <!-- Terms of service sub header label. -->
-  <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Արագ և անվտանգ վեբ դիտարկում</string>
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Արագ և անվտանգ վեբ դիտարկում</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label">Համաձայնել և շարունակել</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
-  <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">Շարունակելով՝ դուք համաձայնում եք Firefox-ի %1$s-ին:</string>
-  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Շարունակելով՝ դուք համաձայնում եք %1$s-ին:</string>
-  <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
-  <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Ծառայության պայմանները</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefox-ի օգտագործման պայմաններ</string>
-  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
-  <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox-ը հոգ է տանում ձեր գաղտնիության մասին: Կարդացեք ավելին մեր %1$s-ում:</string>
   <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox-ը հոգ է տանում ձեր գաղտնիության մասին: Կարդացեք ավելին մեր %1$s-ում:</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
@@ -688,8 +674,8 @@
   <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
   <string name="onboarding_customize_toolbar_placement_bottom_content_description">Ներքևի գործիքագոտու պատկերը</string>
   <string name="onboarding_customize_toolbar_placement_top_content_description">Վերևի գործիքագոտու պատկերը</string>
-  <!-- Onboarding toolbar selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Ոչ հիմա</string>
+  <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_toolbar_a11y_action_label_select">ընտրել</string>
   <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Ընտրեք ժամանակը</string>
   <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
@@ -701,13 +687,13 @@
   <!-- Onboarding theme selection card label for 'light' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_light_option">Լուսավոր</string>
   <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_system_option">Համակարգի տեղեկություն</string>
+  <string name="onboarding_customize_theme_system_option">Համակարգն ինքնաբերաբար</string>
   <!-- Onboarding theme selection card content description for the main image. -->
   <string name="onboarding_customize_theme_main_image_content_description">Թեմայի ընտրության դիտման մեծ վերնագրի պատկերը, որը ցույց է տալիս նկարազարդ նկարիչների և շինարարական գործիքները:</string>
   <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
   <string name="onboarding_customize_theme_content_description">%1$s ձևավորման պատկեր</string>
-  <!-- Onboarding theme selection card label for 'Not now' button, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Ոչ հիմա</string>
+  <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_theme_a11y_action_label_select">ընտրել</string>
   <!--
     Widget Picker
 
@@ -785,6 +771,10 @@
   <string name="preferences_add_private_browsing_shortcut">Ավելացնել գաղտնի դիտարկման դյուրանցում</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Միայն HTTPS կերպ</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">Օգտագործեք էկրանի կողպումը մասնավոր դիտարկման ժամանակ ներդիրները թաքցնելու համար</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary">Դիտեք ներդիրները մատնահետքով, դեմքի ապակողպումով կամ PIN-ով։</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Թխուկների ազդերիզի արգելափակիչ</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -824,9 +814,9 @@
   <!-- Summary of https only preference if https only is set to off -->
   <string name="preferences_https_only_off">Անջ.</string>
   <!-- Summary of https only preference if https only is set to on in all tabs -->
-  <string name="preferences_https_only_on_all">Բոլոր ներդիրներում</string>
+  <string name="preferences_https_only_on_all">Միացված է բոլոր ներդիրներում</string>
   <!-- Summary of https only preference if https only is set to on in private tabs only -->
-  <string name="preferences_https_only_on_private">Միացված գաղտնի ներդիրներում</string>
+  <string name="preferences_https_only_on_private">Միացված է գաղտնի ներդիրներում</string>
   <!-- Text displayed that links to website containing documentation about "HTTPS-Only" mode -->
   <string name="preferences_http_only_learn_more">Իմանալ ավելին</string>
   <!-- Option for the https only setting -->
@@ -850,7 +840,7 @@
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Հաշիվ</string>
   <!-- Preference for changing where the AddressBar is positioned -->
-  <string name="preferences_toolbar_2">Հասցեի գոտու տեղադրություն</string>
+  <string name="preferences_toolbar_2">Հասցեագոտու տեղադրություն</string>
   <!-- Preference for changing default theme to dark or light mode -->
   <string name="preferences_theme">Ոճ</string>
   <!-- Preference for customizing the home screen -->
@@ -928,7 +918,7 @@
   <!-- Preference for open links in third party apps always open in apps option -->
   <string name="preferences_open_links_in_apps_always">Միշտ</string>
   <!-- Preference for open links in third party apps ask before opening option -->
-  <string name="preferences_open_links_in_apps_ask">Հարցրեք բացելուց առաջ</string>
+  <string name="preferences_open_links_in_apps_ask">Հարցել բացելուց առաջ</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Երբեք</string>
   <!-- Preference for open download with an external download manager app -->
@@ -1005,7 +995,7 @@
 
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
-  <string name="wallpapers_item_name_content_description">Պաստառի միույթ՝ %1$s</string>
+  <string name="wallpapers_item_name_content_description">Պաստառի տարր՝ %1$s</string>
   <!-- Snackbar message for when wallpaper is selected -->
   <string name="wallpaper_updated_snackbar_message">Պաստառն արդիացվեց:</string>
   <!-- Snackbar label for action to view selected wallpaper -->
@@ -1091,7 +1081,7 @@
   <!-- Label summary showing never synced -->
   <string name="sync_failed_never_synced_summary">Համաժամեցումը ձախողվեց: Վերջին համաժամեցումը՝ երբեք</string>
   <!-- Label summary the date we last synced. %s is date stamp showing last time sync was completed. -->
-  <string name="sync_last_synced_summary">Վերջին համաժամեցումը. %s</string>
+  <string name="sync_last_synced_summary">Վերջին համաժամեցումը՝ %s</string>
   <!-- Label summary showing never synced -->
   <string name="sync_never_synced_summary">Վերջին համաժամեցումը՝ երբեք</string>
   <!--
@@ -1144,16 +1134,10 @@
   <string name="preference_usage_data_2">Ուղարկել տեխնիկական և փոխազդեցության տվյալներ</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more">Իմանալ ավելին</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Կիսվում է արագագործության, օգտագործման, սարքակազմի և ձեր դիտարկիչի կարգավորումներով Mozilla-ի հետ՝ %1$s-ը էլ ավելի լավը դարձնելու համար</string>
   <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
   <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">Ձեր սարքի, սարքաշարի կազմաձևման և օգտագործման տվյալներն օգնում են բարելավելու Firefox-ի հնարավորությունները, արտադրողականությունը և կայունությունը:</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Շուկայավարման տվյալներ</string>
   <!-- Preference switch for campaign measurement data (marketing data) collection -->
   <string name="preferences_marketing_data_2">Քարոզարշավի չափման տվյալներ</string>
-  <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-  <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Կիսվեք Mozilla-ի մարքեթինգային գործընկերների հետ այն մասին, թե ինչպես եք հայտնաբերել Firefox-ը: Սա օգնում է մեզ զարգացնել Firefox-ը և կառուցել ավելի լավ համացանց</string>
   <!--
     Preference description for marketing data collection.
     Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for.
@@ -1167,10 +1151,8 @@
   <string name="preferences_daily_usage_ping_learn_more">Իմանալ ավելին ամենօրյա օգտագործման պինգի մասին</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title">Ինքնաբար ուղարկել խափանումների մասին զեկույց</string>
-  <string name="preferences_automatically_submit_crashes_title" moz:removedIn="136" tools:ignore="UnusedResources">Ինքնաբար ուղարկել խափանումների մասին զեկույց</string>
   <!-- Preference switch description for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_description">Խափանումների զեկույցները մեզ օգնում են ախտորոշել և շտկել դիտարկիչի հետ կապված խնդիրները: Զեկույցները կարող են ներառել անձնական կամ զգայուն տվյալներ:</string>
-  <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Գործարկման ժամանակ Mozilla-ն ինքնաշխատ համօգտագործում է խափանումների տվյալները</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Իմանալ ավելին խափանումների զեկույցի մասին</string>
   <!-- Title for studies preferences -->
@@ -1262,7 +1244,7 @@
   -->
   <string name="open_all_warning_message">Այսքան ներդիրներ բացելը կարող է դանդաղեցնել %s-ը, մինչ էջերը բեռնվում են: Վստա՞հ եք, որ ցանկանում եք շարունակել:</string>
   <!-- Dialog button text for confirming open all tabs -->
-  <string name="open_all_warning_confirm">Բաց ներդիրներ</string>
+  <string name="open_all_warning_confirm">Բացել ներդիրները</string>
   <!-- Dialog button text for canceling open all tabs -->
   <string name="open_all_warning_cancel">Չեղարկել</string>
   <!--
@@ -1322,11 +1304,11 @@
   -->
   <string name="preferences_opening_screen">Ողջույնի էկրան</string>
   <!-- Option for always opening the homepage when re-opening the app -->
-  <string name="opening_screen_homepage">Տնային էջ</string>
+  <string name="opening_screen_homepage">Տնէջ</string>
   <!-- Option for always opening the user's last-open tab when re-opening the app -->
   <string name="opening_screen_last_tab">Վերջին ներդիրը</string>
   <!-- Option for always opening the homepage when re-opening the app after four hours of inactivity -->
-  <string name="opening_screen_after_four_hours_of_inactivity">Տնային էջը չորս ժամ անգործությունից հետո</string>
+  <string name="opening_screen_after_four_hours_of_inactivity">Տնէջը չորս ժամ անգործությունից հետո</string>
   <!-- Summary for tabs preference when auto closing tabs setting is set to manual close -->
   <string name="close_tabs_manually_summary">Փակել ձեռքով</string>
   <!-- Summary for tabs preference when auto closing tabs setting is set to auto close tabs after one day -->
@@ -1357,8 +1339,6 @@
   <string name="studies_remove">Հեռացնել</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Գործուն</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s-ը կարող է ժամանակ առ ժամանակ տեղադրել և աշխատեցնել ուսումնասիրություններ:</string>
   <!-- Description for studies -->
   <string name="studies_description_3">Փորձեք յուրահատկությունները և գաղափարները, նախքան դրանք բոլորին հասանելի լինեն:</string>
   <!-- Title of the Studies data preference -->
@@ -1368,16 +1348,10 @@
   <!--
     Sessions
 
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Գաղտնի ներդիրներ</string>
-  <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Գաղտնի ներդիրներ են բաց՝ %1$s: Հպեք՝ ներդիրները փոխելու համար:</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Համաժամեցված ներդիրներ</string>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1411,6 +1385,8 @@
   <string name="tab_tray_multiselect_share_content_description">Տարածել ընտրված ներդիրները</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Ընտրված ներդիրների ցանկը</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">Տնային էջ</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Հեռացնել ներդիրը հավաքածուից</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1448,7 +1424,7 @@
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
   <string name="history_delete_multiple_items_snackbar">Պատմությունը ջնջվեց</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s-ը ջնջվել է</string>
+  <string name="history_delete_single_item_snackbar">%1$s-ը ջնջվեց</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Ջնջել</string>
   <!--
@@ -1473,18 +1449,57 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">Ներբեռնումները հեռացված են</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Ներբեռնումները հեռացված են</string>
+  <!--
+    Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
+    %1$d is the number of items deleted.
+  -->
+  <string name="download_delete_multiple_items_snackbar_2">Միույթներըը ջնջվել են՝ %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">%1$s-ը հեռացված է</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s-ը հեռացված է</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">«%1$s»-ը ջնջվեց</string>
+  <!-- Text for the snackbar to confirm that downloads are in progress. -->
+  <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">Ներբեռնվում է…</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">Մանրամասներ</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar" tools:ignore="UnusedResources">Ներբեռնվեց</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open" tools:ignore="UnusedResources">Բացել</string>
+  <!-- Text for the snackbar action button to undo deleting a download. -->
+  <string name="download_undo_delete_snackbar_action">Հետարկել</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">Չկան ներբեռնված ֆայլեր</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Չկան ներբեռնված ֆայլեր</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">Ներբեռնումներ դեռ չկան</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">Ձեր ներբեռնած ֆայլերը կհայտնվեն այստեղ:</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">Ընտրված է %1$d-ը</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">Հեռացնել</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Հեռացնել</string>
+  <!-- Text for the button to delete a single downloaded file item -->
+  <string name="download_delete_item">Ջնջել</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">Նավարկել ետ</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description">Նավարկել վերև</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">Համօգտագործել URL-ը</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">Համօգտագործել ֆայլը</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">Ցանկանո՞ւմ եք ջնջել ընտրված միույթները։</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
+  <string name="download_delete_multi_select_dialog_confirm">Ջնջել</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
+  <string name="download_delete_multi_select_dialog_cancel">Չեղարկել</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress" tools:ignore="UnusedResources">Ընթացքում</string>
   <!--
     Time period headers for downloads
 
@@ -1500,6 +1515,25 @@
   <!-- Text for the header that groups the downloads older than other groups -->
   <string name="download_time_period_older">Ավելի հին</string>
   <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • մնացել է՝ %3$s </string>
+  <!-- Text to indicate that an in progress download is paused. -->
+  <string name="download_item_status_paused" tools:ignore="UnusedResources">դադարի մեջ</string>
+  <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
+  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">սպասում</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed" tools:ignore="UnusedResources">Ներբեռնումը ձախողվեց</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder" tools:ignore="UnusedResources">Որոնել ներբեռնում</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Արդյունքներ չկան</string>
+  <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
+  <string name="download_select_all_items">Նշել բոլորը</string>
+  <!--
     Downloads Content Type Filters
 
     Text for the filter button to show all files in the downloads list
@@ -1512,27 +1546,27 @@
   <!-- Text for the filter button to show only documents in the downloads list -->
   <string name="download_content_type_filter_document">Փաստաթղթեր</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
-  <string name="download_content_type_filter_other">Այլ</string>
+  <string name="download_content_type_filter_other" moz:removedIn="138" tools:ignore="UnusedResources">Այլ</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">Այլ</string>
   <!--
     Description of a downloaded item, displayed in the downloads list.
     %1$s: The size of the downloaded file.
     %2$s: The URL of the downloaded file.
   -->
-  <string name="download_item_description">%1$s • %2$s</string>
+  <string name="download_item_description" moz:removedIn="138" tools:ignore="UnusedResources">%1$s • %2$s</string>
   <!--
     WebCompat Reporter
 
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
-  <string name="webcompat_reporter_screen_title">Զեկուցել խոտանված կայքի մասին</string>
+  <string name="webcompat_reporter_screen_title">Զեկուցել կայքի խոտանումը</string>
   <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description">Օգնեք %1$s-ն ավելի լավը դարձնել բոլորի համար: Mozilla-ի աշխատակիցներն օգտագործում են ձեր ուղարկած տեղեկությունները կայքի խնդիրները շտկելու համար:</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">Մուտքագրեք վավեր URL</string>
-  <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">Ի՞նչն է խոտանվել (ըստ ցանկության):</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Ի՞նչն է խոտանվել:</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
@@ -1625,6 +1659,14 @@
   <string name="bookmark_menu_delete_button">Ջնջել</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Պահպանել</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">Տեսակավորել ըստ ամենանորի</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">Տեսակավորել ըստ ամենահնի</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">Տեսակավորել՝ Ա-ից Ֆ-ի</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">Տեսակավորել՝ Ֆ-ից Ա-ի</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2495,13 +2537,13 @@
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Քարտի համարը</string>
   <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Քարտի ժամկետը</string>
+  <string name="credit_cards_expiration_date">Ավարտի ամսաթիվը</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
-  <string name="credit_cards_expiration_date_month">Ժամկետի ամսաթվի ամիսը</string>
+  <string name="credit_cards_expiration_date_month">Ավարտման ամիսը</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
-  <string name="credit_cards_expiration_date_year">Ժամկետի ամսաթվի տարին</string>
+  <string name="credit_cards_expiration_date_year">Ավարտման տարին</string>
   <!-- The header for the name on the credit card -->
-  <string name="credit_cards_name_on_card">Քարտի վրա ձեր անունը</string>
+  <string name="credit_cards_name_on_card">Քարտի վրայի անունը</string>
   <!-- The text for the "Delete card" menu item for deleting a credit card -->
   <string name="credit_cards_menu_delete_card">Ջնջել քարտը</string>
   <!-- The text for the "Delete card" button for deleting a credit card -->
@@ -2549,7 +2591,7 @@
   <!-- The header for the city of an address -->
   <string name="addresses_city">Քաղաք</string>
   <!-- The header for the subregion of an address when "state" should be used -->
-  <string name="addresses_state">Վիճակը</string>
+  <string name="addresses_state">Նահանգ</string>
   <!-- The header for the subregion of an address when "province" should be used -->
   <string name="addresses_province">Շրջան</string>
   <!-- The header for the zip code of an address -->
@@ -2595,15 +2637,15 @@
   <!-- Placeholder text shown in the Search String TextField before a user enters text -->
   <string name="search_add_custom_engine_search_string_hint_2">Որոնման համար օգտագործվող URL-ն</string>
   <!-- Description text for the Search String TextField. The %s is part of the string -->
-  <string name="search_add_custom_engine_search_string_example" formatted="false">Հարցումը փոխարինել “%s”-ով: Օրինակ՝ \nhttps://www.google.com/search?q=%s</string>
+  <string name="search_add_custom_engine_search_string_example" formatted="false">Փոխարինել հարցումը «%s»-ով։ Օրինակ՝\n https://www.google.com/search?q=%s</string>
   <!-- Accessibility description for the form in which details about the custom search engine are entered -->
   <string name="search_add_custom_engine_form_description">Հարմարեցված որոնիչի մանրամասներ</string>
   <!-- Label for the TextField in which user enters custom search engine suggestion URL -->
-  <string name="search_add_custom_engine_suggest_url_label">Որոնման առաջարկի API (ըստ ցանկության)</string>
+  <string name="search_add_custom_engine_suggest_url_label">Որոնման առաջարկի API (ցանկալի)</string>
   <!-- Placeholder text shown in the Search Suggestion String TextField before a user enters text -->
-  <string name="search_add_custom_engine_suggest_string_hint">Որոնել առաջարկություն API URL</string>
+  <string name="search_add_custom_engine_suggest_string_hint">Որոնել առաջարկի API-ի URL</string>
   <!-- Description text for the Search Suggestion String TextField. The %s is part of the string -->
-  <string name="search_add_custom_engine_suggest_string_example_2" formatted="false">Փոխել հարցումը “%s”-ով: Օրինակ՝ \nhttps://suggestqueries.google.com/complete/search?client=firefox&amp;q=%s</string>
+  <string name="search_add_custom_engine_suggest_string_example_2" formatted="false">Փոխարինել հարցումը «%s»-ով։ Օրինակ՝\n https://suggestqueries.google.com/complete/search?client=firefox&amp;q=%s</string>
   <!-- The text for the "Save" button for saving a custom search engine -->
   <string name="search_custom_engine_save_button">Պահել</string>
   <!-- Text shown when a user leaves the name field empty -->
@@ -2843,151 +2885,13 @@
   <!--
     Review quality check feature
 
-    Name for the review quality check feature used as title for the panel.
+    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
   -->
-  <string name="review_quality_check_feature_name_2" moz:removedIn="136" tools:ignore="UnusedResources">Վերանայել ստուգիչը</string>
-  <!-- Summary for grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_a_b_description" moz:removedIn="136" tools:ignore="UnusedResources">Հուսալի կարծիքներ</string>
-  <!-- Summary for grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_c_description" moz:removedIn="136" tools:ignore="UnusedResources">Հուսալի և անվստահելի կարծիքների խառնուրդ</string>
-  <!-- Summary for grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_grade_d_f_description" moz:removedIn="136" tools:ignore="UnusedResources">Անվստահելի կարծիքներ</string>
-  <!-- Text for title presenting the reliability of a product's reviews. -->
-  <string name="review_quality_check_grade_title" moz:removedIn="136" tools:ignore="UnusedResources">Որքանո՞վ են վստահելի այս կարծիքները:</string>
-  <!-- Title for when the rating has been updated by the review checker -->
-  <string name="review_quality_check_adjusted_rating_title" moz:removedIn="136" tools:ignore="UnusedResources">Ճշգրտված վարկանիշ</string>
-  <!-- Description for a product's adjusted star rating. The text presents that the product's reviews which were evaluated as unreliable were removed from the adjusted rating. -->
-  <string name="review_quality_check_adjusted_rating_description_2" moz:removedIn="136" tools:ignore="UnusedResources">Հուսալի կարծիքների հիման վրա</string>
-  <!-- Title for list of highlights from a product's review emphasizing a product's important traits. -->
-  <string name="review_quality_check_highlights_title" moz:removedIn="136" tools:ignore="UnusedResources">Գունանշումներ վերջին կարծիքներից</string>
-  <!-- Title for section explaining how we analyze the reliability of a product's reviews. -->
-  <string name="review_quality_check_explanation_title" moz:removedIn="136" tools:ignore="UnusedResources">Ինչպես ենք մենք որոշում կարծիքների որակը</string>
-  <!-- Paragraph explaining how we analyze the reliability of a product's reviews. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_explanation_body_reliability" moz:removedIn="136" tools:ignore="UnusedResources">Մենք օգտագործում ենք AI տեխնոլոգիա %s-ից Mozilla-ի կողմից՝ արտադրանքի կարծիքների հավաստիությունը ստուգելու համար: Սա միայն կօգնի ձեզ գնահատել կարծիքների որակը, այլ ոչ թե արտադրանքի որակը:</string>
-  <!-- Paragraph explaining the grading system we use to classify the reliability of a product's reviews. -->
   <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources">Մենք յուրաքանչյուր ապրանքի կարծիքներին տալիս ենք &lt;b&gt;տառային գնահատական&lt;/b&gt;՝ A-ից մինչև F:</string>
-  <!-- Description explaining grades A and B for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_AB" moz:removedIn="136" tools:ignore="UnusedResources">Հուսալի կարծիքներ: Մենք կարծում ենք, որ կարծիքները, հավանաբար, իրական հաճախորդներից են, ովքեր թողել են ազնիվ, անաչառ կարծիքներ:</string>
-  <!-- Description explaining grade C for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_C" moz:removedIn="136" tools:ignore="UnusedResources">Մենք հավատում ենք, որ կա հուսալի և անվստահելի կարծիքների խառնուրդ:</string>
-  <!-- Description explaining grades D and F for review quality check adjusted grading. -->
-  <string name="review_quality_check_info_grade_info_DF" moz:removedIn="136" tools:ignore="UnusedResources">Անվստահելի կարծիքներ: Մենք կարծում ենք, որ կարծիքները, հավանաբար, կեղծ են կամ կողմնակալ գրախոսների կողմից:</string>
   <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
   <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources">&lt;b&gt;Ճշգրտված վարկանիշը&lt;/b&gt; հիմնված է միայն այն կարծիքների վրա, որոնք մենք վստահելի ենք համարում:</string>
   <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
   <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources">&lt;b&gt;Գունանշումները&lt;/b&gt; վերջին 80 օրվա ընթացքում %s կարծիքներից են, որոնք, մեր կարծիքով, հուսալի են:</string>
-  <!-- Text for learn more caption presenting a link with information about review quality. %s is a link using review_quality_check_info_learn_more_link as text. -->
-  <string name="review_quality_check_info_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Իմացեք ավելին %s-ի մասին:</string>
-  <!-- Clickable text that links to review quality check SuMo page. %s is "Fakespot". -->
-  <string name="review_quality_check_info_learn_more_link_2" moz:removedIn="136" tools:ignore="UnusedResources">ինչպես է %s-ը որոշում կարծիքների որակը</string>
-  <!-- Text for title of settings section. -->
-  <string name="review_quality_check_settings_title" moz:removedIn="136" tools:ignore="UnusedResources">Կարգավորումներ</string>
-  <!-- Text for label for switch preference to show recommended products from review quality check settings section. -->
-  <string name="review_quality_check_settings_recommended_products" moz:removedIn="136" tools:ignore="UnusedResources">Ցուցադրել գովազդը կարծիքների ստուգիչում</string>
-  <!-- Description for switch preference to show recommended products from review quality check settings section. %s is a link using review_quality_check_settings_recommended_products_learn_more as text. -->
-  <string name="review_quality_check_settings_recommended_products_description_2" moz:removedIn="136" tools:ignore="UnusedResources">Դուք երբեմն կտեսնեք համապատասխան ապրանքների գովազդներ: Մենք գովազդում ենք միայն վստահելի կարխիքներով ապրանքներ: %s</string>
-  <!-- Clickable text that links to review quality check recommended products support article. -->
-  <string name="review_quality_check_settings_recommended_products_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Իմանալ ավելին</string>
-  <!-- Text for turning sidebar off button from review quality check settings section. -->
-  <string name="review_quality_check_settings_turn_off" moz:removedIn="136" tools:ignore="UnusedResources">Անջատեք վերանայման ստուգիչը</string>
-  <!-- Text for title of recommended product section. This is displayed above a product image, suggested as an alternative to the product reviewed. -->
-  <string name="review_quality_check_ad_title" moz:removedIn="136" tools:ignore="UnusedResources">Ավելի շատ հաշվի առնել</string>
-  <!-- Caption for recommended product section indicating this is an ad by Fakespot. %s is "Fakespot". -->
-  <string name="review_quality_check_ad_caption" moz:removedIn="136" tools:ignore="UnusedResources">Գովազդ %s-ի կողմից</string>
-  <!-- Caption for review quality check panel. %s is a link using review_quality_check_powered_by_link as text. -->
-  <string name="review_quality_check_powered_by_2" moz:removedIn="136" tools:ignore="UnusedResources">Կարծիքների ստուգիչը ստեղծված է %s-ի կողմից</string>
-  <!-- Clickable text that links to Fakespot.com. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_powered_by_link" moz:removedIn="136" tools:ignore="UnusedResources">%s Mozilla-ի կողմից</string>
-  <!-- Text for title of warning card informing the user that the current analysis is outdated. -->
-  <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Նոր տեղեկատվություն ստուգելու համար</string>
-  <!-- Text for button from warning card informing the user that the current analysis is outdated. Clicking this should trigger the product's re-analysis. -->
-  <string name="review_quality_check_outdated_analysis_warning_action" moz:removedIn="136" tools:ignore="UnusedResources">Ստուգիր հիմա</string>
-  <!-- Title for warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Դեռևս բավարար ակնարկներ չկան</string>
-  <!-- Text for body of warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-  <string name="review_quality_check_no_reviews_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Երբ այս ապրանքն ավելի շատ կարծիքներ ունենա, մենք կկարողանանք ստուգել դրանց որակը:</string>
-  <!-- Title for warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Ապրանքը հասանելի չէ</string>
-  <!-- Text for the body of warning card informing the user that the current product is currently not available. -->
-  <string name="review_quality_check_product_availability_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Եթե տեսնեք, որ այս ապրանքը կրկին պահեստում է, հաղորդեք դրա մասին, և մենք կաշխատենք ստուգել ակնարկները:</string>
-  <!-- Clickable text for warning card informing the user that the current product is currently not available. Clicking this should inform the server that the product is available. -->
-  <string name="review_quality_check_product_availability_warning_action_2" moz:removedIn="136" tools:ignore="UnusedResources">Զեկուցված ապրանքը պահեստում է</string>
-  <!-- Title for warning card informing the user that the current product's analysis is still processing. %s is the percentage progress (0-100%) of the analysis process (e.g. 56%). -->
-  <string name="review_quality_check_analysis_in_progress_warning_title_2" moz:removedIn="136" tools:ignore="UnusedResources">Կարծիքի որակի ստուգում (%s)</string>
-  <!-- Text for body of warning card informing the user that the current product's analysis is still processing. -->
-  <string name="review_quality_check_analysis_in_progress_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">Սա կարող է տևել մոտ 60 վայրկյան:</string>
-  <!-- Title for info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Շնորհակալություն հայտնելու համար:</string>
-  <!-- Text for body of info card displayed after the user reports a product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Մենք պետք է 24 ժամվա ընթացքում տեղեկություններ ունենանք այս ապրանքի կարծիքների մասին: Խնդրում ենք նորից ստուգել:</string>
-  <!-- Title for info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Մենք չենք կարող ստուգել այս կարծիքները</string>
-  <!-- Text for body of info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-  <string name="review_quality_check_not_analyzable_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Ցավոք, մենք չենք կարող ստուգել որոշ տեսակի ապրանքների կարծիքների որակը: Օրինակ՝ նվեր քարտեր և հոսքային տեսանյութերի, երաժշտության և խաղեր:</string>
-  <!-- Title for info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Տեղեկությունները շուտով</string>
-  <!-- Text for body of info card displayed when another user reported the displayed product is back in stock. -->
-  <string name="review_quality_check_analysis_requested_other_user_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Մենք պետք է 24 ժամվա ընթացքում տեղեկություններ ունենանք այս ապրանքի կարծիքների մասին: Խնդրում ենք նորից ստուգել:</string>
-  <!-- Title for info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_title" moz:removedIn="136" tools:ignore="UnusedResources">Վերլուծությունն արդիական է</string>
-  <!-- Text for the action button from info card displayed to the user when analysis finished updating. -->
-  <string name="review_quality_check_analysis_updated_confirmation_action" moz:removedIn="136" tools:ignore="UnusedResources">Հասկացա</string>
-  <!-- Title for error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_title" moz:removedIn="136" tools:ignore="UnusedResources">Այս պահին տեղեկություններ չկան</string>
-  <!-- Text for body of error card displayed to the user when an error occurred. -->
-  <string name="review_quality_check_generic_error_body" moz:removedIn="136" tools:ignore="UnusedResources">Մենք աշխատում ենք խնդիրը լուծելու ուղղությամբ։ Խնդրում ենք նորից ստուգել շուտով:</string>
-  <!-- Title for error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_title" moz:removedIn="136" tools:ignore="UnusedResources">Չկա ցանցային կապակցում</string>
-  <!-- Text for body of error card displayed to the user when the device is disconnected from the network. -->
-  <string name="review_quality_check_no_connection_body" moz:removedIn="136" tools:ignore="UnusedResources">Ստուգեք ձեր ցանցային կապակցումը և փորձեք վերաբեռնել էջը:</string>
-  <!-- Title for card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_title" moz:removedIn="136" tools:ignore="UnusedResources">Այս կարծիքների մասին դեռ տեղեկություններ չկան</string>
-  <!-- Text for the body of card displayed to the user for products whose reviews were not analyzed yet. -->
-  <string name="review_quality_check_no_analysis_body" moz:removedIn="136" tools:ignore="UnusedResources">Իմանալու համար, թե արդյոք այս ապրանքի կարծիքները հուսալի են, ստուգեք կարծիքների որակը: Դա կտևի ընդամենը մոտ 60 վայրկյան:</string>
-  <!-- Text for button from body of card displayed to the user for products whose reviews were not analyzed yet. Clicking this should trigger a product analysis. -->
-  <string name="review_quality_check_no_analysis_link" moz:removedIn="136" tools:ignore="UnusedResources">Ստուգեք կարծիքի որակը</string>
-  <!-- Headline for review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_title" moz:removedIn="136" tools:ignore="UnusedResources">Փորձեք արտադրանքի կարծիքների մեր վստահելի ուղեցույցը</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s, %3$s and %4$s are for retailer names (e.g. Amazon, Walmart). %2$s% is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description" moz:removedIn="136" tools:ignore="UnusedResources">Գնելուց առաջ տեսեք, թե որքան հուսալի են արտադրանքի կարծիքները %1$s-ում: Կարծիքների ստուգիչը՝ %2$s-ի փորձարարական յուրահատկությունն է և ներկառուցված է հենց զննիչում: Այն աշխատում է նաև %3$s-ի և %4$s-ի վրա:</string>
-  <!-- Description for review quality check contextual onboarding card. %1$s is for retailer name (e.g. Amazon). %2$s is for the name of the application (for example "Firefox"). -->
-  <string name="review_quality_check_contextual_onboarding_description_one_vendor" moz:removedIn="136" tools:ignore="UnusedResources">Գնելուց առաջ տեսեք, թե որքան հուսալի են արտադրանքի կարծիքները %1$s-ում: Կարծիքների ստուգիչը %2$s-ի փորձարարական յուրահատկությունն է և ներկառուցված է հենց զննիչում:</string>
-  <!-- Paragraph presenting review quality check feature. %1$s is "Fakespot". %2$s is a link using review_quality_check_contextual_onboarding_learn_more_link as text. In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Օգտագործելով %1$s-ի հզորությունը Mozilla-ի կողմից՝ մենք օգնում ենք ձեզ խուսափել կողմնակալ և ոչ վավերական կարծիքներից: Մեր AI մոդելը միշտ բարելավվում է՝ պաշտպանելու ձեզ գնումներ կատարելիս: %2$s</string>
-  <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
-  <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">Իմանալ ավելին</string>
-  <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. %1$s is the name of the app (for example "Firefox"), %3$s is "Fakespot". %2$s and %4$s are links using review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use as text. -->
-  <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">Ընտրելով «Այո, փորձիր»՝ դուք համաձայնվում եք %1$s-ի %2$s-ին և %3$s-ի %4$s-ին:</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
-  <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">գաղտնիության ծանուցում</string>
-  <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
-  <string name="review_quality_check_contextual_onboarding_terms_use" moz:removedIn="136" tools:ignore="UnusedResources">օգտվելու կանոններ</string>
-  <!-- Text for opt-in button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_primary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Այո, փորձիր</string>
-  <!-- Text for opt-out button from the review quality check contextual onboarding card. -->
-  <string name="review_quality_check_contextual_onboarding_secondary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Ոչ հիմա</string>
-  <!-- Content description (not visible, for screen readers etc.) for opening browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_open_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Բացել կարծիքների ստուգիչը</string>
-  <!-- Content description (not visible, for screen readers etc.) for closing browser menu button to open review quality check bottom sheet. -->
-  <string name="review_quality_check_close_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Փակել կարծիքների ստուգիչը</string>
-  <!-- Content description (not visible, for screen readers etc.) for review quality check star rating. %1$s is the number of stars (1-5) representing the rating. -->
-  <string name="review_quality_check_star_rating_content_description" moz:removedIn="136" tools:ignore="UnusedResources">%1$s-ը 5 քայլից</string>
-  <!-- Text for minimize button from highlights card. When clicked the highlights card should reduce its size. -->
-  <string name="review_quality_check_highlights_show_less" moz:removedIn="136" tools:ignore="UnusedResources">Ցուցադրել պակաս</string>
-  <!-- Text for maximize button from highlights card. When clicked the highlights card should expand to its full size. -->
-  <string name="review_quality_check_highlights_show_more" moz:removedIn="136" tools:ignore="UnusedResources">Ցուցադրել ավելին</string>
-  <!-- Text for highlights card quality category header. Reviews shown under this header should refer the product's quality. -->
-  <string name="review_quality_check_highlights_type_quality" moz:removedIn="136" tools:ignore="UnusedResources">Որակ</string>
-  <!-- Text for highlights card price category header. Reviews shown under this header should refer the product's price. -->
-  <string name="review_quality_check_highlights_type_price" moz:removedIn="136" tools:ignore="UnusedResources">Գին</string>
-  <!-- Text for highlights card shipping category header. Reviews shown under this header should refer the product's shipping. -->
-  <string name="review_quality_check_highlights_type_shipping" moz:removedIn="136" tools:ignore="UnusedResources">Առաքում</string>
-  <!-- Text for highlights card packaging and appearance category header. Reviews shown under this header should refer the product's packaging and appearance. -->
-  <string name="review_quality_check_highlights_type_packaging_appearance" moz:removedIn="136" tools:ignore="UnusedResources">Փաթեթավորում և տեսք</string>
-  <!-- Text for highlights card competitiveness category header. Reviews shown under this header should refer the product's competitiveness. -->
-  <string name="review_quality_check_highlights_type_competitiveness" moz:removedIn="136" tools:ignore="UnusedResources">Մրցունակություն</string>
-  <!-- Text that is surrounded by quotes. %s is the actual text that is in quotes. An example of that text could be: Excellent craftsmanship, and that is displayed as “Excellent craftsmanship”. The text comes from a buyer's review that the feature is highlighting" -->
-  <string name="surrounded_with_quotes" moz:removedIn="136" tools:ignore="UnusedResources">“%s”</string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3220,7 +3124,7 @@
     The dialog will be presented when the user requests deletion of a language.
     %1$s is the name of the language, for example, "Spanish" and %2$s is the size in kilobytes or megabytes of the language file.
   -->
-  <string name="delete_language_file_dialog_title">Ջնջե/լ %1$s (%2$s)-ը;</string>
+  <string name="delete_language_file_dialog_title">Ջնջե՞լ %1$s-ը (%2$s)։</string>
   <!-- Additional information for the dialog used by the translations feature to confirm deleting a language. %1$s is the name of the app (for example "Firefox"). -->
   <string name="delete_language_file_dialog_message">Եթե ջնջեք բոլոր լեզուները, %1$s-ը, ըստ թարգմանության, շտեմում կներբեռնի մասնակի լեզուներ:</string>
   <!--
@@ -3479,6 +3383,26 @@
   -->
   <string name="glean_debug_tools_title">Glean վրիպազերծման գործիքներ</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">Տարածաշրջանային գործիքներ</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">Ժամանակավորապես անտեսում է տան և ընթացիկ տարածաշրջանի արժեքները փորձարկման համար:</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">Տնային տարածաշրջան</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">Ներկայիս տարածաշրջան</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Գերազդել տնային տարածաշրջանը</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Գերազդել ներկայիս տարածաշրջանը</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Գերազդել տնային և ներկայիս տարածաշրջանը</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3491,7 +3415,7 @@
 
     Localisation note: this text should be as short as possible, max 68 chars
   -->
-  <string name="exit_fullscreen_with_back_button_short">Քաշեք վերևից և սեղմեք հետ՝ դուրս գալու համար</string>
+  <string name="exit_fullscreen_with_back_button_short">Քաշեք վերևից և սեղմեք ետ՝ դուրս գալու համար</string>
   <!--
     Beta Label Component !
 
@@ -3537,15 +3461,97 @@
 
     The default content description for the eye trailing icon button in TextField
   -->
-  <string name="text_field_eye_trailing_icon_default_content_description">Ցուցադրել թաքնված տեքստը</string>
+  <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Ցուցադրել թաքնված տեքստը</string>
   <!-- The default content description for the cross trailing icon button in TextField -->
-  <string name="text_field_cross_trailing_icon_default_content_description">Մաքրել տեքստը</string>
+  <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Մաքրել տեքստը</string>
   <!--
-    Setup checklist component
+    Setup checklist feature
+
+    ===== Setup checklist feature: Title =====
+
+    Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_title_state_incomplete">Ավարտեք %1$s-ի կարգավորումը</string>
+  <!-- Title for the setup checklist feature when the state is 'completed' -->
+  <string name="setup_checklist_title_state_completed">Շնորհավորանքնե՜ր</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">Կատարեք այս 3 քայլերը՝ %1$s-ը կարգավորելու և դիտարկումների լավագույն փորձառության համար:</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">Հիանալի սկիզբ: Դուք կատարել եք 3 քայլերից 1-ը:</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">Գրեթե պատրաստ է: Երկու քայլ ավարտվեց, և մնում է 1-ը:</string>
+  <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_3_steps_completed_state">Դուք ավարտել եք բոլոր 3 քայլերը: Վայելեք %1$s-ի արագությունը, գաղտնիությունը և անվտանգությունը:</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 6 steps =====
+
+    Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_6_steps_initial_state">Կատարեք բոլոր 6 քայլերը՝ %1$s-ը կարգավորելու և դիտարկումների լավագույն փորձառության համար:</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_first_step">Հիանալի սկիզբ: Դուք կատարել եք 6 քայլերից 1-ը:</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_second_step">Դուք կատարել եք 6 քայլերից 2-ը: Մեծ առաջընթաց:</string>
+  <!-- Subtitle for a setup checklist with 6 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_6_steps_third_step">Գրեթե պատրաստ է: Երեք քայլ ավարտվեց, և մնում է 3-ը:</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fourth_step">Դուք 4 քայլ առաջ եք: Մնացել է ևս 2-ը:</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fifth_step">Գրեթե պատրաստ է: Դուք ընդամենը 1 քայլ եք հեռու ավարտելուց:</string>
+  <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_6_steps_completed_state">Դուք ավարտել եք բոլոր 6 քայլերը: Վայելեք %1$s-ի արագությունը, գաղտնիությունը և անվտանգությունը:</string>
+  <!--
+    ===== Setup checklist feature: Task titles =====
+
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">Կայել որպես սկզբնադիր դիտարկիչ</string>
+  <!-- The title of the sign-in task for the setup checklist -->
+  <string name="setup_checklist_task_account_sync">Մուտք գործեք Ձեր հաշիվ</string>
+  <!-- The title of the theme selection task for the setup checklist -->
+  <string name="setup_checklist_task_theme_selection">Ընտրեք ոճը</string>
+  <!-- The title of the toolbar selection task for the setup checklist -->
+  <string name="setup_checklist_task_toolbar_selection">Ընտրեք գործիքագոտու տեղադրությունը</string>
+  <!-- The title of the explore extensions task for the setup checklist -->
+  <string name="setup_checklist_task_explore_extensions">Ուսումնասիրեք ընդլայնումները</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget">Տեղադրել որոնման վիջեթը</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">%1$s կարևորներ</string>
+  <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_group_customize">Հարմարեցրեք Ձեր %1$s-ը</string>
+  <!-- The title of the 'helpful tools' group in the setup checklist -->
+  <string name="setup_checklist_group_helpful_tools">Օգտակար գործիքներ</string>
+  <!--
+    ===== Setup checklist feature: Button =====
+
+    Text for the 'remove' button for the setup checklist
+  -->
+  <string name="setup_checklist_button_remove">Հեռացնել ստուգաթերթը</string>
+  <!--
+    ===== Setup checklist feature: Accessibility =====
 
     Accessibility description for a check mark on a completed task
   -->
   <string name="a11y_completed_task_description">Կատարված առաջադրանքներ</string>
   <!-- Accessibility description for the task icon -->
   <string name="a11y_task_icon_description">Առաջադրանքի պատկերակ</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">Թողնել գաղտնի ներդիրները</string>
+  <!-- Label for the primary action button to unlock private tabs -->
+  <string name="pbm_authentication_unlock">Ապակողպել</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">Ապակողպել գաղտնի ներդիրները</string>
 </resources>

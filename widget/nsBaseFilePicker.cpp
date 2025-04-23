@@ -26,6 +26,7 @@
 #include "WidgetUtils.h"
 #include "nsSimpleEnumerator.h"
 #include "nsContentUtils.h"
+#include "nsThreadUtils.h"
 
 #include "nsBaseFilePicker.h"
 
@@ -121,9 +122,7 @@ NS_IMETHODIMP nsBaseFilePicker::Init(BrowsingContext* aBrowsingContext,
                                      const nsAString& aTitle,
                                      nsIFilePicker::Mode aMode) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(aBrowsingContext,
-             "Null bc passed to filepicker, no file "
-             "picker for you!");
+  NS_ENSURE_ARG_POINTER(aBrowsingContext);
 
   nsCOMPtr<nsIWidget> widget =
       aBrowsingContext->Canonical()->GetParentProcessWidgetContaining();
@@ -351,7 +350,10 @@ bool nsBaseFilePicker::MaybeBlockFilePicker(
   if (mozilla::StaticPrefs::widget_disable_file_pickers()) {
     if (aCallback) {
       // File pickers are disabled, so we answer the callback with returnCancel.
-      aCallback->Done(nsIFilePicker::returnCancel);
+      NS_DispatchToCurrentThread(
+          mozilla::NewRunnableMethod<nsIFilePicker::ResultCode>(
+              "nsBaseFilePicker::CallbackWithCancelResult", aCallback,
+              &nsIFilePickerShownCallback::Done, nsIFilePicker::returnCancel));
     }
 
     RefPtr<Element> topFrameElement = mBrowsingContext->GetTopFrameElement();
@@ -372,7 +374,10 @@ bool nsBaseFilePicker::MaybeBlockFilePicker(
   if (aCallback) {
     // File pickers are not allowed to open, so we respond to the callback with
     // returnCancel.
-    aCallback->Done(nsIFilePicker::returnCancel);
+    NS_DispatchToCurrentThread(
+        mozilla::NewRunnableMethod<nsIFilePicker::ResultCode>(
+            "nsBaseFilePicker::CallbackWithCancelResult", aCallback,
+            &nsIFilePickerShownCallback::Done, nsIFilePicker::returnCancel));
   }
 
   return true;
@@ -471,4 +476,9 @@ nsBaseFilePicker::GetDomFileOrDirectoryEnumerator(
 
   retIter.forget(aValue);
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsBaseFilePicker::GetDomFilesInWebKitDirectory(nsISimpleEnumerator** aValue) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }

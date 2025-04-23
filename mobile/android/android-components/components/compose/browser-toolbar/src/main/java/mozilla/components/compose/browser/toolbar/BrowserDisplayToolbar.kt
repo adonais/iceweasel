@@ -12,15 +12,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(8.dp)
 
@@ -30,6 +33,7 @@ private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(8.dp)
  *
  * @param url The URL to be displayed.
  * @param colors The color scheme to use in the browser display toolbar.
+ * @param textStyle [TextStyle] configuration for the URL text.
  * @param navigationActions List of navigation [Action]s to be displayed on left side of the
  * display toolbar (outside of the URL bounding box).
  * @param pageActions List of page [Action]s to be displayed to the right side of the URL of the
@@ -39,15 +43,18 @@ private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(8.dp)
  * display toolbar (outside of the URL bounding box). Also see:
  * [MDN docs](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Browser_action)
  * @param onUrlClicked Will be called when the user clicks on the URL.
+ * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
  */
 @Composable
 fun BrowserDisplayToolbar(
     url: String,
     colors: BrowserDisplayToolbarColors,
+    textStyle: TextStyle = LocalTextStyle.current,
     navigationActions: List<Action> = emptyList(),
     pageActions: List<Action> = emptyList(),
     browserActions: List<Action> = emptyList(),
     onUrlClicked: () -> Unit = {},
+    onInteraction: (BrowserToolbarEvent) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -56,7 +63,10 @@ fun BrowserDisplayToolbar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (navigationActions.isNotEmpty()) {
-            ActionContainer(actions = navigationActions)
+            ActionContainer(
+                actions = navigationActions,
+                onInteraction = onInteraction,
+            )
         } else {
             Spacer(modifier = Modifier.width(8.dp))
         }
@@ -79,13 +89,20 @@ fun BrowserDisplayToolbar(
                     .padding(8.dp)
                     .weight(1f),
                 maxLines = 1,
+                style = textStyle,
             )
 
-            ActionContainer(actions = pageActions)
+            ActionContainer(
+                actions = pageActions,
+                onInteraction = onInteraction,
+            )
         }
 
         if (browserActions.isNotEmpty()) {
-            ActionContainer(actions = browserActions)
+            ActionContainer(
+                actions = browserActions,
+                onInteraction = onInteraction,
+            )
         } else {
             Spacer(modifier = Modifier.width(8.dp))
         }
@@ -106,27 +123,28 @@ private fun BrowserDisplayToolbarPreview() {
             navigationActions = listOf(
                 Action.ActionButton(
                     icon = mozilla.components.ui.icons.R.drawable.mozac_ic_home_24,
-                    contentDescription = null,
+                    contentDescription = android.R.string.untitled,
                     tint = AcornTheme.colors.iconPrimary.toArgb(),
-                    onClick = {},
+                    onClick = object : BrowserToolbarEvent {},
                 ),
             ),
             pageActions = listOf(
                 Action.ActionButton(
                     icon = mozilla.components.ui.icons.R.drawable.mozac_ic_arrow_clockwise_24,
-                    contentDescription = null,
+                    contentDescription = android.R.string.untitled,
                     tint = AcornTheme.colors.iconPrimary.toArgb(),
-                    onClick = {},
+                    onClick = object : BrowserToolbarEvent {},
                 ),
             ),
             browserActions = listOf(
                 Action.ActionButton(
                     icon = mozilla.components.ui.icons.R.drawable.mozac_ic_ellipsis_vertical_24,
-                    contentDescription = null,
+                    contentDescription = android.R.string.untitled,
                     tint = AcornTheme.colors.iconPrimary.toArgb(),
-                    onClick = {},
+                    onClick = object : BrowserToolbarEvent {},
                 ),
             ),
+            onInteraction = {},
         )
     }
 }

@@ -19,7 +19,7 @@ use crate::values::{specified, CSSFloat};
 use crate::Zero;
 use app_units::Au;
 use std::fmt::{self, Write};
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 use style_traits::{CSSPixel, CssWriter, ToCss};
 
 pub use super::image::Image;
@@ -174,48 +174,6 @@ pub type NonNegativeLengthPercentageOrAuto =
 
 impl NonNegativeLengthPercentageOrAuto {
     computed_length_percentage_or_auto!(NonNegativeLengthPercentage);
-}
-
-#[cfg(feature = "servo")]
-impl MaxSize {
-    /// Convert the computed value into used value.
-    #[inline]
-    pub fn to_used_value(&self, percentage_basis: Au) -> Option<Au> {
-        match *self {
-            GenericMaxSize::None => None,
-            GenericMaxSize::LengthPercentage(ref lp) => Some(lp.to_used_value(percentage_basis)),
-        }
-    }
-}
-
-impl Size {
-    /// Convert the computed value into used value.
-    #[inline]
-    #[cfg(feature = "servo")]
-    pub fn to_used_value(&self, percentage_basis: Au) -> Option<Au> {
-        match *self {
-            GenericSize::Auto => None,
-            GenericSize::LengthPercentage(ref lp) => Some(lp.to_used_value(percentage_basis)),
-        }
-    }
-
-    /// Returns true if the computed value is absolute 0 or 0%.
-    #[inline]
-    pub fn is_definitely_zero(&self) -> bool {
-        match *self {
-            Self::Auto => false,
-            Self::LengthPercentage(ref lp) => lp.is_definitely_zero(),
-            #[cfg(feature = "gecko")]
-            Self::MinContent |
-            Self::MaxContent |
-            Self::FitContent |
-            Self::MozAvailable |
-            Self::WebkitFillAvailable |
-            Self::Stretch |
-            Self::FitContentFunction(_) |
-            Self::AnchorSizeFunction(_) => false,
-        }
-    }
 }
 
 /// The computed `<length>` value.
@@ -454,6 +412,13 @@ impl Sub for CSSPixelLength {
     #[inline]
     fn sub(self, other: Self) -> Self {
         Self::new(self.px() - other.px())
+    }
+}
+
+impl SubAssign for CSSPixelLength {
+    #[inline]
+    fn sub_assign(&mut self, other: Self) {
+        self.0 -= other.0;
     }
 }
 

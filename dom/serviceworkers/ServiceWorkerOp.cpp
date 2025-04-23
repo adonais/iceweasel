@@ -39,6 +39,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Client.h"
+#include "mozilla/dom/ExtendableCookieChangeEvent.h"
 #include "mozilla/dom/ExtendableMessageEventBinding.h"
 #include "mozilla/dom/FetchEventBinding.h"
 #include "mozilla/dom/FetchEventOpProxyChild.h"
@@ -695,6 +696,59 @@ class LifeCycleEventOp final : public ExtendableEventOp {
   }
 };
 
+class CookieChangeEventOp final : public ExtendableEventOp {
+  using ExtendableEventOp::ExtendableEventOp;
+
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CookieChangeEventOp, override)
+
+ private:
+  ~CookieChangeEventOp() = default;
+
+  bool Exec(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(aWorkerPrivate->IsServiceWorker());
+    MOZ_ASSERT(!mPromiseHolder.IsEmpty());
+
+    const ServiceWorkerCookieChangeEventOpArgs& args =
+        mArgs.get_ServiceWorkerCookieChangeEventOpArgs();
+
+    CookieListItem item;
+    item.mName.Construct();
+    item.mName.Value() = args.name();
+
+    GlobalObject globalObj(aCx, aWorkerPrivate->GlobalScope()->GetWrapper());
+    nsCOMPtr<EventTarget> eventTarget =
+        do_QueryInterface(globalObj.GetAsSupports());
+    MOZ_ASSERT(eventTarget);
+
+    RefPtr<ExtendableCookieChangeEvent> event;
+
+    if (!args.deleted()) {
+      item.mValue.Construct();
+      item.mValue.Value() = args.value();
+
+      event = ExtendableCookieChangeEvent::CreateForChangedCookie(eventTarget,
+                                                                  item);
+    } else {
+      event = ExtendableCookieChangeEvent::CreateForDeletedCookie(eventTarget,
+                                                                  item);
+    }
+
+    MOZ_ASSERT(event);
+
+    nsresult rv = DispatchExtendableEventOnWorkerScope(
+        aCx, aWorkerPrivate->GlobalScope(), event, this);
+
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return false;
+    }
+
+    return true;
+  }
+};
+
 /**
  * PushEventOp
  */
@@ -956,9 +1010,19 @@ class NotificationEventOp : public ExtendableEventOp,
 
     ServiceWorkerNotificationEventOpArgs& args =
         mArgs.get_ServiceWorkerNotificationEventOpArgs();
+    bool isClick = args.type() ==
+                   ServiceWorkerNotificationEventOpArgs::
+                       TServiceWorkerNotificationClickEventOpArgs;
+    const IPCNotification& notification =
+        args.type() == ServiceWorkerNotificationEventOpArgs::
+                           TServiceWorkerNotificationClickEventOpArgs
+            ? args.get_ServiceWorkerNotificationClickEventOpArgs()
+                  .notification()
+            : args.get_ServiceWorkerNotificationCloseEventOpArgs()
+                  .notification();
 
     auto result = Notification::ConstructFromIPC(
-        aWorkerPrivate->GlobalScope(), args.notification(),
+        aWorkerPrivate->GlobalScope(), notification,
         NS_ConvertUTF8toUTF16(aWorkerPrivate->ServiceWorkerScope()));
 
     if (NS_WARN_IF(result.isErr())) {
@@ -969,13 +1033,19 @@ class NotificationEventOp : public ExtendableEventOp,
     init.mNotification = result.unwrap();
     init.mBubbles = false;
     init.mCancelable = false;
+    if (isClick) {
+      init.mAction =
+          args.get_ServiceWorkerNotificationClickEventOpArgs().action();
+    }
 
     RefPtr<NotificationEvent> notificationEvent =
-        NotificationEvent::Constructor(target, args.eventName(), init);
+        NotificationEvent::Constructor(
+            target, isClick ? u"notificationclick"_ns : u"notificationclose"_ns,
+            init);
 
     notificationEvent->SetTrusted(true);
 
-    if (args.eventName().EqualsLiteral("notificationclick")) {
+    if (isClick) {
       StartClearWindowTimer(aWorkerPrivate);
     }
 
@@ -2003,6 +2073,10 @@ class ExtensionAPIEventOp final : public ServiceWorkerOp {
       break;
     case ServiceWorkerOpArgs::TServiceWorkerLifeCycleEventOpArgs:
       op = MakeRefPtr<LifeCycleEventOp>(std::move(aArgs), std::move(aCallback));
+      break;
+    case ServiceWorkerOpArgs::TServiceWorkerCookieChangeEventOpArgs:
+      op = MakeRefPtr<CookieChangeEventOp>(std::move(aArgs),
+                                           std::move(aCallback));
       break;
     case ServiceWorkerOpArgs::TServiceWorkerPushEventOpArgs:
       op = MakeRefPtr<PushEventOp>(std::move(aArgs), std::move(aCallback));

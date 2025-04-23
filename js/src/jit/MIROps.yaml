@@ -1968,6 +1968,17 @@
   alias_set: custom
   might_alias: custom
 
+- name: HasShape
+  operands:
+    object: Object
+  arguments:
+    shape: Shape*
+  result_type: Boolean
+  movable: true
+  congruent_to: custom
+  alias_set: custom
+  generate_lir: true
+
 - name: GuardFuse
   arguments:
     fuseIndex: RealmFuses::FuseIndex
@@ -3445,6 +3456,9 @@
   lir_temps: 2
 
 - name: PostIntPtrConversion
+  gen_boilerplate: false
+
+- name: CanonicalizeNaN
   gen_boilerplate: false
 
 - name: WasmNeg

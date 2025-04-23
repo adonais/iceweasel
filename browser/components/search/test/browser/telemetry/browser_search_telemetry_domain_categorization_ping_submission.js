@@ -9,14 +9,21 @@
  * a test of the ping's submission upon startup.)
  */
 
+// Can fail in TV mode.
+requestLongerTimeout(2);
+
 ChromeUtils.defineESModuleGetters(this, {
-  CATEGORIZATION_SETTINGS: "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  DomainToCategoriesStore: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  CATEGORIZATION_SETTINGS:
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
+  DomainToCategoriesStore:
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  SERPCategorizationRecorder: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  SearchSERPTelemetry:
+    "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
+  SERPCategorizationRecorder:
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
   TELEMETRY_CATEGORIZATION_KEY:
-    "resource:///modules/SearchSERPTelemetry.sys.mjs",
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [
@@ -306,7 +313,7 @@ add_task(async function test_count_incremented_if_store_is_not_created() {
   resetTelemetry();
 
   // Clear the existing domain-to-categories map.
-  await SearchSERPDomainToCategoriesMap.uninit({ deleteMap: true });
+  await SERPDomainToCategoriesMap.uninit({ deleteMap: true });
 
   let sandbox = sinon.createSandbox();
   sandbox
@@ -314,7 +321,7 @@ add_task(async function test_count_incremented_if_store_is_not_created() {
     .throws(new Error());
   // Initializing should fail and cause the component to un-initialize.
   let promise = waitForDomainToCategoriesUninit();
-  await SearchSERPDomainToCategoriesMap.init();
+  await SERPDomainToCategoriesMap.init();
   await promise;
   info("Store for the domain-to-categories map not created successfully.");
 
@@ -331,6 +338,6 @@ add_task(async function test_count_incremented_if_store_is_not_created() {
   );
 
   sandbox.restore();
-  await SearchSERPDomainToCategoriesMap.init();
+  await SERPDomainToCategoriesMap.init();
   await BrowserTestUtils.removeTab(tab);
 });

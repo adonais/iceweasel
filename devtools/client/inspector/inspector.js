@@ -51,11 +51,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "ExtensionSidebar",
-  "resource://devtools/client/inspector/extensions/extension-sidebar.js"
-);
-loader.lazyRequireGetter(
-  this,
   "PICKER_TYPES",
   "resource://devtools/shared/picker-constants.js"
 );
@@ -200,8 +195,13 @@ Inspector.prototype = {
    * InspectorPanel.open() is effectively an asynchronous constructor.
    * Set any attributes or listeners that rely on the document being loaded or fronts
    * from the InspectorFront and Target here.
+   *
+   * @param {Object} options
+   * @param {NodeFront|undefined} options.defaultStartupNode: Optional node front that
+   *        will be selected when the first root node is available.
+   * @returns {Inspector}
    */
-  async init() {
+  async init(options = {}) {
     // Localize all the nodes containing a data-localization attribute.
     localizeMarkup(this.panelDoc);
 
@@ -219,6 +219,15 @@ Inspector.prototype = {
     // parent of the iframe in the DOM tree which would reset the state of the
     // iframe if it had already been initialized.
     this.setupSplitter();
+
+    // Optional NodeFront set on inspector startup, to be selected once the first root
+    // node is available.
+    this._defaultStartupNode = options.defaultStartupNode;
+
+    // NodeFront for the DOM Element selected when opening the inspector, or after each
+    // navigation (i.e. each time a new Root Node is available)
+    // This is used as a fallback if the currently selected node is removed.
+    this._defaultNode = null;
 
     await this.commands.targetCommand.watchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
@@ -370,7 +379,6 @@ Inspector.prototype = {
     // Record new-root timing for telemetry
     this._newRootStart = this.panelWin.performance.now();
 
-    this._defaultNode = null;
     this.selection.setNodeFront(null);
     this._destroyMarkup();
 
@@ -592,8 +600,10 @@ Inspector.prototype = {
    *        The current root node front for the top walker.
    */
   async _getDefaultNodeForSelection(rootNodeFront) {
-    if (this._defaultNode) {
-      return this._defaultNode;
+    if (this._defaultStartupNode) {
+      const node = this._defaultStartupNode;
+      this._defaultStartupNode = null;
+      return node;
     }
 
     // Save the _pendingSelectionUnique on the current inspector instance.
@@ -1320,6 +1330,11 @@ Inspector.prototype = {
       );
     }
 
+    // Load the ExtensionSidebar component via the Browser Loader as it ultimately loads Reps and Object Inspector,
+    // which are expected to be loaded in a document scope.
+    const ExtensionSidebar = this.browserRequire(
+      "resource://devtools/client/inspector/extensions/extension-sidebar.js"
+    );
     const extensionSidebar = new ExtensionSidebar(this, { id, title });
 
     // TODO(rpl): pass some extension metadata (e.g. extension name and icon) to customize
@@ -1349,6 +1364,9 @@ Inspector.prototype = {
 
     const panel = this._panels.get(id);
 
+    const ExtensionSidebar = this.browserRequire(
+      "resource://devtools/client/inspector/extensions/extension-sidebar.js"
+    );
     if (!(panel instanceof ExtensionSidebar)) {
       throw new Error(
         `The sidebar panel with id "${id}" is not an ExtensionSidebar`

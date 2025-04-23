@@ -1,6 +1,31 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+const lazy = {};
+
+const IN_WORKER = typeof importScripts !== "undefined";
+
+const ES_MODULES_OPTIONS = IN_WORKER ? { global: "current" } : {};
+
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    BLOCK_WORDS_ENCODED: "chrome://global/content/ml/BlockWords.sys.mjs",
+    RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+    TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
+  },
+  ES_MODULES_OPTIONS
+);
+
+ChromeUtils.defineLazyGetter(lazy, "console", () => {
+  return console.createInstance({
+    maxLogLevelPref: IN_WORKER ? "Error" : "browser.ml.logLevel",
+    prefix: "ML:Utils",
+  });
+});
+
+/** The name of the remote settings collection holding block list */
+const RS_BLOCK_LIST_COLLECTION = "ml-inference-words-block-list";
 
 /**
  * Enumeration for the progress status text.
@@ -128,6 +153,55 @@ export class ProgressAndStatusCallbackParams {
   }
 }
 
+/** Creates the file URL from the organization, model, and version.
+ *
+ * @param {object} config - The configuration object to be updated.
+ * @param {string} config.model - model name
+ * @param {string} config.revision - model revision
+ * @param {string} config.file - filename
+ * @param {string} config.rootUrl - root url of the model hub
+ * @param {string} config.urlTemplate - url template of the model hub
+ * @param {boolean} config.addDownloadParams - Whether to add a download query parameter.
+ * @returns {string} The full URL
+ */
+export function createFileUrl({
+  model,
+  revision,
+  file,
+  rootUrl,
+  urlTemplate,
+  addDownloadParams = false,
+}) {
+  const baseUrl = new URL(rootUrl);
+
+  if (!baseUrl.pathname.endsWith("/")) {
+    baseUrl.pathname += "/";
+  }
+  // Replace placeholders in the URL template with the provided data.
+  // If some keys are missing in the data object, the placeholder is left as is.
+  // If the placeholder is not found in the data object, it is left as is.
+  const data = {
+    model,
+    revision,
+  };
+  let path = urlTemplate.replace(
+    /\{(\w+)\}/g,
+    (match, key) => data[key] || match
+  );
+  path = `${path}/${file}`;
+
+  const fullPath = `${baseUrl.pathname}${
+    path.startsWith("/") ? path.slice(1) : path
+  }`;
+
+  const urlObject = new URL(fullPath, baseUrl.origin);
+  if (addDownloadParams) {
+    urlObject.searchParams.append("download", "true");
+  }
+
+  return urlObject.toString();
+}
+
 /**
  * Read and track progress when reading a Response object
  *
@@ -216,20 +290,6 @@ export class MultiProgressAggregator {
   watchedTypes;
 
   /**
-   * The total amount of information loaded so far.
-   *
-   * @type {float}
-   */
-  #combinedLoaded = 0;
-
-  /**
-   * The total amount of information to be loaded.
-   *
-   * @type {float}
-   */
-  #combinedTotal = 0;
-
-  /**
    * The number of operations that are yet to be completed.
    *
    * @type {float}
@@ -244,11 +304,25 @@ export class MultiProgressAggregator {
   #seenTypes;
 
   /**
+   * Total number of objects seen, irrespective of method
+   *
+   * @type {integer}
+   */
+  #totalObjectsSeen = 0;
+
+  /**
    * The status of text seen so far.
    *
    * @type {Set<string>}
    */
   #seenStatus;
+
+  /**
+   * Info about each object.
+   *
+   * @type {Dict<string, integer>}
+   */
+  #downloadObjects;
 
   /**
    * @param {object} config
@@ -261,6 +335,7 @@ export class MultiProgressAggregator {
 
     this.#seenTypes = new Set();
     this.#seenStatus = new Set();
+    this.#downloadObjects = {};
   }
 
   /**
@@ -277,14 +352,35 @@ export class MultiProgressAggregator {
       }
 
       if (data.statusText == ProgressStatusText.SIZE_ESTIMATE) {
-        this.#combinedTotal += data.total ?? 0;
+        if (data.type != ProgressType.LOAD_FROM_CACHE) {
+          // We consider a downloaded object seen when we have the size estimate (object started downloading)
+          this.#totalObjectsSeen += 1;
+          this.#downloadObjects[data.id] = {
+            expected: data.total,
+            curTotal: 0,
+          };
+        }
       }
+
+      const curDownload = this.#downloadObjects[data.id] || {};
 
       if (data.statusText == ProgressStatusText.DONE) {
         this.#remainingEvents -= 1;
+        if (data.type == ProgressType.LOAD_FROM_CACHE) {
+          // We consider a cached (not downloaded) object seen when loaded
+          this.#totalObjectsSeen += 1;
+        } else {
+          curDownload.curTotal = curDownload.expected; // Make totals match
+        }
       }
 
-      this.#combinedLoaded += data.currentLoaded ?? 0;
+      if ("curTotal" in curDownload) {
+        curDownload.curTotal += data.currentLoaded;
+        if (curDownload.curTotal > curDownload.expected) {
+          // Make sure we don't go over 100%. Due to compression, sometimes the numbers don't add up as expected.
+          curDownload.curTotal = curDownload.expected;
+        }
+      }
 
       if (this.progressCallback) {
         let statusText = data.statusText;
@@ -295,16 +391,25 @@ export class MultiProgressAggregator {
         if (this.#remainingEvents == 0) {
           statusText = ProgressStatusText.DONE;
         }
-
+        const combinedLoadedManual = Object.keys(this.#downloadObjects).reduce(
+          (acc, key) => acc + this.#downloadObjects[key].curTotal,
+          0
+        );
+        const combinedTotalManual =
+          Object.keys(this.#downloadObjects).reduce(
+            (acc, key) => acc + this.#downloadObjects[key].expected,
+            0
+          ) || 1;
+        data = { ...data, totalObjectsSeen: this.#totalObjectsSeen };
         this.progressCallback(
           new ProgressAndStatusCallbackParams({
             type: data.type,
             statusText,
             id: data.id,
-            total: this.#combinedTotal,
+            total: combinedTotalManual,
             currentLoaded: data.currentLoaded,
-            totalLoaded: this.#combinedLoaded,
-            progress: (this.#combinedLoaded / this.#combinedTotal) * 100,
+            totalLoaded: combinedLoadedManual,
+            progress: (combinedLoadedManual / combinedTotalManual) * 100,
             ok: data.ok,
             units: data.units,
             metadata: data,
@@ -614,4 +719,373 @@ export class URLChecker {
 export function getOptimalCPUConcurrency() {
   let mlUtils = Cc["@mozilla.org/ml-utils;1"].createInstance(Ci.nsIMLUtils);
   return mlUtils.getOptimalCPUConcurrency();
+}
+
+/**
+ * A class to check if some text belongs to a blocked list of n-grams.
+ *
+ */
+export class BlockListManager {
+  /**
+   * The set of blocked word n-grams.
+   *
+   * This set contains the n-grams (combinations of words) that are considered blocked.
+   * The n-grams are decoded from base64 to strings.
+   *
+   * @type {Set<string>}
+   */
+  blockNgramSet = null;
+
+  /**
+   * Word segmenter for identifying word boundaries in the text.
+   *
+   * Used to segment the input text into words and ensure that n-grams are checked at word boundaries.
+   *
+   * @type {Intl.Segmenter}
+   */
+  wordSegmenter = null;
+
+  /**
+   * The unique lengths of the blocked n-grams.
+   *
+   * This set stores the lengths of the blocked n-grams, allowing for efficient length-based checks.
+   * For example, if the blocked n-grams are "apple" (5 characters) and "orange" (6 characters),
+   * this set will store lengths {5, 6}.
+   *
+   * @type {Set<number>}
+   */
+  blockNgramLengths = null;
+
+  /**
+   * Create an instance of the block list manager.
+   *
+   * @param {object} options - Configuration object.
+   * @param {string} options.language - A string with a BCP 47 language tag for the language of the blocked n-grams.
+   *                                    Example: "en" for English, "fr" for French.
+   *                                    See https://en.wikipedia.org/wiki/IETF_language_tag.
+   * @param {Array<string>} options.blockNgrams - Base64-encoded blocked n-grams.
+   */
+  constructor({ blockNgrams, language = "en" } = {}) {
+    const blockNgramList = blockNgrams.map(base64Str =>
+      BlockListManager.decodeBase64(base64Str)
+    );
+    // TODO: Can be optimized by grouping the set by the word n-gram lenghts.
+    this.blockNgramSet = new Set(blockNgramList);
+
+    this.blockNgramLengths = new Set(blockNgramList.map(k => k.length)); // unique lengths
+
+    this.wordSegmenter = new Intl.Segmenter(language, { granularity: "word" });
+  }
+
+  /**
+   * Initialize the block list manager from the default list.
+   *
+   * @param {object} options - Configuration object.
+   * @param {string} options.language - A string with a BCP 47 language tag for the language of the blocked n-grams.
+   *                                    Example: "en" for English, "fr" for French.
+   *                                    See https://en.wikipedia.org/wiki/IETF_language_tag.
+   *
+   * @returns {BlockListManager} A new BlockListManager instance.
+   */
+  static initializeFromDefault({ language = "en" } = {}) {
+    return new BlockListManager({
+      blockNgrams: lazy.BLOCK_WORDS_ENCODED[language],
+      language,
+    });
+  }
+
+  /**
+   * Initialize the block list manager from remote settings
+   *
+   * @param {object} options - Configuration object.
+   * @param {string} options.blockListName - Name of the block list within the remote setting collection.
+   * @param {string} options.language - A string with a BCP 47 language tag for the language of the blocked n-grams.
+   *                                    Example: "en" for English, "fr" for French.
+   *                                    See https://en.wikipedia.org/wiki/IETF_language_tag.
+   * @param {boolean} options.fallbackToDefault - Whether to fall back to the default block list if the remote settings retrieval fails.
+   * @param {number} options.majorVersion - The target version of the block list in remote settings.
+   * @param {number} options.collectionName - The remote settings collection holding the block list.
+   *
+   * @returns {Promise<BlockListManager>} A promise to a new BlockListManager instance.
+   */
+  static async initializeFromRemoteSettings({
+    blockListName,
+    language = "en",
+    fallbackToDefault = true,
+    majorVersion = 1,
+    collectionName = RS_BLOCK_LIST_COLLECTION,
+  } = {}) {
+    try {
+      const record = await RemoteSettingsManager.getRemoteData({
+        collectionName,
+        filters: { name: blockListName, language },
+        majorVersion,
+      });
+
+      if (!record) {
+        throw new Error(
+          `No block list record found for ${JSON.stringify({ language, majorVersion, blockListName })}`
+        );
+      }
+
+      return new BlockListManager({
+        blockNgrams: record.blockList,
+        language,
+      });
+    } catch (error) {
+      if (fallbackToDefault) {
+        lazy.console.debug(
+          "Error when retrieving list from remote settings. Falling back to in-source list"
+        );
+        return BlockListManager.initializeFromDefault({ language });
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Decode a base64 encoded string to its original representation.
+   *
+   * @param {string} base64Str - The base64 encoded string to decode.
+   * @returns {string} The decoded string.
+   */
+  static decodeBase64(base64Str) {
+    const binary = atob(base64Str); // binary string
+
+    // Convert binary string to byte array
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+
+    // Decode bytes to Unicode string
+    return new TextDecoder().decode(bytes);
+  }
+
+  /**
+   * Encode a string to base64.
+   *
+   * @param {string} str - The string to encode.
+   * @returns {string} The base64 encoded string.
+   */
+  static encodeBase64(str) {
+    // Convert Unicode string to bytes
+    const bytes = new TextEncoder().encode(str); // Uint8Array
+
+    // Convert bytes to binary string
+    const binary = String.fromCharCode(...bytes);
+
+    // Encode binary string to base64
+    return btoa(binary);
+  }
+
+  /**
+   * Check if blocked n-grams are present at word boundaries in the given text.
+   *
+   * This method checks the text at word boundaries (using the word segmenter) for any n-grams that are blocked.
+   *
+   * @param {object} options - Configuration object.
+   * @param {string} options.text - The text to check for blocked n-grams.
+   * @returns {boolean} True if the text contains a blocked word n-gram, false otherwise.
+   *
+   * @example
+   * const result = blockListManager.matchAtWordBoundary({ text: "this is spam text" });
+   * console.log(result); // true if 'spam' is a blocked n-gram.
+   * const result2 = blockListManager.matchAtWordBoundary({ text: "this isspam text" });
+   * console.log(result2); // false even if spam is a blocked n-gram.
+   */
+  matchAtWordBoundary({ text }) {
+    const isTextOffsetAtEndOfWordBoundary = new Array(text.length).fill(false);
+
+    // Keep hold of the index of the first character of each word in the text
+    const startWordIndices = Array.from(
+      this.wordSegmenter.segment(text),
+      segment => {
+        if (segment.index > 0) {
+          // segment.index returns start of word. Subtracting one for end of word.
+          isTextOffsetAtEndOfWordBoundary[segment.index - 1] = true;
+        }
+
+        return segment.index;
+      }
+    );
+    // End of text always at word boundary
+    isTextOffsetAtEndOfWordBoundary[text.length - 1] = true;
+
+    for (const startTextOffset of startWordIndices) {
+      // Check if there is a word starting at offset startTextOffset and matching a blocked n-gram words of given length
+      for (const blockLength of this.blockNgramLengths) {
+        const endTextOffset = startTextOffset + blockLength;
+
+        if (
+          // Skip checking when the pattern to check does not end at word boundary.
+          isTextOffsetAtEndOfWordBoundary[endTextOffset - 1] &&
+          // check if we have this word in the block list
+          this.blockNgramSet.has(text.slice(startTextOffset, endTextOffset))
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Check if blocked n-grams are present anywhere in the text.
+   *
+   * This method checks the entire text (not limited to word boundaries) for any n-grams that are blocked.
+   *
+   * @param {object} options - Configuration object.
+   * @param {string} options.text - The text to check for blocked n-grams.
+   * @returns {boolean} True if the text contains a blocked word n-gram, false otherwise.
+   *
+   * @example
+   * const result = blockListManager.matchAnywhere({ text: "this is spam text" });
+   * console.log(result); // true if 'spam' is a blocked n-gram.
+   * const result2 = blockListManager.matchAnywhere({ text: "this isspam text" });
+   * console.log(result2); // true if 'spam' is a blocked n-gram.
+   * const result3 = blockListManager.matchAnywhere({ text: "this is s_p_a_m text" });
+   * console.log(result3); // false even if 'spam' is a blocked n-gram.
+   */
+  matchAnywhere({ text }) {
+    for (
+      let startTextOffset = 0;
+      startTextOffset < text.length;
+      startTextOffset++
+    ) {
+      for (const blockLength of this.blockNgramLengths) {
+        if (
+          this.blockNgramSet.has(
+            text.slice(startTextOffset, startTextOffset + blockLength)
+          )
+        ) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+}
+
+/**
+ * A class to retrieve data from remote setting
+ *
+ */
+export class RemoteSettingsManager {
+  /**
+   * The cached remote settings clients that downloads the data.
+   *
+   * @type {Record<string, RemoteSettingsClient>}
+   */
+  static #remoteClients = {};
+
+  /**
+   * Remote settings isn't available in tests, so provide mocked clients.
+   *
+   * @param {Record<string, RemoteSettingsClient>} remoteClients
+   */
+  static mockRemoteSettings(remoteClients) {
+    lazy.console.log("Mocking remote settings in RemoteSettingsManager.");
+    RemoteSettingsManager.#remoteClients = remoteClients;
+  }
+
+  /**
+   * Remove anything that could have been mocked.
+   */
+  static removeMocks() {
+    lazy.console.log("Removing mocked remote client in RemoteSettingsManager.");
+    RemoteSettingsManager.#remoteClients = {};
+  }
+
+  /**
+   * Lazily initialize the remote settings client responsible for downloading the data.
+   *
+   * @param {string} collectionName - The name of the collection to use.
+   * @returns {RemoteSettingsClient}
+   */
+  static getRemoteClient(collectionName) {
+    if (RemoteSettingsManager.#remoteClients[collectionName]) {
+      return RemoteSettingsManager.#remoteClients[collectionName];
+    }
+
+    /** @type {RemoteSettingsClient} */
+    const client = lazy.RemoteSettings(collectionName, {
+      bucketName: "main",
+    });
+
+    RemoteSettingsManager.#remoteClients[collectionName] = client;
+
+    client.on("sync", async ({ data: { created, updated, deleted } }) => {
+      lazy.console.debug(`"sync" event for ${collectionName}`, {
+        created,
+        updated,
+        deleted,
+      });
+
+      // Remove all the deleted records.
+      for (const record of deleted) {
+        await client.attachments.deleteDownloaded(record);
+      }
+
+      // Remove any updated records, and download the new ones.
+      for (const { old: oldRecord } of updated) {
+        await client.attachments.deleteDownloaded(oldRecord);
+      }
+
+      // Do nothing for the created records.
+    });
+
+    return client;
+  }
+
+  /**
+   * Gets data from remote settings.
+   *
+   * @param {object} options - Configuration object
+   * @param {string} options.collectionName - The name of the remote settings collection.
+   * @param {object} options.filters - The filters to use where key should match the schema in remote settings.
+   * @param {number|null} options.majorVersion - The target version or null if no version is supported.
+   * @param {Function} [options.lookupKey=(record => record.name)]
+   *     The function to use to extract a lookup key from each record when versionning is supported..
+   *     This function should take a record as input and return a string that represents the lookup key for the record.
+   * @returns {Promise<object|null>}
+   */
+
+  static async getRemoteData({
+    collectionName,
+    filters,
+    majorVersion,
+    lookupKey = record => record.name,
+  } = {}) {
+    const client = RemoteSettingsManager.getRemoteClient(collectionName);
+
+    let records = [];
+
+    if (majorVersion) {
+      records = await lazy.TranslationsParent.getMaxSupportedVersionRecords(
+        client,
+        {
+          filters,
+          minSupportedMajorVersion: majorVersion,
+          maxSupportedMajorVersion: majorVersion,
+          lookupKey,
+        }
+      );
+    } else {
+      records = await client.get({ filters });
+    }
+
+    // Handle case where multiple records exist
+    if (records.length > 1) {
+      throw new Error(
+        `Found more than one record in '${collectionName}' for filters ${JSON.stringify(filters)}. Double-check your filters.`
+      );
+    }
+
+    // If still no records, return null
+    if (records.length === 0) {
+      return null;
+    }
+
+    return records[0];
+  }
 }

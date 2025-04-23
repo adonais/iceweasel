@@ -3306,9 +3306,9 @@ void nsFocusManager::GetSelectionLocation(Document* aDocument,
       domSelection->IsCollapsed()) {
     nsIFrame* startFrame = start->GetPrimaryFrame();
     // Yes, indeed we were at the end of the last node
-    nsIFrame* limiter =
+    const Element* const limiter =
         domSelection && domSelection->GetAncestorLimiter()
-            ? domSelection->GetAncestorLimiter()->GetPrimaryFrame()
+            ? domSelection->GetAncestorLimiter()
             : nullptr;
     nsFrameIterator frameIterator(presContext, startFrame,
                                   nsFrameIterator::Type::Leaf,
@@ -4415,8 +4415,10 @@ nsresult nsFocusManager::GetNextTabbableContent(
         }
       }
 
-      if (!aForward) {
-        if (InvokerForPopoverShowingState(currentContent)) {
+      if (!aForward && InvokerForPopoverShowingState(currentContent)) {
+        int32_t tabIndex = frame->IsFocusable().mTabIndex;
+        if (tabIndex >= 0 &&
+            (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
           RefPtr<nsIContent> popover =
               currentContent->GetEffectivePopoverTargetElement();
           nsIContent* contentToFocus = GetNextTabbableContentInScope(

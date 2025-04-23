@@ -3,9 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export const modules = {
-  root: {},
-  "windowglobal-in-root": {},
-  windowglobal: {},
+  root: {
+    moz: {},
+  },
+  "windowglobal-in-root": {
+    moz: {},
+  },
+  windowglobal: {
+    moz: {},
+  },
 };
 
 // eslint-disable-next-line mozilla/lazy-getter-object-name
@@ -42,6 +48,8 @@ ChromeUtils.defineESModuleGetters(modules["windowglobal-in-root"], {
 
 // eslint-disable-next-line mozilla/lazy-getter-object-name
 ChromeUtils.defineESModuleGetters(modules.windowglobal, {
+  _configuration:
+    "chrome://remote/content/webdriver-bidi/modules/windowglobal/_configuration.sys.mjs",
   browsingContext:
     "chrome://remote/content/webdriver-bidi/modules/windowglobal/browsingContext.sys.mjs",
   input:

@@ -786,7 +786,10 @@ var TelemetryReportingPolicyImpl = {
   async _configureFromNimbus() {
     this._nimbusVariables = lazy.NimbusFeatures.preonboarding.getAllVariables();
 
-    if (this._nimbusVariables.enabled === null) {
+    if (
+      this._nimbusVariables.enabled === null &&
+      this._nimbusVariables.onTrainRolloutEnabled
+    ) {
       await this._configureFromOnTrainRollout();
     }
 
@@ -889,7 +892,6 @@ var TelemetryReportingPolicyImpl = {
     }
 
     await p;
-
     this._log.trace("_notifyUserViaModal: user interacted with modal");
 
     return true;

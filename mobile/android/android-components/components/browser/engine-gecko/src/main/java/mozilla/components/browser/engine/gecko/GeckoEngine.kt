@@ -397,7 +397,8 @@ class GeckoEngine(
                 val result = GeckoResult<AllowOrDeny>()
                 webExtensionDelegate.onOptionalPermissionsRequest(
                     GeckoWebExtension(extension, runtime),
-                    permissions.toList() + origins.toList(),
+                    permissions.toList(),
+                    origins.toList(),
                 ) { allow ->
                     if (allow) result.complete(AllowOrDeny.ALLOW) else result.complete(AllowOrDeny.DENY)
                 }
@@ -1491,6 +1492,10 @@ class GeckoEngine(
             this.loginAutofillEnabled = it.loginAutofillEnabled
             this.enterpriseRootsEnabled = it.enterpriseRootsEnabled
             this.httpsOnlyMode = it.httpsOnlyMode
+            this.dohSettingsMode = it.dohSettingsMode
+            this.dohProviderUrl = it.dohProviderUrl
+            this.dohDefaultProviderUrl = it.dohDefaultProviderUrl
+            this.dohExceptionsList = it.dohExceptionsList
             this.cookieBannerHandlingMode = it.cookieBannerHandlingMode
             this.cookieBannerHandlingModePrivateBrowsing = it.cookieBannerHandlingModePrivateBrowsing
             this.cookieBannerHandlingDetectOnlyMode = it.cookieBannerHandlingDetectOnlyMode

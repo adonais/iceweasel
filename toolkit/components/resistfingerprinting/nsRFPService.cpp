@@ -116,6 +116,7 @@ static mozilla::LazyLogModule gTimestamps("Timestamps");
 #define LAST_PB_SESSION_EXITED_TOPIC "last-pb-context-exited"
 #define IDLE_TOPIC "browser-idle-startup-tasks-finished"
 #define COMPOSITOR_CREATED "compositor:created"
+#define FONT_LIST_INITIALIZED "font-list-initialized"
 #define USER_CHARACTERISTICS_TEST_REQUEST \
   "user-characteristics-testing-please-populate-data"
 
@@ -211,6 +212,9 @@ nsresult nsRFPService::Init() {
     rv = obs->AddObserver(this, COMPOSITOR_CREATED, false);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    rv = obs->AddObserver(this, FONT_LIST_INITIALIZED, false);
+    NS_ENSURE_SUCCESS(rv, rv);
+
     rv = obs->AddObserver(this, USER_CHARACTERISTICS_TEST_REQUEST, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -241,8 +245,7 @@ bool nsRFPService::IsRFPPrefEnabled(bool aIsPrivateMode) {
 /* static */
 bool nsRFPService::IsRFPEnabledFor(
     bool aIsPrivateMode, RFPTarget aTarget,
-    const Maybe<RFPTargetSet>& aOverriddenFingerprintingSettings,
-    bool aSkipChromePrincipalCheck /* = false */) {
+    const Maybe<RFPTargetSet>& aOverriddenFingerprintingSettings) {
   MOZ_ASSERT(aTarget != RFPTarget::AllTargets);
 
 #if SPOOFED_MAX_TOUCH_POINTS > 0
@@ -321,6 +324,7 @@ void nsRFPService::StartShutdown() {
       obs->RemoveObserver(this, OBSERVER_TOPIC_IDLE_DAILY);
       obs->RemoveObserver(this, IDLE_TOPIC);
       obs->RemoveObserver(this, COMPOSITOR_CREATED);
+      obs->RemoveObserver(this, FONT_LIST_INITIALIZED);
       obs->RemoveObserver(this, USER_CHARACTERISTICS_TEST_REQUEST);
     }
   }
@@ -360,8 +364,7 @@ void nsRFPService::PrefChanged(const char* aPref) {
 NS_IMETHODIMP
 nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
                       const char16_t* aMessage) {
-  const int kNumTopicsForUserCharacteristics = 2;
-  static int seenTopicsForUserCharacteristics = 0;
+  static uint8_t bitsetForUserCharacteristics = 0;
 
   if (strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic) == 0) {
     StartShutdown();
@@ -375,12 +378,19 @@ nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
     ClearBrowsingSessionKey(pattern);
   }
 
-  if (!strcmp(IDLE_TOPIC, aTopic) || !strcmp(COMPOSITOR_CREATED, aTopic)) {
-    seenTopicsForUserCharacteristics++;
+  if (!strcmp(IDLE_TOPIC, aTopic)) {
+    bitsetForUserCharacteristics |= 1 << 0;
+  } else if (!strcmp(COMPOSITOR_CREATED, aTopic)) {
+    bitsetForUserCharacteristics |= 1 << 1;
+  } else if (!strcmp(FONT_LIST_INITIALIZED, aTopic)) {
+    bitsetForUserCharacteristics |= 1 << 2;
+  }
 
-    if (seenTopicsForUserCharacteristics == kNumTopicsForUserCharacteristics) {
-      nsUserCharacteristics::MaybeSubmitPing();
-    }
+  if (bitsetForUserCharacteristics == 0b111) {
+    nsUserCharacteristics::MaybeSubmitPing();
+    // Set 4th bit to 1 to make sure bitset is never 0b111 again.
+    // This is to ensure that we only submit the ping once.
+    bitsetForUserCharacteristics |= 1 << 3;
   }
 
   if (!strcmp(USER_CHARACTERISTICS_TEST_REQUEST, aTopic) &&

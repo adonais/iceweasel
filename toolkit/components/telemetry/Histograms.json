@@ -1560,17 +1560,6 @@
     "n_buckets": 10,
     "description": "Time(ms) to purge dirty heap pages."
   },
-  "LOW_MEMORY_EVENTS_VIRTUAL": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["memshrink-telemetry-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1024,
-    "n_buckets": 21,
-    "description": "Number of low-virtual-memory events fired since last ping",
-    "bug_numbers": [711490, 1451005]
-  },
   "LOW_MEMORY_EVENTS_PHYSICAL": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
@@ -1581,17 +1570,6 @@
     "n_buckets": 21,
     "description": "Number of low-physical-memory events fired since last ping",
     "bug_numbers": [711490, 1451005]
-  },
-  "LOW_MEMORY_EVENTS_COMMIT_SPACE": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["memshrink-telemetry-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1024,
-    "n_buckets": 21,
-    "description": "Number of low-commit-space events fired since last ping",
-    "bug_numbers": [1451005]
   },
   "PAGE_FAULTS_HARD": {
     "record_in_processes": ["main", "content"],
@@ -6699,19 +6677,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Firefox: If the spinner interstitial displays during tab switching, records the time in ms the graphic is visible"
   },
-  "FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["mconley@mozilla.com", "dothayer@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 1000,
-    "high": 64000,
-    "n_buckets": 7,
-    "bug_numbers": [1301104],
-    "releaseChannelCollection": "opt-out",
-    "description": "Firefox: If the spinner interstitial displays during tab switching, records the time in ms the graphic is visible. This probe is similar to FX_TAB_SWITCH_SPINNER_VISIBLE_MS, but is for truly degenerate cases."
-  },
   "FX_TAB_SWITCH_SPINNER_VISIBLE_TRIGGER": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
@@ -7231,18 +7196,6 @@
     "n_values": 50,
     "description": "Session restore: Number of tabs restored eagerly in the session that has just been restored."
   },
-  "FX_URLBAR_ZERO_PREFIX_DWELL_TIME_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 60000,
-    "n_buckets": 50,
-    "releaseChannelCollection": "opt-out",
-    "bug_numbers": [1806765],
-    "description": "Firefox: Records how long the user is exposed to the zero-prefix results panel (ms)"
-  },
   "FX_SEARCHBAR_SELECTED_RESULT_METHOD": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -7330,16 +7283,6 @@
     "expires_in_version": "default",
     "kind": "boolean",
     "description": "True when we had to wait for a pending preload on first access to localStorage data, false otherwise"
-  },
-  "RANGE_CHECKSUM_ERRORS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["perf-telemetry-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "Number of histograms with range checksum errors"
   },
   "TELEMETRY_ARCHIVE_DIRECTORIES_COUNT": {
     "record_in_processes": ["main"],
@@ -11273,18 +11216,6 @@
     "high": 30000,
     "n_buckets": 20,
     "description": "Sanitize: Time it takes to sanitize the open windows list (ms). On Android, this is the time it takes to close all open tabs (ms)."
-  },
-  "PWMGR_FORM_AUTOFILL_RESULT": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["seceng-telemetry@mozilla.com", "loines@mozilla.com"],
-    "bug_numbers": [1340021, 1545172],
-    "releaseChannelCollection": "opt-out",
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 20,
-    "description": "The result of auto-filling a login form. See http://mzl.la/1Mbs6jL for bucket descriptions.",
-    "record_into_store": ["main"]
   },
   "PWMGR_LOGIN_PAGE_SAFETY": {
     "record_in_processes": ["content"],

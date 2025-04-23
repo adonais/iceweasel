@@ -113,6 +113,7 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
                 preReductionState.selectedItems.filterIsInstance<BookmarkItem.Bookmark>()
                     .forEach { BookmarksManagement.shared.record(NoExtras()) }
             }
+            is BookmarksListMenuAction.SortMenu -> action.record()
             is BookmarksListMenuAction.Folder.DeleteClicked,
             CloseClicked,
             AddFolderClicked,
@@ -185,5 +186,14 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
                 }
             }
         }
+    }
+
+    private fun BookmarksListMenuAction.SortMenu.record() = when (this) {
+        BookmarksListMenuAction.SortMenu.SortMenuButtonClicked -> BookmarksManagement.sortMenuClicked.record()
+        BookmarksListMenuAction.SortMenu.SortMenuDismissed -> Unit
+        BookmarksListMenuAction.SortMenu.NewestClicked -> BookmarksManagement.sortByNewest.record()
+        BookmarksListMenuAction.SortMenu.OldestClicked -> BookmarksManagement.sortByOldest.record()
+        BookmarksListMenuAction.SortMenu.AtoZClicked -> BookmarksManagement.sortByAToZ.record()
+        BookmarksListMenuAction.SortMenu.ZtoAClicked -> BookmarksManagement.sortByZToA.record()
     }
 }

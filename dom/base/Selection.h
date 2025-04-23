@@ -167,8 +167,8 @@ class Selection final : public nsSupportsWeakReference,
    * @param aReasons potentially multiple of the reasons defined in
    * nsISelectionListener.idl
    */
-  void EndBatchChanges(const char* aDetails,
-                       int16_t aReason = nsISelectionListener::NO_REASON);
+  MOZ_CAN_RUN_SCRIPT void EndBatchChanges(
+      const char* aDetails, int16_t aReason = nsISelectionListener::NO_REASON);
 
   /**
    * NotifyAutoCopy() starts to notify AutoCopyListener of selection changes.
@@ -514,7 +514,9 @@ class Selection final : public nsSupportsWeakReference,
    */
   enum class FlushFrames { No, Yes };
   MOZ_CAN_RUN_SCRIPT
-  void Stringify(nsAString& aResult, FlushFrames = FlushFrames::Yes);
+  void Stringify(nsAString& aResult,
+                 CallerType aCallerType = CallerType::System,
+                 FlushFrames = FlushFrames::Yes);
 
   /**
    * Indicates whether the node is part of the selection. If partlyContained
@@ -546,16 +548,10 @@ class Selection final : public nsSupportsWeakReference,
    * @param direction can be one of { "forward", "backward", "left", "right" }
    * @param granularity can be one of { "character", "word",
    *                                    "line", "lineboundary" }
-   *
-   * @throws NS_ERROR_NOT_IMPLEMENTED if the granularity is "sentence",
-   * "sentenceboundary", "paragraph", "paragraphboundary", or
-   * "documentboundary".  Throws NS_ERROR_INVALID_ARG if alter, direction,
-   * or granularity has an unrecognized value.
    */
   MOZ_CAN_RUN_SCRIPT void Modify(const nsAString& aAlter,
                                  const nsAString& aDirection,
-                                 const nsAString& aGranularity,
-                                 mozilla::ErrorResult& aRv);
+                                 const nsAString& aGranularity);
 
   MOZ_CAN_RUN_SCRIPT
   void SetBaseAndExtentJS(nsINode& aAnchorNode, uint32_t aAnchorOffset,
@@ -787,8 +783,8 @@ class Selection final : public nsSupportsWeakReference,
                              const TextRangeStyle& aTextRangeStyle);
 
   // Methods to manipulate our mFrameSelection's ancestor limiter.
-  Element* GetAncestorLimiter() const;
-  void SetAncestorLimiter(Element* aLimiter);
+  [[nodiscard]] Element* GetAncestorLimiter() const;
+  MOZ_CAN_RUN_SCRIPT void SetAncestorLimiter(Element* aLimiter);
 
   /*
    * Frame Offset cache can be used just during calling
@@ -1178,15 +1174,13 @@ class MOZ_STACK_CLASS SelectionBatcher final {
    * This won't be stored nor exposed to selection listeners etc, used only for
    * logging.  This MUST be living when the destructor runs.
    */
-  // TODO: Mark these constructors `MOZ_CAN_RUN_SCRIPT` because the destructor
-  //       may run script via nsISelectionListener.
-  explicit SelectionBatcher(Selection& aSelectionRef,
-                            const char* aRequesterFuncName,
-                            int16_t aReasons = nsISelectionListener::NO_REASON)
+  MOZ_CAN_RUN_SCRIPT explicit SelectionBatcher(
+      Selection& aSelectionRef, const char* aRequesterFuncName,
+      int16_t aReasons = nsISelectionListener::NO_REASON)
       : SelectionBatcher(&aSelectionRef, aRequesterFuncName, aReasons) {}
-  explicit SelectionBatcher(Selection* aSelection,
-                            const char* aRequesterFuncName,
-                            int16_t aReasons = nsISelectionListener::NO_REASON)
+  MOZ_CAN_RUN_SCRIPT explicit SelectionBatcher(
+      Selection* aSelection, const char* aRequesterFuncName,
+      int16_t aReasons = nsISelectionListener::NO_REASON)
       : mSelection(aSelection),
         mReasons(aReasons),
         mRequesterFuncName(aRequesterFuncName) {
@@ -1195,9 +1189,9 @@ class MOZ_STACK_CLASS SelectionBatcher final {
     }
   }
 
-  ~SelectionBatcher() {
+  MOZ_CAN_RUN_SCRIPT ~SelectionBatcher() {
     if (mSelection) {
-      mSelection->EndBatchChanges(mRequesterFuncName, mReasons);
+      MOZ_KnownLive(mSelection)->EndBatchChanges(mRequesterFuncName, mReasons);
     }
   }
 };

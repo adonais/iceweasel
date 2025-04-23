@@ -288,11 +288,15 @@
 #endif
   mirror: always
 
-# Whether to enable support for the UI Automation API on Windows.
+# Whether to enable support for the UI Automation API on Windows. Values:
+# * 0: Never.
+# * 1: Always.
+# * 2: Enable unless incompatible accessibility clients are detected.
 - name: accessibility.uia.enable
-  type: bool
-  value: false
+  type: uint32_t
+  value: 0
   mirror: always
+  do_not_use_directly: true
 
 # Whether to avoid accessibility activation on Windows shortly after clipboard
 # copy.
@@ -1039,7 +1043,7 @@
   mirror: never
 
 # If you change this, you probably also want to change
-# nsXPLookAndFeel::GenericDarkColor for MozNativehyperlinktext.
+# nsXPLookAndFeel::GenericDarkColor for Linktext.
 - name: browser.anchor_color.dark
   type: String
   value: "#8C8CFF"
@@ -1303,6 +1307,13 @@
 - name: browser.contentanalysis.bypass_for_same_tab_operations
   type: bool
   value: false
+  mirror: always
+
+# Max number of concurrent connections to the DLP agent.  For stability
+# reasons, values exceeding 256 will be ignored.
+- name: browser.contentanalysis.max_connections
+  type: uint32_t
+  value: 32
   mirror: always
 
 # Should Firefox use content analysis for clipboard operations?
@@ -1805,7 +1816,7 @@
 # Whether to only classify top-level channels for safe browsing.
 - name: browser.safebrowsing.only_top_level
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # SessionStore prefs
@@ -2049,7 +2060,7 @@
   mirror: never
 
 # If you change this, you probably also want to change
-# nsXPLookAndFeel::GenericDarkColor for MozNativevisitedhyperlinktext.
+# nsXPLookAndFeel::GenericDarkColor for Visitedtext.
 - name: browser.visited_color.dark
   type: String
   value: "#FFADFF"
@@ -2469,13 +2480,7 @@
   value: -1
   mirror: always
 
-# Enable experimental popup blocker changes.
-- name: dom.popup.experimental
-  type: bool
-  value: true
-  mirror: always
-
-  # Enable CacheAPI in private browsing mode with encryption
+# Enable CacheAPI in private browsing mode with encryption
 - name: dom.cache.privateBrowsing.enabled
   type: RelaxedAtomicBool
   value: true
@@ -2536,10 +2541,23 @@
   value: false
   mirror: always
 
+# Compression Streams (zstd) (CompressionStream/DecompressionStream)
+# Whether or not "zstd" is a supported format for these streams.
+- name: dom.compression_streams.zstd.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Disable cookie-store API
 - name: dom.cookieStore.enabled
   type: RelaxedAtomicBool
   value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
+# Disable cookie-store manager API
+- name: dom.cookieStore.manager.enabled
+  type: RelaxedAtomicBool
+  value: false
   mirror: always
 
 # Is support for CSSPseudoElement enabled?
@@ -2811,14 +2829,6 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 #endif
-
-# Whether Gecko keeps store or forgets the last deepest "enter" event target for
-# the next "enter" or "leave" event dispatching when the last "over" event
-# target is removed from the DOM tree.
-- name: dom.events.mouse-pointer-boundary.keep-enter-targets-after-over-target-removed
-  type: bool
-  value: true
-  mirror: always
 
 # Whether .offset{X,Y} for events targeted at SVG nodes returns bounds relative
 # to the outer SVG.
@@ -3511,7 +3521,7 @@
 # Whether to dispatch mutation events.
 - name: dom.mutation_events.enabled
   type: bool
-  value: true
+  value: @IS_NOT_NIGHTLY_BUILD@
   mirror: always
 
 # Limit of location change caused by content scripts in a time span per
@@ -3661,6 +3671,12 @@
 # Is support for PerformanceTiming.timeToNonBlankPaint enabled?
 - name: dom.performance.time_to_non_blank_paint.enabled
   type: bool
+  value: false
+  mirror: always
+
+# Whether the interactionId will be computed and returned by performance observer*
+- name: dom.performance.event_timing.enable_interactionid
+  type: RelaxedAtomicBool
   value: false
   mirror: always
 
@@ -3846,6 +3862,12 @@
 
 # A pref that is used to slow down storage initialization for testing purposes.
 - name: dom.quotaManager.storageInitialization.pauseOnIOThreadMs
+  type: RelaxedAtomicUint32
+  value: 0
+  mirror: always
+
+# A pref that is used to slow down group initialization for testing purposes.
+- name: dom.quotaManager.groupInitialization.pauseOnIOThreadMs
   type: RelaxedAtomicUint32
   value: 0
   mirror: always
@@ -4465,6 +4487,15 @@
   value: 400 * 1024
   mirror: always
 
+# Enable ServiceWorkers in Private Browsing Mode (PBM).  This requires
+# dom.cache.privateBrowsing.enabled to be enabled as well.  Registrations are
+# not persisted to disk; installed scripts are stored in Cache API storage which
+# is encrypted in PBM.
+- name: dom.serviceWorkers.privateBrowsing.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 - name: dom.serviceWorkers.testing.enabled
   type: RelaxedAtomicBool
   value: false
@@ -4502,7 +4533,7 @@
 
 - name: dom.workers.timeoutmanager
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: once
 
 - name: dom.workers.serialized-sab-access
@@ -4544,6 +4575,12 @@
 - name: dom.storage_access.auto_grants.delayed
   type: bool
   value: true
+  mirror: always
+
+# Whether to exclude third-party trackers from Storage Access API auto grants.
+- name: dom.storage_access.auto_grants.exclude_third_party_trackers
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Storage-access API.
@@ -4808,10 +4845,23 @@
 
 # Should we defer timeouts and intervals while loading a page.  Released
 # on Idle or when the page is loaded.
+# A URI list in dom.timeout.defer_during_load.force-disable can override this
+# and disable this optimization for a site.
 - name: dom.timeout.defer_during_load
   type: bool
   value: true
   mirror: always
+
+# Sites we shouldn't defer timeouts and intervals while loading a page.
+# comma-separated list, see IsURIInPrefList() for format details
+- name: dom.timeout.defer_during_load.force-disable
+  type: String
+  value: >-
+    *.usps.com,
+    *.nvidia.com,
+    *.fedex.com,
+    *.msci.com
+  mirror: never
 
 # Maximum amount of time in milliseconds consecutive setTimeout()/setInterval()
 # callback are allowed to run before yielding the event loop.
@@ -4908,6 +4958,18 @@
 - name: dom.viewTransitions.remain-active
   type: bool
   value: false
+  mirror: always
+
+# Whether view transitions use webrender for old-capture
+- name: dom.viewTransitions.wr-old-capture
+  type: bool
+  value: true
+  mirror: always
+
+# Whether view transitions use webrender for live-capture
+- name: dom.viewTransitions.live-capture
+  type: bool
+  value: true
   mirror: always
 
 # Is support for WebVR APIs enabled?
@@ -5220,6 +5282,12 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
+# Mimic Chrome's window.getSelection().toString() behaviour
+- name: dom.selection.mimic_chrome_tostring.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # When this pref is enabled:
 #  - Shadow DOM is not pierced by default anymore
 #  - The method accepts optional CaretPositionFromPointOptions to allow piercing
@@ -5369,6 +5437,11 @@
   value: false
   mirror: always
 
+- name: dom.webnotifications.actions.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # Setting log level for notification modules.
 # The value follows the enum ConsoleLogLevel in ConsoleInstance.webidl.
 - name: dom.webnotifications.loglevel
@@ -5498,6 +5571,25 @@
   value: true
   mirror: always
 
+# Whether or not the `Origin-Agent-Cluster` HTTP header is enabled.
+- name: dom.origin_agent_cluster.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Whether or not agent clusters are origin-keyed by default, blocking the use of
+# `document.domain`.
+- name: dom.origin_agent_cluster.default
+  type: bool
+  value: false
+  mirror: always
+
+# Whether to make the document name getter follow the spec.
+- name: dom.document.name_getter_follow_spec.enabled
+  type: bool
+  value: true
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "editor"
 #---------------------------------------------------------------------------
@@ -5570,7 +5662,7 @@
 # Gecko's traditional white-space normalizer.
 - name: editor.white_space_normalization.blink_compatible
   type: bool
-  value: false
+  value: @IS_EARLY_BETA_OR_EARLIER@
   mirror: always
 
 # General prefs for editor, indicating whether Gecko-specific editing UI is
@@ -6482,7 +6574,7 @@
 
 - name: gfx.canvas.remote.use-draw-image-fast-path-d3d
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 - name: gfx.canvas.remote.recycle-used-data-surface
@@ -6494,16 +6586,6 @@
   type: bool
   value: true
   mirror: once
-
-- name: gfx.canvas.willreadfrequently.enabled
-  type: bool
-#if defined(XP_WIN)
-  value: false
-#else
-  value: true
-#endif
-  mirror: once
-
 
 - name: gfx.color_management.display_profile
   type: DataMutexString
@@ -7333,6 +7415,13 @@
 - name: gfx.webrender.layer-compositor
   type: bool
   value: false
+  mirror: once
+#endif
+
+#ifdef XP_WIN
+- name: gfx.webrender.layer-compositor-use-composition-surface
+  type: bool
+  value: true
   mirror: once
 #endif
 
@@ -8477,11 +8566,18 @@
   set_spidermonkey_pref: startup
 
   # Experimental support for Atomics.pause in JavaScript.
--   name: javascript.options.experimental.atomics_pause
-    type: bool
-    value: true
-    mirror: always
-    set_spidermonkey_pref: startup
+- name: javascript.options.experimental.atomics_pause
+  type: bool
+  value: true
+  mirror: always
+  set_spidermonkey_pref: startup
+
+  # Experimental support for Error.isError in JavaScript.
+- name: javascript.options.experimental.error_iserror
+  type: bool
+  value: true
+  mirror: always
+  set_spidermonkey_pref: always
 
 #ifdef NIGHTLY_BUILD
   # Experimental support for Async Iterator Helpers in JavaScript.
@@ -8497,13 +8593,6 @@
     value: false
     mirror: always
     set_spidermonkey_pref: startup
-
-  # Experimental support for Error.isError in JavaScript.
--   name: javascript.options.experimental.error_iserror
-    type: bool
-    value: false
-    mirror: always
-    set_spidermonkey_pref: always
 
   # Experimental support for Iterator.range in JavaScript.
 -   name: javascript.options.experimental.iterator_range
@@ -8555,7 +8644,7 @@
 
 - name: javascript.options.experimental.error_capture_stack_trace
   type: bool
-  value: false
+  value: true
   mirror: always
   set_spidermonkey_pref: always
 
@@ -8574,7 +8663,7 @@
 
 - name: javascript.options.experimental.import_attributes
   type: bool
-  value: false
+  value: true
   mirror: always
   set_spidermonkey_pref: always
 
@@ -9678,7 +9767,7 @@
 # span more than one track.
 - name: layout.css.grid-flex-spanning-items-intrinsic-sizing.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Is support for :has() enabled?
@@ -10415,6 +10504,13 @@
   value: false
   mirror: always
 
+# Is support for the ::details-content pseudo-element enabled?
+- name: layout.css.details-content.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 # Is 'content:none' supported on (non-pseudo) elements?
 - name: layout.css.element-content-none.enabled
   type: RelaxedAtomicBool
@@ -11049,6 +11145,8 @@
   type: RelaxedAtomicBool
 #if defined(MOZ_WIDGET_GTK)
   value: true
+#elif defined(XP_WIN)
+  value: @IS_NIGHTLY_BUILD@
 #else
   value: false
 #endif
@@ -11950,6 +12048,12 @@
 # Enables navigator.mediaDevices and getUserMedia() support. See also
 # media.peerconnection.enabled
 - name: media.navigator.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Expose the deprecated method navigator.mozGetUserMedia().
+- name: media.navigator.mozgetusermedia.enabled
   type: bool
   value: true
   mirror: always
@@ -13812,7 +13916,7 @@
 # This is the number of dns cache entries allowed
 - name: network.dnsCacheEntries
   type: RelaxedAtomicUint32
-  value: 400
+  value: 800
   mirror: always
 
 # In the absence of OS TTLs, the DNS cache TTL value
@@ -14045,6 +14149,12 @@
 - name: network.standard-url.max-length
   type: RelaxedAtomicUint32
   value: 1048576
+  mirror: always
+
+# If true, use the HSTS preload list.
+- name: network.stricttransportsecurity.preloadlist
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 # DNS Trusted Recursive Resolver
@@ -14567,7 +14677,7 @@
 # true.
 - name: network.http.http3.ecn
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: @IS_EARLY_BETA_OR_EARLIER@
   mirror: always
   rust: true
 
@@ -14654,6 +14764,8 @@
 
 # It represents the maximum duration that we used to accumulate
 # callback timeouts before we set a timer and break out of the loop.
+#
+# Note the typo in accumlated. Not worth fixing.
 - name: network.http.http3.max_accumlated_time_ms
   type: RelaxedAtomicUint32
   value: 1
@@ -15000,6 +15112,12 @@
 - name: network.wifi.scanning_period
   type: RelaxedAtomicUint32
   value: 60000
+  mirror: always
+
+# Block synchronous XMLHttpRequests coming from system requests
+- name: network.xhr.block_sync_system_requests
+  type: bool
+  value: true
   mirror: always
 
 # When the Access-Control-Allow-Headers is wildcard (*), whether to allow
@@ -15371,7 +15489,7 @@
 # header values of "cache" and "*" will clear cached data from the site
 - name: privacy.clearSiteDataHeader.cache.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # First Party Isolation (double keying), disabled by default.
@@ -15461,6 +15579,25 @@
 - name: privacy.trackingprotection.testing.report_blocked_node
   type: RelaxedAtomicBool
   value: false
+  mirror: always
+
+# Annotate channels based on the consent manager list
+# Note: consent manager annotations will be disabled if tracking protection is disabled
+- name: privacy.trackingprotection.consentmanager.annotate_channels
+  type: bool
+  value: true
+  mirror: always
+
+# Skip blocking for consentmanager resources in all modes.
+- name: privacy.trackingprotection.consentmanager.skip.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+# Skip blocking for consentmanager resources in Private Browsing mode.
+- name: privacy.trackingprotection.consentmanager.skip.pbmode.enabled
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 # Whether to spoof user locale to English (used as part of Resist
@@ -15726,7 +15863,7 @@
   value: 600    # 10 minutes
   mirror: always
 
-# Whether to exclude third-party trackers from the storage accessheuristic.
+# Whether to exclude third-party trackers from the storage access heuristics.
 - name: privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers
   type: bool
   value: @IS_NIGHTLY_BUILD@
@@ -15928,13 +16065,6 @@
   value: false
   mirror: always
 
-# To be used in automated test environments to enable event telemetry
-# collection.
-- name: privacy.imageInputTelemetry.enableTestMode
-  type: bool
-  value: false
-  mirror: always
-
 #---------------------------------------------------------------------------
 # Prefs starting with "prompts."
 #---------------------------------------------------------------------------
@@ -15970,6 +16100,19 @@
   value: true
   mirror: always
 
+# When a TLS server asks for a client authentication certificate, the platform
+# will ask the user to select one or opt to not send one. At the same time, the
+# platform will offer a few options for how long to remember the decision at
+# hand. The value of this preference determines which of these three options is
+# selected by default.
+# 0 selects "do not remember the decision"
+# 1 selects "remember the decision permanently"
+# 2 selects "remember the decision for the rest of the session"
+- name: security.client_auth_certificate_default_remember_setting
+  type: uint32_t
+  value: 2
+  mirror: always
+
 - name: security.csp.reporting.script-sample.max-length
   type: int32_t
   value: 40
@@ -15992,6 +16135,14 @@
   value: 2
   mirror: always
 
+#ifdef DEBUG
+# Crash on CSP violations on internal pages (i.e. chrome:)
+- name: security.csp.testing.allow_internal_csp_violation
+  type: bool
+  value: false
+  mirror: always
+#endif
+
 # If true, all toplevel data: URI navigations will be blocked.
 # Please note that manually entering a data: URI in the
 # URL-Bar will not be blocked when flipping this pref.
@@ -16010,7 +16161,7 @@
 # This allows us to collect telemetry information about potential issues.
 - name: security.browser_xhtml_csp.report-only
   type: bool
-  value: @IS_NOT_EARLY_BETA_OR_EARLIER@
+  value: false
   mirror: always
 
 # Allowed by default so it doesn't affect Thunderbird/SeaMonkey, but
@@ -17002,6 +17153,13 @@
 # Prefs starting with "test."
 #---------------------------------------------------------------------------
 
+# A mechanism to make the current time seem later than it is for specific
+# operations. Currently used to test expiration of the HSTS preload list.
+- name: test.currentTimeOffsetSeconds
+  type: RelaxedAtomicUint32
+  value: 0
+  mirror: always
+
 - name: test.events.async.enabled
   type: RelaxedAtomicBool
   value: false
@@ -17097,6 +17255,16 @@
   type: RelaxedAtomicUint32
   value: 0
   mirror: always
+
+# Indicates whether we are testng crash annotation validation. In DEBUG builds,
+# invalid crash annotations cause an assertion failure, which would prevent us
+# from checking the non-DEBUG behavior.
+#ifdef DEBUG
+- name: toolkit.crash_annotation.testing_validation
+  type: bool
+  value: false
+  mirror: always
+#endif
 
 # Returns true if BHR is disabled.
 - name: toolkit.content-background-hang-monitor.disabled
@@ -18226,6 +18394,12 @@
 # Keep those pref hidden on non-nightly builds to avoid people accidentally
 # turning it on.
 
+# Override FEATURE_DMABUF_SURFACE_EXPORT for testing
+- name: widget.dmabuf-export.force-enabled
+  type: bool
+  value: false
+  mirror: once
+
 # Use DMABuf for content textures.
 # For testing purposes only.
 - name: widget.dmabuf-textures.enabled
@@ -18399,11 +18573,25 @@
   value: 0
   mirror: always
 
-# Whether to give explorer.exe a delated nudge to recalculate the fullscreenness
-# of a window after maximizing it.
+# Whether to give explorer.exe a delayed nudge to recalculate the fullscreenness
+# of a window after unminimizing it.
 - name: widget.windows.fullscreen_remind_taskbar
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# Mechanism to use to mark fullscreen windows.
+#
+# (If no problems are reported which adjusting this pref solves, it should be
+# removed in v141, and fixed at `1`.)
+#
+# * 0: Default. Use Gecko-internal heuristics. May vary between versions.
+# * 1: Use only "NonRudeHWND". Historical default on Win7.
+# * 2: Use only MarkFullscreenWindow. Historical default for Win10+.
+# * 3: Use both. (Never a default; not well-tested.)
+- name: widget.windows.fullscreen_marking_method
+  type: RelaxedAtomicUint32
+  value: 0
   mirror: always
 
 # Whether to open the Windows file and folder pickers "remotely" (in a utility
@@ -18469,17 +18657,35 @@
   value: 2
   mirror: always
 
-# Whether we use the mica backdrop. Off by default for now.
+# Whether we use the mica backdrop for top level windows. Off by default for
+# now.
 - name: widget.windows.mica
   type: bool
   value: false
   mirror: always
 
-# Whether we use the mica backdrop for popups. Off by default for now.
+# Whether we use the mica backdrop for popups when available.
+#  * 0: never
+#  * 1: always
+#  * 2 or others: auto
 - name: widget.windows.mica.popups
-  type: RelaxedAtomicBool
-  value: false
+  type: RelaxedAtomicInt32
+  value: 2
   mirror: always
+
+# What mica backdrop do we use for toplevels. See [1] for the meaning.
+#
+#  * 0 or other values: auto
+#  * 1: MAINWINDOW
+#  * 2: TRANSIENTWINDOW
+#  * 3: TABBEDWINDOW
+#
+# [1]: https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwm_systembackdrop_type#constants
+- name: widget.windows.mica.toplevel-backdrop
+  type: RelaxedAtomicInt32
+  value: 0
+  mirror: always
+
 
 # Whether we expand the client area into the taskbar hidden edge on maximized
 # windows.

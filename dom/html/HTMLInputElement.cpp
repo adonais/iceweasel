@@ -29,7 +29,6 @@
 #include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/ImageInputTelemetry.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
@@ -489,8 +488,6 @@ HTMLInputElement::nsFilePickerShownCallback::Done(
 
       OwningFileOrDirectory* element = newFilesOrDirectories.AppendElement();
       element->SetAsFile() = domBlob->ToFile();
-
-      ImageInputTelemetry::MaybeRecordFilePickerImageInputTelemetry(domBlob);
     }
   } else {
     MOZ_ASSERT(mode == nsIFilePicker::modeOpen ||
@@ -540,8 +537,6 @@ HTMLInputElement::nsFilePickerShownCallback::Done(
 
       OwningFileOrDirectory* element = newFilesOrDirectories.AppendElement();
       element->SetAsFile() = file;
-
-      ImageInputTelemetry::MaybeRecordFilePickerImageInputTelemetry(blob);
     } else if (tmp) {
       RefPtr<Directory> directory = static_cast<Directory*>(tmp.get());
       OwningFileOrDirectory* element = newFilesOrDirectories.AppendElement();
@@ -576,6 +571,36 @@ HTMLInputElement::nsFilePickerShownCallback::Done(
 
   if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
       mInput->HasAttr(nsGkAtoms::webkitdirectory)) {
+#ifdef MOZ_WIDGET_ANDROID
+    // Android 13 or later cannot enumerate files into user directory due to
+    // no permission. So we store file list into file picker.
+    FallibleTArray<RefPtr<BlobImpl>> filesInWebKitDirectory;
+
+    nsCOMPtr<nsISimpleEnumerator> iter;
+    if (NS_SUCCEEDED(
+            mFilePicker->GetDomFilesInWebKitDirectory(getter_AddRefs(iter))) &&
+        iter) {
+      nsCOMPtr<nsISupports> supports;
+
+      bool loop = true;
+      while (NS_SUCCEEDED(iter->HasMoreElements(&loop)) && loop) {
+        iter->GetNext(getter_AddRefs(supports));
+        if (supports) {
+          RefPtr<BlobImpl> file = static_cast<File*>(supports.get())->Impl();
+          MOZ_ASSERT(file);
+          if (!filesInWebKitDirectory.AppendElement(file, fallible)) {
+            return nsresult::NS_ERROR_OUT_OF_MEMORY;
+          }
+        }
+      }
+    }
+
+    if (!filesInWebKitDirectory.IsEmpty()) {
+      dispatchChangeEventCallback->Callback(NS_OK, filesInWebKitDirectory);
+      return NS_OK;
+    }
+#endif
+
     ErrorResult error;
     GetFilesHelper* helper = mInput->GetOrCreateGetFilesHelper(true, error);
     if (NS_WARN_IF(error.Failed())) {
@@ -1734,7 +1759,7 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
 
 HTMLDataListElement* HTMLInputElement::GetList() const {
   nsAutoString dataListId;
-  GetAttr(nsGkAtoms::list_, dataListId);
+  GetAttr(nsGkAtoms::list, dataListId);
   if (dataListId.IsEmpty()) {
     return nullptr;
   }
@@ -2398,10 +2423,10 @@ nsISelectionController* HTMLInputElement::GetSelectionController() {
   return nullptr;
 }
 
-nsFrameSelection* HTMLInputElement::GetConstFrameSelection() {
+nsFrameSelection* HTMLInputElement::GetIndependentFrameSelection() const {
   TextControlState* state = GetEditorState();
   if (state) {
-    return state->GetConstFrameSelection();
+    return state->GetIndependentFrameSelection();
   }
   return nullptr;
 }
@@ -3080,7 +3105,7 @@ void HTMLInputElement::Select() {
   MOZ_ASSERT(state, "Single line text controls are expected to have a state");
 
   if (FocusState() != FocusTristate::eUnfocusable) {
-    RefPtr<nsFrameSelection> fs = state->GetConstFrameSelection();
+    RefPtr<nsFrameSelection> fs = state->GetIndependentFrameSelection();
     if (fs && fs->MouseDownRecorded()) {
       // This means that we're being called while the frame selection has a
       // mouse down event recorded to adjust the caret during the mouse up

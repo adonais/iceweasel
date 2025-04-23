@@ -55,7 +55,7 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
   "unknownSocketType-title",
   "nssFailure2-title",
   "csp-xfo-error-title",
-  "corruptedContentError-title",
+  "corruptedContentErrorv2-title",
   "sslv3Used-title",
   "inadequateSecurityError-title",
   "blockedByPolicy-title",
@@ -66,6 +66,7 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
   "nssBadCert-sts-title",
   "certerror-mitm-title",
   "general-body-title",
+  "problem-with-this-site-title",
 ]);
 
 /* The error message IDs from nsserror.ftl get processed into
@@ -330,6 +331,11 @@ function initTitleAndBodyIds(baseURL, isTRROnlyFailure) {
     case "blockedByCOEP": {
       bodyTitleId = "general-body-title";
       document.body.classList.add("blocked");
+      tryAgain.hidden = true;
+      break;
+    }
+    case "invalidHeaderValue": {
+      bodyTitleId = "problem-with-this-site-title";
       tryAgain.hidden = true;
       break;
     }
@@ -751,6 +757,9 @@ function getNetErrorDescParts() {
         ["p", "neterror-inadequate-security-intro", { hostname: HOST_NAME }],
         ["p", "neterror-inadequate-security-code"],
       ];
+    case "invalidHeaderValue": {
+      return [["li", "neterror-http-error-page"]];
+    }
     case "mitm": {
       const failedCertInfo = document.getFailedCertSecurityInfo();
       const errArgs = {

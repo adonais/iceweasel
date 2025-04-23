@@ -181,6 +181,8 @@ skip-if = [
 
 ["browser_net_column_headers_tooltips.js"]
 
+["browser_net_column_path.js"]
+
 ["browser_net_column_slow-request-indicator.js"]
 
 ["browser_net_columns_last_column.js"]
@@ -427,6 +429,8 @@ skip-if = [
 ["browser_net_reload-button.js"]
 
 ["browser_net_req-resp-bodies.js"]
+
+["browser_net_requests_with_empty_response.js"]
 
 ["browser_net_resend.js"]
 

@@ -148,9 +148,6 @@ fail:
 
 bool Decoder::finishSection(const BytecodeRange& range,
                             const char* sectionName) {
-  if (resilientMode_) {
-    return true;
-  }
   if (range.size != currentOffset() - range.start) {
     return failf("byte size mismatch in %s section", sectionName);
   }
@@ -183,25 +180,25 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
     }
 
     CustomSectionRange secRange;
-    if (!readVarU32(&secRange.nameLength) ||
-        secRange.nameLength > bytesRemain()) {
+    if (!readVarU32(&secRange.name.size) ||
+        secRange.name.size > bytesRemain()) {
       goto fail;
     }
 
     // A custom section name must be valid UTF-8
-    if (!IsUtf8(AsChars(mozilla::Span(cur_, secRange.nameLength)))) {
+    if (!IsUtf8(AsChars(mozilla::Span(cur_, secRange.name.size)))) {
       goto fail;
     }
 
-    secRange.nameOffset = currentOffset();
-    secRange.payloadOffset = secRange.nameOffset + secRange.nameLength;
+    secRange.name.start = currentOffset();
+    secRange.payload.start = secRange.name.end();
 
     uint32_t payloadEnd = (*range)->start + (*range)->size;
-    if (secRange.payloadOffset > payloadEnd) {
+    if (secRange.payload.start > payloadEnd) {
       goto fail;
     }
 
-    secRange.payloadLength = payloadEnd - secRange.payloadOffset;
+    secRange.payload.size = payloadEnd - secRange.payload.start;
 
     // Now that we have a valid custom section, record its offsets in the
     // metadata which can be queried by the user via Module.customSections.
@@ -212,9 +209,9 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
     }
 
     // If this is the expected custom section, we're done.
-    if (!expected || (expectedLength == secRange.nameLength &&
-                      !memcmp(cur_, expected, secRange.nameLength))) {
-      cur_ += secRange.nameLength;
+    if (!expected || (expectedLength == secRange.name.size &&
+                      !memcmp(cur_, expected, secRange.name.size))) {
+      cur_ += secRange.name.size;
       return true;
     }
 
@@ -233,7 +230,7 @@ fail:
   return fail("failed to start custom section");
 }
 
-void Decoder::finishCustomSection(const char* name,
+bool Decoder::finishCustomSection(const char* name,
                                   const BytecodeRange& range) {
   MOZ_ASSERT(cur_ >= beg_);
   MOZ_ASSERT(cur_ <= end_);
@@ -241,7 +238,7 @@ void Decoder::finishCustomSection(const char* name,
   if (error_ && *error_) {
     warnf("in the '%s' custom section: %s", name, error_->get());
     skipAndFinishCustomSection(range);
-    return;
+    return false;
   }
 
   uint32_t actualSize = currentOffset() - range.start;
@@ -255,10 +252,11 @@ void Decoder::finishCustomSection(const char* name,
             name, uint32_t(actualSize - range.size));
     }
     skipAndFinishCustomSection(range);
-    return;
+    return false;
   }
 
   // Nothing to do! (c.f. skipAndFinishCustomSection())
+  return true;
 }
 
 void Decoder::skipAndFinishCustomSection(const BytecodeRange& range) {

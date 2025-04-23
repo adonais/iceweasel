@@ -10,6 +10,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,9 +34,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.utils.inComposePreview
@@ -45,6 +51,46 @@ import org.mozilla.fenix.compose.button.PrimaryButton
 import org.mozilla.fenix.onboarding.store.OnboardingStore
 import org.mozilla.fenix.onboarding.store.applyThemeIfRequired
 import org.mozilla.fenix.theme.FirefoxTheme
+
+/**
+ * The default ratio of the image height to the parent height.
+ */
+private const val OPTION_IMAGE_HEIGHT_RATIO_DEFAULT = 1.0f
+
+/**
+ * The ratio of the image height to the parent height for medium sized devices.
+ */
+private const val OPTION_IMAGE_HEIGHT_RATIO_MEDIUM = 0.7f
+
+/**
+ * The ratio of the image height to the parent height for small devices like Nexus 4, Nexus 1.
+ */
+private const val OPTION_IMAGE_HEIGHT_RATIO_SMALL = 0.4f
+
+/**
+ * The default ratio of the image height to the parent height.
+ */
+private const val IMAGE_HEIGHT_RATIO_DEFAULT = 0.4f
+
+/**
+ * The ratio of the image height to the parent height for medium sized devices.
+ */
+private const val IMAGE_HEIGHT_RATIO_MEDIUM = 0.3f
+
+/**
+ * The ratio of the image height to the parent height for small devices.
+ */
+private const val IMAGE_HEIGHT_RATIO_SMALL = 0.2f
+
+/**
+ * This width ensures we can fit the "system auto" option and have consistent spacing.
+ */
+private val columnWidth = 72.dp
+
+/**
+ * This is the width of the 'select theme' image resources.
+ */
+private val imageResourceWidth = 60.dp
 
 /**
  * A Composable for displaying theme selection onboarding page content.
@@ -60,86 +106,92 @@ fun ThemeOnboardingPage(
     pageState: OnboardingPageState,
     onThemeSelectionClicked: (ThemeOptionType) -> Unit,
 ) {
-    // Base
-    Column(
-        modifier = Modifier
-            .background(FirefoxTheme.colors.layer1)
-            .padding(horizontal = 16.dp, vertical = 24.dp)
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.SpaceBetween,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        with(pageState) {
-            // Main content group
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(18.dp))
-                Image(
-                    painter = painterResource(id = imageRes),
-                    contentDescription = stringResource(
-                        R.string.onboarding_customize_theme_main_image_content_description,
-                    ),
-                    modifier = Modifier.width(263.dp),
-                )
+    BoxWithConstraints {
+        val boxWithConstraintsScope = this
+        // Base
+        Column(
+            modifier = Modifier
+                .background(FirefoxTheme.colors.layer1)
+                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            with(pageState) {
+                // Main content group
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(Modifier)
 
-                Spacer(Modifier.height(52.dp))
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = stringResource(
+                            R.string.onboarding_customize_theme_main_image_content_description,
+                        ),
+                        modifier = Modifier.height(mainImageHeight(boxWithConstraintsScope)),
+                    )
 
-                Text(
-                    text = title,
-                    color = FirefoxTheme.colors.textPrimary,
-                    textAlign = TextAlign.Center,
-                    style = FirefoxTheme.typography.headline5,
-                )
+                    Spacer(Modifier.height(32.dp))
 
-                Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = title,
+                        color = FirefoxTheme.colors.textPrimary,
+                        textAlign = TextAlign.Center,
+                        style = FirefoxTheme.typography.headline5,
+                    )
 
-                Text(
-                    text = description,
-                    color = FirefoxTheme.colors.textPrimary,
-                    textAlign = TextAlign.Center,
-                    style = FirefoxTheme.typography.body2,
-                )
+                    Spacer(Modifier.height(16.dp))
 
-                Spacer(Modifier.height(32.dp))
+                    Text(
+                        text = description,
+                        color = FirefoxTheme.colors.textPrimary,
+                        textAlign = TextAlign.Center,
+                        style = FirefoxTheme.typography.body2,
+                    )
 
-                val state by onboardingStore.observeAsState(initialValue = onboardingStore.state) { state -> state }
+                    Spacer(Modifier.height(32.dp))
 
-                if (!inComposePreview) {
-                    LaunchedEffect(onboardingStore.state.themeOptionSelected) {
-                        applyThemeIfRequired(onboardingStore.state.themeOptionSelected)
+                    val state by onboardingStore.observeAsState(initialValue = onboardingStore.state) { state -> state }
+
+                    if (!inComposePreview) {
+                        LaunchedEffect(onboardingStore.state.themeOptionSelected) {
+                            applyThemeIfRequired(onboardingStore.state.themeOptionSelected)
+                        }
+                    }
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        themeOptions?.let {
+                            ThemeOptions(
+                                boxWithConstraintsScope = boxWithConstraintsScope,
+                                options = it,
+                                selectedOption = state.themeOptionSelected,
+                                onClick = onThemeSelectionClicked,
+                            )
+                        }
                     }
                 }
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    themeOptions?.let {
-                        ThemeOptions(
-                            options = it,
-                            selectedOption = state.themeOptionSelected,
-                            onClick = onThemeSelectionClicked,
-                        )
-                    }
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                PrimaryButton(
+                    text = primaryButton.text,
+                    modifier = Modifier
+                        .width(width = FirefoxTheme.layout.size.maxWidth.small)
+                        .semantics { testTag = title + "onboarding_card.positive_button" },
+                    onClick = { primaryButton.onClick() },
+                )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PrimaryButton(
-                text = primaryButton.text,
-                modifier = Modifier
-                    .width(width = FirefoxTheme.layout.size.maxWidth.small)
-                    .semantics { testTag = title + "onboarding_card.positive_button" },
-                onClick = { primaryButton.onClick() },
-            )
         }
-    }
 
-    LaunchedEffect(pageState) {
-        pageState.onRecordImpressionEvent()
+        LaunchedEffect(pageState) {
+            pageState.onRecordImpressionEvent()
+        }
     }
 }
 
 @Composable
 private fun ThemeOptions(
+    boxWithConstraintsScope: BoxWithConstraintsScope,
     options: List<ThemeOption>,
     selectedOption: ThemeOptionType,
     onClick: (ThemeOptionType) -> Unit,
@@ -150,13 +202,14 @@ private fun ThemeOptions(
     ) {
         options.forEach {
             SelectableImageItem(
+                boxWithConstraintsScope = boxWithConstraintsScope,
                 themeOption = it,
                 selectedOption = selectedOption,
                 onClick = onClick,
             )
 
             if (it != options.last()) {
-                Spacer(Modifier.width(26.dp))
+                Spacer(Modifier.width(14.dp))
             }
         }
     }
@@ -164,6 +217,7 @@ private fun ThemeOptions(
 
 @Composable
 private fun SelectableImageItem(
+    boxWithConstraintsScope: BoxWithConstraintsScope,
     themeOption: ThemeOption,
     selectedOption: ThemeOptionType,
     onClick: (ThemeOptionType) -> Unit,
@@ -171,11 +225,20 @@ private fun SelectableImageItem(
     val isSelectedOption = themeOption.themeType == selectedOption
 
     Column(
-        modifier = Modifier.clickable(onClick = {
-            if (!isSelectedOption) {
-                onClick(themeOption.themeType)
-            }
-        }),
+        modifier = Modifier
+            .width(columnWidth)
+            .clickable(
+                onClickLabel = stringResource(R.string.onboarding_customize_theme_a11y_action_label_select),
+                onClick = {
+                    if (!isSelectedOption) {
+                        onClick(themeOption.themeType)
+                    }
+                },
+            )
+            .semantics {
+                selected = isSelectedOption
+                role = Role.RadioButton
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
@@ -185,9 +248,16 @@ private fun SelectableImageItem(
                 themeOption.label,
             ),
             modifier = if (isSelectedOption) {
-                Modifier.border(2.dp, FirefoxTheme.colors.actionPrimary, RoundedCornerShape(10.dp))
-            } else {
+                val borderModifier = borderSize(boxWithConstraintsScope)
                 Modifier
+                    .width(optionImageWidth(boxWithConstraintsScope))
+                    .border(
+                        2.dp,
+                        FirefoxTheme.colors.actionPrimary,
+                        RoundedCornerShape(borderModifier),
+                    )
+            } else {
+                Modifier.width(optionImageWidth(boxWithConstraintsScope))
             },
         )
 
@@ -225,6 +295,30 @@ private fun SelectableImageItem(
             }
         }
     }
+}
+
+private fun mainImageHeight(boxWithConstraintsScope: BoxWithConstraintsScope): Dp {
+    val imageHeightRatio: Float = when {
+        boxWithConstraintsScope.maxHeight <= ONBOARDING_SMALL_DEVICE -> IMAGE_HEIGHT_RATIO_SMALL
+        boxWithConstraintsScope.maxHeight <= ONBOARDING_MEDIUM_DEVICE -> IMAGE_HEIGHT_RATIO_MEDIUM
+        else -> IMAGE_HEIGHT_RATIO_DEFAULT
+    }
+    return boxWithConstraintsScope.maxHeight.times(imageHeightRatio)
+}
+
+private fun borderSize(boxWithConstraintsScope: BoxWithConstraintsScope) = when {
+    boxWithConstraintsScope.maxHeight <= ONBOARDING_SMALL_DEVICE -> 4.dp
+    boxWithConstraintsScope.maxHeight <= ONBOARDING_MEDIUM_DEVICE -> 7.dp
+    else -> 10.dp
+}
+
+private fun optionImageWidth(boxWithConstraintsScope: BoxWithConstraintsScope): Dp {
+    val imageHeightRatio: Float = when {
+        boxWithConstraintsScope.maxHeight <= ONBOARDING_SMALL_DEVICE -> OPTION_IMAGE_HEIGHT_RATIO_SMALL
+        boxWithConstraintsScope.maxHeight <= ONBOARDING_MEDIUM_DEVICE -> OPTION_IMAGE_HEIGHT_RATIO_MEDIUM
+        else -> OPTION_IMAGE_HEIGHT_RATIO_DEFAULT
+    }
+    return imageResourceWidth.times(imageHeightRatio)
 }
 
 // *** Code below used for previews only *** //

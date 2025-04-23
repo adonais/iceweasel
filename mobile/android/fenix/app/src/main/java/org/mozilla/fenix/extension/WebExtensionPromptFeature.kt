@@ -144,7 +144,7 @@ class WebExtensionPromptFeature(
         val shouldGrantWithoutPrompt = Addon.localizePermissions(
             promptRequest.permissions,
             context,
-        ).isEmpty()
+        ).isEmpty() && promptRequest.origins.isEmpty()
 
         // If we don't have any promptable permissions, just proceed.
         if (shouldGrantWithoutPrompt) {
@@ -157,6 +157,7 @@ class WebExtensionPromptFeature(
             promptRequest = promptRequest,
             forOptionalPermissions = true,
             permissions = promptRequest.permissions,
+            origins = promptRequest.origins,
         )
     }
 
@@ -274,11 +275,19 @@ class WebExtensionPromptFeature(
                 gravity = Gravity.BOTTOM,
                 shouldWidthMatchParent = true,
                 confirmButtonBackgroundColor = ThemeManager.resolveAttribute(
-                    R.attr.accent,
+                    R.attr.actionPrimary,
                     context,
                 ),
                 confirmButtonTextColor = ThemeManager.resolveAttribute(
-                    R.attr.textOnColorPrimary,
+                    R.attr.textActionPrimary,
+                    context,
+                ),
+                confirmButtonDisabledBackgroundColor = ThemeManager.resolveAttribute(
+                    R.attr.actionPrimaryDisabled,
+                    context,
+                ),
+                confirmButtonDisabledTextColor = ThemeManager.resolveAttribute(
+                    R.attr.textActionPrimaryDisabled,
                     context,
                 ),
                 confirmButtonRadius =
@@ -413,11 +422,11 @@ class WebExtensionPromptFeature(
                     gravity = Gravity.BOTTOM,
                     shouldWidthMatchParent = true,
                     confirmButtonBackgroundColor = ThemeManager.resolveAttribute(
-                        R.attr.accent,
+                        R.attr.actionPrimary,
                         context,
                     ),
                     confirmButtonTextColor = ThemeManager.resolveAttribute(
-                        R.attr.textOnColorPrimary,
+                        R.attr.textActionPrimary,
                         context,
                     ),
                     confirmButtonRadius =

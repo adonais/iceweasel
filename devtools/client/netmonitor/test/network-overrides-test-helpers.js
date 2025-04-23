@@ -69,16 +69,19 @@ function startOverridesHTTPServer() {
 
   httpServer.registerPathHandler("/index.html", (request, response) => {
     response.setStatusLine(request.httpVersion, 200, "OK");
+    response.setHeader("Cache-Control", "max-age=60000");
     response.write(ORIGINAL_HTML);
   });
 
   httpServer.registerPathHandler("/script.js", (request, response) => {
     response.setHeader("Content-Type", "application/javascript");
+    response.setHeader("Cache-Control", "max-age=60000");
     response.write(ORIGINAL_SCRIPT);
   });
 
   httpServer.registerPathHandler("/style.css", (request, response) => {
     response.setHeader("Content-Type", "text/css; charset=utf-8");
+    response.setHeader("Cache-Control", "max-age=60000");
     response.write(ORIGINAL_STYLESHEET);
   });
 
@@ -194,12 +197,16 @@ async function openContextMenuForItem(monitor, el, id) {
  *     The content to use for the override.
  * @returns {string}
  *     The path to the overridden file.
+ * @param {boolean} isEmpty
+ *     True if the saved file is supposed to be empty.
+ *     This is a workaround for the case where the response is not available.
  */
 async function setNetworkOverride(
   monitor,
   request,
   overrideFileName,
-  overrideContent
+  overrideContent,
+  isEmpty = false
 ) {
   const overridePath = prepareFilePicker(
     overrideFileName,
@@ -219,7 +226,7 @@ async function setNetworkOverride(
   await waitForSetOverride;
 
   info(`Wait for ${overrideFileName} to be saved to disk and re-write it`);
-  await writeTextContentToPath(overrideContent, overridePath);
+  await writeTextContentToPath(overrideContent, overridePath, isEmpty);
 
   return overridePath;
 }
@@ -276,11 +283,16 @@ function prepareFilePicker(filename, chromeWindow) {
  *     The text content to set.
  * @param {string} path
  *     The path of the file to update.
+ * @param {boolean} isEmpty
+ *     True if the saved file is supposed to be empty.
  */
-async function writeTextContentToPath(textContent, path) {
+async function writeTextContentToPath(textContent, path, isEmpty = false) {
   await BrowserTestUtils.waitForCondition(() => IOUtils.exists(path));
   await BrowserTestUtils.waitForCondition(async () => {
     const { size } = await IOUtils.stat(path);
+    if (isEmpty) {
+      return size === 0;
+    }
     return size > 0;
   });
 
@@ -302,12 +314,13 @@ async function writeTextContentToPath(textContent, path) {
  * @returns {object}
  *     An object with monitor, tab and document properties.
  */
-async function setupNetworkOverridesTest() {
+async function setupNetworkOverridesTest({ enableCache = false } = {}) {
   const baseURL = startOverridesHTTPServer();
   const TEST_URL = baseURL + "index.html";
 
   const { monitor, tab } = await initNetMonitor(TEST_URL, {
     requestCount: 3,
+    enableCache,
   });
 
   const { document, store, windowRequire } = monitor.panelWin;

@@ -127,7 +127,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   gfx::SurfaceFormat GetSurfaceFormat() const;
 
   MediaResult CreateImage(int64_t aOffset, int64_t aPts, int64_t aDuration,
-                          MediaDataDecoder::DecodedData& aResults) const;
+                          MediaDataDecoder::DecodedData& aResults);
 
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
 
@@ -164,7 +164,6 @@ class FFmpegVideoDecoder<LIBAV_VER>
                                MediaDataDecoder::DecodedData& aResults);
   bool CanUseZeroCopyVideoFrame() const;
 
-  int32_t mTextureAlignment;
   AVBufferRef* mD3D11VADeviceContext = nullptr;
   RefPtr<ID3D11Device> mDevice;
   UniquePtr<DXVA2Manager> mDXVA2Manager;
@@ -174,6 +173,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
 
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
   bool ShouldEnableLinuxHWDecoding() const;
+  bool UploadSWDecodeToDMABuf() const;
+  bool IsLinuxHDR() const;
   MediaResult InitVAAPIDecoder();
   MediaResult InitV4L2Decoder();
   bool CreateVAAPIDeviceContext();
@@ -192,6 +193,9 @@ class FFmpegVideoDecoder<LIBAV_VER>
 
   AVBufferRef* mVAAPIDeviceContext = nullptr;
   bool mUsingV4L2 = false;
+  // If video overlay is used we want to upload SW decoded frames to
+  // DMABuf and present it as a external texture to rendering pipeline.
+  bool mUploadSWDecodeToDMABuf = false;
   VADisplay mDisplay = nullptr;
   UniquePtr<VideoFramePool<LIBAV_VER>> mVideoFramePool;
   static nsTArray<AVCodecID> mAcceleratedFormats;

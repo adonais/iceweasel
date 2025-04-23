@@ -88,11 +88,12 @@ add_task(async function test_plainQuery() {
   // Let's reset the counts.
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+
   let resultMethodHist = TelemetryTestUtils.getAndClearHistogram(
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
   );
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -119,12 +120,11 @@ add_task(async function test_plainQuery() {
     "This search must only increment one entry in the scalar."
   );
 
-  // Make sure SEARCH_COUNTS contains identical values.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.searchbar",
-    1
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "searchbar",
+    count: 1,
+  });
 
   // Check the histograms as well.
   let resultMethods = resultMethodHist.snapshot();
@@ -143,11 +143,12 @@ add_task(async function test_oneOff_enter() {
   // Let's reset the counts.
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+
   let resultMethodHist = TelemetryTestUtils.getAndClearHistogram(
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
   );
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -177,12 +178,11 @@ add_task(async function test_oneOff_enter() {
     "This search must only increment one entry in the scalar."
   );
 
-  // Make sure SEARCH_COUNTS contains identical values.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch2.searchbar",
-    1
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch2",
+    source: "searchbar",
+    count: 1,
+  });
 
   // Check the histograms as well.
   let resultMethods = resultMethodHist.snapshot();
@@ -278,11 +278,12 @@ async function checkSuggestionClick(clickOptions, waitForActionFn) {
   // Let's reset the counts.
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+
   let resultMethodHist = TelemetryTestUtils.getAndClearHistogram(
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
   );
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let previousEngine = await Services.search.getDefault();
   await Services.search.setDefault(
@@ -316,13 +317,11 @@ async function checkSuggestionClick(clickOptions, waitForActionFn) {
     "This search must only increment one entry in the scalar."
   );
 
-  // Make sure SEARCH_COUNTS contains identical values.
-  let searchEngineId = "other-" + suggestionEngine.name;
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    searchEngineId + ".searchbar",
-    1
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: suggestionEngine.name,
+    source: "searchbar",
+    count: 1,
+  });
 
   // Check the histograms as well.
   let resultMethods = resultMethodHist.snapshot();

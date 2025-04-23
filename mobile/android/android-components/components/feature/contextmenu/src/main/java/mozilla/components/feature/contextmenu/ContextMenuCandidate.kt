@@ -9,9 +9,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.view.View
 import androidx.annotation.VisibleForTesting
+import androidx.core.net.toUri
 import com.google.android.material.snackbar.Snackbar
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.content.DownloadState
@@ -125,6 +125,7 @@ data class ContextMenuCandidate(
                     hitResult.getLink(),
                     selectTab = false,
                     startLoading = true,
+                    textDirectiveUserActivation = true,
                     parentId = parent.id,
                     contextId = parent.contextId,
                 )
@@ -168,6 +169,7 @@ data class ContextMenuCandidate(
                     hitResult.getLink(),
                     selectTab = false,
                     startLoading = true,
+                    textDirectiveUserActivation = true,
                     parentId = parent.id,
                     private = true,
                 )
@@ -694,7 +696,7 @@ internal fun SessionState.isUrlSchemeAllowed(url: String): Boolean {
     return when (val engineSession = engineState.engineSession) {
         null -> true
         else -> {
-            val urlScheme = Uri.parse(url).normalizeScheme().scheme
+            val urlScheme = url.toUri().normalizeScheme().scheme
             !engineSession.getBlockedSchemes().contains(urlScheme)
         }
     }

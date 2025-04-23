@@ -262,6 +262,9 @@
         "IsPerUser": {
           "type": "boolean"
         },
+        "MaxConnectionsCount": {
+          "type": "number"
+        },
         "ShowBlockedResult": {
           "type": "boolean"
         },
@@ -462,6 +465,15 @@
           "type": "boolean"
         },
         "TLS_RSA_WITH_3DES_EDE_CBC_SHA": {
+          "type": "boolean"
+        },
+        "TLS_CHACHA20_POLY1305_SHA256": {
+          "type": "boolean"
+        },
+        "TLS_AES_128_GCM_SHA256": {
+          "type": "boolean"
+        },
+        "TLS_AES_256_GCM_SHA384": {
           "type": "boolean"
         }
       }
@@ -1483,6 +1495,10 @@
     },
 
     "ShowHomeButton": {
+      "type": "boolean"
+    },
+
+    "SkipTermsOfUse": {
       "type": "boolean"
     },
 

@@ -17,8 +17,8 @@
 #include "ia2AccessibleTable.h"
 #include "ia2AccessibleTableCell.h"
 #include "LocalAccessible-inl.h"
+#include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/RemoteAccessible.h"
-#include "mozilla/StaticPrefs_accessibility.h"
 #include "MsaaAccessible.h"
 #include "MsaaRootAccessible.h"
 #include "nsAccessibilityService.h"
@@ -29,6 +29,7 @@
 #include "Relation.h"
 #include "RootAccessible.h"
 #include "TextLeafRange.h"
+#include "UiaText.h"
 #include "UiaTextRange.h"
 
 using namespace mozilla;
@@ -100,10 +101,17 @@ static void MaybeRaiseUiaLiveRegionEvent(Accessible* aAcc,
 }
 
 static bool HasTextPattern(Accessible* aAcc) {
-  // Only documents and editable text controls should have the Text pattern.
+  // The Text pattern must be supported for documents and editable text controls
+  // on the web:
   // https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-textpattern-and-embedded-objects-overview#webpage-and-text-input-controls-in-edge
+  // It is also recommended that the Text pattern be supported for the Text
+  // control type:
+  // https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-about-text-and-textrange-patterns#control-types
+  // If we don't support this for the Text control type, when Narrator is
+  // continuously reading a document, it doesn't respect the starting position
+  // of the cursor and doesn't move the cursor as it reads. See bug 1949920.
   constexpr uint64_t editableRootStates = states::EDITABLE | states::FOCUSABLE;
-  return aAcc->IsDoc() ||
+  return aAcc->IsText() || (aAcc->IsDoc() && !aAcc->IsRoot()) ||
          (aAcc->IsHyperText() &&
           (aAcc->State() & editableRootStates) == editableRootStates);
 }
@@ -132,7 +140,7 @@ Accessible* uiaRawElmProvider::Acc() const {
 /* static */
 void uiaRawElmProvider::RaiseUiaEventForGeckoEvent(Accessible* aAcc,
                                                    uint32_t aGeckoEvent) {
-  if (!StaticPrefs::accessibility_uia_enable()) {
+  if (!Compatibility::IsUiaEnabled()) {
     return;
   }
   auto* uia = MsaaAccessible::GetFrom(aAcc);
@@ -148,6 +156,12 @@ void uiaRawElmProvider::RaiseUiaEventForGeckoEvent(Accessible* aAcc,
     case nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE:
       property = UIA_FullDescriptionPropertyId;
       break;
+    case nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE:
+      // There is a UiaRaiseAsyncContentLoadedEvent function, but the client API
+      // doesn't have a specialized event handler for this event. Also, Chromium
+      // uses UiaRaiseAutomationEvent for this event.
+      ::UiaRaiseAutomationEvent(uia, UIA_AsyncContentLoadedEventId);
+      return;
     case nsIAccessibleEvent::EVENT_FOCUS:
       ::UiaRaiseAutomationEvent(uia, UIA_AutomationFocusChangedEventId);
       return;
@@ -206,7 +220,7 @@ void uiaRawElmProvider::RaiseUiaEventForGeckoEvent(Accessible* aAcc,
 void uiaRawElmProvider::RaiseUiaEventForStateChange(Accessible* aAcc,
                                                     uint64_t aState,
                                                     bool aEnabled) {
-  if (!StaticPrefs::accessibility_uia_enable()) {
+  if (!Compatibility::IsUiaEnabled()) {
     return;
   }
   auto* uia = MsaaAccessible::GetFrom(aAcc);
@@ -463,8 +477,8 @@ uiaRawElmProvider::GetPatternProvider(
       return S_OK;
     case UIA_TextPatternId:
       if (HasTextPattern(acc)) {
-        auto text =
-            GetPatternFromDerived<ia2AccessibleHypertext, ITextProvider>();
+        RefPtr<ITextProvider> text =
+            new UiaText(static_cast<MsaaAccessible*>(this));
         text.forget(aPatternProvider);
       }
       return S_OK;

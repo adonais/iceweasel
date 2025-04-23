@@ -5,7 +5,6 @@
 package org.mozilla.geckoview.test
 
 import android.content.ClipDescription
-import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -17,6 +16,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputContentInfo
+import androidx.core.net.toUri
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
@@ -962,7 +962,7 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         // InputContentInfo requires content:// uri, so we have to set test data to custom content provider.
         TestContentProvider.setTestData(this.getTestBytes("/assets/www/images/test.gif"), "image/gif")
-        val info = InputContentInfo(Uri.parse("content://org.mozilla.geckoview.test.provider/gif"), ClipDescription("test", arrayOf("image/gif")))
+        val info = InputContentInfo("content://org.mozilla.geckoview.test.provider/gif".toUri(), ClipDescription("test", arrayOf("image/gif")))
         ic.commitContent(info, 0, null)
         promise.value
         assertThat("Input event is fired by inserting image", true, equalTo(true))
@@ -1384,6 +1384,41 @@ class TextInputDelegateTest : BaseSessionTest() {
             mainSession.evaluateJS("document.querySelector('$id').blur()")
             mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
         }
+    }
+
+    @WithDisplay(width = 512, height = 512)
+    // Child process updates require having a display.
+    @Test
+    fun editorInfo_dynamic() {
+        // no way on designmode
+        assumeThat("Not in designmode", id, not(equalTo("#designmode")))
+
+        mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
+
+        mainSession.loadTestPath(INPUTS_PATH)
+        mainSession.waitForPageStop()
+        textContent = ""
+
+        mainSession.evaluateJS(
+            """
+            document.querySelector('$id').setAttribute('inputmode', 'text');
+            document.querySelector('$id').focus()""",
+        )
+        mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
+
+        mainSession.setHandlingUserInput(true)
+        mainSession.evaluateJS("document.querySelector('$id').setAttribute('inputmode', 'numeric')")
+        mainSession.setHandlingUserInput(false)
+        mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
+
+        val editorInfo = EditorInfo()
+        mainSession.textInput.onCreateInputConnection(editorInfo)
+
+        assertThat(
+            "EditorInfo.inputType by dynamic change",
+            editorInfo.inputType and InputType.TYPE_NUMBER_VARIATION_NORMAL,
+            equalTo(InputType.TYPE_NUMBER_VARIATION_NORMAL),
+        )
     }
 
     @WithDisplay(width = 512, height = 512)

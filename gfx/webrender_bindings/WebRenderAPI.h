@@ -132,7 +132,8 @@ class TransactionBuilder final {
 
   void ClearDisplayList(Epoch aEpoch, wr::WrPipelineId aPipeline);
 
-  void GenerateFrame(const VsyncId& aVsyncId, wr::RenderReasons aReasons);
+  void GenerateFrame(const VsyncId& aVsyncId, bool aPresent,
+                     wr::RenderReasons aReasons);
 
   void InvalidateRenderedFrame(wr::RenderReasons aReasons);
 
@@ -791,6 +792,8 @@ class DisplayListBuilder final {
                      const float& aSpreadRadius,
                      const wr::BorderRadius& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
+
+  void PushDebug(uint32_t aVal);
 
   /**
    * Notifies the DisplayListBuilder that it can group together WR display items

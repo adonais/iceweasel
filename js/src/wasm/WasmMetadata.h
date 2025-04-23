@@ -105,13 +105,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   BranchHintCollection branchHints;
 
   // Name section information
-  mozilla::Maybe<Name> moduleName;
-  NameVector funcNames;
-  // namePayload points at the name section's CustomSection::payload so that
-  // the Names (which are use payload-relative offsets) can be used
-  // independently of the Module without duplicating the name section.
-  SharedBytes namePayload;
-  mozilla::Maybe<uint32_t> nameCustomSectionIndex;
+  mozilla::Maybe<NameSection> nameSection;
 
   // Bytecode ranges for custom sections.
   CustomSectionRangeVector customSectionRanges;
@@ -139,10 +133,17 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // compilation.
   CallRefMetricsRangeVector funcDefCallRefs;
 
+  // Tracks the range of AllocSites created for each function definition in
+  // this module. This is only accessible after we've decoded the code section.
+  // This means it is not available while doing a 'tier-1' or 'once'
+  // compilation. If we are compiling with a 'once' compilation and using just
+  // ion, this will be empty and ion will instead use per-typedef alloc sites.
+  AllocSitesRangeVector funcDefAllocSites;
+
   // The full bytecode for this module. Only available for debuggable modules.
   // This is only accessible after we've decoded the whole module. This means
   // it is not available while doing a 'tier-1' or 'once' compilation.
-  SharedBytes debugBytecode;
+  BytecodeBuffer debugBytecode;
 
   // An array of hints to use when compiling a call_ref. This is only
   // accessible after we've decoded the code section. This means it is not
@@ -230,6 +231,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // The number of call ref metrics in Instance::callRefs_
   uint32_t numCallRefMetrics;
 
+  // The number of AllocSites in Instance::allocSites_.
+  uint32_t numAllocSites;
+
   explicit CodeMetadata(const CompileArgs* compileArgs = nullptr,
                         ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
@@ -249,7 +253,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         tablesOffsetStart(UINT32_MAX),
         tagsOffsetStart(UINT32_MAX),
         instanceDataLength(UINT32_MAX),
-        numCallRefMetrics(UINT32_MAX) {}
+        numCallRefMetrics(UINT32_MAX),
+        numAllocSites(UINT32_MAX) {}
 
   [[nodiscard]] bool init() {
     MOZ_ASSERT(!types);
@@ -347,6 +352,14 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     uint32_t funcDefIndex = funcIndex - numFuncImports;
     return funcDefCallRefs[funcDefIndex];
   }
+
+  AllocSitesRange getFuncDefAllocSites(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= numFuncImports);
+    uint32_t funcDefIndex = funcIndex - numFuncImports;
+    return funcDefAllocSites[funcDefIndex];
+  }
+
+  bool hasFuncDefAllocSites() const { return !funcDefAllocSites.empty(); }
 
   // Find the exported function index for a function index
   uint32_t findFuncExportIndex(uint32_t funcIndex) const;

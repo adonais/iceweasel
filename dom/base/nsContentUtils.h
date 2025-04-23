@@ -31,6 +31,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/FunctionRef.h"
 #include "mozilla/SourceLocation.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/CallState.h"
@@ -235,7 +236,7 @@ enum EventNameType {
   EventNameType_All = 0xFFFF
 };
 
-enum class TreeKind : uint8_t { DOM, Flat };
+enum class TreeKind : uint8_t { DOM, ShadowIncludingDOM, Flat };
 
 enum class SerializeShadowRoots : uint8_t { Yes, No };
 
@@ -565,17 +566,11 @@ class nsContentUtils {
   // https://html.spec.whatwg.org/#find-a-potential-indicated-element
   static Element* GetTargetElement(Document* aDocument,
                                    const nsAString& aAnchorName);
-  /**
-   * Returns true if aNode1 is before aNode2 in the same connected
-   * tree.
-   * aNode1Index and aNode2Index are in/out arguments. If non-null, and value is
-   * Some, that value is used instead of calling slow ComputeIndexOf on the
-   * parent node. If value is Nothing, the value will be set to the return value
-   * of ComputeIndexOf.
-   */
-  static bool PositionIsBefore(nsINode* aNode1, nsINode* aNode2,
-                               mozilla::Maybe<uint32_t>* aNode1Index = nullptr,
-                               mozilla::Maybe<uint32_t>* aNode2Index = nullptr);
+  /** Returns true if aNode1 is before aNode2 in the same connected tree. */
+  static bool PositionIsBefore(const nsINode* aNode1, const nsINode* aNode2) {
+    return CompareTreePosition<TreeKind::DOM>(aNode1, aNode2, nullptr,
+                                              nullptr) < 0;
+  }
 
   /**
    * Cache implementation for ComparePoints().
@@ -589,15 +584,17 @@ class nsContentUtils {
    * run, this cache must not be used anymore.
    * Also, this cache uses raw pointers. Beware!
    */
-  template <size_t cache_size>
+  template <size_t cache_size = 100>
   struct ResizableNodeIndexCache {
     /**
      * Looks up or computes two indices in one loop.
      */
+    template <TreeKind aTreeKind>
     void ComputeIndicesOf(const nsINode* aParent, const nsINode* aChild1,
                           const nsINode* aChild2,
-                          mozilla::Maybe<uint32_t>& aChild1Index,
-                          mozilla::Maybe<uint32_t>& aChild2Index) {
+                          mozilla::Maybe<int32_t>& aChild1Index,
+                          mozilla::Maybe<int32_t>& aChild2Index) {
+      AssertTreeKind(aTreeKind);
       bool foundChild1 = false;
       bool foundChild2 = false;
       for (size_t cacheIndex = 0; cacheIndex < cache_size; ++cacheIndex) {
@@ -621,17 +618,21 @@ class nsContentUtils {
         }
       }
       if (!foundChild1) {
-        aChild1Index = ComputeAndInsertIndexIntoCache(aParent, aChild1);
+        aChild1Index =
+            ComputeAndInsertIndexIntoCache<aTreeKind>(aParent, aChild1);
       }
       if (!foundChild2) {
-        aChild2Index = ComputeAndInsertIndexIntoCache(aParent, aChild2);
+        aChild2Index =
+            ComputeAndInsertIndexIntoCache<aTreeKind>(aParent, aChild2);
       }
     }
     /**
      * Looks up or computes child index.
      */
-    mozilla::Maybe<uint32_t> ComputeIndexOf(const nsINode* aParent,
-                                            const nsINode* aChild) {
+    template <TreeKind aTreeKind>
+    mozilla::Maybe<int32_t> ComputeIndexOf(const nsINode* aParent,
+                                           const nsINode* aChild) {
+      AssertTreeKind(aTreeKind);
       for (size_t cacheIndex = 0; cacheIndex < cache_size; ++cacheIndex) {
         const nsINode* node = mNodes[cacheIndex];
         if (!node) {
@@ -641,7 +642,7 @@ class nsContentUtils {
           return mIndices[cacheIndex];
         }
       }
-      return ComputeAndInsertIndexIntoCache(aParent, aChild);
+      return ComputeAndInsertIndexIntoCache<aTreeKind>(aParent, aChild);
     }
 
    private:
@@ -649,9 +650,12 @@ class nsContentUtils {
      * Computes the index of aChild in aParent, inserts the index into the
      * cache, and returns the index.
      */
-    mozilla::Maybe<uint32_t> ComputeAndInsertIndexIntoCache(
+    template <TreeKind aTreeKind>
+    mozilla::Maybe<int32_t> ComputeAndInsertIndexIntoCache(
         const nsINode* aParent, const nsINode* aChild) {
-      mozilla::Maybe<uint32_t> childIndex = aParent->ComputeIndexOf(aChild);
+      AssertTreeKind(aTreeKind);
+      mozilla::Maybe<int32_t> childIndex =
+          nsContentUtils::GetIndexInParent<aTreeKind>(aParent, aChild);
 
       mNodes[mNext] = aChild;
       mIndices[mNext] = childIndex;
@@ -669,13 +673,24 @@ class nsContentUtils {
     /// by the empty initializer list.
     const nsINode* mNodes[cache_size]{};
 
-    mozilla::Maybe<uint32_t> mIndices[cache_size];
+    mozilla::Maybe<int32_t> mIndices[cache_size];
 
     /// The next element in the cache that will be written to.
     /// If the cache is full (mNext == cache_size),
     /// the oldest entries in the cache will be overridden,
     /// ie. mNext will be set to 0.
     size_t mNext{0};
+
+#ifdef DEBUG
+    mozilla::Maybe<TreeKind> mTreeKind;
+#endif
+
+    void AssertTreeKind(TreeKind aKind) {
+#ifdef DEBUG
+      MOZ_ASSERT(!mTreeKind || mTreeKind.value() == aKind, "Mixing queries");
+      mTreeKind = mozilla::Some(aKind);
+#endif
+    }
   };
 
   /**
@@ -1749,6 +1764,17 @@ class nsContentUtils {
   static EventMessage GetEventMessage(nsAtom* aName);
 
   /**
+   * Iterate through all event attribute names (such as onclick) that
+   * are valid for a given element type. Types are from the EventNameType
+   * enumeration defined above.
+   *
+   * @param aType the type of content
+   * @param aFunc iterator functor
+   */
+  static void ForEachEventAttributeName(
+      int32_t aType, const mozilla::FunctionRef<void(nsAtom*)> aFunc);
+
+  /**
    * Return the event type atom for a given event message.
    */
   static nsAtom* GetEventTypeFromMessage(EventMessage aEventMessage);
@@ -2645,10 +2671,11 @@ class nsContentUtils {
    * NOTE: the caller has to make sure autocomplete makes sense for the
    * element's type.
    *
-   * @param aInput the input element to check. NOTE: aInput can't be null.
+   * @param aElement the input or textarea element to check. NOTE: aElement
+   * can't be null.
    * @return whether the input element has autocomplete enabled.
    */
-  static bool IsAutocompleteEnabled(mozilla::dom::HTMLInputElement* aInput);
+  static bool IsAutocompleteEnabled(mozilla::dom::Element* aElement);
 
   enum AutocompleteAttrState : uint8_t {
     eAutocompleteAttrState_Unknown = 1,
@@ -3507,10 +3534,25 @@ class nsContentUtils {
    *         > 0 if aNode1 is after aNode2,
    *         0 otherwise
    */
-  template <TreeKind>
+  template <TreeKind aKind>
   static int32_t CompareTreePosition(const nsINode* aNode1,
                                      const nsINode* aNode2,
-                                     const nsINode* aCommonAncestor);
+                                     const nsINode* aCommonAncestor,
+                                     NodeIndexCache* = nullptr);
+
+  // Get the index of a kid in its parent, including anonymous content, in
+  // either the flat tree or the dom tree.
+  //
+  // The order goes as follows:
+  //   ::marker (-3)
+  //   ::before (-2)
+  //   ShadowRoot (-1, only if TreeKind is not Flat)
+  //   non-anonymous kids (0..n)
+  //   anonymous content (n..m)
+  //   ::after (m + 1)
+  template <TreeKind>
+  static mozilla::Maybe<int32_t> GetIndexInParent(const nsINode* aParent,
+                                                  const nsINode* aNode);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsIContent* AttachDeclarativeShadowRoot(

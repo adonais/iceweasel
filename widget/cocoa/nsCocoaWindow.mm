@@ -1591,7 +1591,6 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::EmulatedFullscreen: {
         if (!mInFullScreenMode) {
-          NSDisableScreenUpdates();
           mSuppressSizeModeEvents = true;
           // The order here matters. When we exit full screen mode, we need to
           // show the Dock first, otherwise the newly-created window won't have
@@ -1599,7 +1598,6 @@ void nsCocoaWindow::ProcessTransitions() {
           nsCocoaUtils::HideOSChromeOnScreen(true);
           nsBaseWidget::InfallibleMakeFullScreen(true);
           mSuppressSizeModeEvents = false;
-          NSEnableScreenUpdates();
           UpdateFullscreenState(true, false);
         }
         break;
@@ -1623,7 +1621,6 @@ void nsCocoaWindow::ProcessTransitions() {
             [mWindow toggleFullScreen:nil];
             continue;
           } else {
-            NSDisableScreenUpdates();
             mSuppressSizeModeEvents = true;
             // The order here matters. When we exit full screen mode, we need to
             // show the Dock first, otherwise the newly-created window won't
@@ -1631,7 +1628,6 @@ void nsCocoaWindow::ProcessTransitions() {
             nsCocoaUtils::HideOSChromeOnScreen(false);
             nsBaseWidget::InfallibleMakeFullScreen(false);
             mSuppressSizeModeEvents = false;
-            NSEnableScreenUpdates();
             UpdateFullscreenState(false, false);
           }
         } else if (mWindow.zoomed) {
@@ -2165,7 +2161,7 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
                    mWindow.isMainWindow)) {
     // We do an async paint in order to prevent crashes when macOS is actively
     // enumerating the menu items in `NSApp.mainMenu`.
-    mMenuBar->PaintAsync();
+    mMenuBar->PaintAsyncIfNeeded();
   }
 }
 
@@ -2643,7 +2639,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   if (nsMenuBarX* geckoMenuBar = geckoWidget->GetMenuBar()) {
     // We do an async paint in order to prevent crashes when macOS is actively
     // enumerating the menu items in `NSApp.mainMenu`.
-    geckoMenuBar->PaintAsync();
+    geckoMenuBar->PaintAsyncIfNeeded();
   } else {
     // sometimes we don't have a native application menu early in launching
     if (!sApplicationMenu) {
@@ -2894,7 +2890,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (hiddenWindowMenuBar) {
     // We do an async paint in order to prevent crashes when macOS is actively
     // enumerating the menu items in `NSApp.mainMenu`.
-    hiddenWindowMenuBar->PaintAsync();
+    hiddenWindowMenuBar->PaintAsyncIfNeeded();
   }
 
   NSWindow* window = [aNotification object];

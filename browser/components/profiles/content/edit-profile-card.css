@@ -7,7 +7,11 @@
 #profile-content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-medium);
+  gap: var(--space-xlarge);
+}
+
+#profile-content h2[data-l10n-id="edit-profile-page-header"] {
+  margin-block: 0;
 }
 
 #header-avatar {
@@ -16,11 +20,18 @@
   width: var(--header-avatar-size);
   height: var(--header-avatar-size);
   border-radius: var(--border-radius-circle);
+  margin-inline-end: var(--space-xxlarge);
 }
 
 #profile-name-area {
   display: flex;
   flex-direction: column;
+  gap: var(--space-xsmall);
+  margin-block: 0 var(--space-large);
+}
+
+#profile-name-area label {
+  margin-bottom: var(--space-xsmall);
 }
 
 #profile-name {
@@ -35,6 +46,7 @@
 
 .message-parent {
   position: relative;
+  margin-block-end: var(--space-medium);
 }
 
 .message {
@@ -66,8 +78,18 @@
   color: var(--icon-color-success);
 }
 
+#themes::part(inputs) {
+  margin-top: var(--space-medium);
+}
+
+#avatars::part(inputs) {
+  margin-top: var(--space-medium);
+}
+
 #avatars::part(inputs),
 #themes::part(inputs) {
   flex-direction: row;
   flex-wrap: wrap;
+  row-gap: var(--space-small);
+  column-gap: var(--space-medium);
 }

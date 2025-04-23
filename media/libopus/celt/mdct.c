@@ -210,27 +210,27 @@ void clt_mdct_forward_c(const mdct_lookup *l, kiss_fft_scalar *in, kiss_fft_scal
          im = *yp++;
          yr = S_MUL(re,t0)  -  S_MUL(im,t1);
          yi = S_MUL(im,t0)  +  S_MUL(re,t1);
+         /* For QEXT, it's best to scale before the FFT, but otherwise it's best to scale after.
+            For floating-point it doesn't matter. */
+#ifdef ENABLE_QEXT
          yc.r = yr;
          yc.i = yi;
-         yc.r = S_MUL2(yc.r, scale);
-         yc.i = S_MUL2(yc.i, scale);
+#else
+         yc.r = S_MUL2(yr, scale);
+         yc.i = S_MUL2(yi, scale);
+#endif
 #ifdef FIXED_POINT
-         maxval = MAX32(maxval, MAX32(yc.r, yc.i));
+         maxval = MAX32(maxval, MAX32(ABS32(yc.r), ABS32(yc.i)));
 #endif
          f2[st->bitrev[i]] = yc;
       }
 #ifdef FIXED_POINT
-      headroom = IMAX(0, IMIN(scale_shift-1, 28-celt_ilog2(maxval)));
-      for(i=0;i<N4;i++)
-      {
-         f2[i].r = PSHR32(f2[i].r, scale_shift-headroom);
-         f2[i].i = PSHR32(f2[i].i, scale_shift-headroom);
-      }
+      headroom = IMAX(0, IMIN(scale_shift, 28-celt_ilog2(maxval)));
 #endif
    }
 
    /* N/4 complex FFT, does not downscale anymore */
-   opus_fft_impl(st, f2);
+   opus_fft_impl(st, f2 ARG_FIXED(scale_shift-headroom));
 
    /* Post-rotate */
    {
@@ -243,8 +243,16 @@ void clt_mdct_forward_c(const mdct_lookup *l, kiss_fft_scalar *in, kiss_fft_scal
       for(i=0;i<N4;i++)
       {
          kiss_fft_scalar yr, yi;
-         yr = PSHR32(S_MUL(fp->i,t[N4+i]) - S_MUL(fp->r,t[i]), headroom);
-         yi = PSHR32(S_MUL(fp->r,t[N4+i]) + S_MUL(fp->i,t[i]), headroom);
+         kiss_fft_scalar t0, t1;
+#ifdef ENABLE_QEXT
+         t0 = S_MUL2(t[i], scale);
+         t1 = S_MUL2(t[N4+i], scale);
+#else
+         t0 = t[i];
+         t1 = t[N4+i];
+#endif
+         yr = PSHR32(S_MUL(fp->i,t1) - S_MUL(fp->r,t0), headroom);
+         yi = PSHR32(S_MUL(fp->r,t1) + S_MUL(fp->i,t0), headroom);
          *yp1 = yr;
          *yp2 = yi;
          fp++;
@@ -302,7 +310,7 @@ void clt_mdct_backward_c(const mdct_lookup *l, kiss_fft_scalar *in, kiss_fft_sca
       }
    }
 
-   opus_fft_impl(l->kfft[shift], (kiss_fft_cpx*)(out+(overlap>>1)));
+   opus_fft_impl(l->kfft[shift], (kiss_fft_cpx*)(out+(overlap>>1)) ARG_FIXED(0));
 
    /* Post-rotate and de-shuffle from both ends of the buffer at once to make
       it in-place. */
@@ -322,8 +330,8 @@ void clt_mdct_backward_c(const mdct_lookup *l, kiss_fft_scalar *in, kiss_fft_sca
          t0 = t[i];
          t1 = t[N4+i];
          /* We'd scale up by 2 here, but instead it's done when mixing the windows */
-         yr = PSHR32(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
-         yi = PSHR32(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
+         yr = PSHR32_ovflw(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
+         yi = PSHR32_ovflw(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
          /* We swap real and imag because we're using an FFT instead of an IFFT. */
          re = yp1[1];
          im = yp1[0];
@@ -333,8 +341,8 @@ void clt_mdct_backward_c(const mdct_lookup *l, kiss_fft_scalar *in, kiss_fft_sca
          t0 = t[(N4-i-1)];
          t1 = t[(N2-i-1)];
          /* We'd scale up by 2 here, but instead it's done when mixing the windows */
-         yr = PSHR32(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
-         yi = PSHR32(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
+         yr = PSHR32_ovflw(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
+         yi = PSHR32_ovflw(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
          yp1[0] = yr;
          yp0[1] = yi;
          yp0 += 2;

@@ -141,7 +141,15 @@ menupopup {
   }
 }
 
-
+:root[taskbartab] {
+  #appMenu-new-tab-button2,
+  #appMenu-new-window-button2,
+  #appMenu-new-private-window-button2,
+  #appMenu-new-private-window-button2 + toolbarseparator,
+  #appMenu-bookmarks-button {
+    display: none;
+  }
+}
 
 #PanelUI-menu-button[badge-status="addon-alert"],
 #PanelUI-menu-button[badge-status="fxa-needs-authentication"],
@@ -302,6 +310,7 @@ panelview {
     --panel-border-color: var(--arrowpanel-border-color);
     --panel-border-radius: var(--arrowpanel-border-radius);
     --panel-padding: var(--panel-subview-body-padding);
+    --panel-shadow-margin: var(--arrowpanel-shadow-margin);
   }
 
   menupopup {
@@ -310,7 +319,8 @@ panelview {
     margin-top: calc(-1 * (var(--panel-subview-body-padding-block) + var(--panel-shadow-margin) + 1px));
   }
 
-  :is(menu, menuitem) {
+  menu,
+  menuitem {
     &[disabled] {
       color: var(--button-text-color-ghost-disabled);
       background-color: var(--button-background-color-ghost-disabled);
@@ -2276,10 +2286,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   display: none;
 }
 
-#profiles-header-title {
-  margin-inline-end: 0;
-}
-
 #profiles-header-content {
   max-width: 16em;
   white-space: nowrap;
@@ -2289,7 +2295,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 #profiles-edit-this-profile-button {
   list-style-image: url("chrome://global/skin/icons/edit-outline.svg");
-  opacity: 1;
   padding: var(--arrowpanel-header-back-icon-padding);
   margin: 0;
 }
@@ -2303,13 +2308,13 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 }
 
 #profile-icon-image {
-  width: 75px;
-  height: 75px;
+  width: 90px;
+  height: 90px;
   -moz-context-properties: fill, stroke;
   fill: var(--appmenu-profiles-theme-bg);
   stroke: var(--appmenu-profiles-theme-fg);
   border: 4px solid var(--panel-background);
-  border-radius: 40px;
+  border-radius: var(--border-radius-circle);
 }
 
 #current-profile {
@@ -2333,20 +2338,11 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 /* ----- Profiles FxA panel ----- */
 
-panelmultiview[mainViewId="PanelUI-fxa"]  {
-  #PanelUI-profiles-header {
-    padding-block-start: 0;
-    padding-block-end: 0;
-    padding-inline-end: 0;
-  }
-
-  #profiles-edit-this-profile-button {
-    padding-inline-start: 0;
-
-    &:hover {
-      background-color: inherit;
-    }
-  }
+/* Special case: hide the profiles menuitem if the FxA/Sync panel is shown as
+ * a submenu of the app menu, rather than anchored to the FxA/Sync toolbar
+ * button. */
+#appMenu-popup panelmultiview[mainViewId="appMenu-mainView"] #PanelUI-fxa-menu-profiles-button {
+  display: none;
 }
 
 /* ----- Content Analysis indicator panel ----- */

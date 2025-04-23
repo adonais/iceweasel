@@ -32,8 +32,7 @@
 #include "mozilla/EventStateManager.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/SharedStyleSheetCache.h"
-#include "mozilla/dom/SharedScriptCache.h"
+#include "mozilla/css/Loader.h"
 #include "mozilla/StaticPrefs_test.h"
 #include "mozilla/InputTaskManager.h"
 #include "nsIObjectLoadingContent.h"
@@ -1317,18 +1316,6 @@ nsDOMWindowUtils::SuppressAnimation(bool aSuppress) {
 }
 
 NS_IMETHODIMP
-nsDOMWindowUtils::ClearStyleSheetCache() {
-  SharedStyleSheetCache::Clear();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::ClearScriptCache() {
-  SharedScriptCache::Clear();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDOMWindowUtils::GetParsedStyleSheets(uint32_t* aSheets) {
   RefPtr<Document> doc = GetDocument();
   if (!doc) {
@@ -2306,7 +2293,7 @@ nsDOMWindowUtils::GetCanvasBackgroundColor(nsAString& aColor) {
   }
   nscolor color = NS_RGB(255, 255, 255);
   if (PresShell* presShell = GetPresShell()) {
-    color = presShell->ComputeCanvasBackground().mViewportColor;
+    color = presShell->ComputeCanvasBackground().mViewport.mColor;
   }
   nsStyleUtil::GetSerializedColorValue(color, aColor);
   return NS_OK;

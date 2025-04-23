@@ -61,6 +61,7 @@ __webpack_require__.d(__webpack_exports__, {
   GlobalWorkerOptions: () => (/* reexport */ GlobalWorkerOptions),
   ImageKind: () => (/* reexport */ util_ImageKind),
   InvalidPDFException: () => (/* reexport */ InvalidPDFException),
+  MathClamp: () => (/* reexport */ MathClamp),
   OPS: () => (/* reexport */ OPS),
   OutputScale: () => (/* reexport */ OutputScale),
   PDFDataRangeTransport: () => (/* reexport */ PDFDataRangeTransport),
@@ -88,6 +89,7 @@ __webpack_require__.d(__webpack_exports__, {
   getXfaPageViewport: () => (/* reexport */ getXfaPageViewport),
   isDataScheme: () => (/* reexport */ isDataScheme),
   isPdfFile: () => (/* reexport */ isPdfFile),
+  isValidExplicitDest: () => (/* reexport */ isValidExplicitDest),
   noContextMenu: () => (/* reexport */ noContextMenu),
   normalizeUnicode: () => (/* reexport */ normalizeUnicode),
   setLayerDimensions: () => (/* reexport */ setLayerDimensions),
@@ -369,6 +371,12 @@ const OPS = {
   setStrokeTransparent: 92,
   setFillTransparent: 93
 };
+const DrawOPS = {
+  moveTo: 0,
+  lineTo: 1,
+  curveTo: 2,
+  closePath: 3
+};
 const PasswordResponses = {
   NEED_PASSWORD: 1,
   INCORRECT_PASSWORD: 2
@@ -574,50 +582,6 @@ class Util {
   static makeHexColor(r, g, b) {
     return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
-  static scaleMinMax(transform, minMax) {
-    let temp;
-    if (transform[0]) {
-      if (transform[0] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[0];
-      minMax[2] *= transform[0];
-      if (transform[3] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[3];
-      minMax[3] *= transform[3];
-    } else {
-      temp = minMax[0];
-      minMax[0] = minMax[1];
-      minMax[1] = temp;
-      temp = minMax[2];
-      minMax[2] = minMax[3];
-      minMax[3] = temp;
-      if (transform[1] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[1];
-      minMax[3] *= transform[1];
-      if (transform[2] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[2];
-      minMax[2] *= transform[2];
-    }
-    minMax[0] += transform[4];
-    minMax[1] += transform[5];
-    minMax[2] += transform[4];
-    minMax[3] += transform[5];
-  }
   static transform(m1, m2) {
     return [m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1], m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3], m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]];
   }
@@ -680,6 +644,18 @@ class Util {
     }
     return [xLow, yLow, xHigh, yHigh];
   }
+  static pointBoundingBox(x, y, minMax) {
+    minMax[0] = Math.min(minMax[0], x);
+    minMax[1] = Math.min(minMax[1], y);
+    minMax[2] = Math.max(minMax[2], x);
+    minMax[3] = Math.max(minMax[3], y);
+  }
+  static rectBoundingBox(x0, y0, x1, y1, minMax) {
+    minMax[0] = Math.min(minMax[0], x0, x1);
+    minMax[1] = Math.min(minMax[1], y0, y1);
+    minMax[2] = Math.max(minMax[2], x0, x1);
+    minMax[3] = Math.max(minMax[3], y0, y1);
+  }
   static #getExtremumOnCurve(x0, x1, x2, x3, y0, y1, y2, y3, t, minMax) {
     if (t <= 0 || t >= 1) {
       return;
@@ -711,17 +687,12 @@ class Util {
     this.#getExtremumOnCurve(x0, x1, x2, x3, y0, y1, y2, y3, (-b - sqrtDelta) / a2, minMax);
   }
   static bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3, minMax) {
-    if (minMax) {
-      minMax[0] = Math.min(minMax[0], x0, x3);
-      minMax[1] = Math.min(minMax[1], y0, y3);
-      minMax[2] = Math.max(minMax[2], x0, x3);
-      minMax[3] = Math.max(minMax[3], y0, y3);
-    } else {
-      minMax = [Math.min(x0, x3), Math.min(y0, y3), Math.max(x0, x3), Math.max(y0, y3)];
-    }
+    minMax[0] = Math.min(minMax[0], x0, x3);
+    minMax[1] = Math.min(minMax[1], y0, y3);
+    minMax[2] = Math.max(minMax[2], x0, x3);
+    minMax[3] = Math.max(minMax[3], y0, y3);
     this.#getExtremum(x0, x1, x2, x3, y0, y1, y2, y3, 3 * (-x0 + 3 * (x1 - x2) + x3), 6 * (x0 - 2 * x1 + x2), 3 * (x1 - x0), minMax);
     this.#getExtremum(x0, x1, x2, x3, y0, y1, y2, y3, 3 * (-y0 + 3 * (y1 - y2) + y3), 6 * (y0 - 2 * y1 + y2), 3 * (y1 - y0), minMax);
-    return minMax;
   }
 }
 const PDFStringTranslateTable = (/* unused pure expression or super */ null && ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2d8, 0x2c7, 0x2c6, 0x2d9, 0x2dd, 0x2db, 0x2da, 0x2dc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014, 0x2013, 0x192, 0x2044, 0x2039, 0x203a, 0x2212, 0x2030, 0x201e, 0x201c, 0x201d, 0x2018, 0x2019, 0x201a, 0x2122, 0xfb01, 0xfb02, 0x141, 0x152, 0x160, 0x178, 0x17d, 0x131, 0x142, 0x153, 0x161, 0x17e, 0, 0x20ac]));
@@ -803,6 +774,56 @@ function getUuid() {
   return crypto.randomUUID();
 }
 const AnnotationPrefix = "pdfjs_internal_id_";
+function _isValidExplicitDest(validRef, validName, dest) {
+  if (!Array.isArray(dest) || dest.length < 2) {
+    return false;
+  }
+  const [page, zoom, ...args] = dest;
+  if (!validRef(page) && !Number.isInteger(page)) {
+    return false;
+  }
+  if (!validName(zoom)) {
+    return false;
+  }
+  const argsLen = args.length;
+  let allowNull = true;
+  switch (zoom.name) {
+    case "XYZ":
+      if (argsLen < 2 || argsLen > 3) {
+        return false;
+      }
+      break;
+    case "Fit":
+    case "FitB":
+      return argsLen === 0;
+    case "FitH":
+    case "FitBH":
+    case "FitV":
+    case "FitBV":
+      if (argsLen > 1) {
+        return false;
+      }
+      break;
+    case "FitR":
+      if (argsLen !== 4) {
+        return false;
+      }
+      allowNull = false;
+      break;
+    default:
+      return false;
+  }
+  for (const arg of args) {
+    if (typeof arg === "number" || allowNull && arg === null) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+function MathClamp(v, min, max) {
+  return Math.min(Math.max(v, min), max);
+}
 function toHexUtil(arr) {
   if (Uint8Array.prototype.toHex) {
     return arr.toHex();
@@ -826,6 +847,11 @@ if (typeof Promise.try !== "function") {
     return new Promise(resolve => {
       resolve(fn(...args));
     });
+  };
+}
+if (typeof Math.sumPrecise !== "function") {
+  Math.sumPrecise = function (numbers) {
+    return numbers.reduce((a, b) => a + b, 0);
   };
 }
 
@@ -1185,7 +1211,9 @@ function setLayerDimensions(div, viewport, mustFlip = false, mustRotate = true) 
 }
 class OutputScale {
   constructor() {
-    const pixelRatio = window.devicePixelRatio || 1;
+    const {
+      pixelRatio
+    } = OutputScale;
     this.sx = pixelRatio;
     this.sy = pixelRatio;
   }
@@ -1194,6 +1222,28 @@ class OutputScale {
   }
   get symmetric() {
     return this.sx === this.sy;
+  }
+  limitCanvas(width, height, maxPixels, maxDim) {
+    let maxAreaScale = Infinity,
+      maxWidthScale = Infinity,
+      maxHeightScale = Infinity;
+    if (maxPixels > 0) {
+      maxAreaScale = Math.sqrt(maxPixels / (width * height));
+    }
+    if (maxDim !== -1) {
+      maxWidthScale = maxDim / width;
+      maxHeightScale = maxDim / height;
+    }
+    const maxScale = Math.min(maxAreaScale, maxWidthScale, maxHeightScale);
+    if (this.sx > maxScale || this.sy > maxScale) {
+      this.sx = maxScale;
+      this.sy = maxScale;
+      return true;
+    }
+    return false;
+  }
+  static get pixelRatio() {
+    return globalThis.devicePixelRatio || 1;
   }
 }
 const SupportedImageMimeTypes = ["image/apng", "image/avif", "image/bmp", "image/gif", "image/jpeg", "image/png", "image/svg+xml", "image/webp", "image/x-icon"];
@@ -1416,9 +1466,6 @@ function bindEvents(obj, element, names) {
   for (const name of names) {
     element.addEventListener(name, obj[name].bind(obj));
   }
-}
-function opacityToHex(opacity) {
-  return Math.round(Math.min(255, Math.max(1, 255 * opacity))).toString(16).padStart(2, "0");
 }
 class IdManager {
   #id = 0;
@@ -3488,7 +3535,6 @@ class AltText {
 
 ;// ./src/display/touch_manager.js
 
-
 class TouchManager {
   #container;
   #isPinching = false;
@@ -3525,7 +3571,7 @@ class TouchManager {
     });
   }
   get MIN_TOUCH_DISTANCE_TO_PINCH() {
-    return shadow(this, "MIN_TOUCH_DISTANCE_TO_PINCH", 35 / (window.devicePixelRatio || 1));
+    return 35 / OutputScale.pixelRatio;
   }
   #onTouchStart(evt) {
     if (this.#isPinchingDisabled?.()) {
@@ -4017,20 +4063,20 @@ class AnnotationEditor {
     if (this._mustFixPosition) {
       switch (rotation) {
         case 0:
-          x = Math.max(0, Math.min(pageWidth - width, x));
-          y = Math.max(0, Math.min(pageHeight - height, y));
+          x = MathClamp(x, 0, pageWidth - width);
+          y = MathClamp(y, 0, pageHeight - height);
           break;
         case 90:
-          x = Math.max(0, Math.min(pageWidth - height, x));
-          y = Math.min(pageHeight, Math.max(width, y));
+          x = MathClamp(x, 0, pageWidth - height);
+          y = MathClamp(y, width, pageHeight);
           break;
         case 180:
-          x = Math.min(pageWidth, Math.max(width, x));
-          y = Math.min(pageHeight, Math.max(height, y));
+          x = MathClamp(x, width, pageWidth);
+          y = MathClamp(y, height, pageHeight);
           break;
         case 270:
-          x = Math.min(pageWidth, Math.max(height, x));
-          y = Math.max(0, Math.min(pageHeight - width, y));
+          x = MathClamp(x, height, pageWidth);
+          y = MathClamp(y, 0, pageHeight - width);
           break;
       }
     }
@@ -4323,9 +4369,9 @@ class AnnotationEditor {
       const oldDiag = Math.hypot(savedWidth, savedHeight);
       ratioX = ratioY = Math.max(Math.min(Math.hypot(oppositePoint[0] - point[0] - deltaX, oppositePoint[1] - point[1] - deltaY) / oldDiag, 1 / savedWidth, 1 / savedHeight), minWidth / savedWidth, minHeight / savedHeight);
     } else if (isHorizontal) {
-      ratioX = Math.max(minWidth, Math.min(1, Math.abs(oppositePoint[0] - point[0] - deltaX))) / savedWidth;
+      ratioX = MathClamp(Math.abs(oppositePoint[0] - point[0] - deltaX), minWidth, 1) / savedWidth;
     } else {
-      ratioY = Math.max(minHeight, Math.min(1, Math.abs(oppositePoint[1] - point[1] - deltaY))) / savedHeight;
+      ratioY = MathClamp(Math.abs(oppositePoint[1] - point[1] - deltaY), minHeight, 1) / savedHeight;
     }
     const newWidth = AnnotationEditor._round(savedWidth * ratioX);
     const newHeight = AnnotationEditor._round(savedHeight * ratioY);
@@ -5941,6 +5987,9 @@ function applyBoundingBox(ctx, bbox) {
   ctx.clip(region);
 }
 class BaseShadingPattern {
+  isModifyingCurrentTransform() {
+    return false;
+  }
   getPattern() {
     unreachable("Abstract method `getPattern` called.");
   }
@@ -6185,6 +6234,9 @@ class MeshShadingPattern extends BaseShadingPattern {
       scaleY
     };
   }
+  isModifyingCurrentTransform() {
+    return true;
+  }
   getPattern(ctx, owner, inverse, pathType) {
     applyBoundingBox(ctx, this._bbox);
     let scale;
@@ -6383,6 +6435,9 @@ class TilingPattern {
         throw new FormatError(`Unsupported paint type: ${paintType}`);
     }
   }
+  isModifyingCurrentTransform() {
+    return false;
+  }
   getPattern(ctx, owner, inverse, pathType) {
     let matrix = inverse;
     if (pathType !== PathType.SHADING) {
@@ -6520,6 +6575,7 @@ const EXECUTION_TIME = 15;
 const EXECUTION_STEPS = 10;
 const MAX_SIZE_TO_COMPILE = 1000;
 const FULL_CHUNK_HEIGHT = 16;
+const SCALE_MATRIX = new DOMMatrix();
 function mirrorContextOperations(ctx, destCtx) {
   if (ctx._removeMirroring) {
     throw new Error("Context is already forwarding operations.");
@@ -6844,17 +6900,6 @@ class CanvasExtraState {
     clone.clipBox = this.clipBox.slice();
     return clone;
   }
-  setCurrentPoint(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-  updatePathMinMax(transform, x, y) {
-    [x, y] = Util.applyTransform([x, y], transform);
-    this.minX = Math.min(this.minX, x);
-    this.minY = Math.min(this.minY, y);
-    this.maxX = Math.max(this.maxX, x);
-    this.maxY = Math.max(this.maxY, y);
-  }
   updateRectMinMax(transform, rect) {
     const p1 = Util.applyTransform(rect, transform);
     const p2 = Util.applyTransform(rect.slice(2), transform);
@@ -6864,20 +6909,6 @@ class CanvasExtraState {
     this.minY = Math.min(this.minY, p1[1], p2[1], p3[1], p4[1]);
     this.maxX = Math.max(this.maxX, p1[0], p2[0], p3[0], p4[0]);
     this.maxY = Math.max(this.maxY, p1[1], p2[1], p3[1], p4[1]);
-  }
-  updateScalingPathMinMax(transform, minMax) {
-    Util.scaleMinMax(transform, minMax);
-    this.minX = Math.min(this.minX, minMax[0]);
-    this.minY = Math.min(this.minY, minMax[1]);
-    this.maxX = Math.max(this.maxX, minMax[2]);
-    this.maxY = Math.max(this.maxY, minMax[3]);
-  }
-  updateCurvePathMinMax(transform, x0, y0, x1, y1, x2, y2, x3, y3, minMax) {
-    const box = Util.bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3, minMax);
-    if (minMax) {
-      return;
-    }
-    this.updateRectMinMax(transform, box);
   }
   getPathBoundingBox(pathType = PathType.FILL, transform = null) {
     const box = [this.minX, this.minY, this.maxX, this.maxY];
@@ -7075,7 +7106,7 @@ function getImageSmoothingEnabled(transform, interpolate) {
   const scale = Util.singularValueDecompose2dScale(transform);
   scale[0] = Math.fround(scale[0]);
   scale[1] = Math.fround(scale[1]);
-  const actualScale = Math.fround((globalThis.devicePixelRatio || 1) * PixelsPerInch.PDF_TO_CSS_UNITS);
+  const actualScale = Math.fround(OutputScale.pixelRatio * PixelsPerInch.PDF_TO_CSS_UNITS);
   return scale[0] <= actualScale && scale[1] <= actualScale;
 }
 const LINE_CAP_STYLES = ["butt", "round", "square"];
@@ -7402,8 +7433,7 @@ class CanvasGraphics {
           this.current.strokeAlpha = value;
           break;
         case "ca":
-          this.current.fillAlpha = value;
-          this.ctx.globalAlpha = value;
+          this.ctx.globalAlpha = this.current.fillAlpha = value;
           break;
         case "BM":
           this.ctx.globalCompositeOperation = value;
@@ -7439,12 +7469,11 @@ class CanvasGraphics {
     const cacheId = "smaskGroupAt" + this.groupLevel;
     const scratchCanvas = this.cachedCanvases.getCanvas(cacheId, drawnWidth, drawnHeight);
     this.suspendedCtx = this.ctx;
-    this.ctx = scratchCanvas.context;
-    const ctx = this.ctx;
-    ctx.setTransform(...getCurrentTransform(this.suspendedCtx));
+    const ctx = this.ctx = scratchCanvas.context;
+    ctx.setTransform(this.suspendedCtx.getTransform());
     copyCtxState(this.suspendedCtx, ctx);
     mirrorContextOperations(ctx, this.suspendedCtx);
-    this.setGState([["BM", "source-over"], ["ca", 1], ["CA", 1]]);
+    this.setGState([["BM", "source-over"]]);
   }
   endSMaskMode() {
     if (!this.inSMaskMode) {
@@ -7538,197 +7567,152 @@ class CanvasGraphics {
   save() {
     if (this.inSMaskMode) {
       copyCtxState(this.ctx, this.suspendedCtx);
-      this.suspendedCtx.save();
-    } else {
-      this.ctx.save();
     }
+    this.ctx.save();
     const old = this.current;
     this.stateStack.push(old);
     this.current = old.clone();
   }
   restore() {
-    if (this.stateStack.length === 0 && this.inSMaskMode) {
-      this.endSMaskMode();
-    }
-    if (this.stateStack.length !== 0) {
-      this.current = this.stateStack.pop();
+    if (this.stateStack.length === 0) {
       if (this.inSMaskMode) {
-        this.suspendedCtx.restore();
-        copyCtxState(this.suspendedCtx, this.ctx);
-      } else {
-        this.ctx.restore();
+        this.endSMaskMode();
       }
-      this.checkSMaskState();
-      this.pendingClip = null;
-      this._cachedScaleForStroking[0] = -1;
-      this._cachedGetSinglePixelWidth = null;
+      return;
     }
+    this.current = this.stateStack.pop();
+    this.ctx.restore();
+    if (this.inSMaskMode) {
+      copyCtxState(this.suspendedCtx, this.ctx);
+    }
+    this.checkSMaskState();
+    this.pendingClip = null;
+    this._cachedScaleForStroking[0] = -1;
+    this._cachedGetSinglePixelWidth = null;
   }
   transform(a, b, c, d, e, f) {
     this.ctx.transform(a, b, c, d, e, f);
     this._cachedScaleForStroking[0] = -1;
     this._cachedGetSinglePixelWidth = null;
   }
-  constructPath(ops, args, minMax) {
-    const ctx = this.ctx;
-    const current = this.current;
-    let x = current.x,
-      y = current.y;
-    let startX, startY;
-    const currentTransform = getCurrentTransform(ctx);
-    const isScalingMatrix = currentTransform[0] === 0 && currentTransform[3] === 0 || currentTransform[1] === 0 && currentTransform[2] === 0;
-    const minMaxForBezier = isScalingMatrix ? minMax.slice(0) : null;
-    for (let i = 0, j = 0, ii = ops.length; i < ii; i++) {
-      switch (ops[i] | 0) {
-        case OPS.rectangle:
-          x = args[j++];
-          y = args[j++];
-          const width = args[j++];
-          const height = args[j++];
-          const xw = x + width;
-          const yh = y + height;
-          ctx.moveTo(x, y);
-          if (width === 0 || height === 0) {
-            ctx.lineTo(xw, yh);
-          } else {
-            ctx.lineTo(xw, y);
-            ctx.lineTo(xw, yh);
-            ctx.lineTo(x, yh);
-          }
-          if (!isScalingMatrix) {
-            current.updateRectMinMax(currentTransform, [x, y, xw, yh]);
-          }
-          ctx.closePath();
-          break;
-        case OPS.moveTo:
-          x = args[j++];
-          y = args[j++];
-          ctx.moveTo(x, y);
-          if (!isScalingMatrix) {
-            current.updatePathMinMax(currentTransform, x, y);
-          }
-          break;
-        case OPS.lineTo:
-          x = args[j++];
-          y = args[j++];
-          ctx.lineTo(x, y);
-          if (!isScalingMatrix) {
-            current.updatePathMinMax(currentTransform, x, y);
-          }
-          break;
-        case OPS.curveTo:
-          startX = x;
-          startY = y;
-          x = args[j + 4];
-          y = args[j + 5];
-          ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3], x, y);
-          current.updateCurvePathMinMax(currentTransform, startX, startY, args[j], args[j + 1], args[j + 2], args[j + 3], x, y, minMaxForBezier);
-          j += 6;
-          break;
-        case OPS.curveTo2:
-          startX = x;
-          startY = y;
-          ctx.bezierCurveTo(x, y, args[j], args[j + 1], args[j + 2], args[j + 3]);
-          current.updateCurvePathMinMax(currentTransform, startX, startY, x, y, args[j], args[j + 1], args[j + 2], args[j + 3], minMaxForBezier);
-          x = args[j + 2];
-          y = args[j + 3];
-          j += 4;
-          break;
-        case OPS.curveTo3:
-          startX = x;
-          startY = y;
-          x = args[j + 2];
-          y = args[j + 3];
-          ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
-          current.updateCurvePathMinMax(currentTransform, startX, startY, args[j], args[j + 1], x, y, x, y, minMaxForBezier);
-          j += 4;
-          break;
-        case OPS.closePath:
-          ctx.closePath();
-          break;
+  constructPath(op, data, minMax) {
+    let [path] = data;
+    if (!minMax) {
+      path ||= data[0] = new Path2D();
+      this[op](path);
+      return;
+    }
+    if (!(path instanceof Path2D)) {
+      const path2d = data[0] = new Path2D();
+      for (let i = 0, ii = path.length; i < ii;) {
+        switch (path[i++]) {
+          case DrawOPS.moveTo:
+            path2d.moveTo(path[i++], path[i++]);
+            break;
+          case DrawOPS.lineTo:
+            path2d.lineTo(path[i++], path[i++]);
+            break;
+          case DrawOPS.curveTo:
+            path2d.bezierCurveTo(path[i++], path[i++], path[i++], path[i++], path[i++], path[i++]);
+            break;
+          case DrawOPS.closePath:
+            path2d.closePath();
+            break;
+          default:
+            warn(`Unrecognized drawing path operator: ${path[i - 1]}`);
+            break;
+        }
       }
+      path = path2d;
     }
-    if (isScalingMatrix) {
-      current.updateScalingPathMinMax(currentTransform, minMaxForBezier);
-    }
-    current.setCurrentPoint(x, y);
+    this.current.updateRectMinMax(getCurrentTransform(this.ctx), minMax);
+    this[op](path);
   }
   closePath() {
     this.ctx.closePath();
   }
-  stroke(consumePath = true) {
+  stroke(path, consumePath = true) {
     const ctx = this.ctx;
     const strokeColor = this.current.strokeColor;
     ctx.globalAlpha = this.current.strokeAlpha;
     if (this.contentVisible) {
       if (typeof strokeColor === "object" && strokeColor?.getPattern) {
+        const baseTransform = strokeColor.isModifyingCurrentTransform() ? ctx.getTransform() : null;
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.STROKE);
-        this.rescaleAndStroke(false);
+        if (baseTransform) {
+          const newPath = new Path2D();
+          newPath.addPath(path, ctx.getTransform().invertSelf().multiplySelf(baseTransform));
+          path = newPath;
+        }
+        this.rescaleAndStroke(path, false);
         ctx.restore();
       } else {
-        this.rescaleAndStroke(true);
+        this.rescaleAndStroke(path, true);
       }
     }
     if (consumePath) {
-      this.consumePath(this.current.getClippedPathBoundingBox());
+      this.consumePath(path, this.current.getClippedPathBoundingBox(PathType.STROKE, getCurrentTransform(this.ctx)));
     }
     ctx.globalAlpha = this.current.fillAlpha;
   }
-  closeStroke() {
-    this.closePath();
-    this.stroke();
+  closeStroke(path) {
+    this.stroke(path);
   }
-  fill(consumePath = true) {
+  fill(path, consumePath = true) {
     const ctx = this.ctx;
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     let needRestore = false;
     if (isPatternFill) {
+      const baseTransform = fillColor.isModifyingCurrentTransform() ? ctx.getTransform() : null;
       ctx.save();
       ctx.fillStyle = fillColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.FILL);
+      if (baseTransform) {
+        const newPath = new Path2D();
+        newPath.addPath(path, ctx.getTransform().invertSelf().multiplySelf(baseTransform));
+        path = newPath;
+      }
       needRestore = true;
     }
     const intersect = this.current.getClippedPathBoundingBox();
     if (this.contentVisible && intersect !== null) {
       if (this.pendingEOFill) {
-        ctx.fill("evenodd");
+        ctx.fill(path, "evenodd");
         this.pendingEOFill = false;
       } else {
-        ctx.fill();
+        ctx.fill(path);
       }
     }
     if (needRestore) {
       ctx.restore();
     }
     if (consumePath) {
-      this.consumePath(intersect);
+      this.consumePath(path, intersect);
     }
   }
-  eoFill() {
+  eoFill(path) {
     this.pendingEOFill = true;
-    this.fill();
+    this.fill(path);
   }
-  fillStroke() {
-    this.fill(false);
-    this.stroke(false);
-    this.consumePath();
+  fillStroke(path) {
+    this.fill(path, false);
+    this.stroke(path, false);
+    this.consumePath(path);
   }
-  eoFillStroke() {
+  eoFillStroke(path) {
     this.pendingEOFill = true;
-    this.fillStroke();
+    this.fillStroke(path);
   }
-  closeFillStroke() {
-    this.closePath();
-    this.fillStroke();
+  closeFillStroke(path) {
+    this.fillStroke(path);
   }
-  closeEOFillStroke() {
+  closeEOFillStroke(path) {
     this.pendingEOFill = true;
-    this.closePath();
-    this.fillStroke();
+    this.fillStroke(path);
   }
-  endPath() {
-    this.consumePath();
+  endPath(path) {
+    this.consumePath(path);
   }
   clip() {
     this.pendingClip = NORMAL_CLIP;
@@ -8270,6 +8254,15 @@ class CanvasGraphics {
     const groupCtx = scratchCanvas.context;
     groupCtx.translate(-offsetX, -offsetY);
     groupCtx.transform(...currentTransform);
+    let clip = new Path2D();
+    const [x0, y0, x1, y1] = group.bbox;
+    clip.rect(x0, y0, x1 - x0, y1 - y0);
+    if (group.matrix) {
+      const path = new Path2D();
+      path.addPath(clip, new DOMMatrix(group.matrix));
+      clip = path;
+    }
+    groupCtx.clip(clip);
     if (group.smask) {
       this.smaskStack.push({
         canvas: scratchCanvas.canvas,
@@ -8596,7 +8589,7 @@ class CanvasGraphics {
   }
   beginCompat() {}
   endCompat() {}
-  consumePath(clipBox) {
+  consumePath(path, clipBox) {
     const isEmpty = this.current.isEmptyClip();
     if (this.pendingClip) {
       this.current.updateClipFromPath();
@@ -8608,9 +8601,9 @@ class CanvasGraphics {
     if (this.pendingClip) {
       if (!isEmpty) {
         if (this.pendingClip === EO_CLIP) {
-          ctx.clip("evenodd");
+          ctx.clip(path, "evenodd");
         } else {
-          ctx.clip();
+          ctx.clip(path);
         }
       }
       this.pendingClip = null;
@@ -8681,17 +8674,17 @@ class CanvasGraphics {
     }
     return this._cachedScaleForStroking;
   }
-  rescaleAndStroke(saveRestore) {
+  rescaleAndStroke(path, saveRestore) {
     const {
-      ctx
+      ctx,
+      current: {
+        lineWidth
+      }
     } = this;
-    const {
-      lineWidth
-    } = this.current;
     const [scaleX, scaleY] = this.getScaleForStroking();
-    ctx.lineWidth = lineWidth || 1;
-    if (scaleX === 1 && scaleY === 1) {
-      ctx.stroke();
+    if (scaleX === scaleY) {
+      ctx.lineWidth = (lineWidth || 1) * scaleX;
+      ctx.stroke(path);
       return;
     }
     const dashes = ctx.getLineDash();
@@ -8699,12 +8692,17 @@ class CanvasGraphics {
       ctx.save();
     }
     ctx.scale(scaleX, scaleY);
+    SCALE_MATRIX.a = 1 / scaleX;
+    SCALE_MATRIX.d = 1 / scaleY;
+    const newPath = new Path2D();
+    newPath.addPath(path, SCALE_MATRIX);
     if (dashes.length > 0) {
       const scale = Math.max(scaleX, scaleY);
       ctx.setLineDash(dashes.map(x => x / scale));
       ctx.lineDashOffset /= scale;
     }
-    ctx.stroke();
+    ctx.lineWidth = lineWidth || 1;
+    ctx.stroke(newPath);
     if (saveRestore) {
       ctx.restore();
     }
@@ -9756,7 +9754,7 @@ class TextLayer {
       throw new Error('No "textContentSource" parameter specified.');
     }
     this.#container = this.#rootContainer = container;
-    this.#scale = viewport.scale * (globalThis.devicePixelRatio || 1);
+    this.#scale = viewport.scale * OutputScale.pixelRatio;
     this.#rotation = viewport.rotation;
     this.#layoutTextParams = {
       div: null,
@@ -9812,7 +9810,7 @@ class TextLayer {
     viewport,
     onBefore = null
   }) {
-    const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
+    const scale = viewport.scale * OutputScale.pixelRatio;
     const rotation = viewport.rotation;
     if (rotation !== this.#rotation) {
       onBefore?.();
@@ -10157,6 +10155,7 @@ function getDocument(src = {}) {
   const cMapUrl = getFactoryUrlProp(src.cMapUrl);
   const cMapPacked = src.cMapPacked !== false;
   const CMapReaderFactory = src.CMapReaderFactory || DOMCMapReaderFactory;
+  const iccUrl = getFactoryUrlProp(src.iccUrl);
   const standardFontDataUrl = getFactoryUrlProp(src.standardFontDataUrl);
   const StandardFontDataFactory = src.StandardFontDataFactory || DOMStandardFontDataFactory;
   const wasmUrl = getFactoryUrlProp(src.wasmUrl);
@@ -10207,7 +10206,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.0.254",
+    apiVersion: "5.1.73",
     data,
     password,
     disableAutoFetch,
@@ -10228,6 +10227,7 @@ function getDocument(src = {}) {
       useWasm,
       useWorkerFetch,
       cMapUrl,
+      iccUrl,
       standardFontDataUrl,
       wasmUrl
     }
@@ -10297,20 +10297,18 @@ function getFactoryUrlProp(val) {
   }
   throw new Error(`Invalid factory url: "${val}" must include trailing slash.`);
 }
-function isRefProxy(ref) {
-  return typeof ref === "object" && Number.isInteger(ref?.num) && ref.num >= 0 && Number.isInteger(ref?.gen) && ref.gen >= 0;
-}
+const isRefProxy = v => typeof v === "object" && Number.isInteger(v?.num) && v.num >= 0 && Number.isInteger(v?.gen) && v.gen >= 0;
+const isNameProxy = v => typeof v === "object" && typeof v?.name === "string";
+const isValidExplicitDest = _isValidExplicitDest.bind(null, isRefProxy, isNameProxy);
 class PDFDocumentLoadingTask {
   static #docId = 0;
-  constructor() {
-    this._capability = Promise.withResolvers();
-    this._transport = null;
-    this._worker = null;
-    this.docId = `d${PDFDocumentLoadingTask.#docId++}`;
-    this.destroyed = false;
-    this.onPassword = null;
-    this.onProgress = null;
-  }
+  _capability = Promise.withResolvers();
+  _transport = null;
+  _worker = null;
+  docId = `d${PDFDocumentLoadingTask.#docId++}`;
+  destroyed = false;
+  onPassword = null;
+  onProgress = null;
   get promise() {
     return this._capability.promise;
   }
@@ -10320,6 +10318,9 @@ class PDFDocumentLoadingTask {
     this._transport = null;
     this._worker?.destroy();
     this._worker = null;
+  }
+  async getData() {
+    return this._transport.getData();
   }
 }
 class PDFDataRangeTransport {
@@ -11837,8 +11838,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.0.254";
-const build = "3103747c8";
+const version = "5.1.73";
+const build = "a6a997fe4";
 
 ;// ./src/shared/scripting_utils.js
 function makeColorComp(n) {
@@ -15257,7 +15258,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.#content = `${bufferBefore.join("\n")}${paste}${bufferAfter.join("\n")}`;
     this.#setContent();
     const newRange = new Range();
-    let beforeLength = bufferBefore.reduce((acc, line) => acc + line.length, 0);
+    let beforeLength = Math.sumPrecise(bufferBefore.map(line => line.length));
     for (const {
       firstChild
     } of this.editorDiv.childNodes) {
@@ -15762,31 +15763,25 @@ class FreeDrawOutline extends Outline {
     const outline = this.#outline;
     let lastX = outline[4];
     let lastY = outline[5];
-    let minX = lastX;
-    let minY = lastY;
-    let maxX = lastX;
-    let maxY = lastY;
+    const minMax = [lastX, lastY, lastX, lastY];
     let lastPointX = lastX;
     let lastPointY = lastY;
     const ltrCallback = isLTR ? Math.max : Math.min;
     for (let i = 6, ii = outline.length; i < ii; i += 6) {
+      const x = outline[i + 4],
+        y = outline[i + 5];
       if (isNaN(outline[i])) {
-        minX = Math.min(minX, outline[i + 4]);
-        minY = Math.min(minY, outline[i + 5]);
-        maxX = Math.max(maxX, outline[i + 4]);
-        maxY = Math.max(maxY, outline[i + 5]);
-        if (lastPointY < outline[i + 5]) {
-          lastPointX = outline[i + 4];
-          lastPointY = outline[i + 5];
-        } else if (lastPointY === outline[i + 5]) {
-          lastPointX = ltrCallback(lastPointX, outline[i + 4]);
+        Util.pointBoundingBox(x, y, minMax);
+        if (lastPointY < y) {
+          lastPointX = x;
+          lastPointY = y;
+        } else if (lastPointY === y) {
+          lastPointX = ltrCallback(lastPointX, x);
         }
       } else {
-        const bbox = Util.bezierBoundingBox(lastX, lastY, ...outline.slice(i, i + 6));
-        minX = Math.min(minX, bbox[0]);
-        minY = Math.min(minY, bbox[1]);
-        maxX = Math.max(maxX, bbox[2]);
-        maxY = Math.max(maxY, bbox[3]);
+        const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+        Util.bezierBoundingBox(lastX, lastY, ...outline.slice(i, i + 6), bbox);
+        Util.rectBoundingBox(...bbox, minMax);
         if (lastPointY < bbox[3]) {
           lastPointX = bbox[2];
           lastPointY = bbox[3];
@@ -15794,14 +15789,14 @@ class FreeDrawOutline extends Outline {
           lastPointX = ltrCallback(lastPointX, bbox[2]);
         }
       }
-      lastX = outline[i + 4];
-      lastY = outline[i + 5];
+      lastX = x;
+      lastY = y;
     }
     const bbox = this.#bbox;
-    bbox[0] = minX - this.#innerMargin;
-    bbox[1] = minY - this.#innerMargin;
-    bbox[2] = maxX - minX + 2 * this.#innerMargin;
-    bbox[3] = maxY - minY + 2 * this.#innerMargin;
+    bbox[0] = minMax[0] - this.#innerMargin;
+    bbox[1] = minMax[1] - this.#innerMargin;
+    bbox[2] = minMax[2] - minMax[0] + 2 * this.#innerMargin;
+    bbox[3] = minMax[3] - minMax[1] + 2 * this.#innerMargin;
     this.lastPoint = [lastPointX, lastPointY];
   }
   get box() {
@@ -15834,16 +15829,14 @@ class FreeDrawOutline extends Outline {
 ;// ./src/display/editor/drawers/highlight.js
 
 
+
 class HighlightOutliner {
   #box;
   #lastPoint;
   #verticalEdges = [];
   #intervals = [];
   constructor(boxes, borderWidth = 0, innerMargin = 0, isLTR = true) {
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
+    const minMax = [Infinity, Infinity, -Infinity, -Infinity];
     const NUMBER_OF_DIGITS = 4;
     const EPSILON = 10 ** -NUMBER_OF_DIGITS;
     for (const {
@@ -15859,15 +15852,12 @@ class HighlightOutliner {
       const left = [x1, y1, y2, true];
       const right = [x2, y1, y2, false];
       this.#verticalEdges.push(left, right);
-      minX = Math.min(minX, x1);
-      maxX = Math.max(maxX, x2);
-      minY = Math.min(minY, y1);
-      maxY = Math.max(maxY, y2);
+      Util.rectBoundingBox(x1, y1, x2, y2, minMax);
     }
-    const bboxWidth = maxX - minX + 2 * innerMargin;
-    const bboxHeight = maxY - minY + 2 * innerMargin;
-    const shiftedMinX = minX - innerMargin;
-    const shiftedMinY = minY - innerMargin;
+    const bboxWidth = minMax[2] - minMax[0] + 2 * innerMargin;
+    const bboxHeight = minMax[3] - minMax[1] + 2 * innerMargin;
+    const shiftedMinX = minMax[0] - innerMargin;
+    const shiftedMinY = minMax[1] - innerMargin;
     const lastEdge = this.#verticalEdges.at(isLTR ? -1 : -2);
     const lastPoint = [lastEdge[0], lastEdge[2]];
     for (const edge of this.#verticalEdges) {
@@ -16367,6 +16357,7 @@ class HighlightEditor extends AnnotationEditor {
     this.#methodOfCreation = params.methodOfCreation || "";
     this.#text = params.text || "";
     this._isDraggable = false;
+    this.defaultL10nId = "pdfjs-editor-highlight-editor";
     if (params.highlightId > -1) {
       this.#isFreeHighlight = true;
       this.#createFreeOutlines(params);
@@ -17096,6 +17087,7 @@ class HighlightEditor extends AnnotationEditor {
         clipPathId
       });
       editor.#addToDrawLayer();
+      editor.rotate(editor.parentRotation);
     }
     return editor;
   }
@@ -18194,11 +18186,7 @@ class InkDrawOutline extends Outline {
     } of this.#lines) {
       if (line.length <= 12) {
         for (let i = 4, ii = line.length; i < ii; i += 6) {
-          const [x, y] = line.subarray(i, i + 2);
-          bbox[0] = Math.min(bbox[0], x);
-          bbox[1] = Math.min(bbox[1], y);
-          bbox[2] = Math.max(bbox[2], x);
-          bbox[3] = Math.max(bbox[3], y);
+          Util.pointBoundingBox(line[i], line[i + 1], bbox);
         }
         continue;
       }
@@ -18212,10 +18200,10 @@ class InkDrawOutline extends Outline {
       }
     }
     const [marginX, marginY] = this.#getMarginComponents();
-    bbox[0] = Math.min(1, Math.max(0, bbox[0] - marginX));
-    bbox[1] = Math.min(1, Math.max(0, bbox[1] - marginY));
-    bbox[2] = Math.min(1, Math.max(0, bbox[2] + marginX));
-    bbox[3] = Math.min(1, Math.max(0, bbox[3] + marginY));
+    bbox[0] = MathClamp(bbox[0] - marginX, 0, 1);
+    bbox[1] = MathClamp(bbox[1] - marginY, 0, 1);
+    bbox[2] = MathClamp(bbox[2] + marginX, 0, 1);
+    bbox[3] = MathClamp(bbox[3] + marginY, 0, 1);
     bbox[2] -= bbox[0];
     bbox[3] -= bbox[1];
   }
@@ -18486,6 +18474,7 @@ class InkEditor extends DrawingEditor {
       name: "inkEditor"
     });
     this._willKeepAspectRatio = true;
+    this.defaultL10nId = "pdfjs-editor-ink-editor";
   }
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
@@ -19347,6 +19336,7 @@ class SignatureEditor extends DrawingEditor {
     this._willKeepAspectRatio = true;
     this.#signatureData = params.signatureData || null;
     this.#description = null;
+    this.defaultL10nId = "pdfjs-editor-signature-editor1";
   }
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
@@ -19431,6 +19421,9 @@ class SignatureEditor extends DrawingEditor {
         });
         this.addSignature(outline, heightInPage, description, uuid);
       } else {
+        this.div.setAttribute("data-l10n-args", JSON.stringify({
+          description: ""
+        }));
         this.div.hidden = true;
         this._uiManager.getSignature(this);
       }
@@ -19508,7 +19501,9 @@ class SignatureEditor extends DrawingEditor {
     } = this.#signatureData = data;
     this.#isExtracted = outline instanceof ContourDrawOutline;
     this.#description = description;
-    this.div.setAttribute("aria-label", description);
+    this.div.setAttribute("data-l10n-args", JSON.stringify({
+      description
+    }));
     let drawingOptions;
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
@@ -19685,6 +19680,7 @@ class StampEditor extends AnnotationEditor {
     });
     this.#bitmapUrl = params.bitmapUrl;
     this.#bitmapFile = params.bitmapFile;
+    this.defaultL10nId = "pdfjs-editor-stamp-editor";
   }
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
@@ -21223,8 +21219,8 @@ class DrawLayer {
 
 
 
-const pdfjsVersion = "5.0.254";
-const pdfjsBuild = "3103747c8";
+const pdfjsVersion = "5.1.73";
+const pdfjsBuild = "a6a997fe4";
 
 var __webpack_exports__AbortException = __webpack_exports__.AbortException;
 var __webpack_exports__AnnotationEditorLayer = __webpack_exports__.AnnotationEditorLayer;
@@ -21241,6 +21237,7 @@ var __webpack_exports__FeatureTest = __webpack_exports__.FeatureTest;
 var __webpack_exports__GlobalWorkerOptions = __webpack_exports__.GlobalWorkerOptions;
 var __webpack_exports__ImageKind = __webpack_exports__.ImageKind;
 var __webpack_exports__InvalidPDFException = __webpack_exports__.InvalidPDFException;
+var __webpack_exports__MathClamp = __webpack_exports__.MathClamp;
 var __webpack_exports__OPS = __webpack_exports__.OPS;
 var __webpack_exports__OutputScale = __webpack_exports__.OutputScale;
 var __webpack_exports__PDFDataRangeTransport = __webpack_exports__.PDFDataRangeTransport;
@@ -21268,10 +21265,11 @@ var __webpack_exports__getUuid = __webpack_exports__.getUuid;
 var __webpack_exports__getXfaPageViewport = __webpack_exports__.getXfaPageViewport;
 var __webpack_exports__isDataScheme = __webpack_exports__.isDataScheme;
 var __webpack_exports__isPdfFile = __webpack_exports__.isPdfFile;
+var __webpack_exports__isValidExplicitDest = __webpack_exports__.isValidExplicitDest;
 var __webpack_exports__noContextMenu = __webpack_exports__.noContextMenu;
 var __webpack_exports__normalizeUnicode = __webpack_exports__.normalizeUnicode;
 var __webpack_exports__setLayerDimensions = __webpack_exports__.setLayerDimensions;
 var __webpack_exports__shadow = __webpack_exports__.shadow;
 var __webpack_exports__stopEvent = __webpack_exports__.stopEvent;
 var __webpack_exports__version = __webpack_exports__.version;
-export { __webpack_exports__AbortException as AbortException, __webpack_exports__AnnotationEditorLayer as AnnotationEditorLayer, __webpack_exports__AnnotationEditorParamsType as AnnotationEditorParamsType, __webpack_exports__AnnotationEditorType as AnnotationEditorType, __webpack_exports__AnnotationEditorUIManager as AnnotationEditorUIManager, __webpack_exports__AnnotationLayer as AnnotationLayer, __webpack_exports__AnnotationMode as AnnotationMode, __webpack_exports__AnnotationType as AnnotationType, __webpack_exports__ColorPicker as ColorPicker, __webpack_exports__DOMSVGFactory as DOMSVGFactory, __webpack_exports__DrawLayer as DrawLayer, __webpack_exports__FeatureTest as FeatureTest, __webpack_exports__GlobalWorkerOptions as GlobalWorkerOptions, __webpack_exports__ImageKind as ImageKind, __webpack_exports__InvalidPDFException as InvalidPDFException, __webpack_exports__OPS as OPS, __webpack_exports__OutputScale as OutputScale, __webpack_exports__PDFDataRangeTransport as PDFDataRangeTransport, __webpack_exports__PDFDateString as PDFDateString, __webpack_exports__PDFWorker as PDFWorker, __webpack_exports__PasswordResponses as PasswordResponses, __webpack_exports__PermissionFlag as PermissionFlag, __webpack_exports__PixelsPerInch as PixelsPerInch, __webpack_exports__RenderingCancelledException as RenderingCancelledException, __webpack_exports__ResponseException as ResponseException, __webpack_exports__SignatureExtractor as SignatureExtractor, __webpack_exports__SupportedImageMimeTypes as SupportedImageMimeTypes, __webpack_exports__TextLayer as TextLayer, __webpack_exports__TouchManager as TouchManager, __webpack_exports__Util as Util, __webpack_exports__VerbosityLevel as VerbosityLevel, __webpack_exports__XfaLayer as XfaLayer, __webpack_exports__build as build, __webpack_exports__createValidAbsoluteUrl as createValidAbsoluteUrl, __webpack_exports__fetchData as fetchData, __webpack_exports__getDocument as getDocument, __webpack_exports__getFilenameFromUrl as getFilenameFromUrl, __webpack_exports__getPdfFilenameFromUrl as getPdfFilenameFromUrl, __webpack_exports__getUuid as getUuid, __webpack_exports__getXfaPageViewport as getXfaPageViewport, __webpack_exports__isDataScheme as isDataScheme, __webpack_exports__isPdfFile as isPdfFile, __webpack_exports__noContextMenu as noContextMenu, __webpack_exports__normalizeUnicode as normalizeUnicode, __webpack_exports__setLayerDimensions as setLayerDimensions, __webpack_exports__shadow as shadow, __webpack_exports__stopEvent as stopEvent, __webpack_exports__version as version };
+export { __webpack_exports__AbortException as AbortException, __webpack_exports__AnnotationEditorLayer as AnnotationEditorLayer, __webpack_exports__AnnotationEditorParamsType as AnnotationEditorParamsType, __webpack_exports__AnnotationEditorType as AnnotationEditorType, __webpack_exports__AnnotationEditorUIManager as AnnotationEditorUIManager, __webpack_exports__AnnotationLayer as AnnotationLayer, __webpack_exports__AnnotationMode as AnnotationMode, __webpack_exports__AnnotationType as AnnotationType, __webpack_exports__ColorPicker as ColorPicker, __webpack_exports__DOMSVGFactory as DOMSVGFactory, __webpack_exports__DrawLayer as DrawLayer, __webpack_exports__FeatureTest as FeatureTest, __webpack_exports__GlobalWorkerOptions as GlobalWorkerOptions, __webpack_exports__ImageKind as ImageKind, __webpack_exports__InvalidPDFException as InvalidPDFException, __webpack_exports__MathClamp as MathClamp, __webpack_exports__OPS as OPS, __webpack_exports__OutputScale as OutputScale, __webpack_exports__PDFDataRangeTransport as PDFDataRangeTransport, __webpack_exports__PDFDateString as PDFDateString, __webpack_exports__PDFWorker as PDFWorker, __webpack_exports__PasswordResponses as PasswordResponses, __webpack_exports__PermissionFlag as PermissionFlag, __webpack_exports__PixelsPerInch as PixelsPerInch, __webpack_exports__RenderingCancelledException as RenderingCancelledException, __webpack_exports__ResponseException as ResponseException, __webpack_exports__SignatureExtractor as SignatureExtractor, __webpack_exports__SupportedImageMimeTypes as SupportedImageMimeTypes, __webpack_exports__TextLayer as TextLayer, __webpack_exports__TouchManager as TouchManager, __webpack_exports__Util as Util, __webpack_exports__VerbosityLevel as VerbosityLevel, __webpack_exports__XfaLayer as XfaLayer, __webpack_exports__build as build, __webpack_exports__createValidAbsoluteUrl as createValidAbsoluteUrl, __webpack_exports__fetchData as fetchData, __webpack_exports__getDocument as getDocument, __webpack_exports__getFilenameFromUrl as getFilenameFromUrl, __webpack_exports__getPdfFilenameFromUrl as getPdfFilenameFromUrl, __webpack_exports__getUuid as getUuid, __webpack_exports__getXfaPageViewport as getXfaPageViewport, __webpack_exports__isDataScheme as isDataScheme, __webpack_exports__isPdfFile as isPdfFile, __webpack_exports__isValidExplicitDest as isValidExplicitDest, __webpack_exports__noContextMenu as noContextMenu, __webpack_exports__normalizeUnicode as normalizeUnicode, __webpack_exports__setLayerDimensions as setLayerDimensions, __webpack_exports__shadow as shadow, __webpack_exports__stopEvent as stopEvent, __webpack_exports__version as version };

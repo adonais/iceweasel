@@ -46,7 +46,10 @@ class SimpleRedirectDialogFragment(
         promptAbuserDetector.updateJSDialogAbusedState()
 
         return with(requireBundle()) {
-            val dialogTitleText = getInt(KEY_TITLE_TEXT, R.string.mozac_feature_applinks_normal_confirm_dialog_title)
+            val dialogTitleString = getString(
+                KEY_TITLE_STRING,
+                getString(R.string.mozac_feature_applinks_normal_confirm_dialog_title),
+            )
             val dialogMessageString = getString(KEY_MESSAGE_STRING, "")
             val positiveButtonText = getInt(KEY_POSITIVE_TEXT, R.string.mozac_feature_applinks_confirm_dialog_confirm)
             val negativeButtonText = getInt(KEY_NEGATIVE_TEXT, R.string.mozac_feature_applinks_confirm_dialog_deny)
@@ -68,7 +71,7 @@ class SimpleRedirectDialogFragment(
                 if (showCheckbox) {
                     setView(getLayout(checkbox))
                 }
-                setTitle(dialogTitleText)
+                setTitle(dialogTitleString)
                 setMessage(dialogMessageString)
                 setPositiveButton(positiveButtonText) { _, _ -> }
                 setNegativeButton(negativeButtonText) { _, _ ->
@@ -80,6 +83,8 @@ class SimpleRedirectDialogFragment(
             dialog.withCenterAlignedButtons()
             dialog.setOnShowListener {
                 val okButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                // Overrides the default behavior of the positive button, which dismiss after clicking.
+                // We want to dismiss only when cold off time has expired.
                 okButton.setOnClickListener {
                     if (promptAbuserDetector.areDialogsBeingAbused()) {
                         promptAbuserDetector.updateJSDialogAbusedState()
@@ -105,7 +110,7 @@ class SimpleRedirectDialogFragment(
          * A builder method for creating a [SimpleRedirectDialogFragment]
          */
         fun newInstance(
-            @StringRes dialogTitleText: Int = R.string.mozac_feature_applinks_normal_confirm_dialog_title,
+            dialogTitleString: String,
             dialogMessageString: String = "",
             @StringRes positiveButtonText: Int = R.string.mozac_feature_applinks_confirm_dialog_confirm,
             @StringRes negativeButtonText: Int = R.string.mozac_feature_applinks_confirm_dialog_deny,
@@ -119,7 +124,7 @@ class SimpleRedirectDialogFragment(
             val arguments = fragment.arguments ?: Bundle()
 
             with(arguments) {
-                putInt(KEY_TITLE_TEXT, dialogTitleText)
+                putString(KEY_TITLE_STRING, dialogTitleString)
 
                 putString(KEY_MESSAGE_STRING, dialogMessageString)
 
@@ -150,7 +155,7 @@ class SimpleRedirectDialogFragment(
 
         const val KEY_CHECKBOX_TEXT = "KEY_CHECKBOX_TEXT"
 
-        const val KEY_TITLE_TEXT = "KEY_TITLE_TEXT"
+        const val KEY_TITLE_STRING = "KEY_TITLE_STRING"
 
         const val KEY_MESSAGE_STRING = "KEY_MESSAGE_STRING"
 

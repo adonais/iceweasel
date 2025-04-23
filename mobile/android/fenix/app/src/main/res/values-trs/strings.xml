@@ -42,8 +42,6 @@
   <string name="tab_tray_close_multiselect_content_description">Gāhuī riña multiselección</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Na\'nïnj sà\' nej rakïj ñanj riña \'na\' nej kolexión</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Sa naguit</string>
   <!-- Text for the menu button to remove a recently saved bookmark from the user's home screen -->
   <string name="home_bookmarks_menu_item_remove">Guxūn</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
@@ -567,10 +565,6 @@
   <string name="exceptions_empty_message_description">Â\'nïnj nej esepsiûn gūxūnt sa narrán riña sa naga\'nāj riña nej sitiô naguit.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Gāhuin chrūn doj</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Gānatà\' dàj \'iaj sunj, dàj arâj sunt, aga\' nīka nī doj nej sa nīkāj sa nana\'uî\'t gu\'nàj Mozilla da\' ga\'ue nāgi\'iaj sà\' si doj man %1$s</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Sa huā rayi\'î Marketin</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Nej ēstûdio</string>
   <!-- Summary for studies preferences -->
@@ -751,18 +745,8 @@
   <string name="studies_remove">Nādure\'</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Ngà \'hiaj sunj</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s gā’hue gà’nïn nī gāyi’ìj gi’hia estudio.</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Gāhuin chrūn doj</string>
-  <!--
-    Sessions
-
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Rakïj ñanj huìi</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Nej rakïj ñanj gūñā huaa</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Nūtà\' a\'ngô rakïj ñanj</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -853,18 +837,18 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">Nej sa nadunïnjt ngà nare’</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Nej sa nadunïnjt ngà nare’</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">Ngà gahuin anêj %1$s</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Ngà gahuin anêj %1$s</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">Nitāj à’ngō achibô nanïnj ïn nu</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Nitāj à’ngō achibô nanïnj ïn nu</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">Ngà naguit %1$d</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">Nādure\'</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Nādure\'</string>
   <!--
     Crashes
 

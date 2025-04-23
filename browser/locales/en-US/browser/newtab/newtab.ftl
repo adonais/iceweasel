@@ -46,7 +46,6 @@ newtab-search-box-input =
 
 newtab-topsites-add-search-engine-header = Add Search Engine
 newtab-topsites-add-shortcut-header = New Shortcut
-newtab-topsites-edit-topsites-header = Edit Top Site
 newtab-topsites-edit-shortcut-header = Edit Shortcut
 newtab-topsites-add-shortcut-label = Add Shortcut
 newtab-topsites-title-label = Title
@@ -98,10 +97,6 @@ newtab-dismiss-button-tooltip =
 newtab-menu-content-tooltip =
     .title = Open menu
     .aria-label = Open context menu for { $title }
-# Tooltip on an empty topsite box to open the New Top Site dialog.
-newtab-menu-topsites-placeholder-tooltip =
-    .title = Edit this site
-    .aria-label = Edit this site
 
 ## Context Menu: These strings are displayed in a context menu and are meant as a call to action for a given page.
 
@@ -117,12 +112,19 @@ newtab-menu-delete-pocket = Delete from { -pocket-brand-name }
 newtab-menu-archive-pocket = Archive in { -pocket-brand-name }
 newtab-menu-show-privacy-info = Our sponsors & your privacy
 newtab-menu-about-fakespot = About { -fakespot-brand-name }
+newtab-menu-report-content = Report this content
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Block
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Unfollow topic
+
+## Context menu options for sponsored stories and new ad formats on New Tab.
+
+newtab-menu-manage-sponsored-content = Manage sponsored content
+newtab-menu-our-sponsors-and-your-privacy = Our sponsors and your privacy
+newtab-menu-report-this-ad = Report this ad
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -191,23 +193,7 @@ newtab-label-source-read-time = { $source } · { $timeToRead } min
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
 
-newtab-section-menu-remove-section = Remove Section
-newtab-section-menu-collapse-section = Collapse Section
-newtab-section-menu-expand-section = Expand Section
-newtab-section-menu-manage-section = Manage Section
-newtab-section-menu-manage-webext = Manage Extension
-newtab-section-menu-add-topsite = Add Top Site
-newtab-section-menu-add-search-engine = Add Search Engine
-newtab-section-menu-move-up = Move Up
-newtab-section-menu-move-down = Move Down
 newtab-section-menu-privacy-notice = Privacy Notice
-
-## Section aria-labels
-
-newtab-section-collapse-section-label =
-    .aria-label = Collapse Section
-newtab-section-expand-section-label =
-    .aria-label = Expand Section
 
 ## Section Headers.
 
@@ -232,14 +218,6 @@ newtab-discovery-empty-section-topstories-try-again-button = Try Again
 newtab-discovery-empty-section-topstories-loading = Loading…
 # Displays when a layout in a section took too long to fetch articles.
 newtab-discovery-empty-section-topstories-timed-out = Oops! We almost loaded this section, but not quite.
-
-## Pocket Content Section.
-
-# A save to Pocket button that shows over the card thumbnail on hover.
-newtab-pocket-image =
-    .aria-label = { -pocket-brand-name }
-newtab-pocket-save = Save
-newtab-pocket-saved = Saved
 
 ## Thumbs up and down buttons that shows over a newtab stories card thumbnail on hover.
 
@@ -280,15 +258,10 @@ newtab-custom-row-selector =
             [one] { $num } row
            *[other] { $num } rows
         }
-newtab-custom-sponsored-sites = Sponsored shortcuts
 newtab-custom-stories-toggle =
   .label = Recommended stories
   .description = Exceptional content curated by the { -brand-product-name } family
-newtab-custom-pocket-sponsored = Sponsored stories
 newtab-custom-pocket-show-recent-saves = Show recent saves
-newtab-custom-recent-toggle =
-  .label = Recent activity
-  .description = A selection of recent sites and content
 newtab-custom-weather-toggle =
   .label = Weather
   .description = Today’s forecast at a glance
@@ -367,7 +340,7 @@ newtab-wallpaper-starry-canyon = Blue starry night
 newtab-wallpaper-suspension-bridge = Grey full-suspension bridge photography during daytime
 newtab-wallpaper-sand-dunes = White sand dunes
 newtab-wallpaper-palm-trees = Silhouette of coconut palm trees during golden hour
-newtab-wallpaper-forest-trees = Trees covered with fog
+newtab-wallpaper-blue-flowers = Closeup photography of blue-petaled flowers in bloom
 
 ## Celestial
 
@@ -504,3 +477,10 @@ newtab-section-mangage-topics-followed-topics = Followed
 newtab-section-mangage-topics-followed-topics-empty-state = You have not followed any topics yet.
 newtab-section-mangage-topics-blocked-topics = Blocked
 newtab-section-mangage-topics-blocked-topics-empty-state = You have not blocked any topics yet.
+
+# Strings for custom wallpaper highlight
+
+newtab-custom-wallpaper-title = Custom wallpapers are here
+# 'Make firefox yours" means to customize or personalize
+newtab-custom-wallpaper-subtitle = Upload your own wallpaper or pick a custom color to make { -brand-product-name } yours.
+newtab-custom-wallpaper-cta = Try it

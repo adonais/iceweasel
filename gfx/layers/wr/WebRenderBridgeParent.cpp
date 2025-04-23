@@ -159,19 +159,20 @@ namespace mozilla::layers {
 
 using namespace mozilla::gfx;
 
+#ifdef MOZ_MEMORY
 static bool sAllocAsjustmentTaskCancelled = false;
 static bool sIncreasedDirtyPageThreshold = false;
 
-void ResetDirtyPageModifier();
+static void ResetDirtyPageModifier();
 
-void ScheduleResetMaxDirtyPageModifier() {
+static void ScheduleResetMaxDirtyPageModifier() {
   NS_DelayedDispatchToCurrentThread(
       NewRunnableFunction("ResetDirtyPageModifier", &ResetDirtyPageModifier),
       100  // In ms.
   );
 }
 
-void NeedIncreasedMaxDirtyPageModifier() {
+static void NeedIncreasedMaxDirtyPageModifier() {
   if (sIncreasedDirtyPageThreshold) {
     sAllocAsjustmentTaskCancelled = true;
     return;
@@ -183,7 +184,7 @@ void NeedIncreasedMaxDirtyPageModifier() {
   ScheduleResetMaxDirtyPageModifier();
 }
 
-void ResetDirtyPageModifier() {
+static void ResetDirtyPageModifier() {
   if (!sIncreasedDirtyPageThreshold) {
     return;
   }
@@ -201,12 +202,14 @@ void ResetDirtyPageModifier() {
     renderThread->NotifyIdle();
   }
 
-#if defined(MOZ_MEMORY)
   jemalloc_free_excess_dirty_pages();
-#endif
 
   sIncreasedDirtyPageThreshold = false;
 }
+#else
+// Don't bother doing anything of the memory allocator doesn't support this.
+static void NeedIncreasedMaxDirtyPageModifier() {}
+#endif
 
 LazyLogModule gWebRenderBridgeParentLog("WebRenderBridgeParent");
 #define LOG(...) \
@@ -605,6 +608,24 @@ bool WebRenderBridgeParent::UpdateResources(
         }
         aUpdates.SetBlobImageVisibleArea(op.key(),
                                          wr::ToDeviceIntRect(op.area()));
+        break;
+      }
+      case OpUpdateResource::TOpAddSnapshotImage: {
+        const auto& op = cmd.get_OpAddSnapshotImage();
+        if (!MatchesNamespace(wr::AsImageKey(op.key()))) {
+          MOZ_ASSERT_UNREACHABLE("Stale snapshot image key (add)!");
+          break;
+        }
+        aUpdates.AddSnapshotImage(op.key());
+        break;
+      }
+      case OpUpdateResource::TOpDeleteSnapshotImage: {
+        const auto& op = cmd.get_OpDeleteSnapshotImage();
+        if (!MatchesNamespace(wr::AsImageKey(op.key()))) {
+          MOZ_ASSERT_UNREACHABLE("Stale snapshot image key (remove)!");
+          break;
+        }
+        aUpdates.DeleteSnapshotImage(op.key());
         break;
       }
       case OpUpdateResource::TOpAddSharedExternalImage: {
@@ -1167,7 +1188,8 @@ bool WebRenderBridgeParent::SetDisplayList(
 
 bool WebRenderBridgeParent::ProcessDisplayListData(
     DisplayListData& aDisplayList, wr::Epoch aWrEpoch,
-    const TimeStamp& aTxnStartTime, bool aValidTransaction) {
+    const TimeStamp& aTxnStartTime, bool aValidTransaction,
+    bool aRenderOffscreen, const VsyncId& aVsyncId) {
   wr::TransactionBuilder txn(mApi, /* aUseSceneBuilderThread */ true,
                              mRemoteTextureTxnScheduler, mFwdTransactionId);
   Maybe<wr::AutoTransactionSender> sender;
@@ -1192,6 +1214,13 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
   // be in the updater queue at the time that the scene swap completes.
   if (aDisplayList.mScrollData) {
     UpdateAPZScrollData(aWrEpoch, std::move(aDisplayList.mScrollData.ref()));
+  }
+
+  if (aRenderOffscreen) {
+    TimeStamp start = TimeStamp::Now();
+    txn.GenerateFrame(aVsyncId, false, wr::RenderReasons::SNAPSHOT);
+    wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId(), aVsyncId,
+                                                  start);
   }
 
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
@@ -1221,7 +1250,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
     const bool& aContainsSVGGroup, const VsyncId& aVsyncId,
     const TimeStamp& aVsyncStartTime, const TimeStamp& aRefreshStartTime,
     const TimeStamp& aTxnStartTime, const nsACString& aTxnURL,
-    const TimeStamp& aFwdTime, nsTArray<CompositionPayload>&& aPayloads) {
+    const TimeStamp& aFwdTime, nsTArray<CompositionPayload>&& aPayloads,
+    const bool& aRenderOffscreen) {
   if (mDestroyed) {
     for (const auto& op : aToDestroy) {
       DestroyActor(op);
@@ -1261,8 +1291,9 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
   }
 
   bool validTransaction = aDisplayList.mIdNamespace == mIdNamespace;
-  bool success = ProcessDisplayListData(aDisplayList, wrEpoch, aTxnStartTime,
-                                        validTransaction);
+  bool success =
+      ProcessDisplayListData(aDisplayList, wrEpoch, aTxnStartTime,
+                             validTransaction, aRenderOffscreen, aVsyncId);
 
   if (!IsRootWebRenderBridgeParent()) {
     aPayloads.AppendElement(
@@ -2440,7 +2471,7 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   mApi->SetFrameStartTime(startTime);
 #endif
 
-  fastTxn.GenerateFrame(aId, aReasons);
+  fastTxn.GenerateFrame(aId, true, aReasons);
   wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId(), aId, start);
 
   NeedIncreasedMaxDirtyPageModifier();

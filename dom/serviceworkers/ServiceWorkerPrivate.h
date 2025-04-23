@@ -48,6 +48,7 @@ class ServiceWorkerCloneData;
 class ServiceWorkerInfo;
 class ServiceWorkerPrivate;
 class ServiceWorkerRegistrationInfo;
+struct CookieListItem;
 
 namespace ipc {
 class StructuredCloneData;
@@ -104,6 +105,10 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
       const ServiceWorkerLifetimeExtension& aLifetimeExtension,
       const RefPtr<LifeCycleEventCallback>& aCallback);
 
+  nsresult SendCookieChangeEvent(
+      const nsAString& aCookieName, const nsAString& aCookieValue,
+      bool aCookieDeleted, RefPtr<ServiceWorkerRegistrationInfo> aRegistration);
+
   nsresult SendPushEvent(const nsAString& aMessageId,
                          const Maybe<nsTArray<uint8_t>>& aData,
                          RefPtr<ServiceWorkerRegistrationInfo> aRegistration);
@@ -111,9 +116,12 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   nsresult SendPushSubscriptionChangeEvent(
       const RefPtr<nsIPushSubscription>& aOldSubscription);
 
-  nsresult SendNotificationEvent(const nsAString& aEventName,
-                                 const nsAString& aScope, const nsAString& aId,
-                                 const IPCNotificationOptions& aOptions);
+  nsresult SendNotificationClickEvent(const nsAString& aScope,
+                                      const IPCNotification& aNotification,
+                                      const nsAString& aAction);
+
+  nsresult SendNotificationCloseEvent(const nsAString& aScope,
+                                      const IPCNotification& aNotification);
 
   nsresult SendFetchEvent(nsCOMPtr<nsIInterceptedChannel> aChannel,
                           nsILoadGroup* aLoadGroup, const nsAString& aClientId,
@@ -237,6 +245,10 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   void RefreshRemoteWorkerData(
       const RefPtr<ServiceWorkerRegistrationInfo>& aRegistration);
 
+  nsresult SendCookieChangeEventInternal(
+      RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+      ServiceWorkerCookieChangeEventOpArgs&& aArgs);
+
   nsresult SendPushEventInternal(
       RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
       ServiceWorkerPushEventOpArgs&& aArgs);
@@ -277,6 +289,19 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
    protected:
     ServiceWorkerPrivate* const MOZ_NON_OWNING_REF mOwner;
     RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
+  };
+
+  class PendingCookieChangeEvent final : public PendingFunctionalEvent {
+   public:
+    PendingCookieChangeEvent(
+        ServiceWorkerPrivate* aOwner,
+        RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+        ServiceWorkerCookieChangeEventOpArgs&& aArgs);
+
+    nsresult Send() override;
+
+   private:
+    ServiceWorkerCookieChangeEventOpArgs mArgs;
   };
 
   class PendingPushEvent final : public PendingFunctionalEvent {

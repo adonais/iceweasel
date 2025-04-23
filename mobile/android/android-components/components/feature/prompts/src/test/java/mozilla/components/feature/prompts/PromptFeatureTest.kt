@@ -13,6 +13,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -44,6 +45,7 @@ import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.feature.prompts.address.AddressDelegate
 import mozilla.components.feature.prompts.address.AddressPicker
+import mozilla.components.feature.prompts.certificate.CertificatePicker
 import mozilla.components.feature.prompts.concept.AutocompletePrompt
 import mozilla.components.feature.prompts.concept.PasswordPromptView
 import mozilla.components.feature.prompts.creditcard.CreditCardDelegate
@@ -103,6 +105,7 @@ class PromptFeatureTest {
     private lateinit var loginPicker: LoginPicker
     private lateinit var creditCardPicker: CreditCardPicker
     private lateinit var addressPicker: AddressPicker
+    private lateinit var certificatePicker: CertificatePicker
 
     private val tabId = "test-tab"
     private fun tab(): TabSessionState? {
@@ -126,6 +129,7 @@ class PromptFeatureTest {
         loginPicker = mock()
         creditCardPicker = mock()
         addressPicker = mock()
+        certificatePicker = mock()
         fragmentManager = mockFragmentManager()
     }
 
@@ -3291,11 +3295,36 @@ class PromptFeatureTest {
 
         feature.filePicker = mock()
 
-        val uris = arrayOf(Uri.parse("content://path/to/file1"), Uri.parse("content://path/to/file2"))
+        val uris = arrayOf("content://path/to/file1".toUri(), "content://path/to/file2".toUri())
 
         feature.onAndroidPhotoPickerResult(uris)
 
         verify(feature.filePicker).onAndroidPhotoPickerResult(uris)
+    }
+
+    @Test
+    fun `GIVEN a CertificateRequest prompt THEN handleCertificateRequest(promptRequest) is called`() {
+        val feature = spy(
+            PromptFeature(
+                mock<Activity>(),
+                store,
+                customTabId = "custom-tab",
+                fragmentManager = fragmentManager,
+                tabsUseCases = mock(),
+                isCreditCardAutofillEnabled = { true },
+                fileUploadsDirCleaner = mock(),
+                onNeedToRequestPermissions = { },
+            ),
+        )
+        feature.certificatePicker = certificatePicker
+        feature.start()
+        val certificateRequest = PromptRequest.CertificateRequest("exmaple.com", { })
+
+        store.dispatch(ContentAction.UpdatePromptRequestAction("custom-tab", certificateRequest))
+            .joinBlocking()
+
+        verify(feature).onPromptRequested(store.state.customTabs.first())
+        verify(certificatePicker).handleCertificateRequest(certificateRequest)
     }
 
     private fun mockFragmentManager(): FragmentManager {

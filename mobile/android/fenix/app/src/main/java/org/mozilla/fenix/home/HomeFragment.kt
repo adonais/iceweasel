@@ -9,10 +9,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.StrictMode
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,6 +29,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat.getColor
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -57,7 +55,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mozilla.components.browser.menu.view.MenuButton
-import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.state.BrowserState
@@ -83,20 +80,18 @@ import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.ui.tabcounter.TabCounterMenu
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.AuthenticationStatus
-import org.mozilla.fenix.BiometricAuthenticationManager
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.HomeScreen
 import org.mozilla.fenix.GleanMetrics.Homepage
-import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.NavigationBar
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.addons.showSnackBar
+import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
+import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
 import org.mozilla.fenix.browser.BrowserAnimator
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.tabstrip.TabStrip
@@ -122,7 +117,6 @@ import org.mozilla.fenix.ext.containsQueryParameters
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.nav
-import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.ext.recordEventInNimbus
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.scaleToBottomOfView
@@ -263,6 +257,7 @@ class HomeFragment : Fragment() {
     private val recentSyncedTabFeature = ViewBoundFeatureWrapper<RecentSyncedTabFeature>()
     private val bookmarksFeature = ViewBoundFeatureWrapper<BookmarksFeature>()
     private val historyMetadataFeature = ViewBoundFeatureWrapper<RecentVisitsFeature>()
+    private val tabsCleanupFeature = ViewBoundFeatureWrapper<TabsCleanupFeature>()
     private val searchSelectorBinding = ViewBoundFeatureWrapper<SearchSelectorBinding>()
     private val searchSelectorMenuBinding = ViewBoundFeatureWrapper<SearchSelectorMenuBinding>()
     private val homeScreenPopupManager = ViewBoundFeatureWrapper<HomeScreenPopupManager>()
@@ -366,6 +361,7 @@ class HomeFragment : Fragment() {
                 feature = MessagingFeature(
                     appStore = requireComponents.appStore,
                     surface = FenixMessageSurfaceId.HOMESCREEN,
+                    runWhenReadyQueue = requireComponents.performance.visualCompletenessQueue.queue,
                 ),
                 owner = viewLifecycleOwner,
                 view = binding.root,
@@ -440,6 +436,22 @@ class HomeFragment : Fragment() {
                 view = binding.root,
             )
         }
+
+        tabsCleanupFeature.set(
+            feature = TabsCleanupFeature(
+                context = requireContext(),
+                viewModel = homeViewModel,
+                browserStore = components.core.store,
+                browsingModeManager = browsingModeManager,
+                navController = findNavController(),
+                tabsUseCases = components.useCases.tabsUseCases,
+                settings = components.settings,
+                snackBarParentView = binding.dynamicSnackbarContainer,
+                viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
+            ),
+            owner = viewLifecycleOwner,
+            view = binding.root,
+        )
 
         snackbarBinding.set(
             feature = SnackbarBinding(
@@ -878,6 +890,7 @@ class HomeFragment : Fragment() {
                 feature = MessagingFeature(
                     appStore = requireComponents.appStore,
                     surface = FenixMessageSurfaceId.MICROSURVEY,
+                    runWhenReadyQueue = requireComponents.performance.visualCompletenessQueue.queue,
                 ),
                 owner = viewLifecycleOwner,
                 view = binding.root,
@@ -1031,7 +1044,7 @@ class HomeFragment : Fragment() {
             totalSites = settings.topSitesMaxLimit,
             frecencyConfig = TopSitesFrecencyConfig(
                 FrecencyThresholdOption.SKIP_ONE_TIME_PAGES,
-            ) { !Uri.parse(it.url).containsQueryParameters(settings.frecencyFilterQuery) },
+            ) { !it.url.toUri().containsQueryParameters(settings.frecencyFilterQuery) },
             providerConfig = TopSitesProviderConfig(
                 showProviderTopSites = settings.showContileFeature,
                 limit = TOP_SITES_PROVIDER_LIMIT,
@@ -1149,27 +1162,6 @@ class HomeFragment : Fragment() {
         consumeFrom(requireComponents.core.store) {
             toolbarView?.updateTabCounter(it)
             showCollectionsPlaceholder(it)
-        }
-
-        homeViewModel.sessionToDelete?.also {
-            if (it == ALL_NORMAL_TABS || it == ALL_PRIVATE_TABS) {
-                removeAllTabsAndShowSnackbar(it)
-            } else {
-                removeTabAndShowSnackbar(it)
-            }
-        }
-
-        homeViewModel.sessionToDelete = null
-
-        // Determine if we should show the "Set as Default Browser" prompt
-        if (requireContext().settings().shouldShowSetAsDefaultPrompt &&
-            !BrowsersCache.all(requireContext().applicationContext).isDefaultBrowser &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-        ) {
-            // This is to avoid disk read violations on some devices such as samsung and pixel for android 9/10
-            requireComponents.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
-                showSetAsDefaultBrowserPrompt()
-            }
         }
 
         requireComponents.appStore.state.wasLastTabClosedPrivate?.also {
@@ -1356,40 +1348,6 @@ class HomeFragment : Fragment() {
                     }
                 }
         }
-    }
-
-    private fun removeAllTabsAndShowSnackbar(sessionCode: String) {
-        if (sessionCode == ALL_PRIVATE_TABS) {
-            requireComponents.useCases.tabsUseCases.removePrivateTabs()
-        } else {
-            requireComponents.useCases.tabsUseCases.removeNormalTabs()
-        }
-
-        val snackbarMessage = if (sessionCode == ALL_PRIVATE_TABS) {
-            if (requireContext().settings().feltPrivateBrowsingEnabled) {
-                getString(R.string.snackbar_private_data_deleted)
-            } else {
-                getString(R.string.snackbar_private_tabs_closed)
-            }
-        } else {
-            getString(R.string.snackbar_tabs_closed)
-        }
-
-        viewLifecycleOwner.lifecycleScope.allowUndo(
-            binding.dynamicSnackbarContainer,
-            snackbarMessage,
-            requireContext().getString(R.string.snackbar_deleted_undo),
-            {
-                requireComponents.useCases.tabsUseCases.undo.invoke()
-            },
-            operation = { },
-        )
-    }
-
-    private fun removeTabAndShowSnackbar(sessionId: String) {
-        val tab = store.state.findTab(sessionId) ?: return
-        requireComponents.useCases.tabsUseCases.removeTab(sessionId)
-        showUndoSnackbar(requireContext().tabClosedUndoMessage(tab.content.private))
     }
 
     private fun showUndoSnackbar(message: String) {
@@ -1640,20 +1598,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    @VisibleForTesting
-    internal fun showSetAsDefaultBrowserPrompt() {
-        requireComponents.appStore.dispatch(AppAction.UpdateWasNativeDefaultBrowserPromptShown(true))
-        activity?.openSetDefaultBrowserOption().also {
-            Metrics.setAsDefaultBrowserNativePromptShown.record()
-            requireContext().settings().setAsDefaultPromptCalled()
-        }
-    }
-
     companion object {
-        // Used to set homeViewModel.sessionToDelete when all tabs of a browsing mode are closed
-        const val ALL_NORMAL_TABS = "all_normal"
-        const val ALL_PRIVATE_TABS = "all_private"
-
         // Navigation arguments passed to HomeFragment
         const val FOCUS_ON_ADDRESS_BAR = "focusOnAddressBar"
         private const val SCROLL_TO_COLLECTION = "scrollToCollection"

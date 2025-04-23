@@ -62,8 +62,8 @@ user-login = "martinthomson"
 user-name = "Martin Thomson"
 
 [[publisher.breakpad-symbols]]
-version = "0.22.1"
-when = "2024-09-05"
+version = "0.24.0"
+when = "2025-01-06"
 user-id = 72814
 user-login = "gabrielesvelto"
 user-name = "Gabriele Svelto"
@@ -237,8 +237,8 @@ user-login = "joshtriplett"
 user-name = "Josh Triplett"
 
 [[publisher.framehop]]
-version = "0.12.1"
-when = "2024-06-04"
+version = "0.13.0"
+when = "2024-07-24"
 user-id = 20227
 user-login = "mstange"
 user-name = "Markus Stange"
@@ -279,8 +279,8 @@ user-login = "jamienicol"
 user-name = "Jamie Nicol"
 
 [[publisher.h2]]
-version = "0.3.22"
-when = "2023-11-15"
+version = "0.3.26"
+when = "2024-04-03"
 user-id = 359
 user-login = "seanmonstar"
 user-name = "Sean McArthur"
@@ -349,15 +349,15 @@ user-login = "alexcrichton"
 user-name = "Alex Crichton"
 
 [[publisher.libc]]
-version = "0.2.154"
-when = "2024-04-29"
+version = "0.2.153"
+when = "2024-01-31"
 user-id = 51017
 user-login = "JohnTitor"
 user-name = "Yuki Okushi"
 
 [[publisher.linux-raw-sys]]
-version = "0.4.12"
-when = "2023-11-30"
+version = "0.4.14"
+when = "2024-05-17"
 user-id = 6825
 user-login = "sunfishcode"
 user-name = "Dan Gohman"
@@ -391,22 +391,22 @@ user-login = "seanmonstar"
 user-name = "Sean McArthur"
 
 [[publisher.minidump]]
-version = "0.22.1"
-when = "2024-09-05"
+version = "0.24.0"
+when = "2025-01-06"
 user-id = 72814
 user-login = "gabrielesvelto"
 user-name = "Gabriele Svelto"
 
 [[publisher.minidump-common]]
-version = "0.22.1"
-when = "2024-09-05"
+version = "0.24.0"
+when = "2025-01-06"
 user-id = 72814
 user-login = "gabrielesvelto"
 user-name = "Gabriele Svelto"
 
 [[publisher.minidump-unwind]]
-version = "0.22.1"
-when = "2024-09-05"
+version = "0.24.0"
+when = "2025-01-06"
 user-id = 72814
 user-login = "gabrielesvelto"
 user-name = "Gabriele Svelto"
@@ -592,8 +592,8 @@ user-login = "Amanieu"
 user-name = "Amanieu d'Antras"
 
 [[publisher.serde]]
-version = "1.0.218"
-when = "2025-02-20"
+version = "1.0.219"
+when = "2025-03-09"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -606,8 +606,8 @@ user-login = "dtolnay"
 user-name = "David Tolnay"
 
 [[publisher.serde_derive]]
-version = "1.0.218"
-when = "2025-02-20"
+version = "1.0.219"
+when = "2025-03-09"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -704,8 +704,8 @@ user-login = "dtolnay"
 user-name = "David Tolnay"
 
 [[publisher.unicode-width]]
-version = "0.1.10"
-when = "2022-09-13"
+version = "0.2.0"
+when = "2024-09-19"
 user-id = 1139
 user-login = "Manishearth"
 user-name = "Manish Goregaokar"
@@ -786,8 +786,8 @@ user-login = "seanmonstar"
 user-name = "Sean McArthur"
 
 [[publisher.wasi]]
-version = "0.11.0+wasi-snapshot-preview1"
-when = "2022-01-19"
+version = "0.13.0+wasi-0.2.0"
+when = "2024-03-12"
 user-id = 1
 user-login = "alexcrichton"
 user-name = "Alex Crichton"
@@ -878,6 +878,12 @@ user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
+[[publisher.wit-bindgen-rt]]
+version = "0.21.0"
+when = "2024-03-04"
+user-id = 73222
+user-login = "wasmtime-publish"
+
 [[publisher.zeitstempel]]
 version = "0.1.1"
 when = "2021-03-18"
@@ -944,6 +950,18 @@ publication of this crate from CI. This repository requires all PRs are reviewed
 by a Bytecode Alliance maintainer and it owned by the Bytecode Alliance itself.
 """
 
+[[audits.bytecode-alliance.wildcard-audits.wit-bindgen-rt]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+user-id = 73222 # wasmtime-publish
+start = "2023-01-01"
+end = "2025-05-08"
+notes = """
+The Bytecode Alliance uses the `wasmtime-publish` crates.io account to automate
+publication of this crate from CI. This repository requires all PRs are reviewed
+by a Bytecode Alliance maintainer and it owned by the Bytecode Alliance itself.
+"""
+
 [[audits.bytecode-alliance.audits.adler]]
 who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
@@ -996,6 +1014,39 @@ who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
 version = "0.21.0"
 notes = "This crate has no dependencies, no build.rs, and contains no unsafe code."
+
+[[audits.bytecode-alliance.audits.base64]]
+who = "Andrew Brown <andrew.brown@intel.com>"
+criteria = "safe-to-deploy"
+delta = "0.21.3 -> 0.22.1"
+
+[[audits.bytecode-alliance.audits.bitflags]]
+who = "Jamey Sharp <jsharp@fastly.com>"
+criteria = "safe-to-deploy"
+delta = "2.1.0 -> 2.2.1"
+notes = """
+This version adds unsafe impls of traits from the bytemuck crate when built
+with that library enabled, but I believe the impls satisfy the documented
+safety requirements for bytemuck. The other changes are minor.
+"""
+
+[[audits.bytecode-alliance.audits.bitflags]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "2.3.2 -> 2.3.3"
+notes = """
+Nothing outside the realm of what one would expect from a bitflags generator,
+all as expected.
+"""
+
+[[audits.bytecode-alliance.audits.bitflags]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "2.4.1 -> 2.6.0"
+notes = """
+Changes in how macros are invoked and various bits and pieces of macro-fu.
+Otherwise no major changes and nothing dealing with `unsafe`.
+"""
 
 [[audits.bytecode-alliance.audits.block-buffer]]
 who = "Benjamin Bouvier <public@benj.me>"
@@ -1123,6 +1174,12 @@ who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
 version = "0.3.27"
 
+[[audits.bytecode-alliance.audits.gimli]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "0.29.0 -> 0.31.0"
+notes = "Various updates here and there, nothing too major, what you'd expect from a DWARF parsing crate."
+
 [[audits.bytecode-alliance.audits.heck]]
 who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
@@ -1156,6 +1213,17 @@ who = "Nick Fitzgerald <fitzgen@gmail.com>"
 criteria = "safe-to-deploy"
 version = "0.2.5"
 notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.libc]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.153 -> 0.2.158"
+notes = "More platforms, more definitions, more headers, it's still just `libc`"
+
+[[audits.bytecode-alliance.audits.libc]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+delta = "0.2.158 -> 0.2.161"
 
 [[audits.bytecode-alliance.audits.memoffset]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -1236,6 +1304,11 @@ who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 version = "0.1.21"
 notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.rustix]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+delta = "0.38.34 -> 0.38.39"
 
 [[audits.bytecode-alliance.audits.semver]]
 who = "Pat Hickey <phickey@fastly.com>"
@@ -1348,31 +1421,31 @@ aggregated-from = "https://fuchsia.googlesource.com/fuchsia/+/refs/heads/main/th
 [[audits.google.audits.bitflags]]
 who = "Lukasz Anforowicz <lukasza@chromium.org>"
 criteria = "safe-to-deploy"
-version = "2.4.2"
+version = "1.3.2"
 notes = """
-Audit notes:
+Security review of earlier versions of the crate can be found at
+(Google-internal, sorry): go/image-crate-chromium-security-review
 
-* I've checked for any discussion in Google-internal cl/546819168 (where audit
-  of version 2.3.3 happened)
-* `src/lib.rs` contains `#![cfg_attr(not(test), forbid(unsafe_code))]`
-* There are 2 cases of `unsafe` in `src/external.rs` but they seem to be
-  correct in a straightforward way - they just propagate the marker trait's
-  impl (e.g. `impl bytemuck::Pod`) from the inner to the outer type
-* Additional discussion and/or notes may be found in https://crrev.com/c/5238056
+The crate exposes a function marked as `unsafe`, but doesn't use any
+`unsafe` blocks (except for tests of the single `unsafe` function).  I
+think this justifies marking this crate as `ub-risk-1`.
+
+Additional review comments can be found at https://crrev.com/c/4723145/31
 """
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.bitflags]]
-who = "Adrian Taylor <adetaylor@chromium.org>"
+who = "Lukasz Anforowicz <lukasza@chromium.org>"
 criteria = "safe-to-deploy"
-delta = "2.4.2 -> 2.5.0"
+delta = "2.6.0 -> 2.8.0"
+notes = "No changes related to `unsafe impl ... bytemuck` pieces from `src/external.rs`."
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.bitflags]]
-who = "Adrian Taylor <adetaylor@chromium.org>"
+who = "Daniel Cheng <dcheng@chromium.org>"
 criteria = "safe-to-deploy"
-delta = "2.5.0 -> 2.6.0"
-notes = "The changes from the previous version are negligible and thus it retains the same properties."
+delta = "2.8.0 -> 2.9.0"
+notes = "Adds a straightforward clear() function, but no new unsafe code."
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.bitreader]]
@@ -1599,12 +1672,29 @@ criteria = "safe-to-run"
 version = "0.7.1"
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
+[[audits.google.audits.sfv]]
+who = "Lukasz Anforowicz <lukasza@chromium.org>"
+criteria = "safe-to-deploy"
+version = "0.9.4"
+notes = '''
+Grepped for `-i cipher`, `-i crypto`, `'\bfs\b'`, `'\bnet\b'`, `'\bunsafe\b'`
+and there were no hits.
+'''
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
 [[audits.google.audits.socket2]]
 who = "David Koloski <dkoloski@google.com>"
 criteria = "safe-to-deploy"
 delta = "0.4.4 -> 0.5.5"
 notes = "Reviewed at https://fxrev.dev/946307"
 aggregated-from = "https://fuchsia.googlesource.com/fuchsia/+/refs/heads/main/third_party/rust_crates/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.stable_deref_trait]]
+who = "Manish Goregaokar <manishearth@google.com>"
+criteria = "safe-to-deploy"
+version = "1.2.0"
+notes = "Purely a trait, crates using this should be carefully vetted since self-referential stuff can be super tricky around various unsafe rust edges."
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.static_assertions]]
 who = "Lukasz Anforowicz <lukasza@chromium.org>"
@@ -1735,6 +1825,11 @@ who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
 delta = "0.2.12 -> 0.2.14"
 
+[[audits.isrg.audits.getrandom]]
+who = "David Cook <dcook@divviup.org>"
+criteria = "safe-to-deploy"
+delta = "0.2.14 -> 0.2.15"
+
 [[audits.isrg.audits.keccak]]
 who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
@@ -1850,12 +1945,17 @@ who = "Ameer Ghani <inahga@divviup.org>"
 criteria = "safe-to-deploy"
 delta = "0.4.0 -> 0.4.1"
 
+[[audits.isrg.audits.zlib-rs]]
+who = "Ameer Ghani <inahga@divviup.org>"
+criteria = "safe-to-deploy"
+delta = "0.4.1 -> 0.4.2"
+
 [[audits.mozilla.wildcard-audits.weedle2]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2022-06-16"
-end = "2025-03-05"
+end = "2026-03-14"
 notes = "Maintained by Mozilla"
 aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
 
@@ -1887,6 +1987,13 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 version = "0.1.2"
 notes = "TOML parser, forked from toml 0.5"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.bitflags]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "2.4.0 -> 2.4.1"
+notes = "Only allowing new clippy lints"
 aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.crossbeam-channel]]

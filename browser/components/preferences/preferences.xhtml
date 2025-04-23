@@ -42,6 +42,7 @@
     href="chrome://browser/skin/preferences/containers.css"
   />
   <link rel="stylesheet" href="chrome://browser/skin/preferences/privacy.css" />
+  <link rel="stylesheet" href="chrome://browser/content/preferences/widgets/setting-group.css" />
 
   <link rel="localization" href="branding/brand.ftl"/>
   <link rel="localization" href="browser/browser.ftl"/>
@@ -50,12 +51,15 @@
   <link rel="localization" href="browser/preferences/moreFromMozilla.ftl"/>
   <link rel="localization" href="browser/preferences/preferences.ftl"/>
   <link rel="localization" href="toolkit/branding/brandings.ftl"/>
-  <link rel="localization" href="toolkit/featuregates/features.ftl"/>
+  <link rel="localization" href="toolkit/firefoxlabs/features.ftl"/>
+
+    <!-- Temporary until localization is done -->
+  <link rel="localization" href="preview/smartTabGroups.ftl"/>
 
   <!-- Links below are only used for search-l10n-ids into subdialogs -->
   <link rel="localization" href="browser/aboutDialog.ftl"/>
   <link rel="localization" href="browser/genai.ftl"/>
-  <link rel="localization" href="browser/preferences/addEngine.ftl"/>
+  <link rel="localization" href="browser/search.ftl"/>
   <link rel="localization" href="browser/preferences/blocklists.ftl"/>
   <link rel="localization" href="browser/preferences/clearSiteData.ftl"/>
   <link rel="localization" href="browser/preferences/colors.ftl"/>
@@ -70,6 +74,7 @@
   <link rel="localization" href="preview/translations.ftl"/>
   <link rel="localization" href="preview/enUS-searchFeatures.ftl"/>
   <link rel="localization" href="preview/backupSettings.ftl"/>
+  <link rel="localization" href="preview/reportContentTemporary.ftl"/>
   <link rel="localization" href="security/certificates/certManager.ftl"/>
   <link rel="localization" href="security/certificates/deviceManager.ftl"/>
   <link rel="localization" href="toolkit/updates/history.ftl"/>
@@ -84,6 +89,8 @@
   <script src="chrome://browser/content/preferences/findInPage.js"/>
   <script src="chrome://browser/content/migration/migration-wizard.mjs" type="module"></script>
   <script type="module" src="chrome://browser/content/backup/backup-settings.mjs"></script>
+  <script type="module" src="chrome://browser/content/preferences/widgets/setting-group.mjs"></script>
+  <script type="module" src="chrome://browser/content/preferences/widgets/setting-control.mjs"></script>
 </head>
 
 <html:body xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
@@ -103,7 +110,6 @@
         <richlistitem id="category-general"
                       class="category"
                       value="paneGeneral"
-                      helpTopic="prefs-main"
                       data-l10n-id="category-general"
                       data-l10n-attrs="tooltiptext"
                       align="center">
@@ -114,7 +120,6 @@
         <richlistitem id="category-home"
                       class="category"
                       value="paneHome"
-                      helpTopic="prefs-home"
                       data-l10n-id="category-home"
                       data-l10n-attrs="tooltiptext"
                       align="center">
@@ -125,7 +130,6 @@
         <richlistitem id="category-search"
                       class="category"
                       value="paneSearch"
-                      helpTopic="prefs-search"
                       data-l10n-id="category-search"
                       data-l10n-attrs="tooltiptext"
                       align="center">
@@ -136,7 +140,6 @@
         <richlistitem id="category-privacy"
                       class="category"
                       value="panePrivacy"
-                      helpTopic="prefs-privacy"
                       data-l10n-id="category-privacy"
                       data-l10n-attrs="tooltiptext"
                       align="center">
@@ -148,7 +151,6 @@
                       class="category"
                       hidden="true"
                       value="paneSync"
-                      helpTopic="prefs-weave"
                       data-l10n-id="category-sync3"
                       data-l10n-attrs="tooltiptext"
                       align="center">
@@ -160,7 +162,6 @@
                       class="category"
                       hidden="true"
                       value="paneExperimental"
-                      helpTopic="prefs-experimental"
                       data-l10n-id="settings-category-labs"
                       data-l10n-attrs="tooltiptext"
                       align="center">
@@ -188,13 +189,11 @@
             be added in this fashion. -->
         <richlistitem
                       class="category hidden-category"
-                      value="paneContainers"
-                      helpTopic="prefs-containers"/>
+                      value="paneContainers"/>
 
         <richlistitem
                       class="category hidden-category"
-                      value="paneTranslations"
-                      helpTopic="prefs-translations"/>
+                      value="paneTranslations"/>
 
       </richlistbox>
 

@@ -8,9 +8,10 @@
  */
 
 ChromeUtils.defineESModuleGetters(this, {
-  CATEGORIZATION_SETTINGS: "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  SearchSERPDomainToCategoriesMap:
-    "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  CATEGORIZATION_SETTINGS:
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
+  SERPDomainToCategoriesMap:
+    "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [
@@ -180,8 +181,8 @@ add_task(async function test_no_reporting_if_download_failure() {
   // The map is going to attempt to redo a download. There are other tests that
   // do it, so instead reset the map so later tests don't get interrupted by
   // a sync event caused by this test.
-  await SearchSERPDomainToCategoriesMap.uninit();
-  await SearchSERPDomainToCategoriesMap.init();
+  await SERPDomainToCategoriesMap.uninit();
+  await SERPDomainToCategoriesMap.init();
 });
 
 add_task(async function test_no_reporting_if_no_records() {

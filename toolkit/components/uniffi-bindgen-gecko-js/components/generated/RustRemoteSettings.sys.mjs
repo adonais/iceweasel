@@ -765,6 +765,25 @@ export class RemoteSettingsClient {
         }
     }
 
+    /**
+     * sync
+     */
+    sync() {
+        const liftResult = (result) => undefined;
+        const liftError = (data) => FfiConverterTypeRemoteSettingsError.lift(data);
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsyncWrapper(
+                21, // remote_settings:uniffi_remote_settings_fn_method_remotesettingsclient_sync
+                FfiConverterTypeRemoteSettingsClient.lower(this),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
+    }
+
 }
 
 // Export the FFIConverter object to make external types work.
@@ -841,23 +860,19 @@ export class RemoteSettingsService {
                 }
                 throw e;
             }
-            return UniFFIScaffolding.callAsyncWrapper(
-                24, // remote_settings:uniffi_remote_settings_fn_constructor_remotesettingsservice_new
+            return UniFFIScaffolding.callSync(
+                25, // remote_settings:uniffi_remote_settings_fn_constructor_remotesettingsservice_new
                 FfiConverterString.lower(storageDir),
                 FfiConverterTypeRemoteSettingsConfig2.lower(config),
             )
         }
-        try {
-            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-        }  catch (error) {
-            return Promise.reject(error)
-        }}
+        return handleRustResult(functionCall(), liftResult, liftError);}
 
     /**
      * Create a new Remote Settings client
      * @returns {RemoteSettingsClient}
      */
-    makeClient(collectionName,appContext) {
+    makeClient(collectionName) {
         const liftResult = (result) => FfiConverterTypeRemoteSettingsClient.lift(result);
         const liftError = (data) => FfiConverterTypeRemoteSettingsError.lift(data);
         const functionCall = () => {
@@ -869,19 +884,10 @@ export class RemoteSettingsService {
                 }
                 throw e;
             }
-            try {
-                FfiConverterOptionalTypeRemoteSettingsContext.checkType(appContext)
-            } catch (e) {
-                if (e instanceof UniFFITypeError) {
-                    e.addItemDescriptionPart("appContext");
-                }
-                throw e;
-            }
             return UniFFIScaffolding.callAsyncWrapper(
-                21, // remote_settings:uniffi_remote_settings_fn_method_remotesettingsservice_make_client
+                22, // remote_settings:uniffi_remote_settings_fn_method_remotesettingsservice_make_client
                 FfiConverterTypeRemoteSettingsService.lower(this),
                 FfiConverterString.lower(collectionName),
-                FfiConverterOptionalTypeRemoteSettingsContext.lower(appContext),
             )
         }
         try {
@@ -900,7 +906,7 @@ export class RemoteSettingsService {
         const liftError = (data) => FfiConverterTypeRemoteSettingsError.lift(data);
         const functionCall = () => {
             return UniFFIScaffolding.callAsyncWrapper(
-                22, // remote_settings:uniffi_remote_settings_fn_method_remotesettingsservice_sync
+                23, // remote_settings:uniffi_remote_settings_fn_method_remotesettingsservice_sync
                 FfiConverterTypeRemoteSettingsService.lower(this),
             )
         }
@@ -933,7 +939,7 @@ export class RemoteSettingsService {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                23, // remote_settings:uniffi_remote_settings_fn_method_remotesettingsservice_update_config
+                24, // remote_settings:uniffi_remote_settings_fn_method_remotesettingsservice_update_config
                 FfiConverterTypeRemoteSettingsService.lower(this),
                 FfiConverterTypeRemoteSettingsConfig2.lower(config),
             )
@@ -981,7 +987,7 @@ export class FfiConverterTypeRemoteSettingsService extends FfiConverter {
  * included in calls to [Client::get_attachment].
  */
 export class Attachment {
-    constructor({ filename, mimetype, location, hash, size }) {
+    constructor({ filename, mimetype, location, hash, size } = { filename: undefined, mimetype: undefined, location: undefined, hash: undefined, size: undefined }) {
         try {
             FfiConverterString.checkType(filename)
         } catch (e) {
@@ -1141,7 +1147,7 @@ export class FfiConverterTypeAttachment extends FfiConverterArrayBuffer {
  * - `collection_name`: The name of the collection for the settings server.
  */
 export class RemoteSettingsConfig {
-    constructor({ collectionName, bucketName = null, serverUrl = null, server = null }) {
+    constructor({ collectionName, bucketName = null, serverUrl = null, server = null } = { collectionName: undefined, bucketName: undefined, serverUrl: undefined, server: undefined }) {
         try {
             FfiConverterString.checkType(collectionName)
         } catch (e) {
@@ -1276,7 +1282,7 @@ export class FfiConverterTypeRemoteSettingsConfig extends FfiConverterArrayBuffe
  * name.
  */
 export class RemoteSettingsConfig2 {
-    constructor({ server = null, bucketName = null }) {
+    constructor({ server = null, bucketName = null, appContext = null } = { server: undefined, bucketName: undefined, appContext: undefined }) {
         try {
             FfiConverterOptionalTypeRemoteSettingsServer.checkType(server)
         } catch (e) {
@@ -1293,6 +1299,14 @@ export class RemoteSettingsConfig2 {
             }
             throw e;
         }
+        try {
+            FfiConverterOptionalTypeRemoteSettingsContext.checkType(appContext)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("appContext");
+            }
+            throw e;
+        }
         /**
          * The Remote Settings server to use. Defaults to [RemoteSettingsServer::Prod],
          * @type {?RemoteSettingsServer}
@@ -1303,12 +1317,18 @@ export class RemoteSettingsConfig2 {
          * @type {?string}
          */
         this.bucketName = bucketName;
+        /**
+         * App context to use for JEXL filtering (when the `jexl` feature is present).
+         * @type {?RemoteSettingsContext}
+         */
+        this.appContext = appContext;
     }
 
     equals(other) {
         return (
             this.server == other.server &&
-            this.bucketName == other.bucketName
+            this.bucketName == other.bucketName &&
+            this.appContext == other.appContext
         )
     }
 }
@@ -1319,17 +1339,20 @@ export class FfiConverterTypeRemoteSettingsConfig2 extends FfiConverterArrayBuff
         return new RemoteSettingsConfig2({
             server: FfiConverterOptionalTypeRemoteSettingsServer.read(dataStream),
             bucketName: FfiConverterOptionalstring.read(dataStream),
+            appContext: FfiConverterOptionalTypeRemoteSettingsContext.read(dataStream),
         });
     }
     static write(dataStream, value) {
         FfiConverterOptionalTypeRemoteSettingsServer.write(dataStream, value.server);
         FfiConverterOptionalstring.write(dataStream, value.bucketName);
+        FfiConverterOptionalTypeRemoteSettingsContext.write(dataStream, value.appContext);
     }
 
     static computeSize(value) {
         let totalSize = 0;
         totalSize += FfiConverterOptionalTypeRemoteSettingsServer.computeSize(value.server);
         totalSize += FfiConverterOptionalstring.computeSize(value.bucketName);
+        totalSize += FfiConverterOptionalTypeRemoteSettingsContext.computeSize(value.appContext);
         return totalSize
     }
 
@@ -1354,6 +1377,14 @@ export class FfiConverterTypeRemoteSettingsConfig2 extends FfiConverterArrayBuff
             }
             throw e;
         }
+        try {
+            FfiConverterOptionalTypeRemoteSettingsContext.checkType(value.appContext);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".appContext");
+            }
+            throw e;
+        }
     }
 }
 
@@ -1367,7 +1398,7 @@ export class FfiConverterTypeRemoteSettingsConfig2 extends FfiConverterArrayBuff
  * When set, only records where the expression is true will be returned.
  */
 export class RemoteSettingsContext {
-    constructor({ appName, appId, channel, appVersion, appBuild, architecture, deviceManufacturer, deviceModel, locale, os, osVersion, androidSdkVersion, debugTag, installationDate, homeDirectory, customTargetingAttributes }) {
+    constructor({ appName, appId, channel, appVersion, appBuild, architecture, deviceManufacturer, deviceModel, locale, os, osVersion, androidSdkVersion, debugTag, installationDate, homeDirectory, customTargetingAttributes } = { appName: undefined, appId: undefined, channel: undefined, appVersion: undefined, appBuild: undefined, architecture: undefined, deviceManufacturer: undefined, deviceModel: undefined, locale: undefined, os: undefined, osVersion: undefined, androidSdkVersion: undefined, debugTag: undefined, installationDate: undefined, homeDirectory: undefined, customTargetingAttributes: undefined }) {
         try {
             FfiConverterString.checkType(appName)
         } catch (e) {
@@ -1803,7 +1834,7 @@ export class FfiConverterTypeRemoteSettingsContext extends FfiConverterArrayBuff
  * are required to further extract expected values from the [fields] member.
  */
 export class RemoteSettingsRecord {
-    constructor({ id, lastModified, deleted, attachment, fields }) {
+    constructor({ id, lastModified, deleted, attachment, fields } = { id: undefined, lastModified: undefined, deleted: undefined, attachment: undefined, fields: undefined }) {
         try {
             FfiConverterString.checkType(id)
         } catch (e) {
@@ -1960,7 +1991,7 @@ export class FfiConverterTypeRemoteSettingsRecord extends FfiConverterArrayBuffe
  * [last_modified] will be extracted from the etag header of the response.
  */
 export class RemoteSettingsResponse {
-    constructor({ records, lastModified }) {
+    constructor({ records, lastModified } = { records: undefined, lastModified: undefined }) {
         try {
             FfiConverterSequenceTypeRemoteSettingsRecord.checkType(records)
         } catch (e) {

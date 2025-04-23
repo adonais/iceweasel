@@ -5,6 +5,11 @@
     "favicon_url": "favicons/adidas.png"
   },
   {
+    "domains": ["addons.mozilla.org"],
+    "image_url": "images/addons-mozilla@2x.png",
+    "favicon_url": "favicons/addons-mozilla.png"
+  },
+  {
     "domains": ["aliexpress.com"],
     "image_url": "images/aliexpress-com@2x.png",
     "favicon_url": "favicons/aliexpress-com.ico"

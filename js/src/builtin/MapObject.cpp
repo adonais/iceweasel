@@ -176,6 +176,9 @@ bool GlobalObject::initMapIteratorProto(JSContext* cx,
       !DefineToStringTag(cx, proto, cx->names().Map_Iterator_)) {
     return false;
   }
+  if (!JSObject::setHasFuseProperty(cx, proto)) {
+    return false;
+  }
   global->initBuiltinProto(ProtoKind::MapIteratorProto, proto);
   return true;
 }
@@ -385,7 +388,7 @@ const JSFunctionSpec MapObject::methods[] = {
     JS_FN("clear", clear, 0, 0),
     JS_SELF_HOSTED_FN("forEach", "MapForEach", 2, 0),
 #ifdef NIGHTLY_BUILD
-    JS_SELF_HOSTED_FN("getOrInsert", "MapGetOrInsert", 2, 0),
+    JS_FN("getOrInsert", getOrInsert, 2, 0),
     JS_SELF_HOSTED_FN("getOrInsertComputed", "MapGetOrInsertComputed", 2, 0),
 #endif
     JS_FN("entries", entries, 0, 0),
@@ -419,7 +422,11 @@ const JSFunctionSpec MapObject::staticMethods[] = {
   // The initial value of the @@iterator property is the same function object
   // as the initial value of the "entries" property.
   RootedId iteratorId(cx, PropertyKey::Symbol(cx->wellKnownSymbols().iterator));
-  return NativeDefineDataProperty(cx, nativeProto, iteratorId, entriesFn, 0);
+  if (!NativeDefineDataProperty(cx, nativeProto, iteratorId, entriesFn, 0)) {
+    return false;
+  }
+
+  return JSObject::setHasFuseProperty(cx, nativeProto);
 }
 
 void MapObject::trace(JSTracer* trc, JSObject* obj) {
@@ -566,6 +573,39 @@ bool MapObject::setWithHashableKey(JSContext* cx, const HashableValue& key,
   return true;
 }
 
+#ifdef NIGHTLY_BUILD
+bool MapObject::getOrInsert(JSContext* cx, const Value& key, const Value& val,
+                            MutableHandleValue rval) {
+  HashableValue k;
+  if (!k.setValue(cx, key)) {
+    return false;
+  }
+
+  bool needsPostBarriers = isTenured();
+  if (needsPostBarriers) {
+    if (!PostWriteBarrier(this, k)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    // Use the Table representation which has post barriers.
+    if (const Table::Entry* p = Table(this).getOrAdd(cx, k, val)) {
+      rval.set(p->value);
+    } else {
+      return false;
+    }
+  } else {
+    // Use the PreBarrieredTable representation which does not.
+    if (const PreBarrieredTable::Entry* p =
+            PreBarrieredTable(this).getOrAdd(cx, k, val)) {
+      rval.set(p->value);
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+#endif  // #ifdef NIGHTLY_BUILD
+
 MapObject* MapObject::createWithProto(JSContext* cx, HandleObject proto,
                                       NewObjectKind newKind) {
   MOZ_ASSERT(proto);
@@ -702,6 +742,63 @@ MapObject* MapObject::sweepAfterMinorGC(JS::GCContext* gcx, MapObject* mapobj) {
   return hasNurseryIterators ? mapobj : nullptr;
 }
 
+bool MapObject::tryOptimizeCtorWithIterable(JSContext* cx,
+                                            const Value& iterableVal,
+                                            bool* optimized) {
+  MOZ_ASSERT(!iterableVal.isNullOrUndefined());
+  MOZ_ASSERT(!*optimized);
+
+  if (!CanOptimizeMapOrSetCtorWithIterable<JSProto_Map>(MapObject::set, this,
+                                                        cx)) {
+    return true;
+  }
+
+  if (!iterableVal.isObject()) {
+    return true;
+  }
+  JSObject* iterable = &iterableVal.toObject();
+
+  // Fast path for `new Map(array)`.
+  if (IsOptimizableArrayForMapOrSetCtor<MapOrSet::Map>(iterable, cx)) {
+    ArrayObject* array = &iterable->as<ArrayObject>();
+    uint32_t len = array->getDenseInitializedLength();
+
+    for (uint32_t index = 0; index < len; index++) {
+      Value element = array->getDenseElement(index);
+      MOZ_ASSERT(IsPackedArray(&element.toObject()));
+
+      auto* elementArray = &element.toObject().as<ArrayObject>();
+      Value key = elementArray->getDenseElement(0);
+      Value value = elementArray->getDenseElement(1);
+
+      MOZ_ASSERT(!key.isMagic(JS_ELEMENTS_HOLE));
+      MOZ_ASSERT(!value.isMagic(JS_ELEMENTS_HOLE));
+
+      if (!set(cx, key, value)) {
+        return false;
+      }
+    }
+
+    *optimized = true;
+    return true;
+  }
+
+  // Fast path for `new Map(map)`.
+  if (IsMapObjectWithDefaultIterator(iterable, cx)) {
+    auto* iterableMap = &iterable->as<MapObject>();
+    auto addEntry = [cx, this](auto& entry) {
+      return setWithHashableKey(cx, entry.key, entry.value);
+    };
+    if (!Table(iterableMap).forEachEntry(addEntry)) {
+      return false;
+    }
+    *optimized = true;
+    return true;
+  }
+
+  return true;
+}
+
 // static
 MapObject* MapObject::createFromIterable(JSContext* cx, Handle<JSObject*> proto,
                                          Handle<Value> iterable,
@@ -719,27 +816,11 @@ MapObject* MapObject::createFromIterable(JSContext* cx, Handle<JSObject*> proto,
   }
 
   if (!iterable.isNullOrUndefined()) {
-    bool optimized = IsOptimizableInitForMapOrSet<JSProto_Map>(
-        MapObject::set, obj, iterable, cx);
-    if (optimized) {
-      ArrayObject* array = &iterable.toObject().as<ArrayObject>();
-      uint32_t len = array->getDenseInitializedLength();
-      for (uint32_t index = 0; index < len; index++) {
-        Value element = array->getDenseElement(index);
-        MOZ_ASSERT(IsPackedArray(&element.toObject()));
-
-        auto* elementArray = &element.toObject().as<ArrayObject>();
-        Value key = elementArray->getDenseElement(0);
-        Value value = elementArray->getDenseElement(1);
-
-        MOZ_ASSERT(!key.isMagic(JS_ELEMENTS_HOLE));
-        MOZ_ASSERT(!value.isMagic(JS_ELEMENTS_HOLE));
-
-        if (!obj->set(cx, key, value)) {
-          return nullptr;
-        }
-      }
-    } else {
+    bool optimized = false;
+    if (!obj->tryOptimizeCtorWithIterable(cx, iterable, &optimized)) {
+      return nullptr;
+    }
+    if (!optimized) {
       FixedInvokeArgs<1> args(cx);
       args[0].set(iterable);
 
@@ -866,6 +947,20 @@ bool MapObject::set(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<MapObject::is, MapObject::set_impl>(cx, args);
 }
+
+#ifdef NIGHTLY_BUILD
+bool MapObject::getOrInsert_impl(JSContext* cx, const CallArgs& args) {
+  auto* mapObj = &args.thisv().toObject().as<MapObject>();
+  return mapObj->getOrInsert(cx, args.get(0), args.get(1), args.rval());
+}
+
+bool MapObject::getOrInsert(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Map.prototype", "getOrInsert");
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<MapObject::is, MapObject::getOrInsert_impl>(cx,
+                                                                          args);
+}
+#endif  // #ifdef NIGHTLY_BUILD
 
 bool MapObject::delete_(JSContext* cx, const Value& key, bool* rval) {
   HashableValue k;
@@ -1022,6 +1117,9 @@ bool GlobalObject::initSetIteratorProto(JSContext* cx,
   }
   if (!JS_DefineFunctions(cx, proto, SetIteratorObject::methods) ||
       !DefineToStringTag(cx, proto, cx->names().Set_Iterator_)) {
+    return false;
+  }
+  if (!JSObject::setHasFuseProperty(cx, proto)) {
     return false;
   }
   global->initBuiltinProto(ProtoKind::SetIteratorProto, proto);
@@ -1229,7 +1327,11 @@ const JSPropertySpec SetObject::staticProperties[] = {
   // 23.2.3.11 Set.prototype[@@iterator]()
   // See above.
   RootedId iteratorId(cx, PropertyKey::Symbol(cx->wellKnownSymbols().iterator));
-  return NativeDefineDataProperty(cx, nativeProto, iteratorId, valuesFn, 0);
+  if (!NativeDefineDataProperty(cx, nativeProto, iteratorId, valuesFn, 0)) {
+    return false;
+  }
+
+  return JSObject::setHasFuseProperty(cx, nativeProto);
 }
 
 bool SetObject::keys(JS::MutableHandle<GCVector<JS::Value>> keys) {
@@ -1393,6 +1495,58 @@ SetObject* SetObject::sweepAfterMinorGC(JS::GCContext* gcx, SetObject* setobj) {
   return hasNurseryIterators ? setobj : nullptr;
 }
 
+bool SetObject::tryOptimizeCtorWithIterable(JSContext* cx,
+                                            const Value& iterableVal,
+                                            bool* optimized) {
+  MOZ_ASSERT(!iterableVal.isNullOrUndefined());
+  MOZ_ASSERT(!*optimized);
+
+  if (!CanOptimizeMapOrSetCtorWithIterable<JSProto_Set>(SetObject::add, this,
+                                                        cx)) {
+    return true;
+  }
+
+  if (!iterableVal.isObject()) {
+    return true;
+  }
+  JSObject* iterable = &iterableVal.toObject();
+
+  // Fast path for `new Set(array)`.
+  if (IsOptimizableArrayForMapOrSetCtor<MapOrSet::Set>(iterable, cx)) {
+    ArrayObject* array = &iterable->as<ArrayObject>();
+    uint32_t len = array->getDenseInitializedLength();
+
+    for (uint32_t index = 0; index < len; index++) {
+      Value keyVal = array->getDenseElement(index);
+      MOZ_ASSERT(!keyVal.isMagic(JS_ELEMENTS_HOLE));
+      if (!add(cx, keyVal)) {
+        return false;
+      }
+    }
+
+    *optimized = true;
+    return true;
+  }
+
+  // Fast path for `new Set(set)`.
+  if (IsSetObjectWithDefaultIterator(iterable, cx)) {
+    auto* iterableSet = &iterable->as<SetObject>();
+    if (!IsSetObjectWithDefaultIterator(iterableSet, cx)) {
+      return true;
+    }
+    auto addEntry = [cx, this](auto& entry) {
+      return addHashableValue(cx, entry);
+    };
+    if (!Table(iterableSet).forEachEntry(addEntry)) {
+      return false;
+    }
+    *optimized = true;
+    return true;
+  }
+
+  return true;
+}
+
 // static
 SetObject* SetObject::createFromIterable(JSContext* cx, Handle<JSObject*> proto,
                                          Handle<Value> iterable,
@@ -1410,19 +1564,11 @@ SetObject* SetObject::createFromIterable(JSContext* cx, Handle<JSObject*> proto,
   }
 
   if (!iterable.isNullOrUndefined()) {
-    bool optimized = IsOptimizableInitForMapOrSet<JSProto_Set>(
-        SetObject::add, obj, iterable, cx);
-    if (optimized) {
-      ArrayObject* array = &iterable.toObject().as<ArrayObject>();
-      uint32_t len = array->getDenseInitializedLength();
-      for (uint32_t index = 0; index < len; index++) {
-        Value keyVal = array->getDenseElement(index);
-        MOZ_ASSERT(!keyVal.isMagic(JS_ELEMENTS_HOLE));
-        if (!obj->add(cx, keyVal)) {
-          return nullptr;
-        }
-      }
-    } else {
+    bool optimized = false;
+    if (!obj->tryOptimizeCtorWithIterable(cx, iterable, &optimized)) {
+      return nullptr;
+    }
+    if (!optimized) {
       FixedInvokeArgs<1> args(cx);
       args[0].set(iterable);
 
@@ -1733,6 +1879,31 @@ JS_PUBLIC_API bool JS::MapHas(JSContext* cx, HandleObject obj, HandleValue key,
   }
   return enter.unwrapped()->has(cx, wrappedKey, rval);
 }
+
+#ifdef NIGHTLY_BUILD
+JS_PUBLIC_API bool JS::MapGetOrInsert(JSContext* cx, HandleObject obj,
+                                      HandleValue key, HandleValue val,
+                                      MutableHandleValue rval) {
+  CHECK_THREAD(cx);
+  cx->check(obj, key, val);
+
+  if (obj->is<MapObject>()) {
+    return obj.as<MapObject>()->getOrInsert(cx, key, val, rval);
+  }
+  {
+    AutoEnterTableRealm<MapObject> enter(cx, obj);
+    Rooted<Value> wrappedKey(cx, key);
+    Rooted<Value> wrappedValue(cx, val);
+    if (!JS_WrapValue(cx, &wrappedKey) || !JS_WrapValue(cx, &wrappedValue)) {
+      return false;
+    }
+    if (!enter.unwrapped()->getOrInsert(cx, wrappedKey, wrappedValue, rval)) {
+      return false;
+    }
+  }
+  return JS_WrapValue(cx, rval);
+}
+#endif  // #ifdef NIGHTLY_BUILD
 
 JS_PUBLIC_API bool JS::MapDelete(JSContext* cx, HandleObject obj,
                                  HandleValue key, bool* rval) {

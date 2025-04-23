@@ -502,11 +502,16 @@ pub extern "C" fn wgpu_client_serialize_device_descriptor(
     let label = wgpu_string(desc.label);
     let required_features =
         wgt::Features::from_internal_flags(wgt::FeaturesWGPU::empty(), desc.required_features);
+    let trace = std::env::var("WGPU_TRACE")
+        .ok()
+        .map(|p| wgt::Trace::Directory(p.into()))
+        .unwrap_or(wgt::Trace::Off);
     let desc = wgt::DeviceDescriptor {
         label,
         required_features,
         required_limits: desc.required_limits.clone(),
         memory_hints: wgt::MemoryHints::MemoryUsage,
+        trace,
     };
     *bb = make_byte_buf(&desc);
 }
@@ -1419,10 +1424,14 @@ pub extern "C" fn wgpu_render_bundle_set_vertex_buffer(
     slot: u32,
     buffer_id: id::BufferId,
     offset: BufferAddress,
-    size: Option<BufferSize>,
+    size: Option<&BufferSize>,
 ) {
     wgc::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
-        bundle, slot, buffer_id, offset, size,
+        bundle,
+        slot,
+        buffer_id,
+        offset,
+        size.copied(),
     )
 }
 
@@ -1432,14 +1441,14 @@ pub extern "C" fn wgpu_render_bundle_set_index_buffer(
     buffer: id::BufferId,
     index_format: IndexFormat,
     offset: BufferAddress,
-    size: Option<BufferSize>,
+    size: Option<&BufferSize>,
 ) {
     wgc::command::bundle_ffi::wgpu_render_bundle_set_index_buffer(
         encoder,
         buffer,
         index_format,
         offset,
-        size,
+        size.copied(),
     )
 }
 

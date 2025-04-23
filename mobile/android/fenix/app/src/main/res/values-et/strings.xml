@@ -14,6 +14,8 @@
   <string name="content_description_private_browsing_button">Luba privaatne veebilehitsemine</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_disable_private_browsing_button">Keela privaatne veebilehitsemine</string>
+  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
+  <string name="content_description_private_browsing">Privaatne veebilehitsemine</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Otsi või sisesta aadress</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -42,8 +44,16 @@
   <string name="tab_tray_close_multiselect_content_description">Välju mitmikvaliku režiimist</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Salvesta valitud kaardid kollektsiooni</string>
-  <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-  <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Valitud</string>
+  <!--
+    Home - Bookmarks
+
+    Title for the home screen section with bookmarks.
+  -->
+  <string name="home_bookmarks_title">Järjehoidjad</string>
+  <!-- Content description for the button which navigates the user to show all of their bookmarks. -->
+  <string name="home_bookmarks_show_all_content_description">Kuva kõik järjehoidjad</string>
+  <!-- Text for the menu button to remove a recently saved bookmark from the user's home screen -->
+  <string name="home_bookmarks_menu_item_remove">Eemalda</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s on Mozilla poolt toodetud.</string>
   <!--
@@ -100,6 +110,14 @@
     Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
   -->
   <string name="erase_action_cfr_message">Uue privaatseansi alustamiseks puuduta siit. Kustuta ajalugu, küpsised – kõik.</string>
+  <!--
+    Toolbar "contextual feature recommendation" (CFR)
+
+    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
+  -->
+  <string name="navbar_cfr_title">Uue navigeerimisega saad kiiremini sirvida</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
+  <string name="navbar_cfr_message_2">Veebisaidil allapoole kerides tõmbub see riba kõrvale, et saada sirvimiseks lisaruumi.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Vajalik on ligipääs kaamerale. Mine Androidi sätetesse, puuduta õigusi ja seejärel puuduta lubamise valikut.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -542,10 +560,6 @@
   <string name="exceptions_empty_message_description">Erandid võimaldavad valitud saitidel jälitamisvastase kaitse keelata.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Rohkem teavet</string>
-  <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Jagab sinu brauseri sooritusvõimsuse, kasutamise, kohandamiste ja riistvara andmeid Mozillaga, et aidata meil %1$s paremaks teha.</string>
-  <!-- Preference switch for marketing data collection -->
-  <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Turundusandmed</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Uuringud</string>
   <!-- Summary for studies preferences -->
@@ -692,18 +706,8 @@
   <string name="studies_remove">Eemalda</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Praegu toimuvad</string>
-  <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s võib aegajalt paigaldada ja käivitada uuringuid.</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Rohkem teavet</string>
-  <!--
-    Sessions
-
-    Title for the list of tabs in the current private session
-  -->
-  <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Privaatsed kaardid</string>
-  <!-- Title for the list of tabs in the synced tabs -->
-  <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Sünkroniseeritud kaardid</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Lisa kaart</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -794,18 +798,18 @@
 
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
-  <string name="download_delete_multiple_items_snackbar_1">Allalaadimised on eemaldatud</string>
+  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Allalaadimised on eemaldatud</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar">Allalaadimine %1$s eemaldati</string>
+  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Allalaadimine %1$s eemaldati</string>
   <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1">Allalaaditud faile pole</string>
+  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Allalaaditud faile pole</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d allalaadimist valitud</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1">Eemalda</string>
+  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Eemalda</string>
   <!--
     Crashes
 

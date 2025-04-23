@@ -378,6 +378,27 @@ nsWindowsShellService::CheckBrowserUserChoiceHashes(bool* aResult) {
 }
 
 NS_IMETHODIMP
+nsWindowsShellService::CheckCurrentProcessAUMIDForTesting(
+    nsAString& aRetAumid) {
+  PWSTR id;
+  HRESULT hr = GetCurrentProcessExplicitAppUserModelID(&id);
+
+  if (FAILED(hr)) {
+    // Process AUMID may not be set on MSIX builds,
+    // if so we should return a dummy value
+    if (widget::WinUtils::HasPackageIdentity()) {
+      aRetAumid.Assign(u"MSIXAumidTestValue"_ns);
+      return NS_OK;
+    }
+    return NS_ERROR_FAILURE;
+  }
+  aRetAumid.Assign(id);
+  CoTaskMemFree(id);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsWindowsShellService::CanSetDefaultBrowserUserChoice(bool* aResult) {
   *aResult = false;
 // If the WDBA is not available, this could never succeed.
@@ -1633,9 +1654,10 @@ static nsresult PinShortcutToTaskbarImpl(bool aCheckOnly,
   // during install or runtime - causes a race between it propagating to the
   // virtual `shell:appsfolder` and attempts to pin via `ITaskbarManager`,
   // resulting in pin failures when the latter occurs before the former. We can
-  // skip this when we're only checking whether we're pinned.
-  if (!aCheckOnly && !PollAppsFolderForShortcut(
-                         aAppUserModelId, TimeDuration::FromSeconds(15))) {
+  // skip this when we're in a MSIX build or only checking whether we're pinned.
+  if (!widget::WinUtils::HasPackageIdentity() && !aCheckOnly &&
+      !PollAppsFolderForShortcut(aAppUserModelId,
+                                 TimeDuration::FromSeconds(15))) {
     return NS_ERROR_FILE_NOT_FOUND;
   }
 

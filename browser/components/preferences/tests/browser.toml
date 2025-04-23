@@ -90,9 +90,6 @@ run-if = ["os == 'win'"]
 
 ["browser_dns_over_https_exceptions_subdialog.js"]
 
-["browser_engines.js"]
-fail-if = ["a11y_checks"] # Bug 1854636 clicked treechildren#engineChildren may not be focusable
-
 ["browser_ensure_prefs_bindings_initted.js"]
 
 ["browser_etp_exceptions_dialog.js"]
@@ -177,6 +174,8 @@ skip-if = ["true"]
 
 ["browser_permissions_urlFieldHidden.js"]
 
+["browser_pip_settings.js"]
+
 ["browser_primaryPassword.js"]
 
 ["browser_privacy_cookieBannerHandling.js"]
@@ -196,6 +195,8 @@ skip-if = ["true"]
 ["browser_privacy_syncDataClearing.js"]
 
 ["browser_privacy_syncDataClearing_v2.js"]
+
+["browser_privacy_uploadEnabled.js"]
 
 ["browser_privacypane_2.js"]
 
@@ -217,6 +218,9 @@ skip-if = ["true"]
 support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js"]
 
 ["browser_searchShowSuggestionsFirst.js"]
+
+["browser_search_engineList.js"]
+fail-if = ["a11y_checks"] # Bug 1854636 clicked treechildren#engineChildren may not be focusable
 
 ["browser_search_firefoxSuggest.js"]
 
@@ -245,7 +249,11 @@ skip-if = ["tsan"] # Bug 1678829
 
 ["browser_search_subdialogs_within_preferences_8.js"]
 
+["browser_search_subdialogs_within_preferences_9.js"]
+
 ["browser_search_subdialogs_within_preferences_site_data.js"]
+
+["browser_search_userEngineDialog.js"]
 
 ["browser_search_within_preferences_1.js"]
 

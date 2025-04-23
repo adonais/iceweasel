@@ -11,13 +11,10 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.filter
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.onChildren
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -142,7 +139,7 @@ class DownloadRobot {
 
     fun clickMultiSelectRemoveButton() {
         Log.i(TAG, "clickMultiSelectRemoveButton: Trying to click multi-select remove button")
-        itemWithResIdContainingText("$packageName:id/title", "Remove").click()
+        itemWithResIdContainingText("$packageName:id/title", getStringResource(R.string.download_delete_item)).click()
         Log.i(TAG, "clickMultiSelectRemoveButton: Clicked multi-select remove button")
     }
 
@@ -167,21 +164,37 @@ class DownloadRobot {
         Log.i(TAG, "verifyDownloadedFileName: Trying to verify that the downloaded file: $fileName is displayed")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifyEmptyDownloadsList(testRule: HomeActivityComposeTestRule) {
-        Log.i(TAG, "verifyEmptyDownloadsList: Trying to verify that the \"No downloaded files\" list message is displayed")
-        testRule.onNodeWithText(text = testRule.activity.getString(R.string.download_empty_message_1))
+        Log.i(TAG, "verifyEmptyDownloadsList: Waiting for $waitingTime until the \"No downloads yet\" list message exists")
+        testRule.waitUntilAtLeastOneExists(hasText(testRule.activity.getString(R.string.download_empty_message_2)), waitingTime)
+        Log.i(TAG, "verifyEmptyDownloadsList: Waited for $waitingTime until the \"No downloads yet\" list message exists")
+        Log.i(TAG, "verifyEmptyDownloadsList: Trying to verify that the \"No downloads yet\" list message is displayed")
+        testRule.onNodeWithText(text = testRule.activity.getString(R.string.download_empty_message_2))
             .assertIsDisplayed()
-        Log.i(TAG, "verifyEmptyDownloadsList: Verified that the \"No downloaded files\" list message is displayed")
+        Log.i(TAG, "verifyEmptyDownloadsList: Verified that the \"No downloads yet\" list message is displayed")
+
+        Log.i(TAG, "verifyEmptyDownloadsList: Waiting for $waitingTime until the \"Files you download will appear here.\" list message exists")
+        testRule.waitUntilAtLeastOneExists(hasText(testRule.activity.getString(R.string.download_empty_description)), waitingTime)
+        Log.i(TAG, "verifyEmptyDownloadsList: Waited for $waitingTime until the \"Files you download will appear here.\" list message exists")
+        Log.i(TAG, "verifyEmptyDownloadsList: Trying to verify that the \"Files you download will appear here.\" list message is displayed")
+        testRule.onNodeWithText(text = testRule.activity.getString(R.string.download_empty_description))
+            .assertIsDisplayed()
+        Log.i(TAG, "verifyEmptyDownloadsList: Verified that the \"Files you download will appear here.\" list message is displayed")
     }
 
     fun deleteDownloadedItem(testRule: HomeActivityComposeTestRule, fileName: String) {
-        Log.i(TAG, "deleteDownloadedItem: Trying to click the trash bin icon to delete downloaded file: $fileName")
-        testRule.onNodeWithTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM}.$fileName")
-            .onChildren()
-            .filter(hasContentDescription(testRule.activity.getString(R.string.download_delete_item_1)))
-            .onFirst()
+        Log.i(TAG, "deleteDownloadedItem: Trying to click the delete menu item to delete downloaded file: $fileName")
+        testRule.onNodeWithText(testRule.activity.getString(R.string.download_delete_item))
             .performClick()
-        Log.i(TAG, "deleteDownloadedItem: Clicked the trash bin icon to delete downloaded file: $fileName")
+        Log.i(TAG, "deleteDownloadedItem: Clicked the delete menu item to delete downloaded file: $fileName")
+    }
+
+    fun clickDownloadItemMenuIcon(testRule: HomeActivityComposeTestRule, fileName: String) {
+        Log.i(TAG, "clickDownloadItemMenuIcon: Trying to click the menu overflow icon to open item menu: $fileName")
+        testRule.onNodeWithTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM_MENU}.$fileName")
+            .performClick()
+        Log.i(TAG, "clickDownloadItemMenuIcon: Clicked the menu overflow icon to open item menu: $fileName")
     }
 
     fun clickDownloadedItem(testRule: ComposeTestRule, fileName: String) {

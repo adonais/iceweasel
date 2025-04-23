@@ -5,9 +5,11 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  ShoppingUtils: "resource:///modules/ShoppingUtils.sys.mjs",
 });
 
 const ABOUT_SHOPPING_SIDEBAR = "about:shoppingsidebar";
+const ABOUT_BLANK = "about:blank";
 
 /**
  * When a Review Checker sidebar panel is open ReviewCheckerParent
@@ -57,25 +59,39 @@ export class ReviewCheckerParent extends JSWindowActorParent {
     this.topBrowserWindow = undefined;
   }
 
-  updateCurrentURL(uri, flags) {
+  /**
+   * Returns true if a URL is ignored by ReviewChecker.
+   *
+   * @param {string} url the url that we want to validate.
+   */
+  static isIgnoredURL(url) {
     // about:shoppingsidebar is only used for testing with fake data.
-    if (!uri || uri.spec == ABOUT_SHOPPING_SIDEBAR) {
-      return;
+    return url == ABOUT_SHOPPING_SIDEBAR || url == ABOUT_BLANK;
+  }
+
+  updateCurrentURL(uri, flags, isSimulated) {
+    if (ReviewCheckerParent.isIgnoredURL(uri.spec)) {
+      uri = null;
     }
     this.sendAsyncMessage("ReviewChecker:UpdateCurrentURL", {
-      url: uri.spec,
+      url: uri?.spec,
       isReload: !!(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD),
+      isSimulated,
     });
   }
 
   getCurrentURL() {
     let { selectedBrowser } = this.topBrowserWindow.gBrowser;
     let uri = selectedBrowser.currentURI;
-    // about:shoppingsidebar is only used for testing with fake data.
-    if (!uri || uri.spec == ABOUT_SHOPPING_SIDEBAR) {
+
+    // Remove the unhandled navigation flag if present, as the
+    // product will be handled now.
+    lazy.ShoppingUtils.clearIsDistinctProductPageVisitFlag(selectedBrowser);
+
+    if (ReviewCheckerParent.isIgnoredURL(uri.spec)) {
       return null;
     }
-    return uri.spec;
+    return uri?.spec;
   }
 
   showNewPositionCard() {
@@ -115,7 +131,13 @@ export class ReviewCheckerParent extends JSWindowActorParent {
    * Note that this includes hash changes / pushState navigations, because
    * those can be significant for us.
    */
-  onLocationChange(aWebProgress, _aRequest, aLocationURI, aFlags) {
+  onLocationChange(
+    aWebProgress,
+    _aRequest,
+    aLocationURI,
+    aFlags,
+    aIsSimulated
+  ) {
     if (aWebProgress && !aWebProgress.isTopLevel) {
       return;
     }
@@ -127,7 +149,17 @@ export class ReviewCheckerParent extends JSWindowActorParent {
       return;
     }
 
-    this.updateCurrentURL(aLocationURI, aFlags);
+    // If this tab changed to a new location in the background
+    // it will have an `isDistinctProductPageVisit` flag.
+    // If that is present we need to handle the navigation as
+    // an un-simulated location change.
+    let { selectedBrowser } = this.topBrowserWindow.gBrowser;
+    if (selectedBrowser.isDistinctProductPageVisit) {
+      aIsSimulated = false;
+      lazy.ShoppingUtils.clearIsDistinctProductPageVisitFlag(selectedBrowser);
+    }
+
+    this.updateCurrentURL(aLocationURI, aFlags, aIsSimulated);
   }
 
   dispatchEvent(eventName) {

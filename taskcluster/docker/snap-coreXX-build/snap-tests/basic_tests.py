@@ -31,7 +31,7 @@ class SnapTestsBase:
     _INSTANCE = None
 
     def __init__(self, exp):
-        self._INSTANCE = os.environ.get("TEST_SNAP_INSTANCE", "firefox")
+        self._INSTANCE = os.environ.get("TEST_SNAP_INSTANCE")
 
         self._PROFILE_PATH = "~/snap/{}/common/.mozilla/firefox/".format(self._INSTANCE)
         self._LIB_PATH = r"/snap/{}/current/usr/lib/firefox/libxul.so".format(
@@ -65,12 +65,19 @@ class SnapTestsBase:
             prefix="snap-tests",
             dir=os.path.expanduser(self._PROFILE_PATH),
         )
+
+        driver_service_args = []
+        if self.need_allow_system_access():
+            driver_service_args += ["--allow-system-access"]
+
         driver_service = Service(
             executable_path=self._EXE_PATH,
             log_output=os.path.join(
                 os.environ.get("ARTIFACT_DIR", ""), "geckodriver.log"
             ),
+            service_args=driver_service_args,
         )
+
         options = Options()
         if "TEST_GECKODRIVER_TRACE" in os.environ.keys():
             options.log.level = "trace"
@@ -120,7 +127,8 @@ class SnapTestsBase:
         with open(exp, "r") as j:
             self._expectations = json.load(j)
 
-        rv = False
+        # exit code ; will be set to 1 at first assertion failure
+        ec = 0
         first_tab = self._driver.window_handles[0]
         channel = self.update_channel()
         if self.is_esr_128():
@@ -142,6 +150,8 @@ class SnapTestsBase:
             try:
                 tabs_before = set(self._driver.window_handles)
                 rv = getattr(self, m)(expectations)
+                assert rv is not None, "test returned no value"
+
                 tabs_after = set(self._driver.window_handles)
                 self._logger.info("tabs_after OK {}".format(tabs_after))
 
@@ -151,7 +161,7 @@ class SnapTestsBase:
                 else:
                     self._logger.test_end(m, status="FAIL")
             except Exception as ex:
-                rv = False
+                ec = 1
                 test_status = "ERROR"
                 if isinstance(ex, AssertionError):
                     test_status = "FAIL"
@@ -197,9 +207,9 @@ class SnapTestsBase:
         if not "TEST_NO_QUIT" in os.environ.keys():
             self._driver.quit()
 
-        self._logger.info("Exiting with {}".format(rv))
+        self._logger.info("Exiting with {}".format(ec))
         self._logger.suite_end()
-        sys.exit(0 if rv is True else 1)
+        sys.exit(ec)
 
     def get_screenshot_destination(self, name):
         final_name = name
@@ -237,6 +247,12 @@ class SnapTestsBase:
                 in subprocess.check_output(["file", self._LIB_PATH]).decode()
             )
         return self._is_debug_build
+
+    def need_allow_system_access(self):
+        geckodriver_output = subprocess.check_output(
+            [self._EXE_PATH, "--help"]
+        ).decode()
+        return "--allow-system-access" in geckodriver_output
 
     def update_channel(self):
         if self._update_channel is None:
@@ -335,18 +351,21 @@ class SnapTestsBase:
                     "data:image/png;base64,{}".format(diff_b64.decode("utf-8"))
                 )
 
+            differences_png = "differences_{}".format(exp["reference"])
             with open(
-                self.get_screenshot_destination("differences.png"), "wb"
+                self.get_screenshot_destination(differences_png), "wb"
             ) as diff_screenshot:
                 diff_screenshot.write(buffered.getvalue())
 
+            current_rendering_png = "current_rendering_{}".format(exp["reference"])
             with open(
-                self.get_screenshot_destination("current_rendering.png"), "wb"
+                self.get_screenshot_destination(current_rendering_png), "wb"
             ) as current_screenshot:
                 svg_png_cropped.save(current_screenshot)
 
+            reference_rendering_png = "reference_rendering_{}".format(exp["reference"])
             with open(
-                self.get_screenshot_destination("reference_rendering.png"), "wb"
+                self.get_screenshot_destination(reference_rendering_png), "wb"
             ) as current_screenshot:
                 svg_ref.save(current_screenshot)
 
@@ -377,7 +396,9 @@ class SnapTests(SnapTestsBase):
         super(SnapTests, self).__init__(exp)
 
     def test_snap_core_base(self, exp):
-        assert self.snap_core_base() in ["22", "24"]
+        assert self.snap_core_base() in ["22", "24"], "Core base should be 22 or 24"
+
+        return True
 
     def test_about_support(self, exp):
         self.open_tab("about:support")
@@ -436,6 +457,9 @@ class SnapTests(SnapTestsBase):
     def test_youtube(self, exp):
         self.open_tab("https://www.youtube.com/channel/UCYfdidRxbB8Qhf0Nx7ioOYw")
 
+        # Wait so we leave time to breathe and not be classified as a bot
+        time.sleep(5)
+
         # Wait for the consent dialog and accept it
         self._logger.info("Wait for consent form")
         try:
@@ -447,28 +471,68 @@ class SnapTests(SnapTestsBase):
         except TimeoutException:
             self._logger.info("Wait for consent form: timed out, maybe it is not here")
 
+        # Wait so we leave time to breathe and not be classified as a bot
+        time.sleep(3)
+
+        # Wait for the cable TV dialog and accept it
+        self._logger.info("Wait for cable proposal")
+        try:
+            self._wait.until(
+                EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, "button[aria-label*=Dismiss]")
+                )
+            ).click()
+        except TimeoutException:
+            self._logger.info(
+                "Wait for cable proposal: timed out, maybe it is not here"
+            )
+
+        # Wait so we leave time to breathe and not be classified as a bot
+        time.sleep(3)
+
         # Find first video and click it
         self._logger.info("Wait for one video")
         self._wait.until(
             EC.visibility_of_element_located((By.ID, "video-title-link"))
         ).click()
 
+        # Wait so we leave time to breathe and not be classified as a bot
+        time.sleep(3)
+
         # Wait for duration to be set to something
         self._logger.info("Wait for video to start")
-        video = self._wait.until(
-            EC.visibility_of_element_located((By.CLASS_NAME, "html5-main-video"))
-        )
-        self._wait.until(lambda d: type(video.get_property("duration")) is float)
-        self._logger.info("video duration: {}".format(video.get_property("duration")))
-        assert (
-            video.get_property("duration") > exp["duration"]
-        ), "youtube video should have duration"
+        video = None
+        try:
+            video = self._longwait.until(
+                EC.visibility_of_element_located((By.CLASS_NAME, "html5-main-video"))
+            )
+            self._longwait.until(
+                lambda d: type(video.get_property("duration")) is float
+            )
+            self._logger.info(
+                "video duration: {}".format(video.get_property("duration"))
+            )
+            assert (
+                video.get_property("duration") > exp["duration"]
+            ), "youtube video should have duration"
 
-        self._wait.until(lambda d: video.get_property("currentTime") > exp["playback"])
-        self._logger.info("video played: {}".format(video.get_property("currentTime")))
-        assert (
-            video.get_property("currentTime") > exp["playback"]
-        ), "youtube video should perform playback"
+            self._wait.until(
+                lambda d: video.get_property("currentTime") > exp["playback"]
+            )
+            self._logger.info(
+                "video played: {}".format(video.get_property("currentTime"))
+            )
+            assert (
+                video.get_property("currentTime") > exp["playback"]
+            ), "youtube video should perform playback"
+        except TimeoutException as ex:
+            self._logger.info("video detection timed out")
+            self._logger.info("video: {}".format(video))
+            if video:
+                self._logger.info(
+                    "video duration: {}".format(video.get_property("duration"))
+                )
+            raise ex
 
         return True
 

@@ -1230,26 +1230,21 @@ async function loadTestPage({
      * @returns {Promise<void>}
      */
     runInPage(callback, data = {}) {
-      // ContentTask.spawn runs the `Function.prototype.toString` on this function in
-      // order to send it into the content process. The following function is doing its
-      // own string manipulation in order to load in the TranslationsTest module.
-      const fn = new Function(/* js */ `
-        const TranslationsTest = ChromeUtils.importESModule(
-          "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
-        );
-
-        // Pass in the values that get injected by the task runner.
-        TranslationsTest.setup({Assert, ContentTaskUtils, content});
-
-        const data = ${JSON.stringify(data)};
-
-        return (${callback.toString()})(TranslationsTest, data);
-      `);
-
       return ContentTask.spawn(
         tab.linkedBrowser,
-        {}, // Data to inject.
-        fn
+        { contentData: data, callbackSource: callback.toString() }, // Data to inject.
+        function ({ contentData, callbackSource }) {
+          const TranslationsTest = ChromeUtils.importESModule(
+            "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
+          );
+
+          // Pass in the values that get injected by the task runner.
+          TranslationsTest.setup({ Assert, ContentTaskUtils, content });
+
+          // eslint-disable-next-line no-eval
+          let contentCallback = eval(`(${callbackSource})`);
+          return contentCallback(TranslationsTest, contentData);
+        }
       );
     },
   };
@@ -1400,26 +1395,40 @@ function createAttachmentMock(
 }
 
 /**
- * The count of records per mocked language pair in Remote Settings.
+ * The count of records per mocked language pair in Remote Settings utilizing a shared-vocab config.
  */
-const RECORDS_PER_LANGUAGE_PAIR = 3;
+const RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB = 3;
+
+/**
+ * The count of records per mocked language pair in Remote Settings utilizing a split-vocab config.
+ */
+const RECORDS_PER_LANGUAGE_PAIR_SPLIT_VOCAB = 4;
 
 /**
  * The count of files that are downloaded for a mocked language pair in Remote Settings.
  */
-function downloadedFilesPerLanguagePair() {
+function downloadedFilesPerLanguagePair(splitVocab = false) {
+  const expectedRecords = splitVocab
+    ? RECORDS_PER_LANGUAGE_PAIR_SPLIT_VOCAB
+    : RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB;
+
   return Services.prefs.getBoolPref(USE_LEXICAL_SHORTLIST_PREF)
-    ? RECORDS_PER_LANGUAGE_PAIR
-    : RECORDS_PER_LANGUAGE_PAIR - 1;
+    ? expectedRecords
+    : expectedRecords - 1;
 }
 
-function createRecordsForLanguagePair(fromLang, toLang) {
+function createRecordsForLanguagePair(fromLang, toLang, splitVocab = false) {
   const records = [];
   const lang = fromLang + toLang;
   const models = [
     { fileType: "model", name: `model.${lang}.intgemm.alphas.bin` },
-    { fileType: "vocab", name: `vocab.${lang}.spm` },
     { fileType: "lex", name: `lex.50.50.${lang}.s2t.bin` },
+    ...(splitVocab
+      ? [
+          { fileType: "srcvocab", name: `srcvocab.${lang}.spm` },
+          { fileType: "trgvocab", name: `trgvocab.${lang}.spm` },
+        ]
+      : [{ fileType: "vocab", name: `vocab.${lang}.spm` }]),
   ];
 
   const attachment = {
@@ -1431,9 +1440,15 @@ function createRecordsForLanguagePair(fromLang, toLang) {
     isDownloaded: false,
   };
 
-  if (models.length !== RECORDS_PER_LANGUAGE_PAIR) {
-    throw new Error("Files per language pair was wrong.");
-  }
+  const expectedLength = splitVocab
+    ? RECORDS_PER_LANGUAGE_PAIR_SPLIT_VOCAB
+    : RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB;
+
+  is(
+    models.length,
+    expectedLength,
+    "The number of records per language pair should match the expected length."
+  );
 
   for (const { fileType, name } of models) {
     records.push({

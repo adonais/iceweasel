@@ -20,7 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  ReaderMode: "resource://gre/modules/ReaderMode.sys.mjs",
+  ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
@@ -176,8 +176,6 @@ export class nsContextMenu {
       nsContextMenu.contentData = null;
     }
 
-    this.remoteType = this.actor?.domProcess?.remoteType;
-
     const { gBrowser } = this.window;
 
     this.shouldDisplay = context.shouldDisplay;
@@ -218,6 +216,7 @@ export class nsContextMenu {
     this.onEditable = context.onEditable;
     this.onImage = context.onImage;
     this.onKeywordField = context.onKeywordField;
+    this.onSearchField = context.onSearchField;
     this.onLink = context.onLink;
     this.onLoadedImage = context.onLoadedImage;
     this.onMailtoLink = context.onMailtoLink;
@@ -274,6 +273,8 @@ export class nsContextMenu {
           "ContextMenu"
         );
     }
+
+    this.remoteType = this.actor.manager.domProcess.remoteType;
 
     this.selectedText = this.selectionInfo.text;
     this.isTextSelected = !!this.selectedText.length;
@@ -904,6 +905,7 @@ export class nsContextMenu {
         !this.onMozExtLink) ||
         this.onPlainTextLink
     );
+    this.showItem("context-add-engine", this.shouldShowAddEngine());
     this.showItem("context-keywordfield", this.shouldShowAddKeyword());
     this.showItem("frame", this.inFrame);
 
@@ -2193,7 +2195,7 @@ export class nsContextMenu {
     let cookieJarSettings = this.contentData.cookieJarSettings;
     if (this.onCanvas) {
       // Bypass cache, since it's a data: URL.
-      this._canvasToBlobURL(this.targetIdentifier).then(function (blobURL) {
+      this._canvasToBlobURL(this.targetIdentifier).then(blobURL => {
         this.window.internalSave(
           blobURL,
           null, // originalURL
@@ -2364,6 +2366,36 @@ export class nsContextMenu {
     });
   }
 
+  async addSearchFieldAsEngine() {
+    let { url, formData, charset, method } =
+      await this.actor.getSearchFieldEngineData(this.targetIdentifier);
+
+    let { engineInfo } = await this.window.gDialogBox.open(
+      "chrome://browser/content/search/addEngine.xhtml",
+      {
+        mode: "FORM",
+        title: true,
+        nameTemplate: Services.io.newURI(url).host,
+      }
+    );
+
+    // If the user saved, engineInfo contains `name` and `alias`.
+    // Otherwise, it's undefined.
+    if (engineInfo) {
+      let searchEngine = await Services.search.addUserEngine({
+        name: engineInfo.name,
+        alias: engineInfo.alias,
+        url,
+        formData,
+        charset,
+        method,
+        icon: this.browser.mIconURL,
+      });
+
+      this.window.gURLBar.search("", { searchEngine });
+    }
+  }
+
   /**
    * Utilities
    */
@@ -2508,7 +2540,27 @@ export class nsContextMenu {
   }
 
   shouldShowAddKeyword() {
-    return this.onTextInput && this.onKeywordField && !this.isLoginForm();
+    return (
+      this.onTextInput &&
+      this.onKeywordField &&
+      !this.isLoginForm() &&
+      !Services.prefs.getBoolPref(
+        "browser.urlbar.update2.engineAliasRefresh",
+        false
+      )
+    );
+  }
+
+  shouldShowAddEngine() {
+    return (
+      this.onTextInput &&
+      this.onSearchField &&
+      !this.isLoginForm() &&
+      Services.prefs.getBoolPref(
+        "browser.urlbar.update2.engineAliasRefresh",
+        false
+      )
+    );
   }
 
   addDictionaries() {
@@ -2599,10 +2651,7 @@ export class nsContextMenu {
   getImageText() {
     let dialogBox = this.window.gBrowser.getTabDialogBox(this.browser);
     const imageTextResult = this.actor.getImageText(this.targetIdentifier);
-    TelemetryStopwatch.start(
-      "TEXT_RECOGNITION_API_PERFORMANCE",
-      imageTextResult
-    );
+    let timerId = Glean.textRecognition.apiPerformance.start();
     const { dialog } = dialogBox.open(
       "chrome://browser/content/textrecognition/textrecognition.html",
       {
@@ -2611,7 +2660,8 @@ export class nsContextMenu {
       },
       imageTextResult,
       () => dialog.resizeVertically(),
-      this.window.openLinkIn
+      this.window.openLinkIn,
+      timerId
     );
   }
 

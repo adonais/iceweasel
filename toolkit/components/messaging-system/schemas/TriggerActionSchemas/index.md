@@ -54,6 +54,7 @@ let patterns: string[];
 - [`nthTabOpened`](#nthtabopened)
 - [`tabGroupCreated`](#tabgroupcreated)
 - [`tabGroupSaved`](#tabgroupsaved)
+- [`tabGroupCollapsed`](#tabgroupcollapsed)
 - [`activityAfterIdle`](#activityafteridle)
 - [`cookieBannerDetected`](#cookiebannerdetected)
 - [`cookieBannerHandled`](#cookiebannerhandled)
@@ -61,8 +62,8 @@ let patterns: string[];
 - [`pageActionInUrlbar`](#pageactioninurlbar)
 - [`onSearch`](#onsearch)
 - [`sidebarToolOpened`](#sidebartoolopened)
-- [`shoppingProductPageWithIntegratedRCSidebarClosed`](#shoppingproductpage)
-- [`reviewCheckerSidebarClosedCallout`](#sidebarclosed)
+- [`shoppingProductPageWithIntegratedRCSidebarClosed`](#shoppingproductpagewithintegratedrcsidebarclosed)
+- [`reviewCheckerSidebarClosedCallout`](#reviewcheckersidebarclosedcallout)
 - [`elementClicked`](#elementclicked)
 
 ### `openArticleURL`
@@ -268,7 +269,7 @@ Happens whenever a user creates a tab group.
 }
 ```
 ```js
-// The trigger can also track the number or tab groups created in a
+// The trigger can also track the number of tab groups created in a
 // session, by including the tabGroupsCreatedCount context variable in targeting.
 // Here, the message triggers once two or more tab groups have been created,
 // even if the tabs were closed in between.
@@ -288,12 +289,32 @@ Happens whenever a user uses the "Save and Close" action on a tab group.
 }
 ```
 ```js
-// The trigger can also track the number or tab groups closed in a
+// The trigger can also track the number of tab groups closed in a
 // session, by including the tabGroupsClosedCount context variable in targeting.
 // Here, the message triggers once two tab groups have been saved and closed.
 {
   trigger: { id: "tabGroupSaved" },
   targeting: { "tabGroupsSavedCount >= 2" }
+}
+```
+
+### `tabGroupCollapsed`
+
+Happens whenever a user clicks a tab group label to collapse it. Can be used with the `currentTabGroups` targeting to ensure multiple groups have been collapsed.
+
+```js
+{
+  trigger: { id: "tabGroupCollapsed" }
+}
+```
+```js
+// The trigger can also track the number of tab groups collapsed in a
+// session, by including the tabGroupsCollapsedCount context variable in targeting.
+// Here, the message triggers once four tab groups have been collapsed, or one group
+// has been collapsed four times.
+{
+  trigger: { id: "tabGroupCollapsed" },
+  targeting: { "tabGroupsCollapsedCount >= 4" }
 }
 ```
 
@@ -389,7 +410,7 @@ The `clickCounts` object context variable is also available in targeting, and in
 
 Happens when the user navigates to a product page
 
-The `isReviewCheckerInSidebarClosed` string context variable is available in targeting, and will correspond with which whether the Review Checker panel in the sidebar is closed
+The `isReviewCheckerInSidebarClosed` string context variable is available in targeting, and will correspond with which whether the Review Checker panel in the sidebar is closed.
 
 ```js
 {
@@ -402,7 +423,9 @@ The `isReviewCheckerInSidebarClosed` string context variable is available in tar
 
 Happens when the user navigates to a product page
 
-The `isReviewCheckerInSidebarClosed` string context variable is available in targeting, and will correspond with which whether the Review Checker panel in the sidebar is closed
+The `isReviewCheckerInSidebarClosed` string context variable is available in targeting, and will correspond with which whether the Review Checker panel in the sidebar is closed.
+
+The `isSidebarVisible` string context variable is available in targeting, and will correspond with whether the sidebar launcher is visible.
 
 ```js
 {

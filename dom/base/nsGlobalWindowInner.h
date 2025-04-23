@@ -759,6 +759,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       const nsACString& aQuery, mozilla::dom::CallerType aCallerType,
       mozilla::ErrorResult& aError);
   nsScreen* Screen();
+  bool HasScreen() const { return !!mScreen; }
   void MoveTo(int32_t aXPos, int32_t aYPos,
               mozilla::dom::CallerType aCallerType,
               mozilla::ErrorResult& aError);
@@ -959,6 +960,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   // https://whatpr.org/html/4734/structured-data.html#cross-origin-isolated
   bool CrossOriginIsolated() const override;
+  bool OriginAgentCluster() const;
 
   mozilla::dom::WebTaskScheduler* Scheduler();
 

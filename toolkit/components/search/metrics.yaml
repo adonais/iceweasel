@@ -103,29 +103,6 @@ search.engine.default:
     send_in_pings:
       - 'metrics'
 
-  verified:
-    type: string
-    description: |
-      The verified status of the search engine.
-      For application provided engines, this will always be `default`.
-      For other engines this will either be `verified` or `unverified` depending
-      on if the loadPathHash is valid.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1259139
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1766999
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1259139#c6
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1766999
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-      - rev-data@mozilla.com
-    expires: never
-    lifetime: application
-    send_in_pings:
-      - 'metrics'
-
   changed:
     type: event
     description: |
@@ -274,34 +251,6 @@ search.engine.private:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1766999
     data_sensitivity:
       - web_activity
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-      - rev-data@mozilla.com
-    expires: never
-    lifetime: application
-    send_in_pings:
-      - 'metrics'
-
-  verified:
-    type: string
-    description: |
-      The verified status of the search engine.
-      For application provided engines, this will always be `default`.
-      For other engines this will either be `verified` or `unverified` depending
-      on if the loadPathHash is valid.
-      If this string is an empty string (`""`), this means that one or both of
-      the preferences `browser.search.separatePrivateDefault` and
-      `browser.search.separatePrivateDefault.ui.enabled` are set to false.
-      It is possible that the user selects the same private engine as for the
-      default engine, and hence both versions of these fields will be filled in.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1563016
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1766999
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1563016#c8
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1766999
-    data_sensitivity:
-      - technical
     notification_emails:
       - fx-search-telemetry@mozilla.com
       - rev-data@mozilla.com
@@ -532,3 +481,71 @@ browser.searchinit:
     expires: 145
     unit: updates
     telemetry_mirror: BROWSER_SEARCHINIT_INSECURE_OPENSEARCH_UPDATE_COUNT
+
+search:
+  suggestions_latency:
+    type: labeled_timing_distribution
+    description: >
+      Records the latencies (ms) of search suggestions fetches per search
+      engine. Keys in this histogram are search engine identifiers for built-in
+      search engines and 'other' for non-built-in search engines.
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram SEARCH_SUGGESTIONS_LATENCY_MS.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1743885
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1743885
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - adw@mozilla.com
+    expires: never
+    telemetry_mirror: SEARCH_SUGGESTIONS_LATENCY_MS
+
+search.suggestions:
+  successful_requests:
+    type: labeled_counter
+    description: >
+      Counts the number of successful search suggestion fetches per search
+      engine. Only records app provided engines using their short IDs
+      ('id', not 'identifier') as labels.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: 146
+  aborted_requests:
+    type: labeled_counter
+    description: >
+      Counts the number of aborted search suggestion fetches per search
+      engine. Only records app provided engines using their short IDs
+      ('id', not 'identifier') as labels.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: 146
+  failed_requests:
+    type: labeled_counter
+    description: >
+      Counts the number of failed search suggestion fetches per search
+      engine. Only records app provided engines using their short IDs
+      ('id', not 'identifier') as labels.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: 146

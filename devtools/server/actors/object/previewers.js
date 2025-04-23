@@ -58,6 +58,7 @@ const OBJECT_WITH_URL_CLASSNAMES = new Set([
   "CSSImportRule",
   "CSSStyleSheet",
   "Location",
+  "TrustedScriptURL"
 ]);
 
 /**
@@ -286,6 +287,51 @@ const previewers = {
   "Temporal.Duration": [
     function(objectActor, grip, depth) {
       temporalPreviewer(Temporal.Duration, objectActor, grip);
+      return true;
+    },
+  ],
+
+  TrustedHTML: [
+    function(objectActor, grip, depth) {
+      const text = TrustedHTML.prototype.toString.call(
+        // In worker objectActor.safeRawObj is considered unsafe and is null
+        objectActor.safeRawObj || objectActor.rawObj
+      );
+
+      grip.preview = {
+        kind: "ObjectWithText",
+        text: objectActor.createValueGrip(text, depth)
+      };
+      return true;
+    },
+  ],
+
+  TrustedScript: [
+    function(objectActor, grip, depth) {
+      const text = TrustedScript.prototype.toString.call(
+        // In worker objectActor.safeRawObj is considered unsafe and is null
+        objectActor.safeRawObj || objectActor.rawObj
+      );
+
+      grip.preview = {
+        kind: "ObjectWithText",
+        text: objectActor.createValueGrip(text, depth)
+      };
+      return true;
+    },
+  ],
+
+  TrustedScriptURL: [
+    function(objectActor, grip, depth) {
+      const url = TrustedScriptURL.prototype.toString.call(
+        // In worker objectActor.safeRawObj is considered unsafe and is null
+        objectActor.safeRawObj || objectActor.rawObj
+      );
+
+      grip.preview = {
+        kind: "ObjectWithURL",
+        url: objectActor.createValueGrip(url, depth)
+      };
       return true;
     },
   ],
@@ -942,7 +988,8 @@ function GenericObject(objectActor, grip, depth) {
 
 // Preview functions that do not rely on the object class.
 previewers.Object = [
-  function TypedArray({ obj }, grip, depth) {
+  function TypedArray(objectActor, grip, depth) {
+    const { obj, className } = objectActor;
     if (!ObjectUtils.isTypedArray(obj)) {
       return false;
     }
@@ -961,12 +1008,20 @@ previewers.Object = [
       grip.preview.length
     );
     grip.preview.items = [];
+    const isBigIntArray = className.startsWith("BigInt") || className.startsWith("BigUint");
+
     for (let i = 0; i < previewLength; i++) {
       const desc = obj.getOwnPropertyDescriptor(i);
       if (!desc) {
         break;
       }
-      grip.preview.items.push(desc.value);
+
+      // We need to create grips for items of BigInt arrays. Other typed arrays are fine
+      // as they hold serializable primitives (Numbers)
+      const item = isBigIntArray
+        ? ObjectUtils.createBigIntValueGrip(desc.value)
+        : desc.value;
+      grip.preview.items.push(item);
     }
 
     return true;
@@ -1178,6 +1233,16 @@ previewers.Object = [
       preview.attributesLength = safeRawObj.attributes.length;
       for (const attr of safeRawObj.attributes) {
         preview.attributes[attr.nodeName] = objectActor.createValueGrip(attr.value, depth);
+      }
+
+      // Custom elements may have private properties. Ensure that we provide
+      // enough information for ObjectInspector to know it should check for
+      // them.
+      const privatePropertiesSymbols = ObjectUtils.getSafePrivatePropertiesSymbols(
+        obj
+      );
+      if (privatePropertiesSymbols.length > 0) {
+        preview.privatePropertiesLength = privatePropertiesSymbols.length;
       }
     } else if (className == "Attr") {
       preview.value = objectActor.createValueGrip(safeRawObj.value, depth);

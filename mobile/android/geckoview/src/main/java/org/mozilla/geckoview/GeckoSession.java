@@ -11,9 +11,7 @@ import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_PR
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -27,6 +25,7 @@ import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.provider.DocumentsContract;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
@@ -2035,6 +2034,7 @@ public class GeckoSession {
     private boolean mIsDataUri;
     private @HeaderFilter int mHeaderFilter = HEADER_FILTER_CORS_SAFELISTED;
     private @Nullable String mOriginalInput;
+    private boolean mTextDirectiveUserActivation;
 
     private static @NonNull String createDataUri(
         @NonNull final byte[] bytes, @Nullable final String mimeType) {
@@ -2074,7 +2074,8 @@ public class GeckoSession {
           && equals(mHeaders, other.mHeaders)
           && equals(mLoadFlags, other.mLoadFlags)
           && equals(mIsDataUri, other.mIsDataUri)
-          && equals(mHeaderFilter, other.mHeaderFilter);
+          && equals(mHeaderFilter, other.mHeaderFilter)
+          && equals(mTextDirectiveUserActivation, other.mTextDirectiveUserActivation);
     }
 
     /**
@@ -2234,6 +2235,19 @@ public class GeckoSession {
       mOriginalInput = originalInput;
       return this;
     }
+
+    /**
+     * Set the text directive user activation for the document opened in the window.
+     *
+     * @param textDirectiveUserActivation true if the first text directive wants to be scrolled into
+     *     view.
+     * @return this {@link Loader} instance.
+     */
+    @NonNull
+    public Loader textDirectiveUserActivation(final boolean textDirectiveUserActivation) {
+      mTextDirectiveUserActivation = textDirectiveUserActivation;
+      return this;
+    }
   }
 
   /**
@@ -2302,6 +2316,7 @@ public class GeckoSession {
               msg.putString("uri", request.mUri);
               msg.putInt("flags", loadFlags);
               msg.putInt("headerFilter", request.mHeaderFilter);
+              msg.putBoolean("textDirectiveUserActivation", request.mTextDirectiveUserActivation);
 
               if (request.mReferrerUri != null) {
                 msg.putString("referrerUri", request.mReferrerUri);
@@ -3262,6 +3277,37 @@ public class GeckoSession {
               }
               return new JSONObject(value);
             });
+  }
+
+  /**
+   * Send more web compatibility info when a site is reported as broken.
+   *
+   * @param info A {@link JSONObject} containing the web compatibility report details. The expected
+   *     format of the JSON object is:
+   *     <pre><code>
+   *             {
+   *               "reason": "User-selected reason for reporting",
+   *               "description": "User-provided description of the issue",
+   *               "endpointUrl": "https://webcompat.com/issues/new",
+   *               "reportUrl": "URL of the reported site",
+   *               "reporterConfig": {
+   *                 "src": "android-components-reporter",
+   *                 "utm_campaign": "report-site-issue-button",
+   *                 "utm_source": "android-components-reporter"
+   *               },
+   *               "webcompatInfo": { //JSONObject from GeckoSession.getWebCompatInfo() }
+   *             }
+   *             </code></pre>
+   *
+   * @return a {@link GeckoResult} wil complete if sending more web compatibility info was
+   *     successful. Will complete exceptionally if the web compat info was not sent.
+   */
+  @AnyThread
+  public @NonNull GeckoResult<Void> sendMoreWebCompatInfo(@NonNull final JSONObject info) {
+    Log.i("todocathy", "sendMoreWebCompatInfo");
+    final GeckoBundle bundle = new GeckoBundle();
+    bundle.putString("info", info.toString());
+    return mEventDispatcher.queryVoid("GeckoView:SendMoreWebCompatInfo", bundle);
   }
 
   // This is the GeckoDisplay acquired via acquireDisplay(), if any.
@@ -5503,6 +5549,42 @@ public class GeckoSession {
     }
 
     /**
+     * FolderUploadPrompt represents a prompt shown whenever the browser needs to upload folder data
+     */
+    class FolderUploadPrompt extends BasePrompt {
+      /** The directory name to confirm folder tries to uploading. */
+      public final @Nullable String directoryName;
+
+      /**
+       * A constructor for FolderUploadPrompt
+       *
+       * @param id The identification for this prompt.
+       * @param directoryName The directory that is confirmed.
+       * @param observer A callback to notify when the prompt has been completed.
+       */
+      protected FolderUploadPrompt(
+          @NonNull final String id,
+          @Nullable final String directoryName,
+          @NonNull final Observer observer) {
+        super(id, null, observer);
+        this.directoryName = directoryName;
+      }
+
+      /**
+       * Confirms the prompt.
+       *
+       * @param allowOrDeny whether the browser should allow resubmitting data.
+       * @return A {@link PromptResponse} which can be used to complete the {@link GeckoResult}
+       *     associated with this prompt.
+       */
+      @UiThread
+      public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
+        ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
+        return super.confirm();
+      }
+    }
+
+    /**
      * RepostConfirmPrompt represents a prompt shown whenever the browser needs to resubmit POST
      * data (e.g. due to page refresh).
      */
@@ -6372,7 +6454,7 @@ public class GeckoSession {
      */
     class FilePrompt extends BasePrompt {
       @Retention(RetentionPolicy.SOURCE)
-      @IntDef({Type.SINGLE, Type.MULTIPLE})
+      @IntDef({Type.SINGLE, Type.MULTIPLE, Type.FOLDER})
       public @interface FileType {}
 
       /** Types of file prompts. */
@@ -6382,6 +6464,9 @@ public class GeckoSession {
 
         /** Prompt for multiple files. */
         public static final int MULTIPLE = 2;
+
+        /** Prompt for directory. */
+        public static final int FOLDER = 3;
 
         protected Type() {}
       }
@@ -6458,7 +6543,7 @@ public class GeckoSession {
       @UiThread
       public @NonNull PromptResponse confirm(
           @NonNull final Context context, @NonNull final Uri[] uris) {
-        if (Type.SINGLE == type && (uris == null || uris.length != 1)) {
+        if ((Type.SINGLE == type || Type.FOLDER == type) && (uris == null || uris.length != 1)) {
           throw new IllegalArgumentException();
         }
 
@@ -6473,6 +6558,22 @@ public class GeckoSession {
         }
         ensureResult().putStringArray("files", paths);
 
+        if (Type.FOLDER == type && uris[0] != null) {
+          GeckoBundle[] filesInWebKitDirectory = filesInWebKitDirectory = new GeckoBundle[0];
+          try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                && DocumentsContract.isTreeUri(uris[0])) {
+              filesInWebKitDirectory =
+                  IntentUtils.traverseTreeUri(context, uris[0]).stream()
+                      .map(f -> f.toGeckoBundle())
+                      .toArray(GeckoBundle[]::new);
+            }
+          } catch (final OutOfMemoryError e) {
+            Log.e(LOGTAG, "Cannot traverse child directories", e);
+          }
+          ensureResult().putBundleArray("filesInWebKitDirectory", filesInWebKitDirectory);
+        }
+
         return super.confirm();
       }
 
@@ -6483,33 +6584,14 @@ public class GeckoSession {
         if ("file".equals(uri.getScheme())) {
           return uri.getPath();
         }
-        final ContentResolver cr = context.getContentResolver();
-        final Cursor cur =
-            cr.query(
-                uri,
-                new String[] {"_data"}, /* selection */
-                null,
-                /* args */ null, /* sort */
-                null);
-        if (cur == null) {
-          return null;
-        }
-        try {
-          final int idx = cur.getColumnIndex("_data");
-          if (idx < 0 || !cur.moveToFirst()) {
-            return null;
+        if ("content".equals(uri.getScheme())) {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && DocumentsContract.isTreeUri(uri)) {
+            return IntentUtils.resolveTreeUri(context, uri);
           }
-          do {
-            try {
-              final String path = cur.getString(idx);
-              if (path != null && !path.isEmpty()) {
-                return path;
-              }
-            } catch (final Exception e) {
-            }
-          } while (cur.moveToNext());
-        } finally {
-          cur.close();
+          if (DocumentsContract.isDocumentUri(context, uri)) {
+            return IntentUtils.resolveDocumentUri(context, uri);
+          }
+          return IntentUtils.resolveContentUri(context, uri);
         }
         return null;
       }
@@ -6603,6 +6685,32 @@ public class GeckoSession {
       public @NonNull PromptResponse dismiss() {
         ensureResult().putInt("response", Result.ABORT);
         return super.dismiss();
+      }
+    }
+
+    /** CertificateRequest represents a request for a client authentication certificate. */
+    class CertificateRequest extends BasePrompt {
+      /** The host requesting the certificate. */
+      public final @NonNull String host;
+
+      protected CertificateRequest(
+          final @NonNull String id, final Observer observer, final String host) {
+        super(id, null, observer);
+        this.host = host;
+      }
+
+      /**
+       * Complete the request by responding with the alias of the selected certificate (or null if
+       * none was selected).
+       *
+       * @param alias The alias of the certificate selected (may be null).
+       * @return A {@link PromptResponse} which can be used to complete the {@link GeckoResult}
+       *     associated with this prompt.
+       */
+      @UiThread
+      public @NonNull PromptResponse confirm(final @Nullable String alias) {
+        ensureResult().putString("alias", alias);
+        return super.confirm();
       }
     }
 
@@ -6706,6 +6814,20 @@ public class GeckoSession {
     @UiThread
     default @Nullable GeckoResult<PromptResponse> onButtonPrompt(
         @NonNull final GeckoSession session, @NonNull final ButtonPrompt prompt) {
+      return null;
+    }
+
+    /**
+     * Display a folder upload prompt.
+     *
+     * @param session GeckoSession that triggered the prompt.
+     * @param prompt The {@link FolderUploadPrompt} that describes the prompt.
+     * @return A {@link GeckoResult} resolving to a {@link PromptResponse} which includes all
+     *     necessary information to resolve the prompt.
+     */
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onFolderUploadPrompt(
+        @NonNull final GeckoSession session, @NonNull final FolderUploadPrompt prompt) {
       return null;
     }
 
@@ -6860,6 +6982,20 @@ public class GeckoSession {
     default @Nullable GeckoResult<PromptResponse> onAddressSave(
         @NonNull final GeckoSession session,
         @NonNull final AutocompleteRequest<Autocomplete.AddressSaveOption> request) {
+      return null;
+    }
+
+    /**
+     * Handle a request for a client authentication certificate. This will occur when a host
+     * requests one during the TLS handshake.
+     *
+     * @param session The {@link GeckoSession} that triggered the request.
+     * @param request The {@link CertificateRequest} containing the request details.
+     * @return A {@link GeckoResult} resolving to a {@link PromptResponse}.
+     */
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onRequestCertificate(
+        @NonNull final GeckoSession session, @NonNull final CertificateRequest request) {
       return null;
     }
 

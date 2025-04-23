@@ -2226,46 +2226,36 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // ========================================================================
   // Canonicalization primitives.
   inline void canonicalizeDouble(FloatRegister reg);
-  inline void canonicalizeDoubleIfDeterministic(FloatRegister reg);
 
   inline void canonicalizeFloat(FloatRegister reg);
-  inline void canonicalizeFloatIfDeterministic(FloatRegister reg);
 
  public:
   // ========================================================================
   // Memory access primitives.
-  inline FaultingCodeOffset storeUncanonicalizedDouble(
-      FloatRegister src, const Address& dest) PER_SHARED_ARCH;
-  inline FaultingCodeOffset storeUncanonicalizedDouble(
-      FloatRegister src, const BaseIndex& dest) PER_SHARED_ARCH;
-  inline FaultingCodeOffset storeUncanonicalizedDouble(FloatRegister src,
-                                                       const Operand& dest)
+  inline FaultingCodeOffset storeDouble(FloatRegister src,
+                                        const Address& dest) PER_SHARED_ARCH;
+  inline FaultingCodeOffset storeDouble(FloatRegister src,
+                                        const BaseIndex& dest) PER_SHARED_ARCH;
+  inline FaultingCodeOffset storeDouble(FloatRegister src, const Operand& dest)
       DEFINED_ON(x86_shared);
-
-  template <class T>
-  inline FaultingCodeOffset storeDouble(FloatRegister src, const T& dest);
 
   template <class T>
   inline void boxDouble(FloatRegister src, const T& dest);
 
   using MacroAssemblerSpecific::boxDouble;
 
-  inline FaultingCodeOffset storeUncanonicalizedFloat32(
-      FloatRegister src, const Address& dest) PER_SHARED_ARCH;
-  inline FaultingCodeOffset storeUncanonicalizedFloat32(
-      FloatRegister src, const BaseIndex& dest) PER_SHARED_ARCH;
-  inline FaultingCodeOffset storeUncanonicalizedFloat32(FloatRegister src,
-                                                        const Operand& dest)
+  inline FaultingCodeOffset storeFloat32(FloatRegister src,
+                                         const Address& dest) PER_SHARED_ARCH;
+  inline FaultingCodeOffset storeFloat32(FloatRegister src,
+                                         const BaseIndex& dest) PER_SHARED_ARCH;
+  inline FaultingCodeOffset storeFloat32(FloatRegister src, const Operand& dest)
       DEFINED_ON(x86_shared);
 
-  template <class T>
-  inline FaultingCodeOffset storeFloat32(FloatRegister src, const T& dest);
-
-  inline FaultingCodeOffset storeUncanonicalizedFloat16(
-      FloatRegister src, const Address& dest, Register scratch) PER_SHARED_ARCH;
-  inline FaultingCodeOffset storeUncanonicalizedFloat16(
-      FloatRegister src, const BaseIndex& dest,
-      Register scratch) PER_SHARED_ARCH;
+  inline FaultingCodeOffset storeFloat16(FloatRegister src, const Address& dest,
+                                         Register scratch) PER_SHARED_ARCH;
+  inline FaultingCodeOffset storeFloat16(FloatRegister src,
+                                         const BaseIndex& dest,
+                                         Register scratch) PER_SHARED_ARCH;
 
   template <typename T>
   void storeUnboxedValue(const ConstantOrRegister& value, MIRType valueType,
@@ -4121,26 +4111,26 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // `typeDefData` will be preserved. `instance` and `result` may be the same
   // register, in which case `instance` will be clobbered.
   void wasmNewStructObject(Register instance, Register result,
-                           Register typeDefData, Register temp1, Register temp2,
-                           Label* fail, gc::AllocKind allocKind,
-                           bool zeroFields);
+                           Register allocSite, Register temp1,
+                           size_t offsetOfTypeDefData, Label* fail,
+                           gc::AllocKind allocKind, bool zeroFields);
   // Allocates a wasm array with a dynamic number of elements.
   //
   // `numElements` and `typeDefData` will be preserved. `instance` and `result`
   // may be the same register, in which case `instance` will be clobbered.
   void wasmNewArrayObject(Register instance, Register result,
-                          Register numElements, Register typeDefData,
-                          Register temp, Label* fail, uint32_t elemSize,
-                          bool zeroFields);
+                          Register numElements, Register allocSite,
+                          Register temp, size_t offsetOfTypeDefData,
+                          Label* fail, uint32_t elemSize, bool zeroFields);
   // Allocates a wasm array with a fixed number of elements.
   //
   // `typeDefData` will be preserved. `instance` and `result` may be the same
   // register, in which case `instance` will be clobbered.
   void wasmNewArrayObjectFixed(Register instance, Register result,
-                               Register typeDefData, Register temp1,
-                               Register temp2, Label* fail,
-                               uint32_t numElements, uint32_t storageBytes,
-                               bool zeroFields);
+                               Register allocSite, Register temp1,
+                               Register temp2, size_t offsetOfTypeDefData,
+                               Label* fail, uint32_t numElements,
+                               uint32_t storageBytes, bool zeroFields);
 
   // This function handles nursery allocations for wasm. For JS, see
   // MacroAssembler::bumpPointerAllocate.
@@ -4151,15 +4141,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // See also the dynamically-sized version,
   // MacroAssembler::wasmBumpPointerAllocateDynamic.
   void wasmBumpPointerAllocate(Register instance, Register result,
-                               Register typeDefData, Register temp1,
-                               Register temp2, Label* fail, uint32_t size);
+                               Register allocSite, Register temp1, Label* fail,
+                               uint32_t size);
   // This function handles nursery allocations for wasm of dynamic size. For
   // fixed-size allocations, see MacroAssembler::wasmBumpPointerAllocate.
   //
   // `typeDefData` and `size` will be preserved. `instance` and `result` may be
   // the same register, in which case `instance` will be clobbered.
   void wasmBumpPointerAllocateDynamic(Register instance, Register result,
-                                      Register typeDefData, Register size,
+                                      Register allocSite, Register size,
                                       Register temp1, Label* fail);
 
   // Compute ptr += (indexTemp32 << shift) where shift can be any value < 32.
@@ -4760,6 +4750,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // Unsafe here means the caller is responsible for Spectre mitigations if
   // needed. Prefer branchTestObjClass or one of the other masm helpers!
   inline void loadObjClassUnsafe(Register obj, Register dest);
+  inline void loadObjShapeUnsafe(Register obj, Register dest);
 
   template <typename EmitPreBarrier>
   inline void storeObjShape(Register shape, Register obj,
@@ -5271,11 +5262,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
     }
   }
 
+  template <typename T>
   void storeToTypedFloatArray(Scalar::Type arrayType, FloatRegister value,
-                              const BaseIndex& dest, Register temp,
-                              LiveRegisterSet volatileLiveRegs);
-  void storeToTypedFloatArray(Scalar::Type arrayType, FloatRegister value,
-                              const Address& dest, Register temp,
+                              const T& dest, Register temp,
                               LiveRegisterSet volatileLiveRegs);
 
   template <typename S, typename T>
@@ -5402,6 +5391,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void iteratorClose(Register obj, Register temp1, Register temp2,
                      Register temp3);
   void registerIterator(Register enumeratorsList, Register iter, Register temp);
+
+  void prepareOOBStoreElement(Register object, Register index,
+                              Register elements, Register spectreTemp,
+                              Label* failure, LiveRegisterSet volatileLiveRegs);
 
   void toHashableNonGCThing(ValueOperand value, ValueOperand result,
                             FloatRegister tempFloat);

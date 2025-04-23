@@ -15,7 +15,6 @@ module.exports = {
     Assert: false,
     BrowserTestUtils: false,
     ContentTask: false,
-    ContentTaskUtils: false,
     EventUtils: false,
     IOUtils: false,
     PathUtils: false,
@@ -56,6 +55,7 @@ module.exports = {
     waitForFocus: false,
   },
 
+  name: "mozilla/browser-test",
   plugins: ["mozilla"],
 
   rules: {

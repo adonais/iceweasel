@@ -60,7 +60,7 @@ fi
 # Logic for macosx64
 if [[ $(uname -s) == "Darwin" ]]; then
   # Modify the config with fetched sdk path
-  export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX15.0.sdk"
+  export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX15.2.sdk"
 
   # Avoid mixing up the system python and toolchain python in the
   # python path configuration
@@ -111,7 +111,7 @@ if [[ $(uname -o) == "Msys" ]]; then
   pushd "$WINDOWSSDKDIR"
   mkdir -p Debuggers/x64/
   popd
-  mv $MOZ_FETCHES_DIR/VS/VC/Redist/MSVC/14.38.33135/x64/Microsoft.VC143.CRT/* chrome_dll/system32/
+  mv $MOZ_FETCHES_DIR/VS/VC/Redist/MSVC/14.40.33807/x64/Microsoft.VC143.CRT/* chrome_dll/system32/
   mv "$WINDOWSSDKDIR/App Certification Kit/"* "$WINDOWSSDKDIR"/Debuggers/x64/
   export WINDIR="$PWD/chrome_dll"
 

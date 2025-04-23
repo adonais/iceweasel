@@ -15,12 +15,12 @@ ChromeUtils.defineLazyGetter(lazy, "SearchUIUtilsL10n", () => {
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.sys.mjs",
+  BrowserSearchTelemetry:
+    "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 
 export var SearchUIUtils = {
@@ -222,15 +222,13 @@ export var SearchUIUtils = {
       window.location.href != AppConstants.BROWSER_CHROME_URL ||
       window.gURLBar.readOnly
     ) {
-      let topWindow = lazy.URILoadingHelper.getTopWin(window, {
-        skipPopups: true,
-      });
-      if (topWindow) {
-        // If there's an open browser window, it should handle this command
+      let topWindow = lazy.BrowserWindowTracker.getTopWindow();
+      if (topWindow && !topWindow.gURLBar.readOnly) {
+        // If there's an open browser window, it should handle this command.
         topWindow.focus();
         SearchUIUtils.webSearch(topWindow);
       } else {
-        // If there are no open browser windows, open a new one
+        // If there are no open browser windows, open a new one.
         let newWindow = window.openDialog(
           AppConstants.BROWSER_CHROME_URL,
           "_blank",

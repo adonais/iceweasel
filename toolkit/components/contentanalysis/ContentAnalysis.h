@@ -14,6 +14,7 @@
 #include "mozilla/WeakPtr.h"
 #include "nsIClipboard.h"
 #include "nsIContentAnalysis.h"
+#include "nsIThreadPool.h"
 #include "nsITransferable.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
@@ -167,6 +168,10 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   // WindowGlobalParent that is the origin of the data in the request, if known.
   RefPtr<mozilla::dom::WindowGlobalParent> mSourceWindowGlobal;
 
+  // What to multiply the timeout for this request by. Only needed if there are
+  // requests with multiple userActionIds that are logically grouped together.
+  uint32_t mTimeoutMultiplier = 1;
+
   friend class ::ContentAnalysisTest;
 };
 
@@ -175,11 +180,13 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
 
 class ContentAnalysisResponse;
 class ContentAnalysis final : public nsIContentAnalysis,
+                              public nsIObserver,
                               public SupportsWeakPtr {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(CONTENTANALYSIS_IID)
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICONTENTANALYSIS
+  NS_DECL_NSIOBSERVER
 
   ContentAnalysis();
 
@@ -230,6 +237,14 @@ class ContentAnalysis final : public nsIContentAnalysis,
       nsITransferable* aTransferable,
       nsIClipboard::ClipboardType aClipboardType,
       ContentAnalysisCallback* aResolver, bool aForFullClipboard = false);
+  using FilesAllowedPromise = MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
+  // Checks the passed in files in "batch mode", meaning that all requests will
+  // be done even if some of them are BLOCKED.
+  // Note that aURI is only necessary to pass in in gtests; otherwise we'll
+  // get the URI from aWindow.
+  static RefPtr<FilesAllowedPromise> CheckFilesInBatchMode(
+      nsCOMArray<nsIFile>&& aFiles, mozilla::dom::WindowGlobalParent* aWindow,
+      nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI = nullptr);
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
 
   // Cancel all outstanding requests for the given user action ID.
@@ -261,6 +276,10 @@ class ContentAnalysis final : public nsIContentAnalysis,
                                        nsString&& aClientSignatureSetting,
                                        bool aIsPerUser);
 
+  // Thread pool that all agent communications happen on.  Content Analysis
+  // occasionally uses other (random) background threads for other purposes.
+  nsCOMPtr<nsIThreadPool> mThreadPool;
+
   // Helper function to retry calling the client in case either the client
   // does not exist, or calling the client fails (indicating that the DLP agent
   // has terminated and possibly restarted)
@@ -282,21 +301,38 @@ class ContentAnalysis final : public nsIContentAnalysis,
       const nsACString& aRequestToken);
   nsresult CreateClientIfNecessary(bool aForceCreate = false);
 
-  static Result<std::shared_ptr<content_analysis::sdk::ContentAnalysisResponse>,
-                nsresult>
-  DoAnalyzeRequest(
+  // Actually send the request to the client and handle the response (or error).
+  // Note that the response may be for a different request!
+  static Result<std::nullptr_t, nsresult> DoAnalyzeRequest(
       nsCString&& aUserActionId,
       content_analysis::sdk::ContentAnalysisRequest&& aRequest,
+      bool aAutoAcknowledge,
       const std::shared_ptr<content_analysis::sdk::Client>& aClient);
+  static void HandleResponseFromAgent(
+      content_analysis::sdk::ContentAnalysisResponse&& aResponse);
+
+  struct UserActionIdAndAutoAcknowledge final {
+    nsCString mUserActionId;
+    bool mAutoAcknowledge;
+  };
+  DataMutex<nsTHashMap<nsCString, UserActionIdAndAutoAcknowledge>>
+      mRequestTokenToUserActionIdMap;
   void IssueResponse(ContentAnalysisResponse* response,
-                     nsCString&& aUserActionId, bool aAutoAcknowledge);
+                     nsCString&& aUserActionId, bool aAcknowledge,
+                     bool aIsTooLate);
   void NotifyResponseObservers(ContentAnalysisResponse* aResponse,
-                               nsCString&& aUserActionId,
-                               bool aAutoAcknowledge);
-  void NotifyObserversAndMaybeIssueResponse(ContentAnalysisResponse* aResponse,
-                                            nsCString&& aUserActionId,
-                                            bool aAutoAcknowledge);
-  bool LastRequestSucceeded();
+                               nsCString&& aUserActionId, bool aAutoAcknowledge,
+                               bool aIsTimeout);
+  void NotifyObserversAndMaybeIssueResponseFromAgent(
+      ContentAnalysisResponse* aResponse, nsCString&& aUserActionId,
+      bool aAutoAcknowledge);
+
+  // Destroy the service.  Happens during xpcom-shutdown-threads.
+  void Close();
+
+  // Thread-safe check whether the service is being destroyed.
+  bool IsShutDown();
+
   // Did the URL filter completely handle the request or do we need to check
   // with the agent.
   enum UrlFilterResult { eCheck, eDeny, eAllow };
@@ -331,7 +367,9 @@ class ContentAnalysis final : public nsIContentAnalysis,
     static RefPtr<MultipartRequestCallback> Create(
         ContentAnalysis* aContentAnalysis,
         const nsTArray<ContentAnalysis::ContentAnalysisRequestArray>& aRequests,
-        nsIContentAnalysisCallback* aCallback);
+        nsIContentAnalysisCallback* aCallback, bool aAutoAcknowledge);
+
+    bool HasResponded() const { return mResponded; }
 
    private:
     MultipartRequestCallback() = default;
@@ -343,7 +381,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
     void Initialize(
         ContentAnalysis* aContentAnalysis,
         const nsTArray<ContentAnalysis::ContentAnalysisRequestArray>& aRequests,
-        nsIContentAnalysisCallback* aCallback);
+        nsIContentAnalysisCallback* aCallback, bool aAutoAcknowledge);
 
     void CancelRequests();
     void RemoveFromUserActionMap();
@@ -390,6 +428,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
     RefPtr<nsIContentAnalysisCallback> mCallback;
     nsTHashSet<nsCString> mRequestTokens;
     RefPtr<mozilla::CancelableRunnable> mTimeoutRunnable;
+    bool mAutoAcknowledge;
     bool mIsHandlingTimeout = false;
   };
 
@@ -430,6 +469,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
     RefPtr<ContentAnalysisResponse> mResponse;
     nsCString mUserActionId;
     bool mAutoAcknowledge;
+    bool mWasTimeout;
   };
   // Request token to warn response map.
   nsTHashMap<nsCString, WarnResponseData> mWarnResponseDataMap;
@@ -438,7 +478,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
   std::vector<std::regex> mDenyUrlList;
   bool mParsedUrlLists = false;
   bool mForbidFutureRequests = false;
-  bool mIsShuttingDown = false;
+  DataMutex<bool> mIsShutDown{false, "ContentAnalysis::IsShutDown"};
 
   friend class ContentAnalysisResponse;
   friend class ::ContentAnalysisTest;

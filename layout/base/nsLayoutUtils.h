@@ -1124,6 +1124,7 @@ class nsLayoutUtils {
     ForWebRender = 0x100,
     UseHighQualityScaling = 0x200,
     ResetViewportScrolling = 0x400,
+    CompositeOffscreen = 0x800,
   };
 
   /**
@@ -1461,6 +1462,19 @@ class nsLayoutUtils {
    *         the root content.
    */
   static bool IsViewportScrollbarFrame(nsIFrame* aFrame);
+
+  /**
+   * Use only for paddings / widths / heights, since it clamps negative calc()
+   * to 0.
+   */
+  template <typename LengthPercentageLike>
+  static mozilla::Maybe<nscoord> GetAbsoluteSize(
+      const LengthPercentageLike& aSize) {
+    if (!aSize.ConvertsToLength()) {
+      return mozilla::Nothing();
+    }
+    return mozilla::Some(std::max(0, aSize.ToLength()));
+  }
 
   /**
    * Get the contribution of aFrame to its containing block's intrinsic

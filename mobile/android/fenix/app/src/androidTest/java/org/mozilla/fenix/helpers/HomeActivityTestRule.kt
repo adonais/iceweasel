@@ -70,8 +70,8 @@ class HomeActivityTestRule(
         isNewBookmarksEnabled: Boolean = false,
         isPageLoadTranslationsPromptEnabled: Boolean = false,
         isMicrosurveyEnabled: Boolean = settings.microsurveyFeatureEnabled,
-        isSetAsDefaultBrowserPromptEnabled: Boolean = settings.setAsDefaultBrowserPromptForExistingUsersEnabled,
         shouldUseBottomToolbar: Boolean = settings.shouldUseBottomToolbar,
+        isComposeHomepageEnabled: Boolean = false,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isHomeOnboardingDialogEnabled = isHomeOnboardingDialogEnabled
         this.isPocketEnabled = isPocketEnabled
@@ -91,8 +91,8 @@ class HomeActivityTestRule(
         this.isNewBookmarksEnabled = isNewBookmarksEnabled
         this.enableOrDisablePageLoadTranslationsPrompt(isPageLoadTranslationsPromptEnabled)
         this.isMicrosurveyEnabled = isMicrosurveyEnabled
-        this.isSetAsDefaultBrowserPromptEnabled = isSetAsDefaultBrowserPromptEnabled
         this.shouldUseBottomToolbar = shouldUseBottomToolbar
+        this.isComposeHomepageEnabled = isComposeHomepageEnabled
     }
 
     /**
@@ -149,7 +149,6 @@ class HomeActivityTestRule(
             isOpenInAppBannerEnabled = false,
             composeTopSitesEnabled = composeTopSitesEnabled,
             isMicrosurveyEnabled = false,
-            isSetAsDefaultBrowserPromptEnabled = false,
             // workaround for toolbar at top position by default
             // remove with https://bugzilla.mozilla.org/show_bug.cgi?id=1917640
             shouldUseBottomToolbar = true,
@@ -198,8 +197,9 @@ class HomeActivityIntentTestRule internal constructor(
         isNewBookmarksEnabled: Boolean = false,
         isPageLoadTranslationsPromptEnabled: Boolean = false,
         isMicrosurveyEnabled: Boolean = settings.microsurveyFeatureEnabled,
-        isSetAsDefaultBrowserPromptEnabled: Boolean = settings.setAsDefaultBrowserPromptForExistingUsersEnabled,
         shouldUseBottomToolbar: Boolean = settings.shouldUseBottomToolbar,
+        onboardingFeatureEnabled: Boolean = true,
+        isComposeHomepageEnabled: Boolean = false,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isHomeOnboardingDialogEnabled = isHomeOnboardingDialogEnabled
         this.isPocketEnabled = isPocketEnabled
@@ -219,8 +219,9 @@ class HomeActivityIntentTestRule internal constructor(
         this.isNewBookmarksEnabled = isNewBookmarksEnabled
         this.enableOrDisablePageLoadTranslationsPrompt(isPageLoadTranslationsPromptEnabled)
         this.isMicrosurveyEnabled = isMicrosurveyEnabled
-        this.isSetAsDefaultBrowserPromptEnabled = isSetAsDefaultBrowserPromptEnabled
         this.shouldUseBottomToolbar = shouldUseBottomToolbar
+        this.onboardingFeatureEnabled = onboardingFeatureEnabled
+        this.isComposeHomepageEnabled = isComposeHomepageEnabled
     }
 
     private val longTapUserPreference = getLongPressTimeout()
@@ -293,8 +294,8 @@ class HomeActivityIntentTestRule internal constructor(
         isMenuRedesignCFREnabled = settings.shouldShowMenuCFR
         isNewBookmarksEnabled = settings.useNewBookmarks
         isMicrosurveyEnabled = settings.microsurveyFeatureEnabled
-        isSetAsDefaultBrowserPromptEnabled = settings.setAsDefaultBrowserPromptForExistingUsersEnabled
         shouldUseBottomToolbar = settings.shouldUseBottomToolbar
+        isComposeHomepageEnabled = settings.enableComposeHomepage
     }
 
     companion object {
@@ -320,7 +321,6 @@ class HomeActivityIntentTestRule internal constructor(
             isOpenInAppBannerEnabled = false,
             composeTopSitesEnabled = composeTopSitesEnabled,
             isMicrosurveyEnabled = false,
-            isSetAsDefaultBrowserPromptEnabled = false,
             // workaround for toolbar at top position by default
             // remove with https://bugzilla.mozilla.org/show_bug.cgi?id=1917640
             shouldUseBottomToolbar = true,

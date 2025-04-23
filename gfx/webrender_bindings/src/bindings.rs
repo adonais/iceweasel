@@ -2255,8 +2255,8 @@ pub extern "C" fn wr_transaction_set_document_view(txn: &mut Transaction, doc_re
 }
 
 #[no_mangle]
-pub extern "C" fn wr_transaction_generate_frame(txn: &mut Transaction, id: u64, reasons: RenderReasons) {
-    txn.generate_frame(id, reasons);
+pub extern "C" fn wr_transaction_generate_frame(txn: &mut Transaction, id: u64, present: bool, reasons: RenderReasons) {
+    txn.generate_frame(id, present, reasons);
 }
 
 #[no_mangle]
@@ -3037,6 +3037,11 @@ pub extern "C" fn wr_dp_push_stacking_context(
     );
 
     result
+}
+
+#[no_mangle]
+pub extern "C" fn wr_dp_push_debug(state: &mut WrState, val: u32) {
+    state.frame_builder.dl_builder.push_debug(val);
 }
 
 #[no_mangle]

@@ -246,7 +246,9 @@ def test_task_to_skip_if():
     sf.platform_permutations = {
         "test-manifest": {
             "win": {
-                "11.2009": {"x86": {"debug": ["no_variant"], "opt": ["no_variant"]}}
+                "11.2009": {
+                    "x86": {"debug": {"no_variant": {}}, "opt": {"no_variant": {}}}
+                }
             }
         }
     }
@@ -276,7 +278,10 @@ def test_task_to_skip_if():
         "test-manifest": {
             "mac": {
                 "10.15": {
-                    "x86_64": {"debug": ["swgl", "no_variant"], "opt": ["no_variant"]}
+                    "x86_64": {
+                        "debug": {"swgl": {}, "no_variant": {}},
+                        "opt": {"no_variant": {}},
+                    }
                 }
             }
         }
@@ -299,6 +304,43 @@ def test_task_to_skip_if():
                 "build": {"type": "debug"},
                 "platform": {
                     "arch": "aarch64",
+                    "os": {"name": "macosx", "version": "1015"},
+                },
+                "runtime": {"webrender-sw": True},
+            },
+        },
+    }
+    sf.tasks[task_id] = task_details
+    sf.platform_permutations = {
+        "test-manifest": {
+            "mac": {
+                "10.15": {
+                    "aarch64": {
+                        "debug": {"swgl": {}, "no_variant": {}},
+                        "opt": {"no_variant": {}},
+                    }
+                }
+            }
+        }
+    }
+    # function under test
+    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    assert (
+        skip_if
+        == "os == 'mac' && os_version == '10.15' && processor == 'aarch64' && debug && swgl"
+    )
+
+    # Hacks for macosx 11
+    sf = Skipfails()
+    task_id = "bAkMaQIVQp6oeEIW6fzBDw"
+    task_details = {
+        "expires": "2024-01-09T16:05:56.825Z",
+        "extra": {
+            "suite": "mochitest-media",
+            "test-setting": {
+                "build": {"type": "debug"},
+                "platform": {
+                    "arch": "aarch64",
                     "os": {"name": "macosx", "version": "1100"},
                 },
                 "runtime": {"webrender-sw": True},
@@ -309,8 +351,11 @@ def test_task_to_skip_if():
     sf.platform_permutations = {
         "test-manifest": {
             "mac": {
-                "11.00": {
-                    "aarch64": {"debug": ["swgl", "no_variant"], "opt": ["no_variant"]}
+                "11.20": {
+                    "aarch64": {
+                        "debug": {"swgl": {}, "no_variant": {}},
+                        "opt": {"no_variant": {}},
+                    }
                 }
             }
         }
@@ -319,7 +364,7 @@ def test_task_to_skip_if():
     skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
     assert (
         skip_if
-        == "os == 'mac' && os_version == '11.00' && processor == 'aarch64' && debug && swgl"
+        == "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && debug && swgl"
     )
 
     # Do not include build type or test variant if everything failed
@@ -343,7 +388,7 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     sf.platform_permutations = {
-        "test-manifest": {"linux": {"18.04": {"x86": {"opt": ["no_variant"]}}}}
+        "test-manifest": {"linux": {"18.04": {"x86": {"opt": {"no_variant": {}}}}}}
     }
     # function under test
     skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
@@ -369,7 +414,7 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     sf.platform_permutations = {
-        "test-manifest": {"linux": {"18.04": {"x86": {"opt": ["xorigin"]}}}}
+        "test-manifest": {"linux": {"18.04": {"x86": {"opt": {"xorigin": {}}}}}}
     }
     # function under test
     skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
@@ -397,7 +442,7 @@ def test_task_to_skip_if():
     sf.tasks[task_id] = task_details
     sf.platform_permutations = {
         "test-manifest": {
-            "linux": {"18.04": {"x86": {"opt": ["no_variant", "xorigin"]}}}
+            "linux": {"18.04": {"x86": {"opt": {"no_variant": {}, "xorigin": {}}}}}
         }
     }
     # function under test
@@ -430,7 +475,36 @@ def test_task_to_skip_if():
     sf.platform_permutations = {}
     # function under test
     skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
-    assert skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86'"
+    assert (
+        skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86' && opt"
+    )
+
+    sf = Skipfails()
+    task_id = "czj2mQwqQv6PwON5aijPJg"
+    task_details = {
+        "expires": "2024-03-19T03:29:11.050Z",
+        "extra": {
+            "suite": "web-platform-tests",
+            "test-setting": {
+                "build": {
+                    "type": "opt",
+                },
+                "platform": {
+                    "arch": "32",
+                    "os": {"name": "linux", "version": "1804"},
+                },
+                "runtime": {"xorigin": True},
+            },
+        },
+    }
+    sf.tasks[task_id] = task_details
+    sf.platform_permutations = {}
+    # function under test
+    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    assert (
+        skip_if
+        == "os == 'linux' && os_version == '18.04' && processor == 'x86' && opt && xorigin"
+    )
 
     # Full fail with everal tasks
     sf = Skipfails()
@@ -438,7 +512,10 @@ def test_task_to_skip_if():
         "test-manifest": {
             "linux": {
                 "18.04": {
-                    "x86": {"opt": ["no_variant", "xorigin"], "debug": ["no_variant"]}
+                    "x86": {
+                        "opt": {"no_variant": {}, "xorigin": {}},
+                        "debug": {"no_variant": {}},
+                    }
                 }
             }
         }
@@ -520,7 +597,10 @@ def test_task_to_skip_if():
         "test-manifest": {
             "linux": {
                 "18.04": {
-                    "x86": {"opt": ["no_variant"], "debug": ["no_variant", "xorigin"]}
+                    "x86": {
+                        "opt": {"no_variant": {}},
+                        "debug": {"no_variant": {}, "xorigin": {}},
+                    }
                 }
             }
         }
@@ -625,7 +705,9 @@ def test_task_to_skip_if_wpt():
     sf.platform_permutations = {
         "test-manifest": {
             "linux": {
-                "18.04": {"x86": {"debug": ["no_variant"], "opt": ["no_variant"]}}
+                "18.04": {
+                    "x86": {"debug": {"no_variant": {}}, "opt": {"no_variant": {}}}
+                }
             }
         }
     }

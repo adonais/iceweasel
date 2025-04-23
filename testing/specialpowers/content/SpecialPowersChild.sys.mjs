@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   MockFilePicker: "resource://testing-common/MockFilePicker.sys.mjs",
   MockPermissionPrompt:
     "resource://testing-common/MockPermissionPrompt.sys.mjs",
+  MockPromptCollection:
+    "resource://testing-common/MockPromptCollection.sys.mjs",
   MockSound: "resource://testing-common/MockSound.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PerTestCoverageUtils:
@@ -440,6 +442,10 @@ export class SpecialPowersChild extends JSWindowActorChild {
 
   get MockColorPicker() {
     return lazy.MockColorPicker;
+  }
+
+  get MockPromptCollection() {
+    return lazy.MockPromptCollection;
   }
 
   get MockPermissionPrompt() {
@@ -1603,6 +1609,8 @@ export class SpecialPowersChild extends JSWindowActorChild {
       { imports }
     );
 
+    // If more variables are made available, don't forget to update
+    // tools/lint/eslint/eslint-plugin-mozilla/lib/rules/import-content-task-globals.js.
     sb.sandbox.SpecialPowers = this;
     sb.sandbox.ContentTaskUtils = lazy.ContentTaskUtils;
     for (let [global, prop] of Object.entries({

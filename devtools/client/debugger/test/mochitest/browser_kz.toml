@@ -77,7 +77,7 @@ skip-if = [
 
 ["browser_dbg-outline-focus.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-skip-if = ["verify", "cm6"]
+skip-if = ["verify", "cm5"]
 
 ["browser_dbg-outline-pretty.js"]
 
@@ -141,7 +141,7 @@ skip-if = [
 ["browser_dbg-preview-bucketed-array.js"]
 
 ["browser_dbg-preview-frame.js"]
-skip-if = ["os == 'win'"]
+skip-if = ["os == 'win'", "cm5"]
 
 ["browser_dbg-preview-getter.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
@@ -157,11 +157,16 @@ skip-if = ["os == 'win'"]
 
 ["browser_dbg-preview-moving-token.js"]
 
+["browser_dbg-preview-multiple-frames.js"]
+
+["browser_dbg-preview-multiple-threads.js"]
+fail-if = ["a11y_checks"] # Bug 1849028 .threads-pane .thread is not accessible
+
 ["browser_dbg-preview-source-maps.js"]
 skip-if = ["os == 'win'"]
 
 ["browser_dbg-preview-switch.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 Node is not focusable via the accessibility API
+skip-if = ["a11y_checks"] # Bug 1849028 .theme-twisty is inconsistently not accessible
 
 ["browser_dbg-preview-wrapped-lines.js"]
 fail-if = ["a11y_checks"] # Bug 1860733 splitter element is not focusable
@@ -222,7 +227,7 @@ skip-if = ["os == 'win'"] # Bug 1393121
 skip-if = ["os == 'win'"] # Bug 1393121
 
 ["browser_dbg-search-file.js"]
-fail-if = ["!cm6 && a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = ["os == 'win'"] # Bug 1393121
 
 ["browser_dbg-settings-disable-javascript.js"]
@@ -289,6 +294,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-sources-project-search.js"]
 
 ["browser_dbg-state-based-panels.js"]
+skip-if = [
+ "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt", # Bug 1783639
+]
 
 ["browser_dbg-step-in-navigate.js"]
 
@@ -304,6 +312,7 @@ skip-if = [
 skip-if = ["os == 'win'"]
 
 ["browser_dbg-tabs-pretty-print.js"]
+fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_dbg-tabs-without-urls-selected.js"]
 

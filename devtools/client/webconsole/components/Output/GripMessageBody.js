@@ -5,14 +5,15 @@
 "use strict";
 
 // React
-const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
   MESSAGE_TYPE,
   JSTERM_COMMANDS,
 } = require("resource://devtools/client/webconsole/constants.js");
-const {
-  cleanupStyle,
-} = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
+const { cleanupStyle } = ChromeUtils.importESModule(
+  "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs",
+  { global: "current" }
+);
 const {
   getObjectInspector,
 } = require("resource://devtools/client/webconsole/utils/object-inspector.js");
@@ -23,8 +24,10 @@ loader.lazyGetter(this, "objectInspector", function () {
 });
 
 loader.lazyGetter(this, "MODE", function () {
-  return require("resource://devtools/client/shared/components/reps/index.js")
-    .MODE;
+  return ChromeUtils.importESModule(
+    "resource://devtools/client/shared/components/reps/index.mjs",
+    { global: "current" }
+  ).MODE;
 });
 
 GripMessageBody.displayName = "GripMessageBody";

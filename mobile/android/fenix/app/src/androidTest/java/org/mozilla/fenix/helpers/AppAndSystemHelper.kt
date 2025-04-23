@@ -5,25 +5,23 @@
 
 package org.mozilla.fenix.helpers
 
-import android.Manifest
 import android.app.ActivityManager
-import android.app.LocaleManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.os.LocaleList
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
 import android.provider.Settings
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.core.net.toUri
+import androidx.core.os.LocaleListCompat
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.IdlingResource
@@ -31,7 +29,6 @@ import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.toPackage
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
-import androidx.test.runner.permission.PermissionRequester
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
@@ -45,7 +42,6 @@ import mozilla.components.support.locale.LocaleManager.resetToSystemDefault
 import mozilla.components.support.locale.LocaleManager.setNewLocale
 import org.junit.Assert
 import org.junit.Assert.assertEquals
-import org.mozilla.fenix.Config
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.PermissionStorage
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
@@ -53,7 +49,9 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.PackageName.PIXEL_LAUNCHER
 import org.mozilla.fenix.helpers.Constants.PackageName.YOUTUBE_APP
 import org.mozilla.fenix.helpers.Constants.TAG
+import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithPackageNameAndDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.NetworkConnectionStatusHelper.checkActiveNetworkState
@@ -505,6 +503,16 @@ object AppAndSystemHelper {
         Log.i(TAG, "denyPermission: Clicked the negative camera system permission button.")
     }
 
+    fun verifySystemPhotoAndVideoPickerExists() {
+        assertUIObjectExists(itemWithResId("com.google.android.providers.media.module:id/bottom_sheet"))
+    }
+
+    fun closeSystemPhotoAndVideoPicker() {
+        Log.i(TAG, "closeSystemPhotoAndVideoPicker: Trying to click the system photo picker close button")
+        itemWithPackageNameAndDescription("com.google.android.providers.media.module", "Cancel").click()
+        Log.i(TAG, "closeSystemPhotoAndVideoPicker: Clicked the system photo picker close button")
+    }
+
     fun clickSystemHomeScreenShortcutAddButton() {
         when (Build.VERSION.SDK_INT) {
             in Build.VERSION_CODES.O..Build.VERSION_CODES.R -> clickAddAutomaticallyButton()
@@ -542,83 +550,30 @@ object AppAndSystemHelper {
     }
 
     /**
-     * Changes the default language of the entire device, not just the app.
+     * Changes the default language of the app, simulating a system locale change.
      * Runs the test in its testBlock.
-     * Cleans up and sets the default locale after it's done.
+     * Cleans up and sets the system default locale after it's done.
      */
-    fun runWithSystemLocaleChanged(locale: Locale, testRule: ActivityTestRule<HomeActivity>, testBlock: () -> Unit) {
-        val defaultLocale = Locale.getDefault()
-        Log.i(TAG, "runWithSystemLocaleChanged: Storing the default locale $defaultLocale.")
+    fun runWithSystemLocaleChanged(locale: LocaleListCompat, testBlock: () -> Unit) {
+        Log.i(TAG, "runWithSystemLocaleChanged: Trying to set the locale.")
+        ThreadUtils.runOnUiThread {
+            AppCompatDelegate.setApplicationLocales(locale)
+        }
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
 
         try {
-            Log.i(TAG, "runWithSystemLocaleChanged: Trying to set the locale.")
-            setSystemLocale(locale)
-            // We need to recreate the activity to apply the new locale
-            Log.i(TAG, "runWithSystemLocaleChanged: Recreating the activity to apply the new locale.")
-            ThreadUtils.runOnUiThread { testRule.activity.recreate() }
-            Log.i(TAG, "runWithSystemLocaleChanged: Running the test block.")
+            Log.i(TAG, "Running the test block after locale change.")
             testBlock()
-            Log.i(TAG, "runWithSystemLocaleChanged: Test block finished.")
+            Log.i(TAG, "Test block finished.")
         } catch (e: Exception) {
-            Log.i(TAG, "runWithSystemLocaleChanged: The test block has thrown an exception.${e.message}")
+            Log.i(
+                TAG,
+                "runWithSystemLocaleChanged: The test block has thrown an exception.${e.message}",
+            )
             e.printStackTrace()
             throw e
         } finally {
-            Log.i(TAG, "runWithSystemLocaleChanged final block: Trying to reset the locale to default $defaultLocale.")
-            setSystemLocale(defaultLocale)
-            // We need to recreate the activity to apply the new locale
-            Log.i(TAG, "runWithSystemLocaleChanged final block: Recreating the activity to apply the new locale.")
-            ThreadUtils.runOnUiThread { testRule.activity.recreate() }
-            Log.i(TAG, "runWithSystemLocaleChanged final block: Locale set back to default $defaultLocale.")
-        }
-    }
-
-    /**
-     * Changes the default language of the system, not just the app.
-     * We can only use this if we're running on a debug build, otherwise it will change the permission manifests in release builds.
-     */
-    private fun setSystemLocale(locale: Locale) {
-        if (Config.channel.isDebug) {
-            /* Sets permission to change device language */
-            Log.i(
-                TAG,
-                "setSystemLocale: Requesting permission to change system locale to $locale.",
-            )
-            PermissionRequester().apply {
-                addPermissions(
-                    Manifest.permission.CHANGE_CONFIGURATION,
-                )
-                requestPermissions()
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Log.i(
-                    TAG,
-                    "setSystemLocale: Trying to change system locale to $locale on API ${Build.VERSION.SDK_INT}.",
-                )
-
-                val localeManager = appContext.getSystemService(Context.LOCALE_SERVICE) as LocaleManager
-                localeManager.applicationLocales = LocaleList(locale)
-            } else {
-                Log.i(
-                    TAG,
-                    "setSystemLocale: Trying to change system locale to $locale on API ${Build.VERSION.SDK_INT}.",
-                )
-                val activityManagerNative = Class.forName("android.app.ActivityManagerNative")
-                val am = activityManagerNative.getMethod("getDefault", *arrayOfNulls(0))
-                    .invoke(activityManagerNative, *arrayOfNulls(0))
-                val config =
-                    InstrumentationRegistry.getInstrumentation().context.resources.configuration
-                config.javaClass.getDeclaredField("locale")[config] = locale
-                config.javaClass.getDeclaredField("userSetLocale").setBoolean(config, true)
-                am.javaClass.getMethod(
-                    "updateConfiguration",
-                    Configuration::class.java,
-                ).invoke(am, config)
-            }
-            Log.i(
-                TAG,
-                "setSystemLocale: Changed system locale to $locale.",
-            )
+            ThreadUtils.runOnUiThread { AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList()) }
         }
     }
 
@@ -707,7 +662,7 @@ object AppAndSystemHelper {
         val context = InstrumentationRegistry.getInstrumentation().getTargetContext()
         val intent = Intent().apply {
             action = Intent.ACTION_VIEW
-            data = Uri.parse(url)
+            data = url.toUri()
             `package` = TestHelper.packageName
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }

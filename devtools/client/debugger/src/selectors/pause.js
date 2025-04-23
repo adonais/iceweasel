@@ -134,7 +134,8 @@ function getGeneratedFrameId(frameId) {
   }
   return frameId;
 }
-
+// This is Environment Scope information from the platform.
+// See https://searchfox.org/mozilla-central/rev/b0e8e4ceb46cb3339cdcb90310fcc161ef4b9e3e/devtools/server/actors/environment.js#42-81
 export function getGeneratedFrameScope(state, frame) {
   if (!frame) {
     return null;
@@ -201,22 +202,30 @@ export function getSelectedFrameBindings(state, thread) {
   return frameBindings;
 }
 
-function getFrameScope(state, frame) {
-  return (
-    getOriginalFrameScope(state, frame) || getGeneratedFrameScope(state, frame)
-  );
-}
-
-// This is only used by tests
-export function getSelectedScope(state, thread) {
-  const frame = getSelectedFrame(state, thread);
-
-  const frameScope = getFrameScope(state, frame);
-  if (!frameScope) {
+export function getSelectedScope(state) {
+  const frame = getSelectedFrame(state);
+  if (!frame) {
     return null;
   }
 
-  return frameScope.scope || null;
+  let scopes;
+  // For non-pretty printed original sources
+  if (
+    frame.location.source.isOriginal &&
+    !frame.location.source.isPrettyPrinted &&
+    !frame.generatedLocation?.source.isWasm
+  ) {
+    scopes = getOriginalFrameScope(state, frame)?.scope;
+    // Fallback to the generated scopes if there are no original scopes
+    if (!scopes) {
+      scopes = getGeneratedFrameScope(state, frame)?.scope;
+    }
+  } else {
+    // For generated sources
+    // For pretty printed sources - Even though are seen as original sources they do not include any rename of variables/function names.
+    scopes = getGeneratedFrameScope(state, frame)?.scope;
+  }
+  return scopes;
 }
 
 export function getSelectedOriginalScope(state, thread) {

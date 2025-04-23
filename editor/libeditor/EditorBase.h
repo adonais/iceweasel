@@ -1340,7 +1340,7 @@ class EditorBase : public nsIEditor,
       return mParentData ? mParentData->RangeUpdaterRef() : mRangeUpdater;
     }
 
-    void UpdateSelectionCache(Selection& aSelection);
+    MOZ_CAN_RUN_SCRIPT void UpdateSelectionCache(Selection& aSelection);
 
     bool IsDispatchingInputEvent() const {
       return mDispatchingInputEvent ||
@@ -1775,6 +1775,7 @@ class EditorBase : public nsIEditor,
    *                        available.
    */
   enum class InsertTextTo {
+    SpecifiedPoint,
     ExistingTextNodeIfAvailable,
     ExistingTextNodeIfAvailableAndNotStart,
     AlwaysCreateNewTextNode
@@ -1783,6 +1784,12 @@ class EditorBase : public nsIEditor,
   InsertTextWithTransaction(const nsAString& aStringToInsert,
                             const EditorDOMPoint& aPointToInsert,
                             InsertTextTo aInsertTextTo);
+
+  /**
+   * Compute insertion point from aPoint and aInsertTextTo.
+   */
+  [[nodiscard]] EditorDOMPoint ComputePointToInsertText(
+      const EditorDOMPoint& aPoint, InsertTextTo aInsertTextTo) const;
 
   /**
    * Insert aStringToInsert to aPointToInsert.
@@ -2541,7 +2548,8 @@ class EditorBase : public nsIEditor,
    *                            has parent node.  So, it's always safe to
    *                            call SetAncestorLimit() with this node.
    */
-  virtual void InitializeSelectionAncestorLimit(Element& aAncestorLimit) const;
+  MOZ_CAN_RUN_SCRIPT virtual void InitializeSelectionAncestorLimit(
+      Element& aAncestorLimit) const;
 
   /**
    * Initializes selection and caret for the editor at getting focus.  If
@@ -2658,7 +2666,7 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<CaretPoint, nsresult>
   DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
                               nsIEditor::EStripWrappers aStripWrappers,
-                              const AutoClonedRangeArray& aRangesToDelete);
+                              AutoClonedRangeArray& aRangesToDelete);
 
   /**
    * Create a transaction for delete the content in aRangesToDelete.
@@ -3055,8 +3063,10 @@ class EditorBase : public nsIEditor,
                                         // CollapseSelectionTo, DoReplaceText,
                                         // RangeUpdaterRef
   friend class SplitNodeTransaction;    // ToGenericNSResult
-  friend class WhiteSpaceVisibilityKeeper;  // AutoTransactionsConserveSelection
-  friend class nsIEditor;                   // mIsHTMLEditorClass
+  friend class
+      WhiteSpaceVisibilityKeeper;  // AutoTransactionsConserveSelection,
+                                   // ComputePointToInsertText
+  friend class nsIEditor;          // mIsHTMLEditorClass
 };
 
 }  // namespace mozilla

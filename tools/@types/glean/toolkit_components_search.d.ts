@@ -11,7 +11,6 @@ interface GleanImpl {
     displayName: GleanString;
     loadPath: GleanString;
     submissionUrl: GleanUrl;
-    verified: GleanString;
     changed: GleanEvent;
   }
 
@@ -20,7 +19,6 @@ interface GleanImpl {
     displayName: GleanString;
     loadPath: GleanString;
     submissionUrl: GleanUrl;
-    verified: GleanString;
     changed: GleanEvent;
   }
 
@@ -35,5 +33,15 @@ interface GleanImpl {
     insecureOpensearchEngineCount: GleanQuantity;
     secureOpensearchUpdateCount: GleanQuantity;
     insecureOpensearchUpdateCount: GleanQuantity;
+  }
+
+  search: {
+    suggestionsLatency: Record<string, GleanTimingDistribution>;
+  }
+
+  searchSuggestions: {
+    successfulRequests: Record<string, GleanCounter>;
+    abortedRequests: Record<string, GleanCounter>;
+    failedRequests: Record<string, GleanCounter>;
   }
 }

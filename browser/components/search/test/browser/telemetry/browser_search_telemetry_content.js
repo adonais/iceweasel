@@ -38,8 +38,8 @@ add_task(async function test_context_menu() {
   // Let's reset the Telemetry data.
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  Services.fog.testResetFOG();
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   // Open a new tab with a page containing some text.
   let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -90,12 +90,11 @@ add_task(async function test_context_menu() {
     1
   );
 
-  // Make sure SEARCH_COUNTS contains identical values.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.contextmenu",
-    1
-  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "contextmenu",
+    count: 1,
+  });
 
   contextMenu.hidePopup();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -115,8 +114,7 @@ add_task(async function test_about_newtab() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
   Services.fog.testResetFOG();
-  let search_hist =
-    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -151,12 +149,12 @@ add_task(async function test_about_newtab() {
     "This search must only increment one entry in the scalar."
   );
 
-  // Make sure SEARCH_COUNTS contains identical values.
-  TelemetryTestUtils.assertKeyedHistogramSum(
-    search_hist,
-    "other-MozSearch.newtab",
-    1
-  );
+  // Make sure SAP telemetry has also been incremented.
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "MozSearch",
+    source: "newtab",
+    count: 1,
+  });
 
   // Also also check Glean events.
   const record = Glean.newtabSearch.issued.testGetValue();

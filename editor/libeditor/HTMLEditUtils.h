@@ -1586,6 +1586,96 @@ class HTMLEditUtils final {
   }
 
   /**
+   * Return previous non-empty leaf content or child block or non-editable
+   * content (depending on aLeafNodeTypes).  This ignores invisible inline leaf
+   * element like `<b></b>` and empty `Text` nodes.  So, this may return
+   * invisible `Text` node, but it may be useful to consider whether we need to
+   * insert a padding <br> element.
+   */
+  [[nodiscard]] static nsIContent*
+  GetPreviousNonEmptyLeafContentOrPreviousBlockElement(
+      const nsIContent& aContent, const LeafNodeTypes& aLeafNodeTypes,
+      BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter = nullptr) {
+    for (nsIContent* previousContent =
+             HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+                 aContent, aLeafNodeTypes, aBlockInlineCheck, aAncestorLimiter);
+         previousContent;
+         previousContent =
+             HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+                 *previousContent, aLeafNodeTypes, aBlockInlineCheck,
+                 aAncestorLimiter)) {
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrChildBlock) &&
+          HTMLEditUtils::IsBlockElement(
+              *previousContent,
+              BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+        return previousContent;  // Reached block element
+      }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          HTMLEditUtils::IsSimplyEditableNode(*previousContent)) {
+        return previousContent;  // Reached non-editable content
+      }
+      Text* const previousText = Text::FromNode(previousContent);
+      if (!previousText) {
+        if (!HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousContent)) {
+          continue;  // Ignore invisible inline elements
+        }
+        return previousContent;  // Reached visible inline element
+      }
+      if (!previousText->TextDataLength()) {
+        continue;  // Ignore empty Text nodes.
+      }
+      return previousText;  // Reached non-empty text
+    }
+    return nullptr;
+  }
+
+  /**
+   * Return previous visible leaf content or child block or non-editable content
+   * (depending on aLeafNodeTypes).  This ignores invisible inline leaf element
+   * like `<b></b>` and empty `Text` nodes.  So, this may return invisible
+   * `Text` node, but it may be useful to consider whether we need to insert a
+   * padding <br> element.
+   */
+  template <typename PT, typename CT>
+  [[nodiscard]] static nsIContent*
+  GetPreviousNonEmptyLeafContentOrPreviousBlockElement(
+      const EditorDOMPointBase<PT, CT>& aPoint,
+      const LeafNodeTypes& aLeafNodeTypes, BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter = nullptr) {
+    for (nsIContent* previousContent =
+             HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+                 aPoint, aLeafNodeTypes, aBlockInlineCheck, aAncestorLimiter);
+         previousContent;
+         previousContent =
+             HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+                 *previousContent, aLeafNodeTypes, aBlockInlineCheck,
+                 aAncestorLimiter)) {
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrChildBlock) &&
+          HTMLEditUtils::IsBlockElement(
+              *previousContent,
+              BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+        return previousContent;  // Reached block element
+      }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          HTMLEditUtils::IsSimplyEditableNode(*previousContent)) {
+        return previousContent;  // Reached non-editable content
+      }
+      Text* const previousText = Text::FromNode(previousContent);
+      if (!previousText) {
+        if (!HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousContent)) {
+          continue;  // Ignore invisible inline elements
+        }
+        return previousContent;  // Reached visible inline element
+      }
+      if (!previousText->TextDataLength()) {
+        continue;  // Ignore empty Text nodes.
+      }
+      return previousText;  // Reached non-empty text
+    }
+    return nullptr;
+  }
+  /**
    * Returns a content node whose inline styles should be preserved after
    * deleting content in a range.  Typically, you should set aPoint to start
    * boundary of the range to delete.
@@ -2190,12 +2280,16 @@ class HTMLEditUtils final {
    * GetInclusiveNextNonCollapsibleCharOffset() returns offset of inclusive next
    * character which is not collapsible white-space characters.
    */
+  template <typename PT, typename CT>
   static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
-      const EditorDOMPointInText& aPoint,
+      const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
+    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
+                  std::is_same<PT, Text*>::value);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     return GetInclusiveNextNonCollapsibleCharOffset(
-        *aPoint.ContainerAs<Text>(), aPoint.Offset(), aWalkTextOptions);
+        *aPoint.template ContainerAs<Text>(), aPoint.Offset(),
+        aWalkTextOptions);
   }
   static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
       const Text& aTextNode, uint32_t aOffset,
@@ -2245,9 +2339,12 @@ class HTMLEditUtils final {
    * position.  I.e., the character at the position must be a collapsible
    * white-space.
    */
+  template <typename PT, typename CT>
   static uint32_t GetFirstWhiteSpaceOffsetCollapsedWith(
-      const EditorDOMPointInText& aPoint,
+      const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
+    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
+                  std::is_same<PT, Text*>::value);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     MOZ_ASSERT(!aPoint.IsEndOfContainer());
     MOZ_ASSERT_IF(
@@ -2257,7 +2354,8 @@ class HTMLEditUtils final {
         !aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible),
         aPoint.IsCharCollapsibleASCIISpace());
     return GetFirstWhiteSpaceOffsetCollapsedWith(
-        *aPoint.ContainerAs<Text>(), aPoint.Offset(), aWalkTextOptions);
+        *aPoint.template ContainerAs<Text>(), aPoint.Offset(),
+        aWalkTextOptions);
   }
   static uint32_t GetFirstWhiteSpaceOffsetCollapsedWith(
       const Text& aTextNode, uint32_t aOffset,
@@ -2330,6 +2428,41 @@ class HTMLEditUtils final {
     }
     return EditorDOMPointType();
   }
+
+  /**
+   * Get the first visible char offset in aText.  I.e., this returns invisible
+   * white-space length at start of aText.  If there is no visible char in
+   * aText, this returns the text data length.
+   * Note that WSRunScanner::GetFirstVisiblePoint() may return different `Text`
+   * node point, but this does not scan following `Text` nodes even if aText
+   * is completely invisible.
+   */
+  [[nodiscard]] static uint32_t GetFirstVisibleCharOffset(const Text& aText);
+
+  /**
+   * Get next offset of the last visible char in aText.  I.e., this returns
+   * the first offset of invisible trailing white-spaces.  If there is no
+   * invisible trailing white-spaces in aText, this returns 0.
+   * Note that WSRunScanner::GetAfterLastVisiblePoint() may return different
+   * `Text` node point, but this does not scan preceding `Text` nodes even if
+   * aText is completely invisible.
+   */
+  [[nodiscard]] static uint32_t GetOffsetAfterLastVisibleChar(
+      const Text& aText);
+
+  /**
+   * Get the number of invisible white-spaces in the white-space sequence.  Note
+   * that some invisible white-spaces may be after the first visible character.
+   * E.g., "SP SP NBSP SP SP NBSP".  If this Text follows a block boundary, the
+   * first SPs are the leading invisible white-spaces, and the first NBSP is the
+   * first visible character.  However, following 2 SPs are collapsed to one.
+   * Therefore, one of them is counted as an invisible white-space.
+   *
+   * Note that this assumes that all white-spaces starting from aOffset and
+   * ending by aOffset + aLength are collapsible white-spaces including NBSPs.
+   */
+  [[nodiscard]] static uint32_t GetInvisibleWhiteSpaceCount(
+      const Text& aText, uint32_t aOffset = 0u, uint32_t aLength = UINT32_MAX);
 
   /**
    * GetGoodCaretPointFor() returns a good point to collapse `Selection`
@@ -2698,6 +2831,11 @@ class HTMLEditUtils final {
   template <typename CharType>
   static bool IsSameCSSColorValue(const nsTSubstring<CharType>& aColorA,
                                   const nsTSubstring<CharType>& aColorB);
+
+  /**
+   * Return true if aColor is completely transparent.
+   */
+  [[nodiscard]] static bool IsTransparentCSSColor(const nsAString& aColor);
 
  private:
   static bool CanNodeContain(nsHTMLTag aParentTagId, nsHTMLTag aChildTagId);

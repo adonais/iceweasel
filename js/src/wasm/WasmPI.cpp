@@ -215,7 +215,7 @@ class SuspenderObject : public NativeObject {
 
   enum { DataSlot, PromisingPromiseSlot, SuspendingReturnTypeSlot, SlotCount };
 
-  enum class ReturnType : int32_t { Unknown, Promise, Value, Exception };
+  enum class ReturnType : int32_t { Unknown, Promise, Exception };
 
   static SuspenderObject* create(JSContext* cx) {
     for (;;) {
@@ -1196,12 +1196,7 @@ class SuspendingFunctionModuleFactory {
       return nullptr;
     }
 
-    SharedBytes shareableBytes = js_new<ShareableBytes>();
-    if (!shareableBytes) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    return mg.finishModule(*shareableBytes, moduleMeta,
+    return mg.finishModule(BytecodeBufferOrSource(), moduleMeta,
                            /*maybeCompleteTier2Listener=*/nullptr);
   }
 };
@@ -1238,20 +1233,6 @@ static bool WasmPISuspendTaskContinue(JSContext* cx, unsigned argc, Value* vp) {
   Rooted<PromiseObject*> promise(
       cx, suspender.toObject().as<SuspenderObject>().promisingPromise());
   return RejectPromiseWithPendingError(cx, promise);
-}
-
-static bool IsPromiseValue(JSContext* aCx, JS::Handle<JS::Value> aValue) {
-  if (!aValue.isObject()) {
-    return false;
-  }
-
-  // We only care about Promise here, so CheckedUnwrapStatic is fine.
-  JS::Rooted<JSObject*> obj(aCx, js::CheckedUnwrapStatic(&aValue.toObject()));
-  if (!obj) {
-    return false;
-  }
-
-  return JS::IsPromiseObject(obj);
 }
 
 // Wraps original import to catch all exceptions and convert result to a
@@ -1611,12 +1592,7 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
-    SharedBytes shareableBytes = js_new<ShareableBytes>();
-    if (!shareableBytes) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    return mg.finishModule(*shareableBytes, moduleMeta,
+    return mg.finishModule(BytecodeBufferOrSource(), moduleMeta,
                            /*maybeCompleteTier2Listener=*/nullptr);
   }
 };
@@ -1786,6 +1762,10 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
     return nullptr;
   }
 
+  // The exception and rejection are handled above -- expect resolved promise.
+  MOZ_ASSERT(promise->state() == JS::PromiseState::Fulfilled);
+  RootedValue jsValue(cx, promise->value());
+
   // Construct the results object.
   Rooted<WasmStructObject*> results(
       cx, instance->constantStructNewDefault(
@@ -1793,14 +1773,6 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
   const FieldTypeVector& fields = results->typeDef().structType().fields_;
 
   if (fields.length() > 0) {
-    MOZ_ASSERT_IF(promise, promise->state() == JS::PromiseState::Fulfilled);
-    RootedValue jsValue(cx);
-    if (promise) {
-      jsValue.set(promise->value());
-    } else {
-      jsValue.set(resultRef.get().toJSValue());
-    }
-
     // The struct object is constructed based on returns of exported function.
     // It is the only way we can get ValType for Val::fromJSValue call.
     const wasm::FuncType& sig = instance->codeMeta().getFuncType(
@@ -1860,13 +1832,6 @@ void* AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
   RootedValue resultValue(cx, resultRef.get().toJSValue());
   Rooted<SuspenderObject*> suspenderObject(cx, suspender);
   RootedFunction fn(cx, continueOnSuspendable);
-
-  if (!IsPromiseValue(cx, resultValue)) {
-    suspenderObject->forwardToSuspendable();
-    suspenderObject->setSuspendingReturnType(
-        SuspenderObject::ReturnType::Value);
-    return resultRef.get().forCompiledCode();
-  }
 
   // Wrap a promise.
   RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));

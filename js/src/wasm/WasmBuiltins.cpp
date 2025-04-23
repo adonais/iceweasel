@@ -354,50 +354,50 @@ constexpr SymbolicAddressSignature SASigStructNewIL_true = {
     SymbolicAddress::StructNewIL_true,
     _RoN,
     _FailOnNullPtr,
-    2,
-    {_PTR, _PTR, _END}};
+    3,
+    {_PTR, _I32, _PTR, _END}};
 constexpr SymbolicAddressSignature SASigStructNewIL_false = {
     SymbolicAddress::StructNewIL_false,
     _RoN,
     _FailOnNullPtr,
-    2,
-    {_PTR, _PTR, _END}};
+    3,
+    {_PTR, _I32, _PTR, _END}};
 constexpr SymbolicAddressSignature SASigStructNewOOL_true = {
     SymbolicAddress::StructNewOOL_true,
     _RoN,
     _FailOnNullPtr,
-    2,
-    {_PTR, _PTR, _END}};
+    3,
+    {_PTR, _I32, _PTR, _END}};
 constexpr SymbolicAddressSignature SASigStructNewOOL_false = {
     SymbolicAddress::StructNewOOL_false,
     _RoN,
     _FailOnNullPtr,
-    2,
-    {_PTR, _PTR, _END}};
+    3,
+    {_PTR, _I32, _PTR, _END}};
 constexpr SymbolicAddressSignature SASigArrayNew_true = {
     SymbolicAddress::ArrayNew_true,
     _RoN,
     _FailOnNullPtr,
-    3,
-    {_PTR, _I32, _PTR, _END}};
+    4,
+    {_PTR, _I32, _I32, _PTR, _END}};
 constexpr SymbolicAddressSignature SASigArrayNew_false = {
     SymbolicAddress::ArrayNew_false,
     _RoN,
     _FailOnNullPtr,
-    3,
-    {_PTR, _I32, _PTR, _END}};
+    4,
+    {_PTR, _I32, _I32, _PTR, _END}};
 constexpr SymbolicAddressSignature SASigArrayNewData = {
     SymbolicAddress::ArrayNewData,
     _RoN,
     _FailOnNullPtr,
-    5,
-    {_PTR, _I32, _I32, _PTR, _I32, _END}};
+    6,
+    {_PTR, _I32, _I32, _I32, _PTR, _I32, _END}};
 constexpr SymbolicAddressSignature SASigArrayNewElem = {
     SymbolicAddress::ArrayNewElem,
     _RoN,
     _FailOnNullPtr,
-    5,
-    {_PTR, _I32, _I32, _PTR, _I32, _END}};
+    6,
+    {_PTR, _I32, _I32, _I32, _PTR, _I32, _END}};
 constexpr SymbolicAddressSignature SASigArrayInitData = {
     SymbolicAddress::ArrayInitData,
     _VOID,
@@ -409,7 +409,7 @@ constexpr SymbolicAddressSignature SASigArrayInitElem = {
     _VOID,
     _FailOnNegI32,
     7,
-    {_PTR, _RoN, _I32, _I32, _I32, _PTR, _I32, _END}};
+    {_PTR, _RoN, _I32, _I32, _I32, _I32, _I32, _END}};
 constexpr SymbolicAddressSignature SASigArrayCopy = {
     SymbolicAddress::ArrayCopy,
     _VOID,
@@ -686,7 +686,7 @@ static const wasm::TryNote* FindNonDelegateTryNote(
     const wasm::Code& code, const uint8_t* pc, const CodeBlock** codeBlock) {
   const wasm::TryNote* tryNote = code.lookupTryNote((void*)pc, codeBlock);
   while (tryNote && tryNote->isDelegate()) {
-    pc = (*codeBlock)->segment->base() + tryNote->delegateOffset();
+    pc = (*codeBlock)->base() + tryNote->delegateOffset();
     const wasm::TryNote* delegateTryNote =
         code.lookupTryNote((void*)pc, codeBlock);
     MOZ_RELEASE_ASSERT(delegateTryNote == nullptr ||
@@ -847,8 +847,7 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 
         rfe->stackPointer =
             (uint8_t*)(rfe->framePointer - tryNote->landingPadFramePushed());
-        rfe->target =
-            codeBlock->segment->base() + tryNote->landingPadEntryPoint();
+        rfe->target = codeBlock->base() + tryNote->landingPadEntryPoint();
 
         // Make sure to clear trapping state if we got here due to a trap.
         if (activation->isWasmTrapping()) {
@@ -1601,35 +1600,35 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
       MOZ_ASSERT(*abiType == ToABIType(SASigPostBarrierPreciseWithOffset));
       return FuncCast(Instance::postBarrierPreciseWithOffset, *abiType);
     case SymbolicAddress::StructNewIL_true:
-      *abiType = Args_General2;
+      *abiType = Args_General_GeneralInt32General;
       MOZ_ASSERT(*abiType == ToABIType(SASigStructNewIL_true));
       return FuncCast(Instance::structNewIL<true>, *abiType);
     case SymbolicAddress::StructNewIL_false:
-      *abiType = Args_General2;
+      *abiType = Args_General_GeneralInt32General;
       MOZ_ASSERT(*abiType == ToABIType(SASigStructNewIL_false));
       return FuncCast(Instance::structNewIL<false>, *abiType);
     case SymbolicAddress::StructNewOOL_true:
-      *abiType = Args_General2;
+      *abiType = Args_General_GeneralInt32General;
       MOZ_ASSERT(*abiType == ToABIType(SASigStructNewOOL_true));
       return FuncCast(Instance::structNewOOL<true>, *abiType);
     case SymbolicAddress::StructNewOOL_false:
-      *abiType = Args_General2;
+      *abiType = Args_General_GeneralInt32General;
       MOZ_ASSERT(*abiType == ToABIType(SASigStructNewOOL_false));
       return FuncCast(Instance::structNewOOL<false>, *abiType);
     case SymbolicAddress::ArrayNew_true:
-      *abiType = Args_General_GeneralInt32General;
+      *abiType = Args_General_GeneralInt32Int32General;
       MOZ_ASSERT(*abiType == ToABIType(SASigArrayNew_true));
       return FuncCast(Instance::arrayNew<true>, *abiType);
     case SymbolicAddress::ArrayNew_false:
-      *abiType = Args_General_GeneralInt32General;
+      *abiType = Args_General_GeneralInt32Int32General;
       MOZ_ASSERT(*abiType == ToABIType(SASigArrayNew_false));
       return FuncCast(Instance::arrayNew<false>, *abiType);
     case SymbolicAddress::ArrayNewData:
-      *abiType = Args_General_GeneralInt32Int32GeneralInt32;
+      *abiType = Args_General_GeneralInt32Int32Int32GeneralInt32;
       MOZ_ASSERT(*abiType == ToABIType(SASigArrayNewData));
       return FuncCast(Instance::arrayNewData, *abiType);
     case SymbolicAddress::ArrayNewElem:
-      *abiType = Args_General_GeneralInt32Int32GeneralInt32;
+      *abiType = Args_General_GeneralInt32Int32Int32GeneralInt32;
       MOZ_ASSERT(*abiType == ToABIType(SASigArrayNewElem));
       return FuncCast(Instance::arrayNewElem, *abiType);
     case SymbolicAddress::ArrayInitData:
@@ -1637,7 +1636,7 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
       MOZ_ASSERT(*abiType == ToABIType(SASigArrayInitData));
       return FuncCast(Instance::arrayInitData, *abiType);
     case SymbolicAddress::ArrayInitElem:
-      *abiType = Args_Int32_GeneralGeneralInt32Int32Int32GeneralInt32;
+      *abiType = Args_Int32_GeneralGeneralInt32Int32Int32Int32Int32;
       MOZ_ASSERT(*abiType == ToABIType(SASigArrayInitElem));
       return FuncCast(Instance::arrayInitElem, *abiType);
     case SymbolicAddress::ArrayCopy:

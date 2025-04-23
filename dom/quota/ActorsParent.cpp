@@ -74,8 +74,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SystemPrincipal.h"
-#include "mozilla/Telemetry.h"
-#include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -786,7 +784,8 @@ class CollectOriginsHelper final : public Runnable {
  ******************************************************************************/
 
 class RecordTimeDeltaHelper final : public Runnable {
-  const Telemetry::HistogramID mHistogram;
+  const mozilla::glean::impl::Labeled<
+      mozilla::glean::impl::TimingDistributionMetric, DynamicLabel>& mMetric;
 
   // TimeStamps that are set on the IO thread.
   LazyInitializedOnceNotNull<const TimeStamp> mStartTime;
@@ -796,8 +795,10 @@ class RecordTimeDeltaHelper final : public Runnable {
   LazyInitializedOnceNotNull<const TimeStamp> mInitializedTime;
 
  public:
-  explicit RecordTimeDeltaHelper(const Telemetry::HistogramID aHistogram)
-      : Runnable("dom::quota::RecordTimeDeltaHelper"), mHistogram(aHistogram) {}
+  explicit RecordTimeDeltaHelper(const mozilla::glean::impl::Labeled<
+                                 mozilla::glean::impl::TimingDistributionMetric,
+                                 DynamicLabel>& aMetric)
+      : Runnable("dom::quota::RecordTimeDeltaHelper"), mMetric(aMetric) {}
 
   TimeStamp Start();
 
@@ -1834,7 +1835,7 @@ void QuotaManager::ShutdownInstance() {
 
   if (gInstance) {
     auto recordTimeDeltaHelper =
-        MakeRefPtr<RecordTimeDeltaHelper>(Telemetry::QM_SHUTDOWN_TIME_V0);
+        MakeRefPtr<RecordTimeDeltaHelper>(glean::dom_quota::shutdown_time);
 
     recordTimeDeltaHelper->Start();
 
@@ -2519,9 +2520,13 @@ void QuotaManager::Shutdown() {
   // `isAllClientsShutdownComplete` calls because it should be sufficient
   // to rely on `ShutdownStorage` to abort all existing operations and to
   // wait for all existing directory locks to be released as well.
+  //
+  // This might not be possible after adding mInitializingAllTemporaryOrigins
+  // to the checks below.
 
-  const bool needsToWait =
-      initiateShutdownWorkThreads() || static_cast<bool>(gNormalOriginOps);
+  const bool needsToWait = initiateShutdownWorkThreads() ||
+                           static_cast<bool>(gNormalOriginOps) ||
+                           mInitializingAllTemporaryOrigins;
 
   // If any clients cannot shutdown immediately, spin the event loop while we
   // wait on all the threads to close.
@@ -2529,8 +2534,9 @@ void QuotaManager::Shutdown() {
     startKillActorsTimer();
 
     MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-        "QuotaManager::Shutdown"_ns, [isAllClientsShutdownComplete]() {
-          return !gNormalOriginOps && isAllClientsShutdownComplete();
+        "QuotaManager::Shutdown"_ns, [this, isAllClientsShutdownComplete]() {
+          return !gNormalOriginOps && isAllClientsShutdownComplete() &&
+                 !mInitializingAllTemporaryOrigins;
         }));
 
     stopKillActorsTimer();
@@ -2731,7 +2737,7 @@ nsresult QuotaManager::LoadQuota() {
       };
 
   auto recordTimeDeltaHelper =
-      MakeRefPtr<RecordTimeDeltaHelper>(Telemetry::QM_QUOTA_INFO_LOAD_TIME_V0);
+      MakeRefPtr<RecordTimeDeltaHelper>(glean::dom_quota::info_load_time);
 
   const auto startTime = recordTimeDeltaHelper->Start();
 
@@ -4005,6 +4011,8 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
 
     return NS_OK;
   }
+
+  NotifyOriginInitializationStarted(*this);
 
   // We need to initialize directories of all clients if they exists and also
   // get the total usage to initialize the quota.
@@ -5848,6 +5856,8 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryGroupIsInitializedInternal(
 
   const auto innerFunc = [&aPrincipalMetadata,
                           this](const auto&) -> mozilla::Result<Ok, nsresult> {
+    NotifyGroupInitializationStarted(*this);
+
     const auto& array =
         mIOThreadAccessible.Access()->mAllTemporaryOrigins.Lookup(
             aPrincipalMetadata.mGroup);
@@ -5860,6 +5870,10 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryGroupIsInitializedInternal(
     // origins. This is going to change soon with the planned asynchronous
     // temporary origin initialization done in the background.
     for (const auto& originMetadata : *array) {
+      if (NS_WARN_IF(IsShuttingDown())) {
+        return Err(NS_ERROR_ABORT);
+      }
+
       if (IsTemporaryOriginInitializedInternal(originMetadata)) {
         continue;
       }
@@ -5877,6 +5891,9 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryGroupIsInitializedInternal(
     }
 
     // XXX Evict origins that exceed their group limit here.
+
+    SleepIfEnabled(
+        StaticPrefs::dom_quotaManager_groupInitialization_pauseOnIOThreadMs());
 
     return Ok{};
   };
@@ -6479,8 +6496,6 @@ RefPtr<BoolPromise> QuotaManager::InitializeAllTemporaryOrigins() {
 
     auto processNextGroup = [self = RefPtr(this)](
                                 auto&& processNextGroupCallback) {
-      // TODO: Add shutdown checks.
-
       auto backgroundThreadData = self->mBackgroundThreadAccessible.Access();
 
       if (backgroundThreadData->mUninitializedGroups.IsEmpty()) {
@@ -6489,6 +6504,15 @@ RefPtr<BoolPromise> QuotaManager::InitializeAllTemporaryOrigins() {
 
         self->mInitializeAllTemporaryOriginsPromiseHolder.ResolveIfExists(
             true, __func__);
+
+        return;
+      }
+
+      if (NS_WARN_IF(IsShuttingDown())) {
+        self->mInitializingAllTemporaryOrigins = false;
+
+        self->mInitializeAllTemporaryOriginsPromiseHolder.RejectIfExists(
+            NS_ERROR_ABORT, __func__);
 
         return;
       }
@@ -8055,7 +8079,8 @@ RecordTimeDeltaHelper::Run() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mInitializedTime.isSome()) {
-    // Keys for QM_QUOTA_INFO_LOAD_TIME_V0 and QM_SHUTDOWN_TIME_V0:
+    // Labels for glean::dom_quota::info_load_time and
+    // glean::dom_quota::shutdown_time:
     // Normal: Normal conditions.
     // WasSuspended: There was a OS sleep so that it was suspended.
     // TimeStampErr1: The recorded start time is unexpectedly greater than the
@@ -8083,7 +8108,7 @@ RecordTimeDeltaHelper::Run() {
       return "Normal"_ns;
     }();
 
-    Telemetry::AccumulateTimeDelta(mHistogram, key, *mStartTime, *mEndTime);
+    mMetric.Get(key).AccumulateRawDuration(*mEndTime - *mStartTime);
 
     return NS_OK;
   }

@@ -9,6 +9,17 @@
 
 category app-startup nsBrowserGlue @mozilla.org/browser/browserglue;1 application={ec8030f7-c20a-464f-9b0e-13a3a9e97384} application={aa3c5121-dab2-40e2-81ca-7ea25febc110}
 
+# Browser global components initializing before UI startup
+category browser-before-ui-startup resource:///modules/sessionstore/SessionStore.sys.mjs SessionStore.init
+category browser-before-ui-startup resource:///modules/BuiltInThemes.sys.mjs BuiltInThemes.maybeInstallActiveBuiltInTheme
+#ifdef MOZ_NORMANDY
+category browser-before-ui-startup resource://normandy/Normandy.sys.mjs Normandy.init
+#endif
+category browser-before-ui-startup chrome://pocket/content/SaveToPocket.sys.mjs SaveToPocket.init
+category browser-before-ui-startup resource:///modules/ResetPBMPanel.sys.mjs ResetPBMPanel.init
+category browser-before-ui-startup resource:///modules/AboutHomeStartupCache.sys.mjs AboutHomeStartupCache.init
+category browser-before-ui-startup resource:///modules/AccountsGlue.sys.mjs AccountsGlue.init
+
 # Browser window lifecycle consumers
 category browser-window-domcontentloaded-before-tabbrowser resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.setupInWindow
 category browser-window-domcontentloaded resource:///modules/BrowserWindowTracker.sys.mjs BrowserWindowTracker.track
@@ -16,23 +27,24 @@ category browser-window-domcontentloaded resource:///modules/CustomizableUI.sys.
 
 category browser-window-delayed-startup resource:///modules/ContentAnalysis.sys.mjs ContentAnalysis.initialize
 category browser-window-delayed-startup resource:///modules/HomePage.sys.mjs HomePage.delayedStartup
+category browser-window-delayed-startup moz-src:///browser/components/genai/LinkPreview.sys.mjs LinkPreview.init
 category browser-window-delayed-startup resource:///modules/ReportBrokenSite.sys.mjs ReportBrokenSite.init
-category browser-window-delayed-startup resource:///modules/SearchUIUtils.sys.mjs SearchUIUtils.init
+category browser-window-delayed-startup moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.init
 
 category browser-window-unload resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.teardownInWindow
-category browser-window-unload resource:///modules/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
+category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
 
 # App startup consumers
 category browser-idle-startup resource:///modules/PlacesUIUtils.sys.mjs PlacesUIUtils.unblockToolbars
 category browser-idle-startup resource:///modules/BuiltInThemes.sys.mjs BuiltInThemes.ensureBuiltInThemes
 category browser-idle-startup resource://gre/modules/RFPHelper.sys.mjs RFPHelper.init
 category browser-idle-startup resource://gre/modules/Blocklist.sys.mjs Blocklist.loadBlocklistAsync
-category browser-idle-startup resource:///modules/TabUnloader.sys.mjs TabUnloader.init
+category browser-idle-startup moz-src:///browser/components/tabbrowser/TabUnloader.sys.mjs TabUnloader.init
 category browser-idle-startup resource:///modules/GenAI.sys.mjs GenAI.init
 category browser-idle-startup resource:///modules/QuickSuggest.sys.mjs QuickSuggest.init
 category browser-idle-startup resource:///modules/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.init
 category browser-idle-startup resource:///modules/ShoppingUtils.sys.mjs ShoppingUtils.init
-category browser-idle-startup resource:///modules/SearchSERPTelemetry.sys.mjs SearchSERPCategorization.init
+category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
 #ifdef MOZ_UPDATER
 category browser-idle-startup resource://gre/modules/UpdateListener.sys.mjs UpdateListener.maybeShowUnsupportedNotification
@@ -51,9 +63,11 @@ category browser-quit-application-granted resource://normandy/Normandy.sys.mjs N
 category browser-quit-application-granted resource://gre/modules/RFPHelper.sys.mjs RFPHelper.uninit
 category browser-quit-application-granted resource:///modules/ShoppingUtils.sys.mjs ShoppingUtils.uninit
 category browser-quit-application-granted resource:///modules/asrouter/ASRouterNewTabHook.sys.mjs ASRouterNewTabHook.destroy
+category browser-quit-application-granted moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.uninit
+category browser-quit-application-granted moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs SearchSERPTelemetry.uninit
 #ifdef MOZ_UPDATER
 category browser-quit-application-granted resource://gre/modules/UpdateListener.sys.mjs UpdateListener.reset
 #endif
 category browser-quit-application-granted resource:///modules/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.uninit
 
-category search-service-notification resource:///modules/SearchUIUtils.sys.mjs SearchUIUtils.showSearchServiceNotification
+category search-service-notification moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.showSearchServiceNotification
