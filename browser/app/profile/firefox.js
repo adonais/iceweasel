@@ -1048,11 +1048,7 @@ pref("browser.tabs.tooltipsShowPidAndActiveness", false);
 pref("browser.tabs.hoverPreview.enabled", true);
 pref("browser.tabs.hoverPreview.showThumbnails", true);
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.tabs.groups.enabled", true);
-#else
-pref("browser.tabs.groups.enabled", false);
-#endif
 pref("browser.tabs.groups.smart.enabled", false);
 pref("browser.tabs.groups.smart.optin", false);
 
@@ -1799,8 +1795,14 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 pref("browser.newtab.preload", true);
 
 // If an on-train limited rollout of the preonboarding modal is enabled, the
-// percentage of the Mac, Linux, and MSIX population to enroll
-pref("browser.preonboarding.onTrainRolloutPopulation",  0);
+// percentage of the Mac, Linux, and MSIX population to enroll. Default to 25% of
+// population (2500 / 10000).
+pref("browser.preonboarding.onTrainRolloutPopulation",  2500);
+
+// Do not enable the preonboarding experience on Linux
+#ifdef XP_LINUX
+  pref("browser.preonboarding.enabled", false);
+#endif
 
 // Mozilla Ad Routing Service (MARS) unified ads service
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);

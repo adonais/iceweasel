@@ -3,6 +3,142 @@
     {
       "stash": {
         "blocked": [
+          "{178b7d08-856c-4d24-9aa2-5c656d5b7406}:6.6.2"
+        ],
+        "unblocked": [],
+        "softblocked": []
+      },
+      "schema": 1746794167841,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1746815706308,
+      "id": "e0acee9e-5f92-4567-8ebc-8b8aeb35fbf5",
+      "last_modified": 1746815782081
+    },
+    {
+      "stash": {
+        "blocked": [
+          "{3023a854-75d2-4f14-9cfc-8ae0847e5204}:2.4.2",
+          "{3023a854-75d2-4f14-9cfc-8ae0847e5204}:3.5.2",
+          "{166252d6-b859-4b63-b85f-54c9cb476186}:2.4.2",
+          "{166252d6-b859-4b63-b85f-54c9cb476186}:2.5.2"
+        ],
+        "unblocked": [],
+        "softblocked": []
+      },
+      "schema": 1746556589631,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1746794105194,
+      "id": "631b576c-7ad2-449a-ab5a-83eb103919ac",
+      "last_modified": 1746794167684
+    },
+    {
+      "stash": {
+        "blocked": [
+          "coral@testnet:2025.1",
+          "whopple@pro:1.0.0",
+          "whopple@pro:1.0.1",
+          "whopple@pro:1.0.2",
+          "muxx@stable:1.0.0",
+          "muxx@stable:1.0.1",
+          "beta@bree:1.0.0",
+          "beta@bree:1.0.1",
+          "beta@bree:1.0.2",
+          "beta@whoop:1.0.0",
+          "beta@whoop:1.0.1",
+          "beta@whoop:1.0.2",
+          "beta@whoop:1.0.3",
+          "beta@whoop:1.0.4",
+          "beta@whoop:1.0.5",
+          "official@inspirodev:1.0.0",
+          "official@inspirodev:1.0.1",
+          "official@inspirodev:1.0.2",
+          "official@inspirodev:1.0.3",
+          "official@appsm:1.0.0",
+          "official@appsm:1.1.0",
+          "official@appsm:1.1.1",
+          "official@appsm:1.1.2",
+          "test@twtr:2024.3.27.1",
+          "test@twtr:2024.4.19.1",
+          "test@twtr:2024.4.22.1",
+          "test@twtr:2024.4.24.1",
+          "earnof@official:2024.1.1",
+          "{d64b7c69-2d93-4536-b885-45df44ea375c}:2.2.0",
+          "{d64b7c69-2d93-4536-b885-45df44ea375c}:2.2.1",
+          "daniesl37@gmail.com:1.4.0",
+          "{7a74d83d-4017-404d-a7d2-91c9181bbf1f}:1.2",
+          "{7a74d83d-4017-404d-a7d2-91c9181bbf1f}:1.3",
+          "pardeshiyogesh.930@gmail.com:1.2.0",
+          "pardeshiyogesh930@gmail.com:1.0.0",
+          "{fdd45ac6-9557-4b8c-aa71-cc8ff6dc7204}:1.3"
+        ],
+        "unblocked": [],
+        "softblocked": []
+      },
+      "schema": 1746437704849,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1746556506569,
+      "id": "f0ba085f-5864-4945-9384-37af961c5faf",
+      "last_modified": 1746556589509
+    },
+    {
+      "stash": {
+        "blocked": [
+          "support.firefox@beamy.io:4.8.2"
+        ],
+        "unblocked": [],
+        "softblocked": []
+      },
+      "schema": 1746113766826,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1746210907325,
+      "id": "71c304f8-95eb-403d-8ba4-33021d6af9cb",
+      "last_modified": 1746210984035
+    },
+    {
+      "stash": {
+        "blocked": [
+          "coldturkey@getcoldturkey.com:4.6.2"
+        ],
+        "unblocked": [],
+        "softblocked": []
+      },
+      "schema": 1745584572219,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1745606107340,
+      "id": "4d63be9e-6a4d-4f4a-82a8-3ee3c890ab3b",
+      "last_modified": 1745606180658
+    },
+    {
+      "stash": {
+        "blocked": [
+          "support@sybnet.cc:1.0"
+        ],
+        "unblocked": [],
+        "softblocked": []
+      },
+      "schema": 1745519774559,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1745584505309,
+      "id": "35b0bf4c-0717-4d28-bbc7-a3a00d7156de",
+      "last_modified": 1745584572158
+    },
+    {
+      "stash": {
+        "blocked": [
+          "support@mullvad.net:1.0.1"
+        ],
+        "unblocked": [],
+        "softblocked": []
+      },
+      "schema": 1745508610801,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1745519705243,
+      "id": "06f308b7-e618-4148-af57-a9c0436e51d7",
+      "last_modified": 1745519774313
+    },
+    {
+      "stash": {
+        "blocked": [
           "Footbase-scores@opensourcedaily.site:1.1",
           "Footbase-scores@opensourcedaily.site:1.2",
           "sportzd-News@walloganoportoflio.site:1.1",
@@ -202,5 +338,5 @@
       "last_modified": 1739466430716
     }
   ],
-  "timestamp": 1744374973077
+  "timestamp": 1746815782081
 }

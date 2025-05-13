@@ -1380,6 +1380,21 @@ class LayerViewSupport final
     gkWindow->UpdateDynamicToolbarMaxHeight(ScreenIntCoord(aHeight));
   }
 
+  void OnPipModeChanged(bool aPipMode) {
+    MOZ_ASSERT(NS_IsMainThread());
+    auto win(mWindow.Access());
+    if (!win) {
+      return;  // Already shut down.
+    }
+
+    nsWindow* gkWindow = win->GetNsWindow();
+    if (!gkWindow) {
+      return;
+    }
+
+    gkWindow->PipModeChanged(aPipMode);
+  }
+
   void OnKeyboardHeightChanged(int32_t aHeight) {
     MOZ_ASSERT(NS_IsMainThread());
     auto win(mWindow.Access());
@@ -2939,6 +2954,10 @@ void nsWindow::DispatchHitTest(const WidgetTouchEvent& aEvent) {
 }
 
 void nsWindow::PassExternalResponse(java::WebResponse::Param aResponse) {
+  if (Destroyed()) {
+    return;
+  }
+
   auto acc(mGeckoViewSupport.Access());
   if (!acc) {
     return;
@@ -3284,6 +3303,16 @@ void nsWindow::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
 
   if (mAttachedWidgetListener) {
     mAttachedWidgetListener->DynamicToolbarOffsetChanged(aOffset);
+  }
+}
+
+void nsWindow::PipModeChanged(bool aPipMode) {
+  if (mWidgetListener) {
+    mWidgetListener->AndroidPipModeChanged(aPipMode);
+  }
+
+  if (mAttachedWidgetListener) {
+    mAttachedWidgetListener->AndroidPipModeChanged(aPipMode);
   }
 }
 

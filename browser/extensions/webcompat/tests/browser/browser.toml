@@ -14,6 +14,10 @@ support-files = [
 
 ["browser_aboutcompat.js"]
 
+["browser_custom_functions.js"]
+support-files = ["download_server.sjs"]
+skip-if = ["true"] # Bug 1961710
+
 ["browser_interventions.js"]
 
 ["browser_shims.js"]
