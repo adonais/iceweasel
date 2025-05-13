@@ -205,13 +205,17 @@ const gExperimentalPane = {
   },
 
   _setCategoryVisibility(shouldHide) {
-    document.getElementById("category-experimental").hidden =
-      Services.prefs.getBoolPref(
-        "browser.preferences.experimental.hidden",
-        false
-      );
+    document.getElementById("category-experimental").hidden = shouldHide;
 
-    if (document.getElementById("categories").selectedItem?.id ==
+    // Cache the visibility so we can show it quicker in subsequent loads.
+    Services.prefs.setBoolPref(
+      "browser.preferences.experimental.hidden",
+      shouldHide
+    );
+
+    if (
+      shouldHide &&
+      document.getElementById("categories").selectedItem?.id ==
         "category-experimental"
     ) {
       // Leave the 'experimental' category if there are no available features
