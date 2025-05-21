@@ -13,43 +13,36 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 
 class SetupChecklistReducerTest {
-
     @Test
-    fun `GIVEN no setup checklist state WHEN checklist item clicked action THEN the reduced state remains the same`() {
-        val task = ChecklistItem.Task(
-            type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
-            title = "task",
-            icon = R.drawable.ic_addons_extensions,
-            isCompleted = false,
-        )
+    fun `WHEN init action THEN the reduced state remains the same`() {
+        val appState = AppState(setupChecklistState = SetupChecklistState())
 
-        val appState = AppState()
-        val reducedState = SetupChecklistReducer.reduce(
-            appState,
-            AppAction.SetupChecklistAction.ChecklistItemClicked(task),
-        )
+        val reducedState =
+            SetupChecklistReducer.reduce(appState, AppAction.SetupChecklistAction.Init)
 
         assertEquals(appState, reducedState)
     }
 
     @Test
-    fun `WHEN closed action THEN the reduced state remains the same`() {
+    fun `WHEN closed action THEN the reduced state visible state is updated`() {
         val appState = AppState(setupChecklistState = SetupChecklistState())
 
         val reducedState =
             SetupChecklistReducer.reduce(appState, AppAction.SetupChecklistAction.Closed)
 
-        assertEquals(appState, reducedState)
+        val expected = appState.copy(setupChecklistState = SetupChecklistState(isVisible = false))
+
+        assertEquals(expected, reducedState)
     }
 
     @Test
-    fun `WHEN a group item is clicked THEN the reduced state has the group expanded and other groups collapsed`() {
+    fun `WHEN a group item is clicked action THEN the reduced state group's expanded state is updated`() {
         val expandedGroup = ChecklistItem.Group(
-            title = "group1",
+            title = R.string.setup_checklist_group_essentials,
             tasks = listOf(
                 ChecklistItem.Task(
                     type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
-                    title = "task1",
+                    title = R.string.setup_checklist_task_default_browser,
                     icon = R.drawable.ic_addons_extensions,
                     isCompleted = false,
                 ),
@@ -57,11 +50,11 @@ class SetupChecklistReducerTest {
             isExpanded = true,
         )
         val collapsedGroup = ChecklistItem.Group(
-            title = "group2",
+            title = R.string.setup_checklist_group_helpful_tools,
             tasks = listOf(
                 ChecklistItem.Task(
                     type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-                    title = "task2",
+                    title = R.string.setup_checklist_task_explore_extensions,
                     icon = R.drawable.ic_addons_extensions,
                     isCompleted = false,
                 ),
@@ -93,10 +86,10 @@ class SetupChecklistReducerTest {
     }
 
     @Test
-    fun `WHEN a task item is clicked THEN the reduced state has the task marked completed`() {
+    fun `WHEN a task item is clicked action is dispatched THEN the reduced states task's completed state is not updated`() {
         val task = ChecklistItem.Task(
             type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
-            title = "task",
+            title = R.string.setup_checklist_task_default_browser,
             icon = R.drawable.ic_addons_extensions,
             isCompleted = false,
         )
@@ -108,26 +101,52 @@ class SetupChecklistReducerTest {
             AppAction.SetupChecklistAction.ChecklistItemClicked(task),
         )
 
-        assertTrue((reducedState.setupChecklistState!!.checklistItems[0] as ChecklistItem.Task).isCompleted)
+        assertFalse((reducedState.setupChecklistState!!.checklistItems[0] as ChecklistItem.Task).isCompleted)
     }
 
     @Test
-    fun `WHEN a task item within a group is clicked THEN the reduced state has only the clicked task marked completed`() {
-        val taskToClick = ChecklistItem.Task(
-            type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
-            title = "task1",
+    fun `WHEN a task preference updated action is dispatched THEN the reduced states task's completed state is updated`() {
+        val task = ChecklistItem.Task(
+            type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
+            title = R.string.setup_checklist_task_explore_extensions,
             icon = R.drawable.ic_addons_extensions,
             isCompleted = false,
         )
-        val taskNoClick = ChecklistItem.Task(
+
+        val appState =
+            AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(task)))
+        val reducedState = SetupChecklistReducer.reduce(
+            appState,
+            AppAction.SetupChecklistAction.TaskPreferenceUpdated(task.type, true),
+        )
+
+        assertTrue((reducedState.setupChecklistState!!.checklistItems[0] as ChecklistItem.Task).isCompleted)
+
+        val reducedState2 = SetupChecklistReducer.reduce(
+            reducedState,
+            AppAction.SetupChecklistAction.TaskPreferenceUpdated(task.type, false),
+        )
+
+        assertFalse((reducedState2.setupChecklistState!!.checklistItems[0] as ChecklistItem.Task).isCompleted)
+    }
+
+    @Test
+    fun `WHEN a groups task preference is updated THEN only the reduced state task's completed state is updated`() {
+        val updatedTask = ChecklistItem.Task(
+            type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
+            title = R.string.setup_checklist_task_default_browser,
+            icon = R.drawable.ic_addons_extensions,
+            isCompleted = false,
+        )
+        val nonUpdatedTask = ChecklistItem.Task(
             type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-            title = "task2",
+            title = R.string.setup_checklist_task_default_browser,
             icon = R.drawable.ic_addons_extensions,
             isCompleted = false,
         )
         val group = ChecklistItem.Group(
-            title = "group",
-            tasks = listOf(taskToClick, taskNoClick),
+            title = R.string.setup_checklist_group_customize,
+            tasks = listOf(updatedTask, nonUpdatedTask),
             isExpanded = true,
         )
 
@@ -135,10 +154,18 @@ class SetupChecklistReducerTest {
             AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(group)))
         val reducedState = SetupChecklistReducer.reduce(
             appState,
-            AppAction.SetupChecklistAction.ChecklistItemClicked(taskToClick),
+            AppAction.SetupChecklistAction.TaskPreferenceUpdated(updatedTask.type, true),
         )
 
         assertTrue((reducedState.setupChecklistState!!.checklistItems[0] as ChecklistItem.Group).tasks[0].isCompleted)
         assertFalse((reducedState.setupChecklistState!!.checklistItems[0] as ChecklistItem.Group).tasks[1].isCompleted)
+
+        val reducedState2 = SetupChecklistReducer.reduce(
+            reducedState,
+            AppAction.SetupChecklistAction.TaskPreferenceUpdated(updatedTask.type, false),
+        )
+
+        assertFalse((reducedState2.setupChecklistState!!.checklistItems[0] as ChecklistItem.Group).tasks[0].isCompleted)
+        assertFalse((reducedState2.setupChecklistState!!.checklistItems[0] as ChecklistItem.Group).tasks[1].isCompleted)
     }
 }

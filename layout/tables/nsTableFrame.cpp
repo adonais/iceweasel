@@ -1483,15 +1483,17 @@ bool nsTableFrame::AncestorsHaveStyleBSize(
     if (LayoutFrameType::TableCell == frameType ||
         LayoutFrameType::TableRow == frameType ||
         LayoutFrameType::TableRowGroup == frameType) {
-      const auto& bsize = rs->mStylePosition->BSize(wm);
+      const auto bsize =
+          rs->mStylePosition->BSize(wm, rs->mStyleDisplay->mPosition);
       // calc() with both lengths and percentages treated like 'auto' on
       // internal table elements
-      if (!bsize.IsAuto() && !bsize.HasLengthAndPercentage()) {
+      if (!bsize->IsAuto() && !bsize->HasLengthAndPercentage()) {
         return true;
       }
     } else if (LayoutFrameType::Table == frameType) {
       // we reached the containing table, so always return
-      return !rs->mStylePosition->BSize(wm).IsAuto();
+      return !rs->mStylePosition->BSize(wm, rs->mStyleDisplay->mPosition)
+                  ->IsAuto();
     }
   }
   return false;
@@ -1511,8 +1513,9 @@ void nsTableFrame::CheckRequestSpecialBSizeReflow(
       (NS_UNCONSTRAINEDSIZE ==
            aReflowInput.ComputedBSize() ||  // no computed bsize
        0 == aReflowInput.ComputedBSize()) &&
-      aReflowInput.mStylePosition->BSize(wm)
-          .ConvertsToPercentage() &&  // pct bsize
+      aReflowInput.mStylePosition
+          ->BSize(wm, aReflowInput.mStyleDisplay->mPosition)
+          ->ConvertsToPercentage() &&  // pct bsize
       nsTableFrame::AncestorsHaveStyleBSize(*aReflowInput.mParentReflowInput)) {
     nsTableFrame::RequestSpecialBSizeReflow(aReflowInput);
   }
@@ -3476,11 +3479,11 @@ nsTableFrame* nsTableFrame::GetTableFrame(nsIFrame* aFrame) {
 }
 
 bool nsTableFrame::IsAutoBSize(WritingMode aWM) {
-  const auto& bsize = StylePosition()->BSize(aWM);
-  if (bsize.IsAuto()) {
+  const auto bsize = StylePosition()->BSize(aWM, StyleDisplay()->mPosition);
+  if (bsize->IsAuto()) {
     return true;
   }
-  return bsize.ConvertsToPercentage() && bsize.ToPercentage() <= 0.0f;
+  return bsize->ConvertsToPercentage() && bsize->ToPercentage() <= 0.0f;
 }
 
 nscoord nsTableFrame::CalcBorderBoxBSize(const ReflowInput& aReflowInput,
@@ -3506,8 +3509,9 @@ bool nsTableFrame::IsAutoLayout() {
   // and tables with inline size set to 'max-content' must be
   // auto-layout (at least as long as
   // FixedTableLayoutStrategy::GetPrefISize returns nscoord_MAX)
-  const auto& iSize = StylePosition()->ISize(GetWritingMode());
-  return iSize.IsAuto() || iSize.IsMaxContent();
+  const auto iSize =
+      StylePosition()->ISize(GetWritingMode(), StyleDisplay()->mPosition);
+  return iSize->IsAuto() || iSize->IsMaxContent();
 }
 
 #ifdef DEBUG_FRAME_DUMP
@@ -3651,15 +3655,19 @@ bool nsTableFrame::ColumnHasCellSpacingBefore(int32_t aColIndex) const {
   // Check if we have a <col> element with a non-zero definite inline size.
   // Note: percentages and calc(%) are intentionally not considered.
   if (const auto* col = fif->GetColFrame(aColIndex)) {
-    const auto& iSize = col->StylePosition()->ISize(GetWritingMode());
-    if (iSize.ConvertsToLength() && iSize.ToLength() > 0) {
-      const auto& maxISize = col->StylePosition()->MaxISize(GetWritingMode());
-      if (!maxISize.ConvertsToLength() || maxISize.ToLength() > 0) {
+    const auto positionProperty = col->StyleDisplay()->mPosition;
+    const auto iSize =
+        col->StylePosition()->ISize(GetWritingMode(), positionProperty);
+    if (iSize->ConvertsToLength() && iSize->ToLength() > 0) {
+      const auto maxISize =
+          col->StylePosition()->MaxISize(GetWritingMode(), positionProperty);
+      if (!maxISize->ConvertsToLength() || maxISize->ToLength() > 0) {
         return true;
       }
     }
-    const auto& minISize = col->StylePosition()->MinISize(GetWritingMode());
-    if (minISize.ConvertsToLength() && minISize.ToLength() > 0) {
+    const auto minISize =
+        col->StylePosition()->MinISize(GetWritingMode(), positionProperty);
+    if (minISize->ConvertsToLength() && minISize->ToLength() > 0) {
       return true;
     }
   }
@@ -7385,8 +7393,7 @@ nsDisplayTableBackgroundSet::nsDisplayTableBackgroundSet(
     nsDisplayListBuilder* aBuilder, nsIFrame* aTable)
     : mBuilder(aBuilder),
       mColGroupBackgrounds(aBuilder),
-      mColBackgrounds(aBuilder),
-      mCurrentScrollParentId(aBuilder->GetCurrentScrollParentId()) {
+      mColBackgrounds(aBuilder) {
   mPrevTableBackgroundSet = mBuilder->SetTableBackgroundSet(this);
   mozilla::DebugOnly<const nsIFrame*> reference =
       mBuilder->FindReferenceFrameFor(aTable, &mToReferenceFrame);

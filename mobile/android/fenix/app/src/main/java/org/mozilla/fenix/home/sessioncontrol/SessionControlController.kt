@@ -12,6 +12,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.addTextChangedListener
 import androidx.navigation.NavController
+import androidx.navigation.NavDirections
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
@@ -52,12 +53,15 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.collections.SaveCollectionStep
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.toolbar.navbar.shouldAddNavigationBar
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
+import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.mars.MARSUseCases
@@ -65,6 +69,7 @@ import org.mozilla.fenix.messaging.MessageController
 import org.mozilla.fenix.onboarding.WallpaperOnboardingDialogFragment.Companion.THUMBNAILS_SELECTION_COUNT
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.utils.showAddSearchWidgetPrompt
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperState
 import mozilla.components.feature.tab.collections.Tab as ComponentTab
@@ -189,6 +194,16 @@ interface SessionControlController {
      * @see [SessionControlInteractor.reportSessionMetrics]
      */
     fun handleReportSessionMetrics(state: AppState)
+
+    /**
+     * @see [SetupChecklistInteractor.onChecklistItemClicked]
+     */
+    fun onChecklistItemClicked(item: ChecklistItem)
+
+    /**
+     * @see [SetupChecklistInteractor.onRemoveChecklistButtonClicked]
+     */
+    fun onRemoveChecklistButtonClicked()
 }
 
 @Suppress("TooManyFunctions", "LargeClass", "LongParameterList")
@@ -388,7 +403,6 @@ class DefaultSessionControlController(
         when (topSite.url) {
             SupportUtils.POCKET_TRENDING_URL -> Pocket.pocketTopSiteRemoved.record(NoExtras())
             SupportUtils.GOOGLE_URL -> TopSites.googleTopSiteRemoved.record(NoExtras())
-            SupportUtils.BAIDU_URL -> TopSites.baiduTopSiteRemoved.record(NoExtras())
         }
 
         viewLifecycleScope.launch(Dispatchers.IO) {
@@ -426,7 +440,6 @@ class DefaultSessionControlController(
 
         when (topSite.url) {
             SupportUtils.GOOGLE_URL -> TopSites.openGoogleSearchAttribution.record(NoExtras())
-            SupportUtils.BAIDU_URL -> TopSites.openBaiduSearchAttribution.record(NoExtras())
             SupportUtils.POCKET_TRENDING_URL -> Pocket.pocketTopSiteClicked.record(NoExtras())
         }
 
@@ -662,5 +675,40 @@ class DefaultSessionControlController(
         }
 
         HomeBookmarks.bookmarksCount.set(state.bookmarks.size.toLong())
+    }
+
+    override fun onChecklistItemClicked(item: ChecklistItem) {
+        if (item is ChecklistItem.Task) {
+            // The navigation actions are required to be called on the main thread.
+            navigationActionFor(item)
+        }
+
+        appStore.dispatch(AppAction.SetupChecklistAction.ChecklistItemClicked(item))
+    }
+
+    @VisibleForTesting
+    internal fun navigationActionFor(item: ChecklistItem.Task) = when (item.type) {
+        ChecklistItem.Task.Type.SET_AS_DEFAULT -> activity.openSetDefaultBrowserOption()
+
+        ChecklistItem.Task.Type.SIGN_IN ->
+            navigateTo(HomeFragmentDirections.actionGlobalTurnOnSync(FenixFxAEntryPoint.NewUserOnboarding))
+
+        ChecklistItem.Task.Type.SELECT_THEME ->
+            navigateTo(HomeFragmentDirections.actionGlobalCustomizationFragment())
+
+        ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT ->
+            navigateTo(HomeFragmentDirections.actionGlobalCustomizationFragment())
+
+        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> showAddSearchWidgetPrompt(activity)
+
+        ChecklistItem.Task.Type.EXPLORE_EXTENSION ->
+            navigateTo(HomeFragmentDirections.actionGlobalAddonsManagementFragment())
+    }
+
+    private fun navigateTo(directions: NavDirections) =
+        navController.nav(R.id.homeFragment, directions)
+
+    override fun onRemoveChecklistButtonClicked() {
+        appStore.dispatch(AppAction.SetupChecklistAction.Closed)
     }
 }

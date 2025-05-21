@@ -470,6 +470,23 @@ cycle_collector:
     expires: never
     telemetry_mirror: DEFERRED_FINALIZE_ASYNC
 
+  forget_skippable_max:
+    type: timing_distribution
+    description: >
+      Max time spent on one forget skippable (ms)
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram FORGET_SKIPPABLE_MAX.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
+    notification_emails:
+      - dev-telemetry-gc-alerts@mozilla.org
+    expires: never
+    telemetry_mirror: FORGET_SKIPPABLE_MAX
+
 memory:
   resident_fast:
     type: memory_distribution
@@ -901,3 +918,257 @@ memory:
       - memshrink-telemetry-alerts@mozilla.com
     expires: never
     telemetry_mirror: MEMORY_UNIQUE_CONTENT_STARTUP
+
+event:
+  longtask:
+    type: labeled_timing_distribution
+    description: >
+      LongTask events for parent process (keys: event name): time the event ran
+      in ms
+
+      This metric was generated to correspond to the Legacy Telemetry
+      exponential histogram EVENT_LONGTASK.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=12345678
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=12345678
+    notification_emails:
+      - rjesup@mozilla.com
+      - perf-telemetry-alerts@mozilla.com
+    expires: never
+    telemetry_mirror: EVENT_LONGTASK
+
+xpcom:
+  abi:
+    type: string
+    lifetime: application
+    description: |
+      A string tag identifying the binary ABI of the current processor and
+      compiler vtable. This is taken from the TARGET_XPCOM_ABI configure
+      variable. It may not be available on all platforms, especially
+      unusual processor or compiler combinations.
+
+      The result takes the form <processor>-<compilerABI>, for example:
+        - x86-msvc
+        - ppc-gcc3
+
+      This value should almost always be used in combination with the
+      operating system.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950386
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950386
+    notification_emails:
+      - nika@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+
+system.cpu:
+  name:
+    type: string
+    lifetime: application
+    description: >
+      The user readable CPU name.
+      (e.g. "Intel(R) Core(TM) i9-8950HK CPU @ 2.90GHz")
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1797587
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1797587
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+
+  vendor:
+    type: string
+    lifetime: application
+    description: >
+      The CPU vendor (e.g. "GenuineIntel").
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+
+  logical_cores:
+    type: quantity
+    lifetime: application
+    description: >
+      Logical CPU cores.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1122052
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1122052
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: core
+
+  physical_cores:
+    type: quantity
+    lifetime: application
+    description: >
+      Physical CPU cores.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: core
+
+  big_cores:
+    type: quantity
+    lifetime: application
+    description: >
+      Big (or Performance) CPU cores.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926292
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926292
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: core
+
+  medium_cores:
+    type: quantity
+    lifetime: application
+    description: >
+      Medium CPU cores.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926292
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926292
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: core
+
+  little_cores:
+    type: quantity
+    lifetime: application
+    description: >
+      Little (or Efficient) CPU cores.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926292
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926292
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: core
+
+  family:
+    type: quantity
+    lifetime: application
+    description: >
+      CPU family.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: cpu family number
+
+  model:
+    type: quantity
+    lifetime: application
+    description: >
+      CPU model.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: cpu model number
+
+  stepping:
+    type: quantity
+    lifetime: application
+    description: >
+      CPU stepping.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: cpu stepping number
+
+  l2_cache:
+    type: quantity
+    lifetime: application
+    description: >
+      L2 cache size (only on Windows and Mac).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: kilobyte
+
+  l3_cache:
+    type: quantity
+    lifetime: application
+    description: >
+      L3 cache size.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: kilobyte
+
+  speed:
+    type: quantity
+    lifetime: application
+    description: >
+      CPU speed in MHz.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1128472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950406
+    notification_emails:
+      - florian@mozilla.com
+    expires: never
+    unit: megahertz

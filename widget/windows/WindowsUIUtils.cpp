@@ -235,6 +235,10 @@ WindowsUIUtils::SetWindowIcon(mozIDOMWindowProxy* aWindow,
   nsCOMPtr<nsIWidget> widget =
       nsGlobalWindowOuter::Cast(aWindow)->GetMainWidget();
   nsWindow* window = static_cast<nsWindow*>(widget.get());
+  if (!window) {
+    NS_WARNING("SetWindowIcon failed - missing widget");
+    return NS_OK;
+  }
 
   nsresult rv;
 
@@ -269,6 +273,10 @@ WindowsUIUtils::SetWindowIconFromExe(mozIDOMWindowProxy* aWindow,
   nsCOMPtr<nsIWidget> widget =
       nsGlobalWindowOuter::Cast(aWindow)->GetMainWidget();
   nsWindow* window = static_cast<nsWindow*>(widget.get());
+  if (!window) {
+    NS_WARNING("SetWindowIconFromExe failed - missing widget");
+    return NS_OK;
+  }
 
   HICON icon = ::LoadIconW(::GetModuleHandleW(PromiseFlatString(aExe).get()),
                            MAKEINTRESOURCEW(aIndex));
@@ -285,6 +293,10 @@ WindowsUIUtils::SetWindowIconNoData(mozIDOMWindowProxy* aWindow) {
   nsCOMPtr<nsIWidget> widget =
       nsGlobalWindowOuter::Cast(aWindow)->GetMainWidget();
   nsWindow* window = static_cast<nsWindow*>(widget.get());
+  if (!window) {
+    NS_WARNING("SetWindowIconNoData failed - missing widget");
+    return NS_OK;
+  }
 
   window->SetSmallIconNoData();
   window->SetBigIconNoData();
@@ -892,7 +904,7 @@ Result<HStringUniquePtr, HRESULT> ConvertToWindowsString(
 }
 
 static Result<Ok, nsresult> RequestShare(
-    const std::function<HRESULT(IDataRequestedEventArgs* pArgs)>& aCallback) {
+    std::function<HRESULT(IDataRequestedEventArgs* pArgs)>&& aCallback) {
   HWND hwnd = GetForegroundWindow();
   if (!hwnd) {
     return Err(NS_ERROR_FAILURE);

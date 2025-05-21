@@ -248,7 +248,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   cricket::MediaEngineInterface* media_engine() const;
 
-  rtc::UniqueRandomIdGenerator* ssrc_generator() const {
+  UniqueRandomIdGenerator* ssrc_generator() const {
     return context_->ssrc_generator();
   }
 
@@ -272,7 +272,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   PeerConnectionObserver* observer_;
   LegacyStatsCollectorInterface* const legacy_stats_;
   std::function<void()> on_negotiation_needed_;
-  rtc::WeakPtrFactory<RtpTransmissionManager> weak_ptr_factory_
+  WeakPtrFactory<RtpTransmissionManager> weak_ptr_factory_
       RTC_GUARDED_BY(signaling_thread());
 };
 

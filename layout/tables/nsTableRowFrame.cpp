@@ -373,7 +373,7 @@ void nsTableRowFrame::DidResize(ForceAlignTopForTableCell aForceAlignTop) {
 
     // realign cell content based on the new bsize.  We might be able to
     // skip this if the bsize didn't change... maybe.  Hard to tell.
-    cellFrame->BlockDirAlignChild(wm, mMaxCellAscent, aForceAlignTop);
+    cellFrame->AlignChildWithinCell(mMaxCellAscent, aForceAlignTop);
 
     // Always store the overflow, even if the height didn't change, since
     // we'll lose part of our overflow area otherwise.
@@ -478,11 +478,11 @@ nscoord nsTableRowFrame::CalcBSize(const ReflowInput& aReflowInput) {
 
   WritingMode wm = aReflowInput.GetWritingMode();
   const nsStylePosition* position = StylePosition();
-  const auto& bsizeStyleCoord = position->BSize(wm);
-  if (bsizeStyleCoord.ConvertsToLength()) {
-    SetFixedBSize(bsizeStyleCoord.ToLength());
-  } else if (bsizeStyleCoord.ConvertsToPercentage()) {
-    SetPctBSize(bsizeStyleCoord.ToPercentage());
+  const auto bsizeStyleCoord = position->BSize(wm, StyleDisplay()->mPosition);
+  if (bsizeStyleCoord->ConvertsToLength()) {
+    SetFixedBSize(bsizeStyleCoord->ToLength());
+  } else if (bsizeStyleCoord->ConvertsToPercentage()) {
+    SetPctBSize(bsizeStyleCoord->ToPercentage());
   }
 
   for (nsTableCellFrame* kidFrame = GetFirstCell(); kidFrame;
@@ -571,11 +571,12 @@ nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
 
   int32_t rowSpan = GetTableFrame()->GetEffectiveRowSpan(*aCellFrame);
 
-  const auto& bsizeStyleCoord = position->BSize(aWM);
-  if (bsizeStyleCoord.ConvertsToLength()) {
+  const auto bsizeStyleCoord =
+      position->BSize(aWM, aCellFrame->StyleDisplay()->mPosition);
+  if (bsizeStyleCoord->ConvertsToLength()) {
     // In quirks mode, table cell bsize should always be border-box.
     // https://quirks.spec.whatwg.org/#the-table-cell-height-box-sizing-quirk
-    specifiedBSize = bsizeStyleCoord.ToLength();
+    specifiedBSize = bsizeStyleCoord->ToLength();
     if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
         position->mBoxSizing == StyleBoxSizing::Content) {
       specifiedBSize +=
@@ -585,9 +586,9 @@ nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
     if (1 == rowSpan) {
       SetFixedBSize(specifiedBSize);
     }
-  } else if (bsizeStyleCoord.ConvertsToPercentage()) {
+  } else if (bsizeStyleCoord->ConvertsToPercentage()) {
     if (1 == rowSpan) {
-      SetPctBSize(bsizeStyleCoord.ToPercentage());
+      SetPctBSize(bsizeStyleCoord->ToPercentage());
     }
   }
 
@@ -687,9 +688,15 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
   // Reflow each of our existing cell frames
   WritingMode wm = aReflowInput.GetWritingMode();
   nsSize containerSize = aReflowInput.ComputedSizeAsContainerIfConstrained();
+  bool hasOrthogonalCell = false;
 
   for (nsTableCellFrame* kidFrame = GetFirstCell(); kidFrame;
        kidFrame = kidFrame->GetNextCell()) {
+    // If we have any cells with orthogonal content, we'll need to handle them
+    // later; record the presence of any such cells.
+    if (kidFrame->Inner()->GetWritingMode().IsOrthogonalTo(wm)) {
+      hasOrthogonalCell = true;
+    }
     // See if we should only reflow the dirty child frames
     bool doReflowChild = true;
     if (!aReflowInput.ShouldReflowAllKids() && !aTableFrame.IsGeometryDirty() &&
@@ -924,6 +931,29 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
 
   aDesiredSize.UnionOverflowAreasWithDesiredBounds();
   FinishAndStoreOverflow(&aDesiredSize);
+
+  if (hasOrthogonalCell) {
+    for (nsTableCellFrame* kidFrame = GetFirstCell(); kidFrame;
+         kidFrame = kidFrame->GetNextCell()) {
+      if (kidFrame->Inner()->GetWritingMode().IsOrthogonalTo(wm)) {
+        LogicalSize kidAvailSize(wm, kidFrame->GetRectRelativeToSelf().Size());
+
+        // Reflow the child
+        TableCellReflowInput kidReflowInput(
+            aPresContext, aReflowInput, kidFrame, kidAvailSize,
+            ReflowInput::InitFlag::CallerWillInit);
+        kidReflowInput.mFlags.mOrthogonalCellFinalReflow = true;
+        InitChildReflowInput(*aPresContext, kidAvailSize, borderCollapse,
+                             kidReflowInput);
+
+        nsReflowStatus status;
+        ReflowOutput reflowOutput(wm);
+        ReflowChild(kidFrame, aPresContext, reflowOutput, kidReflowInput, wm,
+                    kidFrame->GetLogicalPosition(containerSize), containerSize,
+                    ReflowChildFlags::Default, status);
+      }
+    }
+  }
 }
 
 /** Layout the entire row.
@@ -1020,12 +1050,12 @@ nscoord nsTableRowFrame::ReflowCellFrame(nsPresContext* aPresContext,
   aCellFrame->SetSize(
       wm, LogicalSize(wm, cellSize.ISize(wm), desiredSize.BSize(wm)));
 
-  // Note: BlockDirAlignChild can affect the overflow rect.
+  // Note: AlignChildWithinCell can affect the overflow rect.
   // XXX What happens if this cell has 'vertical-align: baseline' ?
   // XXX Why is it assumed that the cell's ascent hasn't changed ?
   if (isCompleteAndNotTruncated) {
-    aCellFrame->BlockDirAlignChild(wm, mMaxCellAscent,
-                                   ForceAlignTopForTableCell::Yes);
+    aCellFrame->AlignChildWithinCell(mMaxCellAscent,
+                                     ForceAlignTopForTableCell::Yes);
   }
 
   nsTableFrame::InvalidateTableFrame(
@@ -1268,11 +1298,12 @@ void nsTableRowFrame::InitHasCellWithStyleBSize(nsTableFrame* aTableFrame) {
   for (nsTableCellFrame* cellFrame = GetFirstCell(); cellFrame;
        cellFrame = cellFrame->GetNextCell()) {
     // Ignore row-spanning cells
-    const auto& cellBSize = cellFrame->StylePosition()->BSize(wm);
+    const auto cellBSize = cellFrame->StylePosition()->BSize(
+        wm, cellFrame->StyleDisplay()->mPosition);
     if (aTableFrame->GetEffectiveRowSpan(*cellFrame) == 1 &&
-        !cellBSize.IsAuto() &&
+        !cellBSize->IsAuto() &&
         /* calc() with both percentages and lengths treated like 'auto' */
-        (cellBSize.ConvertsToLength() || cellBSize.ConvertsToPercentage())) {
+        (cellBSize->ConvertsToLength() || cellBSize->ConvertsToPercentage())) {
       AddStateBits(NS_ROW_HAS_CELL_WITH_STYLE_BSIZE);
       return;
     }

@@ -6,7 +6,7 @@ use inherent::inherent;
 
 use uuid::Uuid;
 
-use super::{CommonMetricData, MetricId};
+use super::{BaseMetricId, CommonMetricData};
 
 use crate::ipc::need_ipc;
 
@@ -16,21 +16,24 @@ use crate::ipc::need_ipc;
 pub enum UuidMetric {
     Parent {
         /// The metric's ID. Used for testing and profiler markers. UUID
-        /// metrics canot be labeled, so we only store a MetricId. If this
-        /// changes, this should be changed to a MetricGetter to distinguish
+        /// metrics canot be labeled, so we only store a BaseMetricId. If this
+        /// changes, this should be changed to a MetricId to distinguish
         /// between metrics and sub-metrics.
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::UuidMetric,
     },
     Child(UuidMetricIpc),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UuidMetricIpc;
+
+crate::define_metric_metadata_getter!(UuidMetric, UUID_MAP);
+crate::define_metric_namer!(UuidMetric, PARENT_ONLY);
 
 impl UuidMetric {
     /// Create a new UUID metric.
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             UuidMetric::Child(UuidMetricIpc)
         } else {
@@ -66,7 +69,10 @@ impl glean::traits::Uuid for UuidMetric {
                 gecko_profiler::lazy_add_marker!(
                     "Uuid::set",
                     super::profiler_utils::TelemetryProfilerCategory,
-                    super::profiler_utils::StringLikeMetricMarker::new((*id).into(), &value)
+                    super::profiler_utils::StringLikeMetricMarker::<UuidMetric>::new(
+                        (*id).into(),
+                        &value
+                    )
                 );
                 inner.set(value)
             }
@@ -95,7 +101,10 @@ impl glean::traits::Uuid for UuidMetric {
                 gecko_profiler::lazy_add_marker!(
                     "Uuid::generateAndSet",
                     super::profiler_utils::TelemetryProfilerCategory,
-                    super::profiler_utils::StringLikeMetricMarker::new((*id).into(), &uuid)
+                    super::profiler_utils::StringLikeMetricMarker::<UuidMetric>::new(
+                        (*id).into(),
+                        &uuid
+                    )
                 );
                 Uuid::parse_str(&uuid).unwrap()
             }

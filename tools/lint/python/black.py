@@ -44,8 +44,8 @@ def get_black_version(binary):
         # black, 21.11b1 (compiled: no)
         return re.match(r"black.*,( version)? (\S+)", output)[2]
     except TypeError as e:
-        print("Could not parse the version '{}'".format(output))
-        print("Error: {}".format(e))
+        print(f"Could not parse the version '{output}'")
+        print(f"Error: {e}")
 
 
 def parse_issues(config, output, paths, *, log):
@@ -97,22 +97,39 @@ def run_black(config, paths, fix=None, *, log, virtualenv_bin_path):
     fixed = 0
     binary = os.path.join(virtualenv_bin_path or default_bindir(), "black")
 
-    log.debug("Black version {}".format(get_black_version(binary)))
+    log.debug(f"Black version {get_black_version(binary)}")
 
     cmd_args = [binary]
     if not fix:
         cmd_args.append("--check")
 
-    base_command = cmd_args + paths
-    log.debug("Command: {}".format(" ".join(base_command)))
-    output = parse_issues(config, run_process(config, base_command), paths, log=log)
+    if platform.system() == "Windows":
+        MAX_PATHS_PER_JOB = (
+            50  # set a max size to prevent command lines that are too long on Windows
+        )
+        chunked_paths = [
+            paths[i : i + MAX_PATHS_PER_JOB]
+            for i in range(0, len(paths), MAX_PATHS_PER_JOB)
+        ]
+    else:
+        chunked_paths = [paths]
 
-    # black returns an issue for fixed files as well
-    for eachIssue in output:
-        if eachIssue.message == "reformatted":
-            fixed += 1
+    all_output = []
 
-    return {"results": output, "fixed": fixed}
+    for paths_chunk in chunked_paths:
+        base_command = cmd_args + paths_chunk
+        log.debug("Command: {}".format(" ".join(base_command)))
+        output = parse_issues(
+            config, run_process(config, base_command), paths_chunk, log=log
+        )
+        all_output.extend(output)
+
+        # black returns an issue for fixed files as well
+        for eachIssue in output:
+            if eachIssue.message == "reformatted":
+                fixed += 1
+
+    return {"results": all_output, "fixed": fixed}
 
 
 def lint(paths, config, fix=None, **lintargs):

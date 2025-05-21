@@ -323,8 +323,23 @@ Action for running multiple actions. Actions should be included in an array of a
 
 * args:
 ```ts
-{
-  actions: Array<UserAction>
+interface MultiAction {
+  type: "MULTI_ACTION";
+  data: {
+    actions: Array<UserAction>;
+    // Set to true if the actions should be executed in the order they are
+    // listed in the `actions` array. If false, the actions will be executed in
+    // parallel, with no guarantee of order. Defaults to false. If collectSelect
+    // is true and there are multiselect actions, they will be executed in the
+    // order they are rendered in the UI.
+    orderedExecution?: boolean;
+  };
+  // Set to true if this action is for the primary button and you're using the
+  // "multiselect" tile. This is what allows the primary button to perform the
+  // actions specified by the user's checkbox/radio selections. It will combine
+  // all the actions for all the selected checkboxes/radios into the above
+  // `actions` array before executing them.
+  collectSelect?: boolean;
 }
 ```
 
@@ -341,7 +356,8 @@ Action for running multiple actions. Actions should be included in an array of a
       {
         "type": "OPEN_AWESOME_BAR"
       }
-    ]
+    ],
+    "orderedExecution": true
   }
 }
 ```
@@ -411,3 +427,43 @@ Any message that uses this action should have `canCreateSelectableProfiles` as p
 Submits a Glean `onboarding-opt-out` ping.  Should only be used during preonboarding (but this is not enforced).
 
 - args: (none)
+
+### `SET_SEARCH_MODE`
+
+Sets search mode for a specific browser instance and focuses the urlbar.
+
+- args:
+
+```ts
+interface SearchMode {
+  // The name of the search engine to restrict to. Can be left empty to use source
+  // restriction instead.
+  engineName?: string;
+  // A result source to restrict to. One of the values in UrlbarUtils.RESULT_SOURCE.
+  // Defaults to 3 (SEARCH).
+  source?: number;
+  // How search mode was entered. This is recorded in event telemetry. One of the
+  // values in UrlbarUtils.SEARCH_MODE_ENTRY. Defaults to "other".
+  entry?: string;
+  // If true, we will preview search mode. Search mode preview does not record
+  // telemetry and has slighly different UI behavior. The preview is exited in
+  // favor of full search mode when a query is executed. False should be
+  // passed if the caller needs to enter search mode but expects it will not
+  // be interacted with right away. Defaults to true.
+  isPreview?: boolean;
+}
+```
+
+* example:
+
+```json
+"action": {
+  "type": "SET_SEARCH_MODE",
+  "data": {
+    "engineName": "test_engine",
+    "source": 3,
+    "entry": "other",
+    "isPreview": false,
+  }
+}
+```

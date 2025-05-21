@@ -5,26 +5,52 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CrashReporterHost.h"
+#include "CrashReporter/CrashReporterInitArgs.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/IpcMetrics.h"
 #include "nsServiceManagerUtils.h"
 #include "nsICrashService.h"
 #include "nsXULAppAPI.h"
 #include "nsIFile.h"
 
-namespace mozilla {
-namespace ipc {
+#if defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) && \
+    defined(MOZ_OXIDIZED_BREAKPAD)
+#  include "mozilla/toolkit/crashreporter/rust_minidump_writer_linux_ffi_generated.h"
+#endif  // defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) &&
+        // defined(MOZ_OXIDIZED_BREAKPAD)
 
-CrashReporterHost::CrashReporterHost(GeckoProcessType aProcessType,
-                                     base::ProcessId aPid,
-                                     CrashReporter::ThreadId aThreadId)
+namespace mozilla::ipc {
+
+CrashReporterHost::CrashReporterHost(
+    GeckoProcessType aProcessType, base::ProcessId aPid,
+    const CrashReporter::CrashReporterInitArgs& aInitArgs)
     : mProcessType(aProcessType),
       mPid(aPid),
-      mThreadId(aThreadId),
+      mThreadId(aInitArgs.threadId()),
       mStartTime(::time(nullptr)),
-      mFinalized(false) {}
+      mFinalized(false) {
+#if defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) && \
+    defined(MOZ_OXIDIZED_BREAKPAD)
+  const CrashReporter::AuxvInfo& ipdlAuxvInfo = aInitArgs.auxvInfo();
+  DirectAuxvDumpInfo auxvInfo = {};
+  auxvInfo.program_header_count = ipdlAuxvInfo.programHeaderCount();
+  auxvInfo.program_header_address = ipdlAuxvInfo.programHeaderAddress();
+  auxvInfo.linux_gate_address = ipdlAuxvInfo.linuxGateAddress();
+  auxvInfo.entry_address = ipdlAuxvInfo.entryAddress();
+  CrashReporter::RegisterChildAuxvInfo(mPid, auxvInfo);
+#endif  // defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) &&
+        // defined(MOZ_OXIDIZED_BREAKPAD)
+}
+
+CrashReporterHost::~CrashReporterHost() {
+#if defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) && \
+    defined(MOZ_OXIDIZED_BREAKPAD)
+  CrashReporter::UnregisterChildAuxvInfo(mPid);
+#endif  // defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) &&
+        // defined(MOZ_OXIDIZED_BREAKPAD)
+}
 
 bool CrashReporterHost::GenerateCrashReport() {
   if (!TakeCrashedChildMinidump()) {
@@ -122,7 +148,7 @@ void CrashReporterHost::RecordCrashWithTelemetry(GeckoProcessType aProcessType,
       MOZ_ASSERT_UNREACHABLE("unknown process type");
   }
 
-  Telemetry::Accumulate(Telemetry::SUBPROCESS_CRASHES_WITH_DUMP, key, 1);
+  glean::subprocess::crashes_with_dump.Get(key).Add(1);
 }
 
 /* static */
@@ -177,5 +203,4 @@ void CrashReporterHost::AddAnnotationNSCString(CrashReporter::Annotation aKey,
   mExtraAnnotations[aKey] = aValue;
 }
 
-}  // namespace ipc
-}  // namespace mozilla
+}  // namespace mozilla::ipc

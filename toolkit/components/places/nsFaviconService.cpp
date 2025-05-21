@@ -243,22 +243,19 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
     return result.StealNSResult();
   }
 
-  nsresult rv = NS_OK;
   auto guard = MakeScopeExit([&]() {
-    if (NS_SUCCEEDED(rv)) {
-      promise->MaybeResolveWithUndefined();
-      promise.forget(aPromise);
-    }
+    promise->MaybeResolveWithUndefined();
+    promise.forget(aPromise);
   });
 
   if (!aDataURL->SchemeIs("data")) {
-    return (rv = NS_ERROR_INVALID_ARG);
+    return NS_ERROR_INVALID_ARG;
   }
 
   NS_ENSURE_ARG(canStoreIconForPage(aPageURI));
 
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-    return (rv = NS_OK);
+    return NS_OK;
   }
 
   PRTime now = PR_Now();
@@ -267,6 +264,7 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
     aExpiration = now + MAX_FAVICON_EXPIRATION;
   }
 
+  nsresult rv;
   nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
   NS_ENSURE_SUCCESS(rv, rv);
   nsCOMPtr<nsIProtocolHandler> protocolHandler;
@@ -276,7 +274,7 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
   nsCOMPtr<nsIPrincipal> loadingPrincipal =
       NullPrincipal::CreateWithoutOriginAttributes();
   if (MOZ_UNLIKELY(!(loadingPrincipal))) {
-    return (rv = NS_ERROR_NULL_POINTER);
+    return NS_ERROR_NULL_POINTER;
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = new mozilla::net::LoadInfo(
@@ -300,7 +298,7 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
   rv = stream->Available(&available64);
   NS_ENSURE_SUCCESS(rv, rv);
   if (available64 == 0 || available64 > UINT32_MAX / sizeof(uint8_t)) {
-    return (rv = NS_ERROR_FILE_TOO_BIG);
+    return NS_ERROR_FILE_TOO_BIG;
   }
   uint32_t available = (uint32_t)available64;
 
@@ -311,7 +309,7 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
   rv = stream->Read(TO_CHARBUFFER(buffer.Elements()), available, &numRead);
   NS_ENSURE_SUCCESS(rv, rv);
   if (numRead != available) {
-    return (rv = NS_ERROR_UNEXPECTED);
+    return NS_ERROR_UNEXPECTED;
   }
 
   nsAutoCString mimeType;
@@ -319,7 +317,7 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
   NS_ENSURE_SUCCESS(rv, rv);
   if (!imgLoader::SupportImageWithMimeType(
           mimeType, AcceptedMimeTypes::IMAGES_AND_DOCUMENTS)) {
-    return (rv = NS_ERROR_UNEXPECTED);
+    return NS_ERROR_UNEXPECTED;
   }
 
   // If URI is a Data URI, mime type returned by channel may be incorrect, since
@@ -407,10 +405,13 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
       new AsyncSetIconForPage(icon, page, promise);
   RefPtr<Database> DB = Database::GetDatabase();
   if (MOZ_UNLIKELY(!DB)) {
-    return (rv = NS_ERROR_UNEXPECTED);
+    return NS_ERROR_UNEXPECTED;
   }
 
-  DB->DispatchToAsyncThread(event);
+  rv = DB->DispatchToAsyncThread(event);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   guard.release();
   promise.forget(aPromise);
@@ -418,36 +419,44 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
 }
 
 NS_IMETHODIMP
-nsFaviconService::GetFaviconURLForPage(nsIURI* aPageURI,
-                                       nsIFaviconDataCallback* aCallback,
-                                       uint16_t aPreferredWidth) {
+nsFaviconService::GetFaviconForPage(nsIURI* aPageURI, uint16_t aPreferredWidth,
+                                    JSContext* aContext = nullptr,
+                                    dom::Promise** _retval = nullptr) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aPageURI);
-  NS_ENSURE_ARG(aCallback);
-  // Use the default value, may be UINT16_MAX if a default is not set.
-  if (aPreferredWidth == 0) {
-    aPreferredWidth = mDefaultIconURIPreferredSize;
+
+  ErrorResult errorResult;
+  RefPtr<dom::Promise> promise =
+      dom::Promise::Create(xpc::CurrentNativeGlobal(aContext), errorResult);
+  if (NS_WARN_IF(errorResult.Failed())) {
+    return errorResult.StealNSResult();
   }
 
-  nsCOMPtr<nsIURI> pageURI = GetExposableURI(aPageURI);
+  RefPtr<FaviconPromise> result =
+      AsyncGetFaviconForPage(aPageURI, aPreferredWidth);
+  result->Then(GetMainThreadSerialEventTarget(), __func__,
+               [promise](const FaviconPromise::ResolveOrRejectValue& aValue) {
+                 if (aValue.IsResolve()) {
+                   nsCOMPtr<nsIFavicon> favicon = aValue.ResolveValue();
+                   if (favicon) {
+                     promise->MaybeResolve(favicon);
+                   } else {
+                     promise->MaybeResolve(JS::NullHandleValue);
+                   }
+                 } else {
+                   promise->MaybeReject(aValue.RejectValue());
+                 }
+               });
 
-  RefPtr<AsyncGetFaviconURLForPage> event =
-      new AsyncGetFaviconURLForPage(pageURI, aPreferredWidth, aCallback);
-
-  RefPtr<Database> DB = Database::GetDatabase();
-  NS_ENSURE_STATE(DB);
-  DB->DispatchToAsyncThread(event);
-
+  promise.forget(_retval);
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsFaviconService::GetFaviconDataForPage(nsIURI* aPageURI,
-                                        nsIFaviconDataCallback* aCallback,
-                                        uint16_t aPreferredWidth) {
+RefPtr<FaviconPromise> nsFaviconService::AsyncGetFaviconForPage(
+    nsIURI* aPageURI, uint16_t aPreferredWidth) {
   MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aPageURI);
-  NS_ENSURE_ARG(aCallback);
+  MOZ_ASSERT(aPageURI);
+
   // Use the default value, may be UINT16_MAX if a default is not set.
   if (aPreferredWidth == 0) {
     aPreferredWidth = mDefaultIconURIPreferredSize;
@@ -455,13 +464,23 @@ nsFaviconService::GetFaviconDataForPage(nsIURI* aPageURI,
 
   nsCOMPtr<nsIURI> pageURI = GetExposableURI(aPageURI);
 
-  RefPtr<AsyncGetFaviconDataForPage> event =
-      new AsyncGetFaviconDataForPage(pageURI, aPreferredWidth, aCallback);
-  RefPtr<Database> DB = Database::GetDatabase();
-  NS_ENSURE_STATE(DB);
-  DB->DispatchToAsyncThread(event);
+  RefPtr<FaviconPromise::Private> promise =
+      new FaviconPromise::Private(__func__);
 
-  return NS_OK;
+  RefPtr<AsyncGetFaviconForPageRunnable> runnable =
+      new AsyncGetFaviconForPageRunnable(pageURI, aPreferredWidth, promise);
+  RefPtr<Database> DB = Database::GetDatabase();
+  if (MOZ_UNLIKELY(!DB)) {
+    promise->Reject(NS_ERROR_UNEXPECTED, __func__);
+    return promise;
+  }
+
+  nsresult rv = DB->DispatchToAsyncThread(runnable);
+  if (NS_FAILED(rv)) {
+    promise->Reject(rv, __func__);
+  }
+
+  return promise;
 }
 
 NS_IMETHODIMP

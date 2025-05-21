@@ -12,6 +12,7 @@
 #  include "nsWaylandDisplay.h"
 #endif
 
+#include <gbm.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
@@ -33,7 +34,6 @@
 #endif
 #include <sys/ioctl.h>
 
-#include "gbm/gbm.h"
 #include "mozilla/widget/va_drmcommon.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
@@ -321,9 +321,11 @@ void DMABufSurface::GlobalRefCountDelete() {
 
 void DMABufSurface::ReleaseDMABuf() {
   LOGDMABUF("DMABufSurface::ReleaseDMABuf() UID %d", mUID);
+#ifdef DEBUG
   for (int i = 0; i < mBufferPlaneCount; i++) {
     Unmap(i);
   }
+#endif
 
   MutexAutoLock lockFD(mSurfaceLock);
   CloseFileDescriptors(lockFD, /* aForceClose */ true);
@@ -340,16 +342,18 @@ void DMABufSurface::ReleaseDMABuf() {
 DMABufSurface::DMABufSurface(SurfaceType aSurfaceType)
     : mSurfaceType(aSurfaceType),
       mBufferPlaneCount(0),
-      mDrmFormats(),
       mStrides(),
       mOffsets(),
       mGbmBufferObject(),
+#ifdef DEBUG
       mMappedRegion(),
       mMappedRegionStride(),
+#endif
       mSync(nullptr),
       mGlobalRefCountFd(0),
       mUID(gNewSurfaceUID++),
-      mSurfaceLock("DMABufSurface") {}
+      mSurfaceLock("DMABufSurface") {
+}
 
 DMABufSurface::~DMABufSurface() {
   FenceDelete();
@@ -828,8 +832,8 @@ bool DMABufSurfaceRGBA::CreateExport(mozilla::gl::GLContext* aGLContext,
     return false;
   }
 
-  if (!egl->fExportDMABUFImageQuery(mEGLImage, mDrmFormats, &mBufferPlaneCount,
-                                    &mBufferModifier)) {
+  if (!egl->fExportDMABUFImageQuery(mEGLImage, &mFOURCCFormat,
+                                    &mBufferPlaneCount, &mBufferModifier)) {
     LOGDMABUF("  ExportDMABUFImageQueryMESA failed, quit\n");
     return false;
   }
@@ -859,11 +863,16 @@ bool DMABufSurfaceRGBA::CreateExport(mozilla::gl::GLContext* aGLContext,
       return false;
     }
   }
-  // TODO: remove mDrmFormats array from RGBA
-  mFOURCCFormat = mDrmFormats[0];
 
-  LOGDMABUF("  created size %d x %d format %x planes %d modifiers %" PRIx64,
-            mWidth, mHeight, mFOURCCFormat, mBufferPlaneCount, mBufferModifier);
+  if (GetFormat() == gfx::SurfaceFormat::UNKNOWN) {
+    LOGDMABUF("  failed, unsupported drm format %x", mFOURCCFormat);
+    return false;
+  }
+
+  LOGDMABUF("  created size %d x %d format %x planes %d modifiers %" PRIx64
+            " alpha %d",
+            mWidth, mHeight, mFOURCCFormat, mBufferPlaneCount, mBufferModifier,
+            HasAlpha());
 
   releaseTextures.release();
   return true;
@@ -922,7 +931,6 @@ bool DMABufSurfaceRGBA::ImportSurfaceDescriptor(
     mDmabufFds[i] = desc.fds()[i];
     mStrides[i] = desc.strides()[i];
     mOffsets[i] = desc.offsets()[i];
-    mDrmFormats[i] = desc.format()[i];
   }
 
   if (desc.fence().Length() > 0) {
@@ -950,7 +958,6 @@ bool DMABufSurfaceRGBA::Serialize(
     mozilla::layers::SurfaceDescriptor& aOutDescriptor) {
   AutoTArray<uint32_t, DMABUF_BUFFER_PLANES> width;
   AutoTArray<uint32_t, DMABUF_BUFFER_PLANES> height;
-  AutoTArray<uint32_t, DMABUF_BUFFER_PLANES> format;
   AutoTArray<NotNull<RefPtr<gfx::FileHandleWrapper>>, DMABUF_BUFFER_PLANES> fds;
   AutoTArray<uint32_t, DMABUF_BUFFER_PLANES> strides;
   AutoTArray<uint32_t, DMABUF_BUFFER_PLANES> offsets;
@@ -973,7 +980,6 @@ bool DMABufSurfaceRGBA::Serialize(
     fds.AppendElement(WrapNotNull(mDmabufFds[i]));
     strides.AppendElement(mStrides[i]);
     offsets.AppendElement(mOffsets[i]);
-    format.AppendElement(mDrmFormats[i]);
   }
 
   CloseFileDescriptors(lockFD);
@@ -986,9 +992,11 @@ bool DMABufSurfaceRGBA::Serialize(
     refCountFDs.AppendElement(ipc::FileDescriptor(GlobalRefCountExport()));
   }
 
+  // GCC needs it (Bug 1959653).
+  AutoTArray<uint32_t, 1> tmp;
   aOutDescriptor = SurfaceDescriptorDMABuf(
       mSurfaceType, mFOURCCFormat, modifiers, mGbmBufferFlags, fds, width,
-      height, width, height, format, strides, offsets, GetYUVColorSpace(),
+      height, width, height, tmp, strides, offsets, GetYUVColorSpace(),
       mColorRange, mozilla::gfx::ColorSpace2::UNKNOWN,
       mozilla::gfx::TransferFunction::Default, fenceFDs, mUID, refCountFDs,
       /* semaphoreFd */ nullptr);
@@ -1177,6 +1185,7 @@ wl_buffer* DMABufSurfaceRGBA::CreateWlBuffer() {
 }
 #endif
 
+#ifdef DEBUG
 // We should synchronize DMA Buffer object access from CPU to avoid potential
 // cache incoherency and data loss.
 // See
@@ -1184,12 +1193,12 @@ wl_buffer* DMABufSurfaceRGBA::CreateWlBuffer() {
 struct dma_buf_sync {
   uint64_t flags;
 };
-#define DMA_BUF_SYNC_READ (1 << 0)
-#define DMA_BUF_SYNC_WRITE (2 << 0)
-#define DMA_BUF_SYNC_START (0 << 2)
-#define DMA_BUF_SYNC_END (1 << 2)
-#define DMA_BUF_BASE 'b'
-#define DMA_BUF_IOCTL_SYNC _IOW(DMA_BUF_BASE, 0, struct dma_buf_sync)
+#  define DMA_BUF_SYNC_READ (1 << 0)
+#  define DMA_BUF_SYNC_WRITE (2 << 0)
+#  define DMA_BUF_SYNC_START (0 << 2)
+#  define DMA_BUF_SYNC_END (1 << 2)
+#  define DMA_BUF_BASE 'b'
+#  define DMA_BUF_IOCTL_SYNC _IOW(DMA_BUF_BASE, 0, struct dma_buf_sync)
 
 static void SyncDmaBuf(int aFd, uint64_t aFlags) {
   struct dma_buf_sync sync = {0};
@@ -1279,6 +1288,7 @@ void DMABufSurface::Unmap(int aPlane) {
     mMappedRegionStride[aPlane] = 0;
   }
 }
+#endif  // DEBUG
 
 nsresult DMABufSurface::BuildSurfaceDescriptorBuffer(
     SurfaceDescriptorBuffer& aSdBuffer, Image::BuildSdbFlags aFlags,
@@ -1335,18 +1345,41 @@ void DMABufSurfaceRGBA::Clear() {
 #endif
 
 bool DMABufSurfaceRGBA::HasAlpha() {
-  return mFOURCCFormat == GBM_FORMAT_ARGB8888;
+  return mFOURCCFormat == GBM_FORMAT_ARGB8888 ||
+         mFOURCCFormat == GBM_FORMAT_ABGR8888 ||
+         mFOURCCFormat == GBM_FORMAT_RGBA8888 ||
+         mFOURCCFormat == GBM_FORMAT_BGRA8888;
 }
 
 gfx::SurfaceFormat DMABufSurfaceRGBA::GetFormat() {
-  return HasAlpha() ? gfx::SurfaceFormat::B8G8R8A8
-                    : gfx::SurfaceFormat::B8G8R8X8;
-}
+  switch (mFOURCCFormat) {
+    case GBM_FORMAT_ARGB8888:
+      return gfx::SurfaceFormat::B8G8R8A8;
+    case GBM_FORMAT_ABGR8888:
+      return gfx::SurfaceFormat::R8G8B8A8;
+    case GBM_FORMAT_BGRA8888:
+      return gfx::SurfaceFormat::A8R8G8B8;
+    case GBM_FORMAT_RGBA8888:
+      gfxCriticalError() << "DMABufSurfaceRGBA::GetFormat(): Unsupported "
+                            "format GBM_FORMAT_RGBA8888";
+      return gfx::SurfaceFormat::UNKNOWN;
 
-// GL uses swapped R and B components so report accordingly.
-gfx::SurfaceFormat DMABufSurfaceRGBA::GetFormatGL() {
-  return HasAlpha() ? gfx::SurfaceFormat::R8G8B8A8
-                    : gfx::SurfaceFormat::R8G8B8X8;
+    case GBM_FORMAT_XRGB8888:
+      return gfx::SurfaceFormat::B8G8R8X8;
+    case GBM_FORMAT_XBGR8888:
+      return gfx::SurfaceFormat::R8G8B8X8;
+    case GBM_FORMAT_BGRX8888:
+      return gfx::SurfaceFormat::X8R8G8B8;
+    case GBM_FORMAT_RGBX8888:
+      gfxCriticalError() << "DMABufSurfaceRGBA::GetFormat(): Unsupported "
+                            "format GBM_FORMAT_RGBX8888";
+      return gfx::SurfaceFormat::UNKNOWN;
+
+    default:
+      gfxCriticalError() << "DMABufSurfaceRGBA::GetFormat(): Unknown format"
+                         << gfx::hexa(mFOURCCFormat);
+      return gfx::SurfaceFormat::UNKNOWN;
+  }
 }
 
 already_AddRefed<DMABufSurfaceRGBA> DMABufSurfaceRGBA::CreateDMABufSurface(
@@ -1399,6 +1432,7 @@ DMABufSurfaceYUV::DMABufSurfaceYUV()
       mHeight(),
       mWidthAligned(),
       mHeightAligned(),
+      mDrmFormats(),
       mTexture() {
   for (int i = 0; i < DMABUF_BUFFER_PLANES; i++) {
     mEGLImage[i] = LOCAL_EGL_NO_IMAGE;
@@ -1517,7 +1551,7 @@ bool DMABufSurfaceYUV::CreateYUVPlaneGBM(int aPlane) {
   MOZ_DIAGNOSTIC_ASSERT(mGbmBufferObject[aPlane] == nullptr);
   bool useModifiers = (mBufferModifiers[aPlane] != DRM_FORMAT_MOD_INVALID);
   if (useModifiers) {
-    LOGDMABUF("    Creating with modifiers");
+    LOGDMABUF("    Creating with modifier %" PRIx64, mBufferModifiers[aPlane]);
     mGbmBufferObject[aPlane] = GbmLib::CreateWithModifiers2(
         GetDMABufDevice()->GetGbmDevice(), mWidth[aPlane], mHeight[aPlane],
         mDrmFormats[aPlane], mBufferModifiers + aPlane, 1,
@@ -1633,7 +1667,7 @@ bool DMABufSurfaceYUV::CreateYUVPlaneExport(GLContext* aGLContext, int aPlane) {
     return false;
   }
 
-  LOGDMABUF("  imported size %d x %d format %x planes %d modifiers %" PRIx64,
+  LOGDMABUF("  imported size %d x %d format %x planes %d modifier %" PRIx64,
             mWidth[aPlane], mHeight[aPlane], mFOURCCFormat, mBufferPlaneCount,
             mBufferModifiers[aPlane]);
 
@@ -1642,9 +1676,13 @@ bool DMABufSurfaceYUV::CreateYUVPlaneExport(GLContext* aGLContext, int aPlane) {
 }
 
 bool DMABufSurfaceYUV::CreateYUVPlane(GLContext* aGLContext, int aPlane) {
-  return UseDmaBufExportExtension(aGLContext)
-             ? CreateYUVPlaneExport(aGLContext, aPlane)
-             : CreateYUVPlaneGBM(aPlane);
+  if (gfx::gfxVars::UseDMABufSurfaceExport()) {
+    if (!UseDmaBufExportExtension(aGLContext)) {
+      return false;
+    }
+    return CreateYUVPlaneExport(aGLContext, aPlane);
+  }
+  return CreateYUVPlaneGBM(aPlane);
 }
 
 bool DMABufSurfaceYUV::CopyYUVDataImpl(const VADRMPRIMESurfaceDescriptor& aDesc,
@@ -1706,10 +1744,6 @@ bool DMABufSurfaceYUV::UpdateYUVData(
     ReturnSnapshotGLContext(context);
   });
 
-  // Use LINEAR modifiers
-  // TODO: Load modifiers from DMABuf
-  mBufferModifiers[0] = mBufferModifiers[1] = 0;
-
   gfx::IntSize size = aData.YPictureSize();
 
   mWidthAligned[0] = mWidth[0] = size.width;
@@ -1733,6 +1767,10 @@ bool DMABufSurfaceYUV::UpdateYUVData(
       MOZ_DIAGNOSTIC_CRASH("Unsupported target format!");
       return false;
   }
+
+  RefPtr<DRMFormat> format = GetDMABufDevice()->GetDRMFormat(mFOURCCFormat);
+  mBufferModifiers[0] = mBufferModifiers[1] =
+      format ? format->GetModifier() : DRM_FORMAT_MOD_INVALID;
 
   for (int i = 0; i < mBufferPlaneCount; i++) {
     if (!CreateYUVPlane(context, i)) {
@@ -1774,9 +1812,9 @@ bool DMABufSurfaceYUV::ImportSurfaceDescriptor(
     mStrides[i] = aDesc.strides()[i];
     mOffsets[i] = aDesc.offsets()[i];
     mBufferModifiers[i] = aDesc.modifier()[i];
-    LOGDMABUF("    plane %d fd %d size %d x %d format %x", i,
-              mDmabufFds[i]->GetHandle(), mWidth[i], mHeight[i],
-              mDrmFormats[i]);
+    LOGDMABUF("    plane %d fd %d size %d x %d format %x modifier %" PRIx64, i,
+              mDmabufFds[i]->GetHandle(), mWidth[i], mHeight[i], mDrmFormats[i],
+              mBufferModifiers[i]);
   }
 
   if (aDesc.fence().Length() > 0) {
@@ -2026,10 +2064,6 @@ gfx::SurfaceFormat DMABufSurfaceYUV::GetHWFormat(gfx::SurfaceFormat aSWFormat) {
       return gfx::SurfaceFormat::UNKNOWN;
   }
 }
-
-// GL uses swapped R and B components so report accordingly.
-// YUV formats are not affected so report what we have directly.
-gfx::SurfaceFormat DMABufSurfaceYUV::GetFormatGL() { return GetFormat(); }
 
 int DMABufSurfaceYUV::GetTextureCount() { return mBufferPlaneCount; }
 

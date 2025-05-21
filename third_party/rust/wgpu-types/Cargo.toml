@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.82.0"
 name = "wgpu-types"
-version = "24.0.0"
+version = "25.0.0"
 authors = ["gfx-rs developers"]
 build = false
 autolib = false
@@ -64,6 +64,14 @@ path = "src/lib.rs"
 [dependencies.bitflags]
 version = "2.9"
 features = ["serde"]
+
+[dependencies.bytemuck]
+version = "1.22"
+features = [
+    "extern_crate_alloc",
+    "min_const_generics",
+    "derive",
+]
 
 [dependencies.log]
 version = "0.4"

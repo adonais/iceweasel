@@ -81,13 +81,10 @@ function fakeIdleNotification(topic) {
 }
 
 function setupTestData() {
-  let h2 = Telemetry.getHistogramById("TELEMETRY_TEST_COUNT");
-  h2.add();
-
-  let k1 = Telemetry.getKeyedHistogramById("TELEMETRY_TEST_KEYED_COUNT");
-  k1.add("a");
-  k1.add("a");
-  k1.add("b");
+  Glean.testOnlyIpc.aCounterForHgram.add();
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.a.add(1);
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.a.add(1);
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.b.add(1);
 }
 
 function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
@@ -360,29 +357,15 @@ function checkPayload(payload, reason, successfulPings) {
 
   const TELEMETRY_SEND_SUCCESS = "TELEMETRY_SEND_SUCCESS";
   const TELEMETRY_SUCCESS = "TELEMETRY_SUCCESS";
-  const TELEMETRY_TEST_FLAG = "TELEMETRY_TEST_FLAG";
   const TELEMETRY_TEST_COUNT = "TELEMETRY_TEST_COUNT";
-  const TELEMETRY_TEST_KEYED_FLAG = "TELEMETRY_TEST_KEYED_FLAG";
   const TELEMETRY_TEST_KEYED_COUNT = "TELEMETRY_TEST_KEYED_COUNT";
 
   if (successfulPings > 0) {
     Assert.ok(TELEMETRY_SEND_SUCCESS in payload.histograms);
   }
-  Assert.ok(TELEMETRY_TEST_FLAG in payload.histograms);
   Assert.ok(TELEMETRY_TEST_COUNT in payload.histograms);
 
   Assert.ok(!(IGNORE_CLONED_HISTOGRAM in payload.histograms));
-
-  // Flag histograms should automagically spring to life.
-  const expected_flag = {
-    range: [1, 2],
-    bucket_count: 3,
-    histogram_type: 3,
-    values: { 0: 1, 1: 0 },
-    sum: 0,
-  };
-  let flag = payload.histograms[TELEMETRY_TEST_FLAG];
-  Assert.deepEqual(flag, expected_flag);
 
   // We should have a test count.
   const expected_count = {
@@ -430,7 +413,6 @@ function checkPayload(payload, reason, successfulPings) {
 
   Assert.ok("keyedHistograms" in payload);
   let keyedHistograms = payload.keyedHistograms;
-  Assert.ok(!(TELEMETRY_TEST_KEYED_FLAG in keyedHistograms));
   Assert.ok(TELEMETRY_TEST_KEYED_COUNT in keyedHistograms);
 
   const expected_keyed_count = {
@@ -528,9 +510,7 @@ add_task(async function asyncSetup() {
 
 // Ensures that expired histograms are not part of the payload.
 add_task(async function test_expiredHistogram() {
-  let dummy = Telemetry.getHistogramById("TELEMETRY_TEST_EXPIRED");
-
-  dummy.add(1);
+  Glean.testOnly.expiredHist.accumulateSingleSample(1);
 
   Assert.equal(
     TelemetrySession.getPayload().histograms.TELEMETRY_TEST_EXPIRED,
@@ -845,10 +825,10 @@ add_task(async function test_dailyCollection() {
 
   count.clear();
   keyed.clear();
-  count.add(1);
-  keyed.add("a", 1);
-  keyed.add("b", 1);
-  keyed.add("b", 1);
+  Glean.testOnlyIpc.aCounterForHgram.add();
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.a.add(1);
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.b.add(1);
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.b.add(1);
 
   // Make sure the daily ping gets triggered.
   let expectedDate = nowHour;
@@ -892,9 +872,9 @@ add_task(async function test_dailyCollection() {
   Assert.ok(!(KEYED_ID in ping.payload.keyedHistograms));
 
   // Trigger and collect another daily ping, with the histograms being set again.
-  count.add(1);
-  keyed.add("a", 1);
-  keyed.add("b", 1);
+  Glean.testOnlyIpc.aCounterForHgram.add();
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.a.add(1);
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.b.add(1);
 
   // The daily ping is rescheduled for "tomorrow".
   expectedDate = futureDate(expectedDate, MS_IN_ONE_DAY);
@@ -1066,9 +1046,9 @@ add_task(async function test_environmentChange() {
 
   count.clear();
   keyed.clear();
-  count.add(1);
-  keyed.add("a", 1);
-  keyed.add("b", 1);
+  Glean.testOnlyIpc.aCounterForHgram.add();
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.a.add(1);
+  Glean.testOnlyIpc.aLabeledCounterForKeyedCountHgram.b.add(1);
 
   // Trigger and collect environment-change ping.
   gMonotonicNow = fakeMonotonicNow(

@@ -30,12 +30,18 @@ sidebar-history-date-prev-month =
 sidebar-history-delete =
   .title = Delete from History
 
-sidebar-history-sort-by-date =
-  .label = Sort by date
-sidebar-history-sort-by-site =
-  .label = Sort by site
 sidebar-history-clear =
   .label = Clear history
+
+sidebar-history-sort-by-heading = Sort by:
+sidebar-history-sort-option-date =
+  .label = Date
+sidebar-history-sort-option-site =
+  .label = Site
+sidebar-history-sort-option-date-and-site =
+  .label = Date and site
+sidebar-history-sort-option-last-visited =
+  .label = Last visited
 
 ## Labels for sidebar search
 
@@ -74,10 +80,16 @@ sidebar-context-menu-remove-extension =
   .label = Remove extension
 sidebar-context-menu-report-extension =
   .label = Report extension
+sidebar-context-menu-open-in-tab =
+  .label = Open in New Tab
+sidebar-context-menu-open-in-container-tab =
+  .label = Open in New Container Tab
 sidebar-context-menu-open-in-window =
   .label = Open in New Window
 sidebar-context-menu-open-in-private-window =
   .label = Open in New Private Window
+sidebar-context-menu-forget-site =
+  .label = Clear All Data for Website…
 sidebar-context-menu-bookmark-tab =
   .label = Bookmark Tab…
 sidebar-context-menu-copy-link =
@@ -95,8 +107,10 @@ sidebar-context-menu-close-remote-tab =
 
 ## Labels for sidebar history context menu items
 
-sidebar-history-context-menu-delete-page =
-  .label = Delete from History
+sidebar-history-context-menu-delete-page-2 =
+  .label = Delete Page from History
+sidebar-history-context-menu-bookmark-page =
+  .label = Bookmark Page…
 
 ## Labels for sidebar menu items.
 
@@ -158,8 +172,6 @@ sidebar-menu-history-header =
   .heading = History
 sidebar-menu-syncedtabs-header =
   .heading = Tabs from other devices
-sidebar-menu-bookmarks-header =
-  .heading = Bookmarks
 sidebar-menu-cpm-header =
   .heading = Passwords
 

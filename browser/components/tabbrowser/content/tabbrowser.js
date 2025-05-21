@@ -93,8 +93,6 @@
   }
 
   window.Tabbrowser = class {
-    #stgManager; // Smart Tab Grouping Manager
-
     init() {
       this.tabContainer = document.getElementById("tabbrowser-tabs");
       this.tabGroupMenu = document.getElementById("tab-group-editor");
@@ -186,7 +184,7 @@
       window.addEventListener("framefocusrequested", this);
       window.addEventListener("activate", this);
       window.addEventListener("deactivate", this);
-      window.addEventListener("TabGroupCreate", this);
+      window.addEventListener("TabGroupCreateByUser", this);
 
       this.tabContainer.init();
       this._setupInitialBrowserAndTab();
@@ -2525,7 +2523,9 @@
       // Indicate that this tab was explicitly unloaded (i.e. not
       // from a session restore) in case we want to style that
       // differently.
-      aTab.toggleAttribute("discarded", true);
+      if (aForceDiscard) {
+        aTab.toggleAttribute("discarded", true);
+      }
 
       // Remove the tab's filter and progress listener.
       let filter = this._tabFilters.get(aTab);
@@ -2650,8 +2650,9 @@
         forceAllowDataURI,
         fromExternal,
         inBackground = true,
-        index,
         elementIndex,
+        tabIndex,
+        index,
         lazyTabTitle,
         name,
         noInitialLabel,
@@ -2753,11 +2754,14 @@
           skipBackgroundNotify,
         });
         if (insertTab) {
+          // Insert the tab into the tab container in the correct position.
+          // For now, we support `index` as an alias for `tabIndex`.
           if (typeof index == "number") {
-            elementIndex = this.#tabIndexToElementIndex(index);
+            tabIndex = index;
           }
-          // insert the tab into the tab container in the correct position
-          this.#insertTabAtElementIndex(t, elementIndex, {
+          this.#insertTabAtIndex(t, {
+            elementIndex,
+            tabIndex,
             ownerTab,
             openerTab,
             pinned,
@@ -2925,32 +2929,21 @@
       return element._tPos;
     }
 
-    #tabIndexToElementIndex(tabIndex) {
-      if (tabIndex < 0) {
-        return -1;
-      }
-      let tab;
-      while ((tab = this.tabs.at(tabIndex)) && !tab.visible) {
-        tabIndex++;
-      }
-      return tab?.visible
-        ? tab.elementIndex
-        : this.tabContainer.ariaFocusableItems.length;
-    }
-
     /**
      * @param {string} id
      * @param {string} color
      * @param {boolean} collapsed
      * @param {string} [label=]
+     * @param {boolean} [isAdoptingGroup=false]
      * @returns {MozTabbrowserTabGroup}
      */
-    _createTabGroup(id, color, collapsed, label = "") {
+    _createTabGroup(id, color, collapsed, label = "", isAdoptingGroup = false) {
       let group = document.createXULElement("tab-group", { is: "tab-group" });
       group.id = id;
       group.collapsed = collapsed;
       group.color = color;
       group.label = label;
+      group.wasCreatedByAdoption = isAdoptingGroup;
       return group;
     }
 
@@ -2973,6 +2966,9 @@
      *   An optional argument that accepts a single tab, which, if passed, will
      *   cause the group to be inserted just before this tab in the tab strip. By
      *   default, the group will be created at the end of the tab strip.
+     * @param {boolean} [options.isAdoptingGroup]
+     *   Whether the tab group was created because a tab group with the same
+     *   properties is being adopted from a different window.
      * @param {boolean} [options.isUserTriggered]
      *   Should be true if this group is being created in response to an
      *   explicit request from the user (as opposed to a group being created
@@ -2991,6 +2987,7 @@
         color = null,
         label = "",
         insertBefore = null,
+        isAdoptingGroup = false,
         isUserTriggered = false,
         telemetryUserCreateSource = "unknown",
       } = {}
@@ -3010,7 +3007,13 @@
         // See: Bug 1960104 - Improve tab group ID generation in addTabGroup
         id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
       }
-      let group = this._createTabGroup(id, color, false, label);
+      let group = this._createTabGroup(
+        id,
+        color,
+        false,
+        label,
+        isAdoptingGroup
+      );
       this.tabContainer.insertBefore(
         group,
         insertBefore?.group ?? insertBefore
@@ -3024,15 +3027,16 @@
         return null;
       }
 
-      group.dispatchEvent(
-        new CustomEvent("TabGroupCreate", {
-          bubbles: true,
-          detail: {
-            isUserTriggered,
-            telemetryUserCreateSource,
-          },
-        })
-      );
+      if (isUserTriggered) {
+        group.dispatchEvent(
+          new CustomEvent("TabGroupCreateByUser", {
+            bubbles: true,
+            detail: {
+              telemetryUserCreateSource,
+            },
+          })
+        );
+      }
 
       // Fixes bug1953801 and bug1954689
       // Ensure that the tab state cache is updated immediately after creating
@@ -3139,18 +3143,25 @@
 
     /**
      * @param {MozTabbrowserTabGroup} group
-     * @param {number} elementIndex
+     * @param {object} [options]
+     * @param {number} [options.elementIndex]
+     * @param {number} [options.tabIndex]
      * @returns {MozTabbrowserTabGroup}
      */
-    adoptTabGroup(group, elementIndex) {
+    adoptTabGroup(group, { elementIndex, tabIndex } = {}) {
       if (group.ownerDocument == document) {
         return group;
       }
+      group.removedByAdoption = true;
       group.saveOnWindowClose = false;
 
       let newTabs = [];
       for (let tab of group.tabs) {
-        newTabs.push(this.adoptTab(tab, { elementIndex }));
+        let adoptedTab = this.adoptTab(tab, { elementIndex, tabIndex });
+        newTabs.push(adoptedTab);
+        // Put next tab after current one.
+        elementIndex = undefined;
+        tabIndex = adoptedTab._tPos + 1;
       }
 
       return this.addTabGroup(newTabs, {
@@ -3158,6 +3169,7 @@
         label: group.label,
         color: group.color,
         insertBefore: newTabs[0],
+        isAdoptingGroup: true,
       });
     }
 
@@ -3181,57 +3193,6 @@
         }
       }
       return null;
-    }
-
-    getSmartTabGroupingManager() {
-      if (!this.#stgManager) {
-        this.#stgManager = new this.SmartTabGroupingManager();
-      }
-      return this.#stgManager;
-    }
-
-    /**
-     * Groups all tabs in the current window (other than pinned tabs) into a
-     * set of tab groups. Each is given a name.
-     *
-     * Note that there is no immediate UX plan for this feature but it is
-     * being left in for now, as it can be used while testing in the console.
-     *
-     * Currently this implementation has automatic labeling of the group disabled.
-     *
-     * @returns {object []} List of tab groups
-     */
-    async smartTabGrouping() {
-      const groupManager = this.getSmartTabGroupingManager();
-      const clusters = await groupManager.generateClusters(
-        this.visibleTabs.filter(t => !t.pinned)
-      );
-      const clusterReps = clusters.clusterRepresentations;
-      const tabGroups = clusterReps.map(clusterRep =>
-        this.addTabGroup(clusterRep.tabs, {
-          label: clusterRep.predictedTopicLabel || "",
-        })
-      );
-      return tabGroups;
-    }
-
-    /**
-     * Get suggested title for tabs
-     * @param {object []} tabs One or more tabs in a list
-     * @returns {String} Suggested label for the tabs if creating a tab group, or empty string if no suggestion
-     */
-    async getGroupTitleForTabs(tabs) {
-      if (!tabs) {
-        return "";
-      }
-      const otherTabs = gBrowser.visibleTabs.filter(
-        t => !tabs.includes(t) && !t.pinned
-      );
-      const groupManager = this.getSmartTabGroupingManager();
-      const clusters = groupManager.createStaticCluster(tabs);
-      const otherClusters = groupManager.createStaticCluster(otherTabs);
-      await groupManager.generateGroupLabels(clusters, otherClusters);
-      return clusters.clusterRepresentations[0].predictedTopicLabel;
     }
 
     _determineURIToLoad(uriString, createLazyBrowser) {
@@ -3894,15 +3855,23 @@
      * and inserts it.
      *
      * @param {MozTabbrowserTab} tab
-     * @param {number} index
      * @param {object} [options]
+     * @param {number} [options.elementIndex]
+     * @param {number} [options.tabIndex]
      * @param {MozTabbrowserTabGroup} [options.tabGroup]
      *   A related tab group where this tab should be added, when applicable.
      */
-    #insertTabAtElementIndex(
+    #insertTabAtIndex(
       tab,
-      index,
-      { ownerTab, openerTab, pinned, bulkOrderedOpen, tabGroup } = {}
+      {
+        tabIndex,
+        elementIndex,
+        ownerTab,
+        openerTab,
+        pinned,
+        bulkOrderedOpen,
+        tabGroup,
+      } = {}
     ) {
       // If this new tab is owned by another, assert that relationship
       if (ownerTab) {
@@ -3910,9 +3879,9 @@
       }
 
       // Ensure we have an index if one was not provided.
-      if (typeof index != "number") {
+      if (typeof elementIndex != "number" && typeof tabIndex != "number") {
         // Move the new tab after another tab if needed, to the end otherwise.
-        index = Infinity;
+        elementIndex = Infinity;
         if (
           !bulkOrderedOpen &&
           ((openerTab &&
@@ -3933,11 +3902,11 @@
             ) &&
             previousTab.pinned
           ) {
-            index = Infinity;
+            elementIndex = Infinity;
           } else if (previousTab.visible) {
-            index = previousTab.elementIndex + 1;
+            elementIndex = previousTab.elementIndex + 1;
           } else if (previousTab == FirefoxViewHandler.tab) {
-            index = 0;
+            elementIndex = 0;
           }
 
           if (lastRelatedTab) {
@@ -3952,21 +3921,30 @@
         }
       }
 
-      // Prevent a flash of unstyled content by setting up the tab content
-      // and inherited attributes before appending it (see Bug 1592054):
-      tab.initialize();
-
+      let allItems;
+      let index;
+      if (typeof elementIndex == "number") {
+        allItems = this.tabContainer.ariaFocusableItems;
+        index = elementIndex;
+      } else {
+        allItems = this.tabs;
+        index = tabIndex;
+      }
       // Ensure index is within bounds.
       if (tab.pinned) {
         index = Math.max(index, 0);
         index = Math.min(index, this.pinnedTabCount);
       } else {
         index = Math.max(index, this.pinnedTabCount);
-        index = Math.min(index, this.tabContainer.ariaFocusableItems.length);
+        index = Math.min(index, allItems.length);
       }
-
       /** @type {MozTabbrowserTab|undefined} */
-      let itemAfter = this.tabContainer.ariaFocusableItems.at(index);
+      let itemAfter = allItems.at(index);
+
+      // Prevent a flash of unstyled content by setting up the tab content
+      // and inherited attributes before appending it (see Bug 1592054):
+      tab.initialize();
+
       this.tabContainer._invalidateCachedTabs();
 
       if (tabGroup) {
@@ -4814,7 +4792,6 @@
         }
       }
 
-      aTab.closing = true;
       this.tabContainer._invalidateCachedVisibleTabs();
 
       // this._switcher would normally cover removing a tab from this
@@ -4835,7 +4812,11 @@
 
       var closeWindow = false;
       var newTab = false;
-      if (!this.visibleTabs.length && !this.tabsInCollapsedTabGroups.length) {
+      if (
+        aTab.visible &&
+        this.visibleTabs.length == 1 &&
+        !this.tabsInCollapsedTabGroups.length
+      ) {
         closeWindow =
           closeWindowWithLastTab != null
             ? closeWindowWithLastTab
@@ -4896,6 +4877,7 @@
         aTab.linkedBrowser.mute(true);
       }
 
+      aTab.closing = true;
       this._removingTabs.add(aTab);
       this.tabContainer._invalidateCachedTabs();
 
@@ -5882,6 +5864,7 @@
         selectedIndex = 0;
       }
       let firstTab = group.tabs[selectedIndex];
+      group.removedByAdoption = true;
       let newWindow = this.replaceTabWithWindow(firstTab);
 
       newWindow.addEventListener(
@@ -5899,9 +5882,10 @@
           // The initial tab isn't fully adopted yet, but the tab object has been
           // instantiated, so we can make a group now.
           newWindow.gBrowser.addTabGroup(tabsToGroup, {
-            color: group.color,
-            label: group.label,
             id: group.id,
+            label: group.label,
+            color: group.color,
+            isAdoptingGroup: true,
           });
           Glean.tabgroup.groupInteractions.move_window.add(1);
         },
@@ -6029,7 +6013,7 @@
         element,
         () => {
           let neighbor = this.tabs[tabIndex];
-          if (forceUngrouped && neighbor.group) {
+          if (forceUngrouped && neighbor?.group) {
             neighbor = neighbor.group;
           }
           if (neighbor && this.isTab(element) && tabIndex > element._tPos) {
@@ -6274,8 +6258,17 @@
         this.selectedTab.focus();
       }
 
+      // When a tab group with multiple tabs is moved forwards, emit TabMove in
+      // the reverse order, so that the index in previousTabState values are
+      // still accurate until the event is dispatched. If we were to start with
+      // the front tab, then logically that tab moves, and all following tabs
+      // would shift, which would invalidate the index in previousTabState.
+      let reverseEvents =
+        tabs.length > 1 && tabs[0]._tPos > previousTabStates[0].tabIndex;
+
       for (let i = 0; i < tabs.length; i++) {
-        let tab = tabs[i];
+        let ii = reverseEvents ? tabs.length - i - 1 : i;
+        let tab = tabs[ii];
         if (tab.selected) {
           this.tabContainer._handleTabSelect(true);
         }
@@ -6286,10 +6279,19 @@
         let currentTabState = this.#getTabMoveState(tab);
         this.#notifyOnTabMove(
           tab,
-          previousTabStates[i],
+          previousTabStates[ii],
           currentTabState,
           metricsContext
         );
+      }
+
+      let currentFirst = this.#getTabMoveState(tabs[0]);
+      if (
+        this.isTabGroup(element) &&
+        previousTabStates[0].tabIndex != currentFirst.tabIndex
+      ) {
+        let event = new CustomEvent("TabGroupMoved", { bubbles: true });
+        element.dispatchEvent(event);
       }
     }
 
@@ -6305,27 +6307,31 @@
       // windows). We also ensure that the tab we create to swap into has
       // the same remote type and process as the one we're swapping in.
       // This makes sure we don't get a short-lived process for the new tab.
-      if (typeof tabIndex == "number") {
-        elementIndex = this.#tabIndexToElementIndex(tabIndex);
-      }
       let linkedBrowser = aTab.linkedBrowser;
       let createLazyBrowser = !aTab.linkedPanel;
-      let nextElement = this.tabContainer.ariaFocusableItems.at(elementIndex);
+      let index;
+      let nextElement;
+      if (typeof elementIndex == "number") {
+        index = elementIndex;
+        nextElement = this.tabContainer.ariaFocusableItems.at(elementIndex);
+      } else {
+        index = tabIndex;
+        nextElement = this.tabs.at(tabIndex);
+      }
+      let tabInGroup = !!aTab.group;
       let params = {
         eventDetail: { adoptedTab: aTab },
         preferredRemoteType: linkedBrowser.remoteType,
         initialBrowsingContextGroupId: linkedBrowser.browsingContext?.group.id,
         skipAnimation: true,
         elementIndex,
+        tabIndex,
         tabGroup: this.isTab(nextElement) && nextElement.group,
         createLazyBrowser,
       };
 
       let numPinned = this.pinnedTabCount;
-      if (
-        elementIndex < numPinned ||
-        (aTab.pinned && elementIndex == numPinned)
-      ) {
+      if (index < numPinned || (aTab.pinned && index == numPinned)) {
         params.pinned = true;
       }
 
@@ -6351,6 +6357,10 @@
 
       if (selectTab) {
         this.selectedTab = newTab;
+      }
+
+      if (tabInGroup) {
+        Glean.tabgroup.tabInteractions.remove_other_window.add();
       }
 
       return newTab;
@@ -6965,6 +6975,20 @@
       }
     }
 
+    /**
+     *
+     * @param {MozTabbrowserTab} tab
+     */
+    #isFirstOrLastInTabGroup(tab) {
+      if (tab.group) {
+        let groupTabs = tab.group.tabs;
+        if (groupTabs.at(0) == tab || groupTabs.at(-1) == tab) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     getTabPids(tab) {
       if (!tab.linkedBrowser) {
         return [];
@@ -6979,6 +7003,15 @@
       return pids.concat(framePids.sort());
     }
 
+    /**
+     * @param {MozTabbrowserTab} tab
+     * @param {boolean} [includeLabel=true]
+     *   Include the tab's title/full label in the tooltip. Defaults to true,
+     *   Can be disabled for contexts where including the title in the tooltip
+     *   string would be duplicative would already available information,
+     *   e.g. accessibility descriptions.
+     * @returns {string}
+     */
     getTabTooltip(tab, includeLabel = true) {
       let labelArray = [];
       if (includeLabel) {
@@ -6986,28 +7019,59 @@
       }
       if (this.showPidAndActiveness) {
         const pids = this.getTabPids(tab);
+        let debugStringArray = [];
         if (pids.length) {
           let pidLabel = pids.length > 1 ? "pids" : "pid";
-          labelArray.push(`(${pidLabel} ${pids.join(", ")})`);
+          debugStringArray.push(`(${pidLabel} ${pids.join(", ")})`);
         }
 
         if (tab.linkedBrowser.docShellIsActive) {
-          labelArray.push("[A]");
+          debugStringArray.push("[A]");
+        }
+
+        if (debugStringArray.length) {
+          labelArray.push(debugStringArray.join(" "));
         }
       }
 
-      let label = labelArray.join(" ");
-      if (tab.userContextId) {
-        const containerName = ContextualIdentityService.getUserContextLabel(
-          tab.userContextId
-        );
-        label = this.tabLocalization.formatValueSync(
-          "tabbrowser-container-tab-title",
-          { title: label, containerName }
-        );
+      // Add a line to the tooltip with additional tab context (e.g. container
+      // membership, tab group membership) when applicable.
+      let containerName = tab.userContextId
+        ? ContextualIdentityService.getUserContextLabel(tab.userContextId)
+        : "";
+      let tabGroupName = this.#isFirstOrLastInTabGroup(tab)
+        ? tab.group.name ||
+          this.tabLocalization.formatValueSync("tab-group-name-default")
+        : "";
+
+      if (containerName || tabGroupName) {
+        let tabContextString;
+        if (containerName && tabGroupName) {
+          tabContextString = this.tabLocalization.formatValueSync(
+            "tabbrowser-tab-tooltip-tab-group-container",
+            {
+              tabGroupName,
+              containerName,
+            }
+          );
+        } else if (tabGroupName) {
+          tabContextString = this.tabLocalization.formatValueSync(
+            "tabbrowser-tab-tooltip-tab-group",
+            {
+              tabGroupName,
+            }
+          );
+        } else {
+          tabContextString = this.tabLocalization.formatValueSync(
+            "tabbrowser-tab-tooltip-container",
+            {
+              containerName,
+            }
+          );
+        }
+        labelArray.push(tabContextString);
       }
 
-      labelArray = [label];
       if (tab.soundPlaying) {
         let audioPlayingString = this.tabLocalization.formatValueSync(
           "tabbrowser-tab-audio-playing-description"
@@ -7094,10 +7158,8 @@
           }
           break;
         }
-        case "TabGroupCreate":
-          if (aEvent.detail.isUserTriggered) {
-            this.tabGroupMenu.openCreateModal(aEvent.target);
-          }
+        case "TabGroupCreateByUser":
+          this.tabGroupMenu.openCreateModal(aEvent.target);
           break;
         case "activate":
         // Intentional fallthrough
@@ -8833,10 +8895,9 @@ var TabContextMenu = {
     let contextUngroupTab = document.getElementById("context_ungroupTab");
 
     if (gBrowser._tabGroupsEnabled) {
-      let groupableTabs = this.contextTabs.filter(t => !t.pinned);
       let selectedGroupCount = new Set(
         // The filter removes the "null" group for ungrouped tabs.
-        groupableTabs.map(t => t.group).filter(g => g)
+        this.contextTabs.map(t => t.group).filter(g => g)
       ).size;
 
       let availableGroupsToMoveTo = gBrowser
@@ -8848,16 +8909,13 @@ var TabContextMenu = {
       // Determine whether or not the "current" tab group should appear in the
       // "move tab to group" context menu.
       if (selectedGroupCount == 1) {
-        let groupToFilter = groupableTabs[0].group;
-        if (groupToFilter && groupableTabs.every(t => t.group)) {
+        let groupToFilter = this.contextTabs[0].group;
+        if (groupToFilter && this.contextTabs.every(t => t.group)) {
           availableGroupsToMoveTo = availableGroupsToMoveTo.filter(
             group => group !== groupToFilter
           );
         }
       }
-
-      contextMoveTabToGroup.disabled = !groupableTabs.length;
-      contextMoveTabToNewGroup.disabled = !groupableTabs.length;
       if (!availableGroupsToMoveTo.length) {
         contextMoveTabToGroup.hidden = true;
         contextMoveTabToNewGroup.hidden = false;
@@ -8880,11 +8938,7 @@ var TabContextMenu = {
           }
 
           item.classList.add("menuitem-iconic");
-          if (group.collapsed) {
-            item.classList.add("tab-group-icon-collapsed");
-          } else {
-            item.classList.add("tab-group-icon");
-          }
+          item.classList.add("tab-group-icon");
           item.style.setProperty(
             "--tab-group-color",
             group.style.getPropertyValue("--tab-group-color")
@@ -9236,11 +9290,16 @@ var TabContextMenu = {
   },
 
   moveTabsToNewGroup() {
+    let insertBefore = this.contextTab;
+    if (insertBefore._tPos < gBrowser.pinnedTabCount) {
+      insertBefore = gBrowser.tabs[gBrowser.pinnedTabCount];
+    }
     gBrowser.addTabGroup(this.contextTabs, {
-      insertBefore: this.contextTab,
+      insertBefore,
       isUserTriggered: true,
       telemetryUserCreateSource: "tab_menu",
     });
+    gBrowser.selectedTab = this.contextTabs[0];
 
     // When using the tab context menu to create a group from the all tabs
     // panel, make sure we close that panel so that it doesn't obscure the tab

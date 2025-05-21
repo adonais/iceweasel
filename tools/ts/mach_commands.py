@@ -120,10 +120,12 @@ def update(ctx):
 
 
 @SubCommand("ts", "glean", description="Build Glean bindings.")
-@CommandArgument("path", help="Path to a metrics.yaml or pings.yaml file.")
-def glean(ctx, path):
+def glean(ctx):
+    sys.path.append(mozpath.join(ctx.topsrcdir, "toolkit/components/glean/"))
+    from metrics_index import metrics_yamls, pings_yamls
+
     maybe_setup(ctx)
-    return node(ctx, "build_glean", ctx.topsrcdir, path, "tools/@types")
+    return node(ctx, "build_glean", ctx.topsrcdir, *metrics_yamls, *pings_yamls)
 
 
 @SubCommand("ts", "paths", description="Build module path mapping.")
@@ -132,6 +134,27 @@ def paths(ctx):
     lib = mozpath.join(ctx.topsrcdir, "tools/@types/tspaths.json")
     lazy = mozpath.join(ctx.topsrcdir, "tools/@types/lib.gecko.modules.d.ts")
     return node(ctx, "build_paths", ctx.topsrcdir, lib, lazy)
+
+
+@SubCommand("ts", "subs", description="Emit substitution .d.ts for processed sources.")
+def subs(ctx):
+    maybe_setup(ctx)
+    processed = [
+        # AppConstants.sys.mjs has a (better) manually created declaration file.
+        "dist/bin/browser/modules/policies/schema.sys.mjs",
+        "dist/bin/modules/Readerable.sys.mjs",
+        "toolkit/components/nimbus/FeatureManifest.sys.mjs",
+        "toolkit/components/promiseworker/worker/PromiseWorker.js",
+        "toolkit/components/promiseworker/worker/PromiseWorker.mjs",
+        "toolkit/components/resistfingerprinting/RFPTargetConstants.sys.mjs",
+    ]
+    args = ["--declaration", "--emitDeclarationOnly", "--allowJs", "--outDir"]
+    subs_dir = mozpath.join(ctx.topsrcdir, "tools/@types/subs")
+
+    for file in processed:
+        path = mozpath.join(ctx.topobjdir, file)
+        print(f"[INFO] {path} -> {subs_dir}/{mozpath.basename(path)}")
+        node(ctx, "node_modules/typescript/bin/tsc", *args, subs_dir, path)
 
 
 def node(ctx, script, *args):

@@ -175,7 +175,7 @@ test_description_schema = Schema(
             # additional command-line options for mozharness, beyond those
             # automatically added
             Required("extra-options"): optionally_keyed_by(
-                "test-platform", "variant", [str]
+                "test-platform", "variant", "subtest", "app", [str]
             ),
             # the artifact name (including path) to test on the build task; this is
             # generally set in a per-kind transformation
@@ -435,6 +435,19 @@ def run_remaining_transforms(config, tasks):
             xforms.add(mod.transforms)
 
         yield from xforms(config, [task])
+
+
+@transforms.add
+def define_tags(config, tasks):
+    for task in tasks:
+        tags = task.setdefault("tags", {})
+        tags.setdefault("test-suite", task["suite"])
+        tags.setdefault("test-platform", task["test-platform"])
+        variant = task.get("attributes", {}).get("unittest_variant")
+        if variant:
+            tags.setdefault("test-variant", variant)
+
+        yield task
 
 
 @transforms.add

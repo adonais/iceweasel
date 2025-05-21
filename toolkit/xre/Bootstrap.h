@@ -46,6 +46,12 @@ struct BootstrapConfig {
    * When the pointer above is non-null, may indicate the directory where
    * application files are, relative to the XRE. */
   const char* appDataPath;
+#if defined(MOZ_WIDGET_ANDROID)
+  /* Crash notification socket used by Breakpad. */
+  int crashChildNotificationSocket;
+  /* Crash socket used to communicate with the crash helper. */
+  int crashHelperSocket;
+#endif
 };
 
 /**
@@ -81,8 +87,6 @@ class Bootstrap {
   virtual void NS_LogInit() = 0;
 
   virtual void NS_LogTerm() = 0;
-
-  virtual void XRE_TelemetryAccumulate(int aID, uint32_t aSample) = 0;
 
   virtual void XRE_StartupTimelineRecord(int aEvent,
                                          mozilla::TimeStamp aWhen) = 0;

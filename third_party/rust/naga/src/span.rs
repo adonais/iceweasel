@@ -239,7 +239,7 @@ impl<E> WithSpan<E> {
 
     /// Return a [`SourceLocation`] for our first span, if we have one.
     pub fn location(&self, source: &str) -> Option<SourceLocation> {
-        if self.spans.is_empty() {
+        if self.spans.is_empty() || source.is_empty() {
             return None;
         }
 
@@ -273,6 +273,7 @@ impl<E> WithSpan<E> {
     }
 
     /// Emits a summary of the error to standard error stream.
+    #[cfg(feature = "stderr")]
     pub fn emit_to_stderr(&self, source: &str)
     where
         E: Error,
@@ -281,16 +282,24 @@ impl<E> WithSpan<E> {
     }
 
     /// Emits a summary of the error to standard error stream.
+    #[cfg(feature = "stderr")]
     pub fn emit_to_stderr_with_path(&self, source: &str, path: &str)
     where
         E: Error,
     {
         use codespan_reporting::{files, term};
-        use term::termcolor::{ColorChoice, StandardStream};
 
         let files = files::SimpleFile::new(path, source);
         let config = term::Config::default();
-        let writer = StandardStream::stderr(ColorChoice::Auto);
+
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "termcolor")] {
+                let writer = term::termcolor::StandardStream::stderr(term::termcolor::ColorChoice::Auto);
+            } else {
+                let writer = std::io::stderr();
+            }
+        }
+
         term::emit(&mut writer.lock(), &config, &files, &self.diagnostic())
             .expect("cannot write error");
     }
@@ -309,13 +318,14 @@ impl<E> WithSpan<E> {
         E: Error,
     {
         use codespan_reporting::{files, term};
-        use term::termcolor::NoColor;
 
         let files = files::SimpleFile::new(path, source);
         let config = term::Config::default();
-        let mut writer = NoColor::new(Vec::new());
-        term::emit(&mut writer, &config, &files, &self.diagnostic()).expect("cannot write error");
-        String::from_utf8(writer.into_inner()).unwrap()
+
+        let mut writer = crate::error::DiagnosticBuffer::new();
+        term::emit(writer.inner_mut(), &config, &files, &self.diagnostic())
+            .expect("cannot write error");
+        writer.into_string()
     }
 }
 

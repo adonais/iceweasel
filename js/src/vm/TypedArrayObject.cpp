@@ -349,9 +349,7 @@ static TypedArrayType* NewTypedArrayObject(JSContext* cx, const JSClass* clasp,
                                            gc::AllocKind allocKind,
                                            gc::Heap heap) {
   MOZ_ASSERT(proto);
-
-  MOZ_ASSERT(CanChangeToBackgroundAllocKind(allocKind, clasp));
-  allocKind = ForegroundToBackgroundAllocKind(allocKind);
+  allocKind = gc::GetFinalizedAllocKindForClass(allocKind, clasp);
 
   static_assert(std::is_same_v<TypedArrayType, FixedLengthTypedArrayObject> ||
                 std::is_same_v<TypedArrayType, ResizableTypedArrayObject>);
@@ -4839,8 +4837,8 @@ bool js::IsBufferSource(JSContext* cx, JSObject* object, bool allowShared,
       return false;
     }
     // Ensure the pointer we pass out won't move as long as you properly root
-    // it.
-    if (!ArrayBufferViewObject::ensureNonInline(cx, view)) {
+    // it. This is only needed for non-shared memory.
+    if (!view->isSharedMemory() && !ArrayBufferViewObject::ensureNonInline(cx, view)) {
       return false;
     }
     *dataPointer = view->dataPointerEither().cast<uint8_t*>();
@@ -4857,8 +4855,8 @@ bool js::IsBufferSource(JSContext* cx, JSObject* object, bool allowShared,
       return false;
     }
     // Ensure the pointer we pass out won't move as long as you properly root
-    // it.
-    if (!ArrayBufferViewObject::ensureNonInline(cx, view)) {
+    // it. This is only needed for non-shared memory.
+    if (!view->isSharedMemory() && !ArrayBufferViewObject::ensureNonInline(cx, view)) {
       return false;
     }
     *dataPointer = view->dataPointerEither().cast<uint8_t*>();

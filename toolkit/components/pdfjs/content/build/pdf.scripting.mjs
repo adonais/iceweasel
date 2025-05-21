@@ -20,7 +20,6 @@
  * JavaScript code in this page
  */
 
-var __webpack_exports__ = {};
 
 ;// ./src/scripting_api/constants.js
 const Border = Object.freeze({
@@ -1213,8 +1212,8 @@ class AForm {
       AVG: args => args.reduce((acc, value) => acc + value, 0) / args.length,
       SUM: args => args.reduce((acc, value) => acc + value, 0),
       PRD: args => args.reduce((acc, value) => acc * value, 1),
-      MIN: args => args.reduce((acc, value) => Math.min(acc, value), Number.MAX_VALUE),
-      MAX: args => args.reduce((acc, value) => Math.max(acc, value), Number.MIN_VALUE)
+      MIN: args => Math.min(...args),
+      MAX: args => Math.max(...args)
     };
     if (!(cFunction in actions)) {
       throw new TypeError("Invalid function in AFSimple_Calculate");
@@ -1934,18 +1933,15 @@ class App extends PDFObject {
     this._document.obj.calculate = calculate;
   }
   get constants() {
-    if (!this._constants) {
-      this._constants = Object.freeze({
-        align: Object.freeze({
-          left: 0,
-          center: 1,
-          right: 2,
-          top: 3,
-          bottom: 4
-        })
-      });
-    }
-    return this._constants;
+    return this._constants ??= Object.freeze({
+      align: Object.freeze({
+        left: 0,
+        center: 1,
+        right: 2,
+        top: 3,
+        bottom: 4
+      })
+    });
   }
   set constants(_) {
     throw new Error("app.constants is read-only");
@@ -4043,8 +4039,8 @@ function initSandbox(params) {
 
 ;// ./src/pdf.scripting.js
 
-const pdfjsVersion = "5.1.73";
-const pdfjsBuild = "a6a997fe4";
+const pdfjsVersion = "5.2.96";
+const pdfjsBuild = "d8d3e0abf";
 globalThis.pdfjsScripting = {
   initSandbox: initSandbox
 };

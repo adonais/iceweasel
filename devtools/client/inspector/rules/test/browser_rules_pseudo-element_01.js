@@ -13,6 +13,7 @@ add_task(async function () {
   await pushPref("dom.customHighlightAPI.enabled", true);
   await pushPref("dom.text_fragments.enabled", true);
   await pushPref("layout.css.modern-range-pseudos.enabled", true);
+  await pushPref("layout.css.details-content.enabled", true);
   await pushPref("full-screen-api.transition-duration.enter", "0 0");
   await pushPref("full-screen-api.transition-duration.leave", "0 0");
 
@@ -29,6 +30,7 @@ add_task(async function () {
   await testCustomHighlight(inspector, view);
   await testSlider(inspector, view);
   await testUrlFragmentTextDirective(inspector, view);
+  await testDetailsContent(inspector, view);
   // keep this one last as it makes the browser go fullscreen and seem to impact other tests
   await testBackdrop(inspector, view);
 });
@@ -382,37 +384,36 @@ async function testCustomHighlight(inspector, view) {
 
   is(
     highlightRules[0].pseudoElement,
-    "::highlight(filter)",
-    "First highlight rule is for the filter highlight"
+    "::highlight(search)",
+    "First highlight rule is for the search highlight"
   );
-
   is(
     highlightRules[1].pseudoElement,
     "::highlight(search)",
-    "Second highlight rule is for the search highlight"
+    "Second highlight rule is also for the search highlight"
   );
   is(
     highlightRules[2].pseudoElement,
-    "::highlight(search)",
-    "Third highlight rule is also for the search highlight"
+    "::highlight(filter)",
+    "Third highlight rule is for the filter highlight"
   );
   is(highlightRules.length, 3, "Got all 3 active rules, but not unused one");
 
   // Check that properties are marked as overridden only when they're on the same Highlight
   is(
     convertTextPropsToString(highlightRules[0].textProps),
-    `background-color: purple`,
-    "Got expected properties for filter highlight"
-  );
-  is(
-    convertTextPropsToString(highlightRules[1].textProps),
     `color: white`,
     "Got expected properties for first search highlight"
   );
   is(
-    convertTextPropsToString(highlightRules[2].textProps),
+    convertTextPropsToString(highlightRules[1].textProps),
     `background-color: tomato; ~~color: gold~~`,
     "Got expected properties for second search highlight, `color` is marked as overridden"
+  );
+  is(
+    convertTextPropsToString(highlightRules[2].textProps),
+    `background-color: purple`,
+    "Got expected properties for filter highlight"
   );
 
   assertGutters(view);
@@ -461,6 +462,15 @@ async function testUrlFragmentTextDirective(inspector, view) {
   assertGutters(view);
 }
 
+async function testDetailsContent(inspector, view) {
+  await assertPseudoElementRulesNumbers("details", inspector, view, {
+    // `element`, `*`, and inherited `body`
+    elementRules: 3,
+    detailsContentRules: 1,
+  });
+  assertGutters(view);
+}
+
 function convertTextPropsToString(textProps) {
   return textProps
     .map(
@@ -491,6 +501,7 @@ const PSEUDO_DICT = {
   sliderThumbRules: "::slider-thumb",
   sliderTrackRules: "::slider-track",
   targetTextRules: "::target-text",
+  detailsContentRules: "::details-content",
 };
 
 async function assertPseudoElementRulesNumbers(

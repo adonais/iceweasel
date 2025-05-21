@@ -114,11 +114,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Navegatz mai rapidament amb lo nòu sistèma de navegacion</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Navegatz mai rapidament amb lo nòu sistèma de navegacion</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Sus un site web, aquesta barra s’amaga quand vos desplaçatz enbàs per ganhar d’espaci suplementari.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Sus un site web, aquesta barra s’amaga quand vos desplaçatz enbàs per ganhar d’espaci suplementari.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Tocatz de longa las sagetas per sautar entre paginas de l’istoric d’aqueste onglet.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Tocatz de longa las sagetas per sautar entre paginas de l’istoric d’aqueste onglet.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -627,7 +627,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Navegacion web rapida e segura</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Acceptar e contunhar</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Acceptar e contunhar</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">En contunhant, acceptatz las %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -832,8 +832,6 @@
   <string name="preferences_override_account_server">Servidor de compte Mozilla personalizat</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Servidor Sync personalizat</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Servidor de sincronizacion o compte Mozilla modificat. Tampadura de l’aplicacion per aplicar las modificacions…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Compte</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1203,7 +1201,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Dobrir los ligams en lisant la barra d’aisina amont</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Desplaçatz-vos per amagar la barra d’adreça e la barra d’aisinas</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Desplaçatz-vos per amagar la barra d’adreça e la barra d’aisinas</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Cambiatz d’onglet en lisant la barra d’adreça lateralament</string>
   <!--
@@ -1521,9 +1519,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Fracàs del telecargament</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Recercar dins los telecargaments</string>
+  <string name="download_search_placeholder">Recercar dins los telecargaments</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Cap de resultat pas trobat</string>
+  <string name="download_search_no_results_found">Cap de resultat pas trobat</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Tot seleccionar</string>
   <!--
@@ -2276,7 +2274,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Icòna de preferéncia d’excepcion de proteccion renfortida contra lo seguiment</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2285,8 +2283,6 @@
   <string name="preference_doh_summary">Lo DNS (Domain Name Sistèma) sus HTTPS envia vòstras requèstas per un nom de domeni via una connexion chifrada, en fornissent un DNS segur e en fasent venir mai complicat per los autres de veire quines sites sètz a mand de visitar. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Ne saber mai</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Remontar</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Excepcions</string>
   <!-- Content description for the "Info" button -->
@@ -2826,8 +2822,6 @@ Exemple :\nhttps://suggestqueries.google.com/complete/search?client=firefox&amp
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox suggerís</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Recèrcas popularas</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.

@@ -117,11 +117,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">სწრაფი თვალიერება ახალი სამოძრაოთი</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">სწრაფი თვალიერება ახალი სამოძრაოთი</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">საიტზე ეს ზოლი იკეცება ქვემოთ დამატებითი სივრცისთვის.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">საიტზე ეს ზოლი იკეცება ქვემოთ დამატებითი სივრცისთვის.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">დიდხანს შეეხეთ ისრებს ამ ჩანართის ისტორიის გვერდებს შორის გადასასვლელად.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">დიდხანს შეეხეთ ისრებს ამ ჩანართის ისტორიის გვერდებს შორის გადასასვლელად.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -632,7 +632,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">გვერდების თვალიერება სწრაფად და დაცულად</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">თანხმობა და გაგრძელება</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">თანხმობა და გაგრძელება</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">განაგრძეთ</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">თუ განაგრძობთ, თანახმა ხართ მიიღოთ %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -837,8 +839,6 @@
   <string name="preferences_override_account_server">Mozilla-ანგარიშის მითითებული სერვერი</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">დასინქრონების მითითებული სერვერი</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla-ანგარიშის/სინქრონიზაციის სერვერი შეიცვალა. პროგრამა დაიხურება ცვლილებების ასახვისთვის…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">ანგარიში</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1208,7 +1208,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">აუსვით ხელსაწყოთა ზოლზე ჩანართების გახსნისთვის</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">გადაადგილებისას ხელსაწყოებისა და მისამართის ველის დამალვა</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">გადაადგილებისას ხელსაწყოებისა და მისამართის ველის დამალვა</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">გადაუსვით მისამართის ველს ჩანართების გადასართველად</string>
   <!--
@@ -1484,8 +1484,33 @@
   <string name="download_multi_select_title">შერჩეულია %1$d</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">მოცილება</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">ადგილი არასაკმარისია</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">ამ მოწყობილობას არ აქვს ადგილი, რომ ჩამოიტვირთოს &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">ფაილების მართვა</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">გაუქმება</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">წაშლა</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">გადასვლა უკან</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">ზემოთ გადასვლა</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">უკან და ძიების დახურვა</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">გასუფთავება</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">URL-ბმულის გაზიარება</string>
   <!-- Text for the button to share the download file -->
@@ -1526,9 +1551,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">ჩამოტვირთვა ვერ მოხერხდა</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">ძიება ჩამოტვირთვებში</string>
+  <string name="download_search_placeholder">ძიება ჩამოტვირთვებში</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">შედეგები ვერ მოიძებნა</string>
+  <string name="download_search_no_results_found">შედეგები ვერ მოიძებნა</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">ყველას მონიშვნა</string>
   <!--
@@ -1645,6 +1670,8 @@
   <string name="bookmark_menu_copy_button">ასლი</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">გაზიარება</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">ყველას მონიშვნა</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">ახალ ჩანართში გახსნა</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1657,6 +1684,8 @@
   <string name="bookmark_menu_delete_button">წაშლა</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">შენახვა</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">დალაგება შერჩეული თანმიმდევრობით</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">დალაგება უახლესით</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2282,7 +2311,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">თვალთვალისგან გაძლიერებული დაცვის გამონაკლისის მანიშნებელი ხატულა</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2291,8 +2320,6 @@
   <string name="preference_doh_summary">საიტთა სახელების გადამყვანი (DNS) მომსახურების HTTPS-ით გატარებისას საიტის მისამართის მოთხოვნები იგზავნება დაშიფრული არხით, შედეგად იქმნება დაცული DNS და გარეშე პირებს უძნელდებათ გაარკვიონ, რომელ ვებსაიტებთან ცდილობთ წვდომას. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">ვრცლად</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">ზემოთ გადასვლა</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">გამონაკლისები</string>
   <!-- Content description for the "Info" button -->
@@ -2830,8 +2857,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox-შეთავაზება</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">ხშირად მოძიებული</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3196,6 +3221,8 @@
   <string name="protection_panel_no_trackers_blocked">მეთვალყურეები არაა ნაპოვნი</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">პირადულობისა და უსაფრთხოების პარამეტრები</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">ნებართვები</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3401,6 +3428,8 @@
   <string name="debug_drawer_override_current_region_label">ამჟამინდელი მხარის ჩანაცვლება</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">მშობლიური და ამჟამინდელი მხარის ჩანაცვლება</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">მშობლიური მხარის ჩანაცვლება მუდმივად</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3504,6 +3533,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">თქვენ გაიარეთ 6-ივე ნაბიჯი გასამართად. გამოიყენეთ %1$s და დატკბით სიჩქარით, პირადულობითა და უსაფრთხოებით.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">შეასრულეთ 5-ივე ნაბიჯი, რომ გამართოთ %1$s ვებსივრცით სრულყოფილად სარგებლობისთვის.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">მშვენიერი დასაწყისია! შესრულებულია 1 ნაბიჯი 5-იდან.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">5 ნაბიჯიდან 2 შესრულებულია. მშვენიერი წინსვლაა!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">ნახევარი უკვე გავლილია! სამი ნაბიჯი შესრულდა და 2 წინაა.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">თითქმის მზადაა! მხოლოდ 1 ნაბიჯიღა გაშორებთ დასრულებამდე.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">თქვენ გაიარეთ 5-ივე ნაბიჯი გასამართად. გამოიყენეთ %1$s და დატკბით სიჩქარით, პირადულობითა და უსაფრთხოებით.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3553,4 +3598,16 @@
   <string name="pbm_authentication_unlock">გახსნა</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">პირადი ჩანართების გაღება</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">პირად ჩანართებზე ეკრანის ჩაკეტვის ჩართვა</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">პირად ჩანართებზე ეკრანის ჩაკეტვის გათიშვა</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">ეკრანის ჩაკეტვის გამართვა ჩანართების დასამალად</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">დაიფაროს ეკრანის ჩაკეტვით პირადი ჩანართები?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">არა, გმადლობთ</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">ჩანართების ჩაკეტვა</string>
 </resources>

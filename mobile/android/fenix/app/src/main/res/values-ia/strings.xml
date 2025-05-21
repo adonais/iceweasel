@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Naviga plus velocemente con le nove systema de navigation</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Naviga plus velocemente con le nove systema de navigation</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Sur un sito web, iste barra es celate quando tu glissa verso basso, lassante te plus spatio pro le navigation.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Sur un sito web, iste barra es celate quando tu glissa verso basso, lassante te plus spatio pro le navigation.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Tocca e retene le flechas pro saltar inter paginas in iste chronologia del scheda.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Tocca e retene le flechas pro saltar inter paginas in iste chronologia del scheda.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -631,7 +631,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Navigation del web veloce e secur</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Accordar se e continuar</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Accordar se e continuar</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Continuar</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Continuante, tu accepta le %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -836,8 +838,6 @@
   <string name="preferences_override_account_server">Servitores de conto Mozilla personalisate</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Servitor del Sync personalisate</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Servitor de conto/sync Mozillac modificate. Quitante le application pro applicar cambiamentos…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Conto</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1208,7 +1208,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Glissa verso le alto le barra del instrumentos pro aperir le schedas</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Rola pro celar le barra de adresse e le barra de utensiles</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Rola pro celar le barra de adresse e le barra de utensiles</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Glissa lateralmente le barra de adresse pro cambiar de scheda</string>
   <!--
@@ -1484,12 +1484,33 @@
   <string name="download_multi_select_title">%1$d seligite</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Remover</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Spatio insufficiente</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Iste apparato non ha spatio sufficiente pro discargar &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Gerer files</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Cancellar</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Deler</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Navigar retro</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Navigar a super</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Navigar a super</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Retornar e clauder recerca</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Vacuar</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Compartir URL</string>
   <!-- Text for the button to share the download file -->
@@ -1530,9 +1551,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Discargamento fallite</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Cercar in le discargamentos</string>
+  <string name="download_search_placeholder">Cercar in le discargamentos</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Nulle resultato trovate</string>
+  <string name="download_search_no_results_found">Nulle resultato trovate</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Seliger toto</string>
   <!--
@@ -1649,6 +1670,8 @@
   <string name="bookmark_menu_copy_button">Copiar</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Compartir</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">Seliger toto</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">Aperir in un nove scheda
 </string>
@@ -1662,6 +1685,8 @@
   <string name="bookmark_menu_delete_button">Deler</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Salvar</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Arrangiar per ordine personalitate</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">Ordinar per plus recente</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2289,7 +2314,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Icone de preferentia de exception al protection reinfortiate contra le traciamento</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2298,8 +2323,6 @@
   <string name="preference_doh_summary">Le systemas de nomine de dominio (DNS) sur HTTPS invia tu requesta pro un nomine de dominio per un connexion cryptate, forniente un DNS secur e obstruente al alteres de vider que sito web tu va acceder. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Pro saper plus</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Navigar</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Exceptiones</string>
   <!-- Content description for the "Info" button -->
@@ -2837,8 +2860,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox suggere</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Recercas de tendentia</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3203,6 +3224,8 @@
   <string name="protection_panel_no_trackers_blocked">Nulle traciatores trovate</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Configurationes de confidentialitate e securitate</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Permissos</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3409,6 +3432,8 @@
   <string name="debug_drawer_override_current_region_label">Substituer region actual</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">Substituer region initial e actual</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Permanentemente supplantar le region principal </string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3512,6 +3537,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Tu ha completate tote le 6 passos del configuration. Gaude del velocitate, confidentialitate, e securitate de %1$s.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Completa tote le 5 passos pro configurar %1$s pro le melior experientia de navigation.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Grande initio! Tu ha completate 1 de 5 passos.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Tu ha completate 2 de 5 passos. Grande progresso!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Tu es al mediate del strata! Tres passos finite e 2 pro ir.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Quasi preste! Tu es a justo 1 passo ab le conclusion.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Tu ha completate tote le 5 passos del configuration. Gaude del velocitate, confidentialitate, e securitate de %1$s.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3561,4 +3602,16 @@
   <string name="pbm_authentication_unlock">Disblocar</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Disblocar le schedas private</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Activar blocada de schermo pro schedas private</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Disactivar blocada de schermo pro schedas private </string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Configurar blocada de schermo pro celar schedas</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Usar le blocada de schermo pro celar schedas private?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">No, gratias</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Blocar schedas</string>
 </resources>

@@ -4,6 +4,8 @@
 
 mod common;
 use crate::common::*;
+use glean_core::{AttributionMetrics, DistributionMetrics};
+use serde_json::json;
 
 use glean_core::metrics::*;
 use glean_core::ping::PingMaker;
@@ -97,17 +99,7 @@ fn test_metrics_must_report_experimentation_id() {
     })
     .unwrap();
     let ping_maker = PingMaker::new();
-    let ping_type = PingType::new(
-        "store1",
-        true,
-        false,
-        true,
-        true,
-        true,
-        vec![],
-        vec![],
-        true,
-    );
+    let ping_type = PingBuilder::new("store1").build();
     glean.register_ping_type(&ping_type);
 
     // Record something, so the ping will have data
@@ -164,17 +156,7 @@ fn experimentation_id_is_removed_if_send_if_empty_is_false() {
     .unwrap();
     let ping_maker = PingMaker::new();
 
-    let unknown_ping_type = PingType::new(
-        "unknown",
-        true,
-        false,
-        true,
-        true,
-        true,
-        vec![],
-        vec![],
-        true,
-    );
+    let unknown_ping_type = PingBuilder::new("unknown").build();
     glean.register_ping_type(&unknown_ping_type);
 
     assert!(ping_maker
@@ -190,17 +172,7 @@ fn collect_must_report_none_when_no_data_is_stored() {
 
     let (mut glean, ping_maker, ping_type, _t) = set_up_basic_ping();
 
-    let unknown_ping_type = PingType::new(
-        "unknown",
-        true,
-        false,
-        true,
-        true,
-        true,
-        vec![],
-        vec![],
-        true,
-    );
+    let unknown_ping_type = PingBuilder::new("unknown").build();
     glean.register_ping_type(&ping_type);
 
     assert!(ping_maker
@@ -224,17 +196,7 @@ fn seq_number_must_be_sequential() {
 
     for i in 0..=1 {
         for ping_name in ["store1", "store2"].iter() {
-            let ping_type = PingType::new(
-                *ping_name,
-                true,
-                false,
-                true,
-                true,
-                true,
-                vec![],
-                vec![],
-                true,
-            );
+            let ping_type = PingBuilder::new(ping_name).build();
             let ping = ping_maker
                 .collect(&glean, &ping_type, None, "", "")
                 .unwrap();
@@ -319,7 +281,7 @@ fn no_pings_submitted_if_upload_disabled() {
     // Regression test, bug 1603571
 
     let (mut glean, _t) = new_glean(None);
-    let ping_type = PingType::new("store1", true, true, true, true, true, vec![], vec![], true);
+    let ping_type = PingBuilder::new("store1").with_send_if_empty(true).build();
     glean.register_ping_type(&ping_type);
 
     assert!(ping_type.submit_sync(&glean, None));
@@ -337,7 +299,7 @@ fn no_pings_submitted_if_upload_disabled() {
 fn metadata_is_correctly_added_when_necessary() {
     let (mut glean, _t) = new_glean(None);
     glean.set_debug_view_tag("valid-tag");
-    let ping_type = PingType::new("store1", true, true, true, true, true, vec![], vec![], true);
+    let ping_type = PingBuilder::new("store1").with_send_if_empty(true).build();
     glean.register_ping_type(&ping_type);
 
     assert!(ping_type.submit_sync(&glean, None));
@@ -345,4 +307,70 @@ fn metadata_is_correctly_added_when_necessary() {
     let (_, _, metadata) = &get_queued_pings(glean.get_data_path()).unwrap()[0];
     let headers = metadata.as_ref().unwrap().get("headers").unwrap();
     assert_eq!(headers.get("X-Debug-ID").unwrap(), "valid-tag");
+}
+
+#[test]
+fn attribution_and_distribution_appear_in_client_info() {
+    let (glean, ping_maker, ping_type, _t) = set_up_basic_ping();
+
+    let attribution = AttributionMetrics {
+        source: Some("source".into()),
+        medium: Some("medium".into()),
+        campaign: Some("campaign".into()),
+        term: Some("term".into()),
+        content: Some("content".into()),
+    };
+    let distribution = DistributionMetrics {
+        name: Some("name".into()),
+    };
+    glean.update_attribution(attribution);
+    glean.update_distribution(distribution);
+
+    let ping = ping_maker
+        .collect(&glean, &ping_type, None, "", "")
+        .unwrap();
+    let client_info = ping.content["client_info"].as_object().unwrap();
+
+    assert_eq!(json!({"name": "name"}), client_info["distribution"]);
+    assert_eq!(
+        json!({
+            "source": "source",
+            "medium": "medium",
+            "campaign": "campaign",
+            "term": "term",
+            "content": "content",
+        }),
+        client_info["attribution"]
+    );
+
+    // Now let's test updated values.
+    let attribution_update = AttributionMetrics {
+        content: Some("what a boring word".into()),
+        ..Default::default()
+    };
+    let distribution_update = DistributionMetrics {
+        name: Some("what's in a name".into()),
+    };
+    glean.update_attribution(attribution_update);
+    glean.update_distribution(distribution_update);
+
+    let ping = ping_maker
+        .collect(&glean, &ping_type, None, "", "")
+        .unwrap();
+    let client_info = ping.content["client_info"].as_object().unwrap();
+
+    assert_eq!(
+        json!({"name": "what's in a name"}),
+        client_info["distribution"]
+    );
+    assert_eq!(
+        json!({
+            "source": "source",
+            "medium": "medium",
+            "campaign": "campaign",
+            "term": "term",
+            "content": "what a boring word",
+        }),
+        client_info["attribution"]
+    );
 }

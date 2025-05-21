@@ -44,13 +44,10 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  static already_AddRefed<Sanitizer> New(nsIGlobalObject* aGlobal,
-                                         const SanitizerConfig& aConfig,
-                                         ErrorResult& aRv);
-
-  static already_AddRefed<Sanitizer> New(nsIGlobalObject* aGlobal,
-                                         const SanitizerPresets aConfig,
-                                         ErrorResult& aRv);
+  static already_AddRefed<Sanitizer> GetInstance(
+      nsIGlobalObject* aGlobal,
+      const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
+      bool aSafe, ErrorResult& aRv);
 
   // WebIDL
   static already_AddRefed<Sanitizer> Constructor(
@@ -74,21 +71,20 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   void RemoveUnsafe();
 
   /**
-   * Sanitizes a fragment in place. This assumes that the fragment
+   * Sanitizes a node in place. This assumes that the node
    * belongs but an inert document.
    *
-   * @param aFragment Fragment to be sanitized in place
-   * @return DocumentFragment
+   * @param aNode Node to be sanitized in place
    */
 
-  RefPtr<DocumentFragment> SanitizeFragment(RefPtr<DocumentFragment> aFragment,
-                                            bool aSafe, ErrorResult& aRv);
+  void Sanitize(nsINode* aNode, bool aSafe, ErrorResult& aRv);
 
  private:
   ~Sanitizer() = default;
 
   void SetDefaultConfig();
-  void SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv);
+  void SetConfig(const SanitizerConfig& aConfig,
+                 bool aAllowCommentsAndDataAttributes, ErrorResult& aRv);
 
   void MaybeMaterializeDefaultConfig();
 

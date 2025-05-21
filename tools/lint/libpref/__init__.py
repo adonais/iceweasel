@@ -62,8 +62,8 @@ def get_names(pref_list_filename):
     file = open(pref_list_filename, encoding="utf-8").read().replace("@", "")
     try:
         pref_list = yaml.safe_load(file)
-    except (IOError, ValueError) as e:
-        print("{}: error:\n  {}".format(pref_list_filename, e), file=sys.stderr)
+    except (OSError, ValueError) as e:
+        print(f"{pref_list_filename}: error:\n  {e}", file=sys.stderr)
         sys.exit(1)
 
     # Caveats on pref["value"]:

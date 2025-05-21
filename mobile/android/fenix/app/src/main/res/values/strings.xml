@@ -44,8 +44,6 @@
     <string name="tab_tray_close_multiselect_content_description">Exit multiselect mode</string>
     <!-- Content description for save to collection button while in multiselect mode in tab tray -->
     <string name="tab_tray_collection_button_multiselect_content_description">Save selected tabs to collection</string>
-    <!-- Content description on checkmark while tab is selected in multiselect mode in tab tray -->
-    <string name="tab_tray_multiselect_selected_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Selected</string>
 
     <!-- Home - Bookmarks -->
     <!-- Title for the home screen section with bookmarks. -->
@@ -110,9 +108,11 @@
 
     <!-- Address bar swipe "contextual feature recommendation" (CFR) -->
     <!-- Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-    <string name="address_bar_swipe_cfr_title">Swipe the toolbar to switch tabs</string>
+    <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Swipe the toolbar to switch tabs</string>
     <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-    <string name="address_bar_swipe_cfr_message">Swipe left or right to switch. Swipe left on your last tab to open a new tab.</string>
+    <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Swipe left or right to switch. Swipe left on your last tab to open a new tab.</string>
+    <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+    <string name="address_bar_swipe_cfr_message_2">Swipe the toolbar left or right to switch tabs.</string>
 
     <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
     <string name="camera_permissions_needed_message">Camera access needed. Go to Android settings, tap permissions, and tap allow.</string>
@@ -534,34 +534,20 @@
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Learn more</string>
     <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_usage_data_title">Send technical and interaction data to Mozilla</string>
-    <!-- Description for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
-    <string name="onboarding_preferences_dialog_usage_data_description" moz:removedIn="136" tools:ignore="BrandUsage,UnusedResources">Data about your device, hardware configuration, and how you use Firefox helps improve features, performance, and stability for users everywhere.</string>
     <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Data about your device, hardware configuration, and how you use Firefox helps improve features, performance, and stability for everyone.</string>
-    <!-- Learn more link for the usage data option in the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_usage_data_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Learn more about usage data</string>
     <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Learn more</string>
     <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
     <string name="onboarding_preferences_dialog_positive_button">Done</string>
-    <!-- Negative button label for the privacy preferences dialog shown during onboarding. -->
-    <string name="onboarding_preferences_dialog_negative_button" tools:ignore="UnusedResources" moz:removedIn="136">Cancel</string>
     <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here-->
     <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Welcome to Firefox</string>
-    <!-- Terms of service sub header label. -->
-    <string name="onboarding_terms_of_service_sub_header" tools:ignore="UnusedResources" moz:removedIn="136">Fast and secure web browsing.</string>
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">Fast and secure web browsing</string>
     <!-- Terms of service onboarding page continue button label. -->
     <string name="onboarding_term_of_service_agree_and_continue_button_label">Agree and continue</string>
     <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
-    <string name="onboarding_term_of_service_line_one" moz:removedIn="136" tools:ignore="BrandUsage, UnusedResources">By continuing, you agree to the Firefox %1$s.</string>
-    <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one_2">By continuing, you agree to the %1$s.</string>
-    <!-- Used as text for the link in onboarding_term_of_service_line_one. -->
-    <string name="onboarding_term_of_service_line_one_link_text" moz:removedIn="136" tools:ignore="UnusedResources">Terms of Service</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
     <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Firefox Terms of Use</string>
-    <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
-    <string name="onboarding_term_of_service_line_two" moz:removedIn="136" tools:ignore="UnusedResources,BrandUsage">Firefox cares about your privacy. Read more in our %1$s.</string>
     <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
     <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox cares about your privacy. Learn more in our %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
@@ -605,8 +591,6 @@
     <string name="onboarding_customize_toolbar_placement_top_content_description">Image of the top toolbar</string>
     <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
     <string name="onboarding_customize_toolbar_a11y_action_label_select">select</string>
-    <!-- Onboarding toolbar selection card label for 'Not now' button, used by Nimbus experiments. -->
-    <string name="onboarding_customize_toolbar_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Not now</string>
 
     <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Pick a theme</string>
@@ -626,8 +610,6 @@
     <string name="onboarding_customize_theme_content_description">Image of the %1$s theme</string>
     <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
     <string name="onboarding_customize_theme_a11y_action_label_select">select</string>
-    <!-- Onboarding theme selection card label for 'Not now' button, used by Nimbus experiments. -->
-    <string name="onboarding_customize_theme_not_now_button" moz:removedIn="136" tools:ignore="UnusedResources">Not now</string>
 
     <!-- Widget Picker -->
     <!-- Widget description for widget picker screen -->
@@ -697,6 +679,10 @@
     <string name="preferences_add_private_browsing_shortcut">Add private browsing shortcut</string>
     <!-- Preference for enabling "HTTPS-Only" mode -->
     <string name="preferences_https_only_title">HTTPS-Only Mode</string>
+    <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+    <string name="preferences_pbm_lock_screen_title">Use screen lock to hide tabs in private browsing</string>
+    <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+    <string name="preferences_pbm_lock_screen_summary">View tabs with fingerprint, face unlock, or PIN.</string>
 
     <!-- Label for cookie banner section in quick settings panel. -->
     <string name="cookie_banner_blocker">Cookie Banner Blocker</string>
@@ -759,8 +745,6 @@
     <string name="preferences_override_account_server">Custom Mozilla account server</string>
     <!-- Preference to override the Sync token server -->
     <string name="preferences_override_sync_tokenserver">Custom Sync server</string>
-    <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-    <string name="toast_override_account_sync_server_done">Mozilla account/Sync server modified. Quitting the application to apply changes…</string>
     <!-- Preference category for account information -->
     <string name="preferences_category_account">Account</string>
     <!-- Preference for changing where the AddressBar is positioned -->
@@ -1030,16 +1014,10 @@
     <string name="preference_usage_data_2">Send technical and interaction data</string>
     <!-- Preference switch for usage and technical learn more link -->
     <string name="preference_usage_data_learn_more">Learn more</string>
-    <!-- Preference description for usage and technical data collection. %1$s is the name of the app (for example "Firefox"). -->
-    <string name="preferences_usage_data_description" tools:ignore="UnusedResources" moz:removedIn="136">Shares performance, usage, hardware and customization data about your browser with Mozilla to help us make %1$s better</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
     <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">Data about your device, hardware configuration, and usage helps us improve Firefox features, performance, and stability.</string>
-    <!-- Preference switch for marketing data collection -->
-    <string name="preferences_marketing_data" tools:ignore="UnusedResources" moz:removedIn="136">Marketing data</string>
     <!-- Preference switch for campaign measurement data (marketing data) collection -->
     <string name="preferences_marketing_data_2">Campaign measurement data</string>
-    <!-- Preference description for marketing data collection. Note: The words "Firefox" and "Mozilla" should NOT be translated -->
-    <string name="preferences_marketing_data_description_3" tools:ignore="BrandUsage, UnusedResources" moz:removedIn="136">Share information about how you discovered Firefox with Mozilla’s marketing partners. This helps us grow Firefox and build a better internet</string>
     <!-- Preference description for marketing data collection.
     Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
     <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Share how you discovered Firefox and that you use it with Mozilla’s marketing technology partners.</string>
@@ -1051,11 +1029,10 @@
     <string name="preferences_daily_usage_ping_learn_more">Learn more about daily usage ping</string>
     <!-- Preference switch title for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_title">Automatically send crash reports</string>
-    <string name="preferences_automatically_submit_crashes_title" moz:removedIn="136" tools:ignore="UnusedResources">Automatically submit crash reports</string>
 
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">This helps us diagnose and fix issues with the browser. Reports may include personal or sensitive data.</string>
-    <string name="preferences_automatically_submit_crashes_description" moz:removedIn="136" tools:ignore="UnusedResources">Shares crash data automatically on startup with Mozilla after crashes occur</string>
+    
     <!-- Learn more link for crash reporting preference -->
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Learn more about crash reports</string>
 
@@ -1214,8 +1191,6 @@
     <string name="studies_remove">Remove</string>
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Active</string>
-    <!-- Description for studies, it indicates why Firefox use studies. %1$s is the name of the app (for example "Firefox"). -->
-    <string name="studies_description_2" tools:ignore="UnusedResources" moz:removedIn="136">%1$s may install and run studies from time to time.</string>
     <!-- Description for studies -->
     <string name="studies_description_3">Try out features and ideas before they’re released to everyone.</string>
     <!-- Title of the Studies data preference -->
@@ -1224,13 +1199,9 @@
     <string name="studies_learn_more">Learn more</string>
 
     <!-- Sessions -->
-    <!-- Title for the list of tabs in the current private session -->
-    <string name="tabs_header_private_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Private tabs</string>
     <!-- Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs -->
     <string name="tabs_header_private_tabs_counter_title">Private Tabs Open: %1$s. Tap to switch tabs.</string>
-    <!-- Title for the list of tabs in the synced tabs -->
-    <string name="tabs_header_synced_tabs_title" moz:removedIn="136" tools:ignore="UnusedResources">Synced tabs</string>
     <!-- Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs -->
     <string name="tabs_header_synced_tabs_counter_title">Synced Tabs Open: %1$s. Tap to switch tabs.</string>
@@ -1262,6 +1233,8 @@
     <string name="tab_tray_multiselect_share_content_description">Share selected tabs</string>
     <!-- Content description for tabs tray multiselect menu -->
     <string name="tab_tray_multiselect_menu_content_description">Selected tabs menu</string>
+    <!-- Title text displayed for a homepage tab in the tabs tray. -->
+    <string name="tab_tray_homepage_tab">Homepage</string>
     <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
     <string name="remove_tab_from_collection">Remove tab from collection</string>
     <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1349,16 +1322,20 @@
     <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Remove</string>
     <!-- Text for the button to delete a single downloaded file item -->
     <string name="download_delete_item">Delete</string>
+    <!-- Content description for the toolbar "Navigate back" button -->
+    <string name="download_navigate_back_description">Navigate back</string>
+    <!-- Content description for the toolbar "Navigate up" button -->
+    <string name="download_navigate_up_description">Navigate up</string>
     <!-- Text for the button to share the download URL -->
     <string name="download_share_url">Share URL</string>
     <!-- Text for the button to share the download file -->
     <string name="download_share_file">Share file</string>
     <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
-    <string name="download_delete_multi_select_dialog_confirmation" tools:ignore="UnusedResources">Are you sure you want to delete the selected items?</string>
+    <string name="download_delete_multi_select_dialog_confirmation">Are you sure you want to delete the selected items?</string>
     <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
-    <string name="download_delete_multi_select_dialog_confirm" tools:ignore="UnusedResources">Delete</string>
+    <string name="download_delete_multi_select_dialog_confirm">Delete</string>
     <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
-    <string name="download_delete_multi_select_dialog_cancel" tools:ignore="UnusedResources">Cancel</string>
+    <string name="download_delete_multi_select_dialog_cancel">Cancel</string>
     <!-- Text for the header of in progress downloads -->
     <string name="download_header_in_progress" tools:ignore="UnusedResources">In progress</string>
     <!-- Time period headers for downloads -->
@@ -1384,9 +1361,11 @@
     <!-- Text to indicate that a download has failed to download. -->
     <string name="download_item_status_failed" tools:ignore="UnusedResources">Download failed</string>
     <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-    <string name="download_search_placeholder" tools:ignore="UnusedResources">Search downloads</string>
+    <string name="download_search_placeholder">Search downloads</string>
     <!-- Text to indicate that no downloads match the search query. -->
-    <string name="download_search_no_results_found" tools:ignore="UnusedResources">No results found</string>
+    <string name="download_search_no_results_found">No results found</string>
+    <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
+    <string name="download_select_all_items">Select all</string>
 
     <!-- Downloads Content Type Filters -->
     <!-- Text for the filter button to show all files in the downloads list -->
@@ -1416,8 +1395,6 @@
     <string name="webcompat_reporter_label_url">URL</string>
     <!-- The error message of the URL text field when an invalid URL has been entered. -->
     <string name="webcompat_reporter_url_error_invalid">Please enter a valid URL</string>
-    <!-- The label/title of an optional field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
-    <string name="webcompat_reporter_label_whats_broken" moz:removedIn="136" tools:ignore="UnusedResources">What’s broken? (optional)</string>
     <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken_2">What’s broken?</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
@@ -2080,9 +2057,9 @@
     Enhanced tracking protection exception preference icon for ETP settings. -->
     <string name="preference_etp_exceptions_icon_description">Enhanced tracking protection exception preference icon</string>
 
-    <!-- DNS Over HTTPS (DoH) -->
+    <!-- DNS over HTTPS (DoH) -->
     <!-- Preference title for DNS over HTTPS settings -->
-    <string name="preference_doh_title">DNS Over HTTPS</string>
+    <string name="preference_doh_title">DNS over HTTPS</string>
     <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
     <string name="preference_doh_summary">Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access. %1$s</string>
     <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
@@ -2677,150 +2654,12 @@
     <string name="experiments_snackbar_button">Go to settings</string>
 
     <!-- Review quality check feature-->
-    <!-- Name for the review quality check feature used as title for the panel. -->
-    <string name="review_quality_check_feature_name_2" moz:removedIn="136" tools:ignore="UnusedResources">Review Checker</string>
-    <!-- Summary for grades A and B for review quality check adjusted grading. -->
-    <string name="review_quality_check_grade_a_b_description" moz:removedIn="136" tools:ignore="UnusedResources">Reliable reviews</string>
-    <!-- Summary for grade C for review quality check adjusted grading. -->
-    <string name="review_quality_check_grade_c_description" moz:removedIn="136" tools:ignore="UnusedResources">Mix of reliable and unreliable reviews</string>
-    <!-- Summary for grades D and F for review quality check adjusted grading. -->
-    <string name="review_quality_check_grade_d_f_description" moz:removedIn="136" tools:ignore="UnusedResources">Unreliable reviews</string>
-    <!-- Text for title presenting the reliability of a product's reviews. -->
-    <string name="review_quality_check_grade_title" moz:removedIn="136" tools:ignore="UnusedResources">How reliable are these reviews?</string>
-    <!-- Title for when the rating has been updated by the review checker -->
-    <string name="review_quality_check_adjusted_rating_title" moz:removedIn="136" tools:ignore="UnusedResources">Adjusted rating</string>
-    <!-- Description for a product's adjusted star rating. The text presents that the product's reviews which were evaluated as unreliable were removed from the adjusted rating. -->
-    <string name="review_quality_check_adjusted_rating_description_2" moz:removedIn="136" tools:ignore="UnusedResources">Based on reliable reviews</string>
-    <!-- Title for list of highlights from a product's review emphasizing a product's important traits. -->
-    <string name="review_quality_check_highlights_title" moz:removedIn="136" tools:ignore="UnusedResources">Highlights from recent reviews</string>
-    <!-- Title for section explaining how we analyze the reliability of a product's reviews. -->
-    <string name="review_quality_check_explanation_title" moz:removedIn="136" tools:ignore="UnusedResources">How we determine review quality</string>
-    <!-- Paragraph explaining how we analyze the reliability of a product's reviews. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-    <string name="review_quality_check_explanation_body_reliability" moz:removedIn="136" tools:ignore="UnusedResources">We use AI technology from %s by Mozilla to check the reliability of product reviews. This will only help you assess review quality, not product quality. </string>
     <!-- Paragraph explaining the grading system we use to classify the reliability of a product's reviews. -->
     <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[We assign each product’s reviews a <b>letter grade</b> from A to F.]]></string>
-    <!-- Description explaining grades A and B for review quality check adjusted grading. -->
-    <string name="review_quality_check_info_grade_info_AB" moz:removedIn="136" tools:ignore="UnusedResources">Reliable reviews. We believe the reviews are likely from real customers who left honest, unbiased reviews.</string>
-    <!-- Description explaining grade C for review quality check adjusted grading. -->
-    <string name="review_quality_check_info_grade_info_C" moz:removedIn="136" tools:ignore="UnusedResources">We believe there’s a mix of reliable and unreliable reviews.</string>
-    <!-- Description explaining grades D and F for review quality check adjusted grading. -->
-    <string name="review_quality_check_info_grade_info_DF" moz:removedIn="136" tools:ignore="UnusedResources">Unreliable reviews. We believe the reviews are likely fake or from biased reviewers.</string>
     <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
     <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[The <b>adjusted rating</b> is based only on reviews we believe to be reliable.]]></string>
     <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
     <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Highlights</b> are from %s reviews within the last 80 days that we believe to be reliable.]]></string>
-    <!-- Text for learn more caption presenting a link with information about review quality. %s is a link using review_quality_check_info_learn_more_link as text. -->
-    <string name="review_quality_check_info_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Learn more about %s.</string>
-    <!-- Clickable text that links to review quality check SuMo page. %s is "Fakespot". -->
-    <string name="review_quality_check_info_learn_more_link_2" moz:removedIn="136" tools:ignore="UnusedResources">how %s determines review quality</string>
-    <!-- Text for title of settings section. -->
-    <string name="review_quality_check_settings_title" moz:removedIn="136" tools:ignore="UnusedResources">Settings</string>
-    <!-- Text for label for switch preference to show recommended products from review quality check settings section. -->
-    <string name="review_quality_check_settings_recommended_products" moz:removedIn="136" tools:ignore="UnusedResources">Show ads in review checker</string>
-    <!-- Description for switch preference to show recommended products from review quality check settings section. %s is a link using review_quality_check_settings_recommended_products_learn_more as text.-->
-    <string name="review_quality_check_settings_recommended_products_description_2" moz:removedIn="136" tools:ignore="UnusedResources">You’ll see occasional ads for relevant products. We only advertise products with reliable reviews. %s</string>
-    <!-- Clickable text that links to review quality check recommended products support article. -->
-    <string name="review_quality_check_settings_recommended_products_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Learn more</string>
-    <!-- Text for turning sidebar off button from review quality check settings section. -->
-    <string name="review_quality_check_settings_turn_off" moz:removedIn="136" tools:ignore="UnusedResources">Turn off review checker</string>
-    <!-- Text for title of recommended product section. This is displayed above a product image, suggested as an alternative to the product reviewed. -->
-    <string name="review_quality_check_ad_title" moz:removedIn="136" tools:ignore="UnusedResources">More to consider</string>
-    <!-- Caption for recommended product section indicating this is an ad by Fakespot. %s is "Fakespot". -->
-    <string name="review_quality_check_ad_caption" moz:removedIn="136" tools:ignore="UnusedResources">Ad by %s</string>
-    <!-- Caption for review quality check panel. %s is a link using review_quality_check_powered_by_link as text. -->
-    <string name="review_quality_check_powered_by_2" moz:removedIn="136" tools:ignore="UnusedResources">Review checker is powered by %s</string>
-    <!-- Clickable text that links to Fakespot.com. %s is "Fakespot". In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-    <string name="review_quality_check_powered_by_link" moz:removedIn="136" tools:ignore="UnusedResources">%s by Mozilla</string>
-    <!-- Text for title of warning card informing the user that the current analysis is outdated. -->
-    <string name="review_quality_check_outdated_analysis_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">New info to check</string>
-    <!-- Text for button from warning card informing the user that the current analysis is outdated. Clicking this should trigger the product's re-analysis. -->
-    <string name="review_quality_check_outdated_analysis_warning_action" moz:removedIn="136" tools:ignore="UnusedResources">Check now</string>
-    <!-- Title for warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-    <string name="review_quality_check_no_reviews_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Not enough reviews yet</string>
-    <!-- Text for body of warning card informing the user that the current product does not have enough reviews for a review analysis. -->
-    <string name="review_quality_check_no_reviews_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">When this product has more reviews, we’ll be able to check their quality.</string>
-    <!-- Title for warning card informing the user that the current product is currently not available. -->
-    <string name="review_quality_check_product_availability_warning_title" moz:removedIn="136" tools:ignore="UnusedResources">Product is not available</string>
-    <!-- Text for the body of warning card informing the user that the current product is currently not available. -->
-    <string name="review_quality_check_product_availability_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">If you see this product is back in stock, report it and we’ll work on checking the reviews.</string>
-    <!-- Clickable text for warning card informing the user that the current product is currently not available. Clicking this should inform the server that the product is available. -->
-    <string name="review_quality_check_product_availability_warning_action_2" moz:removedIn="136" tools:ignore="UnusedResources">Report product is in stock</string>
-    <!-- Title for warning card informing the user that the current product's analysis is still processing. %s is the percentage progress (0-100%) of the analysis process (e.g. 56%). -->
-    <string name="review_quality_check_analysis_in_progress_warning_title_2" moz:removedIn="136" tools:ignore="UnusedResources">Checking review quality (%s)</string>
-    <!-- Text for body of warning card informing the user that the current product's analysis is still processing. -->
-    <string name="review_quality_check_analysis_in_progress_warning_body" moz:removedIn="136" tools:ignore="UnusedResources">This could take about 60 seconds.</string>
-    <!-- Title for info card displayed after the user reports a product is back in stock. -->
-    <string name="review_quality_check_analysis_requested_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Thanks for reporting!</string>
-    <!-- Text for body of info card displayed after the user reports a product is back in stock. -->
-    <string name="review_quality_check_analysis_requested_info_body" moz:removedIn="136" tools:ignore="UnusedResources">We should have info about this product’s reviews within 24 hours. Please check back.</string>
-    <!-- Title for info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-    <string name="review_quality_check_not_analyzable_info_title" moz:removedIn="136" tools:ignore="UnusedResources">We can’t check these reviews</string>
-    <!-- Text for body of info card displayed when the user review checker while on a product that Fakespot does not analyze (e.g. gift cards, music). -->
-    <string name="review_quality_check_not_analyzable_info_body" moz:removedIn="136" tools:ignore="UnusedResources">Unfortunately, we can’t check the review quality for certain types of products. For example, gift cards and streaming video, music, and games.</string>
-    <!-- Title for info card displayed when another user reported the displayed product is back in stock. -->
-    <string name="review_quality_check_analysis_requested_other_user_info_title" moz:removedIn="136" tools:ignore="UnusedResources">Info coming soon</string>
-    <!-- Text for body of info card displayed when another user reported the displayed product is back in stock. -->
-    <string name="review_quality_check_analysis_requested_other_user_info_body" moz:removedIn="136" tools:ignore="UnusedResources">We should have info about this product’s reviews within 24 hours. Please check back.</string>
-    <!-- Title for info card displayed to the user when analysis finished updating. -->
-    <string name="review_quality_check_analysis_updated_confirmation_title" moz:removedIn="136" tools:ignore="UnusedResources">Analysis is up to date</string>
-    <!-- Text for the action button from info card displayed to the user when analysis finished updating. -->
-    <string name="review_quality_check_analysis_updated_confirmation_action" moz:removedIn="136" tools:ignore="UnusedResources">Got it</string>
-    <!-- Title for error card displayed to the user when an error occurred. -->
-    <string name="review_quality_check_generic_error_title" moz:removedIn="136" tools:ignore="UnusedResources">No info available right now</string>
-    <!-- Text for body of error card displayed to the user when an error occurred. -->
-    <string name="review_quality_check_generic_error_body" moz:removedIn="136" tools:ignore="UnusedResources">We’re working to resolve the issue. Please check back soon.</string>
-    <!-- Title for error card displayed to the user when the device is disconnected from the network. -->
-    <string name="review_quality_check_no_connection_title" moz:removedIn="136" tools:ignore="UnusedResources">No network connection</string>
-    <!-- Text for body of error card displayed to the user when the device is disconnected from the network. -->
-    <string name="review_quality_check_no_connection_body" moz:removedIn="136" tools:ignore="UnusedResources">Check your network connection and then try reloading the page.</string>
-    <!-- Title for card displayed to the user for products whose reviews were not analyzed yet. -->
-    <string name="review_quality_check_no_analysis_title" moz:removedIn="136" tools:ignore="UnusedResources">No info about these reviews yet</string>
-    <!-- Text for the body of card displayed to the user for products whose reviews were not analyzed yet. -->
-    <string name="review_quality_check_no_analysis_body" moz:removedIn="136" tools:ignore="UnusedResources">To know whether this product’s reviews are reliable, check the review quality. It only takes about 60 seconds.</string>
-    <!-- Text for button from body of card displayed to the user for products whose reviews were not analyzed yet. Clicking this should trigger a product analysis. -->
-    <string name="review_quality_check_no_analysis_link" moz:removedIn="136" tools:ignore="UnusedResources">Check review quality</string>
-    <!-- Headline for review quality check contextual onboarding card. -->
-    <string name="review_quality_check_contextual_onboarding_title" moz:removedIn="136" tools:ignore="UnusedResources">Try our trusted guide to product reviews</string>
-    <!-- Description for review quality check contextual onboarding card. %1$s, %3$s and %4$s are for retailer names (e.g. Amazon, Walmart). %2$s% is for the name of the application (for example "Firefox"). -->
-    <string name="review_quality_check_contextual_onboarding_description" moz:removedIn="136" tools:ignore="UnusedResources">See how reliable product reviews are on %1$s before you buy. Review checker, an experimental feature from %2$s, is built right into the browser. It works on %3$s and %4$s, too.</string>
-    <!-- Description for review quality check contextual onboarding card. %1$s is for retailer name (e.g. Amazon). %2$s is for the name of the application (for example "Firefox"). -->
-    <string name="review_quality_check_contextual_onboarding_description_one_vendor" moz:removedIn="136" tools:ignore="UnusedResources">See how reliable product reviews are on %1$s before you buy. Review Checker, an experimental feature from %2$s, is built right into the browser.</string>
-    <!-- Paragraph presenting review quality check feature. %1$s is "Fakespot". %2$s is a link using review_quality_check_contextual_onboarding_learn_more_link as text. In the phrase "Fakespot by Mozilla", "by" can be localized. -->
-    <string name="review_quality_check_contextual_onboarding_learn_more" moz:removedIn="136" tools:ignore="UnusedResources">Using the power of %1$s by Mozilla, we help you avoid biased and inauthentic reviews. Our AI model is always improving to protect you as you shop. %2$s</string>
-    <!-- Clickable text from the contextual onboarding card that links to review quality check support article. -->
-    <string name="review_quality_check_contextual_onboarding_learn_more_link" moz:removedIn="136" tools:ignore="UnusedResources">Learn more</string>
-    <!-- Caption text to be displayed in review quality check contextual onboarding card above the opt-in button. %1$s is the name of the app (for example "Firefox"), %3$s is "Fakespot". %2$s and %4$s are links using review_quality_check_contextual_onboarding_privacy_policy_3 and review_quality_check_contextual_onboarding_terms_use as text. -->
-    <string name="review_quality_check_contextual_onboarding_caption_4" moz:removedIn="136" tools:ignore="UnusedResources">By selecting “Yes, try it” you agree to %1$s’s %2$s and %3$s’s %4$s.</string>
-    <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot privacy notice. -->
-    <string name="review_quality_check_contextual_onboarding_privacy_policy_3" moz:removedIn="136" tools:ignore="UnusedResources">privacy notice</string>
-    <!-- Clickable text from the review quality check contextual onboarding card that links to Fakespot terms of use. -->
-    <string name="review_quality_check_contextual_onboarding_terms_use" moz:removedIn="136" tools:ignore="UnusedResources">terms of use</string>
-    <!-- Text for opt-in button from the review quality check contextual onboarding card. -->
-    <string name="review_quality_check_contextual_onboarding_primary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Yes, try it</string>
-    <!-- Text for opt-out button from the review quality check contextual onboarding card. -->
-    <string name="review_quality_check_contextual_onboarding_secondary_button_text" moz:removedIn="136" tools:ignore="UnusedResources">Not now</string>
-    <!-- Content description (not visible, for screen readers etc.) for opening browser menu button to open review quality check bottom sheet. -->
-    <string name="review_quality_check_open_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Open review checker</string>
-    <!-- Content description (not visible, for screen readers etc.) for closing browser menu button to open review quality check bottom sheet. -->
-    <string name="review_quality_check_close_handle_content_description" moz:removedIn="136" tools:ignore="UnusedResources">Close review checker</string>
-    <!-- Content description (not visible, for screen readers etc.) for review quality check star rating. %1$s is the number of stars (1-5) representing the rating. -->
-    <string name="review_quality_check_star_rating_content_description" moz:removedIn="136" tools:ignore="UnusedResources">%1$s out of 5 stars</string>
-    <!-- Text for minimize button from highlights card. When clicked the highlights card should reduce its size. -->
-    <string name="review_quality_check_highlights_show_less" moz:removedIn="136" tools:ignore="UnusedResources">Show less</string>
-    <!-- Text for maximize button from highlights card. When clicked the highlights card should expand to its full size. -->
-    <string name="review_quality_check_highlights_show_more" moz:removedIn="136" tools:ignore="UnusedResources">Show more</string>
-    <!-- Text for highlights card quality category header. Reviews shown under this header should refer the product's quality. -->
-    <string name="review_quality_check_highlights_type_quality" moz:removedIn="136" tools:ignore="UnusedResources">Quality</string>
-    <!-- Text for highlights card price category header. Reviews shown under this header should refer the product's price. -->
-    <string name="review_quality_check_highlights_type_price" moz:removedIn="136" tools:ignore="UnusedResources">Price</string>
-    <!-- Text for highlights card shipping category header. Reviews shown under this header should refer the product's shipping. -->
-    <string name="review_quality_check_highlights_type_shipping" moz:removedIn="136" tools:ignore="UnusedResources">Shipping</string>
-    <!-- Text for highlights card packaging and appearance category header. Reviews shown under this header should refer the product's packaging and appearance. -->
-    <string name="review_quality_check_highlights_type_packaging_appearance" moz:removedIn="136" tools:ignore="UnusedResources">Packaging and appearance</string>
-    <!-- Text for highlights card competitiveness category header. Reviews shown under this header should refer the product's competitiveness. -->
-    <string name="review_quality_check_highlights_type_competitiveness" moz:removedIn="136" tools:ignore="UnusedResources">Competitiveness</string>
-    <!-- Text that is surrounded by quotes. %s is the actual text that is in quotes. An example of that text could be: Excellent craftsmanship, and that is displayed as “Excellent craftsmanship”. The text comes from a buyer's review that the feature is highlighting"   -->
-    <string name="surrounded_with_quotes" moz:removedIn="136" tools:ignore="UnusedResources">“%s”</string>
 
     <!-- Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback. -->
     <!-- Action label for elements that can be collapsed if interacting with them. Talkback will append this to say "Double tap to collapse". -->
@@ -3083,6 +2922,8 @@
     <string name="protection_panel_no_trackers_blocked">No trackers found</string>
     <!-- Link text to navigate to privacy and security settings from the protection panel. -->
     <string name="protection_panel_privacy_and_security_settings">Privacy and security settings</string>
+    <!-- Title text for the protection panel permissions section. -->
+    <string name="protection_panel_permissions_title">Permissions</string>
     <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
         %d is a placeholder for the number of trackers blocked. -->
     <string name="trackers_blocked_panel_total_num_trackers_blocked">Trackers blocked: %d</string>
@@ -3238,6 +3079,24 @@
     <!-- The title of the glean debugging feature -->
     <string name="glean_debug_tools_title">Glean Debug Tools</string>
 
+    <!-- Debug drawer region tools -->
+    <!-- Title of the Region tools in the Debug Drawer.
+         This tool allows temporarily overriding the home region (user's default locale)
+         and the current region (device's detected location) for testing purposes. -->
+    <string name="debug_drawer_region_tools_title">Region Tools</string>
+    <!-- The description of the Region tools in the Debug Drawer -->
+    <string name="debug_drawer_regin_tools_description">Temporarily overrides the home and current region values for testing.</string>
+    <!-- The text label for displaying home region. -->
+    <string name="debug_drawer_home_region_label">Home region</string>
+    <!-- The text label for displaying current region. -->
+    <string name="debug_drawer_current_region_label">Current region</string>
+    <!-- The text field label for overriding home region. -->
+    <string name="debug_drawer_override_home_region_label">Override home region</string>
+    <!-- The text field label for overriding current region. -->
+    <string name="debug_drawer_override_current_region_label">Override current region</string>
+    <!-- The title of the button for overriding home and current region. -->
+    <string name="debug_drawer_override_region">Override home and current region</string>
+
     <!-- Messages explaining how to exit fullscreen mode -->
     <!-- Message shown to explain how to exit fullscreen mode when gesture navigation is enabled. -->
     <!-- Localisation note: this text should be as short as possible, max 68 chars -->
@@ -3283,11 +3142,84 @@
 
     <!-- TextField Design System Component -->
     <!-- The default content description for the eye trailing icon button in TextField -->
-    <string name="text_field_eye_trailing_icon_default_content_description">Show hidden text</string>
+    <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Show hidden text</string>
     <!-- The default content description for the cross trailing icon button in TextField -->
-    <string name="text_field_cross_trailing_icon_default_content_description">Clear text</string>
+    <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Clear text</string>
 
-    <!-- Setup checklist component -->
+    <!-- Setup checklist feature -->
+    <!-- ===== Setup checklist feature: Title ===== -->
+    <!-- Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_title_state_incomplete">Finish setting up %1$s</string>
+    <!-- Title for the setup checklist feature when the state is 'completed' -->
+    <string name="setup_checklist_title_state_completed">Congratulations!</string>
+
+    <!-- ===== Setup checklist feature: Subtitles for 3 steps ===== -->
+    <!-- Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_subtitle_3_steps_initial_state">Complete these 3 steps to set up %1$s for the best browsing experience.</string>
+    <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+    <string name="setup_checklist_subtitle_3_steps_first_step">Great start! You’ve completed 1 out of 3 steps.</string>
+    <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+    <string name="setup_checklist_subtitle_3_steps_second_step">Almost there! Two steps finished and 1 to go.</string>
+    <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_subtitle_3_steps_completed_state">You’ve completed all 3 steps. Enjoy the speed, privacy, and security of %1$s.</string>
+
+    <!-- ===== Setup checklist feature: Subtitles for 6 steps ===== -->
+    <!-- Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_subtitle_6_steps_initial_state">Complete all 6 steps to set up %1$s for the best browsing experience.</string>
+    <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+    <string name="setup_checklist_subtitle_6_steps_first_step">Great start! You’ve completed 1 out of 6 steps.</string>
+    <!-- Subtitle for the setup checklist when the second task is completed. -->
+    <string name="setup_checklist_subtitle_6_steps_second_step">You’ve completed 2 out of 6 steps. Great progress!</string>
+    <!-- Subtitle for a setup checklist with 6 steps when three of the tasks are completed. -->
+    <string name="setup_checklist_subtitle_6_steps_third_step">You’re halfway there! Three steps finished and 3 to go.</string>
+    <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+    <string name="setup_checklist_subtitle_6_steps_fourth_step">You’re 4 steps in. Only 2 more to go!</string>
+    <!-- Subtitle for a setup checklist with 6 steps when the fifth task is completed. -->
+    <string name="setup_checklist_subtitle_6_steps_fifth_step">Almost there! You’re just 1 step away from the finish line.</string>
+    <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_subtitle_6_steps_completed_state">You’ve completed all 6 setup steps. Enjoy the speed, privacy, and security of %1$s.</string>
+
+    <!-- ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) ===== -->
+    <!-- Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_subtitle_5_steps_initial_state">Complete all 5 steps to set up %1$s for the best browsing experience.</string>
+    <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+    <string name="setup_checklist_subtitle_5_steps_first_step">Great start! You’ve completed 1 out of 5 steps.</string>
+    <!-- Subtitle for the setup checklist when the second task is completed. -->
+    <string name="setup_checklist_subtitle_5_steps_second_step">You’ve completed 2 out of 5 steps. Great progress!</string>
+    <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+    <string name="setup_checklist_subtitle_5_steps_third_step">You’re halfway there! Three steps finished and 2 to go.</string>
+    <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+    <string name="setup_checklist_subtitle_5_steps_fourth_step">Almost there! You’re just 1 step away from the finish line.</string>
+    <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_subtitle_5_steps_completed_state">You’ve completed all 5 setup steps. Enjoy the speed, privacy, and security of %1$s.</string>
+
+    <!-- ===== Setup checklist feature: Task titles ===== -->
+    <!-- The title of the default browser task for the setup checklist -->
+    <string name="setup_checklist_task_default_browser">Set as default browser</string>
+    <!-- The title of the sign-in task for the setup checklist -->
+    <string name="setup_checklist_task_account_sync">Sign in to your account</string>
+    <!-- The title of the theme selection task for the setup checklist -->
+    <string name="setup_checklist_task_theme_selection">Select a theme</string>
+    <!-- The title of the toolbar selection task for the setup checklist -->
+    <string name="setup_checklist_task_toolbar_selection">Choose toolbar placement</string>
+    <!-- The title of the explore extensions task for the setup checklist -->
+    <string name="setup_checklist_task_explore_extensions">Explore extensions</string>
+    <!-- The title of the search widget task for the setup checklist -->
+    <string name="setup_checklist_task_search_widget">Install search widget</string>
+
+    <!-- ===== Setup checklist feature: Group titles ===== -->
+    <!-- The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_group_essentials">%1$s essentials</string>
+    <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="setup_checklist_group_customize">Customize your %1$s</string>
+    <!-- The title of the 'helpful tools' group in the setup checklist -->
+    <string name="setup_checklist_group_helpful_tools">Helpful tools</string>
+
+    <!-- ===== Setup checklist feature: Button ===== -->
+    <!-- Text for the 'remove' button for the setup checklist -->
+    <string name="setup_checklist_button_remove">Remove checklist</string>
+
+    <!-- ===== Setup checklist feature: Accessibility ===== -->
     <!-- Accessibility description for a check mark on a completed task -->
     <string name="a11y_completed_task_description">Completed task</string>
     <!-- Accessibility description for the task icon -->
@@ -3300,4 +3232,11 @@
     <string name="pbm_authentication_unlock">Unlock</string>
     <!-- Title text instructing the user to unlock private tabs -->
     <string name="pbm_authentication_unlock_private_tabs">Unlock private tabs</string>
+    <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+    <string name="private_tab_cfr_title" tools:ignore="UnusedResources">Use screen lock to hide private tabs?</string>
+    <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+    <string name="private_tab_cfr_negative" tools:ignore="UnusedResources">No thanks</string>
+    <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+    <string name="private_tab_cfr_positive" tools:ignore="UnusedResources">Lock tabs</string>
+
 </resources>

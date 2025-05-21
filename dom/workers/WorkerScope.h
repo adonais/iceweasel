@@ -86,6 +86,7 @@ class WorkerPrivate;
 class VsyncWorkerChild;
 class WebTaskScheduler;
 class WebTaskSchedulerWorker;
+class WebTaskSchedulingState;
 struct RequestInit;
 
 namespace cache {
@@ -206,6 +207,31 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
     return mWorkerPrivate->IsFrozenForWorkerThread();
   }
 
+  void UpdateWebSocketCount(int32_t aDelta) override {
+    if (aDelta == 0) {
+      return;
+    }
+
+    MOZ_DIAGNOSTIC_ASSERT(
+        aDelta > 0 || ((aDelta + mNumOfOpenWebSockets) < mNumOfOpenWebSockets));
+
+    mNumOfOpenWebSockets += aDelta;
+  }
+
+  // Increase/Decrease the number of active IndexedDB databases for the
+  // decision making of timeout-throttling.
+  void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) override {
+    AssertIsOnWorkerThread();
+    mNumOfIndexedDBDatabases += aDelta;
+  }
+
+  bool HasOpenWebSockets() const override { return mNumOfOpenWebSockets; }
+
+  bool HasActiveIndexedDBDatabases() const override {
+    AssertIsOnWorkerThread();
+    return mNumOfIndexedDBDatabases;
+  }
+
   void TriggerUpdateCCFlag() override {
     mWorkerPrivate->UpdateCCFlag(WorkerPrivate::CCFlag::EligibleForTimeout);
   }
@@ -232,6 +258,8 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
   PRThread* mWorkerThreadUsedOnlyForAssert;
 #endif
   mozilla::UniquePtr<mozilla::dom::TimeoutManager> mTimeoutManager;
+  uint32_t mNumOfOpenWebSockets{};
+  uint32_t mNumOfIndexedDBDatabases{};
 };
 
 namespace workerinternals {
@@ -385,6 +413,12 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
 
   WebTaskScheduler* Scheduler();
   WebTaskScheduler* GetExistingScheduler() const;
+  void SetWebTaskSchedulingState(WebTaskSchedulingState* aState) override;
+  bool HasScheduledNormalOrHighPriorityWebTasks() const override;
+
+  WebTaskSchedulingState* GetWebTaskSchedulingState() const override {
+    return mWebTaskSchedulingState;
+  }
 
   bool WindowInteractionAllowed() const;
 
@@ -421,6 +455,7 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
   RefPtr<cache::CacheStorage> mCacheStorage;
   RefPtr<DebuggerNotificationManager> mDebuggerNotificationManager;
   RefPtr<WebTaskSchedulerWorker> mWebTaskScheduler;
+  RefPtr<WebTaskSchedulingState> mWebTaskSchedulingState;
   RefPtr<TrustedTypePolicyFactory> mTrustedTypePolicyFactory;
   uint32_t mWindowInteractionsAllowed = 0;
   bool mIsEligibleForMessaging{true};

@@ -45,15 +45,76 @@ JSObject* Sanitizer::WrapObject(JSContext* aCx,
   return Sanitizer_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-// https://wicg.github.io/sanitizer-api/#sanitizer-constructor
 /* static */
-already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
-                                           const SanitizerConfig& aConfig,
-                                           ErrorResult& aRv) {
-  RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+// https://wicg.github.io/sanitizer-api/#sanitizerconfig-get-a-sanitizer-instance-from-options
+already_AddRefed<Sanitizer> Sanitizer::GetInstance(
+    nsIGlobalObject* aGlobal,
+    const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
+    bool aSafe, ErrorResult& aRv) {
+  // Step 4. If sanitizerSpec is a string:
+  if (aOptions.IsSanitizerPresets()) {
+    // Step 4.1. Assert: sanitizerSpec is "default"
+    MOZ_ASSERT(aOptions.GetAsSanitizerPresets() == SanitizerPresets::Default);
 
-  // Step 2. Let valid be the return value of setting configuration on this.
-  sanitizer->SetConfig(aConfig, aRv);
+    // Step 4.2. Set sanitizerSpec to the built-in safe default configuration.
+    // NOTE: The built-in safe default configuration is complete and not
+    // influenced by |safe|.
+    RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+    sanitizer->SetDefaultConfig();
+    return sanitizer.forget();
+  }
+
+  // Step 5. Assert: sanitizerSpec is either a Sanitizer instance, or a
+  // dictionary. Step 6. If sanitizerSpec is a dictionary:
+  if (aOptions.IsSanitizerConfig()) {
+    // Step 6.1. Let sanitizer be a new Sanitizer instance.
+    RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+
+    // Step 6.2. Let setConfigurationResult be the result of set a configuration
+    // with sanitizerSpec and not safe on sanitizer.
+    sanitizer->SetConfig(aOptions.GetAsSanitizerConfig(), !aSafe, aRv);
+
+    // Step 6.3. If setConfigurationResult is false, throw a TypeError.
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    // Step 6.4. Set sanitizerSpec to sanitizer.
+    return sanitizer.forget();
+  }
+
+  // Step 7. Assert: sanitizerSpec is a Sanitizer instance.
+  MOZ_ASSERT(aOptions.IsSanitizer());
+
+  // Step 8. Return sanitizerSpec.
+  RefPtr<Sanitizer> sanitizer = aOptions.GetAsSanitizer();
+  return sanitizer.forget();
+}
+
+/* static */
+// https://wicg.github.io/sanitizer-api/#sanitizer-constructor
+already_AddRefed<Sanitizer> Sanitizer::Constructor(
+    const GlobalObject& aGlobal,
+    const SanitizerConfigOrSanitizerPresets& aConfig, ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  RefPtr<Sanitizer> sanitizer = new Sanitizer(global);
+
+  // Step 1. If configuration is a SanitizerPresets string, then:
+  if (aConfig.IsSanitizerPresets()) {
+    // Step 1.1. Assert: configuration is default.
+    MOZ_ASSERT(aConfig.GetAsSanitizerPresets() == SanitizerPresets::Default);
+
+    // Step 1.2. Set configuration to the built-in safe default configuration .
+    sanitizer->SetDefaultConfig();
+
+    // NOTE: Early return because we don't need to do any
+    // processing/verification of the default config.
+    return sanitizer.forget();
+  }
+
+  // Step 2. Let valid be the return value of set a configuration with
+  // configuration and true on this.
+  sanitizer->SetConfig(aConfig.GetAsSanitizerConfig(), true, aRv);
 
   // Step 3. If valid is false, then throw a TypeError.
   if (aRv.Failed()) {
@@ -63,39 +124,20 @@ already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
   return sanitizer.forget();
 }
 
-// https://wicg.github.io/sanitizer-api/#sanitizer-constructor
-/* static */
-already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
-                                           const SanitizerPresets aConfig,
-                                           ErrorResult& aRv) {
-  // Step 1. If configuration is a SanitizerPresets string, then:
-  RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
-
-  // Step 1.1. Assert: configuration is default.
-  MOZ_ASSERT(aConfig == SanitizerPresets::Default);
-
-  // Step 1.2. Set configuration to the built-in safe default configuration.
-  sanitizer->SetDefaultConfig();
-
-  return sanitizer.forget();
-}
-
-/* static */
-already_AddRefed<Sanitizer> Sanitizer::Constructor(
-    const GlobalObject& aGlobal,
-    const SanitizerConfigOrSanitizerPresets& aConfig, ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  if (aConfig.IsSanitizerConfig()) {
-    return New(global, aConfig.GetAsSanitizerConfig(), aRv);
-  }
-  return New(global, aConfig.GetAsSanitizerPresets(), aRv);
-}
-
 void Sanitizer::SetDefaultConfig() {
   MOZ_ASSERT(NS_IsMainThread());
   AssertNoLists();
 
   mIsDefaultConfig = true;
+
+  // https://wicg.github.io/sanitizer-api/#built-in-safe-default-configuration
+  // {
+  //   ...
+  //   "comments": false,
+  //   "dataAttributes": false
+  // }
+  MOZ_ASSERT(!mComments);
+  MOZ_ASSERT(!mDataAttributes);
 
   if (sDefaultHTMLElements) {
     // Already initialized.
@@ -149,11 +191,14 @@ void Sanitizer::SetDefaultConfig() {
 }
 
 // https://wicg.github.io/sanitizer-api/#sanitizer-set-a-configuration
-void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
+void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
+                          bool aAllowCommentsAndDataAttributes,
+                          ErrorResult& aRv) {
   // Step 1. For each element of configuration["elements"] do:
   if (aConfig.mElements.WasPassed()) {
     for (const auto& element : aConfig.mElements.Value()) {
-      // Step 1.1. Call allow an element with element and sanitizer.
+      // Step 1.1. Call allow an element with element and sanitizer’s
+      // configuration.
       AllowElement(element);
     }
   }
@@ -161,7 +206,8 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
   // Step 2. For each element of configuration["removeElements"] do:
   if (aConfig.mRemoveElements.WasPassed()) {
     for (const auto& element : aConfig.mRemoveElements.Value()) {
-      // Step 2.1. Call remove an element with element and sanitizer.
+      // Step 2.1. Call remove an element with element and sanitizer’s
+      // configuration.
       RemoveElement(element);
     }
   }
@@ -171,7 +217,7 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
   if (aConfig.mReplaceWithChildrenElements.WasPassed()) {
     for (const auto& element : aConfig.mReplaceWithChildrenElements.Value()) {
       // Step 3.1. Call replace an element with its children with element and
-      // sanitizer.
+      // sanitizer’s configuration.
       ReplaceElementWithChildren(element);
     }
   }
@@ -179,7 +225,8 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
   // Step 4. For each attribute of configuration["attributes"] do:
   if (aConfig.mAttributes.WasPassed()) {
     for (const auto& attribute : aConfig.mAttributes.Value()) {
-      // Step 4.1. Call allow an attribute with attribute and sanitizer.
+      // Step 4.1. Call allow an attribute with attribute and sanitizer’s
+      // configuration.
       AllowAttribute(attribute);
     }
   }
@@ -187,22 +234,32 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
   // Step 5. For each attribute of configuration["removeAttributes"] do:
   if (aConfig.mRemoveAttributes.WasPassed()) {
     for (const auto& attribute : aConfig.mRemoveAttributes.Value()) {
-      // Step 5.1. Call remove an attribute with attribute and sanitizer.
+      // Step 5.1. Call remove an attribute with attribute and sanitizer’s
+      // configuration.
       RemoveAttribute(attribute);
     }
   }
 
-  // Step 6. Call set comments with configuration["comments"] and sanitizer.
-
-  // TODO: This is changing in https://github.com/WICG/sanitizer-api/pull/254
+  // Step 6. If configuration["comments"] exists:
   if (aConfig.mComments.WasPassed()) {
+    // Step 6.1. Then call set comments with configuration["comments"] and
+    // sanitizer’s configuration.
     SetComments(aConfig.mComments.Value());
+  } else {
+    // Step 6.2. Otherwise call set comments with allowCommentsAndDataAttributes
+    // and sanitizer’s configuration.
+    SetComments(aAllowCommentsAndDataAttributes);
   }
 
-  // Step 7. Call set data attributes with configuration["dataAttributes"] and
-  // sanitizer.
+  // Step 7. If configuration["dataAttributes"] exists:
   if (aConfig.mDataAttributes.WasPassed()) {
+    // Step 7.1. Then call set data attributes with
+    // configuration["dataAttributes"] and sanitizer’s configuration.
     SetDataAttributes(aConfig.mDataAttributes.Value());
+  } else {
+    // Step 7.2. Otherwise call set data attributes with
+    // allowCommentsAndDataAttributes and sanitizer’s configuration.
+    SetDataAttributes(aAllowCommentsAndDataAttributes);
   }
 
   // Step 8. Return whether all of the following are true:
@@ -216,36 +273,36 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
 
   // TODO: Better error messages. (e.g. show difference before and after?)
 
-  // size of configuration["elements"] equals size of this’s
+  // size of configuration["elements"] equals size of sanitizer’s
   // configuration["elements"].
   if (!isSameSize(aConfig.mElements, mElements)) {
     aRv.ThrowTypeError("'elements' changed");
     return;
   }
 
-  // size of configuration["removeElements"] equals size of this’s
+  // size of configuration["removeElements"] equals size of sanitizer’s
   // configuration["removeElements"].
   if (!isSameSize(aConfig.mRemoveElements, mRemoveElements)) {
     aRv.ThrowTypeError("'removeElements' changed");
     return;
   }
 
-  // size of configuration["replaceWithChildrenElements"] equals size of this’s
-  // configuration["replaceWithChildrenElements"].
+  // size of configuration["replaceWithChildrenElements"] equals size of
+  // sanitizer’s configuration["replaceWithChildrenElements"].
   if (!isSameSize(aConfig.mReplaceWithChildrenElements,
                   mReplaceWithChildrenElements)) {
     aRv.ThrowTypeError("'replaceWithChildrenElements' changed");
     return;
   }
 
-  // size of configuration["attributes"] equals size of this’s
+  // size of configuration["attributes"] equals size of sanitizer’s
   // configuration["attributes"].
   if (!isSameSize(aConfig.mAttributes, mAttributes)) {
     aRv.ThrowTypeError("'attributes' changed");
     return;
   }
 
-  // size of configuration["removeAttributes"] equals size of this’s
+  // size of configuration["removeAttributes"] equals size of sanitizer’s
   // configuration["removeAttributes"].
   if (!isSameSize(aConfig.mRemoveAttributes, mRemoveAttributes)) {
     aRv.ThrowTypeError("'removeAttributes' changed");
@@ -391,18 +448,24 @@ static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
   const auto& elem = GetAsSanitizerElementNamespace(aElement);
   MOZ_ASSERT(!elem.mName.IsVoid());
 
-  // Step 4. Return «[
+  RefPtr<nsAtom> namespaceAtom;
+  // Step 4. Let namespace be name["namespace"] if it exists, otherwise
+  // defaultNamespace.
+  //
+  // Note: "namespace" always exists due to the WebIDL default value.
+  //
+  // Step 5. If namespace is the empty string, then set it to null.
+  // defaultNamespace.
+  if (!elem.mNamespace.IsEmpty()) {
+    namespaceAtom = NS_AtomizeMainThread(elem.mNamespace);
+  }
+
+  // Step 6. Return «[
   //  "name" → name["name"],
-  //  "namespace" → ( name["namespace"] if it exists, otherwise defaultNamespace
+  //  "namespace" → namespace
   //  )
   // ]».
   RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(elem.mName);
-  RefPtr<nsAtom> namespaceAtom;
-  if (!elem.mNamespace.IsVoid()) {
-    namespaceAtom = NS_AtomizeMainThread(elem.mNamespace);
-  } else {
-    namespaceAtom = nsGkAtoms::nsuri_xhtml;
-  }
   return CanonicalName(nameAtom, namespaceAtom);
 }
 
@@ -427,16 +490,22 @@ static CanonicalName CanonicalizeAttribute(
   const auto& attr = aAttribute.GetAsSanitizerAttributeNamespace();
   MOZ_ASSERT(!attr.mName.IsVoid());
 
-  // Step 4. Return «[
+  RefPtr<nsAtom> namespaceAtom;
+  // Step 4. Let namespace be name["namespace"] if it exists, otherwise
+  // defaultNamespace.
+
+  // Step 5. If namespace is the empty string, then set it to
+  // null.
+  if (!attr.mNamespace.IsEmpty()) {
+    namespaceAtom = NS_AtomizeMainThread(attr.mNamespace);
+  }
+
+  // Step 6. Return «[
   //  "name" → name["name"],
-  //  "namespace" → ( name["namespace"] if it exists, otherwise defaultNamespace
+  //  "namespace" → namespace,
   //  )
   // ]».
   RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(attr.mName);
-  RefPtr<nsAtom> namespaceAtom = nullptr;
-  if (!attr.mNamespace.IsVoid()) {
-    namespaceAtom = NS_AtomizeMainThread(attr.mNamespace);
-  }
   return CanonicalName(nameAtom, namespaceAtom);
 }
 
@@ -648,15 +717,9 @@ void Sanitizer::RemoveUnsafe() {
 }
 
 // https://wicg.github.io/sanitizer-api/#sanitize
-RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
-    RefPtr<DocumentFragment> aFragment, bool aSafe, ErrorResult& aRv) {
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mGlobal);
-  if (!window || !window->GetDoc()) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-  // FIXME(freddyb)
-  // (how) can we assert that the supplied doc is indeed inert?
+void Sanitizer::Sanitize(nsINode* aNode, bool aSafe, ErrorResult& aRv) {
+  MOZ_ASSERT(aNode->OwnerDoc()->IsLoadedAsData(),
+             "SanitizeChildren relies on the document being inert to be safe");
 
   // Step 1. Let configuration be the value of sanitizer’s configuration.
 
@@ -672,12 +735,10 @@ RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
   // handleJavascriptNavigationUrls set to safe.
   if (mIsDefaultConfig) {
     AssertNoLists();
-    SanitizeChildren<true>(aFragment, aSafe);
+    SanitizeChildren<true>(aNode, aSafe);
   } else {
-    SanitizeChildren<false>(aFragment, aSafe);
+    SanitizeChildren<false>(aNode, aSafe);
   }
-
-  return aFragment.forget();
 }
 
 static RefPtr<nsAtom> ToNamespace(int32_t aNamespaceID) {
@@ -708,35 +769,33 @@ static bool IsUnsafeElement(nsAtom* aLocalName, int32_t aNamespaceID) {
 // https://wicg.github.io/sanitizer-api/#sanitize-core
 template <bool IsDefaultConfig>
 void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
-  // Step 1. Let current be node.
-
-  // Step 2. For each child in current’s children:
+  // Step 1. For each child in current’s children:
   nsCOMPtr<nsIContent> next = nullptr;
   for (nsCOMPtr<nsIContent> child = aNode->GetFirstChild(); child;
        child = next) {
     next = child->GetNextSibling();
 
-    // Step 2.1. Assert: child implements Text, Comment, or Element.
-    // TODO
+    // Step 1.1. Assert: child implements Text, Comment, or Element.
+    MOZ_ASSERT(child->IsText() || child->IsComment() || child->IsElement());
 
-    // Step 2.2. If child implements Text, then continue.
+    // Step 1.2. If child implements Text, then continue.
     if (child->IsText()) {
       continue;
     }
 
-    // Step 2.3. If child implements Comment:
+    // Step 1.3. If child implements Comment:
     if (child->IsComment()) {
-      // Step 2.3.1 If configuration["comments"] is not true, then remove child.
+      // Step 1.3.1 If configuration["comments"] is not true, then remove child.
       if (!mComments) {
         child->RemoveFromParent();
       }
       continue;
     }
 
-    // Step 2.4. Otherwise:
+    // Step 1.4. Otherwise:
     MOZ_ASSERT(child->IsElement());
 
-    // Step 2.4.1. Let elementName be a SanitizerElementNamespace with child’s
+    // Step 1.4.1. Let elementName be a SanitizerElementNamespace with child’s
     // local name and namespace.
     nsAtom* nameAtom = child->NodeInfo()->NameAtom();
     int32_t namespaceID = child->NodeInfo()->NamespaceID();
@@ -749,25 +808,56 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     // Optimization: Remove unsafe elements before doing anything else.
     // https://wicg.github.io/sanitizer-api/#built-in-safe-baseline-configuration
     //
+    // We have to do this _before_ handling the "replaceWithChildrenElements"
+    // list, because by adding the unsafe elements to the "removeElements" list
+    // they would be implicitly deleted from the former.
+    //
     // The default config's "elements" allow list does not contain any unsafe
     // elements so we can skip this.
     if constexpr (!IsDefaultConfig) {
       if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
-        // TODO: Complex removal
         child->RemoveFromParent();
         continue;
       }
     }
 
-    // Step 2.4.2. If configuration["removeElements"] contains elementName, or
+    // Step 1.4.2. If configuration["replaceWithChildrenElements"] contains
+    // elementName:
+    if constexpr (!IsDefaultConfig) {
+      if (mReplaceWithChildrenElements.Contains(*elementName)) {
+        // Note: This follows nsTreeSanitizer by first inserting the
+        // child's children in place of the current child and then
+        // continueing the sanitization from the first inserted grandchild.
+        nsCOMPtr<nsIContent> parent = child->GetParent();
+        nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
+        nsCOMPtr<nsIContent> newChild = firstChild;
+        for (; newChild; newChild = child->GetFirstChild()) {
+          ErrorResult rv;
+          parent->InsertBefore(*newChild, child, rv);
+          if (rv.Failed()) {
+            // TODO: Abort?
+            break;
+          }
+        }
+
+        child->RemoveFromParent();
+        if (firstChild) {
+          next = firstChild;
+        }
+        continue;
+      }
+    }
+
+    // Step 1.4.3. If configuration["removeElements"] contains elementName, or
     // if configuration["elements"] is not empty and does not contain
-    // elementName, then remove child.
+    // elementName:
     [[maybe_unused]] StaticAtomSet* elementAttributes = nullptr;
     if constexpr (!IsDefaultConfig) {
       if (mRemoveElements.Contains(*elementName) ||
           (!mElements.IsEmpty() && !mElements.Contains(*elementName))) {
-        // TODO: Do the more complex remove node stuff from nsTreeSanitizer.
+        // Step 1.4.3.1. Remove child.
         child->RemoveFromParent();
+        // Step 1.4.3.2. Continue.
         continue;
       }
     } else {
@@ -789,54 +879,30 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
         }
       }
       if (!found) {
+        // Step 1.4.3.1. Remove child.
         child->RemoveFromParent();
+        // Step 1.4.3.2. Continue.
         continue;
       }
       MOZ_ASSERT(!IsUnsafeElement(nameAtom, namespaceID));
     }
 
-    // Step 2.4.3. If configuration["replaceWithChildrenElements"] contains
-    // elementName:
-    if constexpr (!IsDefaultConfig) {
-      if (mReplaceWithChildrenElements.Contains(*elementName)) {
-        // Note: This follows nsTreeSanitizer by first inserting the
-        // child's children in place of the current child and then
-        // continueing the sanitization from the first inserted grandchild.
-        nsCOMPtr<nsIContent> parent = child->GetParent();
-        nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
-        nsCOMPtr<nsIContent> newChild = firstChild;
-        for (; newChild; newChild = child->GetFirstChild()) {
-          ErrorResult rv;
-          parent->InsertBefore(*newChild, child, rv);
-          if (rv.Failed()) {
-            break;
-          }
-        }
-
-        child->RemoveFromParent();
-        if (firstChild) {
-          next = firstChild;
-        }
-        continue;
-      }
-    }
-
-    // Step 2.4.4. If elementName equals «[ "name" → "template", "namespace" →
+    // Step 1.4.4. If elementName equals «[ "name" → "template", "namespace" →
     // HTML namespace ]»
     if (auto* templateEl = HTMLTemplateElement::FromNode(child)) {
-      // Step 2.4.4.1. Then call sanitize core on child’s template contents with
+      // Step 1.4.4.1. Then call sanitize core on child’s template contents with
       // configuration and handleJavascriptNavigationUrls.
       RefPtr<DocumentFragment> frag = templateEl->Content();
       SanitizeChildren<IsDefaultConfig>(frag, aSafe);
     }
 
-    // Step 2.4.5. If child is a shadow host, then call sanitize core on child’s
+    // Step 1.4.5. If child is a shadow host, then call sanitize core on child’s
     // shadow root with configuration and handleJavascriptNavigationUrls.
     if (RefPtr<ShadowRoot> shadow = child->GetShadowRoot()) {
       SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
     }
 
-    // Step 2.4.6.
+    // Step 1.4.6.
     if constexpr (!IsDefaultConfig) {
       SanitizeAttributes(child->AsElement(), *elementName, aSafe);
     } else {
@@ -844,7 +910,8 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
                                       aSafe);
     }
 
-    // XXX: Recursion missing from the spec ?!?
+    // Step 1.4.7. Call sanitize core on child with configuration and
+    // handleJavascriptNavigationUrls.
     // TODO: Optimization: Remove recusion similar to nsTreeSanitizer
     SanitizeChildren<IsDefaultConfig>(child, aSafe);
   }

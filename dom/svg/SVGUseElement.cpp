@@ -485,22 +485,23 @@ void SVGUseElement::UpdateShadowTree() {
   targetElement->AddMutationObserver(this);
 }
 
-nsIURI* SVGUseElement::GetSourceDocURI() {
+Document* SVGUseElement::GetSourceDocument() const {
   nsIContent* targetElement = mReferencedElementTracker.get();
-  if (!targetElement) {
-    return nullptr;
-  }
-
-  return targetElement->OwnerDoc()->GetDocumentURI();
+  return targetElement ? targetElement->OwnerDoc() : nullptr;
 }
 
-const Encoding* SVGUseElement::GetSourceDocCharacterSet() {
-  nsIContent* targetElement = mReferencedElementTracker.get();
-  if (!targetElement) {
-    return nullptr;
+nsIURI* SVGUseElement::GetSourceDocURI() const {
+  if (auto* doc = GetSourceDocument()) {
+    return doc->GetDocumentURI();
   }
+  return nullptr;
+}
 
-  return targetElement->OwnerDoc()->GetDocumentCharacterSet();
+const Encoding* SVGUseElement::GetSourceDocCharacterSet() const {
+  if (auto* doc = GetSourceDocument()) {
+    return doc->GetDocumentCharacterSet();
+  }
+  return nullptr;
 }
 
 static nsINode* GetClonedChild(const SVGUseElement& aUseElement) {
@@ -584,7 +585,7 @@ void SVGUseElement::LookupHref() {
 
   nsIReferrerInfo* referrer =
       OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-  mReferencedElementTracker.ResetToURIWithFragmentID(treeToWatch, targetURI,
+  mReferencedElementTracker.ResetToURIWithFragmentID(*treeToWatch, targetURI,
                                                      referrer);
 }
 

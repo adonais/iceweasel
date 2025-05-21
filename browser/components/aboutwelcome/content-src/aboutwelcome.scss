@@ -196,6 +196,10 @@ html {
     z-index: 1;
     box-sizing: border-box;
 
+    @media (prefers-contrast){
+      border: 1px solid var(--in-content-page-color)
+    }
+
     &.no-steps {
       padding-bottom: 48px;
     }
@@ -754,6 +758,33 @@ html {
 
               @include arrow-icon-styles;
             }
+
+            .loader {
+              width: 1em;
+              height: 1em;
+              border: 3px solid var(--in-content-primary-button-text-color);
+              border-bottom-color: transparent;
+              border-radius: 50%;
+              box-sizing: border-box;
+              animation: rotation 1s linear infinite;
+              justify-self: center;
+            }
+
+            @keyframes rotation {
+              0% {
+                transform: rotate(0deg);
+              }
+
+              100% {
+                transform: rotate(360deg);
+              }
+            }
+
+            .loaderContainer {
+              display: flex;
+              padding: 1.5px 37.5px;
+              margin: auto;
+            }
           }
 
           .logo-container {
@@ -1049,6 +1080,11 @@ html {
             @media only screen and (width <= 800px) {
               padding-block: 20px;
             }
+
+            .steps:not(.progress-bar) {
+              justify-content: start;
+              padding-top: 24px;
+            }
           }
 
           .action-buttons {
@@ -1078,6 +1114,30 @@ html {
               width: 30%;
             }
           }
+
+          .message-text.hero-text {
+            margin-block: auto;
+            margin-inline: 17% auto;
+            text-align: start;
+            width: 100%;
+            max-width: 450px;
+
+            h1 {
+              font-weight: 510;
+              font-size: 80px;
+              margin: 0;
+              width: 100%;
+              max-width: 100%;
+            }
+
+            h2 {
+              font-size: 20px;
+              margin: 0;
+              margin-block-start: 24px;
+              font-weight: 510;
+              width: 100%;
+            }
+          }
         }
 
         .addons-picker-container {
@@ -1085,7 +1145,7 @@ html {
 
           .addon-container {
             display: flex;
-            flex-flow: row wrap;
+            flex-direction: row;
             border: 1px solid var(--in-content-border-color);
             box-shadow: 0 1px 2px 0 var(--in-content-border-color);
             border-radius: 4px;
@@ -1093,6 +1153,10 @@ html {
             text-align: start;
             padding: 16px;
             max-width: 800px;
+
+            @media (800px <= width <= 990px) {
+              flex-flow: row wrap;
+            }
 
             .rtamo-icon {
               img {

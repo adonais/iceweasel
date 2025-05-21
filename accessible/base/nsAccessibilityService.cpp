@@ -1184,7 +1184,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   if (!aNode->IsContent()) return nullptr;
 
   nsIContent* content = aNode->AsContent();
-  if (aria::HasDefinedARIAHidden(content)) {
+  if (aria::IsValidARIAHidden(content)) {
     if (aIsSubtreeHidden) {
       *aIsSubtreeHidden = true;
     }
@@ -2093,6 +2093,35 @@ void PrefChanged(const char* aPref, void* aClosure) {
     if (accService && !nsAccessibilityService::IsShutdown()) {
       accService->Shutdown();
     }
+  }
+}
+
+uint32_t CacheDomainActivationBlocker::sEntryCount = 0;
+
+CacheDomainActivationBlocker::CacheDomainActivationBlocker() {
+  AssertIsOnMainThread();
+  if (sEntryCount++ != 0) {
+    // We're re-entering. This can happen if an earlier event (even in a
+    // different document) ends up calling an XUL method, since that can run
+    // script which can cause other events to fire. Only the outermost usage
+    // should change the flag.
+    return;
+  }
+  if (nsAccessibilityService* service = GetAccService()) {
+    MOZ_ASSERT(service->mShouldAllowNewCacheDomains);
+    service->mShouldAllowNewCacheDomains = false;
+  }
+}
+
+CacheDomainActivationBlocker::~CacheDomainActivationBlocker() {
+  AssertIsOnMainThread();
+  if (--sEntryCount != 0) {
+    // Only the outermost usage should change the flag.
+    return;
+  }
+  if (nsAccessibilityService* service = GetAccService()) {
+    MOZ_ASSERT(!service->mShouldAllowNewCacheDomains);
+    service->mShouldAllowNewCacheDomains = true;
   }
 }
 

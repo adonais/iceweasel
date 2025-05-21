@@ -3,27 +3,32 @@
 
 "use strict";
 
-// Globals
+const { _ExperimentFeature: ExperimentFeature, ExperimentAPI } =
+  ChromeUtils.importESModule("resource://nimbus/ExperimentAPI.sys.mjs");
+const { ExperimentManager } = ChromeUtils.importESModule(
+  "resource://nimbus/lib/ExperimentManager.sys.mjs"
+);
+const { ExperimentFakes, ExperimentTestUtils, NimbusTestUtils } =
+  ChromeUtils.importESModule(
+    "resource://testing-common/NimbusTestUtils.sys.mjs"
+  );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
-  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
-  ExperimentTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
-  ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
-});
+NimbusTestUtils.init(this);
 
-add_setup(function () {
-  let sandbox = sinon.createSandbox();
+add_setup(async function () {
+  await ExperimentAPI.ready();
+
+  const sandbox = sinon.createSandbox();
 
   /* We stub the functions that operate with enrollments and remote rollouts
    * so that any access to store something is implicitly validated against
    * the schema and no records have missing (or extra) properties while in tests
    */
 
-  let origAddExperiment = ExperimentManager.store.addEnrollment.bind(
+  const origAddExperiment = ExperimentManager.store.addEnrollment.bind(
     ExperimentManager.store
   );
   sandbox
@@ -33,8 +38,14 @@ add_setup(function () {
       return origAddExperiment(enrollment);
     });
 
+  // Ensure the inner callback runs after all other registered cleanup
+  // functions. This lets tests use registerCleanupFunction to clean up any
+  // stray enrollments.
   registerCleanupFunction(() => {
-    sandbox.restore();
+    registerCleanupFunction(() => {
+      NimbusTestUtils.assert.storeIsEmpty(ExperimentManager.store);
+      sandbox.restore();
+    });
   });
 });
 
@@ -52,48 +63,10 @@ async function setupTest() {
   await ExperimentAPI._rsLoader.updateRecipes("test");
 
   return async function cleanup() {
-    const store = ExperimentAPI._manager.store;
-
-    store._store._saver.disarm();
-    if (store._store._saver.isRunning) {
-      await store._store._saver._runningPromise;
-    }
-
-    await IOUtils.remove(store._store.path);
+    await NimbusTestUtils.removeStore(ExperimentAPI._manager.store);
   };
 }
 
-/**
- * Assert the store has no active experiments or rollouts.
- */
 async function assertEmptyStore(store) {
-  Assert.deepEqual(
-    store
-      .getAll()
-      .filter(e => e.active)
-      .map(e => e.slug),
-    [],
-    "Store should have no active enrollments"
-  );
-
-  store
-    .getAll()
-    .filter(e => !e.active)
-    .forEach(e => store._deleteForTests(e.slug));
-
-  Assert.deepEqual(
-    store
-      .getAll()
-      .filter(e => !e.active)
-      .map(e => e.slug),
-    [],
-    "Store should have no inactive enrollments"
-  );
-
-  store._store._saver.disarm();
-  if (store._store._saver.isRunning) {
-    await store._store._saver._runningPromise;
-  }
-
-  await IOUtils.remove(store._store.path);
+  await NimbusTestUtils.removeStore(store);
 }

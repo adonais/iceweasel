@@ -20,7 +20,6 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Telemetry.h"
 #include "mozpkix/pkixnss.h"
 #include "nsCRT.h"
 #include "nsHttpConnection.h"
@@ -43,13 +42,10 @@
 #include "sslt.h"
 
 namespace mozilla::net {
+extern const nsCString& TRRProviderKey();
+}
 
-enum TlsHandshakeResult : uint32_t {
-  EchConfigSuccessful = 0,
-  EchConfigFailed,
-  NoEchConfigSuccessful,
-  NoEchConfigFailed,
-};
+namespace mozilla::net {
 
 //-----------------------------------------------------------------------------
 // nsHttpConnection <public>
@@ -466,13 +462,16 @@ void nsHttpConnection::PostProcessNPNSetup(bool handshakeSucceeded,
     // Telemetry for tls failure rate with and without esni;
     bool echConfigUsed = false;
     mSocketTransport->GetEchConfigUsed(&echConfigUsed);
-    TlsHandshakeResult result =
+    glean::http::EchconfigSuccessRateLabel label =
         echConfigUsed
-            ? (handshakeSucceeded ? TlsHandshakeResult::EchConfigSuccessful
-                                  : TlsHandshakeResult::EchConfigFailed)
-            : (handshakeSucceeded ? TlsHandshakeResult::NoEchConfigSuccessful
-                                  : TlsHandshakeResult::NoEchConfigFailed);
-    Telemetry::Accumulate(Telemetry::ECHCONFIG_SUCCESS_RATE, result);
+            ? (handshakeSucceeded
+                   ? glean::http::EchconfigSuccessRateLabel::eEchconfigsucceeded
+                   : glean::http::EchconfigSuccessRateLabel::eEchconfigfailed)
+            : (handshakeSucceeded ? glean::http::EchconfigSuccessRateLabel::
+                                        eNoechconfigsucceeded
+                                  : glean::http::EchconfigSuccessRateLabel::
+                                        eNoechconfigfailed);
+    glean::http::echconfig_success_rate.EnumGet(label).Add();
   }
 }
 
@@ -769,6 +768,13 @@ void nsHttpConnection::Close(nsresult reason, bool aIsShutdown) {
       if (mSocketOut) mSocketOut->AsyncWait(nullptr, 0, 0, nullptr);
     }
     mKeepAlive = false;
+  }
+
+  if (mConnInfo->GetIsTrrServiceChannel() && !mLastTRRResponseTime.IsNull() &&
+      NS_SUCCEEDED(reason) && !aIsShutdown) {
+    // Record telemetry keyed by TRR provider.
+    glean::network::trr_idle_close_time_h1.Get(TRRProviderKey())
+        .AccumulateRawDuration(TimeStamp::Now() - mLastTRRResponseTime);
   }
 }
 
@@ -1494,6 +1500,13 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
     mSpdySession->SetCleanShutdown(aIsShutdown);
     mUsingSpdyVersion = SpdyVersion::NONE;
     mSpdySession = nullptr;
+  }
+
+  if ((NS_SUCCEEDED(reason) || NS_BASE_STREAM_CLOSED == reason) &&
+      trans->ConnectionInfo() &&
+      trans->ConnectionInfo()->GetIsTrrServiceChannel()) {
+    // save time of last successful response
+    mLastTRRResponseTime = TimeStamp::Now();
   }
 
   if (mTransaction) {
@@ -2615,6 +2628,19 @@ nsresult nsHttpConnection::SendConnectRequest(void* closure,
   return mProxyConnectStream->ReadSegments(ReadFromStream, closure,
                                            nsIOService::gDefaultSegmentSize,
                                            transactionBytes);
+}
+
+WebTransportSessionBase* nsHttpConnection::GetWebTransportSession(
+    nsAHttpTransaction* aTransaction) {
+  LOG(
+      ("nsHttpConnection::GetWebTransportSession %p mSpdySession=%p "
+       "mExtendedCONNECTHttp2Session=%p",
+       this, mSpdySession.get(), mExtendedCONNECTHttp2Session.get()));
+  if (!mExtendedCONNECTHttp2Session) {
+    return nullptr;
+  }
+
+  return mExtendedCONNECTHttp2Session->GetWebTransportSession(aTransaction);
 }
 
 }  // namespace mozilla::net

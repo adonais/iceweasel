@@ -95,6 +95,7 @@ impl crate::Instance for Context {
                 },
             name: _,
             flags: _,
+            memory_budget_thresholds: _,
         } = *desc;
         if enable {
             Ok(Context)
@@ -426,10 +427,10 @@ impl crate::Device for Context {
         Ok(true)
     }
 
-    unsafe fn start_capture(&self) -> bool {
+    unsafe fn start_graphics_debugger_capture(&self) -> bool {
         false
     }
-    unsafe fn stop_capture(&self) {}
+    unsafe fn stop_graphics_debugger_capture(&self) {}
     unsafe fn create_acceleration_structure(
         &self,
         desc: &crate::AccelerationStructureDescriptor,
@@ -456,5 +457,9 @@ impl crate::Device for Context {
 
     fn get_internal_counters(&self) -> wgt::HalCounters {
         Default::default()
+    }
+
+    fn check_if_oom(&self) -> DeviceResult<()> {
+        Ok(())
     }
 }

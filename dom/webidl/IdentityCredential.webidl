@@ -4,7 +4,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * The origin of this IDL file is
- * https://w3c-fedid.github.io/FedCM
+ * https://w3c-fedid.github.io/FedCM.
  */
 
 
@@ -36,6 +36,8 @@ dictionary IdentityProviderConfig {
  UTF8String configURL;
  UTF8String clientId;
  UTF8String nonce;
+ UTF8String loginHint;
+ UTF8String domainHint;
  [Pref="dom.security.credentialmanagement.identity.lightweight.enabled"]
  UTF8String origin;
  [Pref="dom.security.credentialmanagement.identity.lightweight.enabled"]
@@ -67,19 +69,19 @@ dictionary IdentityCredentialInit {
 
 // Heavyweight only
 
-// https://fedidcg.github.io/FedCM/#dictdef-identityproviderwellknown
+// https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderwellknown
 [GenerateInit]
 dictionary IdentityProviderWellKnown {
   required sequence<UTF8String> provider_urls;
 };
 
-// https://fedidcg.github.io/FedCM/#dictdef-identityprovidericon
+// https://w3c-fedid.github.io/FedCM/#dictdef-identityprovidericon
 dictionary IdentityProviderIcon {
   required UTF8String url;
   unsigned long size;
 };
 
-// https://fedidcg.github.io/FedCM/#dictdef-identityproviderbranding
+// https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderbranding
 dictionary IdentityProviderBranding {
   USVString background_color;
   USVString color;
@@ -87,18 +89,21 @@ dictionary IdentityProviderBranding {
   USVString name;
 };
 
-// https://fedidcg.github.io/FedCM/#dictdef-identityproviderapiconfig
+// https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderapiconfig
 [GenerateInit, GenerateConversionToJS]
 dictionary IdentityProviderAPIConfig {
   required UTF8String accounts_endpoint;
-  required UTF8String client_metadata_endpoint;
+  // We do not want to gather consent for identity providers, so we
+  // omit this requirement and its use: https://github.com/w3c-fedid/FedCM/issues/703
+  // required UTF8String client_metadata_endpoint;
   required UTF8String id_assertion_endpoint;
   UTF8String disconnect_endpoint;
   IdentityProviderBranding branding;
+  UTF8String account_label;
 };
 
 
-// https://fedidcg.github.io/FedCM/#dictdef-identityprovideraccount
+// https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccount
 dictionary IdentityProviderAccount {
   required USVString id;
   required USVString name;
@@ -106,9 +111,12 @@ dictionary IdentityProviderAccount {
   USVString given_name;
   USVString picture;
   sequence<USVString> approved_clients;
+  sequence<UTF8String> login_hints;
+  sequence<UTF8String> domain_hints;
+  sequence<UTF8String> label_hints;
 };
 
-// https://fedidcg.github.io/FedCM/#dictdef-identityprovideraccountlist
+// https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccountlist
 [GenerateInit, GenerateConversionToJS]
 dictionary IdentityProviderAccountList {
   sequence<IdentityProviderAccount> accounts;

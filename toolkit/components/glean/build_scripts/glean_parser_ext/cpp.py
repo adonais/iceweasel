@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -34,9 +32,7 @@ def type_name(obj):
                 # we always use the `extra` suffix,
                 # because we only expose the new event API
                 suffix = "Extra"
-                return "{}Metric<{}>".format(
-                    util.Camelize(obj.type), util.Camelize(obj.name) + suffix
-                )
+                return f"{util.Camelize(obj.type)}Metric<{util.Camelize(obj.name) + suffix}>"
     return util.Camelize(obj.type) + "Metric"
 
 

@@ -155,13 +155,13 @@ nasm-2.14.02:
         sha256: e24ade3e928f7253aa8c14aa44726d1edf3f98643f87c9d72ec1df44b26be8f5
         size: 827620
 
-nasm-2.15.05:
-    description: nasm 2.15.05 source code
+nasm-2.16.03:
+    description: nasm 2.16.03 source code
     fetch:
         type: static-url
-        url: https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.xz
-        sha256: 3caf6729c1073bf96629b57cee31eeb54f4f8129b01902c73428836550b30a3f
-        size: 995732
+        url: https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/nasm-2.16.03.tar.xz
+        sha256: 1412a1c760bbd05db026b6c0d1657affd6631cd0a63cddb6f73cc6d4aa616148
+        size: 1032388
 
 wix-3.14.0:
     description: wix 3.14.0 binary release
@@ -226,8 +226,15 @@ wine:
         strip-components: 1
         add-prefix: wine-source/
 
-cbindgen-0.28.0:
-    description: cbindgen source code
+cbindgen-0.27.0:
+    description: cbindgen 0.27 source code
+    fetch:
+        type: git
+        repo: https://github.com/mozilla/cbindgen
+        revision: 58c6156b0d91e82abb03c26187b8d18fa4345ce0
+
+cbindgen:
+    description: cbindgen 0.28 source code
     fetch:
         type: git
         repo: https://github.com/mozilla/cbindgen
@@ -325,7 +332,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: 3346c0eb95c34e2ac0c5f157da8965ee292c64e8
+        revision: 777190497c241e41829587626411db68649264cc
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -533,9 +540,9 @@ jdk-8-linux64:
     description: Java 8 JDK
     fetch:
         type: static-url
-        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u442-b06/OpenJDK8U-jdk_x64_linux_hotspot_8u442b06.tar.gz
-        sha256: 5b0a0145e7790552a9c8767b4680074c4628ec276e5bb278b61d85cf90facafa
-        size: 103096556
+        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u452-b09/OpenJDK8U-jdk_x64_linux_hotspot_8u452b09.tar.gz
+        sha256: 9448308a21841960a591b47927cf2d44fdc4c0533a5f8111a4b243a6bafb5d27
+        size: 103082903
         artifact-name: jdk-8.tar.zst
         strip-components: 1
         add-prefix: jdk-8/

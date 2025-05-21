@@ -29,19 +29,26 @@ The system module uses the ``.sys.mjs`` filename extension.
 
 .. code:: JavaScript
 
-    // Utils.sys.mjs
+    // Test.sys.mjs
 
-    export const Utils = {
+    export const TestUtils = {
       hello() {
         console.log("hello");
       }
     };
+
+    export function TestFunc() {
+      console.log("hi");
+    }
 
 System modules can use other extensions than ``.sys.mjs``, but in that case
 make sure the right ESLint rules are applied to them.
 
 Importing a Module
 ------------------
+
+Immediate Import
+^^^^^^^^^^^^^^^^
 
 Inside all privileged code, system modules can be imported with
 ``ChromeUtils.importESModule``.
@@ -59,10 +66,10 @@ returned.
 
     // Privileged code.
 
-    const { Utils } =
-      ChromeUtils.importESModule("resource://gre/modules/Utils.sys.mjs");
+    const { TestUtils } =
+      ChromeUtils.importESModule("resource://gre/modules/Test.sys.mjs");
 
-    Utils.hello();
+    TestUtils.hello();
 
 Inside system modules, other system modules can be imported with the regular
 ``import`` declaration and the dynamic ``import()``.
@@ -71,17 +78,17 @@ Inside system modules, other system modules can be imported with the regular
 
     // System module top-level scope.
 
-    import { Utils } from "resource://gre/modules/Utils.sys.mjs";
+    import { TestUtils } from "resource://gre/modules/Test.sys.mjs";
 
-    Utils.hello();
+    TestUtils.hello();
 
 .. code:: JavaScript
 
     // A function inside a system module.
 
     async function f() {
-      const { Utils2 } = await import("resource://gre/modules/Utils2.sys.mjs");
-      Utils2.log();
+      const { TestUtils } = await import("resource://gre/modules/Test.sys.mjs");
+      TestUtils.hello();
     }
 
 .. note::
@@ -92,12 +99,22 @@ Inside system modules, other system modules can be imported with the regular
     with these ways, the module is imported into that global instead of
     the shared system global, and it becomes a different instance.
 
+Lazy Import
+^^^^^^^^^^^
+
 Modules can be lazily imported with ``ChromeUtils.defineESModuleGetters``.
 ``ChromeUtils.defineESModuleGetters`` receives a target object, and a object
 that defines a map from the exported symbol name to the module URI.
 Those symbols are defined on the target object as a lazy getter.
 The module is imported on the first access, and the getter is replaced with
 a data property with the exported symbol's value.
+
+.. note::
+
+    ``ChromeUtils.defineESModuleGetters`` is applicable only to the exported
+    symbol, and not to the namespace object.
+    See the next section for how to define the lazy getter for the namespace
+    object.
 
 The convention for the target object's name is ``lazy``.
 
@@ -107,15 +124,80 @@ The convention for the target object's name is ``lazy``.
 
     const lazy = {}
     ChromeUtils.defineESModuleGetters(lazy, {
-      Utils: "resource://gre/modules/Utils.sys.mjs",
+      TestUtils: "resource://gre/modules/Test.sys.mjs",
     });
 
     function f() {
-      // Utils.sys.mjs is imported on the first access.
-      lazy.Utils.hello();
+      // Test.sys.mjs is imported on the first access.
+      lazy.TestUtils.hello();
     }
 
+In order to import multiple symbols from the same module, add the corresponding
+property with the symbol name and the module URI for each.
+
+.. code:: JavaScript
+
+    // Privileged code.
+
+    const lazy = {}
+    ChromeUtils.defineESModuleGetters(lazy, {
+      TestUtils: "resource://gre/modules/Test.sys.mjs",
+      TestFunc: "resource://gre/modules/Test.sys.mjs",
+    });
+
 See `ChromeUtils.webidl <https://searchfox.org/mozilla-central/source/dom/chrome-webidl/ChromeUtils.webidl>`_ for more details.
+
+Using the Namespace Object
+--------------------------
+
+The namespace object returned by the ``ChromeUtils.importESModule`` call
+can also be directly used.
+
+.. code:: JavaScript
+
+    // Privileged code.
+
+    const TestNS =
+      ChromeUtils.importESModule("resource://gre/modules/Test.sys.mjs");
+
+    TestNS.TestUtils.hello();
+
+This is almost same as the following normal ``import`` declaration.
+
+.. code:: JavaScript
+
+    // System module top-level scope.
+
+    import * as TestNS from "resource://gre/modules/Test.sys.mjs";
+
+    TestNS.TestUtils.hello();
+
+or the dynamic import without the destructuring assignment.
+
+.. code:: JavaScript
+
+    async function f() {
+      const TestNS = await import("resource://gre/modules/Test.sys.mjs");
+      TestNS.TestUtils.hello();
+    }
+
+
+``ChromeUtils.defineESModuleGetters`` does not support directly using
+the namespace object.
+Possible workaround is to use ``ChromeUtils.defineLazyGetter`` with
+``ChromeUtils.importESModule``.
+
+.. code:: JavaScript
+
+    const lazy = {}
+    ChromeUtils.defineLazyGetter(lazy, "TestNS", () =>
+      ChromeUtils.importESModule("resource://gre/modules/Test.sys.mjs"));
+
+    function f() {
+      // Test.sys.mjs is imported on the first access.
+      lazy.TestNS.TestUtils.hello();
+    }
+
 
 Importing from Unprivileged Testing Code
 ----------------------------------------
@@ -128,9 +210,9 @@ In unprivileged testing code such as mochitest plain,
 
     // Mochitest-plain testcase.
 
-    const { Utils } =
+    const { TestUtils } =
       SpecialPowers.ChromeUtils.importESModule(
-        "resource://gre/modules/Utils.sys.mjs"
+        "resource://gre/modules/Test.sys.mjs"
       );
 
 Importing from C++ Code
@@ -142,7 +224,7 @@ The exported object should follow the specified XPCOM interface.
 .. code:: c++
 
     nsCOMPtr<nsIUtils> utils = do_ImportESModule(
-      "resource://gre/modules/Utils.sys.mjs", "Utils");
+      "resource://gre/modules/Test.sys.mjs", "Utils");
 
 See `nsImportModule.h <https://searchfox.org/mozilla-central/source/js/xpconnect/loader/nsImportModule.h>`_ for more details.
 
@@ -157,6 +239,31 @@ If a module need to be dynamically updated with the same URI, for example with
 privileged extensions getting updated, they can add query string to distinguish
 different versions.
 
+Lifetime of the Global Variables
+--------------------------------
+
+Unlike the classic scripts, the ECMAScript's module's global variables are not
+properties of any objects.
+
+If the all strong references to the document goes away, the objects held by
+the module global variables are ready to be GCed.  This means, the module global
+variables don't have the same lifetime as the module itself.
+
+In privileged scripts, there can be multiple usage of weak-references and
+similar things, such as XPCOM ``nsISupportsWeakReference``, or
+the window-less ``browser`` element and its content document.
+
+If those objects needs to be kept alive longer, for example, if they need to
+have the same lifetime as the module itself, there should be another strong
+reference to them.
+
+Possible options for those objects are the following:
+
+  * Export the variable that holds the object
+  * Store the object into the exported object's property
+  * Close over the variable from the function that's reachable from the exported objects
+  * Do not use weak reference
+
 Utility Functions
 -----------------
 
@@ -165,7 +272,7 @@ imported to the shared system global.
 
 .. code:: JavaScript
 
-    if (Cu.isESmoduleLoaded("resource://gre/modules/Utils.sys.mjs")) {
+    if (Cu.isESmoduleLoaded("resource://gre/modules/Test.sys.mjs")) {
       // ...
     }
 
@@ -188,11 +295,11 @@ This is only for the debugging purpose.
 
     Services.prefs.setBoolPref("browser.startup.record", true);
 
-    const { Utils } =
-      ChromeUtils.importESModule("resource://gre/modules/Utils.sys.mjs");
+    const { TestUtils } =
+      ChromeUtils.importESModule("resource://gre/modules/Test.sys.mjs");
 
     console.log(
-      Cu.getModuleImportStack("resource://gre/modules/Utils.sys.mjs"));
+      Cu.getModuleImportStack("resource://gre/modules/Test.sys.mjs"));
 
 See `xpccomponents.idl <https://searchfox.org/mozilla-central/source/js/xpconnect/idl/xpccomponents.idl>`_ for more details.
 
@@ -219,16 +326,18 @@ global.
 
 .. code:: JavaScript
 
-    const { Utils } =
-      ChromeUtils.importESModule("resource://gre/modules/Utils.sys.mjs", {
+    const { TestUtils } =
+      ChromeUtils.importESModule("resource://gre/modules/Test.sys.mjs", {
         global: "devtools",
       });
 
-    Utils.hello();
+    TestUtils.hello();
+
+.. code:: JavaScript
 
     const lazy = {}
     ChromeUtils.defineESModuleGetters(lazy, {
-      Utils2: "resource://gre/modules/Utils2.sys.mjs",
+      TestUtils: "resource://gre/modules/Test.sys.mjs",
     }, {
       global: "devtools",
     });

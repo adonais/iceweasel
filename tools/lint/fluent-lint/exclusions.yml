@@ -91,6 +91,8 @@ ID01:
         # The webext-perms-description-* IDs are generated programmatically
         # from permission names.
         - toolkit/locales/en-US/toolkit/global/extensionPermissions.ftl
+        # Same as above: IDs are generated.
+        - toolkit/locales-preview/dataCollectionPermissions.ftl
 ID02:
     messages:
         # browser/aboutDialog.ftl
@@ -172,7 +174,10 @@ CO01:
         # devtools/shared/locales/en-US/webconsole-commands.ftl
         - webconsole-commands-usage-block
         # toolkit/about/aboutAddons.ftl
+        - discopane-intro3
+        - addon-badge-recommended4
         - addon-badge-line4
+        - addon-badge-verified4
         - details-notification-hard-blocked-extension
         - details-notification-hard-blocked-other
         - details-notification-soft-blocked-extension-disabled

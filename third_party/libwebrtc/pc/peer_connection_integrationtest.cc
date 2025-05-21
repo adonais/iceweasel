@@ -63,10 +63,10 @@
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
-#include "p2p/base/test_stun_server.h"
-#include "p2p/base/test_turn_server.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/transport_info.h"
+#include "p2p/test/test_stun_server.h"
+#include "p2p/test/test_turn_server.h"
 #include "pc/media_session.h"
 #include "pc/peer_connection.h"
 #include "pc/peer_connection_factory.h"
@@ -86,6 +86,7 @@
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/test_certificate_verifier.h"
 #include "rtc_base/time_utils.h"
@@ -100,9 +101,12 @@ namespace webrtc {
 namespace {
 
 using ::testing::AtLeast;
+using ::testing::Eq;
+using ::testing::Field;
 using ::testing::InSequence;
 using ::testing::MockFunction;
 using ::testing::NiceMock;
+using ::testing::NotNull;
 using ::testing::Return;
 
 class PeerConnectionIntegrationTest
@@ -1910,6 +1914,7 @@ TEST_P(PeerConnectionIntegrationTest,
   PeerConnectionInterface::RTCConfiguration config;
   config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  config.port_allocator_config.flags = kOnlyLocalPorts;
 
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndDeps(
       config, std::move(caller_deps), config, std::move(callee_deps)));
@@ -1926,8 +1931,6 @@ TEST_P(PeerConnectionIntegrationTest,
       std::make_unique<FakeMdnsResponder>(network_thread()));
   callee()->SetMdnsResponder(
       std::make_unique<FakeMdnsResponder>(network_thread()));
-
-  SetPortAllocatorFlags(kOnlyLocalPorts, kOnlyLocalPorts);
 
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
@@ -1976,11 +1979,6 @@ class PeerConnectionIntegrationIceStatesTest
     return (port_allocator_flags_ & cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
 
-  void SetPortAllocatorFlags() {
-    PeerConnectionIntegrationBaseTest::SetPortAllocatorFlags(
-        port_allocator_flags_, port_allocator_flags_);
-  }
-
   std::vector<SocketAddress> CallerAddresses() {
     std::vector<SocketAddress> addresses;
     addresses.push_back(SocketAddress("1.1.1.1", 0));
@@ -2013,6 +2011,8 @@ class PeerConnectionIntegrationIceStatesTest
     }
   }
 
+  uint32_t port_allocator_flags() const { return port_allocator_flags_; }
+
  private:
   uint32_t port_allocator_flags_;
   cricket::TestStunServer::StunServerPtr stun_server_;
@@ -2036,9 +2036,10 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock,
     firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
   }
 
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  PeerConnectionInterface::RTCConfiguration config;
+  config.port_allocator_config.flags = port_allocator_flags();
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
-  SetPortAllocatorFlags();
   SetUpNetworkInterfaces();
   caller()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
@@ -2066,9 +2067,10 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock,
 #define MAYBE_VerifyBestConnection VerifyBestConnection
 #endif
 TEST_P(PeerConnectionIntegrationIceStatesTest, MAYBE_VerifyBestConnection) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  PeerConnectionInterface::RTCConfiguration config;
+  config.port_allocator_config.flags = port_allocator_flags();
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
-  SetPortAllocatorFlags();
   SetUpNetworkInterfaces();
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
@@ -4201,6 +4203,51 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndRtpSenderVideoEncoderSelector) {
   EXPECT_TRUE(ExpectNewFrames(media_expectations));
 }
 
+TEST_P(PeerConnectionIntegrationTest,
+       EndToEndRtpSenderVideoEncoderSelectorSwitchCodec) {
+  ASSERT_TRUE(
+      CreateOneDirectionalPeerConnectionWrappers(/*caller_to_callee=*/true));
+  ConnectFakeSignaling();
+  // Add one-directional video, from caller to callee.
+  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+      caller()->CreateLocalVideoTrack();
+  auto sender = caller()->AddTrack(caller_track);
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_video = 0;
+  caller()->SetOfferAnswerOptions(options);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
+  ASSERT_EQ(callee()->pc()->GetReceivers().size(), 1u);
+
+  std::unique_ptr<MockEncoderSelector> encoder_selector =
+      std::make_unique<MockEncoderSelector>();
+  std::optional<SdpVideoFormat> next_format;
+  EXPECT_CALL(*encoder_selector, OnCurrentEncoder)
+      .WillOnce(::testing::Invoke([&](const SdpVideoFormat& format) {
+        EXPECT_EQ(format.name, "VP8");
+        next_format = SdpVideoFormat::VP9Profile0();
+      }))
+      .WillOnce(::testing::Invoke([&](const SdpVideoFormat& format) {
+        EXPECT_EQ(format.name, "VP9");
+      }));
+  EXPECT_CALL(*encoder_selector, OnAvailableBitrate)
+      .WillRepeatedly(
+          ::testing::Invoke([&](const DataRate& rate) { return next_format; }));
+
+  sender->SetEncoderSelector(std::move(encoder_selector));
+
+  // Expect video to be received in one direction.
+  MediaExpectations media_expectations;
+  media_expectations.CallerExpectsNoVideo();
+  media_expectations.CalleeExpectsSomeVideo();
+
+  EXPECT_TRUE(ExpectNewFrames(media_expectations));
+
+  caller()->pc()->Close();
+}
+
 int NacksReceivedCount(PeerConnectionIntegrationWrapper& pc) {
   rtc::scoped_refptr<const RTCStatsReport> report = pc.NewGetStats();
   auto sender_stats = report->GetStatsOfType<RTCOutboundRtpStreamStats>();
@@ -4775,6 +4822,71 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_NE(nullptr, offer);
   // The offer should be acceptable.
   EXPECT_TRUE(caller()->SetLocalDescriptionAndSendSdpMessage(std::move(offer)));
+}
+
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       SensibleRtxWithDuplicateCodecs) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  caller()->AddVideoTrack();
+  // Copied from WPT test webrtc/protocol/rtx-codecs.https.html
+  std::string remote_offer_string =
+      "v=0\r\n"
+      "o=- 1878890426675213188 2 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "a=group:BUNDLE video\r\n"
+      "a=msid-semantic: WMS\r\n"
+      "m=video 9 UDP/TLS/RTP/SAVPF 96 97 98 99\r\n"
+      "c=IN IP4 0.0.0.0\r\n"
+      "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+      "a=ice-ufrag:RGPK\r\n"
+      "a=ice-pwd:rAyHEAKC7ckxQgWaRZXukz+Z\r\n"
+      "a=ice-options:trickle\r\n"
+      "a=fingerprint:sha-256 "
+      "8C:29:0A:8F:11:06:BF:1C:58:B3:CA:E6:F1:F1:DC:99:4C:6C:89:E9:FF:BC:D4:38:"
+      "11:18:1F:40:19:C8:49:37\r\n"
+      "a=setup:actpass\r\n"
+      "a=mid:video\r\n"
+      "a=recvonly\r\n"
+      "a=rtcp-mux\r\n"
+      "a=rtpmap:96 VP8/90000\r\n"
+      "a=rtpmap:97 rtx/90000\r\n"
+      "a=fmtp:97 apt=98\r\n"
+      "a=rtpmap:98 VP8/90000\r\n"
+      "a=rtcp-fb:98 ccm fir\r\n"
+      "a=rtcp-fb:98 nack\r\n"
+      "a=rtcp-fb:98 nack pli\r\n"
+      "a=rtcp-fb:98 goog-remb\r\n"
+      "a=rtcp-fb:98 transport-cc\r\n"
+      "a=rtpmap:99 rtx/90000\r\n"
+      "a=fmtp:99 apt=96\r\n";
+  auto srd_observer =
+      rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+  std::unique_ptr<SessionDescriptionInterface> remote_offer =
+      CreateSessionDescription(SdpType::kOffer, remote_offer_string);
+  EXPECT_TRUE(caller()->SetRemoteDescription(std::move(remote_offer)));
+  // The resulting SDP answer should have one video codec with a correctly
+  // associated RTX codec.
+  std::unique_ptr<SessionDescriptionInterface> answer =
+      caller()->CreateAnswerForTest();
+  ASSERT_THAT(answer, NotNull());
+  RTC_LOG(LS_ERROR) << "Answer is " << *answer;
+  ASSERT_THAT(answer->description()->contents().size(), Eq(1));
+  auto codecs =
+      answer->description()->contents()[0].media_description()->codecs();
+  std::vector<int> apt_values;
+  for (const cricket::Codec& codec : codecs) {
+    if (codec.GetResiliencyType() == cricket::Codec::ResiliencyType::kRtx) {
+      const auto apt_it =
+          codec.params.find(cricket::kCodecParamAssociatedPayloadType);
+      int apt_value;
+      ASSERT_TRUE(rtc::FromString(apt_it->second, &apt_value));
+      apt_values.push_back(apt_value);
+    }
+  }
+  for (int apt : apt_values) {
+    EXPECT_THAT(codecs, Contains(Field("id", &cricket::Codec::id, apt)));
+  }
 }
 
 }  // namespace

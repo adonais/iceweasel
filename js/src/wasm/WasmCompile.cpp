@@ -1037,7 +1037,7 @@ SharedModule wasm::CompileBuffer(const CompileArgs& args,
     MOZ_RELEASE_ASSERT(envDecoder.done());
   }
 
-  return mg.finishModule(bytecode, moduleMeta, listener);
+  return mg.finishModule(bytecode, *moduleMeta, listener);
 }
 
 bool wasm::CompileCompleteTier2(const ShareableBytes* codeSection,
@@ -1088,8 +1088,8 @@ bool wasm::CompilePartialTier2(const Code& code, uint32_t funcIndex,
     return false;
   }
 
-  const BytecodeRange& funcRange = codeMeta.funcDefRange(funcIndex);
-  BytecodeSpan funcBytecode = codeMeta.funcDefBody(funcIndex);
+  const BytecodeRange& funcRange = code.codeTailMeta().funcDefRange(funcIndex);
+  BytecodeSpan funcBytecode = code.codeTailMeta().funcDefBody(funcIndex);
 
   // The following sequence will compile/finish this function, on this thread.
   // `error` (as stashed in `mg`) may get set to, for example, "stack frame too
@@ -1221,7 +1221,7 @@ SharedModule wasm::CompileStreaming(
   }
 
   BytecodeBuffer bytecodeBuffer(&envBytes, &codeBytes, &tailBytes);
-  return mg.finishModule(BytecodeBufferOrSource(bytecodeBuffer), moduleMeta,
+  return mg.finishModule(BytecodeBufferOrSource(bytecodeBuffer), *moduleMeta,
                          streamEnd.completeTier2Listener);
 }
 

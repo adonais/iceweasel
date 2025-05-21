@@ -668,7 +668,7 @@ class VideoCodecAnalyzer : public VideoCodecTester::VideoCodecStats {
     RTC_LOG(LS_INFO) << "Write metrics to " << csv_path;
     FILE* csv_file = fopen(csv_path.data(), "w");
     const std::string delimiter = ";";
-    rtc::StringBuilder header;
+    StringBuilder header;
     header
         << "timestamp_rtp;spatial_idx;temporal_idx;width;height;frame_size_"
            "bytes;keyframe;qp;encode_time_us;decode_time_us;psnr_y_db;psnr_u_"
@@ -679,7 +679,7 @@ class VideoCodecAnalyzer : public VideoCodecTester::VideoCodecStats {
     fwrite(header.str().c_str(), 1, header.size(), csv_file);
 
     for (const Frame& f : frames) {
-      rtc::StringBuilder row;
+      StringBuilder row;
       row << "\n" << f.timestamp_rtp;
       row << ";" << f.layer_id.spatial_idx;
       row << ";" << f.layer_id.temporal_idx;
@@ -1297,7 +1297,7 @@ void ConfigureSimulcast(const FieldTrialsView& field_trials, VideoCodec* vc) {
   encoder_config.simulcast_layers.resize(num_spatial_layers);
   VideoEncoder::EncoderInfo encoder_info;
   auto stream_factory =
-      rtc::make_ref_counted<cricket::EncoderStreamFactory>(encoder_info);
+      rtc::make_ref_counted<EncoderStreamFactory>(encoder_info);
   const std::vector<VideoStream> streams = stream_factory->CreateEncoderStreams(
       field_trials, vc->width, vc->height, encoder_config);
   vc->numberOfSimulcastStreams = streams.size();

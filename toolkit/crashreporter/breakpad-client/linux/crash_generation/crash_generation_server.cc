@@ -51,7 +51,7 @@
 
 #if defined(MOZ_OXIDIZED_BREAKPAD)
 #  include "mozilla/toolkit/crashreporter/rust_minidump_writer_linux_ffi_generated.h"
-#endif
+#endif // defined(MOZ_OXIDIZED_BREAKPAD)
 
 #include "mozilla/Alignment.h"
 
@@ -61,12 +61,20 @@ namespace google_breakpad {
 
 CrashGenerationServer::CrashGenerationServer(
   const int listen_fd,
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+  std::function<GetAuxvInfoCallback> get_auxv_info,
+#endif // defined(MOZ_OXIDIZED_BREAKPAD)
   std::function<OnClientDumpRequestCallback> dump_callback,
+  void* dump_context,
   const string* dump_path) :
     server_fd_(listen_fd),
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+    get_auxv_info_(std::move(get_auxv_info)),
+#endif // defined(MOZ_OXIDIZED_BREAKPAD)
     dump_callback_(std::move(dump_callback)),
-    started_(false),
-    reserved_fds_{-1, -1}
+    dump_context_(dump_context),
+    dump_dir_mutex_(PTHREAD_MUTEX_INITIALIZER),
+    started_(false)
 {
   if (dump_path)
     dump_dir_ = *dump_path;
@@ -131,6 +139,14 @@ CrashGenerationServer::Stop()
   started_ = false;
 }
 
+void
+CrashGenerationServer::SetPath(const char* dump_path)
+{
+  pthread_mutex_lock(&dump_dir_mutex_);
+  this->dump_dir_ = string(dump_path);
+  pthread_mutex_unlock(&dump_dir_mutex_);
+}
+
 //static
 bool
 CrashGenerationServer::CreateReportChannel(int* server_fd, int* client_fd)
@@ -147,8 +163,6 @@ CrashGenerationServer::CreateReportChannel(int* server_fd, int* client_fd)
 
   if (fcntl(fds[1], F_SETFL, O_NONBLOCK))
     return false;
-  if (fcntl(fds[1], F_SETFD, FD_CLOEXEC))
-    return false;
 
   *client_fd = fds[0];
   *server_fd = fds[1];
@@ -160,8 +174,6 @@ CrashGenerationServer::CreateReportChannel(int* server_fd, int* client_fd)
 void
 CrashGenerationServer::Run()
 {
-  ReserveFileDescriptors();
-
   struct pollfd pollfds[2];
   memset(&pollfds, 0, sizeof(pollfds));
 
@@ -268,11 +280,6 @@ CrashGenerationServer::ClientEvent(short revents)
   if (!MakeMinidumpFilename(minidump_filename))
     return true;
 
-  // We won't re-reserve the file descriptors past this point. If we crash more
-  // than once we'll just accept that we might run out of file descriptors, but
-  // we don't want to make the situation worse by trying  to grab them again.
-  ReleaseFileDescriptors();
-
 #if defined(MOZ_OXIDIZED_BREAKPAD)
   ExceptionHandler::CrashContext* breakpad_cc =
       reinterpret_cast<ExceptionHandler::CrashContext*>(crash_context);
@@ -301,6 +308,10 @@ CrashGenerationServer::ClientEvent(short revents)
     breakpad_cc->tid,
     &error_msg
   );
+  DirectAuxvDumpInfo auxvInfo = {};
+  if (writer && get_auxv_info_ && get_auxv_info_(crashing_pid, &auxvInfo)) {
+    minidump_writer_set_direct_auxv_dump_info(writer, &auxvInfo);
+  }
   if (writer) {
     const fpregset_t *float_state = nullptr;
 
@@ -328,7 +339,7 @@ CrashGenerationServer::ClientEvent(short revents)
   }
 #endif
   if (dump_callback_) {
-    dump_callback_(info, minidump_filename);
+    dump_callback_(dump_context_, info, minidump_filename);
   }
 
   // Send the done signal to the process: it can exit now.
@@ -375,36 +386,12 @@ CrashGenerationServer::MakeMinidumpFilename(string& outFilename)
     return false;
 
   char path[PATH_MAX];
+  pthread_mutex_lock(&dump_dir_mutex_);
   snprintf(path, sizeof(path), "%s/%s.dmp", dump_dir_.c_str(), guidString);
+  pthread_mutex_unlock(&dump_dir_mutex_);
 
   outFilename = path;
   return true;
-}
-
-void
-CrashGenerationServer::ReserveFileDescriptors() {
-  for (size_t i = 0; i < CrashGenerationServer::RESERVED_FDS_NUM; i++) {
-    assert(reserved_fds_[i] < 0);
-
-    // This fd is just taking up space in the file table, so it can be
-    // anything that's self-contained and simple to create.
-    int fds[2];
-    int rv = pipe2(fds, O_CLOEXEC);
-    if (rv == 0) {
-      close(fds[0]);
-      reserved_fds_[i] = fds[1];
-    }
-  }
-}
-
-void
-CrashGenerationServer::ReleaseFileDescriptors() {
-  for (size_t i = 0; i < CrashGenerationServer::RESERVED_FDS_NUM; i++) {
-    if (reserved_fds_[i] > 0) {
-      close(reserved_fds_[i]);
-      reserved_fds_[i] = -1;
-    }
-  }
 }
 
 }  // namespace google_breakpad

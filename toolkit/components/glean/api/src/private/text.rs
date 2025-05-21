@@ -2,11 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use super::{BaseMetricId, CommonMetricData};
+use crate::ipc::need_ipc;
 use inherent::inherent;
 use std::sync::Arc;
-
-use super::{CommonMetricData, MetricId};
-use crate::ipc::need_ipc;
 
 /// A text metric.
 ///
@@ -41,21 +40,24 @@ use crate::ipc::need_ipc;
 pub enum TextMetric {
     Parent {
         /// The metric's ID. Used for testing and profiler markers. Text
-        /// metrics canot be labeled, so we only store a MetricId. If this
-        /// changes, this should be changed to a MetricGetter to distinguish
+        /// metrics canot be labeled, so we only store a BaseMetricId. If this
+        /// changes, this should be changed to a MetricId to distinguish
         /// between metrics and sub-metrics.
-        id: MetricId,
+        id: BaseMetricId,
         inner: Arc<glean::private::TextMetric>,
     },
     Child(TextMetricIpc),
 }
+
+crate::define_metric_metadata_getter!(TextMetric, TEXT_MAP);
+crate::define_metric_namer!(TextMetric, PARENT_ONLY);
 
 #[derive(Clone, Debug)]
 pub struct TextMetricIpc;
 
 impl TextMetric {
     /// Create a new text metric.
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             TextMetric::Child(TextMetricIpc)
         } else {
@@ -91,7 +93,10 @@ impl glean::traits::Text for TextMetric {
                 gecko_profiler::lazy_add_marker!(
                     "Text::set",
                     super::profiler_utils::TelemetryProfilerCategory,
-                    super::profiler_utils::StringLikeMetricMarker::new((*id).into(), &value)
+                    super::profiler_utils::StringLikeMetricMarker::<TextMetric>::new(
+                        (*id).into(),
+                        &value
+                    )
                 );
                 inner.set(value);
             }

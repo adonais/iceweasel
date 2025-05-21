@@ -228,6 +228,7 @@
   "Marionette",
   "RemoteAgent",
   "RTL_UI",
+  "gLocaleChangeObserver",
   "gBrandBundle",
   "gBrowserBundle",
   "gCustomizeMode",
@@ -255,5 +256,6 @@
   "gFindBarPromise",
   "SelectableProfileService",
   "ActionsProviderContextualSearch",
-  "ToolbarDropHandler"
+  "ToolbarDropHandler",
+  "ProfilesDatastoreService"
 ]

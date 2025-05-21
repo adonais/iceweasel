@@ -190,6 +190,13 @@
         "always-show"
       );
 
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_sidebarPositionStart",
+        "sidebar.position_start",
+        true
+      );
+
       if (gMultiProcessBrowser) {
         this.tabbox.tabpanels.setAttribute("async", "true");
       }
@@ -723,6 +730,7 @@
         // this case.
         dataTransferOrderedTabs = [tab];
       } else {
+        this.selectedItem = tab;
         let selectedTabs = gBrowser.selectedTabs;
         let otherSelectedTabs = selectedTabs.filter(
           selectedTab => selectedTab != tab
@@ -861,7 +869,7 @@
           : event.screenY - window.screenY,
         scrollPos:
           this.verticalMode && tab.pinned
-            ? this.verticalPinnedTabsContainer.scrollTop
+            ? this.verticalPinnedTabsContainer.scrollPosition
             : this.arrowScrollbox.scrollPosition,
         screenX: event.screenX,
         screenY: event.screenY,
@@ -1245,7 +1253,9 @@
           }
         }
       } else if (isTabGroupLabel(draggedTab)) {
-        gBrowser.adoptTabGroup(draggedTab.group, this.#getDropIndex(event));
+        gBrowser.adoptTabGroup(draggedTab.group, {
+          elementIndex: this.#getDropIndex(event),
+        });
       } else if (draggedTab) {
         // Move the tabs into this window. To avoid multiple tab-switches in
         // the original window, the selected tab should be adopted last.
@@ -1377,7 +1387,7 @@
         : [event.screenX, window.screenX, window.screenX + window.outerWidth];
 
       if (tabAxisPos > tabAxisStart && tabAxisPos < tabAxisEnd) {
-        // also avoid detaching if the the tab was dropped too close to
+        // also avoid detaching if the tab was dropped too close to
         // the tabbar (half a tab)
         let rect = window.windowUtils.getBoundsWithoutFlushing(
           this.arrowScrollbox
@@ -1385,16 +1395,21 @@
         let crossAxisPos = this.verticalMode ? event.screenX : event.screenY;
         let crossAxisStart, crossAxisEnd;
         if (this.verticalMode) {
-          if (RTL_UI) {
-            crossAxisStart = window.screenX + rect.right - 1.5 * rect.width;
-            crossAxisEnd = window.screenX;
+          if (
+            (RTL_UI && this._sidebarPositionStart) ||
+            (!RTL_UI && !this._sidebarPositionStart)
+          ) {
+            crossAxisStart =
+              window.mozInnerScreenX + rect.right - 1.5 * rect.width;
+            crossAxisEnd = window.screenX + window.outerWidth;
           } else {
             crossAxisStart = window.screenX;
-            crossAxisEnd = window.screenX + rect.left + 1.5 * rect.width;
+            crossAxisEnd =
+              window.mozInnerScreenX + rect.left + 1.5 * rect.width;
           }
         } else {
           crossAxisStart = window.screenY;
-          crossAxisEnd = window.screenY + rect.top + 1.5 * rect.height;
+          crossAxisEnd = window.mozInnerScreenY + rect.top + 1.5 * rect.height;
         }
         if (crossAxisPos > crossAxisStart && crossAxisPos < crossAxisEnd) {
           return;
@@ -2229,7 +2244,7 @@
       let translateX = screenX - dragData.screenX;
       let translateY = screenY - dragData.screenY;
       translateY +=
-        this.verticalPinnedTabsContainer.scrollTop - dragData.scrollPos;
+        this.verticalPinnedTabsContainer.scrollPosition - dragData.scrollPos;
       let firstBoundX = firstTabInRow.screenX - firstMovingTabScreenX;
       let firstBoundY = firstTabInRow.screenY - firstMovingTabScreenY;
       let lastBoundX =
@@ -2417,7 +2432,7 @@
           this.arrowScrollbox.scrollbox[scrollDirection] - dragData.scrollPos;
       } else if (isPinned && this.verticalMode) {
         translate +=
-          this.verticalPinnedTabsContainer.scrollTop - dragData.scrollPos;
+          this.verticalPinnedTabsContainer.scrollPosition - dragData.scrollPos;
       }
       // Constrain the range over which the moving tabs can move:
       // - for pinned tabs, between the first and last pinned tab

@@ -17,7 +17,7 @@
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Navigazione privata</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
-  <string name="search_hint">Ricerca o indirizzu</string>
+  <string name="search_hint">Circà o stampittà un indirizzu</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">Ricercà nant’à u web</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -117,11 +117,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Navigà più prestu cù u sistema novu di navigazione</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Navigà più prestu cù u sistema novu di navigazione</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Nant’à un situ web, sta barra si piatta quandu si sfila versu u bassu, per lascià più spaziu per a navigazione.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Nant’à un situ web, sta barra si piatta quandu si sfila versu u bassu, per lascià più spaziu per a navigazione.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Picchichjà è mantene e fleccie per saltà trà e pagine in sta cronolugia d’unghjetta</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Picchichjà è mantene e fleccie per saltà trà e pagine in sta cronolugia d’unghjetta</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -632,7 +632,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Una navigazione rapida è assicurizata</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Accettà è cuntinuà</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Accettà è cuntinuà</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Cuntinuà</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Cuntinuendu, vole si dì chì vo accettate e%1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -837,8 +839,6 @@
   <string name="preferences_override_account_server">Servitore persunalizatu di contu Mozilla</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Servitore persunalizatu di sincrunizazione</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Servitore di contu o di sincrunizazione Mozilla mudificatu. Chjusura di l’appiecazione per piglià i cambiamenti in contu…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Contu</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1208,7 +1208,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Fà sfilà a barra d’attrezzi insù per apre unghjette</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Sfilà per piattà a barra d’indirizzu è a barra d’attrezzi</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Sfilà per piattà a barra d’indirizzu è a barra d’attrezzi</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Fà sguillà a barra d’indirizzu lateralmente per cambià d’unghjetta</string>
   <!--
@@ -1484,12 +1484,33 @@
   <string name="download_multi_select_title">%1$d selezziunatu(i)</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Caccià</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Ùn ci hè abbastanza spaziu</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">St’apparechju ùn hà abbastanza spaziu per scaricà &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Urganizà i schedarii</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Abbandunà</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Squassà</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Navigazione in daretu</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Navigà insù</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Navigà insù</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Ritornu è chjode a ricerca</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Squassà</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Sparte l’indirizzu web</string>
   <!-- Text for the button to share the download file -->
@@ -1530,9 +1551,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Fiascu di u scaricamentu</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Circà in i scaricamenti</string>
+  <string name="download_search_placeholder">Circà in i scaricamenti</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Nisunu risultatu trovu</string>
+  <string name="download_search_no_results_found">Nisunu risultatu trovu</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Tuttu selezziunà</string>
   <!--
@@ -1649,6 +1670,8 @@
   <string name="bookmark_menu_copy_button">Cupià</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Sparte</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">Tuttu selezziunà</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">Apre in una nova unghjetta</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1661,6 +1684,8 @@
   <string name="bookmark_menu_delete_button">Squassà</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Arregistrà</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Classificà da l’ordine persunalizatu</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">Ordinà da u piu recente</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -1778,8 +1803,7 @@
   <!-- Preference for altering the location access for all websites -->
   <string name="preference_phone_feature_location">Lucalizazione</string>
   <!-- Preference for altering the notification access for all websites -->
-  <string name="preference_phone_feature_notification">
-</string>
+  <string name="preference_phone_feature_notification">Nutificazione</string>
   <!-- Preference for altering the persistent storage access for all websites -->
   <string name="preference_phone_feature_persistent_storage">Allucamentu permanente</string>
   <!-- Preference for altering the storage access setting for all websites -->
@@ -2286,7 +2310,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Icona di preferenza d’eccezzione à a prutezzione rinfurzata contr’à u spiunagiu</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2295,8 +2319,6 @@
   <string name="preference_doh_summary">U sistema di nome di duminiu (DNS) sopra HTTPS manda a vostra richiesta di nome di duminiu attraversu una cunnessione cifrata, pruvidendu un DNS sicuru per rende più difficiule a scuperta di quellu situ web chì vo state per accede.%1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Sapene di più</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Navigà insù</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Eccezzioni</string>
   <!-- Content description for the "Info" button -->
@@ -2834,8 +2856,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox suggerisce</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Ricerche pupulare</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3200,6 +3220,8 @@
   <string name="protection_panel_no_trackers_blocked">Ùn si trova nisunu perseguitatore</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Parametri di cunfidenzialità è di sicurità</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Permessi</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3405,6 +3427,8 @@
   <string name="debug_drawer_override_current_region_label">Rimpiazzà a regione attuale</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">Rimpiazzà e regioni d’accolta è attuale</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Rimpiazzà a regione d’accolta ab’eternu</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3508,6 +3532,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Avete compiu e 6 tappe di a cunfigurazione. Toccu à voi d’apprezzà a vitezza, a cunfidenzialità è a sicurità di %1$s.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Compie ste 5 tappe per cunfigura %1$s è ottene a più bella esperienza di navigazione.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Bellu avviu ! Avete compiu 1 nant’à e 5 tappe.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Avete compiu 2 nant’à e 5 tappe. Bella prugressione !</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Site à mezu viaghju ! Trè tappe finite è 2 à compie.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Ci simu guasi ! Ancu 1 tappa prima di compie.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Avete compiu e 5 tappe di a cunfigurazione. Toccu à voi d’apprezzà a vitezza, a cunfidenzialità è a sicurità di %1$s.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3557,4 +3597,16 @@
   <string name="pbm_authentication_unlock">Spalancà</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Spalancà l’unghjette private</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Attivà l’ammarchjunata di u screnu per l’unghjette private</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Disattivà l’ammarchjunata di u screnu per l’unghjette private</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Cunfigurà l’ammarchjunata di u screnu per piattà l’unghjette</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Impiegà l’ammarchjunata di u screnu per piattà l’unghjette private </string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Innò, vi ringraziu</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Ammarchjunà l’unghjette</string>
 </resources>

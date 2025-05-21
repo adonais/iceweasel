@@ -115,7 +115,7 @@ void SocketAddress::SetResolvedIP(const IPAddress& ip) {
 }
 
 void SocketAddress::SetPort(int port) {
-  port_ = rtc::dchecked_cast<uint16_t>(port);
+  port_ = webrtc::dchecked_cast<uint16_t>(port);
 }
 
 uint32_t SocketAddress::ip() const {
@@ -160,14 +160,14 @@ std::string SocketAddress::PortAsString() const {
 
 std::string SocketAddress::ToString() const {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  webrtc::SimpleStringBuilder sb(buf);
   sb << HostAsURIString() << ":" << port();
   return sb.str();
 }
 
 std::string SocketAddress::ToSensitiveString() const {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  webrtc::SimpleStringBuilder sb(buf);
   sb << HostAsSensitiveURIString() << ":" << port();
   return sb.str();
 }
@@ -177,7 +177,7 @@ std::string SocketAddress::ToSensitiveNameAndAddressString() const {
     return ToSensitiveString();
   }
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  webrtc::SimpleStringBuilder sb(buf);
   sb << HostAsSensitiveURIString() << ":" << port();
   sb << " (";
   if (ip_.family() == AF_INET6) {

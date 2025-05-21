@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+from importlib import reload
 
 import mozunit
 import pytest
-from six.moves import reload_module as reload
 from tryselect import push
 from tryselect.selectors import again
 
@@ -31,7 +31,7 @@ def test_try_again(monkeypatch):
     )
 
     assert os.path.isfile(push.history_path)
-    with open(push.history_path, "r") as fh:
+    with open(push.history_path) as fh:
         assert len(fh.readlines()) == 1
 
     def fake_push_to_try(*args, **kwargs):
@@ -50,7 +50,7 @@ def test_try_again(monkeypatch):
     assert try_task_config.get("env") == {"TRY_SELECTOR": "fuzzy"}
     assert try_task_config.get("use-artifact-builds")
 
-    with open(push.history_path, "r") as fh:
+    with open(push.history_path) as fh:
         assert len(fh.readlines()) == 1
 
 

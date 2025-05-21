@@ -36,7 +36,6 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
@@ -78,6 +77,7 @@
 
 #if defined(XP_WIN)
 #  include "gfxWindowsPlatform.h"
+#  include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #  include "mozilla/widget/WinWindowOcclusionTracker.h"
 #elif defined(XP_DARWIN)
 #  include "gfxPlatformMac.h"
@@ -354,7 +354,7 @@ class CrashTelemetryEvent : public Runnable {
 
   NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread());
-    Telemetry::Accumulate(Telemetry::GFX_CRASH, mReason);
+    glean::gfx::crash.AccumulateSingleSample(mReason);
     return NS_OK;
   }
 
@@ -377,7 +377,7 @@ void CrashStatsLogForwarder::CrashAction(LogReason aReason) {
     // The callers need to assure that aReason is in the range
     // that the telemetry call below supports.
     if (NS_IsMainThread()) {
-      Telemetry::Accumulate(Telemetry::GFX_CRASH, (uint32_t)aReason);
+      glean::gfx::crash.AccumulateSingleSample((uint32_t)aReason);
     } else {
       nsCOMPtr<nsIRunnable> r1 = new CrashTelemetryEvent((uint32_t)aReason);
       NS_DispatchToMainThread(r1);
@@ -1337,6 +1337,9 @@ void gfxPlatform::InitLayersIPC() {
     }
 #endif
     if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+#if defined(XP_WIN)
+      CompositeProcessD3D11FencesHolderMap::Init();
+#endif
       RemoteTextureMap::Init();
       wr::RenderThread::Start(GPUProcessManager::Get()->AllocateNamespace());
       image::ImageMemoryReporter::InitForWebRender();
@@ -1392,6 +1395,7 @@ void gfxPlatform::ShutdownLayersIPC() {
               StaticPrefs::GetPrefName_gfx_webrender_blob_tile_size()));
     }
 #if defined(XP_WIN)
+    CompositeProcessD3D11FencesHolderMap::Shutdown();
     widget::WinWindowOcclusionTracker::ShutDown();
 #endif
   } else {
@@ -3199,10 +3203,14 @@ void gfxPlatform::InitWebGPUConfig() {
     feature.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 
-#ifdef RELEASE_OR_BETA
-  feature.ForceDisable(FeatureStatus::Blocked,
-                       "WebGPU cannot be enabled in release or beta",
-                       "WEBGPU_DISABLE_RELEASE_OR_BETA"_ns);
+  // When this condition changes, be sure to update the `run-if`
+  // conditions in `dom/webgpu/tests/mochitest/*.toml` accordingly.
+#if !(defined(NIGHTLY_BUILD) || \
+      (defined(XP_WIN) && defined(EARLY_BETA_OR_EARLIER)))
+  feature.ForceDisable(
+      FeatureStatus::Blocked,
+      "WebGPU cannot be enabled unless in Nightly, or Early Beta on Windows.",
+      "WEBGPU_DISABLE_RELEASE_OR_NON_WINDOWS_EARLY_BETA"_ns);
 #endif
 
   gfxVars::SetAllowWebGPU(feature.IsEnabled());
@@ -3975,6 +3983,9 @@ void gfxPlatform::DisableGPUProcess() {
                        "FEATURE_FAILURE_DISABLED_BY_GPU_PROCESS_DISABLED"_ns);
   }
 
+#if defined(XP_WIN)
+  CompositeProcessD3D11FencesHolderMap::Init();
+#endif
   RemoteTextureMap::Init();
   // We need to initialize the parent process to prepare for WebRender if we
   // did not end up disabling it, despite losing the GPU process.

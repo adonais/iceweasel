@@ -48,7 +48,6 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ClipboardContentAnalysisParent.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/BenchmarkStorageParent.h"
 #include "mozilla/Casting.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ClipboardReadRequestParent.h"
@@ -84,6 +83,7 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/TaskController.h"
 #include "mozilla/glean/DomMetrics.h"
+#include "mozilla/glean/IpcMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryIPC.h"
 #include "mozilla/ThreadSafety.h"
@@ -122,6 +122,7 @@
 #include "mozilla/dom/Permissions.h"
 #include "mozilla/dom/ProcessMessageManager.h"
 #include "mozilla/dom/PushNotifier.h"
+#include "mozilla/dom/RemoteWorkerDebuggerManagerParent.h"
 #include "mozilla/dom/RemoteWorkerServiceParent.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/ServiceWorkerRegistrar.h"
@@ -325,9 +326,6 @@
 #  include "nsIMarionette.h"
 #  include "nsIRemoteAgent.h"
 #endif
-
-// For VP9Benchmark::sBenchmarkFpsPref
-#include "Benchmark.h"
 
 #include "mozilla/RemoteDecodeUtils.h"
 #include "nsIToolkitProfileService.h"
@@ -1258,127 +1256,8 @@ void ContentParent::LogAndAssertFailedPrincipalValidationInfo(
 bool ContentParent::ValidatePrincipal(
     nsIPrincipal* aPrincipal,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  // If the pref says we should not validate, then there is nothing to do
-  if (!StaticPrefs::dom_security_enforceIPCBasedPrincipalVetting()) {
-    return true;
-  }
-
-  // If there is no principal, then there is nothing to validate!
-  if (!aPrincipal) {
-    return aOptions.contains(ValidatePrincipalOptions::AllowNullPtr);
-  }
-
-  // We currently do not track relationships between specific null principals
-  // and content processes, so we can not validate much here - just allow all
-  // null principals we see because they are generally safe anyway!
-  if (aPrincipal->GetIsNullPrincipal()) {
-    return true;
-  }
-
-  // Only allow the system principal if the passed in options flags
-  // request permitting the system principal.
-  if (aPrincipal->IsSystemPrincipal()) {
-    return aOptions.contains(ValidatePrincipalOptions::AllowSystem);
-  }
-
-  // XXXckerschb: we should eliminate the resource carve-out here and always
-  // validate the Principal, see Bug 1686200: Investigate Principal for pdf.js
-  if (aPrincipal->SchemeIs("resource")) {
-    return true;
-  }
-
-  // Validate each inner principal individually, allowing us to catch expanded
-  // principals containing the system principal, etc.
-  if (aPrincipal->GetIsExpandedPrincipal()) {
-    if (!aOptions.contains(ValidatePrincipalOptions::AllowExpanded)) {
-      return false;
-    }
-    // FIXME: There are more constraints on expanded principals in-practice,
-    // such as the structure of extension expanded principals. This may need
-    // to be investigated more in the future.
-    nsCOMPtr<nsIExpandedPrincipal> expandedPrincipal =
-        do_QueryInterface(aPrincipal);
-    const auto& allowList = expandedPrincipal->AllowList();
-    for (const auto& innerPrincipal : allowList) {
-      if (!ValidatePrincipal(innerPrincipal, aOptions)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  // A URI with a file:// scheme can never load in a non-file content process
-  // due to sandboxing.
-  if (aPrincipal->SchemeIs("file")) {
-    // If we don't support a separate 'file' process, then we can return here.
-    if (!StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
-      return true;
-    }
-    return mRemoteType == FILE_REMOTE_TYPE;
-  }
-
-  if (aPrincipal->SchemeIs("about")) {
-    uint32_t flags = 0;
-    nsresult rv = aPrincipal->GetAboutModuleFlags(&flags);
-    if (rv == nsresult::NS_ERROR_FACTORY_NOT_REGISTERED) {
-      // This happens in our tests. There is a race between an about page
-      // getting unregistered and the content process unregistering a blob URL
-      // which it was using.
-      return true;
-    }
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-
-    // Block principals for about: URIs which can't load in this process.
-    if (!(flags & (nsIAboutModule::URI_CAN_LOAD_IN_CHILD |
-                   nsIAboutModule::URI_MUST_LOAD_IN_CHILD))) {
-      return false;
-    }
-    if (flags & nsIAboutModule::URI_MUST_LOAD_IN_EXTENSION_PROCESS) {
-      return mRemoteType == EXTENSION_REMOTE_TYPE;
-    }
-    return true;
-  }
-
-  // Web content can contain extension content frames, so any content process
-  // may send us an extension's principal.
-  // NOTE: We don't check AddonPolicy here, as that could disappear if the
-  // add-on is disabled or uninstalled. As this is a lax check, looking at the
-  // scheme should be sufficient.
-  if (aPrincipal->SchemeIs("moz-extension")) {
-    return true;
-  }
-
-  // If the remote type doesn't have an origin suffix, we can do no further
-  // principal validation with it.
-  int32_t equalIdx = mRemoteType.FindChar('=');
-  if (equalIdx == kNotFound) {
-    return true;
-  }
-
-  // Split out the remote type prefix and the origin suffix.
-  nsDependentCSubstring typePrefix(mRemoteType, 0, equalIdx);
-  nsDependentCSubstring typeOrigin(mRemoteType, equalIdx + 1);
-
-  // Only validate webIsolated remote types for now. This should be expanded in
-  // the future.
-  if (typePrefix != FISSION_WEB_REMOTE_TYPE) {
-    return true;
-  }
-
-  // Trim any OriginAttributes from the origin, as those will not be validated.
-  int32_t suffixIdx = typeOrigin.RFindChar('^');
-  nsDependentCSubstring typeOriginNoSuffix(typeOrigin, 0, suffixIdx);
-
-  // NOTE: Currently every webIsolated remote type is site-origin keyed, meaning
-  // we can unconditionally compare site origins. If this changes in the future,
-  // this logic will need to be updated to reflect that.
-  nsAutoCString siteOriginNoSuffix;
-  if (NS_FAILED(aPrincipal->GetSiteOriginNoSuffix(siteOriginNoSuffix))) {
-    return false;
-  }
-  return siteOriginNoSuffix == typeOriginNoSuffix;
+  return ValidatePrincipalCouldPotentiallyBeLoadedBy(aPrincipal, mRemoteType,
+                                                     aOptions);
 }
 
 /*static*/
@@ -1942,8 +1821,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   if (StringBeginsWith(mRemoteType, WEB_REMOTE_TYPE) ||
       mRemoteType == FILE_REMOTE_TYPE || mRemoteType == EXTENSION_REMOTE_TYPE) {
     TimeDuration runtime = TimeStamp::Now() - mActivateTS;
-    Telemetry::Accumulate(Telemetry::PROCESS_LIFETIME,
-                          uint64_t(runtime.ToSeconds()));
+    glean::process::lifetime.AccumulateRawDuration(runtime);
   }
 
   if (mSendShutdownTimer) {
@@ -2007,8 +1885,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
     props->SetPropertyAsUint64(u"childID"_ns, mChildID);
 
     if (AbnormalShutdown == why) {
-      Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT, "content"_ns,
-                            1);
+      glean::subprocess::abnormal_abort.Get("content"_ns).Add(1);
 
       props->SetPropertyAsBool(u"abnormal"_ns, true);
 
@@ -4349,7 +4226,7 @@ void ContentParent::KillHard(const char* aReason) {
   } else {
     reason = nsDependentCString("KillHard after IsNotifiedShutdownSuccess.");
   }
-  Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
+  glean::subprocess::kill_hard.Get(reason).Add(1);
 
   ProcessHandle otherProcessHandle;
   if (!base::OpenProcessHandle(OtherPid(), &otherProcessHandle)) {
@@ -4403,10 +4280,9 @@ void ContentParent::FriendlyName(nsAString& aName, bool aAnonymize) {
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvInitCrashReporter(
-    const NativeThreadId& aThreadId) {
+    const CrashReporter::CrashReporterInitArgs& aInitArgs) {
   mCrashReporter = MakeUnique<CrashReporterHost>(GeckoProcessType_Content,
-                                                 OtherPid(), aThreadId);
-
+                                                 OtherPid(), aInitArgs);
   return IPC_OK();
 }
 
@@ -4563,16 +4439,6 @@ media::PMediaParent* ContentParent::AllocPMediaParent() {
 
 bool ContentParent::DeallocPMediaParent(media::PMediaParent* aActor) {
   return media::DeallocPMediaParent(aActor);
-}
-
-PBenchmarkStorageParent* ContentParent::AllocPBenchmarkStorageParent() {
-  return new BenchmarkStorageParent;
-}
-
-bool ContentParent::DeallocPBenchmarkStorageParent(
-    PBenchmarkStorageParent* aActor) {
-  delete aActor;
-  return true;
 }
 
 #ifdef MOZ_WEBSPEECH
@@ -5741,18 +5607,6 @@ mozilla::ipc::IPCResult ContentParent::RecvEndDriverCrashGuard(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentParent::RecvNotifyBenchmarkResult(
-    const nsAString& aCodecName, const uint32_t& aDecodeFPS)
-
-{
-  if (aCodecName.EqualsLiteral("VP9")) {
-    Preferences::SetUint(VP9Benchmark::sBenchmarkFpsPref, aDecodeFPS);
-    Preferences::SetUint(VP9Benchmark::sBenchmarkFpsVersionCheck,
-                         VP9Benchmark::sBenchmarkVersionID);
-  }
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentParent::RecvNotifyPushObservers(
     const nsACString& aScope, nsIPrincipal* aPrincipal,
     const nsAString& aMessageId) {
@@ -6317,6 +6171,22 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
     mozilla::glean::perf::PageLoadExtra&& aPageLoadEventExtra) {
   // Check whether a webdriver is running.
   aPageLoadEventExtra.usingWebdriver = mozilla::Some(WebdriverRunning());
+
+#if defined(XP_WIN)
+  // The "hasSSD" property is only set on Windows during the first
+  // call to nsISystemInfo.diskInfo - which is done before
+  // browser-startup-idle-tasks-finished
+  // Other platforms do not compute hasSSD, so there's no reason to
+  // query this on other platforms.
+  nsresult rv;
+  nsCOMPtr<nsIPropertyBag2> infoService =
+      mozilla::components::SystemInfo::Service();
+  bool hasSSD;
+  rv = infoService->GetPropertyAsBool(u"hasSSD"_ns, &hasSSD);
+  if (NS_SUCCEEDED(rv)) {
+    aPageLoadEventExtra.hasSsd = Some(hasSSD);
+  }
+#endif
   mozilla::glean::perf::page_load.Record(mozilla::Some(aPageLoadEventExtra));
 
   // Send the PageLoadPing after every 30 page loads, or on startup.
@@ -6447,14 +6317,7 @@ mozilla::ipc::IPCResult ContentParent::RecvPURLClassifierLocalByNameConstructor(
       continue;
     }
 
-    nsAutoCString exceptionHostList;
-    rv = feature->GetExceptionHostList(exceptionHostList);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-
-    ipcFeatures.AppendElement(
-        IPCURLClassifierFeature(name, tables, exceptionHostList));
+    ipcFeatures.AppendElement(IPCURLClassifierFeature(name, tables));
   }
 
   auto* actor = static_cast<URLClassifierLocalByNameParent*>(aActor);
@@ -7865,8 +7728,14 @@ void ContentParent::StartRemoteWorkerService() {
   Endpoint<PRemoteWorkerServiceChild> childEp;
   mRemoteWorkerServiceActor =
       RemoteWorkerServiceParent::CreateForProcess(this, &childEp);
+
+  Endpoint<PRemoteWorkerDebuggerManagerChild> remoteDebuggerChildEp;
+  mRemoteWorkerDebuggerManagerActor =
+      RemoteWorkerDebuggerManagerParent::CreateForProcess(
+          &remoteDebuggerChildEp);
   if (mRemoteWorkerServiceActor) {
-    Unused << SendInitRemoteWorkerService(std::move(childEp));
+    Unused << SendInitRemoteWorkerService(std::move(childEp),
+                                          std::move(remoteDebuggerChildEp));
   }
 }
 

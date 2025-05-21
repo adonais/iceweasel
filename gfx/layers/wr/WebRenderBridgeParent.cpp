@@ -44,7 +44,6 @@
 #include "mozilla/layers/WebRenderImageHost.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
 #include "mozilla/ProfilerMarkerTypes.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "mozilla/webrender/RenderTextureHostSWGL.h"
@@ -2527,7 +2526,7 @@ void WebRenderBridgeParent::NotifySceneBuiltForEpoch(
   }
 }
 
-void WebRenderBridgeParent::NotifyDidSceneBuild(
+void WebRenderBridgeParent::ScheduleFrameAfterSceneBuild(
     RefPtr<const wr::WebRenderPipelineInfo> aInfo) {
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
   if (!mCompositorScheduler) {
@@ -2574,18 +2573,6 @@ void WebRenderBridgeParent::NotifyDidSceneBuild(
                     wr::RenderReasons::SCENE, nullptr, nullptr);
 }
 
-static Telemetry::HistogramID GetHistogramId(const bool aIsLargePaint,
-                                             const bool aIsFullDisplayList) {
-  const Telemetry::HistogramID histogramIds[] = {
-      Telemetry::CONTENT_SMALL_PAINT_PHASE_WEIGHT_PARTIAL,
-      Telemetry::CONTENT_LARGE_PAINT_PHASE_WEIGHT_PARTIAL,
-      Telemetry::CONTENT_SMALL_PAINT_PHASE_WEIGHT_FULL,
-      Telemetry::CONTENT_LARGE_PAINT_PHASE_WEIGHT_FULL,
-  };
-
-  return histogramIds[(aIsFullDisplayList * 2) + aIsLargePaint];
-}
-
 static void RecordPaintPhaseTelemetry(wr::RendererStats* aStats) {
   if (!aStats || !aStats->full_paint) {
     return;
@@ -2611,8 +2598,23 @@ static void RecordPaintPhaseTelemetry(wr::RendererStats* aStats) {
 
   auto RecordKey = [&](const nsCString& aKey, const double aTimeMs) -> void {
     const auto val = static_cast<uint32_t>(AsPercentage(aTimeMs));
-    const auto histogramId = GetHistogramId(isLargePaint, isFullDisplayList);
-    Telemetry::Accumulate(histogramId, aKey, val);
+    if (isFullDisplayList) {
+      if (isLargePaint) {
+        glean::gfx_content::large_paint_phase_weight_full.Get(aKey)
+            .AccumulateSingleSample(val);
+      } else {
+        glean::gfx_content::small_paint_phase_weight_full.Get(aKey)
+            .AccumulateSingleSample(val);
+      }
+    } else {
+      if (isLargePaint) {
+        glean::gfx_content::large_paint_phase_weight_partial.Get(aKey)
+            .AccumulateSingleSample(val);
+      } else {
+        glean::gfx_content::small_paint_phase_weight_partial.Get(aKey)
+            .AccumulateSingleSample(val);
+      }
+    }
   };
 
   RecordKey("dl"_ns, geckoDL);

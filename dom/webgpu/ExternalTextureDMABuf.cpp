@@ -10,7 +10,7 @@
 #include "mozilla/webgpu/WebGPUParent.h"
 #include "mozilla/widget/DMABufSurface.h"
 #include "mozilla/widget/DMABufLibWrapper.h"
-#include "gbm/gbm.h"
+#include <gbm.h>
 
 namespace mozilla::webgpu {
 
@@ -97,10 +97,7 @@ ExternalTextureDMABuf::ExternalTextureDMABuf(
 
 ExternalTextureDMABuf::~ExternalTextureDMABuf() {}
 
-void* ExternalTextureDMABuf::GetExternalTextureHandle() { return nullptr; }
-
-Maybe<layers::SurfaceDescriptor> ExternalTextureDMABuf::ToSurfaceDescriptor(
-    Maybe<gfx::FenceInfo>& aFenceInfo) {
+Maybe<layers::SurfaceDescriptor> ExternalTextureDMABuf::ToSurfaceDescriptor() {
   layers::SurfaceDescriptor sd;
   if (!mSurface->Serialize(sd)) {
     return Nothing();

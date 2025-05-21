@@ -164,7 +164,7 @@ installation.firstSeen:
       value "NotFoundError" if file not found or other values
       depending on the failure reason.
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: string
     notification_emails:
       - rtestard@mozilla.com
@@ -184,7 +184,7 @@ installation.firstSeen:
       The type of installer used to install Firefox.
       The value is one of "stub", "full", or "msix"
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: string
     notification_emails:
       - rtestard@mozilla.com
@@ -204,7 +204,7 @@ installation.firstSeen:
       The application version installed by the installer
       (not necessarily the current version)
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: string
     notification_emails:
       - rtestard@mozilla.com
@@ -223,7 +223,7 @@ installation.firstSeen:
     description: >
       Whether the installer is running from an elevated admin user
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -242,7 +242,7 @@ installation.firstSeen:
     description: >
       'Whether there was already an install in this location'
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -261,7 +261,7 @@ installation.firstSeen:
     description: >
       'Whether the top-level profile directory existed'
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -280,7 +280,7 @@ installation.firstSeen:
     description: >
       'Whether there was already any non-MSIX install on this system'
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -299,7 +299,7 @@ installation.firstSeen:
     description: >
       'Whether there was already any MSIX install on this system'
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -319,7 +319,7 @@ installation.firstSeen:
       (optional, present if installer_type is "full")
       Whether this was a silent install
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -339,7 +339,7 @@ installation.firstSeen:
       (optional, present if installer_type is "full")
       Whether this was an MSI install
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -359,7 +359,7 @@ installation.firstSeen:
       (optional, present if installer_type is "full")
       Whether the default path was used
     keyed: false
-    expires: "140"
+    expires: "152"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -1983,9 +1983,10 @@ extensions.startupCache:
       - 1767336
       - 1892151
       - 1928258
+      - 1958168
     description: >
       The amount of bytes writted into the Extensions StartupCache file.
-    expires: "140"
+    expires: "147"
     kind: uint
     notification_emails:
       - addons-dev-internal@mozilla.com
@@ -1999,10 +2000,11 @@ extensions.startupCache:
       - 1767336
       - 1892151
       - 1928258
+      - 1958168
     description: >
       The amount of times an unexpected error has been raised while
       reading the Extensions StartupCache file
-    expires: "140"
+    expires: "147"
     kind: uint
     keyed: true
     notification_emails:
@@ -2016,6 +2018,7 @@ extensions.startupCache:
     bug_numbers:
       - 1767336
       - 1912170
+      - 1958168
     description: >
       Time to load and deserialize the extensions startupCache data.
       This scalar is mirroring the never expiring Glean metric named
@@ -2024,7 +2027,7 @@ extensions.startupCache:
       Unlike the related glean metric, this scalar has an expiring date,
       set as a deadline to consider removing the mirrored scalar in
       favor to just use the Glean metric).
-    expires: "140"
+    expires: "147"
     kind: uint
     notification_emails:
       - addons-dev-internal@mozilla.com
@@ -2868,27 +2871,6 @@ webrtc.video:
     notification_emails:
       - dminor@mozilla.com
       - nohlmeier@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-      - 'fennec'
-    record_in_processes:
-      - 'content'
-
-mathml:
-  doc_count:
-    bug_numbers:
-      - 1362187
-      - 1538985
-      - 1590350
-    description: >
-      The number of documents that contained enabled MathML elements.
-    expires: never
-    kind: uint
-    notification_emails:
-      - emilio@mozilla.com
-      - fred.wang@free.fr
-      - dev-tech-layout@lists.mozilla.org
     release_channel_collection: opt-out
     products:
       - 'firefox'
@@ -5196,35 +5178,6 @@ browser.search.adclicks:
       - main
 
 browser.searchinit:
-  engine_invalid_webextension:
-    bug_numbers:
-      - 1665938
-      - 1691050
-      - 1725501
-      - 1763528
-      - 1801017
-      - 1832463
-      - 1871199
-      - 1897049
-      - 1933857
-    description: >
-      Records the WebExtension ID of a search engine where the WebExtension
-      is not installed (= 1), disabled (= 2), search engine no longer specified (= 4),
-      a different name (= 5), where the submission URL is different between the
-      search engine and the WebExtension (= 6). The value '3' has been replaced
-      by '6' to distinguish newer entries.
-    expires: "140"
-    keyed: true
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-      - mbanner@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-    release_channel_collection: opt-out
-
   secure_opensearch_engine_count:
     bug_numbers:
       - 1789438
@@ -5377,10 +5330,11 @@ startup:
     bug_numbers:
       - 1878339
       - 1916867
+      - 1958171
     description: >
       The version of the profiles.ini database loaded during startup. A value
       of "0" is used to indicate that no file was present during startup.
-    expires: "140"
+    expires: "147"
     keyed: false
     kind: string
     notification_emails:
@@ -5400,10 +5354,11 @@ startup:
     bug_numbers:
       - 1878339
       - 1916867
+      - 1958171
     description: >
       This records the number of known profiles after startup completes. This
       includes any profiles that were created during startup.
-    expires: "140"
+    expires: "147"
     keyed: false
     kind: uint
     notification_emails:

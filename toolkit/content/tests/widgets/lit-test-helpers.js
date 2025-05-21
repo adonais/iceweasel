@@ -51,7 +51,19 @@ class LitTestHelpers {
         return lit.noChange;
       }
     };
+    this.PropertySpreadDirective = class extends lit.Directive {
+      render() {
+        return lit.nothing;
+      }
+      update(part, [attrs]) {
+        for (let [key, value] of Object.entries(attrs)) {
+          part[key] = value;
+        }
+        return lit.noChange;
+      }
+    };
     this.spread = lit.directive(this.SpreadDirective);
+    this.propertySpread = lit.directive(this.PropertySpreadDirective);
     return lit;
   }
 
@@ -916,5 +928,63 @@ class InputTestHelpers extends LitTestHelpers {
         `The nested disabled ${disabledEl.localName} element is disabled when the parent input is reenabled.`
       );
     });
+  }
+
+  /**
+   * Verifies it is possible to set readonly attribute to the input element and remove it.
+   *
+   * @param {string} selector - HTML tag of the element under test.
+   */
+  async verifyReadonly(selector) {
+    const INITIAL_VALUE = "value";
+    const NEW_VALUE = "new value";
+    let renderTarget = await this.renderTemplate();
+    let firstInput = renderTarget.querySelector(selector);
+
+    async function enterInputValue(inputComponent, inputValue) {
+      synthesizeMouseAtCenter(inputComponent.inputEl, {});
+      sendString(inputValue);
+      inputComponent.blur();
+      await TestUtils.waitForTick();
+    }
+
+    ok(
+      !firstInput.readonly,
+      "Input has a readonly property set to false on initial render."
+    );
+    is(
+      firstInput.inputEl.value,
+      "",
+      "The initial value of the input element is an empty string."
+    );
+
+    await enterInputValue(firstInput, INITIAL_VALUE);
+    is(
+      firstInput.inputEl.value,
+      INITIAL_VALUE,
+      "The value of the input element has changed."
+    );
+
+    firstInput.readonly = true;
+    await firstInput.updateComplete;
+
+    ok(firstInput.readonly, "Input is readonly.");
+    ok(firstInput.inputEl.readOnly, "Readonly state is propagated.");
+
+    await enterInputValue(firstInput, NEW_VALUE);
+    is(
+      firstInput.inputEl.value,
+      INITIAL_VALUE,
+      "The value of the input element hasn't changed."
+    );
+
+    firstInput.readonly = false;
+    await firstInput.updateComplete;
+
+    ok(
+      !firstInput.readonly,
+      "Input has a readonly property set to false again."
+    );
+    ok(!firstInput.inputEl.readOnly, "Readonly state is propagated.");
   }
 }

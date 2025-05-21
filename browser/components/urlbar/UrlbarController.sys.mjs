@@ -7,8 +7,6 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  BrowserSearchTelemetry:
-    "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
@@ -602,32 +600,6 @@ export class UrlbarController {
   }
 
   /**
-   * Records details of the selected result in telemetry. We only record the
-   * selection behavior, type and index.
-   *
-   * @param {Event} event
-   *   The event which triggered the result to be selected.
-   * @param {UrlbarResult} result
-   *   The selected result.
-   */
-  recordSelectedResult(event, result) {
-    let resultIndex = result ? result.rowIndex : -1;
-    let selectedResult = -1;
-    if (resultIndex >= 0) {
-      // Except for the history popup, the urlbar always has a selection.  The
-      // first result at index 0 is the "heuristic" result that indicates what
-      // will happen when you press the Enter key.  Treat it as no selection.
-      selectedResult = resultIndex > 0 || !result.heuristic ? resultIndex : -1;
-    }
-    lazy.BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
-      event,
-      "urlbar",
-      selectedResult,
-      this._userSelectionBehavior
-    );
-  }
-
-  /**
    * Triggers a "dismiss" engagement for the selected result if one is selected
    * and it's not the heuristic. Providers that can respond to dismissals of
    * their results should implement `onEngagement()`, handle the
@@ -732,7 +704,7 @@ export class UrlbarController {
   }
 
   #focusOnUnifiedSearchButton() {
-    this.input.toggleAttribute("unifiedsearchbutton-available", true);
+    this.input.setUnifiedSearchButtonAvailability(true);
 
     const switcher = this.input.document.getElementById(
       "urlbar-searchmode-switcher"

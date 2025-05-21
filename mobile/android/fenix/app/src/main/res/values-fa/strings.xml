@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">با پیمایش جدید سریع‌تر مرور کنید</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">با پیمایش جدید سریع‌تر مرور کنید</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">در یک وبگاه، این نوار هنگام اسکرول به پایین برای فضای بیشتر مرور، پنهان می‌شود.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">در یک وبگاه، این نوار هنگام اسکرول به پایین برای فضای بیشتر مرور، پنهان می‌شود.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">برای جابجایی بین صفحات در تاریخچه این زبانه، فلش‌ها را نگه دارید.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">برای جابجایی بین صفحات در تاریخچه این زبانه، فلش‌ها را نگه دارید.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -631,7 +631,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">مرور وب سریع و امن</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">موافقت و ادامه</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">موافقت و ادامه</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">ادامه</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">با ادامه دادن، شما با %1$s موافقت می‌کنید.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -836,8 +838,6 @@
   <string name="preferences_override_account_server">کارساز حساب کاربری سفارشی Mozilla</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">کارساز همگام‌سازی سفارشی</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">کارساز حساب/همگام‌سازی Mozilla تغییر کرد. برای اعمال تغییرات برنامه را ببندید…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">حساب کاربری</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -906,6 +906,10 @@
   <string name="preferences_show_nonsponsored_suggestions_summary">دریافت پیشنهادات از وب مرتبط با جستجوی شما</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">هم‌رسانی پیوند</string>
+  <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_title">شامل %1$s پیوند بارگیری در هم‌رسانی‌های واتس‌اپ</string>
+  <!-- Body for the link sharing toggle.  %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_body">با هر بار هم‌رسانی پیوند روی واتس‌اپ، دوستان‌تان را دعوت به امتحان کردن مرور امن‌تر و سریع‌تر وب با %1$s کنید.</string>
   <!-- Snackbar message shown when user shares a link -->
   <string name="link_shared_snackbar_message">پیوند هم‌رسانی شد</string>
   <!-- Snackbar action label shown when user shares a link -->
@@ -1203,7 +1207,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">برای باز کردن زبانه‌ها، نوار ابزار را به سمت بالا بکشید</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">برای پنهان کردن نوار نشانی و نوار ابزار، اسکرول کنید</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">برای پنهان کردن نوار نشانی و نوار ابزار، اسکرول کنید</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">نوار نشانی را به طرفین بکشید تا زبانه‌ها را عوض کنید</string>
   <!--
@@ -1447,16 +1451,31 @@
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
   <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">بارگیری‌ها حذف شدند</string>
+  <!--
+    Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
+    %1$d is the number of items deleted.
+  -->
+  <string name="download_delete_multiple_items_snackbar_2">موارد پاک شده: %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
   <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s حذف شد</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">«%1$s» پاک شد</string>
+  <!-- Text for the snackbar to confirm that downloads are in progress. -->
+  <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">بارگیری در جریان…</string>
   <!-- Text for the snackbar action button to view in progress download details. -->
   <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">جزئیات</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar" tools:ignore="UnusedResources">بارگیری کامل شد</string>
   <!-- Text for the snackbar action button to open a completed download. -->
   <string name="download_completed_snackbar_action_open" tools:ignore="UnusedResources">باز کردن</string>
   <!-- Text for the snackbar action button to undo deleting a download. -->
   <string name="download_undo_delete_snackbar_action">برگردان</string>
   <!-- Text shown when no download exists -->
   <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">تا به حال پرونده‌ای بارگیری نشده است</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">چیزی تاکنون بارگیری نشده است</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">پرونده‌هایی را که بارگیری می‌کنید اینجا نمایش می‌یابند.</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
@@ -1464,8 +1483,39 @@
   <string name="download_multi_select_title">%1$d انتخاب شد</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">حذف</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">فضای کافی موجود نیست</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">این دستگاه فضای کافی برای بارگیری &lt;b&gt;%s&lt;/b&gt; را ندارد.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">مدیریت پرونده‌ها</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">لغو</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">حذف</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">بازگشت به عقب</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">پیمایش به بالا</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">بازگشت و بستن جستجو</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">پاک کردن</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">هم‌رسانی نشانی</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">هم‌رسانی پرونده</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">برای پاک کردن موارد انتخاب‌شده مطمئن هستید؟</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">حذف</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
@@ -1486,6 +1536,23 @@
   <string name="download_time_period_last_30_days">۳۰ روز گذشته</string>
   <!-- Text for the header that groups the downloads older than other groups -->
   <string name="download_time_period_older">‏‏قدیمی‌تر</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s از %2$s • %3$s باقی مانده است</string>
+  <!-- Text to indicate that an in progress download is paused. -->
+  <string name="download_item_status_paused" tools:ignore="UnusedResources">متوقف شده</string>
+  <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
+  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">در انتظار</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed" tools:ignore="UnusedResources">بارگیری‌ شکست خورد</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder">جستجو در بارگیری‌ها</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found">نتیجه‌ای یافت نشد</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">انتخاب همه</string>
   <!--
@@ -1498,6 +1565,12 @@
   <string name="download_content_type_filter_image">تصاویر</string>
   <!-- Text for the filter button to show only video files in the downloads list -->
   <string name="download_content_type_filter_video">ویدیوها</string>
+  <!-- Text for the filter button to show only documents in the downloads list -->
+  <string name="download_content_type_filter_document">اسناد</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other" moz:removedIn="138" tools:ignore="UnusedResources">سایر</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">سایر</string>
   <!--
     Description of a downloaded item, displayed in the downloads list.
     %1$s: The size of the downloaded file.
@@ -1608,6 +1681,16 @@
   <string name="bookmark_menu_delete_button">حذف</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">ذخیره</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">به ترتیب چینش سفارشی</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">به ترتیب تازگی</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">به ترتیب کهنگی</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">به ترتیب الف تا ی</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">به ترتیب ی تا الف</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1881,6 +1964,10 @@
   <string name="sync_add_new_device_learn_button">در مورد ارسال زبانه‌ها بیشتر بدانید…</string>
   <!-- Text for the button to connect another device -->
   <string name="sync_add_new_device_connect_button">اتصال به دستگاه دیگر…</string>
+  <!-- A message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+  <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\n از %2$s فرستاده شده است 🦊 مرورگر همراه را امتحان کنید: %3$s</string>
+  <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+  <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\n از %2$s فرستاده شده است 🦊 %3$s</string>
   <!--
     Notifications
 
@@ -2219,22 +2306,46 @@
     Enhanced tracking protection exception preference icon for ETP settings.
   -->
   <string name="preference_etp_exceptions_icon_description">نقشک ترجیحات استثناهای محافظت در برابر ردیابی ارتقا یافته</string>
+  <!--
+    DNS over HTTPS (DoH)
+
+    Preference title for DNS over HTTPS settings
+  -->
+  <string name="preference_doh_title">ساناد روی HTTPS</string>
+  <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_summary">سامانهٔ نام دامنه یا ساناد (DNS) روی HTTPS درخواست‌های شما برای یک نام دامنه را از طریق یک ارتباط رمزنگاری‌شده ارسال می‌کند که این کار باعث افزایش ایمنی ساناد شده و این امکان را که دیگران بتوانند بفهمند چه وبگاهی را می‌خواهید ببینید دشوارتر می‌کند. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">بیشتر بدانید</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">پیمایش به بالا</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">استثناها</string>
   <!-- Content description for the "Info" button -->
   <string name="preference_doh_info_description">اطلاعات</string>
   <!-- Content description for the "Add Site" button -->
   <string name="preference_doh_add_site_description">افزودن وبگاه</string>
+  <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection">محافظت پیش‌فرض</string>
+  <!-- Summary displayed for "Default Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_doh_default_protection_summary">%1$s تصمیم می‌گیرد که چه زمانی از ساناد امن برای محافظت از حریم خصوصی شما استفاده کند.</string>
+  <!-- Bullet point 1 for "Default Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection_info_1">استفاده از ارائه‌دهندهٔ منتخب شما</string>
+  <!-- Bullet point 2 for "Default Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection_info_2">استفاده از مبدل ساناد در صورتی که مشکلی برای کار با ارائه‌دهندهٔ ساناد وجود داشته باشد</string>
+  <!-- Bullet point 3 for "Default Protection" information page under "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_default_protection_info_3">استفاده از ارائه‌دهندهٔ محلی در صورت امکان. %1$s</string>
+  <!-- Bullet point 4 for "Default Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection_info_4">خاموش در زمانی که وی‌پی‌ان، کنترل والدین یا سیاست‌های سازمانی فعال باشند</string>
   <!-- Title displayed for "Off" option under "DNS over HTTPS" -->
   <string name="preference_doh_off">خاموش</string>
   <!-- Text displayed for "Default provider" under "DNS over HTTPS" providers -->
   <string name="preference_doh_provider_default">(پیش‌فرض)</string>
   <!-- Text displayed for "Custom" under "DNS over HTTPS" providers -->
   <string name="preference_doh_provider_custom">سفارشی</string>
+  <!-- Text displayed for "Custom provider" dialog under "DNS over HTTPS" -->
+  <string name="preference_doh_provider_custom_dialog_title">ارائه‌دهندهٔ سفارشی</string>
+  <!-- Text displayed above provider textfield under "DNS over HTTPS" -->
+  <string name="preference_doh_provider_custom_dialog_textfield">ارائه‌دهنده</string>
+  <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL does not start with "https://" or its scheme is not "https" -->
+  <string name="preference_doh_provider_custom_dialog_error_https">نشانی بایستی با «‪https://‬» آغاز شود</string>
   <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL is invalid -->
   <string name="preference_doh_provider_custom_dialog_error_invalid">نشانی اینترنتی معتبر نیست</string>
   <!-- Cancel button text for provider textfield under "DNS over HTTPS" -->
@@ -2243,14 +2354,20 @@
   <string name="preference_doh_provider_custom_dialog_add">افزودن</string>
   <!-- Preference to access list of login exceptions that we don't use DNS over HTTPS -->
   <string name="preference_doh_exceptions">استثناها</string>
+  <!-- Description of "exceptions" for "DNS over HTTPS". %1$s is the name of the app (for example "Firefox"). -->
+  <string name="preference_doh_exceptions_summary"> %1$s در این وبگاه‌ها و زیردامنه‌هایشان از ساناد امن استفاده نمی‌کند.</string>
   <!-- Text displayed that links to adding website domain for "DNS over HTTPS" exceptions. -->
   <string name="preference_doh_exceptions_add">افزودن وبگاه</string>
   <!-- Text displayed above the input field when adding exceptions for "DNS over HTTPS". -->
   <string name="preference_doh_exceptions_add_site">وبگاه</string>
   <!-- Placeholder URL displayed in the input field when adding exceptions for "DNS over HTTPS". -->
   <string name="preference_doh_exceptions_add_placeholder">example.com</string>
+  <!-- Error displayed in the input field when adding invalid URLs for "DNS over HTTPS". -->
+  <string name="preference_doh_exceptions_add_error">باید یک دامنهٔ معتبر باشد</string>
   <!-- Text displayed on the button within the input field for adding exceptions to "DNS over HTTPS" -->
   <string name="preference_doh_exceptions_add_save">ذخیره</string>
+  <!-- Text displayed for removing all exceptions in "DNS over HTTPS" -->
+  <string name="preference_doh_exceptions_remove_all_exceptions">حذف همهٔ استثنائات</string>
   <!-- About page link text to open support link -->
   <string name="about_support">پشتیبانی</string>
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
@@ -2555,6 +2672,8 @@
   <string name="quick_settings_sheet_secure_connection_2">اتصال امن است</string>
   <!-- Label that indicates a site is using a insecure connection -->
   <string name="quick_settings_sheet_insecure_connection_2">اتصال امن نیست</string>
+  <!-- Label that indicates a site is displaying a local document -->
+  <string name="quick_settings_sheet_local_page">این صفحه بر روی رایانه شما ذخیره شد.</string>
   <!-- Label to clear site data -->
   <string name="clear_site_data">پاک‌سازی کلوچک‌ها و داده‌های پایگاه</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
@@ -2714,6 +2833,8 @@
   <string name="google_search_engine_suggestion_header">جست‌وجوی گوگل</string>
   <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. %s is default search engine name. -->
   <string name="other_default_search_engine_suggestion_header">جست‌وجوی %s</string>
+  <!-- Title for recent search suggestions. -->
+  <string name="recent_searches_header">جستجوهای اخیر</string>
   <!--
     Default browser experiment
 
@@ -3032,6 +3153,8 @@
     Text for the protection panel header when the site is secure.
   -->
   <string name="protection_panel_header_secure">ایمن</string>
+  <!-- Text for the protection panel header when the site is not secure. -->
+  <string name="protection_panel_header_not_secure">ناامن</string>
   <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">مواظب این وبگاه باشید</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -3057,15 +3180,47 @@
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description">محافظ‌ها خاموش هستند. پیشنهاد می‌کنیم آن‌ها را دوباره فعال کنید.</string>
   <!--
+    Text for displaying the total number of trackers blocked in the protection panel.
+    %d is a placeholder for the number of trackers blocked.
+  -->
+  <string name="protection_panel_num_trackers_blocked">ردیاب‌ها مسدود شدند: %d</string>
+  <!-- Text for when no trackers have been blocked. -->
+  <string name="protection_panel_no_trackers_blocked">ردیابی یافت نشد</string>
+  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+  <string name="protection_panel_privacy_and_security_settings">تنظیمات حریم خصوصی و امنیت</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">مجوزها</string>
+  <!--
+    Text for displaying the total number of trackers blocked in the trackers blocked panel.
+    %d is a placeholder for the number of trackers blocked.
+  -->
+  <string name="trackers_blocked_panel_total_num_trackers_blocked">ردیاب‌ها مسدود شدند: %d</string>
+  <!--
     Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
     %s is a placeholder for the name of the tracker category.
     %d is a placeholder for the number of trackers blocked.
   -->
   <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+  <!--
+    Description text for a dialog confirming whether the user wants to delete all data for current site.
+    %s is a placeholder for the base domain of website.
+  -->
+  <string name="clear_site_data_dialog_description">حذف کوکی‌ها و داده‌های وبگاه برای &lt;b&gt;%s&lt;/b&gt; ممکن است شما را از وبگاه‌ها خارج کرده و سبدهای خریدتان را خالی کند.</string>
   <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
   <string name="clear_site_data_dialog_positive_button_text">پاک کردن</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">انصراف</string>
+  <!-- Snackbar title shown when the site data has been cleared. -->
+  <string name="clear_site_data_snackbar">کوکی‌ها و داده‌های وبگاه پاک شدند</string>
+  <!-- Text for the connection security panel when the site is secure. -->
+  <string name="connection_security_panel_secure">اتصال امن</string>
+  <!-- Text for the connection security panel when the site is not secure. -->
+  <string name="connection_security_panel_not_secure">اتصال ناامن</string>
+  <!--
+    Text for the connection security panel to indicate who the certificate was verified by.
+    %s is a placeholder for the name of the certificate authority that verified the ticket
+  -->
+  <string name="connection_security_panel_verified_by">تأییدشده توسط %s</string>
   <!--
     Debug drawer
 
@@ -3221,6 +3376,28 @@
   -->
   <string name="glean_debug_tools_title">ابزارهای اشکال‌زدایی Glean</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">ابزارهای منطقه</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">برای آزمایش، مقادیر منطقهٔ خانگی و فعلی را موقتاً بازنویسی می‌کند.</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">منطقهٔ خانگی</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">منطقهٔ فعلی</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">بازنویسی منطقهٔ خانگی</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">بازنویسی منطقهٔ فعلی</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">بازنویسی منطقهٔ خانگی و فعلی</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">بازنویسی همیشگی منطقهٔ خانگی</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3282,4 +3459,54 @@
   <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">نمایش متن مخفی</string>
   <!-- The default content description for the cross trailing icon button in TextField -->
   <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">پاک کردن متن</string>
+  <!--
+    Setup checklist feature
+
+    ===== Setup checklist feature: Title =====
+
+    Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_title_state_incomplete">پایان نصب %1$s</string>
+  <!-- Title for the setup checklist feature when the state is 'completed' -->
+  <string name="setup_checklist_title_state_completed">تبریک!</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">برای تنظیم %1$s جهت بهترین تجربه مرور، این سه مرحله را کامل کنید.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">یک شروع عالی! شما یکی از سه مرحله را انجام داده‌اید.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">تقریباً رسیدیم! دو مرحله تمام شده و یک مرحله دیگر باقی مانده است.</string>
+  <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_3_steps_completed_state">شما هر سه مرحله را انجام داده‌اید. از سرعت، حریم خصوصی و امنیت %1$s لذت ببرید.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 6 steps =====
+
+    Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_6_steps_initial_state">برای بهترین تجربه مرور، هر شش مرحله را برای تنظیم %1$s کامل کنید.</string>
+  <!--
+    ===== Setup checklist feature: Task titles =====
+
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">تنظیم به عنوان مرورگر پیش‌فرض</string>
+  <!-- The title of the sign-in task for the setup checklist -->
+  <string name="setup_checklist_task_account_sync">وارد حساب کاربری خود شوید</string>
+  <!-- The title of the toolbar selection task for the setup checklist -->
+  <string name="setup_checklist_task_toolbar_selection">انتخاب محل قرارگیری نوار ابزار</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget">نصب ابزارک جستجو</string>
+  <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_group_customize">%1$s خود را سفارشی‌سازی کنید</string>
+  <!-- The title of the 'helpful tools' group in the setup checklist -->
+  <string name="setup_checklist_group_helpful_tools">ابزارهای مفید</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">خروج از زبانه‌های خصوصی</string>
 </resources>

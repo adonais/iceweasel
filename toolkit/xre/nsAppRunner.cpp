@@ -35,6 +35,7 @@
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/glean/SecuritySandboxMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Try.h"
 #include "mozilla/Utf8.h"
@@ -1573,6 +1574,12 @@ nsXULAppInfo::GetChromeColorSchemeIsDark(bool* aResult) {
 }
 
 NS_IMETHODIMP
+nsXULAppInfo::GetNativeMenubar(bool* aResult) {
+  *aResult = !!LookAndFeel::GetInt(LookAndFeel::IntID::NativeMenubar);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsXULAppInfo::GetContentThemeDerivedColorSchemeIsDark(bool* aResult) {
   *aResult =
       PreferenceSheet::ThemeDerivedColorSchemeForContent() == ColorScheme::Dark;
@@ -1769,7 +1776,7 @@ nsXULAppInfo::GetServerURL(nsIURL** aServerURL) {
 NS_IMETHODIMP
 nsXULAppInfo::SetServerURL(nsIURL* aServerURL) {
   // Only allow https or http URLs
-  if (!aServerURL->SchemeIs("http") && !aServerURL->SchemeIs("https")) {
+  if (!net::SchemeIsHttpOrHttps(aServerURL)) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -4578,8 +4585,7 @@ enum struct ShouldNotProcessUpdatesReason {
   DevToolsLaunching,
   NotAnUpdatingTask,
   OtherInstanceRunning,
-  FirstStartup,
-  MultiSessionInstallLockout
+  FirstStartup
 };
 
 const char* ShouldNotProcessUpdatesReasonAsString(
@@ -4591,17 +4597,13 @@ const char* ShouldNotProcessUpdatesReasonAsString(
       return "NotAnUpdatingTask";
     case ShouldNotProcessUpdatesReason::OtherInstanceRunning:
       return "OtherInstanceRunning";
-    case ShouldNotProcessUpdatesReason::FirstStartup:
-      return "FirstStartup";
-    case ShouldNotProcessUpdatesReason::MultiSessionInstallLockout:
-      return "MultiSessionInstallLockout";
     default:
       MOZ_CRASH("impossible value for ShouldNotProcessUpdatesReason");
   }
 }
 
 Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
-    nsXREDirProvider& aDirProvider, nsIFile* aUpdateRoot) {
+    nsXREDirProvider& aDirProvider) {
   // Don't process updates when launched from the installer.
   // It's possible for a stale update to be present in the case of a paveover;
   // ignore it and leave the update service to discard it.
@@ -4629,33 +4631,6 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
     }
   }
 
-  bool otherInstance = false;
-  // At this point we have a dir provider but no XPCOM directory service.  We
-  // launch the update sync manager using that information so that it doesn't
-  // need to ask for (and fail to find) the directory service.
-  nsCOMPtr<nsIFile> anAppFile;
-  bool persistent;
-  nsresult rv = aDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
-                                     getter_AddRefs(anAppFile));
-  if (NS_SUCCEEDED(rv) && anAppFile) {
-    auto updateSyncManager = new nsUpdateSyncManager(anAppFile);
-    rv = updateSyncManager->IsOtherInstanceRunning(&otherInstance);
-    if (NS_FAILED(rv)) {
-      // Unless we know that there is another instance, we default to assuming
-      // there is not one.
-      otherInstance = false;
-    }
-  }
-
-  if (otherInstance) {
-    bool msilActive = false;
-    rv = IsMultiSessionInstallLockoutActive(aUpdateRoot, msilActive);
-    if (NS_SUCCEEDED(rv) && msilActive) {
-      NS_WARNING("ShouldNotProcessUpdates(): MultiSessionInstallLockout");
-      return Some(ShouldNotProcessUpdatesReason::MultiSessionInstallLockout);
-    }
-  }
-
 #  ifdef MOZ_BACKGROUNDTASKS
   // Do not process updates if we're running a background task mode and another
   // instance is already running.  This avoids periodic maintenance updating
@@ -4679,6 +4654,22 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
       return Some(ShouldNotProcessUpdatesReason::NotAnUpdatingTask);
     }
 
+    // At this point we have a dir provider but no XPCOM directory service.  We
+    // launch the update sync manager using that information so that it doesn't
+    // need to ask for (and fail to find) the directory service.
+    nsCOMPtr<nsIFile> anAppFile;
+    bool persistent;
+    nsresult rv = aDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
+                                       getter_AddRefs(anAppFile));
+    if (NS_FAILED(rv) || !anAppFile) {
+      // Strange, but not a reason to skip processing updates.
+      return Nothing();
+    }
+
+    auto updateSyncManager = new nsUpdateSyncManager(anAppFile);
+
+    bool otherInstance = false;
+    updateSyncManager->IsOtherInstanceRunning(&otherInstance);
     if (otherInstance) {
       NS_WARNING("ShouldNotProcessUpdates(): OtherInstanceRunning");
       return Some(ShouldNotProcessUpdatesReason::OtherInstanceRunning);
@@ -5134,7 +5125,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   }
 
   Maybe<ShouldNotProcessUpdatesReason> shouldNotProcessUpdatesReason =
-      ShouldNotProcessUpdates(mDirProvider, updRoot);
+      ShouldNotProcessUpdates(mDirProvider);
   if (shouldNotProcessUpdatesReason.isNothing()) {
     nsCOMPtr<nsIFile> exeFile, exeDir;
     rv = mDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
@@ -5364,17 +5355,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   CrashReporter::RecordAnnotationBool(
       CrashReporter::Annotation::StartupCacheValid, cachesOK && versionOK);
-
-#if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
-  if (shouldNotProcessUpdatesReason) {
-    nsDependentCString skipStartupReason(ShouldNotProcessUpdatesReasonAsString(
-        shouldNotProcessUpdatesReason.value()));
-    mozilla::glean::update::skip_startup_update_reason.Get(skipStartupReason)
-        .Add(1);
-  } else {
-    mozilla::glean::update::skip_startup_update_reason.Get("none"_ns).Add(1);
-  }
-#endif
 
   // Every time a profile is loaded by a build with a different version,
   // it updates the compatibility.ini file saying what version last wrote
@@ -5862,8 +5842,10 @@ nsresult XREMain::XRE_mainRun() {
     // If we're on Linux, we now have information about the OS capabilities
     // available to us.
     SandboxInfo sandboxInfo = SandboxInfo::Get();
-    Telemetry::Accumulate(Telemetry::SANDBOX_HAS_USER_NAMESPACES,
-                          sandboxInfo.Test(SandboxInfo::kHasUserNamespaces));
+    glean::sandbox::has_user_namespaces
+        .EnumGet(static_cast<glean::sandbox::HasUserNamespacesLabel>(
+            sandboxInfo.Test(SandboxInfo::kHasUserNamespaces)))
+        .Add();
 
     CrashReporter::RecordAnnotationU32(
         CrashReporter::Annotation::ContentSandboxCapabilities,
@@ -6098,6 +6080,11 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
       return CrashReporter::UnsetExceptionHandler();
     return NS_OK;
   });
+
+#if defined(MOZ_WIDGET_ANDROID)
+  CrashReporter::SetCrashHelperPipes(aConfig.crashChildNotificationSocket,
+                                     aConfig.crashHelperSocket);
+#endif  // defined(MOZ_WIDGET_ANDROID)
 
   mozilla::AutoIOInterposer ioInterposerGuard;
   ioInterposerGuard.Init();

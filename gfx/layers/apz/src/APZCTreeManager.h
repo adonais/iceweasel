@@ -16,12 +16,13 @@
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT_HELPER2
 #include "mozilla/DataMutex.h"   // for DataMutex
 #include "mozilla/gfx/CompositorHitTestInfo.h"
-#include "mozilla/gfx/Logging.h"              // for gfx::TreeLog
-#include "mozilla/gfx/Matrix.h"               // for Matrix4x4
-#include "mozilla/layers/APZInputBridge.h"    // for APZInputBridge
-#include "mozilla/layers/APZTestData.h"       // for APZTestData
-#include "mozilla/layers/APZUtils.h"          // for GeckoViewMetrics
-#include "mozilla/layers/IAPZCTreeManager.h"  // for IAPZCTreeManager
+#include "mozilla/gfx/Logging.h"            // for gfx::TreeLog
+#include "mozilla/gfx/Matrix.h"             // for Matrix4x4
+#include "mozilla/layers/APZInputBridge.h"  // for APZInputBridge
+#include "mozilla/layers/APZTestData.h"     // for APZTestData
+#include "mozilla/layers/APZUtils.h"        // for AsyncTransformComponents
+#include "mozilla/layers/CompositorScrollUpdate.h"  // for CompositorScrollUpdate
+#include "mozilla/layers/IAPZCTreeManager.h"        // for IAPZCTreeManager
 #include "mozilla/layers/ScrollbarData.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/KeyboardMap.h"      // for KeyboardMap
@@ -1144,12 +1145,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   // Whether there's any OOP iframe in this tree.
   // NOTE: This variable needs to be guarded by mTreeLock.
   bool mHaveOOPIframes;
-
-#if defined(MOZ_WIDGET_ANDROID)
- private:
-  // Last Frame metrics sent to java through UIController.
-  GeckoViewMetrics mLastRootMetrics;
-#endif  // defined(MOZ_WIDGET_ANDROID)
 };
 
 }  // namespace layers

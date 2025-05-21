@@ -29,6 +29,7 @@ const startupPhases = {
     allowlist: {
       modules: new Set([
         "resource:///modules/BrowserGlue.sys.mjs",
+        "moz-src:///browser/components/DesktopActorRegistry.sys.mjs",
         "resource:///modules/StartupRecorder.sys.mjs",
         "resource://gre/modules/AppConstants.sys.mjs",
         "resource://gre/modules/ActorManagerParent.sys.mjs",
@@ -106,6 +107,13 @@ const startupPhases = {
     },
   },
 };
+
+if (AppConstants.platform == "win") {
+  // On Windows we call checkForLaunchOnLogin early in startup.
+  startupPhases["before profile selection"].allowlist.modules.add(
+    "moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs"
+  );
+}
 
 if (
   Services.prefs.getBoolPref("browser.startup.blankWindow") &&

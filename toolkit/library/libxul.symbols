@@ -5,3 +5,7 @@ MainProcessInit
 ChildProcessInit
 GeckoViewOpenWindow
 #endif
+#ifdef ANDROID
+*ffi*
+FT*
+#endif

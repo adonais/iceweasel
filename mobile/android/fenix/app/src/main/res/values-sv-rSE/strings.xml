@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Surfa snabbare med ny navigering</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Surfa snabbare med ny navigering</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">På en webbplats försvinner detta fält när du scrollar nedåt för extra surfutrymme.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">På en webbplats försvinner detta fält när du scrollar nedåt för extra surfutrymme.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Tryck och håll ned pilarna för att hoppa mellan sidor i den här flikens historik.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Tryck och håll ned pilarna för att hoppa mellan sidor i den här flikens historik.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -631,7 +631,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Snabb och säker webbläsning</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Godkänn och fortsätt</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Godkänn och fortsätt</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Fortsätt</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Genom att fortsätta godkänner du %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -836,8 +838,6 @@
   <string name="preferences_override_account_server">Anpassad Mozilla-kontoserver</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Anpassad synkroniseringsserver</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla-konto/synkroniseringsserver har ändrats. Avslutar programmet för att tillämpa ändringar…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Konto</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1207,7 +1207,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Svep verktygsfältet uppåt för att öppna flikar</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Bläddra för att dölja adressfältet och verktygsfältet</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Bläddra för att dölja adressfältet och verktygsfältet</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Svep adressfältet i sidled för att växla flikar</string>
   <!--
@@ -1483,12 +1483,33 @@
   <string name="download_multi_select_title">%1$d markerade</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Ta bort</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Inte tillräckligt med utrymme</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Den här enheten har inte tillräckligt med utrymme för att hämta &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Hantera filer</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Avbryt</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Ta bort</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Navigera bakåt</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Navigera uppåt</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Navigera uppåt</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Tillbaka och stäng sökning</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Rensa</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Dela URL</string>
   <!-- Text for the button to share the download file -->
@@ -1529,9 +1550,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Nedladdning misslyckades</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Sök nedladdningar</string>
+  <string name="download_search_placeholder">Sök nedladdningar</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Inga resultat hittades</string>
+  <string name="download_search_no_results_found">Inga resultat hittades</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Markera allt</string>
   <!--
@@ -1648,6 +1669,8 @@
   <string name="bookmark_menu_copy_button">Kopiera</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Dela</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">Markera allt</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">Öppna i ny flik</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1660,6 +1683,8 @@
   <string name="bookmark_menu_delete_button">Ta bort</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Spara</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Sortera efter anpassad ordning</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">Sortera efter senaste</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2284,7 +2309,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Ikon för undantagsinställningar för förbättrat spårningsskydd</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2293,8 +2318,6 @@
   <string name="preference_doh_summary">Domain Name System (DNS) över HTTPS skickar din förfrågan om ett domännamn via en krypterad anslutning, vilket ger en säker DNS och gör det svårare för andra att se vilken webbplats du ska komma åt. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Läs mer</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Navigera uppåt</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Undantag</string>
   <!-- Content description for the "Info" button -->
@@ -2833,8 +2856,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Populära sökningar</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3199,6 +3220,8 @@
   <string name="protection_panel_no_trackers_blocked">Inga spårare hittades</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Sekretess och säkerhetsinställningar</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Behörigheter</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3404,6 +3427,8 @@
   <string name="debug_drawer_override_current_region_label">Åsidosätt aktuell region</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">Åsidosätt hem och aktuell region</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Åsidosätt hemregion permanent</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3507,6 +3532,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Du har slutfört alla 6 installationsstegen. Njut av hastigheten, integriteten och säkerheten i %1$s.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Slutför alla 5 steg för att konfigurera %1$s för den bästa webbupplevelsen.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Bra start! Du har slutfört 1 av 5 steg.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Du har slutfört 2 av 5 steg. Stora framsteg!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Du är halvvägs! Tre steg slutförda och två kvar.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Nästan där! Du är bara 1 steg från mål.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Du har slutfört alla 5 installationsstegen. Njut av hastigheten, integriteten och säkerheten i %1$s.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3556,4 +3597,16 @@
   <string name="pbm_authentication_unlock">Lås upp</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Lås upp privata flikar</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Aktivera skärmlås för privata flikar</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Inaktivera skärmlås för privata flikar</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Ställ in skärmlås för att dölja flikar</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Använda skärmlås för att dölja privata flikar?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Nej tack</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Lås flikar</string>
 </resources>

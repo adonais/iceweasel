@@ -357,11 +357,11 @@ class PresShell final : public nsStubDocumentObserver,
       ResizeReflowOptions = ResizeReflowOptions::NoOption);
   MOZ_CAN_RUN_SCRIPT void ForceResizeReflowWithCurrentDimensions();
 
-  /**
-   * Add this pres shell to the refresh driver to be observed for resize
-   * event if applicable.
-   */
-  void AddResizeEventFlushObserverIfNeeded();
+  /** Schedule a resize event if applicable. */
+  enum class ResizeEventKind : uint8_t { Regular, Visual };
+  void ScheduleResizeEventIfNeeded(ResizeEventKind = ResizeEventKind::Regular);
+
+  void PostScrollEvent(mozilla::Runnable*);
 
   /**
    * Returns true if the document hosted by this presShell is in a devtools
@@ -417,6 +417,8 @@ class PresShell final : public nsStubDocumentObserver,
    * general role.)
    */
   bool UsesMobileViewportSizing() const;
+
+  void ResetWasLastReflowInterrupted() { mWasLastReflowInterrupted = false; }
 
   /**
    * Get the MobileViewportManager used to manage the document's mobile
@@ -544,28 +546,7 @@ class PresShell final : public nsStubDocumentObserver,
    */
   void NotifyFontFaceSetOnRefresh();
 
-  // Removes ourself from the list of style and resize refresh driver observers.
-  //
-  // Right now this is only used for documents in the BFCache, so if you want to
-  // use this for anything else you need to ensure we don't end up in those
-  // lists after calling this, but before calling StartObservingRefreshDriver
-  // again.
-  //
-  // That is handled by the mDocument->GetBFCacheEntry checks in
-  // DoObserveStyleFlushes, though that could conceivably become a boolean
-  // member in the shell if needed.
-  //
-  // Callers are responsible of manually calling StartObservingRefreshDriver
-  // again.
-  void StopObservingRefreshDriver();
   void StartObservingRefreshDriver();
-
-  bool ObservingStyleFlushes() const { return mObservingStyleFlushes; }
-  void ObserveStyleFlushes() {
-    if (!ObservingStyleFlushes()) {
-      DoObserveStyleFlushes();
-    }
-  }
 
   /**
    * Callbacks will be called even if reflow itself fails for
@@ -1176,8 +1157,8 @@ class PresShell final : public nsStubDocumentObserver,
    */
   bool HasHandledUserInput() const { return mHasHandledUserInput; }
 
-  MOZ_CAN_RUN_SCRIPT void FireResizeEvent();
-  MOZ_CAN_RUN_SCRIPT void FireResizeEventSync();
+  MOZ_CAN_RUN_SCRIPT void RunResizeSteps();
+  MOZ_CAN_RUN_SCRIPT void RunScrollSteps();
 
   void NativeAnonymousContentWillBeRemoved(nsIContent* aAnonContent);
 
@@ -1248,7 +1229,9 @@ class PresShell final : public nsStubDocumentObserver,
     mIsNeverPainting = aNeverPainting;
   }
 
-  bool MightHavePendingFontLoads() const { return ObservingStyleFlushes(); }
+  bool MightHavePendingFontLoads() const {
+    return mNeedLayoutFlush || mNeedStyleFlush;
+  }
 
   void SyncWindowProperties(bool aSync);
   struct WindowSizeConstraints {
@@ -1344,12 +1327,7 @@ class PresShell final : public nsStubDocumentObserver,
    * widget geometry.
    */
   MOZ_CAN_RUN_SCRIPT void WillPaint();
-
-  /**
-   * Ensures that the refresh driver is running, and schedules a view
-   * manager flush on the next tick.
-   */
-  void ScheduleViewManagerFlush();
+  void SchedulePaint();
 
   // caret handling
   NS_IMETHOD SetCaretEnabled(bool aInEnable) override;
@@ -1801,10 +1779,8 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_CAN_RUN_SCRIPT
   void PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags);
 
-  /**
-   * Refresh observer management.
-   */
-  void DoObserveStyleFlushes();
+  // Refresh observer management.
+  void ScheduleFlush();
 
   /**
    * Does the actual work of figuring out the current state of font size
@@ -1872,7 +1848,6 @@ class PresShell final : public nsStubDocumentObserver,
   void PopCurrentEventInfo();
   nsIContent* GetCurrentEventContent();
 
-  friend class ::nsRefreshDriver;
   friend class ::nsAutoCauseReflowNotifier;
 
   void WillCauseReflow();
@@ -2099,6 +2074,13 @@ class PresShell final : public nsStubDocumentObserver,
   already_AddRefed<PresShell> GetParentPresShellForEventHandling();
 
   /**
+   * Return a frame for a view which is the closest ancestor view which has
+   * a frame.  I.e., if the closest ancestor view does not have a frame,
+   * this returns a frame for the next closest ancestor view.
+   */
+  [[nodiscard]] nsIFrame* GetClosestAncestorFrameForAncestorView() const;
+
+  /**
    * EventHandler is implementation of PresShell::HandleEvent().
    */
   class MOZ_STACK_CLASS EventHandler final {
@@ -2117,7 +2099,7 @@ class PresShell final : public nsStubDocumentObserver,
      * event info of mPresShell and calls HandleEventWithCurrentEventInfo()
      * to dispatch the event into the DOM tree.
      *
-     * @param aFrameForPresShell        The frame for PresShell.  If PresShell
+     * @param aWeakFrameForPresShell    The frame for PresShell.  If PresShell
      *                                  has root frame, it should be set.
      *                                  Otherwise, a frame which contains the
      *                                  PresShell should be set instead.  I.e.,
@@ -2131,10 +2113,9 @@ class PresShell final : public nsStubDocumentObserver,
      *                                  different PresShell.
      * @param aEventStatus              [in/out] EventStatus of aGUIEvent.
      */
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEvent(nsIFrame* aFrameForPresShell,
-                         WidgetGUIEvent* aGUIEvent, bool aDontRetargetEvents,
-                         nsEventStatus* aEventStatus);
+    MOZ_CAN_RUN_SCRIPT nsresult HandleEvent(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        bool aDontRetargetEvents, nsEventStatus* aEventStatus);
 
     /**
      * HandleEventWithTarget() tries to dispatch aEvent on aContent after
@@ -2174,7 +2155,6 @@ class PresShell final : public nsStubDocumentObserver,
 
    private:
     static bool InZombieDocument(nsIContent* aContent);
-    static nsIFrame* GetNearestFrameContainingPresShell(PresShell* aPresShell);
     static nsIPrincipal* GetDocumentPrincipalToCompareWithBlacklist(
         PresShell& aPresShell);
 
@@ -2182,7 +2162,7 @@ class PresShell final : public nsStubDocumentObserver,
      * HandleEventUsingCoordinates() handles aGUIEvent whose
      * IsUsingCoordinates() returns true with the following helper methods.
      *
-     * @param aFrameForPresShell        The frame for PresShell.  See
+     * @param aWeakFrameForPresShell    The frame for PresShell.  See
      *                                  explanation of HandleEvent() for the
      *                                  details.
      * @param aGUIEvent                 The handling event.  Make sure that
@@ -2191,11 +2171,9 @@ class PresShell final : public nsStubDocumentObserver,
      * @param aDontRetargetEvents       true if we've already retarget document.
      *                                  Otherwise, false.
      */
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEventUsingCoordinates(nsIFrame* aFrameForPresShell,
-                                         WidgetGUIEvent* aGUIEvent,
-                                         nsEventStatus* aEventStatus,
-                                         bool aDontRetargetEvents);
+    MOZ_CAN_RUN_SCRIPT nsresult HandleEventUsingCoordinates(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus, bool aDontRetargetEvents);
 
     /**
      * EventTargetData struct stores a set of a PresShell (event handler),
@@ -2336,38 +2314,36 @@ class PresShell final : public nsStubDocumentObserver,
      * GetFrameToHandleNonTouchEvent() returns a frame to handle the event.
      * This may flush pending layout if the target is in child PresShell.
      *
-     * @param aRootFrameToHandleEvent   The root frame to handle the event.
+     * @param aWeakRootFrameToHandleEvent   The root frame to handle the event.
      * @param aGUIEvent                 The handling event.
      * @return                          The frame which should handle the
      *                                  event.  nullptr if the caller should
      *                                  stop handling the event.
      */
-    MOZ_CAN_RUN_SCRIPT
-    nsIFrame* GetFrameToHandleNonTouchEvent(nsIFrame* aRootFrameToHandleEvent,
-                                            WidgetGUIEvent* aGUIEvent);
+    MOZ_CAN_RUN_SCRIPT nsIFrame* GetFrameToHandleNonTouchEvent(
+        AutoWeakFrame& aWeakRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent);
 
     /**
      * ComputeEventTargetFrameAndPresShellAtEventPoint() computes event
      * target frame at the event point of aGUIEvent and set it to
      * aEventTargetData.
      *
-     * @param aRootFrameToHandleEvent   The root frame to handle aGUIEvent.
+     * @param aWeakRootFrameToHandleEvent   The root frame to handle aGUIEvent.
      * @param aGUIEvent                 The handling event.
      * @param aEventTargetData          [out] Its frame and PresShell will
      *                                  be set.
      * @return                          true if the caller can handle the
      *                                  event.  Otherwise, false.
      */
-    MOZ_CAN_RUN_SCRIPT
-    bool ComputeEventTargetFrameAndPresShellAtEventPoint(
-        nsIFrame* aRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent,
+    MOZ_CAN_RUN_SCRIPT bool ComputeEventTargetFrameAndPresShellAtEventPoint(
+        AutoWeakFrame& aWeakRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent,
         EventTargetData* aEventTargetData);
 
     /**
      * DispatchPrecedingPointerEvent() dispatches preceding pointer event for
      * aGUIEvent if Pointer Events is enabled.
      *
-     * @param aFrameForPresShell        The frame for PresShell.  See
+     * @param aWeakFrameForPresShell    The frame for PresShell.  See
      *                                  explanation of HandleEvent() for the
      *                                  details.
      * @param aGUIEvent                 The handled event.
@@ -2383,13 +2359,10 @@ class PresShell final : public nsStubDocumentObserver,
      * @return                          true if the caller can handle the
      *                                  event.  Otherwise, false.
      */
-    MOZ_CAN_RUN_SCRIPT
-    bool DispatchPrecedingPointerEvent(nsIFrame* aFrameForPresShell,
-                                       WidgetGUIEvent* aGUIEvent,
-                                       nsIContent* aPointerCapturingContent,
-                                       bool aDontRetargetEvents,
-                                       EventTargetData* aEventTargetData,
-                                       nsEventStatus* aEventStatus);
+    MOZ_CAN_RUN_SCRIPT bool DispatchPrecedingPointerEvent(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsIContent* aPointerCapturingContent, bool aDontRetargetEvents,
+        EventTargetData* aEventTargetData, nsEventStatus* aEventStatus);
 
     /**
      * MaybeDiscardEvent() checks whether it's safe to handle aGUIEvent right
@@ -2446,7 +2419,7 @@ class PresShell final : public nsStubDocumentObserver,
      * MaybeHandleEventWithAnotherPresShell() may handle aGUIEvent with another
      * PresShell.
      *
-     * @param aFrameForPresShell        The frame for PresShell.  See
+     * @param aWeakFrameForPresShell    The frame for PresShell.  See
      *                                  explanation of HandleEvent() for the
      *                                  details.
      * @param aGUIEvent                 Handling event.
@@ -2459,11 +2432,9 @@ class PresShell final : public nsStubDocumentObserver,
      *                                  the event.  Note that when no PresShell
      *                                  can handle the event, this returns true.
      */
-    MOZ_CAN_RUN_SCRIPT
-    bool MaybeHandleEventWithAnotherPresShell(nsIFrame* aFrameForPresShell,
-                                              WidgetGUIEvent* aGUIEvent,
-                                              nsEventStatus* aEventStatus,
-                                              nsresult* aRv);
+    MOZ_CAN_RUN_SCRIPT bool MaybeHandleEventWithAnotherPresShell(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus, nsresult* aRv);
 
     MOZ_CAN_RUN_SCRIPT
     nsresult RetargetEventToParent(WidgetGUIEvent* aGUIEvent,
@@ -2473,17 +2444,17 @@ class PresShell final : public nsStubDocumentObserver,
      * MaybeHandleEventWithAccessibleCaret() may handle aGUIEvent with
      * AccessibleCaretEventHub if it's necessary.
      *
-     * @param aFrameForPresShell The frame for PresShell. See explanation of
-     *                           HandleEvent() for the details.
+     * @param aWeakFrameForPresShell
+     *                          The frame for PresShell. See explanation of
+     *                          HandleEvent() for the details.
      * @param aGUIEvent         Event may be handled by AccessibleCaretEventHub.
      * @param aEventStatus      [in/out] EventStatus of aGUIEvent.
      * @return                  true if AccessibleCaretEventHub handled the
      *                          event and caller shouldn't keep handling it.
      */
-    MOZ_CAN_RUN_SCRIPT
-    bool MaybeHandleEventWithAccessibleCaret(nsIFrame* aFrameForPresShell,
-                                             WidgetGUIEvent* aGUIEvent,
-                                             nsEventStatus* aEventStatus);
+    MOZ_CAN_RUN_SCRIPT bool MaybeHandleEventWithAccessibleCaret(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus);
 
     /**
      * Maybe dispatch mouse events for aTouchEnd.  This should be called after
@@ -2522,10 +2493,10 @@ class PresShell final : public nsStubDocumentObserver,
 
     /**
      * MaybeFlushThrottledStyles() tries to flush pending animation.  If it's
-     * flushed and then aFrameForPresShell is destroyed, returns new frame
-     * which contains mPresShell.
+     * flushed and then aWeakFrameForPresShell is reframed, this updates it to
+     * track the new frame (or keep nullptr if it's not available anymore).
      *
-     * @param aFrameForPresShell        The frame for PresShell.  See
+     * @param aWeakFrameForPresShell    The frame for PresShell.  See
      *                                  explanation of HandleEvent() for the
      *                                  details.  This can be nullptr.
      * @return                          Maybe new frame for mPresShell.
@@ -2533,8 +2504,8 @@ class PresShell final : public nsStubDocumentObserver,
      *                                  and hasn't been destroyed, returns
      *                                  aFrameForPresShell as-is.
      */
-    MOZ_CAN_RUN_SCRIPT
-    nsIFrame* MaybeFlushThrottledStyles(nsIFrame* aFrameForPresShell);
+    MOZ_CAN_RUN_SCRIPT void MaybeFlushThrottledStyles(
+        AutoWeakFrame& aWeakFrameForPresShell);
 
     /**
      * ComputeRootFrameToHandleEvent() returns root frame to handle the event.
@@ -2615,7 +2586,7 @@ class PresShell final : public nsStubDocumentObserver,
      * aGUIEvent with aPointerCapturingContent when it does not have primary
      * frame.
      *
-     * @param aFrameForPresShell        The frame for PresShell.  See
+     * @param aWeakFrameForPresShell    The frame for PresShell.  See
      *                                  explanation of HandleEvent() for the
      *                                  details.
      * @param aGUIEvent                 The handling event.
@@ -2623,11 +2594,11 @@ class PresShell final : public nsStubDocumentObserver,
      *                                  Must not be nullptr.
      * @param aEventStatus              [in/out] The event status of aGUIEvent.
      * @return                          Basically, result of
-     *                                  HandeEventWithTraget().
+     *                                  HandleEventWithTarget().
      */
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEventWithPointerCapturingContentWithoutItsFrame(
-        nsIFrame* aFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+    MOZ_CAN_RUN_SCRIPT nsresult
+    HandleEventWithPointerCapturingContentWithoutItsFrame(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
         nsIContent* aPointerCapturingContent, nsEventStatus* aEventStatus);
 
     /**
@@ -2700,16 +2671,15 @@ class PresShell final : public nsStubDocumentObserver,
      * HandleEventWithFrameForPresShell() handles aGUIEvent with the frame
      * for mPresShell.
      *
-     * @param aFrameForPresShell        The frame for mPresShell.
+     * @param aWeakFrameForPresShell    The frame for mPresShell.
      * @param aGUIEvent                 The handling event.  It shouldn't be
      *                                  handled with using coordinates nor
      *                                  handled at focused content.
      * @param aEventStatus              [in/out] The status of aGUIEvent.
      */
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEventWithFrameForPresShell(nsIFrame* aFrameForPresShell,
-                                              WidgetGUIEvent* aGUIEvent,
-                                              nsEventStatus* aEventStatus);
+    MOZ_CAN_RUN_SCRIPT nsresult HandleEventWithFrameForPresShell(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus);
 
     /**
      * HandleEventWithCurrentEventInfo() prepares to dispatch aEvent into the
@@ -2820,8 +2790,13 @@ class PresShell final : public nsStubDocumentObserver,
                                              LayoutDeviceIntPoint& aTargetPt,
                                              nsIWidget* aRootWidget);
 
-    nsIContent* GetOverrideClickTarget(WidgetGUIEvent* aGUIEvent,
-                                       nsIFrame* aFrame);
+    /**
+     * Return the override click target if there is for aGUIEvent.  Otherwise,
+     * nullptr. And this may return error if the caller shouldn't keep handling
+     * the event.
+     */
+    [[nodiscard]] Result<nsIContent*, nsresult> GetOverrideClickTarget(
+        WidgetGUIEvent* aGUIEvent, nsIFrame* aFrameForPresShell);
 
     /**
      * DispatchEvent() tries to dispatch aEvent and notifies aEventStateManager
@@ -2946,7 +2921,7 @@ class PresShell final : public nsStubDocumentObserver,
     bool UpdateFocusSequenceNumber(nsIFrame* aFrameForPresShell,
                                    uint64_t aEventFocusSequenceNumber);
 
-    OwningNonNull<PresShell> mPresShell;
+    MOZ_KNOWN_LIVE const OwningNonNull<PresShell> mPresShell;
     AutoCurrentEventInfoSetter* mCurrentEventInfoSetter;
     static TimeStamp sLastInputCreated;
     static TimeStamp sLastInputProcessed;
@@ -3104,6 +3079,8 @@ class PresShell final : public nsStubDocumentObserver,
   nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorSelection;
   nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorAdjustment;
   nsTHashSet<ScrollContainerFrame*> mPendingScrollResnap;
+  // Pending list of scroll/scrollend/etc events.
+  nsTArray<RefPtr<Runnable>> mPendingScrollEvents;
 
   nsTHashSet<nsIContent*> mHiddenContentInForcedLayout;
 
@@ -3241,10 +3218,8 @@ class PresShell final : public nsStubDocumentObserver,
   // Whether the most recent interruptible reflow was actually interrupted:
   bool mWasLastReflowInterrupted : 1;
 
-  // True if we're observing the refresh driver for style flushes.
-  bool mObservingStyleFlushes : 1;
-
   bool mResizeEventPending : 1;
+  bool mVisualViewportResizeEventPending : 1;
 
   bool mFontSizeInflationForceEnabled : 1;
   bool mFontSizeInflationDisabledInMasterProcess : 1;

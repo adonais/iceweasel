@@ -51,7 +51,7 @@ class IDTracker {
   /**
    * Find which element, if any, is referenced.
    */
-  Element* get() { return mElement; }
+  Element* get() const { return mElement; }
 
   /**
    * Set up a reference to another element, identified by the fragment
@@ -72,7 +72,7 @@ class IDTracker {
    *   property (that is, we're creating a reference an "image element", which
    *   is subject to the document's mozSetImageElement overriding mechanism).
    */
-  void ResetToURIWithFragmentID(nsIContent* aFrom, nsIURI* aURI,
+  void ResetToURIWithFragmentID(Element& aFrom, nsIURI* aURI,
                                 nsIReferrerInfo* aReferrerInfo,
                                 bool aReferenceImage = false);
 
@@ -84,8 +84,16 @@ class IDTracker {
    * @param aFrom The source element that is making the reference.
    * @param aLocalRef The fragment identifier that identifies the target
    *   element. Must begin with "#".
+   * @param aBaseURI The URI this url was specified from. Only used to determine
+   *   whether we need to reference the source resource document.
+   * @param aReferrerInfo The referrerInfo for the source element. Needed if
+   *   the referenced element is in an external resource document.
+   * @param aReferenceImage See above.
    */
-  void ResetToLocalFragmentID(Element& aFrom, const nsAString& aLocalRef);
+  void ResetToLocalFragmentID(Element& aFrom, const nsAString& aLocalRef,
+                              nsIURI* aBaseURI = nullptr,
+                              nsIReferrerInfo* aReferrerInfo = nullptr,
+                              bool aReferenceImage = false);
 
   /**
    * A variation on ResetToURIWithFragmentID() to set up a reference that
@@ -94,8 +102,9 @@ class IDTracker {
    *
    * @param aFrom The source element that is making the reference.
    * @param aID The ID of the target element.
+   * @param aReferenceImage See above.
    */
-  void ResetToID(Element& aFrom, nsAtom* aID);
+  void ResetToID(Element& aFrom, nsAtom* aID, bool aReferenceImage = false);
 
   /**
    * Clears the reference. ElementChanged is not triggered. get() will return
@@ -106,6 +115,11 @@ class IDTracker {
   void Traverse(nsCycleCollectionTraversalCallback* aCB);
 
  protected:
+  /** Requests and maybe watches an external resource doc. */
+  void ResetToExternalResource(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
+                               nsAtom* aRef, Element& aFrom,
+                               bool aReferenceImage);
+
   /**
    * Override this to be notified of element changes. Don't forget
    * to call this superclass method to change mElement. This is called
@@ -124,7 +138,7 @@ class IDTracker {
    * null.  Either aWatch must be false or aRef must be empty.
    */
   void HaveNewDocumentOrShadowRoot(DocumentOrShadowRoot*, bool aWatch,
-                                   const nsString& aRef);
+                                   nsAtom* aID);
 
  private:
   static bool Observe(Element* aOldElement, Element* aNewElement, void* aData);
@@ -169,7 +183,7 @@ class IDTracker {
 
   class DocumentLoadNotification : public Notification, public nsIObserver {
    public:
-    DocumentLoadNotification(IDTracker* aTarget, const nsString& aRef)
+    DocumentLoadNotification(IDTracker* aTarget, nsAtom* aRef)
         : Notification(aTarget) {
       if (!mTarget->IsPersistent()) {
         mRef = aRef;
@@ -183,7 +197,7 @@ class IDTracker {
 
     virtual void SetTo(Element* aTo) override {}
 
-    nsString mRef;
+    RefPtr<nsAtom> mRef;
   };
   friend class DocumentLoadNotification;
 

@@ -721,8 +721,6 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     DECLARE_CACHEOP_CASE(CallSubstringKernelResult);
     DECLARE_CACHEOP_CASE(StringReplaceStringResult);
     DECLARE_CACHEOP_CASE(StringSplitStringResult);
-    DECLARE_CACHEOP_CASE(RegExpPrototypeOptimizableResult);
-    DECLARE_CACHEOP_CASE(RegExpInstanceOptimizableResult);
     DECLARE_CACHEOP_CASE(GetFirstDollarIndexResult);
     DECLARE_CACHEOP_CASE(StringToAtom);
     DECLARE_CACHEOP_CASE(GuardTagNotEqual);
@@ -4297,9 +4295,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         gc::AllocSite* site = reinterpret_cast<gc::AllocSite*>(
             stubInfo->getStubRawWord(cstub, siteOffset));
         gc::AllocKind allocKind = GuessArrayGCKind(arrayLength);
-        MOZ_ASSERT(
-            CanChangeToBackgroundAllocKind(allocKind, &ArrayObject::class_));
-        allocKind = ForegroundToBackgroundAllocKind(allocKind);
+        MOZ_ASSERT(gc::GetObjectFinalizeKind(&ArrayObject::class_) ==
+                   gc::FinalizeKind::None);
+        MOZ_ASSERT(!IsFinalizedKind(allocKind));
         {
           PUSH_IC_FRAME();
           auto* result =
@@ -5407,29 +5405,6 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         JS::RegExpFlags flags = regexp->getFlags();
         retValue = BooleanValue((uint32_t(flags.value()) & flagsMask) != 0)
                        .asRawBits();
-        PREDICT_RETURN();
-        DISPATCH_CACHEOP();
-      }
-
-      CACHEOP_CASE(RegExpPrototypeOptimizableResult) {
-        ObjOperandId protoId = cacheIRReader.objOperandId();
-        JSObject* proto = reinterpret_cast<JSObject*>(READ_REG(protoId.id()));
-        retValue = BooleanValue(RegExpPrototypeOptimizableRaw(
-                                    ctx.frameMgr.cxForLocalUseOnly(), proto))
-                       .asRawBits();
-        PREDICT_RETURN();
-        DISPATCH_CACHEOP();
-      }
-
-      CACHEOP_CASE(RegExpInstanceOptimizableResult) {
-        ObjOperandId regexpId = cacheIRReader.objOperandId();
-        ObjOperandId protoId = cacheIRReader.objOperandId();
-        JSObject* regexp = reinterpret_cast<JSObject*>(READ_REG(regexpId.id()));
-        JSObject* proto = reinterpret_cast<JSObject*>(READ_REG(protoId.id()));
-        retValue =
-            BooleanValue(RegExpInstanceOptimizableRaw(
-                             ctx.frameMgr.cxForLocalUseOnly(), regexp, proto))
-                .asRawBits();
         PREDICT_RETURN();
         DISPATCH_CACHEOP();
       }
@@ -7046,6 +7021,25 @@ PBIResult PortableBaselineInterpret(
         IC_ZERO_ARG(2);
         INVOKE_IC_AND_PUSH(Compare, false);
         END_OP(Eq);
+      }
+
+      CASE(StrictConstantNe)
+      CASE(StrictConstantEq) {
+        JSOp op = JSOp(*pc);
+        uint16_t operand = GET_UINT16(pc);
+        {
+          ReservedRooted<JS::Value> val(&state.value0, VIRTPOP().asValue());
+          bool result;
+          {
+            PUSH_EXIT_FRAME();
+            if (!js::ConstantStrictEqual(cx, val, operand, &result)) {
+              GOTO_ERROR();
+            }
+          }
+          VIRTPUSH(StackVal(
+              BooleanValue(op == JSOp::StrictConstantEq ? result : !result)));
+        }
+        END_OP(StrictConstantEq);
       }
 
       CASE(Instanceof) {

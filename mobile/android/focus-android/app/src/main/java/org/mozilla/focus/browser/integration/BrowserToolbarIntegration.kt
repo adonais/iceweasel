@@ -68,7 +68,6 @@ class BrowserToolbarIntegration(
     private val tabCounterListener: () -> Unit,
     private val customTabId: String? = null,
     isOnboardingTab: Boolean = false,
-    inTesting: Boolean = false,
 ) : LifecycleAwareFeature {
     private val presenter = ToolbarPresenter(
         toolbar,
@@ -203,9 +202,7 @@ class BrowserToolbarIntegration(
 
         if (isCustomTab == false) {
             toolbar.addNavigationAction(eraseAction)
-            if (!inTesting) {
-                setUrlBackground()
-            }
+            setUrlBackground()
         }
     }
 
@@ -446,13 +443,19 @@ class BrowserToolbarIntegration(
                 .distinctUntilChangedBy { tab -> tab.content.securityInfo }
                 .collect {
                     val secure = it.content.securityInfo.secure
-                    val url = it.content.url
-                    if (secure && Indicators.SECURITY in toolbar.display.indicators) {
-                        addTrackingProtectionIndicator()
-                    } else if (!secure && Indicators.SECURITY !in toolbar.display.indicators &&
-                        !url.trim().startsWith("about:")
-                    ) {
-                        addSecurityIndicator()
+                    val url = it.content.url.trim()
+                    when {
+                        secure && Indicators.SECURITY in toolbar.display.indicators -> {
+                            addTrackingProtectionIndicator()
+                        }
+
+                        secure || Indicators.SECURITY in toolbar.display.indicators || url.startsWith("about:") -> {
+                            // do nothing
+                        }
+
+                        else -> {
+                            addSecurityIndicator()
+                        }
                     }
                 }
         }

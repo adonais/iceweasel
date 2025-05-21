@@ -439,6 +439,7 @@ rtc_source_set("frame_transformer_interface") {
     ":scoped_refptr",
     "../rtc_base:refcount",
     "../rtc_base/system:rtc_export",
+    "units:time_delta",
     "units:timestamp",
     "video:encoded_frame",
     "video:video_frame_metadata",
@@ -930,11 +931,13 @@ rtc_source_set("network_emulation_manager_api") {
     "../rtc_base:network",
     "../rtc_base:network_constants",
     "../rtc_base:socket_address",
+    "../rtc_base:socket_factory",
     "../rtc_base:threading",
     "test/network_emulation",
     "units:data_rate",
     "units:data_size",
     "units:timestamp",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -1371,9 +1374,7 @@ if (rtc_include_tests) {
       ":rtc_error",
       ":rtp_parameters",
       ":scoped_refptr",
-      "../p2p:port_allocator",
       "../rtc_base:refcount",
-      "../rtc_base:rtc_certificate_generator",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/strings:string_view",
     ]
@@ -1465,6 +1466,7 @@ if (rtc_include_tests) {
       ":array_view",
       ":frame_transformer_interface",
       "../test:test_support",
+      "units:time_delta",
       "units:timestamp",
       "video:video_frame_metadata",
     ]

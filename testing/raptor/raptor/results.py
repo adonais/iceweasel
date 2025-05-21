@@ -4,6 +4,7 @@
 
 # class to process, format, and report raptor test results
 # received from the raptor control server
+import builtins
 import json
 import os
 import pathlib
@@ -11,7 +12,6 @@ import shutil
 import tarfile
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable
-from io import open
 from pathlib import Path
 
 import six
@@ -35,7 +35,7 @@ NON_FIREFOX_BROWSERS_MOBILE = ("chrome-m", "cstm-car-m")
 
 
 @six.add_metaclass(ABCMeta)
-class PerftestResultsHandler(object):
+class PerftestResultsHandler:
     """Abstract base class to handle perftest results"""
 
     def __init__(
@@ -224,7 +224,7 @@ class PerftestResultsHandler(object):
         )
         LOG.info("Validating PERFHERDER_DATA against %s" % schema_path)
         try:
-            with open(schema_path, encoding="utf-8") as f:
+            with builtins.open(schema_path, encoding="utf-8") as f:
                 schema = json.load(f)
             if output.summarized_results:
                 data = output.summarized_results
@@ -921,7 +921,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 return False
 
             try:
-                with open(bt_res_json, "r", encoding="utf8") as f:
+                with builtins.open(bt_res_json, encoding="utf8") as f:
                     raw_btresults = json.load(f)
             except Exception as e:
                 LOG.error("Exception reading %s" % bt_res_json)
@@ -942,9 +942,9 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 self._label_video_folder(cold_data, dirpath, "cold")
                 self._label_video_folder(warm_data, dirpath, "warm")
 
-                with open(_cold_path, "w") as f:
+                with builtins.open(_cold_path, "w") as f:
                     json.dump([cold_data], f)
-                with open(_warm_path, "w") as f:
+                with builtins.open(_warm_path, "w") as f:
                     json.dump([warm_data], f)
 
                 raw_btresults[0] = cold_data
@@ -962,7 +962,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 # Overwrite the contents of the browsertime.json file
                 # to update it with the new file paths
                 try:
-                    with open(bt_res_json, "w", encoding="utf8") as f:
+                    with builtins.open(bt_res_json, "w", encoding="utf8") as f:
                         json.dump(raw_btresults, f)
                 except Exception as e:
                     LOG.error("Exception reading %s" % bt_res_json)
@@ -980,7 +980,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 ) and os.path.exists(bt_profiling_res_json)
                 if has_extra_profiler_run:
                     try:
-                        with open(bt_profiling_res_json, "r", encoding="utf8") as f:
+                        with builtins.open(bt_profiling_res_json, encoding="utf8") as f:
                             raw_profiling_btresults = json.load(f)
                             split_browsertime_results(
                                 bt_profiling_res_json, raw_profiling_btresults
@@ -1145,9 +1145,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                             item
                         ):
                             # add page cycle custom measurements to the existing results
-                            for measurement in six.iteritems(
-                                new_result["measurements"]
-                            ):
+                            for measurement in new_result["measurements"].items():
                                 self.results[i]["measurements"][measurement[0]].extend(
                                     measurement[1]
                                 )
@@ -1191,11 +1189,9 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
 
             jobs_file = os.path.join(self.result_dir(), "jobs.json")
             LOG.info(
-                "Writing video jobs and application data {} into {}".format(
-                    jobs_json, jobs_file
-                )
+                f"Writing video jobs and application data {jobs_json} into {jobs_file}"
             )
-            with open(jobs_file, "w") as f:
+            with builtins.open(jobs_file, "w") as f:
                 f.write(json.dumps(jobs_json))
 
         support_class_success = True

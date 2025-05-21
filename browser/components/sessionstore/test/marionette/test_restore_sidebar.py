@@ -12,9 +12,7 @@ from session_store_test_case import SessionStoreTestCase
 
 
 def inline(title):
-    return "data:text/html;charset=utf-8,<html><head><title>{}</title></head><body></body></html>".format(
-        title
-    )
+    return f"data:text/html;charset=utf-8,<html><head><title>{title}</title></head><body></body></html>"
 
 
 class TestSessionRestore(SessionStoreTestCase):
@@ -291,3 +289,18 @@ class TestSessionRestore(SessionStoreTestCase):
             "viewHistorySidebar",
             "Correct sidebar category has been restored.",
         )
+
+    def test_upgrade_profile_and_restore_sidebar_from_backup_pref(self):
+        # Bug 1963549 - Sidebar bookmarks no longer open automatically since the last update.
+        self.marionette.execute_script(
+            """
+            Services.prefs.setIntPref("browser.migration.version", 154);
+            Services.xulStore.setValue(
+                AppConstants.BROWSER_CHROME_URL,
+                "sidebar-box",
+                "checked",
+                "true"
+            );
+            """
+        )
+        self.test_restore_sidebar_open_from_backup_pref()

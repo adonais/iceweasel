@@ -26,6 +26,9 @@ declare namespace MockedExports {
     "resource:///modules/CustomizableUI.sys.mjs": typeof import("resource:///modules/CustomizableUI.sys.mjs");
     "resource:///modules/CustomizableWidgets.sys.mjs": typeof import("resource:///modules/CustomizableWidgets.sys.mjs");
     "resource://devtools/shared/loader/Loader.sys.mjs": typeof import("resource://devtools/shared/loader/Loader.sys.mjs");
+    "resource://devtools/shared/performance-new/errors.sys.mjs": typeof import("resource://devtools/shared/performance-new/errors.sys.mjs");
+    "resource://devtools/shared/performance-new/prefs-presets.sys.mjs": typeof import("resource://devtools/shared/performance-new/prefs-presets.sys.mjs");
+    "resource://devtools/shared/performance-new/recording-utils.sys.mjs": typeof import("resource://devtools/shared/performance-new/recording-utils.sys.mjs");
     "resource://devtools/client/performance-new/shared/background.sys.mjs": typeof import("resource://devtools/client/performance-new/shared/background.sys.mjs");
     "resource://devtools/client/performance-new/shared/symbolication.sys.mjs": typeof import("resource://devtools/client/performance-new/shared/symbolication.sys.mjs");
     "resource://devtools/shared/loader/browser-loader.sys.mjs": any;
@@ -229,19 +232,21 @@ declare namespace MockedExports {
 
   interface FaviconData {
     uri: nsIURI;
-    dataLen: number;
-    data: number[];
+    rawData: number[];
     mimeType: string;
-    size: number;
+    width: number;
   }
 
   const PlaceUtilsSYSMJS: {
     PlacesUtils: {
-      promiseFaviconData: (
-        pageUrl: string | URL | nsIURI,
-        preferredWidth?: number
-      ) => Promise<FaviconData>;
-      // TS-TODO: Add the rest.
+      favicons: {
+        getFaviconForPage: (
+          pageUrl: nsIURI,
+          preferredWidth?: number
+        ) => Promise<FaviconData>;
+        // TS-TODO: Add the rest.
+      },
+      toURI: (uri: string | URL | nsIURI) => nsIURI;
     };
   };
 

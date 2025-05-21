@@ -37,13 +37,15 @@ class DownloadUIStateTest {
             userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
         )
 
-        val expected = listOf(
-            HeaderItem(createdTime = CreatedTime.LAST_30_DAYS),
-            fileItem(id = "1"),
-            fileItem(id = "3"),
+        val expected = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(createdTime = CreatedTime.LAST_30_DAYS),
+                fileItem(id = "1"),
+                fileItem(id = "3"),
+            ),
         )
 
-        assertEquals(expected, downloadUIState.itemsToDisplay)
+        assertEquals(expected, downloadUIState.itemsState)
     }
 
     @Test
@@ -90,43 +92,45 @@ class DownloadUIStateTest {
             userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
         )
 
-        val expected = listOf(
-            HeaderItem(createdTime = CreatedTime.TODAY),
-            fileItem(
-                id = "6",
-                createdTime = CreatedTime.TODAY,
-            ),
-            HeaderItem(createdTime = CreatedTime.YESTERDAY),
-            fileItem(
-                id = "5",
-                createdTime = CreatedTime.YESTERDAY,
-            ),
-            HeaderItem(createdTime = CreatedTime.LAST_7_DAYS),
-            fileItem(
-                id = "8",
-                createdTime = CreatedTime.LAST_7_DAYS,
-            ),
-            HeaderItem(createdTime = CreatedTime.LAST_30_DAYS),
-            fileItem(
-                id = "3",
-                createdTime = CreatedTime.LAST_30_DAYS,
-            ),
-            fileItem(
-                id = "4",
-                createdTime = CreatedTime.LAST_30_DAYS,
-            ),
-            HeaderItem(createdTime = CreatedTime.OLDER),
-            fileItem(
-                id = "1",
-                createdTime = CreatedTime.OLDER,
-            ),
-            fileItem(
-                id = "2",
-                createdTime = CreatedTime.OLDER,
+        val expected = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(createdTime = CreatedTime.TODAY),
+                fileItem(
+                    id = "6",
+                    createdTime = CreatedTime.TODAY,
+                ),
+                HeaderItem(createdTime = CreatedTime.YESTERDAY),
+                fileItem(
+                    id = "5",
+                    createdTime = CreatedTime.YESTERDAY,
+                ),
+                HeaderItem(createdTime = CreatedTime.LAST_7_DAYS),
+                fileItem(
+                    id = "8",
+                    createdTime = CreatedTime.LAST_7_DAYS,
+                ),
+                HeaderItem(createdTime = CreatedTime.LAST_30_DAYS),
+                fileItem(
+                    id = "3",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                fileItem(
+                    id = "4",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                HeaderItem(createdTime = CreatedTime.OLDER),
+                fileItem(
+                    id = "1",
+                    createdTime = CreatedTime.OLDER,
+                ),
+                fileItem(
+                    id = "2",
+                    createdTime = CreatedTime.OLDER,
+                ),
             ),
         )
 
-        assertEquals(expected, downloadUIState.itemsToDisplay)
+        assertEquals(expected, downloadUIState.itemsState)
     }
 
     @Test
@@ -176,33 +180,35 @@ class DownloadUIStateTest {
             userSelectedContentTypeFilter = FileItem.ContentTypeFilter.Image,
         )
 
-        val expected = listOf(
-            HeaderItem(createdTime = CreatedTime.TODAY),
-            fileItem(
-                id = "6",
-                createdTime = CreatedTime.TODAY,
-                contentType = "image/png",
-            ),
-            fileItem(
-                id = "7",
-                createdTime = CreatedTime.TODAY,
-                contentType = "image/png",
-            ),
-            HeaderItem(createdTime = CreatedTime.YESTERDAY),
-            fileItem(
-                id = "5",
-                createdTime = CreatedTime.YESTERDAY,
-                contentType = "image/png",
-            ),
-            HeaderItem(createdTime = CreatedTime.OLDER),
-            fileItem(
-                id = "1",
-                createdTime = CreatedTime.OLDER,
-                contentType = "image/png",
+        val expected = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(createdTime = CreatedTime.TODAY),
+                fileItem(
+                    id = "6",
+                    createdTime = CreatedTime.TODAY,
+                    contentType = "image/png",
+                ),
+                fileItem(
+                    id = "7",
+                    createdTime = CreatedTime.TODAY,
+                    contentType = "image/png",
+                ),
+                HeaderItem(createdTime = CreatedTime.YESTERDAY),
+                fileItem(
+                    id = "5",
+                    createdTime = CreatedTime.YESTERDAY,
+                    contentType = "image/png",
+                ),
+                HeaderItem(createdTime = CreatedTime.OLDER),
+                fileItem(
+                    id = "1",
+                    createdTime = CreatedTime.OLDER,
+                    contentType = "image/png",
+                ),
             ),
         )
 
-        assertEquals(expected, downloadUIState.itemsToDisplay)
+        assertEquals(expected, downloadUIState.itemsState)
         assertEquals(FileItem.ContentTypeFilter.Image, downloadUIState.selectedContentTypeFilter)
     }
 
@@ -299,5 +305,420 @@ class DownloadUIStateTest {
         val expected = FileItem.ContentTypeFilter.All
 
         assertEquals(expected, downloadUIState.selectedContentTypeFilter)
+    }
+
+    @Test
+    fun `WHEN search query is used THEN only the items matching query for url are displayed`() {
+        val fileItems = listOf(
+            fileItem(
+                id = "1",
+                fileName = "somefile",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "2",
+                fileName = "anotherfile",
+                displayedShortUrl = "mozilla.org",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "3",
+                fileName = "yetanotherfile",
+                displayedShortUrl = "mozilla.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "4",
+                fileName = "name",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+        )
+
+        val downloadUIState = DownloadUIState(
+            items = fileItems,
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            searchQuery = "firefox",
+        )
+
+        val expected = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(createdTime = CreatedTime.LAST_30_DAYS),
+                fileItem(
+                    id = "1",
+                    fileName = "somefile",
+                    displayedShortUrl = "firefox.com",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                fileItem(
+                    id = "4",
+                    fileName = "name",
+                    displayedShortUrl = "firefox.com",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+            ),
+        )
+
+        assertEquals(expected, downloadUIState.itemsState)
+    }
+
+    @Test
+    fun `WHEN search query is used THEN only the items matching query for name are displayed`() {
+        val fileItems = listOf(
+            fileItem(
+                id = "1",
+                fileName = "somefile",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "2",
+                fileName = "anotherfile",
+                displayedShortUrl = "mozilla.org",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "3",
+                fileName = "yetanotherfile",
+                displayedShortUrl = "mozilla.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "4",
+                fileName = "name",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+        )
+
+        val downloadUIState = DownloadUIState(
+            items = fileItems,
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            searchQuery = "file",
+        )
+
+        val expected = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(createdTime = CreatedTime.LAST_30_DAYS),
+                fileItem(
+                    id = "1",
+                    fileName = "somefile",
+                    displayedShortUrl = "firefox.com",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                fileItem(
+                    id = "2",
+                    fileName = "anotherfile",
+                    displayedShortUrl = "mozilla.org",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                fileItem(
+                    id = "3",
+                    fileName = "yetanotherfile",
+                    displayedShortUrl = "mozilla.com",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+            ),
+        )
+
+        assertEquals(expected, downloadUIState.itemsState)
+    }
+
+    @Test
+    fun `WHEN search query has no matches THEN no results ui is displayed`() {
+        val fileItems = listOf(
+            fileItem(
+                id = "1",
+                fileName = "somefile",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "2",
+                fileName = "anotherfile",
+                displayedShortUrl = "mozilla.org",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "3",
+                fileName = "yetanotherfile",
+                displayedShortUrl = "mozilla.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "4",
+                fileName = "name",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+        )
+
+        val downloadUIState = DownloadUIState(
+            items = fileItems,
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            searchQuery = "blablah",
+        )
+
+        val expected = DownloadUIState.ItemsState.NoSearchResults
+
+        assertEquals(expected, downloadUIState.itemsState)
+    }
+
+    @Test
+    fun `WHEN there are no files THEN empty state ui is displayed`() {
+        val downloadUIState = DownloadUIState(
+            items = emptyList(),
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+        )
+
+        val expected = DownloadUIState.ItemsState.NoItems
+
+        assertEquals(expected, downloadUIState.itemsState)
+    }
+
+    @Test
+    fun `WHEN search is disabled THEN all items are displayed`() {
+        val fileItems = listOf(
+            fileItem(
+                id = "1",
+                fileName = "somefile",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "2",
+                fileName = "anotherfile",
+                displayedShortUrl = "mozilla.org",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "3",
+                fileName = "yetanotherfile",
+                displayedShortUrl = "mozilla.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+            fileItem(
+                id = "4",
+                fileName = "name",
+                displayedShortUrl = "firefox.com",
+                createdTime = CreatedTime.LAST_30_DAYS,
+            ),
+        )
+
+        val downloadUIState = DownloadUIState(
+            items = fileItems,
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = false,
+            searchQuery = "firefox",
+        )
+
+        val expected = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(createdTime = CreatedTime.LAST_30_DAYS),
+                fileItem(
+                    id = "1",
+                    fileName = "somefile",
+                    displayedShortUrl = "firefox.com",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                fileItem(
+                    id = "2",
+                    fileName = "anotherfile",
+                    displayedShortUrl = "mozilla.org",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                fileItem(
+                    id = "3",
+                    fileName = "yetanotherfile",
+                    displayedShortUrl = "mozilla.com",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+                fileItem(
+                    id = "4",
+                    fileName = "name",
+                    displayedShortUrl = "firefox.com",
+                    createdTime = CreatedTime.LAST_30_DAYS,
+                ),
+            ),
+        )
+
+        assertEquals(expected, downloadUIState.itemsState)
+    }
+
+    @Test
+    fun `WHEN search is not enabled THEN search icon is not visible`() {
+        val downloadUIState = DownloadUIState(
+            items = emptyList(),
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = false,
+            isSearchFieldRequested = true,
+            searchQuery = "",
+        )
+
+        assertEquals(false, downloadUIState.isSearchIconVisible)
+    }
+
+    @Test
+    fun `WHEN there are not items THEN search icon is not visible`() {
+        val downloadUIState = DownloadUIState(
+            items = emptyList(),
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            isSearchFieldRequested = false,
+            searchQuery = "",
+        )
+
+        assertEquals(false, downloadUIState.isSearchIconVisible)
+    }
+
+    @Test
+    fun `WHEN state is in edit mode THEN search icon is not visible`() {
+        val fileItem1 = fileItem(
+            id = "1",
+            fileName = "somefile",
+            displayedShortUrl = "firefox.com",
+            createdTime = CreatedTime.LAST_30_DAYS,
+        )
+        val fileItem2 = fileItem(
+            id = "2",
+            fileName = "anotherfile",
+            displayedShortUrl = "mozilla.org",
+            createdTime = CreatedTime.LAST_30_DAYS,
+        )
+        val fileItems = listOf(
+            fileItem1,
+            fileItem2,
+        )
+
+        val downloadUIState = DownloadUIState(
+            items = fileItems,
+            mode = DownloadUIState.Mode.Editing(
+                selectedItems = setOf(fileItem1),
+            ),
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            isSearchFieldRequested = true,
+            searchQuery = "",
+        )
+
+        assertEquals(false, downloadUIState.isSearchIconVisible)
+    }
+
+    @Test
+    fun `WHEN search field is visible THEN search icon is not visible`() {
+        val fileItem1 = fileItem(
+            id = "1",
+            fileName = "somefile",
+            displayedShortUrl = "firefox.com",
+            createdTime = CreatedTime.LAST_30_DAYS,
+        )
+        val fileItem2 = fileItem(
+            id = "2",
+            fileName = "anotherfile",
+            displayedShortUrl = "mozilla.org",
+            createdTime = CreatedTime.LAST_30_DAYS,
+        )
+        val fileItems = listOf(
+            fileItem1,
+            fileItem2,
+        )
+
+        val downloadUIState = DownloadUIState(
+            items = fileItems,
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            isSearchFieldRequested = true,
+            searchQuery = "",
+        )
+
+        assertEquals(false, downloadUIState.isSearchIconVisible)
+    }
+
+    @Test
+    fun `WHEN search field is not requested and state is in normal mode with items THEN search icon is visible`() {
+        val fileItem1 = fileItem(
+            id = "1",
+            fileName = "somefile",
+            displayedShortUrl = "firefox.com",
+            createdTime = CreatedTime.LAST_30_DAYS,
+        )
+        val fileItem2 = fileItem(
+            id = "2",
+            fileName = "anotherfile",
+            displayedShortUrl = "mozilla.org",
+            createdTime = CreatedTime.LAST_30_DAYS,
+        )
+        val fileItems = listOf(
+            fileItem1,
+            fileItem2,
+        )
+
+        val downloadUIState = DownloadUIState(
+            items = fileItems,
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            isSearchFieldRequested = false,
+            searchQuery = "",
+        )
+
+        assertEquals(true, downloadUIState.isSearchIconVisible)
+    }
+
+    @Test
+    fun `WHEN search is not enabled and field is requested and state is in normal mode THEN search field is not visible`() {
+        val downloadUIState = DownloadUIState(
+            items = emptyList(),
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = false,
+            isSearchFieldRequested = true,
+            searchQuery = "",
+        )
+
+        assertEquals(false, downloadUIState.isSearchFieldVisible)
+    }
+
+    @Test
+    fun `WHEN search field is requested and state is in normal mode THEN search field is visible`() {
+        val downloadUIState = DownloadUIState(
+            items = emptyList(),
+            mode = DownloadUIState.Mode.Normal,
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            isSearchFieldRequested = true,
+            searchQuery = "",
+        )
+
+        assertEquals(true, downloadUIState.isSearchFieldVisible)
+    }
+
+    @Test
+    fun `WHEN search field is requested and state is in edit mode THEN search field is not visible`() {
+        val downloadUIState = DownloadUIState(
+            items = emptyList(),
+            mode = DownloadUIState.Mode.Editing(
+                selectedItems = emptySet(),
+            ),
+            pendingDeletionIds = emptySet(),
+            isSearchEnabled = true,
+            isSearchFieldRequested = true,
+            searchQuery = "",
+        )
+
+        assertEquals(false, downloadUIState.isSearchFieldVisible)
     }
 }

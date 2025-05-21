@@ -169,7 +169,7 @@ def ensure_manifest_directories(logger, test_paths):
                 if e.errno != errno.EEXIST:
                     raise
         elif not os.path.isdir(manifest_dir):
-            raise IOError("Manifest directory is a file")
+            raise OSError("Manifest directory is a file")
 
 
 def read_local_config(src_config_path):
@@ -227,7 +227,7 @@ def generate_config(logger, repo_root, wpt_dir, dest_path, force_rewrite=False):
     )
     parser.set("paths", "ws_extra", ws_extra_paths)
 
-    with open(dest_config_path, "wt") as config_file:
+    with open(dest_config_path, "w") as config_file:
         parser.write(config_file)
 
     return dest_config_path

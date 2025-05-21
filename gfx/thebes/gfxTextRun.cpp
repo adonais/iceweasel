@@ -1867,10 +1867,10 @@ gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
     case StyleFontVariantEmoji::Unicode:
       break;
     case StyleFontVariantEmoji::Text:
-      mEmojiPresentation = eFontPresentation::Text;
+      mEmojiPresentation = FontPresentation::TextExplicit;
       break;
     case StyleFontVariantEmoji::Emoji:
-      mEmojiPresentation = eFontPresentation::EmojiExplicit;
+      mEmojiPresentation = FontPresentation::EmojiExplicit;
       break;
   }
   // We don't use SetUserFontSet() here, as we want to unconditionally call
@@ -3062,7 +3062,7 @@ gfxTextRun* gfxFontGroup::GetEllipsisTextRun(
 
 already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
     gfxFontFamily* aFamily, uint32_t aCh, uint32_t aNextCh,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   GlobalFontMatch data(aCh, aNextCh, mStyle, aPresentation);
   aFamily->SearchAllFontsForChar(&data);
   gfxFontEntry* fe = data.mBestMatch;
@@ -3074,7 +3074,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
 
 already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
     fontlist::Family* aFamily, uint32_t aCh, uint32_t aNextCh,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   auto* pfl = gfxPlatformFontList::PlatformFontList();
   auto* list = pfl->SharedFontList();
 
@@ -3098,7 +3098,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
 
 already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
     const FamilyFace& aFamily, uint32_t aCh, uint32_t aNextCh,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   if (aFamily.IsSharedFamily()) {
     return FindFallbackFaceForChar(aFamily.SharedFamily(), aCh, aNextCh,
                                    aPresentation);
@@ -3211,40 +3211,40 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   // list calls for; but if it's a potential emoji codepoint, we need to check
   // if there's a variation selector specifically asking for Text-style or
   // Emoji-style rendering and look for a suitable font.
-  eFontPresentation presentation = eFontPresentation::Any;
-  EmojiPresentation emojiPresentation = GetEmojiPresentation(aCh);
-  if (emojiPresentation != TextOnly) {
+  FontPresentation presentation = FontPresentation::Any;
+  if (EmojiPresentation emojiPresentation = GetEmojiPresentation(aCh);
+      emojiPresentation != TextOnly) {
     // Default presentation from the font-variant-emoji property.
     presentation = mEmojiPresentation;
+    // If there wasn't an explicit font-variant-emoji setting, default to
+    // what Unicode prefers for this character.
+    if (presentation == FontPresentation::Any) {
+      if (emojiPresentation == EmojiPresentation::TextDefault) {
+        presentation = FontPresentation::TextDefault;
+      } else {
+        presentation = FontPresentation::EmojiDefault;
+      }
+    }
     // If the prefer-emoji selector is present, or if it's a default-emoji
     // char and the prefer-text selector is NOT present, or if there's a
     // skin-tone modifier, we specifically look for a font with a color
     // glyph.
     // If the prefer-text selector is present, we specifically look for a
     // font that will provide a monochrome glyph.
-    // Otherwise, we'll accept either color or monochrome font-family
-    // entries, so that a color font can be explicitly applied via font-
-    // family even to characters that are not inherently emoji-style.
     if (aNextCh == kVariationSelector16 ||
         (aNextCh >= kEmojiSkinToneFirst && aNextCh <= kEmojiSkinToneLast) ||
         gfxFontUtils::IsEmojiFlagAndTag(aCh, aNextCh)) {
       // Emoji presentation is explicitly requested by a variation selector
       // or the presence of a skin-tone codepoint.
-      presentation = eFontPresentation::EmojiExplicit;
-    } else if (emojiPresentation == EmojiPresentation::EmojiDefault &&
-               aNextCh != kVariationSelector15) {
-      // Emoji presentation is the default for this Unicode character. but we
-      // will allow an explicitly-specified webfont to apply to it,
-      // regardless of its glyph type.
-      presentation = eFontPresentation::EmojiDefault;
+      presentation = FontPresentation::EmojiExplicit;
     } else if (aNextCh == kVariationSelector15) {
       // Text presentation is explicitly requested.
-      presentation = eFontPresentation::Text;
+      presentation = FontPresentation::TextExplicit;
     }
   }
 
   if (!isJoinControl && !wasJoinCauser && !isVarSelector &&
-      !nextIsVarSelector && presentation == eFontPresentation::Any) {
+      !nextIsVarSelector && presentation == FontPresentation::Any) {
     RefPtr<gfxFont> firstFont = GetFontAt(0, aCh, &loading);
     if (firstFont) {
       if (firstFont->HasCharacter(aCh) ||
@@ -3305,27 +3305,20 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
 
   // Used to remember the first "candidate" font that would provide a fallback
   // text-style rendering if no color glyph can be found.
-  // If we decide NOT to return this font, we must AddRef/Release it to ensure
-  // that it goes into the global font cache as a candidate for deletion.
-  // This is done for us by CheckCandidate, but any code path that returns
-  // WITHOUT calling CheckCandidate needs to handle it explicitly.
   RefPtr<gfxFont> candidateFont;
   FontMatchType candidateMatchType;
 
   // Handle a candidate font that could support the character, returning true
   // if we should go ahead and return |f|, false to continue searching.
-  // If there is already a saved candidate font, and the new candidate is
-  // accepted, we AddRef/Release the existing candidate so it won't leak.
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
     // If no preference, then just accept the font.
-    if (presentation == eFontPresentation::Any ||
-        (presentation == eFontPresentation::EmojiDefault &&
-         f->GetFontEntry()->IsUserFont())) {
+    if (presentation == FontPresentation::Any) {
       *aMatchType = t;
       return true;
     }
     // Does the candidate font provide a color glyph for the current character?
-    bool hasColorGlyph = f->HasColorGlyphFor(aCh, aNextCh);
+    bool hasColorGlyph = f->HasColorGlyphFor(aCh, aNextCh) ||
+        (!nextIsVarSelector && f->HasColorGlyphFor(aCh, kVariationSelector16));
     // If the provided glyph matches the preference, accept the font.
     if (hasColorGlyph == PrefersColor(presentation)) {
       *aMatchType = t;
@@ -3336,7 +3329,8 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     // we'll assume it knows what it is doing (eg Twemoji Mozilla keycap
     // sequences).
     // TODO: reconsider all this as part of any fix for bug 543200.
-    if (aNextCh == kVariationSelector16 && emojiPresentation == TextDefault &&
+    if (aNextCh == kVariationSelector16 &&
+        GetEmojiPresentation(aCh) == EmojiPresentation::TextDefault &&
         f->HasCharacter(aNextCh) && f->GetFontEntry()->TryGetColorGlyphs()) {
       return true;
     }
@@ -3458,6 +3452,19 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     }
   }
 
+  // If it's an emoji codepoint and we found a named-family candidate (not a
+  // generic) in the font list, we accept it even if it doesn't match the
+  // presentation (so authors can deliberately request that do not match the
+  // Unicode emoji default presentation style for a given character). But don't
+  // do this if a particular presentation was explicitly requested in the text.
+  if (candidateFont &&
+      candidateMatchType.generic == StyleGenericFontFamily::None &&
+      presentation != FontPresentation::EmojiExplicit &&
+      presentation != FontPresentation::TextExplicit) {
+    *aMatchType = candidateMatchType;
+    return candidateFont.forget();
+  }
+
   if (fontListLength == 0) {
     RefPtr<gfxFont> defaultFont = GetDefaultFont();
     if (defaultFont->HasCharacter(aCh) ||
@@ -3509,8 +3516,8 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   // For fallback searches, we don't want to use a color-emoji font unless
   // emoji-style presentation is specifically required, so we map Any to
   // Text here.
-  if (presentation == eFontPresentation::Any) {
-    presentation = eFontPresentation::Text;
+  if (presentation == FontPresentation::Any) {
+    presentation = FontPresentation::TextDefault;
   }
 
   // 3. use fallback fonts
@@ -3612,7 +3619,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
         // is if it is explicitly requested with font-variant, as no 8-bit
         // chars are emoji by default.
         ((sizeof(T) == sizeof(uint8_t) &&
-          (mEmojiPresentation != eFontPresentation::EmojiExplicit ||
+          (mEmojiPresentation != FontPresentation::EmojiExplicit ||
            GetEmojiPresentation(ch) == TextOnly)) ||
          // For 16-bit text, we need to consider cluster extenders etc.
          (sizeof(T) == sizeof(char16_t) &&
@@ -3822,7 +3829,7 @@ bool gfxFontGroup::ContainsUserFont(const gfxUserFontEntry* aUserFont) {
 }
 
 already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
-    uint32_t aCh, uint32_t aNextCh, eFontPresentation aPresentation) {
+    uint32_t aCh, uint32_t aNextCh, FontPresentation aPresentation) {
   eFontPrefLang charLang;
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
 
@@ -3899,7 +3906,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
         if (!prefFont) {
           continue;
         }
-        if (aPresentation == eFontPresentation::EmojiExplicit &&
+        if (aPresentation == FontPresentation::EmojiExplicit &&
             !prefFont->HasColorGlyphFor(aCh, aNextCh)) {
           continue;
         }
@@ -3929,7 +3936,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
 
 already_AddRefed<gfxFont> gfxFontGroup::WhichSystemFontSupportsChar(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   FontVisibility visibility;
   return gfxPlatformFontList::PlatformFontList()->SystemFindFontForChar(
       mPresContext, aCh, aNextCh, aRunScript, aPresentation, &mStyle,
@@ -3937,7 +3944,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichSystemFontSupportsChar(
 }
 
 gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
-    gfxFont::Orientation aOrientation) {
+    gfxFont::Orientation aOrientation, StyleQueryFontMetricsFlags aFlags) {
   bool isFirst;
   RefPtr<gfxFont> font = GetFirstValidFont(0x20, nullptr, &isFirst);
   auto metrics = font->GetMetrics(aOrientation);
@@ -3945,7 +3952,8 @@ gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
   // If the font we used to get metrics was not the first in the list,
   // or if it doesn't support the ZERO character, check for the font that
   // does support ZERO and use its metrics for the 'ch' unit.
-  if (!isFirst || !font->HasCharacter('0')) {
+  if ((aFlags & StyleQueryFontMetricsFlags::NEEDS_CH) &&
+      (!isFirst || !font->HasCharacter('0'))) {
     RefPtr<gfxFont> zeroFont = GetFirstValidFont('0');
     if (zeroFont != font) {
       const auto& zeroMetrics = zeroFont->GetMetrics(aOrientation);
@@ -3954,7 +3962,8 @@ gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
   }
 
   // Likewise for the WATER ideograph character used as the basis for 'ic'.
-  if (!isFirst || !font->HasCharacter(0x6C34)) {
+  if ((aFlags & StyleQueryFontMetricsFlags::NEEDS_IC) &&
+      (!isFirst || !font->HasCharacter(0x6C34))) {
     RefPtr<gfxFont> icFont = GetFirstValidFont(0x6C34);
     if (icFont != font) {
       const auto& icMetrics = icFont->GetMetrics(aOrientation);

@@ -118,11 +118,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">ਨਵੀਂ ਨੈਵੀਗੇਸ਼ਨ ਨਾਲ ਵੱਧ ਤੇਜ਼ੀ ਨਾਲ ਬਰਾਊਜ਼ ਕਰੋ</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">ਨਵੀਂ ਨੈਵੀਗੇਸ਼ਨ ਨਾਲ ਵੱਧ ਤੇਜ਼ੀ ਨਾਲ ਬਰਾਊਜ਼ ਕਰੋ</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2"> ਵੈੱਬਸਾਈਟ ਉੱਤੇ ਵਾਧੂ ਬਰਾਊਜ਼ ਕਰਨ ਲਈ ਥਾਂ ਬਣਾਉਣ ਵਾਸਤੇ ਸਕਰੋਲ ਕਰਨ ਦੇ ਦੌਰਾਨ ਇਸ ਪੱਟੀ ਨੂੰ ਪਾਸੇ ਕਰ ਦਿੱਤਾ ਜਾਂਦਾ ਹੈ।</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources"> ਵੈੱਬਸਾਈਟ ਉੱਤੇ ਵਾਧੂ ਬਰਾਊਜ਼ ਕਰਨ ਲਈ ਥਾਂ ਬਣਾਉਣ ਵਾਸਤੇ ਸਕਰੋਲ ਕਰਨ ਦੇ ਦੌਰਾਨ ਇਸ ਪੱਟੀ ਨੂੰ ਪਾਸੇ ਕਰ ਦਿੱਤਾ ਜਾਂਦਾ ਹੈ।</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">ਇਸ ਟੈਬ ਦੇ ਅਤੀਤ ਵਿਚਲੇ ਸਫ਼ਿਆਂ ਵਿੱਚ ਜਾਣ ਲਈ ਤੀਰ ਦੇ ਨਿਸ਼ਾਨਾਂ ਨੂੰ ਛੂਹ ਕੇ ਰੱਖੋ।</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">ਇਸ ਟੈਬ ਦੇ ਅਤੀਤ ਵਿਚਲੇ ਸਫ਼ਿਆਂ ਵਿੱਚ ਜਾਣ ਲਈ ਤੀਰ ਦੇ ਨਿਸ਼ਾਨਾਂ ਨੂੰ ਛੂਹ ਕੇ ਰੱਖੋ।</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -635,7 +635,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">ਤੇਜ਼ ਅਤੇ ਸੁਰੱਖਿਅਤ ਵੈੱਬ ਬਰਾਊਜ਼ਿੰਗ</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">ਸਹਿਮਤ ਅਤੇ ਜਾਰੀ ਰੱਖੋ</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">ਸਹਿਮਤ ਅਤੇ ਜਾਰੀ ਰੱਖੋ</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">ਜਾਰੀ ਰੱਖੋ</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">ਜਾਰੀ ਰੱਖ ਕੇ ਤੁਸੀਂ %1$s ਨਾਲ ਸਹਿਮਤ ਹੁੰਦੇ ਹੋ।</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -840,9 +842,6 @@
   <string name="preferences_override_account_server">ਪਸੰਦੀਦਾ Mozilla ਖਾਤਾ ਸਰਵਰ</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">ਪਸੰਦੀਦਾ ਸਿੰਕ ਸਰਵਰ</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla ਖਾਤਾ/ਸਿੰਕ ਸਰਵਰ ਨੂੰ ਸੋਧਿਆ ਗਿਆ ਹੈ।
-ਤਬਦੀਲੀਆਂ ਲਾਗੂ ਕਰਨ ਵਾਸਤੇ ਐਪਲੀਕੇਸ਼ਨ ਨੂੰ ਬੰਦ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">ਖਾਤਾ</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1212,7 +1211,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ਟੈਬਾਂ ਖੋਲ੍ਹਣ ਲਈ ਟੂਲਬਾਰ ਉੱਤੇ ਵੱਲ ਸਰਕਾਓ</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਅਤੇ ਟੂਲ-ਬਾਰ ਨੂੰ ਲੁਕਾਉਣ ਲਈ ਸਕਰੋਲ ਕਰੋ</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਅਤੇ ਟੂਲ-ਬਾਰ ਨੂੰ ਲੁਕਾਉਣ ਲਈ ਸਕਰੋਲ ਕਰੋ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ਟੈਬਾਂ ਵਿੱਚ ਬਦਲਣ ਲਈ ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਨੂੰ ਪਾਸੇ ਵੱਲ ਸਰਕਾਓ</string>
   <!--
@@ -1488,8 +1487,33 @@
   <string name="download_multi_select_title">%1$d ਚੁਣੇ</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">ਹਟਾਓ</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">ਲੋੜੀਂਦੀ ਥਾਂ ਨਹੀਂ ਹੈ</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">ਇਸ ਡਿਵਾਈਸ ਉੱਤੇ &lt;b&gt;%s&lt;/b&gt; ਨੂੰ ਡਾਊਨਲੋਡ ਕਰਨ ਵਾਸਤੇ ਲੋੜੀਂਦੀ ਥਾਂ ਨਹੀਂ ਹੈ।</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">ਫ਼ਾਇਲਾਂ ਦਾ ਇੰਤਜ਼ਾਮ ਕਰੋ</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">ਰੱਦ ਕਰੋ</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">ਹਟਾਓ</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">ਪਿੱਛੇ ਵੱਲ ਨੈਵੀਗੇਟ ਕਰੋ</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">ਉੱਤੇ ਜਾਓ</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">ਵਾਪਸ ਜਾਓ ਅਤੇ ਖੋਜ ਨੂੰ ਬੰਦ ਕਰੋ</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">ਮਿਟਾਓ</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">URL ਸਾਂਝਾ ਕਰੋ</string>
   <!-- Text for the button to share the download file -->
@@ -1530,9 +1554,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">ਡਾਊਨਲੋਡ ਅਸਫ਼ਲ ਹੈ</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">ਡਾਊਨਲੋਡਾਂ ਨੂੰ ਖੋਜੋ</string>
+  <string name="download_search_placeholder">ਡਾਊਨਲੋਡਾਂ ਨੂੰ ਖੋਜੋ</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">ਨਤੀਜੇ ਨਹੀਂ ਲੱਭੇ</string>
+  <string name="download_search_no_results_found">ਨਤੀਜੇ ਨਹੀਂ ਲੱਭੇ</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">ਸਭ ਨੂੰ ਚੁਣੋ</string>
   <!--
@@ -1649,6 +1673,8 @@
   <string name="bookmark_menu_copy_button">ਨਕਲ ਕਰੋ</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">ਸਾਂਝਾ ਕਰੋ</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">ਸਭ ਚੁਣੋ</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">ਨਵੀਂ ਟੈਬ ‘ਚ ਖੋਲ੍ਹੋ</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1661,6 +1687,8 @@
   <string name="bookmark_menu_delete_button">ਹਟਾਓ</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">ਸੰਭਾਲੋ</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">ਪਸੰਦੀਦਾ ਲੜੀਬੱਧ ਢੰਗ</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">ਸਭ ਤੋਂ ਨਵੇਂ ਪਹਿਲਾਂ</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2286,7 +2314,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">ਵਾਧਾ ਕੀਤੀ ਟਰੈਕਿੰਗ ਰੋਧੀ ਛੋਟ ਪਸੰਦ ਆਈਕਾਨ</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2295,8 +2323,6 @@
   <string name="preference_doh_summary">HTTPS ਰਾਹੀਂ ਡੋਮੇਨ ਨੇਮ ਸਿਸਟਮ (DNS) ਤੁਹਾਡੇ ਵਲੋਂ ਮੰਗ ਕੀਤੀ ਡੋਮੇਨ ਦੀ ਬੇਨਤੀ ਨੂੰ ਇੰਕ੍ਰਿਪਟ ਕੀਤੇ ਕਨੈਕਸ਼ਨ ਰਾਹੀਂ ਭੇਜਦਾ ਹੈ, ਸੁਰੱਖਿਅਤ DNS ਦਿੰਦਾ ਹੈ ਅਤੇ ਇਸ ਨਾਲ ਤੁਹਾਡੇ ਵਲੋਂ ਖੋਲ੍ਹੀ ਜਾ ਰਹੀ ਵੈੱਬਸਾਈਟ ਨੂੰ ਹੋਰਾਂ ਵੱਲੋਂ ਵੇਖਣ ਨੂੰ ਵੱਧ ਔਖਾ ਬਣਾ ਦਿੰਦਾ ਹੈ। %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">ਹੋਰ ਜਾਣੋ</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">ਉੱਤੇ ਜਾਓ</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">ਛੋਟਾਂ</string>
   <!-- Content description for the "Info" button -->
@@ -2835,8 +2861,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox ਸੁਝਾਅ</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">ਰੁਝਾਨ ਵਿੱਚ ਖੋਜਾਂ</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3201,6 +3225,8 @@
   <string name="protection_panel_no_trackers_blocked">ਕੋਈ ਟਰੈਕਰ ਨਹੀਂ ਲੱਭੇ</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">ਪਰਦੇਦਾਰੀ ਅਤੇ ਸੁਰੱਖਿਆ ਸੈਟਿੰਗਾਂ</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">ਇਜਾਜ਼ਤਾਂ</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3406,6 +3432,8 @@
   <string name="debug_drawer_override_current_region_label">ਮੌਜੂਦਾ ਖੇਤਰ ਨੂੰ ਅਣਡਿੱਠਾ ਕਰੋ</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">ਮੁੱਖ ਅਤੇ ਮੌਜੂਦਾ ਖੇਤਰ ਨੂੰ ਅਣਡਿੱਠਾ ਕਰੋ</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">ਹੋਮ ਖੇਤਰ ਨੂੰ ਪੱਕੇ ਤੌਰ ਉੱਤੇ ਅਣਡਿੱਠਾ ਕਰ ਦਿਓ</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3509,6 +3537,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">ਤੁਸੀਂ ਸਾਰੇ 6 ਪੜਾਅ ਪੂਰੇ ਕਰ ਲਏ ਹਨ। %1$s ਦੀ ਸਪੀਡ, ਪਰਦੇਦਾਰੀ ਅਤੇ ਸੁਰੱਖਿਆ ਦਾ ਆਨੰਦ ਮਾਣੋ।</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">ਸਭ ਤੋਂ ਚੰਗੇ ਬਰਾਊਜ਼ ਕਰਨ ਦੇ ਤਜਰਬੇ ਨੂੰ ਹਾਸਲ ਕਰਨ ਲਈ %1$s ਸੈਟਅੱਪ ਦੇ ਸਾਰੇ 5 ਪੜਾਅ ਪੂਰੇ ਕਰੋ।</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">ਵਧੀਆ ਸ਼ੁਰੂ ਕੀਤਾ! ਤੁਸੀਂ 5 ਵਿੱਚੋਂ 1 ਪੜਾਅ ਪੂਰਾ ਕਰ ਲਿਆ ਹੈ।</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">ਤੁਸੀਂ 5 ਵਿੱਚੋਂ 2 ਪੜਾਅ ਪੂਰੇ ਕਰ ਲਏ ਹਨ। ਚੰਗਾ ਕੰਮ ਕੀਤਾ!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">ਤੁਸੀਂ ਅੱਧਾ ਕੰਮ ਨਿਬੇੜ ਲਿਆ ਹੈ! ਤਿੰਨ ਪੜਾਅ ਪੂਰੇ ਤੇ 2 ਹੀ ਰਹਿ ਗਏ ਹਨ।</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">ਲਗਭਗ ਨਿਬੇੜ ਲਿਆ! ਤੁਸੀਂ ਪੂਰਾ ਕਰਨ ਤੋਂ ਬੱਸ 1 ਪੜਾਅ ਰਹਿ ਗਿਆ।</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">ਤੁਸੀਂ ਸਾਰੇ 5 ਪੜਾਅ ਪੂਰੇ ਕਰ ਲਏ ਹਨ। %1$s ਦੀ ਸਪੀਡ, ਪਰਦੇਦਾਰੀ ਅਤੇ ਸੁਰੱਖਿਆ ਦਾ ਆਨੰਦ ਮਾਣੋ।</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3558,4 +3602,16 @@
   <string name="pbm_authentication_unlock">ਅਣ-ਲਾਕ ਕਰੋ</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">ਪ੍ਰਾਈਵੇਟ ਟੈਬਾਂ ਨੂੰ ਅਣ-ਲਾਕ ਕਰੋ</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">ਪ੍ਰਾਈਵੇਟ ਟੈਬਾਂ ਲਈ ਸਕਰੀਨ ਲਾਕ ਨੂੰ ਸਮਰੱਥ ਕਰੋ</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">ਪ੍ਰਾਈਵੇਟ ਟੈਬਾਂ ਲਈ ਸਕਰੀਨ ਲਾਕ ਨੂੰ ਅਸਮਰੱਥ ਕਰੋ</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">ਟੈਬਾਂ ਨੂੰ ਲੁਕਾਉਣ ਲਈ ਸਕਰੀਨ ਲਾਕ ਸੈੱਟ ਅੱਪ ਕਰੋ</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">ਪ੍ਰਾਈਵੇਟ ਟੈਬਾਂ ਨੂੰ ਲੁਕਾਉਣ ਲਈ ਲਾਕ ਸਕਰੀਨ ਨੂੰ ਵਰਤਣਾ ਹੈ?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">ਨਹੀਂ ਜੀ, ਧੰਨਵਾਦ</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">ਟੈਬਾਂ ਨੂੰ ਲਾਕ ਕਰੋ</string>
 </resources>

@@ -855,6 +855,9 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
     packet_infos.push_back(packet_info);
 
     frame_boundary = packet->is_last_packet_in_frame();
+
+    packet->video_header.absolute_capture_time =
+        packet_info.absolute_capture_time();
     if (packet->is_last_packet_in_frame()) {
       auto depacketizer_it = payload_type_map_.find(first_packet->payload_type);
       RTC_CHECK(depacketizer_it != payload_type_map_.end());
@@ -1417,7 +1420,7 @@ void RtpVideoStreamReceiver2::UpdatePacketReceiveTimestamps(
 
   // Periodically log the RTP header of incoming packets.
   if (now.ms() - last_packet_log_ms_ > kPacketLogIntervalMs) {
-    rtc::StringBuilder ss;
+    StringBuilder ss;
     ss << "Packet received on SSRC: " << packet.Ssrc()
        << " with payload type: " << static_cast<int>(packet.PayloadType())
        << ", timestamp: " << packet.Timestamp()

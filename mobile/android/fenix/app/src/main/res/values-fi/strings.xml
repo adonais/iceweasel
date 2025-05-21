@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Selaa nopeammin uuden navigoinnin ansiosta</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Selaa nopeammin uuden navigoinnin ansiosta</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Tämä palkki työntyy pois näkyvistä, kun vierität alas, jotta saat enemmän selaustilaa.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Tämä palkki työntyy pois näkyvistä, kun vierität alas, jotta saat enemmän selaustilaa.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Napauta ja pidä nuolia painettuna siirtyäksesi tämän välilehden historian sivujen välillä.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Napauta ja pidä nuolia painettuna siirtyäksesi tämän välilehden historian sivujen välillä.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -631,7 +631,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Nopeaa ja turvallista verkkoselailua</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Hyväksy ja jatka</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Hyväksy ja jatka</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Jatka</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Jatkamalla hyväksyt %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -768,6 +770,10 @@
   <string name="preferences_add_private_browsing_shortcut">Lisää yksityisen selauksen pikakuvake</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Vain HTTPS -tila</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">Käytä näytön lukitusta piilottaaksesi välilehdet yksityisessä selailussa</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary">Näytä välilehdet sormenjäljellä, kasvojentunnistuksella tai PIN-koodilla.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Evästeilmoitusten esto</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -828,8 +834,6 @@
   <string name="preferences_override_account_server">Mukautettu Mozilla-tilin palvelin</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Mukautettu synkronointipalvelin</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla-tilin tai synkronoinnin palvelinta muutettu. Lopetetaan sovellus, jotta muutokset tulevat voimaan…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Tili</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1197,7 +1201,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Pyyhkäise työkaluriviä ylös avataksesi välilehdet</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Vieritä piilottaaksesi osoite- ja työkalupalkin</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Vieritä piilottaaksesi osoite- ja työkalupalkin</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Vaihda välilehtiä pyyhkäisemällä osoitepalkkia sivuttain</string>
   <!--
@@ -1376,6 +1380,8 @@
   <string name="tab_tray_multiselect_share_content_description">Jaa valitut välilehdet</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Valittujen välilehtien valikko</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">Kotisivu</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Poista välilehti kokoelmasta</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1471,8 +1477,33 @@
   <string name="download_multi_select_title">%1$d valittu</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Poista</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Ei tarpeeksi tilaa</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Tällä laitteella ei ole tarpeeksi tilaa tiedoston &lt;b&gt;%s&lt;/b&gt; lataamiseen.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Tiedostojen hallinta</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Peruuta</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Poista</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">Siirry taaksepäin</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Liiku ylöspäin</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Takaisin ja sulje haku</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Tyhjennä</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Jaa osoite</string>
   <!-- Text for the button to share the download file -->
@@ -1513,9 +1544,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Lataus epäonnistui</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Etsi latauksista</string>
+  <string name="download_search_placeholder">Etsi latauksista</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Tuloksia ei löytynyt</string>
+  <string name="download_search_no_results_found">Tuloksia ei löytynyt</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Valitse kaikki</string>
   <!--
@@ -1632,6 +1663,8 @@
   <string name="bookmark_menu_copy_button">Kopioi</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Jaa</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">Valitse kaikki</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">Avaa uudessa välilehdessä</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1644,6 +1677,16 @@
   <string name="bookmark_menu_delete_button">Poista</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Tallenna</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Lajittele mukautetun järjestyksen mukaan</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">Lajittele uusimman mukaan</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">Lajittele vanhimman mukaan</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">Lajittele A-Ö</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">Lajittele Ö-A</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2260,7 +2303,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Tehostetun seurannan suojauksen poikkeusasetuskuvake</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2269,8 +2312,6 @@
   <string name="preference_doh_summary">DNS (Domain Name System eli nimipalvelujärjestelmä) HTTPS:n kautta lähettää verkkotunnuksen nimeä koskevan pyyntösi salatun yhteyden kautta, tarjoten suojatun DNS:n ja vaikeuttaen muiden nähdä, mihin verkkosivustoon olet siirtymässä. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Lue lisää</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Liiku ylöspäin</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Poikkeukset</string>
   <!-- Content description for the "Info" button -->
@@ -2808,8 +2849,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox-ehdotukset</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Nousussa olevat haut</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3174,6 +3213,8 @@
   <string name="protection_panel_no_trackers_blocked">Seuraimia ei löytynyt</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Tietosuoja- ja turvallisuusasetukset</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Oikeudet</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3360,6 +3401,28 @@
   -->
   <string name="glean_debug_tools_title">Glean-vianjäljitystyökalut</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">Aluetyökalut</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">Ohittaa tilapäisesti kotialueen ja nykyisen alueen arvot testausta varten.</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">Kotialue</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">Nykyinen alue</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Ohita kotialue</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Ohita nykyinen alue</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Ohita kotialue ja nykyinen alue</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Ohita kotialue pysyvästi</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3462,6 +3525,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Olet suorittanut kaikki kuusi vaihetta. Nauti %1$sin nopeudesta, yksityisyydestä ja turvallisuudesta.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Suorita kaikki viisi vaihetta määrittääksesi %1$sin parasta selauskokemusta varten.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Hieno aloitus! Olet suorittanut yhden viidestä vaiheesta.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Olet suorittanut kaksi vaihetta viidestä. Hienoa edistystä!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Ylitit puolivälin! Kolme vaihetta suoritettu, kaksi jäljellä.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Melkein valmista! Olet yhden vaiheen päässä maaliviivasta.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Olet suorittanut kaikki viisi vaihetta. Nauti %1$sin nopeudesta, yksityisyydestä ja turvallisuudesta.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3477,10 +3556,22 @@
   <string name="setup_checklist_task_explore_extensions">Selaa laajennuksia</string>
   <!-- The title of the search widget task for the setup checklist -->
   <string name="setup_checklist_task_search_widget">Asenna hakuwidget</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">%1$s-perusasiat</string>
   <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_group_customize">Mukauta %1$sia</string>
   <!-- The title of the 'helpful tools' group in the setup checklist -->
   <string name="setup_checklist_group_helpful_tools">Hyödyllisiä työkaluja</string>
+  <!--
+    ===== Setup checklist feature: Button =====
+
+    Text for the 'remove' button for the setup checklist
+  -->
+  <string name="setup_checklist_button_remove">Poista tarkistuslista</string>
   <!--
     ===== Setup checklist feature: Accessibility =====
 
@@ -3489,4 +3580,26 @@
   <string name="a11y_completed_task_description">Suoritettu tehtävä</string>
   <!-- Accessibility description for the task icon -->
   <string name="a11y_task_icon_description">Tehtäväkuvake</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">Poistu yksityisestä selauksesta</string>
+  <!-- Label for the primary action button to unlock private tabs -->
+  <string name="pbm_authentication_unlock">Avaa</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">Avaa yksityiset välilehdet</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Ota käyttöön yksityisten välilehtien näytön lukitus</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Poista yksityisten välilehtien näytön lukitus käytöstä</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Aseta näytön lukitus välilehtien piilottamiseksi</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Käytetäänkö näytön lukitusta yksityisten välilehtien piilottamiseksi?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Ei kiitos</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Lukitse välilehdet</string>
 </resources>

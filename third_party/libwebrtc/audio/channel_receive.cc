@@ -697,7 +697,7 @@ void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
           AbsoluteCaptureTimeInterpolator::GetSource(header.ssrc,
                                                      header.arrOfCSRCs),
           header.timestamp,
-          rtc::saturated_cast<uint32_t>(packet_copy.payload_type_frequency()),
+          saturated_cast<uint32_t>(packet_copy.payload_type_frequency()),
           header.extension.absolute_capture_time);
 
   ReceivePacket(packet_copy.data(), packet_copy.size(), header,
@@ -752,7 +752,7 @@ void ChannelReceive::ReceivePacket(const uint8_t* packet,
     // Asynchronously transform the received payload. After the payload is
     // transformed, the delegate will call OnReceivedPayloadData to handle it.
     char buf[1024];
-    rtc::SimpleStringBuilder mime_type(buf);
+    SimpleStringBuilder mime_type(buf);
     auto it = payload_type_map_.find(header.payloadType);
     mime_type << MediaTypeToString(cricket::MEDIA_TYPE_AUDIO) << "/"
               << (it != payload_type_map_.end() ? it->second.name
@@ -1061,8 +1061,8 @@ bool ChannelReceive::SetMinimumPlayoutDelay(int delay_ms) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   // Limit to range accepted by both VoE and ACM, so we're at least getting as
   // close as possible, instead of failing.
-  delay_ms = rtc::SafeClamp(delay_ms, kVoiceEngineMinMinPlayoutDelayMs,
-                            kVoiceEngineMaxMinPlayoutDelayMs);
+  delay_ms = SafeClamp(delay_ms, kVoiceEngineMinMinPlayoutDelayMs,
+                       kVoiceEngineMaxMinPlayoutDelayMs);
   if (!neteq_->SetMinimumDelay(delay_ms)) {
     RTC_DLOG(LS_ERROR)
         << "SetMinimumPlayoutDelay() failed to set min playout delay "

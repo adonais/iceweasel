@@ -6,14 +6,13 @@ package org.mozilla.fenix.settings.sitepermissions
 
 import android.os.Bundle
 import androidx.core.content.ContextCompat
-import androidx.navigation.Navigation
+import androidx.navigation.findNavController
 import androidx.preference.Preference
 import androidx.preference.Preference.OnPreferenceClickListener
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import mozilla.components.browser.state.action.DefaultDesktopModeAction
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.Autoplay
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
@@ -33,9 +32,6 @@ class SiteSettingsFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.site_permissions_preferences, rootKey)
-
-        val preferenceDescription = requirePreference<Preference>(R.string.pref_key_site_permissions_description)
-        preferenceDescription.isVisible = Config.channel.isMozillaOnline
 
         // This should be setup in onCreatePreferences so we setup only once when the fragment is created
         bindDesktopMode()
@@ -71,7 +67,7 @@ class SiteSettingsFragment : PreferenceFragmentCompat() {
 
         exceptionsCategory.onPreferenceClickListener = OnPreferenceClickListener {
             val directions = SiteSettingsFragmentDirections.actionSitePermissionsToExceptions()
-            Navigation.findNavController(requireView()).navigate(directions)
+            requireView().findNavController().navigate(directions)
             true
         }
     }
@@ -105,7 +101,7 @@ class SiteSettingsFragment : PreferenceFragmentCompat() {
             Autoplay.visitedSetting.record(NoExtras())
         }
         context?.let {
-            Navigation.findNavController(requireView()).navigateWithBreadcrumb(
+            requireView().findNavController().navigateWithBreadcrumb(
                 directions = directions,
                 navigateFrom = "SitePermissionsFragment",
                 navigateTo = "ActionSitePermissionsToManagePhoneFeatures",

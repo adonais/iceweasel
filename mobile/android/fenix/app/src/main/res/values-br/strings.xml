@@ -117,11 +117,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Gounezit amzer gant ar merdeiñ nevez</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Gounezit amzer gant ar merdeiñ nevez</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">War ul lec’hienn ez aio ar varrenn-mañ da guzhat pa vo  dibunet ar bajenn war-zu an traoñ evit kaout muioc’h a blas.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">War ul lec’hienn ez aio ar varrenn-mañ da guzhat pa vo  dibunet ar bajenn war-zu an traoñ evit kaout muioc’h a blas.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Stokit ha dalc’hit ar biroù evit lammat etre ar pajennoù e roll istor an ivinell.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Stokit ha dalc’hit ar biroù evit lammat etre ar pajennoù e roll istor an ivinell.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -630,7 +630,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Merdeiñ buan ha diogel</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Asantiñ ha kenderc’hel</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Asantiñ ha kenderc’hel</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">En ur genderc\'hel e asantit d\'ar %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -674,6 +674,8 @@
   <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
   <string name="onboarding_customize_toolbar_placement_bottom_content_description">Skeudenn ar varrenn-ostilhoù izelañ</string>
   <string name="onboarding_customize_toolbar_placement_top_content_description">Skeudenn ar varrenn-ostilhoù uhelañ</string>
+  <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_toolbar_a11y_action_label_select">diuzañ</string>
   <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Dibab un neuz</string>
   <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
@@ -690,6 +692,8 @@
   <string name="onboarding_customize_theme_main_image_content_description">Skeudenn dalbenn vras er gwel diuzañ an neuz o tiskouez an arzourien skeudennet hag ostilhoù krouiñ.</string>
   <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
   <string name="onboarding_customize_theme_content_description">Skeudenn an neuz %1$s</string>
+  <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
+  <string name="onboarding_customize_theme_a11y_action_label_select">diuzañ</string>
   <!--
     Widget Picker
 
@@ -827,8 +831,6 @@
   <string name="preferences_override_account_server">Dafariad kont Mozilla personelaet</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Dafariad Sync personelaet</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Kemmet eo bet an dafariad kontoù Mozilla/Sync. Serriñ a raio an arload evit kemer ar c\'hemmoù e kont…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Kont</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -897,6 +899,10 @@
   <string name="preferences_show_nonsponsored_suggestions_summary">Kaout alioù eus ar web hervez ho klaskoù</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Rannañ an ereoù</string>
+  <!-- Snackbar message shown when user shares a link -->
+  <string name="link_shared_snackbar_message">Ere rannet</string>
+  <!-- Snackbar action label shown when user shares a link -->
+  <string name="link_shared_snackbar_action">Merañ an arventennoù</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Digeriñ ereoù en arloadoù</string>
   <!-- Preference for open links in third party apps always open in apps option -->
@@ -1112,6 +1118,8 @@
   <string name="exceptions_empty_message_description">An nemedennoù a laosk acʼhanocʼh da ziweredekaat ar gwarez heuliañ evit lecʼhiennoù ʼzo.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Gouzout hirocʼh</string>
+  <!-- Preference switch for usage and technical learn more link -->
+  <string name="preference_usage_data_learn_more">Gouzout hiroc’h</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Gouzout hiroc\'h a-zivout an danevelloù sac\'hañ</string>
   <!-- Title for studies preferences -->
@@ -1165,7 +1173,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Rikli ar ar varrenn-ostilhoù war-zu an nec’h evit digeriñ ivinelloù</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Dibunit da guzhat ar varrenn-chomlec’h hag ar varrenn ostilhoù</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Dibunit da guzhat ar varrenn-chomlec’h hag ar varrenn ostilhoù</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Riklit ar varrenn chomlec’h war ar c’hostez evit cheñch ivinell</string>
   <!--
@@ -1393,6 +1401,14 @@
   <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Pellgargadurioù dilammet</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
   <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Dilamet %1$s</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">“%1$s” dilamet</string>
+  <!-- Text for the snackbar to confirm that downloads are in progress. -->
+  <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">O pellgargañ…</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">Munudoù</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar" tools:ignore="UnusedResources">Pellgargadur echu</string>
   <!-- Text shown when no download exists -->
   <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Restr pellgarget ebet</string>
   <!--
@@ -1402,6 +1418,57 @@
   <string name="download_multi_select_title">%1$d diuzet</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Dilemel</string>
+  <!-- Text for the button to delete a single downloaded file item -->
+  <string name="download_delete_item">Dilemel</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">Rannañ an URL</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">Rannañ ar restr</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">Ha fellout a ra deoc’h dilemel an elfennoù-mañ?</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
+  <string name="download_delete_multi_select_dialog_confirm">Dilemel</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
+  <string name="download_delete_multi_select_dialog_cancel">Nullañ</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress" tools:ignore="UnusedResources">War ober</string>
+  <!--
+    Time period headers for downloads
+
+    Text for the header that groups the downloads for today
+  -->
+  <string name="download_time_period_today">Hiziv</string>
+  <!-- Text for the header that groups the downloads for yesterday -->
+  <string name="download_time_period_yesterday">Dec’h</string>
+  <!-- Text for the header that groups the downloads the past 7 days -->
+  <string name="download_time_period_last_7_days">Ar 7 deiz diwezhañ</string>
+  <!-- Text for the header that groups the downloads the past 30 days -->
+  <string name="download_time_period_last_30_days">An 30 deiz diwezhañ</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • %3$s a chom</string>
+  <!-- Text to indicate that an in progress download is paused. -->
+  <string name="download_item_status_paused" tools:ignore="UnusedResources">ehanet</string>
+  <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
+  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">o jediñ</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed" tools:ignore="UnusedResources">Pellgargañ c\'hwitet</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found">Disoc’h ebet kavet</string>
+  <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
+  <string name="download_select_all_items">Diuzañ pep tra</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">All</string>
+  <!--
+    Description of a downloaded item, displayed in the downloads list.
+    %1$s: The size of the downloaded file.
+    %2$s: The URL of the downloaded file.
+  -->
+  <string name="download_item_description" moz:removedIn="138" tools:ignore="UnusedResources">%1$s • %2$s</string>
   <!--
     WebCompat Reporter
 
@@ -1506,6 +1573,10 @@
   <string name="bookmark_menu_delete_button">Dilemel</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Enrollañ</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">Rummañ: A - Z</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">Rummañ: Z - A</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1570,6 +1641,8 @@
   <string name="bookmark_empty_list_title">N’eus tamm sined ebet c’hoazh</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Enrollit al lec’hiennoù a feur ma verdeit. Kennaskit da dapout sinedoù eus trevnadoù goubredet all.</string>
+  <!-- Description for the add new folder button when selecting a folder. -->
+  <string name="bookmark_select_folder_new_folder_button_title">Teuliad nevez</string>
   <!--
     Site Permissions
 
@@ -1656,6 +1729,8 @@
   <string name="studies_on">Gweredekaet</string>
   <!-- Summary of studies data on quit preference if it is set to off -->
   <string name="studies_off">Diweredekaet</string>
+  <!-- Category header of a preference that allows a user to alter settings related to web permissions. -->
+  <string name="preferences_category_permissions">Aotreoù</string>
   <!--
     Collections
 
@@ -1829,6 +1904,8 @@
   <string name="snackbar_tabs_closed">Ivinelloù serret</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Ivinelloù serret: %1$s</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in">Sinedoù enrollet e “%s”!</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Ouzhpennet er berradennoù!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -3041,4 +3118,14 @@
     The default content description for the eye trailing icon button in TextField
   -->
   <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Diskouez an destenn guzh</string>
+  <!--
+    ===== Setup checklist feature: Accessibility =====
+
+    Accessibility description for a check mark on a completed task
+  -->
+  <string name="a11y_completed_task_description">Trevell klokaet</string>
+  <!-- Accessibility description for the task icon -->
+  <string name="a11y_task_icon_description">Ikon trevell</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Ket, trugarez</string>
 </resources>

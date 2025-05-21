@@ -9,6 +9,9 @@
 
 #include <algorithm>
 #include <cstdint>
+#ifdef MOZ_X11
+#include <X11/Xlib.h>
+#endif
 #include <dlfcn.h>
 #include <gdk/gdkkeysyms.h>
 #include <wchar.h>
@@ -441,7 +444,6 @@ nsWindow::nsWindow()
       mPendingBoundsChange(false),
       mPendingBoundsChangeMayChangeCsdMargin(false),
       mTitlebarBackdropState(false),
-      mIsChildWindow(false),
       mAlwaysOnTop(false),
       mNoAutoHide(false),
       mIsTransparent(false),
@@ -914,21 +916,13 @@ bool nsWindow::ToplevelUsesCSD() const {
 }
 
 bool nsWindow::DrawsToCSDTitlebar() const {
-  return mSizeMode == nsSizeMode_Normal &&
-         mGtkWindowDecoration == GTK_DECORATION_CLIENT && mDrawInTitlebar;
+  return mGtkWindowDecoration == GTK_DECORATION_CLIENT && mDrawInTitlebar;
 }
 
-#ifdef MOZ_WAYLAND
-bool nsWindow::GetCSDDecorationOffset(int* aDx, int* aDy) {
-  if (!DrawsToCSDTitlebar()) {
-    return false;
-  }
-  GtkBorder decorationSize = GetTopLevelCSDDecorationSize();
-  *aDx = decorationSize.left;
-  *aDy = decorationSize.top;
-  return true;
+GdkPoint nsWindow::GetCsdOffsetInGdkCoords() {
+  return DevicePixelsToGdkPointRoundDown(
+      LayoutDeviceIntPoint(mCsdMargin.top, mCsdMargin.left));
 }
-#endif
 
 void nsWindow::ApplySizeConstraints() {
   if (!mShell) {
@@ -3250,6 +3244,18 @@ LayoutDeviceIntMargin nsWindow::NormalSizeModeClientToWindowMargin() {
   return {};
 }
 
+#ifdef MOZ_X11
+LayoutDeviceIntCoord GetXWindowBorder(GdkWindow* aWin) {
+  Display* display = GDK_DISPLAY_XDISPLAY(gdk_window_get_display(aWin));
+  auto xid = gdk_x11_window_get_xid(aWin);
+  Window root;
+  int wx, wy;
+  unsigned ww, wh, wb = 0, wd;
+  XGetGeometry(display, xid, &root, &wx, &wy, &ww, &wh, &wb, &wd);
+  return wb;
+}
+#endif
+
 void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
   const bool mayChangeCsdMargin =
       aMayChangeCsdMargin == MayChangeCsdMargin::Yes;
@@ -3265,14 +3271,29 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
   auto GetFrameBounds = [&](GdkWindow* aWin) {
     GdkRectangle b{0};
     gdk_window_get_frame_extents(aWin, &b);
-    // Workaround for https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4820
-    // Bug 1775017 Gtk < 3.24.35 returns scaled values for
-    // override redirected window on X11.
-    if (!gtk_check_version(3, 24, 35) && GdkIsX11Display() &&
+#ifdef MOZ_X11
+    const bool isX11 = GdkIsX11Display();
+    if (isX11 && !gtk_check_version(3, 24, 35) &&
         gdk_window_get_window_type(aWin) == GDK_WINDOW_TEMP) {
+      // Workaround for https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4820
+      // Bug 1775017 Gtk < 3.24.35 returns scaled values for
+      // override redirected window on X11.
       return LayoutDeviceIntRect(b.x, b.y, b.width, b.height);
     }
-    return GdkRectToDevicePixels(b);
+#endif
+    auto result = GdkRectToDevicePixels(b);
+#ifdef MOZ_X11
+    if (isX11 && !gtk_check_version(3, 24, 50)) {
+      if (auto border = GetXWindowBorder(aWin)) {
+        // Workaround for
+        // https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/8423
+        // Bug 1958174 Gtk doesn't account for window border sizes on X11.
+        result.width += 2 * border;
+        result.height += 2 * border;
+      }
+    }
+#endif
+    return result;
   };
 
   auto GetBounds = [&](GdkWindow* aWin) {
@@ -3316,15 +3337,6 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
                gdkWindowBounds;
       }
     }
-    if (mSizeMode == nsSizeMode_Normal && !mIsTiled &&
-        mCsdMargin == kCsdMarginUnknown) {
-      // Try to estimate the margin using our decoration size.
-      auto decorationRect = GetTopLevelCSDDecorationSize();
-      if (!mDrawInTitlebar) {
-        decorationRect.top += moz_gtk_get_titlebar_preferred_height();
-      }
-      return GtkBorderToDevicePixels(decorationRect);
-    }
     // Don't change it. It might have not changed at all, or if it has, we'll
     // get a better margin once we get relevant size-allocate callbacks.
     return mCsdMargin;
@@ -3335,10 +3347,7 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
       return LayoutDeviceIntMargin{};
     }
     const auto systemMargin = mBounds - toplevelBounds;
-    if (mCsdMargin != kCsdMarginUnknown) {
-      return systemMargin + mCsdMargin;
-    }
-    return systemMargin;
+    return systemMargin + mCsdMargin;
   }();
   mClientMargin.EnsureAtLeast(LayoutDeviceIntMargin());
 
@@ -4008,8 +4017,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     return TRUE;
   }
 
-  BufferMode layerBuffering = BufferMode::BUFFERED;
-  RefPtr<DrawTarget> dt = StartRemoteDrawingInRegion(region, &layerBuffering);
+  RefPtr<DrawTarget> dt = StartRemoteDrawingInRegion(region);
   if (!dt || !dt->IsValid()) {
     return FALSE;
   }
@@ -4041,14 +4049,13 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   {
     if (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) {
       if (GetTransparencyMode() == TransparencyMode::Transparent &&
-          layerBuffering == BufferMode::BUFFER_NONE && mHasAlphaVisual) {
+          mHasAlphaVisual) {
         // If our draw target is unbuffered and we use an alpha channel,
         // clear the image beforehand to ensure we don't get artifacts from a
         // reused SHM image. See bug 1258086.
         dt->ClearRect(Rect(boundsRect));
       }
-      AutoLayerManagerSetup setupLayerManager(
-          this, ctx.isNothing() ? nullptr : &ctx.ref(), layerBuffering);
+      AutoLayerManagerSetup setupLayerManager(this, ctx.ptrOr(nullptr));
       listener->PaintWindow(this, region);
 
       // Re-get the listener since the will paint notification might have
@@ -5406,9 +5413,6 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     return result;
   }();
 
-  if (mSizeMode != oldSizeMode) {
-    mCsdMargin = kCsdMarginUnknown;
-  }
   if (mSizeMode != oldSizeMode || mIsTiled != oldIsTiled) {
     RecomputeBounds(MayChangeCsdMargin::No);
   }
@@ -6008,16 +6012,11 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       mWindowType == WindowType::Popup && aInitData &&
       aInitData->mTransparencyMode == TransparencyMode::Transparent;
 
-  // Figure out our parent window - only used for WindowType::Child
+  // Figure out our parent window.
   auto* parentnsWindow = static_cast<nsWindow*>(aParent);
   LOG("  parent window [%p]", parentnsWindow);
-  if (mWindowType == WindowType::Child) {
-    // We don't support WindowType::Child directly but emulate it by popup
-    // windows.
-    mWindowType = WindowType::Popup;
-    mIsChildWindow = true;
-    LOG("  child widget, switch to popup");
-  }
+
+  MOZ_DIAGNOSTIC_ASSERT(mWindowType != WindowType::Child);
 
   MOZ_ASSERT_IF(mWindowType == WindowType::Popup, parentnsWindow);
 
@@ -6302,15 +6301,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     // state indicates that we already have the standard cursor.
     mUpdateCursor = true;
     SetCursor(Cursor{eCursor_standard});
-  }
-
-  if (mIsChildWindow && parentnsWindow) {
-    GdkWindow* window = GetToplevelGdkWindow();
-    GdkWindow* parentWindow = parentnsWindow->GetToplevelGdkWindow();
-    LOG("  child GdkWindow %p set parent GdkWindow %p", window, parentWindow);
-    gdk_window_reparent(window, parentWindow,
-                        DevicePixelsToGdkCoordRoundDown(mBounds.x),
-                        DevicePixelsToGdkCoordRoundDown(mBounds.y));
   }
 
   // Also label mShell toplevel window,
@@ -8704,9 +8694,8 @@ bool nsWindow::GetEditCommands(NativeKeyBindingsType aType,
 }
 
 already_AddRefed<DrawTarget> nsWindow::StartRemoteDrawingInRegion(
-    const LayoutDeviceIntRegion& aInvalidRegion, BufferMode* aBufferMode) {
-  return mSurfaceProvider.StartRemoteDrawingInRegion(aInvalidRegion,
-                                                     aBufferMode);
+    const LayoutDeviceIntRegion& aInvalidRegion) {
+  return mSurfaceProvider.StartRemoteDrawingInRegion(aInvalidRegion);
 }
 
 void nsWindow::EndRemoteDrawingInRegion(

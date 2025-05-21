@@ -170,6 +170,8 @@ async function openAboutTranslations({
     translationInfo: "#translation-info",
     translationResultsPlaceholder: "#translation-results-placeholder",
     noSupportMessage: "[data-l10n-id='about-translations-no-support']",
+    languageLoadErrorMessage:
+      "[data-l10n-id='about-translations-language-load-error']",
   };
 
   // Start the tab at a blank page.
@@ -1048,7 +1050,6 @@ async function loadTestPage({
         // Enabled by default.
         ["browser.translations.enable", true],
         ["browser.translations.logLevel", "All"],
-        ["browser.translations.panelShown", true],
         ["browser.translations.automaticallyPopup", true],
         ["browser.translations.alwaysTranslateLanguages", ""],
         ["browser.translations.neverTranslateLanguages", ""],

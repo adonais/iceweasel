@@ -9,7 +9,7 @@ import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.drawable.ColorDrawable
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -109,7 +110,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
     private val args by navArgs<MenuDialogFragmentArgs>()
     private val webExtensionsMenuBinding = ViewBoundFeatureWrapper<WebExtensionsMenuBinding>()
-    private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+    private var bottomSheetBehavior: BottomSheetBehavior<View>? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         Events.toolbarMenuVisible.record(NoExtras())
@@ -128,23 +129,26 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 window?.setNavigationBarColorCompat(navigationBarColor)
 
                 if (browsingModeManager.mode.isPrivate && args.accesspoint == MenuAccessPoint.Home) {
-                    val backgroundColorDrawable = ColorDrawable(android.graphics.Color.BLACK).mutate()
-                    backgroundColorDrawable.alpha = PRIVATE_HOME_MENU_BACKGROUND_ALPHA
-                    window?.setBackgroundDrawable(backgroundColorDrawable)
+                    window?.setBackgroundDrawable(
+                        Color.BLACK.toDrawable().mutate().apply {
+                            alpha = PRIVATE_HOME_MENU_BACKGROUND_ALPHA
+                        },
+                    )
                 }
 
                 val bottomSheet = findViewById<View?>(R.id.design_bottom_sheet)
                 bottomSheet?.setBackgroundResource(android.R.color.transparent)
 
-                bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-                bottomSheetBehavior.apply {
-                    maxWidth = calculateMenuSheetWidth()
-                    isFitToContents = true
-                    peekHeight = PEEK_HEIGHT.dpToPx(resources.displayMetrics)
-                    halfExpandedRatio = EXPANDED_MIN_RATIO
-                    maxHeight = calculateMenuSheetHeight()
-                    state = BottomSheetBehavior.STATE_COLLAPSED
-                    hideFriction = HIDING_FRICTION
+                bottomSheetBehavior = bottomSheet?.let {
+                    BottomSheetBehavior.from(it).apply {
+                        maxWidth = calculateMenuSheetWidth()
+                        isFitToContents = true
+                        peekHeight = PEEK_HEIGHT.dpToPx(resources.displayMetrics)
+                        halfExpandedRatio = EXPANDED_MIN_RATIO
+                        maxHeight = calculateMenuSheetHeight()
+                        state = BottomSheetBehavior.STATE_COLLAPSED
+                        hideFriction = HIDING_FRICTION
+                    }
                 }
             }
         }
@@ -152,7 +156,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        bottomSheetBehavior.apply {
+        bottomSheetBehavior?.apply {
             maxWidth = calculateMenuSheetWidth()
             maxHeight = calculateMenuSheetHeight()
         }
@@ -246,7 +250,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 navController = findNavController(),
                                 browsingModeManager = browsingModeManager,
                                 openToBrowser = ::openToBrowser,
-                                tabsUseCases = components.useCases.tabsUseCases,
+                                fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
                                 webAppUseCases = webAppUseCases,
                                 settings = settings,
                                 onDismiss = {

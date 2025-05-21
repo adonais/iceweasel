@@ -948,8 +948,10 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
     case eCSSProperty_margin_left: {
       // NOTE(emilio): This is dubious, but matches other browsers.
       // See https://github.com/w3c/csswg-drafts/issues/2328
+      // NOTE(dshin): Raw margin value access since we want to flush
+      // anchor-dependent values here.
       Side side = SideForPaddingOrMarginOrInsetProperty(aPropID);
-      return !style->StyleMargin()->GetMargin(side).ConvertsToLength();
+      return !style->StyleMargin()->mMargin.Get(side).ConvertsToLength();
     }
     default:
       return false;
@@ -1770,7 +1772,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetHeight() {
                               adjustedValues.TopBottom());
   }
   auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
-  SetValueToSize(val, StylePosition()->GetHeight());
+  SetValueToSize(val, StylePosition()->GetHeight(StyleDisplay()->mPosition));
   return val.forget();
 }
 
@@ -1782,19 +1784,21 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetWidth() {
                               adjustedValues.LeftRight());
   }
   auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
-  SetValueToSize(val, StylePosition()->GetWidth());
+  SetValueToSize(val, StylePosition()->GetWidth(StyleDisplay()->mPosition));
   return val.forget();
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMaxHeight() {
   auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
-  SetValueToMaxSize(val, StylePosition()->GetMaxHeight());
+  SetValueToMaxSize(val,
+                    StylePosition()->GetMaxHeight(StyleDisplay()->mPosition));
   return val.forget();
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMaxWidth() {
   auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
-  SetValueToMaxSize(val, StylePosition()->GetMaxWidth());
+  SetValueToMaxSize(val,
+                    StylePosition()->GetMaxWidth(StyleDisplay()->mPosition));
   return val.forget();
 }
 
@@ -1803,25 +1807,44 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMaxWidth() {
  * getComputedStyle() result for the (default) "min-width: auto" and
  * "min-height: auto" CSS values.
  *
- * As of this writing, the CSS Sizing draft spec says this "auto" value
- * *always* computes to itself.  However, for now, we only make it compute to
- * itself for grid and flex items (the containers where "auto" has special
- * significance), because those are the only areas where the CSSWG has actually
- * resolved on this "computes-to-itself" behavior. For elements in other sorts
- * of containers, this function returns false, which will make us resolve
- * "auto" to 0.
+ * https://drafts.csswg.org/css-sizing-3/#valdef-width-auto says that
+ * "Unless otherwise defined by the relevant layout module ... it resolves to a
+ * used value of 0."
+ *
+ * Exceptions to this are explained in the various 'return true' early-returns
+ * here.
  */
 bool nsComputedDOMStyle::ShouldHonorMinSizeAutoInAxis(PhysicalAxis aAxis) {
-  return mOuterFrame && mOuterFrame->IsFlexOrGridItem();
+  if (!mOuterFrame) {
+    // Per https://drafts.csswg.org/css-sizing/#valdef-width-auto
+    // min-{width,height}:auto "resolves to zero when no box is generated".
+    return false;
+  }
+  if (mOuterFrame->IsFlexOrGridItem()) {
+    // Flex and grid items have special significance for min-width:auto and
+    // min-height:auto, so we faithfully report "auto" from getComputedStyle
+    // for those frames:
+    return true;
+  }
+  if (mOuterFrame->StylePosition()->mAspectRatio != StyleAspectRatio::Auto()) {
+    // Frames with non-default CSS 'aspect-ratio' have special significance
+    // for min-{width,height}:auto as well, so we faithfully report "auto"
+    // for them too, per https://github.com/w3c/csswg-drafts/issues/11716
+    return true;
+  }
+
+  // If we're not in one of the special cases above, then we return false
+  // which means that "auto" will get reported as "0" in getComputedStyle.
+  return false;
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMinHeight() {
   auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
-  StyleSize minHeight = StylePosition()->GetMinHeight();
+  auto minHeight = StylePosition()->GetMinHeight(StyleDisplay()->mPosition);
 
-  if (minHeight.IsAuto() &&
+  if (minHeight->IsAuto() &&
       !ShouldHonorMinSizeAutoInAxis(PhysicalAxis::Vertical)) {
-    minHeight = StyleSize::LengthPercentage(LengthPercentage::Zero());
+    minHeight = AnchorResolvedSizeHelper::Zero();
   }
 
   SetValueToSize(val, minHeight);
@@ -1831,11 +1854,11 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMinHeight() {
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMinWidth() {
   auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
 
-  StyleSize minWidth = StylePosition()->GetMinWidth();
+  auto minWidth = StylePosition()->GetMinWidth(StyleDisplay()->mPosition);
 
-  if (minWidth.IsAuto() &&
+  if (minWidth->IsAuto() &&
       !ShouldHonorMinSizeAutoInAxis(PhysicalAxis::Horizontal)) {
-    minWidth = StyleSize::LengthPercentage(LengthPercentage::Zero());
+    minWidth = AnchorResolvedSizeHelper::Zero();
   }
 
   SetValueToSize(val, minWidth);
@@ -1926,9 +1949,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetNonStaticPositionOffset(
     return PixelsToCSSValue(0.0f);
   }
 
-  nscoord result = lp.ResolveWithAnchor(
-      percentageBase, GetStylePhysicalAxis(aSide), positionProperty);
-  return AppUnitsToCSSValue(sign * result);
+  return AppUnitsToCSSValue(sign * lp.Resolve(percentageBase));
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetAbsoluteOffset(
@@ -2045,7 +2066,9 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetBorderWidthFor(
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetMarginFor(Side aSide) {
-  const auto& margin = StyleMargin()->GetMargin(aSide);
+  // Use raw margin here, layout-dependent margins should be stored in used
+  // margin.
+  const auto& margin = StyleMargin()->mMargin.Get(aSide);
   if (!mInnerFrame || margin.ConvertsToLength()) {
     auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
     SetValueToMargin(val, margin);
@@ -2103,33 +2126,35 @@ void nsComputedDOMStyle::SetValueFromFitContentFunction(
 }
 
 void nsComputedDOMStyle::SetValueToSize(nsROCSSPrimitiveValue* aValue,
-                                        const StyleSize& aSize) {
-  if (aSize.IsAuto()) {
+                                        const AnchorResolvedSize& aSize) {
+  if (aSize->IsAuto()) {
     return aValue->SetString("auto");
   }
-  if (aSize.IsFitContentFunction()) {
-    return SetValueFromFitContentFunction(aValue, aSize.AsFitContentFunction());
+  if (aSize->IsFitContentFunction()) {
+    return SetValueFromFitContentFunction(aValue,
+                                          aSize->AsFitContentFunction());
   }
-  if (auto length = nsIFrame::ToExtremumLength(aSize)) {
+  if (auto length = nsIFrame::ToExtremumLength(*aSize)) {
     return SetValueToExtremumLength(aValue, *length);
   }
-  MOZ_ASSERT(aSize.IsLengthPercentage());
-  SetValueToLengthPercentage(aValue, aSize.AsLengthPercentage(), true);
+  MOZ_ASSERT(aSize->IsLengthPercentage());
+  SetValueToLengthPercentage(aValue, aSize->AsLengthPercentage(), true);
 }
 
 void nsComputedDOMStyle::SetValueToMaxSize(nsROCSSPrimitiveValue* aValue,
-                                           const StyleMaxSize& aSize) {
-  if (aSize.IsNone()) {
+                                           const AnchorResolvedMaxSize& aSize) {
+  if (aSize->IsNone()) {
     return aValue->SetString("none");
   }
-  if (aSize.IsFitContentFunction()) {
-    return SetValueFromFitContentFunction(aValue, aSize.AsFitContentFunction());
+  if (aSize->IsFitContentFunction()) {
+    return SetValueFromFitContentFunction(aValue,
+                                          aSize->AsFitContentFunction());
   }
-  if (auto length = nsIFrame::ToExtremumLength(aSize)) {
+  if (auto length = nsIFrame::ToExtremumLength(*aSize)) {
     return SetValueToExtremumLength(aValue, *length);
   }
-  MOZ_ASSERT(aSize.IsLengthPercentage());
-  SetValueToLengthPercentage(aValue, aSize.AsLengthPercentage(), true);
+  MOZ_ASSERT(aSize->IsLengthPercentage());
+  SetValueToLengthPercentage(aValue, aSize->AsLengthPercentage(), true);
 }
 
 void nsComputedDOMStyle::SetValueToLengthPercentageOrAuto(

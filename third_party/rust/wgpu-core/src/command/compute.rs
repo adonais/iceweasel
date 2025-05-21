@@ -4,6 +4,7 @@ use wgt::{BufferAddress, DynamicOffset};
 use alloc::{borrow::Cow, boxed::Box, sync::Arc, vec::Vec};
 use core::{fmt, str};
 
+use crate::ray_tracing::AsAction;
 use crate::{
     binding_model::{
         BindError, BindGroup, LateMinBufferBindingSizeMismatch, PushConstantUploadError,
@@ -24,7 +25,6 @@ use crate::{
     hal_label, id,
     init_tracker::{BufferInitTrackerAction, MemoryInitKind},
     pipeline::ComputePipeline,
-    ray_tracing::TlasAction,
     resource::{
         self, Buffer, DestroyedResourceError, InvalidResourceError, Labeled,
         MissingBufferUsageError, ParentDevice,
@@ -208,7 +208,7 @@ struct State<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder> {
     tracker: &'cmd_buf mut Tracker,
     buffer_memory_init_actions: &'cmd_buf mut Vec<BufferInitTrackerAction>,
     texture_memory_actions: &'cmd_buf mut CommandBufferTextureMemoryActions,
-    tlas_actions: &'cmd_buf mut Vec<TlasAction>,
+    as_actions: &'cmd_buf mut Vec<AsAction>,
 
     temp_offsets: Vec<u32>,
     dynamic_offset_count: usize,
@@ -433,7 +433,7 @@ impl Global {
             tracker: &mut cmd_buf_data.trackers,
             buffer_memory_init_actions: &mut cmd_buf_data.buffer_memory_init_actions,
             texture_memory_actions: &mut cmd_buf_data.texture_memory_actions,
-            tlas_actions: &mut cmd_buf_data.tlas_actions,
+            as_actions: &mut cmd_buf_data.as_actions,
 
             temp_offsets: Vec::new(),
             dynamic_offset_count: 0,
@@ -680,12 +680,9 @@ fn set_bind_group(
         .used
         .acceleration_structures
         .into_iter()
-        .map(|tlas| TlasAction {
-            tlas: tlas.clone(),
-            kind: crate::ray_tracing::TlasActionKind::Use,
-        });
+        .map(|tlas| AsAction::UseTlas(tlas.clone()));
 
-    state.tlas_actions.extend(used_resource);
+    state.as_actions.extend(used_resource);
 
     let pipeline_layout = state.binder.pipeline_layout.clone();
     let entries = state
@@ -765,7 +762,7 @@ fn set_pipeline(
         {
             // Note that non-0 range start doesn't work anyway https://github.com/gfx-rs/wgpu/issues/4502
             let len = push_constant_range.len() / wgt::PUSH_CONSTANT_ALIGNMENT as usize;
-            state.push_constants.extend(core::iter::repeat(0).take(len));
+            state.push_constants.extend(core::iter::repeat_n(0, len));
         }
 
         // Clear push constant ranges
@@ -868,6 +865,7 @@ fn dispatch_indirect(
         .require_downlevel_flags(wgt::DownlevelFlags::INDIRECT_EXECUTION)?;
 
     buffer.check_usage(wgt::BufferUsages::INDIRECT)?;
+    buffer.check_destroyed(&state.snatch_guard)?;
 
     if offset % 4 != 0 {
         return Err(ComputePassErrorInner::UnalignedIndirectBufferOffset(offset));
@@ -891,13 +889,10 @@ fn dispatch_indirect(
             MemoryInitKind::NeedsInitializedMemory,
         ));
 
-    #[cfg(feature = "indirect-validation")]
-    {
-        let params = state.device.indirect_validation.as_ref().unwrap().params(
-            &state.device.limits,
-            offset,
-            buffer.size,
-        );
+    if let Some(ref indirect_validation) = state.device.indirect_validation {
+        let params = indirect_validation
+            .dispatch
+            .params(&state.device.limits, offset, buffer.size);
 
         unsafe {
             state.raw_encoder.set_compute_pipeline(params.pipeline);
@@ -926,9 +921,10 @@ fn dispatch_indirect(
                 1,
                 Some(
                     buffer
-                        .raw_indirect_validation_bind_group
+                        .indirect_validation_bind_groups
                         .get(&state.snatch_guard)
                         .unwrap()
+                        .dispatch
                         .as_ref(),
                 ),
                 &[params.aligned_offset as u32],
@@ -1006,9 +1002,7 @@ fn dispatch_indirect(
         unsafe {
             state.raw_encoder.dispatch_indirect(params.dst_buffer, 0);
         }
-    };
-    #[cfg(not(feature = "indirect-validation"))]
-    {
+    } else {
         state
             .scope
             .buffers

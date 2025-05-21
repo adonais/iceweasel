@@ -5,9 +5,9 @@
 use inherent::inherent;
 use std::sync::Arc;
 
-use glean::traits::Boolean;
+use glean::{traits::Boolean, MetricIdentifier};
 
-use super::{CommonMetricData, MetricGetter, MetricId};
+use super::{BaseMetricId, ChildMetricMeta, CommonMetricData, MetricId, MetricNamer};
 
 use crate::ipc::{need_ipc, with_ipc_payload};
 
@@ -20,20 +20,18 @@ pub enum BooleanMetric {
         /// The metric's ID. Used for testing and profiler markers. Boolean
         /// metrics can be labeled, so we may have either a metric ID or
         /// sub-metric ID.
-        id: MetricGetter,
+        id: MetricId,
         inner: Arc<glean::private::BooleanMetric>,
     },
-    Child(BooleanMetricIpc),
-    UnorderedChild(MetricId),
+    Child(ChildMetricMeta),
+    UnorderedChild(ChildMetricMeta),
 }
-#[derive(Clone, Debug)]
-pub struct BooleanMetricIpc;
 
 impl BooleanMetric {
     /// Create a new boolean metric.
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
-            BooleanMetric::Child(BooleanMetricIpc)
+            BooleanMetric::Child(ChildMetricMeta::from_common_metric_data(id, meta))
         } else {
             BooleanMetric::Parent {
                 id: id.into(),
@@ -42,19 +40,19 @@ impl BooleanMetric {
         }
     }
 
-    pub fn with_unordered_ipc(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn with_unordered_ipc(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
-            BooleanMetric::UnorderedChild(id)
+            BooleanMetric::UnorderedChild(ChildMetricMeta::from_common_metric_data(id, meta))
         } else {
             Self::new(id, meta)
         }
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricGetter {
+    pub(crate) fn metric_id(&self) -> MetricId {
         match self {
             BooleanMetric::Parent { id, .. } => *id,
-            BooleanMetric::UnorderedChild(id) => (*id).into(),
+            BooleanMetric::UnorderedChild(meta) => (meta.id).into(),
             _ => panic!("Can't get a metric_id from a non-ipc-supporting child boolean metric."),
         }
     }
@@ -62,7 +60,16 @@ impl BooleanMetric {
     #[cfg(test)]
     pub(crate) fn child_metric(&self) -> Self {
         match self {
-            BooleanMetric::Parent { id: _, inner: _ } => BooleanMetric::Child(BooleanMetricIpc),
+            BooleanMetric::Parent { id, inner } => {
+                // SAFETY: We can unwrap here, as this code is only run in the
+                // context of a test. If this code is used elsewhere, the
+                // `unwrap` should be replaced with proper error handling of
+                // the `None` case.
+                BooleanMetric::Child(ChildMetricMeta::from_metric_identifier(
+                    id.base_metric_id().unwrap(),
+                    inner.as_ref(),
+                ))
+            }
             _ => panic!("Can't get a child metric from a child metric"),
         }
     }
@@ -84,7 +91,9 @@ impl Boolean for BooleanMetric {
                     "Boolean::set",
                     super::profiler_utils::TelemetryProfilerCategory,
                     Default::default(),
-                    super::profiler_utils::BooleanMetricMarker::new(*id, None, value),
+                    super::profiler_utils::BooleanMetricMarker::<BooleanMetric>::new(
+                        *id, None, value,
+                    ),
                 );
                 inner.set(value);
             }
@@ -95,19 +104,23 @@ impl Boolean for BooleanMetric {
                 assert!(!crate::ipc::is_in_automation(), "Attempted to set boolean metric in non-main process, which is forbidden. This panics in automation.");
                 // TODO: Record an error.
             }
-            BooleanMetric::UnorderedChild(id) => {
+            BooleanMetric::UnorderedChild(meta) => {
                 #[cfg(feature = "with_gecko")]
                 gecko_profiler::add_marker(
                     "Boolean::set",
                     super::profiler_utils::TelemetryProfilerCategory,
                     Default::default(),
-                    super::profiler_utils::BooleanMetricMarker::new((*id).into(), None, value),
+                    super::profiler_utils::BooleanMetricMarker::<BooleanMetric>::new(
+                        meta.id.into(),
+                        None,
+                        value,
+                    ),
                 );
                 with_ipc_payload(move |payload| {
-                    if let Some(v) = payload.booleans.get_mut(&id) {
+                    if let Some(v) = payload.booleans.get_mut(&meta.id) {
                         *v = value;
                     } else {
-                        payload.booleans.insert(*id, value);
+                        payload.booleans.insert(meta.id, value);
                     }
                 });
             }
@@ -156,6 +169,16 @@ impl Boolean for BooleanMetric {
                 "Cannot get the number of recorded errors for boolean metric in non-main process!"
             ),
         }
+    }
+}
+
+impl MetricNamer for BooleanMetric {
+    fn get_metadata(&self) -> crate::private::MetricMetadata {
+        crate::private::MetricMetadata::from_triple(match self {
+            BooleanMetric::Parent { inner, .. } => inner.get_identifiers(),
+            BooleanMetric::Child(meta) => meta.get_identifiers(),
+            BooleanMetric::UnorderedChild(meta) => meta.get_identifiers(),
+        })
     }
 }
 

@@ -1,10 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-import json
 import os
 import shutil
 import tempfile
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 from mozlog import get_proxy_logger
 
@@ -63,7 +67,7 @@ def symbolicate_profile_json(profile_path, firefox_symbols_path):
     )
 
     try:
-        with open(profile_path, "r", encoding="utf-8") as profile_file:
+        with open(profile_path, encoding="utf-8") as profile_file:
             profile = json.load(profile_file)
         symbolicator.dump_and_integrate_missing_symbols(profile, missing_symbols_zip)
         symbolicator.symbolicate_profile(profile)
@@ -71,8 +75,7 @@ def symbolicate_profile_json(profile_path, firefox_symbols_path):
         save_gecko_profile(profile, profile_path)
     except MemoryError:
         LOG.error(
-            "Ran out of memory while trying"
-            " to symbolicate profile {0}".format(profile_path)
+            "Ran out of memory while trying" f" to symbolicate profile {profile_path}"
         )
     except Exception as e:
         LOG.error("Encountered an exception during profile symbolication")

@@ -422,20 +422,35 @@ async function _assertDebugLine(dbg, line, column) {
 
   ok(isVisibleInEditor(dbg, pausedLine), "debug line is visible");
 
-  const markedSpans = lineInfo.handle.markedSpans;
-  if (markedSpans && markedSpans.length && !isWasmBinarySource(source)) {
-    const hasExpectedDebugLine = markedSpans.some(
-      span =>
-        span.marker.className?.includes("debug-expression") &&
-        // When a precise column is expected, ensure that we have at least
-        // one "debug line" for the column we expect.
-        // (See the React Component: DebugLine.setDebugLine)
-        (!column || span.from == column)
+  if (isCm6Enabled) {
+    const editorLineEl = getCMEditor(dbg).getElementAtLine(line);
+    const pauseLocationMarker = editorLineEl.querySelector(".paused-location");
+    is(
+      pauseLocationMarker.cmView.widget.line,
+      line,
+      "The paused caret is at the right line"
     );
-    ok(
-      hasExpectedDebugLine,
-      "Got the expected DebugLine. i.e. got the right marker in codemirror visualizing the breakpoint"
+    is(
+      pauseLocationMarker.cmView.widget.column,
+      column,
+      "The paused caret is at the right column"
     );
+  } else {
+    const markedSpans = lineInfo.handle.markedSpans;
+    if (markedSpans && markedSpans.length && !isWasmBinarySource(source)) {
+      const hasExpectedDebugLine = markedSpans.some(
+        span =>
+          span.marker.className?.includes("debug-expression") &&
+          // When a precise column is expected, ensure that we have at least
+          // one "debug line" for the column we expect.
+          // (See the React Component: DebugLine.setDebugLine)
+          (!column || span.from == column)
+      );
+      ok(
+        hasExpectedDebugLine,
+        "Got the expected DebugLine. i.e. got the right marker in codemirror visualizing the breakpoint"
+      );
+    }
   }
   info(`Paused on line ${line}`);
 }
@@ -467,7 +482,12 @@ async function assertPausedAtSourceAndLine(
     expectedLine,
     "Redux state for currently selected frame's line is correct"
   );
-  const pauseColumn = getVisibleSelectedFrameColumn(dbg);
+
+  const selectedSource = dbg.selectors.getSelectedSource();
+  // WASM binary source is pausing at 0 column, whereas visible selected frame returns 1
+  const pauseColumn = isWasmBinarySource(selectedSource)
+    ? 0
+    : getVisibleSelectedFrameColumn(dbg);
   if (expectedColumn) {
     // `pauseColumn` is 0-based, coming from internal state,
     // while `expectedColumn` is manually passed from test scripts and so is 1-based.
@@ -482,7 +502,6 @@ async function assertPausedAtSourceAndLine(
   ok(isVisibleInEditor(dbg, findElement(dbg, "gutters")), "gutter is visible");
 
   const frames = dbg.selectors.getCurrentThreadFrames();
-  const selectedSource = dbg.selectors.getSelectedSource();
 
   // WASM support is limited when we are on the generated binary source
   if (isWasmBinarySource(selectedSource)) {

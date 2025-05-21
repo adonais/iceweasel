@@ -504,7 +504,6 @@ const TEST_GLOBAL = {
   },
   FX_MONITOR_OAUTH_CLIENT_ID: "fake_client_id",
   ExperimentAPI: {
-    getExperiment() {},
     getExperimentMetaData() {},
     getRolloutMetaData() {},
   },
@@ -561,6 +560,9 @@ const TEST_GLOBAL = {
   },
   Logger: FakeLogger,
   getFxAccountsSingleton() {},
+  AWEnsureAddonInstalled() {
+    return Promise.resolve({ value: "complete" });
+  },
   AboutNewTab: {},
   Glean: {
     newtab: {

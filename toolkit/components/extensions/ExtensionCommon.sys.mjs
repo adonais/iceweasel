@@ -3,6 +3,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* eslint-disable mozilla/valid-lazy */
 
 /**
  * This module contains utilities and base classes for logic which is
@@ -14,22 +15,20 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-/** @type {Lazy} */
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ConsoleAPI: "resource://gre/modules/Console.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SchemaRoot: "resource://gre/modules/Schemas.sys.mjs",
   Schemas: "resource://gre/modules/Schemas.sys.mjs",
+  styleSheetService: {
+    service: "@mozilla.org/content/style-sheet-service;1",
+    iid: Ci.nsIStyleSheetService,
+  },
+  wptEnabled: {
+    pref: "extensions.wpt.enabled",
+    default: false,
+  },
 });
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "styleSheetService",
-  "@mozilla.org/content/style-sheet-service;1",
-  "nsIStyleSheetService"
-);
 
 const ScriptError = Components.Constructor(
   "@mozilla.org/scripterror;1",
@@ -1904,6 +1903,8 @@ class SchemaAPIManager extends EventEmitter {
       Glean,
       GleanPings,
       IOUtils,
+      L10nFileSource,
+      L10nRegistry,
       MatchGlob,
       MatchPattern,
       MatchPatternSet,
@@ -2063,6 +2064,18 @@ export function LocaleData(data) {
   }
 }
 
+LocaleData.listLocaleVariations = function LocaleData_listLocaleVariations(
+  locale
+) {
+  const subTags = locale.split("-");
+  const result = [];
+  while (subTags.length) {
+    result.push(subTags.join("-"));
+    subTags.pop();
+  }
+  return result;
+};
+
 LocaleData.prototype = {
   // Representation of the object to send to content processes. This
   // should include anything the content process might need.
@@ -2081,21 +2094,30 @@ LocaleData.prototype = {
     return this.messages.has(locale);
   },
 
+  getAvailableLocales(preferredLocale) {
+    const locales = [this.BUILTIN];
+
+    if (preferredLocale) {
+      locales.push(...LocaleData.listLocaleVariations(preferredLocale));
+    }
+
+    if (!locales.includes(this.defaultLocale)) {
+      locales.push(this.defaultLocale);
+    }
+
+    return locales.filter(locale => this.messages.has(locale));
+  },
+
   // https://developer.chrome.com/extensions/i18n
   localizeMessage(message, substitutions = [], options = {}) {
-    let defaultOptions = {
+    const defaultOptions = {
       defaultValue: "",
       cloneScope: null,
     };
 
-    let locales = this.availableLocales;
-    if (options.locale) {
-      locales = new Set(
-        [this.BUILTIN, options.locale, this.defaultLocale].filter(locale =>
-          this.messages.has(locale)
-        )
-      );
-    }
+    const locales = options.locale
+      ? this.getAvailableLocales(options.locale)
+      : this.availableLocales;
 
     options = Object.assign(defaultOptions, options);
 
@@ -2255,8 +2277,7 @@ LocaleData.prototype = {
   },
 
   get availableLocales() {
-    const locales = [this.BUILTIN, this.selectedLocale, this.defaultLocale];
-    const value = new Set(locales.filter(locale => this.messages.has(locale)));
+    let value = this.getAvailableLocales(this.selectedLocale);
     return redefineGetter(this, "availableLocales", value);
   },
 };
@@ -3133,4 +3154,10 @@ export var ExtensionCommon = {
 
   MultiAPIManager,
   LazyAPIManager,
+
+  // Whether we're running under Web Platform Tests mode,
+  // required to adjust some cross-browser behaviors.
+  get isInWPT() {
+    return Cu.isInAutomation && lazy.wptEnabled;
+  },
 };

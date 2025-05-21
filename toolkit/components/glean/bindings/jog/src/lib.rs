@@ -5,6 +5,7 @@
 use firefox_on_glean::factory;
 use firefox_on_glean::private::traits::HistogramType;
 use firefox_on_glean::private::{CommonMetricData, Lifetime, MemoryUnit, TimeUnit};
+use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
 #[cfg(feature = "with_gecko")]
 use nsstring::{nsACString, nsAString, nsCString};
 use serde::Deserialize;
@@ -77,6 +78,92 @@ pub extern "C" fn jog_test_register_metric(
     .0
 }
 
+/// Creates and registers a metric as specified,
+/// making it and its APIs available on the JS Glean global.
+///
+/// Not necessary for most uses of FOG and Glean.
+/// If you're not sure if you should call this,
+/// err on the side of not calling it.
+///
+/// # Arguments
+///
+/// * `metric_type` - The type of metric (e.g., "counter", "string", etc.)
+/// * `category` - The category/namespace for the metric
+/// * `name` - The name of the metric
+/// * `send_in_pings` - The pings this metric should be included in
+/// * `lifetime` - The lifetime of the metric (e.g., "ping", "application", "user")
+/// * `disabled` - Whether the metric is disabled
+/// * `extra_args` - Optional JSON string with additional configuration
+///
+/// # Returns
+///
+/// NS_OK if the metric was registered successfully, or NS_ERROR_FAILURE if registration failed
+#[cfg(feature = "with_gecko")]
+#[no_mangle]
+pub extern "C" fn jog_register_metric(
+    metric_type: &nsACString,
+    category: &nsACString,
+    name: &nsACString,
+    send_in_pings: &ThinVec<nsCString>,
+    lifetime: &nsACString,
+    disabled: bool,
+    extra_args: &nsACString,
+) -> nsresult {
+    // Validate inputs
+    if metric_type.is_empty() || category.is_empty() || name.is_empty() || lifetime.is_empty() {
+        log::warn!("Failed to register metric: Missing required parameters");
+        return NS_ERROR_FAILURE;
+    }
+
+    // Convert inputs to Rust types
+    let metric_type = metric_type.to_utf8();
+    let category = category.to_string();
+    let name = name.to_string();
+    let send_in_pings = send_in_pings.iter().map(|ping| ping.to_string()).collect();
+
+    // Parse lifetime with error handling
+    let lifetime = match serde_json::from_str(&lifetime.to_utf8()) {
+        Ok(l) => l,
+        Err(e) => {
+            log::warn!("Failed to parse lifetime '{lifetime:?}': {e}");
+            return NS_ERROR_FAILURE;
+        }
+    };
+
+    // Parse extra_args with error handling
+    let extra_args: ExtraMetricArgs = if extra_args.is_empty() {
+        Default::default()
+    } else {
+        match serde_json::from_str(&extra_args.to_utf8()) {
+            Ok(args) => args,
+            Err(e) => {
+                log::warn!("Failed to parse extra_args '{extra_args:?}': {e}");
+                return NS_ERROR_FAILURE;
+            }
+        }
+    };
+
+    // Create and register the metric
+    match create_and_register_metric(
+        &metric_type,
+        category,
+        name,
+        send_in_pings,
+        lifetime,
+        disabled,
+        extra_args,
+    ) {
+        Ok((_, metric_id)) => {
+            log::debug!("Successfully registered metric with ID {}", metric_id);
+            NS_OK
+        }
+        Err(e) => {
+            log::warn!("Failed to register metric: {}", e);
+            NS_ERROR_FAILURE
+        }
+    }
+}
+
 fn create_and_register_metric(
     metric_type: &str,
     category: String,
@@ -145,6 +232,7 @@ pub extern "C" fn jog_test_register_ping(
     schedules_pings: &ThinVec<nsCString>,
     reason_codes: &ThinVec<nsCString>,
     follows_collection_enabled: bool,
+    uploader_capabilities: &ThinVec<nsCString>,
 ) -> u32 {
     let ping_name = name.to_string();
     let reason_codes = reason_codes
@@ -154,6 +242,10 @@ pub extern "C" fn jog_test_register_ping(
     let schedules_pings = schedules_pings
         .iter()
         .map(|ping| ping.to_string())
+        .collect();
+    let uploader_capabilities = uploader_capabilities
+        .iter()
+        .map(|capability| capability.to_string())
         .collect();
     create_and_register_ping(
         ping_name,
@@ -165,8 +257,90 @@ pub extern "C" fn jog_test_register_ping(
         schedules_pings,
         reason_codes,
         follows_collection_enabled,
+        uploader_capabilities,
     )
     .expect("Creation or registration of ping failed.") // permitted to panic in test-only method.
+}
+
+/// Creates and registers a ping as specified,
+/// making it and its APIs available on the JS GleanPings global.
+///
+/// Not necessary for most uses of FOG and Glean.
+/// If you're not sure if you should call this,
+/// err on the side of not calling it.
+///
+/// # Arguments
+///
+/// * `name` - The name of the ping
+/// * `include_client_id` - Whether the ping should include the client_id
+/// * `send_if_empty` - Whether the ping should send even if empty
+/// * `precise_timestamps` - Whether to use precise timestamps
+/// * `include_info_sections` - Whether to include client_info and ping_info sections
+/// * `enabled` - Whether the ping is enabled
+/// * `schedules_pings` - Array of pings that this ping schedules
+/// * `reason_codes` - Array of valid reason codes for this ping
+/// * `follows_collection_enabled` - Whether this ping follows the collection enabled setting
+/// * `uploader_capabilities` - Array of capabilities that the uploader must support to handle this ping
+///
+/// # Returns
+///
+/// NS_OK if the ping was registered successfully, or NS_ERROR_FAILURE if registration failed
+#[no_mangle]
+pub extern "C" fn jog_register_ping(
+    name: &nsACString,
+    include_client_id: bool,
+    send_if_empty: bool,
+    precise_timestamps: bool,
+    include_info_sections: bool,
+    enabled: bool,
+    schedules_pings: &ThinVec<nsCString>,
+    reason_codes: &ThinVec<nsCString>,
+    follows_collection_enabled: bool,
+    uploader_capabilities: &ThinVec<nsCString>,
+) -> nsresult {
+    // Validate inputs
+    if name.is_empty() {
+        log::warn!("Failed to register ping: Missing ping name");
+        return NS_ERROR_FAILURE;
+    }
+
+    // Convert inputs to Rust types
+    let ping_name = name.to_string();
+    let reason_codes = reason_codes
+        .iter()
+        .map(|reason| reason.to_string())
+        .collect();
+    let schedules_pings = schedules_pings
+        .iter()
+        .map(|ping| ping.to_string())
+        .collect();
+    let uploader_capabilities = uploader_capabilities
+        .iter()
+        .map(|capability| capability.to_string())
+        .collect();
+
+    // Create and register the ping
+    match create_and_register_ping(
+        ping_name,
+        include_client_id,
+        send_if_empty,
+        precise_timestamps,
+        include_info_sections,
+        enabled,
+        schedules_pings,
+        reason_codes,
+        follows_collection_enabled,
+        uploader_capabilities,
+    ) {
+        Ok(_ping_id) => {
+            log::debug!("Successfully registered ping");
+            NS_OK
+        }
+        Err(e) => {
+            log::warn!("Failed to register ping: {}", e);
+            NS_ERROR_FAILURE
+        }
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -180,6 +354,7 @@ fn create_and_register_ping(
     schedules_pings: Vec<String>,
     reason_codes: Vec<String>,
     follows_collection_enabled: bool,
+    uploader_capabilities: Vec<String>,
 ) -> Result<u32, Box<dyn std::error::Error>> {
     let ns_name = nsCString::from(&ping_name);
     let ping_id = factory::create_and_register_ping(
@@ -192,6 +367,7 @@ fn create_and_register_ping(
         schedules_pings,
         reason_codes,
         follows_collection_enabled,
+        uploader_capabilities,
     );
     extern "C" {
         fn JOG_RegisterPing(name: &nsACString, ping_id: u32);
@@ -246,6 +422,7 @@ struct PingDefinitionData {
     schedules_pings: Option<Vec<String>>,
     reason_codes: Option<Vec<String>>,
     follows_collection_enabled: bool,
+    uploader_capabilities: Vec<String>,
 }
 
 /// Read the file at the provided location, interpret it as a jogfile,
@@ -296,6 +473,7 @@ pub extern "C" fn jog_load_jogfile(jogfile_path: &nsAString) -> bool {
             ping.schedules_pings.unwrap_or_else(Vec::new),
             ping.reason_codes.unwrap_or_else(Vec::new),
             ping.follows_collection_enabled,
+            ping.uploader_capabilities,
         );
     }
     true

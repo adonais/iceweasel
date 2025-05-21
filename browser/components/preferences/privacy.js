@@ -54,11 +54,12 @@ ChromeUtils.defineLazyGetter(lazy, "AboutLoginsL10n", () => {
   return new Localization(["branding/brand.ftl", "browser/aboutLogins.ftl"]);
 });
 
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "gParentalControlsService",
-  "@mozilla.org/parental-controls-service;1",
-  "nsIParentalControlsService"
+ChromeUtils.defineLazyGetter(lazy, "gParentalControlsService", () =>
+  "@mozilla.org/parental-controls-service;1" in Cc
+    ? Cc["@mozilla.org/parental-controls-service;1"].getService(
+        Ci.nsIParentalControlsService
+      )
+    : null
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -76,7 +77,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
-  DoHConfigController: "resource:///modules/DoHConfig.sys.mjs",
+  DoHConfigController: "resource://gre/modules/DoHConfig.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
@@ -154,8 +155,6 @@ Preferences.addAll([
   { id: "browser.urlbar.suggest.quicksuggest.nonsponsored", type: "bool" },
   { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
   { id: "browser.urlbar.quicksuggest.dataCollection.enabled", type: "bool" },
-  { id: PREF_URLBAR_QUICKSUGGEST_BLOCKLIST, type: "string" },
-  { id: PREF_URLBAR_WEATHER_USER_ENABLED, type: "bool" },
 
   // History
   { id: "places.history.enabled", type: "bool" },
@@ -709,7 +708,7 @@ var gPrivacyPane = {
         mode == Ci.nsIDNSService.MODE_TRRFIRST ||
         mode == Ci.nsIDNSService.MODE_TRRONLY
       ) {
-        if (lazy.gParentalControlsService.parentalControlsEnabled) {
+        if (lazy.gParentalControlsService?.parentalControlsEnabled) {
           return "preferences-doh-status-not-active";
         }
         let confirmationState = Services.dns.currentTrrConfirmationState;
@@ -732,7 +731,7 @@ var gPrivacyPane = {
     if (
       (mode == Ci.nsIDNSService.MODE_TRRFIRST ||
         mode == Ci.nsIDNSService.MODE_TRRONLY) &&
-      lazy.gParentalControlsService.parentalControlsEnabled
+      lazy.gParentalControlsService?.parentalControlsEnabled
     ) {
       errReason = Services.dns.getTRRSkipReasonName(
         Ci.nsITRRSkipReason.TRR_PARENTAL_CONTROL

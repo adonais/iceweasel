@@ -1012,6 +1012,8 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   already_AddRefed<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(
       gfxAlphaType* out_alphaType) override;
 
+  mozilla::ipc::IProtocol* SupportsSnapshotExternalCanvas() const override;
+
   void SetOpaqueValueFromOpaqueAttr(bool) override {};
   bool GetIsOpaque() override { return !mInitialOptions->alpha; }
 
@@ -1419,6 +1421,8 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   void DepthRange(GLclampf zNear, GLclampf zFar);
 
   void Flush(bool flushGl = true) const;
+
+  void SyncSnapshot() override { Flush(); }
 
   void Finish();
 
@@ -2224,7 +2228,8 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
                   dom::CallerType aCallerType, ErrorResult& out_error) const;
 
  protected:
-  bool ReadPixels_SharedPrecheck(dom::CallerType aCallerType,
+  bool ReadPixels_SharedPrecheck(GLenum* inout_readType,
+                                 dom::CallerType aCallerType,
                                  ErrorResult& out_error) const;
 
   // ------------------------------ Vertex Array ------------------------------

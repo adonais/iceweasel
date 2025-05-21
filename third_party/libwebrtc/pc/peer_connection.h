@@ -114,13 +114,15 @@ class PeerConnection : public PeerConnectionInternal,
   //
   // Note that the function takes ownership of dependencies, and will
   // either use them or release them, whether it succeeds or fails.
-  static RTCErrorOr<rtc::scoped_refptr<PeerConnection>> Create(
+  static rtc::scoped_refptr<PeerConnection> Create(
       const Environment& env,
       rtc::scoped_refptr<ConnectionContext> context,
       const PeerConnectionFactoryInterface::Options& options,
       std::unique_ptr<Call> call,
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies dependencies);
+      PeerConnectionDependencies& dependencies,
+      const cricket::ServerAddresses& stun_servers,
+      const std::vector<cricket::RelayServerConfig>& turn_servers);
 
   rtc::scoped_refptr<StreamCollectionInterface> local_streams() override;
   rtc::scoped_refptr<StreamCollectionInterface> remote_streams() override;
@@ -463,24 +465,29 @@ class PeerConnection : public PeerConnectionInternal,
 
  protected:
   // Available for rtc::scoped_refptr creation
-  PeerConnection(const Environment& env,
+  PeerConnection(const PeerConnectionInterface::RTCConfiguration& configuration,
+                 const Environment& env,
                  rtc::scoped_refptr<ConnectionContext> context,
                  const PeerConnectionFactoryInterface::Options& options,
                  bool is_unified_plan,
                  std::unique_ptr<Call> call,
                  PeerConnectionDependencies& dependencies,
+                 const cricket::ServerAddresses& stun_servers,
+                 const std::vector<cricket::RelayServerConfig>& turn_servers,
                  bool dtls_enabled);
 
   ~PeerConnection() override;
 
  private:
-  RTCError Initialize(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies dependencies);
+  // Called from the constructor to apply the server configuration on the
+  // network thread and initialize network thread related state (see
+  // InitializeTransportController_n). The return value of this function is used
+  // to set the initial value of `transport_controller_copy_`.
+  JsepTransportController* InitializeNetworkThread(
+      const cricket::ServerAddresses& stun_servers,
+      const std::vector<cricket::RelayServerConfig>& turn_servers);
   JsepTransportController* InitializeTransportController_n(
-      const RTCConfiguration& configuration,
-      const PeerConnectionDependencies& dependencies)
-      RTC_RUN_ON(network_thread());
+      const RTCConfiguration& configuration) RTC_RUN_ON(network_thread());
 
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   FindTransceiverBySender(rtc::scoped_refptr<RtpSenderInterface> sender)
@@ -619,6 +626,8 @@ class PeerConnection : public PeerConnectionInternal,
   std::function<void(const RtpPacketReceived& parsed_packet)>
   InitializeUnDemuxablePacketHandler();
 
+  bool CanAttemptDtlsStunPiggybacking(const RTCConfiguration& configuration);
+
   const Environment env_;
   const rtc::scoped_refptr<ConnectionContext> context_;
   const PeerConnectionFactoryInterface::Options options_;
@@ -626,6 +635,12 @@ class PeerConnection : public PeerConnectionInternal,
       nullptr;
 
   const bool is_unified_plan_;
+  const bool dtls_enabled_;
+  bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
+      false;
+  // Did the connectionState ever change to `connected`?
+  // Used to gather metrics only the first such state change.
+  bool was_ever_connected_ RTC_GUARDED_BY(signaling_thread()) = false;
 
   IceConnectionState ice_connection_state_ RTC_GUARDED_BY(signaling_thread()) =
       kIceConnectionNew;
@@ -673,15 +688,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   const std::string session_id_;
 
-  // The transport controller is set and used on the network thread.
-  // Some functions pass the value of the transport_controller_ pointer
-  // around as arguments while running on the signaling thread; these
-  // use the transport_controller_copy.
-  std::unique_ptr<JsepTransportController> transport_controller_
-      RTC_GUARDED_BY(network_thread());
-  JsepTransportController* transport_controller_copy_
-      RTC_GUARDED_BY(signaling_thread()) = nullptr;
-
   // `sctp_mid_` is the content name (MID) in SDP.
   // Note: this is used as the data channel MID by both SCTP and data channel
   // transports.  It is set when either transport is initialized and unset when
@@ -693,15 +699,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::optional<std::string> sctp_mid_n_ RTC_GUARDED_BY(network_thread());
   std::string sctp_transport_name_s_ RTC_GUARDED_BY(signaling_thread());
 
-  // The machinery for handling offers and answers. Const after initialization.
-  std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
-      RTC_GUARDED_BY(signaling_thread()) RTC_PT_GUARDED_BY(signaling_thread());
-
-  const bool dtls_enabled_;
-
   UsagePattern usage_pattern_ RTC_GUARDED_BY(signaling_thread());
-  bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
-      false;
 
   // The DataChannelController is accessed from both the signaling thread
   // and networking thread. It is a thread-aware object.
@@ -711,19 +709,27 @@ class PeerConnection : public PeerConnectionInternal,
   PeerConnectionMessageHandler message_handler_
       RTC_GUARDED_BY(signaling_thread());
 
+  PayloadTypePicker payload_type_picker_;
+
+  // The transport controller is set and used on the network thread.
+  // Some functions pass the value of the transport_controller_ pointer
+  // around as arguments while running on the signaling thread; these
+  // use the transport_controller_copy.
+  std::unique_ptr<JsepTransportController> transport_controller_
+      RTC_GUARDED_BY(network_thread());
+  JsepTransportController* transport_controller_copy_
+      RTC_GUARDED_BY(signaling_thread()) = nullptr;
+
+  // The machinery for handling offers and answers. Const after initialization.
+  std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
+      RTC_GUARDED_BY(signaling_thread()) RTC_PT_GUARDED_BY(signaling_thread());
+
   // Administration of senders, receivers and transceivers
   // Accessed on both signaling and network thread. Const after Initialize().
   std::unique_ptr<RtpTransmissionManager> rtp_manager_;
 
-  // Did the connectionState ever change to `connected`?
-  // Used to gather metrics only the first such state change.
-  bool was_ever_connected_ RTC_GUARDED_BY(signaling_thread()) = false;
-
-  PayloadTypePicker payload_type_picker_;
   // This variable needs to be the last one in the class.
-  rtc::WeakPtrFactory<PeerConnection> weak_factory_;
-
-  bool CanAttemptDtlsStunPiggybacking(const RTCConfiguration& configuration);
+  WeakPtrFactory<PeerConnection> weak_factory_;
 };
 
 }  // namespace webrtc

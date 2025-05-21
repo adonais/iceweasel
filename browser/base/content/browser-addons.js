@@ -140,26 +140,23 @@ customElements.define(
 
       this.textEl = this.querySelector("#addon-webext-perm-text");
       this.introEl = this.querySelector("#addon-webext-perm-intro");
-      this.permsSingleEl = this.querySelector(
-        "#addon-webext-perm-single-entry"
-      );
       this.permsListEl = this.querySelector("#addon-webext-perm-list");
 
       this.render();
     }
 
     get hasNoPermissions() {
-      const { strings, showIncognitoCheckbox } =
-        this.notification.options.customElementOptions;
-      return !(showIncognitoCheckbox || strings.msgs.length);
-    }
+      const {
+        strings,
+        showIncognitoCheckbox,
+        showTechnicalAndInteractionCheckbox,
+      } = this.notification.options.customElementOptions;
 
-    get hasMultiplePermissionsEntries() {
-      const { strings, showIncognitoCheckbox } =
-        this.notification.options.customElementOptions;
-      return (
-        strings.msgs.length > 1 ||
-        (strings.msgs.length === 1 && showIncognitoCheckbox)
+      return !(
+        strings.msgs.length ||
+        this.#dataCollectionPermissions?.msg ||
+        showIncognitoCheckbox ||
+        showTechnicalAndInteractionCheckbox
       );
     }
 
@@ -183,11 +180,27 @@ customElements.define(
       return strings.fullDomainsList.msgIdIndex === idx;
     }
 
-    render() {
-      const { strings, showIncognitoCheckbox, isUserScriptsRequest } =
-        this.notification.options.customElementOptions;
+    /**
+     * @returns {{idx: number, collectsTechnicalAndInteractionData: boolean}}
+     * An object with information about data collection permissions for the UI.
+     */
+    get #dataCollectionPermissions() {
+      if (!this.notification?.options?.customElementOptions) {
+        return undefined;
+      }
+      const { strings } = this.notification.options.customElementOptions;
+      return strings.dataCollectionPermissions;
+    }
 
-      const { textEl, introEl, permsSingleEl, permsListEl } = this;
+    render() {
+      const {
+        strings,
+        showIncognitoCheckbox,
+        showTechnicalAndInteractionCheckbox,
+        isUserScriptsRequest,
+      } = this.notification.options.customElementOptions;
+
+      const { textEl, introEl, permsListEl } = this;
 
       const HTML_NS = "http://www.w3.org/1999/xhtml";
       const doc = this.ownerDocument;
@@ -218,37 +231,8 @@ customElements.define(
         return;
       }
 
-      // If there are multiple permissions entries to be shown,
-      // add to the list element one entry for each granted permission
-      // (and one for the private browsing checkbox, if it should
-      // be shown) and return earlier.
-      if (this.hasMultiplePermissionsEntries) {
-        for (let [idx, msg] of strings.msgs.entries()) {
-          let item = doc.createElementNS(HTML_NS, "li");
-          item.classList.add("webext-perm-granted");
-          if (
-            this.hasFullDomainsList &&
-            this.#isFullDomainsListEntryIndex(idx)
-          ) {
-            item.append(this.#createFullDomainsListFragment(msg));
-          } else {
-            item.textContent = msg;
-          }
-          permsListEl.appendChild(item);
-        }
-        if (showIncognitoCheckbox) {
-          let item = doc.createElementNS(HTML_NS, "li");
-          item.classList.add(
-            "webext-perm-optional",
-            "webext-perm-privatebrowsing"
-          );
-          item.appendChild(this.#createPrivateBrowsingCheckbox());
-          permsListEl.appendChild(item);
-        }
-        permsListEl.hidden = false;
-        return;
-      }
-
+      // We only expect a single permission for a userScripts request per
+      // https://searchfox.org/mozilla-central/rev/5fb48bf50516ed2529d533e5dfe49b4752efb8b8/browser/modules/ExtensionsUI.sys.mjs#308-313.
       if (isUserScriptsRequest) {
         // The "userScripts" permission cannot be granted until the user has
         // confirmed again in the notification's content, as described at
@@ -262,32 +246,59 @@ customElements.define(
 
         this.#setAllowButtonEnabled(false);
 
-        permsSingleEl.append(checkboxEl, warningEl);
-        permsSingleEl.classList.add("webext-perm-optional");
-        permsSingleEl.hidden = false;
-        return;
-      }
-
-      // Render a single permission entry, which will be either:
-      // - an entry for the private browsing checkbox
-      // - or single granted permission entry.
-      if (showIncognitoCheckbox) {
-        permsSingleEl.appendChild(this.#createPrivateBrowsingCheckbox());
-        permsSingleEl.hidden = false;
-        permsSingleEl.classList.add(
-          "webext-perm-optional",
-          "webext-perm-privatebrowsing"
-        );
-        return;
-      }
-
-      const msg = strings.msgs[0];
-      if (this.hasFullDomainsList && this.#isFullDomainsListEntryIndex(0)) {
-        permsSingleEl.append(this.#createFullDomainsListFragment(msg));
+        let item = doc.createElementNS(HTML_NS, "li");
+        item.append(checkboxEl, warningEl);
+        item.classList.add("webext-perm-optional");
+        permsListEl.append(item);
       } else {
-        permsSingleEl.textContent = msg;
+        for (let [idx, msg] of strings.msgs.entries()) {
+          let item = doc.createElementNS(HTML_NS, "li");
+          item.classList.add("webext-perm-granted");
+          if (
+            this.hasFullDomainsList &&
+            this.#isFullDomainsListEntryIndex(idx)
+          ) {
+            item.append(this.#createFullDomainsListFragment(msg));
+          } else {
+            item.textContent = msg;
+          }
+          permsListEl.appendChild(item);
+        }
+
+        if (this.#dataCollectionPermissions?.msg) {
+          let item = doc.createElementNS(HTML_NS, "li");
+          item.classList.add(
+            "webext-perm-granted",
+            "webext-data-collection-perm-granted"
+          );
+          item.textContent = this.#dataCollectionPermissions.msg;
+          permsListEl.appendChild(item);
+        }
+
+        // Add a checkbox for the "technicalAndInteraction" optional data
+        // collection permission.
+        if (showTechnicalAndInteractionCheckbox) {
+          let item = doc.createElementNS(HTML_NS, "li");
+          item.classList.add(
+            "webext-perm-optional",
+            "webext-data-collection-perm-optional"
+          );
+          item.appendChild(this.#createTechnicalAndInteractionDataCheckbox());
+          permsListEl.appendChild(item);
+        }
+
+        if (showIncognitoCheckbox) {
+          let item = doc.createElementNS(HTML_NS, "li");
+          item.classList.add(
+            "webext-perm-optional",
+            "webext-perm-privatebrowsing"
+          );
+          item.appendChild(this.#createPrivateBrowsingCheckbox());
+          permsListEl.appendChild(item);
+        }
       }
-      permsSingleEl.hidden = false;
+
+      permsListEl.hidden = false;
     }
 
     #createFullDomainsListFragment(msg) {
@@ -317,7 +328,7 @@ customElements.define(
     }
 
     #clearChildElements() {
-      const { textEl, introEl, permsSingleEl, permsListEl } = this;
+      const { textEl, introEl, permsListEl } = this;
 
       // Clear all changes to the child elements that may have been changed
       // by a previous call of the render method.
@@ -327,13 +338,6 @@ customElements.define(
 
       introEl.textContent = "";
       introEl.hidden = true;
-
-      permsSingleEl.textContent = "";
-      permsSingleEl.hidden = true;
-      permsSingleEl.classList.remove(
-        "webext-perm-optional",
-        "webext-perm-privatebrowsing"
-      );
 
       permsListEl.textContent = "";
       permsListEl.hidden = true;
@@ -406,8 +410,35 @@ customElements.define(
       });
       doc.l10n.setAttributes(
         checkboxEl,
-        "popup-notification-addon-privatebrowsing-checkbox"
+        "popup-notification-addon-privatebrowsing-checkbox2"
       );
+      return checkboxEl;
+    }
+
+    #createTechnicalAndInteractionDataCheckbox() {
+      const { grantTechnicalAndInteractionDataCollection } =
+        this.notification.options.customElementOptions;
+
+      MozXULElement.insertFTLIfNeeded(
+        "locales-preview/dataCollectionPermissions.ftl"
+      );
+
+      const checkboxEl = this.ownerDocument.createXULElement("checkbox");
+      this.ownerDocument.l10n.setAttributes(
+        checkboxEl,
+        "popup-notification-addon-technicalAndInteraction-checkbox"
+      );
+      checkboxEl.checked = grantTechnicalAndInteractionDataCollection;
+      checkboxEl.addEventListener("CheckboxStateChange", () => {
+        // NOTE: the popupnotification instances will be reused
+        // and so the callback function is destructured here to
+        // avoid this custom element to prevent it from being
+        // garbage collected.
+        const { onTechnicalAndInteractionDataChanged } =
+          this.notification.options.customElementOptions;
+        onTechnicalAndInteractionDataChanged?.(checkboxEl.checked);
+      });
+
       return checkboxEl;
     }
   }
@@ -745,11 +776,9 @@ var gXPInstallObserver = {
       }
       installInfo = null;
 
-      Services.telemetry
-        .getHistogramById("SECURITY_UI")
-        .add(
-          Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL_CLICK_THROUGH
-        );
+      Glean.securityUi.events.accumulateSingleSample(
+        Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL_CLICK_THROUGH
+      );
     };
 
     let cancelInstallation = () => {
@@ -872,9 +901,9 @@ var gXPInstallObserver = {
 
     removeNotificationOnEnd(popup, installInfo.installs);
 
-    Services.telemetry
-      .getHistogramById("SECURITY_UI")
-      .add(Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL);
+    Glean.securityUi.events.accumulateSingleSample(
+      Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL
+    );
   },
 
   // IDs of addon install related notifications
@@ -1001,9 +1030,9 @@ var gXPInstallObserver = {
 
         options.removeOnDismissal = true;
         options.persistent = false;
-        Services.telemetry
-          .getHistogramById("SECURITY_UI")
-          .add(Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED);
+        Glean.securityUi.events.accumulateSingleSample(
+          Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED
+        );
         let popup = PopupNotifications.show(
           browser,
           aTopic,
@@ -1094,9 +1123,9 @@ var gXPInstallObserver = {
           let learnMore = doc.getElementById("addon-install-blocked-info");
           learnMore.setAttribute("support-page", article);
         };
-        Services.telemetry
-          .getHistogramById("SECURITY_UI")
-          .add(Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED);
+        Glean.securityUi.events.accumulateSingleSample(
+          Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED
+        );
 
         const [
           installMsg,
@@ -1111,12 +1140,10 @@ var gXPInstallObserver = {
         ]);
 
         const action = buildNotificationAction(installMsg, () => {
-          Services.telemetry
-            .getHistogramById("SECURITY_UI")
-            .add(
-              Ci.nsISecurityUITelemetry
-                .WARNING_ADDON_ASKING_PREVENTED_CLICK_THROUGH
-            );
+          Glean.securityUi.events.accumulateSingleSample(
+            Ci.nsISecurityUITelemetry
+              .WARNING_ADDON_ASKING_PREVENTED_CLICK_THROUGH
+          );
           installInfo.install();
         });
 

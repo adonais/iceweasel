@@ -1599,7 +1599,7 @@ export var UrlbarUtils = {
     if (result.providerName != "UrlbarProviderGlobalActions") {
       return result.payload.action?.key ?? "none";
     }
-    return result.payload.results.map(({ key }) => key).join(",");
+    return result.payload.actionsResults.map(({ key }) => key).join(",");
   },
 
   _getQuickSuggestTelemetryType(result) {
@@ -1874,6 +1874,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "string",
       },
       descriptionL10n: L10N_SCHEMA,
+      dismissalKey: {
+        type: "string",
+      },
       displayUrl: {
         type: "string",
       },
@@ -1949,6 +1952,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
       subtype: {
         type: "string",
+      },
+      suggestionObject: {
+        type: "object",
       },
       tags: {
         type: "array",

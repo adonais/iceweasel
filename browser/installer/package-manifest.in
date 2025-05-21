@@ -61,9 +61,6 @@
 #ifdef MOZ_UPDATER
 @RESPATH@/updater.ini
 #endif
-#if defined(MOZ_UPDATE_AGENT)
-@RESPATH@/locale.ini
-#endif
 
 [xpcom]
 @RESPATH@/dependentlibs.list
@@ -393,6 +390,12 @@ bin/libfreebl_64int_3.so
 @BINPATH@/@DLL_PREFIX@mozwer@DLL_SUFFIX@
 #endif
 #endif
+#endif
+
+; [ crashhelper ]
+;
+#ifdef MOZ_CRASHREPORTER
+@BINPATH@/crashhelper@BIN_SUFFIX@
 #endif
 
 ; [ Ping Sender ]

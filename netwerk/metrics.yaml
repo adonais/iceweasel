@@ -534,6 +534,45 @@ networking:
       In TRR channel, overall load time.
     expires: never
 
+  trr_response_size: &trr_response_size
+    type: labeled_memory_distribution
+    memory_unit: byte
+    description: >
+      In TRR channel, the size of the HTTP response.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957859
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1957859
+    notification_emails:
+      - necko@mozilla.com
+      - kershaw@mozilla.com
+    labels:
+      - mozilla.cloudflare-dns.com
+      - firefox.dns.nextdns.io
+      - private.canadianshield.cira.ca
+      - doh.xfinity.com
+      - dns.shaw.ca
+      - dooh.cloudflare-dns.com
+      - mozilla.cloudflare-dns.com_2
+      - firefox.dns.nextdns.io_2
+      - private.canadianshield.cira.ca_2
+      - doh.xfinity.com_2
+      - dns.shaw.ca_2
+      - dooh.cloudflare-dns.com_2
+      - mozilla.cloudflare-dns.com_3
+      - firefox.dns.nextdns.io_3
+      - private.canadianshield.cira.ca_3
+      - doh.xfinity.com_3
+      - dns.shaw.ca_3
+      - dooh.cloudflare-dns.com_3
+    expires: never
+
+  trr_request_size:
+    <<: *trr_response_size
+    description: >
+      In TRR channel, the size of the HTTP request.
+    expires: never
+
   dns_renewal_time:
     type: timing_distribution
     time_unit: millisecond
@@ -610,6 +649,7 @@ networking:
       The count of calls to the native DNS APIs
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1879165
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1958160
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1879165
     data_sensitivity:
@@ -617,7 +657,7 @@ networking:
     notification_emails:
       - vgosu@mozilla.com
       - necko@mozilla.com
-    expires: 140
+    expires: 148
     labels:
       - regular
       - private
@@ -1519,12 +1559,13 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1866245
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1902190
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1958160
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1866245
     notification_emails:
       - vgosu@mozilla.com
       - necko@mozilla.com
-    expires: 140
+    expires: never
     labels:
       - regular
       - private
@@ -3081,3 +3122,129 @@ network.cookies:
       - necko@mozilla.com
     expires: never
     telemetry_mirror: MOZ_SQLITE_COOKIES_OPEN_READAHEAD_MS
+
+network:
+  id:
+    type: custom_distribution
+    description: >
+      Network identification (0=None, 1=New Ipv4, 2=Same, 3=New IPv6, 4=New
+      dual)
+
+      This metric was generated to correspond to the Legacy Telemetry enumerated
+      histogram NETWORK_ID2.
+    range_min: 0
+    range_max: 6
+    bucket_count: 7
+    histogram_type: linear
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1240932
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1395914
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1240932
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1395914
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: NETWORK_ID2
+
+  id_online:
+    type: labeled_counter
+    description: >
+      Network ID presence when the network connectivity checker reports that we
+      have connectivity
+
+      This metric was generated to correspond to the Legacy Telemetry
+      categorical histogram NETWORK_ID_ONLINE.
+    labels:
+      - absent
+      - present
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1580130
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1580130
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: h#NETWORK_ID_ONLINE
+
+  backgroundfilesaver_thread_count:
+    type: custom_distribution
+    description: >
+      Maximum number of concurrent threads reached during a given download
+      session
+
+      This metric was generated to correspond to the Legacy Telemetry enumerated
+      histogram BACKGROUNDFILESAVER_THREAD_COUNT.
+    range_min: 0
+    range_max: 21
+    bucket_count: 22
+    histogram_type: linear
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: BACKGROUNDFILESAVER_THREAD_COUNT
+
+  ipv4_and_ipv6_address_connectivity:
+    type: custom_distribution
+    description: >
+      Count the number of 0) successful connections to an ipv4 address, 1)
+      failed connection an ipv4 address, 2) successful connection to an ipv6
+      address and 3) failed connections to an ipv6 address.
+
+      This metric was generated to correspond to the Legacy Telemetry enumerated
+      histogram IPV4_AND_IPV6_ADDRESS_CONNECTIVITY.
+    range_min: 0
+    range_max: 4
+    bucket_count: 5
+    histogram_type: linear
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+    telemetry_mirror: IPV4_AND_IPV6_ADDRESS_CONNECTIVITY
+
+  rel_preload_miss_ratio:
+    type: labeled_counter
+    description: >
+      Ratio of used and unused resources preloaded with link rel=preload tag or
+      response header, broken down by supported resource type.
+
+      This metric was generated to correspond to the Legacy Telemetry
+      categorical histogram REL_PRELOAD_MISS_RATIO.
+    labels:
+      - TYPE_SCRIPT_USED
+      - TYPE_SCRIPT_UNUSED
+      - TYPE_STYLE_USED
+      - TYPE_STYLE_UNUSED
+      - TYPE_IMAGE_USED
+      - TYPE_IMAGE_UNUSED
+      - TYPE_FONT_USED
+      - TYPE_FONT_UNUSED
+      - TYPE_FETCH_USED
+      - TYPE_FETCH_UNUSED
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1658532
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1583604
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1666981
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1700831
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1736687
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1777403
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1658532
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1583604
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1666981
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1700831
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1736687
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1777403
+    notification_emails:
+      - necko@mozilla.com
+      - kershaw@mozilla.com
+    expires: never
+    telemetry_mirror: h#REL_PRELOAD_MISS_RATIO

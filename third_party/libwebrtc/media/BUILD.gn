@@ -339,6 +339,7 @@ rtc_source_set("media_channel") {
     "../api/task_queue:pending_task_safety_flag",
     "../api/transport:datagram_transport_interface",
     "../api/transport/rtp:rtp_source",
+    "../api/units:data_rate",
     "../api/units:time_delta",
     "../api/units:timestamp",
     "../api/video:recordable_encoded_frame",
@@ -401,6 +402,7 @@ rtc_library("codec_list") {
   deps = [
     ":codec",
     ":media_constants",
+    "../api:rtc_error",
     "../rtc_base:checks",
     "../rtc_base:logging",
     "../rtc_base:stringutils",
@@ -469,7 +471,7 @@ rtc_library("rid_description") {
     "base/rid_description.cc",
     "base/rid_description.h",
   ]
-  deps = []
+  deps = [ ":codec" ]
 }
 
 rtc_library("rtc_simulcast_encoder_adapter") {
@@ -856,6 +858,7 @@ if (rtc_include_tests) {
       "../api:call_api",
       "../api:fec_controller_api",
       "../api:frame_transformer_interface",
+      "../api:make_ref_counted",
       "../api:rtc_error",
       "../api:rtp_headers",
       "../api:rtp_parameters",
@@ -863,6 +866,7 @@ if (rtc_include_tests) {
       "../api:scoped_refptr",
       "../api/adaptation:resource_adaptation_api",
       "../api/audio:audio_frame_api",
+      "../api/audio:audio_mixer_api",
       "../api/audio:audio_processing",
       "../api/audio_codecs:audio_codecs_api",
       "../api/crypto:frame_decryptor_interface",
@@ -963,6 +967,7 @@ if (rtc_include_tests) {
       defines = []
       deps = [
         ":codec",
+        ":codec_list",
         ":media_channel",
         ":media_constants",
         ":media_engine",
@@ -1099,6 +1104,7 @@ if (rtc_include_tests) {
 
       sources = [
         "base/codec_comparators_unittest.cc",
+        "base/codec_list_unittest.cc",
         "base/codec_unittest.cc",
         "base/media_engine_unittest.cc",
         "base/rtp_utils_unittest.cc",

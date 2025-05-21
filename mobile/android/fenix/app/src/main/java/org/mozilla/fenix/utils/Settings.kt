@@ -345,8 +345,13 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = false,
     )
 
-    var privateBrowsingBiometricsEnabled by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_private_browsing_biometrics_enabled),
+    var privateBrowsingLockedEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_private_browsing_locked_enabled),
+        default = false,
+    )
+
+    var isPrivateScreenBlocked by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_private_screen_locked),
         default = false,
     )
 
@@ -1466,11 +1471,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         },
     )
 
-    var allowDomesticChinaFxaServer by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_allow_domestic_china_fxa_server),
-        default = true,
-    )
-
     var overrideFxAServer by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_override_fxa_server),
         default = "",
@@ -1885,6 +1885,12 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         },
     )
 
+    var shouldUseComposableToolbar by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_composable_toolbar),
+        default = { FxNimbus.features.composableToolbar.value().enabled },
+        featureFlag = true,
+    )
+
     /**
      * Indicates if the navigation bar CFR should be displayed to the user.
      */
@@ -1907,6 +1913,14 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var shouldShowNavigationButtonsCFR by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_toolbar_navigation_cfr),
         default = true,
+    )
+
+    /**
+     * Indicates whether or not to use remote server search configuration.
+     */
+    var useRemoteSearchConfiguration by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_use_remote_search_configuration),
+        default = FxNimbus.features.remoteSearchConfiguration.value().enabled,
     )
 
     /**
@@ -2468,15 +2482,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     }
 
     /**
-     * Indicates whether or not to show the tab strip.
-     */
-    var tabStripEnabled by lazyFeatureFlagPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_tab_strip),
-        default = { FxNimbus.features.tabStrip.value().enabled },
-        featureFlag = true,
-    )
-
-    /**
      * Indicates if the user has completed the setup step for choosing the toolbar location
      */
     var hasCompletedSetupStepToolbar by booleanPreference(
@@ -2498,5 +2503,22 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var hasCompletedSetupStepExtensions by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_setup_step_extensions),
         default = false,
+    )
+
+    /**
+     * Indicates if this is the default browser.
+     */
+    var isDefaultBrowser by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_default_browser),
+        default = false,
+    )
+
+    /**
+     * Indicates whether or not to show the checklist feature.
+     */
+    var showSetupChecklist by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_setup_checklist_complete),
+        default = { FxNimbus.features.setupChecklist.value().enabled },
+        featureFlag = true,
     )
 }

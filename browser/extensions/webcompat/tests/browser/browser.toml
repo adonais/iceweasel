@@ -13,10 +13,13 @@ support-files = [
 ]
 
 ["browser_aboutcompat.js"]
+skip-if = ["debug"] # disabled until bug 1961939 is fixed.
+
+["browser_console_messages.js"]
+skip-if = ["true"] # disabled in bug 1960374 to verify if the bug which added it has caused regressions.
 
 ["browser_custom_functions.js"]
 support-files = ["download_server.sjs"]
-skip-if = ["true"] # Bug 1961710
 
 ["browser_interventions.js"]
 
@@ -25,5 +28,8 @@ https_first_disabled = true
 skip-if = ["verify"]
 
 ["browser_smartblockembeds.js"]
+
+["browser_smartblockembeds_mutation.js"]
+skip-if = ["os == 'linux' && asan"] # Bug 1858919
 
 ["browser_ua_helpers.js"]

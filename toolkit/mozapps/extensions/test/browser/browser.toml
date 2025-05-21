@@ -3,6 +3,8 @@ tags = "addons"
 support-files = [
   "addons/browser_dragdrop1.xpi",
   "addons/browser_dragdrop1.zip",
+  "addons/browser_dragdrop1.1.xpi",
+  "addons/browser_dragdrop1.1.zip",
   "addons/browser_dragdrop2.xpi",
   "addons/browser_dragdrop2.zip",
   "addons/browser_dragdrop_incompat.xpi",
@@ -33,6 +35,8 @@ support-files = [
 generated-files = [
   "addons/browser_dragdrop1.xpi",
   "addons/browser_dragdrop1.zip",
+  "addons/browser_dragdrop1.1.xpi",
+  "addons/browser_dragdrop1.1.zip",
   "addons/browser_dragdrop2.xpi",
   "addons/browser_dragdrop2.zip",
   "addons/browser_dragdrop_incompat.xpi",
@@ -57,7 +61,7 @@ support-files = ["head_abuse_report.js"]
 
 ["browser_checkAddonCompatibility.js"]
 
-["browser_colorwaybuiltins_migration.js"]
+["browser_colorwaybuiltins_notification.js"]
 run-if = ["appname == 'firefox'"]
 
 ["browser_dragdrop.js"]

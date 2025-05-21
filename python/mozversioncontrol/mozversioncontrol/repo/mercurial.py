@@ -165,7 +165,7 @@ class HgRepository(Repository):
         if rev is None:
             # Use --no-status to print just the filename.
             df = self._format_diff_filter(diff_filter, for_status=True)
-            return self._run("status", "--no-status", "-{}".format(df)).splitlines()
+            return self._run("status", "--no-status", f"-{df}").splitlines()
         else:
             template = self._files_template(diff_filter)
             return self._run("log", "-r", rev, "-T", template).splitlines()
@@ -225,6 +225,17 @@ class HgRepository(Repository):
             if p
         )
         return FileListFinder(files)
+
+    def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
+        args = ["diff", f"-U{context}"]
+        if rev:
+            args += ["-c", rev]
+        else:
+            args += ["-r", ".^"]
+        for dot_extension in extensions:
+            args += ["--include", f"glob:**{dot_extension}"]
+        args += ["--exclude", f"listfile:{exclude_file}"]
+        return self._pipefrom(*args)
 
     def working_directory_clean(self, untracked=False, ignored=False):
         args = ["status", "--modified", "--added", "--removed", "--deleted"]

@@ -90,28 +90,6 @@ bool StyleCssUrlData::operator==(const StyleCssUrlData& aOther) const {
 
 StyleLoadData::~StyleLoadData() { Gecko_LoadData_Drop(this); }
 
-already_AddRefed<nsIURI> StyleComputedUrl::ResolveLocalRef(
-    nsIURI* aBase) const {
-  nsCOMPtr<nsIURI> result = GetURI();
-  if (result && IsLocalRef()) {
-    nsCString ref;
-    result->GetRef(ref);
-
-    nsresult rv = NS_MutateURI(aBase).SetRef(ref).Finalize(result);
-
-    if (NS_FAILED(rv)) {
-      // If setting the ref failed, just return the original URI.
-      result = aBase;
-    }
-  }
-  return result.forget();
-}
-
-already_AddRefed<nsIURI> StyleComputedUrl::ResolveLocalRef(
-    const nsIContent* aContent) const {
-  return ResolveLocalRef(aContent->GetBaseURI());
-}
-
 void StyleComputedUrl::ResolveImage(Document& aDocument,
                                     const StyleComputedUrl* aOldImage) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
@@ -308,8 +286,37 @@ static StyleRect<T> StyleRectWithAllSides(const T& aSide) {
   return {aSide, aSide, aSide, aSide};
 }
 
-MOZ_RUNINIT const StyleMargin nsStyleMargin::kZeroMargin =
-    StyleMargin::LengthPercentage(StyleLengthPercentage::Zero());
+AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
+    const StyleMargin& aValue, StylePositionProperty aPosition) {
+  MOZ_ASSERT(aValue.HasAnchorPositioningFunction(),
+             "Calling anchor resolution without using it?");
+  if (aValue.IsAnchorSizeFunction()) {
+    auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
+    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), aPosition,
+                                    &resolved);
+    if (resolved.IsInvalid()) {
+      return AnchorResolvedMargin::Evaluated(
+          StyleMargin::LengthPercentage(StyleLengthPercentage::Zero()));
+    }
+    if (resolved.IsResolvedReference()) {
+      return AnchorResolvedMargin::Evaluated(
+          StyleMargin::LengthPercentage(*resolved.AsResolvedReference()));
+    }
+    return AnchorResolvedMargin::Evaluated(
+        StyleMargin::LengthPercentage(resolved.AsResolved()));
+  }
+
+  const auto& lp = aValue.AsAnchorContainingCalcFunction();
+  const auto& c = lp.AsCalc();
+  auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, nullptr, aPosition, &result);
+  if (result.IsInvalid()) {
+    return AnchorResolvedMargin::Evaluated(
+        StyleMargin::LengthPercentage(StyleLengthPercentage::Zero()));
+  }
+  return AnchorResolvedMargin::Evaluated(
+      StyleMargin::LengthPercentage(result.AsValid()));
+}
 
 nsStyleMargin::nsStyleMargin()
     : mMargin(StyleRectWithAllSides(
@@ -1259,12 +1266,12 @@ nsChangeHint nsStylePosition::CalcDifference(
     hint |= nsChangeHint_NeedReflow;
   }
 
-  bool widthChanged = GetWidth() != aNewData.GetWidth() ||
-                      GetMinWidth() != aNewData.GetMinWidth() ||
-                      GetMaxWidth() != aNewData.GetMaxWidth();
-  bool heightChanged = GetHeight() != aNewData.GetHeight() ||
-                       GetMinHeight() != aNewData.GetMinHeight() ||
-                       GetMaxHeight() != aNewData.GetMaxHeight();
+  bool widthChanged = mWidth != aNewData.mWidth ||
+                      mMinWidth != aNewData.mMinWidth ||
+                      mMaxWidth != aNewData.mMaxWidth;
+  bool heightChanged = mHeight != aNewData.mHeight ||
+                       mMinHeight != aNewData.mMinHeight ||
+                       mMaxHeight != aNewData.mMaxHeight;
 
   if (widthChanged || heightChanged) {
     // It doesn't matter whether we're looking at the old or new visibility
@@ -1311,7 +1318,7 @@ nsChangeHint nsStylePosition::CalcDifference(
     if (IsEqualInsetType(mOffset, aNewData.mOffset) &&
         aNewData.mOffset.All([](const StyleInset& aInset) {
           // Err on the side of triggering reflow for anchor positioning.
-          return !aInset.IsAnchorPositioningFunction();
+          return !aInset.HasAnchorPositioningFunction();
         })) {
       hint |=
           nsChangeHint_RecomputePosition | nsChangeHint_UpdateParentOverflow;
@@ -1360,109 +1367,127 @@ StyleJustifySelf nsStylePosition::UsedJustifySelf(
   return {StyleAlignFlags::NORMAL};
 }
 
-AnchorResolvedInset nsStylePosition::GetAnchorResolvedInset(
-    Side aSide, StylePositionProperty aPosition) const {
-  return {mOffset.Get(aSide), GetStylePhysicalAxis(aSide), aPosition};
-}
-
-AnchorResolvedInset nsStylePosition::GetAnchorResolvedInset(
-    mozilla::LogicalSide aSide, WritingMode aWM,
-    mozilla::StylePositionProperty aPosition) const {
-  return GetAnchorResolvedInset(aWM.PhysicalSide(aSide), aPosition);
-}
-
-AnchorResolvedInset::AnchorResolvedInset(
-    const mozilla::StyleInset& aValue, mozilla::StylePhysicalAxis aAxis,
-    mozilla::StylePositionProperty aPosition)
-    : AnchorResolved<StyleInset>{FromUnresolved(aValue, aAxis, aPosition)} {}
-
-AnchorResolvedInset::AnchorResolvedInset(
-    const mozilla::StyleInset& aValue, mozilla::LogicalAxis aAxis,
-    mozilla::WritingMode aWM, mozilla::StylePositionProperty aPosition)
-    : AnchorResolved<StyleInset>{FromUnresolved(
-          aValue, ToStylePhysicalAxis(aWM.PhysicalAxis(aAxis)), aPosition)} {}
-
-AnchorResolved<mozilla::StyleInset> AnchorResolvedInset::Invalid() {
-  return AnchorResolved::Evaluated(StyleInset::Auto());
-}
-
-AnchorResolved<mozilla::StyleInset> AnchorResolvedInset::Evaluated(
-    mozilla::StyleLengthPercentage&& aLP) {
-  return AnchorResolved::Evaluated(StyleInset::LengthPercentage(aLP));
-}
-
-AnchorResolved<mozilla::StyleInset> AnchorResolvedInset::Evaluated(
-    const mozilla::StyleLengthPercentage& aLP) {
-  return AnchorResolved::Evaluated(StyleInset::LengthPercentage(aLP));
-}
-
-AnchorResolved<mozilla::StyleInset> AnchorResolvedInset::FromUnresolved(
+AnchorResolvedInset AnchorResolvedInsetHelper::ResolveAnchor(
     const mozilla::StyleInset& aValue, mozilla::StylePhysicalAxis aAxis,
     mozilla::StylePositionProperty aPosition) {
-  // TODO(dshin): Maybe worth pref-gating here.
   static_assert(static_cast<uint8_t>(mozilla::PhysicalAxis::Vertical) ==
                     static_cast<uint8_t>(StylePhysicalAxis::Vertical),
                 "Vertical axis doesn't match");
   static_assert(static_cast<uint8_t>(mozilla::PhysicalAxis::Horizontal) ==
                     static_cast<uint8_t>(StylePhysicalAxis::Horizontal),
                 "Horizontal axis doesn't match");
+  MOZ_ASSERT(aValue.HasAnchorPositioningFunction(),
+             "Calling anchor resolution without using it?");
   switch (aValue.tag) {
-    case StyleInset::Tag::Auto:
-      return AnchorResolved::Unchanged(aValue);
-    case StyleInset::Tag::LengthPercentage: {
-      const auto& lp = aValue.AsLengthPercentage();
-      if (lp.IsCalc()) {
-        const auto& c = lp.AsCalc();
-        float result{};
-        bool percentageUsed{};
-        if (!Servo_ResolveCalcLengthPercentageWithAnchorFunctions(
-                &c, 0.0, aAxis, aPosition, &result, &percentageUsed)) {
-          return Invalid();
-        }
-        if (percentageUsed) {
-          // We just resolved to a wrong value, will need to re-resolve - keep
-          // the original data. This ensures that `HasPercent()` calls to it
-          // makes sense as well.
-          return Unchanged(aValue);
-        }
-        // Guaranteed to not contain any percentage value.
-        return Evaluated(StyleLengthPercentage::FromPixels(result));
+    case StyleInset::Tag::AnchorContainingCalcFunction: {
+      const auto& lp = aValue.AsAnchorContainingCalcFunction();
+      const auto& c = lp.AsCalc();
+      auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
+      Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &aAxis, aPosition,
+                                                   &result);
+      if (result.IsInvalid()) {
+        return AnchorResolvedInset::Evaluated(StyleInset::Auto());
       }
-      return Unchanged(aValue);
+      return AnchorResolvedInset::Evaluated(
+          StyleInset::LengthPercentage(result.AsValid()));
     }
     case StyleInset::Tag::AnchorFunction: {
       auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
       Servo_ResolveAnchorFunction(&*aValue.AsAnchorFunction(), aAxis, aPosition,
                                   &resolved);
       if (resolved.IsInvalid()) {
-        return Invalid();
+        return AnchorResolvedInset::Evaluated(StyleInset::Auto());
       }
       if (resolved.IsResolvedReference()) {
-        return Evaluated(*resolved.AsResolvedReference());
+        return AnchorResolvedInset::Evaluated(
+            StyleInset::LengthPercentage(*resolved.AsResolvedReference()));
       }
-      return Evaluated(resolved.AsResolved());
+      return AnchorResolvedInset::Evaluated(
+          StyleInset::LengthPercentage(resolved.AsResolved()));
     }
     case StyleInset::Tag::AnchorSizeFunction: {
       auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
       Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(),
                                       aPosition, &resolved);
       if (resolved.IsInvalid()) {
-        return Invalid();
+        return AnchorResolvedInset::Evaluated(StyleInset::Auto());
       }
       if (resolved.IsResolvedReference()) {
-        return Evaluated(*resolved.AsResolvedReference());
+        return AnchorResolvedInset::Evaluated(
+            StyleInset::LengthPercentage(*resolved.AsResolvedReference()));
       }
-      return Evaluated(resolved.AsResolved());
+      return AnchorResolvedInset::Evaluated(
+          StyleInset::LengthPercentage(resolved.AsResolved()));
     }
     default:
       MOZ_ASSERT_UNREACHABLE("Unhandled inset type");
-      return Invalid();
+      return AnchorResolvedInset::Evaluated(StyleInset::Auto());
   }
 }
 
-MOZ_RUNINIT const StyleSize nsStylePosition::kAutoSize = StyleSize::Auto();
-MOZ_RUNINIT const StyleMaxSize nsStylePosition::kNoneMaxSize =
-    StyleMaxSize::None();
+AnchorResolvedSize AnchorResolvedSizeHelper::ResolveAnchor(
+    const mozilla::StyleSize& aValue,
+    mozilla::StylePositionProperty aPosition) {
+  MOZ_ASSERT(aValue.HasAnchorPositioningFunction(),
+             "Calling anchor resolution without using it?");
+  if (aValue.IsAnchorSizeFunction()) {
+    auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
+    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), aPosition,
+                                    &resolved);
+    if (resolved.IsInvalid()) {
+      return AnchorResolvedSize::Evaluated(StyleSize::Auto());
+    }
+    if (resolved.IsResolvedReference()) {
+      return AnchorResolvedSize::Evaluated(
+          StyleSize::LengthPercentage(*resolved.AsResolvedReference()));
+    }
+    return AnchorResolvedSize::Evaluated(
+        StyleSize::LengthPercentage(resolved.AsResolved()));
+  }
+
+  const auto& lp = aValue.AsAnchorContainingCalcFunction();
+  // Follows the same reasoning as anchor resolved insets.
+  const auto& c = lp.AsCalc();
+  auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, nullptr, aPosition, &result);
+  if (result.IsInvalid()) {
+    return AnchorResolvedSize::Evaluated(StyleSize::Auto());
+  }
+  return AnchorResolvedSize::Evaluated(
+      StyleSize::LengthPercentage(result.AsValid()));
+}
+
+AnchorResolvedMaxSize AnchorResolvedMaxSizeHelper::ResolveAnchor(
+    const mozilla::StyleMaxSize& aValue,
+    mozilla::StylePositionProperty aPosition) {
+  MOZ_ASSERT(aValue.HasAnchorPositioningFunction(),
+             "Calling anchor resolution without using it?");
+  if (aValue.IsAnchorSizeFunction()) {
+    auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
+    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), aPosition,
+                                    &resolved);
+    if (resolved.IsInvalid()) {
+      return AnchorResolvedMaxSize::Evaluated(StyleMaxSize::None());
+    }
+    if (resolved.IsResolvedReference()) {
+      return AnchorResolvedMaxSize::Evaluated(
+          StyleMaxSize::LengthPercentage(*resolved.AsResolvedReference()));
+    }
+    return AnchorResolvedMaxSize::Evaluated(
+        StyleMaxSize::LengthPercentage(resolved.AsResolved()));
+  }
+
+  const auto& lp = aValue.AsAnchorContainingCalcFunction();
+  // Follows the same reasoning as anchor resolved insets.
+  const auto& c = lp.AsCalc();
+  auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, nullptr, aPosition, &result);
+  if (result.IsInvalid()) {
+    return AnchorResolvedMaxSize::Evaluated(StyleMaxSize::None());
+  }
+  return AnchorResolvedMaxSize::Evaluated(
+      StyleMaxSize::LengthPercentage(result.AsValid()));
+}
 
 // --------------------
 // nsStyleTable

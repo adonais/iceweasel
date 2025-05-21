@@ -506,6 +506,16 @@ nsCSPContext::GetAllowsEval(bool* outShouldReportViolation,
   *outShouldReportViolation = false;
   *outAllowsEval = true;
 
+  if (CSP_IsBrowserXHTML(mSelfURI)) {
+    // Allow eval in browser.xhtml, just like
+    // nsContentSecurityUtils::IsEvalAllowed allows it for other privileged
+    // contexts.
+    if (StaticPrefs::
+            security_allow_unsafe_dangerous_privileged_evil_eval_AtStartup()) {
+      return NS_OK;
+    }
+  }
+
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     if (!mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_UNSAFE_EVAL, u""_ns)) {
       // policy is violated: must report the violation and allow the inline
@@ -1006,10 +1016,9 @@ void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
   // If the origin of aURI is a globally unique identifier (for example,
   // aURI has a scheme of data, blob, or filesystem), then
   // return the ASCII serialization of uri’s scheme.
-  bool isHttpOrWs = (aURI->SchemeIs("http") || aURI->SchemeIs("https") ||
-                     aURI->SchemeIs("ws") || aURI->SchemeIs("wss"));
+  bool isWsOrWss = aURI->SchemeIs("ws") || aURI->SchemeIs("wss");
 
-  if (!isHttpOrWs) {
+  if (!net::SchemeIsHttpOrHttps(aURI) && !isWsOrWss) {
     // not strictly spec compliant, but what we really care about is
     // http/https. If it's not http/https, then treat aURI
     // as if it's a globally unique identifier and just return the scheme.
@@ -1338,10 +1347,7 @@ nsresult nsCSPContext::SendReportsToURIs(
     }
 
     // log a warning to console if scheme is not http or https
-    bool isHttpScheme =
-        reportURI->SchemeIs("http") || reportURI->SchemeIs("https");
-
-    if (!isHttpScheme) {
+    if (!net::SchemeIsHttpOrHttps(reportURI)) {
       AutoTArray<nsString, 1> params = {reportURIs[r]};
       logToConsole("reportURInotHttpsOrHttp2", params,
                    NS_ConvertUTF16toUTF8(aViolationEventInit.mSourceFile),
@@ -2253,11 +2259,9 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
       }
     }
 
-    // Note: The (empty) "trustedTypesDirectiveExpressions" is going to be
-    // removed completely in bug 1959034.
     policies.AppendElement(
         ContentSecurityPolicy(policyString, reportOnly, deliveredViaMetaTag,
-                              hasRequireTrustedTypesForDirective, {}));
+                              hasRequireTrustedTypesForDirective));
   }
 
   // Make sure all data was consumed.
@@ -2331,14 +2335,10 @@ void nsCSPContext::SerializePolicies(
   for (auto* policy : mPolicies) {
     nsAutoString policyString;
     policy->toString(policyString);
-    nsTArray<nsString> trustedTypesDirectiveExpressions;
-    policy->getTrustedTypesDirectiveExpressions(
-        trustedTypesDirectiveExpressions);
     aPolicies.AppendElement(
         ContentSecurityPolicy(policyString, policy->getReportOnlyFlag(),
                               policy->getDeliveredViaMetaTagFlag(),
-                              policy->hasRequireTrustedTypesForDirective(),
-                              trustedTypesDirectiveExpressions));
+                              policy->hasRequireTrustedTypesForDirective()));
   }
 
   aPolicies.AppendElements(mIPCPolicies);

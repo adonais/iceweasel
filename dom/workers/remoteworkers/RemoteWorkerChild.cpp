@@ -41,6 +41,7 @@
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/SharedWorkerOp.h"
 #include "mozilla/dom/workerinternals/ScriptLoader.h"
+#include "mozilla/dom/WorkerCSPContext.h"
 #include "mozilla/dom/WorkerError.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
@@ -138,7 +139,8 @@ RemoteWorkerChild::RemoteWorkerChild(const RemoteWorkerData& aData)
     : mState(VariantType<remoteworker::Pending>(), "RemoteWorkerState"),
       mServiceKeepAlive(RemoteWorkerService::MaybeGetKeepAlive()),
       mIsServiceWorker(aData.serviceWorkerData().type() ==
-                       OptionalServiceWorkerData::TServiceWorkerData) {
+                       OptionalServiceWorkerData::TServiceWorkerData),
+      mPendingOps("PendingRemoteWorkerOps") {
   MOZ_ASSERT(RemoteWorkerService::Thread()->IsOnCurrentThread());
 }
 
@@ -303,8 +305,6 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
     clientInfo.emplace(ClientInfo(aData.clientInfo().ref()));
   }
 
-  nsresult rv = NS_OK;
-
   if (mIsServiceWorker) {
     info.mSourceInfo = clientInfo;
   } else {
@@ -312,16 +312,17 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
       Maybe<mozilla::ipc::CSPInfo> cspInfo = clientInfo.ref().GetCspInfo();
       if (cspInfo.isSome()) {
         info.mCSP = CSPInfoToCSP(cspInfo.ref(), nullptr);
-        info.mCSPInfo = MakeUnique<CSPInfo>();
-        rv = CSPToCSPInfo(info.mCSP, info.mCSPInfo.get());
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+        mozilla::Result<UniquePtr<WorkerCSPContext>, nsresult> ctx =
+            WorkerCSPContext::CreateFromCSP(info.mCSP);
+        if (ctx.isErr()) {
+          return ctx.unwrapErr();
         }
+        info.mCSPContext = ctx.unwrap();
       }
     }
   }
 
-  rv = info.SetPrincipalsAndCSPOnMainThread(
+  nsresult rv = info.SetPrincipalsAndCSPOnMainThread(
       info.mPrincipal, info.mPartitionedPrincipal, info.mLoadGroup, info.mCSP);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -813,8 +814,33 @@ void RemoteWorkerChild::CancelAllPendingOps(RemoteWorkerState& aState) {
   }
 }
 
+void RemoteWorkerChild::PendRemoteWorkerOp(RefPtr<RemoteWorkerOp> aOp) {
+  MOZ_ASSERT_DEBUG_OR_FUZZING(mIsThawing);
+
+  auto pendingOps = mPendingOps.Lock();
+
+  pendingOps->AppendElement(std::move(aOp));
+}
+
+void RemoteWorkerChild::RunAllPendingOpsOnMainThread() {
+  RefPtr<RemoteWorkerChild> self = this;
+
+  auto pendingOps = mPendingOps.Lock();
+
+  for (auto& op : *pendingOps) {
+    op->StartOnMainThread(self);
+  }
+
+  pendingOps->Clear();
+}
+
 void RemoteWorkerChild::MaybeStartOp(RefPtr<RemoteWorkerOp>&& aOp) {
   MOZ_ASSERT(aOp);
+
+  if (mIsThawing) {
+    PendRemoteWorkerOp(std::move(aOp));
+    return;
+  }
 
   auto lock = mState.Lock();
 

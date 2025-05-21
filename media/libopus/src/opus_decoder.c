@@ -650,7 +650,11 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
       for (i=0;i<frame_size*st->channels;i++)
       {
          opus_val32 x;
+#ifdef ENABLE_RES24
+         x = MULT32_32_Q16(pcm[i],gain);
+#else
          x = MULT16_32_P16(pcm[i],gain);
+#endif
          pcm[i] = SATURATE(x, 32767);
       }
    }
@@ -810,7 +814,7 @@ int opus_decode_native(OpusDecoder *st, const unsigned char *data,
       OPUS_PRINT_INT(nb_samples);
 #ifndef FIXED_POINT
    if (soft_clip)
-      opus_pcm_soft_clip(pcm, nb_samples, st->channels, st->softclip_mem);
+      opus_pcm_soft_clip_impl(pcm, nb_samples, st->channels, st->softclip_mem, st->arch);
    else
       st->softclip_mem[0]=st->softclip_mem[1]=0;
 #endif

@@ -15,7 +15,12 @@ const WITH_INSTALL_PROMPT = [
 ];
 const NO_INSTALL_PROMPT = [["extensions.originControls.grantByDefault", false]];
 
-Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+// TODO: Bug 1960273 - Update this test and remove this pref set when we enable
+// the data collection permissions on all channels.
+Services.prefs.setBoolPref(
+  "extensions.dataCollectionPermissions.enabled",
+  false
+);
 
 // ExtensionParent.sys.mjs is being imported lazily because when it is imported Services.appinfo will be
 // retrieved and cached (as a side-effect of Schemas.sys.mjs being imported), and so Services.appinfo
@@ -74,7 +79,7 @@ add_task(
     const res = await ExtensionPermissions.get("@testextension");
     Assert.deepEqual(
       res,
-      { permissions: [], origins: [] },
+      { permissions: [], origins: [], data_collection: [] },
       "Expect ExtensionPermissions get promise to be resolved"
     );
     Assert.ok(
@@ -771,7 +776,8 @@ if (AppConstants.platform == "android") {
     "menus",
     "menus.overrideContext",
     "normandyAddonStudy",
-    "search"
+    "search",
+    "tabGroups"
   );
 }
 GRANTED_WITHOUT_USER_PROMPT.sort();
@@ -1250,4 +1256,76 @@ add_task(async function test_onAdded_all_urls() {
   equal(perms.permissions.join(), "", "Not expecting api permissions.");
 
   await extension.unload();
+});
+
+add_task(async function test_add_data_collection() {
+  let extensionId = "@data-collection-test";
+  // Set up store with existing permissions, without data collection.
+  await ExtensionPermissions._getStore().put(extensionId, {
+    permissions: ["bookmarks"],
+    origins: [],
+  });
+
+  // Verify that the store has only two properties.
+  let perms = await ExtensionPermissions._getStore().get(extensionId);
+  Assert.deepEqual(
+    perms,
+    { permissions: ["bookmarks"], origins: [] },
+    "expected permissions without data collection"
+  );
+
+  // Add a new data collection permission.
+  await ExtensionPermissions.add(extensionId, {
+    permissions: [],
+    origins: [],
+    data_collection: ["technicalAndInteraction"],
+  });
+  // Expect the data permission to be added, even if there was none in the store.
+  perms = await ExtensionPermissions.get(extensionId);
+  Assert.deepEqual(
+    perms,
+    {
+      permissions: ["bookmarks"],
+      origins: [],
+      data_collection: ["technicalAndInteraction"],
+    },
+    "expected permissions with data collection"
+  );
+});
+
+add_task(async function test_remove_data_collection() {
+  let extensionId = "@data-collection-test";
+  // Set up store with existing permissions, without data collection.
+  await ExtensionPermissions._getStore().put(extensionId, {
+    permissions: ["bookmarks"],
+    origins: [],
+  });
+
+  // Verify that the store has only two properties.
+  let perms = await ExtensionPermissions._getStore().get(extensionId);
+  Assert.deepEqual(
+    perms,
+    { permissions: ["bookmarks"], origins: [] },
+    "expected permissions without data collection"
+  );
+
+  // Remove a permission and a data permission even if that isn't supposed to
+  // be possible. This is needed to verify that loading permissions from the
+  // store without data collection won't break anything.
+  await ExtensionPermissions.remove(extensionId, {
+    permissions: ["bookmarks"],
+    origins: [],
+    data_collection: ["technicalAndInteraction"],
+  });
+  // Expect the permission to be removed without side effect.
+  perms = await ExtensionPermissions.get(extensionId);
+  Assert.deepEqual(
+    perms,
+    {
+      permissions: [],
+      origins: [],
+      data_collection: [],
+    },
+    "expected permissions with data collection"
+  );
 });

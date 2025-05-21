@@ -862,7 +862,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
   // Update the accessible tree on aria-hidden change. Make sure to not create
   // a tree under aria-hidden='true'.
   if (aAttribute == nsGkAtoms::aria_hidden) {
-    if (aria::HasDefinedARIAHidden(aElement)) {
+    if (aria::IsValidARIAHidden(aElement)) {
       ContentRemoved(aElement);
     } else {
       ContentInserted(aElement, aElement->GetNextSibling());
@@ -1206,7 +1206,7 @@ LocalAccessible* DocAccessible::GetAccessibleOrContainer(
   for (nsINode* currNode : dom::InclusiveFlatTreeAncestors(*start)) {
     // No container if is inside of aria-hidden subtree.
     if (aNoContainerIfPruned && currNode->IsElement() &&
-        aria::HasDefinedARIAHidden(currNode->AsElement())) {
+        aria::IsValidARIAHidden(currNode->AsElement())) {
       return nullptr;
     }
 
@@ -1806,11 +1806,8 @@ void DocAccessible::ProcessLoad() {
 #endif
 
   // Do not fire document complete/stop events for root chrome document
-  // accessibles and for frame/iframe documents because
-  // a) screen readers start working on focus event in the case of root chrome
-  // documents
-  // b) document load event on sub documents causes screen readers to act is if
-  // entire page is reloaded.
+  // accessibles because screen readers start working on focus event in the case
+  // of root chrome documents.
   if (!IsLoadEventTarget()) return;
 
   // Fire complete/load stopped if the load event type is given.
@@ -2984,31 +2981,7 @@ void DocAccessible::ShutdownChildrenInSubtree(LocalAccessible* aAccessible) {
 }
 
 bool DocAccessible::IsLoadEventTarget() const {
-  nsCOMPtr<nsIDocShellTreeItem> treeItem = mDocumentNode->GetDocShell();
-  if (!treeItem) {
-    return false;
-  }
-
-  nsCOMPtr<nsIDocShellTreeItem> parentTreeItem;
-  treeItem->GetInProcessParent(getter_AddRefs(parentTreeItem));
-
-  // Not a root document.
-  if (parentTreeItem) {
-    // Return true if it's either:
-    // a) tab document;
-    nsCOMPtr<nsIDocShellTreeItem> rootTreeItem;
-    treeItem->GetInProcessRootTreeItem(getter_AddRefs(rootTreeItem));
-    if (parentTreeItem == rootTreeItem) return true;
-
-    // b) frame/iframe document and its parent document is not in loading state
-    // Note: we can get notifications while document is loading (and thus
-    // while there's no parent document yet).
-    DocAccessible* parentDoc = ParentDocument();
-    return parentDoc && parentDoc->HasLoadState(eCompletelyLoaded);
-  }
-
-  // It's content (not chrome) root document.
-  return (treeItem->ItemType() == nsIDocShellTreeItem::typeContent);
+  return mDocumentNode->GetBrowsingContext()->IsContent();
 }
 
 void DocAccessible::SetIPCDoc(DocAccessibleChild* aIPCDoc) {

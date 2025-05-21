@@ -1,11 +1,13 @@
 [tool.ruff]
 line-length = 99
+target-version = "py38"
 # See https://beta.ruff.rs/docs/rules/ for a full list of rules.
 lint.select = [
   "E", "W",    # pycodestyle
   "F",         # pyflakes
   "I",         # isort
   "PL",        # pylint
+  "UP",        # pyupgrade
 ]
 lint.ignore = [
   # These should be triaged and either fixed or moved to the list below.
@@ -18,7 +20,7 @@ lint.ignore = [
   "PLC0206",   # dict-index-missing-items
 
   # These are handled by black.
-  "E1", "E4", "E5", "W2", "W5"
+  "E1", "E4", "E5", "W2", "W5",
 ]
 builtins = ["gdb"]
 extend-include = ["*.configure"]

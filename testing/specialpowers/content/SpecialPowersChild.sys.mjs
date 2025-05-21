@@ -25,7 +25,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://testing-common/SpecialPowersSandbox.sys.mjs",
   WrapPrivileged: "resource://testing-common/WrapPrivileged.sys.mjs",
 });
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 Cu.crashIfNotInAutomation();
 
@@ -493,24 +492,6 @@ export class SpecialPowersChild extends JSWindowActorChild {
     }
 
     return [];
-  }
-
-  /*
-   * Load a privileged script that runs same-process. This is different from
-   * |loadChromeScript|, which will run in the parent process in e10s mode.
-   */
-  loadPrivilegedScript(aFunction) {
-    var str = "(" + aFunction.toString() + ")();";
-    let gGlobalObject = Cu.getGlobalForObject(this);
-    let sb = Cu.Sandbox(gGlobalObject);
-    var window = this.contentWindow;
-    var mc = new window.MessageChannel();
-    sb.port = mc.port1;
-    let blob = new Blob([str], { type: "application/javascript" });
-    let blobUrl = URL.createObjectURL(blob);
-    Services.scriptloader.loadSubScript(blobUrl, sb);
-
-    return mc.port2;
   }
 
   _readUrlAsString(aUrl) {
@@ -2320,6 +2301,3 @@ SpecialPowersChild.prototype._proxiedObservers = {
     );
   },
 };
-
-SpecialPowersChild.prototype.EARLY_BETA_OR_EARLIER =
-  AppConstants.EARLY_BETA_OR_EARLIER;

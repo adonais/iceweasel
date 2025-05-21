@@ -62,8 +62,7 @@ class NetworkBench(BasePythonSupport):
         try:
             result = subprocess.run(
                 ["caddy", "version"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
             )
             if result.returncode == 0:
@@ -256,8 +255,7 @@ class NetworkBench(BasePythonSupport):
         try:
             result = subprocess.run(
                 ["sudo", "tc", "-help"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
             )
             if result.returncode == 0:
@@ -275,8 +273,7 @@ class NetworkBench(BasePythonSupport):
                 command,
                 shell=True,
                 check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
             LOG.info(command)
             LOG.info(f"Output: {result.stdout.decode().strip()}")
@@ -440,7 +437,7 @@ class NetworkBench(BasePythonSupport):
         return temp_file_path, file_size
 
     def generate_download_test_html(self, temp_path, test_file_name):
-        html_content = """
+        html_content = f"""
 <!DOCTYPE html>
 <html>
   <head>
@@ -485,9 +482,7 @@ class NetworkBench(BasePythonSupport):
     </script>
   </body>
 </html>
-    """.format(
-            test_file_name=test_file_name
-        )
+    """
         # Write the HTML content to the file
         prefix = "download_test_"
         suffix = ".html"

@@ -114,11 +114,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">เรียกดูเร็วขึ้นด้วยการนำทางแบบใหม่</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">เรียกดูเร็วขึ้นด้วยการนำทางแบบใหม่</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">เมื่อเข้าเว็บไซต์ แถบนี้จะซ่อนตัวเมื่อคุณเลื่อนหน้าจอลง เพื่อเพิ่มเนื้อที่สำหรับการเรียกดูเว็บ</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">เมื่อเข้าเว็บไซต์ แถบนี้จะซ่อนตัวเมื่อคุณเลื่อนหน้าจอลง เพื่อเพิ่มเนื้อที่สำหรับการเรียกดูเว็บ</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">แตะค้างที่ลูกศรเพื่อข้ามไปมาระหว่างหน้าต่างๆ ในประวัติของแท็บนี้​​​​​​​​​​​​​​​​</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">แตะค้างที่ลูกศรเพื่อข้ามไปมาระหว่างหน้าต่างๆ ในประวัติของแท็บนี้​​​​​​​​​​​​​​​​</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -127,6 +127,8 @@
   <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">กวาดแถบเครื่องมือเพื่อสลับแท็บ</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
   <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">กวาดไปทางซ้ายหรือขวาเพื่อสลับ กวาดไปทางซ้ายบนแท็บล่าสุดของคุณเพื่อเปิดแท็บใหม่</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">ปัดแถบเครื่องมือไปทางซ้ายหรือขวาเพื่อสลับแท็บ</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">จำเป็นต้องมีการเข้าถึงกล้อง ไปที่การตั้งค่า Android แตะสิทธิอนุญาต แล้วแตะอนุญาต</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -627,7 +629,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">เรียกดูเว็บได้อย่างรวดเร็วและปลอดภัย</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">ยินยอมและดำเนินต่อ</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">ยินยอมและดำเนินต่อ</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ%1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -828,8 +830,6 @@
   <string name="preferences_override_account_server">เซิร์ฟเวอร์บัญชี Mozilla ที่กำหนดเอง</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">เซิร์ฟเวอร์ Sync ที่กำหนดเอง</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">เปลี่ยนแปลงเซิร์ฟเวอร์บัญชี Mozilla/Sync แล้ว กำลังออกจากแอปพลิเคชันเพื่อนำการเปลี่ยนแปลงไปใช้…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">บัญชี</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1199,7 +1199,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ปัดแถบเครื่องมือไปด้านบนเพื่อเปิดแท็บ</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">เลื่อนเพื่อซ่อนแถบที่อยู่และแถบเครื่องมือ</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">เลื่อนเพื่อซ่อนแถบที่อยู่และแถบเครื่องมือ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ปัดแถบที่อยู่ไปด้านข้างเพื่อสลับแท็บ</string>
   <!--
@@ -1475,7 +1475,7 @@
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">นำทางย้อนกลับ</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">นำทางขึ้นไปด้านบน</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">นำทางขึ้นไปด้านบน</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">แบ่งปัน URL</string>
   <!-- Text for the button to share the download file -->
@@ -1509,9 +1509,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">การดาวน์โหลดล้มเหลว</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">ค้นหาการดาวน์โหลด</string>
+  <string name="download_search_placeholder">ค้นหาการดาวน์โหลด</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">ไม่พบผลลัพธ์</string>
+  <string name="download_search_no_results_found">ไม่พบผลลัพธ์</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">เลือกทั้งหมด</string>
   <!--
@@ -1644,6 +1644,10 @@
   <string name="bookmark_sort_menu_newest">เรียงตามใหม่ล่าสุด</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_oldest">เรียงตามเก่าที่สุด</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">เรียงตาม ก ถึง ฮ</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">เรียงตาม ฮ ถึง ก</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2260,7 +2264,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">ไอคอนการกำหนดลักษณะข้อยกเว้นการป้องกันการติดตามที่ปรับปรุงใหม่</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2269,8 +2273,6 @@
   <string name="preference_doh_summary">Domain Name System (DNS) over HTTPS จะส่งคำขอชื่อโดเมนของคุณผ่านการเชื่อมต่อที่มีการเข้ารหัส เพื่อเสริมความปลอดภัยให้กับ DNS และทำให้ผู้อื่นดูว่าคุณกำลังจะเข้าถึงเว็บไซต์ใดได้ยากขึ้น %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">เรียนรู้เพิ่มเติม</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">นำทางขึ้นไปด้านบน</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">ข้อยกเว้น</string>
   <!-- Content description for the "Info" button -->
@@ -2808,8 +2810,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">การค้นหาที่กำลังนิยม</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3421,8 +3421,26 @@
   <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">แสดงข้อความที่ซ่อนอยู่</string>
   <!-- The default content description for the cross trailing icon button in TextField -->
   <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">ล้างข้อความ</string>
+  <!--
+    Setup checklist feature
+
+    ===== Setup checklist feature: Title =====
+
+    Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_title_state_incomplete">ตั้งค่า %1$s ให้เสร็จ</string>
   <!-- Title for the setup checklist feature when the state is 'completed' -->
   <string name="setup_checklist_title_state_completed">ขอแสดงความยินดี!</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">ทำตาม 3 ขั้นตอนเหล่านี้เพื่อตั้งค่า %1$s ให้ได้รับประสบการณ์การท่องเว็บที่ดีที่สุด</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">ใกล้เสร็จแล้ว! เสร็จไปแล้ว 2 ขั้นตอน เหลืออีกแค่ 1 ขั้นตอน</string>
+  <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_3_steps_completed_state">คุณได้ทำทั้ง 3 ขั้นตอนแล้ว เพลิดเพลินไปกับความเร็ว ความเป็นส่วนตัว และความปลอดภัยของ %1$s</string>
   <!--
     ===== Setup checklist feature: Task titles =====
 
@@ -3431,6 +3449,8 @@
   <string name="setup_checklist_task_default_browser">ตั้งเป็นเบราว์เซอร์เริ่มต้น</string>
   <!-- The title of the sign-in task for the setup checklist -->
   <string name="setup_checklist_task_account_sync">ลงชื่อเข้าบัญชีของคุณ</string>
+  <!-- The title of the theme selection task for the setup checklist -->
+  <string name="setup_checklist_task_theme_selection">เลือกชุดตกแต่ง</string>
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">สำรวจส่วนขยาย</string>
   <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
@@ -3459,4 +3479,6 @@
   <string name="pbm_authentication_leave_private_tabs">ออกจากแท็บส่วนตัว</string>
   <!-- Label for the primary action button to unlock private tabs -->
   <string name="pbm_authentication_unlock">ปลดล็อก</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">ปลดล็อคแท็บส่วนตัว</string>
 </resources>

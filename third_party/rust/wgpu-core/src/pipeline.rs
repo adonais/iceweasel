@@ -53,6 +53,9 @@ pub struct ShaderModuleDescriptor<'a> {
     pub runtime_checks: wgt::ShaderRuntimeChecks,
 }
 
+pub type ShaderModuleDescriptorPassthrough<'a> =
+    wgt::CreateShaderModuleDescriptorPassthrough<'a, Label<'a>>;
+
 #[derive(Debug)]
 pub struct ShaderModule {
     pub(crate) raw: ManuallyDrop<Box<dyn hal::DynShaderModule>>,
@@ -101,7 +104,7 @@ impl ShaderModule {
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
 pub enum CreateShaderModuleError {
-    #[cfg(any(feature = "wgsl", feature = "indirect-validation"))]
+    #[cfg(feature = "wgsl")]
     #[error(transparent)]
     Parsing(#[from] ShaderError<naga::front::wgsl::ParseError>),
     #[cfg(feature = "glsl")]

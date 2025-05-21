@@ -85,7 +85,6 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://gre/modules/ExtensionPreferencesManager.sys.mjs",
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
-  FeatureGate: "resource://featuregates/FeatureGate.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
@@ -202,8 +201,10 @@ function init_all() {
     register_module("paneTranslations", gTranslationsPane);
   }
   if (Services.prefs.getBoolPref("browser.preferences.experimental")) {
-    // Set hidden based on previous load's hidden value.
+    // Set hidden based on previous load's hidden value or if Nimbus is
+    // disabled.
     document.getElementById("category-experimental").hidden =
+      !ExperimentAPI._manager.studiesEnabled ||
       Services.prefs.getBoolPref(
         "browser.preferences.experimental.hidden",
         false

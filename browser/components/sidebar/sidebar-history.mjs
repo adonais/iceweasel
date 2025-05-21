@@ -5,6 +5,7 @@
 const lazy = {};
 
 import {
+  classMap,
   html,
   ifDefined,
   when,
@@ -45,6 +46,12 @@ export class SidebarHistory extends SidebarPage {
     this._menu = doc.getElementById("sidebar-history-menu");
     this._menuSortByDate = doc.getElementById("sidebar-history-sort-by-date");
     this._menuSortBySite = doc.getElementById("sidebar-history-sort-by-site");
+    this._menuSortByDateSite = doc.getElementById(
+      "sidebar-history-sort-by-date-and-site"
+    );
+    this._menuSortByLastVisited = doc.getElementById(
+      "sidebar-history-sort-by-last-visited"
+    );
     this._menu.addEventListener("command", this);
     this._menu.addEventListener("popuphidden", this.handlePopupEvent);
     this.addContextMenuListeners();
@@ -74,6 +81,12 @@ export class SidebarHistory extends SidebarPage {
         break;
       case "sidebar-history-sort-by-site":
         this.controller.onChangeSortOption(e, "site");
+        break;
+      case "sidebar-history-sort-by-date-and-site":
+        this.controller.onChangeSortOption(e, "datesite");
+        break;
+      case "sidebar-history-sort-by-last-visited":
+        this.controller.onChangeSortOption(e, "lastvisited");
         break;
       case "sidebar-history-clear":
         lazy.Sanitizer.showUI(this.topWindow);
@@ -121,23 +134,59 @@ export class SidebarHistory extends SidebarPage {
         break;
       case "ArrowUp":
         if (!prevSibling || prevSibling.localName !== "moz-card") {
+          const { classList, parentElement: dateCard } = e.target;
+          if (classList.contains("nested-card")) {
+            // Going up from the first site card. Focus the date header.
+            dateCard.summaryEl.focus();
+          }
           return;
         }
         if (prevSibling.expanded) {
-          let tabsList = prevSibling.contentSlotEl.assignedElements()[0];
-          let lastRow = tabsList.rowEls[tabsList.rowEls.length - 1];
-          lastRow.focus();
+          let innerElement = prevSibling.contentSlotEl.assignedElements()[0];
+          if (innerElement.classList.contains("nested-card")) {
+            // Going up from a date header. Focus the last site card from the
+            // date card above this one.
+            const prevSite = prevSibling.lastElementChild;
+            if (prevSite.expanded) {
+              const prevTabList = prevSite.contentSlotEl.assignedElements()[0];
+              const lastRow = prevTabList.rowEls[prevTabList.rowEls.length - 1];
+              lastRow.focus();
+            } else {
+              prevSite.summaryEl.focus();
+            }
+          } else {
+            // Not sorted by Date & Site, innerElement is a SidebarTabList.
+            let lastRow = innerElement.rowEls[innerElement.rowEls.length - 1];
+            lastRow.focus();
+          }
         } else {
           prevSibling.summaryEl.focus();
         }
         break;
       case "ArrowDown":
         if (e.target.expanded) {
-          let tabsList = e.target.contentSlotEl.assignedElements()[0];
-          tabsList.rowEls[0].focus();
+          let innerElement = e.target.contentSlotEl.assignedElements()[0];
+          if (innerElement.classList.contains("nested-card")) {
+            // Going down from a date header. Focus the first site card.
+            innerElement.summaryEl.focus();
+          } else {
+            // Not sorted by Date & Site, innerElement is a SidebarTabList.
+            innerElement.rowEls[0].focus();
+          }
         } else if (nextSibling && nextSibling.localName == "moz-card") {
           nextSibling.summaryEl.focus();
+        } else if (e.target.classList.contains("last-card")) {
+          // Going down from the last site card. Focus the next date header.
+          const dateCard = e.target.parentElement;
+          const nextDate = dateCard.nextElementSibling;
+          nextDate?.summaryEl.focus();
         }
+        break;
+      case "ArrowLeft":
+        e.target.expanded = false;
+        break;
+      case "ArrowRight":
+        e.target.expanded = true;
         break;
     }
   }
@@ -161,37 +210,78 @@ export class SidebarHistory extends SidebarPage {
     const { historyVisits } = this.controller;
     switch (this.controller.sortOption) {
       case "date":
-        return historyVisits.map(({ l10nId, items }, i) => {
-          let tabIndex = i > 0 ? "-1" : undefined;
-          return html` <moz-card
-            type="accordion"
-            ?expanded=${i < DAYS_EXPANDED_INITIALLY}
-            data-l10n-id=${l10nId}
-            data-l10n-args=${JSON.stringify({
-              date: items[0].time,
-            })}
-            @keydown=${this.handleCardKeydown}
-            tabindex=${ifDefined(tabIndex)}
-          >
-            ${this.#tabListTemplate(this.getTabItems(items))}
-          </moz-card>`;
-        });
+        return historyVisits.map(({ l10nId, items }, i) =>
+          this.#dateCardTemplate(l10nId, i, items)
+        );
       case "site":
-        return historyVisits.map(({ domain, items }, i) => {
-          let tabIndex = i > 0 ? "-1" : undefined;
-          return html` <moz-card
-            type="accordion"
-            expanded
-            heading=${domain}
-            @keydown=${this.handleCardKeydown}
-            tabindex=${ifDefined(tabIndex)}
-          >
-            ${this.#tabListTemplate(this.getTabItems(items))}
-          </moz-card>`;
-        });
+        return historyVisits.map(({ domain, items }, i) =>
+          this.#siteCardTemplate(domain, i, items)
+        );
+      case "datesite":
+        return historyVisits.map(({ l10nId, items }, i) =>
+          this.#dateCardTemplate(l10nId, i, items, true)
+        );
+      case "lastvisited":
+        return historyVisits.map(
+          ({ items }) =>
+            html`<moz-card>
+              ${this.#tabListTemplate(this.getTabItems(items))}
+            </moz-card>`
+        );
       default:
         return [];
     }
+  }
+
+  #dateCardTemplate(l10nId, index, items, isDateSite = false) {
+    const tabIndex = index > 0 ? "-1" : undefined;
+    return html` <moz-card
+      type="accordion"
+      class="date-card"
+      ?expanded=${index < DAYS_EXPANDED_INITIALLY}
+      data-l10n-id=${l10nId}
+      data-l10n-args=${JSON.stringify({
+        date: isDateSite ? items[0][1][0].time : items[0].time,
+      })}
+      @keydown=${this.handleCardKeydown}
+      tabindex=${ifDefined(tabIndex)}
+    >
+      ${isDateSite
+        ? items.map(([domain, visits], i) =>
+            this.#siteCardTemplate(
+              domain,
+              i,
+              visits,
+              true,
+              i == items.length - 1
+            )
+          )
+        : this.#tabListTemplate(this.getTabItems(items))}
+    </moz-card>`;
+  }
+
+  #siteCardTemplate(
+    domain,
+    index,
+    items,
+    isDateSite = false,
+    isLastCard = false
+  ) {
+    let tabIndex = index > 0 || isDateSite ? "-1" : undefined;
+    return html` <moz-card
+      class=${classMap({
+        "last-card": isLastCard,
+        "nested-card": isDateSite,
+        "site-card": true,
+      })}
+      type="accordion"
+      ?expanded=${!isDateSite}
+      heading=${domain}
+      @keydown=${this.handleCardKeydown}
+      tabindex=${ifDefined(tabIndex)}
+    >
+      ${this.#tabListTemplate(this.getTabItems(items))}
+    </moz-card>`;
   }
 
   #emptyMessageTemplate() {
@@ -266,6 +356,7 @@ export class SidebarHistory extends SidebarPage {
       maxTabsLength="-1"
       .searchQuery=${searchQuery}
       secondaryActionClass="delete-button"
+      .sortOption=${this.controller.sortOption}
       .tabItems=${tabItems}
       @fxview-tab-list-primary-action=${this.onPrimaryAction}
       @fxview-tab-list-secondary-action=${this.onSecondaryAction}
@@ -301,6 +392,14 @@ export class SidebarHistory extends SidebarPage {
     this._menuSortBySite.setAttribute(
       "checked",
       this.controller.sortOption == "site"
+    );
+    this._menuSortByDateSite.setAttribute(
+      "checked",
+      this.controller.sortOption == "datesite"
+    );
+    this._menuSortByLastVisited.setAttribute(
+      "checked",
+      this.controller.sortOption == "lastvisited"
     );
   }
 

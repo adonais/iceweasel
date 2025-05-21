@@ -1352,6 +1352,11 @@ html {
   z-index: 1;
   box-sizing: border-box;
 }
+@media (prefers-contrast) {
+  .onboardingContainer .main-content {
+    border: 1px solid var(--in-content-page-color);
+  }
+}
 .onboardingContainer .main-content.no-steps {
   padding-bottom: 48px;
 }
@@ -1858,6 +1863,29 @@ html {
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .arrow-icon:dir(rtl)::after {
   background-image: url("chrome://browser/skin/back.svg");
 }
+.onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .loader {
+  width: 1em;
+  height: 1em;
+  border: 3px solid var(--in-content-primary-button-text-color);
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+  justify-self: center;
+}
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .loaderContainer {
+  display: flex;
+  padding: 1.5px 37.5px;
+  margin: auto;
+}
 .onboardingContainer .screen[pos=split] .section-main .main-content .logo-container {
   text-align: start;
 }
@@ -2099,6 +2127,10 @@ html {
     padding-block: 20px;
   }
 }
+.onboardingContainer .screen[pos=split][fullscreen] .section-main .main-content .main-content-inner .steps:not(.progress-bar) {
+  justify-content: start;
+  padding-top: 24px;
+}
 .onboardingContainer .screen[pos=split][fullscreen] .section-main .main-content .action-buttons {
   position: static;
   height: auto;
@@ -2121,12 +2153,33 @@ html {
 .onboardingContainer .screen[pos=split][fullscreen] .section-secondary .hero-image img {
   width: 30%;
 }
+.onboardingContainer .screen[pos=split][fullscreen] .section-secondary .message-text.hero-text {
+  margin-block: auto;
+  margin-inline: 17% auto;
+  text-align: start;
+  width: 100%;
+  max-width: 450px;
+}
+.onboardingContainer .screen[pos=split][fullscreen] .section-secondary .message-text.hero-text h1 {
+  font-weight: 510;
+  font-size: 80px;
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.onboardingContainer .screen[pos=split][fullscreen] .section-secondary .message-text.hero-text h2 {
+  font-size: 20px;
+  margin: 0;
+  margin-block-start: 24px;
+  font-weight: 510;
+  width: 100%;
+}
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container {
   background: none;
 }
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container {
   display: flex;
-  flex-flow: row wrap;
+  flex-direction: row;
   border: 1px solid var(--in-content-border-color);
   box-shadow: 0 1px 2px 0 var(--in-content-border-color);
   border-radius: 4px;
@@ -2134,6 +2187,11 @@ html {
   text-align: start;
   padding: 16px;
   max-width: 800px;
+}
+@media (800px <= width <= 990px) {
+  .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container {
+    flex-flow: row wrap;
+  }
 }
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container .rtamo-icon img {
   margin-inline: 0 16px;

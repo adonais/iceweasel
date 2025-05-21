@@ -125,7 +125,7 @@ class ArtifactPersistLimit(dlmanager.PersistLimit):
                 continue
             try:
                 fs.remove(f.path)
-            except WindowsError:
+            except OSError:
                 # For some reason, on automation, we can't remove those files.
                 # So for now, ignore the error.
                 kept.append(f)
@@ -148,7 +148,7 @@ class ArtifactPersistLimit(dlmanager.PersistLimit):
         self.files = []
 
 
-class ArtifactCache(object):
+class ArtifactCache:
     """Fetch artifacts from URLS and purge least recently used artifacts from disk."""
 
     def __init__(self, cache_dir, log=None, skip_cache=False):

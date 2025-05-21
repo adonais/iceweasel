@@ -62,9 +62,6 @@ class BrowsingContextGroup;
   /* Mixed-Content: If the corresponding documentURI is https,           \
    * then this flag is true. */                                          \
   FIELD(IsSecure, bool)                                                  \
-  /* Whether the user has overriden the mixed content blocker to allow   \
-   * mixed content loads to happen */                                    \
-  FIELD(AllowMixedContent, bool)                                         \
   /* Whether this window has registered a "beforeunload" event           \
    * handler */                                                          \
   FIELD(HasBeforeUnload, bool)                                           \
@@ -218,7 +215,7 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   // out.
   bool HasValidTransientUserGestureActivation();
 
-  // See `mUserGestureStart`.
+  // See `mLastActivationTimestamp`.
   const TimeStamp& GetUserGestureStart() const;
 
   // Return true if the corresponding window has valid transient user gesture
@@ -273,8 +270,6 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   // Overload `CanSet` to get notifications for a particular field being set.
   bool CanSet(FieldIndex<IDX_IsSecure>, const bool& aIsSecure,
-              ContentParent* aSource);
-  bool CanSet(FieldIndex<IDX_AllowMixedContent>, const bool& aAllowMixedContent,
               ContentParent* aSource);
 
   bool CanSet(FieldIndex<IDX_HasBeforeUnload>, const bool& aHasBeforeUnload,
@@ -406,13 +401,14 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   // BrowsingContext.
   bool mCanExecuteScripts = true;
 
+  // https://html.spec.whatwg.org/multipage/interaction.html#last-activation-timestamp
   // The start time of user gesture, this is only available if the window
   // context is in process.
-  TimeStamp mUserGestureStart;
+  TimeStamp mLastActivationTimestamp;
 
   // https://html.spec.whatwg.org/#history-action-activation
-  // This is set to mUserGestureStart every time ConsumeHistoryActivation is
-  // called.
+  // This is set to mLastActivationTimestamp every time ConsumeHistoryActivation
+  // is called.
   TimeStamp mHistoryActivation;
 };
 

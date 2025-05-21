@@ -73,6 +73,28 @@ nsresult AssembleClientData(WindowGlobalParent* aManager,
   return NS_OK;
 }
 
+bool GetAssertionRequestIncludesLargeBlobRead(
+    const WebAuthnGetAssertionInfo& aInfo) {
+  for (const WebAuthnExtension& ext : aInfo.Extensions()) {
+    if (ext.type() == WebAuthnExtension::TWebAuthnExtensionLargeBlob) {
+      if (ext.get_WebAuthnExtensionLargeBlob().flag().isSome()) {
+        return ext.get_WebAuthnExtensionLargeBlob().flag().ref();
+      }
+    }
+  }
+  return false;
+}
+
+bool MakeCredentialRequestIncludesPrfExtension(
+    const WebAuthnMakeCredentialInfo& aInfo) {
+  for (const WebAuthnExtension& ext : aInfo.Extensions()) {
+    if (ext.type() == WebAuthnExtension::TWebAuthnExtensionPrf) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void WebAuthnTransactionParent::CompleteTransaction() {
   if (mTransactionId.isSome()) {
     if (mRegisterPromiseRequest.Exists()) {
@@ -146,6 +168,9 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
     return IPC_OK();
   }
 
+  bool requestIncludesPrfExtension =
+      MakeCredentialRequestIncludesPrfExtension(aTransactionInfo);
+
   RefPtr<WebAuthnRegisterPromiseHolder> promiseHolder =
       new WebAuthnRegisterPromiseHolder(GetCurrentSerialEventTarget());
 
@@ -154,7 +179,7 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, inputClientData = clientDataJSON,
-           resolver = std::move(aResolver)](
+           requestIncludesPrfExtension, resolver = std::move(aResolver)](
               const WebAuthnRegisterPromise::ResolveOrRejectValue& aValue) {
             self->CompleteTransaction();
 
@@ -227,17 +252,24 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
                   WebAuthnExtensionResultHmacSecret(hmacCreateSecret));
             }
 
-            {
-              Maybe<bool> prfEnabledMaybe = Nothing();
+            bool largeBlobSupported;
+            rv = registerResult->GetLargeBlobSupported(&largeBlobSupported);
+            if (rv != NS_ERROR_NOT_AVAILABLE) {
+              if (NS_FAILED(rv)) {
+                return;
+              }
+              nsTArray<uint8_t> blob;  // unused
+              extensions.AppendElement(WebAuthnExtensionResultLargeBlob(
+                  largeBlobSupported, blob, false));
+            }
+
+            if (requestIncludesPrfExtension) {
               Maybe<WebAuthnExtensionPrfValues> prfResults = Nothing();
 
-              bool prfEnabled;
+              bool prfEnabled = false;
               rv = registerResult->GetPrfEnabled(&prfEnabled);
-              if (rv != NS_ERROR_NOT_AVAILABLE) {
-                if (NS_WARN_IF(NS_FAILED(rv))) {
-                  return;
-                }
-                prfEnabledMaybe = Some(prfEnabled);
+              if (rv != NS_ERROR_NOT_AVAILABLE && NS_FAILED(rv)) {
+                return;
               }
 
               nsTArray<uint8_t> prfResultsFirst;
@@ -261,10 +293,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
                     prfResultsFirst, prfResultsSecondMaybe, prfResultsSecond));
               }
 
-              if (prfEnabledMaybe.isSome() || prfResults.isSome()) {
-                extensions.AppendElement(
-                    WebAuthnExtensionResultPrf(prfEnabledMaybe, prfResults));
-              }
+              extensions.AppendElement(
+                  WebAuthnExtensionResultPrf(Some(prfEnabled), prfResults));
             }
 
             WebAuthnMakeCredentialResult result(
@@ -342,6 +372,11 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
     return IPC_OK();
   }
 
+  bool requestIncludesAppId = aTransactionInfo.AppId().isSome();
+
+  bool requestIncludesLargeBlobRead =
+      GetAssertionRequestIncludesLargeBlobRead(aTransactionInfo);
+
   RefPtr<WebAuthnSignPromiseHolder> promiseHolder =
       new WebAuthnSignPromiseHolder(GetCurrentSerialEventTarget());
 
@@ -350,6 +385,7 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, inputClientData = clientDataJSON,
+           requestIncludesAppId, requestIncludesLargeBlobRead,
            resolver = std::move(aResolver)](
               const WebAuthnSignPromise::ResolveOrRejectValue& aValue) {
             self->CompleteTransaction();
@@ -405,13 +441,39 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
             }
 
             nsTArray<WebAuthnExtensionResult> extensions;
-            bool usedAppId;
-            rv = signResult->GetUsedAppId(&usedAppId);
+            if (requestIncludesAppId) {
+              bool usedAppId = false;
+              rv = signResult->GetUsedAppId(&usedAppId);
+              if (rv != NS_ERROR_NOT_AVAILABLE && NS_FAILED(rv)) {
+                return;
+              }
+              extensions.AppendElement(WebAuthnExtensionResultAppId(usedAppId));
+            }
+
+            nsTArray<uint8_t> largeBlobValue;
+            rv = signResult->GetLargeBlobValue(largeBlobValue);
             if (rv != NS_ERROR_NOT_AVAILABLE) {
               if (NS_FAILED(rv)) {
                 return;
               }
-              extensions.AppendElement(WebAuthnExtensionResultAppId(usedAppId));
+              extensions.AppendElement(WebAuthnExtensionResultLargeBlob(
+                  true, largeBlobValue, false));
+            } else if (requestIncludesLargeBlobRead) {
+              // Signal a read error by setting both flags.
+              extensions.AppendElement(
+                  WebAuthnExtensionResultLargeBlob(true, largeBlobValue, true));
+            } else {
+              // Read and write operations are mutually exclusive, so we only
+              // check for a write result if the read result is not available.
+              bool largeBlobWritten;
+              rv = signResult->GetLargeBlobWritten(&largeBlobWritten);
+              if (rv != NS_ERROR_NOT_AVAILABLE) {
+                if (NS_FAILED(rv)) {
+                  return;
+                }
+                extensions.AppendElement(WebAuthnExtensionResultLargeBlob(
+                    false, largeBlobValue, largeBlobWritten));
+              }
             }
 
             {

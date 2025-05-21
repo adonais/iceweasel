@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * Internal module to set the configuration on the newly created navigables.
  */
 class _ConfigurationModule extends WindowGlobalBiDiModule {
+  #geolocationConfiguration;
   #preloadScripts;
   #resolveBlockerPromise;
   #viewportConfiguration;
@@ -24,6 +25,7 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
   constructor(messageHandler) {
     super(messageHandler);
 
+    this.#geolocationConfiguration = null;
     this.#preloadScripts = new Set();
     this.#viewportConfiguration = new Map();
 
@@ -53,7 +55,8 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       // Do nothing if there is no configuration to apply.
       if (
         this.#preloadScripts.size === 0 &&
-        this.#viewportConfiguration.size === 0
+        this.#viewportConfiguration.size === 0 &&
+        this.#geolocationConfiguration === null
       ) {
         return;
       }
@@ -62,7 +65,30 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       const blockerPromise = new Promise(resolve => {
         this.#resolveBlockerPromise = resolve;
       });
-      this.messageHandler.window.document.blockParsing(blockerPromise);
+      window.document.blockParsing(blockerPromise);
+
+      // Usually rendering is blocked until layout is started implicitly (by
+      // end of parsing) or explicitly. Since we block the implicit
+      // initialization and some code we call may block on it (like waiting for
+      // requestAnimationFrame or viewport dimensions), we initialize it
+      // explicitly here by forcing a layout flush. Note that this will cause
+      // flashes of unstyled content, but that was already the case before
+      // bug 1958942.
+      window.document.documentElement.getBoundingClientRect();
+
+      if (this.#geolocationConfiguration !== null) {
+        await this.messageHandler.handleCommand({
+          moduleName: "emulation",
+          commandName: "_setGeolocationOverride",
+          destination: {
+            type: lazy.WindowGlobalMessageHandler.type,
+            id: this.messageHandler.context.id,
+          },
+          params: {
+            coordinates: this.#geolocationConfiguration,
+          },
+        });
+      }
 
       if (this.#viewportConfiguration.size !== 0) {
         await this.messageHandler.forwardCommand({
@@ -116,9 +142,10 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       }
     }
 
-    // Viewport overrides apply only to top-level traversables.
+    // Geolocation and viewport overrides apply only to top-level traversables.
     if (
-      category === "viewport-overrides" &&
+      (category === "geolocation-override" ||
+        category === "viewport-overrides") &&
       !this.messageHandler.context.parent
     ) {
       for (const { contextDescriptor, value } of sessionData) {
@@ -126,15 +153,19 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
           continue;
         }
 
-        if (value.viewport !== undefined) {
-          this.#viewportConfiguration.set("viewport", value.viewport);
-        }
+        if (category === "geolocation-override") {
+          this.#geolocationConfiguration = value;
+        } else {
+          if (value.viewport !== undefined) {
+            this.#viewportConfiguration.set("viewport", value.viewport);
+          }
 
-        if (value.devicePixelRatio !== undefined) {
-          this.#viewportConfiguration.set(
-            "devicePixelRatio",
-            value.devicePixelRatio
-          );
+          if (value.devicePixelRatio !== undefined) {
+            this.#viewportConfiguration.set(
+              "devicePixelRatio",
+              value.devicePixelRatio
+            );
+          }
         }
       }
     }

@@ -8,6 +8,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
+#include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
 #include "mozilla/dom/quota/OriginScope.h"
@@ -17,6 +18,7 @@
 #include "mozilla/dom/quota/UniversalDirectoryLock.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsFmtString.h"
+#include "prtime.h"
 #include "QuotaManagerDependencyFixture.h"
 #include "QuotaManagerTestHelpers.h"
 
@@ -84,7 +86,7 @@ TEST_F(TestQuotaManager, OpenStorageDirectory_OngoingWithScheduledShutdown) {
         quotaManager
             ->OpenStorageDirectory(
                 PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-                OriginScope::FromNull(), Nullable<Client::Type>(),
+                OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
                 /* aExclusive */ false)
             ->Then(GetCurrentSerialEventTarget(), __func__,
                    [&directoryLock](
@@ -135,7 +137,7 @@ TEST_F(TestQuotaManager, OpenStorageDirectory_OngoingWithScheduledShutdown) {
         quotaManager
             ->OpenStorageDirectory(
                 PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-                OriginScope::FromNull(), Nullable<Client::Type>(),
+                OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
                 /* aExclusive */ false)
             ->Then(GetCurrentSerialEventTarget(), __func__,
                    [](UniversalDirectoryLockPromise::ResolveOrRejectValue&&
@@ -181,7 +183,7 @@ TEST_F(TestQuotaManager,
     RefPtr<UniversalDirectoryLock> directoryLock =
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
-            Nullable<Client::Type>(),
+            ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     nsTArray<RefPtr<BoolPromise>> promises;
@@ -190,7 +192,7 @@ TEST_F(TestQuotaManager,
         quotaManager
             ->OpenStorageDirectory(
                 PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-                OriginScope::FromNull(), Nullable<Client::Type>(),
+                OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
                 /* aExclusive */ false)
             ->Then(GetCurrentSerialEventTarget(), __func__,
                    [&directoryLock](
@@ -214,7 +216,7 @@ TEST_F(TestQuotaManager,
         quotaManager
             ->OpenStorageDirectory(
                 PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-                OriginScope::FromNull(), Nullable<Client::Type>(),
+                OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
                 /* aExclusive */ false)
             ->Then(GetCurrentSerialEventTarget(), __func__,
                    [](UniversalDirectoryLockPromise::ResolveOrRejectValue&&
@@ -259,7 +261,7 @@ TEST_F(TestQuotaManager, OpenStorageDirectory_Finished) {
     {
       auto value = Await(quotaManager->OpenStorageDirectory(
           PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-          OriginScope::FromNull(), Nullable<Client::Type>(),
+          OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
           /* aExclusive */ false));
       ASSERT_TRUE(value.IsResolve());
 
@@ -273,7 +275,7 @@ TEST_F(TestQuotaManager, OpenStorageDirectory_Finished) {
     {
       auto value = Await(quotaManager->OpenStorageDirectory(
           PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-          OriginScope::FromNull(), Nullable<Client::Type>(),
+          OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
           /* aExclusive */ false));
       ASSERT_TRUE(value.IsResolve());
 
@@ -304,7 +306,7 @@ TEST_F(TestQuotaManager, OpenStorageDirectory_FinishedWithScheduledShutdown) {
     {
       auto value = Await(quotaManager->OpenStorageDirectory(
           PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-          OriginScope::FromNull(), Nullable<Client::Type>(),
+          OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
           /* aExclusive */ false));
       ASSERT_TRUE(value.IsResolve());
 
@@ -322,7 +324,7 @@ TEST_F(TestQuotaManager, OpenStorageDirectory_FinishedWithScheduledShutdown) {
         quotaManager
             ->OpenStorageDirectory(
                 PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-                OriginScope::FromNull(), Nullable<Client::Type>(),
+                OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
                 /* aExclusive */ false)
             ->Then(GetCurrentSerialEventTarget(), __func__,
                    [](UniversalDirectoryLockPromise::ResolveOrRejectValue&&
@@ -369,7 +371,7 @@ TEST_F(TestQuotaManager,
     {
       auto value = Await(quotaManager->OpenStorageDirectory(
           PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-          OriginScope::FromNull(), Nullable<Client::Type>(),
+          OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
           /* aExclusive */ false));
       ASSERT_TRUE(value.IsResolve());
 
@@ -392,7 +394,7 @@ TEST_F(TestQuotaManager,
     {
       auto value = Await(quotaManager->OpenStorageDirectory(
           PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-          OriginScope::FromNull(), Nullable<Client::Type>(),
+          OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
           /* aExclusive */ false));
       ASSERT_TRUE(value.IsResolve());
 
@@ -422,27 +424,27 @@ TEST_F(TestQuotaManager, OpenClientDirectory_OngoingWithScheduledShutdown) {
     QuotaManager* quotaManager = QuotaManager::Get();
     ASSERT_TRUE(quotaManager);
 
-    RefPtr<ClientDirectoryLock> directoryLock;
+    ClientDirectoryLockHandle directoryLockHandle;
 
     nsTArray<RefPtr<BoolPromise>> promises;
 
     promises.AppendElement(
         quotaManager->OpenClientDirectory(GetTestClientMetadata())
-            ->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [&directoryLock](
-                    ClientDirectoryLockPromise::ResolveOrRejectValue&& aValue) {
-                  if (aValue.IsReject()) {
-                    return BoolPromise::CreateAndReject(aValue.RejectValue(),
-                                                        __func__);
-                  }
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [&directoryLockHandle](
+                       QuotaManager::ClientDirectoryLockHandlePromise::
+                           ResolveOrRejectValue&& aValue) {
+                     if (aValue.IsReject()) {
+                       return BoolPromise::CreateAndReject(aValue.RejectValue(),
+                                                           __func__);
+                     }
 
-                  [&aValue]() { ASSERT_TRUE(aValue.ResolveValue()); }();
+                     [&aValue]() { ASSERT_TRUE(aValue.ResolveValue()); }();
 
-                  directoryLock = std::move(aValue.ResolveValue());
+                     directoryLockHandle = std::move(aValue.ResolveValue());
 
-                  return BoolPromise::CreateAndResolve(true, __func__);
-                })
+                     return BoolPromise::CreateAndResolve(true, __func__);
+                   })
             ->Then(quotaManager->IOThread(), __func__,
                    [](const BoolPromise::ResolveOrRejectValue& aValue) {
                      if (aValue.IsReject()) {
@@ -461,9 +463,12 @@ TEST_F(TestQuotaManager, OpenClientDirectory_OngoingWithScheduledShutdown) {
                      return BoolPromise::CreateAndResolve(true, __func__);
                    })
             ->Then(GetCurrentSerialEventTarget(), __func__,
-                   [&directoryLock](
+                   [&directoryLockHandle](
                        const BoolPromise::ResolveOrRejectValue& aValue) {
-                     DropDirectoryLock(directoryLock);
+                     {
+                       auto destroyingDirectoryLockHandle =
+                           std::move(directoryLockHandle);
+                     }
 
                      if (aValue.IsReject()) {
                        return BoolPromise::CreateAndReject(aValue.RejectValue(),
@@ -475,20 +480,24 @@ TEST_F(TestQuotaManager, OpenClientDirectory_OngoingWithScheduledShutdown) {
     promises.AppendElement(quotaManager->ShutdownStorage());
     promises.AppendElement(
         quotaManager->OpenClientDirectory(GetTestClientMetadata())
-            ->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [](ClientDirectoryLockPromise::ResolveOrRejectValue&& aValue) {
-                  if (aValue.IsReject()) {
-                    return BoolPromise::CreateAndReject(aValue.RejectValue(),
-                                                        __func__);
-                  }
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [](QuotaManager::ClientDirectoryLockHandlePromise::
+                          ResolveOrRejectValue&& aValue) {
+                     if (aValue.IsReject()) {
+                       return BoolPromise::CreateAndReject(aValue.RejectValue(),
+                                                           __func__);
+                     }
 
-                  RefPtr<ClientDirectoryLock> directoryLock =
-                      std::move(aValue.ResolveValue());
-                  DropDirectoryLock(directoryLock);
+                     ClientDirectoryLockHandle directoryLockHandle =
+                         std::move(aValue.ResolveValue());
 
-                  return BoolPromise::CreateAndResolve(true, __func__);
-                }));
+                     {
+                       auto destroyingDirectoryLockHandle =
+                           std::move(directoryLockHandle);
+                     }
+
+                     return BoolPromise::CreateAndResolve(true, __func__);
+                   }));
 
     {
       auto value =
@@ -519,47 +528,55 @@ TEST_F(TestQuotaManager,
     RefPtr<UniversalDirectoryLock> directoryLock =
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
-            Nullable<Client::Type>(),
+            ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     nsTArray<RefPtr<BoolPromise>> promises;
 
     promises.AppendElement(
         quotaManager->OpenClientDirectory(GetTestClientMetadata())
-            ->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [&directoryLock](
-                    ClientDirectoryLockPromise::ResolveOrRejectValue&& aValue) {
-                  DropDirectoryLock(directoryLock);
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [&directoryLock](
+                       QuotaManager::ClientDirectoryLockHandlePromise::
+                           ResolveOrRejectValue&& aValue) {
+                     DropDirectoryLock(directoryLock);
 
-                  if (aValue.IsReject()) {
-                    return BoolPromise::CreateAndReject(aValue.RejectValue(),
-                                                        __func__);
-                  }
+                     if (aValue.IsReject()) {
+                       return BoolPromise::CreateAndReject(aValue.RejectValue(),
+                                                           __func__);
+                     }
 
-                  RefPtr<ClientDirectoryLock> directoryLock =
-                      std::move(aValue.ResolveValue());
-                  DropDirectoryLock(directoryLock);
+                     ClientDirectoryLockHandle directoryLockHandle =
+                         std::move(aValue.ResolveValue());
 
-                  return BoolPromise::CreateAndResolve(true, __func__);
-                }));
+                     {
+                       auto destroyingDirectoryLockHandle =
+                           std::move(directoryLockHandle);
+                     }
+
+                     return BoolPromise::CreateAndResolve(true, __func__);
+                   }));
     promises.AppendElement(directoryLock->Acquire());
     promises.AppendElement(
         quotaManager->OpenClientDirectory(GetTestClientMetadata())
-            ->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [](ClientDirectoryLockPromise::ResolveOrRejectValue&& aValue) {
-                  if (aValue.IsReject()) {
-                    return BoolPromise::CreateAndReject(aValue.RejectValue(),
-                                                        __func__);
-                  }
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [](QuotaManager::ClientDirectoryLockHandlePromise::
+                          ResolveOrRejectValue&& aValue) {
+                     if (aValue.IsReject()) {
+                       return BoolPromise::CreateAndReject(aValue.RejectValue(),
+                                                           __func__);
+                     }
 
-                  RefPtr<ClientDirectoryLock> directoryLock =
-                      std::move(aValue.ResolveValue());
-                  DropDirectoryLock(directoryLock);
+                     ClientDirectoryLockHandle directoryLockHandle =
+                         std::move(aValue.ResolveValue());
 
-                  return BoolPromise::CreateAndResolve(true, __func__);
-                }));
+                     {
+                       auto destroyingDirectoryLockHandle =
+                           std::move(directoryLockHandle);
+                     }
+
+                     return BoolPromise::CreateAndResolve(true, __func__);
+                   }));
 
     {
       auto value =
@@ -591,9 +608,12 @@ TEST_F(TestQuotaManager, OpenClientDirectory_Finished) {
           Await(quotaManager->OpenClientDirectory(GetTestClientMetadata()));
       ASSERT_TRUE(value.IsResolve());
 
-      RefPtr<ClientDirectoryLock> directoryLock =
+      ClientDirectoryLockHandle directoryLockHandle =
           std::move(value.ResolveValue());
-      DropDirectoryLock(directoryLock);
+
+      {
+        auto destroyingDirectoryLockHandle = std::move(directoryLockHandle);
+      }
 
       ASSERT_TRUE(quotaManager->IsStorageInitialized());
     }
@@ -603,9 +623,12 @@ TEST_F(TestQuotaManager, OpenClientDirectory_Finished) {
           Await(quotaManager->OpenClientDirectory(GetTestClientMetadata()));
       ASSERT_TRUE(value.IsResolve());
 
-      RefPtr<ClientDirectoryLock> directoryLock =
+      ClientDirectoryLockHandle directoryLockHandle =
           std::move(value.ResolveValue());
-      DropDirectoryLock(directoryLock);
+
+      {
+        auto destroyingDirectoryLockHandle = std::move(directoryLockHandle);
+      }
 
       ASSERT_TRUE(quotaManager->IsStorageInitialized());
     }
@@ -632,9 +655,12 @@ TEST_F(TestQuotaManager, OpenClientDirectory_FinishedWithScheduledShutdown) {
           Await(quotaManager->OpenClientDirectory(GetTestClientMetadata()));
       ASSERT_TRUE(value.IsResolve());
 
-      RefPtr<ClientDirectoryLock> directoryLock =
+      ClientDirectoryLockHandle directoryLockHandle =
           std::move(value.ResolveValue());
-      DropDirectoryLock(directoryLock);
+
+      {
+        auto destroyingDirectoryLockHandle = std::move(directoryLockHandle);
+      }
 
       ASSERT_TRUE(quotaManager->IsStorageInitialized());
     }
@@ -644,20 +670,24 @@ TEST_F(TestQuotaManager, OpenClientDirectory_FinishedWithScheduledShutdown) {
     promises.AppendElement(quotaManager->ShutdownStorage());
     promises.AppendElement(
         quotaManager->OpenClientDirectory(GetTestClientMetadata())
-            ->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [](ClientDirectoryLockPromise::ResolveOrRejectValue&& aValue) {
-                  if (aValue.IsReject()) {
-                    return BoolPromise::CreateAndReject(aValue.RejectValue(),
-                                                        __func__);
-                  }
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [](QuotaManager::ClientDirectoryLockHandlePromise::
+                          ResolveOrRejectValue&& aValue) {
+                     if (aValue.IsReject()) {
+                       return BoolPromise::CreateAndReject(aValue.RejectValue(),
+                                                           __func__);
+                     }
 
-                  RefPtr<ClientDirectoryLock> directoryLock =
-                      std::move(aValue.ResolveValue());
-                  DropDirectoryLock(directoryLock);
+                     ClientDirectoryLockHandle directoryLockHandle =
+                         std::move(aValue.ResolveValue());
 
-                  return BoolPromise::CreateAndResolve(true, __func__);
-                }));
+                     {
+                       auto destroyingDirectoryLockHandle =
+                           std::move(directoryLockHandle);
+                     }
+
+                     return BoolPromise::CreateAndResolve(true, __func__);
+                   }));
 
     {
       auto value =
@@ -691,9 +721,12 @@ TEST_F(TestQuotaManager,
           Await(quotaManager->OpenClientDirectory(GetTestClientMetadata()));
       ASSERT_TRUE(value.IsResolve());
 
-      RefPtr<ClientDirectoryLock> directoryLock =
+      ClientDirectoryLockHandle directoryLockHandle =
           std::move(value.ResolveValue());
-      DropDirectoryLock(directoryLock);
+
+      {
+        auto destroyingDirectoryLockHandle = std::move(directoryLockHandle);
+      }
 
       ASSERT_TRUE(quotaManager->IsStorageInitialized());
     }
@@ -712,9 +745,12 @@ TEST_F(TestQuotaManager,
           Await(quotaManager->OpenClientDirectory(GetTestClientMetadata()));
       ASSERT_TRUE(value.IsResolve());
 
-      RefPtr<ClientDirectoryLock> directoryLock =
+      ClientDirectoryLockHandle directoryLockHandle =
           std::move(value.ResolveValue());
-      DropDirectoryLock(directoryLock);
+
+      {
+        auto destroyingDirectoryLockHandle = std::move(directoryLockHandle);
+      }
 
       ASSERT_TRUE(quotaManager->IsStorageInitialized());
     }
@@ -736,26 +772,26 @@ TEST_F(TestQuotaManager, OpenClientDirectory_InitializeOrigin) {
     QuotaManager* quotaManager = QuotaManager::Get();
     ASSERT_TRUE(quotaManager);
 
-    RefPtr<ClientDirectoryLock> directoryLock;
+    ClientDirectoryLockHandle directoryLockHandle;
 
     RefPtr<BoolPromise> promise =
         quotaManager
             ->OpenClientDirectory(GetTestClientMetadata(), aInitializeOrigin)
-            ->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [&directoryLock](
-                    ClientDirectoryLockPromise::ResolveOrRejectValue&& aValue) {
-                  if (aValue.IsReject()) {
-                    return BoolPromise::CreateAndReject(aValue.RejectValue(),
-                                                        __func__);
-                  }
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [&directoryLockHandle](
+                       QuotaManager::ClientDirectoryLockHandlePromise::
+                           ResolveOrRejectValue&& aValue) {
+                     if (aValue.IsReject()) {
+                       return BoolPromise::CreateAndReject(aValue.RejectValue(),
+                                                           __func__);
+                     }
 
-                  [&aValue]() { ASSERT_TRUE(aValue.ResolveValue()); }();
+                     [&aValue]() { ASSERT_TRUE(aValue.ResolveValue()); }();
 
-                  directoryLock = std::move(aValue.ResolveValue());
+                     directoryLockHandle = std::move(aValue.ResolveValue());
 
-                  return BoolPromise::CreateAndResolve(true, __func__);
-                })
+                     return BoolPromise::CreateAndResolve(true, __func__);
+                   })
             ->Then(quotaManager->IOThread(), __func__,
                    [aInitializeOrigin](
                        const BoolPromise::ResolveOrRejectValue& aValue) {
@@ -777,9 +813,12 @@ TEST_F(TestQuotaManager, OpenClientDirectory_InitializeOrigin) {
                      return BoolPromise::CreateAndResolve(true, __func__);
                    })
             ->Then(GetCurrentSerialEventTarget(), __func__,
-                   [&directoryLock](
+                   [&directoryLockHandle](
                        const BoolPromise::ResolveOrRejectValue& aValue) {
-                     DropDirectoryLock(directoryLock);
+                     {
+                       auto destroyingDirectoryLockHandle =
+                           std::move(directoryLockHandle);
+                     }
 
                      if (aValue.IsReject()) {
                        return BoolPromise::CreateAndReject(aValue.RejectValue(),
@@ -957,7 +996,7 @@ TEST_F(TestQuotaManager, InitializeStorage_OngoingWithExclusiveDirectoryLock) {
     RefPtr<UniversalDirectoryLock> directoryLock =
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
-            Nullable<Client::Type>(),
+            ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     nsTArray<RefPtr<BoolPromise>> promises;
@@ -1295,7 +1334,7 @@ TEST_F(TestQuotaManager,
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
                                             PERSISTENCE_TYPE_DEFAULT),
-            OriginScope::FromNull(), Nullable<Client::Type>(),
+            OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     {
@@ -1333,7 +1372,7 @@ TEST_F(TestQuotaManager,
     RefPtr<UniversalDirectoryLock> directoryLock =
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
-            Nullable<Client::Type>(),
+            ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     nsTArray<RefPtr<BoolPromise>> promises;
@@ -1482,7 +1521,7 @@ TEST_F(TestQuotaManager,
     RefPtr<UniversalDirectoryLock> directoryLock =
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-            OriginScope::FromNull(), Nullable<Client::Type>(),
+            OriginScope::FromNull(), ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     {
@@ -1520,7 +1559,7 @@ TEST_F(TestQuotaManager,
     RefPtr<UniversalDirectoryLock> directoryLock =
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
-            Nullable<Client::Type>(),
+            ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     nsTArray<RefPtr<BoolPromise>> promises;
@@ -1679,7 +1718,7 @@ TEST_F(TestQuotaManager,
         quotaManager->CreateDirectoryLockInternal(
             PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
             OriginScope::FromGroup(testOriginMetadata.mGroup),
-            Nullable<Client::Type>(),
+            ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     {
@@ -1723,7 +1762,7 @@ TEST_F(TestQuotaManager,
             PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
                                             PERSISTENCE_TYPE_DEFAULT),
             OriginScope::FromGroup(testOriginMetadata.mGroup),
-            Nullable<Client::Type>(),
+            ClientStorageScope::CreateFromNull(),
             /* aExclusive */ true);
 
     nsTArray<RefPtr<BoolPromise>> promises;
@@ -1985,6 +2024,100 @@ TEST_F(TestQuotaManager,
   });
 
   ASSERT_NO_FATAL_FAILURE(AssertStorageInitialized());
+
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+}
+
+// Tests the availability of SaveOriginAccessTime and verifies that calling it
+// does not trigger temporary storage or origin initialization.
+TEST_F(TestQuotaManager, SaveOriginAccessTime_Simple) {
+  auto testOriginMetadata = GetTestOriginMetadata();
+
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+
+  ASSERT_NO_FATAL_FAILURE(AssertStorageNotInitialized());
+  ASSERT_NO_FATAL_FAILURE(AssertTemporaryStorageNotInitialized());
+  ASSERT_NO_FATAL_FAILURE(
+      AssertTemporaryOriginNotInitialized(testOriginMetadata));
+
+  PerformOnBackgroundThread([testOriginMetadata]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    {
+      int64_t timestamp = PR_Now();
+
+      auto value = Await(
+          quotaManager->SaveOriginAccessTime(testOriginMetadata, timestamp));
+      ASSERT_TRUE(value.IsResolve());
+    }
+  });
+
+  ASSERT_NO_FATAL_FAILURE(AssertStorageInitialized());
+  ASSERT_NO_FATAL_FAILURE(AssertTemporaryStorageNotInitialized());
+  ASSERT_NO_FATAL_FAILURE(
+      AssertTemporaryOriginNotInitialized(testOriginMetadata));
+
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+}
+
+// Test SaveOriginAccessTime when saving of origin access time already finished
+// with an exclusive client directory lock for a different client scope
+// acquired in between.
+TEST_F(TestQuotaManager,
+       SaveOriginAccessTime_FinishedWithOtherExclusiveClientDirectoryLock) {
+  auto testOriginMetadata = GetTestOriginMetadata();
+
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+
+  ASSERT_NO_FATAL_FAILURE(AssertStorageNotInitialized());
+  ASSERT_NO_FATAL_FAILURE(AssertTemporaryStorageNotInitialized());
+  ASSERT_NO_FATAL_FAILURE(
+      AssertTemporaryOriginNotInitialized(testOriginMetadata));
+
+  PerformOnBackgroundThread([testOriginMetadata]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    // Save origin access time first to ensure required initialization is
+    // complete. Otherwise, the exclusive directory lock below may not be
+    // acquirable.
+    {
+      int64_t timestamp = PR_Now();
+
+      auto value = Await(
+          quotaManager->SaveOriginAccessTime(testOriginMetadata, timestamp));
+      ASSERT_TRUE(value.IsResolve());
+    }
+
+    // Acquire an exclusive directory lock for the SimpleDB quota client.
+    RefPtr<ClientDirectoryLock> directoryLock =
+        quotaManager->CreateDirectoryLock(GetTestClientMetadata(),
+                                          /* aExclusive */ true);
+
+    {
+      auto value = Await(directoryLock->Acquire());
+      ASSERT_TRUE(value.IsResolve());
+    }
+
+    // Save origin access time while the exclusive directory lock for SimpleDB
+    // is held. Verifies that saving origin access time uses a lock that does
+    // not overlap with quota client directory locks.
+    {
+      int64_t timestamp = PR_Now();
+
+      auto value = Await(
+          quotaManager->SaveOriginAccessTime(testOriginMetadata, timestamp));
+      ASSERT_TRUE(value.IsResolve());
+    }
+
+    DropDirectoryLock(directoryLock);
+  });
+
+  ASSERT_NO_FATAL_FAILURE(AssertStorageInitialized());
+  ASSERT_NO_FATAL_FAILURE(AssertTemporaryStorageNotInitialized());
+  ASSERT_NO_FATAL_FAILURE(
+      AssertTemporaryOriginNotInitialized(testOriginMetadata));
 
   ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
 }

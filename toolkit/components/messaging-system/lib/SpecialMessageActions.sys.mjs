@@ -211,7 +211,6 @@ export const SpecialMessageActions = {
       "browser.shopping.experience2023.survey.optedInTime",
       "browser.shopping.experience2023.survey.hasSeen",
       "browser.shopping.experience2023.survey.pdpVisits",
-      "browser.shopping.experience2023.firstImpressionTime",
       "browser.startup.homepage",
       "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
       "browser.privateWindowSeparation.enabled",
@@ -763,6 +762,10 @@ export const SpecialMessageActions = {
         break;
       case "SUBMIT_ONBOARDING_OPT_OUT_PING":
         this.submitOnboardingOptOutPing();
+        break;
+      case "SET_SEARCH_MODE":
+        window.gURLBar.searchMode = action.data;
+        window.gURLBar.focus();
         break;
     }
     return undefined;

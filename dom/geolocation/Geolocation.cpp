@@ -240,7 +240,6 @@ NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(nsGeolocationRequest,
 
 void nsGeolocationRequest::Notify() {
   MOZ_LOG(gGeolocationLog, LogLevel::Debug, ("nsGeolocationRequest::Notify"));
-  SetTimeoutTimer();
   NotifyErrorAndShutdown(GeolocationPositionError_Binding::TIMEOUT);
 }
 
@@ -428,9 +427,8 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     return NS_OK;
   }
 
-  RefPtr<nsGeolocationService> gs =
-      nsGeolocationService::GetGeolocationService();
-
+  RefPtr<nsGeolocationService> gs = nsGeolocationService::GetGeolocationService(
+      mLocator->GetBrowsingContext());
   bool canUseCache = false;
   CachedPositionAndAccuracy lastPosition = gs->GetCachedPosition();
   if (lastPosition.position) {
@@ -448,6 +446,12 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
       canUseCache =
           isCachedWithinRequestedAccuracy && isCachedWithinRequestedTime;
     }
+  }
+
+  // Enforce using cache in case the geolocation override server is set,
+  // since this server can return only cached values.
+  if (!canUseCache && gs != nsGeolocationService::sService.get()) {
+    canUseCache = true;
   }
 
   gs->UpdateAccuracy(WantsHighAccuracy());
@@ -548,7 +552,17 @@ void nsGeolocationRequest::SendLocation(nsIDOMGeoPosition* aPosition) {
     return;
   }
 
-  if (!mIsWatchPositionRequest) {
+  if (mIsWatchPositionRequest) {
+    // The initial signal for watch request is observed, after this we do not
+    // set a timer as the geolocation device is free to not send extra position
+    // if the device is simply not moving.
+    //
+    // See also https://w3c.github.io/geolocation/#dfn-request-a-position
+    // Step 7.5.1: "Wait for a significant change of geographic position. What
+    // constitutes a significant change of geographic position is left to the
+    // implementation."
+    StopTimeoutTimer();
+  } else {
     // Cancel timer and position updates in case the position
     // callback spins the event loop
     Shutdown();
@@ -570,9 +584,6 @@ void nsGeolocationRequest::SendLocation(nsIDOMGeoPosition* aPosition) {
     callback->HandleEvent(aPosition);
   }
 
-  if (mIsWatchPositionRequest && !mShutdown) {
-    SetTimeoutTimer();
-  }
   MOZ_ASSERT(mShutdown || mIsWatchPositionRequest,
              "non-shutdown getCurrentPosition request after callback!");
 }
@@ -640,7 +651,8 @@ void nsGeolocationRequest::Shutdown() {
   // notify the provider to switch to the default accuracy.
   if (mOptions && mOptions->mEnableHighAccuracy) {
     RefPtr<nsGeolocationService> gs =
-        nsGeolocationService::GetGeolocationService();
+        nsGeolocationService::GetGeolocationService(
+            mLocator->GetBrowsingContext());
     if (gs) {
       gs->UpdateAccuracy();
     }
@@ -957,8 +969,16 @@ void nsGeolocationService::StopDevice() {
 StaticRefPtr<nsGeolocationService> nsGeolocationService::sService;
 
 already_AddRefed<nsGeolocationService>
-nsGeolocationService::GetGeolocationService() {
+nsGeolocationService::GetGeolocationService(
+    mozilla::dom::BrowsingContext* aBrowsingContext) {
   RefPtr<nsGeolocationService> result;
+  if (aBrowsingContext) {
+    result = aBrowsingContext->GetGeolocationServiceOverride();
+
+    if (result) {
+      return result.forget();
+    }
+  }
   if (nsGeolocationService::sService) {
     result = nsGeolocationService::sService;
 
@@ -981,6 +1001,12 @@ void nsGeolocationService::AddLocator(Geolocation* aLocator) {
 
 void nsGeolocationService::RemoveLocator(Geolocation* aLocator) {
   mGeolocators.RemoveElement(aLocator);
+}
+
+void nsGeolocationService::MoveLocators(nsGeolocationService* aService) {
+  for (uint32_t i = 0; i < mGeolocators.Length(); i++) {
+    aService->AddLocator(mGeolocators[i]);
+  }
 }
 
 ////////////////////////////////////////////////////
@@ -1025,6 +1051,8 @@ already_AddRefed<Geolocation> Geolocation::NonWindowSingleton() {
 }
 
 nsresult Geolocation::Init(nsPIDOMWindowInner* aContentDom) {
+  nsCOMPtr<Document> doc = aContentDom ? aContentDom->GetExtantDoc() : nullptr;
+
   // Remember the window
   if (aContentDom) {
     mOwner = do_GetWeakReference(aContentDom);
@@ -1033,7 +1061,6 @@ nsresult Geolocation::Init(nsPIDOMWindowInner* aContentDom) {
     }
 
     // Grab the principal of the document
-    nsCOMPtr<Document> doc = aContentDom->GetDoc();
     if (!doc) {
       return NS_ERROR_FAILURE;
     }
@@ -1047,10 +1074,14 @@ nsresult Geolocation::Init(nsPIDOMWindowInner* aContentDom) {
     }
   }
 
+  mBrowsingContext =
+      doc ? RefPtr<BrowsingContext>(doc->GetBrowsingContext()) : nullptr;
+
   // If no aContentDom was passed into us, we are being used
   // by chrome/c++ and have no mOwner, no mPrincipal, and no need
   // to prompt.
-  mService = nsGeolocationService::GetGeolocationService();
+  mService = nsGeolocationService::GetGeolocationService(mBrowsingContext);
+
   if (mService) {
     mService->AddLocator(this);
   }

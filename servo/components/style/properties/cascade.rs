@@ -1055,6 +1055,7 @@ impl<'b> Cascade<'b> {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_WORD_SPACING);
         }
 
+        #[cfg(feature = "gecko")]
         if self
             .author_specified
             .contains(LonghandId::FontSynthesisWeight)
@@ -1062,6 +1063,7 @@ impl<'b> Cascade<'b> {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_FONT_SYNTHESIS_WEIGHT);
         }
 
+        #[cfg(feature = "gecko")]
         if self
             .author_specified
             .contains(LonghandId::FontSynthesisStyle)
@@ -1197,7 +1199,6 @@ impl<'b> Cascade<'b> {
     }
 
     /// Some keyword sizes depend on the font family and language.
-    #[cfg(feature = "gecko")]
     fn recompute_keyword_font_size_if_needed(&self, context: &mut computed::Context) {
         use crate::values::computed::ToComputedValue;
 
@@ -1216,6 +1217,7 @@ impl<'b> Cascade<'b> {
                 },
             };
 
+            #[cfg(feature = "gecko")]
             if font.mScriptUnconstrainedSize == new_size.computed_size {
                 return;
             }
@@ -1353,6 +1355,8 @@ impl<'b> Cascade<'b> {
         }
 
         let (new_size, new_unconstrained_size) = {
+            use crate::gecko::media_queries::QueryFontMetricsFlags;
+
             let builder = &context.builder;
             let font = builder.get_font();
             let parent_font = builder.get_parent_font();
@@ -1374,7 +1378,7 @@ impl<'b> Cascade<'b> {
                 let font_metrics = context.query_font_metrics(
                     FontBaseSize::InheritedStyle,
                     FontMetricsOrientation::Horizontal,
-                    /* retrieve_math_scales = */ true,
+                    QueryFontMetricsFlags::NEEDS_MATH_SCALES,
                 );
                 scale_factor_for_math_depth_change(
                     parent_font.mMathDepth as i32,

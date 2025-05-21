@@ -30,10 +30,13 @@ use crate::{
     lock::{rank, Mutex, RwLock},
     resource_log,
     snatch::{SnatchGuard, Snatchable},
+    timestamp_normalization::TimestampNormalizationBindGroup,
     track::{SharedTrackerIndexAllocator, TrackerIndex},
     weak_vec::WeakVec,
     Label, LabelHelpers, SubmissionIndex,
 };
+
+use crate::id::{BlasId, TlasId};
 
 /// Information about the wgpu-core resource.
 ///
@@ -366,18 +369,20 @@ pub struct Buffer {
     pub(crate) tracking_data: TrackingData,
     pub(crate) map_state: Mutex<BufferMapState>,
     pub(crate) bind_groups: Mutex<WeakVec<BindGroup>>,
-    #[cfg(feature = "indirect-validation")]
-    pub(crate) raw_indirect_validation_bind_group: Snatchable<Box<dyn hal::DynBindGroup>>,
+    pub(crate) timestamp_normalization_bind_group: Snatchable<TimestampNormalizationBindGroup>,
+    pub(crate) indirect_validation_bind_groups: Snatchable<crate::indirect_validation::BindGroups>,
 }
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        #[cfg(feature = "indirect-validation")]
-        if let Some(raw) = self.raw_indirect_validation_bind_group.take() {
-            unsafe {
-                self.device.raw().destroy_bind_group(raw);
-            }
+        if let Some(raw) = self.timestamp_normalization_bind_group.take() {
+            raw.dispose(self.device.raw());
         }
+
+        if let Some(raw) = self.indirect_validation_bind_groups.take() {
+            raw.dispose(self.device.raw());
+        }
+
         if let Some(raw) = self.raw.take() {
             resource_log!("Destroy raw {}", self.error_ident());
             unsafe {
@@ -439,10 +444,8 @@ impl Buffer {
     ) -> Result<SubmissionIndex, (BufferMapOperation, BufferAccessError)> {
         let range_size = if let Some(size) = size {
             size
-        } else if offset > self.size {
-            0
         } else {
-            self.size - offset
+            self.size.saturating_sub(offset)
         };
 
         if offset % wgt::MAP_ALIGNMENT != 0 {
@@ -714,9 +717,12 @@ impl Buffer {
                 }
             };
 
-            #[cfg(feature = "indirect-validation")]
-            let raw_indirect_validation_bind_group = self
-                .raw_indirect_validation_bind_group
+            let timestamp_normalization_bind_group = self
+                .timestamp_normalization_bind_group
+                .snatch(&mut snatch_guard);
+
+            let indirect_validation_bind_groups = self
+                .indirect_validation_bind_groups
                 .snatch(&mut snatch_guard);
 
             drop(snatch_guard);
@@ -731,8 +737,8 @@ impl Buffer {
                 device: Arc::clone(&self.device),
                 label: self.label().to_owned(),
                 bind_groups,
-                #[cfg(feature = "indirect-validation")]
-                raw_indirect_validation_bind_group,
+                timestamp_normalization_bind_group,
+                indirect_validation_bind_groups,
             })
         };
 
@@ -787,8 +793,8 @@ pub struct DestroyedBuffer {
     device: Arc<Device>,
     label: String,
     bind_groups: WeakVec<BindGroup>,
-    #[cfg(feature = "indirect-validation")]
-    raw_indirect_validation_bind_group: Option<Box<dyn hal::DynBindGroup>>,
+    timestamp_normalization_bind_group: Option<TimestampNormalizationBindGroup>,
+    indirect_validation_bind_groups: Option<crate::indirect_validation::BindGroups>,
 }
 
 impl DestroyedBuffer {
@@ -805,11 +811,12 @@ impl Drop for DestroyedBuffer {
         )));
         drop(deferred);
 
-        #[cfg(feature = "indirect-validation")]
-        if let Some(raw) = self.raw_indirect_validation_bind_group.take() {
-            unsafe {
-                self.device.raw().destroy_bind_group(raw);
-            }
+        if let Some(raw) = self.timestamp_normalization_bind_group.take() {
+            raw.dispose(self.device.raw());
+        }
+
+        if let Some(raw) = self.indirect_validation_bind_groups.take() {
+            raw.dispose(self.device.raw());
         }
 
         resource_log!("Destroy raw Buffer (destroyed) {:?}", self.label());
@@ -1406,6 +1413,54 @@ impl Global {
         let hal_queue = queue.raw().as_any().downcast_ref();
 
         hal_queue_callback(hal_queue)
+    }
+
+    /// # Safety
+    ///
+    /// - The raw blas handle must not be manually destroyed
+    pub unsafe fn blas_as_hal<A: HalApi, F: FnOnce(Option<&A::AccelerationStructure>) -> R, R>(
+        &self,
+        id: BlasId,
+        hal_blas_callback: F,
+    ) -> R {
+        profiling::scope!("Blas::as_hal");
+
+        let hub = &self.hub;
+
+        if let Ok(blas) = hub.blas_s.get(id).get() {
+            let snatch_guard = blas.device.snatchable_lock.read();
+            let hal_blas = blas
+                .try_raw(&snatch_guard)
+                .ok()
+                .and_then(|b| b.as_any().downcast_ref());
+            hal_blas_callback(hal_blas)
+        } else {
+            hal_blas_callback(None)
+        }
+    }
+
+    /// # Safety
+    ///
+    /// - The raw tlas handle must not be manually destroyed
+    pub unsafe fn tlas_as_hal<A: HalApi, F: FnOnce(Option<&A::AccelerationStructure>) -> R, R>(
+        &self,
+        id: TlasId,
+        hal_tlas_callback: F,
+    ) -> R {
+        profiling::scope!("Blas::as_hal");
+
+        let hub = &self.hub;
+
+        if let Ok(tlas) = hub.tlas_s.get(id).get() {
+            let snatch_guard = tlas.device.snatchable_lock.read();
+            let hal_tlas = tlas
+                .try_raw(&snatch_guard)
+                .ok()
+                .and_then(|t| t.as_any().downcast_ref());
+            hal_tlas_callback(hal_tlas)
+        } else {
+            hal_tlas_callback(None)
+        }
     }
 }
 

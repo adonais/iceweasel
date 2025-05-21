@@ -265,19 +265,6 @@ using JS::SliceBudget;
 using JS::TimeBudget;
 using JS::WorkBudget;
 
-const AllocKind gc::slotsToThingKind[] = {
-    // clang-format off
-    /*  0 */ AllocKind::OBJECT0,  AllocKind::OBJECT2,  AllocKind::OBJECT2,  AllocKind::OBJECT4,
-    /*  4 */ AllocKind::OBJECT4,  AllocKind::OBJECT8,  AllocKind::OBJECT8,  AllocKind::OBJECT8,
-    /*  8 */ AllocKind::OBJECT8,  AllocKind::OBJECT12, AllocKind::OBJECT12, AllocKind::OBJECT12,
-    /* 12 */ AllocKind::OBJECT12, AllocKind::OBJECT16, AllocKind::OBJECT16, AllocKind::OBJECT16,
-    /* 16 */ AllocKind::OBJECT16
-    // clang-format on
-};
-
-static_assert(std::size(slotsToThingKind) == SLOTS_TO_THING_KIND_LIMIT,
-              "We have defined a slot count for each kind.");
-
 // A table converting an object size in "slots" (increments of
 // sizeof(js::Value)) to the total number of bytes in the corresponding
 // AllocKind. See gc::slotsToThingKind. This primarily allows wasm jit code to
@@ -286,7 +273,7 @@ static_assert(std::size(slotsToThingKind) == SLOTS_TO_THING_KIND_LIMIT,
 // To use this table, subtract sizeof(NativeObject) from your desired allocation
 // size, divide by sizeof(js::Value) to get the number of "slots", and then
 // index into this table. See gc::GetGCObjectKindForBytes.
-const constexpr uint32_t gc::slotsToAllocKindBytes[] = {
+constexpr uint32_t gc::slotsToAllocKindBytes[] = {
     // These entries correspond exactly to gc::slotsToThingKind. The numeric
     // comments therefore indicate the number of slots that the "bytes" would
     // correspond to.
@@ -299,7 +286,7 @@ const constexpr uint32_t gc::slotsToAllocKindBytes[] = {
     // clang-format on
 };
 
-static_assert(std::size(slotsToAllocKindBytes) == SLOTS_TO_THING_KIND_LIMIT);
+static_assert(std::size(slotsToAllocKindBytes) == std::size(slotsToThingKind));
 
 MOZ_THREAD_LOCAL(JS::GCContext*) js::TlsGCContext;
 
@@ -311,6 +298,7 @@ JS::GCContext::~GCContext() {
   MOZ_ASSERT(gcUse() == GCUse::None);
   MOZ_ASSERT(!gcSweepZone());
   MOZ_ASSERT(!isTouchingGrayThings());
+  MOZ_ASSERT(isPreWriteBarrierAllowed());
 }
 
 void JS::GCContext::poisonJitCode() {
@@ -326,6 +314,12 @@ void GCRuntime::verifyAllChunks() {
   fullChunks(lock).verifyChunks();
   availableChunks(lock).verifyChunks();
   emptyChunks(lock).verifyChunks();
+  if (currentChunk_) {
+    MOZ_ASSERT(currentChunk_->info.isCurrentChunk);
+    currentChunk_->verify();
+  } else {
+    MOZ_ASSERT(pendingFreeCommittedArenas.ref().IsEmpty());
+  }
 }
 #endif
 
@@ -362,7 +356,7 @@ static void FreeChunkPool(ChunkPool& pool) {
     ArenaChunk* chunk = iter.get();
     iter.next();
     pool.remove(chunk);
-    MOZ_ASSERT(chunk->unused());
+    MOZ_ASSERT(chunk->isEmpty());
     UnmapPages(static_cast<void*>(chunk), ChunkSize);
   }
   MOZ_ASSERT(pool.count() == 0);
@@ -405,7 +399,10 @@ void GCRuntime::releaseArena(Arena* arena, const AutoLockGC& lock) {
   } else {
     arena->zone()->gcHeapSize.removeBytes(ArenaSize, true, heapSize);
   }
-  arena->release(this, &lock);
+  if (arena->zone()->isAtomsZone()) {
+    arena->freeAtomMarkingBitmapIndex(this, lock);
+  }
+  arena->release();
   arena->chunk()->releaseArena(this, arena, lock);
 }
 
@@ -1016,6 +1013,11 @@ void GCRuntime::finish() {
 
   zones().clear();
 
+  {
+    AutoLockGC lock(this);
+    clearCurrentChunk(lock);
+  }
+
   FreeChunkPool(fullChunks_.ref());
   FreeChunkPool(availableChunks_.ref());
   FreeChunkPool(emptyChunks_.ref());
@@ -1308,8 +1310,10 @@ uint32_t GCRuntime::getParameter(JSGCParamKey key, const AutoLockGC& lock) {
     case JSGC_PER_ZONE_GC_ENABLED:
       return perZoneGCEnabled;
     case JSGC_UNUSED_CHUNKS:
+      clearCurrentChunk(lock);
       return uint32_t(emptyChunks(lock).count());
     case JSGC_TOTAL_CHUNKS:
+      clearCurrentChunk(lock);
       return uint32_t(fullChunks(lock).count() + availableChunks(lock).count() +
                       emptyChunks(lock).count());
     case JSGC_SLICE_TIME_BUDGET_MS:
@@ -2077,7 +2081,7 @@ void GCRuntime::startDecommit() {
     // Verify that all entries in the empty chunks pool are unused.
     for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done();
          chunk.next()) {
-      MOZ_ASSERT(chunk->unused());
+      MOZ_ASSERT(chunk->isEmpty());
     }
   }
 #endif
@@ -2142,7 +2146,7 @@ void js::gc::BackgroundDecommitTask::run(AutoLockHelperThreadState& lock) {
 }
 
 static inline bool CanDecommitWholeChunk(ArenaChunk* chunk) {
-  return chunk->unused() && chunk->info.numArenasFreeCommitted != 0;
+  return chunk->isEmpty() && chunk->info.numArenasFreeCommitted != 0;
 }
 
 // Called from a background thread to decommit free arenas. Releases the GC
@@ -2201,7 +2205,13 @@ void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
 
   for (ArenaChunk* chunk : chunksToDecommit) {
     MOZ_ASSERT(chunk->getKind() == ChunkKind::TenuredArenas);
-    MOZ_ASSERT(!chunk->unused());
+    MOZ_ASSERT(!chunk->isEmpty());
+
+    if (chunk->info.isCurrentChunk) {
+      // Chunk has become current chunk while lock was released.
+      continue;
+    }
+
     if (!chunk->hasAvailableArenas()) {
       // Chunk has become full while lock was released.
       continue;
@@ -2263,13 +2273,11 @@ void GCRuntime::queueAllLifoBlocksForFreeAfterMinorGC(LifoAlloc* lifo) {
 }
 
 void GCRuntime::queueBuffersForFreeAfterMinorGC(
-    Nursery::BufferSet& buffers, Nursery::StringBufferVector& stringBuffers,
-    Nursery::LargeAllocList& largeAllocs) {
+    Nursery::BufferSet& buffers, Nursery::StringBufferVector& stringBuffers) {
   AutoLockHelperThreadState lock;
 
   if (!buffersToFreeAfterMinorGC.ref().empty() ||
-      !stringBuffersToReleaseAfterMinorGC.ref().empty() ||
-      !largeBuffersToFreeAfterMinorGC.ref().isEmpty()) {
+      !stringBuffersToReleaseAfterMinorGC.ref().empty()) {
     // In the rare case that this hasn't processed the buffers from a previous
     // minor GC we have to wait here.
     MOZ_ASSERT(!freeTask.isIdle(lock));
@@ -2281,9 +2289,6 @@ void GCRuntime::queueBuffersForFreeAfterMinorGC(
 
   MOZ_ASSERT(stringBuffersToReleaseAfterMinorGC.ref().empty());
   std::swap(stringBuffersToReleaseAfterMinorGC.ref(), stringBuffers);
-
-  MOZ_ASSERT(largeBuffersToFreeAfterMinorGC.ref().isEmpty());
-  std::swap(largeBuffersToFreeAfterMinorGC.ref(), largeAllocs);
 }
 
 void Realm::destroy(JS::GCContext* gcx) {
@@ -4003,11 +4008,22 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         break;
       }
 
+      for (GCZonesIter zone(this); !zone.done(); zone.next()) {
+        zone->arenas.mergeBackgroundSweptArenas();
+      }
+
       {
         BufferAllocator::AutoLock lock(this);
         for (GCZonesIter zone(this); !zone.done(); zone.next()) {
           zone->bufferAllocator.finishMajorCollection(lock);
         }
+      }
+
+      atomMarking.mergePendingFreeArenaIndexes(this);
+
+      {
+        AutoLockGC lock(this);
+        clearCurrentChunk(lock);
       }
 
       assertBackgroundSweepingFinished();
@@ -4017,7 +4033,6 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       MOZ_ASSERT(minorGCNumber >= initialMinorGCNumber);
       if (minorGCNumber == initialMinorGCNumber) {
         MOZ_ASSERT(nursery().sweepTaskIsIdle());
-        waitBackgroundFreeEnd();
       }
 
       {
@@ -4049,6 +4064,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
           beginCompactPhase();
         }
 
+        nursery().joinSweepTask();
         if (compactPhase(reason, budget, session) == NotFinished) {
           break;
         }

@@ -40,8 +40,8 @@ use webrender::{
     api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler,
     AsyncScreenshotHandle, Compositor, LayerCompositor, CompositorCapabilities, CompositorConfig, CompositorSurfaceTransform, Device,
     MappableCompositor, MappedTileInfo, NativeSurfaceId, NativeSurfaceInfo, NativeTileId, PartialPresentCompositor,
-    PipelineInfo, ProfilerHooks, RecordedFrameHandle, RenderBackendHooks, Renderer, RendererStats,
-    SWGLCompositeSurfaceInfo, SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders, TextureCacheConfig,
+    PendingShadersToPrecache, PipelineInfo, ProfilerHooks, RecordedFrameHandle, RenderBackendHooks, Renderer, RendererStats,
+    ClipRadius, SWGLCompositeSurfaceInfo, SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders, TextureCacheConfig,
     UploadMethod, WebRenderOptions, WindowVisibility, WindowProperties, ONE_TIME_USAGE_HINT, CompositorInputConfig, CompositorSurfaceUsage,
 };
 use wr_malloc_size_of::MallocSizeOfOps;
@@ -557,11 +557,11 @@ unsafe impl Send for CppNotifier {}
 
 extern "C" {
     fn wr_notifier_wake_up(window_id: WrWindowId, composite_needed: bool);
-    fn wr_notifier_new_frame_ready(window_id: WrWindowId, composite_needed: bool, publish_id: FramePublishId);
+    fn wr_notifier_new_frame_ready(window_id: WrWindowId, publish_id: FramePublishId, params: &FrameReadyParams);
     fn wr_notifier_external_event(window_id: WrWindowId, raw_event: usize);
     fn wr_schedule_render(window_id: WrWindowId, reasons: RenderReasons);
     // NOTE: This moves away from pipeline_info.
-    fn wr_finished_scene_build(window_id: WrWindowId, pipeline_info: &mut WrPipelineInfo);
+    fn wr_schedule_frame_after_scene_build(window_id: WrWindowId, pipeline_info: &mut WrPipelineInfo);
 
     fn wr_transaction_notification_notified(handler: usize, when: Checkpoint);
 }
@@ -579,9 +579,9 @@ impl RenderNotifier for CppNotifier {
         }
     }
 
-    fn new_frame_ready(&self, _: DocumentId, _scrolled: bool, composite_needed: bool, publish_id: FramePublishId) {
+    fn new_frame_ready(&self, _: DocumentId, publish_id: FramePublishId, params: &FrameReadyParams) {
         unsafe {
-            wr_notifier_new_frame_ready(self.window_id, composite_needed, publish_id);
+            wr_notifier_new_frame_ready(self.window_id, publish_id, params);
         }
     }
 
@@ -1028,16 +1028,15 @@ impl SceneBuilderHooks for APZCallbacks {
         }
     }
 
-    fn post_scene_swap(&self, _document_ids: &Vec<DocumentId>, info: PipelineInfo) {
+    fn post_scene_swap(&self, _document_ids: &Vec<DocumentId>, info: PipelineInfo, schedule_frame: bool) {
         let mut info = WrPipelineInfo::new(&info);
         unsafe {
             apz_post_scene_swap(self.window_id, &info);
         }
 
-        // After a scene swap we should schedule a render for the next vsync,
-        // otherwise there's no guarantee that the new scene will get rendered
-        // anytime soon
-        unsafe { wr_finished_scene_build(self.window_id, &mut info) }
+        if schedule_frame {
+            unsafe { wr_schedule_frame_after_scene_build(self.window_id, &mut info) }
+        }
         gecko_profiler_end_marker("SceneBuilding");
     }
 
@@ -1311,6 +1310,8 @@ extern "C" {
         transform: &CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
         image_rendering: ImageRendering,
+        rounded_clip_rect: DeviceIntRect,
+        rounded_clip_radii: ClipRadius,
     );
     fn wr_compositor_start_compositing(
         compositor: *mut c_void,
@@ -1442,9 +1443,19 @@ impl Compositor for WrCompositor {
         transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
         image_rendering: ImageRendering,
+        rounded_clip_rect: DeviceIntRect,
+        rounded_clip_radii: ClipRadius,
     ) {
         unsafe {
-            wr_compositor_add_surface(self.0, id, &transform, clip_rect, image_rendering);
+            wr_compositor_add_surface(
+                self.0,
+                id,
+                &transform,
+                clip_rect,
+                image_rendering,
+                rounded_clip_rect,
+                rounded_clip_radii,
+            );
         }
     }
 
@@ -1665,6 +1676,8 @@ impl LayerCompositor for WrLayerCompositor {
                 &transform,
                 clip_rect,
                 image_rendering,
+                clip_rect,
+                ClipRadius::EMPTY,
             );
         }
     }
@@ -1792,8 +1805,15 @@ impl PartialPresentCompositor for WrPartialPresentCompositor {
     }
 }
 
-/// A wrapper around a strong reference to a Shaders object.
-pub struct WrShaders(SharedShaders);
+/// A wrapper around a strong reference to a Shaders object, and around the
+/// Device object that was used to create the shaders.
+///
+/// We store the device to avoid repeated GL function lookups.
+pub struct WrShaders {
+    shaders: SharedShaders,
+    shaders_to_precache: PendingShadersToPrecache,
+    device: Device,
+}
 
 pub struct WrGlyphRasterThread(GlyphRasterThread);
 
@@ -2031,7 +2051,7 @@ pub extern "C" fn wr_window_new(
 
     let window_size = DeviceIntSize::new(window_width, window_height);
     let notifier = Box::new(CppNotifier { window_id });
-    let (renderer, sender) = match create_webrender_instance(gl, notifier, opts, shaders.map(|sh| &sh.0)) {
+    let (renderer, sender) = match create_webrender_instance(gl, notifier, opts, shaders.map(|sh| &sh.shaders)) {
         Ok((renderer, sender)) => (renderer, sender),
         Err(e) => {
             warn!(" Failed to create a Renderer: {:?}", e);
@@ -4427,21 +4447,10 @@ pub extern "C" fn wr_shaders_new(
 ) -> *mut WrShaders {
     let mut device = wr_device_new(gl_context, program_cache);
 
-    let precache_flags = if precache_shaders || env_var_to_bool("MOZ_WR_PRECACHE_SHADERS") {
-        ShaderPrecacheFlags::FULL_COMPILE
-    } else {
-        ShaderPrecacheFlags::ASYNC_COMPILE
-    };
-
-    let opts = WebRenderOptions {
-        precache_flags,
-        ..Default::default()
-    };
-
-    let gl_type = device.gl().get_type();
     device.begin_frame();
 
-    let shaders = Rc::new(RefCell::new(match Shaders::new(&mut device, gl_type, &opts) {
+    let gl_type = device.gl().get_type();
+    let mut shaders = match Shaders::new(&mut device, gl_type, &WebRenderOptions::default()) {
         Ok(shaders) => shaders,
         Err(e) => {
             warn!(" Failed to create a Shaders: {:?}", e);
@@ -4451,22 +4460,62 @@ pub extern "C" fn wr_shaders_new(
             }
             return ptr::null_mut();
         },
-    }));
-
-    let shaders = WrShaders(shaders);
+    };
 
     device.end_frame();
+
+    let precache_flags = if precache_shaders || env_var_to_bool("MOZ_WR_PRECACHE_SHADERS") {
+        ShaderPrecacheFlags::FULL_COMPILE
+    } else {
+        ShaderPrecacheFlags::ASYNC_COMPILE
+    };
+
+    let shaders_to_precache = shaders.precache_all(precache_flags);
+
+    let shaders = WrShaders {
+        shaders: Rc::new(RefCell::new(shaders)),
+        shaders_to_precache,
+        device,
+    };
+
     Box::into_raw(Box::new(shaders))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_shaders_delete(shaders: *mut WrShaders, gl_context: *mut c_void) {
-    let mut device = wr_device_new(gl_context, None);
-    let shaders = Box::from_raw(shaders);
-    if let Ok(shaders) = Rc::try_unwrap(shaders.0) {
+pub unsafe extern "C" fn wr_shaders_delete(shaders: *mut WrShaders) {
+    // Deallocate the box by moving the values out of it.
+    let WrShaders { shaders, mut device, .. } = *Box::from_raw(shaders);
+    if let Ok(shaders) = Rc::try_unwrap(shaders) {
         shaders.into_inner().deinit(&mut device);
     }
-    // let shaders go out of scope and get dropped
+}
+
+/// Perform one step of shader warmup.
+///
+/// Returns true if another call is needed, false if warmup is finished.
+#[no_mangle]
+pub extern "C" fn wr_shaders_resume_warmup(shaders: &mut WrShaders) -> bool {
+    shaders.device.begin_frame();
+
+    let need_another_call = match shaders.shaders.borrow_mut().resume_precache(&mut shaders.device, &mut shaders.shaders_to_precache) {
+        Ok(need_another_call) => need_another_call,
+        Err(e) => {
+            warn!(" Failed to create a shader during warmup: {:?}", e);
+            let msg = CString::new(format!("wr_shaders_resume_warmup: {:?}", e)).unwrap();
+            unsafe {
+                gfx_critical_note(msg.as_ptr());
+            }
+
+            // Don't ask for another call to resume warmup; if one shader failed
+            // to compile it's likely that we will run into similar errors with
+            // the rest of the shaders.
+            false
+        }
+    };
+
+    shaders.device.end_frame();
+
+    need_another_call
 }
 
 #[no_mangle]

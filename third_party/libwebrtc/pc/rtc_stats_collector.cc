@@ -13,12 +13,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -28,40 +29,56 @@
 #include "api/audio/audio_device.h"
 #include "api/audio/audio_processing_statistics.h"
 #include "api/candidate.h"
+#include "api/data_channel_interface.h"
 #include "api/dtls_transport_interface.h"
+#include "api/environment/environment.h"
+#include "api/make_ref_counted.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
 #include "api/rtp_parameters.h"
+#include "api/rtp_transceiver_direction.h"
+#include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/stats/rtc_stats.h"
+#include "api/stats/rtc_stats_collector_callback.h"
+#include "api/stats/rtc_stats_report.h"
 #include "api/stats/rtcstats_objects.h"
+#include "api/transport/enums.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "api/video/video_content_type.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "common_video/include/quality_limitation_reason.h"
 #include "media/base/media_channel.h"
-#include "media/base/media_channel_impl.h"
+#include "media/base/stream_params.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "p2p/base/connection_info.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
+#include "p2p/base/transport_description.h"
 #include "pc/channel_interface.h"
 #include "pc/data_channel_utils.h"
+#include "pc/peer_connection_internal.h"
 #include "pc/rtc_stats_traversal.h"
 #include "pc/rtp_receiver_proxy.h"
 #include "pc/rtp_sender_proxy.h"
+#include "pc/rtp_transceiver.h"
+#include "pc/transport_stats.h"
 #include "pc/webrtc_sdp.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/event.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 
@@ -85,12 +102,12 @@ std::string RTCCodecStatsIDFromTransportAndCodecParameters(
     const std::string& transport_id,
     const RtpCodecParameters& codec_params) {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << 'C' << direction << transport_id << '_' << codec_params.payload_type;
   // TODO(https://crbug.com/webrtc/14420): If we stop supporting different FMTP
   // lines for the same PT and transport, which should be illegal SDP, then we
   // wouldn't need `fmtp` to be part of the ID here.
-  rtc::StringBuilder fmtp;
+  StringBuilder fmtp;
   if (WriteFmtpParameters(codec_params.parameters, &fmtp)) {
     sb << '_' << fmtp.Release();
   }
@@ -100,7 +117,7 @@ std::string RTCCodecStatsIDFromTransportAndCodecParameters(
 std::string RTCIceCandidatePairStatsIDFromConnectionInfo(
     const cricket::ConnectionInfo& info) {
   char buf[4096];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << "CP" << info.local_candidate.id() << "_" << info.remote_candidate.id();
   return sb.str();
 }
@@ -109,7 +126,7 @@ std::string RTCTransportStatsIDFromTransportChannel(
     const std::string& transport_name,
     int channel_component) {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << 'T' << transport_name << channel_component;
   return sb.str();
 }
@@ -118,7 +135,7 @@ std::string RTCInboundRtpStreamStatsIDFromSSRC(const std::string& transport_id,
                                                cricket::MediaType media_type,
                                                uint32_t ssrc) {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << 'I' << transport_id
      << (media_type == cricket::MEDIA_TYPE_AUDIO ? 'A' : 'V') << ssrc;
   return sb.str();
@@ -128,7 +145,7 @@ std::string RTCOutboundRtpStreamStatsIDFromSSRC(const std::string& transport_id,
                                                 cricket::MediaType media_type,
                                                 uint32_t ssrc) {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << 'O' << transport_id
      << (media_type == cricket::MEDIA_TYPE_AUDIO ? 'A' : 'V') << ssrc;
   return sb.str();
@@ -138,7 +155,7 @@ std::string RTCRemoteInboundRtpStreamStatsIdFromSourceSsrc(
     cricket::MediaType media_type,
     uint32_t source_ssrc) {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << "RI" << (media_type == cricket::MEDIA_TYPE_AUDIO ? 'A' : 'V')
      << source_ssrc;
   return sb.str();
@@ -148,7 +165,7 @@ std::string RTCRemoteOutboundRTPStreamStatsIDFromSSRC(
     cricket::MediaType media_type,
     uint32_t source_ssrc) {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << "RO" << (media_type == cricket::MEDIA_TYPE_AUDIO ? 'A' : 'V')
      << source_ssrc;
   return sb.str();
@@ -158,7 +175,7 @@ std::string RTCMediaSourceStatsIDFromKindAndAttachment(
     cricket::MediaType media_type,
     int attachment_id) {
   char buf[1024];
-  rtc::SimpleStringBuilder sb(buf);
+  SimpleStringBuilder sb(buf);
   sb << 'S' << (media_type == cricket::MEDIA_TYPE_AUDIO ? 'A' : 'V')
      << attachment_id;
   return sb.str();
@@ -370,7 +387,7 @@ std::string GetCodecIdAndMaybeCreateCodecStats(
     codec_stats->channels = *codec_params.num_channels;
   }
 
-  rtc::StringBuilder fmtp;
+  StringBuilder fmtp;
   if (WriteFmtpParameters(codec_params.parameters, &fmtp)) {
     codec_stats->sdp_fmtp_line = fmtp.Release();
   }
@@ -739,9 +756,8 @@ CreateOutboundRTPStreamStatsFromVoiceSenderInfo(
   outbound_audio->transport_id = transport_id;
   outbound_audio->mid = mid;
   outbound_audio->kind = "audio";
-  if (voice_sender_info.target_bitrate.has_value() &&
-      *voice_sender_info.target_bitrate > 0) {
-    outbound_audio->target_bitrate = *voice_sender_info.target_bitrate;
+  if (voice_sender_info.target_bitrate.has_value()) {
+    outbound_audio->target_bitrate = voice_sender_info.target_bitrate->bps();
   }
   if (voice_sender_info.codec_payload_type.has_value()) {
     auto codec_param_it = voice_media_info.send_codecs.find(
@@ -791,9 +807,8 @@ CreateOutboundRTPStreamStatsFromVideoSenderInfo(
       static_cast<uint32_t>(video_sender_info.plis_received);
   if (video_sender_info.qp_sum.has_value())
     outbound_video->qp_sum = *video_sender_info.qp_sum;
-  if (video_sender_info.target_bitrate.has_value() &&
-      *video_sender_info.target_bitrate > 0) {
-    outbound_video->target_bitrate = *video_sender_info.target_bitrate;
+  if (video_sender_info.target_bitrate.has_value()) {
+    outbound_video->target_bitrate = video_sender_info.target_bitrate->bps();
   }
   outbound_video->frames_encoded = video_sender_info.frames_encoded;
   outbound_video->key_frames_encoded = video_sender_info.key_frames_encoded;

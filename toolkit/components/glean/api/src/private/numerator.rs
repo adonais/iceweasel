@@ -4,13 +4,13 @@
 
 use inherent::inherent;
 
-use super::CommonMetricData;
+use super::{ChildMetricMeta, CommonMetricData};
 
 use glean::traits::Numerator;
 use glean::Rate;
 
 use crate::ipc::{need_ipc, with_ipc_payload};
-use crate::private::MetricId;
+use crate::private::BaseMetricId;
 
 /// Developer-facing API for recording rate metrics with external denominators.
 ///
@@ -21,22 +21,23 @@ use crate::private::MetricId;
 pub enum NumeratorMetric {
     Parent {
         /// The metric's ID. Used for testing and profiler markers. Numerator
-        /// metrics canot be labeled, so we only store a MetricId. If this
-        /// changes, this should be changed to a MetricGetter to distinguish
+        /// metrics canot be labeled, so we only store a BaseMetricId. If this
+        /// changes, this should be changed to a MetricId to distinguish
         /// between metrics and sub-metrics.
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::NumeratorMetric,
     },
-    Child(NumeratorMetricIpc),
+    Child(ChildMetricMeta),
 }
-#[derive(Clone, Debug)]
-pub struct NumeratorMetricIpc(MetricId);
+
+crate::define_metric_metadata_getter!(NumeratorMetric, NUMERATOR_MAP);
+crate::define_metric_namer!(NumeratorMetric);
 
 impl NumeratorMetric {
     /// The public constructor used by automatically generated metrics.
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
-            NumeratorMetric::Child(NumeratorMetricIpc(id))
+            NumeratorMetric::Child(ChildMetricMeta::from_common_metric_data(id, meta))
         } else {
             let inner = glean::private::NumeratorMetric::new(meta);
             NumeratorMetric::Parent { id, inner }
@@ -44,17 +45,19 @@ impl NumeratorMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricId {
+    pub(crate) fn metric_id(&self) -> BaseMetricId {
         match self {
             NumeratorMetric::Parent { id, .. } => *id,
-            NumeratorMetric::Child(c) => c.0,
+            NumeratorMetric::Child(meta) => meta.id,
         }
     }
 
     #[cfg(test)]
     pub(crate) fn child_metric(&self) -> Self {
         match self {
-            NumeratorMetric::Parent { id, .. } => NumeratorMetric::Child(NumeratorMetricIpc(*id)),
+            NumeratorMetric::Parent { id, inner } => {
+                NumeratorMetric::Child(ChildMetricMeta::from_metric_identifier(*id, inner))
+            }
             NumeratorMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
         }
     }
@@ -69,15 +72,15 @@ impl Numerator for NumeratorMetric {
                 inner.add_to_numerator(amount);
                 *id
             }
-            NumeratorMetric::Child(c) => {
+            NumeratorMetric::Child(meta) => {
                 with_ipc_payload(move |payload| {
-                    if let Some(v) = payload.numerators.get_mut(&c.0) {
+                    if let Some(v) = payload.numerators.get_mut(&meta.id) {
                         *v += amount;
                     } else {
-                        payload.numerators.insert(c.0, amount);
+                        payload.numerators.insert(meta.id, amount);
                     }
                 });
-                c.0
+                meta.id
             }
         };
 
@@ -87,7 +90,11 @@ impl Numerator for NumeratorMetric {
                 "Rate::addToNumerator",
                 super::profiler_utils::TelemetryProfilerCategory,
                 Default::default(),
-                super::profiler_utils::IntLikeMetricMarker::new(id.into(), None, amount),
+                super::profiler_utils::IntLikeMetricMarker::<NumeratorMetric, i32>::new(
+                    id.into(),
+                    None,
+                    amount,
+                ),
             );
         }
     }
@@ -96,8 +103,11 @@ impl Numerator for NumeratorMetric {
         let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             NumeratorMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            NumeratorMetric::Child(c) => {
-                panic!("Cannot get test value for {:?} in non-parent process!", c.0);
+            NumeratorMetric::Child(meta) => {
+                panic!(
+                    "Cannot get test value for {:?} in non-parent process!",
+                    meta.id
+                );
             }
         }
     }
@@ -105,10 +115,10 @@ impl Numerator for NumeratorMetric {
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
             NumeratorMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
-            NumeratorMetric::Child(c) => {
+            NumeratorMetric::Child(meta) => {
                 panic!(
                     "Cannot get the number of recorded errors for {:?} in non-parent process!",
-                    c.0
+                    meta.id
                 );
             }
         }

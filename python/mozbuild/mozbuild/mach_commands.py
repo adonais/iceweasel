@@ -339,9 +339,7 @@ def cargo(
             append_env["CARGO_NO_AUTO_ARG"] = "1"
         else:
             append_env["ADD_RUST_LTOABLE"] = (
-                "force-cargo-library-{s:s} force-cargo-program-{s:s}".format(
-                    s=cargo_command
-                )
+                f"force-cargo-library-{cargo_command:s} force-cargo-program-{cargo_command:s}"
             )
 
         ret = command_context._run_make(
@@ -1244,16 +1242,14 @@ def _print_package_name(command_context):
     if not os.path.exists(package_name_path):
         return
 
-    with open(package_name_path, "r") as f:
+    with open(package_name_path) as f:
         package_name = f.read().strip()
     package_path = mozpath.join(dist_path, package_name)
 
     if not os.path.exists(package_path):
         return
 
-    command_context.log(
-        logging.INFO, "package", {}, "Created package: {}".format(package_path)
-    )
+    command_context.log(logging.INFO, "package", {}, f"Created package: {package_path}")
 
 
 def _get_android_install_parser():
@@ -1287,7 +1283,7 @@ def setup_install_parser():
 @Command(
     "install",
     category="post-build",
-    conditions=[conditions.has_build],
+    conditions=[conditions.has_build_or_shell],
     parser=setup_install_parser,
     description="Install the package on the machine (or device in the case of Android).",
 )
@@ -1307,6 +1303,55 @@ def install(command_context, **kwargs):
             )
             == 0
         )
+    elif conditions.is_jsshell(command_context) and conditions.is_android_cpu(
+        command_context
+    ):
+        # Push a shell build to the phone.
+        # It would be nice to just use `ADBDevice``, but what's nice about the
+        # mozrunner android stuff is that it nicely will handle starting an emulator for you and
+        # doing the work there
+        from mozrunner.devices.android_device import get_android_device
+
+        [device, device_serial] = get_android_device(command_context)
+
+        if not device:
+            command_context.log(
+                logging.INFO, "install", {}, "No device found, aborting install"
+            )
+            return 1
+
+        command_context.log(
+            logging.INFO,
+            "install",
+            {},
+            "Installing shell binary and support libarary to /data/local/tmp",
+        )
+
+        # The path to the binary and libraries
+        distpath = command_context.topobjdir + "/dist/bin/"
+
+        # Don't need to push much.
+        paths_to_push = [distpath + "js", distpath + "libmozglue.so"]
+
+        # Push
+        for path in paths_to_push:
+            device.push(path, "/data/local/tmp")
+
+        command_context.log(
+            logging.INFO,
+            "install",
+            {},
+            "Install complete: find the binary in `/data/local/tmp` on the device",
+        )
+        command_context.log(
+            logging.INFO,
+            "install",
+            {},
+            "Run with /data/local/tmp/js on the device",
+        )
+
+        return 0
+
     else:
         ret = command_context._run_make(
             directory=".", target="install", ensure_exit_code=False
@@ -1640,7 +1685,7 @@ def _run_android(
     metadata = metadata_for_app(app)
 
     if not metadata.activity_name:
-        raise RuntimeError("Application not recognized: {}".format(app))
+        raise RuntimeError(f"Application not recognized: {app}")
 
     # If we want to debug an existing process, we implicitly do not want
     # to kill it and pave over its installation with a new one.
@@ -1686,9 +1731,7 @@ def _run_android(
                 # Always /data/local/tmp, rather than `device.test_root`, because
                 # GeckoView only takes its configuration file from /data/local/tmp,
                 # and we want to follow suit.
-                target_profile = "/data/local/tmp/{}-profile".format(
-                    metadata.package_name
-                )
+                target_profile = f"/data/local/tmp/{metadata.package_name}-profile"
                 device.rm(target_profile, recursive=True, force=True)
                 device.push(host_profile, target_profile)
                 command_context.log(
@@ -1719,7 +1762,7 @@ def _run_android(
 
         extras = {}
         for i, e in enumerate(env):
-            extras["env{}".format(i)] = e
+            extras[f"env{i}"] = e
         if args:
             extras["args"] = " ".join(args)
 
@@ -3244,7 +3287,7 @@ def repackage_snap_install(command_context, snap_file, snap_name, sudo=None):
         logging.INFO,
         "repackage-snap-install-howto-run",
         {},
-        "Example usage: snap run {}".format(snap_name),
+        f"Example usage: snap run {snap_name}",
     )
 
     return 0
@@ -3382,7 +3425,7 @@ def package_l10n(command_context, verbose=False, locales=[]):
     )
     command_context._run_make(
         directory=command_context.topobjdir,
-        target=["chrome-{}".format(locale) for locale in locales],
+        target=[f"chrome-{locale}" for locale in locales],
         append_env=append_env,
         pass_thru=False,
         print_directory=False,

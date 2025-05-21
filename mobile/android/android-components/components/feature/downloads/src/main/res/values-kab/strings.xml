@@ -7,12 +7,22 @@
     %1$s will be replaced with the percentage of download completed so far.
   -->
   <string name="mozac_feature_downloads_percentage_notification_text" moz:removedIn="139" tools:ignore="UnusedResources">%1$s immed</string>
+  <!--
+    Summary text shown on an in progress download notification.
+    %1$s will be replaced with the estimated time remaining to complete the download.
+  -->
+  <string name="mozac_feature_downloads_time_remaining">deg %1$s</string>
   <!-- Text shown on the second row of a paused download notification. -->
   <string name="mozac_feature_downloads_paused_notification_text">Asader yesteɛfa</string>
   <!-- Text shown on the second row of an completed download notification. The filename is shown on the first row. -->
   <string name="mozac_feature_downloads_completed_notification_text2">Asader yemmed</string>
   <!-- Text shown on the second row of an failed download notification. The filename is shown on the first row. -->
   <string name="mozac_feature_downloads_failed_notification_text2">Ifuyla ittwazedmen</string>
+  <!--
+    Alert dialog confirmation before downloading a previously downloaded file, this is the title.
+    %1$s will be replaced with the size of the file.
+  -->
+  <string name="mozac_feature_downloads_again_dialog_title" tools:ignore="UnusedResources">Sader afaylu i tikkelt niḍen? (%1$s)</string>
   <!--
     Alert dialog confirmation before downloading a file, this is the title.
     %1$s will be replaced with the size of the file.
@@ -31,6 +41,13 @@
     %1$s will be replaced with the name of the file.
   -->
   <string name="mozac_feature_downloads_already_exists_dialog_title" tools:ignore="UnusedResources">%1$s yella yakan.</string>
+  <!--
+    Alert dialog confirmation before downloading a file without network connection, this is the description.
+    %1$s will be replaced with the name of the file.
+  -->
+  <string name="mozac_feature_downloads_file_failure_no_connection" tools:ignore="UnusedResources">%1$s ur d-yettwasadar ara.</string>
+  <!-- Alert dialog confirmation before downloading a file without network connection, this is the description. -->
+  <string name="mozac_feature_downloads_file_check_connection" tools:ignore="UnusedResources">Senqed tuqqn-k sakin ɛreḍ tikkelt niḍen.</string>
   <!-- Error shown when the user is trying to download a invalid file. %1$s will be replaced with the name of the app. -->
   <string name="mozac_feature_downloads_file_not_supported2">%1$s ur izmir ara ad d-isader anaw-a n yifuyla</string>
   <!-- Message that appears when the downloaded file could not be opened. -->

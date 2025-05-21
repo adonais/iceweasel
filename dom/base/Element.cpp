@@ -323,6 +323,9 @@ void Element::SetPointerCapture(int32_t aPointerId, ErrorResult& aError) {
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
+  // XXX If pointerInfo->mIsSynthesizedForTests does not match the last
+  // WidgetPointerEvent's mFlags.mIsSynthesizedForTests, should we treat it
+  // as unknown pointerId?
   if (!pointerInfo->mActiveState ||
       pointerInfo->mActiveDocument != OwnerDoc()) {
     return;
@@ -4125,7 +4128,8 @@ void Element::GetAnimations(const GetAnimationsOptions& aOptions,
     // be reflected in the flags passed in DocumentOrShadowRoot::GetAnimations
     // too.
     doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Style, false /* flush animations */));
+        ChangesToFlush(FlushType::Style, /* aFlushAnimations = */ false,
+                       /* aUpdateRelevancy = */ false));
   }
 
   GetAnimationsWithoutFlush(aOptions, aAnimations);
@@ -5308,17 +5312,8 @@ void Element::SetHTML(const nsAString& aInnerHTML,
     aError.ThrowInvalidStateError("Missing owner global.");
     return;
   }
-
-  RefPtr<Sanitizer> sanitizer;
-  if (aOptions.mSanitizer.IsSanitizer()) {
-    sanitizer = aOptions.mSanitizer.GetAsSanitizer();
-  } else if (aOptions.mSanitizer.IsSanitizerConfig()) {
-    sanitizer = Sanitizer::New(
-        global, aOptions.mSanitizer.GetAsSanitizerConfig(), aError);
-  } else {
-    sanitizer = Sanitizer::New(
-        global, aOptions.mSanitizer.GetAsSanitizerPresets(), aError);
-  }
+  RefPtr<Sanitizer> sanitizer =
+      Sanitizer::GetInstance(global, aOptions.mSanitizer, true, aError);
   if (aError.Failed()) {
     return;
   }
@@ -5372,43 +5367,20 @@ void Element::SetHTML(const nsAString& aInnerHTML,
 
   // We MUST NOT cause any requests during parsing, so we'll
   // create an inert Document and parse into a new DocumentFragment.
-  RefPtr<Document> inertDoc;
-  nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
-  int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
-  ElementCreationOptionsOrString options;
-  RefPtr<DocumentFragment> fragment;
-  if (doc->IsHTMLDocument()) {
-    inertDoc = nsContentUtils::CreateInertHTMLDocument(doc);
-    if (!inertDoc) {
-      aError = NS_ERROR_FAILURE;
-      return;
-    }
-    fragment = new (inertDoc->NodeInfoManager())
-        DocumentFragment(inertDoc->NodeInfoManager());
 
-    aError = nsContentUtils::ParseFragmentHTML(aInnerHTML, fragment,
-                                               contextLocalName,
-                                               contextNameSpaceID, false, true);
-
-  } else {
-    MOZ_ASSERT(doc->IsXMLDocument());
-    inertDoc = nsContentUtils::CreateInertXMLDocument(doc);
-    if (!inertDoc) {
-      aError = NS_ERROR_FAILURE;
-      return;
-    }
-    fragment = new (inertDoc->NodeInfoManager())
-        DocumentFragment(inertDoc->NodeInfoManager());
-
-    // TODO(freddyb) `nsContentUtils::CreateContextualFragment` is actually
-    // collecting a ton of stacks to get in an (X)HTMLish state.
-    // I'm afraid we might need that too. Ugh.
-    AutoTArray<nsString, 0> emptyTagStack;
-    aError =
-        nsContentUtils::ParseFragmentXML(aInnerHTML, inertDoc, emptyTagStack,
-                                         true, -1, getter_AddRefs(fragment));
+  RefPtr<Document> inertDoc = nsContentUtils::CreateInertHTMLDocument(doc);
+  if (!inertDoc) {
+    aError = NS_ERROR_FAILURE;
+    return;
   }
 
+  RefPtr<DocumentFragment> fragment = new (inertDoc->NodeInfoManager())
+      DocumentFragment(inertDoc->NodeInfoManager());
+
+  nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
+  int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
+  aError = nsContentUtils::ParseFragmentHTML(
+      aInnerHTML, fragment, contextLocalName, contextNameSpaceID, false, true);
   if (aError.Failed()) {
     return;
   }
@@ -5421,7 +5393,7 @@ void Element::SetHTML(const nsAString& aInnerHTML,
   int32_t oldChildCount = static_cast<int32_t>(target->GetChildCount());
 
   // Step 6. Run sanitize on fragment using sanitizer and safe.
-  sanitizer->SanitizeFragment(fragment, /* aSafe */ true, aError);
+  sanitizer->Sanitize(fragment, /* aSafe */ true, aError);
   if (aError.Failed()) {
     return;
   }
@@ -5485,6 +5457,17 @@ void Element::SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
                             ErrorResult& aError) {
   nsContentUtils::SetHTMLUnsafe(this, this, aHTML, false /*aIsShadowRoot*/,
                                 aError);
+}
+
+// https://html.spec.whatwg.org/#event-beforematch
+void Element::FireBeforematchEvent(ErrorResult& aRv) {
+  RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
+  event->InitEvent(u"beforematch"_ns,
+                   /*aCanBubble=*/true,
+                   /*aCancelable=*/false);
+
+  event->SetTrusted(true);
+  DispatchEvent(*event, aRv);
 }
 
 bool Element::BlockingContainsRender() const {

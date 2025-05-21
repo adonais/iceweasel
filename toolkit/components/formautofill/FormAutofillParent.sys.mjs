@@ -27,6 +27,7 @@
 
 // We expose a singleton from this module. Some tests may import the
 // constructor via the system global.
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 
@@ -50,6 +51,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   MLAutofill: "resource://autofill/MLAutofill.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
 });
 
@@ -341,11 +343,11 @@ export class FormAutofillParent extends JSWindowActorParent {
         this.onFieldFilledModified(data);
         break;
       }
-      case "FormAutofill:FillFieldsOnFormChange": {
+      case "FormAutofill:FieldsUpdatedDuringAutofill": {
         // TODO bug 1953231: The parent should introduce profile ids, so that
         // the child can simply send a profile id instead of the whole profile data
         const { elementId, profile } = data;
-        this.onFillOnFormChange(elementId, profile);
+        this.onFieldsUpdatedDuringAutofill(elementId, profile);
         break;
       }
 
@@ -581,7 +583,7 @@ export class FormAutofillParent extends JSWindowActorParent {
    * @param {object} profile that was used for the previous autofill action
    *                         causing the form change
    */
-  async onFillOnFormChange(elementId, profile) {
+  async onFieldsUpdatedDuringAutofill(elementId, profile) {
     const section = this.getSectionByElementId(elementId);
     const msg = "FormAutofill:FillFieldsOnFormChange";
     const fields = section.getAutofillFields();
@@ -1006,6 +1008,11 @@ export class FormAutofillParent extends JSWindowActorParent {
       return null;
     }
 
+    const fieldDetail = section.getFieldDetailByElementId(elementId);
+    if (!section.shouldAutofillField(fieldDetail)) {
+      return null;
+    }
+
     const relayPromise = lazy.FirefoxRelay.autocompleteItemsAsync({
       origin: this.formOrigin,
       scenarioName,
@@ -1151,12 +1158,12 @@ export class FormAutofillParent extends JSWindowActorParent {
       entries.push(entry);
     }
 
-    for (const [bcId, fieldDetails] of entries) {
+    for (const [bcId, bcFieldDetails] of entries) {
       const bc = BrowsingContext.get(bcId);
 
       // For sensitive fields, we ONLY fill them when they are same-origin with
       // the triggered frame.
-      const ids = fieldDetails
+      const ids = bcFieldDetails
         .filter(detail => this.shouldAutofill(bc, detail))
         .map(detail => detail.elementId);
 
@@ -1226,7 +1233,15 @@ export class FormAutofillParent extends JSWindowActorParent {
     const section = this.getSectionByElementId(elementId);
     if (!(await section.prepareFillingProfile(profile))) {
       lazy.log.debug("profile cannot be filled");
+      // For testing only
+      Services.obs.notifyObservers(null, "formautofill-autofill-complete");
       return;
+    }
+
+    if (AppConstants.platform !== "android") {
+      lazy.NimbusFeatures["address-autofill-feature"].recordExposureEvent({
+        once: true,
+      });
     }
 
     const msg = "FormAutofill:FillFields";

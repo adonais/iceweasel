@@ -838,9 +838,23 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   UniquePtr<StyleAnimationValueMap> animationValues(
       Servo_AnimationValueMap_Create());
   if (!presContext->EffectCompositor()->ComposeServoAnimationRuleForEffect(
-          *keyframeEffect, CascadeLevel(), animationValues.get())) {
+          *keyframeEffect, CascadeLevel(), animationValues.get(),
+          StaticPrefs::dom_animations_commit_styles_endpoint_inclusive()
+              ? EndpointBehavior::Inclusive
+              : EndpointBehavior::Exclusive)) {
     NS_WARNING("Failed to compose animation style to commit");
     return;
+  }
+
+  // Count how often the endpoint-inclusive behavior makes a difference so we
+  // can gauge if it is Web-compatible.
+  auto computedTimingWithEndpointIncluded =
+      keyframeEffect->GetComputedTiming(nullptr, EndpointBehavior::Inclusive);
+  auto computedTimingWithEndpointExcluded =
+      keyframeEffect->GetComputedTiming(nullptr, EndpointBehavior::Exclusive);
+  if (computedTimingWithEndpointIncluded.mProgress !=
+      computedTimingWithEndpointExcluded.mProgress) {
+    doc->SetUseCounter(eUseCounter_custom_CommitStylesNonFillingFinalValue);
   }
 
   // Calling SetCSSDeclaration will trigger attribute setting code.
@@ -1277,7 +1291,8 @@ void Animation::WillComposeStyle() {
 
 void Animation::ComposeStyle(
     StyleAnimationValueMap& aComposeResult,
-    const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip) {
+    const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip,
+    EndpointBehavior aEndpointBehavior) {
   if (!mEffect) {
     return;
   }
@@ -1331,7 +1346,8 @@ void Animation::ComposeStyle(
 
     KeyframeEffect* keyframeEffect = mEffect->AsKeyframeEffect();
     if (keyframeEffect) {
-      keyframeEffect->ComposeStyle(aComposeResult, aPropertiesToSkip);
+      keyframeEffect->ComposeStyle(aComposeResult, aPropertiesToSkip,
+                                   aEndpointBehavior);
     }
   }
 
@@ -1377,7 +1393,7 @@ static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
   if (!rd->IsInRefresh()) {
     return {};
   }
-  return rd->MostRecentRefresh(/* aEnsureTimerStarted = */ false);
+  return rd->MostRecentRefresh();
 }
 
 // https://drafts.csswg.org/web-animations/#play-an-animation
@@ -1692,7 +1708,8 @@ void Animation::UpdateEffect(PostRestyleMode aPostRestyle) {
 void Animation::FlushUnanimatedStyle() const {
   if (Document* doc = GetRenderedDocument()) {
     doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Style, false /* flush animations */));
+        ChangesToFlush(FlushType::Style, /* aFlushAnimations = */ false,
+                       /* aUpdateRelevancy = */ false));
   }
 }
 

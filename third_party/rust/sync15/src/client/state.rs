@@ -53,8 +53,7 @@ const DEFAULT_DECLINED: &[&str] = &[];
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "schema_version")]
 pub enum PersistedGlobalState {
-    /// V1 was when we persisted the entire GlobalState, keys and all!
-
+    // V1 was when we persisted the entire GlobalState, keys and all!
     /// V2 is just tracking the globally declined list.
     /// None means "I've no idea" and theoretically should only happen on the
     /// very first sync for an app.
@@ -757,6 +756,7 @@ mod tests {
 
     #[test]
     fn test_state_machine_ready_from_empty() {
+        nss::ensure_initialized();
         let _ = env_logger::try_init();
         let root_key = KeyBundle::new_random().unwrap();
         let keys = CollectionKeys {
@@ -814,6 +814,7 @@ mod tests {
 
     #[test]
     fn test_from_previous_state_declined() {
+        nss::ensure_initialized();
         let _ = env_logger::try_init();
         // The state-machine sequence where we didn't use the previous state
         // (ie, where the state machine restarted)

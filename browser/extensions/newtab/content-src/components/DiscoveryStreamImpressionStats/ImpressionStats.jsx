@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { getActiveCardSize } from "../../lib/utils";
 import { TOP_SITES_SOURCE } from "../TopSites/TopSitesConstants";
 import React from "react";
 
@@ -109,7 +110,7 @@ export class ImpressionStats extends React.PureComponent {
             tiles: cards.map(link => ({
               id: link.id,
               pos: link.pos,
-              type: this.props.flightId ? "spoc" : "organic",
+              type: props.flightId ? "spoc" : "organic",
               ...(link.shim ? { shim: link.shim } : {}),
               recommendation_id: link.recommendation_id,
               fetchTimestamp: link.fetchTimestamp,
@@ -119,16 +120,25 @@ export class ImpressionStats extends React.PureComponent {
               received_rank: link.received_rank,
               topic: link.topic,
               is_list_card: link.is_list_card,
-              ...(link.format ? { format: link.format } : {}),
+              ...(link.format
+                ? { format: link.format }
+                : {
+                    format: getActiveCardSize(
+                      window.innerWidth,
+                      link.class_names,
+                      link.section,
+                      link.flightId
+                    ),
+                  }),
               ...(link.section
                 ? {
                     section: link.section,
                     section_position: link.section_position,
-                    is_secton_followed: link.is_secton_followed,
+                    is_section_followed: link.is_section_followed,
                   }
                 : {}),
             })),
-            firstVisibleTimestamp: this.props.firstVisibleTimestamp,
+            firstVisibleTimestamp: props.firstVisibleTimestamp,
           })
         );
         this.impressionCardGuids = cards.map(link => link.id);

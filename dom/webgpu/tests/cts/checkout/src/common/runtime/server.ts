@@ -101,6 +101,8 @@ for (let i = 0; i < sys.args.length; ++i) {
       globalTestConfig.forceFallbackAdapter = true;
     } else if (a === '--enforce-default-limits') {
       globalTestConfig.enforceDefaultLimits = true;
+    } else if (a === '--block-all-features') {
+      globalTestConfig.blockAllFeatures = true;
     } else if (a === '--log-to-websocket') {
       globalTestConfig.logToWebSocket = true;
     } else if (a === '--gpu-provider') {
@@ -128,7 +130,7 @@ if (globalTestConfig.compatibility || globalTestConfig.forceFallbackAdapter) {
   setDefaultRequestAdapterOptions({
     featureLevel: globalTestConfig.compatibility ? 'compatibility' : 'core',
     forceFallbackAdapter: globalTestConfig.forceFallbackAdapter,
-  } as GPURequestAdapterOptions);
+  });
 }
 
 if (gpuProviderModule) {

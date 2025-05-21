@@ -31,6 +31,10 @@
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/about/aboutAddons.ftl" />
     <link rel="localization" href="toolkit/global/extensionPermissions.ftl" />
+    <link
+      rel="localization"
+      href="locales-preview/dataCollectionPermissions.ftl"
+    />
     <link rel="localization" href="locales-preview/localModelManagement.ftl" />
 
     <!-- Defer scripts so all the templates are loaded by the time they run. -->
@@ -321,6 +325,7 @@
     </template>
 
     <template name="addon-permissions-list">
+      <!-- Permissions -->
       <div class="addon-permissions-required" hidden>
         <h2
           class="permission-header"
@@ -335,11 +340,29 @@
         ></h2>
         <ul class="addon-permissions-list"></ul>
       </div>
+
+      <!-- Data collection -->
+      <div class="addon-data-collection-permissions-required" hidden>
+        <h2
+          class="permission-header"
+          data-l10n-id="addon-permissions-required-data-collection"
+        ></h2>
+        <ul class="addon-permissions-list"></ul>
+      </div>
+      <div class="addon-data-collection-permissions-optional" hidden>
+        <h2
+          class="permission-header"
+          data-l10n-id="addon-permissions-optional-data-collection"
+        ></h2>
+        <ul class="addon-permissions-list"></ul>
+      </div>
+
       <div
         class="addon-detail-row addon-permissions-empty"
         data-l10n-id="addon-permissions-empty2"
         hidden
       ></div>
+
       <div class="addon-detail-row">
         <a
           is="moz-support-link"
@@ -376,7 +399,7 @@
                 is="moz-support-link"
                 support-page="add-on-badges"
                 utm-content="promoted-addon-badge"
-                data-l10n-id="addon-badge-recommended3"
+                data-l10n-id="addon-badge-recommended4"
                 hidden
               >
               </a>
@@ -394,7 +417,7 @@
                 is="moz-support-link"
                 support-page="add-on-badges"
                 utm-content="promoted-addon-badge"
-                data-l10n-id="addon-badge-verified3"
+                data-l10n-id="addon-badge-verified4"
                 hidden
               >
               </a>
@@ -691,6 +714,26 @@
       </named-deck>
     </template>
 
+    <template name="colorway-removal-notice">
+      <moz-message-bar
+        data-l10n-id="colorway-removal-notice-message"
+        dismissable
+      >
+        <a
+          is="moz-support-link"
+          support-page="colorways"
+          data-l10n-id="colorway-removal-notice-learn-more"
+          slot="support-link"
+        ></a>
+
+        <button
+          slot="actions"
+          action="open-amo-colorway-collection"
+          data-l10n-id="colorway-removal-notice-button"
+        ></button>
+      </moz-message-bar>
+    </template>
+
     <template name="taar-notice">
       <moz-message-bar
         class="discopane-notice"
@@ -727,7 +770,7 @@
     <template name="discopane">
       <header>
         <p>
-          <span data-l10n-id="discopane-intro2">
+          <span data-l10n-id="discopane-intro3">
             <a
               class="discopane-intro-learn-more-link"
               is="moz-support-link"

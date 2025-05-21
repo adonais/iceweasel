@@ -69,7 +69,40 @@ about-logging-invalid-output = Invalid value “{ $v }“ for key “{ $k }“
 about-logging-unknown-logging-preset = Unknown logging preset “{ $v }“
 about-logging-unknown-profiler-preset = Unknown profiler preset “{ $v }“
 about-logging-unknown-option = Unknown about:logging option “{ $k }“
+
+##
+
 about-logging-configuration-url-ignored = Configuration URL ignored
 about-logging-file-and-profiler-override = Can’t force file output and override profiler options at the same time
 
+# Variables:
+#   $errorText (string) - The received error message, inserted as is.
+about-logging-unknown-error = An error happened: { $errorText }
+
 about-logging-configured-via-url = Option configured via URL
+
+## The upload interface is shown only with the preference toolkit.aboutLogging.uploadProfileToCloud
+## set to true. It is false by default, except on Android.
+
+about-logging-upload-question = The profile data has been captured. Do you want to save or upload it?
+about-logging-save-button = Save
+about-logging-upload-button = Upload
+
+# Variables:
+#   $path (string) - The path where the profile can be found.
+about-logging-saved = Saved to { $path }
+
+# Variables:
+#   $percent (number) - The upload completion progress, to be displayed as a percentage. This is a value between 0 and 1.
+about-logging-uploading-progress = Uploading profile data: { NUMBER($percent, maximumSignificantDigits: 2, style: "percent") }
+
+# Variables:
+#   $url (string) - The URL where the profile can be found
+about-logging-uploaded = Uploaded to <a data-l10n-name="uploaded-message-url">{ $url }</a>
+about-logging-share-uploaded-url = <img data-l10n-name="share-image"/> Share URL
+# Variables:
+#   $errorText (string) - The received error message, inserted as is.
+about-logging-upload-error = An error happened while uploading the profile: { $errorText }
+# Variables:
+#   $errorText (string) - The received error message, inserted as is.
+about-logging-save-error = An error happened while saving the file: { $errorText }

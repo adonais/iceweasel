@@ -25,7 +25,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_permissions.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/ExtensionsPermissionsMetrics.h"
 
 #include "mozIStorageService.h"
 #include "mozIStorageConnection.h"
@@ -89,7 +89,7 @@ constexpr int64_t cIDPermissionIsDefault = -1;
 
 namespace {
 
-bool IsChildProcess() { return XRE_IsContentProcess(); }
+inline bool IsChildProcess() { return XRE_IsContentProcess(); }
 
 void LogToConsole(const nsAString& aMsg) {
   nsCOMPtr<nsIConsoleService> console(
@@ -697,6 +697,8 @@ PermissionManager::PermissionManager()
       mLargestID(0) {}
 
 PermissionManager::~PermissionManager() {
+  MonitorAutoLock lock{mMonitor};
+
   // NOTE: Make sure to reject each of the promises in mPermissionKeyPromiseMap
   // before destroying.
   for (const auto& promise : mPermissionKeyPromiseMap.Values()) {
@@ -755,6 +757,11 @@ nsresult PermissionManager::Init() {
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MonitorAutoLock lock{mMonitor};
+  MOZ_ASSERT(mState == eInitializing);
+
   // If the 'permissions.memory_only' pref is set to true, then don't write any
   // permission settings to disk, but keep them in a memory-only database.
   mMemoryOnlyDB = Preferences::GetBool("permissions.memory_only", false);
@@ -784,6 +791,7 @@ nsresult PermissionManager::Init() {
     observerService->AddObserver(this, "profile-do-change", true);
     observerService->AddObserver(this, "testonly-reload-permissions-from-disk",
                                  true);
+    observerService->AddObserver(this, "last-pb-context-exited", true);
   }
 
   if (XRE_IsParentProcess()) {
@@ -841,11 +849,9 @@ nsresult PermissionManager::OpenDatabase(nsIFile* aPermissionsFile) {
 
 void PermissionManager::InitDB(bool aRemoveFile) {
   mState = eInitializing;
+  MOZ_ASSERT(NS_IsMainThread());
 
-  {
-    MonitorAutoLock lock(mMonitor);
-    mReadEntries.Clear();
-  }
+  mReadEntries.Clear();
 
   auto readyIfFailed = MakeScopeExit([&]() {
     // ignore failure here, since it's non-fatal (we can run fine without
@@ -875,15 +881,19 @@ void PermissionManager::InitDB(bool aRemoveFile) {
   RefPtr<PermissionManager> self = this;
   mThread->Dispatch(NS_NewRunnableFunction(
       "PermissionManager::InitDB", [self, aRemoveFile, defaultsInputStream] {
-        nsresult rv = self->TryInitDB(aRemoveFile, defaultsInputStream);
+        MonitorAutoLock lock(self->mMonitor);
+
+        nsresult rv = self->TryInitDB(aRemoveFile, defaultsInputStream, lock);
         Unused << NS_WARN_IF(NS_FAILED(rv));
 
         // This extra runnable calls EnsureReadCompleted to finialize the
         // initialization. If there is something blocked by the monitor, it will
         // be NOP.
-        NS_DispatchToMainThread(
-            NS_NewRunnableFunction("PermissionManager::InitDB-MainThread",
-                                   [self] { self->EnsureReadCompleted(); }));
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "PermissionManager::InitDB-MainThread", [self] {
+              MonitorAutoLock lock{self->mMonitor};
+              self->EnsureReadCompleted();
+            }));
 
         self->mMonitor.Notify();
       }));
@@ -892,10 +902,9 @@ void PermissionManager::InitDB(bool aRemoveFile) {
 }
 
 nsresult PermissionManager::TryInitDB(bool aRemoveFile,
-                                      nsIInputStream* aDefaultsInputStream) {
+                                      nsIInputStream* aDefaultsInputStream,
+                                      const MonitorAutoLock& aProofOfLock) {
   MOZ_ASSERT(!NS_IsMainThread());
-
-  MonitorAutoLock lock(mMonitor);
 
   auto raii = MakeScopeExit([&]() {
     if (aDefaultsInputStream) {
@@ -932,7 +941,7 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
     LogToConsole(u"permissions.sqlite is corrupted! Try again!"_ns);
 
     // Add telemetry probe
-    Telemetry::Accumulate(Telemetry::PERMISSIONS_SQL_CORRUPTED, 1);
+    glean::permissions::sql_corrupted.Add(1);
 
     // delete corrupted permissions.sqlite and try again
     rv = mPermissionsFile->Remove(false);
@@ -960,7 +969,7 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
     LogToConsole(u"Defective permissions.sqlite has been removed."_ns);
 
     // Add telemetry probe
-    Telemetry::Accumulate(Telemetry::DEFECTIVE_PERMISSIONS_SQL_REMOVED, 1);
+    glean::permissions::defective_sql_removed.Add(1);
 
     rv = OpenDatabase(mPermissionsFile);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1570,11 +1579,11 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Always import default permissions.
-  ConsumeDefaultsInputStream(aDefaultsInputStream, lock);
+  ConsumeDefaultsInputStream(aDefaultsInputStream, aProofOfLock);
 
   // check whether to import or just read in the db
   if (tableExists) {
-    rv = Read(lock);
+    rv = Read(aProofOfLock);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1702,10 +1711,11 @@ PermissionManager::AddFromPrincipalAndPersistInPrivateBrowsing(
   // A modificationTime of zero will cause AddInternal to use now().
   int64_t modificationTime = 0;
 
+  MonitorAutoLock lock{mMonitor};
+
   return AddInternal(aPrincipal, aType, aPermission, 0,
                      nsIPermissionManager::EXPIRE_NEVER,
                      /* aExpireTime */ 0, modificationTime, eNotify, eWriteToDB,
-                     /* aIgnoreSessionPermissions */ false,
                      /* aOriginString*/ nullptr,
                      /* aAllowPersistInPrivateBrowsing */ true);
 }
@@ -1730,11 +1740,10 @@ PermissionManager::AddDefaultFromPrincipal(nsIPrincipal* aPrincipal,
                               origin);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  MonitorAutoLock lock(mMonitor);
+
   DefaultEntry entry;
   {
-    // Lock for mDefaultEntriesForImport
-    MonitorAutoLock lock(mMonitor);
-
     // Try to update existing entry in mDefaultEntriesForImport, which will
     // later be used to restore the default permissions when permissions are
     // cleared
@@ -1800,7 +1809,7 @@ PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
 
   // A modificationTime of zero will cause AddInternal to use now().
   int64_t modificationTime = 0;
-
+  MonitorAutoLock lock{mMonitor};
   return AddInternal(aPrincipal, aType, aPermission, 0, aExpireType,
                      aExpireTime, modificationTime, eNotify, eWriteToDB);
 }
@@ -1822,19 +1831,36 @@ PermissionManager::TestAddFromPrincipalByTime(nsIPrincipal* aPrincipal,
     return rv;
   }
 
+  MonitorAutoLock lock{mMonitor};
   return AddInternal(aPrincipal, aType, aPermission, 0,
                      nsIPermissionManager::EXPIRE_NEVER, 0, aModificationTime,
                      eNotify, eWriteToDB);
+}
+
+nsresult PermissionManager::Add(nsIPrincipal* aPrincipal,
+                                const nsACString& aType, uint32_t aPermission,
+                                int64_t aID, uint32_t aExpireType,
+                                int64_t aExpireTime, int64_t aModificationTime,
+                                NotifyOperationType aNotifyOperation,
+                                DBOperationType aDBOperation,
+                                const nsACString* aOriginString,
+                                const bool aAllowPersistInPrivateBrowsing) {
+  MOZ_ASSERT(IsChildProcess());
+
+  MonitorAutoLock lock{mMonitor};
+  return AddInternal(aPrincipal, aType, aPermission, aID, aExpireType,
+                     aExpireTime, aModificationTime, aNotifyOperation,
+                     aDBOperation, aOriginString,
+                     aAllowPersistInPrivateBrowsing);
 }
 
 nsresult PermissionManager::AddInternal(
     nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aPermission,
     int64_t aID, uint32_t aExpireType, int64_t aExpireTime,
     int64_t aModificationTime, NotifyOperationType aNotifyOperation,
-    DBOperationType aDBOperation, const bool aIgnoreSessionPermissions,
-    const nsACString* aOriginString,
+    DBOperationType aDBOperation, const nsACString* aOriginString,
     const bool aAllowPersistInPrivateBrowsing) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT_IF(!IsChildProcess(), NS_IsMainThread());
 
   // If this is a default permission, no changes should not be written to disk.
   MOZ_ASSERT((aID != cIDPermissionIsDefault) || (aDBOperation != eWriteToDB));
@@ -1906,7 +1932,7 @@ nsresult PermissionManager::AddInternal(
     }
   }
 
-  MOZ_ASSERT(PermissionAvailable(aPrincipal, aType));
+  MOZ_ASSERT(PermissionAvailableInternal(aPrincipal, aType));
 
   // look up the type index
   int32_t typeIndex = GetTypeIndex(aType, true);
@@ -1933,10 +1959,11 @@ nsresult PermissionManager::AddInternal(
   OperationType op;
   int32_t index = entry->GetPermissionIndex(typeIndex);
   if (index == -1) {
-    if (aPermission == nsIPermissionManager::UNKNOWN_ACTION)
+    if (aPermission == nsIPermissionManager::UNKNOWN_ACTION) {
       op = eOperationNone;
-    else
+    } else {
       op = eOperationAdding;
+    }
 
   } else {
     PermissionEntry oldPermissionEntry = entry->GetPermissions()[index];
@@ -2009,7 +2036,7 @@ nsresult PermissionManager::AddInternal(
       if (aNotifyOperation == eNotify) {
         NotifyObserversWithPermission(aPrincipal, mTypeArray[typeIndex],
                                       aPermission, aExpireType, aExpireTime,
-                                      aModificationTime, u"added");
+                                      aModificationTime, u"added"_ns);
       }
 
       break;
@@ -2028,17 +2055,18 @@ nsresult PermissionManager::AddInternal(
 
       entry->GetPermissions().RemoveElementAt(index);
 
-      if (aDBOperation == eWriteToDB)
+      if (aDBOperation == eWriteToDB) {
         // We care only about the id here so we pass dummy values for all other
         // parameters.
         UpdateDB(op, id, ""_ns, ""_ns, 0, nsIPermissionManager::EXPIRE_NEVER, 0,
                  0);
+      }
 
       if (aNotifyOperation == eNotify) {
         NotifyObserversWithPermission(
             aPrincipal, mTypeArray[typeIndex], oldPermissionEntry.mPermission,
             oldPermissionEntry.mExpireType, oldPermissionEntry.mExpireTime,
-            oldPermissionEntry.mModificationTime, u"deleted");
+            oldPermissionEntry.mModificationTime, u"deleted"_ns);
       }
 
       // If there are no more permissions stored for that entry, clear it.
@@ -2126,7 +2154,7 @@ nsresult PermissionManager::AddInternal(
       if (aNotifyOperation == eNotify) {
         NotifyObserversWithPermission(aPrincipal, mTypeArray[typeIndex],
                                       aPermission, aExpireType, aExpireTime,
-                                      aModificationTime, u"changed");
+                                      aModificationTime, u"changed"_ns);
       }
 
       break;
@@ -2176,7 +2204,7 @@ nsresult PermissionManager::AddInternal(
       if (aNotifyOperation == eNotify) {
         NotifyObserversWithPermission(aPrincipal, mTypeArray[typeIndex],
                                       aPermission, aExpireType, aExpireTime,
-                                      aModificationTime, u"changed");
+                                      aModificationTime, u"changed"_ns);
       }
 
     } break;
@@ -2188,6 +2216,14 @@ nsresult PermissionManager::AddInternal(
 NS_IMETHODIMP
 PermissionManager::RemoveFromPrincipal(nsIPrincipal* aPrincipal,
                                        const nsACString& aType) {
+  ENSURE_NOT_CHILD_PROCESS;
+
+  MonitorAutoLock lock{mMonitor};
+  return RemoveFromPrincipalInternal(aPrincipal, aType);
+}
+
+nsresult PermissionManager::RemoveFromPrincipalInternal(
+    nsIPrincipal* aPrincipal, const nsACString& aType) {
   ENSURE_NOT_CHILD_PROCESS;
   NS_ENSURE_ARG_POINTER(aPrincipal);
 
@@ -2220,20 +2256,25 @@ PermissionManager::RemovePermission(nsIPermission* aPerm) {
   rv = aPerm->GetType(type);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  MonitorAutoLock lock{mMonitor};
+
   // Permissions are uniquely identified by their principal and type.
   // We remove the permission using these two pieces of data.
-  return RemoveFromPrincipal(principal, type);
+  return RemoveFromPrincipalInternal(principal, type);
 }
 
 NS_IMETHODIMP
 PermissionManager::RemoveAll() {
   ENSURE_NOT_CHILD_PROCESS;
+
+  MonitorAutoLock lock{mMonitor};
   return RemoveAllInternal(true);
 }
 
 NS_IMETHODIMP
 PermissionManager::RemoveAllSince(int64_t aSince) {
   ENSURE_NOT_CHILD_PROCESS;
+  MonitorAutoLock lock{mMonitor};
   return RemoveAllModifiedSince(aSince);
 }
 
@@ -2242,6 +2283,7 @@ PermissionManager::RemoveAllExceptTypes(
     const nsTArray<nsCString>& aTypeExceptions) {
   ENSURE_NOT_CHILD_PROCESS;
 
+  MonitorAutoLock lock{mMonitor};
   // Need to make sure read is done before we get the type index. Type indexes
   // are populated from DB.
   EnsureReadCompleted();
@@ -2250,19 +2292,26 @@ PermissionManager::RemoveAllExceptTypes(
     return RemoveAllInternal(true);
   }
 
-  return RemovePermissionEntries([&](const PermissionEntry& aPermEntry) {
-    return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]);
-  });
+  return RemovePermissionEntries(
+      [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
+        return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]);
+      });
 }
 
-template <class T>
-nsresult PermissionManager::RemovePermissionEntries(T aCondition) {
+nsresult PermissionManager::RemovePermissionEntries(
+    const std::function<bool(const PermissionEntry& aPermEntry,
+                             const nsCOMPtr<nsIPrincipal>& aPrincipal)>&
+        aCondition,
+    bool aComputePrincipalForCondition) {
   EnsureReadCompleted();
 
   Vector<std::tuple<nsCOMPtr<nsIPrincipal>, nsCString, nsCString>, 10> array;
   for (const PermissionHashKey& entry : mPermissionTable) {
     for (const auto& permEntry : entry.GetPermissions()) {
-      if (!aCondition(permEntry)) {
+      // Depending on whether the principal is needed in the condition check, we
+      // may already check the condition here, to avoid needing to compute the
+      // principal if the condition is true.
+      if (!aComputePrincipalForCondition && !aCondition(permEntry, nullptr)) {
         continue;
       }
 
@@ -2272,6 +2321,10 @@ nsresult PermissionManager::RemovePermissionEntries(T aCondition) {
           IsOAForceStripPermission(mTypeArray[permEntry.mType]),
           getter_AddRefs(principal));
       if (NS_FAILED(rv)) {
+        continue;
+      }
+
+      if (aComputePrincipalForCondition && !aCondition(permEntry, principal)) {
         continue;
       }
 
@@ -2287,15 +2340,27 @@ nsresult PermissionManager::RemovePermissionEntries(T aCondition) {
     AddInternal(
         std::get<0>(i), std::get<1>(i), nsIPermissionManager::UNKNOWN_ACTION, 0,
         nsIPermissionManager::EXPIRE_NEVER, 0, 0, PermissionManager::eNotify,
-        PermissionManager::eWriteToDB, false, &std::get<2>(i));
+        PermissionManager::eWriteToDB, &std::get<2>(i));
   }
 
   return NS_OK;
 }
 
+nsresult PermissionManager::RemovePermissionEntries(
+    const std::function<bool(const PermissionEntry& aPermEntry)>& aCondition) {
+  return RemovePermissionEntries(
+      [&](const PermissionEntry& aPermEntry,
+          const nsCOMPtr<nsIPrincipal>& aPrincipal) {
+        return aCondition(aPermEntry);
+      },
+      false);
+}
+
 NS_IMETHODIMP
 PermissionManager::RemoveByType(const nsACString& aType) {
   ENSURE_NOT_CHILD_PROCESS;
+
+  MonitorAutoLock lock{mMonitor};
 
   // Need to make sure read is done before we get the type index. Type indexes
   // are populated from DB.
@@ -2318,6 +2383,8 @@ NS_IMETHODIMP
 PermissionManager::RemoveByTypeSince(const nsACString& aType,
                                      int64_t aModificationTime) {
   ENSURE_NOT_CHILD_PROCESS;
+
+  MonitorAutoLock lock{mMonitor};
 
   // Need to make sure read is done before we get the type index. Type indexes
   // are populated from DB.
@@ -2342,14 +2409,17 @@ PermissionManager::RemoveAllSinceWithTypeExceptions(
     int64_t aModificationTime, const nsTArray<nsCString>& aTypeExceptions) {
   ENSURE_NOT_CHILD_PROCESS;
 
+  MonitorAutoLock lock{mMonitor};
+
   // Need to make sure read is done before we get the type index. Type indexes
   // are populated from DB.
   EnsureReadCompleted();
 
-  return RemovePermissionEntries([&](const PermissionEntry& aPermEntry) {
-    return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]) &&
-           aModificationTime <= aPermEntry.mModificationTime;
-  });
+  return RemovePermissionEntries(
+      [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
+        return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]) &&
+               aModificationTime <= aPermEntry.mModificationTime;
+      });
 }
 
 void PermissionManager::CloseDB(CloseDBNextOp aNextOp) {
@@ -2376,7 +2446,8 @@ void PermissionManager::CloseDB(CloseDBNextOp aNextOp) {
           data->mDBConn = nullptr;
 
           if (aNextOp == eRebuldOnSuccess) {
-            self->TryInitDB(true, defaultsInputStream);
+            MonitorAutoLock lock{self->mMonitor};
+            self->TryInitDB(true, defaultsInputStream, lock);
           }
         }
 
@@ -2390,6 +2461,8 @@ void PermissionManager::CloseDB(CloseDBNextOp aNextOp) {
 
 nsresult PermissionManager::RemoveAllFromIPC() {
   MOZ_ASSERT(IsChildProcess());
+
+  MonitorAutoLock lock{mMonitor};
 
   // Remove from memory and notify immediately. Since the in-memory
   // database is authoritative, we do not need confirmation from the
@@ -2420,7 +2493,7 @@ nsresult PermissionManager::RemoveAllInternal(bool aNotifyObservers) {
   ImportLatestDefaults();
 
   if (aNotifyObservers) {
-    NotifyObservers(nullptr, u"cleared");
+    NotifyObservers(nullptr, u"cleared"_ns);
   }
 
   RefPtr<PermissionManager> self = this;
@@ -2437,8 +2510,10 @@ nsresult PermissionManager::RemoveAllInternal(bool aNotifyObservers) {
             data->mDBConn->ExecuteSimpleSQL("DELETE FROM moz_perms"_ns);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           NS_DispatchToMainThread(NS_NewRunnableFunction(
-              "PermissionManager::RemoveAllInternal-Failure",
-              [self] { self->CloseDB(eRebuldOnSuccess); }));
+              "PermissionManager::RemoveAllInternal-Failure", [self] {
+                MonitorAutoLock lock{self->mMonitor};
+                self->CloseDB(eRebuldOnSuccess);
+              }));
         }
       }));
 
@@ -2449,6 +2524,7 @@ NS_IMETHODIMP
 PermissionManager::TestExactPermissionFromPrincipal(nsIPrincipal* aPrincipal,
                                                     const nsACString& aType,
                                                     uint32_t* aPermission) {
+  MonitorAutoLock lock{mMonitor};
   return CommonTestPermission(aPrincipal, -1, aType, aPermission,
                               nsIPermissionManager::UNKNOWN_ACTION, false, true,
                               true);
@@ -2458,6 +2534,7 @@ NS_IMETHODIMP
 PermissionManager::TestExactPermanentPermission(nsIPrincipal* aPrincipal,
                                                 const nsACString& aType,
                                                 uint32_t* aPermission) {
+  MonitorAutoLock lock{mMonitor};
   return CommonTestPermission(aPrincipal, -1, aType, aPermission,
                               nsIPermissionManager::UNKNOWN_ACTION, false, true,
                               false);
@@ -2467,6 +2544,7 @@ NS_IMETHODIMP
 PermissionManager::TestPermissionFromPrincipal(nsIPrincipal* aPrincipal,
                                                const nsACString& aType,
                                                uint32_t* aPermission) {
+  MonitorAutoLock lock{mMonitor};
   return CommonTestPermission(aPrincipal, -1, aType, aPermission,
                               nsIPermissionManager::UNKNOWN_ACTION, false,
                               false, true);
@@ -2480,6 +2558,8 @@ PermissionManager::GetPermissionObject(nsIPrincipal* aPrincipal,
   NS_ENSURE_ARG_POINTER(aPrincipal);
   *aResult = nullptr;
 
+  MonitorAutoLock lock{mMonitor};
+
   EnsureReadCompleted();
 
   if (aPrincipal->IsSystemPrincipal()) {
@@ -2491,7 +2571,7 @@ PermissionManager::GetPermissionObject(nsIPrincipal* aPrincipal,
     return NS_ERROR_INVALID_ARG;
   }
 
-  MOZ_ASSERT(PermissionAvailable(aPrincipal, aType));
+  MOZ_ASSERT(PermissionAvailableInternal(aPrincipal, aType));
 
   int32_t typeIndex = GetTypeIndex(aType, false);
   // If type == -1, the type isn't known,
@@ -2549,7 +2629,7 @@ nsresult PermissionManager::CommonTestPermissionInternal(
       }
     }
     MOZ_ASSERT(prin);
-    MOZ_ASSERT(PermissionAvailable(prin, aType));
+    MOZ_ASSERT(PermissionAvailableInternal(prin, aType));
   }
 #endif
 
@@ -2566,14 +2646,12 @@ nsresult PermissionManager::CommonTestPermissionInternal(
   *aPermission = aIncludingSession
                      ? entry->GetPermission(aTypeIndex).mPermission
                      : entry->GetPermission(aTypeIndex).mNonSessionPermission;
-
   return NS_OK;
 }
 
-// Helper function to filter permissions using a condition function.
-template <class T>
 nsresult PermissionManager::GetPermissionEntries(
-    T aCondition, nsTArray<RefPtr<nsIPermission>>& aResult) {
+    const std::function<bool(const PermissionEntry& aPermEntry)>& aCondition,
+    nsTArray<RefPtr<nsIPermission>>& aResult) {
   aResult.Clear();
   if (XRE_IsContentProcess()) {
     NS_WARNING(
@@ -2629,6 +2707,7 @@ nsresult PermissionManager::GetPermissionEntries(
 
 NS_IMETHODIMP PermissionManager::GetAll(
     nsTArray<RefPtr<nsIPermission>>& aResult) {
+  MonitorAutoLock lock{mMonitor};
   return GetPermissionEntries(
       [](const PermissionEntry& aPermEntry) { return true; }, aResult);
 }
@@ -2640,8 +2719,10 @@ NS_IMETHODIMP PermissionManager::GetAllByTypeSince(
   if (aSince > (PR_Now() / PR_USEC_PER_MSEC)) {
     return NS_ERROR_INVALID_ARG;
   }
+
+  MonitorAutoLock lock{mMonitor};
   return GetPermissionEntries(
-      [&](const PermissionEntry& aPermEntry) {
+      [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
         return mTypeArray[aPermEntry.mType].Equals(aPrefix) &&
                aSince <= aPermEntry.mModificationTime;
       },
@@ -2650,8 +2731,9 @@ NS_IMETHODIMP PermissionManager::GetAllByTypeSince(
 
 NS_IMETHODIMP PermissionManager::GetAllWithTypePrefix(
     const nsACString& aPrefix, nsTArray<RefPtr<nsIPermission>>& aResult) {
+  MonitorAutoLock lock{mMonitor};
   return GetPermissionEntries(
-      [&](const PermissionEntry& aPermEntry) {
+      [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
         return StringBeginsWith(mTypeArray[aPermEntry.mType], aPrefix);
       },
       aResult);
@@ -2664,8 +2746,9 @@ NS_IMETHODIMP PermissionManager::GetAllByTypes(
     return NS_OK;
   }
 
+  MonitorAutoLock lock{mMonitor};
   return GetPermissionEntries(
-      [&](const PermissionEntry& aPermEntry) {
+      [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
         return aTypes.Contains(mTypeArray[aPermEntry.mType]);
       },
       aResult);
@@ -2781,9 +2864,11 @@ PermissionManager::GetAllForPrincipal(
     nsIPrincipal* aPrincipal, nsTArray<RefPtr<nsIPermission>>& aResult) {
   nsresult rv;
   aResult.Clear();
+
+  MonitorAutoLock lock{mMonitor};
   EnsureReadCompleted();
 
-  MOZ_ASSERT(PermissionAvailable(aPrincipal, ""_ns));
+  MOZ_ASSERT(PermissionAvailableInternal(aPrincipal, ""_ns));
 
   // First, append the non-site-scoped permissions.
   rv = GetAllForPrincipalHelper(aPrincipal, false, aResult);
@@ -2797,6 +2882,8 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
                                          const char* aTopic,
                                          const char16_t* someData) {
   ENSURE_NOT_CHILD_PROCESS;
+
+  MonitorAutoLock lock{mMonitor};
 
   if (!nsCRT::strcmp(aTopic, "profile-do-change") && !mPermissionsFile) {
     // profile startup is complete, and we didn't have the permissions file
@@ -2815,6 +2902,10 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
     InitDB(false);
   } else if (!nsCRT::strcmp(aTopic, OBSERVER_TOPIC_IDLE_DAILY)) {
     PerformIdleDailyMaintenance();
+  } else if (!nsCRT::strcmp(aTopic, "last-pb-context-exited")) {
+    DebugOnly<nsresult> rv = RemoveAllForPrivateBrowsing();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "Failed to clear private browsing permissions");
   }
 
   return NS_OK;
@@ -2831,6 +2922,15 @@ nsresult PermissionManager::RemoveAllModifiedSince(int64_t aModificationTime) {
       });
 }
 
+nsresult PermissionManager::RemoveAllForPrivateBrowsing() {
+  ENSURE_NOT_CHILD_PROCESS;
+  return RemovePermissionEntries([](const PermissionEntry& aPermEntry,
+                                    const nsCOMPtr<nsIPrincipal>& aPrincipal) {
+    return aPrincipal->GetIsInPrivateBrowsing() &&
+           aPermEntry.mID != cIDPermissionIsDefault;
+  });
+}
+
 NS_IMETHODIMP
 PermissionManager::RemovePermissionsWithAttributes(
     const nsAString& aPattern, const nsTArray<nsCString>& aTypeInclusions,
@@ -2842,6 +2942,7 @@ PermissionManager::RemovePermissionsWithAttributes(
     return NS_ERROR_INVALID_ARG;
   }
 
+  MonitorAutoLock lock{mMonitor};
   return RemovePermissionsWithAttributes(pattern, aTypeInclusions,
                                          aTypeExceptions);
 }
@@ -2885,7 +2986,7 @@ nsresult PermissionManager::RemovePermissionsWithAttributes(
     AddInternal(
         std::get<0>(i), std::get<1>(i), nsIPermissionManager::UNKNOWN_ACTION, 0,
         nsIPermissionManager::EXPIRE_NEVER, 0, 0, PermissionManager::eNotify,
-        PermissionManager::eWriteToDB, false, &std::get<2>(i));
+        PermissionManager::eWriteToDB, &std::get<2>(i));
   }
 
   return NS_OK;
@@ -2972,7 +3073,7 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
     nsIPrincipal* aPrincipal, uint32_t aType, bool aExactHostMatch) {
   EnsureReadCompleted();
 
-  MOZ_ASSERT(PermissionAvailable(aPrincipal, mTypeArray[aType]));
+  MOZ_ASSERT(PermissionAvailableInternal(aPrincipal, mTypeArray[aType]));
 
   nsresult rv;
   RefPtr<PermissionKey> key = PermissionKey::CreateFromPrincipal(
@@ -2990,7 +3091,7 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
     // if the entry is expired, remove and keep looking for others.
     if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
       entry = nullptr;
-      RemoveFromPrincipal(aPrincipal, mTypeArray[aType]);
+      RemoveFromPrincipalInternal(aPrincipal, mTypeArray[aType]);
     } else if (permEntry.mPermission == nsIPermissionManager::UNKNOWN_ACTION) {
       entry = nullptr;
     }
@@ -3026,7 +3127,7 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
       rv = GetPrincipal(aURI, getter_AddRefs(principal));
     }
     MOZ_ASSERT_IF(NS_SUCCEEDED(rv),
-                  PermissionAvailable(principal, mTypeArray[aType]));
+                  PermissionAvailableInternal(principal, mTypeArray[aType]));
   }
 #endif
 
@@ -3102,11 +3203,13 @@ nsresult PermissionManager::RemoveAllFromMemory() {
 void PermissionManager::NotifyObserversWithPermission(
     nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aPermission,
     uint32_t aExpireType, int64_t aExpireTime, int64_t aModificationTime,
-    const char16_t* aData) {
+    const nsString& aData) {
   nsCOMPtr<nsIPermission> permission =
       Permission::Create(aPrincipal, aType, aPermission, aExpireType,
                          aExpireTime, aModificationTime);
-  if (permission) NotifyObservers(permission, aData);
+  if (permission) {
+    NotifyObservers(permission, aData);
+  }
 }
 
 // notify observers that the permission list changed. there are four possible
@@ -3116,12 +3219,17 @@ void PermissionManager::NotifyObserversWithPermission(
 // permission. "changed" means a permission was altered. aPermission is the new
 // permission. "cleared" means the entire permission list was cleared.
 // aPermission is null.
-void PermissionManager::NotifyObservers(nsIPermission* aPermission,
-                                        const char16_t* aData) {
+void PermissionManager::NotifyObservers(
+    const nsCOMPtr<nsIPermission>& aPermission, const nsString& aData) {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
-  if (observerService)
+  if (observerService) {
+    // we need to release the monitor here because the observers for the below
+    // notification can call back in to permission manager and try to lock the
+    // monitor again.
+    MonitorAutoUnlock unlock{mMonitor};
     observerService->NotifyObservers(aPermission, kPermissionChangeNotification,
-                                     aData);
+                                     aData.Data());
+  }
 }
 
 nsresult PermissionManager::Read(const MonitorAutoLock& aProofOfLock) {
@@ -3206,11 +3314,7 @@ void PermissionManager::CompleteMigrations() {
 
   nsresult rv;
 
-  nsTArray<MigrationEntry> entries;
-  {
-    MonitorAutoLock lock(mMonitor);
-    entries = std::move(mMigrationEntries);
-  }
+  nsTArray<MigrationEntry> entries = std::move(mMigrationEntries);
 
   for (const MigrationEntry& entry : entries) {
     rv = UpgradeHostToOriginAndInsert(
@@ -3218,7 +3322,7 @@ void PermissionManager::CompleteMigrations() {
         entry.mExpireTime, entry.mModificationTime,
         [&](const nsACString& aOrigin, const nsCString& aType,
             uint32_t aPermission, uint32_t aExpireType, int64_t aExpireTime,
-            int64_t aModificationTime) {
+            int64_t aModificationTime) MOZ_REQUIRES(mMonitor) {
           MaybeAddReadEntryFromMigration(aOrigin, aType, aPermission,
                                          aExpireType, aExpireTime,
                                          aModificationTime, entry.mId);
@@ -3234,11 +3338,7 @@ void PermissionManager::CompleteRead() {
 
   nsresult rv;
 
-  nsTArray<ReadEntry> entries;
-  {
-    MonitorAutoLock lock(mMonitor);
-    entries = std::move(mReadEntries);
-  }
+  nsTArray<ReadEntry> entries = std::move(mReadEntries);
 
   for (const ReadEntry& entry : entries) {
     nsCOMPtr<nsIPrincipal> principal;
@@ -3253,8 +3353,7 @@ void PermissionManager::CompleteRead() {
 
     rv = AddInternal(principal, entry.mType, entry.mPermission, entry.mId,
                      entry.mExpireType, entry.mExpireTime,
-                     entry.mModificationTime, eDontNotify, op, false,
-                     &entry.mOrigin);
+                     entry.mModificationTime, eDontNotify, op, &entry.mOrigin);
     Unused << NS_WARN_IF(NS_FAILED(rv));
   }
 }
@@ -3263,8 +3362,6 @@ void PermissionManager::MaybeAddReadEntryFromMigration(
     const nsACString& aOrigin, const nsCString& aType, uint32_t aPermission,
     uint32_t aExpireType, int64_t aExpireTime, int64_t aModificationTime,
     int64_t aId) {
-  MonitorAutoLock lock(mMonitor);
-
   // We convert a migration to a ReadEntry only if we don't have an existing
   // ReadEntry for the same origin + type.
   for (const ReadEntry& entry : mReadEntries) {
@@ -3385,6 +3482,8 @@ void PermissionManager::UpdateDB(OperationType aOp, int64_t aID,
 bool PermissionManager::GetPermissionsFromOriginOrKey(
     const nsACString& aOrigin, const nsACString& aKey,
     nsTArray<IPC::Permission>& aPerms) {
+  MonitorAutoLock lock{mMonitor};
+
   EnsureReadCompleted();
 
   aPerms.Clear();
@@ -3446,6 +3545,8 @@ void PermissionManager::SetPermissionsWithKey(
     return;
   }
 
+  MonitorAutoLock lock{mMonitor};
+
   RefPtr<GenericNonExclusivePromise::Private> promise;
   bool foundKey =
       mPermissionKeyPromiseMap.Get(aPermissionKey, getter_AddRefs(promise));
@@ -3485,8 +3586,7 @@ void PermissionManager::SetPermissionsWithKey(
     // will end up as now()) is fine.
     uint64_t modificationTime = 0;
     AddInternal(principal, perm.type, perm.capability, 0, perm.expireType,
-                perm.expireTime, modificationTime, eNotify, eNoDBOperation,
-                true /* ignoreSessionPermissions */);
+                perm.expireTime, modificationTime, eDontNotify, eNoDBOperation);
   }
 }
 
@@ -3616,6 +3716,12 @@ PermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
 
 bool PermissionManager::PermissionAvailable(nsIPrincipal* aPrincipal,
                                             const nsACString& aType) {
+  MonitorAutoLock lock{mMonitor};
+  return PermissionAvailableInternal(aPrincipal, aType);
+}
+
+bool PermissionManager::PermissionAvailableInternal(nsIPrincipal* aPrincipal,
+                                                    const nsACString& aType) {
   EnsureReadCompleted();
 
   if (XRE_IsContentProcess()) {
@@ -3648,6 +3754,8 @@ void PermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
     aRunnable->Run();
     return;
   }
+
+  MonitorAutoLock lock{mMonitor};
 
   nsTArray<RefPtr<GenericNonExclusivePromise>> promises;
   for (auto& pair : GetAllKeysForPrincipal(aPrincipal)) {
@@ -3688,12 +3796,9 @@ void PermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
 }
 
 void PermissionManager::EnsureReadCompleted() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   if (mState == eInitializing) {
-    MonitorAutoLock lock(mMonitor);
-
     while (mState == eInitializing) {
+      mMonitor.AssertCurrentThreadOwns();
       mMonitor.Wait();
     }
   }
@@ -3703,6 +3808,9 @@ void PermissionManager::EnsureReadCompleted() {
       MOZ_CRASH("This state is impossible!");
 
     case eDBInitialized:
+      // child processes transitions from eInitializing -> eReady
+      ENSURE_NOT_CHILD_PROCESS_NORET;
+
       mState = eReady;
 
       CompleteMigrations();
@@ -3715,7 +3823,7 @@ void PermissionManager::EnsureReadCompleted() {
       [[fallthrough]];
 
     case eClosed:
-      return;
+      break;
 
     default:
       MOZ_CRASH("Invalid state");
@@ -3809,7 +3917,7 @@ void PermissionManager::ConsumeDefaultsInputStream(
           0,
           [&](const nsACString& aOrigin, const nsCString& aType,
               uint32_t aPermission, uint32_t aExpireType, int64_t aExpireTime,
-              int64_t aModificationTime) {
+              int64_t aModificationTime) MOZ_REQUIRES(mMonitor) {
             AddDefaultEntryForImport(aOrigin, aType, aPermission, aProofOfLock);
             return NS_OK;
           });
@@ -3889,8 +3997,6 @@ nsresult PermissionManager::ImportLatestDefaults() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == eReady);
 
-  MonitorAutoLock lock(mMonitor);
-
   for (const DefaultEntry& entry : mDefaultEntriesForImport) {
     Unused << ImportDefaultEntry(entry);
   }
@@ -3960,8 +4066,8 @@ PermissionManager::CommonPrepareToTestPermission(
   // For expanded principals, we want to iterate over the allowlist and see
   // if the permission is granted for any of them.
   if (basePrin && basePrin->Is<ExpandedPrincipal>()) {
-    auto ep = basePrin->As<ExpandedPrincipal>();
-    for (auto& prin : ep->AllowList()) {
+    auto* ep = basePrin->As<ExpandedPrincipal>();
+    for (const auto& prin : ep->AllowList()) {
       uint32_t perm;
       nsresult rv =
           CommonTestPermission(prin, typeIndex, aType, &perm, defaultPermission,
@@ -4048,6 +4154,7 @@ nsresult PermissionManager::TestPermissionWithoutDefaultsFromPrincipal(
     nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t* aPermission) {
   MOZ_ASSERT(!HasDefaultPref(aType));
 
+  MonitorAutoLock lock{mMonitor};
   return CommonTestPermission(aPrincipal, -1, aType, aPermission,
                               nsIPermissionManager::UNKNOWN_ACTION, true, false,
                               true);
@@ -4084,6 +4191,9 @@ NS_IMETHODIMP PermissionManager::BlockShutdown(
     StaticMutexAutoLock lock(sCreationMutex);
     sInstanceDead = true;
   }
+
+  MonitorAutoLock lock{mMonitor};
+
   RemoveIdleDailyMaintenanceJob();
   RemoveAllFromMemory();
   // CloseDB does async work and will call FinishAsyncShutdown once done.

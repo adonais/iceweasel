@@ -354,7 +354,7 @@ def process_gyp_result(
                         if not f:
                             continue
                         # the result may be a string or a list.
-                        if isinstance(f, six.string_types):
+                        if isinstance(f, str):
                             context[var].append(f)
                         else:
                             context[var].extend(f)
@@ -398,7 +398,7 @@ def load_gyp(*args):
     return flat_list, targets, data
 
 
-class GypProcessor(object):
+class GypProcessor:
     """Reads a gyp configuration in the background using the given executor and
     emits GypContexts for the backend to process.
 

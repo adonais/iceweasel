@@ -6,7 +6,6 @@ package org.mozilla.fenix.settings.search
 
 import android.content.Context
 import android.content.res.Resources
-import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -14,8 +13,9 @@ import android.view.ViewGroup
 import android.widget.CompoundButton
 import android.widget.LinearLayout
 import android.widget.RadioGroup
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
-import androidx.navigation.Navigation.findNavController
+import androidx.navigation.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -134,7 +134,7 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
             ).menuBuilder.build(context).show(binding.overflowMenu)
         }
         val iconSize = res.getDimension(R.dimen.preference_icon_drawable_size).toInt()
-        val engineIcon = BitmapDrawable(res, engine.icon)
+        val engineIcon = engine.icon.toDrawable(res)
         engineIcon.setBounds(0, 0, iconSize, iconSize)
         binding.engineIcon.setImageDrawable(engineIcon)
         return wrapper
@@ -157,7 +157,7 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
         val directions =
             DefaultSearchEngineFragmentDirections
                 .actionDefaultEngineFragmentToSaveSearchEngineFragment(engine.id)
-        findNavController(view).navigate(directions)
+        view.findNavController().navigate(directions)
     }
 
     private fun deleteSearchEngine(

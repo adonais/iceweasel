@@ -32,6 +32,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://newtab/lib/RecommendationProvider.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   SectionsFeed: "resource://newtab/lib/SectionsManager.sys.mjs",
+  StartupCacheInit: "resource://newtab/lib/StartupCacheInit.sys.mjs",
   Store: "resource://newtab/lib/Store.sys.mjs",
   SystemTickFeed: "resource://newtab/lib/SystemTickFeed.sys.mjs",
   TelemetryFeed: "resource://newtab/lib/TelemetryFeed.sys.mjs",
@@ -47,6 +48,11 @@ import {
   actionCreators as ac,
   actionTypes as at,
 } from "resource://newtab/common/Actions.mjs";
+
+const REGION_INFERRED_PERSONALIZATION_CONFIG =
+  "browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.region-config";
+const LOCALE_INFERRED_PERSONALIZATION_CONFIG =
+  "browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.locale-config";
 
 const REGION_WEATHER_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.region-weather-config";
@@ -92,6 +98,13 @@ export function csvPrefHasValue(stringPrefName, value) {
     .filter(item => item);
 
   return prefValues.includes(value);
+}
+
+function useInferredPersonalization({ geo, locale }) {
+  return (
+    csvPrefHasValue(REGION_INFERRED_PERSONALIZATION_CONFIG, geo) &&
+    csvPrefHasValue(LOCALE_INFERRED_PERSONALIZATION_CONFIG, locale)
+  );
 }
 
 // Determine if spocs should be shown for a geo/locale
@@ -216,6 +229,37 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Show sponsored top sites",
       value: true,
+    },
+  ],
+  [
+    "mobileDownloadModal.enabled",
+    {
+      title: "Boolean flag to show download Firefox for mobile QR code modal",
+      value: false,
+    },
+  ],
+  [
+    "mobileDownloadModal.variant-a",
+    {
+      title:
+        "Boolean flag to turn download Firefox for mobile promo variant A on and off",
+      value: false,
+    },
+  ],
+  [
+    "mobileDownloadModal.variant-b",
+    {
+      title:
+        "Boolean flag to turn download Firefox for mobile promo variant B on and off",
+      value: false,
+    },
+  ],
+  [
+    "mobileDownloadModal.variant-c",
+    {
+      title:
+        "Boolean flag to turn download Firefox for mobile promo variant C on and off",
+      value: false,
     },
   ],
   [
@@ -378,6 +422,13 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Structured Ingestion telemetry server endpoint",
       value: "https://incoming.telemetry.mozilla.org/submit",
+    },
+  ],
+  [
+    "telemetry.privatePing.enabled",
+    {
+      title: "Enables the private ping sent over OHTTP through Glean",
+      value: false,
     },
   ],
   [
@@ -598,6 +649,23 @@ export const PREFS_CONFIG = new Map([
     "discoverystream.sections.personalization.inferred.enabled",
     {
       title: "Boolean flag to enable inferred personalizaton",
+      // pref is dynamic
+      getValue: useInferredPersonalization,
+    },
+  ],
+  [
+    "discoverystream.sections.personalization.inferred.position",
+    {
+      title:
+        "Position of inferred personalizaton card. Should correlate to a row in Card Sections",
+      value: "1",
+    },
+  ],
+  [
+    "discoverystream.sections.personalization.inferred.blocked",
+    {
+      title:
+        "Boolean determining if personalized card is dismissed or visible on the page",
       value: false,
     },
   ],
@@ -617,10 +685,9 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.reportContent.enabled",
+    "discoverystream.reportAds.enabled",
     {
-      title:
-        "Boolean flag to enable reporting content and ads from the context menu",
+      title: "Boolean flag to enable reporting ads from the context menu",
       value: false,
     },
   ],
@@ -1131,6 +1198,12 @@ const FEEDS_DATA = [
     name: "sections",
     factory: () => new lazy.SectionsFeed(),
     title: "Manages sections",
+    value: true,
+  },
+  {
+    name: "startupcacheinit",
+    factory: () => new lazy.StartupCacheInit(),
+    title: "Sends a copy of the state to the startup cache newtab",
     value: true,
   },
   {

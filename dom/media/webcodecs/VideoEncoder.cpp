@@ -275,12 +275,18 @@ EncoderConfig VideoEncoderConfigInternal::ToEncoderConfig() const {
         false                  /* Flexible */
         ));
   }
-  return EncoderConfig(codecType, {mWidth, mHeight}, usage,
-                       // Gecko favors BGRA
-                       ImageBitmapFormat::BGRA32, ImageBitmapFormat::BGRA32,
+  // For real-time usage, typically used in web conferencing, YUV420 is the most
+  // common format and is set as the default. Otherwise, Gecko's preferred
+  // format, BGRA, is assumed.
+  EncoderConfig::SampleFormat format = {
+      .mPixelFormat = (usage == Usage::Realtime) ? ImageBitmapFormat::YUV420P
+                                                 : ImageBitmapFormat::BGRA32,
+      .mColorRange = (usage == Usage::Realtime) ? gfx::ColorRange::LIMITED
+                                                : gfx::ColorRange::FULL};
+  return EncoderConfig(codecType, {mWidth, mHeight}, usage, format,
                        SaturatingCast<uint32_t>(mFramerate.refOr(0.f)), 0,
                        mBitrate.refOr(0), 0, 0,
-                       mBitrateMode == VideoEncoderBitrateMode::Constant
+                       (mBitrateMode == VideoEncoderBitrateMode::Constant)
                            ? mozilla::BitrateMode::Constant
                            : mozilla::BitrateMode::Variable,
                        hwPref, scalabilityMode, specific);

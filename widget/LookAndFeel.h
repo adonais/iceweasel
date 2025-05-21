@@ -305,6 +305,9 @@ class LookAndFeel {
     /** GTK button-to-button spacing in the inline axis */
     TitlebarButtonSpacing,
 
+    /** GTK tooltip radius */
+    TooltipRadius,
+
     /**
      * Corresponding to dynamic-range.
      * https://drafts.csswg.org/mediaqueries-5/#dynamic-range
@@ -331,6 +334,9 @@ class LookAndFeel {
     // Note that PrimaryPointerCapabilities may not be replaceable as it has a
     // bit more system specific heuristic, e.g. IsTabletMode on Windows.
     PointingDeviceKinds,
+
+    /* Whether the menubar is native / outside the application */
+    NativeMenubar,
 
     /*
      * Not an ID; used to define the range of valid IDs.  Must be last.

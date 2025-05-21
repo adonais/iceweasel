@@ -249,16 +249,19 @@ add_task(async function test_review_checker_sidebar_toggle() {
 
 add_task(async function test_contextual_manager_toggle() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.contextual-password-manager.enabled", true],
-      ["sidebar.revamp", false],
-    ],
+    set: [["browser.contextual-password-manager.enabled", true]],
   });
   await SidebarController.waitUntilStable();
   const gleanEvent = Glean.contextualManager.sidebarToggle;
   await testSidebarToggle("viewCPMSidebar", gleanEvent);
+  await testCustomizeToggle(
+    "viewCPMSidebar",
+    Glean.contextualManager.passwordsEnabled,
+    false // Remove this in bug 1957425
+  );
   await SpecialPowers.popPrefEnv();
   await SidebarController.waitUntilStable();
+  Services.fog.testResetFOG();
 });
 
 add_task(async function test_customize_panel_toggle() {
@@ -558,9 +561,7 @@ add_task(async function test_sidebar_tabs_layout() {
 });
 
 add_task(async function test_sidebar_position_rtl_ui() {
-  const sandbox = sinon.createSandbox();
-  sandbox.stub(window, "RTL_UI").value(true);
-  await SpecialPowers.pushPrefEnv({ set: [["intl.l10n.pseudo", "bidi"]] });
+  await BrowserTestUtils.enableRtlLocale();
   Services.fog.testResetFOG();
 
   // When RTL is enabled, sidebar is shown on the right by default.
@@ -578,8 +579,7 @@ add_task(async function test_sidebar_position_rtl_ui() {
     "right"
   );
 
-  sandbox.restore();
-  await SpecialPowers.popPrefEnv();
+  await BrowserTestUtils.disableRtlLocale();
   await SidebarController.waitUntilStable();
 });
 

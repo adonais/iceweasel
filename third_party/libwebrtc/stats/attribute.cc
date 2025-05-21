@@ -10,7 +10,13 @@
 
 #include "api/stats/attribute.h"
 
+#include <cstdint>
+#include <cstdio>
+#include <map>
+#include <optional>
 #include <string>
+#include <type_traits>
+#include <vector>
 
 #include "absl/types/variant.h"
 #include "rtc_base/arraysize.h"
@@ -63,7 +69,7 @@ struct VisitToString {
   // Vector attributes.
   template <typename T>
   std::string operator()(const std::optional<std::vector<T>>* attribute) {
-    rtc::StringBuilder sb;
+    StringBuilder sb;
     sb << "[";
     const char* separator = "";
     constexpr bool element_is_string = std::is_same<T, std::string>::value;
@@ -85,7 +91,7 @@ struct VisitToString {
   template <typename T>
   std::string operator()(
       const std::optional<std::map<std::string, T>>* attribute) {
-    rtc::StringBuilder sb;
+    StringBuilder sb;
     sb << "{";
     const char* separator = "";
     constexpr bool element_is_string = std::is_same<T, std::string>::value;

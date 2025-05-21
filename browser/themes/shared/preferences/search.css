@@ -13,8 +13,8 @@
   width: 16px;
 }
 
-/* work around a display: none in Linux's menu.css, see bug 1112310 */
-.searchengine-menuitem > .menu-iconic-left {
+/* work around a display: none in menu.css, see bug 1112310 */
+.searchengine-menuitem > .menu-icon {
   display: flex;
 }
 

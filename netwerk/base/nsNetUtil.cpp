@@ -22,7 +22,6 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/Telemetry.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsBufferedStreams.h"
 #include "nsCategoryCache.h"
@@ -102,11 +101,13 @@
 #endif
 #include "nsAboutProtocolHandler.h"
 #include "nsResProtocolHandler.h"
+#include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/MozSrcProtocolHandler.h"
 #include "mozilla/net/ExtensionProtocolHandler.h"
 #include "mozilla/net/PageThumbProtocolHandler.h"
 #include "mozilla/net/SFVService.h"
 #include <limits>
+#include "nsICookieService.h"
 #include "nsIXPConnect.h"
 #include "nsParserConstants.h"
 #include "nsCRT.h"
@@ -507,12 +508,36 @@ NS_NewChannelWithTriggeringPrincipal(
   MOZ_ASSERT(aLoadingNode);
   NS_ASSERTION(aTriggeringPrincipal,
                "Can not create channel without a triggering Principal!");
+
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+
+  // Special treatment for resources injected by add-ons.
+  if (aTriggeringPrincipal &&
+      StaticPrefs::privacy_antitracking_isolateContentScriptResources() &&
+      nsContentUtils::IsExpandedPrincipal(aTriggeringPrincipal)) {
+    bool shouldResistFingerprinting =
+        nsContentUtils::ShouldResistFingerprinting_dangerous(
+            aLoadingNode->NodePrincipal(),
+            "CookieJarSettings can't exist yet, we're creating it",
+            RFPTarget::IsAlwaysEnabledForPrecompute);
+    cookieJarSettings = CookieJarSettings::Create(
+        nsICookieService::BEHAVIOR_REJECT,
+        StoragePrincipalHelper::PartitionKeyForExpandedPrincipal(
+            aTriggeringPrincipal),
+        OriginAttributes::IsFirstPartyEnabled(), false,
+        shouldResistFingerprinting);
+  } else {
+    // Let's inherit the cookie behavior and permission from the parent
+    // document.
+    cookieJarSettings = aLoadingNode->OwnerDoc()->CookieJarSettings();
+  }
+
   return NS_NewChannelInternal(
       outChannel, aUri, aLoadingNode, aLoadingNode->NodePrincipal(),
       aTriggeringPrincipal, Maybe<ClientInfo>(),
       Maybe<ServiceWorkerDescriptor>(), aSecurityFlags, aContentPolicyType,
-      aLoadingNode->OwnerDoc()->CookieJarSettings(), aPerformanceStorage,
-      aLoadGroup, aCallbacks, aLoadFlags, aIoService);
+      cookieJarSettings, aPerformanceStorage, aLoadGroup, aCallbacks,
+      aLoadFlags, aIoService);
 }
 
 // See NS_NewChannelInternal for usage and argument description
@@ -3366,59 +3391,9 @@ bool ChannelIsPost(nsIChannel* aChannel) {
   return false;
 }
 
-bool SchemeIsHTTP(nsIURI* aURI) {
+bool SchemeIsHttpOrHttps(nsIURI* aURI) {
   MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("http");
-}
-
-bool SchemeIsHTTPS(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("https");
-}
-
-bool SchemeIsJavascript(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("javascript");
-}
-
-bool SchemeIsChrome(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("chrome");
-}
-
-bool SchemeIsAbout(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("about");
-}
-
-bool SchemeIsBlob(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("blob");
-}
-
-bool SchemeIsFile(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("file");
-}
-
-bool SchemeIsData(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("data");
-}
-
-bool SchemeIsViewSource(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("view-source");
-}
-
-bool SchemeIsResource(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("resource");
-}
-
-bool SchemeIsFTP(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  return aURI->SchemeIs("ftp");
+  return aURI->SchemeIs("http") || aURI->SchemeIs("https");
 }
 
 bool SchemeIsSpecial(const nsACString& aScheme) {

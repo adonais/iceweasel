@@ -20,47 +20,64 @@ internal object SetupChecklistReducer {
      * @return The resulting [AppState] after the given [action] has been reduced.
      */
     fun reduce(state: AppState, action: SetupChecklistAction): AppState = when (action) {
-        SetupChecklistAction.Closed -> state
+        is SetupChecklistAction.Init -> state
+        is SetupChecklistAction.Closed -> state.copy(
+            setupChecklistState = state.setupChecklistState?.copy(isVisible = false),
+        )
+
         is SetupChecklistAction.ChecklistItemClicked -> {
-            state.setupChecklistState?.let {
-                val updatedItems = it.checklistItems.map { item ->
-                    // A local variable to clearly distinguish between
-                    // the item in the list and the item from the action.
-                    val clickedItem = action.item
-
-                    when (item) {
-                        is ChecklistItem.Group -> {
-                            when (clickedItem) {
-                                // Given the clicked item is a group, when we find a group in the list,
-                                // we change its state. Only one group can be expanded at a time.
-                                is ChecklistItem.Group -> {
-                                    if (item == clickedItem) {
-                                        item.copy(isExpanded = !clickedItem.isExpanded)
-                                    } else {
-                                        item.copy(isExpanded = false)
-                                    }
-                                }
-
-                                // Given the clicked item is a task, when we find a group in the list,
-                                // we check the group tasks for the clicked one.
-                                is ChecklistItem.Task -> item.copy(
-                                    tasks = item.tasks.map { task ->
-                                        if (task == clickedItem) {
-                                            task.copy(isCompleted = !clickedItem.isCompleted)
-                                        } else {
-                                            task
-                                        }
-                                    },
-                                )
+            // A local variable to clearly distinguish between
+            // the item in the list and the item from the action.
+            val clickedItem = action.item
+            if (clickedItem is ChecklistItem.Group && state.setupChecklistState != null) {
+                // Task updates are handled by TaskPreferenceUpdated.
+                val updatedGroups =
+                    state.setupChecklistState.checklistItems.filterIsInstance<ChecklistItem.Group>()
+                        .map { existingGroup ->
+                            if (existingGroup == clickedItem) {
+                                existingGroup.copy(isExpanded = !clickedItem.isExpanded)
+                            } else {
+                                // Only one group should be expanded at a time.
+                                existingGroup.copy(isExpanded = false)
                             }
                         }
 
-                        // Given the clicked item is a task, when we find a task in the list,
-                        // we change its completed state.
-                        is ChecklistItem.Task -> if (item == clickedItem) {
-                            item.copy(isCompleted = !(clickedItem as ChecklistItem.Task).isCompleted)
+                state.copy(
+                    setupChecklistState = state.setupChecklistState.copy(
+                        checklistItems = updatedGroups,
+                        progress = updatedGroups.getTaskProgress(),
+                    ),
+                )
+            } else {
+                state
+            }
+        }
+
+        is SetupChecklistAction.TaskPreferenceUpdated -> {
+            state.setupChecklistState?.let {
+                val updatedItems = it.checklistItems.map { existingItem ->
+                    val updatedTaskType = action.taskType
+                    when (existingItem) {
+                        // Given the updated item is a task, when we find a group in the list,
+                        // check the group tasks for the updated one to change its completed state.
+                        is ChecklistItem.Group -> {
+                            existingItem.copy(
+                                tasks = existingItem.tasks.map { existingTask ->
+                                    if (existingTask.type == updatedTaskType) {
+                                        existingTask.copy(isCompleted = action.prefValue)
+                                    } else {
+                                        existingTask
+                                    }
+                                },
+                            )
+                        }
+
+                        // Given the updated item is a task, when we find a task in the list, we
+                        // change its completed state.
+                        is ChecklistItem.Task -> if (existingItem.type == updatedTaskType) {
+                            existingItem.copy(isCompleted = action.prefValue)
                         } else {
-                            item
+                            existingItem
                         }
                     }
                 }

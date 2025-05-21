@@ -336,7 +336,7 @@ features:
           download-link: "[Download Link]"
           show-snackbar: true
 
-  SetupChecklist:
+  setup-checklist:
     description: A feature on the home page that allows the user to track onboarding setup progress.
     variables:
       enabled:
@@ -464,6 +464,15 @@ features:
       - channel: nightly
         value:
           enabled: true
+
+  composable-toolbar:
+    description: Use a composable toolbar instead of the View based one.
+    variables:
+      enabled:
+        description: >
+          When the feature is enabled the user will see a new composable toolbar instead the previous View based one.
+        type: Boolean
+        default: false
 
   remote-tab-management:
     description: >
@@ -630,6 +639,16 @@ features:
           Whether or not to enable tab strip.
         type: Boolean
         default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
+      - channel: beta
+        value:
+          enabled: true
 
   trending-searches:
     description: Enables trending searches.
@@ -685,6 +704,15 @@ features:
       enabled:
         description: >
           Whether or not to enable the homepage search bar.
+        type: Boolean
+        default: false
+
+  homepage-hide-frecent-top-sites:
+    description: Hides frecent top sites on the homepage.
+    variables:
+      enabled:
+        description: >
+          Whether or not to hide frecent top sites on the homepage.
         type: Boolean
         default: false
 
@@ -761,6 +789,14 @@ features:
         description: The text to show in the CFR
         type: Text
         default: ""
+  remote-search-configuration:
+    description: Feature to use search configurations from remote servers.
+    variables:
+      enabled:
+        description: >
+          Uses search configuration from remote servers .
+        type: Boolean
+        default: false
 
 types:
   objects: {}

@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.82.0"
 name = "naga"
-version = "24.0.0"
+version = "25.0.0"
 authors = ["gfx-rs developers"]
 build = "build.rs"
 exclude = [
@@ -36,8 +36,7 @@ keywords = [
     "MSL",
 ]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/gfx-rs/wgpu/tree/trunk/naga"
-resolver = "2"
+repository = "https://github.com/gfx-rs/wgpu"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -47,6 +46,8 @@ arbitrary = [
     "dep:arbitrary",
     "bitflags/arbitrary",
     "indexmap/arbitrary",
+    "half/arbitrary",
+    "half/std",
 ]
 compact = []
 default = []
@@ -73,14 +74,16 @@ serialize = [
 ]
 spv-in = [
     "dep:petgraph",
+    "petgraph/graphmap",
     "dep:spirv",
 ]
 spv-out = ["dep:spirv"]
+stderr = ["codespan-reporting/std"]
+termcolor = ["codespan-reporting/termcolor"]
 wgsl-in = [
     "dep:hexf-parse",
     "dep:strum",
     "dep:unicode-ident",
-    "indexmap/std",
     "compact",
 ]
 wgsl-out = []
@@ -91,7 +94,6 @@ path = "src/lib.rs"
 
 [dependencies]
 log = "0.4"
-num-traits = "0.2.16"
 
 [dependencies.arbitrary]
 version = "1.4"
@@ -109,20 +111,22 @@ default-features = false
 [dependencies.bitflags]
 version = "2.9"
 
+[dependencies.cfg-if]
+version = "1"
+
 [dependencies.codespan-reporting]
-version = "0.11.0"
+version = "0.12"
+default-features = false
 
 [dependencies.half]
 version = "2.5"
-features = [
-    "arbitrary",
-    "num-traits",
-]
+features = ["num-traits"]
+default-features = false
 
 [dependencies.hashbrown]
-version = "0.14.5"
+version = "0.15.2"
 features = [
-    "ahash",
+    "default-hasher",
     "inline-more",
 ]
 default-features = false
@@ -132,12 +136,25 @@ version = "0.2.1"
 optional = true
 
 [dependencies.indexmap]
-version = "2.5.0"
+version = "2.7.1"
+default-features = false
+
+[dependencies.num-traits]
+version = "0.2.16"
+default-features = false
+
+[dependencies.once_cell]
+version = "1.21.3"
+features = [
+    "alloc",
+    "race",
+]
 default-features = false
 
 [dependencies.petgraph]
-version = "0.7"
+version = "0.8"
 optional = true
+default-features = false
 
 [dependencies.pp-rs]
 version = "0.2.1"
@@ -150,23 +167,21 @@ default-features = false
 [dependencies.serde]
 version = "1.0.219"
 features = [
-    "default",
+    "alloc",
     "derive",
 ]
 optional = true
+default-features = false
 
 [dependencies.spirv]
 version = "0.3"
 optional = true
 
 [dependencies.strum]
-version = "0.26.3"
+version = "0.27.1"
 features = ["derive"]
 optional = true
 default-features = false
-
-[dependencies.termcolor]
-version = "1.4.1"
 
 [dependencies.thiserror]
 version = "2"
@@ -178,16 +193,15 @@ optional = true
 
 [dev-dependencies]
 diff = "0.1"
-ron = "0.8.0"
 toml = "0.8"
 
 [dev-dependencies.env_logger]
 version = "0.11"
 
 [dev-dependencies.hashbrown]
-version = "0.14.5"
+version = "0.15.2"
 features = [
-    "ahash",
+    "default-hasher",
     "inline-more",
     "serde",
 ]
@@ -197,7 +211,10 @@ default-features = false
 path = "./hlsl-snapshots"
 
 [dev-dependencies.itertools]
-version = "0.13.0"
+version = "0.14.0"
+
+[dev-dependencies.ron]
+version = "0.10"
 
 [dev-dependencies.rspirv]
 version = "0.11"

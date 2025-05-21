@@ -45,8 +45,7 @@ inline size_t BufferAllocator::GetGoodAllocSize(size_t requiredBytes) {
   requiredBytes = std::max(requiredBytes, MinAllocSize);
 
   if (IsLargeAllocSize(requiredBytes)) {
-    size_t headerSize = sizeof(LargeBuffer);
-    return RoundUp(requiredBytes + headerSize, ChunkSize) - headerSize;
+    return RoundUp(requiredBytes, ChunkSize);
   }
 
   // Small and medium headers have the same size.
@@ -61,10 +60,8 @@ inline size_t BufferAllocator::GetGoodAllocSize(size_t requiredBytes) {
 size_t BufferAllocator::GetGoodPower2AllocSize(size_t requiredBytes) {
   requiredBytes = std::max(requiredBytes, MinAllocSize);
 
-  size_t headerSize;
-  if (IsLargeAllocSize(requiredBytes)) {
-    headerSize = sizeof(LargeBuffer);
-  } else {
+  size_t headerSize = 0;
+  if (!IsLargeAllocSize(requiredBytes)) {
     // Small and medium headers have the same size.
     headerSize = sizeof(SmallBuffer);
     static_assert(sizeof(SmallBuffer) == sizeof(MediumBuffer));
@@ -135,20 +132,26 @@ inline bool IsBufferAlloc(void* alloc) {
   return BufferAllocator::IsBufferAlloc(alloc);
 }
 
-inline size_t GetAllocSize(void* alloc) {
-  return BufferAllocator::GetAllocSize(alloc);
+inline size_t GetAllocSize(JS::Zone* zone, void* alloc) {
+  return zone->bufferAllocator.getAllocSize(alloc);
 }
 
-inline JS::Zone* GetAllocZone(void* alloc) {
-  return BufferAllocator::GetAllocZone(alloc);
+inline bool IsNurseryOwned(JS::Zone* zone, void* alloc) {
+  return zone->bufferAllocator.isNurseryOwned(alloc);
 }
 
-inline bool IsNurseryOwned(void* alloc) {
-  return BufferAllocator::IsNurseryOwned(alloc);
+inline bool IsBufferAllocMarkedBlack(JS::Zone* zone, void* alloc) {
+  return zone->bufferAllocator.isMarkedBlack(alloc);
 }
 
-inline bool IsBufferAllocMarkedBlack(void* alloc) {
-  return BufferAllocator::IsMarkedBlack(alloc);
+inline void TraceBufferEdgeInternal(JSTracer* trc, Cell* owner, void** bufferp,
+                                    const char* name) {
+  owner->zoneFromAnyThread()->bufferAllocator.traceEdge(trc, owner, bufferp,
+                                                        name);
+}
+
+inline void MarkTenuredBuffer(JS::Zone* zone, void* alloc) {
+  zone->bufferAllocator.markTenuredAlloc(alloc);
 }
 
 }  // namespace js::gc

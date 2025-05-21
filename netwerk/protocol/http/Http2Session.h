@@ -403,9 +403,8 @@ class Http2Session final : public ASpdySession,
   RefPtr<nsAHttpSegmentReader> mSegmentReader;
   nsAHttpSegmentWriter* mSegmentWriter;
 
-  uint32_t mSendingChunkSize; /* the transmission chunk size */
-  uint32_t mNextStreamID;     /* 24 bits */
-  uint32_t mLastPushedID;
+  uint32_t mSendingChunkSize;    /* the transmission chunk size */
+  uint32_t mNextStreamID;        /* 24 bits */
   uint32_t mConcurrentHighWater; /* max parallelism on session */
   uint32_t mPushAllowance;       /* rwin for unmatched pushes */
 
@@ -424,7 +423,6 @@ class Http2Session final : public ASpdySession,
   nsTArray<WeakPtr<Http2StreamBase>> mQueuedStreams;
   nsTArray<WeakPtr<Http2StreamBase>> mPushesReadyForRead;
   nsTArray<WeakPtr<Http2StreamBase>> mSlowConsumersReadyForRead;
-  nsTArray<Http2PushedStream*> mPushedStreams;
 
   // Compression contexts for header transport.
   // HTTP/2 compresses only HTTP headers and does not reset the context in
@@ -474,7 +472,6 @@ class Http2Session final : public ASpdySession,
   // next recvd frame which must be the same type
   uint32_t mExpectedHeaderID;
   uint32_t mExpectedPushPromiseID;
-  uint32_t mContinuedPromiseStream;
 
   // for the conversion of downstream http headers into http/2 formatted headers
   // The data here does not persist between frames
@@ -613,6 +610,7 @@ class Http2Session final : public ASpdySession,
   bool mPeerFailedHandshake;
 
  private:
+  TimeStamp mLastTRRResponseTime;  // Time of the last successful TRR response
   uint32_t mTrrStreams;
 
   // Whether we allow websockets, based on a pref

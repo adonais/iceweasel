@@ -27,7 +27,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ServoBindings.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextControlState.h"
 #include "mozilla/TextEditor.h"
@@ -43,6 +42,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/HTMLDetailsElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
@@ -3925,6 +3925,65 @@ ShadowRoot* nsINode::GetShadowRootForSelection() const {
   }
 
   return shadowRoot;
+}
+
+// https://html.spec.whatwg.org/#ancestor-hidden-until-found-revealing-algorithm
+void nsINode::RevealAncestorHiddenUntilFoundAndFireBeforematchEvent(
+    ErrorResult& aRv) {
+  if (!StaticPrefs::dom_hidden_until_found_enabled()) {
+    return;
+  }
+  // 1. While currentNode has a parent node within the flat tree:
+  auto* currentNode = this;
+  while (RefPtr parentNode = currentNode->GetFlattenedTreeParentNode()) {
+    // 1.1. If currentNode has the hidden attribute in the hidden until found
+    //      state, then:
+    if (RefPtr currentAsElement = Element::FromNode(currentNode);
+        currentAsElement &&
+        currentAsElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::hidden,
+                                      nsGkAtoms::untilFound, eIgnoreCase)) {
+      // 1.1.1 Fire an event named beforematch at currentNode.
+      currentAsElement->FireBeforematchEvent(aRv);
+      if (MOZ_UNLIKELY(aRv.Failed())) {
+        return;
+      }
+
+      // 1.1.2 Remove the hidden attribute from currentNode.
+      currentAsElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::hidden,
+                                  /*aNotify=*/true);
+    }
+    // 1.2 Set currentNode to the parent node of currentNode within the flat
+    //     tree.
+    currentNode = parentNode;
+  }
+}
+
+// https://html.spec.whatwg.org/#ancestor-details-revealing-algorithm
+void nsINode::RevealAncestorClosedDetails() {
+  AutoTArray<RefPtr<HTMLDetailsElement>, 16> detailsElements;
+  // 1. While currentNode has a parent node within the flat tree:
+  for (auto* currentNode : InclusiveFlatTreeAncestors(*this)) {
+    // 1.1 If currentNode is slotted into the second slot of a details element:
+    auto* slot = HTMLSlotElement::FromNode(currentNode);
+    if (!slot) {
+      continue;
+    }
+    // Note: There are two slots in the details element. Gecko names the
+    //       summary, and leaves the content slot unnamed.
+    if (auto* details =
+            HTMLDetailsElement::FromNodeOrNull(slot->GetContainingShadowHost());
+        details && !details->Open() && !slot->HasName()) {
+      detailsElements.AppendElement(details);
+      // 1.1.1 Set currentNode to the details element which currentNode is
+      //       slotted into.
+      // Note: This step is omitted because we use the custom iterator.
+    }
+  }
+  // 1.1.2 If the open attribute is not set on currentNode, then set the
+  //       open attribute on currentNode to the empty string.
+  for (auto& details : detailsElements) {
+    details->SetOpen(true, IgnoreErrors());
+  }
 }
 
 NS_IMPL_ISUPPORTS(nsNodeWeakReference, nsIWeakReference)

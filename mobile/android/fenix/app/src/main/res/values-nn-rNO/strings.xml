@@ -115,11 +115,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Surf raskare med ny navigasjon</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Surf raskare med ny navigasjon</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">På ein nettstad forsvinn dette feltet når du skrollar ned for ekstra nettlesarplass.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">På ein nettstad forsvinn dette feltet når du skrollar ned for ekstra nettlesarplass.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Trykk og hald ned pilene for å hoppe mellom sider i historikken til denne fana.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Trykk og hald ned pilene for å hoppe mellom sider i historikken til denne fana.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -630,7 +630,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Rask og sikker nettsurfing</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Godta og hald fram</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Godta og hald fram</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Hald fram</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Ved å halde fram, godtek du %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -835,8 +837,6 @@
   <string name="preferences_override_account_server">Tilpassa Mozilla-kontoserver</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Tilpassa synkroniseringsserver</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla-konto/synkroniseringsserver er endra. Avsluttar programmet for å kunne bruke endringane…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Konto</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1206,7 +1206,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Sveip verktøylinja opp for å opne faner</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Rull for å gøyme adresse- og verktøylinja</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Rull for å gøyme adresse- og verktøylinja</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Sveip adresselinja sidelengs for å byte fane</string>
   <!--
@@ -1482,12 +1482,33 @@
   <string name="download_multi_select_title">%1$d valde</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Fjern</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Ikkje nok diskplass</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Denne eininga har ikkje nok plass for å laste ned &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Handsam filer</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Avbryt</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Slett</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Naviger tilbake</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Naviger opp</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Naviger opp</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Tilbake og lat att søk</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Tøm</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Del URL</string>
   <!-- Text for the button to share the download file -->
@@ -1528,9 +1549,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Mislykka nedlasting</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Søk i nedlastingar</string>
+  <string name="download_search_placeholder">Søk i nedlastingar</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Fann ingen resultat</string>
+  <string name="download_search_no_results_found">Fann ingen resultat</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Merk alle</string>
   <!--
@@ -2283,7 +2304,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Ikon for unntaksinnstillingar for utvida vern mot sporing</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2292,8 +2313,6 @@
   <string name="preference_doh_summary">Domain Name System (DNs) over HTTPS sender førespurnaden din om eit domenenamn gjennom ei kryptert tilkopling, og gir ein sikker DNS og gjer det vanskelegare for andre å sjå kva nettstad du er i ferd med å besøkje. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Les meir</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Naviger opp</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Unntak</string>
   <!-- Content description for the "Info" button -->
@@ -2831,8 +2850,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox-forslag</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Populære søk</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3197,6 +3214,8 @@
   <string name="protection_panel_no_trackers_blocked">Fann ingen sporarar</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Personvern- og sikkerheitsinnstillingar</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Løyve</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3505,6 +3524,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Du har fullført alle 6 konfigurasjonsstega. Nyt farta, personvernet og sikkerheita til %1$s.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Fullfør alle 5 stega for å konfigurere %1$s for den beste nettlesaropplevinga.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Flott start! Du har fullført 1 av 5 steg.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Du har fullført 2 av 5 steg. Stor framgang!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Du er halvvegs! Tre steg fullførte og 2 igjen.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Nesten ferdig! Du er berre 1 steg unna målstreken.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Du har fullført alle 5 konfigurasjonsstega. Nyt farta, personvernet og sikkerheita til %1$s.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3554,4 +3589,10 @@
   <string name="pbm_authentication_unlock">Lås opp</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Lås opp private faner</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Bruke skjermlås til å skjule private faner?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Nei takk</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Lås faner</string>
 </resources>

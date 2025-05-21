@@ -8845,10 +8845,29 @@ static const JSClass* GetDomClass();
 
 static JSObject* GetDOMPrototype(JSContext* cx, JSObject* global);
 
+static void TransplantableDOMObject_finalize(JS::GCContext* gcx,
+                                             JSObject* obj) {
+  // Dummy finalize method so we can swap with background finalized object.
+}
+
+static const JSClassOps TransplantableDOMObjectClassOps = {
+    nullptr,  // addProperty
+    nullptr,  // delProperty
+    nullptr,  // enumerate
+    nullptr,  // newEnumerate
+    nullptr,  // resolve
+    nullptr,  // mayResolve
+    TransplantableDOMObject_finalize,
+    nullptr,  // call
+    nullptr,  // construct
+    nullptr,
+};
+
 static const JSClass TransplantableDOMObjectClass = {
     "TransplantableDOMObject",
-    JSCLASS_IS_DOMJSCLASS | JSCLASS_HAS_RESERVED_SLOTS(1),
-};
+    JSCLASS_IS_DOMJSCLASS | JSCLASS_HAS_RESERVED_SLOTS(1) |
+        JSCLASS_BACKGROUND_FINALIZE,
+    &TransplantableDOMObjectClassOps};
 
 static const JSClass TransplantableDOMProxyObjectClass =
     PROXY_CLASS_DEF("TransplantableDOMProxyObject",
@@ -11275,10 +11294,28 @@ static const JSFunctionSpec dom_methods[] = {
     JS_FS_END,
 };
 
-static const JSClass dom_class = {
-    "FakeDOMObject",
-    JSCLASS_IS_DOMJSCLASS | JSCLASS_HAS_RESERVED_SLOTS(2),
+static void FakeDOMObject_finalize(JS::GCContext* gcx, JSObject* obj) {
+  // Dummy finalize method so we can swap with background finalized object.
+}
+
+static const JSClassOps FakeDOMObjectClassOps = {
+    nullptr,  // addProperty
+    nullptr,  // delProperty
+    nullptr,  // enumerate
+    nullptr,  // newEnumerate
+    nullptr,  // resolve
+    nullptr,  // mayResolve
+    FakeDOMObject_finalize,
+    nullptr,  // call
+    nullptr,  // construct
+    nullptr,
 };
+
+static const JSClass dom_class = {"FakeDOMObject",
+                                  JSCLASS_IS_DOMJSCLASS |
+                                      JSCLASS_HAS_RESERVED_SLOTS(2) |
+                                      JSCLASS_BACKGROUND_FINALIZE,
+                                  &FakeDOMObjectClassOps};
 
 static const JSClass* GetDomClass() { return &dom_class; }
 
@@ -13003,7 +13040,7 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     JS::Prefs::set_experimental_explicit_resource_management(false);
   }
 #endif
-#ifdef JS_HAS_TEMPORAL_API
+#ifdef JS_HAS_INTL_API
   if (op.getBoolOption("enable-temporal")) {
     JS::Prefs::setAtStartup_experimental_temporal(true);
   }

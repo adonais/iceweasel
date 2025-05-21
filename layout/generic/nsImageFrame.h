@@ -88,8 +88,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
               nsReflowStatus&) override;
   bool IsLeafDynamic() const override;
 
-  nsresult GetContentForEvent(const mozilla::WidgetEvent*,
-                              nsIContent** aContent) final;
+  nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const final;
   nsresult HandleEvent(nsPresContext*, mozilla::WidgetGUIEvent*,
                        nsEventStatus*) override;
   Cursor GetCursor(const nsPoint&) override;
@@ -99,6 +98,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   void OnVisibilityChange(
       Visibility aNewVisibility,
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing()) final;
+
+  void MarkIntrinsicISizesDirty() override;
 
   void ResponsiveContentDensityChanged();
   void ElementStateChanged(mozilla::dom::ElementState) override;
@@ -236,7 +237,16 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   ~nsImageFrame() override;
 
-  void EnsureIntrinsicSizeAndRatio();
+  /**
+   * Populate/update mIntrinsicSize and mIntrinsicSize if necessary.
+   *
+   * @param aConsiderIntrinsicsDirty if true, then this function will update
+   *   mIntrinsicSize and mIntrinsicRatio *regardless* of what their current
+   *   value is. (We'll still reason about whether the value changed or not
+   *   when deciding whether additional notifications are needed.)  This param
+   *   defaults to false, but it's used in MarkIntrinsicISizesDirty.
+   */
+  void EnsureIntrinsicSizeAndRatio(bool aConsiderIntrinsicsDirty = false);
 
   bool GotInitialReflow() const {
     return !HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
@@ -255,7 +265,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   // Translate a point that is relative to our frame into a localized CSS pixel
   // coordinate that is relative to the content area of this frame (inside the
   // border+padding).
-  mozilla::CSSIntPoint TranslateEventCoords(const nsPoint& aPoint);
+  mozilla::CSSIntPoint TranslateEventCoords(const nsPoint&) const;
 
   bool GetAnchorHREFTargetAndNode(nsIURI** aHref, nsString& aTarget,
                                   nsIContent** aNode);
@@ -287,11 +297,6 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
    * painted.
    */
   void MaybeDecodeForPredictedSize();
-
-  /**
-   * Is this frame part of a ::marker pseudo?
-   */
-  bool IsForMarkerPseudo() const;
 
  protected:
   friend class nsImageListener;

@@ -4,14 +4,15 @@
 
 use inherent::inherent;
 
-use glean::traits::Counter;
-
 use super::CommonMetricData;
+use glean::traits::Counter;
 
 use crate::ipc::{need_ipc, with_ipc_payload};
 #[cfg(test)]
-use crate::private::MetricGetter;
-use crate::private::{CounterMetric, MetricId};
+use crate::private::MetricId;
+use crate::private::{
+    BaseMetric, BaseMetricId, BaseMetricResult, CounterMetric, MetricMetadataGetterImpl,
+};
 
 use std::collections::HashMap;
 
@@ -22,12 +23,21 @@ use std::collections::HashMap;
 #[derive(Clone)]
 pub enum LabeledCounterMetric {
     Parent(CounterMetric),
-    Child { id: MetricId, label: String },
+    Child { id: BaseMetricId, label: String },
 }
+
+crate::define_metric_metadata_getter!(
+    CounterMetric,
+    LabeledCounterMetric,
+    COUNTER_MAP,
+    LABELED_COUNTER_MAP
+);
+
+crate::define_metric_namer!(LabeledCounterMetric, LABELED);
 
 impl LabeledCounterMetric {
     /// Create a new labeled counter submetric.
-    pub fn new(id: MetricId, meta: CommonMetricData, label: String) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData, label: String) -> Self {
         if need_ipc() {
             LabeledCounterMetric::Child { id, label }
         } else {
@@ -36,7 +46,7 @@ impl LabeledCounterMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricGetter {
+    pub(crate) fn metric_id(&self) -> MetricId {
         match self {
             LabeledCounterMetric::Parent(p) => p.metric_id(),
             LabeledCounterMetric::Child { id, .. } => (*id).into(),
@@ -65,7 +75,7 @@ impl Counter for LabeledCounterMetric {
                         "LabeledCounter::add",
                         super::profiler_utils::TelemetryProfilerCategory,
                         Default::default(),
-                        super::profiler_utils::IntLikeMetricMarker::new(
+                        super::profiler_utils::IntLikeMetricMarker::<LabeledCounterMetric, i32>::new(
                             (*id).into(),
                             Some(label.clone()),
                             amount,
@@ -134,6 +144,20 @@ impl Counter for LabeledCounterMetric {
     }
 }
 
+impl BaseMetric for LabeledCounterMetric {
+    type BaseMetricT = CounterMetric;
+    fn get_base_metric<'a>(&'a self) -> BaseMetricResult<'a, Self::BaseMetricT> {
+        match self {
+            LabeledCounterMetric::Parent(counter_metric) => {
+                BaseMetricResult::BaseMetric(&counter_metric)
+            }
+            LabeledCounterMetric::Child { id, label } => {
+                BaseMetricResult::IndexLabelPair(*id, &label)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::{common_test::*, ipc, metrics};
@@ -177,8 +201,8 @@ mod test {
 
             let metric_id = child_metric
                 .metric_id()
-                .metric_id()
-                .expect("Cannot perform IPC calls without a MetricId");
+                .base_metric_id()
+                .expect("Cannot perform IPC calls without a BaseMetricId");
 
             child_metric.add(42);
 

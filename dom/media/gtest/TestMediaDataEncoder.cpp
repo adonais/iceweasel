@@ -19,6 +19,30 @@
 #include "VPXDecoder.h"
 #include <algorithm>
 
+#ifdef MOZ_WIDGET_ANDROID
+// Create/init a H.264 encoder and check if it's SW.
+#  define SKIP_IF_ANDROID_SW()                                           \
+    do {                                                                 \
+      RefPtr<MediaDataEncoder> e = CreateH264Encoder(                    \
+          Usage::Record,                                                 \
+          EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,   \
+                                      gfx::ColorRange::LIMITED},         \
+          kImageSize, ScalabilityMode::None, Some(kH264SpecificAnnexB)); \
+      if (EnsureInit(e)) {                                               \
+        nsCString dummy;                                                 \
+        bool isSW = !e->IsHardwareAccelerated(dummy);                    \
+        WaitForShutdown(e);                                              \
+        if (isSW) {                                                      \
+          return;                                                        \
+        }                                                                \
+      }                                                                  \
+    } while (0)
+#else
+#  define SKIP_IF_ANDROID_SW() \
+    do {                       \
+    } while (0)
+#endif
+
 #define RUN_IF_SUPPORTED(codecType, test)   \
   do {                                      \
     RefPtr<PEMFactory> f(new PEMFactory()); \
@@ -163,7 +187,7 @@ class MediaDataEncoderTest : public testing::Test {
 
 template <typename T>
 already_AddRefed<MediaDataEncoder> CreateVideoEncoder(
-    CodecType aCodec, Usage aUsage, dom::ImageBitmapFormat aPixelFormat,
+    CodecType aCodec, Usage aUsage, EncoderConfig::SampleFormat aFormat,
     gfx::IntSize aSize, ScalabilityMode aScalabilityMode,
     const Maybe<T>& aSpecific) {
   RefPtr<PEMFactory> f(new PEMFactory());
@@ -179,8 +203,7 @@ already_AddRefed<MediaDataEncoder> CreateVideoEncoder(
   RefPtr<MediaDataEncoder> e;
   const HardwarePreference pref = HardwarePreference::None;
   e = f->CreateEncoder(
-      EncoderConfig(aCodec, aSize, aUsage, aPixelFormat, aPixelFormat,
-                    FRAME_RATE /* FPS */,
+      EncoderConfig(aCodec, aSize, aUsage, aFormat, FRAME_RATE /* FPS */,
                     KEYFRAME_INTERVAL /* keyframe interval */,
                     BIT_RATE /* bitrate */, 0, 0, BIT_RATE_MODE, pref,
                     aScalabilityMode, aSpecific),
@@ -191,11 +214,12 @@ already_AddRefed<MediaDataEncoder> CreateVideoEncoder(
 
 static already_AddRefed<MediaDataEncoder> CreateH264Encoder(
     Usage aUsage = Usage::Realtime,
-    dom::ImageBitmapFormat aPixelFormat = dom::ImageBitmapFormat::YUV420P,
+    EncoderConfig::SampleFormat aFormat = {dom::ImageBitmapFormat::YUV420P,
+                                           gfx::ColorRange::LIMITED},
     gfx::IntSize aSize = kImageSize,
     ScalabilityMode aScalabilityMode = ScalabilityMode::None,
     const Maybe<H264Specific>& aSpecific = Some(kH264SpecificAnnexB)) {
-  return CreateVideoEncoder(CodecType::H264, aUsage, aPixelFormat, aSize,
+  return CreateVideoEncoder(CodecType::H264, aUsage, aFormat, aSize,
                             aScalabilityMode, aSpecific);
 }
 
@@ -240,9 +264,11 @@ static bool EnsureInit(const RefPtr<MediaDataEncoder>& aEncoder) {
 TEST_F(MediaDataEncoderTest, H264Inits) {
   RUN_IF_SUPPORTED(CodecType::H264, []() {
     // w/o codec specific: should fail for h264.
-    RefPtr<MediaDataEncoder> e =
-        CreateH264Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize, ScalabilityMode::None, Nothing());
+    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Nothing());
     EXPECT_FALSE(e);
 
     // w/ codec specific
@@ -330,8 +356,10 @@ TEST_F(MediaDataEncoderTest, H264EncodesAnnexBRecord) {
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in AnnexB format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record, dom::ImageBitmapFormat::YUV420P, kImageSize,
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
     EXPECT_EQ(output.Length(), 1UL);
@@ -339,9 +367,11 @@ TEST_F(MediaDataEncoderTest, H264EncodesAnnexBRecord) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(Usage::Record, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize, ScalabilityMode::None,
-                          Some(kH264SpecificAnnexB));
+    e = CreateH264Encoder(
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData);
     EXPECT_EQ(output.Length(), NUM_FRAMES);
@@ -356,8 +386,10 @@ TEST_F(MediaDataEncoderTest, H264EncodesAnnexBRealtime) {
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in AnnexB format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, kImageSize,
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
     EXPECT_EQ(output.Length(), 1UL);
@@ -365,9 +397,11 @@ TEST_F(MediaDataEncoderTest, H264EncodesAnnexBRealtime) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize, ScalabilityMode::None,
-                          Some(kH264SpecificAnnexB));
+    e = CreateH264Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData);
     EXPECT_EQ(output.Length(), NUM_FRAMES);
@@ -382,8 +416,10 @@ TEST_F(MediaDataEncoderTest, H264EncodesAVCCRecord) {
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in avcC format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record, dom::ImageBitmapFormat::YUV420P, kImageSize,
-        ScalabilityMode::None, Some(kH264SpecificAVCC));
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
     EXPECT_EQ(output.Length(), 1UL);
@@ -391,9 +427,11 @@ TEST_F(MediaDataEncoderTest, H264EncodesAVCCRecord) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(Usage::Record, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize, ScalabilityMode::None,
-                          Some(kH264SpecificAVCC));
+    e = CreateH264Encoder(
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData);
     EXPECT_EQ(output.Length(), NUM_FRAMES);
@@ -417,8 +455,10 @@ TEST_F(MediaDataEncoderTest, H264EncodesAVCCRealtime) {
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in avcC format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, kImageSize,
-        ScalabilityMode::None, Some(kH264SpecificAVCC));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
     EXPECT_EQ(output.Length(), 1UL);
@@ -426,9 +466,11 @@ TEST_F(MediaDataEncoderTest, H264EncodesAVCCRealtime) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize, ScalabilityMode::None,
-                          Some(kH264SpecificAVCC));
+    e = CreateH264Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData);
     EXPECT_EQ(output.Length(), NUM_FRAMES);
@@ -449,11 +491,14 @@ TEST_F(MediaDataEncoderTest, H264EncodesAVCCRealtime) {
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRecord) {
+  SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in AnnexB format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record, dom::ImageBitmapFormat::YUV420P, kImageSize4K,
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
     EXPECT_EQ(output.Length(), 1UL);
@@ -461,9 +506,11 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRecord) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(Usage::Record, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize4K, ScalabilityMode::None,
-                          Some(kH264SpecificAnnexB));
+    e = CreateH264Encoder(
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData4K);
     EXPECT_EQ(output.Length(), NUM_FRAMES);
@@ -475,11 +522,14 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRecord) {
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRealtime) {
+  SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in AnnexB format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, kImageSize4K,
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
     EXPECT_EQ(output.Length(), 1UL);
@@ -487,9 +537,11 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRealtime) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize4K, ScalabilityMode::None,
-                          Some(kH264SpecificAnnexB));
+    e = CreateH264Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData4K);
     EXPECT_LE(output.Length(),
@@ -502,11 +554,14 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRealtime) {
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRecord) {
+  SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in avcC format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record, dom::ImageBitmapFormat::YUV420P, kImageSize4K,
-        ScalabilityMode::None, Some(kH264SpecificAVCC));
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
     EXPECT_EQ(output.Length(), 1UL);
@@ -514,9 +569,11 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRecord) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(Usage::Record, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize4K, ScalabilityMode::None,
-                          Some(kH264SpecificAVCC));
+    e = CreateH264Encoder(
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData4K);
     EXPECT_EQ(output.Length(), NUM_FRAMES);
@@ -537,11 +594,14 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRecord) {
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRealtime) {
+  SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encode one frame and output in avcC format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, kImageSize4K,
-        ScalabilityMode::None, Some(kH264SpecificAVCC));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
     EXPECT_EQ(output.Length(), 1UL);
@@ -549,9 +609,11 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRealtime) {
     WaitForShutdown(e);
 
     // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                          kImageSize4K, ScalabilityMode::None,
-                          Some(kH264SpecificAVCC));
+    e = CreateH264Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize4K, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     output = Encode(e, NUM_FRAMES, mData4K);
     EXPECT_LE(output.Length(),
@@ -588,55 +650,71 @@ TEST_F(MediaDataEncoderTest, H264Duration) {
 TEST_F(MediaDataEncoderTest, InvalidSize) {
   RUN_IF_SUPPORTED(CodecType::H264, []() {
     RefPtr<MediaDataEncoder> e0x0 = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, {0, 0},
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        {0, 0}, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EXPECT_EQ(e0x0, nullptr);
 
     RefPtr<MediaDataEncoder> e0x1 = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, {0, 1},
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        {0, 1}, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EXPECT_EQ(e0x1, nullptr);
 
     RefPtr<MediaDataEncoder> e1x0 = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, {1, 0},
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        {1, 0}, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EXPECT_EQ(e1x0, nullptr);
   });
 }
 
+// For Android HW encoder only.
 #ifdef MOZ_WIDGET_ANDROID
 TEST_F(MediaDataEncoderTest, AndroidNotSupportedSize) {
+  SKIP_IF_ANDROID_SW();
   RUN_IF_SUPPORTED(CodecType::H264, []() {
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime, dom::ImageBitmapFormat::YUV420P, {1, 1},
-        ScalabilityMode::None, Some(kH264SpecificAnnexB));
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        {1, 1}, ScalabilityMode::None, Some(kH264SpecificAnnexB));
     EXPECT_NE(e, nullptr);
     EXPECT_FALSE(EnsureInit(e));
   });
 }
 #endif
 
-#if defined(XP_LINUX) && !defined(ANDROID)
+#if !defined(ANDROID)
 TEST_F(MediaDataEncoderTest, H264AVCC) {
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
     // Encod frames in avcC format.
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record, dom::ImageBitmapFormat::YUV420P, kImageSize,
-        ScalabilityMode::None, Some(kH264SpecificAVCC));
+        Usage::Record,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Some(kH264SpecificAVCC));
     EnsureInit(e);
     MediaDataEncoder::EncodedData output = Encode(e, NUM_FRAMES, mData);
     EXPECT_EQ(output.Length(), NUM_FRAMES);
     for (auto frame : output) {
       EXPECT_FALSE(AnnexB::IsAnnexB(frame));
       if (frame->mKeyframe) {
-        AnnexB::IsAVCC(frame);
-        AVCCConfig config = AVCCConfig::Parse(frame).unwrap();
-        EXPECT_EQ(config.mAVCProfileIndication,
-                  static_cast<decltype(config.mAVCProfileIndication)>(
-                      kH264SpecificAVCC.mProfile));
-        EXPECT_EQ(config.mAVCLevelIndication,
-                  static_cast<decltype(config.mAVCLevelIndication)>(
-                      kH264SpecificAVCC.mLevel));
+        // The extradata may be included at the beginning, whenever it changes,
+        // or with every keyframe to support robust seeking or decoder resets.
+        if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
+          EXPECT_TRUE(AnnexB::IsAVCC(frame));
+          AVCCConfig config = AVCCConfig::Parse(frame).unwrap();
+          EXPECT_EQ(config.mAVCProfileIndication,
+                    static_cast<decltype(config.mAVCProfileIndication)>(
+                        kH264SpecificAVCC.mProfile));
+          EXPECT_EQ(config.mAVCLevelIndication,
+                    static_cast<decltype(config.mAVCLevelIndication)>(
+                        kH264SpecificAVCC.mLevel));
+        }
       }
     }
     WaitForShutdown(e);
@@ -646,21 +724,23 @@ TEST_F(MediaDataEncoderTest, H264AVCC) {
 
 static already_AddRefed<MediaDataEncoder> CreateVP8Encoder(
     Usage aUsage = Usage::Realtime,
-    dom::ImageBitmapFormat aPixelFormat = dom::ImageBitmapFormat::YUV420P,
+    EncoderConfig::SampleFormat aFormat = {dom::ImageBitmapFormat::YUV420P,
+                                           gfx::ColorRange::LIMITED},
     gfx::IntSize aSize = kImageSize,
     ScalabilityMode aScalabilityMode = ScalabilityMode::None,
     const Maybe<VP8Specific>& aSpecific = Some(VP8Specific())) {
-  return CreateVideoEncoder(CodecType::VP8, aUsage, aPixelFormat, aSize,
+  return CreateVideoEncoder(CodecType::VP8, aUsage, aFormat, aSize,
                             aScalabilityMode, aSpecific);
 }
 
 static already_AddRefed<MediaDataEncoder> CreateVP9Encoder(
     Usage aUsage = Usage::Realtime,
-    dom::ImageBitmapFormat aPixelFormat = dom::ImageBitmapFormat::YUV420P,
+    EncoderConfig::SampleFormat aFormat = {dom::ImageBitmapFormat::YUV420P,
+                                           gfx::ColorRange::LIMITED},
     gfx::IntSize aSize = kImageSize,
     ScalabilityMode aScalabilityMode = ScalabilityMode::None,
     const Maybe<VP9Specific>& aSpecific = Some(VP9Specific())) {
-  return CreateVideoEncoder(CodecType::VP9, aUsage, aPixelFormat, aSize,
+  return CreateVideoEncoder(CodecType::VP9, aUsage, aFormat, aSize,
                             aScalabilityMode, aSpecific);
 }
 
@@ -675,9 +755,11 @@ TEST_F(MediaDataEncoderTest, VP8Create) {
 TEST_F(MediaDataEncoderTest, VP8Inits) {
   RUN_IF_SUPPORTED(CodecType::VP8, []() {
     // w/o codec specific.
-    RefPtr<MediaDataEncoder> e =
-        CreateVP8Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                         kImageSize, ScalabilityMode::None, Nothing());
+    RefPtr<MediaDataEncoder> e = CreateVP8Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Nothing());
     EXPECT_TRUE(EnsureInit(e));
     WaitForShutdown(e);
 
@@ -735,7 +817,7 @@ TEST_F(MediaDataEncoderTest, VP8Duration) {
   });
 }
 
-#if defined(XP_LINUX) && !defined(ANDROID)
+#if !defined(ANDROID)
 TEST_F(MediaDataEncoderTest, VP8EncodeAfterDrain) {
   RUN_IF_SUPPORTED(CodecType::VP8, [this]() {
     RefPtr<MediaDataEncoder> e = CreateVP8Encoder();
@@ -779,9 +861,11 @@ TEST_F(MediaDataEncoderTest, VP8EncodeWithScalabilityModeL1T2) {
                          false,                 /* mAutoResize */
                          false                  /* mFrameDropping */
     );
-    RefPtr<MediaDataEncoder> e =
-        CreateVP8Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                         kImageSize, ScalabilityMode::L1T2, Some(specific));
+    RefPtr<MediaDataEncoder> e = CreateVP8Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::L1T2, Some(specific));
     EnsureInit(e);
 
     const nsTArray<uint8_t> pattern({0, 1});
@@ -810,9 +894,11 @@ TEST_F(MediaDataEncoderTest, VP8EncodeWithScalabilityModeL1T3) {
                          false,                 /* mAutoResize */
                          false                  /* mFrameDropping */
     );
-    RefPtr<MediaDataEncoder> e =
-        CreateVP8Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                         kImageSize, ScalabilityMode::L1T3, Some(specific));
+    RefPtr<MediaDataEncoder> e = CreateVP8Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::L1T3, Some(specific));
     EnsureInit(e);
 
     const nsTArray<uint8_t> pattern({0, 2, 1, 2});
@@ -844,9 +930,11 @@ TEST_F(MediaDataEncoderTest, VP9Create) {
 TEST_F(MediaDataEncoderTest, VP9Inits) {
   RUN_IF_SUPPORTED(CodecType::VP9, []() {
     // w/o codec specific.
-    RefPtr<MediaDataEncoder> e =
-        CreateVP9Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                         kImageSize, ScalabilityMode::None, Nothing());
+    RefPtr<MediaDataEncoder> e = CreateVP9Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::None, Nothing());
     EXPECT_TRUE(EnsureInit(e));
     WaitForShutdown(e);
 
@@ -902,7 +990,7 @@ TEST_F(MediaDataEncoderTest, VP9Duration) {
   });
 }
 
-#if defined(XP_LINUX) && !defined(ANDROID)
+#if !defined(ANDROID)
 TEST_F(MediaDataEncoderTest, VP9EncodeAfterDrain) {
   RUN_IF_SUPPORTED(CodecType::VP9, [this]() {
     RefPtr<MediaDataEncoder> e = CreateVP9Encoder();
@@ -950,9 +1038,11 @@ TEST_F(MediaDataEncoderTest, VP9EncodeWithScalabilityModeL1T2) {
                          false                  /* mFlexible */
     );
 
-    RefPtr<MediaDataEncoder> e =
-        CreateVP9Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                         kImageSize, ScalabilityMode::L1T2, Some(specific));
+    RefPtr<MediaDataEncoder> e = CreateVP9Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::L1T2, Some(specific));
     EnsureInit(e);
 
     const nsTArray<uint8_t> pattern({0, 1});
@@ -985,9 +1075,11 @@ TEST_F(MediaDataEncoderTest, VP9EncodeWithScalabilityModeL1T3) {
                          false                  /* mFlexible */
     );
 
-    RefPtr<MediaDataEncoder> e =
-        CreateVP9Encoder(Usage::Realtime, dom::ImageBitmapFormat::YUV420P,
-                         kImageSize, ScalabilityMode::L1T3, Some(specific));
+    RefPtr<MediaDataEncoder> e = CreateVP9Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat{dom::ImageBitmapFormat::YUV420P,
+                                    gfx::ColorRange::LIMITED},
+        kImageSize, ScalabilityMode::L1T3, Some(specific));
     EnsureInit(e);
 
     const nsTArray<uint8_t> pattern({0, 2, 1, 2});

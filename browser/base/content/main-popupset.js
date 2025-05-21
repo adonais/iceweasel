@@ -121,10 +121,9 @@ document.addEventListener(
           {
             let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             let otherTabGroup = gBrowser.getTabGroupById(tabGroupId);
-            let adoptedTabGroup = gBrowser.adoptTabGroup(
-              otherTabGroup,
-              gBrowser.tabs.length
-            );
+            let adoptedTabGroup = gBrowser.adoptTabGroup(otherTabGroup, {
+              tabIndex: gBrowser.tabs.length,
+            });
             adoptedTabGroup.select();
           }
           break;
@@ -384,6 +383,16 @@ document.addEventListener(
           break;
       }
     });
+
+    const containerHistoryPopup = document.getElementById(
+      "sidebar-history-context-menu-container-popup"
+    );
+    containerHistoryPopup.addEventListener("command", event =>
+      PlacesUIUtils.openInContainerTab(event)
+    );
+    containerHistoryPopup.addEventListener("popupshowing", event =>
+      PlacesUIUtils.createContainerTabMenu(event)
+    );
 
     document
       .getElementById("context_reopenInContainerPopupMenu")

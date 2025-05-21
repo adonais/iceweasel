@@ -12,15 +12,15 @@ export class _DSLinkMenu extends React.PureComponent {
   render() {
     const { index, dispatch } = this.props;
     let TOP_STORIES_CONTEXT_MENU_OPTIONS;
-    const PREF_REPORT_CONTENT_ENABLED = "discoverystream.reportContent.enabled";
+    const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
     const prefs = this.props.Prefs.values;
-    const showReporting = prefs[PREF_REPORT_CONTENT_ENABLED];
+    const showAdsReporting = prefs[PREF_REPORT_ADS_ENABLED];
     const isSpoc = this.props.card_type === "spoc";
 
     if (isSpoc) {
       TOP_STORIES_CONTEXT_MENU_OPTIONS = [
         "BlockUrl",
-        ...(showReporting ? ["ReportAd"] : []),
+        ...(showAdsReporting ? ["ReportAd"] : []),
         "ManageSponsoredContent",
         "OurSponsorsAndYourPrivacy",
       ];
@@ -31,7 +31,7 @@ export class _DSLinkMenu extends React.PureComponent {
 
       TOP_STORIES_CONTEXT_MENU_OPTIONS = [
         "CheckBookmark",
-        ...(showReporting ? ["ReportContent"] : []),
+        ...(this.props.section ? ["ReportContent"] : []),
         ...saveToPocketOptions,
         "Separator",
         "OpenInNewWindow",
@@ -76,13 +76,15 @@ export class _DSLinkMenu extends React.PureComponent {
               scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
               recommended_at: this.props.recommended_at,
               received_rank: this.props.received_rank,
+              topic: this.props.topic,
               is_list_card: this.props.is_list_card,
+              position: index,
               ...(this.props.format ? { format: this.props.format } : {}),
               ...(this.props.section
                 ? {
                     section: this.props.section,
                     section_position: this.props.section_position,
-                    is_secton_followed: this.props.is_secton_followed,
+                    is_section_followed: this.props.is_section_followed,
                   }
                 : {}),
             }}

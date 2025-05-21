@@ -106,6 +106,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerRunnable.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
@@ -941,18 +942,20 @@ static constexpr nsLiteralCString kRfpPrefs[] = {
     "privacy.fingerprintingProtection"_ns,
     "privacy.fingerprintingProtection.pbmode"_ns,
     "privacy.fingerprintingProtection.overrides"_ns,
+    "privacy.baselineFingerprintingProtection"_ns,
+    "privacy.baselineFingerprintingProtection.overrides"_ns,
 };
 
 static void RecomputeResistFingerprintingAllDocs(const char*, void*) {
   AutoTArray<RefPtr<Document>, 64> allDocuments;
   Document::GetAllInProcessDocuments(allDocuments);
   for (auto& doc : allDocuments) {
-    if (doc->RecomputeResistFingerprinting()) {
-      if (auto* pc = doc->GetPresContext()) {
-        pc->MediaFeatureValuesChanged(
-            {MediaFeatureChangeReason::PreferenceChange},
-            MediaFeatureChangePropagation::JustThisDocument);
-      }
+    doc->RecomputeResistFingerprinting(
+        /* aForceRefreshRTPCallerType= */ true);
+    if (auto* pc = doc->GetPresContext()) {
+      pc->MediaFeatureValuesChanged(
+          {MediaFeatureChangeReason::PreferenceChange},
+          MediaFeatureChangePropagation::JustThisDocument);
     }
   }
 }
@@ -1916,33 +1919,6 @@ nsIBidiKeyboard* nsContentUtils::GetBidiKeyboard() {
   return sBidiKeyboard;
 }
 
-/**
- * This is used to determine whether a character is in one of the classes
- * which CSS says should be part of the first-letter.  Currently, that is
- * all punctuation classes (P*).  Note that this is a change from CSS2
- * which excluded Pc and Pd.
- *
- * https://www.w3.org/TR/css-pseudo-4/#first-letter-pseudo
- * "Punctuation (i.e, characters that belong to the Punctuation (P*) Unicode
- *  general category [UAX44]) [...]"
- */
-
-// static
-bool nsContentUtils::IsFirstLetterPunctuation(uint32_t aChar) {
-  switch (mozilla::unicode::GetGeneralCategory(aChar)) {
-    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: /* Pc */
-    case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    /* Pd */
-    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   /* Pe */
-    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   /* Pf */
-    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: /* Pi */
-    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   /* Po */
-    case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    /* Ps */
-      return true;
-    default:
-      return false;
-  }
-}
-
 // static
 bool nsContentUtils::IsAlphanumeric(uint32_t aChar) {
   nsUGenCategory cat = mozilla::unicode::GetGenCategory(aChar);
@@ -2398,11 +2374,8 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject,
 // Newer Should RFP Functions ----------------------------------
 // Utilities ---------------------------------------------------
 
-inline void LogDomainAndPrefList(const char* urlType,
-                                 const char* exemptedDomainsPrefName,
-                                 nsAutoCString& url, bool isExemptDomain) {
-  nsAutoCString list;
-  Preferences::GetCString(exemptedDomainsPrefName, list);
+inline void LogDomainAndList(const char* urlType, nsAutoCString& list,
+                             nsAutoCString& url, bool isExemptDomain) {
   MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
           ("%s \"%s\" is %s the exempt list \"%s\"", urlType,
            PromiseFlatCString(url).get(), isExemptDomain ? "in" : "NOT in",
@@ -2436,23 +2409,8 @@ bool nsContentUtils::ETPSaysShouldNotResistFingerprinting(
   // A positive return from this function should always be obeyed.
   // A negative return means we should keep checking things.
 
-  // We do not want this check to apply to RFP, only to FPP
-  // There is one problematic combination of prefs; however:
-  // If RFP is enabled in PBMode only and FPP is enabled globally
-  // (so, in non-PBM mode) - we need to know if we're in PBMode or not.
-  // But that's kind of expensive and we'd like to avoid it if we
-  // don't have to, so special-case that scenario
-  if (StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly() &&
-      !StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
-      StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
-    if (aIsPBM) {
-      // In PBM (where RFP is enabled) do not exempt based on the ETP toggle
-      return false;
-    }
-  } else if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
-             (aIsPBM &&
-              StaticPrefs::
-                  privacy_resistFingerprinting_pbmode_DoNotUseDirectly())) {
+  // We do not want this check to apply to RFP, only to FPP.
+  if (nsRFPService::IsRFPPrefEnabled(aIsPBM)) {
     // In RFP, never use the ETP toggle to exempt.
     // We can safely return false here even if we are not in PBM mode
     // and RFP_pbmode is enabled because we will later see that and
@@ -2512,9 +2470,6 @@ inline bool SchemeSaysShouldNotResistFingerprinting(nsIPrincipal* aPrincipal) {
   return !isContentAccessibleAboutURI;
 }
 
-const char* kExemptedDomainsPrefName =
-    "privacy.resistFingerprinting.exemptedDomains";
-
 inline bool PartionKeyIsAlsoExempted(
     const mozilla::OriginAttributes& aOriginAttributes) {
   // If we've gotten here we have (probably) passed the CookieJarSettings
@@ -2537,14 +2492,14 @@ inline bool PartionKeyIsAlsoExempted(
   }
 
   if (!NS_FAILED(rv)) {
-    bool isExemptPartitionKey =
-        nsContentUtils::IsURIInPrefList(uri, kExemptedDomainsPrefName);
+    nsAutoCString list;
+    nsRFPService::GetExemptedDomainsLowercase(list);
+    bool isExemptPartitionKey = nsContentUtils::IsURIInList(uri, list);
     if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
                      mozilla::LogLevel::Debug)) {
       nsAutoCString url;
       uri->GetHost(url);
-      LogDomainAndPrefList("Partition Key", kExemptedDomainsPrefName, url,
-                           isExemptPartitionKey);
+      LogDomainAndList("Partition Key", list, url, isExemptPartitionKey);
     }
     return isExemptPartitionKey;
   }
@@ -2722,19 +2677,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
            " OriginAttributes) and the URI is %s",
            aURI->GetSpecOrDefault().get()));
 
-  if (!StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
-      !StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly()) {
-    // If neither of the 'regular' RFP prefs are set, then one (or both)
-    // of the PBM-Only prefs are set (or we would have failed the
-    // Positive return check.)  Therefore, if we are not in PBM, return false
-    if (!aOriginAttributes.IsPrivateBrowsing()) {
-      MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
-              ("Inside ShouldResistFingerprinting_dangerous(nsIURI*,"
-               " OriginAttributes) OA PBM Check said false"));
-      return false;
-    }
-  }
-
   // Exclude internal schemes and web extensions
   if (SchemeSaysShouldNotResistFingerprinting(aURI)) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
@@ -2745,15 +2687,14 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 
   bool isExemptDomain = false;
   nsAutoCString list;
-  Preferences::GetCString(kExemptedDomainsPrefName, list);
-  ToLowerCase(list);
+  nsRFPService::GetExemptedDomainsLowercase(list);
   isExemptDomain = IsURIInList(aURI, list);
 
   if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
                    mozilla::LogLevel::Debug)) {
     nsAutoCString url;
     aURI->GetHost(url);
-    LogDomainAndPrefList("URI", kExemptedDomainsPrefName, url, isExemptDomain);
+    LogDomainAndList("URI", list, url, isExemptDomain);
   }
 
   if (isExemptDomain) {
@@ -2810,14 +2751,15 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   }
 
   bool isExemptDomain = false;
-  aPrincipal->IsURIInPrefList(kExemptedDomainsPrefName, &isExemptDomain);
+  nsAutoCString list;
+  nsRFPService::GetExemptedDomainsLowercase(list);
+  aPrincipal->IsURIInList(list, &isExemptDomain);
 
   if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
                    mozilla::LogLevel::Debug)) {
     nsAutoCString origin;
     aPrincipal->GetOrigin(origin);
-    LogDomainAndPrefList("URI", kExemptedDomainsPrefName, origin,
-                         isExemptDomain);
+    LogDomainAndList("URI", list, origin, isExemptDomain);
   }
 
   if (isExemptDomain) {
@@ -3973,9 +3915,13 @@ void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
     nsINode* parent = aContent->GetParentNode();
     nsINode* content = aContent;
     while (parent) {
-      KeyAppendInt(parent->ComputeIndexOf_Deprecated(content), aKey);
+      if (content->IsShadowRoot()) {
+        KeyAppendString("s"_ns, aKey);
+      } else {
+        KeyAppendInt(parent->ComputeIndexOf_Deprecated(content), aKey);
+      }
       content = parent;
-      parent = content->GetParentNode();
+      parent = content->GetParentOrShadowHostNode();
     }
   }
 }
@@ -5136,12 +5082,13 @@ static already_AddRefed<Event> GetEventWithTarget(
 nsresult nsContentUtils::DispatchTrustedEvent(
     Document* aDoc, EventTarget* aTarget, const nsAString& aEventName,
     CanBubble aCanBubble, Cancelable aCancelable, Composed aComposed,
-    bool* aDefaultAction) {
+    bool* aDefaultAction, SystemGroupOnly aSystemGroupOnly) {
   MOZ_ASSERT(!aEventName.EqualsLiteral("input") &&
                  !aEventName.EqualsLiteral("beforeinput"),
              "Use DispatchInputEvent() instead");
   return DispatchEvent(aDoc, aTarget, aEventName, aCanBubble, aCancelable,
-                       aComposed, Trusted::eYes, aDefaultAction);
+                       aComposed, Trusted::eYes, aDefaultAction,
+                       ChromeOnlyDispatch::eNo, aSystemGroupOnly);
 }
 
 // static
@@ -5153,13 +5100,11 @@ nsresult nsContentUtils::DispatchUntrustedEvent(
 }
 
 // static
-nsresult nsContentUtils::DispatchEvent(Document* aDoc, EventTarget* aTarget,
-                                       const nsAString& aEventName,
-                                       CanBubble aCanBubble,
-                                       Cancelable aCancelable,
-                                       Composed aComposed, Trusted aTrusted,
-                                       bool* aDefaultAction,
-                                       ChromeOnlyDispatch aOnlyChromeDispatch) {
+nsresult nsContentUtils::DispatchEvent(
+    Document* aDoc, EventTarget* aTarget, const nsAString& aEventName,
+    CanBubble aCanBubble, Cancelable aCancelable, Composed aComposed,
+    Trusted aTrusted, bool* aDefaultAction,
+    ChromeOnlyDispatch aOnlyChromeDispatch, SystemGroupOnly aSystemGroupOnly) {
   if (!aDoc || !aTarget) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -5173,6 +5118,8 @@ nsresult nsContentUtils::DispatchEvent(Document* aDoc, EventTarget* aTarget,
   }
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch =
       aOnlyChromeDispatch == ChromeOnlyDispatch::eYes;
+  event->WidgetEventPtr()->mFlags.mOnlySystemGroupDispatch =
+      aSystemGroupOnly == SystemGroupOnly::eYes;
 
   bool doDefault = aTarget->DispatchEvent(*event, CallerType::System, err);
   if (aDefaultAction) {
@@ -6192,13 +6139,13 @@ static already_AddRefed<Document> CreateInertDocument(const Document* aTemplate,
 /* static */
 already_AddRefed<Document> nsContentUtils::CreateInertXMLDocument(
     const Document* aTemplate) {
-  return CreateInertDocument(aTemplate, DocumentFlavorXML);
+  return CreateInertDocument(aTemplate, DocumentFlavor::XML);
 }
 
 /* static */
 already_AddRefed<Document> nsContentUtils::CreateInertHTMLDocument(
     const Document* aTemplate) {
-  return CreateInertDocument(aTemplate, DocumentFlavorHTML);
+  return CreateInertDocument(aTemplate, DocumentFlavor::HTML);
 }
 
 /* static */
@@ -6631,6 +6578,8 @@ void nsContentUtils::AddScriptRunner(already_AddRefed<nsIRunnable> aRunnable) {
   }
 
   if (sScriptBlockerCount) {
+    PROFILER_MARKER("nsContentUtils::AddScriptRunner", OTHER, {}, FlowMarker,
+                    Flow::FromPointer(runnable.get()));
     sBlockedScriptRunners->AppendElement(runnable.forget());
     return;
   }
@@ -7113,8 +7062,8 @@ nsresult nsContentUtils::GetWebExposedOriginSerialization(nsIURI* aURI,
 
     if (
         // Schemes in spec. https://url.spec.whatwg.org/#origin
-        !uri->SchemeIs("http") && !uri->SchemeIs("https") &&
-        !uri->SchemeIs("file") && !uri->SchemeIs("resource") &&
+        !net::SchemeIsHttpOrHttps(uri) && !uri->SchemeIs("file") &&
+        !uri->SchemeIs("resource") &&
         // Our own schemes.
         !uri->SchemeIs("moz-extension")) {
       aOrigin.AssignLiteral("null");
@@ -9709,6 +9658,20 @@ class StringBuilder {
           aAppender.AppendLiteral(u"&nbsp;");
           flushedUntil = currentPosition + 1;
           break;
+        case '<':
+          if (StaticPrefs::dom_security_html_serialization_escape_lt_gt()) {
+            aAppender.Append(aStr.FromTo(flushedUntil, currentPosition));
+            aAppender.AppendLiteral(u"&lt;");
+            flushedUntil = currentPosition + 1;
+          }
+          break;
+        case '>':
+          if (StaticPrefs::dom_security_html_serialization_escape_lt_gt()) {
+            aAppender.Append(aStr.FromTo(flushedUntil, currentPosition));
+            aAppender.AppendLiteral(u"&gt;");
+            flushedUntil = currentPosition + 1;
+          }
+          break;
         default:
           break;
       }
@@ -9832,7 +9795,9 @@ static CheckedInt<uint32_t> ExtraSpaceNeededForAttrEncoding(
     switch (*c) {
       case '"':
       case '&':
-      case 0x00A0:
+      case 0x00A0: // NO-BREAK SPACE
+      case '<':
+      case '>':
         ++numEncodedChars;
         break;
       default:
@@ -9851,7 +9816,7 @@ static CheckedInt<uint32_t> ExtraSpaceNeededForAttrEncoding(
   // & in it. We subtract 1 for the null terminator, then 1 more for the
   // existing character that will be replaced.
   constexpr uint32_t maxCharExtraSpace =
-      std::max({std::size("&quot;"), std::size("&amp;"), std::size("&nbsp;")}) -
+      std::max({std::size("&quot;"), std::size("&amp;"), std::size("&nbsp;"), std::size("&lt;"), std::size("&gt;")}) -
       2;
   static_assert(maxCharExtraSpace < 100, "Possible underflow");
   return CheckedInt<uint32_t>(numEncodedChars) * maxCharExtraSpace;

@@ -19,15 +19,14 @@ def Libxul(name, output_category=None):
     if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
         # This is going to be a framework named "XUL", not an ordinary library named
         # "libxul.dylib"
-        GeckoFramework(name, output_category=output_category, linkage=None)
+        GeckoFramework(name, output_category=output_category)
         SHARED_LIBRARY_NAME = "XUL"
     else:
-        GeckoSharedLibrary(name, output_category=output_category, linkage=None)
+        GeckoSharedLibrary(name, output_category=output_category)
         SHARED_LIBRARY_NAME = "xul"
 
     DELAYLOAD_DLLS += [
         "avrt.dll",
-        "bcryptprimitives.dll",
         "comdlg32.dll",
         "credui.dll",
         "d3d11.dll",
@@ -108,7 +107,7 @@ def Libxul(name, output_category=None):
     if CONFIG["RUSTC_NATVIS_LDFLAGS"]:
         LDFLAGS += CONFIG["RUSTC_NATVIS_LDFLAGS"]
 
-    if CONFIG["OS_TARGET"] != "Android" and name == "xul-real":
+    if name == "xul-real":
         SYMBOLS_FILE = "../libxul.symbols"
 
 
@@ -324,6 +323,9 @@ if CONFIG["OS_ARCH"] == "OpenBSD":
 
 if CONFIG["MOZ_ENABLE_DBUS"]:
     OS_LIBS += CONFIG["MOZ_DBUS_LIBS"]
+
+if CONFIG["MOZ_SYSTEM_LIBDRM"]:
+    OS_LIBS += CONFIG["MOZ_LIBDRM_LIBS"]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk" and CONFIG["COMPILE_ENVIRONMENT"]:
     OS_LIBS += [l for l in CONFIG["MOZ_GTK3_LIBS"] if l not in ("-lgtk-3", "-lgdk-3")]

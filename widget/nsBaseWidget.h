@@ -140,7 +140,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   typedef base::Thread Thread;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::SourceSurface SourceSurface;
-  typedef mozilla::layers::BufferMode BufferMode;
   typedef mozilla::layers::CompositorBridgeChild CompositorBridgeChild;
   typedef mozilla::layers::CompositorBridgeParent CompositorBridgeParent;
   typedef mozilla::layers::IAPZCTreeManager IAPZCTreeManager;
@@ -385,8 +384,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
    */
   class AutoLayerManagerSetup {
    public:
-    AutoLayerManagerSetup(nsBaseWidget* aWidget, gfxContext* aTarget,
-                          BufferMode aDoubleBuffering);
+    AutoLayerManagerSetup(nsBaseWidget* aWidget, gfxContext* aTarget);
     ~AutoLayerManagerSetup();
 
    private:
@@ -410,10 +408,11 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   void NotifyLiveResizeStarted();
   void NotifyLiveResizeStopped();
 
+  void NotifyCompositorScrollUpdate(
+      const mozilla::layers::CompositorScrollUpdate& aUpdate) override {};
+
 #if defined(MOZ_WIDGET_ANDROID)
   void RecvToolbarAnimatorMessageFromCompositor(int32_t) override {};
-  void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset,
-                              const CSSToScreenScale& aZoom) override {};
   void RecvScreenPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize,
                         bool aNeedsYFlip) override {};
 #endif
@@ -435,7 +434,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   }
   virtual already_AddRefed<DrawTarget> StartRemoteDrawing();
   virtual already_AddRefed<DrawTarget> StartRemoteDrawingInRegion(
-      const LayoutDeviceIntRegion& aInvalidRegion, BufferMode* aBufferMode) {
+      const LayoutDeviceIntRegion& aInvalidRegion) {
     return StartRemoteDrawing();
   }
   virtual void EndRemoteDrawing() {}

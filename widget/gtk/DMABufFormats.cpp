@@ -5,18 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <drm/xf86drm.h>
+#include <xf86drm.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 
 #include "DMABufLibWrapper.h"
 #include "DMABufFormats.h"
-#include "gbm/gbm.h"
 #ifdef MOZ_WAYLAND
 #  include "nsWaylandDisplay.h"
 #  include "mozilla/widget/mozwayland.h"
 #  include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
 #endif
+#include <gbm.h>
 
 #include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
 

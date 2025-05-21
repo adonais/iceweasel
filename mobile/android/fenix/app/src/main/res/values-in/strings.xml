@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Jelajahi lebih cepat dengan navigasi baru</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Jelajahi lebih cepat dengan navigasi baru</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Di situs web, bilah ini terselip saat Anda menggulir ke bawah untuk ruang penjelajahan tambahan.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Di situs web, bilah ini terselip saat Anda menggulir ke bawah untuk ruang penjelajahan tambahan.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Ketuk dan tahan panah untuk berpindah antar laman dalam riwayat tab ini.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Ketuk dan tahan panah untuk berpindah antar laman dalam riwayat tab ini.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -629,7 +629,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Penjelajahan web yang cepat dan aman</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Setuju dan lanjutkan</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Setuju dan lanjutkan</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Dengan melanjutkan, Anda menyetujui %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -834,8 +834,6 @@
   <string name="preferences_override_account_server">Penyedia akun Mozilla khusus</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Penyedia Sync khusus</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Akun Mozilla/server Sync diubah. Keluar dari aplikasi untuk menerapkan perubahan…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Akun</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1205,7 +1203,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Geser bilah alat ke atas untuk membuka tab</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Gulir untuk menyembunyikan bilah alamat dan bilah alat</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Gulir untuk menyembunyikan bilah alamat dan bilah alat</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Gesek bilah alamat ke samping untuk beralih tab</string>
   <!--
@@ -1521,9 +1519,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Unduhan gagal</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Cari di unduhan</string>
+  <string name="download_search_placeholder">Cari di unduhan</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Tidak ada yang ditemukan</string>
+  <string name="download_search_no_results_found">Tidak ada yang ditemukan</string>
   <!--
     Downloads Content Type Filters
 
@@ -2274,7 +2272,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Ikon preferensi pengecualian perlindungan pelacakan yang ditingkatkan</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2283,8 +2281,6 @@
   <string name="preference_doh_summary">Domain Name System (DNS) melalui HTTPS mengirimkan permintaan Anda untuk mendapatkan nama domain melalui koneksi terenkripsi, sehingga menyediakan DNS yang aman dan mempersulit orang lain untuk melihat situs web mana yang akan diakses. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Pelajari lebih lanjut</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Arahkan ke atas</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Pengecualian</string>
   <!-- Content description for the "Info" button -->
@@ -2822,8 +2818,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Saran Firefox</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Pencarian Tren</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.

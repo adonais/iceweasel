@@ -144,7 +144,7 @@ class nsWindow final : public nsBaseWidget,
   NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
   MOZ_DECLARE_REFCOUNTED_TYPENAME(nsWindow)
 
-  explicit nsWindow(bool aIsChildWindow = false);
+  nsWindow();
 
   void SendAnAPZEvent(mozilla::InputData& aEvent);
 
@@ -554,7 +554,6 @@ class nsWindow final : public nsBaseWidget,
   bool UpdateNonClientMargins(bool aReflowWindow = true);
   void UpdateDarkModeToolbar();
   void ResetLayout();
-  LayoutDeviceIntRegion ComputeNonClientRegion();
   HWND GetOwnerWnd() const { return ::GetWindow(mWnd, GW_OWNER); }
   bool IsOwnerForegroundWindow() const {
     HWND owner = GetOwnerWnd();
@@ -607,7 +606,7 @@ class nsWindow final : public nsBaseWidget,
   bool OnGesture(WPARAM wParam, LPARAM lParam);
   bool OnTouch(WPARAM wParam, LPARAM lParam);
   bool OnHotKey(WPARAM wParam, LPARAM lParam);
-  bool OnPaint(uint32_t aNestingLevel);
+  bool OnPaint();
   void OnWindowPosChanging(WINDOWPOS* info);
   void OnWindowPosChanged(WINDOWPOS* wp);
   void OnSysColorChanged();
@@ -646,8 +645,7 @@ class nsWindow final : public nsBaseWidget,
   LayoutDeviceIntRegion GetOpaqueRegionForTesting() const override {
     return mOpaqueRegion;
   }
-  // Gets the translucent region, relative to the whole window, including the
-  // NC area.
+  // Gets the translucent region, in client coordinates.
   LayoutDeviceIntRegion GetTranslucentRegion();
   void MaybeInvalidateTranslucentRegion();
 
@@ -849,8 +847,8 @@ class nsWindow final : public nsBaseWidget,
 
   // Graphics
   LayoutDeviceIntRect mLastPaintBounds;
-  // The region of the window we know is cleared to transparent already
-  // (relative to the whole window).
+  // The region of the window we know is cleared to transparent already,
+  // in client coords.
   LayoutDeviceIntRegion mClearedRegion;
 
   ResizeState mResizeState = NOT_RESIZING;
@@ -875,9 +873,6 @@ class nsWindow final : public nsBaseWidget,
 
   // Whether we're in the process of sending a WM_SETTEXT ourselves
   bool mSendingSetText = false;
-
-  // Whether we were created as a child window (aka ChildWindow) or not.
-  bool mIsChildWindow : 1;
 
   // Whether we're a PIP window.
   bool mPIPWindow : 1;
@@ -941,10 +936,6 @@ class nsWindow final : public nsBaseWidget,
       mWindowBtnRect;
 
   mozilla::DataMutex<Desktop> mDesktopId;
-
-  // If set, indicates the non-client-area region must be cleared to black on
-  // next paint.
-  bool mNeedsNCAreaClear = false;
 
   friend class nsWindowGfx;
 

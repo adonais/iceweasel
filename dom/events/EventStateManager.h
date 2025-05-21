@@ -530,10 +530,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
     return mGestureDownContent;
   }
 
-  // If the current frame is for the current gesture down content (being
-  // dragged), when it's destroyed, we should continue the gesture on its
-  // parent.
-  void NotifyDestroyingFrameForGesture(nsIFrame* aFrame);
+  // Update the tracked gesture content to the parent of its frame when it's
+  // removed, so that the gesture can be continued.
+  void NotifyContentWillBeRemovedForGesture(nsIContent& aContent);
 
   bool IsTrackingDragGesture() const { return mGestureDownContent != nullptr; }
 
@@ -1300,6 +1299,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   // Update the last known ref point to the current event's mRefPoint.
   static void UpdateLastPointerPosition(WidgetMouseEvent* aMouseEvent);
+
+  void UpdateGestureContent(nsIContent* aContent);
 
   /**
    * Notify target when user has been interaction with some speicific user

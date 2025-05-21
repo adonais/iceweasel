@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-03-26T03:42:10.702051+00:00'
+updated_at: '2025-04-07T08:24:03.558859+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -1273,6 +1273,7 @@ modules:
       - *bvandersloot
       - *dimi
       - *emz
+      - *tjr
     machine_name: core_antitracking
 
   - name: 'Core: APZ (Graphics submodule)'
@@ -2870,7 +2871,8 @@ modules:
       - netwerk/protocol/http/**/*
     meta:
       group: dev-platform
-      url: https://developer.mozilla.org/docs/Web/HTTP/Headers/User-Agent/Firefox
+      url:
+        https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/User-Agent/Firefox
       components:
         - 'Core::Networking: HTTP'
     owners:
@@ -3244,6 +3246,8 @@ modules:
   - name: 'Core: XPCOM'
     description: The cross-platform object model and core data structures.
     includes:
+      - dom/chrome-webidl/IOUtils.webidl
+      - dom/chrome-webidl/PathUtils.webidl
       - startupcache/**/*
       - xpcom/**/*
       - xpcom/base/**/*
@@ -3252,6 +3256,8 @@ modules:
       - xpcom/docs/**/*
       - xpcom/ds/**/*
       - xpcom/glue/**/*
+      - xpcom/io/**/*
+      - xpcom/ioutils/**/*
       - xpcom/reflect/**/*
       - xpcom/rust/**/*
       - xpcom/system/**/*
@@ -3270,6 +3276,7 @@ modules:
       url: :ref:`XPCOM`
       components:
         - Core::XPCOM
+        - Toolkit::IOUtils and PathUtils
       review_group: xpcom-reviewers
     owners:
       - *nika
@@ -4540,5 +4547,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 67ba7c16fafd3456d27a3d7cbf1bf741bc7afc87
-  export: df3168a61c61e5945f0312688eb917cc58bc14fc
+  config: 191cbfa5573d7c94c637045ac3ed62e662fb1b03
+  export: 7fb1baa3c6c64954bdaca31c752859f93cf2b78b

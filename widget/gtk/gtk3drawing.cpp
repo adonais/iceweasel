@@ -28,7 +28,6 @@ static gboolean checkbox_check_state;
 static gboolean notebook_has_tab_gap;
 
 static ToolbarGTKMetrics sToolbarMetrics;
-static CSDWindowDecorationSize sToplevelWindowDecorationSize;
 
 using mozilla::Span;
 
@@ -53,31 +52,9 @@ style_path_print(GtkStyleContext *context)
 }
 #endif
 
-static GtkBorder operator+=(GtkBorder& first, const GtkBorder& second) {
-  first.left += second.left;
-  first.right += second.right;
-  first.top += second.top;
-  first.bottom += second.bottom;
-  return first;
-}
-
 static gint moz_gtk_get_tab_thickness(GtkStyleContext* style);
 
 static void Inset(GdkRectangle*, const GtkBorder&);
-
-static void InsetByMargin(GdkRectangle*, GtkStyleContext* style);
-
-static void moz_gtk_add_style_margin(GtkStyleContext* style, gint* left,
-                                     gint* top, gint* right, gint* bottom) {
-  GtkBorder margin;
-
-  gtk_style_context_get_margin(style, gtk_style_context_get_state(style),
-                               &margin);
-  *left += margin.left;
-  *right += margin.right;
-  *top += margin.top;
-  *bottom += margin.bottom;
-}
 
 static void moz_gtk_add_style_border(GtkStyleContext* style, gint* left,
                                      gint* top, gint* right, gint* bottom) {
@@ -103,14 +80,6 @@ static void moz_gtk_add_style_padding(GtkStyleContext* style, gint* left,
   *right += padding.right;
   *top += padding.top;
   *bottom += padding.bottom;
-}
-
-static void moz_gtk_add_margin_border_padding(GtkStyleContext* style,
-                                              gint* left, gint* top,
-                                              gint* right, gint* bottom) {
-  moz_gtk_add_style_margin(style, left, top, right, bottom);
-  moz_gtk_add_style_border(style, left, top, right, bottom);
-  moz_gtk_add_style_padding(style, left, top, right, bottom);
 }
 
 static void moz_gtk_add_border_padding(GtkStyleContext* style, gint* left,
@@ -194,7 +163,6 @@ void moz_gtk_refresh() {
   }
 
   sToolbarMetrics.initialized = false;
-  sToplevelWindowDecorationSize.initialized = false;
 
   /* This will destroy all of our widgets */
   ResetWidgetCache();
@@ -389,13 +357,6 @@ const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
 gint moz_gtk_get_titlebar_button_spacing() {
   EnsureToolbarMetrics();
   return sToolbarMetrics.inlineSpacing;
-}
-
-gint moz_gtk_get_titlebar_preferred_height() {
-  gint height = 0;
-  gtk_widget_get_preferred_height(GetWidget(MOZ_GTK_HEADER_BAR), nullptr,
-                                  &height);
-  return height;
 }
 
 static gint moz_gtk_window_decoration_paint(cairo_t* cr,
@@ -615,14 +576,6 @@ static void Inset(GdkRectangle* rect, const GtkBorder& aBorder) {
   rect->height -= aBorder.top + aBorder.bottom;
 }
 
-// Inset a rectangle by the margins specified in a style context.
-static void InsetByMargin(GdkRectangle* rect, GtkStyleContext* style) {
-  GtkBorder margin;
-  gtk_style_context_get_margin(style, gtk_style_context_get_state(style),
-                               &margin);
-  Inset(rect, margin);
-}
-
 // Inset a rectangle by the border and padding specified in a style context.
 static void InsetByBorderPadding(GdkRectangle* rect, GtkStyleContext* style) {
   GtkStateFlags state = gtk_style_context_get_state(style);
@@ -632,20 +585,6 @@ static void InsetByBorderPadding(GdkRectangle* rect, GtkStyleContext* style) {
   Inset(rect, padding);
   gtk_style_context_get_border(style, state, &border);
   Inset(rect, border);
-}
-
-static void moz_gtk_draw_styled_frame(GtkStyleContext* style, cairo_t* cr,
-                                      const GdkRectangle* aRect,
-                                      bool drawFocus) {
-  GdkRectangle rect = *aRect;
-
-  InsetByMargin(&rect, style);
-
-  gtk_render_background(style, cr, rect.x, rect.y, rect.width, rect.height);
-  gtk_render_frame(style, cr, rect.x, rect.y, rect.width, rect.height);
-  if (drawFocus) {
-    gtk_render_focus(style, cr, rect.x, rect.y, rect.width, rect.height);
-  }
 }
 
 /* See gtk_range_draw() for reference.
@@ -930,54 +869,6 @@ static gint moz_gtk_arrow_paint(cairo_t* cr, GdkRectangle* rect,
       MOZ_GTK_BUTTON_ARROW, state->image_scale, direction, state_flags);
   gtk_render_arrow(style, cr, arrow_angle, arrow_rect.x, arrow_rect.y,
                    arrow_rect.width);
-  return MOZ_GTK_SUCCESS;
-}
-
-static gint moz_gtk_tooltip_paint(cairo_t* cr, const GdkRectangle* aRect,
-                                  GtkWidgetState* state,
-                                  GtkTextDirection direction) {
-  // Tooltip widget is made in GTK3 as following tree:
-  // Tooltip window
-  //   Horizontal Box
-  //     Icon (not supported by Firefox)
-  //     Label
-  // Each element can be fully styled by CSS of GTK theme.
-  // We have to draw all elements with appropriate offset and right dimensions.
-
-  // Tooltip drawing
-  GtkStyleContext* style =
-      GetStyleContext(MOZ_GTK_TOOLTIP, state->image_scale, direction);
-  GdkRectangle rect = *aRect;
-  gtk_render_background(style, cr, rect.x, rect.y, rect.width, rect.height);
-  gtk_render_frame(style, cr, rect.x, rect.y, rect.width, rect.height);
-
-  // Horizontal Box drawing
-  //
-  // The box element has hard-coded 6px margin-* GtkWidget properties, which
-  // are added between the window dimensions and the CSS margin box of the
-  // horizontal box.  The frame of the tooltip window is drawn in the
-  // 6px margin.
-  // For drawing Horizontal Box we have to inset drawing area by that 6px
-  // plus its CSS margin.
-  GtkStyleContext* boxStyle =
-      GetStyleContext(MOZ_GTK_TOOLTIP_BOX, state->image_scale, direction);
-
-  rect.x += 6;
-  rect.y += 6;
-  rect.width -= 12;
-  rect.height -= 12;
-
-  InsetByMargin(&rect, boxStyle);
-  gtk_render_background(boxStyle, cr, rect.x, rect.y, rect.width, rect.height);
-  gtk_render_frame(boxStyle, cr, rect.x, rect.y, rect.width, rect.height);
-
-  // Label drawing
-  InsetByBorderPadding(&rect, boxStyle);
-
-  GtkStyleContext* labelStyle =
-      GetStyleContext(MOZ_GTK_TOOLTIP_BOX_LABEL, state->image_scale, direction);
-  moz_gtk_draw_styled_frame(labelStyle, cr, &rect, false);
-
   return MOZ_GTK_SUCCESS;
 }
 
@@ -1426,23 +1317,6 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
     case MOZ_GTK_FRAME:
       w = GetWidget(MOZ_GTK_FRAME);
       break;
-    case MOZ_GTK_TOOLTIP: {
-      // In GTK 3 there are 6 pixels of additional margin around the box.
-      // See details there:
-      // https://github.com/GNOME/gtk/blob/5ea69a136bd7e4970b3a800390e20314665aaed2/gtk/ui/gtktooltipwindow.ui#L11
-      *left = *right = *top = *bottom = 6;
-
-      // We also need to add margin/padding/borders from Tooltip content.
-      // Tooltip contains horizontal box, where icon and label is put.
-      // We ignore icon as long as we don't have support for it.
-      GtkStyleContext* boxStyle = GetStyleContext(MOZ_GTK_TOOLTIP_BOX);
-      moz_gtk_add_margin_border_padding(boxStyle, left, top, right, bottom);
-
-      GtkStyleContext* labelStyle = GetStyleContext(MOZ_GTK_TOOLTIP_BOX_LABEL);
-      moz_gtk_add_margin_border_padding(labelStyle, left, top, right, bottom);
-
-      return MOZ_GTK_SUCCESS;
-    }
     /* These widgets have no borders, since they are not containers. */
     case MOZ_GTK_SPLITTER_HORIZONTAL:
     case MOZ_GTK_SPLITTER_VERTICAL:
@@ -1641,69 +1515,6 @@ gint moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length,
   return MOZ_GTK_SUCCESS;
 }
 
-// Best effort implementation of get_shadow_width() from gtkwindow.c...
-static GtkBorder ComputeWindowDecorationSize() {
-  GtkBorder decorationSize = {0, 0, 0, 0};
-  const bool solidDecorations = gtk_style_context_has_class(
-      GetStyleContext(MOZ_GTK_HEADERBAR_WINDOW, 1), "solid-csd");
-  // solid-csd does not use frame extents, quit now.
-  if (solidDecorations) {
-    return decorationSize;
-  }
-
-  // Scale factor is applied later when decoration size is used for actual
-  // gtk windows.
-  GtkStyleContext* context = GetStyleContext(MOZ_GTK_WINDOW_DECORATION);
-
-  /* Always sum border + padding */
-  GtkBorder padding;
-  GtkStateFlags state = gtk_style_context_get_state(context);
-  gtk_style_context_get_border(context, state, &decorationSize);
-  gtk_style_context_get_padding(context, state, &padding);
-  decorationSize += padding;
-
-  // Available on GTK 3.20+.
-  static auto sGtkRenderBackgroundGetClip = (void (*)(
-      GtkStyleContext*, gdouble, gdouble, gdouble, gdouble,
-      GdkRectangle*))dlsym(RTLD_DEFAULT, "gtk_render_background_get_clip");
-
-  if (!sGtkRenderBackgroundGetClip) {
-    return decorationSize;
-  }
-
-  GdkRectangle clip;
-  sGtkRenderBackgroundGetClip(context, 0, 0, 0, 0, &clip);
-
-  GtkBorder extents;
-  extents.top = -clip.y;
-  extents.right = clip.width + clip.x;
-  extents.bottom = clip.height + clip.y;
-  extents.left = -clip.x;
-
-  // Get shadow extents but combine with style margin; use the bigger value.
-  // Margin is used for resize grip size - it's not present on
-  // popup windows.
-  GtkBorder margin;
-  gtk_style_context_get_margin(context, state, &margin);
-
-  extents.top = MAX(extents.top, margin.top);
-  extents.right = MAX(extents.right, margin.right);
-  extents.bottom = MAX(extents.bottom, margin.bottom);
-  extents.left = MAX(extents.left, margin.left);
-
-  decorationSize += extents;
-  return decorationSize;
-}
-
-GtkBorder GetTopLevelCSDDecorationSize() {
-  if (!sToplevelWindowDecorationSize.initialized) {
-    sToplevelWindowDecorationSize.decorationSize =
-        ComputeWindowDecorationSize();
-    sToplevelWindowDecorationSize.initialized = true;
-  }
-  return sToplevelWindowDecorationSize.decorationSize;
-}
-
 /* cairo_t *cr argument has to be a system-cairo. */
 gint moz_gtk_widget_paint(WidgetNodeType widget, cairo_t* cr,
                           GdkRectangle* rect, GtkWidgetState* state, gint flags,
@@ -1750,8 +1561,6 @@ gint moz_gtk_widget_paint(WidgetNodeType widget, cairo_t* cr,
       return moz_gtk_text_view_paint(cr, rect, state, direction);
     case MOZ_GTK_DROPDOWN:
       return moz_gtk_combo_box_paint(cr, rect, state, direction);
-    case MOZ_GTK_TOOLTIP:
-      return moz_gtk_tooltip_paint(cr, rect, state, direction);
     case MOZ_GTK_FRAME:
       return moz_gtk_frame_paint(cr, rect, state, direction);
     case MOZ_GTK_RESIZER:

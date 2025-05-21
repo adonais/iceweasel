@@ -4,7 +4,7 @@
 
 use inherent::inherent;
 
-use super::{CommonMetricData, MetricId};
+use super::{BaseMetricId, ChildMetricMeta, CommonMetricData};
 
 use super::TimeUnit;
 use crate::ipc::need_ipc;
@@ -13,13 +13,14 @@ use glean::traits::Datetime;
 
 #[cfg(feature = "with_gecko")]
 use super::profiler_utils::{
-    glean_to_chrono_datetime, local_now_with_offset, TelemetryProfilerCategory,
+    glean_to_chrono_datetime, local_now_with_offset, stream_identifiers_by_id,
+    TelemetryProfilerCategory,
 };
 
 #[cfg(feature = "with_gecko")]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct DatetimeMetricMarker {
-    id: MetricId,
+    id: BaseMetricId,
     time: chrono::DateTime<FixedOffset>,
 }
 
@@ -32,8 +33,14 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
     fn marker_type_display() -> gecko_profiler::MarkerSchema {
         use gecko_profiler::schema::*;
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
-        schema.set_tooltip_label("{marker.data.id} {marker.data.time}");
-        schema.set_table_label("{marker.name} - {marker.data.id}: {marker.data.time}");
+        schema.set_tooltip_label("{marker.data.cat}.{marker.data.id} {marker.data.time}");
+        schema.set_table_label("{marker.data.cat}.{marker.data.id}: {marker.data.time}");
+        schema.add_key_label_format_searchable(
+            "cat",
+            "Category",
+            Format::UniqueString,
+            Searchable::Searchable,
+        );
         schema.add_key_label_format_searchable(
             "id",
             "Metric",
@@ -47,8 +54,7 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
-        let name = self.id.get_name();
-        json_writer.unique_string_property("id", &name);
+        stream_identifiers_by_id::<DatetimeMetric>(&self.id.into(), json_writer);
         // We need to be careful formatting our datestring so that we can match
         // it to an equivalently formatted string in JavaScript when we're
         // testing these markers. JavaScript's `toISOString` *always* converts
@@ -78,22 +84,23 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
 #[derive(Clone)]
 pub enum DatetimeMetric {
     Parent {
-        /// The metric's ID. Date time metrics canot be labeled, so we only
-        /// store a MetricId. If this changes, this should be changed to a
-        /// MetricGetter to distinguish between metrics and sub-metrics.
-        id: MetricId,
+        /// The metric's ID. Date time metrics cannot be labeled, so we only
+        /// store a BaseMetricId. If this changes, this should be changed to a
+        /// MetricId to distinguish between metrics and sub-metrics.
+        id: BaseMetricId,
         inner: glean::private::DatetimeMetric,
     },
-    Child(DatetimeMetricIpc),
+    Child(ChildMetricMeta),
 }
-#[derive(Debug, Clone)]
-pub struct DatetimeMetricIpc;
+
+crate::define_metric_metadata_getter!(DatetimeMetric, DATETIME_MAP);
+crate::define_metric_namer!(DatetimeMetric);
 
 impl DatetimeMetric {
     /// Create a new datetime metric.
-    pub fn new(id: MetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
         if need_ipc() {
-            DatetimeMetric::Child(DatetimeMetricIpc)
+            DatetimeMetric::Child(ChildMetricMeta::from_common_metric_data(id, meta))
         } else {
             DatetimeMetric::Parent {
                 id,
@@ -105,7 +112,9 @@ impl DatetimeMetric {
     #[cfg(test)]
     pub(crate) fn child_metric(&self) -> Self {
         match self {
-            DatetimeMetric::Parent { .. } => DatetimeMetric::Child(DatetimeMetricIpc),
+            DatetimeMetric::Parent { id, inner } => {
+                DatetimeMetric::Child(ChildMetricMeta::from_metric_identifier(*id, inner))
+            }
             DatetimeMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
         }
     }
@@ -125,6 +134,7 @@ impl DatetimeMetric {
     ///   Hemisphere. Negative seconds mean Western Hemisphere.
     #[cfg_attr(not(feature = "with_gecko"), allow(dead_code))]
     #[allow(clippy::too_many_arguments)]
+    #[allow(deprecated)] // use of deprecated chrono functions.
     pub(crate) fn set_with_details(
         &self,
         year: i32,
@@ -316,6 +326,7 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
+    #[allow(deprecated)] // use of deprecated chrono functions.
     fn sets_datetime_value() {
         let _lock = lock_test();
 
@@ -347,6 +358,7 @@ mod test {
     }
 
     #[test]
+    #[allow(deprecated)] // use of deprecated chrono functions.
     fn datetime_ipc() {
         // DatetimeMetric doesn't support IPC.
         let _lock = lock_test();

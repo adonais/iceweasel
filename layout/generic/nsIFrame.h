@@ -2357,8 +2357,7 @@ class nsIFrame : public nsQueryFrame {
   int16_t DetermineDisplaySelection();
 
  public:
-  virtual nsresult GetContentForEvent(const mozilla::WidgetEvent* aEvent,
-                                      nsIContent** aContent);
+  virtual nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const;
 
   // This structure keeps track of the content node and offsets associated with
   // a point; there is a primary and a secondary offset associated with any
@@ -3280,8 +3279,9 @@ class nsIFrame : public nsQueryFrame {
   // Returns true iff this frame's computed block-size property is one of the
   // intrinsic-sizing keywords.
   bool HasIntrinsicKeywordForBSize() const {
-    const auto& bSize = StylePosition()->BSize(GetWritingMode());
-    return IsIntrinsicKeyword(bSize);
+    const auto bSize =
+        StylePosition()->BSize(GetWritingMode(), StyleDisplay()->mPosition);
+    return IsIntrinsicKeyword(*bSize);
   }
 
  protected:
@@ -3464,6 +3464,19 @@ class nsIFrame : public nsQueryFrame {
   bool IsHiddenByContentVisibilityOnAnyAncestor(
       const mozilla::EnumSet<IncludeContentVisibility>& =
           IncludeAllContentVisibility()) const;
+
+  /**
+   * @brief Returns true if the frame is hidden=until-found or in a closed
+   *        <details> element.
+   *
+   * The frame is considered hidden=until-found, if all parent frames are either
+   * visible or hidden=until-found. If a hidden=until-found element is inside a
+   * content-visibility:hidden element (or vice versa), this returns false.
+   *
+   * Similarly, if the frame is inside a closed details element, and it is not
+   * hidden, this also returns true.
+   */
+  bool IsHiddenUntilFoundOrClosedDetails() const;
 
   /**
    * Returns true is this frame is hidden by its first unskipped in flow
@@ -5622,8 +5635,10 @@ class nsIFrame : public nsQueryFrame {
   /**
    * Dump the frame tree beginning from the root frame.
    */
-  void DumpFrameTree(bool aListOnlyDeterministic = false) const;
-  void DumpFrameTreeInCSSPixels(bool aListOnlyDeterministic = false) const;
+  void DumpFrameTree() const;
+  void DumpFrameTree(bool aListOnlyDeterministic) const;
+  void DumpFrameTreeInCSSPixels() const;
+  void DumpFrameTreeInCSSPixels(bool aListOnlyDeterministic) const;
 
   /**
    * Dump the frame tree beginning from ourselves.

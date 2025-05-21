@@ -4,10 +4,12 @@
 
 use inherent::inherent;
 
-use glean::traits::MemoryDistribution;
-
 use crate::ipc::with_ipc_payload;
-use crate::private::{DistributionData, MemoryDistributionMetric, MetricId};
+use crate::private::{
+    BaseMetric, BaseMetricId, BaseMetricResult, DistributionData, MemoryDistributionMetric,
+    MetricMetadataGetterImpl,
+};
+use glean::traits::MemoryDistribution;
 use std::collections::HashMap;
 
 #[cfg(feature = "with_gecko")]
@@ -23,12 +25,21 @@ use super::profiler_utils::{
 #[derive(Clone)]
 pub enum LabeledMemoryDistributionMetric {
     Parent(MemoryDistributionMetric),
-    Child { id: MetricId, label: String },
+    Child { id: BaseMetricId, label: String },
 }
+
+crate::define_metric_metadata_getter!(
+    MemoryDistributionMetric,
+    LabeledMemoryDistributionMetric,
+    MEMORY_DISTRIBUTION_MAP,
+    LABELED_MEMORY_DISTRIBUTION_MAP
+);
+
+crate::define_metric_namer!(LabeledMemoryDistributionMetric, LABELED);
 
 impl LabeledMemoryDistributionMetric {
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> crate::private::MetricGetter {
+    pub(crate) fn metric_id(&self) -> crate::private::MetricId {
         match self {
             LabeledMemoryDistributionMetric::Parent(p) => p.metric_id(),
             LabeledMemoryDistributionMetric::Child { id, .. } => (*id).into(),
@@ -45,7 +56,7 @@ impl LabeledMemoryDistributionMetric {
                         "MemoryDistribution::accumulate",
                         TelemetryProfilerCategory,
                         Default::default(),
-                        DistributionMetricMarker::new(
+                        DistributionMetricMarker::<LabeledMemoryDistributionMetric, u64>::new(
                             (*id).into(),
                             Some(label.clone()),
                             DistributionValues::Samples(truncate_vector_for_marker(&samples)),
@@ -82,7 +93,7 @@ impl MemoryDistribution for LabeledMemoryDistributionMetric {
                         "MemoryDistribution::accumulate",
                         TelemetryProfilerCategory,
                         Default::default(),
-                        DistributionMetricMarker::new(
+                        DistributionMetricMarker::<LabeledMemoryDistributionMetric, u64>::new(
                             (*id).into(),
                             Some(label.clone()),
                             DistributionValues::Sample(sample),
@@ -125,6 +136,20 @@ impl MemoryDistribution for LabeledMemoryDistributionMetric {
                 "Cannot get the number of recorded errors for labeled_memory_distribution {:?} in non-parent process!",
                 id
             ),
+        }
+    }
+}
+
+impl BaseMetric for LabeledMemoryDistributionMetric {
+    type BaseMetricT = MemoryDistributionMetric;
+    fn get_base_metric<'a>(&'a self) -> BaseMetricResult<'a, Self::BaseMetricT> {
+        match self {
+            LabeledMemoryDistributionMetric::Parent(memory_distribution_metric) => {
+                BaseMetricResult::BaseMetric(&memory_distribution_metric)
+            }
+            LabeledMemoryDistributionMetric::Child { id, label } => {
+                BaseMetricResult::IndexLabelPair(*id, &label)
+            }
         }
     }
 }
@@ -180,8 +205,8 @@ mod test {
                         .get(
                             &child_metric
                                 .metric_id()
-                                .metric_id()
-                                .expect("Cannot perform IPC calls without a MetricId")
+                                .base_metric_id()
+                                .expect("Cannot perform IPC calls without a BaseMetricId")
                         )
                         .unwrap()
                         .get(label)

@@ -3,7 +3,7 @@ use super::conv;
 use arrayvec::ArrayVec;
 use ash::vk;
 
-use std::{mem, ops::Range, slice};
+use core::{mem, ops::Range};
 
 const ALLOCATION_GRANULARITY: u32 = 16;
 const DST_IMAGE_LAYOUT: vk::ImageLayout = vk::ImageLayout::TRANSFER_DST_OPTIMAL;
@@ -900,7 +900,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
                 layout.raw,
                 conv::map_shader_stage(stages),
                 offset_bytes,
-                slice::from_raw_parts(data.as_ptr().cast(), data.len() * 4),
+                bytemuck::cast_slice(data),
             )
         };
     }
@@ -1277,7 +1277,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
                     self.active,
                     &vk::CopyAccelerationStructureInfoKHR {
                         s_type: vk::StructureType::COPY_ACCELERATION_STRUCTURE_INFO_KHR,
-                        p_next: std::ptr::null(),
+                        p_next: core::ptr::null(),
                         src: src.raw,
                         dst: dst.raw,
                         mode,

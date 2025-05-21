@@ -101,6 +101,7 @@ export class UrlbarInput {
     this.textbox.appendChild(
       this.window.MozXULElement.parseXULToFragment(`
         <vbox class="urlbarView"
+              context=""
               role="group"
               tooltip="aHTMLTooltip">
           <html:div class="urlbarView-body-outer">
@@ -213,7 +214,11 @@ export class UrlbarInput {
     // If the toolbar is not visible in this window or the urlbar is readonly,
     // we'll stop here, so that most properties of the input object are valid,
     // but we won't handle events.
-    if (!this.window.toolbar.visible || this.readOnly) {
+    if (
+      !this.window.toolbar.visible ||
+      this.window.document.documentElement.hasAttribute("taskbartab") ||
+      this.readOnly
+    ) {
       return;
     }
 
@@ -270,6 +275,7 @@ export class UrlbarInput {
     this.window.addEventListener("unload", this);
 
     this.window.gBrowser.tabContainer.addEventListener("TabSelect", this);
+    this.window.gBrowser.addTabsProgressListener(this);
 
     this.window.addEventListener("customizationstarting", this);
     this.window.addEventListener("aftercustomization", this);
@@ -486,6 +492,7 @@ export class UrlbarInput {
 
     let value = this.window.gBrowser.userTypedValue;
     let valid = false;
+    let isReverting = !uri;
 
     // If `value` is null or if it's an empty string and we're switching tabs
     // set value to the browser's current URI. When a user empties the input,
@@ -594,7 +601,14 @@ export class UrlbarInput {
 
     // The proxystate must be set before setting search mode below because
     // search mode depends on it.
-    this.setPageProxyState(valid ? "valid" : "invalid", dueToTabSwitch);
+    this.setPageProxyState(
+      valid ? "valid" : "invalid",
+      dueToTabSwitch,
+      !isReverting &&
+        dueToTabSwitch &&
+        this.getBrowserState(this.window.gBrowser.selectedBrowser)
+          .isUnifiedSearchButtonAvailable
+    );
 
     if (
       state.persist?.shouldPersist &&
@@ -656,6 +670,29 @@ export class UrlbarInput {
   }
 
   /**
+   * Function for tabs progress listener.
+   *
+   * @param {nsIBrowser} browser
+   * @param {nsIWebProgress} webProgress
+   *   The nsIWebProgress instance that fired the notification.
+   * @param {nsIRequest} request
+   *   The associated nsIRequest.  This may be null in some cases.
+   * @param {nsIURI} location
+   *   The URI of the location that is being loaded.
+   */
+  onLocationChange(browser, webProgress, request, location) {
+    if (
+      webProgress.isTopLevel &&
+      browser != this.window.gBrowser.selectedBrowser &&
+      !this.window.isBlankPageURL(location.spec)
+    ) {
+      // If the page is loaded on background tab, make Unified Search Button
+      // unavailable when back to the tab.
+      this.getBrowserState(browser).isUnifiedSearchButtonAvailable = false;
+    }
+  }
+
+  /**
    * Passes DOM events to the _on_<event type> methods.
    *
    * @param {Event} event The event to handle.
@@ -709,14 +746,14 @@ export class UrlbarInput {
    *   Where we expect the result to be opened.
    * @property {object} openParams
    *   The parameters related to where the result will be opened.
-   * @property {Node} engine
+   * @property {nsISearchEngine} engine
    *   The selected one-off's engine.
    */
 
   /**
    * Handles an event which would cause a URL or text to be opened.
    *
-   * @param {object} [options]
+   * @param {object} options
    *   Options for the navigation.
    * @param {Event} [options.event]
    *   The event triggering the open.
@@ -808,7 +845,21 @@ export class UrlbarInput {
         oneOffParams.engine,
         searchString
       );
-      this._recordSearch(oneOffParams.engine, event);
+      if (oneOffParams.openWhere == "tab") {
+        this.window.gBrowser.tabContainer.addEventListener(
+          "TabOpen",
+          tabEvent =>
+            this._recordSearch(
+              oneOffParams.engine,
+              event,
+              {},
+              tabEvent.target.linkedBrowser
+            ),
+          { once: true }
+        );
+      } else {
+        this._recordSearch(oneOffParams.engine, event);
+      }
 
       lazy.UrlbarUtils.addToFormHistory(
         this,
@@ -837,9 +888,6 @@ export class UrlbarInput {
       return;
     }
 
-    let selectedResult = result || this.view.selectedResult;
-    this.controller.recordSelectedResult(event, selectedResult);
-
     let where = oneOffParams?.openWhere || this._whereToOpen(event);
     if (selectedPrivateResult) {
       where = "window";
@@ -848,6 +896,7 @@ export class UrlbarInput {
     openParams.allowInheritPrincipal = false;
     url = this._maybeCanonizeURL(event, url) || url.trim();
 
+    let selectedResult = result || this.view.selectedResult;
     this.controller.engagementEvent.record(event, {
       element,
       selType,
@@ -1096,8 +1145,6 @@ export class UrlbarInput {
       this.view.close({ elementPicked: true });
     }
 
-    this.controller.recordSelectedResult(event, result);
-
     if (isCanonized) {
       this.controller.engagementEvent.record(event, {
         result,
@@ -1281,7 +1328,24 @@ export class UrlbarInput {
           alias: result.payload.keyword,
         };
         const engine = Services.search.getEngineByName(result.payload.engine);
-        this._recordSearch(engine, event, actionDetails);
+
+        if (where == "tab") {
+          // The TabOpen event is fired synchronously so tabEvent.target
+          // is guaranteed to be our new search tab.
+          this.window.gBrowser.tabContainer.addEventListener(
+            "TabOpen",
+            tabEvent =>
+              this._recordSearch(
+                engine,
+                event,
+                actionDetails,
+                tabEvent.target.linkedBrowser
+              ),
+            { once: true }
+          );
+        } else {
+          this._recordSearch(engine, event, actionDetails);
+        }
 
         if (!result.payload.inPrivateWindow) {
           lazy.UrlbarUtils.addToFormHistory(
@@ -1829,8 +1893,10 @@ export class UrlbarInput {
         null,
         "search-mode-switcher"
       ).uri.spec;
+      // TODO: record SAP telemetry, see Bug 1961789.
     } else {
       url = searchEngine.searchForm;
+      lazy.BrowserSearchTelemetry.recordSearchForm(searchEngine, "urlbar");
     }
 
     this._lastSearchString = "";
@@ -2137,14 +2203,6 @@ export class UrlbarInput {
 
     this.#updateTextboxPosition();
 
-    if (Cu.isInAutomation) {
-      if (lazy.UrlbarPrefs.get("disableExtendForTests")) {
-        this.setAttribute("breakout-extend-disabled", "true");
-        return;
-      }
-      this.removeAttribute("breakout-extend-disabled");
-    }
-
     this.setAttribute("breakout-extend", "true");
 
     // Enable the animation only after the first extend call to ensure it
@@ -2185,14 +2243,24 @@ export class UrlbarInput {
    *        Indicates whether we should update the PopupNotifications
    *        visibility due to this change, otherwise avoid doing so as it is
    *        being handled somewhere else.
+   * @param {boolean} [forceUnifiedSearchButtonAvailable]
+   *        If this parameter is true, force to make Unified Search Button available.
+   *        Otherwise, the availability will be depedent on the proxy state.
+   *        Default value is false.
    */
-  setPageProxyState(state, updatePopupNotifications) {
+  setPageProxyState(
+    state,
+    updatePopupNotifications,
+    forceUnifiedSearchButtonAvailable = false
+  ) {
     let prevState = this.getAttribute("pageproxystate");
 
     this.setAttribute("pageproxystate", state);
     this._inputContainer.setAttribute("pageproxystate", state);
     this._identityBox?.setAttribute("pageproxystate", state);
-    this.toggleAttribute("unifiedsearchbutton-available", state == "invalid");
+    this.setUnifiedSearchButtonAvailability(
+      forceUnifiedSearchButtonAvailable || state == "invalid"
+    );
 
     if (state == "valid") {
       this._lastValidURLStr = this.value;
@@ -2936,18 +3004,26 @@ export class UrlbarInput {
    *   The engine to generate the query for.
    * @param {Event} event
    *   The event that triggered this query.
-   * @param {object} searchActionDetails
+   * @param {object} [searchActionDetails]
    *   The details associated with this search query.
-   * @param {boolean} searchActionDetails.isSuggestion
+   * @param {boolean} [searchActionDetails.isSuggestion]
    *   True if this query was initiated from a suggestion from the search engine.
-   * @param {boolean} searchActionDetails.alias
+   * @param {boolean} [searchActionDetails.alias]
    *   True if this query was initiated via a search alias.
-   * @param {boolean} searchActionDetails.isFormHistory
+   * @param {boolean} [searchActionDetails.isFormHistory]
    *   True if this query was initiated from a form history result.
-   * @param {string} searchActionDetails.url
+   * @param {string} [searchActionDetails.url]
    *   The url this query was triggered with.
+   * @param {XULBrowserElement} [browser]
+   *   The browser where the search is being opened.
+   *   Defaults to the window's selected browser.
    */
-  _recordSearch(engine, event, searchActionDetails = {}) {
+  _recordSearch(
+    engine,
+    event,
+    searchActionDetails = {},
+    browser = this.window.gBrowser.selectedBrowser
+  ) {
     const isOneOff = this.view.oneOffSearchButtons.eventTargetIsAOneOff(event);
     const searchSource = this.getSearchSource(event);
 
@@ -2967,7 +3043,7 @@ export class UrlbarInput {
 
     // Sending a trigger to ASRouter when a search happens
     lazy.ASRouter.sendTriggerMessage({
-      browser: this.window.gBrowser.selectedBrowser,
+      browser,
       id: "onSearch",
       context: {
         isSuggestion: searchActionDetails.isSuggestion || false,
@@ -2976,16 +3052,11 @@ export class UrlbarInput {
       },
     });
 
-    lazy.BrowserSearchTelemetry.recordSearch(
-      this.window.gBrowser.selectedBrowser,
-      engine,
-      searchSource,
-      {
-        ...searchActionDetails,
-        isOneOff,
-        newtabSessionId: this._handoffSession,
-      }
-    );
+    lazy.BrowserSearchTelemetry.recordSearch(browser, engine, searchSource, {
+      ...searchActionDetails,
+      isOneOff,
+      newtabSessionId: this._handoffSession,
+    });
   }
 
   /**
@@ -3882,6 +3953,18 @@ export class UrlbarInput {
     );
 
     this._addObservers();
+  }
+
+  /**
+   * Set Unified Search Button availability.
+   *
+   * @param {boolean} available If true Unified Search Button will be available.
+   */
+  setUnifiedSearchButtonAvailability(available) {
+    this.toggleAttribute("unifiedsearchbutton-available", available);
+    this.getBrowserState(
+      this.window.gBrowser.selectedBrowser
+    ).isUnifiedSearchButtonAvailable = available;
   }
 
   /**

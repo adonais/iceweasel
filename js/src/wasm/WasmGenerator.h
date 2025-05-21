@@ -102,6 +102,7 @@ struct CompiledCode {
   FuncIonPerfSpewerVector funcIonSpewers;
   FuncBaselinePerfSpewerVector funcBaselineSpewers;
   FeatureUsage featureUsage;
+  TierStats tierStats;
 
   [[nodiscard]] bool swap(jit::MacroAssembler& masm);
 
@@ -166,6 +167,7 @@ struct CompileTaskState {
 
 struct CompileTask : public HelperThreadTask {
   const CodeMetadata& codeMeta;
+  const CodeTailMetadata* codeTailMeta;
   const CompilerEnvironment& compilerEnv;
   const CompileState compileState;
 
@@ -175,9 +177,11 @@ struct CompileTask : public HelperThreadTask {
   CompiledCode output;
 
   CompileTask(const CodeMetadata& codeMeta,
+              const CodeTailMetadata* codeTailMeta,
               const CompilerEnvironment& compilerEnv, CompileState compileState,
               CompileTaskState& state, size_t defaultChunkSize)
       : codeMeta(codeMeta),
+        codeTailMeta(codeTailMeta),
         compilerEnv(compilerEnv),
         compileState(compileState),
         state(state),
@@ -214,6 +218,14 @@ class MOZ_STACK_CLASS ModuleGenerator {
     ~MacroAssemblerScope() = default;
   };
 
+  // Encapsulates all the results of creating a code block.
+  struct CodeBlockResult {
+    UniqueCodeBlock codeBlock;
+    UniqueLinkData linkData;
+    FuncIonPerfSpewerVector funcIonSpewers;
+    FuncBaselinePerfSpewerVector funcBaselineSpewers;
+  };
+
   // Constant parameters
   SharedCompileArgs const compileArgs_;
   const CompileState compileState_;
@@ -235,8 +247,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   CallRefMetricsRangeVector funcDefCallRefMetrics_;
   AllocSitesRangeVector funcDefAllocSites_;
   FuncImportVector funcImports_;
-  UniqueLinkData sharedStubsLinkData_;
-  UniqueCodeBlock sharedStubsCodeBlock_;
+  CodeBlockResult sharedStubs_;
   MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
   FeatureUsage featureUsage_;
 
@@ -257,6 +268,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   uint32_t startOfUnpatchedCallsites_;
   uint32_t numCallRefMetrics_;
   uint32_t numAllocSites_;
+  TierStats tierStats_;
 
   // Parallel compilation
   bool parallel_;
@@ -285,9 +297,8 @@ class MOZ_STACK_CLASS ModuleGenerator {
   // will go into this code block. All previous code blocks must be finished.
   [[nodiscard]] bool startCodeBlock(CodeBlockKind kind);
   // Finish the creation of a code block. This will move all the compiled code
-  // and metadata into the code block and initialize it. Returns a `linkData`
-  // through an out-param that can be serialized with the code block.
-  UniqueCodeBlock finishCodeBlock(UniqueLinkData* linkData);
+  // and metadata into the code block and initialize it.
+  [[nodiscard]] bool finishCodeBlock(CodeBlockResult* result);
 
   // Generate a code block containing all stubs that are shared between the
   // different tiers.
@@ -300,9 +311,8 @@ class MOZ_STACK_CLASS ModuleGenerator {
   // Starts the creation of a partial tier of wasm code. The specified function
   // must be compiled, then finishTier must be called.
   [[nodiscard]] bool startPartialTier(uint32_t funcIndex);
-  // Finishes a complete or partial tier of wasm code. Returns a `linkData`
-  // through an out-param that can be serialized with the code block.
-  UniqueCodeBlock finishTier(UniqueLinkData* linkData);
+  // Finishes a complete or partial tier of wasm code.
+  [[nodiscard]] bool finishTier(TierStats* tierStats, CodeBlockResult* result);
 
   bool isAsmJS() const { return codeMeta_->isAsmJS(); }
   Tier tier() const { return compilerEnv_->tier(); }
@@ -348,7 +358,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   // to being SharedModuleMetadata.
 
   SharedModule finishModule(
-      const BytecodeBufferOrSource& bytecode, MutableModuleMetadata moduleMeta,
+      const BytecodeBufferOrSource& bytecode, ModuleMetadata& moduleMeta,
       JS::OptimizedEncodingListener* maybeCompleteTier2Listener);
   [[nodiscard]] bool finishTier2(const Module& module);
   [[nodiscard]] bool finishPartialTier2();

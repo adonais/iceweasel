@@ -219,6 +219,7 @@ V2_ROUTE_TEMPLATES = [
     "index.{trust-domain}.v2.{project}.pushdate.{build_date}.latest.{product}.{job-name}",
     "index.{trust-domain}.v2.{project}.pushlog-id.{pushlog_id}.{product}.{job-name}",
     "index.{trust-domain}.v2.{project}.revision.{branch_rev}.{product}.{job-name}",
+    "index.{trust-domain}.v2.{project}.revision.{branch_git_rev}.{product}.{job-name}",
 ]
 
 # {central, inbound, autoland} write to a "trunk" index prefix. This facilitates
@@ -232,6 +233,7 @@ V2_SHIPPABLE_TEMPLATES = [
     "index.{trust-domain}.v2.{project}.shippable.{build_date}.revision.{branch_rev}.{product}.{job-name}",  # noqa - too long
     "index.{trust-domain}.v2.{project}.shippable.{build_date}.latest.{product}.{job-name}",
     "index.{trust-domain}.v2.{project}.shippable.revision.{branch_rev}.{product}.{job-name}",
+    "index.{trust-domain}.v2.{project}.shippable.revision.{branch_git_rev}.{product}.{job-name}",
 ]
 
 V2_SHIPPABLE_L10N_TEMPLATES = [
@@ -259,6 +261,12 @@ TREEHERDER_ROUTE_ROOT = "tc-treeherder"
 def get_branch_rev(config):
     return config.params[
         "{}head_rev".format(config.graph_config["project-repo-param-prefix"])
+    ]
+
+
+def get_branch_git_rev(config):
+    return config.params[
+        "{}head_git_rev".format(config.graph_config["project-repo-param-prefix"])
     ]
 
 
@@ -1528,6 +1536,7 @@ def build_treescript_payload(config, task, task_def):
         Optional("ignore-closed-tree"): bool,
         Optional("dontbuild"): bool,
         Optional("tags"): [Any("buildN", "release", None)],
+        Optional("force-dry-run"): bool,
         Optional("android-l10n-import-info"): {
             Required("from-repo-url"): str,
             Required("toml-info"): [
@@ -1562,6 +1571,7 @@ def build_treescript_payload(config, task, task_def):
             }
         ],
         Optional("bump-files"): [str],
+        Optional("merge-info"): object,
     },
 )
 def build_landoscript_payload(config, task, task_def):
@@ -1575,6 +1585,9 @@ def build_landoscript_payload(config, task, task_def):
 
     if worker.get("dontbuild"):
         task_def["payload"]["dontbuild"] = True
+
+    if worker.get("force-dry-run"):
+        task_def["payload"]["dry_run"] = True
 
     if worker.get("android-l10n-import-info"):
         android_l10n_import_info = {}
@@ -1657,6 +1670,34 @@ def build_landoscript_payload(config, task, task_def):
         task_def["payload"]["version_bump_info"] = bump_info
         actions.append("version_bump")
 
+    if worker.get("merge-info"):
+        merge_info = {
+            merge_param_name.replace("-", "_"): merge_param_value
+            for merge_param_name, merge_param_value in worker["merge-info"].items()
+            if merge_param_name != "version-files"
+        }
+        merge_info["version_files"] = [
+            {
+                file_param_name.replace("-", "_"): file_param_value
+                for file_param_name, file_param_value in file_entry.items()
+            }
+            for file_entry in worker["merge-info"]["version-files"]
+        ]
+        # hack alert: co-opt the l10n_bump_info into the merge_info section
+        # this should be cleaned up to avoid l10n_bump_info ever existing
+        # in the payload
+        if task_def["payload"].get("l10n_bump_info"):
+            actions.remove("l10n_bump")
+            merge_info["l10n_bump_info"] = task_def["payload"].pop("l10n_bump_info")
+
+        task_def["payload"]["merge_info"] = merge_info
+        actions.append("merge_day")
+
+    scopes = set(task_def.get("scopes", []))
+    scopes.add(f"project:releng:lando:repo:{worker['lando-repo']}")
+    scopes.update([f"project:releng:lando:action:{action}" for action in actions])
+    task_def["scopes"] = sorted(scopes)
+
 
 @payload_builder(
     "invalid",
@@ -1690,25 +1731,44 @@ def set_implementation(config, tasks):
     Set the worker implementation based on the worker-type alias.
     """
     for task in tasks:
-        worker = task.setdefault("worker", {})
-        if "implementation" in task["worker"]:
-            yield task
-            continue
-
-        impl, os = worker_type_implementation(
+        default_worker_implementation, default_os = worker_type_implementation(
             config.graph_config, config.params, task["worker-type"]
         )
 
+        worker = task.setdefault("worker", {})
         tags = task.setdefault("tags", {})
-        tags["worker-implementation"] = impl
+
+        worker_implementation = worker.get(
+            "implementation", default_worker_implementation
+        )
+        tag_worker_implementation = _get_worker_implementation_tag(
+            config, task["worker-type"], worker_implementation
+        )
+        if worker_implementation:
+            worker["implementation"] = worker_implementation
+            tags["worker-implementation"] = tag_worker_implementation
+
+        os = worker.get("os", default_os)
         if os:
             tags["os"] = os
-
-        worker["implementation"] = impl
-        if os:
             worker["os"] = os
 
         yield task
+
+
+def _get_worker_implementation_tag(config, task_worker_type, worker_implementation):
+    # Scriptworkers have different types of payload and each sets its own
+    # worker-implementation. Per bug 1955941, we want to bundle them all in one category
+    # through their tags.
+    provisioner_id, _ = get_worker_type(
+        config.graph_config,
+        config.params,
+        task_worker_type,
+    )
+    if provisioner_id in ("scriptworker-k8s", "scriptworker-prov-v1"):
+        return "scriptworker"
+
+    return worker_implementation
 
 
 @transforms.add
@@ -1787,7 +1847,7 @@ def task_name_from_label(config, tasks):
         if "label" not in task:
             if taskname is None:
                 raise Exception("task has neither a name nor a label")
-            task["label"] = "{}-{}".format(config.kind, taskname)
+            task["label"] = f"{config.kind}-{taskname}"
         yield task
 
 
@@ -1838,11 +1898,19 @@ def add_generic_index_routes(config, task):
     subs["product"] = index["product"]
     subs["trust-domain"] = config.graph_config["trust-domain"]
     subs["branch_rev"] = get_branch_rev(config)
+    try:
+        subs["branch_git_rev"] = get_branch_git_rev(config)
+    except KeyError:
+        pass
 
     project = config.params.get("project")
 
     for tpl in V2_ROUTE_TEMPLATES:
-        routes.append(tpl.format(**subs))
+        try:
+            routes.append(tpl.format(**subs))
+        except KeyError:
+            # Ignore errors that arise from branch_git_rev not being set.
+            pass
 
     # Additionally alias all tasks for "trunk" repos into a common
     # namespace.
@@ -1871,9 +1939,17 @@ def add_shippable_index_routes(config, task):
     subs["product"] = index["product"]
     subs["trust-domain"] = config.graph_config["trust-domain"]
     subs["branch_rev"] = get_branch_rev(config)
+    try:
+        subs["branch_git_rev"] = get_branch_git_rev(config)
+    except KeyError:
+        pass
 
     for tpl in V2_SHIPPABLE_TEMPLATES:
-        routes.append(tpl.format(**subs))
+        try:
+            routes.append(tpl.format(**subs))
+        except KeyError:
+            # Ignore errors that arise from branch_git_rev not being set.
+            pass
 
     # Also add routes for en-US
     task = add_shippable_l10n_index_routes(config, task, force_locale="en-US")

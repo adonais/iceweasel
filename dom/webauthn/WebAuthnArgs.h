@@ -26,18 +26,30 @@ class WebAuthnRegisterArgs final : public nsIWebAuthnRegisterArgs {
         mClientDataJSON(aClientDataJSON),
         mPrivateBrowsing(aPrivateBrowsing),
         mInfo(aInfo),
+        mEnforceCredentialProtectionPolicy(false),
         mCredProps(false),
         mHmacCreateSecret(false),
+        mLargeBlobSupportRequired(Nothing()),
         mMinPinLength(false),
         mPrf(false) {
     for (const WebAuthnExtension& ext : mInfo.Extensions()) {
       switch (ext.type()) {
+        case WebAuthnExtension::TWebAuthnExtensionCredProtect:
+          mCredentialProtectionPolicy.emplace(
+              ext.get_WebAuthnExtensionCredProtect().policy());
+          mEnforceCredentialProtectionPolicy =
+              ext.get_WebAuthnExtensionCredProtect().required();
+          break;
         case WebAuthnExtension::TWebAuthnExtensionCredProps:
           mCredProps = ext.get_WebAuthnExtensionCredProps().credProps();
           break;
         case WebAuthnExtension::TWebAuthnExtensionHmacSecret:
           mHmacCreateSecret =
               ext.get_WebAuthnExtensionHmacSecret().hmacCreateSecret();
+          break;
+        case WebAuthnExtension::TWebAuthnExtensionLargeBlob:
+          mLargeBlobSupportRequired =
+              ext.get_WebAuthnExtensionLargeBlob().flag();
           break;
         case WebAuthnExtension::TWebAuthnExtensionMinPinLength:
           mMinPinLength =
@@ -60,9 +72,13 @@ class WebAuthnRegisterArgs final : public nsIWebAuthnRegisterArgs {
   const bool mPrivateBrowsing;
   const WebAuthnMakeCredentialInfo mInfo;
 
+  Maybe<CredentialProtectionPolicy> mCredentialProtectionPolicy;
+  bool mEnforceCredentialProtectionPolicy;
+
   // Flags to indicate whether an extension is being requested.
   bool mCredProps;
   bool mHmacCreateSecret;
+  Maybe<bool> mLargeBlobSupportRequired;
   bool mMinPinLength;
   bool mPrf;
 };
@@ -83,11 +99,23 @@ class WebAuthnSignArgs final : public nsIWebAuthnSignArgs {
         mPrf(false) {
     for (const WebAuthnExtension& ext : mInfo.Extensions()) {
       switch (ext.type()) {
+        case WebAuthnExtension::TWebAuthnExtensionCredProtect:
+          break;
         case WebAuthnExtension::TWebAuthnExtensionCredProps:
           break;
         case WebAuthnExtension::TWebAuthnExtensionHmacSecret:
           break;
         case WebAuthnExtension::TWebAuthnExtensionMinPinLength:
+          break;
+        case WebAuthnExtension::TWebAuthnExtensionLargeBlob:
+          if (ext.get_WebAuthnExtensionLargeBlob().flag().isSome()) {
+            bool read = ext.get_WebAuthnExtensionLargeBlob().flag().ref();
+            mLargeBlobRead.emplace(read);
+            if (!read) {
+              mLargeBlobWrite.AppendElements(
+                  ext.get_WebAuthnExtensionLargeBlob().write());
+            }
+          }
           break;
         case WebAuthnExtension::TWebAuthnExtensionPrf:
           mPrf = ext.get_WebAuthnExtensionPrf().eval().isSome() ||
@@ -106,6 +134,8 @@ class WebAuthnSignArgs final : public nsIWebAuthnSignArgs {
   const nsCString mClientDataJSON;
   const bool mPrivateBrowsing;
   const WebAuthnGetAssertionInfo mInfo;
+  Maybe<bool> mLargeBlobRead;
+  nsTArray<uint8_t> mLargeBlobWrite;
   bool mPrf;
 };
 

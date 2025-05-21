@@ -238,13 +238,22 @@ class API_AVAILABLE(macos(13.3)) MacOSWebAuthnService final
   void FinishMakeCredential(const nsTArray<uint8_t>& aRawAttestationObject,
                             const nsTArray<uint8_t>& aCredentialId,
                             const nsTArray<nsString>& aTransports,
-                            const Maybe<nsString>& aAuthenticatorAttachment);
+                            const Maybe<nsString>& aAuthenticatorAttachment,
+                            const Maybe<bool>& aLargeBlobSupported,
+                            const Maybe<bool>& aPrfSupported,
+                            const Maybe<nsTArray<uint8_t>>& aPrfFirst,
+                            const Maybe<nsTArray<uint8_t>>& aPrfSecond);
 
   void FinishGetAssertion(const nsTArray<uint8_t>& aCredentialId,
                           const nsTArray<uint8_t>& aSignature,
                           const nsTArray<uint8_t>& aAuthenticatorData,
                           const nsTArray<uint8_t>& aUserHandle,
-                          const Maybe<nsString>& aAuthenticatorAttachment);
+                          const Maybe<nsString>& aAuthenticatorAttachment,
+                          const Maybe<bool>& aUsedAppId,
+                          const Maybe<nsTArray<uint8_t>>& aLargeBlobValue,
+                          const Maybe<bool>& aLargeBlobWritten,
+                          const Maybe<nsTArray<uint8_t>>& aPrfFirst,
+                          const Maybe<nsTArray<uint8_t>>& aPrfSecond);
   void ReleasePlatformResources();
   void AbortTransaction(nsresult aError);
 
@@ -290,6 +299,47 @@ nsTArray<uint8_t> NSDataToArray(NSData* data) {
   return array;
 }
 
+API_AVAILABLE(macos(15.0))
+NSDictionary<NSData*, ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*>* _Nullable ConstructPrfEvalByCredentialEntries(
+    const RefPtr<nsIWebAuthnSignArgs>& aArgs) {
+  nsTArray<nsTArray<uint8_t>> prfEvalByCredIds;
+  nsTArray<nsTArray<uint8_t>> prfEvalByCredFirsts;
+  nsTArray<bool> prfEvalByCredSecondMaybes;
+  nsTArray<nsTArray<uint8_t>> prfEvalByCredSeconds;
+  if (NS_FAILED(aArgs->GetPrfEvalByCredentialCredentialId(prfEvalByCredIds)) ||
+      NS_FAILED(aArgs->GetPrfEvalByCredentialEvalFirst(prfEvalByCredFirsts)) ||
+      NS_FAILED(aArgs->GetPrfEvalByCredentialEvalSecondMaybe(
+          prfEvalByCredSecondMaybes)) ||
+      NS_FAILED(
+          aArgs->GetPrfEvalByCredentialEvalSecond(prfEvalByCredSeconds)) ||
+      prfEvalByCredIds.Length() != prfEvalByCredFirsts.Length() ||
+      prfEvalByCredIds.Length() != prfEvalByCredSecondMaybes.Length() ||
+      prfEvalByCredIds.Length() != prfEvalByCredSeconds.Length()) {
+    return nil;
+  }
+
+  uint32_t count = prfEvalByCredIds.Length();
+  NSData* keys[count];
+  ASAuthorizationPublicKeyCredentialPRFAssertionInputValues* objects[count];
+  for (size_t i = 0; i < count; i++) {
+    NSData* saltInput1 = [NSData dataWithBytes:prfEvalByCredFirsts[i].Elements()
+                                        length:prfEvalByCredFirsts[i].Length()];
+    NSData* saltInput2 = nil;
+    if (prfEvalByCredSecondMaybes[i]) {
+      saltInput2 = [NSData dataWithBytes:prfEvalByCredSeconds[i].Elements()
+                                  length:prfEvalByCredSeconds[i].Length()];
+    }
+    keys[i] = [NSData dataWithBytes:prfEvalByCredIds[i].Elements()
+                             length:prfEvalByCredIds[i].Length()];
+    objects[i] =
+        [[ASAuthorizationPublicKeyCredentialPRFAssertionInputValues alloc]
+            initWithSaltInput1:saltInput1
+                    saltInput2:saltInput2];
+  }
+
+  return [NSDictionary dictionaryWithObjects:objects forKeys:keys count:count];
+}
+
 @implementation MacOSAuthenticatorRequestDelegate {
   RefPtr<mozilla::dom::MacOSWebAuthnService> mCallback;
 }
@@ -314,18 +364,20 @@ nsTArray<uint8_t> NSDataToArray(NSData* data) {
     nsTArray<uint8_t> credentialId(NSDataToArray(credential.credentialID));
     nsTArray<nsString> transports;
     mozilla::Maybe<nsString> authenticatorAttachment;
+    mozilla::Maybe<bool> largeBlobSupported;
+    mozilla::Maybe<bool> prfSupported;
+    mozilla::Maybe<nsTArray<uint8_t>> prfFirst;
+    mozilla::Maybe<nsTArray<uint8_t>> prfSecond;
     if ([credential isKindOfClass:
                         [ASAuthorizationPlatformPublicKeyCredentialRegistration
                             class]]) {
       transports.AppendElement(u"hybrid"_ns);
       transports.AppendElement(u"internal"_ns);
-#if defined(MAC_OS_VERSION_13_5) && \
-    MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_13_5
+      ASAuthorizationPlatformPublicKeyCredentialRegistration*
+          platformCredential =
+              (ASAuthorizationPlatformPublicKeyCredentialRegistration*)
+                  credential;
       if (__builtin_available(macos 13.5, *)) {
-        ASAuthorizationPlatformPublicKeyCredentialRegistration*
-            platformCredential =
-                (ASAuthorizationPlatformPublicKeyCredentialRegistration*)
-                    credential;
         switch (platformCredential.attachment) {
           case ASAuthorizationPublicKeyCredentialAttachmentCrossPlatform:
             authenticatorAttachment.emplace(u"cross-platform"_ns);
@@ -337,7 +389,22 @@ nsTArray<uint8_t> NSDataToArray(NSData* data) {
             break;
         }
       }
-#endif
+      if (__builtin_available(macos 14.0, *)) {
+        if (platformCredential.largeBlob) {
+          largeBlobSupported.emplace(platformCredential.largeBlob.isSupported);
+        }
+      }
+      if (__builtin_available(macos 15.0, *)) {
+        if (platformCredential.prf) {
+          prfSupported.emplace(platformCredential.prf.isSupported);
+          if (platformCredential.prf.first) {
+            prfFirst.emplace(NSDataToArray(platformCredential.prf.first));
+          }
+          if (platformCredential.prf.second) {
+            prfSecond.emplace(NSDataToArray(platformCredential.prf.second));
+          }
+        }
+      }
     } else {
       // The platform didn't tell us what transport was used, but we know it
       // wasn't the internal transport. The transport response is not signed by
@@ -347,8 +414,9 @@ nsTArray<uint8_t> NSDataToArray(NSData* data) {
       transports.AppendElement(u"usb"_ns);
       authenticatorAttachment.emplace(u"cross-platform"_ns);
     }
-    mCallback->FinishMakeCredential(rawAttestationObject, credentialId,
-                                    transports, authenticatorAttachment);
+    mCallback->FinishMakeCredential(
+        rawAttestationObject, credentialId, transports, authenticatorAttachment,
+        largeBlobSupported, prfSupported, prfFirst, prfSecond);
   } else if ([authorization.credential
                  conformsToProtocol:
                      @protocol(ASAuthorizationPublicKeyCredentialAssertion)]) {
@@ -364,16 +432,17 @@ nsTArray<uint8_t> NSDataToArray(NSData* data) {
         NSDataToArray(credential.rawAuthenticatorData));
     nsTArray<uint8_t> userHandle(NSDataToArray(credential.userID));
     mozilla::Maybe<nsString> authenticatorAttachment;
+    mozilla::Maybe<bool> usedAppId;
+    mozilla::Maybe<nsTArray<uint8_t>> largeBlobValue;
+    mozilla::Maybe<bool> largeBlobWritten;
+    mozilla::Maybe<nsTArray<uint8_t>> prfFirst;
+    mozilla::Maybe<nsTArray<uint8_t>> prfSecond;
     if ([credential
             isKindOfClass:[ASAuthorizationPlatformPublicKeyCredentialAssertion
                               class]]) {
-#if defined(MAC_OS_VERSION_13_5) && \
-    MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_13_5
+      ASAuthorizationPlatformPublicKeyCredentialAssertion* platformCredential =
+          (ASAuthorizationPlatformPublicKeyCredentialAssertion*)credential;
       if (__builtin_available(macos 13.5, *)) {
-        ASAuthorizationPlatformPublicKeyCredentialAssertion*
-            platformCredential =
-                (ASAuthorizationPlatformPublicKeyCredentialAssertion*)
-                    credential;
         switch (platformCredential.attachment) {
           case ASAuthorizationPublicKeyCredentialAttachmentCrossPlatform:
             authenticatorAttachment.emplace(u"cross-platform"_ns);
@@ -385,12 +454,43 @@ nsTArray<uint8_t> NSDataToArray(NSData* data) {
             break;
         }
       }
-#endif
-    } else {
+      if (__builtin_available(macos 14.0, *)) {
+        if (platformCredential.largeBlob) {
+          if (platformCredential.largeBlob.readData) {
+            largeBlobValue.emplace(
+                NSDataToArray(platformCredential.largeBlob.readData));
+          } else {
+            largeBlobWritten.emplace(platformCredential.largeBlob.didWrite);
+          }
+        }
+      }
+      if (__builtin_available(macos 15.0, *)) {
+        if (platformCredential.prf) {
+          if (platformCredential.prf.first) {
+            prfFirst.emplace(NSDataToArray(platformCredential.prf.first));
+          }
+          if (platformCredential.prf.second) {
+            prfSecond.emplace(NSDataToArray(platformCredential.prf.second));
+          }
+        }
+      }
+    } else if ([credential
+                   isKindOfClass:
+                       [ASAuthorizationSecurityKeyPublicKeyCredentialAssertion
+                           class]]) {
+      ASAuthorizationSecurityKeyPublicKeyCredentialAssertion*
+          securityKeyCredential =
+              (ASAuthorizationSecurityKeyPublicKeyCredentialAssertion*)
+                  credential;
+      if (__builtin_available(macos 14.5, *)) {
+        usedAppId.emplace(securityKeyCredential.appID);
+      }
       authenticatorAttachment.emplace(u"cross-platform"_ns);
     }
     mCallback->FinishGetAssertion(credentialId, signature, rawAuthenticatorData,
-                                  userHandle, authenticatorAttachment);
+                                  userHandle, authenticatorAttachment,
+                                  usedAppId, largeBlobValue, largeBlobWritten,
+                                  prfFirst, prfSecond);
   } else {
     MOZ_LOG(
         gMacOSWebAuthnServiceLog, mozilla::LogLevel::Error,
@@ -722,6 +822,63 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
           crossPlatformRegistrationRequest.userVerificationPreference =
               *userVerificationPreference;
         }
+
+        if (__builtin_available(macos 14.0, *)) {
+          bool largeBlobSupportRequired;
+          nsresult rv =
+              aArgs->GetLargeBlobSupportRequired(&largeBlobSupportRequired);
+          if (rv != NS_ERROR_NOT_AVAILABLE) {
+            if (NS_FAILED(rv)) {
+              self->mRegisterPromise->Reject(rv);
+              return;
+            }
+            ASAuthorizationPublicKeyCredentialLargeBlobSupportRequirement
+                largeBlobRequirement =
+                    largeBlobSupportRequired
+                        ? ASAuthorizationPublicKeyCredentialLargeBlobSupportRequirementRequired
+                        : ASAuthorizationPublicKeyCredentialLargeBlobSupportRequirementPreferred;
+            platformRegistrationRequest.largeBlob =
+                [[ASAuthorizationPublicKeyCredentialLargeBlobRegistrationInput
+                    alloc] initWithSupportRequirement:largeBlobRequirement];
+          }
+        }
+        if (__builtin_available(macos 15.0, *)) {
+          bool requestedPrf;
+          Unused << aArgs->GetPrf(&requestedPrf);
+          if (requestedPrf) {
+            NSData* saltInput1 = nil;
+            NSData* saltInput2 = nil;
+            nsTArray<uint8_t> prfInput1;
+            nsresult rv = aArgs->GetPrfEvalFirst(prfInput1);
+            if (rv != NS_ERROR_NOT_AVAILABLE) {
+              if (NS_FAILED(rv)) {
+                self->mRegisterPromise->Reject(rv);
+                return;
+              }
+              saltInput1 = [NSData dataWithBytes:prfInput1.Elements()
+                                          length:prfInput1.Length()];
+            }
+            nsTArray<uint8_t> prfInput2;
+            rv = aArgs->GetPrfEvalSecond(prfInput2);
+            if (rv != NS_ERROR_NOT_AVAILABLE) {
+              if (NS_FAILED(rv)) {
+                self->mRegisterPromise->Reject(rv);
+                return;
+              }
+              saltInput2 = [NSData dataWithBytes:prfInput2.Elements()
+                                          length:prfInput2.Length()];
+            }
+            ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
+                prfInputs =
+                    [[ASAuthorizationPublicKeyCredentialPRFAssertionInputValues
+                        alloc] initWithSaltInput1:saltInput1
+                                       saltInput2:saltInput2];
+            platformRegistrationRequest.prf =
+                [[ASAuthorizationPublicKeyCredentialPRFRegistrationInput alloc]
+                    initWithInputValues:prfInputs];
+          }
+        }
+
         nsTArray<uint8_t> clientDataHash;
         nsresult rv = aArgs->GetClientDataHash(clientDataHash);
         if (NS_FAILED(rv)) {
@@ -800,7 +957,10 @@ void MacOSWebAuthnService::FinishMakeCredential(
     const nsTArray<uint8_t>& aRawAttestationObject,
     const nsTArray<uint8_t>& aCredentialId,
     const nsTArray<nsString>& aTransports,
-    const Maybe<nsString>& aAuthenticatorAttachment) {
+    const Maybe<nsString>& aAuthenticatorAttachment,
+    const Maybe<bool>& aLargeBlobSupported, const Maybe<bool>& aPrfSupported,
+    const Maybe<nsTArray<uint8_t>>& aPrfFirst,
+    const Maybe<nsTArray<uint8_t>>& aPrfSecond) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!mRegisterPromise) {
     return;
@@ -808,7 +968,8 @@ void MacOSWebAuthnService::FinishMakeCredential(
 
   RefPtr<WebAuthnRegisterResult> result(new WebAuthnRegisterResult(
       aRawAttestationObject, Nothing(), aCredentialId, aTransports,
-      aAuthenticatorAttachment));
+      aAuthenticatorAttachment, aLargeBlobSupported, aPrfSupported, aPrfFirst,
+      aPrfSecond));
   Unused << mRegisterPromise->Resolve(result);
   mRegisterPromise = nullptr;
 }
@@ -1037,6 +1198,104 @@ void MacOSWebAuthnService::DoGetAssertion(
           crossPlatformAssertionRequest.userVerificationPreference =
               *userVerificationPreference;
         }
+
+        if (__builtin_available(macos 14.0, *)) {
+          nsTArray<uint8_t> largeBlobWrite;
+          bool largeBlobRead;
+          nsresult rv = aArgs->GetLargeBlobRead(&largeBlobRead);
+          if (rv != NS_ERROR_NOT_AVAILABLE) {
+            if (NS_FAILED(rv)) {
+              self->mSignPromise->Reject(rv);
+              return;
+            }
+            if (largeBlobRead) {
+              platformAssertionRequest
+                  .largeBlob = [[ASAuthorizationPublicKeyCredentialLargeBlobAssertionInput
+                  alloc]
+                  initWithOperation:
+                      ASAuthorizationPublicKeyCredentialLargeBlobAssertionOperationRead];
+            } else {
+              rv = aArgs->GetLargeBlobWrite(largeBlobWrite);
+              if (rv != NS_ERROR_NOT_AVAILABLE) {
+                if (NS_FAILED(rv)) {
+                  self->mSignPromise->Reject(rv);
+                  return;
+                }
+                ASAuthorizationPublicKeyCredentialLargeBlobAssertionInput*
+                    largeBlobAssertionInput =
+                        [[ASAuthorizationPublicKeyCredentialLargeBlobAssertionInput
+                            alloc]
+                            initWithOperation:
+                                ASAuthorizationPublicKeyCredentialLargeBlobAssertionOperationWrite];
+                // We need to fully form the input before assigning it to
+                // platformAssertionRequest.largeBlob.  See
+                // https://bugs.webkit.org/show_bug.cgi?id=276961
+                largeBlobAssertionInput.dataToWrite =
+                    [NSData dataWithBytes:largeBlobWrite.Elements()
+                                   length:largeBlobWrite.Length()];
+                platformAssertionRequest.largeBlob = largeBlobAssertionInput;
+              }
+            }
+          }
+        }
+
+        if (__builtin_available(macos 14.5, *)) {
+          nsString appId;
+          nsresult rv = aArgs->GetAppId(appId);
+          if (rv != NS_ERROR_NOT_AVAILABLE) {  // AppID is set
+            if (NS_FAILED(rv)) {
+              self->mSignPromise->Reject(rv);
+              return;
+            }
+            crossPlatformAssertionRequest.appID =
+                nsCocoaUtils::ToNSString(appId);
+          }
+        }
+
+        if (__builtin_available(macos 15.0, *)) {
+          bool requestedPrf;
+          Unused << aArgs->GetPrf(&requestedPrf);
+          if (requestedPrf) {
+            NSData* saltInput1 = nil;
+            NSData* saltInput2 = nil;
+            nsTArray<uint8_t> prfInput1;
+            nsresult rv = aArgs->GetPrfEvalFirst(prfInput1);
+            if (rv != NS_ERROR_NOT_AVAILABLE) {
+              if (NS_FAILED(rv)) {
+                self->mSignPromise->Reject(rv);
+                return;
+              }
+              saltInput1 = [NSData dataWithBytes:prfInput1.Elements()
+                                          length:prfInput1.Length()];
+            }
+            nsTArray<uint8_t> prfInput2;
+            rv = aArgs->GetPrfEvalSecond(prfInput2);
+            if (rv != NS_ERROR_NOT_AVAILABLE) {
+              if (NS_FAILED(rv)) {
+                self->mSignPromise->Reject(rv);
+                return;
+              }
+              saltInput2 = [NSData dataWithBytes:prfInput2.Elements()
+                                          length:prfInput2.Length()];
+            }
+            ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
+                prfInputs =
+                    [[ASAuthorizationPublicKeyCredentialPRFAssertionInputValues
+                        alloc] initWithSaltInput1:saltInput1
+                                       saltInput2:saltInput2];
+
+            NSDictionary<
+                NSData*,
+                ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*>*
+                prfPerCredentialInputs =
+                    ConstructPrfEvalByCredentialEntries(aArgs);
+            platformAssertionRequest.prf =
+                [[ASAuthorizationPublicKeyCredentialPRFAssertionInput alloc]
+                         initWithInputValues:prfInputs
+                    perCredentialInputValues:prfPerCredentialInputs];
+          }
+        }
+
         nsTArray<uint8_t> clientDataHash;
         nsresult rv = aArgs->GetClientDataHash(clientDataHash);
         if (NS_FAILED(rv)) {
@@ -1057,7 +1316,12 @@ void MacOSWebAuthnService::FinishGetAssertion(
     const nsTArray<uint8_t>& aCredentialId, const nsTArray<uint8_t>& aSignature,
     const nsTArray<uint8_t>& aAuthenticatorData,
     const nsTArray<uint8_t>& aUserHandle,
-    const Maybe<nsString>& aAuthenticatorAttachment) {
+    const Maybe<nsString>& aAuthenticatorAttachment,
+    const Maybe<bool>& aUsedAppId,
+    const Maybe<nsTArray<uint8_t>>& aLargeBlobValue,
+    const Maybe<bool>& aLargeBlobWritten,
+    const Maybe<nsTArray<uint8_t>>& aPrfFirst,
+    const Maybe<nsTArray<uint8_t>>& aPrfSecond) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!mSignPromise) {
     return;
@@ -1065,7 +1329,8 @@ void MacOSWebAuthnService::FinishGetAssertion(
 
   RefPtr<WebAuthnSignResult> result(new WebAuthnSignResult(
       aAuthenticatorData, Nothing(), aCredentialId, aSignature, aUserHandle,
-      aAuthenticatorAttachment));
+      aAuthenticatorAttachment, aUsedAppId, aLargeBlobValue, aLargeBlobWritten,
+      aPrfFirst, aPrfSecond));
   Unused << mSignPromise->Resolve(result);
   mSignPromise = nullptr;
 }

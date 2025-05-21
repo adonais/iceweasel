@@ -184,6 +184,8 @@ for (const type of [
   "NEW_TAB_LOAD",
   "NEW_TAB_REHYDRATED",
   "NEW_TAB_STATE_REQUEST",
+  "NEW_TAB_STATE_REQUEST_STARTUPCACHE",
+  "NEW_TAB_STATE_REQUEST_WITHOUT_STARTUPCACHE",
   "NEW_TAB_UNLOAD",
   "OPEN_ABOUT_FAKESPOT",
   "OPEN_DOWNLOAD_FILE",
@@ -211,8 +213,11 @@ for (const type of [
   "PREVIEW_REQUEST_CANCEL",
   "PREVIEW_RESPONSE",
   "REMOVE_DOWNLOAD_FILE",
+  "REPORT_AD_OPEN",
+  "REPORT_AD_SUBMIT",
   "REPORT_CLOSE",
-  "REPORT_OPEN",
+  "REPORT_CONTENT_OPEN",
+  "REPORT_CONTENT_SUBMIT",
   "RICH_ICON_MISSING",
   "SAVE_SESSION_PERF_DATA",
   "SAVE_TO_POCKET",
@@ -221,6 +226,7 @@ for (const type of [
   "SECTION_DISABLE",
   "SECTION_ENABLE",
   "SECTION_OPTIONS_CHANGED",
+  "SECTION_PERSONALIZATION_UPDATE",
   "SECTION_REGISTER",
   "SECTION_UPDATE",
   "SECTION_UPDATE_CARD",
@@ -1764,7 +1770,7 @@ const LinkMenuOptions = {
           ? {
               section: site.section,
               section_position: site.section_position,
-              is_secton_followed: site.is_secton_followed,
+              is_section_followed: site.is_section_followed,
             }
           : {}),
       },
@@ -1778,7 +1784,7 @@ const LinkMenuOptions = {
   BlockUrl: (site, index, eventSource) => {
     return LinkMenuOptions.BlockUrls([site], index, eventSource);
   },
-  // Same as BlockUrl, cept can work on an array of sites.
+  // Same as BlockUrl, except can work on an array of sites.
   BlockUrls: (tiles, pos, eventSource) => ({
     id: "newtab-menu-dismiss",
     icon: "dismiss",
@@ -1819,7 +1825,7 @@ const LinkMenuOptions = {
           ? {
               section: site.section,
               section_position: site.section_position,
-              is_secton_followed: site.is_secton_followed,
+              is_section_followed: site.is_section_followed,
             }
           : {}),
       })),
@@ -2132,7 +2138,12 @@ const LinkMenuOptions = {
       type: actionTypes.OPEN_ABOUT_FAKESPOT,
     }),
   }),
-  SectionBlock: ({ blockedSections, sectionKey, sectionPosition, title }) => ({
+  SectionBlock: ({
+    sectionPersonalization,
+    sectionKey,
+    sectionPosition,
+    title,
+  }) => ({
     id: "newtab-menu-section-block",
     icon: "delete",
     action: {
@@ -2143,10 +2154,13 @@ const LinkMenuOptions = {
           // Once the user confirmed their intention to block this section,
           // update their preferences.
           actionCreators.AlsoToMain({
-            type: actionTypes.SET_PREF,
+            type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
             data: {
-              name: "discoverystream.sections.blocked",
-              value: [...blockedSections, sectionKey].join(", "),
+              ...sectionPersonalization,
+              [sectionKey]: {
+                isBlocked: true,
+                isFollowed: false,
+              },
             },
           }),
           // Telemetry
@@ -2177,16 +2191,17 @@ const LinkMenuOptions = {
     },
     userEvent: "DIALOG_OPEN",
   }),
-  SectionUnfollow: ({ followedSections, sectionKey, sectionPosition }) => ({
+  SectionUnfollow: ({
+    sectionPersonalization,
+    sectionKey,
+    sectionPosition,
+  }) => ({
     id: "newtab-menu-section-unfollow",
     action: actionCreators.AlsoToMain({
-      type: actionTypes.SET_PREF,
-      data: {
-        name: "discoverystream.sections.following",
-        value: [...followedSections.filter(item => item !== sectionKey)].join(
-          ", "
-        ),
-      },
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: (({ sectionKey: _sectionKey, ...remaining }) => remaining)(
+        sectionPersonalization
+      ),
     }),
     impression: actionCreators.OnlyToMain({
       type: actionTypes.UNFOLLOW_SECTION,
@@ -2212,14 +2227,42 @@ const LinkMenuOptions = {
     }),
     userEvent: "CLICK_PRIVACY_INFO",
   }),
-  ReportAd: () => ({
-    id: "newtab-menu-report-this-ad",
-    action: actionCreators.BroadcastToContent({ type: actionTypes.REPORT_OPEN }),
-  }),
-  ReportContent: () => ({
-    id: "newtab-menu-report-content",
-    action: actionCreators.BroadcastToContent({ type: actionTypes.REPORT_OPEN }),
-  }),
+  ReportAd: site => {
+    return {
+      id: "newtab-menu-report-this-ad",
+      action: actionCreators.AlsoToMain({
+        type: actionTypes.REPORT_AD_OPEN,
+        data: {
+          card_type: site.card_type,
+          position: site.position,
+          reporting_url: site.shim.report,
+          url: site.url,
+        },
+      }),
+    };
+  },
+
+  ReportContent: site => {
+    return {
+      id: "newtab-menu-report-content",
+      action: actionCreators.AlsoToMain({
+        type: actionTypes.REPORT_CONTENT_OPEN,
+        data: {
+          card_type: site.card_type,
+          corpus_item_id: site.corpus_item_id,
+          is_section_followed: site.is_section_followed,
+          received_rank: site.received_rank,
+          recommended_at: site.recommended_at,
+          scheduled_corpus_item_id: site.scheduled_corpus_item_id,
+          section_position: site.section_position,
+          section: site.section,
+          title: site.title,
+          topic: site.topic,
+          url: site.url,
+        },
+      }),
+    };
+  },
 };
 
 ;// CONCATENATED MODULE: ./content-src/components/LinkMenu/LinkMenu.jsx
@@ -2409,15 +2452,15 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
       dispatch
     } = this.props;
     let TOP_STORIES_CONTEXT_MENU_OPTIONS;
-    const PREF_REPORT_CONTENT_ENABLED = "discoverystream.reportContent.enabled";
+    const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
     const prefs = this.props.Prefs.values;
-    const showReporting = prefs[PREF_REPORT_CONTENT_ENABLED];
+    const showAdsReporting = prefs[PREF_REPORT_ADS_ENABLED];
     const isSpoc = this.props.card_type === "spoc";
     if (isSpoc) {
-      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["BlockUrl", ...(showReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
+      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["BlockUrl", ...(showAdsReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
     } else {
       const saveToPocketOptions = this.props.pocket_button_enabled ? ["CheckArchiveFromPocket", "CheckSavedToPocket"] : [];
-      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", ...(showReporting ? ["ReportContent"] : []), ...saveToPocketOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
+      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", ...(this.props.section ? ["ReportContent"] : []), ...saveToPocketOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
     }
     const type = this.props.type || "DISCOVERY_STREAM";
     const title = this.props.title || this.props.source;
@@ -2454,14 +2497,16 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
         scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
         recommended_at: this.props.recommended_at,
         received_rank: this.props.received_rank,
+        topic: this.props.topic,
         is_list_card: this.props.is_list_card,
+        position: index,
         ...(this.props.format ? {
           format: this.props.format
         } : {}),
         ...(this.props.section ? {
           section: this.props.section,
           section_position: this.props.section_position,
-          is_secton_followed: this.props.is_secton_followed
+          is_section_followed: this.props.is_section_followed
         } : {})
       }
     })));
@@ -2470,6 +2515,122 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
 const DSLinkMenu = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Prefs: state.Prefs
 }))(_DSLinkMenu);
+;// CONCATENATED MODULE: ./content-src/lib/utils.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+/**
+ * A custom react hook that sets up an IntersectionObserver to observe a single
+ * or list of elements and triggers a callback when the element comes into the viewport
+ * Note: The refs used should be an array type
+ * @function useIntersectionObserver
+ * @param {function} callback - The function to call when an element comes into the viewport
+ * @param {Object} options - Options object passed to Intersection Observer:
+ * https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/IntersectionObserver#options
+ * @param {Boolean} [isSingle = false] Boolean if the elements are an array or single element
+ *
+ * @returns {React.MutableRefObject} a ref containing an array of elements or single element
+ *
+ *
+ *
+ */
+function useIntersectionObserver(callback, threshold = 0.3) {
+  const elementsRef = (0,external_React_namespaceObject.useRef)([]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          callback(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold
+    });
+    elementsRef.current.forEach(el => {
+      if (el) {
+        observer.observe(el);
+      }
+    });
+
+    // Cleanup function to disconnect observer on unmount
+    return () => observer.disconnect();
+  }, [callback, threshold]);
+  return elementsRef;
+}
+
+/**
+ * Determines the active card size ("small", "medium", or "large") based on the screen width
+ * and class names applied to the card element at the time of an event (example: click)
+ *
+ * @param {number} screenWidth - The current window width (in pixels).
+ * @param {string | string[]} classNames - A string or array of class names applied to the sections card.
+ * @param {boolean[]} sectionsEnabled - If sections is not enabled, all cards are `medium-card`
+ * @param {number} flightId - Error ege case: This function should not be called on spocs, which have flightId
+ * @returns {"small-card" | "medium-card" | "large-card" | null} The active card type, or null if none is matched.
+ */
+function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
+  // Only applies to sponsored content
+  if (flightId) {
+    return "spoc";
+  }
+
+  // Default layout only supports `medium-card`
+  if (!sectionsEnabled) {
+    // Missing arguments
+    return "medium-card";
+  }
+
+  // Return null if no values are available
+  if (!screenWidth || !classNames) {
+    // Missing arguments
+    return null;
+  }
+  const classList = classNames.split(" ");
+
+  // Each breakpoint corresponds to a minimum screen width and its associated column class
+  const breakpoints = [{
+    min: 1374,
+    column: "col-4"
+  },
+  // $break-point-sections-variant
+  {
+    min: 1122,
+    column: "col-3"
+  },
+  // $break-point-widest
+  {
+    min: 724,
+    column: "col-2"
+  },
+  // $break-point-layout-variant
+  {
+    min: 0,
+    column: "col-1"
+  } // (default layout)
+  ];
+  const cardTypes = ["small", "medium", "large"];
+
+  // Determine which column is active based on the current screen width
+  const currColumnCount = breakpoints.find(bp => screenWidth >= bp.min).column;
+
+  // Match the card type for that column count
+  for (let type of cardTypes) {
+    const className = `${currColumnCount}-${type}`;
+    if (classList.includes(className)) {
+      // Special case: below $break-point-medium (610px), report `col-1-small` as medium
+      if (screenWidth < 610 && currColumnCount === "col-1" && type === "small") {
+        return "medium-card";
+      }
+      // Will be either "small-card", "medium-card", or "large-card"
+      return `${type}-card`;
+    }
+  }
+  return null;
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/TopSites/TopSitesConstants.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -2515,6 +2676,7 @@ const MIN_SMALL_FAVICON_SIZE = 16;
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -2613,7 +2775,7 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
           tiles: cards.map(link => ({
             id: link.id,
             pos: link.pos,
-            type: this.props.flightId ? "spoc" : "organic",
+            type: props.flightId ? "spoc" : "organic",
             ...(link.shim ? {
               shim: link.shim
             } : {}),
@@ -2627,14 +2789,16 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
             is_list_card: link.is_list_card,
             ...(link.format ? {
               format: link.format
-            } : {}),
+            } : {
+              format: getActiveCardSize(window.innerWidth, link.class_names, link.section, link.flightId)
+            }),
             ...(link.section ? {
               section: link.section,
               section_position: link.section_position,
-              is_secton_followed: link.is_secton_followed
+              is_section_followed: link.is_section_followed
             } : {})
           })),
-          firstVisibleTimestamp: this.props.firstVisibleTimestamp
+          firstVisibleTimestamp: props.firstVisibleTimestamp
         }));
         this.impressionCardGuids = cards.map(link => link.id);
       }
@@ -3210,6 +3374,7 @@ function DSThumbsUpDownButtons({
 
 
 
+
 const READING_WPM = 220;
 
 /**
@@ -3261,14 +3426,16 @@ const DSSource = ({
   }
 
   // Otherwise display a default source.
-  return /*#__PURE__*/external_React_default().createElement("p", {
-    className: "source clamp"
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "source-wrapper"
   }, icon_src && /*#__PURE__*/external_React_default().createElement("img", {
     src: icon_src,
     height: "16",
     width: "16",
     alt: ""
-  }), source);
+  }), /*#__PURE__*/external_React_default().createElement("p", {
+    className: "source clamp"
+  }, source));
 };
 const DefaultMeta = ({
   source,
@@ -3374,7 +3541,7 @@ class _DSCard extends (external_React_default()).PureComponent {
 
     // If this is for the about:home startup cache, then we always want
     // to render the DSCard, regardless of whether or not its been seen.
-    if (props.App.isForStartupCache) {
+    if (props.App.isForStartupCache.App) {
       this.state.isSeen = true;
     }
 
@@ -3492,11 +3659,13 @@ class _DSCard extends (external_React_default()).PureComponent {
             is_list_card: this.props.isListCard,
             ...(this.props.format ? {
               format: this.props.format
-            } : {}),
+            } : {
+              format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId)
+            }),
             ...(this.props.section ? {
               section: this.props.section,
               section_position: this.props.sectionPosition,
-              is_secton_followed: this.props.sectionFollowed
+              is_section_followed: this.props.sectionFollowed
             } : {})
           }
         }));
@@ -3518,11 +3687,13 @@ class _DSCard extends (external_React_default()).PureComponent {
             is_list_card: this.props.isListCard,
             ...(this.props.format ? {
               format: this.props.format
-            } : {}),
+            } : {
+              format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId)
+            }),
             ...(this.props.section ? {
               section: this.props.section,
               section_position: this.props.sectionPosition,
-              is_secton_followed: this.props.sectionFollowed
+              is_section_followed: this.props.sectionFollowed
             } : {})
           }]
         }));
@@ -3558,10 +3729,12 @@ class _DSCard extends (external_React_default()).PureComponent {
         thumbs_up: true,
         thumbs_down: false,
         topic: this.props.topic,
+        format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, false // (thumbs up/down only exist on organic content)
+        ),
         ...(this.props.section ? {
           section: this.props.section,
           section_position: this.props.sectionPosition,
-          is_secton_followed: this.props.sectionFollowed
+          is_section_followed: this.props.sectionFollowed
         } : {})
       }
     }));
@@ -3633,10 +3806,12 @@ class _DSCard extends (external_React_default()).PureComponent {
           thumbs_up: false,
           thumbs_down: true,
           topic: this.props.topic,
+          format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, false // (thumbs up/down only exist on organic content)
+          ),
           ...(this.props.section ? {
             section: this.props.section,
             section_position: this.props.sectionPosition,
-            is_secton_followed: this.props.sectionFollowed
+            is_section_followed: this.props.sectionFollowed
           } : {})
         }
       }));
@@ -3847,7 +4022,12 @@ class _DSCard extends (external_React_default()).PureComponent {
         ...(this.props.section ? {
           section: this.props.section,
           section_position: this.props.sectionPosition,
-          is_secton_followed: this.props.sectionFollowed
+          is_section_followed: this.props.sectionFollowed
+        } : {}),
+        ...(!format && this.props.section ?
+        // Note: sectionsCardsClassName is passed to ImpressionStats.jsx in order to calculate format
+        {
+          class_names: sectionsCardsClassName
         } : {})
       }],
       dispatch: this.props.dispatch,
@@ -3920,9 +4100,11 @@ class _DSCard extends (external_React_default()).PureComponent {
       is_list_card: this.props.isListCard,
       section: this.props.section,
       section_position: this.props.sectionPosition,
-      is_secton_followed: this.props.sectionFollowed,
+      is_section_followed: this.props.sectionFollowed,
       format: format,
-      isSectionsCard: this.props.mayHaveSectionsCards
+      isSectionsCard: this.props.mayHaveSectionsCards,
+      topic: this.props.topic,
+      selected_topics: this.props.selected_topics
     }))));
   }
 }
@@ -4358,6 +4540,7 @@ function ListFeed({
  * @param spoc
  * @param position
  * @param type
+ * @param showAdReporting
  * @returns {Element}
  * @constructor
  */
@@ -4366,13 +4549,15 @@ function AdBannerContextMenu({
   spoc,
   position,
   type,
-  prefs
+  showAdReporting
 }) {
-  const PREF_REPORT_CONTENT_ENABLED = "discoverystream.reportContent.enabled";
-  const showReporting = prefs[PREF_REPORT_CONTENT_ENABLED];
-  const ADBANNER_CONTEXT_MENU_OPTIONS = ["BlockAdUrl", ...(showReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
+  const ADBANNER_CONTEXT_MENU_OPTIONS = ["BlockAdUrl", ...(showAdReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
   const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
   const [contextMenuClassNames, setContextMenuClassNames] = (0,external_React_namespaceObject.useState)("ads-context-menu");
+
+  // The keyboard access parameter is passed down to LinkMenu component
+  // that uses it to focus on the first context menu option for accessibility.
+  const [isKeyboardAccess, setIsKeyboardAccess] = (0,external_React_namespaceObject.useState)(false);
 
   /**
    * Toggles the style fix for context menu hover/active styles.
@@ -4388,10 +4573,27 @@ function AdBannerContextMenu({
       setContextMenuClassNames("ads-context-menu");
     }
   };
-  const onClick = e => {
-    e.preventDefault();
+
+  /**
+   * Toggles the context menu to open or close. Sets state depending on whether
+   * the context menu is accessed by mouse or keyboard.
+   *
+   * @param isKeyBoard
+   */
+  const toggleContextMenu = isKeyBoard => {
     toggleContextMenuStyleSwitch(!showContextMenu);
     setShowContextMenu(!showContextMenu);
+    setIsKeyboardAccess(isKeyBoard);
+  };
+  const onClick = e => {
+    e.preventDefault();
+    toggleContextMenu(false);
+  };
+  const onKeyDown = e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleContextMenu(true);
+    }
   };
   const onUpdate = () => {
     toggleContextMenuStyleSwitch(!showContextMenu);
@@ -4405,10 +4607,12 @@ function AdBannerContextMenu({
     type: "icon",
     size: "default",
     iconsrc: "chrome://global/skin/icons/more.svg",
-    onClick: onClick
+    onClick: onClick,
+    onKeyDown: onKeyDown
   }), showContextMenu && /*#__PURE__*/external_React_default().createElement(LinkMenu, {
     onUpdate: onUpdate,
     dispatch: dispatch,
+    keyboardAccess: isKeyboardAccess,
     options: ADBANNER_CONTEXT_MENU_OPTIONS,
     shouldSendImpressionStats: true,
     userEvent: actionCreators.DiscoveryStreamUserEvent,
@@ -4488,6 +4692,7 @@ const AdBanner = ({
     };
   };
   const sectionsEnabled = prefs["discoverystream.sections.enabled"];
+  const showAdReporting = prefs["discoverystream.reportAds.enabled"];
   const {
     width: imgWidth,
     height: imgHeight
@@ -4530,7 +4735,7 @@ const AdBanner = ({
     spoc: spoc,
     position: row,
     type: type,
-    prefs: prefs
+    showAdReporting: showAdReporting
   }), /*#__PURE__*/external_React_default().createElement(SafeAnchor, {
     className: "ad-banner-link",
     url: spoc.url,
@@ -4887,7 +5092,7 @@ class _CardGrid extends (external_React_default()).PureComponent {
     let editorsPicksCards = [];
     for (let index = 0; index < items; index++) {
       const rec = recs[index];
-      cards.push(topicsLoading || !rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache ? /*#__PURE__*/external_React_default().createElement(PlaceholderDSCard, {
+      cards.push(topicsLoading || !rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache.App ? /*#__PURE__*/external_React_default().createElement(PlaceholderDSCard, {
         key: `dscard-${index}`
       }) : /*#__PURE__*/external_React_default().createElement(DSCard, {
         key: `dscard-${rec.id}`,
@@ -4932,7 +5137,8 @@ class _CardGrid extends (external_React_default()).PureComponent {
         recommended_at: rec.recommended_at,
         received_rank: rec.received_rank,
         format: rec.format,
-        alt_text: rec.alt_text
+        alt_text: rec.alt_text,
+        isTimeSensitive: rec.isTimeSensitive
       }));
     }
     if (widgets?.positions?.length && widgets?.data?.length) {
@@ -5663,23 +5869,97 @@ class DSPrivacyModal extends (external_React_default()).PureComponent {
 
 
 
-const ReportContent = () => {
+const ReportContent = spocs => {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const modal = (0,external_React_namespaceObject.useRef)(null);
   const radioGroupRef = (0,external_React_namespaceObject.useRef)(null);
   const submitButtonRef = (0,external_React_namespaceObject.useRef)(null);
   const report = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.report);
   const [valueSelected, setValueSelected] = (0,external_React_namespaceObject.useState)(false);
+  const [selectedReason, setSelectedReason] = (0,external_React_namespaceObject.useState)(null);
+  const spocData = spocs.spocs.data;
 
   // Sends a dispatch to update the redux store when modal is cancelled
-  const handleCancel = (0,external_React_namespaceObject.useCallback)(() => {
-    dispatch(actionCreators.BroadcastToContent({
+  const handleCancel = () => {
+    dispatch(actionCreators.AlsoToMain({
       type: actionTypes.REPORT_CLOSE
     }));
-  }, [dispatch]);
-  const handleSubmit = (0,external_React_namespaceObject.useCallback)(e => {
-    e.preventDefault();
-  }, []);
+  };
+  const handleSubmit = (0,external_React_namespaceObject.useCallback)(() => {
+    const {
+      card_type,
+      corpus_item_id,
+      is_section_followed,
+      position,
+      received_rank,
+      recommended_at,
+      reporting_url,
+      scheduled_corpus_item_id,
+      section_position,
+      section,
+      title,
+      topic,
+      url
+    } = report;
+    if (card_type === "organic") {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.REPORT_CONTENT_SUBMIT,
+        data: {
+          card_type,
+          corpus_item_id,
+          is_section_followed,
+          received_rank,
+          recommended_at,
+          report_reason: selectedReason,
+          scheduled_corpus_item_id,
+          section_position,
+          section,
+          title,
+          topic,
+          url
+        }
+      }));
+    } else if (card_type === "spoc") {
+      // Retrieve placement_id by comparing spocData with the ad that was reported
+      const getPlacementId = () => {
+        if (!spocData || !report.url) {
+          return null;
+        }
+        for (const [placementId, spocList] of Object.entries(spocData)) {
+          for (const spoc of Object.values(spocList)) {
+            if (spoc?.url === report.url) {
+              return placementId;
+            }
+          }
+        }
+        return null;
+      };
+      const placement_id = getPlacementId();
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.REPORT_AD_SUBMIT,
+        data: {
+          report_reason: selectedReason,
+          placement_id,
+          position,
+          reporting_url,
+          url
+        }
+      }));
+    }
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.BLOCK_URL,
+      data: [{
+        ...report
+      }]
+    }));
+    dispatch(actionCreators.OnlyToOneContent({
+      type: actionTypes.SHOW_TOAST_MESSAGE,
+      data: {
+        toastId: "reportSuccessToast",
+        showNotifications: true
+      }
+    }, "ActivityStream:Content"));
+  }, [dispatch, selectedReason, report, spocData]);
 
   // Opens and closes the modal based on user interaction
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -5694,7 +5974,13 @@ const ReportContent = () => {
   (0,external_React_namespaceObject.useEffect)(() => {
     const radioGroup = radioGroupRef.current;
     const submitButton = submitButtonRef.current;
-    const handleRadioChange = () => setValueSelected(true);
+    const handleRadioChange = e => {
+      const reasonValue = e?.target?.value;
+      if (reasonValue) {
+        setValueSelected(true);
+        setSelectedReason(reasonValue);
+      }
+    };
     if (radioGroup) {
       radioGroup.addEventListener("change", handleRadioChange);
     }
@@ -5713,7 +5999,7 @@ const ReportContent = () => {
         radioGroup.removeEventListener("change", handleRadioChange);
       }
     };
-  }, [valueSelected]);
+  }, [valueSelected, selectedReason]);
   return /*#__PURE__*/external_React_default().createElement("dialog", {
     className: "report-content-form",
     id: "dialog-report",
@@ -5723,28 +6009,49 @@ const ReportContent = () => {
     })
   }, /*#__PURE__*/external_React_default().createElement("form", {
     action: ""
-  }, /*#__PURE__*/external_React_default().createElement("moz-radio-group", {
+  }, report.card_type === "spoc" ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("moz-radio-group", {
     name: "report",
     ref: radioGroupRef,
     id: "report-group",
-    "data-l10n-id": "newtab-report-ads-why-reporting"
+    "data-l10n-id": "newtab-report-ads-why-reporting",
+    className: "report-ads-options"
   }, /*#__PURE__*/external_React_default().createElement("moz-radio", {
-    value: "unsafe",
-    "data-l10n-id": "newtab-report-ads-reason-unsafe"
+    "data-l10n-id": "newtab-report-ads-reason-not-interested",
+    value: "not_interested"
   }), /*#__PURE__*/external_React_default().createElement("moz-radio", {
     "data-l10n-id": "newtab-report-ads-reason-inappropriate",
     value: "inappropriate"
   }), /*#__PURE__*/external_React_default().createElement("moz-radio", {
     "data-l10n-id": "newtab-report-ads-reason-seen-it-too-many-times",
-    value: "too-many"
-  })), /*#__PURE__*/external_React_default().createElement("moz-button-group", null, /*#__PURE__*/external_React_default().createElement("moz-button", {
-    "data-l10n-id": "newtab-topic-selection-cancel-button",
-    onClick: handleCancel
+    value: "seen_too_many_times"
+  }))) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("moz-radio-group", {
+    name: "report",
+    ref: radioGroupRef,
+    id: "report-group",
+    "data-l10n-id": "newtab-report-content-why-reporting-this",
+    className: "report-content-options"
+  }, /*#__PURE__*/external_React_default().createElement("moz-radio", {
+    "data-l10n-id": "newtab-report-content-wrong-category",
+    value: "wrong_category"
+  }), /*#__PURE__*/external_React_default().createElement("moz-radio", {
+    "data-l10n-id": "newtab-report-content-outdated",
+    value: "outdated"
+  }), /*#__PURE__*/external_React_default().createElement("moz-radio", {
+    "data-l10n-id": "newtab-report-content-inappropriate-offensive",
+    value: "inappropriate_or_offensive"
+  }), /*#__PURE__*/external_React_default().createElement("moz-radio", {
+    "data-l10n-id": "newtab-report-content-spam-misleading",
+    value: "spam_or_misleading"
+  }))), /*#__PURE__*/external_React_default().createElement("moz-button-group", null, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    "data-l10n-id": "newtab-report-cancel",
+    onClick: handleCancel,
+    className: "cancel-report-btn"
   }), /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: "primary",
     "data-l10n-id": "newtab-report-submit",
     ref: submitButtonRef,
-    onClick: handleSubmit
+    onClick: handleSubmit,
+    className: "submit-report-btn"
   }))));
 };
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/DSSignup/DSSignup.jsx
@@ -6957,7 +7264,10 @@ const INITIAL_STATE = {
     // Have we received real data from the app yet?
     initialized: false,
     locale: "",
-    isForStartupCache: false,
+    isForStartupCache: {
+      App: false,
+      Wallpaper: false,
+    },
     customizeMenuVisible: false,
   },
   Ads: {
@@ -7044,6 +7354,7 @@ const INITIAL_STATE = {
       visible: false,
       data: {},
     },
+    sectionPersonalization: {},
   },
   // Messages received from ASRouter to render in newtab
   Messages: {
@@ -7107,15 +7418,24 @@ function App(prevState = INITIAL_STATE.App, action) {
     case actionTypes.TOP_SITES_UPDATED:
       // Toggle `isForStartupCache` when receiving the `TOP_SITES_UPDATE` action
       // so that sponsored tiles can be rendered as usual. See Bug 1826360.
-      return Object.assign({}, prevState, action.data || {}, {
-        isForStartupCache: false,
-      });
+      return {
+        ...prevState,
+        isForStartupCache: { ...prevState.isForStartupCache, App: false },
+      };
     case actionTypes.DISCOVERY_STREAM_SPOCS_UPDATE:
       // Toggle `isForStartupCache` when receiving the `DISCOVERY_STREAM_SPOCS_UPDATE_STARTUPCACHE` action
       // so that spoc cards can be rendered as usual.
-      return Object.assign({}, prevState, action.data || {}, {
-        isForStartupCache: false,
-      });
+      return {
+        ...prevState,
+        isForStartupCache: { ...prevState.isForStartupCache, App: false },
+      };
+    case actionTypes.WALLPAPERS_CUSTOM_SET:
+      // Toggle `isForStartupCache.Wallpaper` when receiving the `WALLPAPERS_CUSTOM_SET` action
+      // so that custom wallpaper can be rendered as usual.
+      return {
+        ...prevState,
+        isForStartupCache: { ...prevState.isForStartupCache, Wallpaper: false },
+      };
     case actionTypes.SHOW_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: true,
@@ -7832,17 +8152,43 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
       return {
         ...prevState,
         showBlockSectionConfirmation: true,
-        sectionData: action.data,
+        sectionPersonalization: action.data,
       };
-    case actionTypes.REPORT_OPEN:
+    case actionTypes.REPORT_AD_OPEN:
       return {
         ...prevState,
         report: {
           ...prevState.report,
+          card_type: action.data?.card_type,
+          position: action.data?.position,
+          placement_id: action.data?.placement_id,
+          reporting_url: action.data?.reporting_url,
+          url: action.data?.url,
+          visible: true,
+        },
+      };
+    case actionTypes.REPORT_CONTENT_OPEN:
+      return {
+        ...prevState,
+        report: {
+          ...prevState.report,
+          card_type: action.data?.card_type,
+          corpus_item_id: action.data?.corpus_item_id,
+          is_section_followed: action.data?.is_section_followed,
+          received_rank: action.data?.received_rank,
+          recommended_at: action.data?.recommended_at,
+          scheduled_corpus_item_id: action.data?.scheduled_corpus_item_id,
+          section_position: action.data?.section_position,
+          section: action.data?.section,
+          title: action.data?.title,
+          topic: action.data?.topic,
+          url: action.data?.url,
           visible: true,
         },
       };
     case actionTypes.REPORT_CLOSE:
+    case actionTypes.REPORT_AD_SUBMIT:
+    case actionTypes.REPORT_CONTENT_SUBMIT:
       return {
         ...prevState,
         report: {
@@ -7850,6 +8196,8 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
           visible: false,
         },
       };
+    case actionTypes.SECTION_PERSONALIZATION_UPDATE:
+      return { ...prevState, sectionPersonalization: action.data };
     default:
       return prevState;
   }
@@ -9021,7 +9369,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       let topSiteLink;
       // Use a placeholder if the link is empty or it's rendering a sponsored
       // tile for the about:home startup cache.
-      if (!link || props.App.isForStartupCache && isSponsored(link) || topSites[i]?.isAddButton) {
+      if (!link || props.App.isForStartupCache.App && isSponsored(link) || topSites[i]?.isAddButton) {
         if (link) {
           topSiteLink = /*#__PURE__*/external_React_default().createElement(TopSitePlaceholder, TopSite_extends({}, slotProps, commonProps, {
             isAddButton: topSites[i] && topSites[i].isAddButton,
@@ -10336,52 +10684,6 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   return { layoutRender };
 };
 
-;// CONCATENATED MODULE: ./content-src/lib/utils.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-
-
-/**
- * A custom react hook that sets up an IntersectionObserver to observe a single
- * or list of elements and triggers a callback when the element comes into the viewport
- * Note: The refs used should be an array type
- * @function useIntersectionObserver
- * @param {function} callback - The function to call when an element comes into the viewport
- * @param {Object} options - Options object passed to Intersection Observer:
- * https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/IntersectionObserver#options
- * @param {Boolean} [isSingle = false] Boolean if the elements are an array or single element
- *
- * @returns {React.MutableRefObject} a ref containing an array of elements or single element
- *
- *
- *
- */
-function useIntersectionObserver(callback, threshold = 0.3) {
-  const elementsRef = (0,external_React_namespaceObject.useRef)([]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          callback(entry.target);
-          observer.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold
-    });
-    elementsRef.current.forEach(el => {
-      if (el) {
-        observer.observe(el);
-      }
-    });
-
-    // Cleanup function to disconnect observer on unmount
-    return () => observer.disconnect();
-  }, [callback, threshold]);
-  return elementsRef;
-}
-
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/SectionContextMenu/SectionContextMenu.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10404,8 +10706,7 @@ function SectionContextMenu({
   dispatch,
   sectionKey,
   following,
-  followedSections,
-  blockedSections,
+  sectionPersonalization,
   sectionPosition
 }) {
   // Initial context menu options: block this section only.
@@ -10437,8 +10738,7 @@ function SectionContextMenu({
     options: SECTIONS_CONTEXT_MENU_OPTIONS,
     shouldSendImpressionStats: true,
     site: {
-      followedSections,
-      blockedSections,
+      sectionPersonalization,
       sectionKey,
       sectionPosition,
       title
@@ -10454,7 +10754,6 @@ function SectionContextMenu({
 
 
 
-const PREF_FOLLOWED_SECTIONS = "discoverystream.sections.following";
 const PREF_VISIBLE_SECTIONS = "discoverystream.sections.interestPicker.visibleSections";
 
 /**
@@ -10475,8 +10774,10 @@ function InterestPicker({
   const focusRef = (0,external_React_namespaceObject.useRef)(null);
   const [focusedIndex, setFocusedIndex] = (0,external_React_namespaceObject.useState)(0);
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const {
+    sectionPersonalization
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
   const visibleSections = prefs[PREF_VISIBLE_SECTIONS]?.split(",").map(item => item.trim()).filter(item => item);
-  const following = prefs[PREF_FOLLOWED_SECTIONS]?.split(",").map(item => item.trim()).filter(item => item) || [];
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.INLINE_SELECTION_IMPRESSION,
@@ -10517,9 +10818,15 @@ function InterestPicker({
       name: topic,
       checked
     } = e.target;
-    let updatedTopics = following;
+    let updatedSections = {
+      ...sectionPersonalization
+    };
     if (checked) {
-      updatedTopics = updatedTopics.length ? [...updatedTopics, topic] : [topic];
+      updatedSections[topic] = {
+        isFollowed: true,
+        isBlocked: false,
+        followedAt: new Date().toISOString()
+      };
       if (!visibleSections.includes(topic)) {
         // add section to visible sections and place after the inline picker
         // subtract 1 from the rank so that it is normalized with array index
@@ -10527,7 +10834,7 @@ function InterestPicker({
         dispatch(actionCreators.SetPref(PREF_VISIBLE_SECTIONS, visibleSections.join(", ")));
       }
     } else {
-      updatedTopics = updatedTopics.filter(t => t !== topic);
+      delete updatedSections[topic];
     }
     dispatch(actionCreators.OnlyToMain({
       type: actionTypes.INLINE_SELECTION_CLICK,
@@ -10538,7 +10845,10 @@ function InterestPicker({
         section_position: receivedFeedRank
       }
     }));
-    dispatch(actionCreators.SetPref(PREF_FOLLOWED_SECTIONS, updatedTopics.join(", ")));
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: updatedSections
+    }));
   }
   return /*#__PURE__*/external_React_default().createElement("section", {
     className: "inline-selection-wrapper ds-section",
@@ -10559,7 +10869,7 @@ function InterestPicker({
     onBlur: onWrapperBlur,
     ref: focusRef
   }, interests.map((interest, index) => {
-    const checked = following.includes(interest.sectionId);
+    const checked = sectionPersonalization[interest.sectionId]?.isFollowed;
     return /*#__PURE__*/external_React_default().createElement("li", {
       key: interest.sectionId,
       ref: index === focusedIndex ? focusedRef : null
@@ -10587,10 +10897,43 @@ function InterestPicker({
   })));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/PersonalizedCard/PersonalizedCard.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+const PersonalizedCard = ({
+  onDismiss
+}) => {
+  const wavingFox = "chrome://newtab/content/data/content/assets/waving-fox.svg";
+  return /*#__PURE__*/external_React_default().createElement("aside", {
+    className: "personalized-card-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "personalized-card-dismiss"
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "icon ghost",
+    iconSrc: "chrome://global/skin/icons/close.svg",
+    onClick: onDismiss,
+    "data-l10n-id": "newtab-toast-dismiss-button"
+  })), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "personalized-card-inner"
+  }, /*#__PURE__*/external_React_default().createElement("img", {
+    src: wavingFox,
+    alt: ""
+  }), /*#__PURE__*/external_React_default().createElement("h2", null, "Personalized Just for You"), /*#__PURE__*/external_React_default().createElement("p", null, "We\u2019re customizing your feed to show content that matters to you, while ensuring your privacy is always respected."), /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "primary",
+    class: "personalized-card-cta"
+  }, "Manage your settings"), /*#__PURE__*/external_React_default().createElement("a", {
+    href: "https://www.mozilla.org/en-US/privacy/firefox/#notice"
+  }, "Learn how we protect and manage data")));
+};
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
 
 
 
@@ -10607,8 +10950,6 @@ const PREF_SECTIONS_CARDS_THUMBS_UP_DOWN_ENABLED = "discoverystream.sections.car
 const PREF_SECTIONS_PERSONALIZATION_ENABLED = "discoverystream.sections.personalization.enabled";
 const CardSections_PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const CardSections_PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
-const CardSections_PREF_FOLLOWED_SECTIONS = "discoverystream.sections.following";
-const PREF_BLOCKED_SECTIONS = "discoverystream.sections.blocked";
 const CardSections_PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
 const CardSections_PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 const PREF_INTEREST_PICKER_ENABLED = "discoverystream.sections.interestPicker.enabled";
@@ -10618,6 +10959,10 @@ const CardSections_PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
 const CardSections_PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
 const CardSections_PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
 const CardSections_PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
+const PREF_INFERRED_PERSONALIZATION_ENABLED = "discoverystream.sections.personalization.inferred.enabled";
+const PREF_INFERRED_PERSONALIZATION_USER_ENABLED = "discoverystream.sections.personalization.inferred.user.enabled";
+const PREF_INFERRED_PERSONALIZATION_POSITION = "discoverystream.sections.personalization.inferred.position";
+const PREF_INFERRED_PERSONALIZATION_BLOCKED = "discoverystream.sections.personalization.inferred.blocked";
 function getLayoutData(responsiveLayouts, index) {
   let layoutData = {
     classNames: [],
@@ -10679,14 +11024,15 @@ function CardSection({
   ctaButtonSponsors
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const {
+    sectionPersonalization
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
   const showTopics = prefs[CardSections_PREF_TOPICS_ENABLED];
   const mayHaveSectionsCards = prefs[CardSections_PREF_SECTIONS_CARDS_ENABLED];
   const mayHaveSectionsCardsThumbsUpDown = prefs[PREF_SECTIONS_CARDS_THUMBS_UP_DOWN_ENABLED];
   const mayHaveThumbsUpDown = prefs[CardSections_PREF_THUMBS_UP_DOWN_ENABLED];
   const selectedTopics = prefs[CardSections_PREF_TOPICS_SELECTED];
   const availableTopics = prefs[CardSections_PREF_TOPICS_AVAILABLE];
-  const followedSectionsPref = prefs[CardSections_PREF_FOLLOWED_SECTIONS] || "";
-  const blockedSectionsPref = prefs[PREF_BLOCKED_SECTIONS] || "";
   const {
     saveToPocketCard
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
@@ -10699,16 +11045,14 @@ function CardSection({
   const {
     responsiveLayouts
   } = section.layout;
-  const followedSections = prefToArray(followedSectionsPref);
-  const following = followedSections.includes(sectionKey);
-  const blockedSections = prefToArray(blockedSectionsPref);
+  const following = sectionPersonalization[sectionKey]?.isFollowed;
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.CARD_SECTION_IMPRESSION,
       data: {
         section: sectionKey,
         section_position: sectionPosition,
-        is_secton_followed: following
+        is_section_followed: following
       }
     }));
   }, [dispatch, sectionKey, sectionPosition, following]);
@@ -10719,7 +11063,18 @@ function CardSection({
   // Only show thumbs up/down buttons if both default thumbs and sections thumbs prefs are enabled
   const mayHaveCombinedThumbsUpDown = mayHaveSectionsCardsThumbsUpDown && mayHaveThumbsUpDown;
   const onFollowClick = (0,external_React_namespaceObject.useCallback)(() => {
-    dispatch(actionCreators.SetPref(CardSections_PREF_FOLLOWED_SECTIONS, [...followedSections, sectionKey].join(", ")));
+    const updatedSectionData = {
+      ...sectionPersonalization,
+      [sectionKey]: {
+        isFollowed: true,
+        isBlocked: false,
+        followedAt: new Date().toISOString()
+      }
+    };
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: updatedSectionData
+    }));
     // Telemetry Event Dispatch
     dispatch(actionCreators.OnlyToMain({
       type: "FOLLOW_SECTION",
@@ -10729,9 +11084,17 @@ function CardSection({
         event_source: "MOZ_BUTTON"
       }
     }));
-  }, [dispatch, followedSections, sectionKey, sectionPosition]);
+  }, [dispatch, sectionPersonalization, sectionKey, sectionPosition]);
   const onUnfollowClick = (0,external_React_namespaceObject.useCallback)(() => {
-    dispatch(actionCreators.SetPref(CardSections_PREF_FOLLOWED_SECTIONS, [...followedSections.filter(item => item !== sectionKey)].join(", ")));
+    const updatedSectionData = {
+      ...sectionPersonalization
+    };
+    delete updatedSectionData[sectionKey];
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: updatedSectionData
+    }));
+
     // Telemetry Event Dispatch
     dispatch(actionCreators.OnlyToMain({
       type: "UNFOLLOW_SECTION",
@@ -10741,7 +11104,7 @@ function CardSection({
         event_source: "MOZ_BUTTON"
       }
     }));
-  }, [dispatch, followedSections, sectionKey, sectionPosition]);
+  }, [dispatch, sectionPersonalization, sectionKey, sectionPosition]);
   const {
     maxTile
   } = getMaxTiles(responsiveLayouts);
@@ -10773,8 +11136,7 @@ function CardSection({
     dispatch: dispatch,
     index: sectionPosition,
     following: following,
-    followedSections: followedSections,
-    blockedSections: blockedSections,
+    sectionPersonalization: sectionPersonalization,
     sectionKey: sectionKey,
     title: title,
     type: type,
@@ -10860,7 +11222,8 @@ function CardSection({
       sectionsCardImageSizes: imageSizes,
       section: sectionKey,
       sectionPosition: sectionPosition,
-      sectionFollowed: following
+      sectionFollowed: following,
+      isTimeSensitive: rec.isTimeSensitive
     });
   })));
 }
@@ -10877,7 +11240,8 @@ function CardSections({
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
-    spocs
+    spocs,
+    sectionPersonalization
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
@@ -10887,11 +11251,10 @@ function CardSections({
     return null;
   }
   const visibleSections = prefToArray(prefs[CardSections_PREF_VISIBLE_SECTIONS]);
-  const blockedSections = prefToArray(prefs[PREF_BLOCKED_SECTIONS] || "");
   const {
     interestPicker
   } = data;
-  let filteredSections = data.sections.filter(section => !blockedSections.includes(section.sectionKey));
+  let filteredSections = data.sections.filter(section => !sectionPersonalization[section.sectionKey]?.isBlocked);
   if (interestPickerEnabled && visibleSections.length) {
     filteredSections = visibleSections.reduce((acc, visibleSection) => {
       const found = filteredSections.find(({
@@ -10953,6 +11316,22 @@ function CardSections({
       receivedFeedRank: interestPicker.receivedFeedRank
     }));
   }
+  const handleDismissP13nCard = () => {
+    dispatch(actionCreators.SetPref(PREF_INFERRED_PERSONALIZATION_BLOCKED, true));
+  };
+  function displayP13nCard() {
+    const row = prefs[PREF_INFERRED_PERSONALIZATION_POSITION];
+    const cardBlocked = prefs[PREF_INFERRED_PERSONALIZATION_BLOCKED];
+    const cardEnabled = prefs[PREF_INFERRED_PERSONALIZATION_ENABLED];
+    const userEnabled = prefs[PREF_INFERRED_PERSONALIZATION_USER_ENABLED];
+    if (!cardBlocked && cardEnabled && userEnabled) {
+      sectionsToRender.splice(row, 0, /*#__PURE__*/external_React_default().createElement(PersonalizedCard, {
+        row: row,
+        onDismiss: handleDismissP13nCard
+      }));
+    }
+  }
+  displayP13nCard();
   const isEmpty = sectionsToRender.length === 0;
   return isEmpty ? /*#__PURE__*/external_React_default().createElement("div", {
     className: "ds-card-grid empty"
@@ -11200,7 +11579,8 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       config
     } = this.props.DiscoveryStream;
     const topicSelectionEnabled = this.props.Prefs.values["discoverystream.topicSelection.enabled"];
-    const reportContentEnabled = this.props.Prefs.values["discoverystream.reportContent.enabled"];
+    const reportAdsEnabled = this.props.Prefs.values["discoverystream.reportAds.enabled"];
+    const spocsEnabled = this.props.Prefs.values["unifiedAds.spocs.enabled"];
 
     // Allow rendering without extracting special components
     if (!config.collapsible) {
@@ -11262,11 +11642,14 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
         sectionTitle = "Editor’s Picks";
       }
     }
-
-    // Render a DS-style TopSites then the rest if any in a collapsible section
+    const {
+      DiscoveryStream
+    } = this.props;
     return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && /*#__PURE__*/external_React_default().createElement(DSPrivacyModal, {
       dispatch: this.props.dispatch
-    }), reportContentEnabled && /*#__PURE__*/external_React_default().createElement(ReportContent, null), topSites && this.renderLayout([{
+    }), (reportAdsEnabled && spocsEnabled || sectionsEnabled) && /*#__PURE__*/external_React_default().createElement(ReportContent, {
+      spocs: DiscoveryStream.spocs
+    }), topSites && this.renderLayout([{
       width: 12,
       components: [topSites],
       sectionType: "topsites"
@@ -11339,25 +11722,13 @@ const DiscoveryStreamBase = (0,external_ReactRedux_namespaceObject.connect)(stat
 
 // eslint-disable-next-line no-shadow
 
-const SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS = "discoverystream.sections.following";
-const SectionsMgmtPanel_PREF_BLOCKED_SECTIONS = "discoverystream.sections.blocked";
-
-/**
- * Transforms a comma-separated string of topics in user preferences
- * into a cleaned-up array.
- *
- * @param pref
- * @returns string[]
- */
-// TODO: DRY Issue: Import function from CardSections.jsx?
-const getTopics = pref => {
-  return pref.split(",").map(item => item.trim()).filter(item => item);
-};
 function SectionsMgmtPanel({
   exitEventFired
 }) {
   const [showPanel, setShowPanel] = (0,external_React_namespaceObject.useState)(false); // State management with useState
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const {
+    sectionPersonalization
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
   const layoutComponents = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.layout[0].components);
   const sections = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.feeds.data);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
@@ -11372,24 +11743,28 @@ function SectionsMgmtPanel({
   if (sectionsFeedName) {
     sectionsList = sections[sectionsFeedName].data.sections;
   }
-  const followedSectionsPref = prefs[SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS] || "";
-  const blockedSectionsPref = prefs[SectionsMgmtPanel_PREF_BLOCKED_SECTIONS] || "";
-  const followedSections = getTopics(followedSectionsPref);
-  const blockedSections = getTopics(blockedSectionsPref);
-  const [followedSectionsState, setFollowedSectionsState] = (0,external_React_namespaceObject.useState)(followedSectionsPref); // State management with useState
-  const [blockedSectionsState, setBlockedSectionsState] = (0,external_React_namespaceObject.useState)(blockedSectionsPref); // State management with useState
+  const [sectionsState, setSectionState] = (0,external_React_namespaceObject.useState)(sectionPersonalization); // State management with useState
 
-  let followedSectionsData = sectionsList.filter(item => followedSectionsState.includes(item.sectionKey));
-  let blockedSectionsData = sectionsList.filter(item => blockedSectionsState.includes(item.sectionKey));
+  let followedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isFollowed);
+  let blockedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isBlocked);
   function updateCachedData() {
     // Reset cached followed/blocked list data while panel is open
-    setFollowedSectionsState(followedSectionsPref);
-    setBlockedSectionsState(blockedSectionsPref);
-    followedSectionsData = sectionsList.filter(item => followedSectionsState.includes(item.sectionKey));
-    blockedSectionsData = sectionsList.filter(item => blockedSectionsState.includes(item.sectionKey));
+    setSectionState(sectionPersonalization);
+    followedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isFollowed);
+    blockedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isBlocked);
   }
   const onFollowClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
-    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS, [...followedSections, sectionKey].join(", ")));
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: {
+        ...sectionPersonalization,
+        [sectionKey]: {
+          isFollowed: true,
+          isBlocked: false,
+          followedAt: new Date().toISOString()
+        }
+      }
+    }));
     // Telemetry Event Dispatch
     dispatch(actionCreators.OnlyToMain({
       type: "FOLLOW_SECTION",
@@ -11399,9 +11774,18 @@ function SectionsMgmtPanel({
         event_source: "CUSTOMIZE_PANEL"
       }
     }));
-  }, [dispatch, followedSections]);
+  }, [dispatch, sectionPersonalization]);
   const onBlockClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
-    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_BLOCKED_SECTIONS, [...blockedSections, sectionKey].join(", ")));
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: {
+        ...sectionPersonalization,
+        [sectionKey]: {
+          isFollowed: false,
+          isBlocked: true
+        }
+      }
+    }));
 
     // Telemetry Event Dispatch
     dispatch(actionCreators.OnlyToMain({
@@ -11412,9 +11796,16 @@ function SectionsMgmtPanel({
         event_source: "CUSTOMIZE_PANEL"
       }
     }));
-  }, [dispatch, blockedSections]);
+  }, [dispatch, sectionPersonalization]);
   const onUnblockClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
-    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_BLOCKED_SECTIONS, [...blockedSections.filter(item => item !== sectionKey)].join(", ")));
+    const updatedSectionData = {
+      ...sectionPersonalization
+    };
+    delete updatedSectionData[sectionKey];
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: updatedSectionData
+    }));
     // Telemetry Event Dispatch
     dispatch(actionCreators.OnlyToMain({
       type: "UNBLOCK_SECTION",
@@ -11424,9 +11815,16 @@ function SectionsMgmtPanel({
         event_source: "CUSTOMIZE_PANEL"
       }
     }));
-  }, [dispatch, blockedSections]);
+  }, [dispatch, sectionPersonalization]);
   const onUnfollowClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
-    dispatch(actionCreators.SetPref(SectionsMgmtPanel_PREF_FOLLOWED_SECTIONS, [...followedSections.filter(item => item !== sectionKey)].join(", ")));
+    const updatedSectionData = {
+      ...sectionPersonalization
+    };
+    delete updatedSectionData[sectionKey];
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.SECTION_PERSONALIZATION_UPDATE,
+      data: updatedSectionData
+    }));
     // Telemetry Event Dispatch
     dispatch(actionCreators.OnlyToMain({
       type: "UNFOLLOW_SECTION",
@@ -11436,7 +11834,7 @@ function SectionsMgmtPanel({
         event_source: "CUSTOMIZE_PANEL"
       }
     }));
-  }, [dispatch, followedSections]);
+  }, [dispatch, sectionPersonalization]);
 
   // Close followed/blocked topic subpanel when parent menu is closed
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -11457,7 +11855,7 @@ function SectionsMgmtPanel({
     title,
     receivedRank
   }) => {
-    const following = followedSections.includes(sectionKey);
+    const following = sectionPersonalization[sectionKey]?.isFollowed;
     return /*#__PURE__*/external_React_default().createElement("li", {
       key: sectionKey
     }, /*#__PURE__*/external_React_default().createElement("label", {
@@ -11486,7 +11884,7 @@ function SectionsMgmtPanel({
     title,
     receivedRank
   }) => {
-    const blocked = blockedSections.includes(sectionKey);
+    const blocked = sectionPersonalization[sectionKey]?.isBlocked;
     return /*#__PURE__*/external_React_default().createElement("li", {
       key: sectionKey
     }, /*#__PURE__*/external_React_default().createElement("label", {
@@ -13079,7 +13477,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherCard"
       }, /*#__PURE__*/external_React_default().createElement("a", {
         "data-l10n-id": "newtab-weather-see-forecast",
-        "data-l10n-args": "{\"provider\": \"AccuWeather\"}",
+        "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}",
         href: WEATHER_SUGGESTION.forecast.url,
         className: "weatherInfoLink",
         onClick: this.onProviderClick
@@ -13107,7 +13505,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherSponsorText"
       }, /*#__PURE__*/external_React_default().createElement("span", {
         "data-l10n-id": "newtab-weather-sponsored",
-        "data-l10n-args": "{\"provider\": \"AccuWeather\"}"
+        "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
       })));
     }
     return /*#__PURE__*/external_React_default().createElement("div", {
@@ -13128,6 +13526,24 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
   IntersectionObserver: globalThis.IntersectionObserver,
   document: globalThis.document
 }))(_Weather);
+;// CONCATENATED MODULE: ./content-src/components/DownloadModalToggle/DownloadModalToggle.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function DownloadModalToggle({
+  onClick,
+  isActive
+}) {
+  return /*#__PURE__*/external_React_default().createElement("button", {
+    className: `mobile-download-promo ${isActive ? " is-active" : ""}`,
+    onClick: onClick
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "icon icon-device-phone"
+  }));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Notifications/Toasts/ThumbUpThumbDownToast.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -13160,10 +13576,43 @@ function ThumbUpThumbDownToast({
   });
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Notifications/Toasts/ReportContentToast.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function ReportContentToast({
+  onDismissClick,
+  onAnimationEnd
+}) {
+  const mozMessageBarRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const {
+      current: mozMessageBarElement
+    } = mozMessageBarRef;
+    mozMessageBarElement.addEventListener("message-bar:user-dismissed", onDismissClick, {
+      once: true
+    });
+    return () => {
+      mozMessageBarElement.removeEventListener("message-bar:user-dismissed", onDismissClick);
+    };
+  }, [onDismissClick]);
+  return /*#__PURE__*/external_React_default().createElement("moz-message-bar", {
+    type: "success",
+    class: "notification-feed-item",
+    dismissable: true,
+    "data-l10n-id": "newtab-toast-thanks-for-reporting",
+    ref: mozMessageBarRef,
+    onAnimationEnd: onAnimationEnd
+  });
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Notifications/Notifications.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -13199,11 +13648,23 @@ function Notifications_Notifications({
     if (!latestToastItem) {
       throw new Error("No toast found");
     }
-    return /*#__PURE__*/external_React_default().createElement(ThumbUpThumbDownToast, {
-      onDismissClick: syncHiddenToastData,
-      onAnimationEnd: syncHiddenToastData,
-      key: toastCounter
-    });
+    switch (latestToastItem) {
+      case "reportSuccessToast":
+        return /*#__PURE__*/external_React_default().createElement(ReportContentToast, {
+          onDismissClick: syncHiddenToastData,
+          onAnimationEnd: syncHiddenToastData,
+          key: toastCounter
+        });
+      case "thumbsUpToast":
+      case "thumbsDownToast":
+        return /*#__PURE__*/external_React_default().createElement(ThumbUpThumbDownToast, {
+          onDismissClick: syncHiddenToastData,
+          onAnimationEnd: syncHiddenToastData,
+          key: toastCounter
+        });
+      default:
+        throw new Error(`Unexpected toast type: ${latestToastItem}`);
+    }
   }, [syncHiddenToastData, toastCounter, toastQueue]);
   (0,external_React_namespaceObject.useEffect)(() => {
     getToast();
@@ -13455,6 +13916,96 @@ function TopicSelection({
   })))));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/FeatureHighlight/DownloadMobilePromoHighlight.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+const PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_A = "mobileDownloadModal.variant-a";
+const PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_B = "mobileDownloadModal.variant-b";
+const PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_C = "mobileDownloadModal.variant-c";
+function DownloadMobilePromoHighlight({
+  position,
+  dispatch,
+  handleDismiss,
+  handleBlock
+}) {
+  const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
+    handleDismiss();
+    handleBlock();
+  }, [handleDismiss, handleBlock]);
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const mobileDownloadPromoVarA = prefs[PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_A];
+  const mobileDownloadPromoVarB = prefs[PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_B];
+  const mobileDownloadPromoVarC = prefs[PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_C];
+  function getActiveVariant() {
+    if (mobileDownloadPromoVarA) {
+      return "A";
+    }
+    if (mobileDownloadPromoVarB) {
+      return "B";
+    }
+    if (mobileDownloadPromoVarC) {
+      return "C";
+    }
+    return null;
+  }
+  function getVariantQRCodeImg() {
+    const variant = getActiveVariant();
+    switch (variant) {
+      case "A":
+        return "chrome://newtab/content/data/content/assets/download-qr-code-var-a.png";
+      case "B":
+        return "chrome://newtab/content/data/content/assets/download-qr-code-var-b.png";
+      case "C":
+        return "chrome://newtab/content/data/content/assets/download-qr-code-var-c.png";
+      default:
+        return null;
+    }
+  }
+  function getVariantCopy() {
+    const variant = getActiveVariant();
+    switch (variant) {
+      case "A":
+        return "newtab-download-mobile-highlight-body-variant-a";
+      case "B":
+        return "newtab-download-mobile-highlight-body-variant-b";
+      case "C":
+        return "newtab-download-mobile-highlight-body-variant-c";
+      default:
+        return null;
+    }
+  }
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "download-firefox-feature-highlight"
+  }, /*#__PURE__*/external_React_default().createElement(FeatureHighlight, {
+    position: position,
+    feature: "FEATURE_DOWNLOAD_MOBILE_PROMO",
+    dispatch: dispatch,
+    message: /*#__PURE__*/external_React_default().createElement("div", {
+      className: "download-firefox-feature-highlight-content"
+    }, /*#__PURE__*/external_React_default().createElement("img", {
+      src: getVariantQRCodeImg(),
+      "data-l10n-id": "newtab-download-mobile-highlight-image",
+      width: "120",
+      height: "191",
+      alt: ""
+    }), /*#__PURE__*/external_React_default().createElement("p", {
+      className: "title",
+      "data-l10n-id": "newtab-download-mobile-highlight-title"
+    }), /*#__PURE__*/external_React_default().createElement("p", {
+      className: "subtitle",
+      "data-l10n-id": getVariantCopy()
+    })),
+    openedOverride: true,
+    showButtonIcon: false,
+    dismissCallback: onDismiss,
+    outsideClickCallback: handleDismiss
+  }));
+}
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -13531,7 +14082,9 @@ function WallpaperFeatureHighlight({
 
 function MessageWrapper({
   children,
-  dispatch
+  dispatch,
+  hiddenOverride,
+  onDismiss
 }) {
   const message = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const [isIntersecting, setIsIntersecting] = (0,external_React_namespaceObject.useState)(false);
@@ -13570,7 +14123,8 @@ function MessageWrapper({
     } else {
       dispatch(actionCreators.AlsoToMain(action));
     }
-  }, [dispatch, message]);
+    onDismiss();
+  }, [dispatch, message, onDismiss]);
   function handleDismiss() {
     const {
       id
@@ -13612,7 +14166,7 @@ function MessageWrapper({
   }
 
   // only display the message if `isHidden` is false
-  return !message.isHidden && /*#__PURE__*/external_React_default().createElement("div", {
+  return (!message.isHidden || hiddenOverride) && /*#__PURE__*/external_React_default().createElement("div", {
     ref: el => {
       ref.current = [el];
     },
@@ -13631,6 +14185,8 @@ function Base_extends() { Base_extends = Object.assign ? Object.assign.bind() : 
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
 
 
 
@@ -13733,16 +14289,20 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.handleOnKeyDown = this.handleOnKeyDown.bind(this);
     this.onWindowScroll = Base_debounce(this.onWindowScroll.bind(this), 5);
     this.setPref = this.setPref.bind(this);
-    this.shouldShowWallpapersHighlight = this.shouldShowWallpapersHighlight.bind(this);
+    this.shouldShowOMCHighlight = this.shouldShowOMCHighlight.bind(this);
     this.updateWallpaper = this.updateWallpaper.bind(this);
     this.prefersDarkQuery = null;
     this.handleColorModeChange = this.handleColorModeChange.bind(this);
     this.shouldDisplayTopicSelectionModal = this.shouldDisplayTopicSelectionModal.bind(this);
+    this.toggleDownloadHighlight = this.toggleDownloadHighlight.bind(this);
+    this.handleDismissDownloadHighlight = this.handleDismissDownloadHighlight.bind(this);
     this.state = {
       fixedSearch: false,
       firstVisibleTimestamp: null,
       colorMode: "",
-      fixedNavStyle: {}
+      fixedNavStyle: {},
+      wallpaperTheme: "",
+      showDownloadHighlight: this.shouldShowOMCHighlight("DownloadMobilePromoHighlight")
     };
   }
   setFirstVisibleTimestamp() {
@@ -13755,6 +14315,8 @@ class BaseContent extends (external_React_default()).PureComponent {
   componentDidMount() {
     __webpack_require__.g.addEventListener("scroll", this.onWindowScroll);
     __webpack_require__.g.addEventListener("keydown", this.handleOnKeyDown);
+    const prefs = this.props.Prefs.values;
+    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
     if (this.props.document.visibilityState === Base_VISIBLE) {
       this.setFirstVisibleTimestamp();
       this.shouldDisplayTopicSelectionModal();
@@ -13773,6 +14335,46 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
     this.prefersDarkQuery.addEventListener("change", this.handleColorModeChange);
     this.handleColorModeChange();
+    if (wallpapersV2Enabled) {
+      this.updateWallpaper();
+    }
+  }
+  componentDidUpdate(prevProps) {
+    const prefs = this.props.Prefs.values;
+    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
+    if (wallpapersV2Enabled) {
+      // destructure current and previous props with fallbacks
+      // (preventing undefined errors)
+      const {
+        Wallpapers: {
+          uploadedWallpaper = null,
+          wallpaperList = null
+        } = {}
+      } = this.props;
+      const {
+        Wallpapers: {
+          uploadedWallpaper: prevUploadedWallpaper = null,
+          wallpaperList: prevWallpaperList = null
+        } = {},
+        Prefs: {
+          values: prevPrefs = {}
+        } = {}
+      } = prevProps;
+      const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
+      const prevSelectedWallpaper = prevPrefs["newtabWallpapers.wallpaper"];
+
+      // don't update wallpaper unless the wallpaper is being changed.
+      if (selectedWallpaper !== prevSelectedWallpaper ||
+      // selecting a new wallpaper
+      uploadedWallpaper !== prevUploadedWallpaper ||
+      // uploading a new wallpaper
+      wallpaperList !== prevWallpaperList ||
+      // remote settings wallpaper list updates
+      this.props.App.isForStartupCache.Wallpaper !== prevProps.App.isForStartupCache.Wallpaper // Startup cached page wallpaper is updating
+      ) {
+        this.updateWallpaper();
+      }
+    }
   }
   handleColorModeChange() {
     const colorMode = this.prefersDarkQuery?.matches ? "dark" : "light";
@@ -13967,21 +14569,23 @@ class BaseContent extends (external_React_default()).PureComponent {
       wallpaperList,
       uploadedWallpaper
     } = this.props.Wallpapers;
+    let lightWallpaper = {};
+    let darkWallpaper = {};
     if (selectedWallpaper === "custom" && uploadedWallpaper) {
       // revoke ObjectURL to prevent memory leaks
       if (this.uploadedWallpaperUrl) {
         URL.revokeObjectURL(this.uploadedWallpaperUrl);
       }
-      const uploadedWallpaperUrl = URL.createObjectURL(uploadedWallpaper);
-      __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper", `url(${uploadedWallpaperUrl})`);
-      __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper-color", "transparent");
+      try {
+        const uploadedWallpaperUrl = URL.createObjectURL(uploadedWallpaper);
+        __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper", `url(${uploadedWallpaperUrl})`);
+        __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper-color", "transparent");
+      } catch (e) {}
       return;
     }
     if (wallpaperList) {
       let wallpaper = wallpaperList.find(wp => wp.title === selectedWallpaper);
-      let lightWallpaper = {};
-      let darkWallpaper = {};
-      if (selectedWallpaper) {
+      if (selectedWallpaper && wallpaper) {
         // if selectedWallpaper exists - we override what light and dark prefs are to match that
         lightWallpaper = wallpaper;
         darkWallpaper = wallpaper;
@@ -14018,26 +14622,27 @@ class BaseContent extends (external_React_default()).PureComponent {
           wallpaperTheme = theme;
         }
       }
-
-      // Add helper class to body if user has a wallpaper selected
-      if (wallpaperTheme === "light") {
-        __webpack_require__.g.document?.body.classList.add("lightWallpaper");
-        __webpack_require__.g.document?.body.classList.remove("darkWallpaper");
-      }
-      if (wallpaperTheme === "dark") {
-        __webpack_require__.g.document?.body.classList.add("darkWallpaper");
-        __webpack_require__.g.document?.body.classList.remove("lightWallpaper");
-      }
+      this.setState({
+        wallpaperTheme
+      });
     }
   }
-  shouldShowWallpapersHighlight() {
-    if (!this.props.Messages?.messageData) {
+  shouldShowOMCHighlight(componentId) {
+    const messageData = this.props.Messages?.messageData;
+    if (!messageData || Object.keys(messageData).length === 0) {
       return false;
     }
-    const {
-      messageData
-    } = this.props.Messages;
-    return messageData?.content?.messageType === "CustomWallpaperHighlight";
+    return messageData?.content?.messageType === componentId;
+  }
+  toggleDownloadHighlight() {
+    this.setState(prevState => ({
+      showDownloadHighlight: !prevState.showDownloadHighlight
+    }));
+  }
+  handleDismissDownloadHighlight() {
+    this.setState({
+      showDownloadHighlight: false
+    });
   }
   getRGBColors(input) {
     if (input.length !== 7) {
@@ -14074,6 +14679,8 @@ class BaseContent extends (external_React_default()).PureComponent {
       }
     }
   }
+
+  // eslint-disable-next-line max-statements, complexity
   render() {
     const {
       props
@@ -14126,15 +14733,26 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveSponsoredTopSites
     } = prefs;
     const supportUrl = prefs["support.url"];
+
+    // Mobile Download Promo Pref Checks
+    const mobileDownloadPromoEnabled = prefs["mobileDownloadModal.enabled"];
+    const mobileDownloadPromoVariantAEnabled = prefs["mobileDownloadModal.variant-a"];
+    const mobileDownloadPromoVariantBEnabled = prefs["mobileDownloadModal.variant-b"];
+    const mobileDownloadPromoVariantCEnabled = prefs["mobileDownloadModal.variant-c"];
+    const mobileDownloadPromoVariantABorC = mobileDownloadPromoVariantAEnabled || mobileDownloadPromoVariantBEnabled || mobileDownloadPromoVariantCEnabled;
+    const mobileDownloadPromoWrapperHeightModifier = prefs["weather.display"] === "detailed" && weatherEnabled && mayHaveWeather ? "is-tall" : "";
     const hasThumbsUpDownLayout = prefs["discoverystream.thumbsUpDown.searchTopsitesCompact"];
     const hasThumbsUpDown = prefs["discoverystream.thumbsUpDown.enabled"];
     const sectionsEnabled = prefs["discoverystream.sections.enabled"];
     const topicLabelsEnabled = prefs["discoverystream.topicLabels.enabled"];
     const sectionsCustomizeMenuPanelEnabled = prefs["discoverystream.sections.customizeMenuPanel.enabled"];
+    const sectionsPersonalizationEnabled = prefs["discoverystream.sections.personalization.enabled"];
     // Logic to show follow/block topic mgmt panel in Customize panel
-    const mayHaveTopicSections = topicLabelsEnabled && sectionsEnabled && sectionsCustomizeMenuPanelEnabled && DiscoveryStream.feeds.loaded;
-    const featureClassName = [weatherEnabled && mayHaveWeather && "has-weather",
-    // Show is weather is enabled/visible
+    const mayHavePersonalizedTopicSections = sectionsPersonalizationEnabled && topicLabelsEnabled && sectionsEnabled && sectionsCustomizeMenuPanelEnabled && DiscoveryStream.feeds.loaded;
+    const featureClassName = [mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && "has-mobile-download-promo",
+    // Mobile download promo modal is enabled/visible
+    weatherEnabled && mayHaveWeather && "has-weather",
+    // Weather widget is enabled/visible
     prefs.showSearch ? "has-search" : "no-search", layoutsVariantAEnabled ? "layout-variant-a" : "",
     // Layout experiment variant A
     layoutsVariantBEnabled ? "layout-variant-b" : "",
@@ -14144,7 +14762,15 @@ class BaseContent extends (external_React_default()).PureComponent {
     pocketEnabled ? "has-recommended-stories" : "no-recommended-stories", sectionsEnabled ? "has-sections-grid" : ""].filter(v => v).join(" ");
     const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["feeds.topsites"] && !pocketEnabled && !prefs.showSearch && "only-topsites", noSectionsEnabled && "no-sections", prefs["logowordmark.alwaysVisible"] && "visible-logo", hasThumbsUpDownLayout && hasThumbsUpDown && "thumbs-ui-compact"].filter(v => v).join(" ");
     if (wallpapersV2Enabled) {
-      this.updateWallpaper();
+      // Add helper class to body if user has a wallpaper selected
+      if (this.state.wallpaperTheme === "light") {
+        __webpack_require__.g.document?.body.classList.add("lightWallpaper");
+        __webpack_require__.g.document?.body.classList.remove("darkWallpaper");
+      }
+      if (this.state.wallpaperTheme === "dark") {
+        __webpack_require__.g.document?.body.classList.add("darkWallpaper");
+        __webpack_require__.g.document?.body.classList.remove("lightWallpaper");
+      }
     }
     return /*#__PURE__*/external_React_default().createElement("div", {
       className: featureClassName
@@ -14159,14 +14785,14 @@ class BaseContent extends (external_React_default()).PureComponent {
       wallpapersV2Enabled: wallpapersV2Enabled,
       activeWallpaper: activeWallpaper,
       pocketRegion: pocketRegion,
-      mayHaveTopicSections: mayHaveTopicSections,
+      mayHaveTopicSections: mayHavePersonalizedTopicSections,
       mayHaveSponsoredTopSites: mayHaveSponsoredTopSites,
       mayHaveSponsoredStories: mayHaveSponsoredStories,
       mayHaveInferredPersonalization: mayHaveInferredPersonalization,
       mayHaveWeather: mayHaveWeather,
       spocMessageVariant: spocMessageVariant,
       showing: customizeMenuVisible
-    }), this.shouldShowWallpapersHighlight() && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+    }), this.shouldShowOMCHighlight("CustomWallpaperHighlight") && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
       dispatch: this.props.dispatch
     }, /*#__PURE__*/external_React_default().createElement(WallpaperFeatureHighlight, {
       position: "inset-block-start inset-inline-start",
@@ -14174,6 +14800,20 @@ class BaseContent extends (external_React_default()).PureComponent {
     }))), /*#__PURE__*/external_React_default().createElement("div", {
       className: "weatherWrapper"
     }, weatherEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Weather_Weather, null))), /*#__PURE__*/external_React_default().createElement("div", {
+      className: `mobileDownloadPromoWrapper ${mobileDownloadPromoWrapperHeightModifier}`
+    }, mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(DownloadModalToggle, {
+      isActive: this.state.showDownloadHighlight,
+      onClick: this.toggleDownloadHighlight
+    }), this.state.showDownloadHighlight && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+      hiddenOverride: this.state.showDownloadHighlight,
+      onDismiss: this.handleDismissDownloadHighlight,
+      dispatch: this.props.dispatch
+    }, /*#__PURE__*/external_React_default().createElement(DownloadMobilePromoHighlight
+    // Var B layout has the weather right-aligned
+    , {
+      position: `${layoutsVariantBEnabled ? "inset-inline-start" : "inset-inline-end"} inset-block-end`,
+      dispatch: this.props.dispatch
+    })))), /*#__PURE__*/external_React_default().createElement("div", {
       className: outerClassName,
       onClick: this.closeCustomizationMenu
     }, /*#__PURE__*/external_React_default().createElement("main", {
@@ -14462,34 +15102,46 @@ const NewTab = ({
 }) => /*#__PURE__*/external_React_default().createElement(external_ReactRedux_namespaceObject.Provider, {
   store: store
 }, /*#__PURE__*/external_React_default().createElement(Base, null));
+function doRequestWhenReady() {
+  // If this document has already gone into the background by the time we've reached
+  // here, we can deprioritize the request until the event loop
+  // frees up. If, however, the visibility changes, we then send the request.
+  const doRequestPromise = new Promise(resolve => {
+    let didRequest = false;
+    let requestIdleCallbackId = 0;
+    function doRequest() {
+      if (!didRequest) {
+        if (requestIdleCallbackId) {
+          cancelIdleCallback(requestIdleCallbackId);
+        }
+        didRequest = true;
+        resolve();
+      }
+    }
+    if (document.hidden) {
+      requestIdleCallbackId = requestIdleCallback(doRequest);
+      addEventListener("visibilitychange", doRequest, {
+        once: true
+      });
+    } else {
+      resolve();
+    }
+  });
+  return doRequestPromise;
+}
 function renderWithoutState() {
   const store = initStore(reducers);
   new DetectUserSessionStart(store).sendEventOrAddListener();
-
-  // If this document has already gone into the background by the time we've reached
-  // here, we can deprioritize requesting the initial state until the event loop
-  // frees up. If, however, the visibility changes, we then send the request.
-  let didRequest = false;
-  let requestIdleCallbackId = 0;
-  function doRequest() {
-    if (!didRequest) {
-      if (requestIdleCallbackId) {
-        cancelIdleCallback(requestIdleCallbackId);
-      }
-      didRequest = true;
-      store.dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.NEW_TAB_STATE_REQUEST
-      }));
-    }
-  }
-  if (document.hidden) {
-    requestIdleCallbackId = requestIdleCallback(doRequest);
-    addEventListener("visibilitychange", doRequest, {
-      once: true
-    });
-  } else {
-    doRequest();
-  }
+  doRequestWhenReady().then(() => {
+    // If state events happened before we got here, we can request state again.
+    store.dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.NEW_TAB_STATE_REQUEST
+    }));
+    // If we rendered without state, we don't need the startup cache.
+    store.dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.NEW_TAB_STATE_REQUEST_WITHOUT_STARTUPCACHE
+    }));
+  });
   external_ReactDOM_default().hydrate( /*#__PURE__*/external_React_default().createElement(NewTab, {
     store: store
   }), document.getElementById("root"));
@@ -14497,6 +15149,14 @@ function renderWithoutState() {
 function renderCache(initialState) {
   const store = initStore(reducers, initialState);
   new DetectUserSessionStart(store).sendEventOrAddListener();
+  doRequestWhenReady().then(() => {
+    // If state events happened before we got here,
+    // we can notify main that we need updates.
+    // The individual feeds know what state is not cached.
+    store.dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.NEW_TAB_STATE_REQUEST_STARTUPCACHE
+    }));
+  });
   external_ReactDOM_default().hydrate( /*#__PURE__*/external_React_default().createElement(NewTab, {
     store: store
   }), document.getElementById("root"));

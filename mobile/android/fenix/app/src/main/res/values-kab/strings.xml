@@ -116,11 +116,11 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Rbeḥ akud s unagraw amaynut n tunigin</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Rbeḥ akud s unagraw amaynut n tunigin</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Deg usmel web, afeggag-a yettnefḍas mi ara tedrurmeḍ d akessar i wakken ad d-trebḥeḍ tallunt.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Deg usmel web, afeggag-a yettnefḍas mi ara tedrurmeḍ d akessar i wakken ad d-trebḥeḍ tallunt.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Sit, teṭṭfeḍ tineccabin akken ad tneggzed gar yisebtar deg uzray n yiccer-a.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Sit, teṭṭfeḍ tineccabin akken ad tneggzed gar yisebtar deg uzray n yiccer-a.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -129,6 +129,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Sfeḍ afeggag n yifecka akken ad tbeddleḍ accaren</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
   <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Zuɣer s azelmaḍ neɣ s ayeffus akken ad tbeddleḍ. Zuɣer iccer aneggaru ɣer uzelmaḍ i wakken ad teldiḍ iccer amaynut.</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">Uɣal ɣer ufeggag n yifecka ɣer tama n zelmeḍ neɣ n yeffus i uzgal seg yiccer ɣer wayeḍ.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Isɛa anekcum ɣer tkamiṛat. Ddu ɣer iɣewwaṛen Android, sit ɣef tisirag, sakin senned sireg.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -359,8 +361,12 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="browser_tools_menu_handlebar_content_description">Mdel tiferkit n wumuɣ n yifecka</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Mdel tiferkit n wumuɣ n waccaren udmawanen</string>
+  <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu when the "Report broken site" feature is available -->
+  <string name="browser_menu_tools_description_with_translate_with_report_site_2">Askar n tɣuri, suqel, mmel asmel yerrẓen, siggez, bḍu, ldi deg usnas</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
   <string name="browser_menu_tools_description_with_translate_without_report_site">Askar n tɣuri, suqel, siggez, bḍu, ldi deg usnas</string>
+  <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu when the "Report broken site" feature is available -->
+  <string name="browser_menu_tools_description_with_report_site_2">Askar n tɣuri, mmel asmel yerrẓen, siggez, bḍu, ldi deg usnas</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
   <string name="browser_menu_tools_description_without_report_site">Askar n tɣuri, siggez, bḍu, ldi deg usnas</string>
   <!--
@@ -380,6 +386,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="browser_menu_turn_on_reader_view">Rmed timeẓri n tɣuṛi</string>
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
   <string name="browser_menu_turn_off_reader_view">Sens timeẓri n tɣuṛi</string>
+  <!-- Browser menu button that reopens a private tab as a regular tab -->
+  <string name="browser_menu_open_in_normal_tab">Senkez ar yiccer aruslig</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page">Suqel asebter…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -470,6 +478,12 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
     %s is the search engine name (for example: DuckDuckGo).
   -->
   <string name="search_engine_icon_content_description_1">Amsedday n unadi: %s</string>
+  <!--
+    Content description (not visible, for screen readers etc.) of the search engine selector from the search toolbar.
+    %s is the search engine name (for example: DuckDuckGo).
+    The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
+  -->
+  <string name="search_engine_selector_content_description">%s: Anefran n umsedday n unadi</string>
   <!--
     Home onboarding
 
@@ -614,16 +628,40 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="onboarding_preferences_dialog_positive_button">Immed</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Anṣuf ar Firefox</string>
+  <!-- Terms of service sub header label. -->
+  <string name="onboarding_terms_of_service_sub_header_2">Tinigin taruradt, taɣellsant deg uẓeṭṭa</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Qbel syen kemmel</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Qbel syen kemmel</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Kemmel</string>
+  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+  <string name="onboarding_term_of_service_line_one_2">S ukemmel, ad tqebleḍ %1$s.</string>
+  <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+  <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Tiwtiln n useqdec n Fiefox</string>
+  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+  <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox terḥa-t tudert-ik tabaḍnit. Issin ugar deg %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
   <string name="onboarding_term_of_service_line_two_link_text">Tasertit n tbaḍnit</string>
+  <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
+  <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Akken ad tεawneḍ deg usnerni iminig, Firefox ad yazen isefka n tawassna akked umyigew ɣer Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Sefrek</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Mudd afus i usnerni n Firefox</string>
+  <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Mi ara tebḍuḍ amek i d-tessneḍ Firefox d wamek i t-tesseqdaceḍ, ad aɣ-tɛawneḍ ad nessiweḍ iminig-nneɣ i wugar n yimdanen.</string>
+  <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Bḍu cwiṭ n yisefka akked yisefkaicriken n tetiknulujit n Mozilla. Isefka-a werǧin ttnuzun neɣ ttusqdacen i uskan n udellel.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Amek i nesseqdac isefka</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Sentem syen bdu tunigin</string>
+  <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
+  <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">Taɣawsa taneggarut</string>
+  <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Bḍu amek i d-tufiḍ Firefox, daɣen i t-tesseqdaceḍ, akked yicriken n ulzuz n Mozilla. Isefka-a werǧin ttnuzun.</string>
+  <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Qbel, syen bdu tunigin</string>
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Fren adeg deg ufeggag n yifecka</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -634,20 +672,37 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="onboarding_customize_toolbar_top_option">Afella</string>
   <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_bottom_option">Adday</string>
+  <!-- Onboarding toolbar selection card content description for the main image. -->
+  <string name="onboarding_customize_toolbar_main_image_content_description">Tugna tameqqrant n uqerru n teskan n tefrant n ufeggag n yifecka i d-yeskanen amedya n ufeggag n yifecka .</string>
+  <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
+  <string name="onboarding_customize_toolbar_placement_bottom_content_description">Tugna n ufeggag n yifecka adday</string>
+  <string name="onboarding_customize_toolbar_placement_top_content_description">Tugna n ufeggag n yifecka afelay</string>
   <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
   <string name="onboarding_customize_toolbar_a11y_action_label_select">fren</string>
   <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Fren asentel</string>
   <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_description" tools:ignore="UnusedResources">Wali web s tafat taceεlalt i tebɣiḍ.</string>
+  <!-- Onboarding label for 'Save and start browsing' button, used by Nimbus experiments. -->
+  <string name="onboarding_save_and_start_button">Sekles syen bdu tunigin</string>
   <!-- Onboarding theme selection card label for 'dark' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_dark_option">Aberkan</string>
   <!-- Onboarding theme selection card label for 'light' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_light_option">Aceɛlal</string>
   <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_system_option">Anagraw awurman</string>
+  <!-- Onboarding theme selection card content description for the main image. -->
+  <string name="onboarding_customize_theme_main_image_content_description">Tugna meqqren n tmuɣli n ufran n usentel i d-yeskanen anaẓur d yifecka n lebni.</string>
+  <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
+  <string name="onboarding_customize_theme_content_description">Tugna n usentel %1$s</string>
   <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
   <string name="onboarding_customize_theme_a11y_action_label_select">fren</string>
+  <!--
+    Widget Picker
+
+    Widget description for widget picker screen
+  -->
+  <string name="widget_picket_description">Bdu anadi uzrib</string>
   <!--
     Search Widget
 
@@ -719,6 +774,10 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="preferences_add_private_browsing_shortcut">Rnu anegzum i tunigin tusligin</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Askar HTTPS-Only</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">Seqdec asekkeṛ n ugdil i tuffra n waccaren deg tunigin tusligt</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary">Wali accaren s udsil umḍin, tukksa n usekkeṛ s wudem, neɣ s PIN.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Amsewḥel n yiɣarracen n yinagan n tuqqna</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -779,8 +838,6 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="preferences_override_account_server">Sagen aqeddac n umiḍan Mozilla</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Sagen aeddac n umtawi</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Aqeddac i umtawi neɣ amiḍan n Mozilla yettwasenfel, Ffeɣ seg usnas akken ad iddu usnifel…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Amiḍan</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -815,6 +872,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="preferences_show_voice_search">Sken anadi s taɣect</string>
   <!-- Preference title for switch preference to show search suggestions also in private mode -->
   <string name="preferences_show_search_suggestions_in_private">Sken deg tɣimit tusligt</string>
+  <!-- Preference title for switch preference to show trending search suggestions -->
+  <string name="preferences_show_trending_search_suggestions">Sken isumar i yettuɛelqen</string>
   <!-- Preference title for switch preference to show recent search suggestions -->
   <string name="preferences_show_recent_search_suggestions">Sken inadiyen imaynuten</string>
   <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
@@ -847,6 +906,12 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="preferences_show_nonsponsored_suggestions_summary">Awi isumar seg web yeqqnen ɣer unadi-k·m</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Beṭṭu n useɣwen</string>
+  <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_title">Seddu aseɣwen n usader n %1$s deg ibeṭṭuyen ɣef WhatsApp..</string>
+  <!-- Body for the link sharing toggle.  %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_body">Nced imeddukkal-ik ad inigen s zzerb, s tɣellist s %1$s yal tikkelt mi ara tebduḍ aseɣwen deg WhatsApp.</string>
+  <!-- Snackbar message shown when user shares a link -->
+  <string name="link_shared_snackbar_message">Aseɣwen yettwabḍa</string>
   <!-- Snackbar action label shown when user shares a link -->
   <string name="link_shared_snackbar_action">Sefrek iɣewwaren</string>
   <!-- Preference for open links in third party apps -->
@@ -1066,10 +1131,24 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="exceptions_empty_message_learn_more_link">Issin ugar</string>
   <!-- Preference switch for usage and technical data collection -->
   <string name="preference_usage_data_1" tools:ignore="UnusedResources" moz:removedIn="138">Isefka n tetiknikt d umyigew</string>
+  <!-- Preference switch for usage and technical data collection -->
+  <string name="preference_usage_data_2">Azen isefka itiknikanen akked wid n umyigew</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more">Issin ugar</string>
+  <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
+  <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">Isefka yerzan ibenk-ik, tawila n warrum akked useqdec-ik, ttεawanen-aɣ ad nesnerni timahilin, tamlellit akked urkad n Firefox.</string>
+  <!-- Preference switch for campaign measurement data (marketing data) collection -->
+  <string name="preferences_marketing_data_2">Isefka n usket n tudrin</string>
+  <!-- Learn more link for marketing data preference -->
+  <string name="preferences_marketing_data_learn_more">Issin ugar ɣef yisefka n ulzuz</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preferences_daily_usage_ping_title">Ping n useqdec n yal ass</string>
+  <string name="preferences_daily_usage_ping_description">Aya yettallel Mozilla ad tessekyed amḍan n yiseqdacen urmiden.</string>
+  <string name="preferences_daily_usage_ping_learn_more">Issin ugar ɣef ping n useqdec n yal ass</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title">Azen s wudem awurman ineqqisen n truẓi</string>
+  <!-- Preference switch description for automatically submitting crash reports -->
+  <string name="preferences_automatically_send_crashes_description">Aya yettall-aneɣ ad nesnined syen ad nṣeggem uguren akked yiminig. Ineqqisen zemren ad d-skecmen isefka udmawanen neɣ imḥulfa.</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Issin ugar ɣef yineqqisen yerrẓen</string>
   <!-- Title for studies preferences -->
@@ -1123,7 +1202,7 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Err agalis n yifecka deg usawen i twaledyawt n waccaren</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Drurem ɣer i wakken ad teffreḍ afeggag n tansiwin d ufeggag n yifecka</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Drurem ɣer i wakken ad teffreḍ afeggag n tansiwin d ufeggag n yifecka</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Err afeggag n tansiwin deg tama i ubeddel n waccaren</string>
   <!--
@@ -1256,8 +1335,24 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="studies_remove">Kkes</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Rmed</string>
+  <!-- Description for studies -->
+  <string name="studies_description_3">Ɛreḍ timahilin d tektiwin send ma ad asent-nserrḥen akk i medden.</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title">Sbedd syen bdu almad</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Issin ugar</string>
+  <!--
+    Sessions
+
+    Title for the list of tabs in the current private session used by a11y services
+    The %1$s will be replaced by the number of opened private tabs
+  -->
+  <string name="tabs_header_private_tabs_counter_title">Acaren usligen yeldin: %1$s. Sit i ubeddel n yiccer.</string>
+  <!--
+    Title for the list of tabs in the synced tabs used by a11y services
+    The %1$s will be replaced by the number of opened synced tabs
+  -->
+  <string name="tabs_header_synced_tabs_counter_title">Accaren yemtawan yeldin: %1$s. Sit i usenfel n waccaren.</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Rnu iccer</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1351,8 +1446,15 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
     Text for the snackbar to confirm that multiple downloads items have been removed
   -->
   <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Isadaren ttwakksen</string>
+  <!--
+    Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
+    %1$d is the number of items deleted.
+  -->
+  <string name="download_delete_multiple_items_snackbar_2">Iferdisen i yettwakksen: %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
   <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Yettwakkes %1$s</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">Yettwakkes “%1$s”</string>
   <!-- Text for the snackbar to confirm that downloads are in progress. -->
   <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">Asader iteddu…</string>
   <!-- Text for the snackbar action button to view in progress download details. -->
@@ -1367,6 +1469,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Ulac ifuyla i d-yettusadren</string>
   <!-- Text shown when no download exists -->
   <string name="download_empty_message_2">Ulac isadaren akka tura</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">Ifuyla i d-tsadreḍ ad d-banen dagi.</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
@@ -1374,10 +1478,33 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="download_multi_select_title">%1$d yettwafren</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Kkes</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Ulac ddeqs n tallunt</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Ibenk-a ulac fell-as aṭas n tallunt i usader n &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Sefrek ifuyla</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Sefsex</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Kkes</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Inig ar deffir</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Inig d asawen</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Uɣal ɣer deffir syen mdel anadi</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Sfeḍ</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Bḍu URL</string>
   <!-- Text for the button to share the download file -->
@@ -1404,6 +1531,13 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="download_time_period_last_30_days">30 n wussan ineggura</string>
   <!-- Text for the header that groups the downloads older than other groups -->
   <string name="download_time_period_older">Iqbuṛen</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • %3$s i d-mazal</string>
   <!-- Text to indicate that an in progress download is paused. -->
   <string name="download_item_status_paused" tools:ignore="UnusedResources">isteɛfa</string>
   <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
@@ -1411,9 +1545,9 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Ifuyla ittwazedmen</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Nadi isadaren</string>
+  <string name="download_search_placeholder">Nadi isadaren</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Ulac igmad yettwafen</string>
+  <string name="download_search_no_results_found">Ulac igmad yettwafen</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Fren akk</string>
   <!--
@@ -1464,6 +1598,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="webcompat_reporter_cancel">Sefsex</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Azen</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text">Aneqqisik yettwazen</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
   <string name="webcompat_reporter_dismiss_success_snackbar_text">Mdel</string>
   <!--
@@ -1528,6 +1664,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="bookmark_menu_copy_button">Nɣel</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Bḍu</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">Fren akk</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">Ldi-t deg yiccer amaynut</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1540,6 +1678,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="bookmark_menu_delete_button">Kkes</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Sekles</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Smizwer s umizwer udmawan</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">Smizwer s umaynut</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -1821,6 +1961,10 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="sync_add_new_device_learn_button">Issin ugar γef tuzba n iccaren…</string>
   <!-- Text for the button to connect another device -->
   <string name="sync_add_new_device_connect_button">Qqen ibenk-nniḍen…</string>
+  <!-- A message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+  <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nYettwazen sɣur %2$s 🦊 Ԑreḍ iminig aziraz: %3$s</string>
+  <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
+  <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nYettwazen sɣur %2$s 🦊%3$s</string>
   <!--
     Notifications
 
@@ -2160,15 +2304,13 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   -->
   <string name="preference_etp_exceptions_icon_description">Tignit n usmenyif n tasureft i ummesten yettwasǧehden mgal aḍfar</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
   <string name="preference_doh_title">DNS nnig n HTTPS</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Issin ugar</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Inig d asawen</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Tisuraf</string>
   <!-- Content description for the "Info" button -->
@@ -2177,38 +2319,62 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="preference_doh_add_site_description">Rnu asmel</string>
   <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection">Ammesten s wudem amezwer</string>
+  <!-- Summary displayed for "Default Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_doh_default_protection_summary">%1$s yeɣtes melmi ara yesseqdec DNS aɣellsan akken ad immesten tabaḍnit-ik.</string>
   <!-- Bullet point 1 for "Default Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection_info_1">Seqdec asaǧǧaw i tferneḍ</string>
+  <!-- Bullet point 3 for "Default Protection" information page under "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_default_protection_info_3">Seqdec asaǧǧaw adigan, ma yella tettunefk tegnit. %1$s</string>
   <!-- Title displayed for "Increased Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_increased_protection">Ammesten yettwasghden</string>
   <!-- Bullet point 1 for "Increased Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_increased_protection_info_1">Seqdec asaǧǧaw i tferneḍ</string>
   <!-- Title displayed for "Max Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_max_protection">Ammesten unnig</string>
+  <!-- Bullet point 1 for "Max Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_max_protection_info_1">Seqdec kan asaǧǧaw i tferneḍ</string>
+  <!-- Bullet point 2 for "Max Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_max_protection_info_2">Ttɛeggin-d yal ma yili ulac DNS aɣellsan</string>
+  <!-- Bullet point 3 for "Max Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_max_protection_info_3">Ma yella ur yelli ara DNS aɣelsan, ismal web ad uɣalen ur d-ttalin ara neɣ ur teddun ara akken iwata</string>
   <!-- Title displayed for "Off" option under "DNS over HTTPS" -->
   <string name="preference_doh_off">Yensa</string>
+  <!-- Summary displayed for "Off" option under "DNS over HTTPS" -->
+  <string name="preference_doh_off_summary">Seqdec aqeddacn uṣeggem DNS s wudem amezwer</string>
   <!-- Text displayed above provider dropdown under "DNS over HTTPS" -->
   <string name="preference_doh_choose_provider">Fren asaǧǧaw</string>
   <!-- Text displayed for "Default provider" under "DNS over HTTPS" providers -->
   <string name="preference_doh_provider_default">(amezwer)</string>
   <!-- Text displayed for "Custom" under "DNS over HTTPS" providers -->
   <string name="preference_doh_provider_custom">Udmawan</string>
+  <!-- Text displayed for "Custom provider" dialog under "DNS over HTTPS" -->
+  <string name="preference_doh_provider_custom_dialog_title">Asaǧǧaw udmawan</string>
   <!-- Text displayed above provider textfield under "DNS over HTTPS" -->
   <string name="preference_doh_provider_custom_dialog_textfield">Imefki</string>
+  <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL does not start with "https://" or its scheme is not "https" -->
+  <string name="preference_doh_provider_custom_dialog_error_https">URLs yezmer ad yebdu s “https://”</string>
   <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL is invalid -->
   <string name="preference_doh_provider_custom_dialog_error_invalid">URL d tarameɣtut</string>
   <!-- Cancel button text for provider textfield under "DNS over HTTPS" -->
   <string name="preference_doh_provider_custom_dialog_cancel">Semmet</string>
   <!-- Add button text for provider textfield under "DNS over HTTPS" -->
   <string name="preference_doh_provider_custom_dialog_add">Rnu</string>
+  <!-- Preference to access list of login exceptions that we don't use DNS over HTTPS -->
+  <string name="preference_doh_exceptions">Tisuraf</string>
+  <!-- Description of "exceptions" for "DNS over HTTPS". %1$s is the name of the app (for example "Firefox"). -->
+  <string name="preference_doh_exceptions_summary">%1$s ur isseqdac ara DNS n tɣellist ɣef usmel-a akked taɣulin-is tirnawin.</string>
   <!-- Text displayed that links to adding website domain for "DNS over HTTPS" exceptions. -->
   <string name="preference_doh_exceptions_add">Rnu asmel</string>
   <!-- Text displayed above the input field when adding exceptions for "DNS over HTTPS". -->
   <string name="preference_doh_exceptions_add_site">Asmel web</string>
   <!-- Placeholder URL displayed in the input field when adding exceptions for "DNS over HTTPS". -->
   <string name="preference_doh_exceptions_add_placeholder">example.com</string>
+  <!-- Error displayed in the input field when adding invalid URLs for "DNS over HTTPS". -->
+  <string name="preference_doh_exceptions_add_error">Yessefk ad yili d taɣult tameɣtut</string>
   <!-- Text displayed on the button within the input field for adding exceptions to "DNS over HTTPS" -->
   <string name="preference_doh_exceptions_add_save">Sekles</string>
+  <!-- Text displayed for removing all exceptions in "DNS over HTTPS" -->
+  <string name="preference_doh_exceptions_remove_all_exceptions">Kkes akk tisuraf</string>
   <!-- About page link text to open support link -->
   <string name="about_support">Tallelt</string>
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
@@ -2513,6 +2679,8 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="quick_settings_sheet_secure_connection_2">Tuqqna d taɣellsant</string>
   <!-- Label that indicates a site is using a insecure connection -->
   <string name="quick_settings_sheet_insecure_connection_2">Tuqqna d taraɣellsant</string>
+  <!-- Label that indicates a site is displaying a local document -->
+  <string name="quick_settings_sheet_local_page">Asebter-a yettwakles deg yibenk-inek.</string>
   <!-- Label to clear site data -->
   <string name="clear_site_data">Sfeḍ inagan n tuqna akked isefka n usmel</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
@@ -3014,18 +3182,37 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="protection_panel_banner_protected_description">Tettummestneḍ. Ma yella ncukk deg kra, ad ak-d-nini.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">Ammesten mgal aḍfaṛ yettwaseǧhed</string>
+  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
+  <string name="protection_panel_etp_toggle_enabled_description">Ma yella wayen ur nteddu ara ɣef usmel-a, εreḍ ad tsenseḍ ammesten.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description">Ammesten yensa. Ad nsumer ad t-tremdeḍ.</string>
+  <!--
+    Text for displaying the total number of trackers blocked in the protection panel.
+    %d is a placeholder for the number of trackers blocked.
+  -->
+  <string name="protection_panel_num_trackers_blocked">Ineḍfaren ttusweḥlen: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">Ulac ineḍfaren i yettwafen</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Iɣewwaren n tbaḍnit d tɣellist</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Tisirag</string>
+  <!--
+    Text for displaying the total number of trackers blocked in the trackers blocked panel.
+    %d is a placeholder for the number of trackers blocked.
+  -->
+  <string name="trackers_blocked_panel_total_num_trackers_blocked">Ineḍfaren ttusweḥlen: %d</string>
   <!--
     Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
     %s is a placeholder for the name of the tracker category.
     %d is a placeholder for the number of trackers blocked.
   -->
   <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+  <!--
+    Description text for a dialog confirming whether the user wants to delete all data for current site.
+    %s is a placeholder for the base domain of website.
+  -->
+  <string name="clear_site_data_dialog_description">Tukksa n yinagan n tuqqna d yisefka n usmel i &lt;b&gt;%s&lt;/b&gt; yezmer ad ak-isuffeɣ seg usmel web, ad yesfeḍ tikarḍiwin n tiɣin.</string>
   <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
   <string name="clear_site_data_dialog_positive_button_text">Sfeḍ</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
@@ -3173,8 +3360,12 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
     The title of the Addresses feature in the Debug Drawer.
   -->
   <string name="debug_drawer_addresses_title">Tansiwin</string>
+  <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+  <string name="debug_drawer_addresses_debug_locales_header">Seɣti idigan ara yettwaremden</string>
   <!-- The title of the header for the section for managing addresses. -->
   <string name="debug_drawer_addresses_management_header">Sefrek tansiwin</string>
+  <!-- The title of the button in the debug drawer for adding a new address. -->
+  <string name="debug_drawer_add_new_address">Rnu tansa tamaynut i tutlayt i yettwafernen</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">Kkes akk tansiwin</string>
   <!--
@@ -3191,6 +3382,26 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
     The title of the glean debugging feature
   -->
   <string name="glean_debug_tools_title">Ifecka n temseɣtayt Glean</string>
+  <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">Ifecka n temḍant</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">Tamnaḍt tagejdant</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">Tamnaḍt-a</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Ɛeddi i tmurt tagejdant</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Ɛeddi i tmurt tamirant</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Ɛeddi i tmurt tagejdant tamirant</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Ɛeddi tamurt tagejdant i lebda</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3221,16 +3432,136 @@ Tiktiwin tigejdanin yuzzlen ur nṣeḥḥi ara
   <string name="certificate_warning_homepage_card_update_now_button" tools:ignore="UnusedResources">Leqqem tura</string>
   <!-- Homepage card title about old Firefox version. "Update" is a verb. Note: The word "Firefox" should NOT be translated. -->
   <string name="certificate_warning_homepage_card_hca1_title" tools:ignore="BrandUsage,UnusedResources">Leqqem iminig-ik Firefox</string>
+  <!-- Homepage card title about old Firefox version. "Update" is a verb. -->
+  <string name="certificate_warning_homepage_card_hcr1_title" tools:ignore="UnusedResources">Leqqem send 14 seg meɣres</string>
+  <!-- Homepage card title about old Firefox version -->
+  <string name="certificate_warning_homepage_card_hcw2_title" tools:ignore="UnusedResources">Ur wwiḍen ara 7 n wussan akken ad truḥeḍ ɣer uleqqem</string>
+  <!-- Homepage card title about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
+  <string name="certificate_warning_homepage_card_hcw3_title" tools:ignore="BrandUsage,UnusedResources">Tagnit taneggarut i ukemmel n useqdec n Firefox</string>
+  <!-- Homepage card message about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
+  <string name="certificate_warning_homepage_card_hcw3_message" tools:ignore="BrandUsage,UnusedResources">Lqem-inek·inem n Firefox ad yeḥbes, ur iteddu ara, akken iwata ass n 14 di meɣres acku aselkin aẓar ad immet.</string>
+  <!-- Push notification title about old Firefox version. "Update" is a noun. -->
+  <string name="certificate_warning_push_notification_update_recommended_title" tools:ignore="UnusedResources">Yettwasra lqem</string>
+  <!-- Push notification title about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
+  <string name="certificate_warning_push_notification_pnw2_title" tools:ignore="BrandUsage,UnusedResources">Aql-ak tesseqdaceḍ lqem aqbuṛ n Firefox.</string>
+  <!-- Push notification message about old Firefox version -->
+  <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Kra n tmahilin ad ḥebsent, ur teddunt ara, azekka.</string>
+  <!--
+    TextField Design System Component
+
+    The default content description for the eye trailing icon button in TextField
+  -->
+  <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Sken-d aḍris uffir</string>
   <!-- The default content description for the cross trailing icon button in TextField -->
   <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Sfeḍ aḍṛis</string>
+  <!--
+    Setup checklist feature
+
+    ===== Setup checklist feature: Title =====
+
+    Title for the setup checklist feature when the state is 'incomplete'. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_title_state_incomplete">Fakk asbedi %1$s</string>
   <!-- Title for the setup checklist feature when the state is 'completed' -->
   <string name="setup_checklist_title_state_completed">Ayyuz!</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">Smed kraḍ-a 3 takkayin i usbeddi n %1$s i tirmit n tunigin igerrzen.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">Tebdiḍ akken iwata! Tfukkeḍ amecwaṛ amezwaru 1 seg 3 n imecwaṛen.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">Qrib! Snat takkayin kfant, mazal 1 ad tfakkeḍ.</string>
+  <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_3_steps_completed_state">Tsemdeḍ akk 3 takkayin. Faṛes seg urured, tabaḍnit akked tɣellist n %1$s.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 6 steps =====
+
+    Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_6_steps_initial_state">Smed akk 6 takkayin i usbeddi n %1$s i tirmit n tunigin igerrzen.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_first_step">Tebdiḍ akken iwata! Tfukkeḍ amecwaṛ amezwaru 1 seg 6 n imecwaṛen.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_second_step">Tfukkeḍ 2 seg 6 takkayin kfant. Iteddu!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fourth_step">Aql-ak deg takkayt tis 4. 2 kan i mazal ad tfakkeḍ!</string>
+  <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_6_steps_completed_state">Tsemdeḍ akk 6 takkayin. Faṛes seg urured, tabaḍnit akked tɣellist n %1$s.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Smed akk 5 takkayin i usbeddi n %1$s i tirmit n tunigin igerrzen.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Tebdiḍ akken iwata! Tfukkeḍ amecwaṛ amezwaru 1 seg 5 n imecwaṛen.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Tfukkeḍ 2 seg 5 takkayin kfant. Iteddu!</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Tsemdeḍ akk 5 takkayin. Faṛes seg urured, tabaḍnit akked tɣellist n %1$s.</string>
+  <!--
+    ===== Setup checklist feature: Task titles =====
+
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">Sbadu-t d iminig amezwer</string>
   <!-- The title of the sign-in task for the setup checklist -->
   <string name="setup_checklist_task_account_sync">Kcem ɣer umiḍan-ik·im</string>
+  <!-- The title of the theme selection task for the setup checklist -->
+  <string name="setup_checklist_task_theme_selection">Fren asentel</string>
+  <!-- The title of the toolbar selection task for the setup checklist -->
+  <string name="setup_checklist_task_toolbar_selection">Fren adeg deg ufeggag n yifecka</string>
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">Snirem isiɣzaf</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget">Sbedd awiǧit n unadi</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">%1$s ixataṛen</string>
+  <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_group_customize">Sagen %1$s</string>
   <!-- The title of the 'helpful tools' group in the setup checklist -->
   <string name="setup_checklist_group_helpful_tools">Ifecka yelhan</string>
+  <!--
+    ===== Setup checklist feature: Button =====
+
+    Text for the 'remove' button for the setup checklist
+  -->
+  <string name="setup_checklist_button_remove">Kkes tabdart n usenqed</string>
+  <!--
+    ===== Setup checklist feature: Accessibility =====
+
+    Accessibility description for a check mark on a completed task
+  -->
+  <string name="a11y_completed_task_description">Tawuri yemmden</string>
+  <!-- Accessibility description for the task icon -->
+  <string name="a11y_task_icon_description">Tignit n temsekrit</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">Ffeɣ seg waccaren usligen</string>
   <!-- Label for the primary action button to unlock private tabs -->
   <string name="pbm_authentication_unlock">Serreḥ</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">Seḥbes accaren usligen</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Rmed asekker n ugdil n waccaren usligen</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Sens asekker n ugdil n waccaren usligen</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Sesteb asekkeṛ n ugdil i tuffra n waccaren</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Sseqdec asekkeṛ n ugdil akken ad teffreḍ accaren usligen?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Ala, tanemmirt</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Mdel accaren</string>
 </resources>

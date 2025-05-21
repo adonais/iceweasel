@@ -127,6 +127,8 @@ const CSP_RESEND_URL = EXAMPLE_URL + "html_csp-resend-test-page.html";
 const IMAGE_CACHE_URL = HTTPS_EXAMPLE_URL + "html_image-cache.html";
 const STYLESHEET_CACHE_URL = HTTPS_EXAMPLE_URL + "html_stylesheet-cache.html";
 const SCRIPT_CACHE_URL = HTTPS_EXAMPLE_URL + "html_script-cache.html";
+const MODULE_SCRIPT_CACHE_URL =
+  HTTPS_EXAMPLE_URL + "html_module-script-cache.html";
 const SLOW_REQUESTS_URL = EXAMPLE_URL + "html_slow-requests-test-page.html";
 const HTTPS_SLOW_REQUESTS_URL =
   HTTPS_EXAMPLE_URL + "html_slow-requests-test-page.html";
@@ -150,6 +152,7 @@ const CORS_SJS_PATH =
 const HSTS_SJS = EXAMPLE_URL + "sjs_hsts-test-server.sjs";
 const METHOD_SJS = EXAMPLE_URL + "sjs_method-test-server.sjs";
 const HTTPS_SLOW_SJS = HTTPS_EXAMPLE_URL + "sjs_slow-test-server.sjs";
+const DELAY_SJS = HTTPS_EXAMPLE_URL + "sjs_delay-test-server.sjs";
 const SET_COOKIE_SAME_SITE_SJS = EXAMPLE_URL + "sjs_set-cookie-same-site.sjs";
 const SEARCH_SJS = EXAMPLE_URL + "sjs_search-test-server.sjs";
 const HTTPS_SEARCH_SJS = HTTPS_EXAMPLE_URL + "sjs_search-test-server.sjs";
@@ -184,6 +187,9 @@ Services.prefs.setBoolPref("devtools.debugger.log", false);
 const gDefaultFilters = Services.prefs.getCharPref(
   "devtools.netmonitor.filters"
 );
+const gDefaultRequestFilter = Services.prefs.getCharPref(
+  "devtools.netmonitor.requestfilter"
+);
 
 // Reveal many columns for test
 Services.prefs.setCharPref(
@@ -214,6 +220,10 @@ registerCleanupFunction(() => {
 
   Services.prefs.setBoolPref("devtools.debugger.log", gEnableLogging);
   Services.prefs.setCharPref("devtools.netmonitor.filters", gDefaultFilters);
+  Services.prefs.setCharPref(
+    "devtools.netmonitor.requestfilter",
+    gDefaultRequestFilter
+  );
   Services.prefs.clearUserPref("devtools.cache.disabled");
   Services.prefs.clearUserPref("devtools.netmonitor.columnsData");
   Services.prefs.clearUserPref("devtools.netmonitor.visibleColumns");
@@ -640,8 +650,15 @@ function verifyRequestItemTarget(
   } = requestItem;
   const formattedIPPort = getFormattedIPAndPort(remoteAddress, remotePort);
   const remoteIP = remoteAddress ? `${formattedIPPort}` : "unknown";
-  const duration = getFormattedTime(totalTime);
-  const latency = getFormattedTime(eventTimings.timings.wait);
+  // TODO Bug 1959359: timing columns duration and latency use a custom formatting for now for undefined/NaN values
+  const duration =
+    totalTime === undefined || isNaN(totalTime)
+      ? ""
+      : getFormattedTime(totalTime);
+  const latency =
+    eventTimings.timings.wait === undefined || isNaN(eventTimings.timings.wait)
+      ? ""
+      : getFormattedTime(eventTimings.timings.wait);
   const protocol = getFormattedProtocol(requestItem);
 
   if (fuzzyUrl) {

@@ -86,7 +86,6 @@
 #include "mozilla/SVGClipPathFrame.h"
 #include "mozilla/SVGMaskFrame.h"
 #include "mozilla/SVGObserverUtils.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
@@ -2316,11 +2315,11 @@ void nsDisplayList::PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
                                             aFlags & PAINT_COMPOSITE_OFFSCREEN);
     }
 
-    if (presContext->RefreshDriver()->HasScheduleFlush()) {
+    if (presContext->RefreshDriver()->IsInRefresh() ||
+        presContext->RefreshDriver()->IsPaintPending()) {
       presContext->NotifyInvalidation(layerManager->GetLastTransactionId(),
                                       frame->GetRect());
     }
-
     return;
   }
 
@@ -2363,12 +2362,12 @@ struct FramesWithDepth {
   explicit FramesWithDepth(float aDepth) : mDepth(aDepth) {}
 
   bool operator<(const FramesWithDepth& aOther) const {
-    if (!FuzzyEqual(mDepth, aOther.mDepth, 0.1f)) {
-      // We want to sort so that the shallowest item (highest depth value) is
-      // first
-      return mDepth > aOther.mDepth;
-    }
-    return false;
+    // We want to sort so that the shallowest item (highest depth value) is
+    // first. Round to have some error tolerance (multiply with 8 translates
+    // effectively to <<3).
+    double lDepth = round(mDepth * 8.);
+    double rDepth = round(aOther.mDepth * 8.);
+    return lDepth > rDepth;
   }
   bool operator==(const FramesWithDepth& aOther) const {
     return this == &aOther;
@@ -5384,7 +5383,6 @@ nsDisplaySubDocument::nsDisplaySubDocument(nsDisplayListBuilder* aBuilder,
                                            nsDisplayOwnLayerFlags aFlags)
     : nsDisplayOwnLayer(aBuilder, aFrame, aList,
                         aBuilder->CurrentActiveScrolledRoot(), aFlags),
-      mScrollParentId(aBuilder->GetCurrentScrollParentId()),
       mShouldFlatten(false),
       mSubDocFrame(aSubDocFrame) {
   MOZ_COUNT_CTOR(nsDisplaySubDocument);

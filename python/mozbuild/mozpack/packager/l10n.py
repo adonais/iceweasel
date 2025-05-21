@@ -30,12 +30,12 @@ from mozpack.packager.formats import FlatFormatter, JarFormatter, OmniJarFormatt
 from mozpack.packager.unpack import UnpackFinder
 
 
-class LocaleManifestFinder(object):
+class LocaleManifestFinder:
     def __init__(self, finder):
         entries = self.entries = []
         bases = self.bases = []
 
-        class MockFormatter(object):
+        class MockFormatter:
             def add_interfaces(self, path, content):
                 pass
 
@@ -54,7 +54,7 @@ class LocaleManifestFinder(object):
         # Those type of entries are used by language packs to work as addons,
         # but are not necessary for the purpose of l10n repacking. So we wrap
         # the finder in order to remove those entries.
-        class WrapFinder(object):
+        class WrapFinder:
             def __init__(self, finder):
                 self._finder = finder
 
@@ -80,7 +80,7 @@ class LocaleManifestFinder(object):
         )
 
 
-class L10NRepackFormatterMixin(object):
+class L10NRepackFormatterMixin:
     def __init__(self, *args, **kwargs):
         super(L10NRepackFormatterMixin, self).__init__(*args, **kwargs)
         self._dictionaries = {}
@@ -250,7 +250,7 @@ def _repack(app_finder, l10n_finder, copier, formatter, non_chrome=set()):
             formatter.add(p, f)
 
     # Transplant jar preloading information.
-    for path, log in six.iteritems(app_finder.jarlogs):
+    for path, log in app_finder.jarlogs.items():
         assert isinstance(copier[path], Jarrer)
         copier[path].preload([l.replace(locale, l10n_locale) for l in log])
 
@@ -284,7 +284,7 @@ def repack(
         finders = {
             "": l10n_finder,
         }
-        for base, path in six.iteritems(extra_l10n):
+        for base, path in extra_l10n.items():
             finders[base] = UnpackFinder(path, minify=minify)
         l10n_finder = ComposedFinder(finders)
     copier = FileCopier()

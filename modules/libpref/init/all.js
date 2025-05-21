@@ -500,7 +500,6 @@ pref("focusmanager.testmode", false);
 pref("accessibility.typeaheadfind", true);
 // Enable FAYT by pressing / or "
 pref("accessibility.typeaheadfind.manual", true);
-pref("accessibility.typeaheadfind.autostart", true);
 // casesensitive: controls the find bar's case-sensitivity
 //     0 - "never"  (case-insensitive)
 //     1 - "always" (case-sensitive)
@@ -647,7 +646,7 @@ pref("toolkit.dump.emit", false);
 pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com");
 // When gathering profiles from child processes, this is the longest time (in
 // seconds) allowed between two responses. 0 = Use internal default.
-pref("devtools.performance.recording.child.timeout_s", 0);
+pref("devtools.performance.recording.child.timeout_s", 15);
 // The popup is only enabled by default on Nightly, Dev Edition, and debug buildsd since
 // it's a developer focused item. It can still be enabled by going to profiler.firefox.com,
 // but by default it is off on Release and Beta. Note that this only adds it to the
@@ -842,6 +841,14 @@ pref("privacy.fingerprintingProtection.overrides", "");
 // If privacy.fingerprintingProtection is enabled, this pref can be used to add
 // or remove features on a domain granular level.
 pref("privacy.fingerprintingProtection.granularOverrides", "");
+
+// If privacy.baselineFingerprintingProtection is enabled, this pref can be used to add
+// or remove features from its effects
+pref("privacy.baselineFingerprintingProtection.overrides", "");
+
+// If privacy.baselineFingerprintingProtection is enabled, this pref can be used to add
+// or remove features on a domain granular level.
+pref("privacy.baselineFingerprintingProtection.granularOverrides", "");
 
 // Fix cookie blocking breakage by providing ephemeral Paritioned LocalStorage
 // for a list of hosts when detected as trackers.
@@ -1467,7 +1474,7 @@ pref("network.cookie.sameSite.laxByDefault.disabledHosts", "");
 pref("network.cookie.maxNumber", 3000);
 pref("network.cookie.maxPerHost", 180);
 // Cookies quota for each host. If cookies exceed the limit maxPerHost,
-// (maxPerHost - quotaPerHost) cookies will be evicted.
+// we evict cookies until we have the quota amount.
 pref("network.cookie.quotaPerHost", 150);
 
 // The PAC file to load.  Ignored unless network.proxy.type is 2.
@@ -3335,7 +3342,7 @@ pref("urlclassifier.features.consentmanager.annotate.allowlistTables", "mozstd-t
 pref("urlclassifier.disallow_completions", "goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256,consent-manager-track-digest256");
 
 // Workaround for Google Recaptcha
-pref("urlclassifier.trackingAnnotationSkipURLs", "google.com/recaptcha/,*.google.com/recaptcha/,d3vox9szr7t2nm.cloudfront.net");
+pref("urlclassifier.trackingAnnotationSkipURLs", "");
 pref("privacy.rejectForeign.allowList", "");
 
 // The list of email webapp sites
@@ -3445,7 +3452,11 @@ pref("browser.search.separatePrivateDefault.ui.enabled", false);
 pref("browser.search.removeEngineInfobar.enabled", true);
 // Temporary preference to allow switching between the Rust based search engine
 // selector and the JavaScript one (bug 1914143).
-pref("browser.search.rustSelector.featureGate", false);
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("browser.search.rustSelector.featureGate", true);
+#else
+  pref("browser.search.rustSelector.featureGate", false);
+#endif
 
 // GMPInstallManager prefs
 
@@ -3708,6 +3719,23 @@ pref("toolkit.aboutProcesses.showProfilerIcons", true);
 // profile is captured.
 pref("toolkit.aboutProcesses.profileDuration", 5);
 
+// This preference controls how about:logging handles profiles when stopping:
+// either it opens the profile in a new tab on profiler.firefox.com, or it
+// uploads it directly to the cloud storage, providing the URL.
+// On Android, it's not currently possible to capture a profile this way,
+// therefore the profile is uploaded by default.
+#if !defined(MOZ_WIDGET_ANDROID)
+  pref("toolkit.aboutLogging.uploadProfileToCloud", false);
+#else
+  pref("toolkit.aboutLogging.uploadProfileToCloud", true);
+#endif
+// The pref "toolkit.aboutlogging.uploadProfileUrl" can also be set to change
+// the upload endpoint. The comment below shows the default value. It's not
+// defined usually because we don't expect our users, even advanced, to change
+// it, and therefore this will likely only be used in our tests.
+// pref("toolkit.aboutlogging.uploadProfileUrl", "https://api.profiler.firefox.com/compressed-store");
+
+
 // When a crash happens, whether to include heap regions of the crash context
 // in the minidump. Enabled by default on nightly and aurora.
 #ifdef RELEASE_OR_BETA
@@ -3726,11 +3754,15 @@ pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
   pref("datareporting.policy.dataSubmissionEnabled", true);
   pref("datareporting.policy.dataSubmissionPolicyNotifiedTime", "0");
   pref("datareporting.policy.dataSubmissionPolicyAcceptedVersion", 0);
-  pref("datareporting.policy.dataSubmissionPolicyBypassNotification", false);
   pref("datareporting.policy.currentPolicyVersion", 2);
   pref("datareporting.policy.minimumPolicyVersion", 1);
   pref("datareporting.policy.minimumPolicyVersion.channel-beta", 2);
   pref("datareporting.policy.firstRunURL", "https://www.mozilla.org/privacy/firefox/");
+  #ifdef MOZILLA_OFFICIAL
+    pref("datareporting.policy.dataSubmissionPolicyBypassNotification", false);
+  #else
+    pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
+  #endif
 #endif
 
 #ifdef MOZ_SERVICES_HEALTHREPORT
@@ -3866,10 +3898,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   // 2: CDP (Chrome DevTools Protocol)
   // 3: WebDriver BiDi + CDP
   pref("remote.active-protocols", 1);
-
-  // Enable processing and dispatching of actions from the
-  // parent process (bug 1773393).
-  pref("remote.events.async.enabled", true);
 
   // Enable WebDriver BiDi experimental commands and events.
   #if defined(NIGHTLY_BUILD)
@@ -4032,6 +4060,8 @@ pref("extensions.formautofill.heuristics.detectDynamicFormChanges", true);
 pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges", true);
 // Note: The greater the timeout value the higher the risk of automatically filling fields after a non-script/user action.
 pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges.timeout", 1000);
+pref("extensions.formautofill.heuristics.refillOnSiteClearingFields", true);
+pref("extensions.formautofill.heuristics.refillOnSiteClearingFields.timeout", 500);
 
 pref("extensions.formautofill.heuristics.autofillSameOriginWithTop", true);
 

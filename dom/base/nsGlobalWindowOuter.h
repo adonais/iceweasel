@@ -339,7 +339,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   virtual bool DispatchCustomEvent(
       const nsAString& aEventName,
       mozilla::ChromeOnlyDispatch aChromeOnlyDispatch) override;
-  bool DispatchResizeEvent(const mozilla::CSSIntSize& aSize);
 
   // For accessing protected field mFullscreen
   friend class FullscreenTransitionTask;
@@ -965,8 +964,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   nsresult GetInterfaceInternal(const nsIID& aIID, void** aSink);
 
   void MaybeAllowStorageForOpenedWindow(nsIURI* aURI);
-
-  bool IsOnlyTopLevelDocumentInSHistory();
 
   void MaybeResetWindowName(Document* aNewDocument);
 

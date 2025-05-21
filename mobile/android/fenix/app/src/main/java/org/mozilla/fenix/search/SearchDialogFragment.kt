@@ -13,7 +13,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
@@ -34,6 +33,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.constraintlayout.widget.ConstraintProperties.BOTTOM
 import androidx.constraintlayout.widget.ConstraintProperties.PARENT_ID
 import androidx.constraintlayout.widget.ConstraintProperties.TOP
@@ -118,13 +118,22 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
     private var _binding: FragmentSearchDialogBinding? = null
     private val binding get() = _binding!!
 
-    @VisibleForTesting internal lateinit var interactor: SearchDialogInteractor
+    private var controller: SearchDialogController? = null
+
+    @VisibleForTesting
+    internal var nullableInteractor: SearchDialogInteractor? = null
+
+    @VisibleForTesting internal val interactor: SearchDialogInteractor get() = nullableInteractor!!
+
     private lateinit var store: SearchDialogFragmentStore
 
-    @VisibleForTesting internal lateinit var toolbarView: ToolbarView
+    private var _toolbarView: ToolbarView? = null
+
+    @VisibleForTesting internal val toolbarView: ToolbarView get() = _toolbarView!!
 
     @VisibleForTesting internal lateinit var inlineAutocompleteEditText: InlineAutocompleteEditText
-    private lateinit var awesomeBarView: AwesomeBarView
+    private var _awesomeBarView: AwesomeBarView? = null
+    private val awesomeBarView: AwesomeBarView get() = _awesomeBarView!!
     private lateinit var startForResult: ActivityResultLauncher<Intent>
 
     private val searchSelectorMenu by lazy {
@@ -245,36 +254,35 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
             ),
         )
 
-        interactor = SearchDialogInteractor(
-            SearchDialogController(
-                activity = activity,
-                store = requireComponents.core.store,
-                tabsUseCases = requireComponents.useCases.tabsUseCases,
-                fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-                fragmentStore = store,
-                navController = findNavController(),
-                settings = requireContext().settings(),
-                dismissDialog = {
-                    dialogHandledAction = true
-                    dismissAllowingStateLoss()
-                },
-                clearToolbarFocus = {
-                    dialogHandledAction = true
-                    toolbarView.view.hideKeyboard()
-                    toolbarView.view.clearFocus()
-                },
-                focusToolbar = { toolbarView.view.edit.focus() },
-                clearToolbar = {
-                    inlineAutocompleteEditText.setText("")
-                },
-                dismissDialogAndGoBack = ::dismissDialogAndGoBack,
-            ),
+        controller = SearchDialogController(
+            activity = activity,
+            store = requireComponents.core.store,
+            tabsUseCases = requireComponents.useCases.tabsUseCases,
+            fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
+            fragmentStore = store,
+            navController = findNavController(),
+            settings = requireContext().settings(),
+            dismissDialog = {
+                dialogHandledAction = true
+                dismissAllowingStateLoss()
+            },
+            clearToolbarFocus = {
+                dialogHandledAction = true
+                toolbarView.view.hideKeyboard()
+                toolbarView.view.clearFocus()
+            },
+            focusToolbar = { toolbarView.view.edit.focus() },
+            clearToolbar = {
+                inlineAutocompleteEditText.setText("")
+            },
+            dismissDialogAndGoBack = ::dismissDialogAndGoBack,
         )
+        nullableInteractor = SearchDialogInteractor(searchController = requireNotNull(controller))
 
         val fromHomeFragment =
             getPreviousDestination()?.destination?.id == R.id.homeFragment
 
-        toolbarView = ToolbarView(
+        _toolbarView = ToolbarView(
             requireContext().settings(),
             requireComponents,
             interactor,
@@ -288,7 +296,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
 
         val awesomeBar = binding.awesomeBar
 
-        awesomeBarView = AwesomeBarView(
+        _awesomeBarView = AwesomeBarView(
             activity,
             interactor,
             awesomeBar,
@@ -312,7 +320,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
         when (getPreviousDestination()?.destination?.id) {
             R.id.homeFragment -> {
                 // When displayed above home, dispatches the touch events to scrim area to the HomeFragment
-                binding.searchWrapper.background = ColorDrawable(Color.TRANSPARENT)
+                binding.searchWrapper.background = Color.TRANSPARENT.toDrawable()
                 dialog?.window?.decorView?.setOnTouchListener { _, event ->
                     when (event?.action) {
                         MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
@@ -363,6 +371,8 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
     @SuppressWarnings("LongMethod", "ComplexMethod")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        binding.awesomeBar.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
         val showUnifiedSearchFeature = requireContext().settings().showUnifiedSearchFeature
 
@@ -625,7 +635,18 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
 
     override fun onDestroyView() {
         super.onDestroyView()
-
+        awesomeBarView.onDestroy()
+        _awesomeBarView = null
+        nullableInteractor = null
+        controller?.apply {
+            dismissDialog = null
+            clearToolbarFocus = null
+            focusToolbar = null
+            clearToolbar = null
+            dismissDialogAndGoBack = null
+        }
+        controller = null
+        _toolbarView = null
         _binding = null
 
         setFragmentResult(

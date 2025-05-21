@@ -809,17 +809,19 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
     EXPECT_EQ(info.payload_bytes_received, stats.payload_bytes_received);
     EXPECT_EQ(info.header_and_padding_bytes_received,
               stats.header_and_padding_bytes_received);
-    EXPECT_EQ(rtc::checked_cast<unsigned int>(info.packets_received),
+    EXPECT_EQ(webrtc::checked_cast<unsigned int>(info.packets_received),
               stats.packets_received);
     EXPECT_EQ(info.packets_lost, stats.packets_lost);
     EXPECT_EQ(info.codec_name, stats.codec_name);
     EXPECT_EQ(info.codec_payload_type, stats.codec_payload_type);
-    EXPECT_EQ(rtc::checked_cast<unsigned int>(info.jitter_ms), stats.jitter_ms);
-    EXPECT_EQ(rtc::checked_cast<unsigned int>(info.jitter_buffer_ms),
+    EXPECT_EQ(webrtc::checked_cast<unsigned int>(info.jitter_ms),
+              stats.jitter_ms);
+    EXPECT_EQ(webrtc::checked_cast<unsigned int>(info.jitter_buffer_ms),
               stats.jitter_buffer_ms);
-    EXPECT_EQ(rtc::checked_cast<unsigned int>(info.jitter_buffer_preferred_ms),
-              stats.jitter_buffer_preferred_ms);
-    EXPECT_EQ(rtc::checked_cast<unsigned int>(info.delay_estimate_ms),
+    EXPECT_EQ(
+        webrtc::checked_cast<unsigned int>(info.jitter_buffer_preferred_ms),
+        stats.jitter_buffer_preferred_ms);
+    EXPECT_EQ(webrtc::checked_cast<unsigned int>(info.delay_estimate_ms),
               stats.delay_estimate_ms);
     EXPECT_EQ(info.audio_level, stats.audio_level);
     EXPECT_EQ(info.total_samples_received, stats.total_samples_received);
@@ -4056,16 +4058,15 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
     spec1.info.allow_comfort_noise = false;
     spec1.info.supports_network_adaption = true;
     specs.push_back(spec1);
-    webrtc::AudioCodecSpec spec2{{"codec2", 32000, 1}, {32000, 1, 32000}};
-    spec2.info.allow_comfort_noise = false;
+    webrtc::AudioCodecSpec spec2{{"codec2", 48000, 2, {{"param1", "value1"}}},
+                                 {48000, 2, 16000, 10000, 20000}};
+    // We do not support 48khz CN.
+    spec2.info.allow_comfort_noise = true;
     specs.push_back(spec2);
-    specs.push_back(webrtc::AudioCodecSpec{
-        {"codec3", 16000, 1, {{"param1", "value1b"}, {"param2", "value2"}}},
-        {16000, 1, 13300}});
     specs.push_back(
-        webrtc::AudioCodecSpec{{"codec4", 8000, 1}, {8000, 1, 64000}});
+        webrtc::AudioCodecSpec{{"codec3", 8000, 1}, {8000, 1, 64000}});
     specs.push_back(
-        webrtc::AudioCodecSpec{{"codec5", 8000, 2}, {8000, 1, 64000}});
+        webrtc::AudioCodecSpec{{"codec4", 8000, 2}, {8000, 1, 64000}});
 
     rtc::scoped_refptr<webrtc::MockAudioEncoderFactory> unused_encoder_factory =
         webrtc::MockAudioEncoderFactory::CreateUnusedFactory();
@@ -4083,7 +4084,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
         mock_decoder_factory, nullptr, apm, nullptr, env.field_trials());
     engine.Init();
     auto codecs = engine.recv_codecs();
-    EXPECT_EQ(11u, codecs.size());
+    EXPECT_EQ(7u, codecs.size());
 
     // Rather than just ASSERTing that there are enough codecs, ensure that we
     // can check the actual values safely, to provide better test results.
@@ -4111,7 +4112,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
         if (absl::EqualsIgnoreCase(codec.name, format.name) &&
             codec.clockrate == format.clockrate_hz &&
             codec.channels == format.num_channels) {
-          return rtc::checked_cast<int>(i);
+          return webrtc::checked_cast<int>(i);
         }
       }
       return -1;
@@ -4122,11 +4123,12 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
     // unsigned and, thus, failed for -1.
     const int num_specs = static_cast<int>(specs.size());
     EXPECT_GE(find_codec({"cn", 8000, 1}), num_specs);
-    EXPECT_GE(find_codec({"cn", 16000, 1}), num_specs);
+    EXPECT_EQ(find_codec({"cn", 16000, 1}), -1);
     EXPECT_EQ(find_codec({"cn", 32000, 1}), -1);
+    EXPECT_EQ(find_codec({"cn", 48000, 1}), -1);
     EXPECT_GE(find_codec({"telephone-event", 8000, 1}), num_specs);
-    EXPECT_GE(find_codec({"telephone-event", 16000, 1}), num_specs);
-    EXPECT_GE(find_codec({"telephone-event", 32000, 1}), num_specs);
+    EXPECT_EQ(find_codec({"telephone-event", 16000, 1}), -1);
+    EXPECT_EQ(find_codec({"telephone-event", 32000, 1}), -1);
     EXPECT_GE(find_codec({"telephone-event", 48000, 1}), num_specs);
   }
 }
@@ -4143,16 +4145,15 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecsWithLatePtAssignment) {
     spec1.info.allow_comfort_noise = false;
     spec1.info.supports_network_adaption = true;
     specs.push_back(spec1);
-    webrtc::AudioCodecSpec spec2{{"codec2", 32000, 1}, {32000, 1, 32000}};
-    spec2.info.allow_comfort_noise = false;
+    webrtc::AudioCodecSpec spec2{{"codec2", 48000, 2, {{"param1", "value1"}}},
+                                 {48000, 2, 16000, 10000, 20000}};
+    // We do not support 48khz CN.
+    spec2.info.allow_comfort_noise = true;
     specs.push_back(spec2);
-    specs.push_back(webrtc::AudioCodecSpec{
-        {"codec3", 16000, 1, {{"param1", "value1b"}, {"param2", "value2"}}},
-        {16000, 1, 13300}});
     specs.push_back(
-        webrtc::AudioCodecSpec{{"codec4", 8000, 1}, {8000, 1, 64000}});
+        webrtc::AudioCodecSpec{{"codec3", 8000, 1}, {8000, 1, 64000}});
     specs.push_back(
-        webrtc::AudioCodecSpec{{"codec5", 8000, 2}, {8000, 1, 64000}});
+        webrtc::AudioCodecSpec{{"codec4", 8000, 2}, {8000, 1, 64000}});
 
     rtc::scoped_refptr<webrtc::MockAudioEncoderFactory> unused_encoder_factory =
         webrtc::MockAudioEncoderFactory::CreateUnusedFactory();
@@ -4170,7 +4171,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecsWithLatePtAssignment) {
         mock_decoder_factory, nullptr, apm, nullptr, env.field_trials());
     engine.Init();
     auto codecs = engine.recv_codecs();
-    EXPECT_EQ(11u, codecs.size());
+    EXPECT_EQ(7u, codecs.size());
 
     // Rather than just ASSERTing that there are enough codecs, ensure that we
     // can check the actual values safely, to provide better test results.
@@ -4198,7 +4199,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecsWithLatePtAssignment) {
         if (absl::EqualsIgnoreCase(codec.name, format.name) &&
             codec.clockrate == format.clockrate_hz &&
             codec.channels == format.num_channels) {
-          return rtc::checked_cast<int>(i);
+          return webrtc::checked_cast<int>(i);
         }
       }
       return -1;
@@ -4209,11 +4210,12 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecsWithLatePtAssignment) {
     // unsigned and, thus, failed for -1.
     const int num_specs = static_cast<int>(specs.size());
     EXPECT_GE(find_codec({"cn", 8000, 1}), num_specs);
-    EXPECT_GE(find_codec({"cn", 16000, 1}), num_specs);
+    EXPECT_EQ(find_codec({"cn", 16000, 1}), -1);
     EXPECT_EQ(find_codec({"cn", 32000, 1}), -1);
+    EXPECT_EQ(find_codec({"cn", 48000, 1}), -1);
     EXPECT_GE(find_codec({"telephone-event", 8000, 1}), num_specs);
-    EXPECT_GE(find_codec({"telephone-event", 16000, 1}), num_specs);
-    EXPECT_GE(find_codec({"telephone-event", 32000, 1}), num_specs);
+    EXPECT_EQ(find_codec({"telephone-event", 16000, 1}), -1);
+    EXPECT_EQ(find_codec({"telephone-event", 32000, 1}), -1);
     EXPECT_GE(find_codec({"telephone-event", 48000, 1}), num_specs);
   }
 }

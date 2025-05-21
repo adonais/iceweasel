@@ -115,11 +115,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">ᱱᱟᱣᱟ ᱱᱮᱵᱷᱤᱜᱮᱥᱚᱱ ᱥᱟᱶᱛᱮ ᱩᱥᱟᱹᱨᱟᱛᱮ ᱵᱽᱨᱟᱣᱡᱽ ᱢᱮ</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">ᱱᱟᱣᱟ ᱱᱮᱵᱷᱤᱜᱮᱥᱚᱱ ᱥᱟᱶᱛᱮ ᱩᱥᱟᱹᱨᱟᱛᱮ ᱵᱽᱨᱟᱣᱡᱽ ᱢᱮ</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">ᱢᱤᱫᱴᱟᱹᱝ ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱨᱮ, ᱱᱚᱣᱟ ᱵᱟᱨ ᱫᱚ ᱰᱷᱮᱨ ᱵᱽᱨᱟᱣᱡᱤᱝ ᱨᱮᱭᱟᱜ ᱡᱟᱭᱜᱟ ᱞᱟᱹᱜᱤᱫ ᱞᱟᱛᱟᱨ ᱥᱮᱫ ᱥᱠᱨᱚᱞ ᱟ ᱚᱱᱟ ᱫᱚ ᱠᱷᱚᱥᱨᱚᱫᱚᱜ ᱟ ᱾</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">ᱢᱤᱫᱴᱟᱹᱝ ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱨᱮ, ᱱᱚᱣᱟ ᱵᱟᱨ ᱫᱚ ᱰᱷᱮᱨ ᱵᱽᱨᱟᱣᱡᱤᱝ ᱨᱮᱭᱟᱜ ᱡᱟᱭᱜᱟ ᱞᱟᱹᱜᱤᱫ ᱞᱟᱛᱟᱨ ᱥᱮᱫ ᱥᱠᱨᱚᱞ ᱟ ᱚᱱᱟ ᱫᱚ ᱠᱷᱚᱥᱨᱚᱫᱚᱜ ᱟ ᱾</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">ᱱᱚᱶᱟ ᱴᱮᱵᱽ ᱱᱟᱜᱟᱢ ᱨᱮ ᱥᱟᱦᱴᱟ ᱛᱟᱞᱟ ᱨᱮ ᱩᱪᱟᱹᱲᱚᱜ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱨ ᱪᱤᱱᱦᱟᱹ ᱨᱮ ᱴᱤᱯᱟᱹᱣ ᱢᱮ ᱾</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">ᱱᱚᱶᱟ ᱴᱮᱵᱽ ᱱᱟᱜᱟᱢ ᱨᱮ ᱥᱟᱦᱴᱟ ᱛᱟᱞᱟ ᱨᱮ ᱩᱪᱟᱹᱲᱚᱜ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱨ ᱪᱤᱱᱦᱟᱹ ᱨᱮ ᱴᱤᱯᱟᱹᱣ ᱢᱮ ᱾</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -630,7 +630,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">ᱩᱥᱟᱹᱨᱟ ᱟᱨ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱣᱮᱵᱽ ᱵᱽᱨᱟᱣᱩᱡᱤᱝ</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">ᱨᱮᱵᱮᱱ ᱢᱮ ᱟᱨ ᱞᱟᱦᱟᱜ ᱢᱮ</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">ᱨᱮᱵᱮᱱ ᱢᱮ ᱟᱨ ᱞᱟᱦᱟᱜ ᱢᱮ</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">ᱞᱟᱦᱟᱜ ᱠᱟᱛᱮ, ᱟᱢ %1$s ᱨᱮᱢ ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟ ᱾</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -836,8 +836,6 @@
   <string name="preferences_override_account_server">ᱢᱚᱱᱮᱛᱮᱭᱟᱜ Mozilla ᱠᱷᱟᱛᱟ ᱥᱟᱹᱨᱣᱟᱹᱨ</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">ᱠᱩᱥᱤᱭᱟᱜ ᱥᱭᱝᱠ ᱥᱟᱹᱨᱣᱟᱹᱨ</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla ᱠᱷᱟᱛᱟ/ ᱥᱭᱝᱠ ᱠᱟᱹᱨᱣᱟᱹᱨ ᱵᱚᱫᱚᱞᱮᱱᱟ ᱾ ᱵᱚᱫᱚᱞ ᱠᱚ ᱫᱚᱦᱚ ᱞᱟᱹᱜᱤᱫ ᱮᱯᱞᱤᱠᱮᱥᱚᱱ ᱵᱚᱸᱫᱚᱜ ᱠᱟᱱᱟ…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">ᱠᱷᱟᱛᱟ</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1170,7 +1168,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ᱴᱮᱵᱽ ᱠᱚ ᱠᱷᱩᱞᱟᱹ ᱞᱟᱹᱜᱤᱫ ᱴᱩᱞᱵᱟᱨ ᱥᱣᱟᱭᱤᱯ ᱢᱮ</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">ᱴᱷᱤᱠᱬᱟᱹᱵᱟᱨ ᱟᱨ ᱦᱟᱹᱛᱷᱤᱭᱟᱹᱨᱵᱟᱨ ᱩᱠᱩ ᱞᱟᱹᱜᱤᱫ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">ᱴᱷᱤᱠᱬᱟᱹᱵᱟᱨ ᱟᱨ ᱦᱟᱹᱛᱷᱤᱭᱟᱹᱨᱵᱟᱨ ᱩᱠᱩ ᱞᱟᱹᱜᱤᱫ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ᱴᱮᱵᱽ ᱠᱚ ᱵᱚᱫᱚᱞ‌ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱭᱤᱰ ᱴᱷᱤᱠᱬᱟᱹᱵᱟᱨ ᱠᱷᱚᱥᱨᱚᱫ ᱢᱮ</string>
   <!--
@@ -1456,9 +1454,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">ᱰᱟᱣᱱᱞᱚᱰ ᱰᱤᱜᱟᱹᱣᱮᱱᱟ</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">ᱰᱟᱩᱱᱞᱚᱰ ᱯᱟᱱᱛᱮ ᱢᱮ</string>
+  <string name="download_search_placeholder">ᱰᱟᱩᱱᱞᱚᱰ ᱯᱟᱱᱛᱮ ᱢᱮ</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">ᱪᱮᱫ ᱛᱮᱞᱟ ᱵᱟᱭ ᱧᱟᱢ ᱞᱮᱱᱟ</string>
+  <string name="download_search_no_results_found">ᱪᱮᱫ ᱛᱮᱞᱟ ᱵᱟᱭ ᱧᱟᱢ ᱞᱮᱱᱟ</string>
   <!--
     Downloads Content Type Filters
 
@@ -2201,7 +2199,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">ᱵᱟᱲᱦᱟᱣᱟᱠᱟᱱ ᱯᱟᱸᱡᱟ ᱨᱚᱯᱷᱟ ᱵᱟᱹᱨᱜᱤᱞ ᱠᱩᱥᱤ ᱪᱤᱱᱦᱟᱹ</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2210,8 +2208,6 @@
   <string name="preference_doh_summary">HTTPS ᱛᱮ Domain Name System (DNS) ᱫᱚ ᱟᱢᱟᱜ ᱰᱚᱢᱮᱱ ᱧᱩᱛᱩᱢ ᱞᱟᱹᱜᱤᱫ ᱟᱢᱟᱜ ᱟᱨᱡᱟᱣ ᱫᱚ ᱮᱱᱠᱨᱤᱯᱴ ᱠᱚᱱᱮᱠᱥᱚᱱ ᱛᱮ ᱵᱷᱮᱡᱟᱭᱟ, ᱚᱱᱟ ᱛᱮ ᱨᱟᱠᱷᱟ DNS ᱮᱢ ᱫᱟᱲᱮᱭᱟᱜ-ᱟ ᱟᱨ ᱮᱴᱟᱜ ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱟᱢ ᱚᱠᱟ ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱮᱢ ᱥᱮᱱᱚᱜ ᱠᱟᱱᱟ ᱚᱱᱟ ᱧᱮᱞ ᱫᱚ ᱟᱹᱰᱤ ᱜᱮ ᱢᱩᱥᱠᱤᱞ ᱠᱟᱱᱟ ᱾ %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">ᱪᱮᱛᱟᱱ ᱥᱮᱱ ᱱᱮᱣᱤᱜᱮᱴ ᱢᱮ</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">ᱪᱷᱟᱰᱟ ᱠᱚ</string>
   <!-- Content description for the "Info" button -->

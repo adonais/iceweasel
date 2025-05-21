@@ -841,13 +841,14 @@ struct VOut {
     GPUShaderStage.VERTEX;
 
     const entries = [];
-    if (texture instanceof GPUExternalTexture) {
+    if (code.includes('texture_external')) {
       entries.push({
         binding: 0,
         visibility,
         externalTexture: {}
       });
     } else if (code.includes('texture_storage')) {
+      assert(texture instanceof GPUTexture);
       entries.push({
         binding: 0,
         visibility,
@@ -862,6 +863,7 @@ struct VOut {
         }
       });
     } else {
+      assert(texture instanceof GPUTexture);
       const sampleType =
       viewDescriptor?.aspect === 'stencil-only' ?
       'uint' :
@@ -1635,6 +1637,26 @@ src)
   }
 }
 
+function getEffectiveLodClamp(
+builtin,
+sampler,
+softwareTexture)
+{
+  const { mipLevelCount } = getBaseMipLevelInfo(softwareTexture);
+
+  const lodMinClamp =
+  isBuiltinGather(builtin) || sampler?.lodMinClamp === undefined ? 0 : sampler.lodMinClamp;
+  const lodMaxClamp =
+  isBuiltinGather(builtin) || sampler?.lodMaxClamp === undefined ?
+  mipLevelCount - 1 :
+  sampler.lodMaxClamp;
+  assert(lodMinClamp >= 0 && lodMinClamp < mipLevelCount, 'lodMinClamp in range');
+  assert(lodMaxClamp >= 0 && lodMaxClamp < mipLevelCount, 'lodMaxClamp in range');
+  assert(lodMinClamp <= lodMinClamp, 'lodMinClamp <= lodMaxClamp');
+
+  return { min: lodMinClamp, max: lodMaxClamp };
+}
+
 /**
  * Returns the expect value for a WGSL builtin texture function for a single
  * mip level
@@ -1890,12 +1912,11 @@ mipLevel)
   }
 
   const { mipLevelCount } = getBaseMipLevelInfo(softwareTexture);
-  const maxLevel = mipLevelCount - 1;
-
+  const lodClampMinMax = getEffectiveLodClamp(call.builtin, sampler, softwareTexture);
   const effectiveMipmapFilter = isBuiltinGather(call.builtin) ? 'nearest' : sampler.mipmapFilter;
   switch (effectiveMipmapFilter) {
     case 'linear':{
-        const clampedMipLevel = clamp(mipLevel, { min: 0, max: maxLevel });
+        const clampedMipLevel = clamp(mipLevel, lodClampMinMax);
         const rootMipLevel = Math.floor(clampedMipLevel);
         const nextMipLevel = Math.ceil(clampedMipLevel);
         const t0 = softwareTextureReadMipLevel(call, softwareTexture, sampler, rootMipLevel);
@@ -1916,7 +1937,7 @@ mipLevel)
         return out;
       }
     default:{
-        const baseMipLevel = Math.floor(clamp(mipLevel + 0.5, { min: 0, max: maxLevel }));
+        const baseMipLevel = Math.floor(clamp(mipLevel, lodClampMinMax) + 0.5);
         return softwareTextureReadMipLevel(call, softwareTexture, sampler, baseMipLevel);
       }
   }
@@ -2501,6 +2522,7 @@ gpuTexture)
       const { baseMipLevel, mipLevelCount, baseArrayLayer, arrayLayerCount, baseMipLevelSize } =
       getBaseMipLevelInfo(softwareTexture);
       const physicalMipLevelCount = softwareTexture.descriptor.mipLevelCount ?? 1;
+      const lodClamp = getEffectiveLodClamp(call.builtin, sampler, softwareTexture);
 
       const desc = describeTextureCall(call);
       errs.push(`result was not as expected:
@@ -2510,6 +2532,8 @@ gpuTexture)
   baseArrayLayer: ${baseArrayLayer}
  arrayLayerCount: ${arrayLayerCount}
 physicalMipCount: ${physicalMipLevelCount}
+     lodMinClamp: ${lodClamp.min} (effective)
+     lodMaxClamp: ${lodClamp.max} (effective)
             call: ${desc}  // #${callIdx}`);
       if (isCubeViewDimension(softwareTexture.viewDescriptor)) {
         const coord = convertCubeCoordToNormalized3DTextureCoord(call.coords);
@@ -2895,12 +2919,9 @@ function getEffectiveViewDimension(
 t,
 descriptor)
 {
-  const { textureBindingViewDimension } = descriptor;
-
-
   const size = reifyExtent3D(descriptor.size);
   return effectiveViewDimensionForDimension(
-    textureBindingViewDimension,
+    descriptor.textureBindingViewDimension,
     descriptor.dimension,
     size.depthOrArrayLayers
   );
@@ -3249,9 +3270,9 @@ componentOrder)
 }
 
 /**
- * Creates a VideoFrame with random data and a TexelView with the same data.
+ * Creates a Canvas with random data and a TexelView with the same data.
  */
-export function createVideoFrameWithRandomDataAndGetTexels(textureSize) {
+export function createCanvasWithRandomDataAndGetTexels(textureSize) {
   const size = reifyExtent3D(textureSize);
   assert(size.depthOrArrayLayers === 1);
 
@@ -3267,7 +3288,6 @@ export function createVideoFrameWithRandomDataAndGetTexels(textureSize) {
   const canvas = new OffscreenCanvas(size.width, size.height);
   const ctx = canvas.getContext('2d');
   ctx.putImageData(imageData, 0, 0);
-  const videoFrame = new VideoFrame(canvas, { timestamp: 0 });
 
   // Premultiply the ImageData
   for (let i = 0; i < data.length; i += 4) {
@@ -3287,7 +3307,7 @@ export function createVideoFrameWithRandomDataAndGetTexels(textureSize) {
   })];
 
 
-  return { videoFrame, texels };
+  return { canvas, texels };
 }
 
 const kFaceNames = ['+x', '-x', '+y', '-y', '+z', '-z'];

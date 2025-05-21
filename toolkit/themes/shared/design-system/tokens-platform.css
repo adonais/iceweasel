@@ -41,8 +41,8 @@
 
     /** Link **/
     --link-color: LinkText;
-    --link-color-hover: LinkText;
-    --link-color-active: ActiveText;
+    --link-color-hover: color-mix(in srgb, black 10%, var(--link-color));
+    --link-color-active: color-mix(in srgb, black 20%, var(--link-color));
     --link-color-visited: var(--link-color);
 
     /** Table Row **/

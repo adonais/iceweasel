@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{ColorF, ExternalImageId, ImageBufferKind, ImageKey, ImageRendering, YuvFormat, YuvRangedColorSpace};
+use api::{BorderRadius, ColorF, ExternalImageId, ImageBufferKind, ImageKey, ImageRendering, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
 use api::ColorDepth;
 use crate::image_source::resolve_image;
@@ -13,11 +13,12 @@ use crate::internal_types::{FrameAllocator, FrameMemory, FrameVec, TextureSource
 use crate::picture::{ImageDependency, ResolvedSurfaceTexture, TileCacheInstance, TileId, TileSurface};
 use crate::prim_store::DeferredResolve;
 use crate::resource_cache::{ImageRequest, ResourceCache};
-use crate::util::{Preallocator, ScaleOffset};
+use crate::util::{extract_inner_rect_safe, Preallocator, ScaleOffset};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::device::Device;
 use crate::space::SpaceMapper;
 use std::{ops, u64, os::raw::c_void};
+use std::num::NonZeroUsize;
 
 /*
  Types and definitions related to compositing picture cache tiles
@@ -115,6 +116,8 @@ bitflags! {
         const NO_UV_CLAMP = 1 << 0;
         // The texture sample should not be modulated by a specified color.
         const NO_COLOR_MODULATION = 1 << 1;
+        // Can skip applying clip mask.
+        const NO_CLIP_MASK = 1 << 2;
     }
 }
 
@@ -137,6 +140,12 @@ impl CompositorTransformIndex {
     pub const INVALID: CompositorTransformIndex = CompositorTransformIndex(!0);
 }
 
+// Index in to the compositor clips stored in `CompositeState`
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Copy, Clone)]
+pub struct CompositorClipIndex(NonZeroUsize);
+
 /// Describes the geometry and surface of a tile to be composited
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -150,6 +159,7 @@ pub struct CompositeTile {
     pub z_id: ZBufferId,
     pub kind: TileKind,
     pub transform_index: CompositorTransformIndex,
+    pub clip_index: Option<CompositorClipIndex>,
 }
 
 pub fn tile_kind(surface: &CompositeTileSurface, is_opaque: bool) -> TileKind {
@@ -514,6 +524,8 @@ pub struct CompositeSurfaceDescriptor {
     pub image_rendering: ImageRendering,
     // List of the surface information for each tile added to this virtual surface
     pub tile_descriptors: Vec<CompositeTileDescriptor>,
+    pub rounded_clip_rect: DeviceRect,
+    pub rounded_clip_radii: ClipRadius,
 }
 
 /// Describes surface properties used to composite a frame. This
@@ -595,6 +607,13 @@ pub struct CompositorTransform {
     local_to_device: ScaleOffset,
 }
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct CompositorClip {
+    pub rect: DeviceRect,
+    pub radius: BorderRadius,
+}
+
 /// The list of tiles to be drawn this frame
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -629,6 +648,8 @@ pub struct CompositeState {
     pub transforms: FrameVec<CompositorTransform>,
     /// Whether we have low quality pinch zoom enabled
     low_quality_pinch_zoom: bool,
+    /// List of registered clips used by picture cache and/or external surfaces
+    pub clips: FrameVec<CompositorClip>,
 }
 
 impl CompositeState {
@@ -641,6 +662,14 @@ impl CompositeState {
         low_quality_pinch_zoom: bool,
         memory: &FrameMemory,
     ) -> Self {
+        // Since CompositorClipIndex is NonZeroUSize, we need to
+        // push a dummy entry in to this array.
+        let mut clips = memory.new_vec();
+        clips.push(CompositorClip {
+            rect: DeviceRect::zero(),
+            radius: BorderRadius::zero(),
+        });
+
         CompositeState {
             tiles: memory.new_vec(),
             z_generator: ZBufferIdGenerator::new(max_depth_ids),
@@ -652,6 +681,32 @@ impl CompositeState {
             picture_cache_debug: PictureCacheDebugInfo::new(),
             transforms: memory.new_vec(),
             low_quality_pinch_zoom,
+            clips,
+        }
+    }
+
+    fn compositor_clip_params(
+        &self,
+        clip_index: Option<CompositorClipIndex>,
+        default_rect: DeviceRect,
+    ) -> (DeviceRect, ClipRadius) {
+        match clip_index {
+            Some(clip_index) => {
+                let clip = self.get_compositor_clip(clip_index);
+
+                (
+                    clip.rect.cast_unit(),
+                    ClipRadius {
+                        top_left: clip.radius.top_left.width,
+                        top_right: clip.radius.top_right.width,
+                        bottom_left: clip.radius.bottom_left.width,
+                        bottom_right: clip.radius.bottom_right.width,
+                    }
+                )
+            }
+            None => {
+                (default_rect, ClipRadius::EMPTY)
+            }
         }
     }
 
@@ -669,6 +724,22 @@ impl CompositeState {
             local_to_raster,
             raster_to_device,
             local_to_device,
+        });
+
+        index
+    }
+
+    /// Register use of a clip for a picture cache tile and/or external surface
+    pub fn register_clip(
+        &mut self,
+        rect: DeviceRect,
+        radius: BorderRadius,
+    ) -> CompositorClipIndex {
+        let index = CompositorClipIndex(NonZeroUsize::new(self.clips.len()).expect("bug"));
+
+        self.clips.push(CompositorClip {
+            rect,
+            radius,
         });
 
         index
@@ -723,13 +794,44 @@ impl CompositeState {
         transform.raster_to_device
     }
 
+    /// Get the compositor clip
+    pub fn get_compositor_clip(
+        &self,
+        clip_index: CompositorClipIndex,
+    ) -> &CompositorClip {
+        &self.clips[clip_index.0.get()]
+    }
+
     /// Register an occluder during picture cache updates that can be
     /// used during frame building to occlude tiles.
     pub fn register_occluder(
         &mut self,
         z_id: ZBufferId,
         rect: WorldRect,
+        compositor_clip: Option<CompositorClipIndex>,
     ) {
+        let rect = match compositor_clip {
+            Some(clip_index) => {
+                let clip = self.get_compositor_clip(clip_index);
+
+                let inner_rect = match extract_inner_rect_safe(
+                    &clip.rect,
+                    &clip.radius,
+                ) {
+                    Some(rect) => rect,
+                    None => return,
+                };
+
+                match inner_rect.cast_unit().intersection(&rect) {
+                    Some(rect) => rect,
+                    None => return,
+                }
+            }
+            None => {
+                rect
+            }
+        };
+
         let world_rect = rect.round().to_i32();
 
         self.occluders.push(world_rect, z_id);
@@ -744,6 +846,7 @@ impl CompositeState {
         resource_cache: &ResourceCache,
         gpu_cache: &mut GpuCache,
         deferred_resolves: &mut FrameVec<DeferredResolve>,
+        clip_index: Option<CompositorClipIndex>,
     ) {
         let clip_rect = external_surface
             .clip_rect
@@ -815,7 +918,13 @@ impl CompositeState {
             device_clip_rect: clip_rect,
             z_id: external_surface.z_id,
             transform_index: external_surface.transform_index,
+            clip_index,
         };
+
+        let (rounded_clip_rect, rounded_clip_radii) = self.compositor_clip_params(
+            clip_index,
+            clip_rect,
+        );
 
         // Add a surface descriptor for each compositor surface. For the Draw
         // compositor, this is used to avoid composites being skipped by adding
@@ -828,6 +937,8 @@ impl CompositeState {
                 image_dependencies: image_dependencies,
                 image_rendering: external_surface.image_rendering,
                 tile_descriptors: Vec::new(),
+                rounded_clip_rect,
+                rounded_clip_radii,
             }
         );
 
@@ -857,6 +968,11 @@ impl CompositeState {
         };
 
         if let Some(backdrop_surface) = &tile_cache.backdrop_surface {
+            let (rounded_clip_rect, rounded_clip_radii) = self.compositor_clip_params(
+                tile_cache.compositor_clip,
+                backdrop_surface.device_rect,
+            );
+    
             // Use the backdrop native surface we created and add that to the composite state.
             self.descriptor.surfaces.push(
                 CompositeSurfaceDescriptor {
@@ -866,6 +982,8 @@ impl CompositeState {
                     image_dependencies: [ImageDependency::INVALID; 3],
                     image_rendering,
                     tile_descriptors: Vec::new(),
+                    rounded_clip_rect,
+                    rounded_clip_radii,
                 }
             );
         }
@@ -879,6 +997,7 @@ impl CompositeState {
                 resource_cache,
                 gpu_cache,
                 deferred_resolves,
+                tile_cache.compositor_clip,
             );
         }
 
@@ -916,6 +1035,11 @@ impl CompositeState {
 
             // Only push tiles if they have valid clip rects.
             if !surface_clip_rect.is_empty() {
+                let (rounded_clip_rect, rounded_clip_radii) = self.compositor_clip_params(
+                    tile_cache.compositor_clip,
+                    surface_clip_rect,
+                );
+
                 // Add opaque surface before any compositor surfaces
                 if !sub_slice.opaque_tile_descriptors.is_empty() {
                     self.descriptor.surfaces.push(
@@ -926,6 +1050,8 @@ impl CompositeState {
                             image_dependencies: [ImageDependency::INVALID; 3],
                             image_rendering,
                             tile_descriptors: sub_slice.opaque_tile_descriptors.clone(),
+                            rounded_clip_rect,
+                            rounded_clip_radii,
                         }
                     );
                 }
@@ -940,6 +1066,8 @@ impl CompositeState {
                             image_dependencies: [ImageDependency::INVALID; 3],
                             image_rendering,
                             tile_descriptors: sub_slice.alpha_tile_descriptors.clone(),
+                            rounded_clip_rect,
+                            rounded_clip_radii,
                         }
                     );
                 }
@@ -955,6 +1083,7 @@ impl CompositeState {
                     resource_cache,
                     gpu_cache,
                     deferred_resolves,
+                    tile_cache.compositor_clip,
                 );
             }
         }
@@ -1217,6 +1346,21 @@ impl Default for WindowVisibility {
 // pub struct CompositorSurfacePixel;
 pub type CompositorSurfaceTransform = ScaleOffset;
 
+#[repr(C)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub struct ClipRadius {
+    top_left: f32,
+    top_right: f32,
+    bottom_left: f32,
+    bottom_right: f32,
+}
+
+impl ClipRadius {
+    pub const EMPTY: ClipRadius = ClipRadius { top_left: 0.0, top_right: 0.0, bottom_left: 0.0, bottom_right: 0.0 };
+}
+
 /// Defines an interface to a native (OS level) compositor. If supplied
 /// by the client application, then picture cache slices will be
 /// composited by the OS compositor, rather than drawn via WR batches.
@@ -1343,6 +1487,8 @@ pub trait Compositor {
         transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
         image_rendering: ImageRendering,
+        rounded_clip_rect: DeviceIntRect,
+        rounded_clip_radii: ClipRadius,
     );
 
     /// Notify the compositor that all tiles have been invalidated and all

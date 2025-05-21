@@ -49,7 +49,7 @@ else:
 
     def _copyfile(src, dest):
         # False indicates `dest` should be overwritten if it exists already.
-        if isinstance(src, six.text_type) and isinstance(dest, six.text_type):
+        if isinstance(src, str) and isinstance(dest, str):
             _CopyFileW(src, dest, False)
         elif isinstance(src, str) and isinstance(dest, str):
             _CopyFileA(src, dest, False)
@@ -65,7 +65,7 @@ def _open(path, mode="r"):
     return open(path, mode)
 
 
-class Dest(object):
+class Dest:
     """
     Helper interface for BaseFile.copy. The interface works as follows:
       - read() and write() can be used to sequentially read/write from the underlying file.
@@ -105,7 +105,7 @@ class Dest(object):
             self.file = None
 
 
-class BaseFile(object):
+class BaseFile:
     """
     Base interface and helper for file copying. Derived class may implement
     their own copy function, or rely on BaseFile.copy using the open() member
@@ -175,7 +175,7 @@ class BaseFile(object):
         disabled when skip_if_older is False.
         Returns whether a copy was actually performed (True) or not (False).
         """
-        if isinstance(dest, six.string_types):
+        if isinstance(dest, str):
             dest = Dest(dest)
         else:
             assert isinstance(dest, Dest)
@@ -297,11 +297,11 @@ class ExecutableFile(File):
 
     def copy(self, dest, skip_if_older=True):
         real_dest = dest
-        if not isinstance(dest, six.string_types):
+        if not isinstance(dest, str):
             fd, dest = mkstemp()
             os.close(fd)
             os.remove(dest)
-        assert isinstance(dest, six.string_types)
+        assert isinstance(dest, str)
         # If File.copy didn't actually copy because dest is newer, check the
         # file sizes. If dest is smaller, it means it is already stripped and
         # elfhacked, so we can skip.
@@ -339,7 +339,7 @@ class AbsoluteSymlinkFile(File):
         File.__init__(self, path)
 
     def copy(self, dest, skip_if_older=True):
-        assert isinstance(dest, six.string_types)
+        assert isinstance(dest, str)
 
         # The logic in this function is complicated by the fact that symlinks
         # aren't universally supported. So, where symlinks aren't supported, we
@@ -405,14 +405,14 @@ class AbsoluteSymlinkFile(File):
             os.symlink(self.path, temp_dest)
         # TODO Figure out exactly how symlink creation fails and only trap
         # that.
-        except EnvironmentError:
+        except OSError:
             return File.copy(self, dest, skip_if_older=skip_if_older)
 
         # If removing the original file fails, don't forget to clean up the
         # temporary symlink.
         try:
             os.remove(dest)
-        except EnvironmentError:
+        except OSError:
             os.remove(temp_dest)
             raise
 
@@ -430,7 +430,7 @@ class HardlinkFile(File):
     """
 
     def copy(self, dest, skip_if_older=True):
-        assert isinstance(dest, six.string_types)
+        assert isinstance(dest, str)
 
         if not hasattr(os, "link"):
             return super(HardlinkFile, self).copy(dest, skip_if_older=skip_if_older)
@@ -488,7 +488,7 @@ class ExistingFile(BaseFile):
         self.required = required
 
     def copy(self, dest, skip_if_older=True):
-        if isinstance(dest, six.string_types):
+        if isinstance(dest, str):
             dest = Dest(dest)
         else:
             assert isinstance(dest, Dest)
@@ -540,7 +540,7 @@ class PreprocessedFile(BaseFile):
         """
         Invokes the preprocessor to create the destination file.
         """
-        if isinstance(dest, six.string_types):
+        if isinstance(dest, str):
             dest = Dest(dest)
         else:
             assert isinstance(dest, Dest)
@@ -805,7 +805,7 @@ class MinifiedJavaScript(BaseFile):
         return output
 
 
-class BaseFinder(object):
+class BaseFinder:
     def __init__(
         self, base, minify=False, minify_js=False, minify_js_verify_command=None
     ):
@@ -1120,7 +1120,7 @@ class ComposedFinder(BaseFinder):
 
         self.files = FileRegistry()
 
-        for base, finder in sorted(six.iteritems(finders)):
+        for base, finder in sorted(finders.items()):
             if self.files.contains(base):
                 self.files.remove(base)
             for p, f in finder.find(""):
@@ -1233,8 +1233,7 @@ class FileListFinder(BaseFinder):
     """Finder for a literal list of file names."""
 
     def __init__(self, files):
-        """files must be a sorted list."""
-        self._files = files
+        self._files = sorted(files)
 
     @memoize
     def _match(self, pattern):
@@ -1248,7 +1247,7 @@ class FileListFinder(BaseFinder):
         components = pattern.split("/")
         prefix = "/".join(takewhile(lambda s: "*" not in s, components))
         start = bisect.bisect_left(self._files, prefix)
-        for i in six.moves.range(start, len(self._files)):
+        for i in range(start, len(self._files)):
             f = self._files[i]
             if not f.startswith(prefix):
                 break

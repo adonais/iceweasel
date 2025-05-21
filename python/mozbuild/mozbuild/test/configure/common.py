@@ -33,7 +33,7 @@ def ensure_exe_extension(path):
     return path
 
 
-class ConfigureTestVFS(object):
+class ConfigureTestVFS:
     def __init__(self, paths):
         self._paths = set(mozpath.abspath(p) for p in paths)
 
@@ -92,9 +92,7 @@ class ConfigureTestSandbox(ConfigureSandbox):
     def __init__(self, paths, config, environ, *args, **kwargs):
         self._search_path = environ.get("PATH", "").split(os.pathsep)
 
-        self._subprocess_paths = {
-            mozpath.abspath(k): v for k, v in six.iteritems(paths) if v
-        }
+        self._subprocess_paths = {mozpath.abspath(k): v for k, v in paths.items() if v}
 
         paths = list(paths)
 
@@ -142,7 +140,7 @@ class ConfigureTestSandbox(ConfigureSandbox):
 
     @memoized_property
     def _wrapped_ctypes(self):
-        class CTypesFunc(object):
+        class CTypesFunc:
             def __init__(self, func):
                 self._func = func
 
@@ -162,12 +160,12 @@ class ConfigureTestSandbox(ConfigureSandbox):
     @memoized_property
     def _wrapped__winreg(self):
         def OpenKey(*args, **kwargs):
-            raise WindowsError()
+            raise OSError()
 
         return ReadOnlyNamespace(HKEY_LOCAL_MACHINE=0, OpenKey=OpenKey)
 
     def create_unicode_buffer(self, *args, **kwargs):
-        class Buffer(object):
+        class Buffer:
             def __init__(self):
                 self.value = ""
 
@@ -200,7 +198,7 @@ class ConfigureTestSandbox(ConfigureSandbox):
         else:
             retcode, stdout, stderr = func(stdin, args[1:])
 
-        class Process(object):
+        class Process:
             def communicate(self, stdin=None):
                 return stdout, stderr
 
@@ -305,7 +303,6 @@ class BaseConfigureTest(unittest.TestCase):
         try:
             environ = dict(
                 environ,
-                OLD_CONFIGURE=os.path.join(topsrcdir, "old-configure"),
                 MOZCONFIG=mozconfig_path,
             )
 

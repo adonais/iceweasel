@@ -1314,6 +1314,12 @@ var gMainPane = {
           "command",
           this.handleDeleteAll
         );
+
+        Services.obs.addObserver(this, "intl:app-locales-changed");
+      }
+
+      destroy() {
+        Services.obs.removeObserver(this, "intl:app-locales-changed");
       }
 
       handleInstallAll = async () => {
@@ -1397,6 +1403,7 @@ var gMainPane = {
         for (const { langTag, displayName } of this.state.languageList) {
           const hboxRow = document.createXULElement("hbox");
           hboxRow.classList.add("translations-manage-language");
+          hboxRow.setAttribute("data-lang-tag", langTag);
 
           const languageLabel = document.createXULElement("label");
           languageLabel.textContent = displayName; // The display name is already localized.
@@ -1558,11 +1565,41 @@ var gMainPane = {
       hideError() {
         this.elements.error.hidden = true;
       }
+
+      observe(_subject, topic, _data) {
+        if (topic === "intl:app-locales-changed") {
+          this.refreshLanguageListDisplay();
+        }
+      }
+
+      refreshLanguageListDisplay() {
+        try {
+          const languageDisplayNames =
+            TranslationsParent.createLanguageDisplayNames();
+
+          for (const row of this.elements.installList.children) {
+            const rowLangTag = row.getAttribute("data-lang-tag");
+            if (!rowLangTag) {
+              continue;
+            }
+
+            const label = row.querySelector("label");
+            if (label) {
+              const newDisplayName = languageDisplayNames.of(rowLangTag);
+              if (label.textContent !== newDisplayName) {
+                label.textContent = newDisplayName;
+              }
+            }
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
     }
 
     TranslationsState.create().then(
       state => {
-        new TranslationsView(state);
+        this._translationsView = new TranslationsView(state);
       },
       error => {
         // This error can happen when a user is not connected to the internet, or
@@ -2736,6 +2773,13 @@ var gMainPane = {
     Services.prefs.removeObserver(PREF_CONTAINERS_EXTENSION, this);
     Services.obs.removeObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
     Services.obs.removeObserver(this, BACKGROUND_UPDATE_CHANGED_TOPIC);
+
+    // Clean up the TranslationsView instance if it exists
+    if (this._translationsView) {
+      this._translationsView.destroy();
+      this._translationsView = null;
+    }
+
     AppearanceChooser.destroy();
   },
 
@@ -3837,9 +3881,10 @@ var gMainPane = {
     switch (aFolder) {
       case "Desktop":
         return Services.dirsvc.get("Desk", Ci.nsIFile);
-      case "Downloads":
+      case "Downloads": {
         let downloadsDir = await Downloads.getSystemDownloadsDirectory();
         return new FileUtils.File(downloadsDir);
+      }
     }
     throw new Error(
       "ASSERTION FAILED: folder type should be 'Desktop' or 'Downloads'"
@@ -4004,8 +4049,17 @@ class HandlerListItem {
       return;
     }
     const { id, args } = document.l10n.getAttributes(selectedItem);
+    const messageIDs = {
+      "applications-action-save": "applications-action-save-label",
+      "applications-always-ask": "applications-always-ask-label",
+      "applications-open-inapp": "applications-open-inapp-label",
+      "applications-use-app-default": "applications-use-app-default-label",
+      "applications-use-app": "applications-use-app-label",
+      "applications-use-os-default": "applications-use-os-default-label",
+      "applications-use-other": "applications-use-other-label",
+    };
     localizeElement(this.node.querySelector(".actionDescription"), {
-      id: id + "-label",
+      id: messageIDs[id],
       args,
     });
     localizeElement(this.node.querySelector(".actionsMenu"), { id, args });
@@ -4126,12 +4180,12 @@ class HandlerInfoWrapper {
       case Ci.nsIHandlerInfo.useSystemDefault:
         return this.iconURLForSystemDefault;
 
-      case Ci.nsIHandlerInfo.useHelperApp:
+      case Ci.nsIHandlerInfo.useHelperApp: {
         let preferredApp = this.preferredApplicationHandler;
         if (gMainPane.isValidHandlerApp(preferredApp)) {
           return gMainPane._getIconURLForHandlerApp(preferredApp);
         }
-
+      }
       // This should never happen, but if preferredAction is set to some weird
       // value, then fall back to the generic application icon.
       // Explicit fall-through
@@ -4394,11 +4448,6 @@ const AppearanceChooser = {
   handleEvent(e) {
     if (e.type == "click") {
       switch (e.target.id) {
-        // Forward the click to the "colors" button.
-        case "web-appearance-manage-colors-button":
-          document.getElementById("colors").click();
-          e.preventDefault();
-          break;
         case "web-appearance-manage-themes-link":
           window.browsingContext.topChromeWindow.BrowserAddonUI.openAddonsMgr(
             "addons://list/theme"

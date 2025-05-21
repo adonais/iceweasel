@@ -52,6 +52,7 @@
 #include "api/video/video_codec_constants.h"
 #include "call/payload_type.h"
 #include "media/base/codec.h"
+#include "media/base/codec_comparators.h"
 #include "media/base/media_engine.h"
 #include "media/base/rid_description.h"
 #include "media/base/stream_params.h"
@@ -205,7 +206,7 @@ bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
 std::string GetSetDescriptionErrorMessage(cricket::ContentSource source,
                                           SdpType type,
                                           const RTCError& error) {
-  rtc::StringBuilder oss;
+  StringBuilder oss;
   oss << "Failed to set " << (source == cricket::CS_LOCAL ? "local" : "remote")
       << " " << SdpTypeToString(type) << " sdp: ";
   RTC_DCHECK(!absl::StartsWith(error.message(), oss.str())) << error.message();
@@ -644,16 +645,8 @@ std::vector<RtpEncodingParameters> GetSendEncodingsFromRemoteDescription(
     auto rid_desc = std::find_if(
         desc.receive_rids().begin(), desc.receive_rids().end(),
         [&layer](const RidDescription& rid) { return rid.rid == layer.rid; });
-    if (rid_desc != desc.receive_rids().end() &&
-        !rid_desc->payload_types.empty()) {
-      int payload_type = rid_desc->payload_types[0];
-      auto codec = std::find_if(desc.codecs().begin(), desc.codecs().end(),
-                                [payload_type](const cricket::Codec& codec) {
-                                  return codec.id == payload_type;
-                                });
-      if (codec != desc.codecs().end()) {
-        parameters.codec = codec->ToCodecParameters();
-      }
+    if (rid_desc != desc.receive_rids().end() && !rid_desc->codecs.empty()) {
+      parameters.codec = rid_desc->codecs[0].ToCodecParameters();
     }
     result.push_back(parameters);
   }
@@ -813,8 +806,8 @@ cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForTransceiver(
     if (encoding.codec) {
       auto send_codecs = transceiver->sender_internal()->GetSendCodecs();
       for (const cricket::Codec& codec : send_codecs) {
-        if (codec.MatchesRtpCodec(*encoding.codec)) {
-          send_rid.payload_types.push_back(codec.id);
+        if (IsSameRtpCodecIgnoringLevel(codec, *encoding.codec)) {
+          send_rid.codecs.push_back(codec);
           break;
         }
       }
@@ -1188,7 +1181,7 @@ class SdpOfferAnswerHandler::ImplicitCreateSessionDescriptionObserver
     : public CreateSessionDescriptionObserver {
  public:
   ImplicitCreateSessionDescriptionObserver(
-      rtc::WeakPtr<SdpOfferAnswerHandler> sdp_handler,
+      WeakPtr<SdpOfferAnswerHandler> sdp_handler,
       rtc::scoped_refptr<SetLocalDescriptionObserverInterface>
           set_local_description_observer)
       : sdp_handler_(std::move(sdp_handler)),
@@ -1234,7 +1227,7 @@ class SdpOfferAnswerHandler::ImplicitCreateSessionDescriptionObserver
 
  private:
   bool was_called_ = false;
-  rtc::WeakPtr<SdpOfferAnswerHandler> sdp_handler_;
+  WeakPtr<SdpOfferAnswerHandler> sdp_handler_;
   rtc::scoped_refptr<SetLocalDescriptionObserverInterface>
       set_local_description_observer_;
   std::function<void()> operation_complete_callback_;
@@ -1325,7 +1318,7 @@ class SdpOfferAnswerHandler::SetSessionDescriptionObserverAdapter
       public SetRemoteDescriptionObserverInterface {
  public:
   SetSessionDescriptionObserverAdapter(
-      rtc::WeakPtr<SdpOfferAnswerHandler> handler,
+      WeakPtr<SdpOfferAnswerHandler> handler,
       rtc::scoped_refptr<SetSessionDescriptionObserver> inner_observer)
       : handler_(std::move(handler)),
         inner_observer_(std::move(inner_observer)) {}
@@ -1352,7 +1345,7 @@ class SdpOfferAnswerHandler::SetSessionDescriptionObserverAdapter
     }
   }
 
-  rtc::WeakPtr<SdpOfferAnswerHandler> handler_;
+  WeakPtr<SdpOfferAnswerHandler> handler_;
   rtc::scoped_refptr<SetSessionDescriptionObserver> inner_observer_;
 };
 
@@ -1429,17 +1422,23 @@ SdpOfferAnswerHandler::~SdpOfferAnswerHandler() {}
 std::unique_ptr<SdpOfferAnswerHandler> SdpOfferAnswerHandler::Create(
     PeerConnectionSdpMethods* pc,
     const PeerConnectionInterface::RTCConfiguration& configuration,
-    PeerConnectionDependencies& dependencies,
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+    std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+        video_bitrate_allocator_factory,
     ConnectionContext* context,
     PayloadTypeSuggester* pt_suggester) {
   auto handler = absl::WrapUnique(new SdpOfferAnswerHandler(pc, context));
-  handler->Initialize(configuration, dependencies, context, pt_suggester);
+  handler->Initialize(configuration, std::move(cert_generator),
+                      std::move(video_bitrate_allocator_factory), context,
+                      pt_suggester);
   return handler;
 }
 
 void SdpOfferAnswerHandler::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
-    PeerConnectionDependencies& dependencies,
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+    std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+        video_bitrate_allocator_factory,
     ConnectionContext* context,
     PayloadTypeSuggester* pt_suggester) {
   RTC_DCHECK_RUN_ON(signaling_thread());
@@ -1469,7 +1468,7 @@ void SdpOfferAnswerHandler::Initialize(
   webrtc_session_desc_factory_ =
       std::make_unique<WebRtcSessionDescriptionFactory>(
           context, this, pc_->session_id(), pc_->dtls_enabled(),
-          std::move(dependencies.cert_generator), std::move(certificate),
+          std::move(cert_generator), std::move(certificate),
           [this](const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
             RTC_DCHECK_RUN_ON(signaling_thread());
             transport_controller_s()->SetLocalCertificate(certificate);
@@ -1486,10 +1485,8 @@ void SdpOfferAnswerHandler::Initialize(
       pc_->GetCryptoOptions().srtp.enable_encrypted_rtp_header_extensions);
   webrtc_session_desc_factory_->set_is_unified_plan(IsUnifiedPlan());
 
-  if (dependencies.video_bitrate_allocator_factory) {
-    video_bitrate_allocator_factory_ =
-        std::move(dependencies.video_bitrate_allocator_factory);
-  } else {
+  video_bitrate_allocator_factory_ = std::move(video_bitrate_allocator_factory);
+  if (!video_bitrate_allocator_factory_) {
     video_bitrate_allocator_factory_ =
         CreateBuiltinVideoBitrateAllocatorFactory();
   }
@@ -3218,7 +3215,7 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
       state != PeerConnectionInterface::kHaveRemoteOffer) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_STATE,
-        (rtc::StringBuilder("Called in wrong signalingState: ")
+        (StringBuilder("Called in wrong signalingState: ")
          << (PeerConnectionInterface::AsString(signaling_state())))
             .Release());
   }
@@ -3683,7 +3680,7 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
       (source == cricket::CS_REMOTE && !ExpectSetRemoteDescription(type))) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_STATE,
-        (rtc::StringBuilder("Called in wrong state: ")
+        (StringBuilder("Called in wrong state: ")
          << PeerConnectionInterface::AsString(signaling_state()))
             .Release());
   }
@@ -4103,7 +4100,7 @@ RTCError SdpOfferAnswerHandler::UpdateDataChannelTransport(
     RTC_LOG(LS_INFO) << "Rejected data channel transport with mid="
                      << content.mid();
 
-    rtc::StringBuilder sb;
+    StringBuilder sb;
     sb << "Rejected data channel transport with mid=" << content.mid();
     RTCError error(RTCErrorType::OPERATION_ERROR_WITH_DATA, sb.Release());
     error.set_error_detail(RTCErrorDetailType::DATA_CHANNEL_FAILURE);
@@ -4658,7 +4655,7 @@ const char* SdpOfferAnswerHandler::SessionErrorToString(
 
 std::string SdpOfferAnswerHandler::GetSessionErrorMsg() {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  rtc::StringBuilder desc;
+  StringBuilder desc;
   desc << kSessionError << SessionErrorToString(session_error()) << ". ";
   desc << kSessionErrorDesc << session_error_desc() << ".";
   return desc.Release();
@@ -5152,7 +5149,7 @@ void SdpOfferAnswerHandler::RemoveUnusedChannels(
     error.set_error_detail(RTCErrorDetailType::DATA_CHANNEL_FAILURE);
     pc_->DestroyDataChannelTransport(error);
   } else if (data_info->rejected) {
-    rtc::StringBuilder sb;
+    StringBuilder sb;
     sb << "Rejected data channel with mid=" << data_info->mid() << ".";
 
     RTCError error(RTCErrorType::OPERATION_ERROR_WITH_DATA, sb.Release());

@@ -10,28 +10,26 @@
 
 #include "pc/peer_connection_factory.h"
 
-#include <type_traits>
+#include <cstdint>
+#include <cstdio>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/match.h"
 #include "api/environment/environment.h"
 #include "api/environment/environment_factory.h"
-#include "api/fec_controller.h"
 #include "api/ice_transport_interface.h"
-#include "api/network_state_predictor.h"
-#include "api/packet_socket_factory.h"
-#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/sequence_checker.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/units/data_rate.h"
-#include "call/audio_state.h"
 #include "call/rtp_transport_controller_send_factory.h"
 #include "media/base/media_engine.h"
-#include "p2p/base/basic_packet_socket_factory.h"
+#include "p2p/base/basic_async_resolver_factory.h"
 #include "p2p/base/default_ice_transport_factory.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/client/basic_port_allocator.h"
 #include "pc/audio_track.h"
+#include "pc/ice_server_parsing.h"
 #include "pc/local_audio_source.h"
 #include "pc/media_factory.h"
 #include "pc/media_stream.h"
@@ -41,7 +39,6 @@
 #include "pc/peer_connection_factory_proxy.h"
 #include "pc/peer_connection_proxy.h"
 #include "pc/rtp_parameters_conversion.h"
-#include "pc/session_description.h"
 #include "pc/video_track.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
@@ -213,6 +210,33 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
     PeerConnectionDependencies dependencies) {
   RTC_DCHECK_RUN_ON(signaling_thread());
 
+  // TODO(https://crbug.com/webrtc/13528): Remove support for kPlanB.
+  if (configuration.sdp_semantics == SdpSemantics::kPlanB_DEPRECATED) {
+    RTC_LOG(LS_WARNING)
+        << "PeerConnection constructed with legacy SDP semantics!";
+  }
+
+  RTCError err = cricket::IceConfig(configuration).IsValid();
+  if (!err.ok()) {
+    RTC_LOG(LS_ERROR) << "Invalid ICE configuration: " << err.message();
+    return err;
+  }
+
+  cricket::ServerAddresses stun_servers;
+  std::vector<cricket::RelayServerConfig> turn_servers;
+  err = ParseAndValidateIceServersFromConfiguration(configuration, stun_servers,
+                                                    turn_servers);
+  if (!err.ok()) {
+    return err;
+  }
+
+  if (!dependencies.observer) {
+    RTC_LOG(LS_ERROR) << "PeerConnection initialized without a "
+                         "PeerConnectionObserver";
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "Attempt to create a PeerConnection without an observer");
+  }
+
   EnvironmentFactory env_factory(context_->env());
 
   // Field trials active for this PeerConnection is the first of:
@@ -236,6 +260,12 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
         std::make_unique<rtc::RTCCertificateGenerator>(signaling_thread(),
                                                        network_thread());
   }
+
+  if (!dependencies.async_dns_resolver_factory) {
+    dependencies.async_dns_resolver_factory =
+        std::make_unique<BasicAsyncDnsResolverFactory>();
+  }
+
   if (!dependencies.allocator) {
     dependencies.allocator = std::make_unique<cricket::BasicPortAllocator>(
         context_->default_network_manager(), context_->default_socket_factory(),
@@ -265,21 +295,18 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
                             std::move(network_controller_factory));
       });
 
-  auto result = PeerConnection::Create(env, context_, options_, std::move(call),
-                                       configuration, std::move(dependencies));
-  if (!result.ok()) {
-    return result.MoveError();
-  }
+  auto pc = PeerConnection::Create(env, context_, options_, std::move(call),
+                                   configuration, dependencies, stun_servers,
+                                   turn_servers);
   // We configure the proxy with a pointer to the network thread for methods
   // that need to be invoked there rather than on the signaling thread.
   // Internally, the proxy object has a member variable named `worker_thread_`
   // which will point to the network thread (and not the factory's
   // worker_thread()).  All such methods have thread checks though, so the code
   // should still be clear (outside of macro expansion).
-  rtc::scoped_refptr<PeerConnectionInterface> result_proxy =
+  return rtc::scoped_refptr<PeerConnectionInterface>(
       PeerConnectionProxy::Create(signaling_thread(), network_thread(),
-                                  result.MoveValue());
-  return result_proxy;
+                                  std::move(pc)));
 }
 
 rtc::scoped_refptr<MediaStreamInterface>
@@ -330,11 +357,11 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
                   env.field_trials().Lookup("WebRTC-PcFactoryDefaultBitrates"));
 
   call_config.bitrate_config.min_bitrate_bps =
-      rtc::saturated_cast<int>(min_bandwidth->bps());
+      saturated_cast<int>(min_bandwidth->bps());
   call_config.bitrate_config.start_bitrate_bps =
-      rtc::saturated_cast<int>(start_bandwidth->bps());
+      saturated_cast<int>(start_bandwidth->bps());
   call_config.bitrate_config.max_bitrate_bps =
-      rtc::saturated_cast<int>(max_bandwidth->bps());
+      saturated_cast<int>(max_bandwidth->bps());
 
   call_config.fec_controller_factory = fec_controller_factory_.get();
   call_config.network_state_predictor_factory =

@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">גלישה מהירה יותר עם ניווט חדש</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">גלישה מהירה יותר עם ניווט חדש</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">בעת גלישה באתרים, סרגל זה מתחבא בעת גלילה כלפי מטה, לקבלת שטח גלישה נוסף.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">בעת גלישה באתרים, סרגל זה מתחבא בעת גלילה כלפי מטה, לקבלת שטח גלישה נוסף.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">יש להקיש ולהחזיק את החצים כדי לדלג בין דפים בהיסטוריה של לשונית זו.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">יש להקיש ולהחזיק את החצים כדי לדלג בין דפים בהיסטוריה של לשונית זו.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -629,7 +629,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">גלישה מהירה ומאובטחת באינטרנט</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">הסכמה והמשך</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">הסכמה והמשך</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">המשך</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">בחירה בהמשך מהווה הסכמה ל%1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -834,8 +836,6 @@
   <string name="preferences_override_account_server">שרת חשבוןו Mozilla מותאם אישית</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">שרת Sync מותאם אישית</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">שרת חשבון Mozilla השתנה. היישום ייסגר לצורך להחלת השינויים…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">חשבון</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1205,7 +1205,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">החלקה על סרגל הכלים כלפי מעלה לפתיחת לשוניות</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">גלילה להסתרת שורת הכתובת וסרגל הכלים</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">גלילה להסתרת שורת הכתובת וסרגל הכלים</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">החלקה על שורת הכתובת כלפי הצדדים למעבר בין לשוניות</string>
   <!--
@@ -1481,12 +1481,33 @@
   <string name="download_multi_select_title">%1$d נבחרו</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">הסרה</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">אין מספיק מקום</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">אין מספיק מקום במכשיר זה כדי להוריד את &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">ניהול קבצים</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">ביטול</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">מחיקה</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">ניווט אחורה</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">ניווט למעלה</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">ניווט למעלה</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">חזרה וסגירת החיפוש</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">ניקוי</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">שיתוף כתובת אתר</string>
   <!-- Text for the button to share the download file -->
@@ -1527,9 +1548,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">ההורדה נכשלה</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">חיפוש בהורדות</string>
+  <string name="download_search_placeholder">חיפוש בהורדות</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">לא נמצאו תוצאות</string>
+  <string name="download_search_no_results_found">לא נמצאו תוצאות</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">בחירת הכול</string>
   <!--
@@ -1646,6 +1667,8 @@
   <string name="bookmark_menu_copy_button">העתקה</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">שיתוף</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">בחירת הכול</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">פתיחה בלשונית חדשה</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1658,6 +1681,8 @@
   <string name="bookmark_menu_delete_button">מחיקה</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">שמירה</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">מיון לפי סדר מותאם אישית</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">מיון לפי החדש ביותר</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2280,7 +2305,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">סמל של העדפת חריגות להגנת מעקב מתקדמת</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2289,8 +2314,6 @@
   <string name="preference_doh_summary">מערכת שמות מתחם (DNS) על גבי HTTPS שולחת את הבקשה שלך לשם מתחם דרך חיבור מוצפן, מספקת DNS מאובטח ומקשה על אחרים לראות לאיזה אתר הדפדפן עומד לגשת. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">מידע נוסף</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">ניווט למעלה</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">חריגות</string>
   <!-- Content description for the "Info" button -->
@@ -2826,8 +2849,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">הצעות של Firefox</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">חיפושים פופולריים</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3192,6 +3213,8 @@
   <string name="protection_panel_no_trackers_blocked">לא נמצאו רכיבי מעקב</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">הגדרות פרטיות ואבטחה</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">הרשאות</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3395,6 +3418,8 @@
   <string name="debug_drawer_override_current_region_label">עקיפת האזור הנוכחי</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">עקיפת הבית והאזור הנוכחי</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">עקיפת אזור הבית לצמיתות</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3498,6 +3523,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">השלמת את כל 6 השלבים. כעת באפשרותך ליהנות מהמהירות, הפרטיות והאבטחה של %1$s.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">כדאי להשלים את כל 5 השלבים כדי להגדיר את %1$s לחווית הגלישה הטובה ביותר.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">התחלה מעולה! השלמת 1 מתוך 5 שלבים.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">השלמת 2 מתוך 5 שלבים. התקדמות נהדרת!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">הגעת לחצי הדרך! השלמת 3 שלבים, ונשארו עוד 2 לסיום.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">כמעט שם! נשאר רק עוד שלב אחד לקו הסיום.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">השלמת את כל 5 השלבים. כעת באפשרותך ליהנות מהמהירות, הפרטיות והאבטחה של %1$s.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3513,6 +3554,12 @@
   <string name="setup_checklist_task_explore_extensions">עיון בהרחבות</string>
   <!-- The title of the search widget task for the setup checklist -->
   <string name="setup_checklist_task_search_widget">התקנת ווידג’ט חיפוש</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">המומלצים עבור %1$s</string>
   <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_group_customize">התאמה אישית של ה־%1$s שלך</string>
   <!-- The title of the 'helpful tools' group in the setup checklist -->
@@ -3541,4 +3588,16 @@
   <string name="pbm_authentication_unlock">שחרור נעילה</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">שחרור נעילת לשוניות פרטיות</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">הפעלה של נעילת המסך בלשוניות פרטיות</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">השבתה של נעילת המסך בלשוניות פרטיות</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">יש להגדיר נעילת מסך כדי להסתיר לשוניות</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">להשתמש בנעילת מסך כדי להסתיר לשוניות פרטיות?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">לא תודה</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">נעילת לשוניות</string>
 </resources>

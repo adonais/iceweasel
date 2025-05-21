@@ -92,6 +92,10 @@ export class FakespotSuggestions extends SuggestProvider {
     ];
   }
 
+  get primaryUserControlledPreference() {
+    return "suggest.fakespot";
+  }
+
   get rustSuggestionType() {
     return "Fakespot";
   }
@@ -206,7 +210,7 @@ export class FakespotSuggestions extends SuggestProvider {
       commands.push({
         name: RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY,
         l10n: {
-          id: "firefox-suggest-command-show-less-frequently",
+          id: "urlbar-result-menu-show-less-frequently",
         },
       });
     }
@@ -260,7 +264,7 @@ export class FakespotSuggestions extends SuggestProvider {
       // selType == "dismiss" when the user presses the dismiss key shortcut.
       case "dismiss":
       case RESULT_MENU_COMMAND.NOT_RELEVANT:
-        lazy.QuickSuggest.blockedSuggestions.blockResult(result);
+        lazy.QuickSuggest.dismissResult(result);
         result.acknowledgeDismissalL10n = {
           id: "firefox-suggest-dismissal-acknowledgment-one-fakespot",
         };

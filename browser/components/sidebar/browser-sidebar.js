@@ -203,13 +203,15 @@ var SidebarController = {
       }
     );
 
-    this._sidebars.set("viewCustomizeSidebar", {
-      url: "chrome://browser/content/sidebar/sidebar-customize.html",
-      revampL10nId: "sidebar-menu-customize-label",
-      iconUrl: "chrome://global/skin/icons/settings.svg",
-      gleanEvent: Glean.sidebarCustomize.panelToggle,
-      visible: false,
-    });
+    if (this.sidebarRevampEnabled) {
+      this._sidebars.set("viewCustomizeSidebar", {
+        url: "chrome://browser/content/sidebar/sidebar-customize.html",
+        revampL10nId: "sidebar-menu-customize-label",
+        iconUrl: "chrome://global/skin/icons/settings.svg",
+        gleanEvent: Glean.sidebarCustomize.panelToggle,
+        visible: false,
+      });
+    }
 
     return this._sidebars;
   },
@@ -383,8 +385,6 @@ var SidebarController = {
     this._mainResizeObserver = new ResizeObserver(([entry]) =>
       this._handleLauncherResize(entry)
     );
-
-    CustomizableUI.addListener(this);
 
     if (this.sidebarRevampEnabled) {
       if (!customElements.get("sidebar-main")) {
@@ -627,7 +627,8 @@ var SidebarController = {
     let observer = this._observer;
     if (!observer) {
       observer = new MutationObserver(() => {
-        this.title = this.sidebars.get(this.lastOpenedId).title;
+        // it's possible for lastOpenedId to be null here
+        this.title = this.sidebars.get(this.lastOpenedId)?.title;
       });
       // Re-use the observer.
       this._observer = observer;
@@ -803,10 +804,16 @@ var SidebarController = {
     }
     if (!this._sidebars.get(this.lastOpenedId)) {
       this.lastOpenedId = this.DEFAULT_SIDEBAR_ID;
+      wasOpen = false;
     }
     this.updateToolbarButton();
     this._inited = false;
     this.init();
+
+    // Reopen the panel in the new or old sidebar now that we've inited
+    if (wasOpen) {
+      this.toggle();
+    }
   },
 
   /**
@@ -961,6 +968,10 @@ var SidebarController = {
     return this._state?.launcherVisible;
   },
 
+  get launcherEverVisible() {
+    return this._state?.launcherEverVisible;
+  },
+
   get title() {
     return this._title.value;
   },
@@ -1074,13 +1085,12 @@ var SidebarController = {
 
     let fromRects = this._getRects(animatingElements);
 
-    // We need to wait for rAF for lit to re-render, and us to get the final
-    // width. This is a bit unfortunate but alas...
-    let toRects = await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        resolve(this._getRects(animatingElements));
-      });
+    // We need to wait for lit to re-render, and us to get the final width.
+    // This is a bit unfortunate but alas...
+    await new Promise(resolve => {
+      queueMicrotask(() => resolve(this.sidebarMain.updateComplete));
     });
+    let toRects = this._getRects(animatingElements);
 
     const options = {
       duration: document.documentElement.hasAttribute("sidebar-expand-on-hover")
@@ -1882,16 +1892,6 @@ var SidebarController = {
     }
   },
 
-  onWidgetRemoved(aWidgetId) {
-    if (aWidgetId == "sidebar-button") {
-      if (this.isOpen) {
-        this.hide();
-      }
-      this._state.loadInitialState({ ...this.SidebarState.defaultProperties });
-      Services.prefs.setStringPref("sidebar.visibility", "hide-sidebar");
-    }
-  },
-
   toggleTabstrip() {
     let toVerticalTabs = CustomizableUI.verticalTabsEnabled;
     let tabStrip = gBrowser.tabContainer;
@@ -1922,6 +1922,14 @@ var SidebarController = {
     // Re-render sidebar-main so that templating is updated
     // for proper keyboard navigation for Tools
     this.sidebarMain.requestUpdate();
+    if (
+      !this.verticalTabsEnabled &&
+      this.sidebarRevampVisibility == "hide-sidebar"
+    ) {
+      // the sidebar.visibility pref didn't change so updateVisbility hasn't
+      // been called; we need to call it here to un-expand the launcher
+      this._state.updateVisibility(undefined, false);
+    }
   },
 
   debouncedMouseEnter() {

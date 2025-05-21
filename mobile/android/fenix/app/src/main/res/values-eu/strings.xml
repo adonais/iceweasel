@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Nabigatu azkarrago nabigazio berriarekin</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Nabigatu azkarrago nabigazio berriarekin</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Webgune batean egonik, korritzean barra hau ezkutatu egiten da nabigatzeko toki gehiago egiteko.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Webgune batean egonik, korritzean barra hau ezkutatu egiten da nabigatzeko toki gehiago egiteko.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Geziak sakatuta mantendu fitxa honetako historiaren orrien artean saltatzeko.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Geziak sakatuta mantendu fitxa honetako historiaren orrien artean saltatzeko.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -631,7 +631,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Web nabigatze bizkor eta segurua</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Onartu eta jarraitu</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Onartu eta jarraitu</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Jarraitzearekin bat, %1$s onartzen dituzu.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -836,8 +836,6 @@
   <string name="preferences_override_account_server">Mozilla kontu-zerbitzari pertsonalizatua</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Sinkronizaziorako zerbitzari pertsonalizatua</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla kontuko/Sync zerbitzaria aldatuta. Aplikaziotik irteten aldaketak aplikatzeko…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Kontua</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1207,7 +1205,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Pasatu gora tresna-barra fitxak irekitzeko</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Korritu helbide-barra eta tresna-barra ezkutatzeko</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Korritu helbide-barra eta tresna-barra ezkutatzeko</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Pasatu zeharka helbide-barra fitxak aldatzeko</string>
   <!--
@@ -1488,7 +1486,7 @@
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Nabigatu atzera</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Nabigatu gora</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Nabigatu gora</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Partekatu URLa</string>
   <!-- Text for the button to share the download file -->
@@ -1529,9 +1527,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Deskargak huts egin du</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Bilatu deskargak</string>
+  <string name="download_search_placeholder">Bilatu deskargak</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Ez da emaitzarik aurkitu</string>
+  <string name="download_search_no_results_found">Ez da emaitzarik aurkitu</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Hautatu dena</string>
   <!--
@@ -2284,7 +2282,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Jarraipenaren babes hobetuaren salbuespenen hobespen-ikonoa</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2293,8 +2291,6 @@
   <string name="preference_doh_summary">HTTPS gaineko DNSak domeinu-izenerako zure eskaera zifratutako konexio bidez bidaltzen du, DNS segurua hornituz eta zailagoa eginez beste inork jakitea zein den bisitatu behar duzun webgunea. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Argibide gehiago</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Nabigatu gora</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Salbuespenak</string>
   <!-- Content description for the "Info" button -->
@@ -2833,8 +2829,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefoxen iradokizunak</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Bilaketa-joerak</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3199,6 +3193,8 @@
   <string name="protection_panel_no_trackers_blocked">Ez da jarraipen-elementurik aurkitu</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Pribatutasun- eta segurtasun-ezarpenak</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Baimenak</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3507,6 +3503,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Konfigurazioko sei urratsak burutu dituzu. Gozatu %1$s(r)en abiadura, pribatutasuna eta segurtasuna.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Osatu ondorengo bost urratsak %1$s nabigatze-esperientzia optimorako konfiguratzeko.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Hasiera ona! Bostetik urrats bat osatu duzu.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Bostetik bi urrats osatu dituzu. Ederki ari zara!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Erdi-bidean zaude! Hiru urrats amaituta eta beste biren faltan.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Ia-ia eginda! Urrats bakarraren faltan zaude.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Konfigurazioko bost urratsak burutu dituzu. Gozatu %1$s(r)en abiadura, pribatutasuna eta segurtasuna.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3556,4 +3568,10 @@
   <string name="pbm_authentication_unlock">Desblokeatu</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Desblokeatu fitxa pribatuak</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Erabili pantailaren blokeoa fitxa pribatuak ezkutatzeko?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Ez, eskerrik asko</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Blokeatu fitxak</string>
 </resources>

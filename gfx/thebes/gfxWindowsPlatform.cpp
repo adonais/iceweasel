@@ -30,7 +30,6 @@
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 #include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/Telemetry.h"
 
 #include "plbase64.h"
 #include "nsIXULRuntime.h"
@@ -260,7 +259,7 @@ class D3DSharedTexturesReporter final : public nsIMemoryReporter {
 
 NS_IMPL_ISUPPORTS(D3DSharedTexturesReporter, nsIMemoryReporter)
 
-gfxWindowsPlatform::gfxWindowsPlatform() : mRenderMode(RENDER_GDI) {
+gfxWindowsPlatform::gfxWindowsPlatform() {
   // If win32k is locked down then we can't use COM STA and shouldn't need it.
   // Also, we won't be using any GPU memory in this process.
   if (!IsWin32kLockedDown()) {
@@ -441,8 +440,8 @@ bool gfxWindowsPlatform::HandleDeviceReset() {
   }
 
   if (resetReason != mozilla::gfx::DeviceResetReason::FORCED_RESET) {
-    Telemetry::Accumulate(Telemetry::DEVICE_RESET_REASON,
-                          uint32_t(resetReason));
+    glean::gfx::device_reset_reason.AccumulateSingleSample(
+        uint32_t(resetReason));
   }
 
   // Remove devices and adapters.
@@ -613,9 +612,7 @@ already_AddRefed<gfxASurface> gfxWindowsPlatform::CreateOffscreenSurface(
 
 #ifdef CAIRO_HAS_WIN32_SURFACE
   if (!XRE_IsContentProcess()) {
-    if (mRenderMode == RENDER_GDI || mRenderMode == RENDER_DIRECT2D) {
-      surf = new gfxWindowsSurface(aSize, aFormat);
-    }
+    surf = new gfxWindowsSurface(aSize, aFormat);
   }
 #endif
 
@@ -627,7 +624,7 @@ already_AddRefed<gfxASurface> gfxWindowsPlatform::CreateOffscreenSurface(
 }
 
 void gfxWindowsPlatform::GetCommonFallbackFonts(
-    uint32_t aCh, Script aRunScript, eFontPresentation aPresentation,
+    uint32_t aCh, Script aRunScript, FontPresentation aPresentation,
     nsTArray<const char*>& aFontList) {
   if (PrefersColor(aPresentation)) {
     aFontList.AppendElement("Segoe UI Emoji");
@@ -1461,8 +1458,8 @@ void gfxWindowsPlatform::RecordContentDeviceFailure(
   if (!XRE_IsContentProcess()) {
     return;
   }
-  Telemetry::Accumulate(Telemetry::GFX_CONTENT_FAILED_TO_ACQUIRE_DEVICE,
-                        uint32_t(aDevice));
+  glean::gfx::content_failed_to_acquire_device.AccumulateSingleSample(
+      uint32_t(aDevice));
 }
 
 void gfxWindowsPlatform::RecordStartupTelemetry() {

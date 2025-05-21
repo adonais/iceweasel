@@ -32,13 +32,14 @@
 #include "api/scoped_refptr.h"
 #include "api/test/create_peer_connection_quality_test_frame_generator.h"
 #include "api/test/frame_generator_interface.h"
+#include "api/test/network_emulation_manager.h"
 #include "api/test/pclf/media_configuration.h"
 #include "api/test/pclf/media_quality_test_params.h"
-#include "api/test/peer_network_dependencies.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "p2p/base/port_allocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
@@ -46,12 +47,11 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-PeerConfigurer::PeerConfigurer(
-    const PeerNetworkDependencies& network_dependencies)
+PeerConfigurer::PeerConfigurer(EmulatedNetworkManagerInterface& network)
     : components_(std::make_unique<InjectableComponents>(
-          network_dependencies.network_thread,
-          network_dependencies.network_manager,
-          network_dependencies.packet_socket_factory)),
+          network.network_thread(),
+          network.ReleaseNetworkManager(),
+          network.socket_factory())),
       params_(std::make_unique<Params>()),
       configurable_params_(std::make_unique<ConfigurableParams>()) {}
 

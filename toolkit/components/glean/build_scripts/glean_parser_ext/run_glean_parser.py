@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -340,33 +338,6 @@ def jog_factory(output_fd, *args):
 def jog_file(output_fd, *args):
     all_objs, options = parse(args)
     jog.output_file(all_objs, output_fd, options)
-    return get_deps()
-
-
-def ohttp_pings(output_fd, *args):
-    all_objs, options = parse(args)
-    ohttp_pings = []
-    for ping in all_objs["pings"].values():
-        if ping.metadata.get("use_ohttp", False):
-            if ping.include_info_sections:
-                raise ParserError(
-                    "Cannot send pings with OHTTP that contain {client|ping}_info sections. Specify `metadata: include_info_sections: false`"
-                )
-            ohttp_pings.append(ping.name)
-
-    env = jinja2.Environment(
-        loader=jinja2.PackageLoader("run_glean_parser", "templates"),
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-    env.filters["quote_and_join"] = lambda l: "\n| ".join(f'"{x}"' for x in l)
-    template = env.get_template("ohttp.jinja2")
-    output_fd.write(
-        template.render(
-            ohttp_pings=ohttp_pings,
-        )
-    )
-    output_fd.write("\n")
     return get_deps()
 
 

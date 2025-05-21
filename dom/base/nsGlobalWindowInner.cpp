@@ -87,7 +87,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomMetrics.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -1088,8 +1088,10 @@ nsGlobalWindowInner::~nsGlobalWindowInner() {
   MOZ_LOG(gDOMLeakPRLogInner, LogLevel::Debug,
           ("DOMWINDOW %p destroyed", this));
 
-  Telemetry::Accumulate(Telemetry::INNERWINDOWS_WITH_MUTATION_LISTENERS,
-                        mMutationBits ? 1 : 0);
+  glean::dom::innerwindows_with_mutation_listeners
+      .EnumGet(static_cast<glean::dom::InnerwindowsWithMutationListenersLabel>(
+          mMutationBits ? 1 : 0))
+      .Add();
 
   // An inner window is destroyed, pull it out of the outer window's
   // list if inner windows.
@@ -1400,6 +1402,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWebTaskScheduler)
 
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWebTaskSchedulingState)
+
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTrustedTypePolicyFactory)
 
 #ifdef MOZ_WEBSPEECH
@@ -1423,7 +1427,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHistory)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mNavigation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCustomElements)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSharedWorkers)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocalStorage)
@@ -1510,6 +1513,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
     tmp->mWebTaskScheduler->Disconnect();
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mWebTaskScheduler)
   }
+
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mWebTaskSchedulingState)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTrustedTypePolicyFactory)
 
@@ -1827,6 +1832,7 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   if (mWebTaskScheduler) {
     mWebTaskScheduler->Disconnect();
     mWebTaskScheduler = nullptr;
+    mWebTaskSchedulingState = nullptr;
   }
 
   // This must be called after nullifying the internal objects because here we
@@ -1866,8 +1872,10 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   mLastOpenedURI = mDoc->GetDocumentURI();
 #endif
 
-  Telemetry::Accumulate(Telemetry::INNERWINDOWS_WITH_MUTATION_LISTENERS,
-                        mMutationBits ? 1 : 0);
+  glean::dom::innerwindows_with_mutation_listeners
+      .EnumGet(static_cast<glean::dom::InnerwindowsWithMutationListenersLabel>(
+          mMutationBits ? 1 : 0))
+      .Add();
 
   // Clear our mutation bitfield.
   mMutationBits = 0;
@@ -2686,7 +2694,8 @@ void nsGlobalWindowInner::UpdateTopInnerWindow() {
     return;
   }
 
-  mTopInnerWindow->UpdateWebSocketCount(-(int32_t)mNumOfOpenWebSockets);
+  nsGlobalWindowInner::Cast(mTopInnerWindow)
+      ->UpdateWebSocketCount(-(int32_t)mNumOfOpenWebSockets);
 }
 
 bool nsGlobalWindowInner::IsInSyncOperation() {
@@ -2839,7 +2848,7 @@ void nsPIDOMWindowInner::TryToCacheTopInnerWindow() {
   }
 }
 
-void nsPIDOMWindowInner::UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) {
+void nsGlobalWindowInner::UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aDelta == 0) {
@@ -2855,14 +2864,14 @@ void nsPIDOMWindowInner::UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) {
   counter += aDelta;
 }
 
-bool nsGlobalWindowInner::HasActiveIndexedDBDatabases() {
+bool nsGlobalWindowInner::HasActiveIndexedDBDatabases() const {
   MOZ_ASSERT(NS_IsMainThread());
 
   return mTopInnerWindow ? mTopInnerWindow->mNumOfIndexedDBDatabases > 0
                          : mNumOfIndexedDBDatabases > 0;
 }
 
-void nsPIDOMWindowInner::UpdateWebSocketCount(int32_t aDelta) {
+void nsGlobalWindowInner::UpdateWebSocketCount(int32_t aDelta) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aDelta == 0) {
@@ -2870,7 +2879,7 @@ void nsPIDOMWindowInner::UpdateWebSocketCount(int32_t aDelta) {
   }
 
   if (mTopInnerWindow && !IsTopInnerWindow()) {
-    mTopInnerWindow->UpdateWebSocketCount(aDelta);
+    nsGlobalWindowInner::Cast(mTopInnerWindow)->UpdateWebSocketCount(aDelta);
   }
 
   MOZ_DIAGNOSTIC_ASSERT(
@@ -2900,6 +2909,10 @@ bool nsPIDOMWindowInner::IsCurrentInnerWindow() const {
 
   nsPIDOMWindowOuter* outer = mBrowsingContext->GetDOMWindow();
   return outer && outer->GetCurrentInnerWindow() == this;
+}
+
+bool nsGlobalWindowInner::HasScheduledNormalOrHighPriorityWebTasks() const {
+  return gNumNormalOrHighPriorityQueuesHaveTaskScheduledMainThread > 0;
 }
 
 bool nsPIDOMWindowInner::IsFullyActive() const {
@@ -3331,15 +3344,6 @@ bool nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext*, JSObject* aObj) {
 /* static */
 bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext*, JSObject*) {
   return Preferences::GetBool("device.sensors.enabled");
-}
-
-/* static */
-bool nsGlobalWindowInner::CachesEnabled(JSContext* aCx, JSObject* aObj) {
-  if (!IsSecureContextOrObjectIsFromSecureContext(aCx, aObj)) {
-    return StaticPrefs::dom_caches_testing_enabled() ||
-           ServiceWorkersEnabled(aCx, aObj);
-  }
-  return true;
 }
 
 /* static */
@@ -4100,6 +4104,11 @@ WebTaskScheduler* nsGlobalWindowInner::Scheduler() {
   }
   MOZ_ASSERT(mWebTaskScheduler);
   return mWebTaskScheduler;
+}
+
+inline void nsGlobalWindowInner::SetWebTaskSchedulingState(
+    WebTaskSchedulingState* aState) {
+  mWebTaskSchedulingState = aState;
 }
 
 bool nsGlobalWindowInner::Find(const nsAString& aString, bool aCaseSensitive,
@@ -5030,7 +5039,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
   // Record the slow script event if we haven't done so already for this inner
   // window (which represents a particular page to the user).
   if (!mHasHadSlowScript) {
-    Telemetry::Accumulate(Telemetry::SLOW_SCRIPT_PAGE_COUNT, 1);
+    glean::dom::slow_script_page_count.Add(1);
   }
   mHasHadSlowScript = true;
 
@@ -5067,7 +5076,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
 
   // Reached only on non-e10s - once per slow script dialog.
   // On e10s - we probe once at ProcessHangsMonitor.sys.mjs
-  Telemetry::Accumulate(Telemetry::SLOW_SCRIPT_NOTICE_COUNT, 1);
+  glean::dom::slow_script_notice_count.Add(1);
 
   // Get the nsIPrompt interface from the docshell
   nsCOMPtr<nsIDocShell> ds = GetDocShell();

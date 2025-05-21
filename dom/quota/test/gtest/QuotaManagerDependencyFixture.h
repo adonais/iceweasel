@@ -11,6 +11,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
+#include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
 #include "mozilla/dom/quota/ForwardDecls.h"
@@ -131,12 +132,32 @@ class QuotaManagerDependencyFixture : public testing::Test {
     }
   }
 
+  // Acquire and await a client directory lock and pass it to the given task.
+  template <class Task>
+  static void PerformClientDirectoryLockTest(
+      const ClientMetadata& aClientMetadata, Task&& aTask) {
+    PerformOnBackgroundThread(
+        [clientMetadata = aClientMetadata, task = std::forward<Task>(aTask)]() {
+          QuotaManager* quotaManager = QuotaManager::Get();
+          ASSERT_TRUE(quotaManager);
+
+          RefPtr<ClientDirectoryLock> directoryLock =
+              quotaManager->CreateDirectoryLock(clientMetadata,
+                                                /* aExclusive */ false);
+
+          auto value = Await(directoryLock->Acquire());
+          ASSERT_TRUE(value.IsResolve());
+
+          task(std::move(directoryLock));
+        });
+  }
+
   template <class Task>
   static void PerformClientDirectoryTest(const ClientMetadata& aClientMetadata,
                                          Task&& aTask) {
     PerformOnBackgroundThread([clientMetadata = aClientMetadata,
                                task = std::forward<Task>(aTask)]() mutable {
-      RefPtr<ClientDirectoryLock> directoryLock;
+      ClientDirectoryLockHandle directoryLockHandle;
 
       QuotaManager* quotaManager = QuotaManager::Get();
       ASSERT_TRUE(quotaManager);
@@ -146,9 +167,9 @@ class QuotaManagerDependencyFixture : public testing::Test {
       quotaManager->OpenClientDirectory(clientMetadata)
           ->Then(
               GetCurrentSerialEventTarget(), __func__,
-              [&directoryLock,
-               &done](RefPtr<ClientDirectoryLock> aResolveValue) {
-                directoryLock = std::move(aResolveValue);
+              [&directoryLockHandle,
+               &done](ClientDirectoryLockHandle&& aResolveValue) {
+                directoryLockHandle = std::move(aResolveValue);
 
                 done = true;
               },
@@ -160,11 +181,13 @@ class QuotaManagerDependencyFixture : public testing::Test {
 
       SpinEventLoopUntil("Promise is fulfilled"_ns, [&done]() { return done; });
 
-      ASSERT_TRUE(directoryLock);
+      ASSERT_TRUE(directoryLockHandle);
 
-      PerformOnIOThread(std::move(task), directoryLock->Id());
+      PerformOnIOThread(std::move(task), directoryLockHandle->Id());
 
-      DropDirectoryLock(directoryLock);
+      {
+        auto destroyingDirectoryLockHandle = std::move(directoryLockHandle);
+      }
     });
   }
 

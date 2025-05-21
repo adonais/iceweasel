@@ -36,7 +36,6 @@ DIRS += [
     "contentanalysis",
     "contextualidentity",
     "customizableui",
-    "doh",
     "downloads",
     "enterprisepolicies",
     "extensions",
@@ -47,6 +46,7 @@ DIRS += [
     "newtab",
     "originattributes",
     "pagedata",
+    "permissions",
     "places",
     "pocket",
     "preferences",
@@ -104,6 +104,13 @@ EXTRA_JS_MODULES += [
     "distribution.sys.mjs",
 ]
 
+MOZ_SRC_FILES += [
+    "DefaultBrowserCheck.sys.mjs",
+    "DesktopActorRegistry.sys.mjs",
+    "ProfileDataUpgrader.sys.mjs",
+    "StartupTelemetry.sys.mjs",
+]
+
 if CONFIG["MOZ_DEBUG"] or CONFIG["MOZ_DEV_EDITION"] or CONFIG["NIGHTLY_BUILD"]:
     EXTRA_JS_MODULES += [
         "StartupRecorder.sys.mjs",
@@ -112,6 +119,7 @@ if CONFIG["MOZ_DEBUG"] or CONFIG["MOZ_DEV_EDITION"] or CONFIG["NIGHTLY_BUILD"]:
 BROWSER_CHROME_MANIFESTS += [
     "safebrowsing/content/test/browser.toml",
     "tests/browser/browser.toml",
+    "tests/browser/eval/browser.toml",
 ]
 
 if CONFIG["MOZ_UPDATER"]:

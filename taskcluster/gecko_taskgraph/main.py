@@ -342,9 +342,8 @@ def show_taskgraph(options):
                 # CalledProcessError with a returncode > 1.
                 proc = subprocess.run(
                     diffcmd + [base_path, cur_path],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
+                    capture_output=True,
+                    text=True,
                     check=True,
                 )
                 diff_output = proc.stdout
@@ -383,7 +382,7 @@ def show_taskgraph(options):
             )
 
     if len(parameters) > 1:
-        print("See '{}' for logs".format(logdir), file=sys.stderr)
+        print(f"See '{logdir}' for logs", file=sys.stderr)
 
 
 @command("build-image", help="Build a Docker image")

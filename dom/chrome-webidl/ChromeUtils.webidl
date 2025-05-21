@@ -423,6 +423,11 @@ namespace ChromeUtils {
                                   optional ImportESModuleOptionsDictionary aOptions = {});
 
   /**
+   * Returns whether |str| is a valid JS identifier
+   */
+  boolean isJSIdentifier(DOMString str);
+
+  /**
    * IF YOU ADD NEW METHODS HERE, MAKE SURE THEY ARE THREAD-SAFE.
    */
 };
@@ -788,6 +793,9 @@ partial namespace ChromeUtils {
   // Equivalent to pressing the home button. Exclusively for testing.
   [ChromeOnly]
   undefined androidMoveTaskToBack();
+
+  [Throws]
+  ContentSecurityPolicy createCSPFromHeader(DOMString header, URI selfURI, Principal loadingPrincipal);
 };
 
 /*
@@ -1140,6 +1148,7 @@ enum JSRFPTarget {
   "RoundWindowSize",
   "SiteSpecificZoom",
   "CSSPrefersColorScheme",
+  "JSLocalePrompt",
 };
 
 #ifdef XP_UNIX

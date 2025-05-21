@@ -34,6 +34,7 @@
 #include "util/Text.h"
 #include "util/Unicode.h"
 #include "vm/BigIntType.h"
+#include "vm/ConstantCompareOperand.h"
 #include "vm/Float16.h"
 #include "vm/Iteration.h"    // js::NativeIterator
 #include "vm/PlainObject.h"  // js::PlainObject
@@ -853,6 +854,13 @@ size_t MDefinition::defUseCount() const {
   return count;
 }
 #endif
+
+bool MDefinition::updateWasmRefType() {
+  wasm::MaybeRefType newRefType = computeWasmRefType();
+  bool changed = wasmRefType_ != newRefType;
+  setWasmRefType(newRefType);
+  return changed;
+}
 
 bool MDefinition::hasOneUse() const {
   MUseIterator i(uses_.begin());

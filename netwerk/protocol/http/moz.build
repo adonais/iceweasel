@@ -77,7 +77,6 @@ EXPORTS.mozilla.net += [
     "OpaqueResponseUtils.h",
     "ParentChannelListener.h",
     "PHttpChannelParams.h",
-    "PSpdyPush.h",
     "ReplacedHttpResponse.h",
     "SpeculativeTransaction.h",
     "TimingStruct.h",
@@ -101,7 +100,6 @@ UNIFIED_SOURCES += [
     "BackgroundDataBridgeParent.cpp",
     "BinaryHttpRequest.cpp",
     "CacheControlParser.cpp",
-    "CachePushChecker.cpp",
     "Capsule.cpp",
     "CapsuleDecoder.cpp",
     "CapsuleEncoder.cpp",
@@ -115,7 +113,6 @@ UNIFIED_SOURCES += [
     "EarlyHintRegistrar.cpp",
     "EarlyHintsService.cpp",
     "Http2Compression.cpp",
-    "Http2Push.cpp",
     "Http2Session.cpp",
     "Http2Stream.cpp",
     "Http2StreamBase.cpp",
@@ -177,6 +174,8 @@ UNIFIED_SOURCES += [
     "TLSTransportLayer.cpp",
     "TRRServiceChannel.cpp",
     "WebTransportCertificateVerifier.cpp",
+    "WebTransportSessionBase.cpp",
+    "WebTransportStreamBase.cpp",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":

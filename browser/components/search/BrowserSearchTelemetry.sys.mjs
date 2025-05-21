@@ -55,7 +55,7 @@ class BrowserSearchTelemetryHandler {
    * Determines if we should record a search for this browser instance.
    * Private Browsing mode is normally skipped.
    *
-   * @param {browser} browser
+   * @param {XULBrowserElement} browser
    *   The browser where the search was loaded.
    * @returns {boolean}
    *   True if the search should be recorded, false otherwise.
@@ -68,32 +68,16 @@ class BrowserSearchTelemetryHandler {
   }
 
   /**
-   * Records the method by which the user selected a result from the urlbar or
-   * searchbar.
+   * Records the method by which the user selected a result from the searchbar.
    *
    * @param {Event} event
    *        The event that triggered the selection.
-   * @param {string} source
-   *        Either "urlbar" or "searchbar" depending on the source.
    * @param {number} index
    *        The index that the user chose in the popup, or -1 if there wasn't a
    *        selection.
-   * @param {string} userSelectionBehavior
-   *        How the user cycled through results before picking the current match.
-   *        Could be one of "tab", "arrow" or "none".
    */
-  recordSearchSuggestionSelectionMethod(
-    event,
-    source,
-    index,
-    userSelectionBehavior = "none"
-  ) {
-    // If the contents of the histogram are changed then
-    // `UrlbarTestUtils.SELECTED_RESULT_METHODS` should also be updated.
-    if (source == "searchbar" && userSelectionBehavior != "none") {
-      throw new Error("Did not expect a selection behavior for the searchbar.");
-    }
-    // command events are from the one-off context menu.  Treat them as clicks.
+  recordSearchSuggestionSelectionMethod(event, index) {
+    // command events are from the one-off context menu. Treat them as clicks.
     // Note that we only care about MouseEvent subclasses here when the
     // event type is "click", or else the subclasses are associated with
     // non-click interactions.
@@ -106,26 +90,12 @@ class BrowserSearchTelemetryHandler {
     if (isClick) {
       category = "click";
     } else if (index >= 0) {
-      switch (userSelectionBehavior) {
-        case "tab":
-          category = "tabEnterSelection";
-          break;
-        case "arrow":
-          category = "arrowEnterSelection";
-          break;
-        case "rightClick":
-          // Selected by right mouse button.
-          category = "rightClickEnter";
-          break;
-        default:
-          category = "enterSelection";
-      }
+      category = "enterSelection";
     } else {
       category = "enter";
     }
-    if (source == "searchbar") {
-      Glean.searchbar.selectedResultMethod[category].add(1);
-    }
+
+    Glean.searchbar.selectedResultMethod[category].add(1);
   }
 
   /**
@@ -157,7 +127,7 @@ class BrowserSearchTelemetryHandler {
    * Telemetry records only search counts per engine and action origin, but
    * nothing pertaining to the search contents themselves.
    *
-   * @param {browser} browser
+   * @param {XULBrowserElement} browser
    *        The browser where the search originated.
    * @param {nsISearchEngine} engine
    *        The engine handling the search.
@@ -263,10 +233,26 @@ class BrowserSearchTelemetryHandler {
   }
 
   /**
+   * Records visits to a search engine's search form.
+   *
+   * @param {nsISearchEngine} engine
+   *   The engine whose search form is being visited.
+   * @param {string} source
+   *   Where the search form was opened from.
+   *   This can be "urlbar" or "searchbar".
+   */
+  recordSearchForm(engine, source) {
+    Glean.sap.searchFormCounts.record({
+      source,
+      provider_id: engine.isAppProvided ? engine.id : "other",
+    });
+  }
+
+  /**
    * This function handles the "urlbar", "urlbar-oneoff", "searchbar" and
    * "searchbar-oneoff" sources.
    *
-   * @param {browser} browser
+   * @param {XULBrowserElement} browser
    *   The browser where the search originated.
    * @param {nsISearchEngine} engine
    *   The engine handling the search.

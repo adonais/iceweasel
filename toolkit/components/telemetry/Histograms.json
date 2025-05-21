@@ -1749,14 +1749,6 @@
     "n_buckets": 20,
     "description": "System font fallback, first call (ms)"
   },
-  "SYSTEM_FONT_FALLBACK_SCRIPT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 110,
-    "description": "System font fallback script"
-  },
   "FONT_CACHE_HIT": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -5370,17 +5362,6 @@
     "bug_numbers": [1053467],
     "description": "The width dimension of the 'sizes' attribute for <link rel=icon>."
   },
-  "PAGE_METADATA_SIZE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 500,
-    "n_buckets": 10,
-    "alert_emails": ["najiang@mozilla.com", "activity-stream@mozilla.com"],
-    "bug_numbers": [1399880],
-    "description": "The size of the description and preview image url for page metadata (Bytes)"
-  },
   "PLACES_SORTED_BOOKMARKS_PERC": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec", "thunderbird"],
@@ -6544,24 +6525,6 @@
     "bug_numbers": [1656994],
     "description": "Update: How much longer langpacks took to download than the app update in seconds."
   },
-  "THUNDERBIRD_GLODA_SIZE_MB": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 1000,
-    "n_buckets": 40,
-    "description": "Gloda: size of global-messages-db.sqlite (MB)"
-  },
-  "THUNDERBIRD_INDEXING_RATE_MSG_PER_S": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 20,
-    "description": "Gloda: indexing rate (message/s)"
-  },
   "FX_TAB_CLOSE_TIME_ANIM_MS": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
@@ -7669,14 +7632,6 @@
     "labels": ["UnknownEvent", "Expired", "ExtraKey", "Value", "Extra"],
     "description": "Number of event recording failures, by type of failure"
   },
-  "TELEMETRY_TEST_FLAG": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "description": "a testing histogram; not meant to be touched"
-  },
   "TELEMETRY_TEST_COUNT": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec", "thunderbird"],
@@ -7743,15 +7698,6 @@
     "keyed": true,
     "description": "a testing histogram; not meant to be touched - initially not recording"
   },
-  "TELEMETRY_TEST_KEYED_FLAG": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "keyed": true,
-    "description": "a testing histogram; not meant to be touched"
-  },
   "TELEMETRY_TEST_KEYED_COUNT": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec", "thunderbird"],
@@ -7817,44 +7763,6 @@
     "keyed": true,
     "labels": ["CommonLabel", "Label2", "Label3"],
     "bug_numbers": [1347216],
-    "description": "a testing histogram; not meant to be touched"
-  },
-  "TELEMETRY_TEST_RELEASE_OPTOUT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "releaseChannelCollection": "opt-out",
-    "description": "a testing histogram; not meant to be touched"
-  },
-  "TELEMETRY_TEST_RELEASE_OPTIN": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "releaseChannelCollection": "opt-in",
-    "description": "a testing histogram; not meant to be touched"
-  },
-  "TELEMETRY_TEST_KEYED_RELEASE_OPTIN": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "keyed": true,
-    "releaseChannelCollection": "opt-in",
-    "description": "a testing histogram; not meant to be touched"
-  },
-  "TELEMETRY_TEST_KEYED_RELEASE_OPTOUT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "keyed": true,
-    "releaseChannelCollection": "opt-out",
     "description": "a testing histogram; not meant to be touched"
   },
   "TELEMETRY_TEST_EXPONENTIAL": {
@@ -7963,24 +7871,6 @@
     "high": 10000,
     "n_buckets": 10,
     "keyed": true,
-    "bug_numbers": [1335343],
-    "description": "a testing histogram; not meant to be touched"
-  },
-  "TELEMETRY_TEST_FLAG_CONTENT_PROCESS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "bug_numbers": [1335343],
-    "description": "a testing histogram; not meant to be touched"
-  },
-  "TELEMETRY_TEST_FLAG_MAIN_PROCESS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["telemetry-client-dev@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
     "bug_numbers": [1335343],
     "description": "a testing histogram; not meant to be touched"
   },
@@ -8292,54 +8182,6 @@
     "n_values": 8,
     "description": "Result of XHR request fetching the country-code. 0=SUCCESS, 1=SUCCESS_WITHOUT_DATA, 2=XHRTIMEOUT, 3=ERROR (rest reserved for finer-grained error codes later)"
   },
-  "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_TIMEZONE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "description": "Set if the fetched country-code indicates US but the time-zone heuristic doesn't"
-  },
-  "SEARCH_SERVICE_US_TIMEZONE_MISMATCHED_COUNTRY": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "flag",
-    "description": "Set if the time-zone heuristic indicates US but the fetched country code doesn't"
-  },
-  "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_OSX": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "If we are on OSX and either the OSX countryCode or the geoip countryCode indicates we are in the US, set to false if they both do or true otherwise"
-  },
-  "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "If we are on OSX and neither the OSX countryCode nor the geoip countryCode indicates we are in the US, set to false if they both agree on the value or true otherwise"
-  },
-  "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_WIN": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "If we are on Windows and either the Windows countryCode or the geoip countryCode indicates we are in the US, set to false if they both do or true otherwise"
-  },
-  "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "If we are on Windows and neither the Windows countryCode nor the geoip countryCode indicates we are in the US, set to false if they both agree on the value or true otherwise"
-  },
   "SEARCH_SUGGESTIONS_LATENCY_MS": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
@@ -8456,22 +8298,6 @@
     "high": 120000,
     "n_buckets": 100,
     "description": "Time taken (in ms) to update the inspector during a page reload, starting from new-root event."
-  },
-  "MEDIA_GMP_UPDATE_XML_FETCH_RESULT": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["media-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "categorical",
-    "labels": [
-      "cert_pinning_ok",
-      "cert_pinning_fail",
-      "content_sig_ok",
-      "content_sig_fail"
-    ],
-    "description": "Reports if a Firefox succeeded or failed in fetching the GMP update.xml from balrog, and which method was used to verify the download.",
-    "bug_numbers": [1714621]
   },
   "MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CODECS": {
     "record_in_processes": ["main", "content"],
@@ -10437,24 +10263,6 @@
     "n_values": 4,
     "description": "Does enforcing a larger minimum RSA key size cause verification failures? 1 = no, 2 = yes, 3 = another error prevented finding a verified chain"
   },
-  "WEAVE_START_COUNT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "default",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 10,
-    "description": "The number of times a sync started in this session"
-  },
-  "WEAVE_COMPLETE_SUCCESS_COUNT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "default",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 10,
-    "description": "The number of times a sync successfully completed in this session"
-  },
   "WEBCRYPTO_EXTRACTABLE_IMPORT": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -11947,28 +11755,6 @@
     "n_buckets": 50,
     "description": "The time, in percentage of a vsync interval, spent from beginning a paint in the content process until that frame is presented in the compositor by WebRender, excluding time spent uploading any content"
   },
-  "CONTENT_FRAME_TIME_REASON": {
-    "record_in_processes": ["main", "gpu"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "gfx-telemetry-alerts@mozilla.com",
-      "mwoodrow@mozilla.com"
-    ],
-    "bug_numbers": [1510853, 1584109],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "description": "The reason that CONTENT_FRAME_TIME recorded a slow (>200) result, if any.",
-    "labels": [
-      "OnTime",
-      "NoVsync",
-      "MissedComposite",
-      "SlowComposite",
-      "MissedCompositeMid",
-      "MissedCompositeLong",
-      "MissedCompositeLow",
-      "NoVsyncNoId"
-    ]
-  },
   "CONTENT_SMALL_PAINT_PHASE_WEIGHT_PARTIAL": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -12291,9 +12077,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 60000,
@@ -12307,9 +12093,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1297167, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958168
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12322,9 +12108,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12338,9 +12124,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1297167, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958168
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "categorical",
     "labels": ["popupShown", "clearAfterHover", "clearAfterMousedown"],
     "releaseChannelCollection": "opt-out",
@@ -12352,9 +12138,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958168
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "categorical",
     "labels": ["popupShown", "clearAfterHover", "clearAfterMousedown"],
     "releaseChannelCollection": "opt-out",
@@ -12447,8 +12233,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
-    "bug_numbers": [1787940, 1817103, 1861303, 1912170],
-    "expires_in_version": "140",
+    "bug_numbers": [1787940, 1817103, 1861303, 1912170, 1958154],
+    "expires_in_version": "147",
     "kind": "exponential",
     "keyed": true,
     "releaseChannelCollection": "opt-out",
@@ -12460,8 +12246,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
-    "bug_numbers": [1787940, 1817103, 1861303, 1912170],
-    "expires_in_version": "140",
+    "bug_numbers": [1787940, 1817103, 1861303, 1912170, 1958168],
+    "expires_in_version": "147",
     "kind": "categorical",
     "labels": [
       "suspend",
@@ -12481,8 +12267,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
-    "bug_numbers": [1787940, 1817103, 1861303, 1912170],
-    "expires_in_version": "140",
+    "bug_numbers": [1787940, 1817103, 1861303, 1912170, 1958168],
+    "expires_in_version": "147",
     "kind": "categorical",
     "labels": [
       "suspend",
@@ -12517,9 +12303,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12545,9 +12331,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12561,9 +12347,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1297167, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958168
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12576,9 +12362,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12592,9 +12378,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1465120, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958168
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12607,9 +12393,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12623,9 +12409,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1465120, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958168
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12638,9 +12424,9 @@
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
     "bug_numbers": [
       1483002, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 50000,
@@ -12653,10 +12439,10 @@
     "products": ["firefox", "fennec"],
     "bug_numbers": [
       1465129, 1513556, 1578225, 1623315, 1666980, 1706839, 1745271, 1777402,
-      1811155, 1861303, 1912170
+      1811155, 1861303, 1912170, 1958154
     ],
     "alert_emails": ["addons-dev-internal@mozilla.com", "lgreco@mozilla.com"],
-    "expires_in_version": "140",
+    "expires_in_version": "147",
     "kind": "categorical",
     "labels": ["success", "failure"],
     "releaseChannelCollection": "opt-out",
@@ -13012,32 +12798,6 @@
     "n_values": 5,
     "bug_numbers": [1627708, 1672576],
     "description": "Input device that triggered the zoom gesture (InputData::PinchGestureSource)",
-    "releaseChannelCollection": "opt-out"
-  },
-  "AUTOFILL_PROFILE_NUM_USES": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "How many times each saved autofill profile(address or credit card) has ever been autofilled. Rewritten after each autofill; always contains one entry per each count of uses. Example: If user has 3 cards, and he used 2 of them 5 times, and one of them 3 times, the value will be: `{3: 1, 5: 2}.",
-    "alert_emails": ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"],
-    "bug_numbers": [1653073, 1656355],
-    "releaseChannelCollection": "opt-out",
-    "keyed": true,
-    "keys": ["credit_card", "address"]
-  },
-  "CREDITCARD_NUM_USES": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "How many times each saved credit card has ever been autofilled. Rewritten after each autofill; always contains one entry per each count of uses. Example: If user has 3 cards, and he used 2 of them 5 times, and one of them 3 times, the value will be: `{3: 1, 5: 2}.",
-    "alert_emails": ["jmathies@mozilla.com", "chsiang@mozilla.com"],
-    "bug_numbers": [1653073, 1656355],
     "releaseChannelCollection": "opt-out"
   },
   "SQLITE_STORE_OPEN": {

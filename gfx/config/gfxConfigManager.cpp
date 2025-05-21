@@ -32,11 +32,11 @@ void gfxConfigManager::Init() {
   mWrForceEnabled = gfxPlatform::WebRenderPrefEnabled();
   mWrSoftwareForceEnabled = StaticPrefs::gfx_webrender_software_AtStartup();
   mWrCompositorForceEnabled =
-#if defined(MOZ_WAYLAND)
-      // HDR on Linux works with compositor only.
-      StaticPrefs::gfx_wayland_hdr_AtStartup() ||
-#endif
+#ifdef MOZ_WAYLAND
+      StaticPrefs::gfx_wayland_hdr_AtStartup();
+#else
       StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup();
+#endif
   mGPUProcessAllowSoftware =
       StaticPrefs::layers_gpu_process_allow_software_AtStartup();
   mWrForcePartialPresent =
@@ -268,22 +268,6 @@ void gfxConfigManager::ConfigureWebRender() {
   if (!mFeatureGPUProcess->IsEnabled()) {
     mFeatureWrDComp->Disable(FeatureStatus::Unavailable, "Requires GPU process",
                              "FEATURE_FAILURE_NO_GPU_PROCESS"_ns);
-  }
-
-  if (!mIsWin11OrLater) {
-    // Disable DirectComposition for NVIDIA users on Windows 10 with high/mixed
-    // refresh rate monitors due to rendering artifacts. (See bug 1638709.)
-    nsAutoString adapterVendorID;
-    mGfxInfo->GetAdapterVendorID(adapterVendorID);
-    if (adapterVendorID == u"0x10de") {
-      bool mixed = false;
-      int32_t maxRefreshRate = mGfxInfo->GetMaxRefreshRate(&mixed);
-      if (maxRefreshRate > 60 && mixed) {
-        mFeatureWrDComp->Disable(FeatureStatus::Blocked,
-                                 "Monitor refresh rate too high/mixed",
-                                 "NVIDIA_REFRESH_RATE_MIXED"_ns);
-      }
-    }
   }
 
   mFeatureWrDComp->MaybeSetFailed(

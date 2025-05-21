@@ -20,7 +20,6 @@ import mozdevice
 import mozfile
 import mozinfo
 import runxpcshelltests as xpcshell
-import six
 from mozdevice import ADBDevice, ADBDeviceFactory, ADBTimeoutError
 from mozlog import commandline
 from xpcshellcommandline import parser_remote
@@ -28,7 +27,7 @@ from xpcshellcommandline import parser_remote
 here = os.path.dirname(os.path.abspath(__file__))
 
 
-class RemoteProcessMonitor(object):
+class RemoteProcessMonitor:
     processStatus = []
 
     def __init__(self, package, device, log, remoteLogFile):
@@ -383,7 +382,7 @@ class RemoteXPCShellTestThread(xpcshell.XPCShellTestThread):
 
 
 # A specialization of XPCShellTests that runs tests on an Android device.
-class XPCShellRemote(xpcshell.XPCShellTests, object):
+class XPCShellRemote(xpcshell.XPCShellTests):
     def __init__(self, options, log):
         xpcshell.XPCShellTests.__init__(self, log)
 
@@ -507,7 +506,7 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         localWrapper = tempfile.mktemp()
         with open(localWrapper, "w") as f:
             f.write("#!/system/bin/sh\n")
-            for envkey, envval in six.iteritems(self.env):
+            for envkey, envval in self.env.items():
                 f.write("export %s=%s\n" % (envkey, envval))
             f.writelines(
                 [
@@ -759,13 +758,6 @@ class PathMapping:
 
 
 def main():
-    if sys.version_info < (2, 7):
-        print(
-            "Error: You must use python version 2.7 or newer but less than 3.0",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
     parser = parser_remote()
     options = parser.parse_args()
 

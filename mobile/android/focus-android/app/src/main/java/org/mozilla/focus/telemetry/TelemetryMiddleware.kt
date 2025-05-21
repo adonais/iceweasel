@@ -49,7 +49,9 @@ class TelemetryMiddleware : Middleware<BrowserState, BrowserAction> {
             is ContentAction.UpdateLoadingStateAction -> {
                 context.state.findTab(action.sessionId)?.let { tab ->
                     // Record UriOpened event when a page finishes loading
-                    if (!tab.content.loading && !action.loading) {
+                    if (tab.content.loading || action.loading) {
+                        // tab is still loading
+                    } else {
                         Browser.totalUriCount.add()
                     }
                 }
@@ -106,17 +108,5 @@ class TelemetryMiddleware : Middleware<BrowserState, BrowserAction> {
                 // For other session types we create events at the place where we create the sessions.
             }
         }
-    }
-
-    companion object {
-        internal const val TOOLBAR_COLOR_OPTION = "hasToolbarColor"
-        internal const val CLOSE_BUTTON_OPTION = "hasCloseButton"
-        internal const val DISABLE_URLBAR_HIDING_OPTION = "disablesUrlbarHiding"
-        internal const val ACTION_BUTTON_OPTION = "hasActionButton"
-        internal const val SHARE_MENU_ITEM_OPTION = "hasShareItem"
-        internal const val CUSTOMIZED_MENU_OPTION = "hasCustomizedMenu"
-        internal const val ACTION_BUTTON_TINT_OPTION = "hasActionButtonTint"
-        internal const val EXIT_ANIMATION_OPTION = "hasExitAnimation"
-        internal const val PAGE_TITLE_OPTION = "hasPageTitle"
     }
 }

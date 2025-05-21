@@ -38,12 +38,12 @@
 #include "media/base/rid_description.h"
 #include "media/base/stream_params.h"
 #include "p2p/base/candidate_pair_interface.h"
-#include "p2p/base/fake_packet_transport.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/dtls/dtls_transport_internal.h"
 #include "p2p/dtls/fake_dtls_transport.h"
+#include "p2p/test/fake_packet_transport.h"
 #include "pc/dtls_srtp_transport.h"
 #include "pc/jsep_transport.h"
 #include "pc/rtp_transport.h"
@@ -1589,7 +1589,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   rtc::Buffer rtp_packet_;
   rtc::Buffer rtcp_packet_;
   cricket::CandidatePairInterface* last_selected_candidate_pair_;
-  rtc::UniqueRandomIdGenerator ssrc_generator_;
+  webrtc::UniqueRandomIdGenerator ssrc_generator_;
   webrtc::test::ScopedKeyValueConfig field_trials_;
 };
 

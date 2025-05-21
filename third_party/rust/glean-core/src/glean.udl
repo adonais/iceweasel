@@ -71,6 +71,18 @@ namespace glean {
 
     PingUploadTask glean_get_upload_task();
     UploadTaskAction glean_process_ping_upload_response(string uuid, UploadResult result);
+
+    // Updates attribution fields with new values.
+    // AttributionMetrics fields with no values will not overwrite older values.
+    void glean_update_attribution(AttributionMetrics attribution);
+    // Returns the current attribution metrics, if any.
+    AttributionMetrics glean_test_get_attribution();
+
+    // Updates distribution fields with new values.
+    // DistributionMetrics fields with no values will not overwrite older values.
+    void glean_update_distribution(DistributionMetrics distribution);
+    // Returns the current distribution metrics, if any.
+    DistributionMetrics glean_test_get_distribution();
 };
 
 // A `Cow<'static, str>`, but really it's always the owned part.
@@ -108,6 +120,7 @@ dictionary PingRateLimit {
 };
 
 // An enum representing the different logging levels for the `log` crate.
+[Remote]
 enum LevelFilter {
     "Off",
     "Error",
@@ -135,6 +148,18 @@ dictionary ClientInfoMetrics {
     string? device_model = null;
     string? android_sdk_version = null;
     i64? windows_build_number = null;
+};
+
+dictionary AttributionMetrics {
+    string? source = null;
+    string? medium = null;
+    string? campaign = null;
+    string? term = null;
+    string? content = null;
+};
+
+dictionary DistributionMetrics {
+    string? name = null;
 };
 
 [Error]
@@ -214,6 +239,8 @@ dictionary PingRequest {
     boolean body_has_info_sections;
     // The ping's name. Likely also somewhere in `path`.
     string ping_name;
+    // The capabilities required during this ping's upload.
+    sequence<string> uploader_capabilities;
 };
 
 // An enum representing the possible upload tasks to be performed by an uploader.
@@ -223,6 +250,7 @@ interface PingUploadTask {
     //
     // * request: the ping request for upload
     Upload(PingRequest request);
+
     // A flag signaling that the pending pings directories are not done being processed,
     // thus the requester should wait and come back later.
     //
@@ -253,6 +281,15 @@ interface UploadResult {
     //
     // * unused: _ignored_.
     UnrecoverableFailure(i8 unused);
+
+    // The uploader is not capable of uploading this request due to lack of or
+    // mismatched capabilities.
+    //
+    // e.g. The ping requires upload over OHTTP,
+    //      but the uploader doesn't support OHTTP.
+    //
+    // * unused: _ignored_.
+    Incapable(i8 unused);
 
     // A HTTP response code.
     //
@@ -309,7 +346,8 @@ interface PingType {
         boolean enabled,
         sequence<string> schedules_pings,
         sequence<string> reason_codes,
-        boolean follows_collection_enabled
+        boolean follows_collection_enabled,
+        sequence<string> uploader_capabilities
     );
     void submit(optional string? reason = null);
 

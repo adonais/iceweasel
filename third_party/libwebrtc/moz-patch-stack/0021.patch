@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1387b2c480b55ecca
  2 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc b/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc
-index fc6cad6167..06422aaf5a 100644
+index 57d2a17833..aa9b20cdf8 100644
 --- a/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc
 +++ b/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc
 @@ -47,7 +47,7 @@ const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Config-Arm";
@@ -23,7 +23,7 @@ index fc6cad6167..06422aaf5a 100644
  #else
  constexpr bool kIsArm = false;
 diff --git a/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc b/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc
-index 1289650a87..c6ff129889 100644
+index 8b08272650..542b0ce93e 100644
 --- a/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc
 +++ b/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc
 @@ -771,7 +771,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,

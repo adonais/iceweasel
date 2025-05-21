@@ -6,6 +6,7 @@ import argparse
 import ast
 import difflib
 import errno
+import importlib.metadata
 import shlex
 import sys
 import types
@@ -153,6 +154,7 @@ MACH_COMMANDS = {
     ),
     "mozharness": MachCommandReference("testing/mozharness/mach_commands.py"),
     "mozregression": MachCommandReference("tools/mach_commands.py"),
+    "newtab": MachCommandReference("browser/extensions/newtab/mach_commands.py"),
     "node": MachCommandReference("tools/mach_commands.py"),
     "npm": MachCommandReference("tools/mach_commands.py"),
     "package": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
@@ -494,16 +496,7 @@ def load_commands_from_entry_point(group="mach.providers"):
     This takes an optional group argument which specifies the entry point
     group to use. If not specified, it defaults to 'mach.providers'.
     """
-    try:
-        import pkg_resources
-    except ImportError:
-        print(
-            "Could not find setuptools, ignoring command entry points",
-            file=sys.stderr,
-        )
-        return
-
-    for entry in pkg_resources.iter_entry_points(group=group, name=None):
+    for entry in importlib.metadata.entry_points(group=group):
         paths = [Path(path) for path in entry.load()()]
         if not isinstance(paths, Iterable):
             print(INVALID_ENTRY_POINT % entry)

@@ -159,39 +159,14 @@ class AsyncSetIconForPage final : public Runnable {
   PageData mPage;
 };
 
-/**
- * Asynchronously tries to get the URL of a page's favicon, then notifies the
- * given observer.
- */
-class AsyncGetFaviconURLForPage final : public Runnable {
- public:
-  NS_DECL_NSIRUNNABLE
-
-  /**
-   * Constructor.
-   *
-   * @param aPageURI
-   *        URI of the page whose favicon's URL we're fetching
-   * @param aCallback
-   *        function to be called once finished
-   * @param aPreferredWidth
-   *        The preferred size for the icon
-   */
-  AsyncGetFaviconURLForPage(const nsCOMPtr<nsIURI>& aPageURI,
-                            uint16_t aPreferredWidth,
-                            nsIFaviconDataCallback* aCallback);
-
- private:
-  uint16_t mPreferredWidth;
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
-  nsCOMPtr<nsIURI> mPageURI;
-};
+using FaviconPromise =
+    mozilla::MozPromise<nsCOMPtr<nsIFavicon>, nsresult, true>;
 
 /**
  * Asynchronously tries to get the URL and data of a page's favicon, then
- * notifies the given observer.
+ * resolve given promise with the result.
  */
-class AsyncGetFaviconDataForPage final : public Runnable {
+class AsyncGetFaviconForPageRunnable final : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
 
@@ -203,17 +178,17 @@ class AsyncGetFaviconDataForPage final : public Runnable {
    * @param aPreferredWidth
    *        The preferred size of the icon.  We will try to return an icon close
    *        to this size.
-   * @param aCallback
-   *        function to be called once finished
+   * @param aPromise
+   *        Promise that returns the result.
    */
-  AsyncGetFaviconDataForPage(const nsCOMPtr<nsIURI>& aPageURI,
-                             uint16_t aPreferredWidth,
-                             nsIFaviconDataCallback* aCallback);
+  AsyncGetFaviconForPageRunnable(const nsCOMPtr<nsIURI>& aPageURI,
+                                 uint16_t aPreferredWidth,
+                                 FaviconPromise::Private* aPromise);
 
  private:
-  uint16_t mPreferredWidth;
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCOMPtr<nsIURI> mPageURI;
+  uint16_t mPreferredWidth;
+  nsMainThreadPtrHandle<FaviconPromise::Private> mPromise;
 };
 
 /**

@@ -724,6 +724,19 @@ const AVAILABLE_SHIMS = [
     onlyIfDFPIActive: true,
   },
   {
+    id: "MicrosoftIcon",
+    name: "Microsoft Account Icon",
+    bug: "1728111",
+    contentScripts: [
+      {
+        js: "microsoftAccountIcon.js",
+        matches: ["*://*.microsoft.com/*", "*://m365.cloud.microsoft/*"],
+        runAt: "document_start",
+      },
+    ],
+    onlyIfDFPIActive: true,
+  },
+  {
     id: "MicrosoftLogin",
     platform: "desktop",
     name: "Microsoft Login",
@@ -949,6 +962,34 @@ const AVAILABLE_SHIMS = [
     onlyIfDFPIActive: true,
   },
   {
+    id: "JiraZendeskSupport",
+    platform: "all",
+    name: "Jira Zendesk Support",
+    bug: "1774592",
+    contentScripts: [
+      {
+        js: "jira-zendesk-support.js",
+        matches: ["*://*.atlassian.net/*"],
+        runAt: "document_start",
+      },
+    ],
+    onlyIfDFPIActive: true,
+  },
+  {
+    id: "ZendeskAsanaSupport",
+    platform: "all",
+    name: "Zendesk Asana Support",
+    bug: "1774567",
+    contentScripts: [
+      {
+        js: "zendesk-asana-support.js",
+        matches: ["*://*.zendesk.com/*"],
+        runAt: "document_start",
+      },
+    ],
+    onlyIfDFPIActive: true,
+  },
+  {
     id: "emeraude.my.salesforce.com",
     platform: "all",
     name: "Salesforce IndexedDB Script Access",
@@ -1068,6 +1109,19 @@ const AVAILABLE_SHIMS = [
       "*://abs.twimg.com/*",
       "*://abs-0.twimg.com/*",
     ],
+  },
+  {
+    id: "AliExpressInternationalization",
+    name: "AliExpress Internationalization",
+    bug: "1912228",
+    contentScripts: [
+      {
+        js: "aliexpress-language.js",
+        matches: ["*://*.aliexpress.us/*"],
+        runAt: "document_start",
+      },
+    ],
+    onlyIfDFPIActive: true,
   },
 ];
 

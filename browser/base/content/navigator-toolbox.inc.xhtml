@@ -164,7 +164,6 @@
         <toolbartabstop/>
         <html:div id="urlbar"
               popover="manual"
-              context=""
               focused="true"
               pageproxystate="invalid"
               unifiedsearchbutton-available=""
@@ -382,6 +381,13 @@
                 <image id="picture-in-picture-button-icon"
                        class="urlbar-icon"/>
               </hbox>
+              <hbox id="taskbar-tabs-button"
+                    class="urlbar-page-action"
+                    role="button"
+                    data-l10n-id="taskbar-tab-urlbar-button-open"
+                    hidden="true">
+                <image class="urlbar-icon"/>
+              </hbox>
               <hbox id="translations-button"
                     class="urlbar-page-action"
                     role="button"
@@ -457,9 +463,10 @@
                      data-l10n-id="toolbar-button-account"
                      cui-areatype="toolbar"
                      removable="true">
-                     <vbox>
+                     <hbox>
                       <image id="fxa-avatar-image"/>
-                     </vbox>
+                      <label id="fxa-avatar-label" hidden="true"/>
+                     </hbox>
       </toolbarbutton>
 
       <toolbarbutton id="unified-extensions-button"

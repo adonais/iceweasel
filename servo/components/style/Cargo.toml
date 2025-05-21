@@ -5,7 +5,7 @@ authors = ["The Servo Project Developers"]
 license = "MPL-2.0"
 repository = "https://github.com/servo/stylo"
 edition = "2021"
-publish = false
+description = "The Stylo CSS engine"
 
 build = "build.rs"
 
@@ -50,7 +50,7 @@ gecko_debug = []
 gecko_refcount_logging = []
 
 [dependencies]
-app_units = "0.7"
+app_units = "0.7.8"
 arrayvec = "0.7"
 atomic_refcell = "0.1"
 bitflags = "2"
@@ -64,7 +64,7 @@ euclid = "0.22"
 fxhash = "0.2"
 icu_segmenter = { version = "1.5", default-features = false, features = ["auto", "compiled_data"] }
 indexmap = {version = "2", features = ["std"]}
-itertools = "0.10"
+itertools = "0.14"
 itoa = "1.0"
 lazy_static = "1"
 log = "0.4"

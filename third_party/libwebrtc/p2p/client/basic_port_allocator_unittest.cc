@@ -30,9 +30,12 @@
 #include "p2p/base/port_interface.h"
 #include "p2p/base/stun_port.h"
 #include "p2p/base/stun_request.h"
-#include "p2p/base/stun_server.h"
-#include "p2p/base/test_stun_server.h"
-#include "p2p/base/test_turn_server.h"
+#include "p2p/test/nat_server.h"
+#include "p2p/test/nat_socket_factory.h"
+#include "p2p/test/nat_types.h"
+#include "p2p/test/stun_server.h"
+#include "p2p/test/test_stun_server.h"
+#include "p2p/test/test_turn_server.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/fake_mdns_responder.h"
 #include "rtc_base/fake_network.h"
@@ -40,9 +43,6 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nat_server.h"
-#include "rtc_base/nat_socket_factory.h"
-#include "rtc_base/nat_types.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/net_test_helpers.h"
 #include "rtc_base/network.h"
@@ -165,11 +165,11 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
                      kTurnUdpIntAddr,
                      kTurnUdpExtAddr),
         candidate_allocation_done_(false) {
-    ServerAddresses stun_servers;
-    stun_servers.insert(kStunAddr);
-
     allocator_ = std::make_unique<BasicPortAllocator>(
-        &network_manager_, &socket_factory_, stun_servers, &field_trials_);
+        &network_manager_, &socket_factory_, /*customizer=*/nullptr,
+        /*relay_port_factory=*/nullptr, &field_trials_);
+    allocator_->SetConfiguration({kStunAddr}, {}, 0, webrtc::NO_PRUNE, nullptr);
+
     allocator_->Initialize();
     allocator_->set_step_delay(kMinimumStepDelay);
     webrtc::metrics::Reset();
@@ -489,9 +489,13 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     if (!stun_server.IsNil()) {
       stun_servers.insert(stun_server);
     }
-    allocator_.reset(new BasicPortAllocator(&network_manager_,
-                                            nat_socket_factory_.get(),
-                                            stun_servers, &field_trials_));
+    allocator_ = std::make_unique<BasicPortAllocator>(
+        &network_manager_, nat_socket_factory_.get(),
+        /*customizer=*/nullptr,
+        /*relay_port_factory=*/nullptr, &field_trials_);
+    allocator_->SetConfiguration(stun_servers, {}, 0, webrtc::NO_PRUNE,
+                                 nullptr);
+
     allocator_->Initialize();
     allocator_->set_step_delay(kMinimumStepDelay);
   }

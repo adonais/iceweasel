@@ -50,7 +50,7 @@ def execute_node_cmd(node_cmd_list):
 
     try:
         if os.environ.get("BUILD_VERBOSE_LOG"):
-            print('Executing "{}"'.format(shell_quote(*node_cmd_list)), file=sys.stderr)
+            print(f'Executing "{shell_quote(*node_cmd_list)}"', file=sys.stderr)
             sys.stderr.flush()
 
         # We need to redirect stderr to a pipe because
@@ -122,7 +122,7 @@ def generate(output, node_script, *files):
         sys.exit(1)
 
     node_script = six.ensure_text(node_script)
-    if not isinstance(node_script, six.text_type):
+    if not isinstance(node_script, str):
         print(
             "moz.build file didn't pass a valid node script name to execute",
             file=sys.stderr,

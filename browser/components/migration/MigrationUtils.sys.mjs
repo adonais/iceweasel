@@ -152,7 +152,7 @@ class MigrationUtils {
           "MigrationWizard:RequestState": { wantUntrusted: true },
           "MigrationWizard:BeginMigration": { wantUntrusted: true },
           "MigrationWizard:RequestSafariPermissions": { wantUntrusted: true },
-          "MigrationWizard:SelectSafariPasswordFile": { wantUntrusted: true },
+          "MigrationWizard:SelectManualPasswordFile": { wantUntrusted: true },
           "MigrationWizard:OpenAboutAddons": { wantUntrusted: true },
           "MigrationWizard:PermissionsNeeded": { wantUntrusted: true },
           "MigrationWizard:GetPermissions": { wantUntrusted: true },
@@ -860,6 +860,18 @@ class MigrationUtils {
         gUndoData.get("logins").push({ guid, timePasswordChanged });
       }
     }
+  }
+
+  /**
+   * Called by MigrationWizardParent during a migration to indicate that a
+   * manual migration of logins occurred via import from a CSV / TSV file, and
+   * should be counted towards the total number of imported logins.
+   *
+   * @param {number} totalLogins
+   *   The number of logins imported manually from a CSV / TSV file.
+   */
+  notifyLoginsManuallyImported(totalLogins) {
+    this._importQuantities.logins += totalLogins;
   }
 
   /**

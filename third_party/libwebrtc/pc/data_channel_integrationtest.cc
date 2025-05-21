@@ -659,12 +659,12 @@ TEST_P(DataChannelIntegrationTest, StressTestUnorderedSctpDataChannel) {
   EXPECT_THAT(
       WaitUntil(
           [&] { return caller()->data_observer()->received_message_count(); },
-          Eq(rtc::checked_cast<size_t>(kNumMessages))),
+          Eq(checked_cast<size_t>(kNumMessages))),
       IsRtcOk());
   EXPECT_THAT(
       WaitUntil(
           [&] { return callee()->data_observer()->received_message_count(); },
-          Eq(rtc::checked_cast<size_t>(kNumMessages))),
+          Eq(checked_cast<size_t>(kNumMessages))),
       IsRtcOk());
 
   // Sort and compare to make sure none of the messages were corrupted.
@@ -701,7 +701,7 @@ TEST_P(DataChannelIntegrationTest, StressTestOpenCloseChannelNoDelay) {
     RTC_LOG(LS_INFO) << "Iteration " << (repeats + 1) << "/" << kIterations;
 
     for (size_t i = 0; i < kChannelCount; ++i) {
-      rtc::StringBuilder sb;
+      StringBuilder sb;
       sb << "channel-" << channel_id++;
       caller()->CreateDataChannel(sb.Release(), &init);
     }
@@ -788,7 +788,7 @@ TEST_P(DataChannelIntegrationTest, StressTestOpenCloseChannelWithDelay) {
     RTC_LOG(LS_INFO) << "Iteration " << (repeats + 1) << "/" << kIterations;
 
     for (size_t i = 0; i < kChannelCount; ++i) {
-      rtc::StringBuilder sb;
+      StringBuilder sb;
       sb << "channel-" << channel_id++;
       caller()->CreateDataChannel(sb.Release(), &init);
     }

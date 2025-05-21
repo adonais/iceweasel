@@ -1596,7 +1596,7 @@ class NetworkModule extends RootBiDiModule {
       const protocolEventName = "network.authRequired";
 
       const isListening = this._hasListener(protocolEventName, {
-        contextId: request.contextId,
+        contextId: browsingContext.id,
       });
       if (!isListening) {
         // If there are no listeners subscribed to this event and this context,
@@ -1669,7 +1669,7 @@ class NetworkModule extends RootBiDiModule {
     const protocolEventName = "network.beforeRequestSent";
 
     const isListening = this._hasListener(protocolEventName, {
-      contextId: request.contextId,
+      contextId: browsingContext.id,
     });
     if (!isListening) {
       // If there are no listeners subscribed to this event and this context,
@@ -1729,7 +1729,7 @@ class NetworkModule extends RootBiDiModule {
     const protocolEventName = "network.fetchError";
 
     const isListening = this._hasListener(protocolEventName, {
-      contextId: request.contextId,
+      contextId: browsingContext.id,
     });
     if (!isListening) {
       // If there are no listeners subscribed to this event and this context,
@@ -1772,7 +1772,7 @@ class NetworkModule extends RootBiDiModule {
         : "network.responseCompleted";
 
     const isListening = this._hasListener(protocolEventName, {
-      contextId: request.contextId,
+      contextId: browsingContext.id,
     });
     if (!isListening) {
       // If there are no listeners subscribed to this event and this context,
@@ -1980,8 +1980,8 @@ class NetworkModule extends RootBiDiModule {
     }
   }
 
-  _sendEventsForCachedResource(params) {
-    this.#onBeforeRequestSent("beforerequest-sent", params);
+  _sendEventsForWindowGlobalNetworkResource(params) {
+    this.#onBeforeRequestSent("before-request-sent", params);
     this.#onResponseEvent("response-started", params);
     this.#onResponseEvent("response-completed", params);
   }

@@ -117,11 +117,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Navighe plui svelt cul gnûf sisteme di navigazion</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Navighe plui svelt cul gnûf sisteme di navigazion</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Suntun sît web, cheste sbare e vignarà platade a pene che tu scoris in jù, lassantti plui spazi pe naviazion.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Suntun sît web, cheste sbare e vignarà platade a pene che tu scoris in jù, lassantti plui spazi pe naviazion.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Tocje e ten fracadis lis frecis par passâ di une pagjine a chê altre te cronologjie di cheste schede.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Tocje e ten fracadis lis frecis par passâ di une pagjine a chê altre te cronologjie di cheste schede.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -632,7 +632,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Navigazion svelte e sigure</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Acete e continue</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Acete e continue</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Continuant, tu acetis lis %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -837,8 +837,6 @@
   <string name="preferences_override_account_server">Servidôr di account Mozilla personalizât </string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Servidôr personalizât par Sync</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Modificât servidôr par account Mozilla e sincronizazion. Daûr a sierâ la aplicazion par aplicâ lis modifichis…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Account</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1208,7 +1206,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Scor la sbare dai struments in alt par vierzi lis schedis</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Scor par platâ la sbare de direzion e chê dai struments</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Scor par platâ la sbare de direzion e chê dai struments</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Scor la sbare de direzion di une bande o chê altre par cambiâ schede</string>
   <!--
@@ -1526,9 +1524,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Discjariament falît</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Cîr tai discjariâts</string>
+  <string name="download_search_placeholder">Cîr tai discjariâts</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Nissun risultât cjatât</string>
+  <string name="download_search_no_results_found">Nissun risultât cjatât</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Selezione dut</string>
   <!--
@@ -2281,7 +2279,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Icone des preferencis pes ecezions pe protezion des spiis miorade</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2290,8 +2288,6 @@
   <string name="preference_doh_summary">Il sisteme di risoluzion dai nons di domini (DNS) sore HTTPS al invie lis richiestis pai nons di domini a traviers di une conession cifrade, furnint un DNS sigûr e fasint in mût che al sedi plui dificil scuvierzi i sîts web che tu stâs par visitâ. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Plui informazions</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Navighe in sù</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Ecezions</string>
   <!-- Content description for the "Info" button -->
@@ -2830,8 +2826,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Ricercjis di tindince</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.

@@ -200,7 +200,7 @@
     static markup = /*html*/ `
     <panel
         type="arrow"
-        class="panel tab-group-editor-panel"
+        class="tab-group-editor-panel"
         orient="vertical"
         role="dialog"
         ignorekeys="true"
@@ -354,7 +354,8 @@
         this,
         "smartTabGroupsOptin",
         "browser.tabs.groups.smart.optin",
-        false
+        false,
+        this.#onSmartTabGroupsOptInPrefChange.bind(this)
       );
     }
 
@@ -473,6 +474,7 @@
       this.panel.addEventListener("popuphidden", this);
       this.panel.addEventListener("keypress", this);
       this.#swatchesContainer.addEventListener("change", this);
+      Glean.tabgroup.smartTabEnabled.set(this.smartTabGroupsPrefEnabled);
     }
 
     get smartTabGroupsEnabled() {
@@ -483,6 +485,14 @@
       );
     }
 
+    get smartTabGroupsPrefEnabled() {
+      return (
+        this.smartTabGroupsUserEnabled &&
+        this.smartTabGroupsFeatureConfigEnabled &&
+        this.smartTabGroupsOptin
+      );
+    }
+
     #onSmartTabGroupsPrefChange(_preName, _prev, _latest) {
       const icon = this.smartTabGroupsEnabled
         ? MozTabbrowserTabGroupMenu.AI_ICON
@@ -490,6 +500,17 @@
 
       this.#suggestionButton.iconSrc = icon;
       this.#suggestionsMessage.iconSrc = icon;
+      Glean.tabgroup.smartTab.record({
+        enabled: this.smartTabGroupsPrefEnabled,
+      });
+      Glean.tabgroup.smartTabEnabled.set(this.smartTabGroupsPrefEnabled);
+    }
+
+    #onSmartTabGroupsOptInPrefChange(_preName, _prev, _latest) {
+      Glean.tabgroup.smartTab.record({
+        enabled: this.smartTabGroupsPrefEnabled,
+      });
+      Glean.tabgroup.smartTabEnabled.set(this.smartTabGroupsPrefEnabled);
     }
 
     #initSmartTabGroupsOptin() {
@@ -534,6 +555,19 @@
             ? MozTabbrowserTabGroupMenu.State.CREATE_AI_INITIAL
             : MozTabbrowserTabGroupMenu.State.EDIT_AI_INITIAL;
           this.#setFormToDisabled(false);
+        }
+      );
+
+      // On Message link click
+      this.#suggestionsOptin.addEventListener(
+        "MlModelOptinMessageLinkClick",
+        () => {
+          this.#handleMLOptinTelemetry("step0-optin-link-click");
+          openTrustedLinkIn(
+            // this is a placeholder link, it should be replaced with the actual link
+            "https://support.mozilla.org",
+            "tab"
+          );
         }
       );
 
@@ -734,13 +768,24 @@
       return "bottomleft topleft";
     }
 
-    #initMlGroupLabel() {
-      if (!this.smartTabGroupsEnabled) {
+    /**
+     * Sets the suggested title for the group
+     */
+    async #initMlGroupLabel() {
+      if (!this.smartTabGroupsEnabled || !this.activeGroup.tabs?.length) {
         return;
       }
-      gBrowser.getGroupTitleForTabs(this.activeGroup.tabs).then(newLabel => {
-        this.#setMlGroupLabel(newLabel);
-      });
+
+      const tabs = this.activeGroup.tabs;
+      const otherTabs = gBrowser.visibleTabs.filter(
+        t => !tabs.includes(t) && !t.pinned
+      );
+      let predictedLabel =
+        await this.#smartTabGroupingManager.getPredictedLabelForGroup(
+          tabs,
+          otherTabs
+        );
+      this.#setMlGroupLabel(predictedLabel);
     }
 
     /**
@@ -871,7 +916,10 @@
             this.#handleMlTelemetry("save-popup-hidden");
           }
         } else {
-          this.activeGroup.ungroupTabs();
+          this.activeGroup.ungroupTabs({
+            isUserTriggered: true,
+            telemetrySource: TabMetrics.METRIC_SOURCE.CANCEL_TAB_GROUP_CREATION,
+          });
         }
       }
       if (this.#nameField.disabled) {
@@ -895,9 +943,12 @@
           this.close(false);
           break;
         case KeyEvent.DOM_VK_RETURN:
-          // When focus is on a toolbarbutton, we need to wait for the command
-          // event, which will ultimately close the panel as well.
-          if (event.target.nodeName != "toolbarbutton") {
+          // When focus is on a button, we need to let that handle the Enter key,
+          // which should ultimately close the panel as well.
+          if (
+            event.target.localName != "toolbarbutton" &&
+            event.target.localName != "moz-button"
+          ) {
             this.close();
           }
           break;

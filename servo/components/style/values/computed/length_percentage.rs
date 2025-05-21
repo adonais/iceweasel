@@ -460,7 +460,7 @@ impl LengthPercentage {
         match self.unpack() {
             Unpacked::Length(l) => l,
             Unpacked::Percentage(p) => (basis * p.0).normalized(),
-            Unpacked::Calc(ref c) => c.resolve_non_anchor(basis),
+            Unpacked::Calc(ref c) => c.resolve(basis),
         }
     }
 
@@ -508,14 +508,18 @@ impl LengthPercentage {
         Some(match self.unpack() {
             Unpacked::Length(l) => Percentage(l.px() / basis.px()),
             Unpacked::Percentage(p) => p,
-            Unpacked::Calc(ref c) => Percentage(c.resolve_non_anchor(basis).px() / basis.px()),
+            Unpacked::Calc(ref c) => Percentage(c.resolve(basis).px() / basis.px()),
         })
     }
 
     /// Returns the used value.
     #[inline]
     pub fn to_used_value(&self, containing_length: Au) -> Au {
-        Au::from(self.to_pixel_length(containing_length))
+        let length = self.to_pixel_length(containing_length);
+        if let Unpacked::Percentage(_) = self.unpack() {
+            return Au::from_f32_px_trunc(length.px());
+        }
+        Au::from(length)
     }
 
     /// Returns the used value as CSSPixelLength.
@@ -528,7 +532,11 @@ impl LengthPercentage {
     #[inline]
     pub fn maybe_to_used_value(&self, container_len: Option<Au>) -> Option<Au> {
         self.maybe_percentage_relative_to(container_len.map(Length::from))
-            .map(Au::from)
+            .map(if let Unpacked::Percentage(_) = self.unpack() {
+                |length: Length| Au::from_f32_px_trunc(length.px())
+            } else {
+                Au::from
+            })
     }
 
     /// If there are special rules for computing percentages in a value (e.g.
@@ -901,90 +909,28 @@ pub struct CalcLengthPercentage {
     node: CalcNode,
 }
 
-struct ResolveContext {
-    percentage_used: bool,
-    anchor_function_used: bool,
-}
-
-impl Default for ResolveContext {
-    fn default() -> Self {
-        Self {
-            percentage_used: false,
-            anchor_function_used: false,
-        }
-    }
-}
-
-fn leaf_to_output(
-    leaf: &CalcLengthPercentageLeaf,
-    basis: Length,
-    context: &mut ResolveContext,
-) -> Result<CalcLengthPercentageLeaf, ()> {
-    Ok(if let CalcLengthPercentageLeaf::Percentage(p) = leaf {
-        context.percentage_used = true;
-        CalcLengthPercentageLeaf::Length(Length::new(basis.px() * p.0))
-    } else {
-        leaf.clone()
-    })
-}
-
-fn map_node(
+fn resolve_anchor_functions(
     node: &CalcNode,
-    basis: Length,
     info: &CalcAnchorFunctionResolutionInfo,
-    context: &mut ResolveContext,
 ) -> Result<Option<CalcNode>, ()> {
-    match node {
+    let resolution = match node {
         CalcNode::Anchor(f) => {
-            context.anchor_function_used = true;
-            match f.resolve(info.axis, info.position_property) {
-                AnchorResolutionResult::Invalid => return Err(()),
-                AnchorResolutionResult::Fallback(fb) => {
-                    let mut inner_context = ResolveContext::default();
-                    // TODO(dshin, bug 1923759): At least for now, fallbacks should always resolve, since they do not contain
-                    // recursive anchor functions.
-                    let resolved = fb
-                        .resolve_map(
-                            |leaf, percentage_used| leaf_to_output(leaf, basis, percentage_used),
-                            |_, _| Ok(None),
-                            &mut inner_context,
-                        )
-                        .expect("anchor() fallback should have been resolvable?");
-                    context.percentage_used |= inner_context.percentage_used;
-                    debug_assert!(
-                        !inner_context.anchor_function_used,
-                        "Nested anchor function used?"
-                    );
-                    Ok(Some(CalcNode::Leaf(resolved)))
-                },
-                AnchorResolutionResult::Resolved(v) => Ok(Some(*v.clone())),
-            }
+            let axis = info.axis.expect("Unexpected anchor()");
+            // Invalid use of `anchor()` (i.e. Outside of inset properties) should've been
+            // caught at parse time.
+            f.resolve(axis, info.position_property)
         },
-        CalcNode::AnchorSize(f) => {
-            context.anchor_function_used = true;
-            match f.resolve(info.position_property) {
-                AnchorResolutionResult::Invalid => return Err(()),
-                AnchorResolutionResult::Fallback(fb) => {
-                    let mut inner_context = ResolveContext::default();
-                    // TODO(dshin, bug 1923956): Equivalent to corresponding matching arm for `anchor()`.
-                    let resolved = fb
-                        .resolve_map(
-                            |leaf, percentage_used| leaf_to_output(leaf, basis, percentage_used),
-                            |_, _| Ok(None),
-                            &mut inner_context,
-                        )
-                        .expect("anchor-size() fallbaack should have been resolvable?");
-                    context.percentage_used |= inner_context.percentage_used;
-                    debug_assert!(
-                        !inner_context.anchor_function_used,
-                        "Nested anchor function used?"
-                    );
-                    Ok(Some(CalcNode::Leaf(resolved)))
-                },
-                AnchorResolutionResult::Resolved(v) => Ok(Some(*v.clone())),
-            }
+        CalcNode::AnchorSize(f) => f.resolve(info.position_property),
+        _ => return Ok(None),
+    };
+
+    match resolution {
+        AnchorResolutionResult::Invalid => Err(()),
+        AnchorResolutionResult::Fallback(fb) => {
+            // TODO(dshin, bug 1923759): At least for now, fallbacks should not contain any anchor function.
+            Ok(Some(*fb.clone()))
         },
-        _ => Ok(None),
+        AnchorResolutionResult::Resolved(v) => Ok(Some(*v.clone())),
     }
 }
 
@@ -995,22 +941,13 @@ pub struct CalcAnchorFunctionResolutionInfo {
     /// Which axis we're resolving anchor functions for.
     /// This is only relevant for `anchor()`, which requires
     /// the property using the function to be in the same axis
-    /// as the specified side [1].
+    /// as the specified side [1]. `None` if we aren't expecting
+    /// `anchor()`, like in size properties, where only `anchor-size()`
+    /// is allowed.
     /// [1]: https://drafts.csswg.org/css-anchor-position-1/#anchor-valid
-    pub axis: PhysicalAxis,
+    pub axis: Option<PhysicalAxis>,
     /// `position` property of the box for which this style is being resolved.
     pub position_property: PositionProperty,
-}
-
-impl CalcAnchorFunctionResolutionInfo {
-    fn invalid() -> Self {
-        Self {
-            // Makes anchor functions always invalid
-            position_property: PositionProperty::Static,
-            // Doesn't matter
-            axis: PhysicalAxis::Vertical,
-        }
-    }
 }
 
 /// Result of resolving `CalcLengthPercentage`
@@ -1022,51 +959,37 @@ pub struct CalcLengthPercentageResolution {
 }
 
 impl CalcLengthPercentage {
-    /// Resolves the percentage, resolving anchor functions as specified in `resolve`.
-    pub fn resolve_non_anchor(&self, basis: Length) -> Length {
-        self.resolve(basis, None)
-            .expect("Non-anchor calc resolution returned None")
-            .result
+    /// Resolves the percentage.
+    #[inline]
+    pub fn resolve(&self, basis: Length) -> Length {
+        // unwrap() is fine because the conversion below is infallible.
+        if let CalcLengthPercentageLeaf::Length(px) = self
+            .node
+            .resolve_map(|leaf| {
+                Ok(if let CalcLengthPercentageLeaf::Percentage(p) = leaf {
+                    CalcLengthPercentageLeaf::Length(Length::new(basis.px() * p.0))
+                } else {
+                    leaf.clone()
+                })
+            })
+            .unwrap()
+        {
+            Length::new(self.clamping_mode.clamp(px.px())).normalized()
+        } else {
+            unreachable!("resolve_map should turn percentages to lengths, and parsing should ensure that we don't end up with a number");
+        }
     }
 
-    /// Resolves the percentage and anchor functions, if provided. Otherwise, anchor functions
-    /// will be resolved as invalid.
+    /// Return a clone of this node with all anchor functions computed and replaced with
+    /// corresponding values, returning error if the resolution is invalid.
     #[inline]
-    pub fn resolve(
+    pub fn resolve_anchor(
         &self,
-        basis: Length,
-        anchor_resolution_info: Option<CalcAnchorFunctionResolutionInfo>,
-    ) -> Option<CalcLengthPercentageResolution> {
-        let mut context = ResolveContext::default();
-        let info = anchor_resolution_info.unwrap_or(CalcAnchorFunctionResolutionInfo::invalid());
-        let result = self.node.resolve_map(
-            |leaf, context| leaf_to_output(leaf, basis, context),
-            |node, context| map_node(node, basis, &info, context),
-            &mut context,
-        );
-
-        match result {
-            Ok(r) => match r {
-                CalcLengthPercentageLeaf::Length(px) => Some(CalcLengthPercentageResolution{
-                    result: Length::new(self.clamping_mode.clamp(px.px())).normalized(),
-                    percentage_used: context.percentage_used,
-                }),
-                _ => unreachable!("resolve_map should turn percentages to lengths, and parsing should ensure that we don't end up with a number"),
-            },
-            Err(()) => {
-                if anchor_resolution_info.is_some() {
-                    None
-                } else {
-                    // TODO(dshin, bug 1923959): This should be an assert; we can't do that at the moment because size properties with anchor
-                    // functions in calc node end up here. For now, return an invalid-but-reasonable-enough 0.
-                    debug_assert!(context.anchor_function_used, "Anchor function not used but failed resolution?");
-                    Some(CalcLengthPercentageResolution{
-                        result: Length::zero(),
-                        percentage_used: false,
-                    })
-                }
-            },
-        }
+        anchor_resolution_info: CalcAnchorFunctionResolutionInfo,
+    ) -> Result<(CalcNode, AllowedNumericType), ()> {
+        let mut node = self.node.clone();
+        node.map_node(|node| resolve_anchor_functions(node, &anchor_resolution_info))?;
+        Ok((node, self.clamping_mode))
     }
 }
 

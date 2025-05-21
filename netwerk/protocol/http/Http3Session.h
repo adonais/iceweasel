@@ -104,6 +104,8 @@ namespace mozilla::net {
 class HttpConnectionUDP;
 class Http3StreamBase;
 class QuicSocketControl;
+class Http3WebTransportSession;
+class Http3WebTransportStream;
 
 // IID for the Http3Session interface
 #define NS_HTTP3SESSION_IID \
@@ -215,6 +217,8 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   void SetSendOrder(Http3StreamBase* aStream, Maybe<int64_t> aSendOrder);
 
   void CloseWebTransportConn();
+
+  Http3Stats GetStats();
 
  private:
   ~Http3Session();
@@ -336,6 +340,7 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   Maybe<uint64_t> mFirstStreamIdReuseIdleConnection;
   TimeStamp mTimerShouldTrigger;
   TimeStamp mZeroRttStarted;
+  TimeStamp mLastTRRResponseTime;  // Time of the last successful TRR response
   uint64_t mBlockedByStreamLimitCount = 0;
   uint64_t mTransactionsBlockedByStreamLimitCount = 0;
   uint64_t mTransactionsSenderBlockedByFlowControlCount = 0;

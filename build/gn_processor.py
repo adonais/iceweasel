@@ -30,7 +30,7 @@ generated_header = """
 """
 
 
-class MozbuildWriter(object):
+class MozbuildWriter:
     def __init__(self, fh):
         self._fh = fh
         self.indent = ""
@@ -565,6 +565,36 @@ def write_mozbuild(
             except KeyError:
                 pass
             try:
+                if relsrcdir in write_mozbuild_variables["INCLUDE_SYSTEM_GBM_HANDLING"]:
+                    mb.write('CXXFLAGS += CONFIG["MOZ_GBM_CFLAGS"]\n')
+                    mb.write('if not CONFIG["MOZ_SYSTEM_GBM"]:\n')
+                    mb.write('    LOCAL_INCLUDES += [ "/third_party/gbm/gbm/" ]\n')
+            except KeyError:
+                pass
+            try:
+                if (
+                    relsrcdir
+                    in write_mozbuild_variables["INCLUDE_SYSTEM_LIBDRM_HANDLING"]
+                ):
+                    mb.write('CXXFLAGS += CONFIG["MOZ_LIBDRM_CFLAGS"]\n')
+                    mb.write('if not CONFIG["MOZ_SYSTEM_LIBDRM"]:\n')
+                    mb.write('    LOCAL_INCLUDES += [ "/third_party/drm/drm/",\n')
+                    mb.write(
+                        '                        "/third_party/drm/drm/include/" ]\n'
+                    )
+            except KeyError:
+                pass
+            try:
+                if (
+                    relsrcdir
+                    in write_mozbuild_variables["INCLUDE_SYSTEM_PIPEWIRE_HANDLING"]
+                ):
+                    mb.write('CXXFLAGS += CONFIG["MOZ_PIPEWIRE_CFLAGS"]\n')
+                    mb.write('if not CONFIG["MOZ_SYSTEM_PIPEWIRE"]:\n')
+                    mb.write('    LOCAL_INCLUDES += [ "/third_party/pipewire/" ]\n')
+            except KeyError:
+                pass
+            try:
                 if (
                     relsrcdir
                     in write_mozbuild_variables["INCLUDE_SYSTEM_LIBVPX_HANDLING"]
@@ -605,7 +635,7 @@ def write_mozbuild(
             ):
                 conditions = set()
                 for args in all_args:
-                    cond = tuple(((k, args.get(k) or "") for k in attrs))
+                    cond = tuple((k, args.get(k) or "") for k in attrs)
                     conditions.add(cond)
 
                 for cond in sorted(conditions):
@@ -649,7 +679,7 @@ def write_mozbuild(
         ):
             conditions = set()
             for args in dirs_by_config.keys():
-                cond = tuple(((k, dict(args).get(k) or "") for k in attrs))
+                cond = tuple((k, dict(args).get(k) or "") for k in attrs)
                 conditions.add(cond)
 
             for cond in sorted(conditions):
@@ -745,7 +775,7 @@ def generate_gn_config(
         if preprocessor:
             preprocessor.main(gn_config_file)
 
-        with open(gn_config_file, "r") as fh:
+        with open(gn_config_file) as fh:
             gn_out = json.load(fh)
             gn_out = filter_gn_config(
                 resolved_tempdir, gn_out, sandbox_variables, input_variables, gn_target
@@ -772,7 +802,7 @@ def main():
     if not gn_binary:
         raise Exception("The GN program must be present to generate GN configs.")
 
-    with open(args.config, "r") as fh:
+    with open(args.config) as fh:
         config = json.load(fh)
 
     topsrcdir = Path(__file__).parent.parent.resolve()

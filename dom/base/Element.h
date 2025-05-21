@@ -2277,6 +2277,9 @@ class Element : public FragmentOrElement {
   virtual void SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
                              ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
+  void FireBeforematchEvent(ErrorResult& aRv);
+
  protected:
   enum class ReparseAttributes { No, Yes };
   /**

@@ -246,14 +246,31 @@ export class FormAutofillSection {
         // allows for fields that might commonly appear twice such as a verification
         // email field, an invisible field that appears next to the user-visible field,
         // and simple cases where a page error where a field name is reused twice.
-        let isDuplicate = candidateSection.fieldDetails.find(
+        let dupIndex = candidateSection.fieldDetails.findIndex(
           f => f.fieldName == cur.fieldName && f.isVisible && cur.isVisible
         );
+        let isDuplicate = dupIndex != -1;
 
         if (isDuplicate) {
           const [last] = candidateSection.fieldDetails.slice(-1);
           if (last.fieldName == cur.fieldName) {
             isDuplicate = false;
+          } else if (
+            lazy.FormAutofillUtils.getCategoryFromFieldName(cur.fieldName) ==
+            "name"
+          ) {
+            // If the duplicate field is in the "name" category (e.g., family-name, given-name),
+            // we check whether all fields starting from the first duplicate also belong to the
+            // name category. If they do, we don't consider the field a duplicate, since name
+            // fields often appear in groups like family-name + given-name.
+            isDuplicate = !candidateSection.fieldDetails
+              .slice(dupIndex)
+              .every(
+                f =>
+                  lazy.FormAutofillUtils.getCategoryFromFieldName(
+                    f.fieldName
+                  ) === "name"
+              );
           }
         }
 
@@ -316,27 +333,32 @@ export class FormAutofillSection {
     return data;
   }
 
+  shouldAutofillField(fieldDetail) {
+    // We don't save security code, but if somehow the profile has securty code,
+    // make sure we don't autofill it.
+    if (fieldDetail.fieldName == "cc-csc") {
+      return false;
+    }
+
+    // When both visible and invisible elements exist, we only autofill the
+    // visible element.
+    if (!fieldDetail.isVisible) {
+      return !this.fieldDetails.some(
+        field => field.fieldName == fieldDetail.fieldName && field.isVisible
+      );
+    }
+
+    return true;
+  }
+
   /**
    * Heuristics to determine which fields to autofill when a section contains
    * multiple fields of the same type.
    */
   getAutofillFields() {
-    return this.fieldDetails.filter(fieldDetail => {
-      // We don't save security code, but if somehow the profile has securty code,
-      // make sure we don't autofill it.
-      if (fieldDetail.fieldName == "cc-csc") {
-        return false;
-      }
-
-      // When both visible and invisible elements exist, we only autofill the
-      // visible element.
-      if (!fieldDetail.isVisible) {
-        return !this.fieldDetails.some(
-          field => field.fieldName == fieldDetail.fieldName && field.isVisible
-        );
-      }
-      return true;
-    });
+    return this.fieldDetails.filter(fieldDetail =>
+      this.shouldAutofillField(fieldDetail)
+    );
   }
 
   /*
@@ -628,7 +650,6 @@ export class FormAutofillCreditCardSection extends FormAutofillSection {
         result = decrypted ? "success" : "fail_user_canceled";
       } catch (ex) {
         result = "fail_error";
-        throw ex;
       } finally {
         Glean.formautofill.promptShownOsReauth.record({
           trigger: "autofill",
@@ -660,6 +681,7 @@ export class FormAutofillCreditCardSection extends FormAutofillSection {
     } catch (e) {
       errorResult = e.result;
       if (e.result != Cr.NS_ERROR_ABORT) {
+        this.log.warn(`Decryption failed with result: ${e.result}`);
         throw e;
       }
       this.log.warn("User canceled encryption login");

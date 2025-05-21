@@ -377,14 +377,14 @@ impl super::Adapter {
         } else {
             vertex_shader_storage_textures.min(fragment_shader_storage_textures)
         };
-        let indirect_execution =
-            supported((3, 1), (4, 3)) || extensions.contains("GL_ARB_multi_draw_indirect");
+        // NOTE: GL_ARB_compute_shader adds support for indirect dispatch
+        let indirect_execution = supported((3, 1), (4, 3))
+            || (extensions.contains("GL_ARB_draw_indirect") && supports_compute);
 
         let mut downlevel_flags = wgt::DownlevelFlags::empty()
             | wgt::DownlevelFlags::NON_POWER_OF_TWO_MIPMAPPED_TEXTURES
             | wgt::DownlevelFlags::CUBE_ARRAY_TEXTURES
-            | wgt::DownlevelFlags::COMPARISON_SAMPLERS
-            | wgt::DownlevelFlags::VERTEX_AND_INSTANCE_INDEX_RESPECTS_RESPECTIVE_FIRST_VALUE_IN_INDIRECT_DRAW;
+            | wgt::DownlevelFlags::COMPARISON_SAMPLERS;
         downlevel_flags.set(wgt::DownlevelFlags::COMPUTE_SHADERS, supports_compute);
         downlevel_flags.set(
             wgt::DownlevelFlags::FRAGMENT_WRITABLE_STORAGE,

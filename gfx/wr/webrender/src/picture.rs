@@ -94,7 +94,7 @@
 //! blend the overlay tile (this is not always optimal right now, but will be
 //! improved as a follow up).
 
-use api::{FilterPrimitiveKind, MixBlendMode, PremultipliedColorF, SVGFE_GRAPH_MAX};
+use api::{BorderRadius, ClipMode, FilterPrimitiveKind, MixBlendMode, PremultipliedColorF, SVGFE_GRAPH_MAX};
 use api::{PropertyBinding, PropertyBindingId, FilterPrimitive, FilterOpGraphPictureBufferId, RasterSpace};
 use api::{DebugFlags, ImageKey, ColorF, ColorU, PrimitiveFlags, SnapshotInfo};
 use api::{ImageRendering, ColorDepth, YuvRangedColorSpace, YuvFormat, AlphaType};
@@ -102,10 +102,10 @@ use api::units::*;
 use crate::prim_store::image::AdjustedImageSource;
 use crate::{command_buffer::PrimitiveCommand, render_task_graph::RenderTaskGraphBuilder, renderer::GpuBufferBuilderF};
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
-use crate::clip::{ClipStore, ClipChainInstance, ClipLeafId, ClipNodeId, ClipTreeBuilder};
+use crate::clip::{ClipChainInstance, ClipItemKind, ClipLeafId, ClipNodeId, ClipSpaceConversion, ClipStore, ClipTreeBuilder};
 use crate::profiler::{self, TransactionProfile};
 use crate::spatial_tree::{SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
-use crate::composite::{CompositorKind, CompositeState, NativeSurfaceId, NativeTileId, CompositeTileSurface, tile_kind};
+use crate::composite::{tile_kind, CompositeState, CompositeTileSurface, CompositorClipIndex, CompositorKind, NativeSurfaceId, NativeTileId};
 use crate::composite::{ExternalSurfaceDescriptor, ExternalSurfaceDependency, CompositeTileDescriptor, CompositeTile};
 use crate::composite::{CompositorTransformIndex, CompositorSurfaceKind};
 use crate::debug_colors;
@@ -1824,6 +1824,8 @@ pub struct TileCacheInstance {
     pub local_rect: PictureRect,
     /// The local clip rect, from the shared clips of this picture.
     pub local_clip_rect: PictureRect,
+    /// Registered clip in CompositeState for this picture cache
+    pub compositor_clip: Option<CompositorClipIndex>,
     /// The screen rect, transformed to local picture space.
     pub screen_rect_in_pic_space: PictureRect,
     /// The surface index that this tile cache will be drawn into.
@@ -1960,6 +1962,7 @@ impl TileCacheInstance {
             tile_bounds_p1: TileOffset::zero(),
             local_rect: PictureRect::zero(),
             local_clip_rect: PictureRect::zero(),
+            compositor_clip: None,
             screen_rect_in_pic_space: PictureRect::zero(),
             surface_index: SurfaceIndex(0),
             background_color: params.background_color,
@@ -2206,9 +2209,72 @@ impl TileCacheInstance {
             // Ensure that if the entire picture cache is clipped out, the local
             // clip rect is zero. This makes sure we don't register any occluders
             // that are actually off-screen.
-            self.local_clip_rect = clip_chain_instance.map_or(PictureRect::zero(), |clip_chain_instance| {
-                clip_chain_instance.pic_coverage_rect
-            });
+            self.local_clip_rect = PictureRect::zero();
+            self.compositor_clip = None;
+
+            if let Some(clip_chain) = clip_chain_instance {
+                self.local_clip_rect = clip_chain.pic_coverage_rect;
+
+                self.compositor_clip = if clip_chain.needs_mask {
+                    let clip_instance = frame_state
+                        .clip_store
+                        .get_instance_from_range(&clip_chain.clips_range, 0);
+                    let clip_node = &frame_state.data_stores.clip[clip_instance.handle];
+
+                    let index = match clip_node.item.kind {
+                        ClipItemKind::RoundedRectangle { rect, radius, mode } => {
+                            assert_eq!(mode, ClipMode::Clip);
+
+                            // Map the clip in to device space. We know from the shared
+                            // clip creation logic it's in root coord system, so only a
+                            // 2d axis-aligned transform can apply. For example, in the
+                            // case of a pinch-zoom effect.
+                            let map = ClipSpaceConversion::new(
+                                frame_context.root_spatial_node_index,
+                                clip_node.item.spatial_node_index,
+                                frame_context.root_spatial_node_index,                   
+                                frame_context.spatial_tree,
+                            );
+
+                            let (rect, radius) = match map {
+                                ClipSpaceConversion::Local => {
+                                    (rect.cast_unit(), radius)
+                                }
+                                ClipSpaceConversion::ScaleOffset(scale_offset) => {
+                                    (
+                                        scale_offset.map_rect(&rect),
+                                        BorderRadius {
+                                            top_left: scale_offset.map_size(&radius.top_left),
+                                            top_right: scale_offset.map_size(&radius.top_right),
+                                            bottom_left: scale_offset.map_size(&radius.bottom_left),
+                                            bottom_right: scale_offset.map_size(&radius.bottom_right),
+                                        },
+                                    )
+                                }
+                                ClipSpaceConversion::Transform(..) => {
+                                    unreachable!();                                    
+                                }
+                            };
+
+                            frame_state.composite_state.register_clip(
+                                rect,
+                                radius,
+                            )
+                        }
+                        _ => {
+                            // The logic to check for shared clips excludes other mask
+                            // clip types (box-shadow, image-mask) and ensures that the
+                            // clip is in the root coord system (so rect clips can't
+                            // produce a mask).
+                            unreachable!();
+                        }
+                    };
+
+                    Some(index)
+                } else {
+                    None
+                };
+            }
         }
 
         // Advance the current frame ID counter for this picture cache (must be done
@@ -3950,6 +4016,7 @@ impl TileCacheInstance {
                 composite_state.register_occluder(
                     underlay.z_id,
                     world_surface_rect,
+                    self.compositor_clip,
                 );
             }
         }
@@ -3964,6 +4031,7 @@ impl TileCacheInstance {
                         composite_state.register_occluder(
                             compositor_surface.descriptor.z_id,
                             world_surface_rect,
+                            self.compositor_clip,
                         );
                     }
                 }
@@ -3991,6 +4059,7 @@ impl TileCacheInstance {
                 composite_state.register_occluder(
                     z_id_backdrop,
                     world_backdrop_rect,
+                    self.compositor_clip,
                 );
             }
         }
@@ -5752,6 +5821,7 @@ impl PicturePrimitive {
                             device_clip_rect,
                             z_id: tile.z_id,
                             transform_index: tile_cache.transform_index,
+                            clip_index: tile_cache.compositor_clip,
                         };
 
                         sub_slice.composite_tiles.push(composite_tile);
@@ -8139,19 +8209,21 @@ fn get_surface_rects(
             spatial_tree,
         );
 
-        let clipped = (local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale).round_out();
+        let clipped = local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale;
         let unclipped = local_to_world.map(&unclipped_local).unwrap() * surface.device_pixel_scale;
-        let source = (local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale).round_out();
+        let source = local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale;
 
         (clipped, unclipped, source)
     } else {
         // Surface is already in the chosen raster spatial node
-        let clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round_out();
+        let clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
         let unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        let source = (source_local.cast_unit() * surface.device_pixel_scale).round_out();
+        let source = source_local.cast_unit() * surface.device_pixel_scale;
 
         (clipped, unclipped, source)
     };
+    let mut clipped_snapped = clipped.round_out();
+    let mut source_snapped = source.round_out();
 
     // We need to make sure the surface size does not exceed max_surface_size,
     // if it would exceed it we actually want to keep the surface in its local
@@ -8160,18 +8232,20 @@ fn get_surface_rects(
     // Since both clipped and source are subject to the same limit, we can just
     // pick the largest axis from all rects involved.
     //
+    // Importantly, surfaces that are exactly at max_surface_size are relatively
+    // common for some reason, so we don't want to use a conservative limit.
+    //
     // If you change this, test with:
     // ./mach crashtest layout/svg/crashtests/387290-1.svg
     let max_dimension =
-        clipped.width().max(
-            clipped.height().max(
-                source.width().max(
-                    source.height()
+        clipped_snapped.width().max(
+            clipped_snapped.height().max(
+                source_snapped.width().max(
+                    source_snapped.height()
                 ))).ceil();
     if max_dimension > max_surface_size {
         // We have to recalculate max_dimension for the local space we'll be
-        // using, and we want to make absolutely sure it is a sufficiently large
-        // value that the result does not exceed max_surface_size
+        // using as we're no longer rasterizing in the parent space
         let max_dimension =
             clipped_local.width().max(
                 clipped_local.height().max(
@@ -8194,15 +8268,18 @@ fn get_surface_rects(
                 Duration::from_secs_f32(new_clipped.width() * new_clipped.height() / 1000000000.0));
         }
 
-        clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round();
+        clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
         unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        source = (source_local.cast_unit() * surface.device_pixel_scale).round();
+        source = source_local.cast_unit() * surface.device_pixel_scale;
+        clipped_snapped = clipped.round();
+        source_snapped = source.round();
     }
 
-    let task_size = clipped.size().to_i32();
-    // Panics here cause the GPUProcess to repeatedly crash, making the whole
-    // browser largely non-functional until the tab is closed (or changes to no
-    // longer trigger this), so make sure we never actually hit the panic case.
+    let task_size = clipped_snapped.size().to_i32();
+    // We must avoid hitting the assert here at all costs because panics here
+    // will repeatedly crash the GPU Process, making the whole app unusable,
+    // so make sure task_size <= max_surface_size, it's possible that we lose a
+    // pixel here if the max_dimension threshold was not optimal.
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=1948939 for more info.
     let task_size = task_size.min(DeviceIntSize::new(max_surface_size as i32, max_surface_size as i32));
     debug_assert!(
@@ -8214,7 +8291,7 @@ fn get_surface_rects(
         max_surface_size);
 
     let uv_rect_kind = calculate_uv_rect_kind(
-        clipped,
+        clipped_snapped,
         unclipped,
     );
 
@@ -8234,10 +8311,9 @@ fn get_surface_rects(
     Some(SurfaceAllocInfo {
         task_size,
         needs_scissor_rect,
-        clipped,
+        clipped: clipped_snapped,
         unclipped,
-        source,
-        // TODO - fix this again https://bugzilla.mozilla.org/show_bug.cgi?id=1918529
+        source: source_snapped,
         clipped_notsnapped: clipped,
         clipped_local,
         uv_rect_kind,

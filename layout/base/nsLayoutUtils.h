@@ -1392,12 +1392,6 @@ class nsLayoutUtils {
    */
   static nsBlockFrame* FindNearestBlockAncestor(nsIFrame* aFrame);
 
-  /**
-   * Find the nearest ancestor that's not for generated content. Will return
-   * aFrame if aFrame is not for generated content.
-   */
-  static nsIFrame* GetNonGeneratedAncestor(nsIFrame* aFrame);
-
   /*
    * Whether the frame is an nsBlockFrame which is not a wrapper block.
    */
@@ -1562,8 +1556,6 @@ class nsLayoutUtils {
   }
 
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
-                                         mozilla::StylePhysicalAxis aAxis,
-                                         mozilla::StylePositionProperty aProp,
                                          const AnchorResolvedInset& aInset) {
     if (aInset->IsAuto()) {
       // Callers are assumed to have handled other cases already.
@@ -1573,16 +1565,17 @@ class nsLayoutUtils {
                  "Have unconstrained percentage basis when percentage "
                  "resolution needed; this should only result from very "
                  "large sizes, not attempts at intrinsic size calculation");
-    return aInset->AsLengthPercentage().ResolveWithAnchor(aPercentBasis, aAxis,
-                                                          aProp);
+    return aInset->AsLengthPercentage().Resolve(aPercentBasis);
   }
 
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
-                                         const mozilla::StyleMargin& aMargin) {
-    if (!aMargin.IsLengthPercentage()) {
+                                         const AnchorResolvedMargin& aMargin) {
+    if (!aMargin->IsLengthPercentage()) {
+      MOZ_ASSERT(aMargin->IsAuto(), "Didn't resolve anchor functions first?");
       return 0;
     }
-    return ComputeCBDependentValue(aPercentBasis, aMargin.AsLengthPercentage());
+    return ComputeCBDependentValue(aPercentBasis,
+                                   aMargin->AsLengthPercentage());
   }
 
   static nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
@@ -1710,10 +1703,6 @@ class nsLayoutUtils {
   static bool IsPaddingZero(const LengthPercentage& aLength) {
     // clamp negative calc() to 0
     return aLength.Resolve(nscoord_MAX) <= 0 && aLength.Resolve(0) <= 0;
-  }
-
-  static bool IsMarginZero(const LengthPercentage& aLength) {
-    return aLength.Resolve(nscoord_MAX) == 0 && aLength.Resolve(0) == 0;
   }
 
   static void MarkDescendantsDirty(nsIFrame* aSubtreeRoot);

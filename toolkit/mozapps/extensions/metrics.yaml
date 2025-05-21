@@ -10,6 +10,177 @@ $schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
 $tags:
   - 'Toolkit :: Add-ons Manager'
 
+addons:
+  active_addons:
+    type: object
+    description: |
+      The list of currently enabled addons.
+
+      Some of the addon fields are not available during startup. The fields
+      that will always be present are id, version, addonType, updateDay, scope,
+      isSystem, isWebExtension, and multiprocessCompatible. All the other
+      fields become present shortly after the `sessionstore-windows-restored`
+      observer topic is notified.
+
+      This metric is an echo of the Legacy Telemetry Environment field
+      addons.activeAddons. Like its counterpart, it will only have data in
+      Firefox Desktop and at times and on platforms where the environment would
+      have values.
+    bugs:
+      - https://bugzilla.mozilla.org/1950416
+    data_reviews:
+      - https://bugzilla.mozilla.org/1950416
+    data_sensitivity:
+      - technical
+      - interaction
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    no_lint:
+      - COMMON_PREFIX
+    structure:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          blocklisted:
+            type: boolean
+          description:
+            type: string
+          name:
+            type: string
+          userDisabled:
+            type: boolean
+          appDisabled:
+            type: boolean
+          version:
+            type: string
+          scope:
+            type: number
+          addonType:
+            type: string
+          foreignInstall:
+            type: boolean
+          hasBinaryComponents:
+            type: boolean
+          installDay:
+            type: number
+          updateDay:
+            type: number
+          signedState:
+            type: number
+          signedTypes:
+            type: string
+          isSystem:
+            type: boolean
+          isWebExtension:
+            type: boolean
+          multiprocessCompatible:
+            type: boolean
+          quarantineIgnoredByApp:
+            type: boolean
+          quarantineIgnoredByUser:
+            type: boolean
+
+  theme:
+    type: object
+    description: |
+      The currently active theme.
+
+      Some of the addon fields are not available during startup. The fields
+      that will always be present are id, version, updateDay, and scope. All
+      the other fields become present shortly after the
+      `sessionstore-windows-restored` observer topic is notified.
+
+      This metric is an echo of the Legacy Telemetry Environment field
+      addons.theme. Like its counterpart, it will only have data in Firefox
+      Desktop and at times and on platforms where the environment would have
+      values.
+    bugs:
+      - https://bugzilla.mozilla.org/1950416
+    data_reviews:
+      - https://bugzilla.mozilla.org/1950416
+    data_sensitivity:
+      - technical
+      - interaction
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    structure:
+      type: object
+      properties:
+         id:
+           type: string
+         blocklisted:
+           type: boolean
+         description:
+           type: string
+         name:
+           type: string
+         userDisabled:
+           type: boolean
+         appDisabled:
+           type: boolean
+         version:
+           type: string
+         scope:
+           type: number
+         foreignInstall:
+           type: boolean
+         hasBinaryComponents:
+           type: boolean
+         installDay:
+           type: number
+         updateDay:
+           type: number
+         signedState:
+           type: number
+         signedTypes:
+           type: string
+
+  active_g_m_plugins:
+    type: object
+    description: |
+      The list of currently enabled Gecko Media Plugins.
+
+      Some of the addon fields are not available during startup. The fields
+      that will always be present are id and version. All the other
+      fields become present shortly after the `sessionstore-windows-restored`
+      observer topic is notified.
+
+      This metric is an echo of the Legacy Telemetry Environment field
+      addons.activeGMPlugins. Like its counterpart, it will only have data in
+      Firefox Desktop and at times and on platforms where the environment would
+      have values.
+    bugs:
+      - https://bugzilla.mozilla.org/1950416
+    data_reviews:
+      - https://bugzilla.mozilla.org/1950416
+    data_sensitivity:
+      - technical
+      - interaction
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    no_lint:
+      - COMMON_PREFIX
+    structure:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          version:
+            type: string
+          userDisabled:
+            type: boolean
+          applyBackgroundUpdates:
+            type: number
+
+
 addons_manager:
   install: &install_update_event
     type: event
@@ -30,6 +201,7 @@ addons_manager:
       - https://bugzilla.mozilla.org/1817100
       - https://bugzilla.mozilla.org/1820153
       - https://bugzilla.mozilla.org/1912166
+      - https://bugzilla.mozilla.org/1958151
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1433335#c8
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
@@ -106,7 +278,7 @@ addons_manager:
           site_warning, site_blocked,install_disabled_warning,
           download_started, download_completed, download_failed
         type: string
-    expires: 140
+    expires: 147
 
   update: *install_update_event
 
@@ -183,6 +355,7 @@ addons_manager:
       - https://bugzilla.mozilla.org/1820153
       - https://bugzilla.mozilla.org/1912166
       - https://bugzilla.mozilla.org/1917859
+      - https://bugzilla.mozilla.org/1958149
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1433335#c8
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
@@ -224,7 +397,7 @@ addons_manager:
           The add-on blocklistState (0 not-blocked, 1 soft-blocked, 2
           hard-blocked) at the time the manage event was being collected.
         type: string
-    expires: 140
+    expires: 147
 
   report_suspicious_site:
     type: event
@@ -236,6 +409,7 @@ addons_manager:
       - https://bugzilla.mozilla.org/1817100
       - https://bugzilla.mozilla.org/1820153
       - https://bugzilla.mozilla.org/1912166
+      - https://bugzilla.mozilla.org/1958151
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1806056#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
@@ -247,7 +421,52 @@ addons_manager:
       suspicious_site:
         description: The domain of the site that was reported.
         type: string
-    expires: 140
+    expires: 147
+
+  compatibility_check_enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether application compatibility is enforced for add-ons.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950389
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950389
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+
+  xpistates_write_errors:
+    type: event
+    description: |
+      Sent when saving addonStartup.json.lz4 data back to disk fails.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1966154
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1966154
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    extra_keys:
+      error_type:
+        description: |
+          A string set to determine which kind of errors originated from IOUtils.writeJSON
+          was hit by JSONFile.save. The expected values are:
+          - "TooMuchRecursion" (if the error hit was an "too much recursion" InternalError
+          - the value set on `name` property of the error object instance
+          - "Unknown" as a fallback if the error object did not have a `name` property and
+            it wasn't detected as a "too much recursion" error.
+        type: string
+      profile_state:
+        description: |
+          A string set to determine whether the profile was a new or existing profile,
+          and if the application version was changing, while the write error was hit.
+          The expected values are: "new", "existing" "existingWithVersionChanged"
+        type: string
+    expires: 147
 
 blocklist:
   last_modified_rs_addons_mblf:
@@ -547,4 +766,20 @@ blocklist:
     notification_emails:
       - addons-dev-internal@mozilla.com
       - rwu@mozilla.com
+    expires: never
+
+  enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether the extension blocklist is enabled.
+      Corresponds to the `extensions.blocklist.enabled` pref.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950389
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950389
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - addons-dev-internal@mozilla.com
     expires: never

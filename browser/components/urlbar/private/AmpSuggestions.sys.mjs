@@ -40,6 +40,11 @@ export class AmpSuggestions extends SuggestProvider {
     return ["suggest.quicksuggest.sponsored"];
   }
 
+  get primaryUserControlledPreference() {
+    // AMP suggestions can't be toggled separately from sponsored suggestions.
+    return null;
+  }
+
   get merinoProvider() {
     return "adm";
   }
@@ -193,7 +198,7 @@ export class AmpSuggestions extends SuggestProvider {
     // commands. Dismissal is the only one we need to handle here. `UrlbarInput`
     // handles Manage.
     if (details.selType == "dismiss") {
-      lazy.QuickSuggest.blockedSuggestions.blockResult(result);
+      lazy.QuickSuggest.dismissResult(result);
       controller.removeResult(result);
     }
 

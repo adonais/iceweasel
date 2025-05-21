@@ -26,7 +26,6 @@ namespace mozilla {
 
 namespace gfx {
 class FileHandleWrapper;
-struct FenceInfo;
 }  // namespace gfx
 
 namespace gl {
@@ -34,6 +33,8 @@ class GLBlitHelper;
 }
 
 namespace layers {
+
+class FenceD3D11;
 
 gfx::DeviceResetReason DXGIErrorToDeviceResetReason(HRESULT aError);
 
@@ -71,7 +72,8 @@ class D3D11TextureData final : public TextureData {
       ID3D11Texture2D* aTexture, uint32_t aIndex, gfx::IntSize aSize,
       gfx::SurfaceFormat aFormat, gfx::ColorSpace2 aColorSpace,
       gfx::ColorRange aColorRange, KnowsCompositor* aKnowsCompositor,
-      RefPtr<ZeroCopyUsageInfo> aUsageInfo);
+      RefPtr<ZeroCopyUsageInfo> aUsageInfo,
+      const RefPtr<FenceD3D11> aWriteFence);
 
   virtual ~D3D11TextureData();
 
@@ -122,12 +124,15 @@ class D3D11TextureData final : public TextureData {
     return mGpuProcessTextureId;
   }
 
-  void RegisterQuery(RefPtr<ID3D11Query> aQuery, bool aOnlyForOverlay = false);
+  void IncrementAndSignalWriteFence();
 
  private:
-  D3D11TextureData(ID3D11Texture2D* aTexture, uint32_t aArrayIndex,
+  D3D11TextureData(ID3D11Device* aDevice, ID3D11Texture2D* aTexture,
+                   uint32_t aArrayIndex,
                    RefPtr<gfx::FileHandleWrapper> aSharedHandle,
                    gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+                   const Maybe<CompositeProcessFencesHolderId> aFencesHolderId,
+                   const RefPtr<FenceD3D11> aWriteFence,
                    TextureAllocationFlags aFlags);
 
   bool PrepareDrawTargetInLock(OpenMode aMode);
@@ -144,35 +149,40 @@ class D3D11TextureData final : public TextureData {
   // Hold on to the DrawTarget because it is expensive to create one each
   // ::Lock.
   RefPtr<gfx::DrawTarget> mDrawTarget;
-  const gfx::IntSize mSize;
-  const gfx::SurfaceFormat mFormat;
 
  public:
+  const gfx::IntSize mSize;
+  const gfx::SurfaceFormat mFormat;
+  const bool mHasKeyedMutex;
+  const Maybe<CompositeProcessFencesHolderId> mFencesHolderId;
+  const RefPtr<FenceD3D11> mWriteFence;
   gfx::ColorSpace2 mColorSpace = gfx::ColorSpace2::SRGB;
 
  private:
   gfx::ColorRange mColorRange = gfx::ColorRange::LIMITED;
   bool mNeedsClear = false;
-  const bool mHasKeyedMutex;
 
+  const RefPtr<ID3D11Device> mDevice;
   RefPtr<ID3D11Texture2D> mTexture;
   const RefPtr<gfx::FileHandleWrapper> mSharedHandle;
   Maybe<GpuProcessTextureId> mGpuProcessTextureId;
   uint32_t mArrayIndex = 0;
   const TextureAllocationFlags mAllocationFlags;
-  Maybe<GpuProcessQueryId> mGpuProcessQueryId;
 };
 
 class DXGIYCbCrTextureData : public TextureData {
   friend class gl::GLBlitHelper;
 
  public:
-  static DXGIYCbCrTextureData* Create(
-      ID3D11Texture2D* aTextureCb, ID3D11Texture2D* aTextureY,
-      ID3D11Texture2D* aTextureCr, const gfx::IntSize& aSize,
-      const gfx::IntSize& aSizeY, const gfx::IntSize& aSizeCbCr,
-      gfx::ColorDepth aColorDepth, gfx::YUVColorSpace aYUVColorSpace,
-      gfx::ColorRange aColorRange);
+  static DXGIYCbCrTextureData* Create(ID3D11Texture2D* aTextureCb,
+                                      ID3D11Texture2D* aTextureY,
+                                      ID3D11Texture2D* aTextureCr,
+                                      const gfx::IntSize& aSize,
+                                      const gfx::IntSize& aSizeY,
+                                      const gfx::IntSize& aSizeCbCr,
+                                      const gfx::ColorDepth aColorDepth,
+                                      const gfx::YUVColorSpace aYUVColorSpace,
+                                      const gfx::ColorRange aColorRange);
 
   bool Lock(OpenMode) override { return true; }
 
@@ -196,27 +206,33 @@ class DXGIYCbCrTextureData : public TextureData {
 
   DXGIYCbCrTextureData* AsDXGIYCbCrTextureData() override { return this; }
 
-  gfx::IntSize GetYSize() const { return mSizeY; }
-
-  gfx::IntSize GetCbCrSize() const { return mSizeCbCr; }
-
-  gfx::ColorDepth GetColorDepth() const { return mColorDepth; }
-  gfx::YUVColorSpace GetYUVColorSpace() const { return mYUVColorSpace; }
-  gfx::ColorRange GetColorRange() const { return mColorRange; }
-
   ID3D11Texture2D* GetD3D11Texture(size_t index) {
     return mD3D11Textures[index];
   }
 
+  const gfx::IntSize mSize;
+  const gfx::IntSize mSizeY;
+  const gfx::IntSize mSizeCbCr;
+  const gfx::ColorDepth mColorDepth;
+  const gfx::YUVColorSpace mYUVColorSpace;
+  const gfx::ColorRange mColorRange;
+  const CompositeProcessFencesHolderId mFencesHolderId;
+  const RefPtr<FenceD3D11> mWriteFence;
+
  protected:
+  DXGIYCbCrTextureData(RefPtr<ID3D11Texture2D> (&aD3D11Textures)[3],
+                       RefPtr<gfx::FileHandleWrapper>(aHandles)[3],
+                       const gfx::IntSize& aSize, const gfx::IntSize& aSizeY,
+                       const gfx::IntSize& aSizeCbCr,
+                       const gfx::ColorDepth aColorDepth,
+                       const gfx::YUVColorSpace aYUVColorSpace,
+                       const gfx::ColorRange aColorRange,
+                       const CompositeProcessFencesHolderId aFencesHolderId,
+                       const RefPtr<FenceD3D11> aWriteFence);
+  virtual ~DXGIYCbCrTextureData();
+
   RefPtr<ID3D11Texture2D> mD3D11Textures[3];
   RefPtr<gfx::FileHandleWrapper> mHandles[3];
-  gfx::IntSize mSize;
-  gfx::IntSize mSizeY;
-  gfx::IntSize mSizeCbCr;
-  gfx::ColorDepth mColorDepth;
-  gfx::YUVColorSpace mYUVColorSpace;
-  gfx::ColorRange mColorRange;
 };
 
 /**
@@ -387,11 +403,10 @@ class DXGITextureHostD3D11 : public TextureHost {
   const RefPtr<gfx::FileHandleWrapper> mHandle;
   const Maybe<GpuProcessTextureId> mGpuProcessTextureId;
   const uint32_t mArrayIndex;
-  const Maybe<GpuProcessQueryId> mGpuProcessQueryId;
   const gfx::IntSize mSize;
   const gfx::SurfaceFormat mFormat;
   const bool mHasKeyedMutex;
-  const gfx::FenceInfo mAcquireFenceInfo;
+  const Maybe<CompositeProcessFencesHolderId> mFencesHolderId;
   const gfx::ColorSpace2 mColorSpace;
   const gfx::ColorRange mColorRange;
 };
@@ -438,19 +453,28 @@ class DXGIYCbCrTextureHostD3D11 : public TextureHost {
 
   bool SupportsExternalCompositing(WebRenderBackend aBackend) override;
 
- protected:
-  RefPtr<ID3D11Texture2D> mTextures[3];
+  void NotifyNotUsed() override;
 
-  gfx::IntSize mSize;
-  gfx::IntSize mSizeY;
-  gfx::IntSize mSizeCbCr;
+  DXGIYCbCrTextureHostD3D11* AsDXGIYCbCrTextureHostD3D11() override {
+    return this;
+  }
+
+  void SetReadFence(RefPtr<FenceD3D11> aReadFence);
+
+  const gfx::IntSize mSize;
+  const gfx::IntSize mSizeY;
+  const gfx::IntSize mSizeCbCr;
+  const gfx::ColorDepth mColorDepth;
+  const gfx::YUVColorSpace mYUVColorSpace;
+  const gfx::ColorRange mColorRange;
+  const CompositeProcessFencesHolderId mFencesHolderId;
+
+ protected:
   // Handles will be closed automatically when `UniqueFileHandle` gets
   // destroyed.
   RefPtr<gfx::FileHandleWrapper> mHandles[3];
-  bool mIsLocked;
-  gfx::ColorDepth mColorDepth;
-  gfx::YUVColorSpace mYUVColorSpace;
-  gfx::ColorRange mColorRange;
+  bool mIsLocked = false;
+  RefPtr<FenceD3D11> mReadFence;
 };
 
 class CompositingRenderTargetD3D11 : public CompositingRenderTarget,

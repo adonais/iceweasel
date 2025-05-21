@@ -243,7 +243,7 @@ class PrivacySecuritySettingsFragment :
             ) == true
         ) {
             sharedPreferences
-                .edit() {
+                .edit {
                     putBoolean(resources.getString(R.string.pref_key_secure), true)
                 }
 
@@ -253,14 +253,6 @@ class PrivacySecuritySettingsFragment :
         } else {
             // Enable the stealth switch
             switch?.isEnabled = true
-        }
-    }
-
-    companion object {
-        const val FRAGMENT_TAG = "PrivacySecuritySettings"
-
-        fun newInstance(): PrivacySecuritySettingsFragment {
-            return PrivacySecuritySettingsFragment()
         }
     }
 }

@@ -310,7 +310,7 @@ impl BlockContext<'_> {
                 uint2_ptr_type_id,
                 loop_counter_var_id,
                 spirv::StorageClass::Function,
-                Some(zero_uint2_const_id),
+                Some(max_uint2_const_id),
             ),
         };
         self.function.force_loop_bounding_vars.push(var);
@@ -331,14 +331,14 @@ impl BlockContext<'_> {
             None,
         ));
 
-        // If both the high and low u32s have reached u32::MAX then break. ie
-        // if (all(eq(loop_counter, vec2(u32::MAX)))) { break; }
+        // If both the high and low u32s have reached 0 then break. ie
+        // if (all(eq(loop_counter, vec2(0)))) { break; }
         let eq_id = self.gen_id();
         block.body.push(Instruction::binary(
             spirv::Op::IEqual,
             bool2_type_id,
             eq_id,
-            max_uint2_const_id,
+            zero_uint2_const_id,
             load_id,
         ));
         let all_eq_id = self.gen_id();
@@ -360,9 +360,11 @@ impl BlockContext<'_> {
         );
         block = Block::new(inc_counter_block_id);
 
-        // To simulate a 64-bit counter we always increment the low u32, and increment
+        // To simulate a 64-bit counter we always decrement the low u32, and decrement
         // the high u32 when the low u32 overflows. ie
-        // counter += vec2(select(0u, 1u, counter.y == u32::MAX), 1u);
+        // counter -= vec2(select(0u, 1u, counter.y == 0), 1u);
+        // Count down from u32::MAX rather than up from 0 to avoid hang on
+        // certain Intel drivers. See <https://github.com/gfx-rs/wgpu/issues/7319>.
         let low_id = self.gen_id();
         block.body.push(Instruction::composite_extract(
             uint_type_id,
@@ -376,7 +378,7 @@ impl BlockContext<'_> {
             bool_type_id,
             low_overflow_id,
             low_id,
-            max_uint_const_id,
+            zero_uint_const_id,
         ));
         let carry_bit_id = self.gen_id();
         block.body.push(Instruction::select(
@@ -386,19 +388,19 @@ impl BlockContext<'_> {
             one_uint_const_id,
             zero_uint_const_id,
         ));
-        let increment_id = self.gen_id();
+        let decrement_id = self.gen_id();
         block.body.push(Instruction::composite_construct(
             uint2_type_id,
-            increment_id,
+            decrement_id,
             &[carry_bit_id, one_uint_const_id],
         ));
         let result_id = self.gen_id();
         block.body.push(Instruction::binary(
-            spirv::Op::IAdd,
+            spirv::Op::ISub,
             uint2_type_id,
             result_id,
             load_id,
-            increment_id,
+            decrement_id,
         ));
         block
             .body
@@ -1124,6 +1126,14 @@ impl BlockContext<'_> {
                                 arg1_id,
                                 size as u32,
                                 block,
+                                |result_id, composite_id, index| {
+                                    Instruction::composite_extract(
+                                        result_type_id,
+                                        result_id,
+                                        composite_id,
+                                        &[index],
+                                    )
+                                },
                             );
                             self.cached[expr_handle] = id;
                             return Ok(());
@@ -1132,6 +1142,63 @@ impl BlockContext<'_> {
                             "Correct TypeInner for dot product should be already validated"
                         ),
                     },
+                    fun @ (Mf::Dot4I8Packed | Mf::Dot4U8Packed) => {
+                        // TODO: consider using packed integer dot product if PackedVectorFormat4x8Bit is available
+                        let (extract_op, arg0_id, arg1_id) = match fun {
+                            Mf::Dot4U8Packed => (spirv::Op::BitFieldUExtract, arg0_id, arg1_id),
+                            Mf::Dot4I8Packed => {
+                                // Convert both packed arguments to signed integers so that we can apply the
+                                // `BitFieldSExtract` operation on them in `write_dot_product` below.
+                                let new_arg0_id = self.gen_id();
+                                block.body.push(Instruction::unary(
+                                    spirv::Op::Bitcast,
+                                    result_type_id,
+                                    new_arg0_id,
+                                    arg0_id,
+                                ));
+
+                                let new_arg1_id = self.gen_id();
+                                block.body.push(Instruction::unary(
+                                    spirv::Op::Bitcast,
+                                    result_type_id,
+                                    new_arg1_id,
+                                    arg1_id,
+                                ));
+
+                                (spirv::Op::BitFieldSExtract, new_arg0_id, new_arg1_id)
+                            }
+                            _ => unreachable!(),
+                        };
+
+                        let eight = self.writer.get_constant_scalar(crate::Literal::U32(8));
+
+                        const VEC_LENGTH: u8 = 4;
+                        let bit_shifts: [_; VEC_LENGTH as usize] = core::array::from_fn(|index| {
+                            self.writer
+                                .get_constant_scalar(crate::Literal::U32(index as u32 * 8))
+                        });
+
+                        self.write_dot_product(
+                            id,
+                            result_type_id,
+                            arg0_id,
+                            arg1_id,
+                            VEC_LENGTH as Word,
+                            block,
+                            |result_id, composite_id, index| {
+                                Instruction::ternary(
+                                    extract_op,
+                                    result_type_id,
+                                    result_id,
+                                    composite_id,
+                                    bit_shifts[index as usize],
+                                    eight,
+                                )
+                            },
+                        );
+                        self.cached[expr_handle] = id;
+                        return Ok(());
+                    }
                     Mf::Outer => MathOp::Custom(Instruction::binary(
                         spirv::Op::OuterProduct,
                         result_type_id,
@@ -1450,12 +1517,13 @@ impl BlockContext<'_> {
                     Mf::Pack2x16float => MathOp::Ext(spirv::GLOp::PackHalf2x16),
                     Mf::Pack2x16unorm => MathOp::Ext(spirv::GLOp::PackUnorm2x16),
                     Mf::Pack2x16snorm => MathOp::Ext(spirv::GLOp::PackSnorm2x16),
-                    fun @ (Mf::Pack4xI8 | Mf::Pack4xU8) => {
+                    fun @ (Mf::Pack4xI8 | Mf::Pack4xU8 | Mf::Pack4xI8Clamp | Mf::Pack4xU8Clamp) => {
                         let (int_type, is_signed) = match fun {
-                            Mf::Pack4xI8 => (crate::ScalarKind::Sint, true),
-                            Mf::Pack4xU8 => (crate::ScalarKind::Uint, false),
+                            Mf::Pack4xI8 | Mf::Pack4xI8Clamp => (crate::ScalarKind::Sint, true),
+                            Mf::Pack4xU8 | Mf::Pack4xU8Clamp => (crate::ScalarKind::Uint, false),
                             _ => unreachable!(),
                         };
+                        let should_clamp = matches!(fun, Mf::Pack4xI8Clamp | Mf::Pack4xU8Clamp);
                         let uint_type_id =
                             self.get_numeric_type_id(NumericType::Scalar(crate::Scalar::U32));
 
@@ -1495,6 +1563,34 @@ impl BlockContext<'_> {
                                     extracted,
                                 ));
                                 extracted = casted;
+                            }
+                            if should_clamp {
+                                let (min, max, clamp_op) = if is_signed {
+                                    (
+                                        crate::Literal::I32(-128),
+                                        crate::Literal::I32(127),
+                                        spirv::GLOp::SClamp,
+                                    )
+                                } else {
+                                    (
+                                        crate::Literal::U32(0),
+                                        crate::Literal::U32(255),
+                                        spirv::GLOp::UClamp,
+                                    )
+                                };
+                                let [min, max] =
+                                    [min, max].map(|lit| self.writer.get_constant_scalar(lit));
+
+                                let clamp_id = self.gen_id();
+                                block.body.push(Instruction::ext_inst(
+                                    self.writer.gl450_ext_inst_id,
+                                    clamp_op,
+                                    result_type_id,
+                                    clamp_id,
+                                    &[extracted, min, max],
+                                ));
+
+                                extracted = clamp_id;
                             }
                             let is_last = i == u32::from(VEC_LENGTH - 1);
                             if is_last {
@@ -1874,10 +1970,10 @@ impl BlockContext<'_> {
         };
 
         enum Cast {
-            Identity,
-            Unary(spirv::Op),
-            Binary(spirv::Op, Word),
-            Ternary(spirv::Op, Word, Word),
+            Identity(Word),
+            Unary(spirv::Op, Word),
+            Binary(spirv::Op, Word, Word),
+            Ternary(spirv::Op, Word, Word, Word),
         }
         let cast = match (src_scalar.kind, kind, convert) {
             // Filter out identity casts. Some Adreno drivers are
@@ -1886,10 +1982,10 @@ impl BlockContext<'_> {
                 if src_kind == kind
                     && convert.filter(|&width| width != src_scalar.width).is_none() =>
             {
-                Cast::Identity
+                Cast::Identity(expr_id)
             }
-            (Sk::Bool, Sk::Bool, _) => Cast::Unary(spirv::Op::CopyObject),
-            (_, _, None) => Cast::Unary(spirv::Op::Bitcast),
+            (Sk::Bool, Sk::Bool, _) => Cast::Unary(spirv::Op::CopyObject, expr_id),
+            (_, _, None) => Cast::Unary(spirv::Op::Bitcast, expr_id),
             // casting to a bool - generate `OpXxxNotEqual`
             (_, Sk::Bool, Some(_)) => {
                 let op = match src_scalar.kind {
@@ -1914,7 +2010,7 @@ impl BlockContext<'_> {
                     None => zero_scalar_id,
                 };
 
-                Cast::Binary(op, zero_id)
+                Cast::Binary(op, expr_id, zero_id)
             }
             // casting from a bool - generate `OpSelect`
             (Sk::Bool, _, Some(dst_width)) => {
@@ -1946,60 +2042,99 @@ impl BlockContext<'_> {
                     None => (one_scalar_id, zero_scalar_id),
                 };
 
-                Cast::Ternary(spirv::Op::Select, accept_id, reject_id)
+                Cast::Ternary(spirv::Op::Select, expr_id, accept_id, reject_id)
             }
-            (Sk::Float, Sk::Uint, Some(_)) => Cast::Unary(spirv::Op::ConvertFToU),
-            (Sk::Float, Sk::Sint, Some(_)) => Cast::Unary(spirv::Op::ConvertFToS),
+            // Avoid undefined behaviour when casting from a float to integer
+            // when the value is out of range for the target type. Additionally
+            // ensure we clamp to the correct value as per the WGSL spec.
+            //
+            // https://www.w3.org/TR/WGSL/#floating-point-conversion:
+            // * If X is exactly representable in the target type T, then the
+            //   result is that value.
+            // * Otherwise, the result is the value in T closest to
+            //   truncate(X) and also exactly representable in the original
+            //   floating point type.
+            (Sk::Float, Sk::Sint | Sk::Uint, Some(width)) => {
+                let dst_scalar = crate::Scalar { kind, width };
+                let (min, max) =
+                    crate::proc::min_max_float_representable_by(src_scalar, dst_scalar);
+                let expr_type_id = self.get_expression_type_id(&self.fun_info[expr].ty);
+
+                let maybe_splat_const = |writer: &mut Writer, const_id| match src_size {
+                    None => const_id,
+                    Some(size) => {
+                        let constituent_ids = [const_id; crate::VectorSize::MAX];
+                        writer.get_constant_composite(
+                            LookupType::Local(LocalType::Numeric(NumericType::Vector {
+                                size,
+                                scalar: src_scalar,
+                            })),
+                            &constituent_ids[..size as usize],
+                        )
+                    }
+                };
+                let min_const_id = self.writer.get_constant_scalar(min);
+                let min_const_id = maybe_splat_const(self.writer, min_const_id);
+                let max_const_id = self.writer.get_constant_scalar(max);
+                let max_const_id = maybe_splat_const(self.writer, max_const_id);
+
+                let clamp_id = self.gen_id();
+                block.body.push(Instruction::ext_inst(
+                    self.writer.gl450_ext_inst_id,
+                    spirv::GLOp::FClamp,
+                    expr_type_id,
+                    clamp_id,
+                    &[expr_id, min_const_id, max_const_id],
+                ));
+
+                let op = match dst_scalar.kind {
+                    crate::ScalarKind::Sint => spirv::Op::ConvertFToS,
+                    crate::ScalarKind::Uint => spirv::Op::ConvertFToU,
+                    _ => unreachable!(),
+                };
+                Cast::Unary(op, clamp_id)
+            }
             (Sk::Float, Sk::Float, Some(dst_width)) if src_scalar.width != dst_width => {
-                Cast::Unary(spirv::Op::FConvert)
+                Cast::Unary(spirv::Op::FConvert, expr_id)
             }
-            (Sk::Sint, Sk::Float, Some(_)) => Cast::Unary(spirv::Op::ConvertSToF),
+            (Sk::Sint, Sk::Float, Some(_)) => Cast::Unary(spirv::Op::ConvertSToF, expr_id),
             (Sk::Sint, Sk::Sint, Some(dst_width)) if src_scalar.width != dst_width => {
-                Cast::Unary(spirv::Op::SConvert)
+                Cast::Unary(spirv::Op::SConvert, expr_id)
             }
-            (Sk::Uint, Sk::Float, Some(_)) => Cast::Unary(spirv::Op::ConvertUToF),
+            (Sk::Uint, Sk::Float, Some(_)) => Cast::Unary(spirv::Op::ConvertUToF, expr_id),
             (Sk::Uint, Sk::Uint, Some(dst_width)) if src_scalar.width != dst_width => {
-                Cast::Unary(spirv::Op::UConvert)
+                Cast::Unary(spirv::Op::UConvert, expr_id)
             }
             (Sk::Uint, Sk::Sint, Some(dst_width)) if src_scalar.width != dst_width => {
-                Cast::Unary(spirv::Op::SConvert)
+                Cast::Unary(spirv::Op::SConvert, expr_id)
             }
             (Sk::Sint, Sk::Uint, Some(dst_width)) if src_scalar.width != dst_width => {
-                Cast::Unary(spirv::Op::UConvert)
+                Cast::Unary(spirv::Op::UConvert, expr_id)
             }
             // We assume it's either an identity cast, or int-uint.
-            _ => Cast::Unary(spirv::Op::Bitcast),
+            _ => Cast::Unary(spirv::Op::Bitcast, expr_id),
         };
         Ok(match cast {
-            Cast::Identity => expr_id,
-            Cast::Unary(op) => {
+            Cast::Identity(expr) => expr,
+            Cast::Unary(op, op1) => {
                 let id = self.gen_id();
                 block
                     .body
-                    .push(Instruction::unary(op, result_type_id, id, expr_id));
+                    .push(Instruction::unary(op, result_type_id, id, op1));
                 id
             }
-            Cast::Binary(op, operand) => {
+            Cast::Binary(op, op1, op2) => {
                 let id = self.gen_id();
-                block.body.push(Instruction::binary(
-                    op,
-                    result_type_id,
-                    id,
-                    expr_id,
-                    operand,
-                ));
+                block
+                    .body
+                    .push(Instruction::binary(op, result_type_id, id, op1, op2));
                 id
             }
-            Cast::Ternary(op, op1, op2) => {
+            Cast::Ternary(op, op1, op2, op3) => {
                 let id = self.gen_id();
-                block.body.push(Instruction::ternary(
-                    op,
-                    result_type_id,
-                    id,
-                    expr_id,
-                    op1,
-                    op2,
-                ));
+                block
+                    .body
+                    .push(Instruction::ternary(op, result_type_id, id, op1, op2, op3));
                 id
             }
         })
@@ -2499,6 +2634,12 @@ impl BlockContext<'_> {
     }
 
     /// Build the instructions for the arithmetic expression of a dot product
+    ///
+    /// The argument `extractor` is a function that maps `(result_id,
+    /// composite_id, index)` to an instruction that extracts the `index`th
+    /// entry of the value with ID `composite_id` and assigns it to the slot
+    /// with id `result_id` (which must have type `result_type_id`).
+    #[expect(clippy::too_many_arguments)]
     fn write_dot_product(
         &mut self,
         result_id: Word,
@@ -2507,25 +2648,16 @@ impl BlockContext<'_> {
         arg1_id: Word,
         size: u32,
         block: &mut Block,
+        extractor: impl Fn(Word, Word, Word) -> Instruction,
     ) {
         let mut partial_sum = self.writer.get_constant_null(result_type_id);
         let last_component = size - 1;
         for index in 0..=last_component {
             // compute the product of the current components
             let a_id = self.gen_id();
-            block.body.push(Instruction::composite_extract(
-                result_type_id,
-                a_id,
-                arg0_id,
-                &[index],
-            ));
+            block.body.push(extractor(a_id, arg0_id, index));
             let b_id = self.gen_id();
-            block.body.push(Instruction::composite_extract(
-                result_type_id,
-                b_id,
-                arg1_id,
-                &[index],
-            ));
+            block.body.push(extractor(b_id, arg1_id, index));
             let prod_id = self.gen_id();
             block.body.push(Instruction::binary(
                 spirv::Op::IMul,

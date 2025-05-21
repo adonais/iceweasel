@@ -1161,7 +1161,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -2306,7 +2337,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -2483,7 +2545,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -2918,7 +3011,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -3095,7 +3219,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -3188,139 +3343,6 @@ For the sample commands found below, note that the capitalization used is import
    * tppagecycles: 5
    * unit: ms
    * win_counters: None
-   * **Test Task**:
-
-   .. list-table:: **test-linux1804-64-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-linux1804-64-shippable-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **talos-webgl-profiling**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-macosx1470-64-shippable/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **talos-webgl-profiling**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-windows11-64-24h2-shippable/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl-profiling**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-windows11-64-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-windows11-64-shippable-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-
-
 
 .. dropdown:: offscreencanvas_webcodecs_main_2d_vp9
    :class-container: anchor-id-offscreencanvas_webcodecs_main_2d_vp9
@@ -3449,7 +3471,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -3626,7 +3679,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -3803,7 +3887,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -3980,7 +4095,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -4157,7 +4303,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -4250,139 +4427,6 @@ For the sample commands found below, note that the capitalization used is import
    * tppagecycles: 5
    * unit: ms
    * win_counters: None
-   * **Test Task**:
-
-   .. list-table:: **test-linux1804-64-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-linux1804-64-shippable-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **talos-webgl-profiling**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-macosx1470-64-shippable/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **talos-webgl-profiling**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-windows11-64-24h2-shippable/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl-profiling**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-windows11-64-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ❌
-        - ❌
-        - ❌
-        - ❌
-
-
-   .. list-table:: **test-windows11-64-shippable-qr/opt**
-      :widths: 30 15 15 15 15
-      :header-rows: 1
-
-      * - **Test Name**
-        - mozilla-central
-        - autoland
-        - mozilla-release
-        - mozilla-beta
-      * - **talos-webgl**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **talos-webgl-swr**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-
-
 
 .. dropdown:: offscreencanvas_webcodecs_worker_2d_vp9
    :class-container: anchor-id-offscreencanvas_webcodecs_worker_2d_vp9
@@ -4511,7 +4555,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -4688,7 +4763,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -4865,7 +4971,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌
@@ -5042,7 +5179,38 @@ For the sample commands found below, note that the capitalization used is import
         - autoland
         - mozilla-release
         - mozilla-beta
+      * - **talos-webgl**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
       * - **talos-webgl-profiling**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+
+
+   .. list-table:: **test-windows11-64-24h2/opt**
+      :widths: 30 15 15 15 15
+      :header-rows: 1
+
+      * - **Test Name**
+        - mozilla-central
+        - autoland
+        - mozilla-release
+        - mozilla-beta
+      * - **talos-webgl**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **talos-webgl-swr**
         - ❌
         - ❌
         - ❌

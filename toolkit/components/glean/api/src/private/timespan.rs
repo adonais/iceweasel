@@ -4,7 +4,7 @@
 
 use inherent::inherent;
 
-use super::{CommonMetricData, MetricId, TimeUnit};
+use super::{BaseMetricId, CommonMetricData, TimeUnit};
 use std::convert::TryInto;
 use std::time::Duration;
 
@@ -13,12 +13,12 @@ use glean::traits::Timespan;
 use crate::ipc::need_ipc;
 
 #[cfg(feature = "with_gecko")]
-use super::profiler_utils::TelemetryProfilerCategory;
+use super::profiler_utils::{stream_identifiers_by_id, TelemetryProfilerCategory};
 
 #[cfg(feature = "with_gecko")]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct TimespanMetricMarker {
-    id: MetricId,
+    id: BaseMetricId,
     value: Option<u64>,
 }
 
@@ -31,9 +31,17 @@ impl gecko_profiler::ProfilerMarker for TimespanMetricMarker {
     fn marker_type_display() -> gecko_profiler::MarkerSchema {
         use gecko_profiler::schema::*;
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
-        schema.set_tooltip_label("{marker.data.id} {marker.data.val}{marker.data.stringval}");
+        schema.set_tooltip_label(
+            "{marker.data.cat}.{marker.data.id} {marker.data.val}{marker.data.stringval}",
+        );
         schema.set_table_label(
-            "{marker.name} - {marker.data.id}: {marker.data.val}{marker.data.stringval}",
+            "{marker.data.cat}.{marker.data.id}: {marker.data.val}{marker.data.stringval}",
+        );
+        schema.add_key_label_format_searchable(
+            "cat",
+            "Category",
+            Format::UniqueString,
+            Searchable::Searchable,
         );
         schema.add_key_label_format_searchable(
             "id",
@@ -47,8 +55,7 @@ impl gecko_profiler::ProfilerMarker for TimespanMetricMarker {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
-        let name = self.id.get_name();
-        json_writer.unique_string_property("id", &name);
+        stream_identifiers_by_id::<TimespanMetric>(&self.id.into(), json_writer);
         if let Some(v) = self.value {
             use std::convert::TryFrom;
             // We will always be writing values as nanoseconds, however,
@@ -76,19 +83,22 @@ impl gecko_profiler::ProfilerMarker for TimespanMetricMarker {
 pub enum TimespanMetric {
     Parent {
         /// The metric's ID. Used for testing and profiler markers. Time span
-        /// metrics canot be labeled, so we only store a MetricId. If this
-        /// changes, this should be changed to a MetricGetter to distinguish
+        /// metrics canot be labeled, so we only store a BaseMetricId. If this
+        /// changes, this should be changed to a MetricId to distinguish
         /// between metrics and sub-metrics.
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::TimespanMetric,
         time_unit: TimeUnit,
     },
     Child,
 }
 
+crate::define_metric_metadata_getter!(TimespanMetric, TIMESPAN_MAP);
+crate::define_metric_namer!(TimespanMetric, PARENT_ONLY);
+
 impl TimespanMetric {
     /// Create a new timespan metric.
-    pub fn new(id: MetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
         if need_ipc() {
             TimespanMetric::Child
         } else {
@@ -298,7 +308,7 @@ impl Timespan for TimespanMetric {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::private::MetricId;
+    use crate::private::BaseMetricId;
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
@@ -306,7 +316,7 @@ mod test {
         let _lock = lock_test();
 
         let metric = TimespanMetric::new(
-            MetricId(0),
+            BaseMetricId(0),
             CommonMetricData {
                 name: "timespan_metric".into(),
                 category: "telemetry".into(),

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -49,7 +47,7 @@ def rust_datatypes_filter(value):
     class RustEncoder(json.JSONEncoder):
         def iterencode(self, value):
             if isinstance(value, dict):
-                raise ValueError("RustEncoder doesn't know dicts {}".format(str(value)))
+                raise ValueError(f"RustEncoder doesn't know dicts {str(value)}")
             elif isinstance(value, enum.Enum):
                 yield (value.__class__.__name__ + "::" + util.Camelize(value.name))
             elif isinstance(value, set):
@@ -119,13 +117,11 @@ def type_name(obj):
                 # we always use the `extra` suffix,
                 # because we only expose the new event API
                 suffix = "Extra"
-                return "{}<{}>".format(
-                    class_name(obj.type), util.Camelize(obj.name) + suffix
-                )
+                return f"{class_name(obj.type)}<{util.Camelize(obj.name) + suffix}>"
     generate_structure = getattr(obj, "_generate_structure", [])
     if len(generate_structure):
         generic = util.Camelize(obj.name) + "Object"
-        return "{}<{}>".format(class_name(obj.type), generic)
+        return f"{class_name(obj.type)}<{generic}>"
     return class_name(obj.type)
 
 

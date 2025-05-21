@@ -47,9 +47,7 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
-#include "mozilla/Telemetry.h"
 
-#include "mozilla/dom/IOUtils.h"
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 
 // Normally, the number of milliseconds that AsyncShutdown waits until

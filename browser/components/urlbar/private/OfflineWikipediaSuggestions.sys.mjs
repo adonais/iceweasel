@@ -22,6 +22,12 @@ export class OfflineWikipediaSuggestions extends SuggestProvider {
     return ["suggest.quicksuggest.nonsponsored"];
   }
 
+  get primaryUserControlledPreference() {
+    // Wikipedia suggestions can't be toggled separately from nonsponsored
+    // suggestions.
+    return null;
+  }
+
   get rustSuggestionType() {
     return "Wikipedia";
   }
@@ -60,7 +66,7 @@ export class OfflineWikipediaSuggestions extends SuggestProvider {
     // commands. Dismissal is the only one we need to handle here. `UrlbarInput`
     // handles Manage.
     if (details.selType == "dismiss") {
-      lazy.QuickSuggest.blockedSuggestions.blockResult(result);
+      lazy.QuickSuggest.dismissResult(result);
       controller.removeResult(result);
     }
   }

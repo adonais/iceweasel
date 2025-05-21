@@ -114,11 +114,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Pretražujte brže uz novu navigaciju</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Pretražujte brže uz novu navigaciju</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Na web stranici, ova traka se povlači dok skrolujete prema dole za dodatni prostor za pretraživanje.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Na web stranici, ova traka se povlači dok skrolujete prema dole za dodatni prostor za pretraživanje.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Dodirnite i držite strelice da se prebacujete između stranica u historiji ovog taba.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Dodirnite i držite strelice da se prebacujete između stranica u historiji ovog taba.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -629,7 +629,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Brzo i sigurno pregledavanje weba</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Slažem se, nastavi</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Slažem se, nastavi</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Nastavi</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Ako nastavite, prihvatate %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -834,8 +836,6 @@
   <string name="preferences_override_account_server">Prilagođeni server Mozilla računa</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Zaseban Sync server</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla račun/Sync server izmijenjen. Napuštanje aplikacije radi primjene promjena…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Račun</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1205,7 +1205,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Prevucite alatnu traku prema gore da biste otvorili tabove</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Skrolujte da sakrijete adresnu traku i traku s alatima</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Skrolujte da sakrijete adresnu traku i traku s alatima</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Prevucite adresnu traku u stranu za promjenu tabova</string>
   <!--
@@ -1481,12 +1481,33 @@
   <string name="download_multi_select_title">%1$d označeno</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Ukloni</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Nema dovoljno prostora</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Ovaj uređaj nema dovoljno prostora za preuzimanje datoteke &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Upravljaj datotekama</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Otkaži</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Izbriši</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Idite nazad</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Idi prema gore</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Idi prema gore</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Nazad i zatvori pretragu</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Očisti</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Dijeli URL</string>
   <!-- Text for the button to share the download file -->
@@ -1527,9 +1548,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Neuspjelo preuzimanje</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Traži preuzimanja</string>
+  <string name="download_search_placeholder">Traži preuzimanja</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Nema pronađenih rezultata</string>
+  <string name="download_search_no_results_found">Nema pronađenih rezultata</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Označi sve</string>
   <!--
@@ -1658,6 +1679,8 @@
   <string name="bookmark_menu_delete_button">Obriši</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Spasi</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Poredaj po prilagođenom redoslijedu</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">Poredaj po najnovijim</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2282,7 +2305,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Ikona preferencije izuzetaka poboljšane zaštite od praćenja</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2291,8 +2314,6 @@
   <string name="preference_doh_summary">Sistem imena domena (DNS) preko HTTPS-a šalje vaš zahtjev za ime domene putem šifrovane veze, pružajući siguran DNS i otežavajući drugima da vide kojoj web stranici ćete pristupiti. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Saznajte više</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Idi prema gore</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Izuzeci</string>
   <!-- Content description for the "Info" button -->
@@ -2831,8 +2852,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox prijedlozi</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Popularne pretrage</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3197,6 +3216,8 @@
   <string name="protection_panel_no_trackers_blocked">Nisu pronađeni tragači</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Podešavanja sigurnosti i privatnosti</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Dozvole</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3402,6 +3423,8 @@
   <string name="debug_drawer_override_current_region_label">Poništi trenutnu regiju</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">Poništi matičnu i trenutnu regiju</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Trajno promijeni regiju prebivališta</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3505,6 +3528,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Završili ste svih 6 koraka podešavanja. Uživajte u %1$s brzini, privatnosti i sigurnosti.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Završite svih 5 koraka da biste postavili %1$s za najbolje iskustvo pregledavanja.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Odličan početak! Završili ste 1 od 5 koraka.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Završili ste 2 od 5 koraka. Veliki napredak!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Na pola ste puta! Završena tri koraka, preostalo je još 2.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Pri kraju smo! Nalazite se samo 1 korak od cilja.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Završili ste svih 5 koraka podešavanja. Uživajte u %1$s brzini, privatnosti i sigurnosti.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3554,4 +3593,14 @@
   <string name="pbm_authentication_unlock">Otključaj</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Otključajte privatne tabove</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Omogući zaključavanje ekrana za privatne tabove</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Onemogući zaključavanje ekrana za privatne tabove</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Koristiti zaključavanje ekrana za skrivanje privatnih tabova?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Ne, hvala</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Zaključaj tabove</string>
 </resources>

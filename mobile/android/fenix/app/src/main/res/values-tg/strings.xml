@@ -117,11 +117,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Бо имкони паймоиши нав сомонаҳоро тезтар тамошо кунед</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Бо имкони паймоиши нав сомонаҳоро тезтар тамошо кунед</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Вақте ки шумо саҳифаҳоро ба поён варақ мегардонед, ин навор дар сомона барои таъмини фазои иловагӣ пинҳон карда мешавад.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Вақте ки шумо саҳифаҳоро ба поён варақ мегардонед, ин навор дар сомона барои таъмини фазои иловагӣ пинҳон карда мешавад.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Барои гузариш аз саҳифа ба саҳифа дар таърихи ин варақа, ақрабақҳоро зер карда, доред.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Барои гузариш аз саҳифа ба саҳифа дар таърихи ин варақа, ақрабақҳоро зер карда, доред.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -130,6 +130,8 @@
   <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Барои иваз кардани варақаҳо, навори абзорҳоро бо ангуш молед</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
   <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Барои гузариш, бо ангушт ба тарафи чап ё рост молед. Барои кушодани варақаи нав, варақаи охиринро бо ангушт ба тарафи чап молед.</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">Барои иваз кардани варақаҳо, дар навори абзорҳо ба тарафи чап ё рост бо ангушт молед.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Дастрасии камера лозим аст. Ба «Танзимоти Android» гузаред, ба «Иҷозатҳо» зарба занед, пас ба «Иҷозат додан» зарба занед.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -630,7 +632,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Тамошобинии тезкор ва бехатар дар Интернет</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Розӣ шавед ва идома диҳед</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Розӣ шавед ва идома диҳед</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Идома додан</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Бо идома додан, шумо бо %1$s розӣ мешавед.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -835,8 +839,6 @@
   <string name="preferences_override_account_server">Сервери ҳисоби фармоишии «Mozilla»</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Сервери ҳамоҳангсозии фармоишӣ</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Сервери ҳисоб/ҳамоҳангсозии «Mozilla» тағйир ёфт. Барои татбиқ кардани тағйирот барнома бояд хомӯш карда шавад…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Ҳисоб</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1206,7 +1208,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Барои кушодани варақаҳо аз болои навори абзорҳо ба боло бо ангуш молед</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Барои пинҳон кардани навори нишонӣ ва навори абзорҳо, ба боло ё поён ҳаракат кунед</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Барои пинҳон кардани навори нишонӣ ва навори абзорҳо, ба боло ё поён ҳаракат кунед</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Барои иваз кардани варақаҳо аз болои навори нишонӣ ба тарафи лозимӣ бо ангуш молед</string>
   <!--
@@ -1482,12 +1484,33 @@
   <string name="download_multi_select_title">%1$d интихоб шуд</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Тоза кардан</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Фазои кофӣ нест</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Ин дастгоҳ барои боргирӣ кардани &lt;b&gt;«%s»&lt;/b&gt; фазои кофӣ надорад.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Идоракунии файлҳо</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Бекор кардан</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Нест кардан</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Ба қафо гузаштан</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Ба боло гузаштан</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Ба боло гузаштан</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Бозгашт ва пӯшидани ҷустуҷӯ</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Пок кардан</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Мубодилаи нишонии «URL»</string>
   <!-- Text for the button to share the download file -->
@@ -1528,9 +1551,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Боргирӣ иҷро нашуд</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Ҷустуҷӯ дар боргириҳо</string>
+  <string name="download_search_placeholder">Ҷустуҷӯ дар боргириҳо</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Ягон натиҷа ёфт нашуд</string>
+  <string name="download_search_no_results_found">Ягон натиҷа ёфт нашуд</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Ҳамаро интихоб кардан</string>
   <!--
@@ -1647,6 +1670,8 @@
   <string name="bookmark_menu_copy_button">Нусха бардоштан</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Мубодила кардан</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">Ҳамаро интихоб кардан</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">Кушодан дар варақаи нав</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1659,6 +1684,8 @@
   <string name="bookmark_menu_delete_button">Нест кардан</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Нигоҳ доштан</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Мураттаб кардан аз рӯи дархост</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">Мураттаб кардан аз рӯи навтарин</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2283,7 +2310,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Нишони хусусияти истисно барои муҳофизати такмилёфта аз пайгирӣ</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2292,8 +2319,6 @@
   <string name="preference_doh_summary">Низоми номҳои домен (DNS) тавассути HTTPS дархостҳои шуморо барои номи домен тавассути пайвасти рамзгузоришуда ирсол карда, DNS-и бехатарро таъмин мекунад ва ба дигарон барои дидани сомонаҳое, ки шумо мехоҳед ба он дастрасӣ пайдо намоед, душворӣ мекунад. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Маълумоти бештар</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Ба боло гузаред</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Истисноҳо</string>
   <!-- Content description for the "Info" button -->
@@ -2831,8 +2856,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Пешниҳоди Firefox</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Ҷустуҷӯҳои ҳавасангез</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3197,6 +3220,8 @@
   <string name="protection_panel_no_trackers_blocked">Ягон васоити пайгирӣ ёфт нашуд</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Танзимоти махфият ва амният</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Иҷозатҳо</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3390,10 +3415,20 @@
     and the current region (device's detected location) for testing purposes.
   -->
   <string name="debug_drawer_region_tools_title">Абзорҳои минтақавӣ</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">Барои гузаронидани санҷишҳо, ин имкон қиматҳои минтақаи хонагӣ ва ҷориро иваз мекунад.</string>
   <!-- The text label for displaying home region. -->
   <string name="debug_drawer_home_region_label">Минтақаи хонагӣ</string>
   <!-- The text label for displaying current region. -->
   <string name="debug_drawer_current_region_label">Минтақаи ҷорӣ</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Иваз кардани минтақаи хонагӣ</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Иваз кардани минтақаи ҷорӣ</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Иваз кардани минтақаи хонагӣ ва ҷорӣ</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Ба таври доимӣ иваз кардани минтақаи хонагӣ</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3467,6 +3502,52 @@
   <!-- Title for the setup checklist feature when the state is 'completed' -->
   <string name="setup_checklist_title_state_completed">Табрик мекунем!</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">Барои танзим кардани «%1$s» ба мақсадҳои таҷрибаи тамошобинии беҳтарин, лутфан, 3 қадами зеринро иҷро намоед.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">Оғози олӣ! Шумо қадами 1-умро аз 3 қадами умумӣ иҷро кардед.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">Қариб ҳамааш тайёр аст! Ду қадам иҷро шуд ва танҳо 1 қадами дигар монд.</string>
+  <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_3_steps_completed_state">Шумо ҳамаи 3 қадамро иҷро кардед. Аз беҳтарин суръат, махфият ва амнияти браузери «%1$s» истифода баред.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 6 steps =====
+
+    Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_6_steps_initial_state">Барои танзим кардани «%1$s» ба мақсадҳои таҷрибаи тамошобинии беҳтарин, лутфан, ҳамаи 6 қадами зеринро иҷро намоед.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_first_step">Оғози олӣ! Шумо қадами 1-умро аз 6 қадами умумӣ иҷро кардед.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_second_step">Шумо қадами 1-умро аз 6 қадами умумӣ иҷро кардед. Пешравии бузург!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_6_steps_third_step">Шумо дар ними роҳ қарор доред! Се қадам иҷро шуд ва танҳо 3 қадами дигар монд.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fourth_step">Шумо дар қадами 4-ум қарор доред! Танҳо 2 қадами дигар монд.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fifth_step">Қариб ҳамааш тайёр аст! Барои расидан ба марра танҳо 1 қадами дигар монд.</string>
+  <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_6_steps_completed_state">Шумо ҳамаи 6 қадамро иҷро кардед. Аз беҳтарин суръат, махфият ва амнияти браузери «%1$s» истифода баред.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Барои танзим кардани «%1$s» ба мақсадҳои таҷрибаи тамошобинии беҳтарин, лутфан, ҳамаи 5 қадами зеринро иҷро намоед.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Оғози олӣ! Шумо қадами 1-умро аз 5 қадами умумӣ иҷро кардед.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Шумо қадами 1-умро аз 5 қадами умумӣ иҷро кардед. Пешравии бузург!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Шумо дар ними роҳ қарор доред! Се қадам иҷро шуд ва танҳо 2 қадами дигар монд.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Қариб ҳамааш тайёр аст! Барои расидан ба марра танҳо 1 қадами дигар монд.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Шумо ҳамаи 5 қадамро иҷро кардед. Аз беҳтарин суръат, махфият ва амнияти браузери «%1$s» истифода баред.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3516,4 +3597,16 @@
   <string name="pbm_authentication_unlock">Кушодани қулф</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Кушодани қулфи варақаҳои хусусӣ</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Фаъол кардани қулфи экрани варақаҳои хусусӣ</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Ғайрифаъол кардани қулфи экрани варақаҳои хусусӣ</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Барои пинҳон кардани варақаҳо қулфи экранро танзим кунед</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Барои пинҳон кардани варақаҳои хусусӣ қулфи экранро истифода мебаред?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Не, ташаккур</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Қулф кардани варақаҳо</string>
 </resources>

@@ -80,7 +80,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   static std::unique_ptr<SdpOfferAnswerHandler> Create(
       PeerConnectionSdpMethods* pc,
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies& dependencies,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+      std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+          video_bitrate_allocator_factory,
       ConnectionContext* context,
       PayloadTypeSuggester* pt_suggester);
 
@@ -213,7 +215,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   // once. Modifies dependencies.
   void Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies& dependencies,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+      std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+          video_bitrate_allocator_factory,
       ConnectionContext* context,
       PayloadTypeSuggester* pt_suggester);
 
@@ -641,7 +645,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   // MIDs will be generated using this generator which will keep track of
   // all the MIDs that have been seen over the life of the PeerConnection.
-  rtc::UniqueStringGenerator mid_generator_ RTC_GUARDED_BY(signaling_thread());
+  UniqueStringGenerator mid_generator_ RTC_GUARDED_BY(signaling_thread());
 
   // List of content names for which the remote side triggered an ICE restart.
   std::set<std::string> pending_ice_restarts_
@@ -690,7 +694,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   // determines the SSL role.
   std::optional<bool> initial_offerer_ RTC_GUARDED_BY(signaling_thread());
 
-  rtc::WeakPtrFactory<SdpOfferAnswerHandler> weak_ptr_factory_
+  WeakPtrFactory<SdpOfferAnswerHandler> weak_ptr_factory_
       RTC_GUARDED_BY(signaling_thread());
 };
 

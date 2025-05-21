@@ -41,11 +41,16 @@ add_task(async function test_tabGroupTelemetry() {
   let group1tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
   await BrowserTestUtils.browserLoaded(group1tab.linkedBrowser);
 
+  let tabGroupCreateByUser = BrowserTestUtils.waitForEvent(
+    win.gBrowser.tabContainer,
+    "TabGroupCreateByUser"
+  );
   let group1 = win.gBrowser.addTabGroup([group1tab], {
     isUserTriggered: true,
     telemetryUserCreateSource: "test-source",
   });
   win.gBrowser.tabGroupMenu.close();
+  await tabGroupCreateByUser;
 
   await BrowserTestUtils.waitForCondition(() => {
     tabGroupCreateTelemetry = Glean.tabgroup.createGroup.testGetValue();
@@ -701,113 +706,124 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
 });
 
 add_task(async function test_tabInteractions() {
+  let assertMetricEmpty = async metricName => {
+    Assert.equal(
+      Glean.tabgroup.tabInteractions[metricName].testGetValue(),
+      null,
+      `tab_interactions.${metricName} starts empty`
+    );
+  };
+
+  let assertOneMetricFoundFor = async metricName => {
+    await BrowserTestUtils.waitForCondition(() => {
+      return Glean.tabgroup.tabInteractions[metricName].testGetValue() !== null;
+    }, `Wait for tab_interactions.${metricName} to be recorded`);
+    Assert.equal(
+      Glean.tabgroup.tabInteractions[metricName].testGetValue(),
+      1,
+      `tab_interactions.${metricName} was recorded`
+    );
+  };
+
+  let initialTab = win.gBrowser.tabs[0];
+
   await resetTelemetry();
   let group = await makeTabGroup();
 
   info(
     "Test that selecting a tab in a group records tab_interactions.activate"
   );
+  await assertMetricEmpty("activate");
   const tabSelectEvent = BrowserTestUtils.waitForEvent(win, "TabSelect");
   win.gBrowser.selectTabAtIndex(1);
   await tabSelectEvent;
-
-  await BrowserTestUtils.waitForCondition(() => {
-    return Glean.tabgroup.tabInteractions.activate.testGetValue() !== null;
-  }, "Wait for tab_interactions.activate to be recorded");
-  Assert.equal(
-    Glean.tabgroup.tabInteractions.activate.testGetValue(),
-    1,
-    "tab_interactions.activate was recorded"
-  );
+  await assertOneMetricFoundFor("activate");
 
   info(
     "Test that moving an existing tab into a tab group records tab_interactions.add"
   );
   let tab1 = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
+  await assertMetricEmpty("add");
   win.gBrowser.moveTabToGroup(tab1, group, { isUserTriggered: true });
-
-  await BrowserTestUtils.waitForCondition(() => {
-    return Glean.tabgroup.tabInteractions.add.testGetValue() !== null;
-  }, "Wait for tab_interactions.add to be recorded");
-  Assert.equal(
-    Glean.tabgroup.tabInteractions.add.testGetValue(),
-    1,
-    "tab_interactions.add was recorded"
-  );
+  await assertOneMetricFoundFor("add");
 
   info(
     "Test that adding a new tab to a tab group records tab_interactions.new"
   );
+  await assertMetricEmpty("new");
   BrowserTestUtils.addTab(win.gBrowser, "https://example.com", {
     tabGroup: group,
   });
-
-  await BrowserTestUtils.waitForCondition(() => {
-    return Glean.tabgroup.tabInteractions.new.testGetValue() !== null;
-  }, "Wait for tab_interactions.new to be recorded");
-  Assert.equal(
-    Glean.tabgroup.tabInteractions.new.testGetValue(),
-    1,
-    "tab_interactions.new was recorded"
-  );
+  await assertOneMetricFoundFor("new");
 
   info("Test that moving a tab within a group calls tab_interactions.reorder");
+  await assertMetricEmpty("reorder");
   win.gBrowser.moveTabTo(group.tabs[0], { tabIndex: 3, isUserTriggered: true });
-  await BrowserTestUtils.waitForCondition(() => {
-    return Glean.tabgroup.tabInteractions.reorder.testGetValue() !== null;
-  }, "Wait for tab_interactions.reorder to be recorded");
-  Assert.equal(
-    Glean.tabgroup.tabInteractions.reorder.testGetValue(),
-    1,
-    "tab_interactions.reorder was recorded"
-  );
+  await assertOneMetricFoundFor("reorder");
 
   info(
     "Test that duplicating a tab within a group calls tab_interactions.duplicate"
   );
+  await assertMetricEmpty("duplicate");
   win.gBrowser.duplicateTab(group.tabs[0], true, { index: 2 });
-  await BrowserTestUtils.waitForCondition(() => {
-    return Glean.tabgroup.tabInteractions.duplicate.testGetValue() !== null;
-  }, "Wait for tab_interactions.duplicate to be recorded");
-  Assert.equal(
-    Glean.tabgroup.tabInteractions.duplicate.testGetValue(),
-    1,
-    "tab_interactions.duplicate was recorded"
-  );
+  await assertOneMetricFoundFor("duplicate");
 
   info(
     "Test that closing a tab using the tab's close button calls tab_interactions.close_tabstrip"
   );
+  await assertMetricEmpty("close_tabstrip");
   group.tabs.at(-1).querySelector(".tab-close-button").click();
-  await BrowserTestUtils.waitForCondition(() => {
-    return (
-      Glean.tabgroup.tabInteractions.close_tabstrip.testGetValue() !== null
-    );
-  }, "Wait for tab_interactions.close_tabstrip to be recorded");
-  Assert.equal(
-    Glean.tabgroup.tabInteractions.close_tabstrip.testGetValue(),
-    1,
-    "tab_interactions.close_tabstrip was recorded"
-  );
+  await assertOneMetricFoundFor("close_tabstrip");
 
   info(
     "Test that closing a tab from the tab overflow menu calls tab_interactions.close_tabmenu"
   );
   await openTabsMenu();
+  await assertMetricEmpty("close_tabmenu");
   win.document
     .querySelector(".all-tabs-item.grouped .all-tabs-close-button")
     .click();
-  await BrowserTestUtils.waitForCondition(() => {
-    return Glean.tabgroup.tabInteractions.close_tabmenu.testGetValue() !== null;
-  }, "Wait for tab_interactions.close_tabmenu to be recorded");
-  Assert.equal(
-    Glean.tabgroup.tabInteractions.close_tabmenu.testGetValue(),
-    1,
-    "tab_interactions.close_tabmenu was recorded"
-  );
+  await assertOneMetricFoundFor("close_tabmenu");
   await closeTabsMenu();
 
-  await removeTabGroup(group);
+  info(
+    "Test that moving a tab out of a tab group calls tab_interactions.remove_same_window"
+  );
+  await assertMetricEmpty("remove_same_window");
+  win.gBrowser.moveTabTo(group.tabs[0], { tabIndex: 0, isUserTriggered: true });
+  await assertOneMetricFoundFor("remove_same_window");
+
+  info(
+    "Test that moving a tab out of a tab group and into a different (existing) window calls tab_interactions.remove_other_window"
+  );
+  await assertMetricEmpty("remove_other_window");
+  let tab2 = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
+  win.gBrowser.moveTabToGroup(tab2, group, { isUserTriggered: true });
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
+  newWin.gBrowser.adoptTab(tab2);
+  await assertOneMetricFoundFor("remove_other_window");
+  await BrowserTestUtils.closeWindow(newWin);
+
+  info(
+    "Test that moving a tab out of a tab group and into a different (new) window calls tab_interactions.remove_new_window"
+  );
+  await assertMetricEmpty("remove_new_window");
+  let newWindowPromise = BrowserTestUtils.waitForNewWindow();
+  await EventUtils.synthesizePlainDragAndDrop({
+    srcElement: group.tabs[0],
+    srcWindow: win,
+    destElement: null,
+    // don't move horizontally because that could cause a tab move
+    // animation, and there's code to prevent a tab detaching if
+    // the dragged tab is released while the animation is running.
+    stepX: 0,
+    stepY: 100,
+  });
+  newWin = await newWindowPromise;
+  await assertOneMetricFoundFor("remove_new_window");
+  await BrowserTestUtils.closeWindow(newWin);
+
+  win.gBrowser.removeAllTabsBut(initialTab);
   await resetTelemetry();
 });
 
@@ -966,6 +982,66 @@ add_task(async function test_groupInteractions() {
     1,
     "tab group ungroup count should have increased because a tab group was ungrouped"
   );
+  const ungroupEvents = Glean.tabgroup.ungroup.testGetValue();
+  Assert.ok(ungroupEvents, "an `ungroup` event should have been recorded");
+  Assert.deepEqual(
+    ungroupEvents[0].extra,
+    { source: "tab_group" },
+    "ungroup event should have come from the tab group context menu"
+  );
+
+  await resetTelemetry();
+});
+
+add_task(async function test_cancelTabGroupCreation_ungroupTabsEvent() {
+  await resetTelemetry();
+
+  let tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
+
+  let tabGroupCreateByUser = BrowserTestUtils.waitForEvent(
+    win.gBrowser.tabContainer,
+    "TabGroupCreateByUser"
+  );
+  let tabGroupContextOpen = BrowserTestUtils.waitForPopupEvent(
+    win.gBrowser.tabGroupMenu,
+    "shown"
+  );
+  win.gBrowser.addTabGroup([tab], {
+    isUserTriggered: true,
+    telemetryUserCreateSource: "test-source",
+  });
+  await Promise.all([tabGroupCreateByUser, tabGroupContextOpen]);
+
+  Assert.ok(
+    win.gBrowser.tabGroupMenu.createMode,
+    "tab group context menu should be in create mode"
+  );
+
+  info("hit Escape key in order to cancel/undo tab group creation");
+  let tabGroupContextClosed = BrowserTestUtils.waitForPopupEvent(
+    win.gBrowser.tabGroupMenu,
+    "hidden"
+  );
+  EventUtils.synthesizeKey("KEY_Escape", {}, win);
+  await tabGroupContextClosed;
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return Glean.tabgroup.ungroup.testGetValue() != null;
+  }, "wait until an ungroup event is recorded");
+
+  let [ungroupEvent] = Glean.tabgroup.ungroup.testGetValue();
+  Assert.deepEqual(
+    ungroupEvent.extra,
+    { source: "cancel_create" },
+    "ungroup event should be from canceling group creation"
+  );
+  Assert.equal(
+    Glean.tabgroup.groupInteractions.ungroup.testGetValue(),
+    null,
+    "tab group interactions ungroup count should not be increased when canceling tab group creation"
+  );
+
+  await BrowserTestUtils.removeTab(tab);
 
   await resetTelemetry();
 });

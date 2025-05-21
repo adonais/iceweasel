@@ -1,8 +1,6 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const { ExperimentAPI, _ExperimentFeature: ExperimentFeature } =
-  ChromeUtils.importESModule("resource://nimbus/ExperimentAPI.sys.mjs");
 const { PrefUtils } = ChromeUtils.importESModule(
   "resource://normandy/lib/PrefUtils.sys.mjs"
 );
@@ -59,24 +57,6 @@ const PREF_FEATURES = {
     },
   }),
 };
-
-function assertNoObservers(manager) {
-  Assert.equal(
-    manager._prefs.size,
-    0,
-    "There should be no active pref observers on ExperimentManager"
-  );
-  Assert.equal(
-    manager._prefsBySlug.size,
-    0,
-    "There should be no active pref observers on ExperimentManager"
-  );
-  Assert.equal(
-    manager._prefFlips._prefs.size,
-    0,
-    "There should be no prefFlips feature observers"
-  );
-}
 
 function setPrefs(prefs) {
   for (const [name, { userBranchValue, defaultBranchValue }] of Object.entries(
@@ -143,16 +123,31 @@ function checkExpectedPrefBranches(prefs) {
 }
 
 add_setup(function setup() {
-  do_get_profile();
   Services.fog.initializeFOG();
+  Services.telemetry.clearEvents();
 
-  const cleanupFeatures = ExperimentTestUtils.addTestFeatures(
-    PREF_FEATURES[USER],
-    PREF_FEATURES[DEFAULT]
+  registerCleanupFunction(
+    ExperimentTestUtils.addTestFeatures(
+      PREF_FEATURES[USER],
+      PREF_FEATURES[DEFAULT]
+    )
   );
-
-  registerCleanupFunction(cleanupFeatures);
 });
+
+async function setupTest({ ...args } = {}) {
+  const { cleanup: baseCleanup, ...ctx } = await NimbusTestUtils.setupTest({
+    ...args,
+    clearTelemetry: true,
+  });
+
+  return {
+    ...ctx,
+    cleanup() {
+      assertNoObservers(ctx.manager);
+      baseCleanup();
+    },
+  };
+}
 
 add_task(async function test_schema() {
   const schema = await fetch(
@@ -409,8 +404,6 @@ add_task(async function test_prefFlips() {
   for (const [i, { name, ...testCase }] of TEST_CASES.entries()) {
     info(`Running test case ${i}: ${name}`);
 
-    const sandbox = sinon.createSandbox();
-
     const {
       // The feature config to enroll.
       featureValue,
@@ -424,10 +417,7 @@ add_task(async function test_prefFlips() {
       expectedPrefs = {},
     } = testCase;
 
-    const manager = ExperimentFakes.manager();
-    sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-    await manager.onStartup();
+    const { manager, cleanup } = await setupTest();
 
     info("Setting initial values of prefs...");
     setPrefs(setPrefsBefore);
@@ -442,7 +432,7 @@ add_task(async function test_prefFlips() {
     );
 
     info("Enrolling...");
-    const cleanup = await ExperimentFakes.enrollWithFeatureConfig(
+    const cleanupExperiment = await ExperimentFakes.enrollWithFeatureConfig(
       {
         featureId: FEATURE_ID,
         value: featureValue,
@@ -483,7 +473,7 @@ add_task(async function test_prefFlips() {
     }
 
     info("Unenrolling...");
-    await cleanup();
+    await cleanupExperiment();
 
     info("Checking prefs were restored after unenrollment...");
     // After unenrollment, the prefs should have been restored to their values
@@ -510,10 +500,7 @@ add_task(async function test_prefFlips() {
       Services.prefs.deleteBranch(prefName);
     }
 
-    assertEmptyStore(manager.store);
-    assertNoObservers(manager);
-
-    sandbox.restore();
+    cleanup();
   }
 });
 
@@ -1513,8 +1500,6 @@ add_task(async function test_prefFlips_unenrollment() {
   for (const [i, { name, ...testCase }] of TEST_CASES.entries()) {
     info(`Running test case ${i}: ${name}`);
 
-    const sandbox = sinon.createSandbox();
-
     const {
       // Prefs that should be set after enrollment. These will be undone after
       // each test case.
@@ -1537,10 +1522,7 @@ add_task(async function test_prefFlips_unenrollment() {
     info("Setting prefs before enrollment...");
     setPrefs(setPrefsBefore);
 
-    const manager = ExperimentFakes.manager();
-    sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-    await manager.onStartup();
+    const { manager, cleanup } = await setupTest();
 
     info("Enrolling...");
     for (const { slug, isRollout = false } of enrollmentOrder) {
@@ -1587,16 +1569,14 @@ add_task(async function test_prefFlips_unenrollment() {
     for (const { slug, isRollout = false } of expectedEnrollments) {
       const computedSlug = `${slug}-${isRollout ? "rollout" : "experiment"}`;
       info(`Unenrolling from ${computedSlug}\n`);
-      manager.unenroll(computedSlug, "cleanup");
+      manager.unenroll(computedSlug);
     }
-    assertEmptyStore(manager.store);
-    assertNoObservers(manager);
 
     info("Cleaning up prefs...");
     Services.prefs.deleteBranch(PREF);
     Services.prefs.deleteBranch(PREF2);
 
-    sandbox.restore();
+    cleanup();
   }
 });
 
@@ -1962,25 +1942,22 @@ add_task(async function test_prefFlip_setPref_restore() {
   ];
 
   for (const [i, { name, ...testCase }] of TEST_CASES.entries()) {
-    Services.fog.testResetFOG();
-    Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      /* clear = */ true
+    Services.fog.applyServerKnobsConfig(
+      JSON.stringify({
+        metrics_enabled: {
+          "nimbus_events.enrollment_status": true,
+        },
+      })
     );
 
     info(`Running test case ${i}: ${name}`);
-
-    const sandbox = sinon.createSandbox();
 
     const { setPrefsBefore = {}, enrollmentOrder, expectedPrefs } = testCase;
 
     info("Setting prefs before enrollment...");
     setPrefs(setPrefsBefore);
 
-    const manager = ExperimentFakes.manager();
-    sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-    await manager.onStartup();
+    const { manager, cleanup } = await setupTest();
 
     info("Enrolling...");
     for (const slug of enrollmentOrder) {
@@ -2039,15 +2016,40 @@ add_task(async function test_prefFlip_setPref_restore() {
         },
       ]
     );
+    Assert.deepEqual(
+      Glean.nimbusEvents.enrollmentStatus
+        .testGetValue("events")
+        ?.map(ev => ev.extra),
+      [
+        {
+          slug: enrollmentOrder[0],
+          branch: "control",
+          status: "Enrolled",
+          reason: "Qualified",
+        },
+        {
+          slug: enrollmentOrder[0],
+          branch: "control",
+          status: "Disqualified",
+          reason: "PrefFlipsConflict",
+          conflict_slug: enrollmentOrder[1],
+        },
+        {
+          slug: enrollmentOrder[1],
+          branch: "control",
+          status: "Enrolled",
+          reason: "Qualified",
+        },
+      ]
+    );
 
     info("Unenrolling...");
-    manager.unenroll(enrollmentOrder[1], "test-cleanup");
+    manager.unenroll(enrollmentOrder[1]);
 
     info("Checking expected prefs...");
     checkExpectedPrefBranches(expectedPrefs);
 
-    assertEmptyStore(manager.store);
-    assertNoObservers(manager);
+    cleanup();
 
     info("Cleaning up prefs...");
     Services.prefs.deleteBranch(PREF);
@@ -2080,12 +2082,8 @@ add_task(async function test_prefFlips_cacheOriginalValues() {
     ],
   });
 
-  const sandbox = sinon.createSandbox();
-  const manager = ExperimentFakes.manager();
+  const { manager, cleanup } = await setupTest();
 
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  await manager.onStartup();
   await manager.enroll(recipe, "test");
 
   const activeEnrollment = manager.store.getExperimentForFeature(FEATURE_ID);
@@ -2097,9 +2095,9 @@ add_task(async function test_prefFlips_cacheOriginalValues() {
   });
 
   // Force the store to save to disk
-  await manager.store._store._save();
+  const storePath = await NimbusTestUtils.saveStore(manager.store);
 
-  const storeContents = await IOUtils.readJSON(manager.store._store.path);
+  const storeContents = await IOUtils.readJSON(storePath);
 
   Assert.ok(
     Object.hasOwn(storeContents, "prefFlips-test"),
@@ -2120,14 +2118,13 @@ add_task(async function test_prefFlips_cacheOriginalValues() {
     "originalValues cached on serialized enrollment"
   );
 
-  manager.unenroll(recipe.slug, "test");
+  manager.unenroll(recipe.slug);
   Assert.ok(
     !Services.prefs.prefHasUserValue("test.pref.please.ignore"),
     "pref unset after unenrollment"
   );
-  assertEmptyStore(manager.store);
 
-  sandbox.restore();
+  cleanup();
 });
 
 add_task(async function test_prefFlips_restore_unenroll() {
@@ -2175,29 +2172,22 @@ add_task(async function test_prefFlips_restore_unenroll() {
           "test.pref.please.ignore": null,
         },
       },
+      lastSeen: new Date().toJSON(),
     };
 
     const store = ExperimentFakes.store();
     await store.init();
-    await store.ready();
     store.set(enrollment.slug, enrollment);
-    store._store.saveSoon();
-    await store._store.finalize();
-
-    storePath = store._store.path;
+    storePath = await NimbusTestUtils.saveStore(store);
   }
 
   // Set the pref controlled by the experiment.
   Services.prefs.setStringPref("test.pref.please.ignore", "test-value");
 
-  const sandbox = sinon.createSandbox();
-
-  const store = ExperimentFakes.store(storePath);
-  const manager = ExperimentFakes.manager(store);
-
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  await manager.onStartup();
+  const { manager, cleanup } = await setupTest({
+    storePath,
+    secureExperiments: [recipe],
+  });
 
   const activeEnrollment = manager.store.getExperimentForFeature(FEATURE_ID);
   Assert.equal(activeEnrollment.slug, recipe.slug, "enrollment restored");
@@ -2207,33 +2197,19 @@ add_task(async function test_prefFlips_restore_unenroll() {
     null
   );
 
-  manager.unenroll(recipe.slug, "test");
+  manager.unenroll(recipe.slug);
   Assert.ok(
     !Services.prefs.prefHasUserValue("test.pref.please.ignore"),
     "pref unset after unenrollment"
   );
 
-  assertEmptyStore(manager.store);
-
-  sandbox.restore();
+  cleanup();
 });
 
 add_task(async function test_prefFlips_failed() {
   const PREF = "test.pref.please.ignore";
 
-  Services.fog.testResetFOG();
-  Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-    /* clear = */ true
-  );
-
   Services.prefs.getDefaultBranch(null).setStringPref(PREF, "test-value");
-  const sandbox = sinon.createSandbox();
-  const manager = ExperimentFakes.manager();
-
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  await manager.onStartup();
 
   const recipe = ExperimentFakes.recipe("prefFlips-test", {
     branches: [
@@ -2257,6 +2233,7 @@ add_task(async function test_prefFlips_failed() {
     },
   });
 
+  const { manager, cleanup } = await setupTest();
   await manager.enroll(recipe);
 
   const enrollment = manager.store.get(recipe.slug);
@@ -2300,28 +2277,14 @@ add_task(async function test_prefFlips_failed() {
 
   Services.prefs.deleteBranch(PREF);
 
-  assertEmptyStore(manager.store);
+  cleanup();
 });
 
 add_task(async function test_prefFlips_failed_multiple_prefs() {
   const GOOD_PREF = "test.pref.please.ignore";
   const BAD_PREF = "this.one.too";
 
-  Services.fog.testResetFOG();
-  Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-    /* clear = */ true
-  );
-
   Services.prefs.getDefaultBranch(null).setStringPref(BAD_PREF, "test-value");
-  const sandbox = sinon.createSandbox();
-  const manager = ExperimentFakes.manager();
-
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  const setPrefSpy = sandbox.spy(PrefUtils, "setPref");
-
-  await manager.onStartup();
 
   const recipe = ExperimentFakes.recipe("prefFlips-test", {
     branches: [
@@ -2345,6 +2308,10 @@ add_task(async function test_prefFlips_failed_multiple_prefs() {
       count: 1000,
     },
   });
+
+  const { sandbox, manager, cleanup } = await setupTest();
+
+  const setPrefSpy = sandbox.spy(PrefUtils, "setPref");
 
   await manager.enroll(recipe);
 
@@ -2385,17 +2352,16 @@ add_task(async function test_prefFlips_failed_multiple_prefs() {
   Services.prefs.deleteBranch(GOOD_PREF);
   Services.prefs.deleteBranch(BAD_PREF);
 
-  assertEmptyStore(manager.store);
-  sandbox.reset();
+  cleanup();
 });
 
-add_task(async function test_prefFlips_failed_experiment_and_rollout() {
+add_task(async function test_prefFlips_failed_experiment_and_rollout_1() {
   const ROLLOUT = "rollout";
   const EXPERIMENT = "experiment";
 
   const PREFS = {
-    [ROLLOUT]: "test.nimbus.prefs.rollout",
-    [EXPERIMENT]: "test.nimbus.prefs.experiment",
+    [ROLLOUT]: "test.nimbus.prefs.rollout-1",
+    [EXPERIMENT]: "test.nimbus.prefs.experiment-1",
   };
 
   const VALUES = {
@@ -2419,6 +2385,106 @@ add_task(async function test_prefFlips_failed_experiment_and_rollout() {
         [PREFS[ROLLOUT]]: BOGUS_VALUE,
       },
     },
+  ];
+
+  const FEATURE_VALUES = {
+    [EXPERIMENT]: {
+      prefs: {
+        [PREFS[EXPERIMENT]]: {
+          value: VALUES[EXPERIMENT],
+          branch: USER,
+        },
+      },
+    },
+    [ROLLOUT]: {
+      prefs: {
+        [PREFS[ROLLOUT]]: {
+          value: VALUES[ROLLOUT],
+          branch: USER,
+        },
+      },
+    },
+  };
+
+  for (const [i, { name, ...testCase }] of TEST_CASES.entries()) {
+    info(`Running test case ${i}: ${name}`);
+
+    const {
+      setPrefsBefore,
+      enrollmentOrder,
+      expectedEnrollments,
+      expectedUnenrollments,
+      expectedPrefs,
+    } = testCase;
+
+    const { manager, cleanup } = await setupTest();
+
+    info("Setting initial values of prefs...");
+    setPrefs(setPrefsBefore);
+
+    info("Enrolling...");
+    for (const slug of enrollmentOrder) {
+      await ExperimentFakes.enrollWithFeatureConfig(
+        {
+          featureId: FEATURE_ID,
+          value: FEATURE_VALUES[slug],
+        },
+        {
+          manager,
+          slug,
+          isRollout: slug === ROLLOUT,
+        }
+      );
+    }
+
+    info("Checking expected enrollments...");
+    for (const slug of expectedEnrollments) {
+      const enrollment = manager.store.get(slug);
+      Assert.ok(enrollment.active, `The enrollment for ${slug} is active`);
+    }
+
+    info("Checking expected unenrollments...");
+    for (const slug of expectedUnenrollments) {
+      const enrollment = manager.store.get(slug);
+      Assert.ok(!enrollment.active, "The enrollment is no longer active.");
+    }
+
+    info("Checking expected prefs...");
+    checkExpectedPrefs(expectedPrefs);
+
+    info("Unenrolling...");
+    if (expectedEnrollments.includes(ROLLOUT)) {
+      manager.unenroll(ROLLOUT);
+    }
+    if (expectedEnrollments.includes(EXPERIMENT)) {
+      manager.unenroll(EXPERIMENT);
+    }
+
+    info("Cleaning up...");
+    Services.prefs.deleteBranch(PREFS[ROLLOUT]);
+    Services.prefs.deleteBranch(PREFS[EXPERIMENT]);
+
+    cleanup();
+  }
+});
+
+add_task(async function test_prefFlips_failed_experiment_and_rollout_2() {
+  const ROLLOUT = "rollout";
+  const EXPERIMENT = "experiment";
+
+  const PREFS = {
+    [ROLLOUT]: "test.nimbus.prefs.rollout-2",
+    [EXPERIMENT]: "test.nimbus.prefs.experiment-2",
+  };
+
+  const VALUES = {
+    [ROLLOUT]: "rollout-value",
+    [EXPERIMENT]: "experiment-value",
+  };
+
+  const BOGUS_VALUE = 123;
+
+  const TEST_CASES = [
     {
       name: "Enrolling in a rollout and then an experiment with errors",
       setPrefsBefore: {
@@ -2464,12 +2530,7 @@ add_task(async function test_prefFlips_failed_experiment_and_rollout() {
       expectedPrefs,
     } = testCase;
 
-    const sandbox = sinon.createSandbox();
-
-    const manager = ExperimentFakes.manager();
-    sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-    await manager.onStartup();
+    const { manager, cleanup } = await setupTest();
 
     info("Setting initial values of prefs...");
     setPrefs(setPrefsBefore);
@@ -2492,7 +2553,7 @@ add_task(async function test_prefFlips_failed_experiment_and_rollout() {
     info("Checking expected enrollments...");
     for (const slug of expectedEnrollments) {
       const enrollment = manager.store.get(slug);
-      Assert.ok(enrollment.active, "The enrollment is active.");
+      Assert.ok(enrollment.active, `The enrollment for ${slug} is active`);
     }
 
     info("Checking expected unenrollments...");
@@ -2506,34 +2567,27 @@ add_task(async function test_prefFlips_failed_experiment_and_rollout() {
 
     info("Unenrolling...");
     if (expectedEnrollments.includes(ROLLOUT)) {
-      manager.unenroll(ROLLOUT, "test-cleanup");
+      manager.unenroll(ROLLOUT);
     }
     if (expectedEnrollments.includes(EXPERIMENT)) {
-      manager.unenroll(EXPERIMENT, "test-cleanup");
+      manager.unenroll(EXPERIMENT);
     }
 
     info("Cleaning up...");
     Services.prefs.deleteBranch(PREFS[ROLLOUT]);
     Services.prefs.deleteBranch(PREFS[EXPERIMENT]);
 
-    assertEmptyStore(manager.store);
-    assertNoObservers(manager);
-    sandbox.restore();
+    cleanup();
   }
 });
 
 add_task(async function test_prefFlips_update_failure() {
-  const sandbox = sinon.createSandbox();
-  const manager = ExperimentFakes.manager();
-
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  await manager.onStartup();
+  const { manager, cleanup } = await setupTest();
 
   PrefUtils.setPref("pref.one", "default-value", { branch: DEFAULT });
   PrefUtils.setPref("pref.two", "default-value", { branch: DEFAULT });
 
-  const doCleanup = await ExperimentFakes.enrollWithFeatureConfig(
+  const cleanupExperiment = await ExperimentFakes.enrollWithFeatureConfig(
     {
       featureId: FEATURE_ID,
       value: {
@@ -2575,11 +2629,8 @@ add_task(async function test_prefFlips_update_failure() {
   Services.prefs.deleteBranch("pref.one");
   Services.prefs.deleteBranch("pref.two");
 
-  doCleanup();
-  assertEmptyStore(manager.store);
-  assertNoObservers(manager);
-
-  sandbox.restore();
+  cleanupExperiment();
+  cleanup();
 });
 
 // Test the case where an experiment sets a default branch pref, but the user
@@ -2630,27 +2681,18 @@ add_task(async function test_prefFlips_restore_failure() {
           [PREF]: "original-value",
         },
       },
+      lastSeen: new Date().toJSON(),
     };
 
     const store = ExperimentFakes.store();
     await store.init();
-    await store.ready();
     store.set(prevEnrollment.slug, prevEnrollment);
-    store._store.saveSoon();
-    await store._store.finalize();
-
-    storePath = store._store.path;
+    storePath = await NimbusTestUtils.saveStore(store);
   }
 
   Services.prefs.setIntPref(PREF, 123);
 
-  const sandbox = sinon.createSandbox();
-  const store = ExperimentFakes.store(storePath);
-  const manager = ExperimentFakes.manager(store);
-
-  sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
-
-  await manager.onStartup();
+  const { manager, cleanup } = await setupTest({ storePath });
 
   const enrollment = manager.store.get(recipe.slug);
 
@@ -2663,18 +2705,13 @@ add_task(async function test_prefFlips_restore_failure() {
   );
   Assert.equal(Services.prefs.getIntPref(PREF), 123, "pref value unchanged");
 
-  assertEmptyStore(manager.store);
-  assertNoObservers(manager);
-
   Services.prefs.deleteBranch(PREF);
+  cleanup();
 });
 
 add_task(
   async function test_prefFlips_reenroll_set_default_branch_wrong_type() {
     const PREF = "test.pref.please.ignore";
-
-    const sandbox = sinon.createSandbox();
-    const manager = ExperimentFakes.manager();
 
     const recipe = ExperimentFakes.recipe("invalid", {
       isRollout: true,
@@ -2699,11 +2736,10 @@ add_task(
       ],
     });
 
-    sandbox.stub(ExperimentAPI, "_manager").get(() => manager);
+    const { manager, cleanup } = await setupTest();
 
     PrefUtils.setPref(PREF, "default-value", { branch: DEFAULT });
 
-    await manager.onStartup();
     await manager.enroll(recipe, "rs-loader");
 
     let enrollment = manager.store.get(recipe.slug);
@@ -2717,11 +2753,8 @@ add_task(
     Assert.ok(!enrollment.active, "enrollment should not be active");
     Assert.equal(enrollment.unenrollReason, "prefFlips-failed");
 
-    assertEmptyStore(manager.store);
-    assertNoObservers(manager);
-
     Services.prefs.deleteBranch(PREF);
 
-    sandbox.restore();
+    cleanup();
   }
 );

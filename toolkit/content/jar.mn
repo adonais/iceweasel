@@ -5,8 +5,11 @@ toolkit.jar:
    content/global/autocomplete.css
    content/global/aboutAbout.js
    content/global/aboutAbout.html
-   content/global/aboutLogging.js
-   content/global/aboutLogging.html
+   content/global/aboutLogging/aboutLogging.html (aboutLogging/aboutLogging.html)
+   content/global/aboutLogging/aboutLogging.css (aboutLogging/aboutLogging.css)
+   content/global/aboutLogging/aboutLogging.mjs (aboutLogging/aboutLogging.mjs)
+   content/global/aboutLogging/jwt.mjs (aboutLogging/jwt.mjs)
+   content/global/aboutLogging/profileSaveUploadLogic.mjs (aboutLogging/profileSaveUploadLogic.mjs)
    content/global/aboutNetError.mjs
    content/global/aboutNetError.html
    content/global/aboutNetErrorHelpers.mjs
@@ -89,6 +92,8 @@ toolkit.jar:
    content/global/elements/moz-box-common.css    (widgets/moz-box-common.css)
    content/global/elements/moz-box-button.css    (widgets/moz-box-button/moz-box-button.css)
    content/global/elements/moz-box-button.mjs    (widgets/moz-box-button/moz-box-button.mjs)
+   content/global/elements/moz-box-group.css    (widgets/moz-box-group/moz-box-group.css)
+   content/global/elements/moz-box-group.mjs    (widgets/moz-box-group/moz-box-group.mjs)
    content/global/elements/moz-box-item.css    (widgets/moz-box-item/moz-box-item.css)
    content/global/elements/moz-box-item.mjs    (widgets/moz-box-item/moz-box-item.mjs)
    content/global/elements/moz-box-link.css    (widgets/moz-box-link/moz-box-link.css)

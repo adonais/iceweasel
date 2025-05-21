@@ -5,26 +5,115 @@ import React, { useRef, useEffect, useCallback, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { actionTypes as at, actionCreators as ac } from "common/Actions.mjs";
 
-export const ReportContent = () => {
+export const ReportContent = spocs => {
   const dispatch = useDispatch();
   const modal = useRef(null);
   const radioGroupRef = useRef(null);
   const submitButtonRef = useRef(null);
   const report = useSelector(state => state.DiscoveryStream.report);
   const [valueSelected, setValueSelected] = useState(false);
+  const [selectedReason, setSelectedReason] = useState(null);
+  const spocData = spocs.spocs.data;
 
   // Sends a dispatch to update the redux store when modal is cancelled
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     dispatch(
-      ac.BroadcastToContent({
+      ac.AlsoToMain({
         type: at.REPORT_CLOSE,
       })
     );
-  }, [dispatch]);
+  };
 
-  const handleSubmit = useCallback(e => {
-    e.preventDefault();
-  }, []);
+  const handleSubmit = useCallback(() => {
+    const {
+      card_type,
+      corpus_item_id,
+      is_section_followed,
+      position,
+      received_rank,
+      recommended_at,
+      reporting_url,
+      scheduled_corpus_item_id,
+      section_position,
+      section,
+      title,
+      topic,
+      url,
+    } = report;
+
+    if (card_type === "organic") {
+      dispatch(
+        ac.AlsoToMain({
+          type: at.REPORT_CONTENT_SUBMIT,
+          data: {
+            card_type,
+            corpus_item_id,
+            is_section_followed,
+            received_rank,
+            recommended_at,
+            report_reason: selectedReason,
+            scheduled_corpus_item_id,
+            section_position,
+            section,
+            title,
+            topic,
+            url,
+          },
+        })
+      );
+    } else if (card_type === "spoc") {
+      // Retrieve placement_id by comparing spocData with the ad that was reported
+      const getPlacementId = () => {
+        if (!spocData || !report.url) {
+          return null;
+        }
+
+        for (const [placementId, spocList] of Object.entries(spocData)) {
+          for (const spoc of Object.values(spocList)) {
+            if (spoc?.url === report.url) {
+              return placementId;
+            }
+          }
+        }
+        return null;
+      };
+
+      const placement_id = getPlacementId();
+
+      dispatch(
+        ac.AlsoToMain({
+          type: at.REPORT_AD_SUBMIT,
+          data: {
+            report_reason: selectedReason,
+            placement_id,
+            position,
+            reporting_url,
+            url,
+          },
+        })
+      );
+    }
+
+    dispatch(
+      ac.AlsoToMain({
+        type: at.BLOCK_URL,
+        data: [{ ...report }],
+      })
+    );
+
+    dispatch(
+      ac.OnlyToOneContent(
+        {
+          type: at.SHOW_TOAST_MESSAGE,
+          data: {
+            toastId: "reportSuccessToast",
+            showNotifications: true,
+          },
+        },
+        "ActivityStream:Content"
+      )
+    );
+  }, [dispatch, selectedReason, report, spocData]);
 
   // Opens and closes the modal based on user interaction
   useEffect(() => {
@@ -40,7 +129,14 @@ export const ReportContent = () => {
     const radioGroup = radioGroupRef.current;
     const submitButton = submitButtonRef.current;
 
-    const handleRadioChange = () => setValueSelected(true);
+    const handleRadioChange = e => {
+      const reasonValue = e?.target?.value;
+
+      if (reasonValue) {
+        setValueSelected(true);
+        setSelectedReason(reasonValue);
+      }
+    };
 
     if (radioGroup) {
       radioGroup.addEventListener("change", handleRadioChange);
@@ -62,7 +158,7 @@ export const ReportContent = () => {
         radioGroup.removeEventListener("change", handleRadioChange);
       }
     };
-  }, [valueSelected]);
+  }, [valueSelected, selectedReason]);
 
   return (
     <dialog
@@ -72,30 +168,65 @@ export const ReportContent = () => {
       onClose={() => dispatch({ type: at.REPORT_CLOSE })}
     >
       <form action="">
-        <moz-radio-group
-          name="report"
-          ref={radioGroupRef}
-          id="report-group"
-          data-l10n-id="newtab-report-ads-why-reporting"
-        >
-          <moz-radio
-            value="unsafe"
-            data-l10n-id="newtab-report-ads-reason-unsafe"
-          ></moz-radio>
-          <moz-radio
-            data-l10n-id="newtab-report-ads-reason-inappropriate"
-            value="inappropriate"
-          ></moz-radio>
-          <moz-radio
-            data-l10n-id="newtab-report-ads-reason-seen-it-too-many-times"
-            value="too-many"
-          ></moz-radio>
-        </moz-radio-group>
+        {/* spocs and stories are going to have different reporting
+          options, so placed a conditional to render the different reasons */}
+        {report.card_type === "spoc" ? (
+          <>
+            <moz-radio-group
+              name="report"
+              ref={radioGroupRef}
+              id="report-group"
+              data-l10n-id="newtab-report-ads-why-reporting"
+              className="report-ads-options"
+            >
+              <moz-radio
+                data-l10n-id="newtab-report-ads-reason-not-interested"
+                value="not_interested"
+              ></moz-radio>
+              <moz-radio
+                data-l10n-id="newtab-report-ads-reason-inappropriate"
+                value="inappropriate"
+              ></moz-radio>
+              <moz-radio
+                data-l10n-id="newtab-report-ads-reason-seen-it-too-many-times"
+                value="seen_too_many_times"
+              ></moz-radio>
+            </moz-radio-group>
+          </>
+        ) : (
+          <>
+            <moz-radio-group
+              name="report"
+              ref={radioGroupRef}
+              id="report-group"
+              data-l10n-id="newtab-report-content-why-reporting-this"
+              className="report-content-options"
+            >
+              <moz-radio
+                data-l10n-id="newtab-report-content-wrong-category"
+                value="wrong_category"
+              ></moz-radio>
+              <moz-radio
+                data-l10n-id="newtab-report-content-outdated"
+                value="outdated"
+              ></moz-radio>
+              <moz-radio
+                data-l10n-id="newtab-report-content-inappropriate-offensive"
+                value="inappropriate_or_offensive"
+              ></moz-radio>
+              <moz-radio
+                data-l10n-id="newtab-report-content-spam-misleading"
+                value="spam_or_misleading"
+              ></moz-radio>
+            </moz-radio-group>
+          </>
+        )}
 
         <moz-button-group>
           <moz-button
-            data-l10n-id="newtab-topic-selection-cancel-button"
+            data-l10n-id="newtab-report-cancel"
             onClick={handleCancel}
+            className="cancel-report-btn"
           ></moz-button>
 
           <moz-button
@@ -103,6 +234,7 @@ export const ReportContent = () => {
             data-l10n-id="newtab-report-submit"
             ref={submitButtonRef}
             onClick={handleSubmit}
+            className="submit-report-btn"
           ></moz-button>
         </moz-button-group>
       </form>

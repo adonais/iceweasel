@@ -756,8 +756,8 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
 
  protected:
   webrtc::test::ScopedKeyValueConfig field_trials;
-  UniqueRandomIdGenerator ssrc_generator1;
-  UniqueRandomIdGenerator ssrc_generator2;
+  rtc::UniqueRandomIdGenerator ssrc_generator1;
+  rtc::UniqueRandomIdGenerator ssrc_generator2;
   TransportDescriptionFactory tdf1_;
   TransportDescriptionFactory tdf2_;
   webrtc::FakePayloadTypeSuggester pt_suggester_1_;
@@ -966,9 +966,9 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAnswerWithCustomCodecs) {
 // RTP paylod type. The test verifies that the offer don't contain the
 // duplicate RTP payload types.
 TEST_F(MediaSessionDescriptionFactoryTest, TestBundleOfferWithSameCodecPlType) {
-  const Codec& offered_video_codec =
+  Codec offered_video_codec =
       f2_.CodecVendorForTesting()->video_sendrecv_codecs()[0];
-  const Codec& offered_audio_codec =
+  Codec offered_audio_codec =
       f2_.CodecVendorForTesting()->audio_sendrecv_codecs()[0];
   ASSERT_EQ(offered_video_codec.id, offered_audio_codec.id);
 
@@ -4617,8 +4617,8 @@ class MediaProtocolTest : public testing::TestWithParam<const char*> {
   webrtc::FakePayloadTypeSuggester pt_suggester_2_;
   MediaSessionDescriptionFactory f1_;
   MediaSessionDescriptionFactory f2_;
-  UniqueRandomIdGenerator ssrc_generator1;
-  UniqueRandomIdGenerator ssrc_generator2;
+  rtc::UniqueRandomIdGenerator ssrc_generator1;
+  rtc::UniqueRandomIdGenerator ssrc_generator2;
 };
 
 TEST_P(MediaProtocolTest, TestAudioVideoAcceptance) {
@@ -4673,7 +4673,7 @@ void TestAudioCodecsOffer(RtpTransceiverDirection direction) {
   tdf.set_certificate(rtc::RTCCertificate::Create(
       std::unique_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id"))));
 
-  UniqueRandomIdGenerator ssrc_generator;
+  rtc::UniqueRandomIdGenerator ssrc_generator;
   webrtc::FakePayloadTypeSuggester pt_suggester;
   MediaSessionDescriptionFactory sf(nullptr, false, &ssrc_generator, &tdf,
                                     &pt_suggester);
@@ -4780,7 +4780,7 @@ void TestAudioCodecsAnswer(RtpTransceiverDirection offer_direction,
   answer_tdf.set_certificate(
       rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
           new rtc::FakeSSLIdentity("answer_id"))));
-  UniqueRandomIdGenerator ssrc_generator1, ssrc_generator2;
+  rtc::UniqueRandomIdGenerator ssrc_generator1, ssrc_generator2;
   webrtc::FakePayloadTypeSuggester offer_pt_suggester;
   MediaSessionDescriptionFactory offer_factory(nullptr, false, &ssrc_generator1,
                                                &offer_tdf, &offer_pt_suggester);
@@ -4963,8 +4963,8 @@ class VideoCodecsOfferH265LevelIdTest : public testing::Test {
   webrtc::test::ScopedKeyValueConfig field_trials_;
   TransportDescriptionFactory tdf_offerer_;
   TransportDescriptionFactory tdf_answerer_;
-  UniqueRandomIdGenerator ssrc_generator_offerer_;
-  UniqueRandomIdGenerator ssrc_generator_answerer_;
+  rtc::UniqueRandomIdGenerator ssrc_generator_offerer_;
+  rtc::UniqueRandomIdGenerator ssrc_generator_answerer_;
   MediaSessionDescriptionFactory sf_offerer_;
   MediaSessionDescriptionFactory sf_answerer_;
   webrtc::FakePayloadTypeSuggester pt_suggester_offerer_;

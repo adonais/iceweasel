@@ -27,6 +27,15 @@
   --arrowpanel-border-radius: 8px;
   --arrowpanel-padding: 16px;
   --arrowpanel-shadow-margin: 4px;
+
+  --arrowpanel-menuitem-border-radius: 4px;
+  --arrowpanel-menuitem-margin-block: 0px;
+  --arrowpanel-menuitem-margin-inline: 8px;
+  --arrowpanel-menuitem-margin: var(--arrowpanel-menuitem-margin-block) var(--arrowpanel-menuitem-margin-inline);
+  --arrowpanel-menuitem-padding-block: 8px;
+  --arrowpanel-menuitem-padding-inline: 8px;
+  --arrowpanel-menuitem-padding: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline);
+
   @media (-moz-platform: macos) {
     /* On macOS we use native shadows via -moz-window-shadow */
     --arrowpanel-shadow-margin: 0px;
@@ -136,6 +145,9 @@
   --panel-border-radius: var(--arrowpanel-border-radius);
   --panel-padding: var(--arrowpanel-padding);
   --panel-shadow-margin: var(--arrowpanel-shadow-margin);
+  --menuitem-border-radius: var(--arrowpanel-menuitem-border-radius);
+  --menuitem-padding: var(--arrowpanel-menuitem-padding);
+  --menuitem-margin: var(--arrowpanel-menuitem-margin);
 }
 
 /* Lightweight theme roots */
@@ -300,6 +312,15 @@ a,
   cursor: pointer;
   text-decoration: underline;
 
+  &:hover {
+    color: var(--link-color-hover);
+  }
+
+  &:hover:active {
+    color: var(--link-color-active);
+    text-decoration: none;
+  }
+
   &:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--link-focus-outline-offset);
@@ -370,7 +391,8 @@ button.text-link .button-text {
       color: var(--button-text-color-hover);
       background-color: var(--button-background-color-hover);
     }
-    &:hover:active {
+    &:hover:active,
+    &[open] {
       color: var(--button-text-color-active);
       background-color: var(--button-background-color-active);
     }
@@ -378,12 +400,13 @@ button.text-link .button-text {
     &.primary {
       color: var(--button-text-color-primary);
       background-color: var(--color-accent-primary);
-
       &:hover {
         color: var(--button-text-color-primary-hover);
         background-color: var(--color-accent-primary-hover);
       }
-      &:hover:active {
+      &:hover:active,
+      &[open] {
+        color: var(--button-text-color-primary-active);
         background-color: var(--color-accent-primary-active);
       }
     }
@@ -460,7 +483,7 @@ button.text-link .button-text {
 }
 
 /* Indent options in optgroups */
-.contentSelectDropdown-ingroup .menu-iconic-text {
+.contentSelectDropdown-ingroup .menu-text {
   padding-inline-start: 2em;
 }
 

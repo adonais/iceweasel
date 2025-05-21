@@ -5,6 +5,7 @@
 package org.mozilla.fenix.downloads.listscreen.store
 
 import mozilla.components.lib.state.State
+import org.mozilla.fenix.Config
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState.Mode
 
 /**
@@ -13,19 +14,27 @@ import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState.Mode
  * @property items List of [FileItem] to display.
  * @property mode Current [Mode] of the Download screen.
  * @property pendingDeletionIds Set of [FileItem] IDs that are waiting to be deleted.
+ * @property isDeleteDialogVisible Flag indicating whether the delete confirmation dialog is currently visible.
+ * @property searchQuery The search query entered by the user. This is used to filter the list of items.
+ * @param isSearchFieldRequested Indicates whether the search field is requested to be shown.
+ * @param isSearchEnabled Feature flag for search functionality.
  * @param userSelectedContentTypeFilter The user selected [FileItem.ContentTypeFilter].
  */
 data class DownloadUIState(
     val items: List<FileItem>,
     val mode: Mode,
     val pendingDeletionIds: Set<String>,
+    val isDeleteDialogVisible: Boolean = false,
+    val searchQuery: String = "",
+    private val isSearchFieldRequested: Boolean = false,
+    private val isSearchEnabled: Boolean = Config.channel.isNightlyOrDebug,
     private val userSelectedContentTypeFilter: FileItem.ContentTypeFilter = FileItem.ContentTypeFilter.All,
 ) : State {
 
     /**
-     * The ungrouped list of items to display, excluding any items that are pending deletion.
+     * The ungrouped list of items, excluding any items that are pending deletion.
      */
-    val itemsNotPendingDeletion = items.filter { it.id !in pendingDeletionIds }
+    private val itemsNotPendingDeletion = items.filter { it.id !in pendingDeletionIds }
 
     /**
      * The content type filter that is actually used to filter the items. This overrides the user
@@ -44,11 +53,27 @@ data class DownloadUIState(
             }
         }
 
+    private val searchQueryPredicate: (FileItem) -> Boolean = {
+        if (isSearchEnabled) {
+            it.stringToMatchForSearchQuery.contains(searchQuery, ignoreCase = true)
+        } else {
+            true
+        }
+    }
+
+    /**
+     * The list of items to display grouped by the created time of the item.
+     * The ungrouped list of items to display, excluding any items that are pending deletion and
+     * that match the selected content type filter and the search query.
+     */
+    val itemsMatchingFilters = itemsNotPendingDeletion
+        .filter { selectedContentTypeFilter.predicate(it.contentType) }
+        .filter(searchQueryPredicate)
+
     /**
      * The list of items to display grouped by the created time of the item.
      */
-    val itemsToDisplay: List<DownloadListItem> = itemsNotPendingDeletion
-        .filter { download -> selectedContentTypeFilter.predicate(download.contentType) }
+    private val itemsToDisplay: List<DownloadListItem> = itemsMatchingFilters
         .groupBy { it.createdTime }
         .toSortedMap()
         .flatMap { (key, value) ->
@@ -74,10 +99,18 @@ data class DownloadUIState(
             emptyList()
         }
 
-    /**
-     * Whether or not the state is in normal mode.
-     */
-    val isNormalMode: Boolean = mode is Mode.Normal
+    val itemsState: ItemsState = when {
+        itemsToDisplay.isEmpty() && searchQuery.isNotEmpty() -> ItemsState.NoSearchResults
+        itemsToDisplay.isEmpty() -> ItemsState.NoItems
+        else -> ItemsState.Items(itemsToDisplay)
+    }
+
+    val isSearchFieldVisible: Boolean
+        get() = isSearchEnabled && isSearchFieldRequested && mode is Mode.Normal
+
+    val isSearchIconVisible: Boolean
+        get() = isSearchEnabled && itemsNotPendingDeletion.isNotEmpty() && !isSearchFieldVisible &&
+            mode is Mode.Normal
 
     /**
      * @see [DownloadUIState].
@@ -89,6 +122,28 @@ data class DownloadUIState(
             pendingDeletionIds = emptySet(),
             userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
         )
+    }
+
+    /**
+     * The state of the items to display in the Download screen.
+     */
+    sealed interface ItemsState {
+        /**
+         * The state when there are no files to display.
+         */
+        data object NoItems : ItemsState
+
+        /**
+         * The state when there are no results to display based on the search query.
+         */
+        data object NoSearchResults : ItemsState
+
+        /**
+         * The state when there are files to display.
+         */
+        data class Items(
+            val items: List<DownloadListItem>,
+        ) : ItemsState
     }
 
     /**

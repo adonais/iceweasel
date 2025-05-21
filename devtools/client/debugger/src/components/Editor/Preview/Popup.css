@@ -29,7 +29,7 @@
   }
 }
 
-/* Tooltip is used when previewing primitives */
+/* Tooltip is used when previewing primitives and exceptions */
 .tooltip .preview-popup {
   max-width: inherit;
   min-height: inherit;
@@ -48,6 +48,12 @@
     .objectBox {
       padding: 0 5px;
     }
+  }
+
+  &.exception-popup {
+    padding: 5px;
+    color: var(--theme-error-color);
+    background-color: var(--theme-error-background);
   }
 }
 
@@ -159,6 +165,18 @@
 .theme-dark .cm-s-mozilla .preview-token,
 .theme-dark .cm-s-mozilla .debug-expression.preview-token {
   color: #e7ebee;
+}
+
+/* Use a color other than yellow to highlight the hovered token on the paused line
+   as the paused line is already yellow */
+.paused-line .preview-token {
+  background-color: light-dark(rgba(202, 227, 255, 0.5), rgba(202, 227, 255, 0.3));
+}
+
+/* This rule only make sure the text remains readable when hovering a token on the paused line. */
+:root[forced-colors-active] .paused-line :is(.preview-token, .debug-expression.preview-token) {
+  color: inherit;
+  background-color: inherit;
 }
 
 .theme-dark .popover .preview-popup {

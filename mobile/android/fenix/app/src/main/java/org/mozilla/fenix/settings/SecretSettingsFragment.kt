@@ -14,11 +14,12 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import mozilla.appservices.remotesettings.RemoteSettingsConfig2
+import mozilla.appservices.remotesettings.RemoteSettingsServer
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.tabstrip.isTabStripEligible
 import org.mozilla.fenix.debugsettings.data.DefaultDebugSettingsRepository
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
@@ -64,6 +65,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_toolbar_show_navigation_toolbar).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().navigationToolbarEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_composable_toolbar).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = context.settings().shouldUseComposableToolbar
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -209,7 +216,38 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_remote_server_prod).apply {
             isVisible = true
             isChecked = context.settings().useProductionRemoteSettingsServer
-            onPreferenceChangeListener = SharedPreferenceUpdater()
+            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    val service =
+                        context.components.remoteSettingsService.value.remoteSettingsService
+                    service.updateConfig(
+                        RemoteSettingsConfig2(
+                            server = if (newValue as? Boolean == true) {
+                                RemoteSettingsServer.Prod
+                            } else {
+                                RemoteSettingsServer.Stage
+                            },
+                        ),
+                    )
+                    service.sync()
+                    return super.onPreferenceChange(preference, newValue)
+                }
+            }
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_use_remote_search_configuration).apply {
+            isVisible = true
+            isChecked = context.settings().useRemoteSearchConfiguration
+            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    if (newValue as? Boolean == true) {
+                        context.components.remoteSettingsSyncScheduler.registerForSync()
+                    } else {
+                        context.components.remoteSettingsSyncScheduler.unregisterForSync()
+                    }
+                    return super.onPreferenceChange(preference, newValue)
+                }
+            }
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_microsurvey_feature_enabled).apply {
@@ -227,12 +265,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                 context.getPreferenceKey(R.string.pref_key_persistent_debug_menu),
                 false,
             )
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_tab_strip).apply {
-            isVisible = Config.channel.isNightlyOrDebug && !context.isTabStripEligible()
-            isChecked = context.settings().tabStripEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }

@@ -266,6 +266,14 @@ audit-as-crates-io = false
 audit-as-crates-io = true
 notes = "Upstream project which we pin."
 
+[policy.wgpu-core-deps-apple]
+audit-as-crates-io = true
+notes = "Upstream project which we pin."
+
+[policy.wgpu-core-deps-windows-linux-android]
+audit-as-crates-io = true
+notes = "Upstream project which we pin."
+
 [policy.wgpu-hal]
 audit-as-crates-io = true
 notes = "Upstream project which we pin."
@@ -281,10 +289,6 @@ notes = "Local override of the crates.io crate that uses a non-vendored local co
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
 
-[[exemptions.ahash]]
-version = "0.7.6"
-criteria = "safe-to-deploy"
-
 [[exemptions.alsa]]
 version = "0.4.3"
 criteria = "safe-to-deploy"
@@ -295,14 +299,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.android_log-sys]]
 version = "0.2.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.askama_derive]]
-version = "0.11.2"
-criteria = "safe-to-deploy"
-
-[[exemptions.askama_escape]]
-version = "0.10.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.async-task]]
@@ -526,10 +522,6 @@ criteria = "safe-to-deploy"
 version = "0.10.3"
 criteria = "safe-to-deploy"
 
-[[exemptions.khronos-egl]]
-version = "4.1.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.khronos_api]]
 version = "3.1.0"
 criteria = "safe-to-deploy"
@@ -640,10 +632,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.quick-error]]
 version = "1.2.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.rand]]
-version = "0.8.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.remove_dir_all]]

@@ -158,12 +158,14 @@ static const char sIntPrefs[][45] = {
     "ui.touchDeviceSupportPresent",
     "ui.titlebarRadius",
     "ui.titlebarButtonSpacing",
+    "ui.tooltipRadius",
     "ui.dynamicRange",
     "ui.panelAnimations",
     "ui.hideCursorWhileTyping",
     "ui.gtkThemeFamily",
     "ui.fullKeyboardAccess",
     "ui.pointingDeviceKinds",
+    "ui.nativeMenubar",
 };
 
 static_assert(std::size(sIntPrefs) == size_t(LookAndFeel::IntID::End),

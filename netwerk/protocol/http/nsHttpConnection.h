@@ -263,6 +263,9 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   void MarkAsDontReuse();
 
+  virtual WebTransportSessionBase* GetWebTransportSession(
+      nsAHttpTransaction* aTransaction) override;
+
  private:
   // mTransaction only points to the HTTP Transaction callbacks if the
   // transaction is open, otherwise it is null.
@@ -285,6 +288,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   PRIntervalTime mIdleTimeout;  // value of keep-alive: timeout=
   PRIntervalTime mConsiderReusedAfterInterval{0};
   PRIntervalTime mConsiderReusedAfterEpoch{0};
+  TimeStamp mLastTRRResponseTime;   // Time of the last successful TRR response
   int64_t mCurrentBytesRead{0};     // data read per activation
   int64_t mMaxBytesRead{0};         // max read in 1 activation
   int64_t mTotalBytesRead{0};       // total data read

@@ -426,17 +426,6 @@ export class TranslationsParent extends JSWindowActorParent {
   resolveEngine = null;
 
   /**
-   * The cached URI spec where the panel was first ever shown, as determined by the
-   * browser.translations.panelShown pref.
-   *
-   * Holding on to this URI value allows us to show the introductory message in the panel
-   * when the panel opens, as long as the active panel is open on that particular URI.
-   *
-   * @type {string | null}
-   */
-  firstShowUriSpec = null;
-
-  /**
    * The TranslationsEngineParent instance which requests from this
    * TranslationsParent are being handled by.
    *
@@ -958,6 +947,7 @@ export class TranslationsParent extends JSWindowActorParent {
       case "https":
       case "http":
       case "file":
+      case "moz-extension":
         return false;
     }
     return true;
@@ -1002,7 +992,7 @@ export class TranslationsParent extends JSWindowActorParent {
 
   /**
    * The "Accept-Language" values that the localizer or user has indicated for
-   * the preferences for the web. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language
+   * the preferences for the web. https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept-Language
    *
    * Note that this preference always has English in the fallback chain, even if the
    * user doesn't actually speak English, and to other languages they potentially do
@@ -1075,6 +1065,15 @@ export class TranslationsParent extends JSWindowActorParent {
     ].reverse();
 
     return TranslationsParent.#mostRecentTargetLanguages;
+  }
+
+  /**
+   * Returns true if the active user has ever triggered a translation request, otherwise false.
+   *
+   * @returns {boolean}
+   */
+  static hasUserEverTranslated() {
+    return !!TranslationsParent.#getMostRecentTargetLanguages().length;
   }
 
   /**
@@ -1742,7 +1741,7 @@ export class TranslationsParent extends JSWindowActorParent {
     fallback = "code",
     languageDisplay = "standard",
   } = {}) {
-    return new Services.intl.DisplayNames(undefined, {
+    return new Services.intl.DisplayNames(Services.locale.appLocaleAsBCP47, {
       type: "language",
       languageDisplay,
       fallback,

@@ -23,10 +23,8 @@ import traceback
 from copy import deepcopy
 
 import mozversion
-import six
 from mozprofile import Profile
 from mozrunner import FennecEmulatorRunner, Runner
-from six import reraise
 
 from . import errors
 
@@ -35,7 +33,7 @@ if sys.platform.startswith("darwin"):
     from .processhandler import UNKNOWN_RETURNCODE, ProcessHandler
 
 
-class GeckoInstance(object):
+class GeckoInstance:
     required_prefs = {
         # Make sure Shield doesn't hit the network.
         "app.normandy.api_url": "",
@@ -234,7 +232,7 @@ class GeckoInstance(object):
             if path is None:
                 path = "gecko.log"
             elif os.path.isdir(path):
-                fname = "gecko-{}.log".format(time.time())
+                fname = f"gecko-{time.time()}.log"
                 path = os.path.join(path, fname)
 
             path = os.path.realpath(path)
@@ -274,10 +272,10 @@ class GeckoInstance(object):
             profile_path = profile
 
             # If a path to a profile is given then clone it
-            if isinstance(profile_path, six.string_types):
+            if isinstance(profile_path, str):
                 profile_args["path_from"] = profile_path
                 profile_args["path_to"] = tempfile.mkdtemp(
-                    suffix=".{}".format(profile_name or os.path.basename(profile_path)),
+                    suffix=f".{profile_name or os.path.basename(profile_path)}",
                     dir=self.workspace,
                 )
                 # The target must not exist yet
@@ -354,12 +352,10 @@ class GeckoInstance(object):
                 app = app_ids[app_id]
 
             instance_class = apps[app]
-        except (IOError, KeyError):
+        except (OSError, KeyError):
             exc, val, tb = sys.exc_info()
-            msg = 'Application "{0}" unknown (should be one of {1})'.format(
-                app, list(apps.keys())
-            )
-            reraise(NotImplementedError, NotImplementedError(msg), tb)
+            msg = f'Application "{app}" unknown (should be one of {list(apps.keys())})'
+            raise NotImplementedError(msg).with_traceback(tb)
 
         return instance_class(*args, **kwargs)
 
@@ -466,7 +462,7 @@ class GeckoInstance(object):
             # The new process handler is only supported on MacOS yet
             returncode = self.runner.process_handler.update_process(pid, timeout)
             if returncode not in [0, UNKNOWN_RETURNCODE]:
-                raise IOError(
+                raise OSError(
                     f"Old process inappropriately quit with exit code: {returncode}"
                 )
 
@@ -538,16 +534,14 @@ class FennecInstance(GeckoInstance):
             self.runner.start()
         except Exception:
             exc_cls, exc, tb = sys.exc_info()
-            reraise(
-                exc_cls,
-                exc_cls("Error possibly due to runner or device args: {}".format(exc)),
-                tb,
-            )
+            raise exc_cls(
+                f"Error possibly due to runner or device args: {exc}"
+            ).with_traceback(tb)
 
         # forward marionette port
         self.runner.device.device.forward(
-            local="tcp:{}".format(self.marionette_port),
-            remote="tcp:{}".format(self.marionette_port),
+            local=f"tcp:{self.marionette_port}",
+            remote=f"tcp:{self.marionette_port}",
         )
 
     def _get_runner_args(self):
@@ -588,9 +582,7 @@ class FennecInstance(GeckoInstance):
         super(FennecInstance, self).close(clean)
         if clean and self.runner and self.runner.device.connected:
             try:
-                self.runner.device.device.remove_forwards(
-                    "tcp:{}".format(self.marionette_port)
-                )
+                self.runner.device.device.remove_forwards(f"tcp:{self.marionette_port}")
                 self.unresponsive_count = 0
             except Exception:
                 self.unresponsive_count += 1
@@ -665,6 +657,13 @@ class DesktopInstance(GeckoInstance):
         "browser.urlbar.suggest.searches": False,
         # Don't warn when exiting the browser
         "browser.warnOnQuit": False,
+        # Disable the QoS manager on MacOS and the priority manager on all other
+        # platforms to not cause stalled processes in background tabs when the
+        # overall CPU load on the machine is high.
+        #
+        # TODO: Should be considered to get removed once bug 1960741 is fixed.
+        "threads.lower_mainthread_priority_in_background.enabled": False,
+        "dom.ipc.processPriorityManager.enabled": False,
         # Disable first-run welcome page
         "startup.homepage_welcome_url": "about:blank",
         "startup.homepage_welcome_url.additional": "",
@@ -697,7 +696,7 @@ class ThunderbirdInstance(GeckoInstance):
         self.required_prefs.update(thunderbird_prefs)
 
 
-class NullOutput(object):
+class NullOutput:
     def __call__(self, line):
         pass
 

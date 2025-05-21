@@ -1631,6 +1631,8 @@ impl Global {
         let device = &cmd_buf.device;
         let snatch_guard = &device.snatchable_lock.read();
 
+        let mut indirect_draw_validation_batcher = crate::indirect_validation::DrawBatcher::new();
+
         let (scope, pending_discard_init_fixups) = {
             device.check_is_valid().map_pass_err(pass_scope)?;
 
@@ -1639,6 +1641,8 @@ impl Global {
             let buffer_memory_init_actions = &mut cmd_buf_data.buffer_memory_init_actions;
             let texture_memory_actions = &mut cmd_buf_data.texture_memory_actions;
             let pending_query_resets = &mut cmd_buf_data.pending_query_resets;
+            let indirect_draw_validation_resources =
+                &mut cmd_buf_data.indirect_draw_validation_resources;
 
             // We automatically keep extending command buffers over time, and because
             // we want to insert a command buffer _before_ what we're about to record,
@@ -1819,6 +1823,9 @@ impl Global {
                         offset,
                         count,
                         indexed,
+
+                        vertex_or_index_limit: _,
+                        instance_limit: _,
                     } => {
                         let scope = PassErrorScope::Draw {
                             kind: if count != 1 {
@@ -1828,8 +1835,17 @@ impl Global {
                             },
                             indexed,
                         };
-                        multi_draw_indirect(&mut state, cmd_buf, buffer, offset, count, indexed)
-                            .map_pass_err(scope)?;
+                        multi_draw_indirect(
+                            &mut state,
+                            indirect_draw_validation_resources,
+                            &mut indirect_draw_validation_batcher,
+                            cmd_buf,
+                            buffer,
+                            offset,
+                            count,
+                            indexed,
+                        )
+                        .map_pass_err(scope)?;
                     }
                     ArcRenderCommand::MultiDrawIndirectCount {
                         buffer,
@@ -1939,7 +1955,14 @@ impl Global {
                     }
                     ArcRenderCommand::ExecuteBundle(bundle) => {
                         let scope = PassErrorScope::ExecuteBundle;
-                        execute_bundle(&mut state, cmd_buf, bundle).map_pass_err(scope)?;
+                        execute_bundle(
+                            &mut state,
+                            indirect_draw_validation_resources,
+                            &mut indirect_draw_validation_batcher,
+                            cmd_buf,
+                            bundle,
+                        )
+                        .map_pass_err(scope)?;
                     }
                 }
             }
@@ -1972,6 +1995,20 @@ impl Global {
             cmd_buf_data.pending_query_resets.reset_queries(transit);
 
             CommandBuffer::insert_barriers_from_scope(transit, tracker, &scope, snatch_guard);
+
+            if let Some(ref indirect_validation) = device.indirect_validation {
+                indirect_validation
+                    .draw
+                    .inject_validation_pass(
+                        device,
+                        snatch_guard,
+                        &mut cmd_buf_data.indirect_draw_validation_resources,
+                        &mut cmd_buf_data.temp_resources,
+                        transit,
+                        indirect_draw_validation_batcher,
+                    )
+                    .map_pass_err(pass_scope)?;
+            }
         }
 
         encoder.close_and_swap().map_pass_err(pass_scope)?;
@@ -2310,14 +2347,33 @@ fn set_viewport(
     depth_max: f32,
 ) -> Result<(), RenderPassErrorInner> {
     api_log!("RenderPass::set_viewport {rect:?}");
-    if rect.x < 0.0
-        || rect.y < 0.0
-        || rect.w <= 0.0
-        || rect.h <= 0.0
-        || rect.x + rect.w > state.info.extent.width as f32
-        || rect.y + rect.h > state.info.extent.height as f32
+
+    if rect.w < 0.0
+        || rect.h < 0.0
+        || rect.w > state.device.limits.max_texture_dimension_2d as f32
+        || rect.h > state.device.limits.max_texture_dimension_2d as f32
     {
-        return Err(RenderCommandError::InvalidViewportRect(rect, state.info.extent).into());
+        return Err(RenderCommandError::InvalidViewportRectSize {
+            w: rect.w,
+            h: rect.h,
+            max: state.device.limits.max_texture_dimension_2d,
+        }
+        .into());
+    }
+
+    let max_viewport_range = state.device.limits.max_texture_dimension_2d as f32 * 2.0;
+
+    if rect.x < -max_viewport_range
+        || rect.y < -max_viewport_range
+        || rect.x + rect.w > max_viewport_range - 1.0
+        || rect.y + rect.h > max_viewport_range - 1.0
+    {
+        return Err(RenderCommandError::InvalidViewportRectPosition {
+            rect,
+            min: -max_viewport_range,
+            max: max_viewport_range - 1.0,
+        }
+        .into());
     }
     if !(0.0..=1.0).contains(&depth_min) || !(0.0..=1.0).contains(&depth_max) {
         return Err(RenderCommandError::InvalidViewportDepth(depth_min, depth_max).into());
@@ -2371,7 +2427,9 @@ fn set_push_constant(
 fn set_scissor(state: &mut State, rect: Rect<u32>) -> Result<(), RenderPassErrorInner> {
     api_log!("RenderPass::set_scissor_rect {rect:?}");
 
-    if rect.x + rect.w > state.info.extent.width || rect.y + rect.h > state.info.extent.height {
+    if rect.x.saturating_add(rect.w) > state.info.extent.width
+        || rect.y.saturating_add(rect.h) > state.info.extent.height
+    {
         return Err(RenderCommandError::InvalidScissorRect(rect, state.info.extent).into());
     }
     let r = hal::Rect {
@@ -2457,6 +2515,8 @@ fn draw_indexed(
 
 fn multi_draw_indirect(
     state: &mut State,
+    indirect_draw_validation_resources: &mut crate::indirect_validation::DrawResources,
+    indirect_draw_validation_batcher: &mut crate::indirect_validation::DrawBatcher,
     cmd_buf: &Arc<CommandBuffer>,
     indirect_buffer: Arc<crate::resource::Buffer>,
     offset: u64,
@@ -2470,36 +2530,27 @@ fn multi_draw_indirect(
 
     state.is_ready(indexed)?;
 
-    let stride = match indexed {
-        false => size_of::<wgt::DrawIndirectArgs>(),
-        true => size_of::<wgt::DrawIndexedIndirectArgs>(),
-    };
-
     if count != 1 {
         state
             .device
             .require_features(wgt::Features::MULTI_DRAW_INDIRECT)?;
     }
+
     state
         .device
         .require_downlevel_flags(wgt::DownlevelFlags::INDIRECT_EXECUTION)?;
 
     indirect_buffer.same_device_as(cmd_buf.as_ref())?;
-
-    state
-        .info
-        .usage_scope
-        .buffers
-        .merge_single(&indirect_buffer, wgt::BufferUses::INDIRECT)?;
-
     indirect_buffer.check_usage(BufferUsages::INDIRECT)?;
-    let indirect_raw = indirect_buffer.try_raw(state.snatch_guard)?;
+    indirect_buffer.check_destroyed(state.snatch_guard)?;
 
     if offset % 4 != 0 {
         return Err(RenderPassErrorInner::UnalignedIndirectBufferOffset(offset));
     }
 
-    let end_offset = offset + stride as u64 * count as u64;
+    let stride = get_stride_of_indirect_args(indexed);
+
+    let end_offset = offset + stride * count as u64;
     if end_offset > indirect_buffer.size {
         return Err(RenderPassErrorInner::IndirectBufferOverrun {
             count,
@@ -2517,16 +2568,129 @@ fn multi_draw_indirect(
         ),
     );
 
-    match indexed {
-        false => unsafe {
-            state.raw_encoder.draw_indirect(indirect_raw, offset, count);
-        },
-        true => unsafe {
-            state
-                .raw_encoder
-                .draw_indexed_indirect(indirect_raw, offset, count);
-        },
+    fn draw(
+        raw_encoder: &mut dyn hal::DynCommandEncoder,
+        indexed: bool,
+        indirect_buffer: &dyn hal::DynBuffer,
+        offset: u64,
+        count: u32,
+    ) {
+        match indexed {
+            false => unsafe {
+                raw_encoder.draw_indirect(indirect_buffer, offset, count);
+            },
+            true => unsafe {
+                raw_encoder.draw_indexed_indirect(indirect_buffer, offset, count);
+            },
+        }
     }
+
+    if state.device.indirect_validation.is_some() {
+        state
+            .info
+            .usage_scope
+            .buffers
+            .merge_single(&indirect_buffer, wgt::BufferUses::STORAGE_READ_ONLY)?;
+
+        struct DrawData {
+            buffer_index: usize,
+            offset: u64,
+            count: u32,
+        }
+
+        struct DrawContext<'a> {
+            raw_encoder: &'a mut dyn hal::DynCommandEncoder,
+            device: &'a Device,
+
+            indirect_draw_validation_resources: &'a mut crate::indirect_validation::DrawResources,
+            indirect_draw_validation_batcher: &'a mut crate::indirect_validation::DrawBatcher,
+
+            indirect_buffer: Arc<crate::resource::Buffer>,
+            indexed: bool,
+            vertex_or_index_limit: u64,
+            instance_limit: u64,
+        }
+
+        impl<'a> DrawContext<'a> {
+            fn add(&mut self, offset: u64) -> Result<DrawData, DeviceError> {
+                let (dst_resource_index, dst_offset) = self.indirect_draw_validation_batcher.add(
+                    self.indirect_draw_validation_resources,
+                    self.device,
+                    &self.indirect_buffer,
+                    offset,
+                    self.indexed,
+                    self.vertex_or_index_limit,
+                    self.instance_limit,
+                )?;
+                Ok(DrawData {
+                    buffer_index: dst_resource_index,
+                    offset: dst_offset,
+                    count: 1,
+                })
+            }
+            fn draw(&mut self, draw_data: DrawData) {
+                let dst_buffer = self
+                    .indirect_draw_validation_resources
+                    .get_dst_buffer(draw_data.buffer_index);
+                draw(
+                    self.raw_encoder,
+                    self.indexed,
+                    dst_buffer,
+                    draw_data.offset,
+                    draw_data.count,
+                );
+            }
+        }
+
+        let mut draw_ctx = DrawContext {
+            raw_encoder: state.raw_encoder,
+            device: state.device,
+            indirect_draw_validation_resources,
+            indirect_draw_validation_batcher,
+            indirect_buffer,
+            indexed,
+            vertex_or_index_limit: if indexed {
+                state.index.limit
+            } else {
+                state.vertex.limits.vertex_limit
+            },
+            instance_limit: state.vertex.limits.instance_limit,
+        };
+
+        let mut current_draw_data = draw_ctx.add(offset)?;
+
+        for i in 1..count {
+            let draw_data = draw_ctx.add(offset + stride * i as u64)?;
+
+            if draw_data.buffer_index == current_draw_data.buffer_index {
+                debug_assert_eq!(
+                    draw_data.offset,
+                    current_draw_data.offset + stride * current_draw_data.count as u64
+                );
+                current_draw_data.count += 1;
+            } else {
+                draw_ctx.draw(current_draw_data);
+                current_draw_data = draw_data;
+            }
+        }
+
+        draw_ctx.draw(current_draw_data);
+    } else {
+        state
+            .info
+            .usage_scope
+            .buffers
+            .merge_single(&indirect_buffer, wgt::BufferUses::INDIRECT)?;
+
+        draw(
+            state.raw_encoder,
+            indexed,
+            indirect_buffer.try_raw(state.snatch_guard)?,
+            offset,
+            count,
+        );
+    };
+
     Ok(())
 }
 
@@ -2548,10 +2712,7 @@ fn multi_draw_indirect_count(
 
     state.is_ready(indexed)?;
 
-    let stride = match indexed {
-        false => size_of::<wgt::DrawIndirectArgs>(),
-        true => size_of::<wgt::DrawIndexedIndirectArgs>(),
-    } as u64;
+    let stride = get_stride_of_indirect_args(indexed);
 
     state
         .device
@@ -2725,6 +2886,8 @@ fn write_timestamp(
 
 fn execute_bundle(
     state: &mut State,
+    indirect_draw_validation_resources: &mut crate::indirect_validation::DrawResources,
+    indirect_draw_validation_batcher: &mut crate::indirect_validation::DrawBatcher,
     cmd_buf: &Arc<CommandBuffer>,
     bundle: Arc<super::RenderBundle>,
 ) -> Result<(), RenderPassErrorInner> {
@@ -2774,9 +2937,22 @@ fn execute_bundle(
             .extend(state.texture_memory_actions.register_init_action(action));
     }
 
-    unsafe { bundle.execute(state.raw_encoder, state.snatch_guard) }.map_err(|e| match e {
-        ExecutionError::DestroyedResource(e) => RenderCommandError::DestroyedResource(e),
-        ExecutionError::Unimplemented(what) => RenderCommandError::Unimplemented(what),
+    unsafe {
+        bundle.execute(
+            state.raw_encoder,
+            indirect_draw_validation_resources,
+            indirect_draw_validation_batcher,
+            state.snatch_guard,
+        )
+    }
+    .map_err(|e| match e {
+        ExecutionError::Device(e) => RenderPassErrorInner::Device(e),
+        ExecutionError::DestroyedResource(e) => {
+            RenderPassErrorInner::RenderCommand(RenderCommandError::DestroyedResource(e))
+        }
+        ExecutionError::Unimplemented(what) => {
+            RenderPassErrorInner::RenderCommand(RenderCommandError::Unimplemented(what))
+        }
     })?;
 
     unsafe {
@@ -3097,6 +3273,9 @@ impl Global {
             offset,
             count: 1,
             indexed: false,
+
+            vertex_or_index_limit: 0,
+            instance_limit: 0,
         });
 
         Ok(())
@@ -3119,6 +3298,9 @@ impl Global {
             offset,
             count: 1,
             indexed: true,
+
+            vertex_or_index_limit: 0,
+            instance_limit: 0,
         });
 
         Ok(())
@@ -3142,6 +3324,9 @@ impl Global {
             offset,
             count,
             indexed: false,
+
+            vertex_or_index_limit: 0,
+            instance_limit: 0,
         });
 
         Ok(())
@@ -3165,6 +3350,9 @@ impl Global {
             offset,
             count,
             indexed: true,
+
+            vertex_or_index_limit: 0,
+            instance_limit: 0,
         });
 
         Ok(())
@@ -3369,5 +3557,12 @@ impl Global {
         pass.current_bind_groups.reset();
 
         Ok(())
+    }
+}
+
+pub(crate) const fn get_stride_of_indirect_args(indexed: bool) -> u64 {
+    match indexed {
+        false => size_of::<wgt::DrawIndirectArgs>() as u64,
+        true => size_of::<wgt::DrawIndexedIndirectArgs>() as u64,
     }
 }

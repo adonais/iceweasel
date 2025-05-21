@@ -191,13 +191,13 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:
     case InlinableNative::IsRegExpObject:
+    case InlinableNative::IsOptimizableRegExpObject:
     case InlinableNative::IsPossiblyWrappedRegExpObject:
+    case InlinableNative::IsRegExpPrototypeOptimizable:
     case InlinableNative::RegExpMatcher:
     case InlinableNative::RegExpSearcher:
     case InlinableNative::RegExpSearcherLastLimit:
     case InlinableNative::RegExpHasCaptureGroups:
-    case InlinableNative::RegExpPrototypeOptimizable:
-    case InlinableNative::RegExpInstanceOptimizable:
     case InlinableNative::GetFirstDollarIndex:
     case InlinableNative::IntrinsicNewArrayIterator:
     case InlinableNative::IntrinsicNewStringIterator:
@@ -215,6 +215,7 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::IntrinsicIsObject:
     case InlinableNative::IntrinsicIsCrossRealmArrayConstructor:
     case InlinableNative::IntrinsicCanOptimizeArraySpecies:
+    case InlinableNative::IntrinsicCanOptimizeStringProtoSymbolLookup:
     case InlinableNative::IntrinsicToInteger:
     case InlinableNative::IntrinsicToLength:
     case InlinableNative::IntrinsicIsConstructing:
@@ -231,7 +232,6 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
 #ifdef NIGHTLY_BUILD
     case InlinableNative::IntrinsicGuardToIteratorRange:
 #endif
-    case InlinableNative::IntrinsicObjectHasPrototype:
     case InlinableNative::IntrinsicIsPackedArray:
     case InlinableNative::IntrinsicGuardToMapObject:
     case InlinableNative::IntrinsicGetNextMapEntryForIterator:

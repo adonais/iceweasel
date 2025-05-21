@@ -1,24 +1,18 @@
 "use strict";
 
-const { TelemetryEvents } = ChromeUtils.importESModule(
-  "resource://normandy/lib/TelemetryEvents.sys.mjs"
-);
 const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
 );
 const STUDIES_OPT_OUT_PREF = "app.shield.optoutstudies.enabled";
 const UPLOAD_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 
-/**
- * FOG requires a little setup in order to test it
- */
 add_setup(function test_setup() {
-  // FOG needs a profile directory to put its data in.
-  do_get_profile();
-
-  // FOG needs to be initialized in order for data to flow.
   Services.fog.initializeFOG();
 });
+
+function setupTest({ ...args } = {}) {
+  return NimbusTestUtils.setupTest({ ...args, clearTelemetry: true });
+}
 
 /**
  * Normal unenrollment for experiments:
@@ -27,40 +21,38 @@ add_setup(function test_setup() {
  * - send unrollment event
  */
 add_task(async function test_set_inactive() {
-  const manager = ExperimentFakes.manager();
+  const { manager, cleanup } = await setupTest();
 
-  await manager.onStartup();
   await manager.store.addEnrollment(ExperimentFakes.experiment("foo"));
-
-  manager.unenroll("foo", "some-reason");
+  manager.unenroll("foo");
 
   Assert.equal(
     manager.store.get("foo").active,
     false,
     "should set .active to false"
   );
+
+  cleanup();
 });
 
 add_task(async function test_unenroll_opt_out() {
-  const sandbox = sinon.createSandbox();
-  sandbox.spy(TelemetryEvents, "sendEvent");
-
   Services.prefs.setBoolPref(STUDIES_OPT_OUT_PREF, true);
-  const manager = ExperimentFakes.manager();
+
+  const { manager, cleanup } = await setupTest();
   const experiment = ExperimentFakes.experiment("foo");
-
-  // Clear any pre-existing data in Glean
-  Services.fog.testResetFOG();
-
-  await manager.onStartup();
   await manager.store.addEnrollment(experiment);
 
-  // Check that there aren't any Glean unenrollment events yet
-  var unenrollmentEvents =
-    Glean.nimbusEvents.unenrollment.testGetValue("events");
+  // Check that there aren't any Glean normandy unenrollNimbusExperiment events yet
   Assert.equal(
+    Glean.normandy.unenrollNimbusExperiment.testGetValue("events"),
     undefined,
-    unenrollmentEvents,
+    "no Glean normandy unenrollNimbusExperiment events before unenrollment"
+  );
+
+  // Check that there aren't any Glean unenrollment events yet
+  Assert.equal(
+    Glean.nimbusEvents.unenrollment.testGetValue("events"),
+    undefined,
     "no Glean unenrollment events before unenrollment"
   );
 
@@ -71,67 +63,55 @@ add_task(async function test_unenroll_opt_out() {
     false,
     "should set .active to false"
   );
-  Assert.ok(TelemetryEvents.sendEvent.calledOnce);
+
+  // We expect only one event and that that one event matches the expected enrolled experiment
   Assert.deepEqual(
-    TelemetryEvents.sendEvent.firstCall.args,
+    Glean.normandy.unenrollNimbusExperiment
+      .testGetValue("events")
+      .map(ev => ev.extra),
     [
-      "unenroll",
-      "nimbus_experiment",
-      experiment.slug,
       {
-        reason: "studies-opt-out",
+        value: experiment.slug,
         branch: experiment.branch.slug,
+        reason: "studies-opt-out",
       },
-    ],
-    "should send an unenrollment ping with the slug, reason, and branch slug"
+    ]
   );
 
-  // Check that the Glean unenrollment event was recorded.
-  unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
-  // We expect only one event
-  Assert.equal(1, unenrollmentEvents.length);
-  // And that one event matches the expected enrolled experiment
-  Assert.equal(
-    experiment.slug,
-    unenrollmentEvents[0].extra.experiment,
-    "Glean.nimbusEvents.unenrollment recorded with correct experiment slug"
-  );
-  Assert.equal(
-    experiment.branch.slug,
-    unenrollmentEvents[0].extra.branch,
-    "Glean.nimbusEvents.unenrollment recorded with correct branch slug"
-  );
-  Assert.equal(
-    "studies-opt-out",
-    unenrollmentEvents[0].extra.reason,
-    "Glean.nimbusEvents.unenrollment recorded with correct reason"
+  // We expect only one event and that that one event matches the expected enrolled experiment
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events").map(ev => ev.extra),
+    [
+      {
+        experiment: experiment.slug,
+        branch: experiment.branch.slug,
+        reason: "studies-opt-out",
+      },
+    ]
   );
 
-  // reset pref
+  cleanup();
   Services.prefs.clearUserPref(STUDIES_OPT_OUT_PREF);
-  sandbox.restore();
 });
 
 add_task(async function test_unenroll_rollout_opt_out() {
-  const sandbox = sinon.createSandbox();
-  sandbox.spy(TelemetryEvents, "sendEvent");
-
   Services.prefs.setBoolPref(STUDIES_OPT_OUT_PREF, true);
-  const manager = ExperimentFakes.manager();
+
+  const { manager, cleanup } = await setupTest();
   const rollout = ExperimentFakes.rollout("foo");
+  manager.store.addEnrollment(rollout);
 
-  // Clear any pre-existing data in Glean
-  Services.fog.testResetFOG();
-
-  await manager.onStartup();
-  await manager.store.addEnrollment(rollout);
+  // Check that there aren't any Glean normandy unenrollNimbusExperiment events yet
+  Assert.equal(
+    Glean.normandy.unenrollNimbusExperiment.testGetValue("events"),
+    undefined,
+    "no Glean normandy unenrollNimbusExperiment events before unenrollment"
+  );
 
   // Check that there aren't any Glean unenrollment events yet
-  var unenrollmentEvents =
-    Glean.nimbusEvents.unenrollment.testGetValue("events");
   Assert.equal(
+    Glean.nimbusEvents.unenrollment.testGetValue("events"),
     undefined,
-    unenrollmentEvents,
     "no Glean unenrollment events before unenrollment"
   );
 
@@ -142,49 +122,39 @@ add_task(async function test_unenroll_rollout_opt_out() {
     false,
     "should set .active to false"
   );
-  Assert.ok(TelemetryEvents.sendEvent.calledOnce);
+
+  // We expect only one event and that that one event matches the expected enrolled experiment
   Assert.deepEqual(
-    TelemetryEvents.sendEvent.firstCall.args,
+    Glean.normandy.unenrollNimbusExperiment
+      .testGetValue("events")
+      .map(ev => ev.extra),
     [
-      "unenroll",
-      "nimbus_experiment",
-      rollout.slug,
       {
-        reason: "studies-opt-out",
+        value: rollout.slug,
         branch: rollout.branch.slug,
+        reason: "studies-opt-out",
       },
-    ],
-    "should send an unenrollment ping with the slug, reason, and branch slug"
+    ]
   );
 
-  // Check that the Glean unenrollment event was recorded.
-  unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
-  // We expect only one event
-  Assert.equal(1, unenrollmentEvents.length);
-  // And that one event matches the expected enrolled experiment
-  Assert.equal(
-    rollout.slug,
-    unenrollmentEvents[0].extra.experiment,
-    "Glean.nimbusEvents.unenrollment recorded with correct rollout slug"
-  );
-  Assert.equal(
-    rollout.branch.slug,
-    unenrollmentEvents[0].extra.branch,
-    "Glean.nimbusEvents.unenrollment recorded with correct branch slug"
-  );
-  Assert.equal(
-    "studies-opt-out",
-    unenrollmentEvents[0].extra.reason,
-    "Glean.nimbusEvents.unenrollment recorded with correct reason"
+  // We expect only one event and that that one event matches the expected enrolled experiment
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events").map(ev => ev.extra),
+    [
+      {
+        experiment: rollout.slug,
+        branch: rollout.branch.slug,
+        reason: "studies-opt-out",
+      },
+    ]
   );
 
-  // reset pref
+  cleanup();
   Services.prefs.clearUserPref(STUDIES_OPT_OUT_PREF);
-  sandbox.restore();
 });
 
 add_task(async function test_unenroll_uploadPref() {
-  const manager = ExperimentFakes.manager();
+  const { manager, cleanup } = await setupTest();
   const recipe = ExperimentFakes.recipe("foo");
 
   await manager.onStartup();
@@ -203,14 +173,15 @@ add_task(async function test_unenroll_uploadPref() {
     false,
     "Should set .active to false"
   );
+
+  cleanup();
   Services.prefs.clearUserPref(UPLOAD_ENABLED_PREF);
 });
 
 add_task(async function test_setExperimentInactive_called() {
-  const sandbox = sinon.createSandbox();
+  const { sandbox, manager, cleanup } = await setupTest();
   sandbox.spy(TelemetryEnvironment, "setExperimentInactive");
 
-  const manager = ExperimentFakes.manager();
   const experiment = ExperimentFakes.recipe("foo", {
     bucketConfig: {
       ...ExperimentFakes.recipe.bucketConfig,
@@ -218,10 +189,6 @@ add_task(async function test_setExperimentInactive_called() {
     },
   });
 
-  // Clear any pre-existing data in Glean
-  Services.fog.testResetFOG();
-
-  await manager.onStartup();
   await manager.enroll(experiment);
 
   // Test Glean experiment API interaction
@@ -231,7 +198,7 @@ add_task(async function test_setExperimentInactive_called() {
     "experiment should be active before unenroll"
   );
 
-  manager.unenroll("foo", "some-reason");
+  manager.unenroll("foo");
 
   Assert.ok(
     TelemetryEnvironment.setExperimentInactive.calledWith("foo"),
@@ -245,111 +212,85 @@ add_task(async function test_setExperimentInactive_called() {
     "experiment should be inactive after unenroll"
   );
 
-  sandbox.restore();
+  cleanup();
 });
 
 add_task(async function test_send_unenroll_event() {
-  const sandbox = sinon.createSandbox();
-  sandbox.spy(TelemetryEvents, "sendEvent");
-
-  const manager = ExperimentFakes.manager();
+  const { manager, cleanup } = await setupTest();
   const experiment = ExperimentFakes.experiment("foo");
 
-  // Clear any pre-existing data in Glean
-  Services.fog.testResetFOG();
+  manager.store.addEnrollment(experiment);
 
-  await manager.onStartup();
-  await manager.store.addEnrollment(experiment);
+  // Check that there aren't any Glean normandy unenrollNimbusExperiment events yet
+  Assert.equal(
+    Glean.normandy.unenrollNimbusExperiment.testGetValue("events"),
+    undefined,
+    "no Glean normandy unenrollNimbusExperiment events before unenrollment"
+  );
 
   // Check that there aren't any Glean unenrollment events yet
-  var unenrollmentEvents =
-    Glean.nimbusEvents.unenrollment.testGetValue("events");
   Assert.equal(
+    Glean.nimbusEvents.unenrollment.testGetValue("events"),
     undefined,
-    unenrollmentEvents,
     "no Glean unenrollment events before unenrollment"
   );
 
-  manager.unenroll("foo", "some-reason");
+  manager.unenroll("foo", { reason: "some-reason" });
 
-  Assert.ok(TelemetryEvents.sendEvent.calledOnce);
+  // We expect only one event and that that one event matches the expected enrolled experiment
   Assert.deepEqual(
-    TelemetryEvents.sendEvent.firstCall.args,
+    Glean.normandy.unenrollNimbusExperiment
+      .testGetValue("events")
+      .map(ev => ev.extra),
     [
-      "unenroll",
-      "nimbus_experiment",
-      "foo", // slug
       {
-        reason: "some-reason",
+        value: experiment.slug,
         branch: experiment.branch.slug,
+        reason: "some-reason",
       },
-    ],
-    "should send an unenrollment ping with the slug, reason, and branch slug"
+    ]
   );
 
-  // Check that the Glean unenrollment event was recorded.
-  unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
-  // We expect only one event
-  Assert.equal(1, unenrollmentEvents.length);
-  // And that one event matches the expected enrolled experiment
-  Assert.equal(
-    experiment.slug,
-    unenrollmentEvents[0].extra.experiment,
-    "Glean.nimbusEvents.unenrollment recorded with correct experiment slug"
-  );
-  Assert.equal(
-    experiment.branch.slug,
-    unenrollmentEvents[0].extra.branch,
-    "Glean.nimbusEvents.unenrollment recorded with correct branch slug"
-  );
-  Assert.equal(
-    "some-reason",
-    unenrollmentEvents[0].extra.reason,
-    "Glean.nimbusEvents.unenrollment recorded with correct reason"
+  // We expect only one event and that that one event matches the expected enrolled experiment
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events").map(ev => ev.extra),
+    [
+      {
+        experiment: experiment.slug,
+        branch: experiment.branch.slug,
+        reason: "some-reason",
+      },
+    ]
   );
 
-  sandbox.restore();
+  cleanup();
 });
 
 add_task(async function test_undefined_reason() {
-  const sandbox = sinon.createSandbox();
-  sandbox.spy(TelemetryEvents, "sendEvent");
-
-  const manager = ExperimentFakes.manager();
+  const { manager, cleanup } = await setupTest();
   const experiment = ExperimentFakes.experiment("foo");
 
-  // Clear any pre-existing data in Glean
-  Services.fog.testResetFOG();
-
-  await manager.onStartup();
-  await manager.store.addEnrollment(experiment);
+  manager.store.addEnrollment(experiment);
 
   manager.unenroll("foo");
 
-  const options = TelemetryEvents.sendEvent.firstCall?.args[3];
-  Assert.ok(
-    "reason" in options,
-    "options object with .reason should be the fourth param"
-  );
-  Assert.equal(
-    options.reason,
-    "unknown",
-    "should include unknown as the reason if none was supplied"
+  // We expect only one event and that that one event reason matches the expected reason
+  Assert.deepEqual(
+    Glean.normandy.unenrollNimbusExperiment
+      .testGetValue("events")
+      .map(ev => ev.extra.reason),
+    ["unknown"]
   );
 
-  // Check that the Glean unenrollment event was recorded.
-  let unenrollmentEvents =
-    Glean.nimbusEvents.unenrollment.testGetValue("events");
-  // We expect only one event
-  Assert.equal(1, unenrollmentEvents.length);
-  // And that one event reason matches the expected reason
-  Assert.equal(
-    "unknown",
-    unenrollmentEvents[0].extra.reason,
-    "Glean.nimbusEvents.unenrollment recorded with correct (unknown) reason"
+  // We expect only one event and that that one event reason matches the expected reason
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment
+      .testGetValue("events")
+      .map(ev => ev.extra.reason),
+    ["unknown"]
   );
 
-  sandbox.restore();
+  cleanup();
 });
 
 /**
@@ -360,20 +301,23 @@ add_task(async function test_undefined_reason() {
  */
 
 add_task(async function test_remove_rollouts() {
-  const store = ExperimentFakes.store();
-  const manager = ExperimentFakes.manager(store);
+  const { sandbox, manager, cleanup } = await setupTest();
+  sandbox.spy(manager.store, "updateExperiment");
   const rollout = ExperimentFakes.rollout("foo");
 
-  sinon.stub(store, "get").returns(rollout);
-  sinon.spy(store, "updateExperiment");
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe("foo", { isRollout: true })
+  );
+  Assert.ok(
+    manager.store.updateExperiment.notCalled,
+    "Should not have called updateExperiment when enrolling"
+  );
 
-  await manager.onStartup();
-
-  manager.unenroll("foo", "some-reason");
+  manager.unenroll("foo", { reason: "some-reason" });
 
   Assert.ok(
     manager.store.updateExperiment.calledOnce,
-    "Called to set the rollout as !active"
+    "Called to set the rollout as inactive"
   );
   Assert.ok(
     manager.store.updateExperiment.calledWith(rollout.slug, {
@@ -382,4 +326,109 @@ add_task(async function test_remove_rollouts() {
     }),
     "Called with expected parameters"
   );
+
+  cleanup();
+});
+
+add_task(async function test_unenroll_individualOptOut_statusTelemetry() {
+  const { manager, cleanup } = await setupTest();
+
+  await manager.enroll(
+    ExperimentFakes.recipe("foo", {
+      bucketConfig: {
+        ...ExperimentFakes.recipe.bucketConfig,
+        count: 1000,
+      },
+      branches: [ExperimentFakes.recipe.branches[0]],
+    })
+  );
+
+  Services.fog.applyServerKnobsConfig(
+    JSON.stringify({
+      metrics_enabled: {
+        "nimbus_events.enrollment_status": true,
+      },
+    })
+  );
+
+  manager.unenroll("foo", { reason: "individual-opt-out" });
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.enrollmentStatus
+      .testGetValue("events")
+      ?.map(ev => ev.extra),
+    [
+      {
+        slug: "foo",
+        branch: "control",
+        status: "Disqualified",
+        reason: "OptOut",
+      },
+    ]
+  );
+
+  cleanup();
+});
+
+add_task(async function testUnenrollBogusReason() {
+  const { manager, cleanup } = await setupTest();
+
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe("bogus", {
+      branches: [NimbusTestUtils.factories.recipe.branches[0]],
+    })
+  );
+
+  Assert.ok(manager.store.get("bogus").active, "Enrollment active");
+
+  Services.fog.applyServerKnobsConfig(
+    JSON.stringify({
+      metrics_enabled: {
+        "nimbus_events.enrollment_status": true,
+      },
+    })
+  );
+
+  manager.unenroll("bogus", "bogus");
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.enrollmentStatus
+      .testGetValue("events")
+      ?.map(ev => ev.extra),
+    [
+      {
+        slug: "bogus",
+        branch: "control",
+        status: "Disqualified",
+        reason: "Error",
+        error_string: "unknown",
+      },
+    ]
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events")?.map(ev => ev.extra),
+    [
+      {
+        experiment: "bogus",
+        branch: "control",
+        reason: "unknown",
+      },
+    ]
+  );
+
+  Assert.deepEqual(
+    Glean.normandy.unenrollNimbusExperiment
+      .testGetValue("events")
+      ?.map(ev => ev.extra),
+    [
+      {
+        value: "bogus",
+        branch: "control",
+        reason: "unknown",
+      },
+    ]
+  );
+
+  cleanup();
 });

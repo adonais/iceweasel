@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.distributions
 
-import io.mockk.every
-import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
@@ -34,12 +32,6 @@ class DistributionIdManagerTest {
         }
     }
 
-    private val subject = DistributionIdManager(
-        testContext,
-        testBrowserStoreProvider,
-        testDistributionProviderChecker,
-    )
-
     @After
     fun tearDown() {
         providerValue = null
@@ -50,49 +42,60 @@ class DistributionIdManagerTest {
 
     @Test
     fun `WHEN a device is made by vivo AND the vivo distribution file is found THEN the proper id is returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+            appPreinstalledOnVivoDevice = { true },
+        )
+
         // Mock Build.MANUFACTURER to simulate a Vivo device
         ShadowBuild.setManufacturer("vivo")
 
-        val distributionId = subject.getDistributionId(
-            appPreinstalledOnVivoDevice = { true },
-        )
+        val distributionId = subject.getDistributionId()
 
         assertEquals("vivo-001", distributionId)
     }
 
     @Test
     fun `WHEN a device is not made by vivo AND the vivo distribution file is found THEN the proper id is returned`() {
-        val distributionId = subject.getDistributionId(
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
             appPreinstalledOnVivoDevice = { true },
         )
+
+        val distributionId = subject.getDistributionId()
 
         assertEquals("Mozilla", distributionId)
     }
 
     @Test
     fun `WHEN a device is made by vivo AND the vivo distribution file is not found THEN the proper id is returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+            appPreinstalledOnVivoDevice = { false },
+        )
+
         // Mock Build.MANUFACTURER to simulate a Vivo device
         ShadowBuild.setManufacturer("vivo")
 
-        val distributionId = subject.getDistributionId(
-            appPreinstalledOnVivoDevice = { false },
-        )
+        val distributionId = subject.getDistributionId()
 
         assertEquals("Mozilla", distributionId)
     }
 
     @Test
-    fun `WHEN the config channel is mozilla online THEN the proper id is returned`() {
-        mockkObject(Config)
-        every { Config.channel.isMozillaOnline } returns true
-
-        val distributionId = subject.getDistributionId()
-
-        assertEquals("MozillaOnline", distributionId)
-    }
-
-    @Test
     fun `WHEN the device is not vivo AND the channel is not mozilla online THEN the proper id is returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+        )
+
         val distributionId = subject.getDistributionId()
 
         assertEquals("Mozilla", distributionId)
@@ -100,6 +103,12 @@ class DistributionIdManagerTest {
 
     @Test
     fun `WHEN the browser stores state already has a distribution Id assigned THEN that ID gets returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+        )
+
         storedId = "testId"
 
         val distributionId = subject.getDistributionId()
@@ -109,61 +118,155 @@ class DistributionIdManagerTest {
 
     @Test
     fun `WHEN the provider is digital_tubrine AND the DT app is installed THEN the proper ID is returned`() {
-        providerValue = "digital_turbine"
-        val distributionId = subject.getDistributionId(
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
             isDtTelefonicaInstalled = { true },
         )
+
+        providerValue = "digital_turbine"
+        val distributionId = subject.getDistributionId()
 
         assertEquals("dt-001", distributionId)
     }
 
     @Test
     fun `WHEN the provider is not digital_tubrine AND the DT app is installed THEN the proper ID is returned`() {
-        providerValue = "some_provider"
-        val distributionId = subject.getDistributionId(
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
             isDtTelefonicaInstalled = { true },
         )
 
-        assertEquals("Mozilla", distributionId)
-    }
-
-    @Test
-    fun `WHEN the provider is digital_tubrine AND the DT app is not installed THEN the proper ID is returned`() {
-        providerValue = "digital_turbine"
-        val distributionId = subject.getDistributionId(
-            isDtTelefonicaInstalled = { false },
-        )
+        providerValue = "some_provider"
+        val distributionId = subject.getDistributionId()
 
         assertEquals("Mozilla", distributionId)
     }
 
     @Test
     fun `WHEN the provider is not digital_tubrine AND the DT app is not installed THEN the proper ID is returned`() {
-        providerValue = "some_provider"
-        val distributionId = subject.getDistributionId(
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
             isDtTelefonicaInstalled = { false },
         )
+
+        providerValue = "some_provider"
+        val distributionId = subject.getDistributionId()
 
         assertEquals("Mozilla", distributionId)
     }
 
     @Test
     fun `WHEN the provider is null AND the DT app is installed THEN the proper ID is returned`() {
-        providerValue = null
-        val distributionId = subject.getDistributionId(
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
             isDtTelefonicaInstalled = { true },
         )
+
+        providerValue = null
+        val distributionId = subject.getDistributionId()
 
         assertEquals("Mozilla", distributionId)
     }
 
     @Test
     fun `WHEN the provider is null AND the DT app is not installed THEN the proper ID is returned`() {
-        providerValue = null
-        val distributionId = subject.getDistributionId(
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
             isDtTelefonicaInstalled = { false },
         )
 
+        providerValue = null
+        val distributionId = subject.getDistributionId()
+
         assertEquals("Mozilla", distributionId)
+    }
+
+    @Test
+    fun `WHEN the distribution is not default or mozilla online THEN the distribution is from a deal`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+        )
+
+        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.VIVO_001.id)
+        assertEquals(true, subject.isPartnershipDistribution())
+
+        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.DT_001.id)
+        assertEquals(true, subject.isPartnershipDistribution())
+
+        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.DT_002.id)
+        assertEquals(true, subject.isPartnershipDistribution())
+
+        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.AURA_001.id)
+        assertEquals(true, subject.isPartnershipDistribution())
+    }
+
+    @Test
+    fun `WHEN the provider is aura THEN the proper distribution ID is returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+        )
+
+        providerValue = "aura"
+        val distributionId = subject.getDistributionId()
+
+        assertEquals("aura-001", distributionId)
+    }
+
+    @Test
+    fun `WHEN the provider is DT AND a DT USA package is installed THEN the proper distribution ID is returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+            isDtUsaInstalled = { true },
+        )
+
+        providerValue = "digital_turbine"
+        val distributionId = subject.getDistributionId()
+
+        assertEquals("dt-002", distributionId)
+    }
+
+    @Test
+    fun `WHEN the provider is not DT AND a DT USA package is installed THEN the proper distribution ID is returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+            isDtUsaInstalled = { true },
+        )
+
+        providerValue = "some_provider"
+        val distributionId = subject.getDistributionId()
+
+        assertEquals("Mozilla", distributionId)
+    }
+
+    @Test
+    fun `WHEN the provider is DT and telefonica and USA packages are not installed THEN the proper distribution ID is returned`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            testDistributionProviderChecker,
+        )
+
+        providerValue = "digital_turbine"
+        val distributionId = subject.getDistributionId()
+
+        assertEquals("dt-003", distributionId)
     }
 }

@@ -1675,7 +1675,6 @@ void internal_ClearHistogram(const StaticMutexAutoLock& aLock, HistogramID id,
 
 // NOTE: the functions in this section:
 //
-//   internal_JSHistogram_Add
 //   internal_JSHistogram_Name
 //   internal_JSHistogram_Snapshot
 //   internal_JSHistogram_Clear
@@ -1859,42 +1858,6 @@ static JSHistogramData* GetJSHistogramData(JSObject* obj) {
       obj, HistogramObjectDataSlot);
 }
 
-bool internal_JSHistogram_Add(JSContext* cx, unsigned argc, JS::Value* vp) {
-  JS::CallArgs args = CallArgsFromVp(argc, vp);
-
-  if (!args.thisv().isObject() ||
-      JS::GetClass(&args.thisv().toObject()) != &sJSHistogramClass) {
-    JS_ReportErrorASCII(cx, "Wrong JS class, expected JSHistogram class");
-    return false;
-  }
-
-  JSObject* obj = &args.thisv().toObject();
-  JSHistogramData* data = GetJSHistogramData(obj);
-  MOZ_ASSERT(data);
-  HistogramID id = data->histogramId;
-  MOZ_ASSERT(internal_IsHistogramEnumId(id));
-  uint32_t type = gHistogramInfos[id].histogramType;
-
-  // This function should always return |undefined| and never fail but
-  // rather report failures using the console.
-  args.rval().setUndefined();
-
-  nsTArray<uint32_t> values;
-  if (!internal_JSHistogram_GetValueArray(cx, args, type, id, false, values)) {
-    // Either GetValueArray or CoerceValue utility function will have printed a
-    // meaningful error message, so we simply return true
-    return true;
-  }
-
-  {
-    StaticMutexAutoLock locker(gTelemetryHistogramMutex);
-    for (uint32_t aValue : values) {
-      internal_Accumulate(locker, id, aValue);
-    }
-  }
-  return true;
-}
-
 bool internal_JSHistogram_Name(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -2072,8 +2035,7 @@ nsresult internal_WrapAndReturnHistogram(HistogramID id, JSContext* cx,
 
   // The 3 functions that are wrapped up here are eventually called
   // by the same thread that runs this function.
-  if (!(JS_DefineFunction(cx, obj, "add", internal_JSHistogram_Add, 1, 0) &&
-        JS_DefineFunction(cx, obj, "name", internal_JSHistogram_Name, 1, 0) &&
+  if (!(JS_DefineFunction(cx, obj, "name", internal_JSHistogram_Name, 1, 0) &&
         JS_DefineFunction(cx, obj, "snapshot", internal_JSHistogram_Snapshot, 1,
                           0) &&
         JS_DefineFunction(cx, obj, "clear", internal_JSHistogram_Clear, 1,
@@ -2616,85 +2578,6 @@ void TelemetryHistogram::Accumulate(HistogramID aID, const nsCString& aKey,
   internal_Accumulate(locker, aID, aKey, aSample);
 }
 
-void TelemetryHistogram::Accumulate(HistogramID aID, const nsCString& aKey,
-                                    const nsTArray<uint32_t>& aSamples) {
-  if (NS_WARN_IF(!internal_IsHistogramEnumId(aID))) {
-    MOZ_ASSERT_UNREACHABLE("Histogram usage requires valid ids");
-    return;
-  }
-
-  // Check that this histogram is keyed
-  MOZ_ASSERT(gHistogramInfos[aID].keyed,
-             "Cannot accumulate into a non-keyed histogram using a key.");
-
-  // Check if we're allowed to record in the provided key, for this histogram.
-  if (!gHistogramInfos[aID].allows_key(aKey)) {
-    nsPrintfCString msg("%s - key '%s' not allowed for this keyed histogram",
-                        gHistogramInfos[aID].name(), aKey.get());
-    LogToBrowserConsole(nsIScriptError::errorFlag, NS_ConvertUTF8toUTF16(msg));
-    TelemetryScalar::Add(mozilla::Telemetry::ScalarID::
-                             TELEMETRY_ACCUMULATE_UNKNOWN_HISTOGRAM_KEYS,
-                         NS_ConvertASCIItoUTF16(gHistogramInfos[aID].name()),
-                         1);
-    return;
-  }
-
-  StaticMutexAutoLock locker(gTelemetryHistogramMutex);
-  for (uint32_t sample : aSamples) {
-    internal_Accumulate(locker, aID, aKey, sample);
-  }
-}
-
-nsresult TelemetryHistogram::Accumulate(const char* name, uint32_t sample) {
-  StaticMutexAutoLock locker(gTelemetryHistogramMutex);
-  if (!internal_CanRecordBase()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  HistogramID id;
-  nsresult rv =
-      internal_GetHistogramIdByName(locker, nsDependentCString(name), &id);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  internal_Accumulate(locker, id, sample);
-  return NS_OK;
-}
-
-nsresult TelemetryHistogram::Accumulate(const char* name, const nsCString& key,
-                                        uint32_t sample) {
-  bool keyNotAllowed = false;
-
-  {
-    StaticMutexAutoLock locker(gTelemetryHistogramMutex);
-    if (!internal_CanRecordBase()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-    HistogramID id;
-    nsresult rv =
-        internal_GetHistogramIdByName(locker, nsDependentCString(name), &id);
-    if (NS_SUCCEEDED(rv)) {
-      // Check if we're allowed to record in the provided key, for this
-      // histogram.
-      if (gHistogramInfos[id].allows_key(key)) {
-        internal_Accumulate(locker, id, key, sample);
-        return NS_OK;
-      }
-      // We're holding |gTelemetryHistogramMutex|, so we can't print a message
-      // here.
-      keyNotAllowed = true;
-    }
-  }
-
-  if (keyNotAllowed) {
-    LogToBrowserConsole(nsIScriptError::errorFlag,
-                        u"Key not allowed for this keyed histogram"_ns);
-    TelemetryScalar::Add(mozilla::Telemetry::ScalarID::
-                             TELEMETRY_ACCUMULATE_UNKNOWN_HISTOGRAM_KEYS,
-                         NS_ConvertASCIItoUTF16(name), 1);
-  }
-  return NS_ERROR_FAILURE;
-}
-
 void TelemetryHistogram::AccumulateCategorical(HistogramID aId,
                                                const nsCString& label) {
   if (NS_WARN_IF(!internal_IsHistogramEnumId(aId))) {
@@ -2711,38 +2594,6 @@ void TelemetryHistogram::AccumulateCategorical(HistogramID aId,
     return;
   }
   internal_Accumulate(locker, aId, labelId);
-}
-
-void TelemetryHistogram::AccumulateCategorical(
-    HistogramID aId, const nsTArray<nsCString>& aLabels) {
-  if (NS_WARN_IF(!internal_IsHistogramEnumId(aId))) {
-    MOZ_ASSERT_UNREACHABLE("Histogram usage requires valid ids.");
-    return;
-  }
-
-  if (!internal_CanRecordBase()) {
-    return;
-  }
-
-  // We use two loops, one for getting label_ids and another one for actually
-  // accumulating the values. This ensures that in the case of an invalid label
-  // in the array, no values are accumulated. In any call to this API, either
-  // all or (in case of error) none of the values will be accumulated.
-
-  nsTArray<uint32_t> intSamples(aLabels.Length());
-  for (const nsCString& label : aLabels) {
-    uint32_t labelId = 0;
-    if (NS_FAILED(gHistogramInfos[aId].label_id(label.get(), &labelId))) {
-      return;
-    }
-    intSamples.AppendElement(labelId);
-  }
-
-  StaticMutexAutoLock locker(gTelemetryHistogramMutex);
-
-  for (uint32_t sample : intSamples) {
-    internal_Accumulate(locker, aId, sample);
-  }
 }
 
 void TelemetryHistogram::AccumulateChild(

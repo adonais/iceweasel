@@ -33,6 +33,7 @@ category browser-window-delayed-startup moz-src:///browser/components/search/Sea
 
 category browser-window-unload resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.teardownInWindow
 category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
+category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarTabs.sys.mjs TaskbarTabs.init
 
 # App startup consumers
 category browser-idle-startup resource:///modules/PlacesUIUtils.sys.mjs PlacesUIUtils.unblockToolbars
@@ -46,12 +47,21 @@ category browser-idle-startup resource:///modules/UrlbarSearchTermsPersistence.s
 category browser-idle-startup resource:///modules/ShoppingUtils.sys.mjs ShoppingUtils.init
 category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
+category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.mjs ColorwayThemeMigration.maybeWarn
 #ifdef MOZ_UPDATER
 category browser-idle-startup resource://gre/modules/UpdateListener.sys.mjs UpdateListener.maybeShowUnsupportedNotification
 #endif
 #ifdef XP_WIN
 category browser-idle-startup resource:///modules/WindowsJumpLists.sys.mjs WinTaskbarJumpList.startup
 #endif
+#if defined(XP_WIN) || defined(XP_MACOSX)
+category browser-idle-startup moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs StartupOSIntegration.onStartupIdle
+#endif
+
+# Note that these telemetry entries schedule their own idle tasks,
+# so they are guaranteed to run after everything else.
+category browser-idle-startup moz-src:///browser/components/StartupTelemetry.sys.mjs StartupTelemetry.browserIdleStartup
+category browser-best-effort-idle-startup moz-src:///browser/components/StartupTelemetry.sys.mjs StartupTelemetry.bestEffortIdleStartup
 
 # App shutdown consumers
 category browser-quit-application-granted resource:///modules/BrowserUsageTelemetry.sys.mjs BrowserUsageTelemetry.uninit

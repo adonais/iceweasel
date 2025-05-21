@@ -53,6 +53,7 @@ class ServiceWorkerContainer;
 class ServiceWorkerRegistration;
 class ServiceWorkerRegistrationDescriptor;
 class StorageManager;
+class WebTaskSchedulingState;
 enum class CallerType : uint32_t;
 }  // namespace dom
 namespace ipc {
@@ -194,6 +195,13 @@ class nsIGlobalObject : public nsISupports {
     return nullptr;
   }
 
+  virtual void SetWebTaskSchedulingState(
+      mozilla::dom::WebTaskSchedulingState* aState) {}
+  virtual mozilla::dom::WebTaskSchedulingState* GetWebTaskSchedulingState()
+      const {
+    return nullptr;
+  }
+
   // For globals with a concept of a Base URI (windows, workers), the base URI,
   // nullptr otherwise.
   virtual nsIURI* GetBaseURI() const;
@@ -328,7 +336,7 @@ class nsIGlobalObject : public nsISupports {
   }
   // Return true if there is any active IndexedDB databases which could block
   // timeout-throttling.
-  virtual bool HasActiveIndexedDBDatabases() { return false; }
+  virtual bool HasActiveIndexedDBDatabases() const { return false; }
   /**
    * Check whether the active peer connection count is non-zero.
    */
@@ -338,6 +346,15 @@ class nsIGlobalObject : public nsISupports {
   virtual bool HasOpenWebSockets() const { return false; }
 
   virtual bool IsXPCSandbox() { return false; }
+
+  virtual bool HasScheduledNormalOrHighPriorityWebTasks() const {
+    return false;
+  }
+
+  virtual void UpdateWebSocketCount(int32_t aDelta) {};
+  // Increase/Decrease the number of active IndexedDB databases for the
+  // decision making of timeout-throttling.
+  virtual void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) {}
 
   /**
    * Report a localized error message to the error console.  Currently this

@@ -49,15 +49,15 @@ add_task(async function test_experimentEnrollment() {
 
   await RemoteSettingsExperimentLoader.updateRecipes("mochitest");
 
-  let experiment = ExperimentAPI.getExperiment({
+  let experiment = ExperimentAPI.getExperimentMetaData({
     slug: recipe.slug,
   });
 
   Assert.ok(experiment.active, "Should be enrolled in the experiment");
 
-  ExperimentManager.unenroll(recipe.slug, "mochitest-cleanup");
+  ExperimentManager.unenroll(recipe.slug);
 
-  experiment = ExperimentAPI.getExperiment({
+  experiment = ExperimentAPI.getExperimentMetaData({
     slug: recipe.slug,
   });
 

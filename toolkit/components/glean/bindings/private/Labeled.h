@@ -405,6 +405,17 @@ class Labeled<TimingDistributionMetric, DynamicLabel> {
 
   TimingDistributionMetric EnumGet(DynamicLabel aLabel) const = delete;
 
+  TimingDistributionMetric MaybeTruncateAndGet(const nsACString& aLabel) const {
+    // bug 1959765 is for incorporating this behaviour into the SDK.
+    if (aLabel.Length() < 112) {
+      return Get(aLabel);
+    }
+    nsAutoCStringN<111> truncated;
+    truncated.Append(aLabel.BeginReading(), 108);
+    truncated += "...";
+    return Get(truncated);
+  }
+
  private:
   const uint32_t mId;
 };

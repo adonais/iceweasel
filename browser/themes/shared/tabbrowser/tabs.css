@@ -17,6 +17,7 @@
   --tab-group-label-height: max(1.5em, var(--tab-min-height) - 14px);
   --tab-group-label-padding: 4px;
   --tab-group-line-thickness: 2px;
+  --tab-group-line-toolbar-border-distance: 1px;
   /* Collapsed tabs should be square, so set width to match the min height */
   --tab-collapsed-background-width: var(--tab-min-height);
   --tab-collapsed-width: calc(var(--tab-collapsed-background-width) + 2 * var(--tab-inner-inline-margin));
@@ -75,30 +76,30 @@
    * tab-group-color-* is used for expanded groups in light mode and collapsed groups in dark mode
    * tab-group-color-*-invert is used for expanded groups in dark mode
    * tab-group-color-*-pale is used for collapsed groups in light mode */
-  --tab-group-color-blue: #0069CC;
-  --tab-group-color-blue-invert: #52A9FE;
-  --tab-group-color-blue-pale: #F2F9FF;
-  --tab-group-color-purple: #8C39BC;
-  --tab-group-color-purple-invert: #C188EA;
-  --tab-group-color-purple-pale: #FBF6FF;
-  --tab-group-color-cyan: #007B7C;
-  --tab-group-color-cyan-invert: #4AB6C7;
-  --tab-group-color-cyan-pale: #EFFBFC;
-  --tab-group-color-orange: #B14200;
-  --tab-group-color-orange-invert: #EE8545;
-  --tab-group-color-orange-pale: #FFF6F1;
-  --tab-group-color-yellow: #955C00;
-  --tab-group-color-yellow-invert: #F5AE39;
-  --tab-group-color-yellow-pale: #FCF8EF;
-  --tab-group-color-pink: #BB1562;
-  --tab-group-color-pink-invert: #E17CC2;
-  --tab-group-color-pink-pale: #FFF5FB;
-  --tab-group-color-green: #477A00;
-  --tab-group-color-green-invert: #6EBB5D;
-  --tab-group-color-green-pale: #F4FBF2;
-  --tab-group-color-red: #C21725;
-  --tab-group-color-red-invert: #F47B74;
-  --tab-group-color-red-pale: #FFF5F5;
+  --tab-group-color-blue: var(--color-blue-70);
+  --tab-group-color-blue-invert: var(--color-blue-20);
+  --tab-group-color-blue-pale: var(--color-blue-0);
+  --tab-group-color-purple: var(--color-purple-70);
+  --tab-group-color-purple-invert: var(--color-purple-20);
+  --tab-group-color-purple-pale: var(--color-purple-0);
+  --tab-group-color-cyan: var(--color-cyan-70);
+  --tab-group-color-cyan-invert: var(--color-cyan-20);
+  --tab-group-color-cyan-pale: var(--color-cyan-0);
+  --tab-group-color-orange: var(--color-orange-70);
+  --tab-group-color-orange-invert: var(--color-orange-20);
+  --tab-group-color-orange-pale: var(--color-orange-0);
+  --tab-group-color-yellow: var(--color-yellow-70);
+  --tab-group-color-yellow-invert: var(--color-yellow-20);
+  --tab-group-color-yellow-pale: var(--color-yellow-0);
+  --tab-group-color-pink: var(--color-pink-70);
+  --tab-group-color-pink-invert: var(--color-pink-20);
+  --tab-group-color-pink-pale: var(--color-pink-0);
+  --tab-group-color-green: var(--color-green-70);
+  --tab-group-color-green-invert: var(--color-green-20);
+  --tab-group-color-green-pale: var(--color-green-0);
+  --tab-group-color-red: var(--color-red-70);
+  --tab-group-color-red-invert: var(--color-red-20);
+  --tab-group-color-red-pale: var(--color-red-0);
   --tab-group-color-gray: #5E6A77;
   --tab-group-color-gray-invert: #99A6B4;
   --tab-group-color-gray-pale: #F2F9FF;
@@ -459,15 +460,13 @@
   -moz-context-properties: fill, stroke;
   fill: currentColor;
 
-  /* Apply crisp rendering for favicons at exactly 2dppx resolution */
-  @media (resolution: 2dppx) {
-    image-rendering: -moz-crisp-edges;
-  }
-
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.tabs.fadeOutUnloadedTabs") {
     &[pending] {
       filter: grayscale(100%);
+      @media (prefers-color-scheme: dark) {
+        filter: grayscale(100%) invert();
+      }
       opacity: 0.5;
       /* Fade the favicon out */
       transition-property: filter, opacity;
@@ -485,6 +484,9 @@
   @media -moz-pref("browser.tabs.fadeOutExplicitlyUnloadedTabs") {
     &[pending][discarded] {
       filter: grayscale(100%);
+      @media (prefers-color-scheme: dark) {
+        filter: grayscale(100%) invert();
+      }
       opacity: 0.5;
       /* Fade the favicon out */
       transition-property: filter, opacity;
@@ -763,13 +765,13 @@
 
   &[textoverflow] {
     &[labeldirection=ltr],
-    &:not([labeldirection], [pinned]):-moz-locale-dir(ltr) {
+    &:not([labeldirection]):-moz-locale-dir(ltr) {
       direction: ltr;
       mask-image: linear-gradient(to left, transparent, black var(--tab-label-mask-size));
     }
 
     &[labeldirection=rtl],
-    &:not([labeldirection], [pinned]):-moz-locale-dir(rtl) {
+    &:not([labeldirection]):-moz-locale-dir(rtl) {
       direction: rtl;
       mask-image: linear-gradient(to right, transparent, black var(--tab-label-mask-size));
     }
@@ -943,14 +945,16 @@
  */
 .tab-group-line {
   display: none;
+  position: absolute;
   background-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
 
   #tabbrowser-tabs[orient="horizontal"] & {
     height: var(--tab-group-line-thickness);
-    margin: 0 calc(-1 * var(--tab-overflow-clip-margin)) calc(-1 * var(--tab-block-margin));
+    inset-inline: calc(-1 * var(--tab-overflow-clip-margin));
+    inset-block-end: var(--tab-group-line-toolbar-border-distance);
 
     .tabbrowser-tab:last-of-type > .tab-stack > .tab-background > & {
-      margin-inline-end: 0;
+      inset-inline-end: 0;
       border-start-end-radius: calc(var(--tab-group-line-thickness) / 2);
       border-end-end-radius: calc(var(--tab-group-line-thickness) / 2);
     }
@@ -960,7 +964,6 @@
     width: var(--tab-group-line-thickness);
     inset-block: -3px -2px;
     inset-inline: 2px 0;
-    position: absolute;
 
     #tabbrowser-tabs[expanded] & {
       inset-inline-start: 0;
@@ -1059,7 +1062,7 @@ tab-group {
 
   #tabbrowser-tabs[orient="horizontal"] tab-group:not([collapsed]) > &::after {
     height: var(--tab-group-line-thickness);
-    inset: auto 0 0;
+    inset: auto 0 var(--tab-group-line-toolbar-border-distance);
     border-start-start-radius: 1px;
     border-end-start-radius: 1px;
   }
@@ -1580,10 +1583,6 @@ tab-group {
     margin-inline: var(--tab-inner-inline-margin);
   }
 
-  .tab-close-button {
-    margin-inline-end: calc(-1 * var(--tab-close-button-padding));
-  }
-
   &:not([expanded]) {
     .tabbrowser-tab[pinned] {
       width: var(--tab-collapsed-width);
@@ -1675,7 +1674,7 @@ tab-group {
       max-width: none;
 
       .tab-close-button {
-        margin-inline-end: calc(-1 * var(--tab-close-button-padding));
+        margin-inline-end: calc(var(--tab-close-button-padding) / -2);
       }
 
       &:not(:hover) .tab-close-button:not([selected]) {

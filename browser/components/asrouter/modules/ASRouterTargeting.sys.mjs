@@ -34,6 +34,11 @@ const { ShellService } = ChromeUtils.importESModule(
   "resource:///modules/ShellService.sys.mjs"
 );
 
+// eslint-disable-next-line mozilla/use-static-import
+const { ClientID } = ChromeUtils.importESModule(
+  "resource://gre/modules/ClientID.sys.mjs"
+);
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -172,9 +177,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
-  "profileStoreID",
-  "toolkit.profiles.storeID",
-  null
+  "profilesCreated",
+  "browser.profiles.created",
+  false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -387,6 +392,12 @@ export const QueryCache = {
       null,
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
+    ),
+    profileGroupId: new CachedTargetingGetter(
+      "getCachedProfileGroupID",
+      null,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      ClientID
     ),
   },
 };
@@ -605,7 +616,7 @@ const TargetingGetters = {
     return lazy.SelectableProfileService?.isEnabled ?? false;
   },
   get hasSelectableProfiles() {
-    return !!lazy.profileStoreID;
+    return lazy.profilesCreated;
   },
   get profileAgeCreated() {
     return lazy.ProfileAge().then(times => times.created);
@@ -1183,6 +1194,10 @@ const TargetingGetters = {
 
   get totalSearches() {
     return lazy.totalSearches;
+  },
+
+  get profileGroupId() {
+    return QueryCache.getters.profileGroupId.get();
   },
 };
 

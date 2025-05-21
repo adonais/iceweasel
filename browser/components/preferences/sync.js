@@ -133,7 +133,7 @@ var gSyncPane = {
       if (location.href.includes("action=pair")) {
         gSyncPane.pairAnotherDevice();
       } else if (location.href.includes("action=choose-what-to-sync")) {
-        gSyncPane._chooseWhatToSync(false);
+        gSyncPane._chooseWhatToSync(false, "callToAction");
       }
     }
   },
@@ -239,10 +239,10 @@ var gSyncPane = {
       }
     });
     setEventListener("syncSetup", "command", function () {
-      this._chooseWhatToSync(false);
+      this._chooseWhatToSync(false, "setupSync");
     });
     setEventListener("syncChangeOptions", "command", function () {
-      this._chooseWhatToSync(true);
+      this._chooseWhatToSync(true, "manageSyncSettings");
     });
     setEventListener("syncNow", "command", function () {
       // syncing can take a little time to send the "started" notification, so
@@ -286,11 +286,16 @@ var gSyncPane = {
     }
   },
 
-  async _chooseWhatToSync(isAlreadySyncing) {
+  async _chooseWhatToSync(isSyncConfigured, why = null) {
+    // Record the user opening the choose what to sync menu.
+    fxAccounts.telemetry.recordOpenCWTSMenu(why).catch(err => {
+      console.error("Failed to record open CWTS menu event", err);
+    });
+
     // Assuming another device is syncing and we're not,
     // we update the engines selection so the correct
     // checkboxes are pre-filed.
-    if (!isAlreadySyncing) {
+    if (!isSyncConfigured) {
       try {
         await Weave.Service.updateLocalEnginesState();
       } catch (err) {
@@ -298,7 +303,7 @@ var gSyncPane = {
       }
     }
     let params = {};
-    if (isAlreadySyncing) {
+    if (isSyncConfigured) {
       // If we are already syncing then we also offer to disconnect.
       params.disconnectFun = () => this.disconnectSync();
     }
@@ -306,18 +311,34 @@ var gSyncPane = {
       "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml",
       {
         closingCallback: event => {
-          if (!isAlreadySyncing && event.detail.button == "accept") {
-            // We weren't syncing but the user has accepted the dialog - so we
-            // want to start!
-            fxAccounts.telemetry
-              .recordConnection(["sync"], "ui")
-              .then(() => {
-                this.updateSyncUI();
-                return Weave.Service.configure();
-              })
-              .catch(err => {
-                console.error("Failed to enable sync", err);
+          if (event.detail.button == "accept") {
+            // Record when the user saves sync settings regardless of the
+            // `isAlreadySyncing` status.
+            fxAccounts.telemetry.recordSaveSyncSettings().catch(err => {
+              console.error("Failed to record save sync settings event", err);
+            });
+
+            // Sync wasn't previously configured, but the user has accepted
+            // so we want to now start syncing!
+            if (!isSyncConfigured) {
+              fxAccounts.telemetry
+                .recordConnection(["sync"], "ui")
+                .then(() => {
+                  this.updateSyncUI();
+                  return Weave.Service.configure();
+                })
+                .catch(err => {
+                  console.error("Failed to enable sync", err);
+                });
+            } else {
+              // User is already configured and have possibly changed the engines they want to
+              // sync, so we should let the server know immediately
+              // if the user is currently syncing, we queue another sync after
+              // to ensure we caught their updates
+              Services.tm.dispatchToMainThread(() => {
+                Weave.Service.queueSync("cwts");
               });
+            }
           }
           // When the modal closes we want to remove any query params
           // so it doesn't open on subsequent visits (and will reload)
@@ -439,10 +460,10 @@ var gSyncPane = {
   },
 
   _getEntryPoint() {
-    let params = new URLSearchParams(
-      document.URL.split("#")[0].split("?")[1] || ""
-    );
-    return params.get("entrypoint") || "preferences";
+    let params = URL.fromURI(document.documentURIObject).searchParams;
+    let entryPoint = params.get("entrypoint") || "preferences";
+    entryPoint = entryPoint.replace(/[^-.\w]/g, "");
+    return entryPoint;
   },
 
   openContentInBrowser(url, options) {

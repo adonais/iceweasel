@@ -52,77 +52,19 @@ void Init();
 void ShutdownTelemetry();
 
 /**
- * Adds sample to a histogram defined in TelemetryHistogramEnums.h
- *
- * @param id - histogram id
- * @param sample - value to record.
- */
-void Accumulate(HistogramID id, uint32_t sample);
-
-/**
- * Adds an array of samples to a histogram defined in TelemetryHistograms.h
- * @param id - histogram id
- * @param samples - values to record.
- */
-void Accumulate(HistogramID id, const nsTArray<uint32_t>& samples);
-
-/**
+ * DEPRECATED:
  * Adds sample to a keyed histogram defined in TelemetryHistogramEnums.h
+ * The only remaining callers should use keyed boolean or keyed categorical
+ * histograms, that do not have glean equivalents yet (see bug 1657470).
  *
  * @param id - keyed histogram id
  * @param key - the string key
- * @param sample - (optional) value to record, defaults to 1.
+ * @param sample - value to record.
  */
-void Accumulate(HistogramID id, const nsCString& key, uint32_t sample = 1);
+void Accumulate(HistogramID id, const nsCString& key, uint32_t sample);
 
 /**
- * Adds an array of samples to a histogram defined in TelemetryHistograms.h
- * @param id - histogram id
- * @param samples - values to record.
- * @param key - the string key
- */
-void Accumulate(HistogramID id, const nsCString& key,
-                const nsTArray<uint32_t>& samples);
-
-/**
- * Adds a sample to a histogram defined in TelemetryHistogramEnums.h.
- * This function is here to support telemetry measurements from Java,
- * where we have only names and not numeric IDs.  You should almost
- * certainly be using the by-enum-id version instead of this one.
- *
- * @param name - histogram name
- * @param sample - value to record
- */
-void Accumulate(const char* name, uint32_t sample);
-
-/**
- * Adds a sample to a histogram defined in TelemetryHistogramEnums.h.
- * This function is here to support telemetry measurements from Java,
- * where we have only names and not numeric IDs.  You should almost
- * certainly be using the by-enum-id version instead of this one.
- *
- * @param name - histogram name
- * @param key - the string key
- * @param sample - sample - (optional) value to record, defaults to 1.
- */
-void Accumulate(const char* name, const nsCString& key, uint32_t sample = 1);
-
-/**
- * Adds sample to a categorical histogram defined in TelemetryHistogramEnums.h
- * This is the typesafe - and preferred - way to use the categorical histograms
- * by passing values from the corresponding Telemetry::LABELS_* enum.
- *
- * @param enumValue - Label value from one of the Telemetry::LABELS_* enums.
- */
-template <class E>
-void AccumulateCategorical(E enumValue) {
-  static_assert(IsCategoricalLabelEnum<E>::value,
-                "Only categorical label enum types are supported.");
-  Accumulate(static_cast<HistogramID>(CategoricalLabelId<E>::value),
-             static_cast<uint32_t>(enumValue));
-};
-
-/**
+ * DEPRECATED:
  * Adds sample to a keyed categorical histogram defined in
  * TelemetryHistogramEnums.h This is the typesafe - and preferred - way to use
  * the keyed categorical histograms by passing values from the corresponding
@@ -138,50 +80,6 @@ void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
   Accumulate(static_cast<HistogramID>(CategoricalLabelId<E>::value), key,
              static_cast<uint32_t>(enumValue));
 };
-
-/**
- * Adds sample to a categorical histogram defined in TelemetryHistogramEnums.h
- * This string will be matched against the labels defined in Histograms.json.
- * If the string does not match a label defined for the histogram, nothing will
- * be recorded.
- *
- * @param id - The histogram id.
- * @param label - A string label value that is defined in Histograms.json for
- *                this histogram.
- */
-void AccumulateCategorical(HistogramID id, const nsCString& label);
-
-/**
- * Adds an array of samples to a categorical histogram defined in
- * Histograms.json
- *
- * @param id - The histogram id
- * @param labels - The array of labels to accumulate
- */
-void AccumulateCategorical(HistogramID id, const nsTArray<nsCString>& labels);
-
-/**
- * Adds time delta in milliseconds to a histogram defined in
- * TelemetryHistogramEnums.h
- *
- * @param id - histogram id
- * @param start - start time
- * @param end - end time
- */
-void AccumulateTimeDelta(HistogramID id, TimeStamp start,
-                         TimeStamp end = TimeStamp::Now());
-
-/**
- * Adds time delta in milliseconds to a keyed histogram defined in
- * TelemetryHistogramEnums.h
- *
- * @param id - histogram id
- * @param key - the string key
- * @param start - start time
- * @param end - end time
- */
-void AccumulateTimeDelta(HistogramID id, const nsCString& key, TimeStamp start,
-                         TimeStamp end = TimeStamp::Now());
 
 const char* GetHistogramName(HistogramID id);
 

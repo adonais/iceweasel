@@ -151,7 +151,7 @@ class ConfigureOutputHandler(logging.Handler):
                 msg = "%s\n" % self.format(record)
             stream.write(msg)
             stream.flush()
-        except (KeyboardInterrupt, SystemExit, IOError):
+        except (OSError, KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.handleError(record)
@@ -198,7 +198,7 @@ class ConfigureOutputHandler(logging.Handler):
         self._keep_if_debug = self.KEEP
 
 
-class LineIO(object):
+class LineIO:
     """File-like class that sends each line of the written data to a callback
     (without carriage returns).
     """

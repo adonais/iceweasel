@@ -844,7 +844,8 @@ static bool RecomputePosition(nsIFrame* aFrame) {
     if (aFrame->HasIntrinsicKeywordForBSize()) {
       WritingMode wm = aFrame->GetWritingMode();
       const auto* styleMargin = aFrame->StyleMargin();
-      if (styleMargin->HasBlockAxisAuto(wm)) {
+      const auto positionProperty = aFrame->StyleDisplay()->mPosition;
+      if (styleMargin->HasBlockAxisAuto(wm, positionProperty)) {
         return false;
       }
     }
@@ -1939,15 +1940,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 uint64_t RestyleManager::GetAnimationGenerationForFrame(nsIFrame* aStyleFrame) {
   EffectSet* effectSet = EffectSet::GetForStyleFrame(aStyleFrame);
   return effectSet ? effectSet->GetAnimationGeneration() : 0;
-}
-
-void RestyleManager::IncrementAnimationGeneration() {
-  // We update the animation generation at start of each call to
-  // ProcessPendingRestyles so we should ignore any subsequent (redundant)
-  // calls that occur while we are still processing restyles.
-  if (!mInStyleRefresh) {
-    ++mAnimationGeneration;
-  }
 }
 
 /* static */
@@ -3252,10 +3244,6 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
 
   ServoStyleSet* styleSet = StyleSet();
   Document* doc = presContext->Document();
-
-  // Ensure the refresh driver is active during traversal to avoid mutating
-  // mActiveTimer and mMostRecentRefresh time.
-  presContext->RefreshDriver()->MostRecentRefresh();
 
   if (!doc->GetServoRestyleRoot()) {
     // This might post new restyles, so need to do it here. Don't do it if we're

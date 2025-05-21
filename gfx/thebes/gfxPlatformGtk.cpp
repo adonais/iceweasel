@@ -320,15 +320,19 @@ void gfxPlatformGtk::InitWebRenderConfig() {
   }
 
   FeatureState& feature = gfxConfig::GetFeature(Feature::WEBRENDER_COMPOSITOR);
+  // HDR requires compositor to work
+#if defined(MOZ_WAYLAND)
   if (feature.IsEnabled()) {
-    if (!IsWaylandDisplay()) {
+    if (!StaticPrefs::gfx_wayland_hdr_AtStartup()) {
+      feature.ForceDisable(FeatureStatus::Unavailable, "HDR mode is disabled",
+                           "FEATURE_FAILURE_NO_HDR"_ns);
+
+    } else if (!IsWaylandDisplay()) {
       feature.ForceDisable(FeatureStatus::Unavailable,
                            "Wayland support missing",
                            "FEATURE_FAILURE_NO_WAYLAND"_ns);
-    }
-#ifdef MOZ_WAYLAND
-    else if (gfxConfig::IsEnabled(Feature::WEBRENDER) &&
-             !gfxConfig::IsEnabled(Feature::DMABUF)) {
+    } else if (gfxConfig::IsEnabled(Feature::WEBRENDER) &&
+               !gfxConfig::IsEnabled(Feature::DMABUF)) {
       // We use zwp_linux_dmabuf_v1 and GBM directly to manage FBOs. In theory
       // this is also possible vie EGLstreams, but we don't bother to implement
       // it as recent NVidia drivers support GBM and DMABuf as well.
@@ -340,8 +344,11 @@ void gfxPlatformGtk::InitWebRenderConfig() {
                            "Requires wp_viewporter protocol support",
                            "FEATURE_FAILURE_REQUIRES_WPVIEWPORTER"_ns);
     }
-#endif  // MOZ_WAYLAND
   }
+#else  // MOZ_WAYLAND
+  feature.ForceDisable(FeatureStatus::Unavailable, "Not available on X11",
+                       "FEATURE_FAILURE_NO_WAYLAND"_ns);
+#endif
 
   gfxVars::SetUseWebRenderCompositor(feature.IsEnabled());
 }
@@ -418,7 +425,7 @@ static const char kFontNotoSansSymbols[] = "Noto Sans Symbols";
 static const char kFontNotoSansSymbols2[] = "Noto Sans Symbols2";
 
 void gfxPlatformGtk::GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
-                                            eFontPresentation aPresentation,
+                                            FontPresentation aPresentation,
                                             nsTArray<const char*>& aFontList) {
   if (PrefersColor(aPresentation)) {
     aFontList.AppendElement(kFontTwemojiMozilla);

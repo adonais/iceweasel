@@ -18,8 +18,8 @@
 #include <utility>
 #include <vector>
 
-#include "api/audio/audio_device.h"
 #include "api/candidate.h"
+#include "api/enable_media_with_defaults.h"
 #include "api/field_trials.h"
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
@@ -32,13 +32,12 @@
 #include "api/test/rtc_error_matchers.h"
 #include "api/units/time_delta.h"
 #include "p2p/base/basic_packet_socket_factory.h"
-#include "p2p/base/fake_port_allocator.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/transport_info.h"
-#include "p2p/client/basic_port_allocator.h"
+#include "p2p/test/fake_port_allocator.h"
 #include "pc/channel_interface.h"
 #include "pc/dtls_transport.h"
 #include "pc/media_session.h"
@@ -136,9 +135,6 @@ class PeerConnectionWrapperForIceTest : public PeerConnectionWrapper {
 
   void set_network(rtc::FakeNetworkManager* network) { network_ = network; }
 
-  // The port allocator used by this PC.
-  cricket::PortAllocator* port_allocator_;
-
  private:
   rtc::FakeNetworkManager* network_;
 };
@@ -148,24 +144,10 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
   typedef std::unique_ptr<PeerConnectionWrapperForIceTest> WrapperPtr;
 
   explicit PeerConnectionIceBaseTest(SdpSemantics sdp_semantics)
-      : vss_(new rtc::VirtualSocketServer()),
-        socket_factory_(new rtc::BasicPacketSocketFactory(vss_.get())),
-        main_(vss_.get()),
-        sdp_semantics_(sdp_semantics) {
+      : main_(&vss_), sdp_semantics_(sdp_semantics) {
 #ifdef WEBRTC_ANDROID
     InitializeAndroidObjects();
 #endif
-    pc_factory_ = CreatePeerConnectionFactory(
-        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        rtc::scoped_refptr<AudioDeviceModule>(FakeAudioCaptureModule::Create()),
-        CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory(),
-        std::make_unique<VideoEncoderFactoryTemplate<
-            LibvpxVp8EncoderTemplateAdapter, LibvpxVp9EncoderTemplateAdapter,
-            OpenH264EncoderTemplateAdapter, LibaomAv1EncoderTemplateAdapter>>(),
-        std::make_unique<VideoDecoderFactoryTemplate<
-            LibvpxVp8DecoderTemplateAdapter, LibvpxVp9DecoderTemplateAdapter,
-            OpenH264DecoderTemplateAdapter, Dav1dDecoderTemplateAdapter>>(),
-        nullptr /* audio_mixer */, nullptr /* audio_processing */);
   }
 
   WrapperPtr CreatePeerConnection() {
@@ -173,19 +155,35 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
   }
 
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
-    auto* fake_network = NewFakeNetwork();
-    auto port_allocator = std::make_unique<cricket::BasicPortAllocator>(
-        fake_network, socket_factory_.get());
-    port_allocator->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                              cricket::PORTALLOCATOR_DISABLE_RELAY);
-    port_allocator->set_step_delay(cricket::kMinimumStepDelay);
+    PeerConnectionFactoryDependencies pcf_deps;
+    pcf_deps.network_thread = rtc::Thread::Current();
+    pcf_deps.worker_thread = rtc::Thread::Current();
+    pcf_deps.signaling_thread = rtc::Thread::Current();
+    pcf_deps.socket_factory = &vss_;
+    auto network_manager = std::make_unique<rtc::FakeNetworkManager>();
+    auto* fake_network = network_manager.get();
+    pcf_deps.network_manager = std::move(network_manager);
+    pcf_deps.adm = FakeAudioCaptureModule::Create();
+    pcf_deps.video_encoder_factory =
+        std::make_unique<VideoEncoderFactoryTemplate<
+            LibvpxVp8EncoderTemplateAdapter, LibvpxVp9EncoderTemplateAdapter,
+            OpenH264EncoderTemplateAdapter, LibaomAv1EncoderTemplateAdapter>>();
+    pcf_deps.video_decoder_factory =
+        std::make_unique<VideoDecoderFactoryTemplate<
+            LibvpxVp8DecoderTemplateAdapter, LibvpxVp9DecoderTemplateAdapter,
+            OpenH264DecoderTemplateAdapter, Dav1dDecoderTemplateAdapter>>();
+    EnableMediaWithDefaults(pcf_deps);
+    scoped_refptr<PeerConnectionFactoryInterface> pc_factory =
+        CreateModularPeerConnectionFactory(std::move(pcf_deps));
+
     RTCConfiguration modified_config = config;
+    modified_config.set_port_allocator_flags(
+        cricket::PORTALLOCATOR_DISABLE_TCP |
+        cricket::PORTALLOCATOR_DISABLE_RELAY);
     modified_config.sdp_semantics = sdp_semantics_;
     auto observer = std::make_unique<MockPeerConnectionObserver>();
-    auto port_allocator_copy = port_allocator.get();
     PeerConnectionDependencies pc_dependencies(observer.get());
-    pc_dependencies.allocator = std::move(port_allocator);
-    auto result = pc_factory_->CreatePeerConnectionOrError(
+    auto result = pc_factory->CreatePeerConnectionOrError(
         modified_config, std::move(pc_dependencies));
     if (!result.ok()) {
       return nullptr;
@@ -193,9 +191,8 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
 
     observer->SetPeerConnectionInterface(result.value().get());
     auto wrapper = std::make_unique<PeerConnectionWrapperForIceTest>(
-        pc_factory_, result.MoveValue(), std::move(observer));
+        std::move(pc_factory), result.MoveValue(), std::move(observer));
     wrapper->set_network(fake_network);
-    wrapper->port_allocator_ = port_allocator_copy;
     return wrapper;
   }
 
@@ -318,22 +315,8 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
     return sdesc->AddCandidate(jsep_candidate.get());
   }
 
-  rtc::FakeNetworkManager* NewFakeNetwork() {
-    // The PeerConnection's port allocator is tied to the PeerConnection's
-    // lifetime and expects the underlying NetworkManager to outlive it. That
-    // prevents us from having the PeerConnectionWrapper own the fake network.
-    // Therefore, the test fixture will own all the fake networks even though
-    // tests should access the fake network through the PeerConnectionWrapper.
-    auto* fake_network = new rtc::FakeNetworkManager();
-    fake_networks_.emplace_back(fake_network);
-    return fake_network;
-  }
-
-  std::unique_ptr<rtc::VirtualSocketServer> vss_;
-  std::unique_ptr<rtc::BasicPacketSocketFactory> socket_factory_;
+  rtc::VirtualSocketServer vss_;
   rtc::AutoSocketServerThread main_;
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
-  std::vector<std::unique_ptr<rtc::FakeNetworkManager>> fake_networks_;
   const SdpSemantics sdp_semantics_;
 };
 
@@ -350,7 +333,7 @@ class PeerConnectionIceTest
                                                  const char* b_expr,
                                                  const cricket::Candidate& a,
                                                  const cricket::Candidate& b) {
-  rtc::StringBuilder failure_info;
+  StringBuilder failure_info;
   if (a.component() != b.component()) {
     failure_info << "\ncomponent: " << a.component() << " != " << b.component();
   }
@@ -709,7 +692,7 @@ TEST_P(PeerConnectionIceTest, VerifyUfragPwdLength) {
     const char* candidates_expr,
     const SocketAddress& address,
     const std::vector<IceCandidateInterface*> candidates) {
-  rtc::StringBuilder candidate_hosts;
+  StringBuilder candidate_hosts;
   for (const auto* candidate : candidates) {
     const auto& candidate_ip = candidate->candidate().address().ipaddr();
     if (candidate_ip == address.ipaddr()) {
@@ -1566,9 +1549,11 @@ TEST_P(PeerConnectionIceTest, IceCredentialsCreateOffer) {
   config.sdp_semantics = SdpSemantics::kUnifiedPlan;
   config.ice_candidate_pool_size = 1;
   auto pc = CreatePeerConnectionWithAudioVideo(config);
-  ASSERT_NE(pc->port_allocator_, nullptr);
+  ASSERT_NE(pc->GetInternalPeerConnection()->port_allocator(), nullptr);
   auto offer = pc->CreateOffer();
-  auto credentials = pc->port_allocator_->GetPooledIceCredentials();
+  auto credentials = pc->GetInternalPeerConnection()
+                         ->port_allocator()
+                         ->GetPooledIceCredentials();
   ASSERT_EQ(1u, credentials.size());
 
   auto* desc = offer->description();
@@ -1584,12 +1569,14 @@ TEST_P(PeerConnectionIceTest, IceCredentialsCreateAnswer) {
   config.sdp_semantics = SdpSemantics::kUnifiedPlan;
   config.ice_candidate_pool_size = 1;
   auto pc = CreatePeerConnectionWithAudioVideo(config);
-  ASSERT_NE(pc->port_allocator_, nullptr);
+  ASSERT_NE(pc->GetInternalPeerConnection()->port_allocator(), nullptr);
   auto offer = pc->CreateOffer();
   ASSERT_TRUE(pc->SetRemoteDescription(std::move(offer)));
   auto answer = pc->CreateAnswer();
 
-  auto credentials = pc->port_allocator_->GetPooledIceCredentials();
+  auto credentials = pc->GetInternalPeerConnection()
+                         ->port_allocator()
+                         ->GetPooledIceCredentials();
   ASSERT_EQ(1u, credentials.size());
 
   auto* desc = answer->description();

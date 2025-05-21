@@ -32,6 +32,10 @@
   &[sidebarcommand="viewGenaiChatSidebar"] {
     min-width: 400px;
   }
+
+  &[sidebarcommand="viewCPMSidebar"] {
+    min-width: 260px;
+  }
 }
 
 #sidebar-main,
@@ -248,7 +252,7 @@ sidebar-main,
     */
     &[sidebar-launcher-expanded],
     &[sidebar-ongoing-animations]:not([sidebar-launcher-expanded]) {
-      z-index: var(--browser-area-z-index-sidebar-wrapper);
+      z-index: var(--browser-area-z-index-sidebar-expand-on-hover);
       position: absolute;
       color: var(--toolbox-textcolor);
       background-color: var(--toolbox-bgcolor);
@@ -351,3 +355,15 @@ sidebar-main,
       }
     }
   }
+
+/* History Menu */
+#sidebar-history-sort-by-heading {
+  margin-block: var(--space-xsmall);
+}
+
+#sidebar-history-clear {
+  padding: var(--menuitem-padding);
+  &::before {
+    content: unset;
+  }
+}

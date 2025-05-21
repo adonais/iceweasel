@@ -7,6 +7,7 @@ mod emitter;
 pub mod index;
 mod layouter;
 mod namer;
+mod overloads;
 mod terminator;
 mod type_methods;
 mod typifier;
@@ -18,9 +19,11 @@ pub use emitter::Emitter;
 pub use index::{BoundsCheckPolicies, BoundsCheckPolicy, IndexableLength, IndexableLengthError};
 pub use layouter::{Alignment, LayoutError, LayoutErrorInner, Layouter, TypeLayout};
 pub use namer::{EntryPointIndex, NameKey, Namer};
+pub use overloads::{Conclusion, MissingSpecialType, OverloadSet, Rule};
 pub use terminator::ensure_block_returns;
 use thiserror::Error;
-pub use typifier::{ResolveContext, ResolveError, TypeResolution};
+pub use type_methods::min_max_float_representable_by;
+pub use typifier::{compare_types, ResolveContext, ResolveError, TypeResolution};
 
 impl From<super::StorageFormat> for super::Scalar {
     fn from(format: super::StorageFormat) -> Self {
@@ -118,6 +121,8 @@ impl crate::Literal {
             (value, crate::ScalarKind::Sint, 8) => Some(Self::I64(value as _)),
             (1, crate::ScalarKind::Bool, crate::BOOL_WIDTH) => Some(Self::Bool(true)),
             (0, crate::ScalarKind::Bool, crate::BOOL_WIDTH) => Some(Self::Bool(false)),
+            (value, crate::ScalarKind::AbstractInt, 8) => Some(Self::AbstractInt(value as _)),
+            (value, crate::ScalarKind::AbstractFloat, 8) => Some(Self::AbstractFloat(value as _)),
             _ => None,
         }
     }
@@ -218,6 +223,8 @@ impl super::MathFunction {
             Self::Pow => 2,
             // geometry
             Self::Dot => 2,
+            Self::Dot4I8Packed => 2,
+            Self::Dot4U8Packed => 2,
             Self::Outer => 2,
             Self::Cross => 2,
             Self::Distance => 2,
@@ -255,6 +262,8 @@ impl super::MathFunction {
             Self::Pack2x16float => 1,
             Self::Pack4xI8 => 1,
             Self::Pack4xU8 => 1,
+            Self::Pack4xI8Clamp => 1,
+            Self::Pack4xU8Clamp => 1,
             // data unpacking
             Self::Unpack4x8snorm => 1,
             Self::Unpack4x8unorm => 1,
@@ -398,6 +407,10 @@ impl crate::Module {
             global_expressions: &self.global_expressions,
         }
     }
+
+    pub fn compare_types(&self, lhs: &TypeResolution, rhs: &TypeResolution) -> bool {
+        compare_types(lhs, rhs, &self.types)
+    }
 }
 
 #[derive(Debug)]
@@ -485,6 +498,10 @@ impl GlobalCtx<'_> {
             }
             _ => get(*self, handle, arena),
         }
+    }
+
+    pub fn compare_types(&self, lhs: &TypeResolution, rhs: &TypeResolution) -> bool {
+        compare_types(lhs, rhs, self.types)
     }
 }
 
@@ -590,7 +607,7 @@ pub fn flatten_compose<'arenas>(
                 count = size as usize;
             }
         }
-        core::iter::repeat(expr).take(count)
+        core::iter::repeat_n(expr, count)
     }
 
     // Expressions like `vec4(vec3(vec2(6, 7), 8), 9)` require us to

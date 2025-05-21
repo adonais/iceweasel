@@ -263,6 +263,7 @@ windows11-64-24h2/opt:
         - talos-xperf
         - windows-talos
         - browsertime
+        - windows-talos-webgl
 
 windows11-64-24h2-shippable/opt:
     build-platform: win64-shippable/opt
@@ -280,6 +281,7 @@ windows11-64-24h2-shippable/opt:
         - talos-profiling
         - windows-talos
         - browsertime
+        - windows-talos-webgl
 
 windows11-64-24h2-devedition/opt:
     build-platform: win64-devedition/opt
@@ -312,24 +314,25 @@ windows11-64-24h2-nightlyasrelease/opt:
 ##
 # MacOS X platforms (matching /macosx.*/)
 
-macosx1100-64-qr/debug:
+macosx1500-64/debug:
     build-platform: macosx64/debug
     build-signing-label: repackage-macosx64/debug
     test-sets:
-        - macosx1100-64-jittests
+        - macosx1500-64-jittests
 
-macosx1100-aarch64-qr/debug:
+macosx1500-aarch64/debug:
     build-platform: macosx64-aarch64/debug
     build-signing-label: repackage-macosx64-aarch64/debug
     test-sets:
-        - macosx1100-aarch64-qr-tests
+        - macosx1500-aarch64-tests
 
-macosx1100-aarch64-shippable-qr/opt:
+macosx1500-aarch64-shippable/opt:
     build-platform: macosx64-shippable/opt
     build-signing-label: repackage-macosx64-shippable/opt
     test-sets:
-        - macosx1100-64-jittests
-        - macosx1100-64-qr-tests
+        - macosx1500-64-jittests
+        - macosx1500-64-tests
+        - macosx1500-64-perftests
 
 macosx1470-64-nightlyasrelease/opt:
     build-platform: macosx64-nightlyasrelease/opt
@@ -387,11 +390,6 @@ macosx1015-64-qr/debug:
     build-platform: macosx64/debug
     test-sets:
         - macosx1015-64-qr-tests
-
-macosx1400-64-shippable-qr/opt:
-    build-platform: macosx64-shippable/opt
-    test-sets:
-        - macosx1400-64-qr-tests
 
 ##
 # Android platforms (matching /android-em.*/)
@@ -459,20 +457,17 @@ android-hw-p5-13-0-arm7-qr/debug:
 android-hw-p5-13-0-android-aarch64-qr/debug:
     build-platform: android-aarch64/debug
     test-sets:
-        - android-hw-aarch64
-        - android-hw-aarch64-debug-unittests
+        - android-hw-p5-aarch64
 
 android-hw-p5-13-0-android-aarch64-qr/opt:
     build-platform: android-aarch64/opt
     test-sets:
-        - android-hw-aarch64
-        - android-hw-aarch64-opt-unittests
+        - android-hw-p5-aarch64
 
 android-hw-p5-13-0-android-aarch64-shippable-qr/opt:
     build-platform: android-aarch64-shippable/opt
     test-sets:
-        - android-hw-aarch64
-        - android-hw-aarch64-pgo-unittests
+        - android-hw-p5-aarch64
 
 android-hw-p6-13-0-aarch64-shippable/opt:
     build-platform: android-aarch64-shippable/opt
@@ -485,12 +480,22 @@ android-hw-a55-14-0-aarch64-shippable/opt:
     test-sets:
         - android-hw-speedometer-tests
         - android-hw-browsertime
+        - android-hw-aarch64
+        - android-hw-aarch64-pgo-unittests
 
 android-hw-a55-14-0-aarch64/opt:
     build-platform: android-aarch64/opt
     test-sets:
         - android-hw-speedometer-tests
         - android-hw-browsertime
+        - android-hw-aarch64
+        - android-hw-aarch64-pgo-unittests
+
+android-hw-a55-14-0-aarch64/debug:
+    build-platform: android-aarch64/debug
+    test-sets:
+        - android-hw-aarch64
+        - android-hw-aarch64-debug-unittests
 
 android-hw-s24-14-0-aarch64-shippable/opt:
     build-platform: android-aarch64-shippable/opt

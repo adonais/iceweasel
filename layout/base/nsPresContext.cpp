@@ -87,6 +87,7 @@
 #include "mozilla/StaticPrefs_zoom.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/glean/LayoutMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimelineManager.h"
 #include "mozilla/dom/Performance.h"
@@ -132,7 +133,7 @@ bool nsPresContext::IsDOMPaintEventPending() {
   }
 
   nsRootPresContext* drpc = GetRootPresContext();
-  if (drpc && drpc->mRefreshDriver->ViewManagerFlushIsPending()) {
+  if (drpc && drpc->mRefreshDriver->IsPaintPending()) {
     // Since we're promising that there will be a MozAfterPaint event fired, we
     // record an empty invalidation in case display list invalidation doesn't
     // invalidate anything further.
@@ -1274,7 +1275,7 @@ bool nsPresContext::UserInputEventsAllowed() {
   }
 
   // Special document
-  if (Document()->IsEverInitialDocument()) {
+  if (Document()->IsEverInitialDocument() || Document()->IsStaticDocument()) {
     return true;
   }
 
@@ -1316,7 +1317,8 @@ bool nsPresContext::UserInputEventsAllowed() {
 void nsPresContext::MaybeIncreaseMeasuredTicksSinceLoading() {
   MOZ_ASSERT(IsRoot());
   if (mMeasuredTicksSinceLoading >=
-      StaticPrefs::dom_input_events_security_minNumTicks()) {
+          StaticPrefs::dom_input_events_security_minNumTicks() ||
+      Document()->IsStaticDocument()) {
     return;
   }
 
@@ -1818,12 +1820,9 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
   // Only the top level content pres context reports first interaction
   // time to telemetry (if it hasn't already done so).
   if (this == inProcessRootPresContext) {
-    if (Telemetry::CanRecordExtended()) {
-      double millis =
-          (interactionTime - mFirstNonBlankPaintTime).ToMilliseconds();
-      if (isFirstInteraction) {
-        Telemetry::Accumulate(Telemetry::TIME_TO_FIRST_INTERACTION_MS, millis);
-      }
+    if (Telemetry::CanRecordExtended() && isFirstInteraction) {
+      glean::layout::time_to_first_interaction.AccumulateRawDuration(
+          interactionTime - mFirstNonBlankPaintTime);
     }
   } else {
     inProcessRootPresContext->RecordInteractionTime(aType, aTimeStamp);
@@ -2377,26 +2376,6 @@ void nsPresContext::FireDOMPaintEvent(
                                     static_cast<Event*>(event), this, nullptr);
 }
 
-void nsPresContext::NotifyInvalidation(TransactionId aTransactionId,
-                                       const nsIntRect& aRect) {
-  // Prevent values from overflow after DevPixelsToAppUnits().
-  //
-  // DevPixelsTopAppUnits() will multiple a factor (60) to the value,
-  // it may make the result value over the edge (overflow) of max or
-  // min value of int32_t. Compute the max sized dev pixel rect that
-  // we can support and intersect with it.
-  nsIntRect clampedRect = nsIntRect::MaxIntRect();
-  clampedRect.ScaleInverseRoundIn(AppUnitsPerDevPixel());
-
-  clampedRect = clampedRect.Intersect(aRect);
-
-  nsRect rect(DevPixelsToAppUnits(clampedRect.x),
-              DevPixelsToAppUnits(clampedRect.y),
-              DevPixelsToAppUnits(clampedRect.width),
-              DevPixelsToAppUnits(clampedRect.height));
-  NotifyInvalidation(aTransactionId, rect);
-}
-
 nsPresContext::TransactionInvalidations* nsPresContext::GetInvalidations(
     TransactionId aTransactionId) {
   for (TransactionInvalidations& t : mTransactions) {
@@ -2846,8 +2825,7 @@ void nsPresContext::NotifyContentfulPaint() {
                "We should only notify contentful paint during refresh "
                "driver ticks");
     if (!perf->HadFCPTimingEntry()) {
-      TimeStamp nowTime = rootPresContext->RefreshDriver()->MostRecentRefresh(
-          /* aEnsureTimerStarted */ false);
+      TimeStamp nowTime = rootPresContext->RefreshDriver()->MostRecentRefresh();
       MOZ_ASSERT(!nowTime.IsNull(),
                  "Most recent refresh timestamp should exist since we are in "
                  "a refresh driver tick");
@@ -3078,7 +3056,8 @@ void nsPresContext::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
   if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
     mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
     mPresShell->MarkStickyFramesForReflow();
-    mPresShell->AddResizeEventFlushObserverIfNeeded();
+    mPresShell->ScheduleResizeEventIfNeeded(
+        PresShell::ResizeEventKind::Regular);
   }
 
   mDynamicToolbarHeight = mDynamicToolbarMaxHeight + aOffset;

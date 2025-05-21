@@ -92,7 +92,7 @@ BuildOutputResult = namedtuple(
 )
 
 
-class TierStatus(object):
+class TierStatus:
     """Represents the state and progress of tier traversal.
 
     The build system is organized into linear phases called tiers. Each tier
@@ -359,7 +359,7 @@ class BuildMonitor(MozbuildObject):
                 build_resources_profile_path = self._get_state_filename(
                     "profile_build_resources.json"
                 )
-            with io.open(
+            with open(
                 build_resources_profile_path, "w", encoding="utf-8", newline="\n"
             ) as fh:
                 to_write = six.ensure_text(
@@ -595,7 +595,7 @@ class BuildProgressFooter(Footer):
 
     def __init__(self, terminal, monitor):
         Footer.__init__(self, terminal)
-        self.tiers = six.viewitems(monitor.tiers.tier_status)
+        self.tiers = monitor.tiers.tier_status.items()
 
     def draw(self):
         """Draws this footer in the terminal."""
@@ -766,16 +766,17 @@ class StaticAnalysisOutputManager(OutputManager):
                     self._handler.release()
 
     def write(self, path, output_format):
-        assert output_format in ("text", "json"), "Invalid output format {}".format(
-            output_format
-        )
+        assert output_format in (
+            "text",
+            "json",
+        ), f"Invalid output format {output_format}"
         path = mozpath.realpath(path)
 
         if output_format == "json":
             self.monitor._warnings_database.save_to_file(path)
 
         else:
-            with io.open(path, "w", encoding="utf-8", newline="\n") as f:
+            with open(path, "w", encoding="utf-8", newline="\n") as f:
                 f.write(self.raw)
 
         self.log(
@@ -786,7 +787,7 @@ class StaticAnalysisOutputManager(OutputManager):
         )
 
 
-class CCacheStats(object):
+class CCacheStats:
     """Holds statistics from ccache.
 
     Instances can be subtracted from each other to obtain differences.
@@ -1422,9 +1423,9 @@ class BuildDriver(MozbuildObject):
             )
 
             if os.path.exists(pathToThirdparty):
-                with io.open(
-                    pathToThirdparty, encoding="utf-8", newline="\n"
-                ) as f, io.open(pathToGenerated, encoding="utf-8", newline="\n") as g:
+                with open(pathToThirdparty, encoding="utf-8", newline="\n") as f, open(
+                    pathToGenerated, encoding="utf-8", newline="\n"
+                ) as g:
                     # Normalize the path (no trailing /)
                     LOCAL_SUPPRESS_DIRS = tuple(
                         [line.strip("\n/") for line in f]
@@ -1787,7 +1788,7 @@ class BuildDriver(MozbuildObject):
         # Copy the original mozconfig to the objdir.
         mozconfig_objdir = mozpath.join(self.topobjdir, ".mozconfig")
         if mozconfig["path"]:
-            with open(mozconfig["path"], "r") as ifh:
+            with open(mozconfig["path"]) as ifh:
                 with FileAvoidWrite(mozconfig_objdir) as ofh:
                     ofh.write(ifh.read())
         else:

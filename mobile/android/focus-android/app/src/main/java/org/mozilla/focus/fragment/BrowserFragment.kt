@@ -70,7 +70,6 @@ import mozilla.components.support.ktx.android.content.createChooserExcludingCurr
 import mozilla.components.support.ktx.android.view.exitImmersiveMode
 import mozilla.components.support.locale.ActivityContextWrapper
 import mozilla.components.support.utils.Browsers
-import mozilla.components.support.utils.StatusBarUtils
 import mozilla.components.support.utils.ext.requestInPlacePermissions
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.GleanMetrics.Browser
@@ -299,7 +298,6 @@ class BrowserFragment :
                 tab.id,
                 components.sessionUseCases,
                 binding.browserToolbar,
-                binding.statusBarBackground,
                 binding.engineView,
                 isAccessibilityEnabled = { requireContext().isAccessibilityEnabled() },
             ),
@@ -703,7 +701,7 @@ class BrowserFragment :
     }
 
     fun crashReporterIsVisible(): Boolean = requireActivity().supportFragmentManager.let {
-        it.findFragmentByTag(CrashReporterFragment.FRAGMENT_TAG)?.isVisible ?: false
+        it.findFragmentByTag(CrashReporterFragment.FRAGMENT_TAG)?.isVisible == true
     }
 
     private fun handleDownloadStopped(
@@ -759,7 +757,9 @@ class BrowserFragment :
         snackbar.setAction(getString(R.string.download_snackbar_open)) { context ->
             val opened = AbstractFetchDownloadService.openFile(
                 applicationContext = context.applicationContext,
-                download = state,
+                downloadFileName = state.fileName,
+                downloadFilePath = state.filePath,
+                downloadContentType = state.contentType,
             )
 
             if (!opened) {
@@ -816,12 +816,6 @@ class BrowserFragment :
         super.onResume()
 
         updateEngineColorScheme()
-
-        // Hide status bar background if the parent activity can be casted to MainActivity
-        (requireActivity() as? MainActivity)?.hideStatusBarBackground()
-        StatusBarUtils.getStatusBarHeight(binding.statusBarBackground) { statusBarHeight ->
-            binding.statusBarBackground.layoutParams.height = statusBarHeight
-        }
 
         // Custom tab content should always be visible, even if the app is locked.
         if (tab.isCustomTab()) {

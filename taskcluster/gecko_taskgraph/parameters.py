@@ -89,11 +89,12 @@ gecko_parameters_schema = {
         Optional("routes"): [str],
     },
     Required("version"): str,
+    Optional("head_git_rev"): str,
 }
 
 
 def get_contents(path):
-    with open(path, "r") as fh:
+    with open(path) as fh:
         contents = fh.readline().rstrip()
     return contents
 

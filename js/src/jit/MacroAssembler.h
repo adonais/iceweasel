@@ -645,7 +645,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   CodeOffset farJumpWithPatch() PER_SHARED_ARCH;
   void patchFarJump(CodeOffset farJump, uint32_t targetOffset) PER_SHARED_ARCH;
   static void patchFarJump(uint8_t* farJump, uint8_t* target)
-      DEFINED_ON(arm, arm64, x86_shared, loong64, mips64);
+      DEFINED_ON(arm, arm64, x86_shared, loong64, mips64, riscv64);
 
   // Emit a nop that can be patched to and from a nop and a call with int32
   // relative displacement.
@@ -671,9 +671,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // target behaviour is only provided for `n` in the range 0 .. 2^31-1
   // inclusive.
   CodeOffset move32WithPatch(Register dest)
-      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64);
+      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64, riscv64);
   void patchMove32(CodeOffset offset, Imm32 n)
-      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64);
+      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64, riscv64);
 
  public:
   // ===============================================================
@@ -1350,13 +1350,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void sameValueDouble(FloatRegister left, FloatRegister right,
                        FloatRegister temp, Register dest);
-
-  void branchIfNotRegExpPrototypeOptimizable(Register proto, Register temp,
-                                             const GlobalObject* maybeGlobal,
-                                             Label* label);
-  void branchIfNotRegExpInstanceOptimizable(Register regexp, Register temp,
-                                            const GlobalObject* maybeGlobal,
-                                            Label* label);
 
   void loadRegExpLastIndex(Register regexp, Register string, Register lastIndex,
                            Label* notFoundZeroLastIndex);
@@ -3982,7 +3975,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // Will select one of the other branchWasmRefIsSubtype* functions depending on
   // destType. See each function for the register allocation requirements, as
   // well as which registers will be preserved.
-  void branchWasmRefIsSubtype(Register ref, wasm::RefType sourceType,
+  void branchWasmRefIsSubtype(Register ref, wasm::MaybeRefType sourceType,
                               wasm::RefType destType, Label* label,
                               bool onSuccess, Register superSTV,
                               Register scratch1, Register scratch2);
@@ -4036,11 +4029,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // `superSTV` is statically known, which is the case for all wasm
   // instructions.
   //
-  // `scratch` is required iff the `superDepth` is >=
-  // wasm::MinSuperTypeVectorLength. `subSTV` is clobbered by this method.
-  // `superSTV` is preserved.
+  // `scratch` is required iff the destination type is not final and the
+  // `superDepth` is >= wasm::MinSuperTypeVectorLength. `subSTV` is clobbered by
+  // this method if the destination type is not final. `superSTV` is always
+  // preserved.
   void branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
-                              Register scratch, uint32_t superDepth,
+                              Register scratch, const wasm::TypeDef* destType,
                               Label* label, bool onSuccess);
 
   // Same as branchWasmSTVIsSubtype, but looks up a dynamic position in the

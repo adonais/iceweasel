@@ -19,7 +19,9 @@ use crate::{
     lock::{rank, Mutex},
     present::Presentation,
     resource::ResourceType,
-    resource_log, DOWNLEVEL_WARNING_MESSAGE,
+    resource_log,
+    timestamp_normalization::TimestampNormalizerInitError,
+    DOWNLEVEL_WARNING_MESSAGE,
 };
 
 use wgt::{Backend, Backends, PowerPreference};
@@ -80,7 +82,7 @@ pub struct Instance {
     /// `instance_per_backend` instead.
     supported_backends: Backends,
 
-    flags: wgt::InstanceFlags,
+    pub flags: wgt::InstanceFlags,
 }
 
 impl Instance {
@@ -121,6 +123,7 @@ impl Instance {
         let hal_desc = hal::InstanceDescriptor {
             name: "wgpu",
             flags: self.flags,
+            memory_budget_thresholds: instance_desc.memory_budget_thresholds,
             backend_options: instance_desc.backend_options.clone(),
         };
 
@@ -406,7 +409,7 @@ impl Instance {
         {
             // NOTE: We might be using `profiling` without any features. The empty backend of this
             // macro emits no code, so unused code linting changes depending on the backend.
-            profiling::scope!("enumerating", &*format!("{:?}", _backend));
+            profiling::scope!("enumerating", &*alloc::format!("{:?}", _backend));
 
             let hal_adapters = unsafe { instance.enumerate_adapters(None) };
             for raw in hal_adapters {
@@ -764,6 +767,7 @@ impl Adapter {
         let queue = Arc::new(queue);
 
         device.set_queue(&queue);
+        device.late_init_resources_with_queue()?;
 
         Ok((device, queue))
     }
@@ -835,7 +839,6 @@ pub enum GetSurfaceSupportError {
 }
 
 #[derive(Clone, Debug, Error)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Error when requesting a device from the adapter
 #[non_exhaustive]
 pub enum RequestDeviceError {
@@ -843,6 +846,8 @@ pub enum RequestDeviceError {
     Device(#[from] DeviceError),
     #[error(transparent)]
     LimitsExceeded(#[from] FailedLimit),
+    #[error("Failed to initialize Timestamp Normalizer")]
+    TimestampNormalizerInitFailed(#[from] TimestampNormalizerInitError),
     #[error("Unsupported features were requested: {0:?}")]
     UnsupportedFeature(wgt::Features),
 }

@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -34,16 +36,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Divider
+import mozilla.components.compose.base.Dropdown
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.menu.MenuItem
+import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.base.textfield.TextField
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.Dropdown
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.button.RadioButton
-import org.mozilla.fenix.compose.menu.MenuItem
-import org.mozilla.fenix.compose.text.Text
-import org.mozilla.fenix.compose.textfield.TextField
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.doh.CustomProviderErrorState
 import org.mozilla.fenix.settings.doh.DohSettingsState
@@ -89,6 +91,7 @@ internal fun DohSettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues),
         ) {
             DohSummary(

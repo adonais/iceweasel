@@ -10,6 +10,7 @@
 #include <CoreMedia/CoreMedia.h>
 #include <VideoToolbox/VideoToolbox.h>
 
+#include "apple/AppleUtils.h"
 #include "PlatformEncoderModule.h"
 
 namespace mozilla {
@@ -67,10 +68,20 @@ class AppleVTEncoder final : public MediaDataEncoder {
   RefPtr<EncodePromise> ProcessDrain();
   RefPtr<ShutdownPromise> ProcessShutdown();
 
-  CFDictionaryRef BuildSourceImageBufferAttributes();
+  void InvalidateSessionIfNeeded();
+  MediaResult InitSession();
+  CFDictionaryRef BuildSourceImageBufferAttributes(OSType aPixelFormat);
   CVPixelBufferRef CreateCVPixelBuffer(layers::Image* aSource);
   bool WriteExtraData(MediaRawData* aDst, CMSampleBufferRef aSrc,
                       const bool aAsAnnexB);
+
+  bool SetAverageBitrate(uint32_t aBitsPerSec);
+  bool SetConstantBitrate(uint32_t aBitsPerSec);
+  bool SetBitrateAndMode(BitrateMode aBitrateMode, uint32_t aBitsPerSec);
+  bool SetFrameRate(int64_t aFPS);
+  bool SetRealtime(bool aEnabled);
+  bool SetProfileLevel(H264_PROFILE aValue);
+
   void AssertOnTaskQueue() { MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn()); }
 
   EncoderConfig mConfig;
@@ -84,11 +95,9 @@ class AppleVTEncoder final : public MediaDataEncoder {
   MediaResult mError;
 
   // Written by Init() but used only in task queue.
-  VTCompressionSessionRef mSession;
+  AutoCFTypeRef<VTCompressionSessionRef> mSession;
   // Can be accessed on any thread, but only written on during init.
   Atomic<bool> mIsHardwareAccelerated;
-  // Written during init and shutdown.
-  Atomic<bool> mInited;
   // Accessed only in mTaskQueue. Used for for OS versions < 11.
   nsCOMPtr<nsITimer> mTimer;
 };

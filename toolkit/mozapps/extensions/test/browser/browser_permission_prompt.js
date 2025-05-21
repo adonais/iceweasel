@@ -14,9 +14,15 @@ const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 
 ChromeUtils.defineESModuleGetters(this, {
   PERMISSION_L10N: "resource://gre/modules/ExtensionPermissionMessages.sys.mjs",
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
 });
 
 AddonTestUtils.initMochitest(this);
+
+const LABEL_FOR_TECHNICAL_AND_INTERACTION_DATA_CHECKBOX =
+  PERMISSION_L10N.formatMessagesSync([
+    "popup-notification-addon-technicalAndInteraction-checkbox",
+  ])[0].attributes.find(attr => attr.name === "label").value;
 
 function assertDisabledSideloadedExtensionElement(managerWindow, addonElement) {
   const doc = addonElement.ownerDocument;
@@ -209,25 +215,11 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
     .fill("x")
     .join("")}.com`;
 
-  const assertPermsElVisibility = (popupContentEl, noIncognitoCheckbox) => {
-    // We expect the host permissions entry to be the only entry to be shown
-    // if the incognito checkbox isn't expected to be visible for the test
-    // extension (because the test extension doesn't request any other
-    // permission and each test case is executed with and without opting-out
-    // of the private browsing access).
+  const assertPermsElVisibility = popupContentEl => {
     Assert.equal(
-      BrowserTestUtils.isHidden(popupContentEl.permsListEl),
-      noIncognitoCheckbox,
-      `Expect the permissions list element to be ${
-        noIncognitoCheckbox ? "hidden" : "visible"
-      }`
-    );
-    Assert.equal(
-      BrowserTestUtils.isVisible(popupContentEl.permsSingleEl),
-      noIncognitoCheckbox,
-      `Expect the single permission element to be ${
-        noIncognitoCheckbox ? "visible" : "hidden"
-      }`
+      BrowserTestUtils.isVisible(popupContentEl.permsListEl),
+      true,
+      "Expect the permissions list element to be visible"
     );
   };
 
@@ -245,12 +237,8 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       domainsListLength: 0,
       verifyDialog(popupContentEl, noIncognitoCheckbox) {
         assertNoDomainsList(popupContentEl);
-        Assert.ok(
-          BrowserTestUtils.isHidden(popupContentEl.permsListEl),
-          `Expect the permissions list element to be hidden`
-        );
         Assert.equal(
-          BrowserTestUtils.isHidden(popupContentEl.permsSingleEl),
+          BrowserTestUtils.isHidden(popupContentEl.permsListEl),
           noIncognitoCheckbox,
           `Expect the permissions list element to be ${
             noIncognitoCheckbox ? "hidden" : "visible"
@@ -262,12 +250,12 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       msg: "Test install extension with one domain listed in host permissions",
       id: "one-domain",
       domainsListLength: 1,
-      verifyDialog(popupContentEl, noIncognitoCheckbox) {
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
+      verifyDialog(popupContentEl) {
+        assertPermsElVisibility(popupContentEl);
         assertNoDomainsList(popupContentEl);
-        const hostPermStringEl = noIncognitoCheckbox
-          ? popupContentEl.permsSingleEl
-          : popupContentEl.permsListEl.querySelector("li.webext-perm-granted");
+        const hostPermStringEl = popupContentEl.permsListEl.querySelector(
+          "li.webext-perm-granted"
+        );
         Assert.ok(
           hostPermStringEl,
           "Expect one granted permission string element"
@@ -292,15 +280,11 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       msg: "Test install extension with less than 6 domains listed in host permissions",
       id: "few-domains",
       domainsListLength: 5,
-      verifyDialog(popupContentEl, noIncognitoCheckbox) {
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
-        const domainsListEl = noIncognitoCheckbox
-          ? popupContentEl.permsSingleEl.querySelector(
-              ".webext-perm-domains-list"
-            )
-          : popupContentEl.permsListEl.querySelector(
-              ".webext-perm-domains-list"
-            );
+      verifyDialog(popupContentEl) {
+        assertPermsElVisibility(popupContentEl);
+        const domainsListEl = popupContentEl.permsListEl.querySelector(
+          ".webext-perm-domains-list"
+        );
 
         Assert.ok(
           domainsListEl,
@@ -341,15 +325,11 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       msg: "Test install extension with many domains listed in host permissions",
       id: "many-domains",
       domainsListLength: 20,
-      verifyDialog(popupContentEl, noIncognitoCheckbox) {
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
-        const domainsListEl = noIncognitoCheckbox
-          ? popupContentEl.permsSingleEl.querySelector(
-              ".webext-perm-domains-list"
-            )
-          : popupContentEl.permsListEl.querySelector(
-              ".webext-perm-domains-list"
-            );
+      verifyDialog(popupContentEl) {
+        assertPermsElVisibility(popupContentEl);
+        const domainsListEl = popupContentEl.permsListEl.querySelector(
+          ".webext-perm-domains-list"
+        );
 
         Assert.ok(
           domainsListEl,
@@ -391,11 +371,11 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       id: "one-long-domain",
       domainsListLength: 0,
       permissions: [`*://${LONG_DOMAIN_NAME}/*`],
-      verifyDialog(popupContentEl, noIncognitoCheckbox) {
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
-        const hostPermStringEl = noIncognitoCheckbox
-          ? popupContentEl.permsSingleEl
-          : popupContentEl.permsListEl.querySelector("li.webext-perm-granted");
+      verifyDialog(popupContentEl) {
+        assertPermsElVisibility(popupContentEl);
+        const hostPermStringEl = popupContentEl.permsListEl.querySelector(
+          "li.webext-perm-granted"
+        );
         Assert.equal(
           hostPermStringEl.childNodes[0].nodeType,
           hostPermStringEl.TEXT_NODE,
@@ -421,9 +401,8 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
           // been broken into has a width larger than the width of the parent
           // element.
           //
-          // NOTE: this assertion is expected to hit a failure if .webext-perm-granted
-          // or .addon-webext-perm-single-entry elements are missing the overflow-wrap
-          // CSS rule.
+          // NOTE: this assertion is expected to hit a failure if
+          // .webext-perm-granted is missing the overflow-wrap CSS rule.
           hostPermStringEl.childNodes[0]
             .getBoxQuads()
             .map(quad => quad.getBounds().width)
@@ -440,15 +419,11 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       id: "one-long-domain-in-domains-list",
       domainsListLength: 10,
       permissions: [`*://${LONG_DOMAIN_NAME}/*`],
-      verifyDialog(popupContentEl, noIncognitoCheckbox) {
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
-        const domainsListEl = noIncognitoCheckbox
-          ? popupContentEl.permsSingleEl.querySelector(
-              ".webext-perm-domains-list"
-            )
-          : popupContentEl.permsListEl.querySelector(
-              ".webext-perm-domains-list"
-            );
+      verifyDialog(popupContentEl) {
+        assertPermsElVisibility(popupContentEl);
+        const domainsListEl = popupContentEl.permsListEl.querySelector(
+          ".webext-perm-domains-list"
+        );
         Assert.ok(
           domainsListEl,
           "Expect domains list element to be found inside the permission list element"
@@ -495,11 +470,11 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       id: "with-wildcard-subdomains",
       domainsListLength: 0,
       permissions: ["*://*.example.com/*", "*://example.com/*"],
-      verifyDialog(popupContentEl, noIncognitoCheckbox) {
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
-        const hostPermStringEl = noIncognitoCheckbox
-          ? popupContentEl.permsSingleEl
-          : popupContentEl.permsListEl.querySelector("li.webext-perm-granted");
+      verifyDialog(popupContentEl) {
+        assertPermsElVisibility(popupContentEl);
+        const hostPermStringEl = popupContentEl.permsListEl.querySelector(
+          "li.webext-perm-granted"
+        );
         Assert.equal(
           hostPermStringEl.textContent,
           PERMISSION_L10N.formatValueSync(
@@ -522,16 +497,11 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
         "*://*.example.org/*",
         "*://example.org/*",
       ],
-      verifyDialog(popupContentEl, noIncognitoCheckbox) {
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
-        assertPermsElVisibility(popupContentEl, noIncognitoCheckbox);
-        const domainsListEl = noIncognitoCheckbox
-          ? popupContentEl.permsSingleEl.querySelector(
-              ".webext-perm-domains-list"
-            )
-          : popupContentEl.permsListEl.querySelector(
-              ".webext-perm-domains-list"
-            );
+      verifyDialog(popupContentEl) {
+        assertPermsElVisibility(popupContentEl);
+        const domainsListEl = popupContentEl.permsListEl.querySelector(
+          ".webext-perm-domains-list"
+        );
         Assert.ok(
           domainsListEl,
           "Expect domains list element to be found inside the permission list element"
@@ -602,4 +572,633 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       });
     }
   }
+});
+
+add_task(async function testInstallDialogShowsDataCollectionPermissions() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.dataCollectionPermissions.enabled", true]],
+  });
+
+  const createTestExtensionXPI = ({
+    id,
+    manifest_version,
+    incognito = undefined,
+    permissions = undefined,
+    data_collection_permissions = undefined,
+  }) => {
+    return AddonTestUtils.createTempWebExtensionFile({
+      manifest: {
+        manifest_version,
+        // Set the generated id as a name to make it easier to recognize the
+        // test case from dialog screenshots (e.g. in the screenshot captured
+        // when the test hits a failure).
+        name: id,
+        version: "1.0",
+        incognito,
+        permissions,
+        browser_specific_settings: {
+          gecko: {
+            id,
+            data_collection_permissions,
+          },
+        },
+      },
+    });
+  };
+
+  const assertHeaderWithPerms = (popupContentEl, extensionId) => {
+    Assert.equal(
+      popupContentEl.querySelector(".popup-notification-description")
+        .textContent,
+      PERMISSION_L10N.formatValueSync(
+        "webext-perms-header-unsigned-with-perms",
+        // We set the extension name to the extension id in `createTestExtensionXPI`.
+        { extension: extensionId }
+      ),
+      "Expected header string with perms"
+    );
+  };
+
+  const assertHeaderNoPerms = (popupContentEl, extensionId) => {
+    Assert.equal(
+      popupContentEl.querySelector(".popup-notification-description")
+        .textContent,
+      PERMISSION_L10N.formatValueSync(
+        "webext-perms-header-unsigned",
+        // We set the extension name to the extension id in `createTestExtensionXPI`.
+        { extension: extensionId }
+      ),
+      "Expected header string without perms"
+    );
+  };
+
+  const TEST_CASES = [
+    {
+      title: "With no data collection and incognito not allowed",
+      incognito: "not_allowed",
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          0,
+          "Expected no permissions"
+        );
+        Assert.ok(
+          !popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected no learn more link"
+        );
+      },
+    },
+    // Make sure we have the incognito checkbox when no other permissions are
+    // specified.
+    {
+      title: "With no data collection",
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          1,
+          "Expected a single permission in the list"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title: "With required data collection",
+      data_collection_permissions: {
+        required: ["locationInfo"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          2,
+          "Expected two permission entries in the list"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-data-collection-perm-granted"
+          ),
+          "Expected data collection item"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.firstChild.textContent,
+          PERMISSION_L10N.formatValueSync(
+            "webext-perms-description-data-some",
+            {
+              permissions: "location",
+            }
+          ),
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title: "With multiple required data collection",
+      data_collection_permissions: {
+        required: ["locationInfo", "financialAndPaymentInfo", "websiteContent"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          2,
+          "Expected two permission entries in the list"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.firstChild.textContent,
+          PERMISSION_L10N.formatValueSync(
+            "webext-perms-description-data-some",
+            {
+              // We pass the result of the `Intl.ListFormat` here to verify its
+              // output.
+              permissions:
+                "location, financial and payment information, website content",
+            }
+          ),
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title: "With explicit no data collection",
+      data_collection_permissions: {
+        required: ["none"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          2,
+          "Expected two permission entries in the list"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.firstChild.textContent,
+          PERMISSION_L10N.formatValueSync("webext-perms-description-data-none"),
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    // This test verifies that we omit "none" when other required data
+    // collection permissions are also defined.
+    {
+      title: "With required data collection and 'none'",
+      // This test extension requires "none" with another data collection permission,
+      // and so it is expected to log a manifest warning.
+      expectManifestWarnings: true,
+      data_collection_permissions: {
+        required: ["none", "locationInfo"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          2,
+          "Expected two permission entries in the list"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.firstChild.textContent,
+          PERMISSION_L10N.formatValueSync(
+            "webext-perms-description-data-some",
+            {
+              permissions: "location",
+            }
+          ),
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title: "With optional data collection",
+      data_collection_permissions: {
+        optional: ["locationInfo"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          1,
+          "Expected a single permission in the list"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    // This test case verifies that we show a checkbox for the
+    // `technicalAndInteraction` optional data collection permission.
+    {
+      title: "With technical and interaction data",
+      data_collection_permissions: {
+        optional: ["technicalAndInteraction"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          2,
+          "Expected two permission entries in the list"
+        );
+        let checkbox = popupContentEl.permsListEl.querySelector(
+          "li.webext-data-collection-perm-optional > checkbox"
+        );
+        Assert.ok(checkbox, "Expected technical and interaction checkbox");
+        Assert.ok(checkbox.checked, "Expected checkbox to be checked");
+        Assert.equal(
+          popupContentEl.permsListEl.firstChild.textContent,
+          LABEL_FOR_TECHNICAL_AND_INTERACTION_DATA_CHECKBOX,
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title: "With technical and interaction data and no private browsing",
+      incognito: "not_allowed",
+      data_collection_permissions: {
+        optional: ["technicalAndInteraction"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          1,
+          "Expected a single permission entry in the list"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-data-collection-perm-optional > checkbox"
+          ),
+          "Expected technical and interaction checkbox"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.textContent,
+          LABEL_FOR_TECHNICAL_AND_INTERACTION_DATA_CHECKBOX,
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title: "No required data collection and technical and interaction data",
+      data_collection_permissions: {
+        required: ["none"],
+        optional: ["technicalAndInteraction"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderNoPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          3,
+          "Expected three permission entries in the list"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.firstChild.textContent,
+          PERMISSION_L10N.formatValueSync("webext-perms-description-data-none"),
+          "Expected formatted data collection permission string"
+        );
+        const checkboxEl = popupContentEl.permsListEl.querySelector(
+          "li.webext-data-collection-perm-optional > checkbox"
+        );
+        Assert.ok(checkboxEl, "Expected technical and interaction checkbox");
+        Assert.equal(
+          checkboxEl.parentNode.textContent,
+          LABEL_FOR_TECHNICAL_AND_INTERACTION_DATA_CHECKBOX,
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title: "With required permission and data collection",
+      permissions: ["bookmarks"],
+      data_collection_permissions: {
+        required: ["bookmarksInfo"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderWithPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          3,
+          "Expected three permission entries in the list"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.firstChild.classList.contains(
+            "webext-perm-granted"
+          ),
+          "Expected first entry to be the required API permission"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-data-collection-perm-granted"
+          ),
+          "Expected data collection item"
+        );
+        // Make sure the data collection permission is the second child.
+        Assert.equal(
+          popupContentEl.permsListEl.childNodes[1].textContent,
+          PERMISSION_L10N.formatValueSync(
+            "webext-perms-description-data-some",
+            {
+              permissions: "bookmarks",
+            }
+          ),
+          "Expected formatted data collection permission string"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+    {
+      title:
+        "With required permission and data collection, and optional collection",
+      permissions: ["bookmarks"],
+      data_collection_permissions: {
+        required: ["bookmarksInfo"],
+        optional: ["technicalAndInteraction"],
+      },
+      verifyDialog(popupContentEl, { extensionId }) {
+        assertHeaderWithPerms(popupContentEl, extensionId);
+        Assert.equal(
+          popupContentEl.permsListEl.childElementCount,
+          4,
+          "Expected four permission entries in the list"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.firstChild.classList.contains(
+            "webext-perm-granted"
+          ),
+          "Expected first entry to be the required API permission"
+        );
+        Assert.ok(
+          popupContentEl.permsListEl.querySelector(
+            "li.webext-data-collection-perm-granted"
+          ),
+          "Expected data collection item"
+        );
+        // Make sure the data collection permission is the second child.
+        Assert.equal(
+          popupContentEl.permsListEl.childNodes[1].textContent,
+          PERMISSION_L10N.formatValueSync(
+            "webext-perms-description-data-some",
+            {
+              permissions: "bookmarks",
+            }
+          ),
+          "Expected formatted data collection permission string"
+        );
+        // Make sure the T&I checkbox is listed after the permissions.
+        const checkboxEl =
+          popupContentEl.permsListEl.childNodes[2].querySelector("checkbox");
+        Assert.ok(checkboxEl, "Expected technical and interaction checkbox");
+        Assert.equal(
+          checkboxEl.parentNode.textContent,
+          LABEL_FOR_TECHNICAL_AND_INTERACTION_DATA_CHECKBOX,
+          "Expected formatted data collection permission string"
+        );
+        // Make sure the incognito checkbox is the last item.
+        Assert.ok(
+          popupContentEl.permsListEl.childNodes[3].querySelector(
+            "li.webext-perm-privatebrowsing > checkbox"
+          ),
+          "Expected private browsing checkbox"
+        );
+        Assert.ok(
+          popupContentEl.hasAttribute("learnmoreurl"),
+          "Expected a learn more link"
+        );
+      },
+    },
+  ];
+
+  for (const manifest_version of [2, 3]) {
+    for (const { title, verifyDialog, ...testCase } of TEST_CASES) {
+      info(`MV${manifest_version} - ${title}`);
+
+      const extensionId = `@${title.toLowerCase().replaceAll(/[^\w]+/g, "-")}`;
+      const xpi = createTestExtensionXPI({
+        id: extensionId,
+        manifest_version,
+        ...testCase,
+      });
+
+      await BrowserTestUtils.withNewTab("about:blank", async () => {
+        const dialogPromise = promisePopupNotificationShown(
+          "addon-webext-permissions"
+        );
+
+        if (testCase.expectManifestWarnings) {
+          await ExtensionTestUtils.failOnSchemaWarnings(false);
+        }
+        gURLBar.value = xpi.path;
+        gURLBar.focus();
+        EventUtils.synthesizeKey("KEY_Enter");
+        const popupContentEl = await dialogPromise;
+
+        verifyDialog(popupContentEl, { extensionId });
+
+        let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+          window.PopupNotifications.panel,
+          "popuphidden"
+        );
+        // Hide the panel (this simulates the user dismissing it).
+        popupContentEl.closest("panel").hidePopup();
+        await popupHiddenPromise;
+        if (testCase.expectManifestWarnings) {
+          ExtensionTestUtils.failOnSchemaWarnings(true);
+        }
+      });
+    }
+  }
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function testTechnicalAndInteractionData() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.dataCollectionPermissions.enabled", true]],
+  });
+
+  const extensionId = "@test-id";
+  const extension = AddonTestUtils.createTempWebExtensionFile({
+    manifest: {
+      version: "1.0",
+      browser_specific_settings: {
+        gecko: {
+          id: extensionId,
+          data_collection_permissions: {
+            optional: ["technicalAndInteraction"],
+          },
+        },
+      },
+    },
+  });
+
+  let perms = await ExtensionPermissions.get(extensionId);
+  Assert.deepEqual(
+    perms,
+    { permissions: [], origins: [], data_collection: [] },
+    "Expected no permissions"
+  );
+
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    const dialogPromise = promisePopupNotificationShown(
+      "addon-webext-permissions"
+    );
+
+    gURLBar.value = extension.path;
+    gURLBar.focus();
+    EventUtils.synthesizeKey("KEY_Enter");
+    const popupContentEl = await dialogPromise;
+
+    // Install the add-on.
+    let notificationPromise = acceptAppMenuNotificationWhenShown(
+      "addon-installed",
+      extensionId
+    );
+    popupContentEl.button.click();
+    await notificationPromise;
+
+    perms = await ExtensionPermissions.get(extensionId);
+    Assert.deepEqual(
+      perms,
+      {
+        permissions: [],
+        origins: [],
+        data_collection: ["technicalAndInteraction"],
+      },
+      "Expected data collection permission"
+    );
+
+    const addon = await AddonManager.getAddonByID(extensionId);
+    Assert.ok(addon, "Expected add-on");
+    await addon.uninstall();
+  });
+
+  // Repeat but uncheck the checkbox this time.
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    const dialogPromise = promisePopupNotificationShown(
+      "addon-webext-permissions"
+    );
+
+    gURLBar.value = extension.path;
+    gURLBar.focus();
+    EventUtils.synthesizeKey("KEY_Enter");
+    const popupContentEl = await dialogPromise;
+
+    const checkboxEl = popupContentEl.permsListEl.querySelector(
+      "li.webext-data-collection-perm-optional > checkbox"
+    );
+    checkboxEl.click();
+
+    // Install the add-on.
+    let notificationPromise = acceptAppMenuNotificationWhenShown(
+      "addon-installed",
+      extensionId
+    );
+    popupContentEl.button.click();
+    await notificationPromise;
+
+    perms = await ExtensionPermissions.get(extensionId);
+    Assert.deepEqual(
+      perms,
+      {
+        permissions: [],
+        origins: [],
+        data_collection: [],
+      },
+      "Expected no data collection permission"
+    );
+
+    const addon = await AddonManager.getAddonByID(extensionId);
+    Assert.ok(addon, "Expected add-on");
+    await addon.uninstall();
+  });
+
+  await SpecialPowers.popPrefEnv();
 });

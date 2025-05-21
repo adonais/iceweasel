@@ -34,7 +34,7 @@
 //! up the scissor, are accepting already transformed coordinates, which we can get by
 //! calling `DrawTarget::to_framebuffer_rect`
 
-use api::{ColorF, ColorU, MixBlendMode};
+use api::{ClipMode, ColorF, ColorU, MixBlendMode};
 use api::{DocumentId, Epoch, ExternalImageHandler, RenderReasons};
 #[cfg(feature = "replay")]
 use api::ExternalImageId;
@@ -56,8 +56,9 @@ use crate::batch::ClipMaskInstanceList;
 use crate::capture::{CaptureConfig, ExternalCaptureImage, PlainExternalImage};
 use crate::composite::{CompositeState, CompositeTileSurface, CompositorInputLayer, CompositorSurfaceTransform, ResolvedExternalSurface};
 use crate::composite::{CompositorKind, Compositor, NativeTileId, CompositeFeatures, CompositeSurfaceFormat, ResolvedExternalSurfaceColorData};
-use crate::composite::{CompositorConfig, NativeSurfaceOperationDetails, NativeSurfaceId, NativeSurfaceOperation};
+use crate::composite::{CompositorConfig, NativeSurfaceOperationDetails, NativeSurfaceId, NativeSurfaceOperation, ClipRadius};
 use crate::composite::TileKind;
+use crate::segment::SegmentBuilder;
 use crate::{debug_colors, CompositorInputConfig, CompositorSurfaceUsage};
 use crate::device::{DepthFunction, Device, DrawTarget, ExternalTexture, GpuFrameId, UploadPBOPool};
 use crate::device::{ReadTarget, ShaderError, Texture, TextureFilter, TextureFlags, TextureSlot, Texel};
@@ -125,7 +126,7 @@ mod upload;
 pub(crate) mod init;
 
 pub use debug::DebugRenderer;
-pub use shade::{Shaders, SharedShaders};
+pub use shade::{PendingShadersToPrecache, Shaders, SharedShaders};
 pub use vertex::{desc, VertexArrayKind, MAX_VERTEX_TEXTURE_WIDTH};
 pub use gpu_buffer::{GpuBuffer, GpuBufferF, GpuBufferBuilderF, GpuBufferI, GpuBufferBuilderI, GpuBufferAddress, GpuBufferBuilder};
 
@@ -265,11 +266,21 @@ const GPU_TAG_COMPOSITE: GpuProfileTag = GpuProfileTag {
     color: debug_colors::TOMATO,
 };
 
+// Key used when adding compositing tiles to the occlusion tracker.
+// Since an entire tile may have a mask, but we may segment that in
+// to masked and non-masked regions, we need to track which of the
+// occlusion tracker outputs need a mask
+#[derive(Debug, Copy, Clone)]
+struct OcclusionItemKey {
+    tile_index: usize,
+    needs_mask: bool,
+}
+
 // Defines the content that we will draw to a given swapchain / layer, calculated
 // after occlusion culling.
 struct SwapChainLayer {
-    occlusion: occlusion::FrontToBackBuilder<usize>,
-    clear_tiles: Vec<occlusion::Item<usize>>,
+    occlusion: occlusion::FrontToBackBuilder<OcclusionItemKey>,
+    clear_tiles: Vec<occlusion::Item<OcclusionItemKey>>,
 }
 
 /// The clear color used for the texture cache when the debug display is enabled.
@@ -1263,10 +1274,16 @@ impl Renderer {
                     .remove(&doc_id)
                     .unwrap();
 
+                let size = if !device_size.is_empty() {
+                    Some(device_size)
+                } else {
+                    None
+                };
+
                 let result = self.render_impl(
                     doc_id,
                     &mut doc,
-                    Some(device_size),
+                    size,
                     buffer_age,
                 );
 
@@ -1440,14 +1457,18 @@ impl Renderer {
                     // Unbind the draw target and add it to the visual tree to be composited
                     compositor.unbind(&mut self.device);
 
+                    let clip_rect = DeviceIntRect::from_size(
+                        self.debug_overlay_state.current_size.unwrap(),
+                    );
+
                     compositor.add_surface(
                         &mut self.device,
                         NativeSurfaceId::DEBUG_OVERLAY,
                         CompositorSurfaceTransform::identity(),
-                        DeviceIntRect::from_size(
-                            self.debug_overlay_state.current_size.unwrap(),
-                        ),
+                        clip_rect,
                         ImageRendering::Auto,
+                        clip_rect,
+                        ClipRadius::EMPTY,
                     );
                 }
                 CompositorKind::Draw { .. } => {}
@@ -1863,7 +1884,7 @@ impl Renderer {
 
                 self.shaders
                     .borrow_mut()
-                    .ps_copy
+                    .ps_copy()
                     .bind(
                         &mut self.device,
                         &Transform3D::identity(),
@@ -2329,7 +2350,7 @@ impl Renderer {
             self.set_blend_mode_multiply(FramebufferKind::Other);
 
             if !masks.mask_instances_fast.is_empty() {
-                self.shaders.borrow_mut().ps_mask_fast.bind(
+                self.shaders.borrow_mut().ps_mask_fast().bind(
                     &mut self.device,
                     projection,
                     None,
@@ -2346,7 +2367,7 @@ impl Renderer {
             }
 
             if !masks.mask_instances_fast_with_scissor.is_empty() {
-                self.shaders.borrow_mut().ps_mask_fast.bind(
+                self.shaders.borrow_mut().ps_mask_fast().bind(
                     &mut self.device,
                     projection,
                     None,
@@ -2371,7 +2392,7 @@ impl Renderer {
             }
 
             if !masks.image_mask_instances.is_empty() {
-                self.shaders.borrow_mut().ps_quad_textured.bind(
+                self.shaders.borrow_mut().ps_quad_textured().bind(
                     &mut self.device,
                     projection,
                     None,
@@ -2392,7 +2413,7 @@ impl Renderer {
             if !masks.image_mask_instances_with_scissor.is_empty() {
                 self.device.enable_scissor();
 
-                self.shaders.borrow_mut().ps_quad_textured.bind(
+                self.shaders.borrow_mut().ps_quad_textured().bind(
                     &mut self.device,
                     projection,
                     None,
@@ -2415,7 +2436,7 @@ impl Renderer {
             }
 
             if !masks.mask_instances_slow.is_empty() {
-                self.shaders.borrow_mut().ps_mask.bind(
+                self.shaders.borrow_mut().ps_mask().bind(
                     &mut self.device,
                     projection,
                     None,
@@ -2432,7 +2453,7 @@ impl Renderer {
             }
 
             if !masks.mask_instances_slow_with_scissor.is_empty() {
-                self.shaders.borrow_mut().ps_mask.bind(
+                self.shaders.borrow_mut().ps_mask().bind(
                     &mut self.device,
                     projection,
                     None,
@@ -2575,7 +2596,7 @@ impl Renderer {
 
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_SVG_FILTER);
 
-        self.shaders.borrow_mut().cs_svg_filter.bind(
+        self.shaders.borrow_mut().cs_svg_filter().bind(
             &mut self.device,
             &projection,
             None,
@@ -2604,7 +2625,7 @@ impl Renderer {
 
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_SVG_FILTER_NODES);
 
-        self.shaders.borrow_mut().cs_svg_filter_node.bind(
+        self.shaders.borrow_mut().cs_svg_filter_node().bind(
             &mut self.device,
             &projection,
             None,
@@ -2761,7 +2782,7 @@ impl Renderer {
                         ],
                         color: clear_color.unwrap_or([0.0; 4]),
                     };
-                    self.shaders.borrow_mut().ps_clear.bind(
+                    self.shaders.borrow_mut().ps_clear().bind(
                         &mut self.device,
                         &projection,
                         None,
@@ -3068,21 +3089,6 @@ impl Renderer {
                 ResolvedExternalSurfaceColorData::Yuv{
                         ref planes, color_space, format, channel_bit_depth, .. } => {
 
-                    // Bind an appropriate YUV shader for the texture format kind
-                    self.shaders
-                        .borrow_mut()
-                        .get_composite_shader(
-                            CompositeSurfaceFormat::Yuv,
-                            surface.image_buffer_kind,
-                            CompositeFeatures::empty(),
-                        ).bind(
-                            &mut self.device,
-                            &projection,
-                            None,
-                            &mut self.renderer_errors,
-                            &mut self.profile,
-                        );
-
                     let textures = BatchTextures::composite_yuv(
                         planes[0].texture,
                         planes[1].texture,
@@ -3110,17 +3116,16 @@ impl Renderer {
                         channel_bit_depth,
                         uv_rects,
                         (false, false),
+                        None,
                     );
 
-                    ( textures, instance )
-                },
-                ResolvedExternalSurfaceColorData::Rgb{ ref plane, .. } => {
+                    // Bind an appropriate YUV shader for the texture format kind
                     self.shaders
                         .borrow_mut()
                         .get_composite_shader(
-                            CompositeSurfaceFormat::Rgba,
+                            CompositeSurfaceFormat::Yuv,
                             surface.image_buffer_kind,
-                            CompositeFeatures::empty(),
+                            instance.get_yuv_features(),
                         ).bind(
                             &mut self.device,
                             &projection,
@@ -3129,6 +3134,9 @@ impl Renderer {
                             &mut self.profile,
                         );
 
+                    ( textures, instance )
+                },
+                ResolvedExternalSurfaceColorData::Rgb{ ref plane, .. } => {
                     let textures = BatchTextures::composite_rgb(plane.texture);
                     let uv_rect = self.texture_resolver.get_uv_rect(&textures.input.colors[0], plane.uv_rect);
                     let instance = CompositeInstance::new_rgb(
@@ -3138,7 +3146,23 @@ impl Renderer {
                         uv_rect,
                         plane.texture.uses_normalized_uvs(),
                         (false, false),
+                        None,
                     );
+                    let features = instance.get_rgb_features();
+
+                    self.shaders
+                        .borrow_mut()
+                        .get_composite_shader(
+                            CompositeSurfaceFormat::Rgba,
+                            surface.image_buffer_kind,
+                            features,
+                        ).bind(
+                            &mut self.device,
+                            &projection,
+                            None,
+                            &mut self.renderer_errors,
+                            &mut self.profile,
+                        );
 
                     ( textures, instance )
                 },
@@ -3161,7 +3185,7 @@ impl Renderer {
     }
 
     /// Draw a list of tiles to the framebuffer
-    fn draw_tile_list<'a, I: Iterator<Item = &'a occlusion::Item<usize>>>(
+    fn draw_tile_list<'a, I: Iterator<Item = &'a occlusion::Item<OcclusionItemKey>>>(
         &mut self,
         tiles_iter: I,
         composite_state: &CompositeState,
@@ -3193,12 +3217,20 @@ impl Renderer {
             );
 
         for item in tiles_iter {
-            let tile = &composite_state.tiles[item.key];
+            let tile = &composite_state.tiles[item.key.tile_index];
 
             let clip_rect = item.rectangle;
             let tile_rect = composite_state.get_device_rect(&tile.local_rect, tile.transform_index);
             let transform = composite_state.get_device_transform(tile.transform_index);
             let flip = (transform.scale.x < 0.0, transform.scale.y < 0.0);
+
+            let clip = if item.key.needs_mask {
+                tile.clip_index.map(|index| {
+                    composite_state.get_compositor_clip(index)
+                })
+            } else {
+                None
+            };
 
             // Work out the draw params based on the tile surface
             let (instance, textures, shader_params) = match tile.surface {
@@ -3210,6 +3242,7 @@ impl Renderer {
                         clip_rect,
                         color.premultiplied(),
                         flip,
+                        clip,
                     );
                     let features = instance.get_rgb_features();
                     (
@@ -3224,6 +3257,7 @@ impl Renderer {
                         clip_rect,
                         PremultipliedColorF::WHITE,
                         flip,
+                        clip,
                     );
                     let features = instance.get_rgb_features();
                     (
@@ -3259,21 +3293,25 @@ impl Renderer {
                                 self.texture_resolver.get_uv_rect(&textures.input.colors[2], planes[2].uv_rect),
                             ];
 
+                            let instance = CompositeInstance::new_yuv(
+                                tile_rect,
+                                clip_rect,
+                                color_space,
+                                format,
+                                channel_bit_depth,
+                                uv_rects,
+                                flip,
+                                clip,
+                            );
+                            let features = instance.get_yuv_features();
+
                             (
-                                CompositeInstance::new_yuv(
-                                    tile_rect,
-                                    clip_rect,
-                                    color_space,
-                                    format,
-                                    channel_bit_depth,
-                                    uv_rects,
-                                    flip,
-                                ),
+                                instance,
                                 textures,
                                 (
                                     CompositeSurfaceFormat::Yuv,
                                     surface.image_buffer_kind,
-                                    CompositeFeatures::empty(),
+                                    features,
                                     None
                                 ),
                             )
@@ -3287,6 +3325,7 @@ impl Renderer {
                                 uv_rect,
                                 plane.texture.uses_normalized_uvs(),
                                 flip,
+                                clip,
                             );
                             let features = instance.get_rgb_features();
                             (
@@ -3310,6 +3349,7 @@ impl Renderer {
                         clip_rect,
                         PremultipliedColorF::BLACK,
                         flip,
+                        clip,
                     );
                     let features = instance.get_rgb_features();
                     (
@@ -3503,6 +3543,7 @@ impl Renderer {
         let mut input_layers: Vec<CompositorInputLayer> = Vec::new();
         let mut swapchain_layers = Vec::new();
         let cap = composite_state.tiles.len();
+        let mut segment_builder = SegmentBuilder::new();
 
         // NOTE: Tiles here are being iterated in front-to-back order by
         //       z-id, due to the sort in composite_state.end_frame()
@@ -3646,20 +3687,48 @@ impl Renderer {
 
             // Clear tiles overwrite whatever is under them, so they are treated as opaque.
             match tile.kind {
-                TileKind::Opaque => {
-                    // Store (index of tile, index of layer) so we can segment them below
-                    layer.occlusion.add(&rect, true, idx);
-                }
-                TileKind::Alpha => {
-                    // Store (index of tile, index of layer) so we can segment them below
-                    layer.occlusion.add(&rect, false, idx);
+                TileKind::Opaque | TileKind::Alpha => {
+                    let is_opaque = tile.kind != TileKind::Alpha;
+
+                    match tile.clip_index {
+                        Some(clip_index) => {
+                            let clip = composite_state.get_compositor_clip(clip_index);
+
+                                // TODO(gw): Make segment builder generic on unit to avoid casts below.
+                            segment_builder.initialize(
+                                rect.cast_unit(),
+                                None,
+                                rect.cast_unit(),
+                            );
+                            segment_builder.push_clip_rect(
+                                clip.rect.cast_unit(),
+                                Some(clip.radius),
+                                ClipMode::Clip,
+                            );
+                            segment_builder.build(|segment| {
+                                let key = OcclusionItemKey { tile_index: idx, needs_mask: segment.has_mask };
+
+                                layer. occlusion.add(
+                                    &segment.rect.cast_unit(),
+                                    is_opaque && !segment.has_mask,
+                                    key,
+                                );
+                            });
+                        }
+                        None => {
+                            layer.occlusion.add(&rect, is_opaque, OcclusionItemKey {
+                                tile_index: idx,
+                                needs_mask: false,
+                            });
+                        }
+                    }
                 }
                 TileKind::Clear => {
                     // Clear tiles are specific to how we render the window buttons on
                     // Windows 8. They clobber what's under them so they can be treated as opaque,
                     // but require a different blend state so they will be rendered after the opaque
                     // tiles and before transparent ones.
-                    layer.clear_tiles.push(occlusion::Item { rectangle: rect, key: idx });
+                    layer.clear_tiles.push(occlusion::Item { rectangle: rect, key: OcclusionItemKey { tile_index: idx, needs_mask: false } });
                 }
             }
         }
@@ -3920,7 +3989,7 @@ impl Renderer {
         }
 
         if !clear_instances.is_empty() {
-            self.shaders.borrow_mut().ps_clear.bind(
+            self.shaders.borrow_mut().ps_clear().bind(
                 &mut self.device,
                 &projection,
                 None,
@@ -4052,7 +4121,7 @@ impl Renderer {
             self.set_blend_mode_premultiplied_alpha(FramebufferKind::Other);
 
             if !target.border_segments_solid.is_empty() {
-                self.shaders.borrow_mut().cs_border_solid.bind(
+                self.shaders.borrow_mut().cs_border_solid().bind(
                     &mut self.device,
                     &projection,
                     None,
@@ -4069,7 +4138,7 @@ impl Renderer {
             }
 
             if !target.border_segments_complex.is_empty() {
-                self.shaders.borrow_mut().cs_border_segment.bind(
+                self.shaders.borrow_mut().cs_border_segment().bind(
                     &mut self.device,
                     &projection,
                     None,
@@ -4095,7 +4164,7 @@ impl Renderer {
             self.set_blend(true, FramebufferKind::Other);
             self.set_blend_mode_premultiplied_alpha(FramebufferKind::Other);
 
-            self.shaders.borrow_mut().cs_line_decoration.bind(
+            self.shaders.borrow_mut().cs_line_decoration().bind(
                 &mut self.device,
                 &projection,
                 None,
@@ -4119,7 +4188,7 @@ impl Renderer {
 
             self.set_blend(false, FramebufferKind::Other);
 
-            self.shaders.borrow_mut().cs_fast_linear_gradient.bind(
+            self.shaders.borrow_mut().cs_fast_linear_gradient().bind(
                 &mut self.device,
                 &projection,
                 None,
@@ -4141,7 +4210,7 @@ impl Renderer {
 
             self.set_blend(false, FramebufferKind::Other);
 
-            self.shaders.borrow_mut().cs_linear_gradient.bind(
+            self.shaders.borrow_mut().cs_linear_gradient().bind(
                 &mut self.device,
                 &projection,
                 None,
@@ -4167,7 +4236,7 @@ impl Renderer {
 
             self.set_blend(false, FramebufferKind::Other);
 
-            self.shaders.borrow_mut().cs_radial_gradient.bind(
+            self.shaders.borrow_mut().cs_radial_gradient().bind(
                 &mut self.device,
                 &projection,
                 None,
@@ -4193,7 +4262,7 @@ impl Renderer {
 
             self.set_blend(false, FramebufferKind::Other);
 
-            self.shaders.borrow_mut().cs_conic_gradient.bind(
+            self.shaders.borrow_mut().cs_conic_gradient().bind(
                 &mut self.device,
                 &projection,
                 None,
@@ -4223,7 +4292,7 @@ impl Renderer {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_BLUR);
 
             self.set_blend(false, framebuffer_kind);
-            self.shaders.borrow_mut().cs_blur_rgba8
+            self.shaders.borrow_mut().cs_blur_rgba8()
                 .bind(&mut self.device, &projection, None, &mut self.renderer_errors, &mut self.profile);
 
             if !target.vertical_blurs.is_empty() {
@@ -4363,7 +4432,7 @@ impl Renderer {
         // draw rounded cornered rectangles
         if !list.slow_rectangles.is_empty() {
             let _gm2 = self.gpu_profiler.start_marker("slow clip rectangles");
-            self.shaders.borrow_mut().cs_clip_rectangle_slow.bind(
+            self.shaders.borrow_mut().cs_clip_rectangle_slow().bind(
                 &mut self.device,
                 projection,
                 None,
@@ -4379,7 +4448,7 @@ impl Renderer {
         }
         if !list.fast_rectangles.is_empty() {
             let _gm2 = self.gpu_profiler.start_marker("fast clip rectangles");
-            self.shaders.borrow_mut().cs_clip_rectangle_fast.bind(
+            self.shaders.borrow_mut().cs_clip_rectangle_fast().bind(
                 &mut self.device,
                 projection,
                 None,
@@ -4398,7 +4467,7 @@ impl Renderer {
         for (mask_texture_id, items) in list.box_shadows.iter() {
             let _gm2 = self.gpu_profiler.start_marker("box-shadows");
             let textures = BatchTextures::composite_rgb(*mask_texture_id);
-            self.shaders.borrow_mut().cs_clip_box_shadow
+            self.shaders.borrow_mut().cs_clip_box_shadow()
                 .bind(&mut self.device, projection, None, &mut self.renderer_errors, &mut self.profile);
             self.draw_instanced_batch(
                 items,
@@ -6188,6 +6257,8 @@ impl CompositeState {
                 surface.transform,
                 surface.clip_rect.to_i32(),
                 surface.image_rendering,
+                surface.rounded_clip_rect.to_i32(),
+                surface.rounded_clip_radii,
             );
         }
         compositor.start_compositing(device, clear_color, dirty_rects, &[]);

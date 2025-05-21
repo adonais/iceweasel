@@ -28,9 +28,10 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/layers/D3D11ShareHandleImage.h"
 #include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
-#include "mozilla/layers/HelpersD3D11.h"
+#include "mozilla/layers/FenceD3D11.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/TextureD3D11.h"
 #include "mozilla/layers/TextureForwarder.h"
@@ -425,6 +426,7 @@ class D3D11DXVA2Manager : public DXVA2Manager {
   std::list<ThreadSafeWeakPtr<layers::IMFSampleWrapper>> mIMFSampleWrappers;
   RefPtr<layers::ZeroCopyUsageInfo> mZeroCopyUsageInfo;
   uint32_t mVendorID = 0;
+  RefPtr<layers::FenceD3D11> mWriteFence;
 };
 
 bool D3D11DXVA2Manager::SupportsConfig(const VideoInfo& aInfo,
@@ -667,6 +669,12 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
     }
   }
 
+  // XXX enable fence
+  const bool useFence = false;
+  if (useFence) {
+    mWriteFence = layers::FenceD3D11::Create(mDevice);
+  }
+
   RefPtr<ID3D10Multithread> mt;
   hr = mDevice->QueryInterface((ID3D10Multithread**)getter_AddRefs(mt));
   NS_ENSURE_TRUE(SUCCEEDED(hr) && mt, hr);
@@ -852,7 +860,8 @@ HRESULT D3D11DXVA2Manager::WrapTextureWithImage(IMFSample* aVideoSample,
   RefPtr<D3D11TextureIMFSampleImage> image = new D3D11TextureIMFSampleImage(
       aVideoSample, texture, arrayIndex, gfx::IntSize(mWidth, mHeight), aRegion,
       ToColorSpace2(mYUVColorSpace), mColorRange, mColorDepth);
-  image->AllocateTextureClient(mKnowsCompositor, mZeroCopyUsageInfo);
+  image->AllocateTextureClient(mKnowsCompositor, mZeroCopyUsageInfo,
+                               mWriteFence);
 
   RefPtr<IMFSampleWrapper> wrapper = image->GetIMFSampleWrapper();
   ThreadSafeWeakPtr<IMFSampleWrapper> weak(wrapper);
@@ -870,7 +879,8 @@ HRESULT D3D11DXVA2Manager::WrapTextureWithImage(
   RefPtr<D3D11TextureAVFrameImage> image = new D3D11TextureAVFrameImage(
       aTextureWrapper, gfx::IntSize(mWidth, mHeight), aRegion,
       ToColorSpace2(mYUVColorSpace), mColorRange, mColorDepth);
-  image->AllocateTextureClient(mKnowsCompositor, mZeroCopyUsageInfo);
+  image->AllocateTextureClient(mKnowsCompositor, mZeroCopyUsageInfo,
+                               mWriteFence);
   image.forget(aOutImage);
   return S_OK;
 }
@@ -1208,8 +1218,16 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
     perfRecorder.Record();
   }
 
-  if (!mutex && mDevice != DeviceManagerDx::Get()->GetCompositorDevice() &&
-      mSyncObject) {
+  auto* textureData = client->GetInternalData()->AsD3D11TextureData();
+  auto* fencesHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
+  MOZ_ASSERT(textureData);
+  const bool useFence =
+      textureData && textureData->mFencesHolderId.isSome() && fencesHolderMap;
+  if (useFence) {
+    textureData->IncrementAndSignalWriteFence();
+  } else if (!mutex &&
+             mDevice != DeviceManagerDx::Get()->GetCompositorDevice() &&
+             mSyncObject) {
     static StaticMutex sMutex MOZ_UNANNOTATED;
     // Ensure that we only ever attempt to synchronise via the sync object
     // serially as when using the same D3D11 device for multiple video decoders
@@ -1220,43 +1238,6 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
     client->SyncWithObject(mSyncObject);
     if (!mSyncObject->Synchronize(true)) {
       return DXGI_ERROR_DEVICE_RESET;
-    }
-  } else if (mDevice == DeviceManagerDx::Get()->GetCompositorDevice() &&
-             mVendorID != 0x8086) {
-    MOZ_ASSERT(XRE_IsGPUProcess());
-    MOZ_ASSERT(mVendorID);
-
-    // Normally when D3D11Texture2D is copied by
-    // ID3D11DeviceContext::CopySubresourceRegion() with compositor device,
-    // WebRender does not need to wait copy complete, since WebRender also uses
-    // compositor device. But with some non-Intel GPUs, the copy complete need
-    // to be wait explicitly even with compositor device such as when using
-    // video overlays.
-
-    RefPtr<ID3D11DeviceContext> context;
-    mDevice->GetImmediateContext(getter_AddRefs(context));
-
-    RefPtr<ID3D11Query> query;
-    CD3D11_QUERY_DESC desc(D3D11_QUERY_EVENT);
-    HRESULT hr = mDevice->CreateQuery(&desc, getter_AddRefs(query));
-    if (SUCCEEDED(hr) && query) {
-      context->End(query);
-
-      auto* data = client->GetInternalData()->AsD3D11TextureData();
-      MOZ_ASSERT(data);
-      if (data) {
-        // If GPU is not NVIDIA GPU, ID3D11Query is used only for video overlay.
-        // See Bug 1910990 Intel GPU does not use ID3D11Query for waiting video
-        // frame copy.
-        const bool onlyForOverlay = mVendorID != 0x10DE;
-        // Wait query happens only just before blitting for video overlay.
-        data->RegisterQuery(query, onlyForOverlay);
-      } else {
-        gfxCriticalNoteOnce << "D3D11TextureData does not exist";
-      }
-    } else {
-      gfxCriticalNoteOnce << "Could not create D3D11_QUERY_EVENT: "
-                          << gfx::hexa(hr);
     }
   }
 

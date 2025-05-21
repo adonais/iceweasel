@@ -12,6 +12,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "numberFormat",
+  () => new Services.intl.NumberFormat()
+);
+
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "pluralRules",
+  () => new Services.intl.PluralRules()
+);
+
 const FEEDBACK_LINK =
   "https://connect.mozilla.org/t5/discussions/try-out-link-previews-on-firefox-labs/td-p/92012";
 
@@ -25,6 +37,9 @@ class LinkPreviewCard extends MozLitElement {
   static ERROR_CARD_MESSAGE = "We can't preview this link";
   // Text for the link to visit the original URL when in error state
   static VISIT_LINK_TEXT = "Visit link";
+
+  // Number of placeholder rows to show when loading
+  static PLACEHOLDER_COUNT = 3;
 
   static properties = {
     generating: { type: Number }, // 0 = off, 1-4 = generating & dots state
@@ -52,7 +67,9 @@ class LinkPreviewCard extends MozLitElement {
   handleLink(event) {
     event.preventDefault();
 
-    const url = event.target.href;
+    const anchor = event.target.closest("a");
+    const url = anchor.href;
+
     const win = this.ownerGlobal;
     const params = {
       triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
@@ -95,12 +112,19 @@ class LinkPreviewCard extends MozLitElement {
   render() {
     const articleData = this.pageData?.article || {};
     const pageUrl = this.pageData?.url || "about:blank";
-    const siteName = articleData.siteName || "";
+    const siteName =
+      articleData.siteName || this.pageData?.urlComponents?.domain || "";
 
     const { title, description, imageUrl } = this.pageData.meta;
 
     const readingTimeMinsFast = articleData.readingTimeMinsFast || "";
     const readingTimeMinsSlow = articleData.readingTimeMinsSlow || "";
+    const readingTimeMinsFastStr =
+      lazy.numberFormat.format(readingTimeMinsFast);
+    const readingTimeRange = lazy.numberFormat.formatRange(
+      readingTimeMinsFast,
+      readingTimeMinsSlow
+    );
 
     // Check if both metadata and article text content are missing
     const isMissingAllContent = !description && !articleData.textContent;
@@ -150,24 +174,84 @@ class LinkPreviewCard extends MozLitElement {
             ? html`<p class="og-card-description">${description}</p>`
             : ""}
           ${readingTimeMinsFast && readingTimeMinsSlow
-            ? html`<div class="og-card-reading-time">
-                ${readingTimeMinsFast === readingTimeMinsSlow
-                  ? `${readingTimeMinsFast} min${readingTimeMinsFast > 1 ? "s" : ""} reading time`
-                  : `${readingTimeMinsFast}-${readingTimeMinsSlow} mins reading time`}
-              </div>`
+            ? html`
+                <div
+                  class="og-card-reading-time"
+                  data-l10n-id="link-preview-reading-time"
+                  data-l10n-args=${JSON.stringify({
+                    range:
+                      readingTimeMinsFast === readingTimeMinsSlow
+                        ? `~${readingTimeMinsFastStr}`
+                        : `${readingTimeRange}`,
+                    rangePlural:
+                      readingTimeMinsFast === readingTimeMinsSlow
+                        ? lazy.pluralRules.select(readingTimeMinsFast)
+                        : lazy.pluralRules.selectRange(
+                            readingTimeMinsFast,
+                            readingTimeMinsSlow
+                          ),
+                  })}
+                ></div>
+              `
             : ""}
         </div>
         ${this.generating || this.keyPoints.length
           ? html`
               <div class="ai-content">
                 <h3>
-                  ${this.generating
-                    ? "Generating key points" + ".".repeat(this.generating - 1)
-                    : "Key points"}
+                  Key points
+                  <img
+                    class="icon"
+                    xmlns="http://www.w3.org/1999/xhtml"
+                    role="presentation"
+                    src="chrome://global/skin/icons/highlights.svg"
+                  />
                 </h3>
-                <ul>
-                  ${this.keyPoints.map(item => html`<li>${item}</li>`)}
+                <ul class="keypoints-list">
+                  ${
+                    /* All populated content items */
+                    this.keyPoints.map(
+                      item => html`<li class="content-item">${item}</li>`
+                    )
+                  }
+                  ${
+                    /* Loading placeholders with three divs each */
+                    this.generating
+                      ? Array(
+                          Math.max(
+                            0,
+                            LinkPreviewCard.PLACEHOLDER_COUNT -
+                              this.keyPoints.length
+                          )
+                        )
+                          .fill()
+                          .map(
+                            () =>
+                              html` <li class="content-item loading">
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                              </li>`
+                          )
+                      : []
+                  }
                 </ul>
+                <div class="visit-link-container">
+                  <a
+                    @click=${this.handleLink}
+                    data-source="visit"
+                    href=${pageUrl}
+                    class="visit-link"
+                  >
+                    Visit page
+                    <img
+                      class="icon"
+                      xmlns="http://www.w3.org/1999/xhtml"
+                      role="presentation"
+                      src="chrome://global/skin/icons/open-in-new.svg"
+                    />
+                  </a>
+                </div>
                 ${this.progress >= 0
                   ? html`
                       <p>
@@ -185,15 +269,6 @@ class LinkPreviewCard extends MozLitElement {
                     href=${FEEDBACK_LINK}
                   >
                     Share feedback
-                  </a>
-                </p>
-                <p>
-                  <a
-                    @click=${this.handleLink}
-                    data-source="visit"
-                    href=${pageUrl}
-                  >
-                    Visit original page
                   </a>
                 </p>
               </div>

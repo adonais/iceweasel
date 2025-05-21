@@ -145,6 +145,7 @@ rtc_library("basic_port_allocator") {
 
 rtc_source_set("candidate_pair_interface") {
   sources = [ "base/candidate_pair_interface.h" ]
+  deps = [ "../api:candidate" ]
 }
 
 rtc_library("connection") {
@@ -384,6 +385,7 @@ rtc_library("ice_transport_internal") {
     "../api:array_view",
     "../api:candidate",
     "../api:field_trials_view",
+    "../api:libjingle_peerconnection_api",
     "../api:rtc_error",
     "../api/transport:enums",
     "../api/transport:stun_types",
@@ -886,7 +888,10 @@ if (rtc_include_tests) {
   rtc_library("fake_ice_transport") {
     testonly = true
     visibility = [ "*" ]
-    sources = [ "base/fake_ice_transport.h" ]
+    sources = [
+      "base/fake_ice_transport.h",
+      "test/fake_ice_transport.h",
+    ]
     deps = [
       ":candidate_pair_interface",
       ":connection",
@@ -921,7 +926,10 @@ if (rtc_include_tests) {
   rtc_library("fake_port_allocator") {
     testonly = true
     visibility = [ "*" ]
-    sources = [ "base/fake_port_allocator.h" ]
+    sources = [
+      "base/fake_port_allocator.h",
+      "test/fake_port_allocator.h",
+    ]
     deps = [
       ":basic_packet_socket_factory",
       ":connection",
@@ -940,17 +948,26 @@ if (rtc_include_tests) {
   rtc_library("p2p_test_utils") {
     testonly = true
     sources = [
-      "base/fake_packet_transport.h",
-      "base/mock_active_ice_controller.h",
-      "base/mock_dns_resolving_packet_socket_factory.h",
       "base/mock_ice_agent.h",
       "base/mock_ice_controller.h",
       "base/mock_ice_transport.h",
-      "base/test_stun_server.cc",
-      "base/test_stun_server.h",
-      "base/test_turn_customizer.h",
-      "base/test_turn_server.h",
       "dtls/fake_dtls_transport.h",
+      "test/fake_packet_transport.h",
+      "test/mock_active_ice_controller.h",
+      "test/mock_dns_resolving_packet_socket_factory.h",
+      "test/mock_ice_agent.h",
+      "test/mock_ice_controller.h",
+      "test/mock_ice_transport.h",
+      "test/nat_server.cc",
+      "test/nat_server.h",
+      "test/nat_socket_factory.cc",
+      "test/nat_socket_factory.h",
+      "test/nat_types.cc",
+      "test/nat_types.h",
+      "test/test_stun_server.cc",
+      "test/test_stun_server.h",
+      "test/test_turn_customizer.h",
+      "test/test_turn_server.h",
     ]
     deps = [
       ":active_ice_controller_factory_interface",
@@ -979,23 +996,30 @@ if (rtc_include_tests) {
       "../api:turn_customizer",
       "../api/crypto:options",
       "../api/transport:stun_types",
+      "../api/units:timestamp",
       "../rtc_base:async_packet_socket",
+      "../rtc_base:async_udp_socket",
       "../rtc_base:async_udp_socket",
       "../rtc_base:buffer",
       "../rtc_base:checks",
       "../rtc_base:copy_on_write_buffer",
       "../rtc_base:gunit_helpers",
       "../rtc_base:logging",
+      "../rtc_base:macromagic",
       "../rtc_base:network_route",
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:socket",
+      "../rtc_base:socket_adapters",
       "../rtc_base:socket_address",
+      "../rtc_base:socket_address_pair",
+      "../rtc_base:socket_factory",
       "../rtc_base:socket_server",
       "../rtc_base:ssl",
       "../rtc_base:ssl_adapter",
       "../rtc_base:threading",
       "../rtc_base:timeutils",
       "../rtc_base/network:received_packet",
+      "../rtc_base/synchronization:mutex",
       "../rtc_base/third_party/sigslot",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/strings:string_view",
@@ -1017,22 +1041,21 @@ if (rtc_include_tests) {
       "base/stun_dictionary_unittest.cc",
       "base/stun_port_unittest.cc",
       "base/stun_request_unittest.cc",
-      "base/stun_server_unittest.cc",
       "base/tcp_port_unittest.cc",
       "base/transport_description_factory_unittest.cc",
       "base/transport_description_unittest.cc",
       "base/turn_port_unittest.cc",
-      "base/turn_server_unittest.cc",
       "base/wrapping_active_ice_controller_unittest.cc",
       "client/basic_port_allocator_unittest.cc",
       "dtls/dtls_ice_integrationtest.cc",
       "dtls/dtls_stun_piggyback_controller_unittest.cc",
       "dtls/dtls_transport_unittest.cc",
       "dtls/dtls_utils_unittest.cc",
+      "test/nat_unittest.cc",
+      "test/stun_server_unittest.cc",
+      "test/turn_server_unittest.cc",
     ]
     deps = [
-      ":active_ice_controller_factory_interface",
-      ":active_ice_controller_interface",
       ":async_stun_tcp_socket",
       ":basic_ice_controller",
       ":basic_packet_socket_factory",
@@ -1075,28 +1098,32 @@ if (rtc_include_tests) {
       "../api:async_dns_resolver",
       "../api:candidate",
       "../api:dtls_transport_interface",
+      "../api:field_trials",
       "../api:field_trials_view",
       "../api:ice_transport_interface",
-      "../api:libjingle_peerconnection_api",
       "../api:mock_async_dns_resolver",
       "../api:packet_socket_factory",
       "../api:rtc_error",
       "../api:rtc_error_matchers",
       "../api:scoped_refptr",
       "../api/crypto:options",
+      "../api/environment",
+      "../api/environment:environment_factory",
       "../api/task_queue",
       "../api/task_queue:pending_task_safety_flag",
       "../api/transport:enums",
       "../api/transport:stun_types",
       "../api/units:time_delta",
       "../rtc_base:async_packet_socket",
+      "../rtc_base:async_packet_socket",
+      "../rtc_base:async_tcp_socket",
+      "../rtc_base:async_udp_socket",
       "../rtc_base:buffer",
       "../rtc_base:byte_buffer",
       "../rtc_base:byte_order",
       "../rtc_base:checks",
       "../rtc_base:copy_on_write_buffer",
       "../rtc_base:crypto_random",
-      "../rtc_base:digest",
       "../rtc_base:dscp",
       "../rtc_base:gunit_helpers",
       "../rtc_base:ip_address",
@@ -1113,12 +1140,11 @@ if (rtc_include_tests) {
       "../rtc_base:socket",
       "../rtc_base:socket_adapters",
       "../rtc_base:socket_address",
-      "../rtc_base:socket_address_pair",
+      "../rtc_base:socket_factory",
       "../rtc_base:socket_server",
       "../rtc_base:ssl",
       "../rtc_base:ssl_adapter",
       "../rtc_base:stream",
-      "../rtc_base:stringutils",
       "../rtc_base:testclient",
       "../rtc_base:threading",
       "../rtc_base:timeutils",
@@ -1126,13 +1152,11 @@ if (rtc_include_tests) {
       "../rtc_base/network:sent_packet",
       "../rtc_base/third_party/sigslot",
       "../system_wrappers:metrics",
-      "../test:field_trial",
-      "../test:rtc_expect_death",
       "../test:scoped_key_value_config",
       "../test:test_support",
       "../test:wait_until",
-      "//testing/gtest",
       "//third_party/abseil-cpp/absl/algorithm:container",
+      "//third_party/abseil-cpp/absl/base:nullability",
       "//third_party/abseil-cpp/absl/functional:any_invocable",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
@@ -1144,10 +1168,10 @@ if (rtc_include_tests) {
 rtc_library("p2p_server_utils") {
   testonly = true
   sources = [
-    "base/stun_server.cc",
-    "base/stun_server.h",
-    "base/turn_server.cc",
-    "base/turn_server.h",
+    "test/stun_server.cc",
+    "test/stun_server.h",
+    "test/turn_server.cc",
+    "test/turn_server.h",
   ]
   deps = [
     ":async_stun_tcp_socket",

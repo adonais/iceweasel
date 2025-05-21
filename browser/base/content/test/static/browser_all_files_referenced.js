@@ -119,6 +119,10 @@ var gExceptionPaths = [
   "resource://builtin-addons/newtab/",
   "resource://newtab/",
   "chrome://newtab/",
+
+  // Bug 1957102 - Temporarily ignore until used by the URLBar provider
+  "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
+  "resource://gre/modules/PlacesSemanticHistoryDatabase.sys.mjs",
 ];
 
 // These are not part of the omni.ja file, so we find them only when running
@@ -315,12 +319,6 @@ var allowlist = [
 
   // toolkit/xre/MacRunFromDmgUtils.mm
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
-
-  // Referenced by screenshots extension
-  { file: "chrome://browser/content/screenshots/cancel.svg" },
-  { file: "chrome://browser/content/screenshots/copy.svg" },
-  { file: "chrome://browser/content/screenshots/download.svg" },
-  { file: "chrome://browser/content/screenshots/download-white.svg" },
 
   // Referenced programmatically
   { file: "chrome://browser/content/backup/BackupManifest.1.schema.json" },

@@ -102,23 +102,25 @@ enum eGfxLog {
 
 // Used during font matching to express a preference, if any, for whether
 // to use a font that will present a color or monochrome glyph.
-enum class eFontPresentation : uint8_t {
+enum class FontPresentation : uint8_t {
   // Character does not have the emoji property, so no special heuristics
   // apply during font selection.
   Any = 0,
+  // Character is potentially emoji, but its default presentation is text.
+  TextDefault,
   // Character is potentially emoji, but Text-style presentation has been
   // explicitly requested using VS15.
-  Text = 1,
+  TextExplicit,
   // Character has Emoji-style presentation by default (but an author-
-  // provided webfont will be used even if it is not color).
-  EmojiDefault = 2,
+  // provided webfont may be used even if it is not color).
+  EmojiDefault,
   // Character explicitly requires Emoji-style presentation due to VS16 or
   // skin-tone codepoint.
-  EmojiExplicit = 3
+  EmojiExplicit,
 };
 
-inline bool PrefersColor(eFontPresentation aPresentation) {
-  return aPresentation >= eFontPresentation::EmojiDefault;
+inline bool PrefersColor(FontPresentation aPresentation) {
+  return aPresentation >= FontPresentation::EmojiDefault;
 }
 
 // when searching through pref langs, max number of pref langs
@@ -488,7 +490,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   // returns a list of commonly used fonts for a given character
   // these are *possible* matches, no cmap-checking is done at this level
   virtual void GetCommonFallbackFonts(uint32_t /*aCh*/, Script /*aRunScript*/,
-                                      eFontPresentation /*aPresentation*/,
+                                      FontPresentation /*aPresentation*/,
                                       nsTArray<const char*>& /*aFontList*/) {
     // platform-specific override, by default do nothing
   }

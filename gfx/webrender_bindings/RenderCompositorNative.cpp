@@ -15,6 +15,7 @@
 #include "mozilla/layers/CompositionRecorder.h"
 #include "mozilla/layers/GpuFence.h"
 #include "mozilla/layers/NativeLayer.h"
+#include "mozilla/layers/ProfilerScreenshots.h"
 #include "mozilla/layers/SurfacePool.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/webrender/RenderThread.h"
@@ -197,7 +198,8 @@ bool RenderCompositorNative::MaybeRecordFrame(
 
 bool RenderCompositorNative::MaybeGrabScreenshot(
     const gfx::IntSize& aWindowSize) {
-  if (!ShouldUseNativeCompositor()) {
+  if (!ShouldUseNativeCompositor() ||
+      !mozilla::layers::ProfilerScreenshots::IsEnabled()) {
     return false;
   }
 
@@ -406,7 +408,8 @@ gfx::SamplingFilter ToSamplingFilter(wr::ImageRendering aImageRendering) {
 
 void RenderCompositorNative::AddSurface(
     wr::NativeSurfaceId aId, const wr::CompositorSurfaceTransform& aTransform,
-    wr::DeviceIntRect aClipRect, wr::ImageRendering aImageRendering) {
+    wr::DeviceIntRect aClipRect, wr::ImageRendering aImageRendering,
+    wr::DeviceIntRect aRoundedClipRect, wr::ClipRadius aClipRadius) {
   MOZ_RELEASE_ASSERT(!mCurrentlyBoundNativeLayer);
 
   auto surfaceCursor = mSurfaces.find(aId);

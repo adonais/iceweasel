@@ -50,7 +50,7 @@
 #include "mozilla/dom/FormDataEvent.h"
 #include "mozilla/dom/SubmitEvent.h"
 #include "mozilla/intl/Localization.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_prompts.h"
 #include "nsCategoryManagerUtils.h"
@@ -1017,12 +1017,11 @@ nsresult HTMLFormElement::DoSecureToInsecureSubmitCheck(nsIURI* aActionURL,
   *aCancelSubmit = (buttonPressed == 1);
   uint32_t telemetryBucket =
       nsISecurityUITelemetry::WARNING_CONFIRM_POST_TO_INSECURE_FROM_SECURE;
-  mozilla::Telemetry::Accumulate(mozilla::Telemetry::SECURITY_UI,
-                                 telemetryBucket);
+  mozilla::glean::security_ui::events.AccumulateSingleSample(telemetryBucket);
   if (!*aCancelSubmit) {
     // The user opted to continue, so note that in the next telemetry bucket.
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::SECURITY_UI,
-                                   telemetryBucket + 1);
+    mozilla::glean::security_ui::events.AccumulateSingleSample(telemetryBucket +
+                                                               1);
   }
   return NS_OK;
 }

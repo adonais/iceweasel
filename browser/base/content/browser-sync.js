@@ -787,12 +787,6 @@ var gSync = {
     if (ctaCopyVariant) {
       NimbusFeatures.fxaAvatarMenuItem.recordExposureEvent();
     }
-
-    // We want to record exposure if the user has sync disabled and has
-    // clicked to open the FxA panel
-    if (this.isSignedIn && !UIState.get().syncEnabled) {
-      NimbusFeatures.syncSetupFlow.recordExposureEvent();
-    }
   },
 
   onFxAPanelViewHiding(panelview) {
@@ -804,11 +798,9 @@ var gSync = {
   onCommand(button) {
     switch (button.id) {
       case "PanelUI-fxa-menu-sync-prefs-button":
-      // fall through
-      case "PanelUI-fxa-menu-setup-sync-button":
         this.openPrefsFromFxaMenu("sync_settings", button);
         break;
-      case "PanelUI-fxa-menu-setup-sync-button-new":
+      case "PanelUI-fxa-menu-setup-sync-button":
         this.openChooseWhatToSync("sync_settings", button);
         break;
 
@@ -1136,16 +1128,9 @@ var gSync = {
   },
 
   _disableSyncOffIndicator() {
-    const newSyncSetupEnabled =
-      NimbusFeatures.syncSetupFlow.getVariable("enabled");
     const SYNC_PANEL_ACCESSED_PREF =
       "identity.fxaccounts.toolbar.syncSetup.panelAccessed";
-    // If the user was enrolled in the experiment and hasn't previously accessed
-    // the panel, we disable the sync off indicator
-    if (
-      newSyncSetupEnabled &&
-      !Services.prefs.getBoolPref(SYNC_PANEL_ACCESSED_PREF, false)
-    ) {
+    if (!Services.prefs.getBoolPref(SYNC_PANEL_ACCESSED_PREF, false)) {
       // Turn off the indicator so the user doesn't see it in subsequent openings
       Services.prefs.setBoolPref(SYNC_PANEL_ACCESSED_PREF, true);
     }
@@ -1154,20 +1139,15 @@ var gSync = {
   _shouldShowSyncOffIndicator() {
     // We only ever want to show the user the dot once, once they've clicked into the panel
     // we do not show them the dot anymore
-    if (
-      Services.prefs.getBoolPref(
-        "identity.fxaccounts.toolbar.syncSetup.panelAccessed",
-        false
-      )
-    ) {
-      return false;
-    }
-    return NimbusFeatures.syncSetupFlow.getVariable("enabled");
+    return !Services.prefs.getBoolPref(
+      "identity.fxaccounts.toolbar.syncSetup.panelAccessed",
+      false
+    );
   },
 
   updateFxAPanel(state = {}) {
-    const isNewSyncSetupFlowEnabled =
-      NimbusFeatures.syncSetupFlow.getVariable("enabled");
+    const expandedSignInCopy =
+      NimbusFeatures.expandSignInButton.getVariable("ctaCopyVariant");
     const mainWindowEl = document.documentElement;
 
     const menuHeaderTitleEl = PanelMultiView.getViewNode(
@@ -1206,15 +1186,50 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-profiles-separator"
     );
+    const syncSetupEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-setup-sync-container"
+    );
+
+    const fxaToolbarMenuButton = document.getElementById(
+      "fxa-toolbar-menu-button"
+    );
+    let fxaAvatarLabelEl = document.getElementById("fxa-avatar-label");
 
     // Reset FxA/Sync UI elements to default, which is signed out
     cadButtonEl.setAttribute("disabled", true);
-    cadButtonEl.hidden = isNewSyncSetupFlowEnabled;
     syncNowButtonEl.hidden = true;
     signedInContainer.hidden = true;
     fxaMenuAccountButtonEl.classList.remove("subviewbutton-nav");
     fxaMenuAccountButtonEl.removeAttribute("closemenu");
     menuHeaderDescriptionEl.hidden = false;
+
+    // Expanded sign in copy experiment is only for signed out users
+    // so if a text variant has been provided then we show the expanded label
+    // otherwise it'll be the default avatar icon
+    // fxaToolbarMenuButton can be null in certain testing scenarios
+    if (fxaToolbarMenuButton) {
+      if (
+        state.status === UIState.STATUS_NOT_CONFIGURED &&
+        expandedSignInCopy
+      ) {
+        fxaAvatarLabelEl.setAttribute(
+          "value",
+          this.fluentStrings.formatValueSync(expandedSignInCopy)
+        );
+        fxaAvatarLabelEl.removeAttribute("hidden");
+        fxaToolbarMenuButton.setAttribute("data-l10n-id", "fxa-avatar-tooltip");
+        fxaToolbarMenuButton.classList.add("avatar-button-background");
+      } else {
+        // Either signed in, or experiment not enabled
+        fxaToolbarMenuButton.setAttribute(
+          "data-l10n-id",
+          "toolbar-button-account"
+        );
+        fxaToolbarMenuButton.classList.remove("avatar-button-background");
+        fxaAvatarLabelEl.hidden = true;
+      }
+    }
 
     // The Firefox Account toolbar currently handles 3 different states for
     // users. The default `not_configured` state shows an empty avatar, `unverified`
@@ -1282,34 +1297,17 @@ var gSync = {
         signedInContainer.hidden = false;
         cadButtonEl.removeAttribute("disabled");
 
-        // Due to bug 1951719, we toggle both old and new sync setup
-        // elements as some platforms had a delay during sign-in/out
-        // that there were some scenarios where both showed up or the
-        // incorrect one
-        const oldSyncSetupEl = PanelMultiView.getViewNode(
-          document,
-          "PanelUI-fxa-menu-setup-sync-button"
-        );
-        const newSyncSetupEl = PanelMultiView.getViewNode(
-          document,
-          "PanelUI-fxa-menu-setup-sync-container"
-        );
-
         if (state.syncEnabled) {
           // Always show sync now and connect another device button when sync is enabled
           syncNowButtonEl.removeAttribute("hidden");
           cadButtonEl.removeAttribute("hidden");
-          oldSyncSetupEl.setAttribute("hidden", "true");
-          newSyncSetupEl.setAttribute("hidden", "true");
+          syncSetupEl.setAttribute("hidden", "true");
         } else {
           if (this._shouldShowSyncOffIndicator()) {
-            let fxaButton = document.getElementById("fxa-toolbar-menu-button");
-            fxaButton?.setAttribute("badge-status", "sync-disabled");
+            fxaToolbarMenuButton?.setAttribute("badge-status", "sync-disabled");
           }
           // Show the sync element depending on if the user is enrolled or not
-          isNewSyncSetupFlowEnabled
-            ? newSyncSetupEl.removeAttribute("hidden")
-            : oldSyncSetupEl.removeAttribute("hidden");
+          syncSetupEl.removeAttribute("hidden");
         }
 
         // Reposition profiles elements

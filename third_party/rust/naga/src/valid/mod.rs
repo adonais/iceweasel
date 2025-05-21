@@ -237,7 +237,7 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct ModuleInfo {
@@ -532,9 +532,7 @@ impl Validator {
             return Err(ConstantError::InitializerExprType);
         }
 
-        let decl_ty = &gctx.types[con.ty].inner;
-        let init_ty = mod_info[con.init].inner_with(gctx.types);
-        if !decl_ty.equivalent(init_ty, gctx.types) {
+        if !gctx.compare_types(&TypeResolution::Handle(con.ty), &mod_info[con.init]) {
             return Err(ConstantError::InvalidType);
         }
 
@@ -560,12 +558,12 @@ impl Validator {
             return Err(OverrideError::NonConstructibleType);
         }
 
-        let decl_ty = &gctx.types[o.ty].inner;
-        match decl_ty {
-            &crate::TypeInner::Scalar(
+        match gctx.types[o.ty].inner {
+            crate::TypeInner::Scalar(
                 crate::Scalar::BOOL
                 | crate::Scalar::I32
                 | crate::Scalar::U32
+                | crate::Scalar::F16
                 | crate::Scalar::F32
                 | crate::Scalar::F64,
             ) => {}
@@ -573,8 +571,7 @@ impl Validator {
         }
 
         if let Some(init) = o.init {
-            let init_ty = mod_info[init].inner_with(gctx.types);
-            if !decl_ty.equivalent(init_ty, gctx.types) {
+            if !gctx.compare_types(&TypeResolution::Handle(o.ty), &mod_info[init]) {
                 return Err(OverrideError::InvalidType);
             }
         } else if self.overrides_resolved {

@@ -29,8 +29,8 @@
 #include "api/units/time_delta.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
-#include "p2p/base/stun_server.h"
-#include "p2p/base/test_stun_server.h"
+#include "p2p/test/stun_server.h"
+#include "p2p/test/test_stun_server.h"
 #include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/fake_clock.h"
@@ -289,11 +289,6 @@ class PeerConnectionIntegrationIceStatesTest
     return (port_allocator_flags_ & cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
 
-  void SetPortAllocatorFlags() {
-    PeerConnectionIntegrationBaseTest::SetPortAllocatorFlags(
-        port_allocator_flags_, port_allocator_flags_);
-  }
-
   std::vector<SocketAddress> CallerAddresses() {
     std::vector<SocketAddress> addresses;
     addresses.push_back(SocketAddress("1.1.1.1", 0));
@@ -326,6 +321,8 @@ class PeerConnectionIntegrationIceStatesTest
     }
   }
 
+  uint32_t port_allocator_flags() const { return port_allocator_flags_; }
+
  private:
   uint32_t port_allocator_flags_;
   cricket::TestStunServer::StunServerPtr stun_server_;
@@ -354,10 +351,10 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
       "stun:" + kStunServerAddress.HostAsURIString() + ":" +
       kStunServerAddress.PortAsString());
   config.servers.push_back(ice_stun_server);
+  config.port_allocator_config.flags = port_allocator_flags();
 
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
-  SetPortAllocatorFlags();
   SetUpNetworkInterfaces();
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();

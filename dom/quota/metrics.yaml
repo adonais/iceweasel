@@ -69,6 +69,27 @@ dom.quota.try:
           Optionally, the stack within process_id.
         type: string
     telemetry_mirror: DomQuotaTry_Error_Step
+quotamanager:
+  restore_origin_directory_metadata_counter:
+    type: counter
+    description: >
+      Increments each time QuotaManager::RestoreDirectoryMetadata2 is called to
+      restore origin directory metadata. This typically occurs when expected
+      directory metadata is missing or needs to be regenerated. The counter is
+      incremented regardless of whether the restoration ultimately succeeds or
+      fails.
+      This can provide insight into the impacts of specific code changes,
+      including potential optimizations or regressions.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1961884
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1961884
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - jvarga@mozilla.com
+      - storage-telemetry@mozilla.com
+    expires: 142
 quotamanager.initialize.repository:
   number_of_iterations:
     type: labeled_custom_distribution
@@ -103,6 +124,60 @@ quotamanager.initialize.repository:
       - temporary
       - default
       - private
+quotamanager.initialize.temporarystorage:
+  total_time_excluding_suspend:
+    type: timing_distribution
+    time_unit: millisecond
+    description: >
+      This metric logs the total time required to initialize temporary storage
+      within the QuotaManager after startup on the I/O thread. The duration
+      excludes any periods when the system was suspended (e.g. system sleep or
+      hibernation), to better reflect actual time spent performing temporary
+      storage initialization.
+      The primary goal is to measure the actual runtime cost of temporary
+      storage initialization under typical conditions, without distortion from
+      system-level suspension delays.
+      This data can help detect performance regressions or improvements during
+      startup-related phases, particularly for users with significant amounts
+      of temporary storage data on disk.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1955992
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1955992
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - jvarga@mozilla.com
+      - storage-telemetry@mozilla.com
+    expires: 141
+quotamanager.shutdown:
+  total_time_excluding_suspend:
+    type: timing_distribution
+    time_unit: millisecond
+    description: >
+      This metric logs the total time required to shut down the QuotaManager
+      instance on the PBackground thread. The duration excludes any periods
+      when the system was suspended (system sleep or hibernation), to better
+      reflect actual time spent performing shutdown.
+      While the shutdown process is measured on the PBackground thread, it
+      involves spinning the event loop and thus waiting for operations on other
+      threads (especially I/O threads) to complete.
+      The primary goal is to measure the actual runtime cost of shutdown under
+      typical conditions, without distortion from system-level suspension
+      delays.
+      This data can help detect performance regressions or improvements related
+      to QuotaManager shutdown behavior, especially in scenarios involving
+      large amounts of user storage data.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1590635
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1590635
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - jvarga@mozilla.com
+      - storage-telemetry@mozilla.com
+    expires: 141
 
 dom.quota:
   info_load_time:

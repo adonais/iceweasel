@@ -30,6 +30,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Geolocation.h"
 #include "mozilla/dom/HTMLEmbedElement.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/Location.h"
@@ -2040,7 +2041,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
 
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
 
-  if (net::SchemeIsJavascript(aLoadState->URI())) {
+  if (aLoadState->URI()->SchemeIs("javascript")) {
     if (!XRE_IsParentProcess()) {
       // Web content should only be able to load javascript: URIs into documents
       // whose principals the caller principal subsumes, which by definition
@@ -2135,7 +2136,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
 
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
 
-  if (net::SchemeIsJavascript(aLoadState->URI())) {
+  if (aLoadState->URI()->SchemeIs("javascript")) {
     if (!XRE_IsParentProcess()) {
       // Web content should only be able to load javascript: URIs into documents
       // whose principals the caller principal subsumes, which by definition
@@ -3233,6 +3234,33 @@ void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
     return;
   }
   SetWatchedByDevToolsInternal(aWatchedByDevTools, aRv);
+}
+
+RefPtr<nsGeolocationService> BrowsingContext::GetGeolocationServiceOverride() {
+  // Override can be set only to the top-level browsing context,
+  // but when the geolocation coordinates are requested for iframe,
+  // we should return the override which is set for its top-level context.
+  return Top()->mGeolocationServiceOverride;
+}
+
+void BrowsingContext::SetGeolocationServiceOverride(
+    const Optional<nsIDOMGeoPosition*>& aGeolocationOverride) {
+  MOZ_ASSERT(
+      IsTop(),
+      "Should only set GeolocationServiceOverride in the top browsing context");
+  if (aGeolocationOverride.WasPassed()) {
+    if (!mGeolocationServiceOverride) {
+      mGeolocationServiceOverride = new nsGeolocationService();
+      mGeolocationServiceOverride->Init();
+    }
+    mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
+  } else if (RefPtr<nsGeolocationService> serviceOverride =
+                 mGeolocationServiceOverride.forget()) {
+    // Create an original service and move the locators.
+    RefPtr<nsGeolocationService> service =
+        nsGeolocationService::GetGeolocationService();
+    serviceOverride->MoveLocators(service);
+  }
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_DefaultLoadFlags>,

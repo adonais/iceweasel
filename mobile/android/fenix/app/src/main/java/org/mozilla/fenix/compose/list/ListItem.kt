@@ -52,11 +52,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.annotation.LightDarkPreview
+import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.button.RadioButton
-import org.mozilla.fenix.compose.ext.thenConditional
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val LIST_ITEM_HEIGHT = 56.dp
@@ -274,7 +274,7 @@ fun FaviconListItem(
 
 /**
  * List item used to display a label and an icon at the beginning with an optional description
- * text and an optional [IconButton] or [Icon] at the end.
+ * text and an optional [IconButton], [Icon], or Composable at the end.
  *
  * @param label The label in the list item.
  * @param modifier [Modifier] to be applied to the layout.
@@ -298,6 +298,7 @@ fun FaviconListItem(
  * @param afterIconTint Tint applied to [afterIconPainter].
  * @param onAfterIconClick Called when the user clicks on the icon. An [IconButton] will be
  * displayed if this is provided. Otherwise, an [Icon] will be displayed.
+ * @param afterListAction Optional Composable for adding UI to the end of the list item.
  */
 @Composable
 fun IconListItem(
@@ -320,6 +321,7 @@ fun IconListItem(
     afterIconDescription: String? = null,
     afterIconTint: Color = FirefoxTheme.colors.iconPrimary,
     onAfterIconClick: (() -> Unit)? = null,
+    afterListAction: (@Composable RowScope.() -> Unit)? = null,
 ) {
     ListItem(
         label = label,
@@ -343,6 +345,11 @@ fun IconListItem(
             Spacer(modifier = Modifier.width(16.dp))
         },
         afterListAction = {
+            afterListAction?.let {
+                it()
+                return@ListItem
+            }
+
             if (afterIconPainter == null) {
                 return@ListItem
             }

@@ -1421,11 +1421,13 @@ MarkupView.prototype = {
    * Scroll the node into view.
    */
   scrollNodeIntoView() {
-    if (!this.inspector.selection.isNode()) {
+    if (!this.inspector.selection.supportsScrollIntoView()) {
       return;
     }
 
-    this.inspector.selection.nodeFront.scrollIntoView();
+    this.inspector.selection.nodeFront
+      .scrollIntoView()
+      .then(() => this.emitForTests("node-scrolled-into-view"));
   },
 
   async toggleMutationBreakpoint(name) {
@@ -2341,6 +2343,8 @@ MarkupView.prototype = {
 
         const fragment = this.doc.createDocumentFragment();
 
+        // Store the focused element before moving elements to the document fragment
+        const previouslyActiveElement = this.doc.activeElement;
         for (const child of children.nodes) {
           const slotted = !isShadowHost && child.isDirectShadowHostChild;
           const childContainer = this.importNode(child, flash, slotted);
@@ -2361,6 +2365,15 @@ MarkupView.prototype = {
         }
 
         container.children.appendChild(fragment);
+        // If previouslyActiveElement was moved to `fragment`, the focus was moved elsewhere,
+        // so here we set it back (see Bug 1955040)
+        if (container.children.contains(previouslyActiveElement)) {
+          previouslyActiveElement.focus({
+            // don't scroll the item into view, the user might have scrolled away and we
+            // don't want to disturb them.
+            preventScroll: true,
+          });
+        }
         return container;
       })
       .catch(this._handleRejectionIfNotDestroyed);

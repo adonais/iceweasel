@@ -1594,9 +1594,8 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     // the download is in progress we set that flag so that timeout counter
     // measures do not kick in.
     nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
-    if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin) ||
-        nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
+    if (nsHTTPSOnlyUtils::GetUpgradeMode(loadInfo) !=
+        nsHTTPSOnlyUtils::NO_UPGRADE_MODE) {
       uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
       httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_DOWNLOAD_IN_PROGRESS;
       loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
@@ -3277,7 +3276,7 @@ bool nsExternalHelperAppService::GetFileNameFromChannel(nsIChannel* aChannel,
     nsAutoCString query;
 
     // We only care about the query for HTTP and HTTPS URLs
-    if (url->SchemeIs("http") || url->SchemeIs("https")) {
+    if (net::SchemeIsHttpOrHttps(url)) {
       url->GetQuery(query);
     }
 
@@ -3767,6 +3766,17 @@ nsExternalHelperAppService::ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
   nsAutoCString MIMEType;
   if (!aMimeInfo || NS_FAILED(aMimeInfo->GetMIMEType(MIMEType))) {
     return ModifyExtension_Append;
+  }
+
+  // MIME type video/3gpp is a special case as 3gpp is (mostly) MP4 compatible
+  // and often saved as .mp4. If so, we want to avoid changing the extension
+  // since .3gpp is uncommon and confuses users (see: bug 1749294)
+  if (MIMEType.Equals("video/3gpp")) {
+    nsAutoCString fileExtLowerCase(aFileExt);
+    ToLowerCase(fileExtLowerCase);
+    if (fileExtLowerCase.Equals("mp4")) {
+      return ModifyExtension_Ignore;
+    }
   }
 
   // Determine whether the extensions should be appended or replaced depending

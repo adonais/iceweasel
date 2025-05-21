@@ -77,11 +77,13 @@
    * fields can be styled differently from the toolbar, we need to use the
    * correct color scheme in toolbar fields.
    */
-  :root[lwt-toolbar-field="light"] & {
-    color-scheme: light;
-  }
-  :root[lwt-toolbar-field="dark"] & {
-    color-scheme: dark;
+  :root:is([lwtheme-image], :not([taskbartab], [chromehidden~="toolbar"])) {
+    :root[lwt-toolbar-field="light"] & {
+      color-scheme: light;
+    }
+    :root[lwt-toolbar-field="dark"] & {
+      color-scheme: dark;
+    }
   }
 }
 
@@ -101,6 +103,19 @@
   background-clip: border-box;
   border: 1px solid var(--toolbar-field-border-color);
   border-radius: var(--toolbarbutton-border-radius);
+}
+
+/* Make the urlbar background transparent for
+ * taskbar tab and popup windows */
+:root:is([taskbartab], [chromehidden~="toolbar"]):not([lwtheme-image]) {
+  #urlbar-background {
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+  #urlbar {
+    color: inherit;
+  }
 }
 
 .urlbar-input-container,
@@ -286,12 +301,8 @@
   display: none;
 }
 
-#urlbar[breakout][breakout-extend],
-#urlbar[breakout][breakout-extend-disabled][open] {
-  height: auto;
-}
-
 #urlbar[breakout][breakout-extend] {
+  height: auto;
   margin-left: calc(-1 * var(--urlbar-margin-inline));
   width: calc(var(--urlbar-width) + 2 * var(--urlbar-margin-inline));
 
@@ -869,6 +880,12 @@
   transform: scaleX(-1);
 }
 
+/* Taskbar Tabs icon */
+
+#taskbar-tabs-button > .urlbar-icon {
+  list-style-image: url(chrome://browser/skin/taskbar-tabs-create-new.svg);
+}
+
 /* Translations button */
 
 #translations-button-icon {
@@ -1008,7 +1025,7 @@
 /* Search bar */
 
 #search-container,
-#wrapper-search-container {
+#wrapper-search-container:not([place="panel"]) {
   flex: 175 175 auto;
 }
 
@@ -1084,36 +1101,33 @@
 }
 
 .searchbar-engine-one-off-add-engine:not([image]),
-moz-input-box > menupopup .context-menu-add-engine:not([image]) {
+.context-menu-add-engine:not([image]) {
   list-style-image: image-set(url("chrome://browser/skin/search-engine-placeholder.png"), url("chrome://browser/skin/search-engine-placeholder@2x.png") 2x);
 }
 
-.searchbar-engine-one-off-add-engine > .button-box::after,
-moz-input-box > menupopup .context-menu-add-engine > .menu-iconic-left::after {
-  content: "";
+.searchbar-engine-one-off-add-engine > .button-box,
+.context-menu-add-engine {
   position: relative;
-  display: flex;
-  background: url(chrome://browser/skin/search-indicator-badge-add.svg) no-repeat center;
-  height: 11px;
-  width: 11px;
-  margin-inline: -4px -7px;
-  margin-top: -13px;
-}
 
-moz-input-box > menupopup .context-menu-add-engine > .menu-iconic-left::after {
-  /* These differ from the urlbar and searchbar because the context menu
-     may not have enough space */
-  margin-inline: -7px -4px;
-  margin-top: -8px;
+  &::before {
+    content: "";
+    position: absolute;
+    display: block;
+    background: url(chrome://browser/skin/search-indicator-badge-add.svg) no-repeat center;
+    height: 11px;
+    width: 11px;
+    margin-inline-start: 9px;
+    margin-top: -8px;
+    /* Needed so it paints after the icon when it is a stacking context (with
+     * opacity, below) */
+    z-index: 1;
+  }
 }
 
 /* Fade a little the icon so that the + badge is more evident and the button
    is less likely to be visually confused with a normal search shortcut */
 .searchbar-engine-one-off-add-engine[image]:not(:hover) > .button-box > .button-icon {
   opacity: 0.7;
-}
-.searchbar-engine-one-off-add-engine[image]:hover > .button-box > .button-icon {
-  opacity: 1;
 }
 
 #urlbar-searchmode-switcher {

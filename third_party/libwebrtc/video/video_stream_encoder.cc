@@ -80,6 +80,10 @@ constexpr char kFrameDropperFieldTrial[] = "WebRTC-FrameDropper";
 constexpr char kSwitchEncoderOnInitializationFailuresFieldTrial[] =
     "WebRTC-SwitchEncoderOnInitializationFailures";
 
+// TODO(crbugs.com/378566918): Remove this kill switch after rollout.
+constexpr char kSwitchEncoderFollowCodecPreferenceOrderFieldTrial[] =
+    "WebRTC-SwitchEncoderFollowCodecPreferenceOrder";
+
 const size_t kDefaultPayloadSize = 1440;
 
 const int64_t kParameterUpdateIntervalMs = 1000;
@@ -92,6 +96,9 @@ int GetNumSpatialLayers(const VideoCodec& codec) {
   } else if (codec.codecType == kVideoCodecAV1 &&
              codec.GetScalabilityMode().has_value()) {
     return ScalabilityModeToNumSpatialLayers(*(codec.GetScalabilityMode()));
+  } else if (codec.codecType == kVideoCodecH265) {
+    // No spatial scalability support for H.265.
+    return 1;
   } else {
     return 0;
   }
@@ -379,10 +386,24 @@ VideoEncoder::EncoderInfo GetEncoderInfoWithBitrateLimitUpdate(
     const VideoEncoder::EncoderInfo& info,
     const VideoEncoderConfig& encoder_config,
     bool default_limits_allowed) {
-  if (!default_limits_allowed || !info.resolution_bitrate_limits.empty() ||
+  bool are_all_bitrate_limits_zero = true;
+  // Hardware encoders commonly only report resolution limits, while reporting
+  // the bitrate limits as 0. In such case, we should not use them for setting
+  // bitrate limits.
+  if (!info.resolution_bitrate_limits.empty()) {
+    are_all_bitrate_limits_zero = std::all_of(
+        info.resolution_bitrate_limits.begin(),
+        info.resolution_bitrate_limits.end(),
+        [](const VideoEncoder::ResolutionBitrateLimits& limit) {
+          return limit.max_bitrate_bps == 0 && limit.min_bitrate_bps == 0;
+        });
+  }
+
+  if (!default_limits_allowed || !are_all_bitrate_limits_zero ||
       encoder_config.simulcast_layers.size() <= 1) {
     return info;
   }
+
   // Bitrate limits are not configured and more than one layer is used, use
   // the default limits (bitrate limits are not used for simulcast).
   VideoEncoder::EncoderInfo new_info = info;
@@ -447,15 +468,15 @@ void ApplySpatialLayerBitrateLimits(
   if (encoder_config.simulcast_layers[*index].max_bitrate_bps <= 0) {
     max_bitrate_bps = bitrate_limits->max_bitrate_bps;
   } else {
-    max_bitrate_bps =
-        std::min(bitrate_limits->max_bitrate_bps,
-                 encoder_config.simulcast_layers[*index].max_bitrate_bps);
+    max_bitrate_bps = encoder_config.simulcast_layers[*index].max_bitrate_bps;
   }
-  if (min_bitrate_bps >= max_bitrate_bps) {
-    RTC_LOG(LS_WARNING) << "Bitrate limits not used, min_bitrate_bps "
-                        << min_bitrate_bps << " >= max_bitrate_bps "
-                        << max_bitrate_bps;
-    return;
+
+  if (encoder_config.simulcast_layers[*index].min_bitrate_bps > 0) {
+    // Ensure max is not below configured min.
+    max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
+  } else {
+    // Ensure min is not above max.
+    min_bitrate_bps = std::min(min_bitrate_bps, max_bitrate_bps);
   }
 
   for (int i = 0; i < GetNumSpatialLayers(*codec); ++i) {
@@ -463,8 +484,9 @@ void ApplySpatialLayerBitrateLimits(
       codec->spatialLayers[i].minBitrate = min_bitrate_bps / 1000;
       codec->spatialLayers[i].maxBitrate = max_bitrate_bps / 1000;
       codec->spatialLayers[i].targetBitrate =
-          std::min(codec->spatialLayers[i].targetBitrate,
-                   codec->spatialLayers[i].maxBitrate);
+          std::clamp(codec->spatialLayers[i].targetBitrate,
+                     codec->spatialLayers[i].minBitrate,
+                     codec->spatialLayers[i].maxBitrate);
       break;
     }
   }
@@ -510,25 +532,21 @@ void ApplyEncoderBitrateLimitsIfSingleActiveStream(
   if (encoder_config_layers[index].max_bitrate_bps <= 0) {
     max_bitrate_bps = encoder_bitrate_limits->max_bitrate_bps;
   } else {
-    max_bitrate_bps = std::min(encoder_bitrate_limits->max_bitrate_bps,
-                               (*streams)[index].max_bitrate_bps);
+    max_bitrate_bps = (*streams)[index].max_bitrate_bps;
   }
-  if (min_bitrate_bps >= max_bitrate_bps) {
-    RTC_LOG(LS_WARNING) << "Encoder bitrate limits"
-                        << " (min=" << encoder_bitrate_limits->min_bitrate_bps
-                        << ", max=" << encoder_bitrate_limits->max_bitrate_bps
-                        << ") do not intersect with stream limits"
-                        << " (min=" << (*streams)[index].min_bitrate_bps
-                        << ", max=" << (*streams)[index].max_bitrate_bps
-                        << "). Encoder bitrate limits not used.";
-    return;
+
+  if (encoder_config_layers[index].min_bitrate_bps > 0) {
+    // Ensure max is not below configured min.
+    max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
+  } else {
+    // Ensure min is not above max.
+    min_bitrate_bps = std::min(min_bitrate_bps, max_bitrate_bps);
   }
 
   (*streams)[index].min_bitrate_bps = min_bitrate_bps;
   (*streams)[index].max_bitrate_bps = max_bitrate_bps;
-  (*streams)[index].target_bitrate_bps =
-      std::min((*streams)[index].target_bitrate_bps,
-               encoder_bitrate_limits->max_bitrate_bps);
+  (*streams)[index].target_bitrate_bps = std::clamp(
+      (*streams)[index].target_bitrate_bps, min_bitrate_bps, max_bitrate_bps);
 }
 
 std::optional<int> ParseVp9LowTierCoreCountThreshold(
@@ -1017,7 +1035,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
         env_.field_trials(), last_frame_info_->width, last_frame_info_->height,
         encoder_config_);
   } else {
-    auto factory = rtc::make_ref_counted<cricket::EncoderStreamFactory>(
+    auto factory = rtc::make_ref_counted<EncoderStreamFactory>(
         encoder_->GetEncoderInfo(), latest_restrictions_);
 
     streams = factory->CreateEncoderStreams(
@@ -1064,7 +1082,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     const std::vector<VideoEncoder::ResolutionBitrateLimits>& bitrate_limits =
         encoder_->GetEncoderInfo().resolution_bitrate_limits.empty()
             ? EncoderInfoSettings::
-                  GetDefaultSinglecastBitrateLimitsWhenQpIsUntrusted()
+                  GetDefaultSinglecastBitrateLimitsWhenQpIsUntrusted(
+                      encoder_config_.codec_type)
             : encoder_->GetEncoderInfo().resolution_bitrate_limits;
 
     // For BandwidthQualityScaler, its implement based on a certain pixel_count
@@ -1192,7 +1211,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   }
 
   char log_stream_buf[4 * 1024];
-  rtc::SimpleStringBuilder log_stream(log_stream_buf);
+  SimpleStringBuilder log_stream(log_stream_buf);
   log_stream << "ReconfigureEncoder: simulcast streams: ";
   for (size_t i = 0; i < codec.numberOfSimulcastStreams; ++i) {
     std::optional<ScalabilityMode> scalability_mode =
@@ -1481,15 +1500,21 @@ void VideoStreamEncoder::RequestEncoderSwitch() {
   }
 
   // If encoder selector is available, switch to the encoder it prefers.
-  // Otherwise try switching to VP8 (default WebRTC codec).
   std::optional<SdpVideoFormat> preferred_fallback_encoder;
   if (is_encoder_selector_available) {
     preferred_fallback_encoder = encoder_selector_->OnEncoderBroken();
   }
 
   if (!preferred_fallback_encoder) {
-    preferred_fallback_encoder =
-        SdpVideoFormat(CodecTypeToPayloadString(kVideoCodecVP8));
+    if (!env_.field_trials().IsDisabled(
+            kSwitchEncoderFollowCodecPreferenceOrderFieldTrial)) {
+      encoder_fallback_requested_ = true;
+      settings_.encoder_switch_request_callback->RequestEncoderFallback();
+      return;
+    } else {
+      preferred_fallback_encoder =
+          SdpVideoFormat(CodecTypeToPayloadString(kVideoCodecVP8));
+    }
   }
 
   settings_.encoder_switch_request_callback->RequestEncoderSwitch(
@@ -1892,11 +1917,14 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   RTC_LOG(LS_VERBOSE) << __func__ << " posted " << time_when_posted_us
                       << " ntp time " << video_frame.ntp_time_ms();
 
-  // If the encoder fail we can't continue to encode frames. When this happens
-  // the WebrtcVideoSender is notified and the whole VideoSendStream is
-  // recreated.
-  if (encoder_failed_ || !encoder_initialized_)
+  // If encoder fallback is requested, but we run out of codecs to be
+  // negotiated, we don't continue to encode frames. The send streams will still
+  // be kept. Otherwise if WebRtcVideoEngine responds to the fallback request,
+  // the send streams will be recreated and current VideoStreamEncoder will no
+  // longer be used.
+  if (encoder_fallback_requested_ || !encoder_initialized_) {
     return;
+  }
 
   // It's possible that EncodeVideoFrame can be called after we've completed
   // a Stop() operation. Check if the encoder_ is set before continuing.

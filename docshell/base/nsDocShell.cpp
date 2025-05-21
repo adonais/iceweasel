@@ -667,7 +667,7 @@ nsDocShell::SetCancelContentJSEpoch(int32_t aEpoch) {
 
 nsresult nsDocShell::CheckDisallowedJavascriptLoad(
     nsDocShellLoadState* aLoadState) {
-  if (!net::SchemeIsJavascript(aLoadState->URI())) {
+  if (!aLoadState->URI()->SchemeIs("javascript")) {
     return NS_OK;
   }
 
@@ -1616,8 +1616,8 @@ nsDocShell::ForceEncodingDetection() {
 
   mForcedAutodetection = true;
 
-  nsIURI* url = doc->GetOriginalURI();
-  bool isFileURL = url && SchemeIsFile(url);
+  nsIURI* uri = doc->GetOriginalURI();
+  bool isFileURL = uri && uri->SchemeIs("file");
 
   int32_t charsetSource = doc->GetDocumentCharacterSetSource();
   auto encoding = doc->GetDocumentCharacterSet();
@@ -3710,7 +3710,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     if (aURI) {
       // displaying "file://" is aesthetically unpleasing and could even be
       // confusing to the user
-      if (SchemeIsFile(aURI)) {
+      if (aURI->SchemeIs("file")) {
         aURI->GetPathQueryRef(spec);
       } else {
         aURI->GetSpec(spec);
@@ -3740,7 +3740,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   NS_ENSURE_FALSE(messageStr.IsEmpty(), NS_ERROR_FAILURE);
 
   if ((NS_ERROR_NET_INTERRUPT == aError || NS_ERROR_NET_RESET == aError) &&
-      SchemeIsHTTPS(aURI)) {
+      aURI->SchemeIs("https")) {
     // Maybe TLS intolerant. Treat this as an SSL error.
     error = "nssFailure2";
   }
@@ -5780,7 +5780,7 @@ already_AddRefed<nsIURI> nsDocShell::MaybeFixBadCertDomainErrorURI(
   }
 
   // Return if scheme is not HTTPS.
-  if (!SchemeIsHTTPS(aUrl)) {
+  if (!aUrl->SchemeIs("https")) {
     return nullptr;
   }
 
@@ -5949,10 +5949,8 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
     // Someone needs to clean up keywords in general so we can
     // determine on a per url basis if we want keywords
     // enabled...this is just a bandaid...
-    nsAutoCString scheme;
-    Unused << url->GetScheme(scheme);
     if (Preferences::GetBool("keyword.enabled", false) &&
-        StringBeginsWith(scheme, "http"_ns)) {
+        net::SchemeIsHttpOrHttps(url)) {
       bool attemptFixup = false;
       nsAutoCString host;
       Unused << url->GetHost(host);
@@ -6050,7 +6048,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
   } else if (aStatus == NS_ERROR_CONNECTION_REFUSED &&
              Preferences::GetBool("browser.fixup.fallback-to-https", false)) {
     // Try HTTPS, since http didn't work
-    if (SchemeIsHTTP(url)) {
+    if (url->SchemeIs("http")) {
       int32_t port = 0;
       url->GetPort(&port);
 
@@ -8550,13 +8548,18 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
       if (!aState.mSameExceptHashes) {
         if (nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel()) {
           nsCOMPtr<nsILoadInfo> docLoadInfo = docChannel->LoadInfo();
+          nsHTTPSOnlyUtils::UpgradeMode upgradeMode =
+              nsHTTPSOnlyUtils::GetUpgradeMode(docLoadInfo);
           if (!docLoadInfo->GetLoadErrorPage() &&
-              nsHTTPSOnlyUtils::ShouldUpgradeConnection(docLoadInfo) &&
+              (upgradeMode == nsHTTPSOnlyUtils::HTTPS_ONLY_MODE ||
+               upgradeMode == nsHTTPSOnlyUtils::HTTPS_FIRST_MODE) &&
               nsHTTPSOnlyUtils::IsHttpDowngrade(currentExposableURI,
                                                 aLoadState->URI())) {
             uint32_t status = docLoadInfo->GetHttpsOnlyStatus();
-            if (status & (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
-                          nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) {
+            if ((status &
+                 (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
+                  nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) &&
+                !(status & nsILoadInfo::HTTPS_ONLY_EXEMPT)) {
               // At this point the requested URI is for sure a fragment
               // navigation via HTTP and HTTPS-Only mode or HTTPS-First is
               // enabled. Also it is not interfering the upgrade order of
@@ -8712,7 +8715,17 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   // Reset mLoadType to its original value once we exit this block, because this
   // same document navigation might have started after a normal, network load,
   // and we don't want to clobber its load type. See bug 737307.
-  AutoRestore<uint32_t> loadTypeResetter(mLoadType);
+  Maybe<AutoRestore<uint32_t>> loadTypeResetter;
+  if (StaticPrefs::
+          docshell_shistory_sameDocumentNavigationOverridesLoadType() &&
+      !doc->NodePrincipal()->IsURIInPrefList(
+          "docshell.shistory.sameDocumentNavigationOverridesLoadType."
+          "forceDisable")) {
+    loadTypeResetter.emplace(mLoadType);
+  }
+  if (JustStartedNetworkLoad() && !loadTypeResetter.isSome()) {
+    loadTypeResetter.emplace(mLoadType);
+  }
 
   // If a non-same-document-navigation (i.e., a network load) is pending, make
   // this a replacement load, so that we don't add a SHEntry here and the
@@ -9309,7 +9322,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     MOZ_DIAGNOSTIC_ASSERT(aLoadState->LoadType() == LOAD_NORMAL);
 
     // Disallow external chrome: loads targetted at content windows
-    if (SchemeIsChrome(aLoadState->URI())) {
+    if (aLoadState->URI()->SchemeIs("chrome")) {
       NS_WARNING("blocked external chrome: url -- use '--chrome' option");
       return NS_ERROR_FAILURE;
     }
@@ -9353,7 +9366,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   // XXXbz mTiming should know what channel it's for, so we don't
   // need this hackery.
-  const bool isJavaScript = SchemeIsJavascript(aLoadState->URI());
+  const bool isJavaScript = aLoadState->URI()->SchemeIs("javascript");
   const bool isExternalProtocol =
       nsContentUtils::IsExternalProtocol(aLoadState->URI());
   const bool isDownload = !aLoadState->FileName().IsVoid();
@@ -9392,7 +9405,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     // unload and just unload.
     bool okToUnload;
     if (!isHistoryOrReload && aLoadState->IsExemptFromHTTPSFirstMode() &&
-        nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
+        nsHTTPSOnlyUtils::GetUpgradeMode(isPrivateWin) ==
+            nsHTTPSOnlyUtils::HTTPS_FIRST_MODE) {
       rv = mDocumentViewer->PermitUnload(
           nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload,
           &okToUnload);
@@ -9733,7 +9747,7 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
         MOZ_ALWAYS_SUCCEEDS(vsc->SetBaseURI(aBaseURI));
       }
     }
-  } else if (SchemeIsViewSource(aURI)) {
+  } else if (aURI->SchemeIs("view-source")) {
     // Instantiate view source handler protocol, if it doesn't exist already.
     nsCOMPtr<nsIIOService> io(do_GetIOService());
     MOZ_ASSERT(io);
@@ -10239,7 +10253,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     while (nestedURI) {
       // view-source should always be an nsINestedURI, loop and check the
       // scheme on this and all inner URIs that are also nested URIs.
-      if (SchemeIsViewSource(tempURI)) {
+      if (tempURI->SchemeIs("view-source")) {
         return NS_ERROR_UNKNOWN_PROTOCOL;
       }
       nestedURI->GetInnerURI(getter_AddRefs(tempURI));
@@ -10256,20 +10270,21 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   //    configured as unique opaque origin.
   bool inheritPrincipal = false;
 
+  nsCOMPtr<nsIURI> uri = aLoadState->URI();
   if (aLoadState->PrincipalToInherit()) {
     bool isSrcdoc =
         aLoadState->HasInternalLoadFlags(INTERNAL_LOAD_FLAGS_IS_SRCDOC);
     bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
-        aLoadState->PrincipalToInherit(), aLoadState->URI(),
+        aLoadState->PrincipalToInherit(), uri,
         true,  // aInheritForAboutBlank
         isSrcdoc);
 
-    inheritPrincipal = inheritAttrs && !SchemeIsData(aLoadState->URI());
+    inheritPrincipal = inheritAttrs && !uri->SchemeIs("data");
   }
 
   // See https://bugzilla.mozilla.org/show_bug.cgi?id=1736570
   const bool isAboutBlankLoadOntoInitialAboutBlank =
-      IsAboutBlankLoadOntoInitialAboutBlank(aLoadState->URI(), inheritPrincipal,
+      IsAboutBlankLoadOntoInitialAboutBlank(uri, inheritPrincipal,
                                             aLoadState->PrincipalToInherit());
 
   // FIXME We still have a ton of codepaths that don't pass through
@@ -10282,7 +10297,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     // Materialize LoadingSessionHistoryInfo here, because DocumentChannel
     // loads have it, and later history behavior depends on it existing.
     UniquePtr<SessionHistoryInfo> entry = MakeUnique<SessionHistoryInfo>(
-        aLoadState->URI(), aLoadState->TriggeringPrincipal(),
+        uri, aLoadState->TriggeringPrincipal(),
         aLoadState->PrincipalToInherit(),
         aLoadState->PartitionedPrincipalToInherit(), aLoadState->Csp(),
         mContentTypeHint);
@@ -10394,8 +10409,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
       aLoadState->GetLoadIdentifier());
   RefPtr<LoadInfo> loadInfo =
       (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT)
-          ? new LoadInfo(loadingWindow, aLoadState->URI(),
-                         aLoadState->TriggeringPrincipal(),
+          ? new LoadInfo(loadingWindow, uri, aLoadState->TriggeringPrincipal(),
                          topLevelLoadingContext, securityFlags, sandboxFlags)
           : new LoadInfo(loadingPrincipal, aLoadState->TriggeringPrincipal(),
                          loadingNode, securityFlags, contentPolicyType,
@@ -10502,7 +10516,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
       mBrowsingContext, uriModified, Some(isEmbeddingBlockedError));
 
   nsCOMPtr<nsIChannel> channel;
-  if (DocumentChannel::CanUseDocumentChannel(aLoadState->URI()) &&
+  if (DocumentChannel::CanUseDocumentChannel(uri) &&
       !isAboutBlankLoadOntoInitialAboutBlank) {
     channel = DocumentChannel::CreateForDocument(
         aLoadState, loadInfo, loadFlags, this, cacheKey, uriModified,
@@ -11175,7 +11189,8 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
   // Here's what we do, roughly in the order specified by HTML5.  The specific
   // steps we are executing are at
-  // <https://html.spec.whatwg.org/multipage/history.html#dom-history-pushstate>
+  // <https://html.spec.whatwg.org/multipage/history.html#dom-history-pushstate>,
+  // <https://html.spec.whatwg.org/#shared-history-push/replace-state-steps>,
   // and
   // <https://html.spec.whatwg.org/multipage/history.html#url-and-history-update-steps>.
   // This function basically implements #dom-history-pushstate and
@@ -11218,18 +11233,28 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
   nsresult rv;
 
+  RefPtr<Document> document = GetDocument();
+  NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
+
   // Don't clobber the load type of an existing network load.
-  AutoRestore<uint32_t> loadTypeResetter(mLoadType);
+  Maybe<AutoRestore<uint32_t>> loadTypeResetter;
+  if (StaticPrefs::
+          docshell_shistory_sameDocumentNavigationOverridesLoadType() &&
+      !document->NodePrincipal()->IsURIInPrefList(
+          "docshell.shistory.sameDocumentNavigationOverridesLoadType."
+          "forceDisable")) {
+    loadTypeResetter.emplace(mLoadType);
+  }
 
   // pushState effectively becomes replaceState when we've started a network
   // load but haven't adopted its document yet.  This mirrors what we do with
   // changes to the hash at this stage of the game.
   if (JustStartedNetworkLoad()) {
+    if (!loadTypeResetter.isSome()) {
+      loadTypeResetter.emplace(mLoadType);
+    }
     aReplace = true;
   }
-
-  RefPtr<Document> document = GetDocument();
-  NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
 
   // Step A: Serialize aData using structured clone.
   // https://html.spec.whatwg.org/multipage/history.html#dom-history-pushstate
@@ -11306,43 +11331,8 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 
-    // 7.4 and 7.5: Same-origin check.
-    if (!nsContentUtils::URIIsLocalFile(newURI)) {
-      // In addition to checking that the security manager says that
-      // the new URI has the same origin as our current URI, we also
-      // check that the two URIs have the same userpass. (The
-      // security manager says that |http://foo.com| and
-      // |http://me@foo.com| have the same origin.)  currentURI
-      // won't contain the password part of the userpass, so this
-      // means that it's never valid to specify a password in a
-      // pushState or replaceState URI.
-
-      nsCOMPtr<nsIScriptSecurityManager> secMan =
-          do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);
-      NS_ENSURE_TRUE(secMan, NS_ERROR_FAILURE);
-
-      // It's very important that we check that newURI is of the same
-      // origin as currentURI, not docBaseURI, because a page can
-      // set docBaseURI arbitrarily to any domain.
-      nsAutoCString currentUserPass, newUserPass;
-      NS_ENSURE_SUCCESS(currentURI->GetUserPass(currentUserPass),
-                        NS_ERROR_FAILURE);
-      NS_ENSURE_SUCCESS(newURI->GetUserPass(newUserPass), NS_ERROR_FAILURE);
-      bool isPrivateWin =
-          document->NodePrincipal()->OriginAttributesRef().IsPrivateBrowsing();
-      if (NS_FAILED(secMan->CheckSameOriginURI(currentURI, newURI, true,
-                                               isPrivateWin)) ||
-          !currentUserPass.Equals(newUserPass)) {
-        return NS_ERROR_DOM_SECURITY_ERR;
-      }
-    } else {
-      // It's a file:// URI
-      nsCOMPtr<nsIPrincipal> principal = document->GetPrincipal();
-
-      if (!principal || NS_FAILED(principal->CheckMayLoadWithReporting(
-                            newURI, false, document->InnerWindowID()))) {
-        return NS_ERROR_DOM_SECURITY_ERR;
-      }
+    if (!document->CanRewriteURL(newURI)) {
+      return NS_ERROR_DOM_SECURITY_ERR;
     }
 
     if (currentURI) {
@@ -11359,7 +11349,8 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
     if (RefPtr<Navigation> navigation = window->Navigation();
         navigation &&
         navigation->FirePushReplaceReloadNavigateEvent(
-            aReplace ? NavigationType::Replace : NavigationType::Push, newURI,
+            aCx, aReplace ? NavigationType::Replace : NavigationType::Push,
+            newURI,
             /* aIsSameDocument */ true, /* aUserInvolvement */ Nothing(),
             /* aSourceElement */ nullptr, /* aFormDataEntryList */ Nothing(),
             /* aNavigationAPIState */ nullptr, scContainer)) {
@@ -12065,7 +12056,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
   aLoadState->SetLoadType(aLoadType);
 
   nsresult rv;
-  if (SchemeIsJavascript(aLoadState->URI())) {
+  if (aLoadState->URI()->SchemeIs("javascript")) {
     // We're loading a URL that will execute script from inside asyncOpen.
     // Replace the current document with about:blank now to prevent
     // anything from the current document from leaking into any JavaScript
@@ -12908,7 +12899,7 @@ nsresult nsDocShell::OnLinkClick(
 bool nsDocShell::ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,
                                          nsIURI* aLinkURI, nsIContent* aContent,
                                          bool aIsUserTriggered) {
-  if (net::SchemeIsJavascript(aLinkURI)) {
+  if (aLinkURI->SchemeIs("javascript")) {
     return false;
   }
 

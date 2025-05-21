@@ -12,30 +12,30 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/UniFFICall.h"
-#include "mozilla/dom/UniFFICallbacks.h"
 #include "mozilla/dom/UniFFIScaffolding.h"
+#include "mozilla/uniffi/Call.h"
+#include "mozilla/uniffi/Callbacks.h"
 
 // This file implements the UniFFI WebIDL interface by leveraging the generate
-// code in UniFFIScaffolding.cpp and UniFFIFixtureScaffolding.cpp.  It's main
-// purpose is to check if MOZ_UNIFFI_FIXTURES is set and only try calling the
-// scaffolding code if it is.
+// code in UniFFIScaffolding.cpp.  It's main purpose is to check if
+// MOZ_UNIFFI_FIXTURES is set and only try calling the scaffolding code if it
+// is.
 
 using mozilla::dom::ArrayBuffer;
 using mozilla::dom::GlobalObject;
+using mozilla::dom::OwningUniFFIScaffoldingValue;
 using mozilla::dom::Promise;
 using mozilla::dom::RootedDictionary;
 using mozilla::dom::Sequence;
 using mozilla::dom::UniFFICallbackHandler;
 using mozilla::dom::UniFFIPointer;
 using mozilla::dom::UniFFIScaffoldingCallResult;
-using mozilla::dom::UniFFIScaffoldingValue;
 using mozilla::uniffi::UniffiAsyncCallHandler;
 using mozilla::uniffi::UniffiSyncCallHandler;
 
 namespace mozilla::uniffi {
 mozilla::LazyLogModule gUniffiLogger("uniffi");
-// Implemented in UniFFIGeneratedScaffolding.cpp
+// Implemented in GeneratedScaffolding.cpp
 UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId);
 UniquePtr<UniffiAsyncCallHandler> GetAsyncCallHandler(uint64_t aId);
 Maybe<already_AddRefed<UniFFIPointer>> ReadPointer(
@@ -52,7 +52,7 @@ namespace mozilla::dom {
 
 void UniFFIScaffolding::CallSync(
     const GlobalObject& aGlobal, uint64_t aId,
-    const Sequence<UniFFIScaffoldingValue>& aArgs,
+    const Sequence<OwningUniFFIScaffoldingValue>& aArgs,
     RootedDictionary<UniFFIScaffoldingCallResult>& aReturnValue,
     ErrorResult& aError) {
   if (UniquePtr<UniffiSyncCallHandler> handler =
@@ -67,7 +67,7 @@ void UniFFIScaffolding::CallSync(
 
 already_AddRefed<Promise> UniFFIScaffolding::CallAsync(
     const GlobalObject& aGlobal, uint64_t aId,
-    const Sequence<UniFFIScaffoldingValue>& aArgs, ErrorResult& aError) {
+    const Sequence<OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) {
   if (UniquePtr<UniffiAsyncCallHandler> handler =
           uniffi::GetAsyncCallHandler(aId)) {
     return UniffiAsyncCallHandler::CallAsync(std::move(handler), aGlobal, aArgs,
@@ -81,7 +81,7 @@ already_AddRefed<Promise> UniFFIScaffolding::CallAsync(
 
 already_AddRefed<Promise> UniFFIScaffolding::CallAsyncWrapper(
     const GlobalObject& aGlobal, uint64_t aId,
-    const Sequence<UniFFIScaffoldingValue>& aArgs, ErrorResult& aError) {
+    const Sequence<OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) {
   if (UniquePtr<UniffiSyncCallHandler> handler =
           uniffi::GetSyncCallHandler(aId)) {
     return UniffiSyncCallHandler::CallAsyncWrapper(std::move(handler), aGlobal,

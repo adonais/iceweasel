@@ -340,13 +340,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   // indexedDB counters.
   void TryToCacheTopInnerWindow();
 
-  // Increase/Decrease the number of active IndexedDB databases for the
-  // decision making of timeout-throttling.
-  void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta);
-
-  // Increase/Decrease the number of open WebSockets.
-  void UpdateWebSocketCount(int32_t aDelta);
-
   mozilla::Maybe<mozilla::dom::ClientInfo> GetClientInfo() const;
   mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;
   mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;

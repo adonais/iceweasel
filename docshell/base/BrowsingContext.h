@@ -32,8 +32,10 @@
 #include "nsILoadInfo.h"
 #include "nsILoadContext.h"
 #include "nsThreadUtils.h"
+#include "nsIDOMGeoPosition.h"
 
 class nsDocShellLoadState;
+class nsGeolocationService;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
 class nsIPrincipal;
@@ -222,9 +224,6 @@ struct EmbedderColorSchemes {
    * This is only ever set to true on the top BC, so consumers need to get    \
    * the value from the top BC! */                                            \
   FIELD(HasSessionHistory, bool)                                              \
-  /* Tracks if this context is the only top-level document in the session     \
-   * history of the context. */                                               \
-  FIELD(IsSingleToplevelInHistory, bool)                                      \
   FIELD(UseErrorPages, bool)                                                  \
   FIELD(PlatformOverride, nsString)                                           \
   /* Specifies if this BC has loaded documents besides the initial            \
@@ -484,6 +483,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool IsContentSubframe() const { return IsContent() && IsSubframe(); }
 
+  RefPtr<nsGeolocationService> GetGeolocationServiceOverride();
+
   // non-zero
   uint64_t Id() const { return mBrowsingContextId; }
 
@@ -612,6 +613,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool WatchedByDevTools();
   void SetWatchedByDevTools(bool aWatchedByDevTools, ErrorResult& aRv);
+
+  void SetGeolocationServiceOverride(
+      const Optional<nsIDOMGeoPosition*>& aGeolocationOverride);
 
   dom::TouchEventsOverride TouchEventsOverride() const;
   bool TargetTopLevelLinkClicksToBlank() const;
@@ -1353,6 +1357,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   nsTArray<RefPtr<WindowContext>> mWindowContexts;
   RefPtr<WindowContext> mCurrentWindowContext;
+
+  RefPtr<nsGeolocationService> mGeolocationServiceOverride;
 
   // This is not a strong reference, but using a JS::Heap for that should be
   // fine. The JSObject stored in here should be a proxy with a

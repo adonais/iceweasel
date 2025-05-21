@@ -13,8 +13,6 @@ end of the VS buffer table.
 
 !*/
 
-#![allow(clippy::std_instead_of_alloc, clippy::std_instead_of_core)]
-
 // `MTLFeatureSet` is superseded by `MTLGpuFamily`.
 // However, `MTLGpuFamily` is only supported starting MacOS 10.15, whereas our minimum target is MacOS 10.13,
 // See https://github.com/gpuweb/gpuweb/issues/1069 for minimum spec.
@@ -28,15 +26,9 @@ mod layer_observer;
 mod surface;
 mod time;
 
-use std::{
-    borrow::ToOwned as _,
-    fmt, iter, ops,
-    ptr::NonNull,
-    string::String,
-    sync::{atomic, Arc},
-    thread,
-    vec::Vec,
-};
+use alloc::{borrow::ToOwned as _, string::String, sync::Arc, vec::Vec};
+use core::{fmt, iter, ops, ptr::NonNull, sync::atomic};
+use std::thread;
 
 use arrayvec::ArrayVec;
 use bitflags::bitflags;
@@ -396,13 +388,13 @@ pub struct SurfaceTexture {
 
 impl crate::DynSurfaceTexture for SurfaceTexture {}
 
-impl std::borrow::Borrow<Texture> for SurfaceTexture {
+impl core::borrow::Borrow<Texture> for SurfaceTexture {
     fn borrow(&self) -> &Texture {
         &self.texture
     }
 }
 
-impl std::borrow::Borrow<dyn crate::DynTexture> for SurfaceTexture {
+impl core::borrow::Borrow<dyn crate::DynTexture> for SurfaceTexture {
     fn borrow(&self) -> &dyn crate::DynTexture {
         &self.texture
     }
@@ -782,8 +774,22 @@ unsafe impl Send for BindGroup {}
 unsafe impl Sync for BindGroup {}
 
 #[derive(Debug)]
+pub enum ShaderModuleSource {
+    Naga(crate::NagaShader),
+    Passthrough(PassthroughShader),
+}
+
+#[derive(Debug)]
+pub struct PassthroughShader {
+    pub library: metal::Library,
+    pub function: metal::Function,
+    pub entry_point: String,
+    pub num_workgroups: (u32, u32, u32),
+}
+
+#[derive(Debug)]
 pub struct ShaderModule {
-    naga: crate::NagaShader,
+    source: ShaderModuleSource,
     bounds_checks: wgt::ShaderRuntimeChecks,
 }
 

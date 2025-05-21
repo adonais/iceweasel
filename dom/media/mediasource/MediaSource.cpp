@@ -7,7 +7,6 @@
 #include "MediaSource.h"
 
 #include "AsyncEventRunner.h"
-#include "Benchmark.h"
 #include "DecoderDoctorDiagnostics.h"
 #include "DecoderTraits.h"
 #include "MP4Decoder.h"
@@ -80,10 +79,10 @@ static bool IsVP9Forced(DecoderDoctorDiagnostics* aDiagnostics) {
       MediaContainerType(MEDIAMIMETYPE(VIDEO_MP4)), aDiagnostics);
   bool hwsupported = gfx::gfxVars::CanUseHardwareVideoDecoding();
 #ifdef MOZ_WIDGET_ANDROID
-  return !mp4supported || !hwsupported || VP9Benchmark::IsVP9DecodeFast() ||
+  return !mp4supported || !hwsupported ||
          java::HardwareCodecCapabilityUtils::HasHWVP9(false /* aIsEncoder */);
 #else
-  return !mp4supported || !hwsupported || VP9Benchmark::IsVP9DecodeFast();
+  return !mp4supported || !hwsupported;
 #endif
 }
 
@@ -419,7 +418,7 @@ void MediaSource::EndOfStream(
   }
 
   SetReadyState(MediaSourceReadyState::Ended);
-  mSourceBuffers->Ended();
+  mSourceBuffers->SetEnded(aError);
   if (!aError.WasPassed()) {
     DurationChangeOnEndOfStream();
     // Notify reader that all data is now available.
@@ -446,7 +445,7 @@ void MediaSource::EndOfStream(const MediaResult& aError) {
   MSE_API("EndOfStream(aError=%s)", aError.ErrorName().get());
 
   SetReadyState(MediaSourceReadyState::Ended);
-  mSourceBuffers->Ended();
+  mSourceBuffers->SetEnded(Optional(MediaSourceEndOfStreamError::Decode));
   mDecoder->DecodeError(aError);
 }
 

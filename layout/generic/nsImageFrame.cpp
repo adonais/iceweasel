@@ -323,12 +323,13 @@ void BrokenImageIcon::Notify(imgIRequest* aRequest, int32_t aType,
 // test if the width and height are fixed, looking at the style data
 // This is used by nsImageFrame::ImageFrameTypeFor and should not be used for
 // layout decisions.
-static bool HaveSpecifiedSize(const nsStylePosition* aStylePosition) {
+static bool HaveSpecifiedSize(const nsStylePosition* aStylePosition,
+                              StylePositionProperty aProp) {
   // check the width and height values in the reflow input's style struct
   // - if width and height are specified as either coord or percentage, then
   //   the size of the image frame is constrained
-  return aStylePosition->GetWidth().IsLengthPercentage() &&
-         aStylePosition->GetHeight().IsLengthPercentage();
+  return aStylePosition->GetWidth(aProp)->IsLengthPercentage() &&
+         aStylePosition->GetHeight(aProp)->IsLengthPercentage();
 }
 
 template <typename SizeOrMaxSize>
@@ -355,6 +356,7 @@ static bool DependsOnIntrinsicSize(const SizeOrMaxSize& aMinOrMaxSize) {
 // image's intrinsic size changing.
 static bool SizeDependsOnIntrinsicSize(const ReflowInput& aReflowInput) {
   const auto& position = *aReflowInput.mStylePosition;
+  const auto positionProperty = aReflowInput.mStyleDisplay->mPosition;
   WritingMode wm = aReflowInput.GetWritingMode();
   // Don't try to make this optimization when an image has percentages
   // in its 'width' or 'height'.  The percentages might be treated like
@@ -365,10 +367,10 @@ static bool SizeDependsOnIntrinsicSize(const ReflowInput& aReflowInput) {
   // don't need to check them.
   //
   // Flex item's min-[width|height]:auto resolution depends on intrinsic size.
-  return !position.GetHeight().ConvertsToLength() ||
-         !position.GetWidth().ConvertsToLength() ||
-         DependsOnIntrinsicSize(position.MinISize(wm)) ||
-         DependsOnIntrinsicSize(position.MaxISize(wm)) ||
+  return !position.GetHeight(positionProperty)->ConvertsToLength() ||
+         !position.GetWidth(positionProperty)->ConvertsToLength() ||
+         DependsOnIntrinsicSize(*position.MinISize(wm, positionProperty)) ||
+         DependsOnIntrinsicSize(*position.MaxISize(wm, positionProperty)) ||
          aReflowInput.mFrame->IsFlexItem();
 }
 
@@ -558,9 +560,9 @@ void nsImageFrame::DeinitOwnedRequest() {
 void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   nsAtomicContainerFrame::DidSetComputedStyle(aOldStyle);
 
-  // A ::marker's default size is calculated from the font's em-size.
-  if (IsForMarkerPseudo()) {
-    mIntrinsicSize = IntrinsicSize(0, 0);
+  // A list-style-image ::marker default size is calculated from the font's
+  // em-size, which might have changed here.
+  if (mKind == Kind::ListStyleImage) {
     UpdateIntrinsicSize();
   }
 
@@ -763,7 +765,7 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
     // Increase load priority further if intrinsic size might be important for
     // layout.
-    if (!HaveSpecifiedSize(StylePosition())) {
+    if (!HaveSpecifiedSize(StylePosition(), StyleDisplay()->mPosition)) {
       categoryToBoostPriority |= imgIRequest::CATEGORY_SIZE_QUERY;
     }
 
@@ -1148,7 +1150,8 @@ auto nsImageFrame::ImageFrameTypeFor(const Element& aElement,
   // FIXME(emilio, bug 1788767): We definitely don't reframe when
   // HaveSpecifiedSize changes...
   if (aElement.OwnerDoc()->GetCompatibilityMode() == eCompatibility_NavQuirks &&
-      HaveSpecifiedSize(aStyle.StylePosition())) {
+      HaveSpecifiedSize(aStyle.StylePosition(),
+                        aStyle.StyleDisplay()->mPosition)) {
     return ImageFrameType::ForElementRequest;
   }
 
@@ -1474,15 +1477,7 @@ nsRect nsImageFrame::GetDestRect(const nsRect& aFrameContentBox,
                                               aAnchorPoint);
 }
 
-bool nsImageFrame::IsForMarkerPseudo() const {
-  if (mKind == Kind::ImageLoadingContent) {
-    return false;
-  }
-  auto* subtreeRoot = GetContent()->GetClosestNativeAnonymousSubtreeRoot();
-  return subtreeRoot && subtreeRoot->IsGeneratedContentContainerForMarker();
-}
-
-void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
+void nsImageFrame::EnsureIntrinsicSizeAndRatio(bool aConsiderIntrinsicsDirty) {
   const auto containAxes = GetContainSizeAxes();
   if (containAxes.IsBoth()) {
     // If we have 'contain:size', then we have no intrinsic aspect ratio,
@@ -1493,10 +1488,17 @@ void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
     return;
   }
 
-  // If mIntrinsicSize.width and height are 0, then we need to update from the
-  // image container.  Note that we handle ::marker intrinsic size/ratio in
-  // DidSetComputedStyle.
-  if (mIntrinsicSize != IntrinsicSize(0, 0) && !IsForMarkerPseudo()) {
+  // If mIntrinsicSize is set (i.e. anything besides (0,0)), then we assume that
+  // our intrinsic size/ratio have been already computed and don't need
+  // recomputing, *unless* the aConsiderIntrinsicsDirty param is set to true
+  // (in which case our intrinsic size/ratio might be invalid).
+  //
+  // The fallback list-style-image marker size might have been set in
+  // DidSetComputedStyle, and it might have changed since then.
+  // TODO(emilio): We should remove that special case and add missing
+  // invalidation if/where needed.
+  if (!aConsiderIntrinsicsDirty && mIntrinsicSize != IntrinsicSize(0, 0) &&
+      mKind != Kind::ListStyleImage) {
     return;
   }
 
@@ -2392,8 +2394,10 @@ bool nsDisplayImage::CreateWebRenderCommands(
         aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
     return true;
   }
-  if (frame->HasImageMap()) {
-    // Image layer doesn't support draw focus ring for image map.
+
+  if (nsImageMap* map = frame->GetImageMap(); map && map->HasFocus()) {
+    // We can't draw some of the focus areas (in particular, PolyArea would be
+    // somewhat hard to do).
     return false;
   }
 
@@ -2517,7 +2521,7 @@ ImgDrawResult nsImageFrame::PaintImage(gfxContext& aRenderingContext,
       nsLayoutUtils::GetSamplingFilterForFrame(this), dest, aDirtyRect,
       svgContext, aFlags, &anchorPoint);
 
-  if (nsImageMap* map = GetImageMap()) {
+  if (nsImageMap* map = GetImageMap(); map && map->HasFocus()) {
     gfxPoint devPixelOffset = nsLayoutUtils::PointToGfxPoint(
         dest.TopLeft(), PresContext()->AppUnitsPerDevPixel());
     AutoRestoreTransform autoRestoreTransform(drawTarget);
@@ -2526,13 +2530,13 @@ ImgDrawResult nsImageFrame::PaintImage(gfxContext& aRenderingContext,
 
     // solid white stroke:
     ColorPattern white(ToDeviceColor(sRGBColor::OpaqueWhite()));
-    map->Draw(this, *drawTarget, white);
+    map->DrawFocus(this, *drawTarget, white);
 
     // then dashed black stroke over the top:
     ColorPattern black(ToDeviceColor(sRGBColor::OpaqueBlack()));
     StrokeOptions strokeOptions;
     nsLayoutUtils::InitDashPattern(strokeOptions, StyleBorderStyle::Dotted);
-    map->Draw(this, *drawTarget, black, strokeOptions);
+    map->DrawFocus(this, *drawTarget, black, strokeOptions);
   }
 
   if (result == ImgDrawResult::SUCCESS) {
@@ -2686,7 +2690,7 @@ bool nsImageFrame::IsServerImageMap() {
   return mContent->AsElement()->HasAttr(nsGkAtoms::ismap);
 }
 
-CSSIntPoint nsImageFrame::TranslateEventCoords(const nsPoint& aPoint) {
+CSSIntPoint nsImageFrame::TranslateEventCoords(const nsPoint& aPoint) const {
   const nsRect contentRect = GetContentRectRelativeToSelf();
   // Subtract out border and padding here so that the coordinates are
   // now relative to the content area of this frame.
@@ -2732,39 +2736,23 @@ bool nsImageFrame::IsLeafDynamic() const {
   return !shadow;
 }
 
-nsresult nsImageFrame::GetContentForEvent(const WidgetEvent* aEvent,
-                                          nsIContent** aContent) {
-  NS_ENSURE_ARG_POINTER(aContent);
-
-  nsIFrame* f = nsLayoutUtils::GetNonGeneratedAncestor(this);
-  if (f != this) {
-    return f->GetContentForEvent(aEvent, aContent);
-  }
-
-  // XXX We need to make this special check for area element's capturing the
-  // mouse due to bug 135040. Remove it once that's fixed.
-  nsIContent* capturingContent = aEvent->HasMouseEventMessage()
-                                     ? PresShell::GetCapturingContent()
-                                     : nullptr;
-  if (capturingContent && capturingContent->GetPrimaryFrame() == this) {
-    *aContent = capturingContent;
-    NS_IF_ADDREF(*aContent);
-    return NS_OK;
-  }
-
-  if (nsImageMap* map = GetImageMap()) {
+nsIContent* nsImageFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
+  if (mImageMap) {
+    // XXX We need to make this special check for area element's capturing the
+    // mouse due to bug 135040. Remove it once that's fixed.
+    nsIContent* capturingContent = aEvent->HasMouseEventMessage()
+                                       ? PresShell::GetCapturingContent()
+                                       : nullptr;
+    if (capturingContent && capturingContent->GetPrimaryFrame() == this) {
+      return capturingContent;
+    }
     const CSSIntPoint p = TranslateEventCoords(
         nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, RelativeTo{this}));
-    nsCOMPtr<nsIContent> area = map->GetArea(p);
-    if (area) {
-      area.forget(aContent);
-      return NS_OK;
+    if (auto* area = mImageMap->GetArea(p)) {
+      return area;
     }
   }
-
-  *aContent = GetContent();
-  NS_IF_ADDREF(*aContent);
-  return NS_OK;
+  return nsIFrame::GetContentForEvent(aEvent);
 }
 
 // XXX what should clicks on transparent pixels do?
@@ -2892,6 +2880,21 @@ void nsImageFrame::OnVisibilityChange(
   nsAtomicContainerFrame::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 }
 
+void nsImageFrame::MarkIntrinsicISizesDirty() {
+  // Recompute our intrinsic size and ratio. It's important that we pass 'true'
+  // here -- that makes us recompute the intrinsic size *and* ratio, regardless
+  // of their current value. Without that, EnsureIntrinsicSizeAndRatio assumes
+  // the intrinsic ratio can't have changed in some cases; but if we're a
+  // "content-visibility:auto" image that's being scrolled back into view, our
+  // ratio may have changed from not-existing to existing, per spec text[1]
+  // about suppressing the natural aspect ratio when size-contained.
+  // [1] https://drafts.csswg.org/css-contain-2/#containment-size
+  EnsureIntrinsicSizeAndRatio(true);
+
+  // Call superclass method:
+  nsAtomicContainerFrame::MarkIntrinsicISizesDirty();
+}
+
 #ifdef DEBUG_FRAME_DUMP
 nsresult nsImageFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(u"ImageFrame"_ns, aResult);
@@ -2951,7 +2954,10 @@ static bool IsInAutoWidthTableCellForQuirk(nsIFrame* aFrame) {
   if (ancestor->Style()->GetPseudoType() == PseudoStyleType::cellContent) {
     // Assume direct parent is a table cell frame.
     nsIFrame* grandAncestor = static_cast<nsIFrame*>(ancestor->GetParent());
-    return grandAncestor && grandAncestor->StylePosition()->GetWidth().IsAuto();
+    return grandAncestor &&
+           grandAncestor->StylePosition()
+               ->GetWidth(grandAncestor->StyleDisplay()->mPosition)
+               ->IsAuto();
   }
   return false;
 }

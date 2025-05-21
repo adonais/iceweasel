@@ -82,7 +82,9 @@ def vcs_setup(command_context, update_only=False):
 
     import mozboot.bootstrap as bootstrap
 
-    repo = mozversioncontrol.get_repository_object(command_context._mach_context.topdir)
+    repo = mozversioncontrol.get_repository_object(
+        command_context._mach_context.topdir, jj=None
+    )
     tool = "hg"
     if repo.name == "git":
         tool = "git"
@@ -95,7 +97,7 @@ def vcs_setup(command_context, update_only=False):
 
     vcs = to_optional_path(which(tool))
     if not vcs:
-        raise OSError(errno.ENOENT, "Could not find {} on $PATH".format(tool))
+        raise OSError(errno.ENOENT, f"Could not find {tool} on $PATH")
 
     if update_only:
         if repo.name == "git":

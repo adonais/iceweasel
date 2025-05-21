@@ -298,8 +298,8 @@ preferences-web-appearance-choice-input-dark =
 
 # This can appear when using windows HCM or "Override colors: always" without
 # system colors.
-preferences-web-appearance-override-warning2 =
-    .message = Your color selections are overriding website appearance.
+preferences-web-appearance-override-warning3 =
+    .message = Your contrast control settings are overriding website appearance.
 
 # This message contains one link. It can be moved within the sentence as needed
 # to adapt to your language, but should not be changed.
@@ -467,19 +467,12 @@ applications-type-description-with-type = { $type-description } ({ $type })
 #   $type (string) - The MIME type (e.g application/binary)
 applications-file-ending-with-type = { applications-file-ending } ({ $type })
 
-# Variables:
-#   $plugin-name (string) - Name of a plugin (e.g Adobe Flash)
-applications-use-plugin-in =
-    .label = Use { $plugin-name } (in { -brand-short-name })
 applications-open-inapp =
     .label = Open in { -brand-short-name }
 
 ## The strings in this group are used to populate
 ## selected label element based on the string from
 ## the selected menu item.
-
-applications-use-plugin-in-label =
-    .value = { applications-use-plugin-in.label }
 
 applications-action-save-label =
     .value = { applications-action-save.label }

@@ -19,7 +19,8 @@
   preview/backupSettings.ftl                       (../locales-preview/backupSettings.ftl)
   preview/smartTabGroups.ftl                       (../locales-preview/smartTabGroups.ftl)
   preview/tabUnload.ftl                            (../locales-preview/tabUnload.ftl)
-  preview/reportContentTemporary.ftl               (../locales-preview/reportContentTemporary.ftl)
+  preview/taskbartabs.ftl                          (../locales-preview/taskbartabs.ftl)
+  preview/migrationWizardChromeWindows.ftl         (../locales-preview/migrationWizardChromeWindows.ftl)
 
 @AB_CD@.jar:
 % locale browser @AB_CD@ %locale/browser/
@@ -29,7 +30,6 @@
     locale/browser/search.properties               (%chrome/browser/search.properties)
     locale/browser/siteData.properties             (%chrome/browser/siteData.properties)
     locale/browser/sitePermissions.properties      (%chrome/browser/sitePermissions.properties)
-    locale/browser/shellservice.properties         (%chrome/browser/shellservice.properties)
     locale/browser/taskbar.properties              (%chrome/browser/taskbar.properties)
     locale/browser/downloads/downloads.properties  (%chrome/browser/downloads/downloads.properties)
     locale/browser/places/bookmarkProperties.properties (%chrome/browser/places/bookmarkProperties.properties)

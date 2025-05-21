@@ -34,6 +34,8 @@ pub struct Ping<'a> {
     pub includes_info_sections: bool,
     /// Other pings that should be scheduled when this ping is sent.
     pub schedules_pings: Vec<String>,
+    /// Capabilities the uploader must have in order to uplaoad this ping.
+    pub uploader_capabilities: Vec<String>,
 }
 
 /// Collect a ping's data, assemble it into its full payload and store it on disk.
@@ -174,8 +176,36 @@ impl PingMaker {
             StorageManager.snapshot_as_json(glean.storage(), "glean_client_info", true)
         {
             let client_info_obj = client_info.as_object().unwrap(); // safe unwrap, snapshot always returns an object.
-            for (_key, value) in client_info_obj {
-                merge(&mut map, value);
+            for (_metric_type, metrics) in client_info_obj {
+                merge(&mut map, metrics);
+            }
+            let map = map.as_object_mut().unwrap(); // safe unwrap, we created the object above.
+            let mut attribution = serde_json::Map::new();
+            let mut distribution = serde_json::Map::new();
+            map.retain(|name, value| {
+                // Only works because we ensure no client_info metric categories contain '.'.
+                let mut split = name.split('.');
+                let category = split.next();
+                let name = split.next();
+                if let (Some(category), Some(name)) = (category, name) {
+                    if category == "attribution" {
+                        attribution.insert(name.into(), value.take());
+                        false
+                    } else if category == "distribution" {
+                        distribution.insert(name.into(), value.take());
+                        false
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                }
+            });
+            if !attribution.is_empty() {
+                map.insert("attribution".into(), serde_json::Value::from(attribution));
+            }
+            if !distribution.is_empty() {
+                map.insert("distribution".into(), serde_json::Value::from(distribution));
             }
         } else {
             log::warn!("Empty client info data.");
@@ -334,6 +364,7 @@ impl PingMaker {
             headers: self.get_headers(glean),
             includes_info_sections: ping.include_info_sections(),
             schedules_pings: ping.schedules_pings().to_vec(),
+            uploader_capabilities: ping.uploader_capabilities().to_vec(),
         })
     }
 
@@ -392,6 +423,7 @@ impl PingMaker {
                 headers: Some(ping.headers.clone()),
                 body_has_info_sections: Some(ping.includes_info_sections),
                 ping_name: Some(ping.name.to_string()),
+                uploader_capabilities: Some(ping.uploader_capabilities.clone()),
             };
             file.write_all(::serde_json::to_string(&metadata)?.as_bytes())?;
         }

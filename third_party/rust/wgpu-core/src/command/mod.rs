@@ -36,7 +36,7 @@ use crate::lock::{rank, Mutex};
 use crate::snatch::SnatchGuard;
 
 use crate::init_tracker::BufferInitTrackerAction;
-use crate::ray_tracing::{BlasAction, TlasAction};
+use crate::ray_tracing::AsAction;
 use crate::resource::{Fallible, InvalidResourceError, Labeled, ParentDevice as _, QuerySet};
 use crate::storage::Storage;
 use crate::track::{DeviceTracker, Tracker, UsageScope};
@@ -436,6 +436,7 @@ pub(crate) struct BakedCommands {
     pub(crate) encoder: CommandEncoder,
     pub(crate) trackers: Tracker,
     pub(crate) temp_resources: Vec<TempResource>,
+    pub(crate) indirect_draw_validation_resources: crate::indirect_validation::DrawResources,
     buffer_memory_init_actions: Vec<BufferInitTrackerAction>,
     texture_memory_actions: CommandBufferTextureMemoryActions,
 }
@@ -462,9 +463,10 @@ pub struct CommandBufferMutable {
 
     pub(crate) pending_query_resets: QueryResetMap,
 
-    blas_actions: Vec<BlasAction>,
-    tlas_actions: Vec<TlasAction>,
+    as_actions: Vec<AsAction>,
     temp_resources: Vec<TempResource>,
+
+    indirect_draw_validation_resources: crate::indirect_validation::DrawResources,
 
     #[cfg(feature = "trace")]
     pub(crate) commands: Option<Vec<TraceCommand>>,
@@ -485,6 +487,7 @@ impl CommandBufferMutable {
             encoder: self.encoder,
             trackers: self.trackers,
             temp_resources: self.temp_resources,
+            indirect_draw_validation_resources: self.indirect_draw_validation_resources,
             buffer_memory_init_actions: self.buffer_memory_init_actions,
             texture_memory_actions: self.texture_memory_actions,
         }
@@ -549,9 +552,10 @@ impl CommandBuffer {
                     buffer_memory_init_actions: Default::default(),
                     texture_memory_actions: Default::default(),
                     pending_query_resets: QueryResetMap::new(),
-                    blas_actions: Default::default(),
-                    tlas_actions: Default::default(),
+                    as_actions: Default::default(),
                     temp_resources: Default::default(),
+                    indirect_draw_validation_resources:
+                        crate::indirect_validation::DrawResources::new(device.clone()),
                     #[cfg(feature = "trace")]
                     commands: if device.trace.lock().is_some() {
                         Some(Vec::new())

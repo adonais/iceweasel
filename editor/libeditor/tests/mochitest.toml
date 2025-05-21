@@ -444,6 +444,7 @@ skip-if = ["os == 'android'"] # Needs interaction with the scrollbar
 ["test_editing_UI_in_plaintext-only.html"]
 
 ["test_execCommandPaste_noTarget.html"]
+skip-if = ["display == 'wayland'"] # Bug 1935188
 
 ["test_focus_caret_navigation_between_nested_editors.html"]
 
@@ -620,6 +621,8 @@ support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_utils.js"]
 skip-if = ["os == 'android'"]
 
 ["test_state_change_on_reframe.html"]
+
+["test_tb_htmlmail_reply_below_quote.html"]
 
 ["test_textarea_value_not_include_cr.html"]
 

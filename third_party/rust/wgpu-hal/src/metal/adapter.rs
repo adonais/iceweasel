@@ -3,7 +3,8 @@ use objc::{class, msg_send, sel, sel_impl};
 use parking_lot::Mutex;
 use wgt::{AstcBlock, AstcChannel};
 
-use std::{sync::Arc, thread};
+use alloc::sync::Arc;
+use std::thread;
 
 use super::TimestampQuerySupport;
 
@@ -904,6 +905,7 @@ impl super::PrivateCapabilities {
         use wgt::Features as F;
 
         let mut features = F::empty()
+            | F::MSL_SHADER_PASSTHROUGH
             | F::MAPPABLE_PRIMARY_BUFFERS
             | F::VERTEX_WRITABLE_STORAGE
             | F::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES

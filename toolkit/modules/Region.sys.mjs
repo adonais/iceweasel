@@ -4,14 +4,11 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-
-import { RemoteSettings } from "resource://services-settings/remote-settings.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   LocationHelper: "resource://gre/modules/LocationHelper.sys.mjs",
+  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
@@ -127,7 +124,10 @@ class RegionDetector {
   // Keep track of how many times we have tried to fetch
   // the users region during failure.
   _retryCount = 0;
-  // Let tests wait for init to complete.
+  /**
+   * @type {Promise}
+   *   Allow tests to wait for init to be complete.
+   */
   _initPromise = null;
   // Topic for Observer events fired by Region.sys.mjs.
   REGION_TOPIC = "browser-region-updated";
@@ -143,11 +143,18 @@ class RegionDetector {
    * Read currently stored region data and if needed trigger background
    * region detection.
    */
-  async init() {
+  init() {
+    // If we're running in the child process, then all `Region` does is act
+    // as a proxy for the browser.search.region preference.
+    if (inChildProcess) {
+      this._home = Services.prefs.getCharPref(REGION_PREF, null);
+      return Promise.resolve();
+    }
+
     if (this._initPromise) {
       return this._initPromise;
     }
-    if (lazy.cacheBustEnabled && !inChildProcess) {
+    if (lazy.cacheBustEnabled) {
       Services.tm.idleDispatchToMainThread(() => {
         lazy.timerManager.registerTimer(
           UPDATE_CHECK_NAME,
@@ -158,10 +165,13 @@ class RegionDetector {
     }
     let promises = [];
     this._home = Services.prefs.getCharPref(REGION_PREF, null);
-    if (!this._home && !inChildProcess) {
+    if (this._home) {
+      // On startup, ensure the Glean probe knows the home region from preferences.
+      Glean.region.homeRegion.set(this._home);
+    } else {
       promises.push(this._idleDispatch(() => this._fetchRegion()));
     }
-    if (lazy.localGeocodingEnabled && !inChildProcess) {
+    if (lazy.localGeocodingEnabled) {
       promises.push(this._idleDispatch(() => this._setupRemoteSettings()));
     }
     return (this._initPromise = Promise.all(promises));
@@ -170,7 +180,7 @@ class RegionDetector {
   /**
    * Get the region we currently consider the users home.
    *
-   * @returns {string}
+   * @returns {?string}
    *   The users current home region.
    */
   get home() {
@@ -228,68 +238,22 @@ class RegionDetector {
   /**
    * Validate then store the region and report telemetry.
    *
-   * @param region
+   * @param {string} region
    *   The region to store.
    */
   async _storeRegion(region) {
-    let prefix = "SEARCH_SERVICE";
-    let isTimezoneUS = isUSTimezone();
+    let isTimezoneUS = this._isUSTimezone();
     // If it's a US region, but not a US timezone, we don't store
     // the value. This works because no region defaults to
     // ZZ (unknown) in nsURLFormatter
-    if (region != "US" || isTimezoneUS) {
+    if (region != "US") {
       this._setCurrentRegion(region, true);
-    }
-
-    // and telemetry...
-    if (region == "US" && !isTimezoneUS) {
-      log.info("storeRegion mismatch - US Region, non-US timezone");
-      Services.telemetry
-        .getHistogramById(`${prefix}_US_COUNTRY_MISMATCHED_TIMEZONE`)
-        .add(1);
-    }
-    if (region != "US" && isTimezoneUS) {
-      log.info("storeRegion mismatch - non-US Region, US timezone");
-      Services.telemetry
-        .getHistogramById(`${prefix}_US_TIMEZONE_MISMATCHED_COUNTRY`)
-        .add(1);
-    }
-    // telemetry to compare our geoip response with
-    // platform-specific country data.
-    // On Mac and Windows, we can get a country code via sysinfo
-    let platformCC = await Services.sysinfo.countryCode;
-    if (platformCC) {
-      let probeUSMismatched, probeNonUSMismatched;
-      switch (AppConstants.platform) {
-        case "macosx":
-          probeUSMismatched = `${prefix}_US_COUNTRY_MISMATCHED_PLATFORM_OSX`;
-          probeNonUSMismatched = `${prefix}_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX`;
-          break;
-        case "win":
-          probeUSMismatched = `${prefix}_US_COUNTRY_MISMATCHED_PLATFORM_WIN`;
-          probeNonUSMismatched = `${prefix}_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN`;
-          break;
-        default:
-          log.error(
-            "Platform " +
-              Services.appinfo.OS +
-              " has system country code but no search service telemetry probes"
-          );
-          break;
-      }
-      if (probeUSMismatched && probeNonUSMismatched) {
-        if (region == "US" || platformCC == "US") {
-          // one of the 2 said US, so record if they are the same.
-          Services.telemetry
-            .getHistogramById(probeUSMismatched)
-            .add(region != platformCC);
-        } else {
-          // non-US - record if they are the same
-          Services.telemetry
-            .getHistogramById(probeNonUSMismatched)
-            .add(region != platformCC);
-        }
-      }
+      Glean.region.storeRegionResult.setForRestOfWorld.add();
+    } else if (isTimezoneUS) {
+      this._setCurrentRegion(region, true);
+      Glean.region.storeRegionResult.setForUnitedStates.add();
+    } else {
+      Glean.region.storeRegionResult.ignoredUnitedStatesIncorrectTimezone.add();
     }
   }
 
@@ -363,6 +327,7 @@ class RegionDetector {
     log.info("Updating home region:", region);
     this._home = region;
     Services.prefs.setCharPref("browser.search.region", region);
+    Glean.region.homeRegion.set(region);
     if (notify) {
       Services.obs.notifyObservers(
         this._createSupportsString(region),
@@ -414,7 +379,7 @@ class RegionDetector {
    */
   async _setupRemoteSettings() {
     log.info("_setupRemoteSettings");
-    this._rsClient = RemoteSettings(COLLECTION_ID);
+    this._rsClient = lazy.RemoteSettings(COLLECTION_ID);
     this._rsClient.on("sync", this._onRegionFilesSync.bind(this));
     await this._ensureRegionFilesDownloaded();
     // Start listening to geolocation events only after
@@ -839,6 +804,32 @@ class RegionDetector {
     }
   }
 
+  /**
+   * A method that tries to determine if this user is in a US geography according
+   * to their timezones.
+   *
+   * This is exposed so that tests may override it to avoid timezone issues when
+   * testing.
+   *
+   * @returns {boolean}
+   */
+  _isUSTimezone() {
+    // Timezone assumptions! We assume that if the system clock's timezone is
+    // between Newfoundland and Hawaii, that the user is in North America.
+
+    // This includes all of South America as well, but we have relatively few
+    // en-US users there, so that's OK.
+
+    // 150 minutes = 2.5 hours (UTC-2.5), which is
+    // Newfoundland Daylight Time (http://www.timeanddate.com/time/zones/ndt)
+
+    // 600 minutes = 10 hours (UTC-10), which is
+    // Hawaii-Aleutian Standard Time (http://www.timeanddate.com/time/zones/hast)
+
+    let UTCOffset = new Date().getTimezoneOffset();
+    return UTCOffset >= 150 && UTCOffset <= 600;
+  }
+
   observe(aSubject, aTopic) {
     log.info(`Observed ${aTopic}`);
     switch (aTopic) {
@@ -863,21 +854,3 @@ class RegionDetector {
 
 export let Region = new RegionDetector();
 Region.init();
-
-// A method that tries to determine if this user is in a US geography.
-function isUSTimezone() {
-  // Timezone assumptions! We assume that if the system clock's timezone is
-  // between Newfoundland and Hawaii, that the user is in North America.
-
-  // This includes all of South America as well, but we have relatively few
-  // en-US users there, so that's OK.
-
-  // 150 minutes = 2.5 hours (UTC-2.5), which is
-  // Newfoundland Daylight Time (http://www.timeanddate.com/time/zones/ndt)
-
-  // 600 minutes = 10 hours (UTC-10), which is
-  // Hawaii-Aleutian Standard Time (http://www.timeanddate.com/time/zones/hast)
-
-  let UTCOffset = new Date().getTimezoneOffset();
-  return UTCOffset >= 150 && UTCOffset <= 600;
-}

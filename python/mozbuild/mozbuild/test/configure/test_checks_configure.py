@@ -593,7 +593,7 @@ class TestChecksConfigure(unittest.TestCase):
         javac = mozpath.abspath("/usr/bin/javac")
         paths = {java: None, javac: None}
         expected_error_message = (
-            "ERROR: Could not locate Java at /mozbuild/jdk/jdk-17.0.14+7/bin, "
+            "ERROR: Could not locate Java at /mozbuild/jdk/jdk-17.0.15+6/bin, "
             "please run ./mach bootstrap --no-system-changes\n"
         )
 
@@ -719,7 +719,7 @@ class TestChecksConfigure(unittest.TestCase):
                 seen_flags.add(args[0])
                 args = args[1:]
             if args[0] == "--about":
-                return 0, "pkgconf {}".format(mock_pkg_config_version), ""
+                return 0, f"pkgconf {mock_pkg_config_version}", ""
             return mock_pkg_config(_, args)
 
         def get_result(cmd, args=[], bootstrapped_sysroot=False, extra_paths=None):

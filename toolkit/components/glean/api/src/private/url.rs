@@ -4,17 +4,19 @@
 
 use inherent::inherent;
 
-use super::{CommonMetricData, MetricId};
+use super::{BaseMetricId, CommonMetricData};
 
 use crate::ipc::need_ipc;
 
 #[cfg(feature = "with_gecko")]
-use super::profiler_utils::{truncate_string_for_marker, TelemetryProfilerCategory};
+use super::profiler_utils::{
+    stream_identifiers_by_id, truncate_string_for_marker, TelemetryProfilerCategory,
+};
 
 #[cfg(feature = "with_gecko")]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct UrlMetricMarker {
-    id: MetricId,
+    id: BaseMetricId,
     val: String,
 }
 
@@ -27,8 +29,14 @@ impl gecko_profiler::ProfilerMarker for UrlMetricMarker {
     fn marker_type_display() -> gecko_profiler::MarkerSchema {
         use gecko_profiler::schema::*;
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
-        schema.set_tooltip_label("{marker.data.id} {marker.data.val}");
-        schema.set_table_label("{marker.name} - {marker.data.id}: {marker.data.val}");
+        schema.set_tooltip_label("{marker.data.cat}.{marker.data.id} {marker.data.val}");
+        schema.set_table_label("{marker.data.cat}.{marker.data.id}: {marker.data.val}");
+        schema.add_key_label_format_searchable(
+            "cat",
+            "Category",
+            Format::UniqueString,
+            Searchable::Searchable,
+        );
         schema.add_key_label_format_searchable(
             "id",
             "Metric",
@@ -40,8 +48,7 @@ impl gecko_profiler::ProfilerMarker for UrlMetricMarker {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
-        let name = self.id.get_name();
-        json_writer.unique_string_property("id", &name);
+        stream_identifiers_by_id::<UrlMetric>(&self.id.into(), json_writer);
         json_writer.string_property("val", self.val.as_str());
     }
 }
@@ -55,10 +62,10 @@ impl gecko_profiler::ProfilerMarker for UrlMetricMarker {
 pub enum UrlMetric {
     Parent {
         /// The metric's ID. Used for testing and profiler markers. URL
-        /// metrics canot be labeled, so we only store a MetricId. If this
-        /// changes, this should be changed to a MetricGetter to distinguish
+        /// metrics canot be labeled, so we only store a BaseMetricId. If this
+        /// changes, this should be changed to a MetricId to distinguish
         /// between metrics and sub-metrics.
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::UrlMetric,
     },
     Child(UrlMetricIpc),
@@ -66,9 +73,12 @@ pub enum UrlMetric {
 #[derive(Clone, Debug)]
 pub struct UrlMetricIpc;
 
+crate::define_metric_metadata_getter!(UrlMetric, URL_MAP);
+crate::define_metric_namer!(UrlMetric, PARENT_ONLY);
+
 impl UrlMetric {
     /// Create a new Url metric.
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             UrlMetric::Child(UrlMetricIpc)
         } else {

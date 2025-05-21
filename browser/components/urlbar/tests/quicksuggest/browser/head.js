@@ -102,6 +102,7 @@ async function initQuickSuggestPingTest({
       // button and closes the new tab, which interferes with the expected
       // indexes of quick suggest results, so disable them.
       ["browser.urlbar.suggest.openpage", false],
+      ["browser.urlbar.quicksuggest.ampTopPickCharThreshold", 0],
     ],
   });
 
@@ -443,7 +444,7 @@ async function doCommandTest({
   );
 
   if (command == "dismiss") {
-    await QuickSuggest.blockedSuggestions.clear();
+    await QuickSuggest.clearDismissedSuggestions();
   }
   await PlacesUtils.history.clear();
 

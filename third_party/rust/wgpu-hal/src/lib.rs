@@ -971,8 +971,23 @@ pub trait Device: WasmNotSendSync {
         timeout_ms: u32,
     ) -> Result<bool, DeviceError>;
 
-    unsafe fn start_capture(&self) -> bool;
-    unsafe fn stop_capture(&self);
+    /// Start a graphics debugger capture.
+    ///
+    /// # Safety
+    ///
+    /// See [`wgpu::Device::start_graphics_debugger_capture`][api] for more details.
+    ///
+    /// [api]: ../wgpu/struct.Device.html#method.start_graphics_debugger_capture
+    unsafe fn start_graphics_debugger_capture(&self) -> bool;
+
+    /// Stop a graphics debugger capture.
+    ///
+    /// # Safety
+    ///
+    /// See [`wgpu::Device::stop_graphics_debugger_capture`][api] for more details.
+    ///
+    /// [api]: ../wgpu/struct.Device.html#method.stop_graphics_debugger_capture
+    unsafe fn stop_graphics_debugger_capture(&self);
 
     #[allow(unused_variables)]
     unsafe fn pipeline_cache_get_data(
@@ -1005,6 +1020,8 @@ pub trait Device: WasmNotSendSync {
     fn generate_allocator_report(&self) -> Option<wgt::AllocatorReport> {
         None
     }
+
+    fn check_if_oom(&self) -> Result<(), DeviceError>;
 }
 
 pub trait Queue: WasmNotSendSync {
@@ -1724,6 +1741,7 @@ bitflags!(
 pub struct InstanceDescriptor<'a> {
     pub name: &'a str,
     pub flags: wgt::InstanceFlags,
+    pub memory_budget_thresholds: wgt::MemoryBudgetThresholds,
     pub backend_options: wgt::BackendOptions,
 }
 
@@ -2054,6 +2072,7 @@ pub struct CommandEncoderDescriptor<'a, Q: DynQueue + ?Sized> {
 }
 
 /// Naga shader module.
+#[derive(Default)]
 pub struct NagaShader {
     /// Shader module IR.
     pub module: Cow<'static, naga::Module>,
@@ -2075,6 +2094,11 @@ impl fmt::Debug for NagaShader {
 #[allow(clippy::large_enum_variant)]
 pub enum ShaderInput<'a> {
     Naga(NagaShader),
+    Msl {
+        shader: String,
+        entry_point: String,
+        num_workgroups: (u32, u32, u32),
+    },
     SpirV(&'a [u32]),
 }
 

@@ -21,7 +21,7 @@ pub trait ToWgsl: Sized {
 }
 
 /// Types that may be able to return the WGSL source representation
-/// for their values as a `'static' string.
+/// for their values as a `'static` string.
 ///
 /// This trait is specifically for types whose values are either
 /// simple enough that their WGSL form can be represented a static
@@ -105,6 +105,8 @@ impl TryToWgsl for crate::MathFunction {
             Mf::Log2 => "log2",
             Mf::Pow => "pow",
             Mf::Dot => "dot",
+            Mf::Dot4I8Packed => "dot4I8Packed",
+            Mf::Dot4U8Packed => "dot4U8Packed",
             Mf::Cross => "cross",
             Mf::Distance => "distance",
             Mf::Length => "length",
@@ -137,6 +139,8 @@ impl TryToWgsl for crate::MathFunction {
             Mf::Pack2x16float => "pack2x16float",
             Mf::Pack4xI8 => "pack4xI8",
             Mf::Pack4xU8 => "pack4xU8",
+            Mf::Pack4xI8Clamp => "pack4xI8Clamp",
+            Mf::Pack4xU8Clamp => "pack4xU8Clamp",
             Mf::Unpack4x8snorm => "unpack4x8snorm",
             Mf::Unpack4x8unorm => "unpack4x8unorm",
             Mf::Unpack2x16snorm => "unpack2x16snorm",
@@ -268,9 +272,9 @@ impl TryToWgsl for crate::Scalar {
         use crate::Scalar;
 
         Some(match self {
-            Scalar::F64 => "f64",
-            Scalar::F32 => "f32",
             Scalar::F16 => "f16",
+            Scalar::F32 => "f32",
+            Scalar::F64 => "f64",
             Scalar::I32 => "i32",
             Scalar::U32 => "u32",
             Scalar::I64 => "i64",

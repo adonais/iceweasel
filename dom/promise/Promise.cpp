@@ -80,10 +80,10 @@ Promise::Promise(nsIGlobalObject* aGlobal)
     : mGlobal(aGlobal), mPromiseObj(nullptr) {
   MOZ_ASSERT(mGlobal);
 
-  mozilla::HoldJSObjects(this);
+  mozilla::HoldJSObjectsWithKey(this);
 }
 
-Promise::~Promise() { mozilla::DropJSObjects(this); }
+Promise::~Promise() { mozilla::DropJSObjectsWithKey(this); }
 
 // static
 already_AddRefed<Promise> Promise::Create(
@@ -262,10 +262,10 @@ NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(WaitForAllResults, (), (mResult))
 
 // https://webidl.spec.whatwg.org/#wait-for-all
 /* static */
-void Promise::WaitForAll(
-    nsIGlobalObject* aGlobal, const Span<RefPtr<Promise>>& aPromises,
-    const std::function<void(const Span<JS::Heap<JS::Value>>&)>& aSuccessSteps,
-    const std::function<void(JS::Handle<JS::Value>)>& aFailureSteps) {
+void Promise::WaitForAll(nsIGlobalObject* aGlobal,
+                         const Span<RefPtr<Promise>>& aPromises,
+                         SuccessSteps aSuccessSteps,
+                         FailureSteps aFailureSteps) {
   // Step 1 and step 2 are in WaitForAllResults.
 
   // Step 3
@@ -949,10 +949,6 @@ WorkerPrivate* PromiseWorkerProxy::GetWorkerPrivate() const {
   MOZ_ASSERT(mWorkerRef);
 
   return mWorkerRef->Private();
-}
-
-bool PromiseWorkerProxy::OnWritingThread() const {
-  return IsCurrentThreadRunningWorker();
 }
 
 Promise* PromiseWorkerProxy::GetWorkerPromise() const {

@@ -52,7 +52,7 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/glean/DomMetrics.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/IpcMetrics.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/ipc/IOThread.h"
 #include "mozilla/ipc/EnvironmentMap.h"
@@ -611,10 +611,6 @@ void GeckoChildProcessHost::SetEnv(const char* aKey, const char* aValue) {
 
 bool GeckoChildProcessHost::PrepareLaunch(
     geckoargs::ChildProcessArgs& aExtraOpts) {
-  if (CrashReporter::GetEnabled()) {
-    CrashReporter::OOPInit();
-  }
-
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   if (!SandboxLaunch::Configure(mProcessType, mSandbox, aExtraOpts,
                                 mLaunchOptions.get())) {
@@ -806,10 +802,10 @@ bool GeckoChildProcessHost::AsyncLaunch(
                     << XRE_GeckoProcessTypeToString(mProcessType)
                     << " subprocess @" << aError.FunctionName()
                     << " (Error:" << aError.ErrorCode() << ")";
-                Telemetry::Accumulate(
-                    Telemetry::SUBPROCESS_LAUNCH_FAILURE,
-                    nsDependentCString(
-                        XRE_GeckoProcessTypeToString(mProcessType)));
+                glean::subprocess::launch_failure
+                    .Get(nsDependentCString(
+                        XRE_GeckoProcessTypeToString(mProcessType)))
+                    .Add(1);
                 nsCString telemetryKey = nsPrintfCString(
 #if defined(XP_WIN)
                     "%s,0x%lx,%s",
@@ -1125,13 +1121,20 @@ Result<Ok, LaunchError> BaseProcessLauncher::DoSetup() {
 #if defined(MOZ_WIDGET_COCOA) || defined(XP_WIN)
     geckoargs::sCrashReporter.Put(CrashReporter::GetChildNotificationPipe(),
                                   mChildArgs);
-#elif defined(XP_UNIX)
+#elif defined(XP_UNIX) && !defined(XP_IOS)
     UniqueFileHandle childCrashFd = CrashReporter::GetChildNotificationPipe();
     if (!childCrashFd) {
       return Err(LaunchError("DuplicateFileHandle failed"));
     }
     geckoargs::sCrashReporter.Put(std::move(childCrashFd), mChildArgs);
-#endif
+
+#  if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+    CrashReporter::ProcessId pid = CrashReporter::GetCrashHelperPid();
+    if (pid != base::kInvalidProcessId) {
+      geckoargs::sCrashHelperPid.Put(pid, mChildArgs);
+    }
+#  endif  // defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+#endif    // XP_UNIX && !XP_IOS
   }
 
   return Ok();
@@ -1730,8 +1733,8 @@ RefPtr<ProcessLaunchPromise> BaseProcessLauncher::FinishLaunch() {
 
   MOZ_DIAGNOSTIC_ASSERT(mResults.mHandle);
 
-  Telemetry::AccumulateTimeDelta(Telemetry::CHILD_PROCESS_LAUNCH_MS,
-                                 mStartTimeStamp);
+  glean::process::child_launch.AccumulateRawDuration(TimeStamp::Now() -
+                                                     mStartTimeStamp);
 
   return ProcessLaunchPromise::CreateAndResolve(std::move(mResults), __func__);
 }

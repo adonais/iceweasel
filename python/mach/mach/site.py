@@ -256,19 +256,10 @@ class MozSiteMetadata:
             ...
         """
 
-        try:
-            import pkg_resources
-        except ModuleNotFoundError:
-            pkg_resources = None
-
         yield
         MozSiteMetadata.current = self
 
         sys.executable = executable
-
-        if pkg_resources:
-            # Rebuild the working_set based on the new sys.path.
-            pkg_resources._initialize_master_working_set()
 
 
 class MachSiteManager:
@@ -720,9 +711,9 @@ class CommandSiteManager:
         if require_hashes:
             args.append("--require-hashes")
 
-        install_result = self._virtualenv.pip_install(args)
-
-        if install_result.returncode:
+        try:
+            install_result = self._virtualenv.pip_install(args)
+        except subprocess.CalledProcessError:
             raise InstallPipRequirementsException(
                 f'Failed to install "{path}" into the "{self._site_name}" site.'
             )
@@ -731,7 +722,7 @@ class CommandSiteManager:
             pip_command(python_executable=self.python_path, subcommand="check"),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            universal_newlines=True,
+            text=True,
         )
 
         if not check_result.returncode:
@@ -790,7 +781,7 @@ class CommandSiteManager:
             pip_command(python_executable=self.python_path, subcommand="check"),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            universal_newlines=True,
+            text=True,
         )
 
         if check_result.returncode:
@@ -1022,7 +1013,7 @@ class PythonVirtualenv:
         # thereby causing a build failure. To avoid this, we explicitly influence the
         # build to only target a single architecture - our current architecture.
         kwargs.setdefault("env", os.environ.copy()).setdefault(
-            "ARCHFLAGS", "-arch {}".format(platform.machine())
+            "ARCHFLAGS", f"-arch {platform.machine()}"
         )
         kwargs.setdefault("check", True)
         kwargs.setdefault("stdout", None if show_pip_output() else subprocess.PIPE)
@@ -1047,26 +1038,32 @@ class PythonVirtualenv:
                 ),
                 **kwargs,
             )
-            return install_result
         except subprocess.CalledProcessError as cpe:
             if not self._quiet:
+                # We print the stdout/stderr on a failed install here so that we don't
+                # need to do it for every code path. We still raise the CalledProcessError
+                # afterward so that the different paths can do their own handling.
                 if cpe.stdout:
                     print(cpe.stdout)
                 if cpe.stderr:
                     print(cpe.stderr, file=sys.stderr)
-            sys.exit(1)
+            raise cpe
+
+        # On one code path we do a 'pip check', and if that fails, having the stdout
+        # of the 'pip install' is helpful for debugging, so we pass it along here so
+        # that we can print later if we hit that scenario.
+        return install_result
 
     def install_optional_packages(self, optional_requirements):
         for requirement in optional_requirements:
             try:
                 self.pip_install_with_constraints([str(requirement.requirement)])
-            except subprocess.CalledProcessError as error:
-                print(
-                    f"{error.output if error.output else ''}"
-                    f"{error.stderr if error.stderr else ''}"
-                    f"Could not install {requirement.requirement.name}, so "
-                    f"{requirement.repercussion}. Continuing."
-                )
+            except subprocess.CalledProcessError:
+                if not self._quiet:
+                    print(
+                        f"Could not install {requirement.requirement.name}, so "
+                        f"{requirement.repercussion}. Continuing."
+                    )
 
     def _resolve_installed_packages(self):
         return _resolve_installed_packages(self.python_path)
@@ -1268,9 +1265,8 @@ def _resolve_installed_packages(python_executable):
             args=["--format", "json"],
             non_uv_args=["--disable-pip-version-check"],
         ),
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        text=True,
+        capture_output=True,
         check=True,
     )
 
@@ -1337,8 +1333,7 @@ def _assert_pip_check(pthfile_lines, virtualenv_name, requirements):
         # changes recently).
         process = subprocess.run(
             [sys.executable, "-m", "venv", "--without-pip", check_env_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             encoding="UTF-8",
         )
 
@@ -1386,7 +1381,7 @@ def _assert_pip_check(pthfile_lines, virtualenv_name, requirements):
             pip + ["check"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            universal_newlines=True,
+            text=True,
         )
         if check_result.returncode:
             subprocess.check_call(pip + ["list", "-v"], stdout=sys.stderr)
@@ -1449,8 +1444,7 @@ def _create_venv_with_pthfile(
 
     process = subprocess.run(
         [sys.executable, "-m", "venv", "--without-pip", virtualenv_root],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         encoding="UTF-8",
     )
 

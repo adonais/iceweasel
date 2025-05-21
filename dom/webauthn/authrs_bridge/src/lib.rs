@@ -15,9 +15,9 @@ use authenticator::{
     ctap2::server::{
         AuthenticationExtensionsClientInputs, AuthenticationExtensionsPRFInputs,
         AuthenticationExtensionsPRFOutputs, AuthenticationExtensionsPRFValues,
-        AuthenticatorAttachment, PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
-        PublicKeyCredentialUserEntity, RelyingParty, ResidentKeyRequirement,
-        UserVerificationRequirement,
+        AuthenticatorAttachment, CredentialProtectionPolicy, PublicKeyCredentialDescriptor,
+        PublicKeyCredentialParameters, PublicKeyCredentialUserEntity, RelyingParty,
+        ResidentKeyRequirement, UserVerificationRequirement,
     },
     errors::AuthenticatorError,
     statecallback::StateCallback,
@@ -216,6 +216,11 @@ impl WebAuthnRegisterResult {
         Ok(hmac_create_secret)
     }
 
+    xpcom_method!(get_large_blob_supported => GetLargeBlobSupported() -> bool);
+    fn get_large_blob_supported(&self) -> Result<bool, nsresult> {
+        Err(NS_ERROR_NOT_AVAILABLE)
+    }
+
     xpcom_method!(get_prf_enabled => GetPrfEnabled() -> bool);
     fn get_prf_enabled(&self) -> Result<bool, nsresult> {
         match self.result.borrow().extensions.prf {
@@ -410,6 +415,16 @@ impl WebAuthnSignResult {
     xpcom_method!(set_used_app_id => SetUsedAppId(aUsedAppId: bool));
     fn set_used_app_id(&self, _used_app_id: bool) -> Result<(), nsresult> {
         Err(NS_ERROR_NOT_IMPLEMENTED)
+    }
+
+    xpcom_method!(get_large_blob_value => GetLargeBlobValue() -> ThinVec<u8>);
+    fn get_large_blob_value(&self) -> Result<ThinVec<u8>, nsresult> {
+        Err(NS_ERROR_NOT_AVAILABLE)
+    }
+
+    xpcom_method!(get_large_blob_written => GetLargeBlobWritten() -> bool);
+    fn get_large_blob_written(&self) -> Result<bool, nsresult> {
+        Err(NS_ERROR_NOT_AVAILABLE)
     }
 
     xpcom_method!(get_prf_maybe => GetPrfMaybe() -> bool);
@@ -813,6 +828,30 @@ impl AuthrsService {
             }
         }
 
+        let mut credential_protection_policy = None;
+        let mut enforce_credential_protection_policy = None;
+        let mut cred_protect_policy_value = nsCString::new();
+        let mut enforce_cred_protect_value = false;
+        if unsafe { args.GetCredentialProtectionPolicy(&mut *cred_protect_policy_value) }
+            .to_result()
+            .is_ok()
+        {
+            unsafe { args.GetEnforceCredentialProtectionPolicy(&mut enforce_cred_protect_value) }
+                .to_result()?;
+            credential_protection_policy = if cred_protect_policy_value
+                .eq("userVerificationOptional")
+            {
+                Some(CredentialProtectionPolicy::UserVerificationOptional)
+            } else if cred_protect_policy_value.eq("userVerificationOptionalWithCredentialIDList") {
+                Some(CredentialProtectionPolicy::UserVerificationOptionalWithCredentialIDList)
+            } else if cred_protect_policy_value.eq("userVerificationRequired") {
+                Some(CredentialProtectionPolicy::UserVerificationRequired)
+            } else {
+                return Err(NS_ERROR_FAILURE);
+            };
+            enforce_credential_protection_policy = Some(enforce_cred_protect_value);
+        }
+
         let mut cred_props = false;
         unsafe { args.GetCredProps(&mut cred_props) }.to_result()?;
 
@@ -874,6 +913,8 @@ impl AuthrsService {
             user_verification_req,
             resident_key_req,
             extensions: AuthenticationExtensionsClientInputs {
+                credential_protection_policy,
+                enforce_credential_protection_policy,
                 cred_props: cred_props.then_some(true),
                 hmac_create_secret,
                 min_pin_length: min_pin_length.then_some(true),

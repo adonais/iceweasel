@@ -11,9 +11,7 @@ describe("<AdBannerContextMenu>", () => {
       spoc: { url: "https://www.test.com/", shim: "aaabbbcccddd" },
       position: 1,
       type: "billboard",
-      prefs: {
-        "discoverystream.reportContent.enabled": true,
-      },
+      prefs: {},
     };
 
     beforeEach(() => {
@@ -53,6 +51,22 @@ describe("<AdBannerContextMenu>", () => {
       assert.equal(wrapper.find(LinkMenu).length, 1);
     });
 
+    it("should render LinkMenu when context menu is accessed with the 'Enter' key", () => {
+      let button = wrapper.find("moz-button");
+
+      button.simulate("keydown", { key: "Enter", preventDefault: () => {} });
+
+      assert.equal(wrapper.find(LinkMenu).length, 1);
+    });
+
+    it("should render LinkMenu when context menu is accessed with the 'Space' key", () => {
+      let button = wrapper.find("moz-button");
+
+      button.simulate("keydown", { key: " ", preventDefault: () => {} });
+
+      assert.equal(wrapper.find(LinkMenu).length, 1);
+    });
+
     it("should pass props to LinkMenu", () => {
       wrapper.find("moz-button").simulate("click", {
         preventDefault: () => {},
@@ -61,6 +75,7 @@ describe("<AdBannerContextMenu>", () => {
       [
         "onUpdate",
         "dispatch",
+        "keyboardAccess",
         "options",
         "shouldSendImpressionStats",
         "userEvent",
@@ -70,8 +85,34 @@ describe("<AdBannerContextMenu>", () => {
       ].forEach(prop => assert.property(linkMenuProps, prop));
     });
 
-    it("should pass through the correct menu options to LinkMenu for ad banners", () => {
-      const reportPref = props.prefs["discoverystream.reportContent.enabled"];
+    it("should pass through the correct menu options to LinkMenu for ad banners with reporting INCLUDED", () => {
+      const propsWithReporting = {
+        ...props,
+        showAdReporting: true,
+      };
+      wrapper = shallow(<AdBannerContextMenu {...propsWithReporting} />);
+      wrapper.find("moz-button").simulate("click", {
+        preventDefault: () => {},
+      });
+      const linkMenuProps = wrapper.find(LinkMenu).props();
+
+      const linkMenuOptions = [
+        "BlockAdUrl",
+        "ReportAd",
+        "ManageSponsoredContent",
+        "OurSponsorsAndYourPrivacy",
+      ];
+
+      assert.deepEqual(linkMenuProps.options, linkMenuOptions);
+    });
+
+    it("should pass through correct menu options to LinkMenu for ad banner with reporting EXCLUDED", () => {
+      const propsWithoutReporting = {
+        ...props,
+        showAdReporting: false,
+      };
+
+      wrapper = shallow(<AdBannerContextMenu {...propsWithoutReporting} />);
       wrapper.find("moz-button").simulate("click", {
         preventDefault: () => {},
       });
@@ -83,18 +124,7 @@ describe("<AdBannerContextMenu>", () => {
         "OurSponsorsAndYourPrivacy",
       ];
 
-      const optionsWithReporting = [
-        "BlockAdUrl",
-        "ReportAd",
-        "ManageSponsoredContent",
-        "OurSponsorsAndYourPrivacy",
-      ];
-
-      const expectedOptions = reportPref
-        ? optionsWithReporting
-        : linkMenuOptions;
-
-      assert.deepEqual(linkMenuProps.options, expectedOptions);
+      assert.deepEqual(linkMenuProps.options, linkMenuOptions);
     });
   });
 });

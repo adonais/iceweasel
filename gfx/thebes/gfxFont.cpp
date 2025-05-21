@@ -1342,8 +1342,12 @@ static const hb_tag_t defaultFeatures[] = {
 void gfxFont::CheckForFeaturesInvolvingSpace() const {
   gfxFontEntry::SpaceFeatures flags = gfxFontEntry::SpaceFeatures::None;
 
+  // mFontEntry->mHasSpaceFeatures is a std::atomic<>, so we set it with
+  // `exchange` to avoid a potential data race. It's ok if two threads both
+  // try to set it; they'll end up with the same value, so it doesn't matter
+  // that one will overwrite the other.
   auto setFlags =
-      MakeScopeExit([&]() { mFontEntry->mHasSpaceFeatures = flags; });
+      MakeScopeExit([&]() { mFontEntry->mHasSpaceFeatures.exchange(flags); });
 
   bool log = LOG_FONTINIT_ENABLED();
   TimeStamp start;
@@ -2822,10 +2826,19 @@ bool gfxFont::HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh) {
   uint32_t gid = 0;
   if (gfxFontUtils::IsVarSelector(aNextCh)) {
     gid = shaper->GetVariationGlyph(aCh, aNextCh);
+    if (gid) {
+      if (aNextCh == kVariationSelector16) {
+        // If the font explicitly supports the character + VS16, we accept it
+        // as implying it will provide an emoji-style glyph.
+        return true;
+      }
+      if (aNextCh == kVariationSelector15) {
+        // Explicit support for VS15 implies a text-style glyph.
+        return false;
+      }
+    }
   }
-  if (!gid) {
-    gid = shaper->GetNominalGlyph(aCh);
-  }
+  gid = shaper->GetNominalGlyph(aCh);
   if (!gid) {
     return false;
   }

@@ -51,9 +51,7 @@
 namespace mozilla {
 namespace net {
 
-NS_IMPL_ISUPPORTS_INHERITED(TRR, Runnable, nsIHttpPushListener,
-                            nsIInterfaceRequestor, nsIStreamListener,
-                            nsITimerCallback)
+NS_IMPL_ISUPPORTS_INHERITED(TRR, Runnable, nsIStreamListener, nsITimerCallback)
 
 // when firing off a normal A or AAAA query
 TRR::TRR(AHostResolver* aResolver, nsHostRecord* aRec, enum TrrType aType)
@@ -79,13 +77,6 @@ TRR::TRR(AHostResolver* aResolver, nsHostRecord* aRec, nsCString& aHost,
       mPB(aPB),
       mCnameLoop(aLoopCount),
       mOriginSuffix(aRec ? aRec->originSuffix : ""_ns) {
-  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess() || XRE_IsSocketProcess(),
-                        "TRR must be in parent or socket process");
-}
-
-// used on push
-TRR::TRR(AHostResolver* aResolver, bool aPB)
-    : mozilla::Runnable("TRR"), mHostResolver(aResolver), mPB(aPB) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess() || XRE_IsSocketProcess(),
                         "TRR must be in parent or socket process");
 }
@@ -306,9 +297,6 @@ nsresult TRR::SendHTTPRequest() {
   channel->SetLoadFlags(loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = channel->SetNotificationCallbacks(this);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
   if (!httpChannel) {
     return NS_ERROR_UNEXPECTED;
@@ -443,179 +431,6 @@ nsresult TRR::SetupTRRServiceChannelInternal(nsIHttpChannel* aChannel,
   }
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-TRR::GetInterface(const nsIID& iid, void** result) {
-  if (!iid.Equals(NS_GET_IID(nsIHttpPushListener))) {
-    return NS_ERROR_NO_INTERFACE;
-  }
-
-  nsCOMPtr<nsIHttpPushListener> copy(this);
-  *result = copy.forget().take();
-  return NS_OK;
-}
-
-nsresult TRR::DohDecodeQuery(const nsCString& query, nsCString& host,
-                             enum TrrType& type) {
-  FallibleTArray<uint8_t> binary;
-  bool found_dns = false;
-  LOG(("TRR::DohDecodeQuery %s!\n", query.get()));
-
-  // extract "dns=" from the query string
-  nsAutoCString data;
-  for (const nsACString& token :
-       nsCCharSeparatedTokenizer(query, '&').ToRange()) {
-    nsDependentCSubstring dns = Substring(token, 0, 4);
-    nsAutoCString check(dns);
-    if (check.Equals("dns=")) {
-      nsDependentCSubstring q = Substring(token, 4, -1);
-      data = q;
-      found_dns = true;
-      break;
-    }
-  }
-  if (!found_dns) {
-    LOG(("TRR::DohDecodeQuery no dns= in pushed URI query string\n"));
-    return NS_ERROR_ILLEGAL_VALUE;
-  }
-
-  nsresult rv =
-      Base64URLDecode(data, Base64URLDecodePaddingPolicy::Ignore, binary);
-  NS_ENSURE_SUCCESS(rv, rv);
-  uint32_t avail = binary.Length();
-  if (avail < 12) {
-    return NS_ERROR_FAILURE;
-  }
-  // check the query bit and the opcode
-  if ((binary[2] & 0xf8) != 0) {
-    return NS_ERROR_FAILURE;
-  }
-  uint32_t qdcount = (binary[4] << 8) + binary[5];
-  if (!qdcount) {
-    return NS_ERROR_FAILURE;
-  }
-
-  uint32_t index = 12;
-  uint32_t length = 0;
-  host.Truncate();
-  do {
-    if (avail < (index + 1)) {
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    length = binary[index];
-    if (length) {
-      if (host.Length()) {
-        host.Append(".");
-      }
-      if (avail < (index + 1 + length)) {
-        return NS_ERROR_UNEXPECTED;
-      }
-      host.Append((const char*)(&binary[0]) + index + 1, length);
-    }
-    index += 1 + length;  // skip length byte + label
-  } while (length);
-
-  LOG(("TRR::DohDecodeQuery host %s\n", host.get()));
-
-  if (avail < (index + 2)) {
-    return NS_ERROR_UNEXPECTED;
-  }
-  uint16_t i16 = 0;
-  i16 += binary[index] << 8;
-  i16 += binary[index + 1];
-  type = (enum TrrType)i16;
-
-  LOG(("TRR::DohDecodeQuery type %d\n", (int)type));
-
-  return NS_OK;
-}
-
-nsresult TRR::ReceivePush(nsIHttpChannel* pushed, nsHostRecord* pushedRec) {
-  if (!mHostResolver) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  LOG(("TRR::ReceivePush: PUSH incoming!\n"));
-
-  nsCOMPtr<nsIURI> uri;
-  pushed->GetURI(getter_AddRefs(uri));
-  nsAutoCString query;
-  if (uri) {
-    uri->GetQuery(query);
-  }
-
-  if (NS_FAILED(DohDecodeQuery(query, mHost, mType)) ||
-      HostIsIPLiteral(mHost)) {  // literal
-    LOG(("TRR::ReceivePush failed to decode %s\n", mHost.get()));
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  if ((mType != TRRTYPE_A) && (mType != TRRTYPE_AAAA) &&
-      (mType != TRRTYPE_TXT) && (mType != TRRTYPE_HTTPSSVC)) {
-    LOG(("TRR::ReceivePush unknown type %d\n", mType));
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  if (TRRService::Get()->IsExcludedFromTRR(mHost)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  uint32_t type = nsIDNSService::RESOLVE_TYPE_DEFAULT;
-  if (mType == TRRTYPE_TXT) {
-    type = nsIDNSService::RESOLVE_TYPE_TXT;
-  } else if (mType == TRRTYPE_HTTPSSVC) {
-    type = nsIDNSService::RESOLVE_TYPE_HTTPSSVC;
-  }
-
-  RefPtr<nsHostRecord> hostRecord;
-  nsresult rv;
-  rv = mHostResolver->GetHostRecord(
-      mHost, ""_ns, type, pushedRec->flags, pushedRec->af, pushedRec->pb,
-      pushedRec->originSuffix, getter_AddRefs(hostRecord));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  // Since we don't ever call nsHostResolver::NameLookup for this record,
-  // we need to copy the trr mode from the previous record
-  if (hostRecord->mEffectiveTRRMode == nsIRequest::TRR_DEFAULT_MODE) {
-    hostRecord->mEffectiveTRRMode =
-        static_cast<nsIRequest::TRRMode>(pushedRec->mEffectiveTRRMode);
-  }
-
-  rv = mHostResolver->TrrLookup_unlocked(hostRecord, this);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  rv = pushed->AsyncOpen(this);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  // OK!
-  mChannel = pushed;
-  mRec.swap(hostRecord);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-TRR::OnPush(nsIHttpChannel* associated, nsIHttpChannel* pushed) {
-  LOG(("TRR::OnPush entry\n"));
-  MOZ_ASSERT(associated == mChannel);
-  if (!mRec) {
-    return NS_ERROR_FAILURE;
-  }
-  if (!UseDefaultServer()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  RefPtr<TRR> trr = new TRR(mHostResolver, mPB);
-  trr->SetPurpose(mPurpose);
-  return trr->ReceivePush(pushed, mRec);
 }
 
 NS_IMETHODIMP

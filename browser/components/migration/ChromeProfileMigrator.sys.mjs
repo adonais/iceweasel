@@ -181,6 +181,22 @@ export class ChromeProfileMigrator extends MigratorBase {
     return false;
   }
 
+  /**
+   * For Chrome on Windows, we show a specialized flow for importing passwords
+   * from a CSV file.
+   *
+   * @returns {boolean}
+   */
+  get showsManualPasswordImport() {
+    // We show the CSV workflow on Windows, but _only_ in English locales, until
+    // bug 1965231 is closed.
+    return (
+      AppConstants.platform == "win" &&
+      this.constructor.key == "chrome" &&
+      Services.locale.appLocaleAsBCP47.startsWith("en")
+    );
+  }
+
   _keychainServiceName = "Chrome Safe Storage";
 
   _keychainAccountName = "Chrome";
@@ -241,7 +257,7 @@ export class ChromeProfileMigrator extends MigratorBase {
         if (lazy.ChromeMigrationUtils.supportsLoginsForPlatform) {
           possibleResourcePromises.push(
             this._GetPasswordsResource(profileFolder),
-            this._GetPaymentMethodsResource(profileFolder)
+            this._GetPaymentMethodsResource(profileFolder, this.constructor.key)
           );
         }
 
@@ -527,13 +543,19 @@ export class ChromeProfileMigrator extends MigratorBase {
       },
     };
   }
-  async _GetPaymentMethodsResource(aProfileFolder) {
+  async _GetPaymentMethodsResource(aProfileFolder, aBrowserKey = "chrome") {
     if (
       !Services.prefs.getBoolPref(
         "browser.migrate.chrome.payment_methods.enabled",
         false
       )
     ) {
+      return null;
+    }
+
+    // We no longer support importing payment methods from Chrome on
+    // Windows.
+    if (AppConstants.platform == "win" && aBrowserKey == "chrome") {
       return null;
     }
 
@@ -611,18 +633,25 @@ export class ChromeProfileMigrator extends MigratorBase {
 
         let cards = [];
         for (let row of rows) {
-          cards.push({
-            "cc-name": row.getResultByName("name_on_card"),
-            "cc-number": await loginCrypto.decryptData(
-              row.getResultByName("card_number_encrypted"),
-              null
-            ),
-            "cc-exp-month": parseInt(
-              row.getResultByName("expiration_month"),
-              10
-            ),
-            "cc-exp-year": parseInt(row.getResultByName("expiration_year"), 10),
-          });
+          try {
+            cards.push({
+              "cc-name": row.getResultByName("name_on_card"),
+              "cc-number": await loginCrypto.decryptData(
+                row.getResultByName("card_number_encrypted"),
+                null
+              ),
+              "cc-exp-month": parseInt(
+                row.getResultByName("expiration_month"),
+                10
+              ),
+              "cc-exp-year": parseInt(
+                row.getResultByName("expiration_year"),
+                10
+              ),
+            });
+          } catch (e) {
+            console.error(e);
+          }
         }
 
         await MigrationUtils.insertCreditCardsWrapper(cards);

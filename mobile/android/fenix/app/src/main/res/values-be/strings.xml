@@ -114,7 +114,13 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Аглядайце хутчэй з новай навігацыяй</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Аглядайце хутчэй з новай навігацыяй</string>
+  <!--
+    Address bar swipe "contextual feature recommendation" (CFR)
+
+    Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar.
+  -->
+  <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Правядзіце пальцам па панэлі інструментаў, каб пераключыць укладкі</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Патрабуецца доступ да камеры. Перайдзіце ў налады Android, націсніце "Дазволы", і затым "Дазволіць".</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -504,6 +510,8 @@
   <string name="onboarding_add_on_ublock_name" tools:ignore="UnusedResources">uBlock Origin</string>
   <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
   <string name="onboarding_add_on_privacy_badger_name" tools:ignore="UnusedResources">Privacy Badger</string>
+  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
+  <string name="onboarding_add_on_search_by_image_name" tools:ignore="UnusedResources">Search by Image</string>
   <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
   <string name="onboarding_add_on_reviews_label">Водгукі: %1$s</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -519,6 +527,8 @@
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Калі ласка да Firefox</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
   <string name="onboarding_term_of_service_line_two_link_text">Паведамленнем аб прыватнасці</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Як мы выкарыстоўваем дадзеныя</string>
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_continue_button">Захаваць і працягваць</string>
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
@@ -668,8 +678,6 @@
   <string name="preferences_override_account_server">Уласны сервер уліковых запісаў Mozilla</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Уласны сервер сінхранізацыі</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Сервер уліковых запісаў Mozilla/сінхранізацыі зменены. Выхад з праграмы, каб прымяніць змены…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Уліковы запіс</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -931,6 +939,8 @@
   <string name="exceptions_empty_message_description">Выключэнні дазваляюць адключыць функцыю аховы ад сачэння для абраных сайтаў.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Даведацца больш</string>
+  <!-- Preference switch title for automatically submitting crash reports -->
+  <string name="preferences_automatically_send_crashes_title">Аўтаматычна адпраўляць справаздачы аб збоях</string>
   <!-- Learn more link for crash reporting preference -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Падрабязней пра справаздачы аб збоях</string>
   <!-- Title for studies preferences -->
@@ -1143,6 +1153,8 @@
   <string name="tab_tray_multiselect_share_content_description">Падзяліцца выбранымі карткамі</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Меню выбраных картак</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">Хатняя старонка</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Выдаліць картку з калекцыі</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1217,6 +1229,8 @@
   <string name="download_multi_select_title">Вылучана: %1$d</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Выдаліць</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">Іншыя</string>
   <!--
     WebCompat Reporter
 
@@ -1351,6 +1365,10 @@
   <string name="bookmark_undo_deletion">АДМЯНІЦЬ</string>
   <!-- Text for the button to search all bookmarks -->
   <string name="bookmark_search">Увядзіце пошукавыя запыты</string>
+  <!-- Content description for the bookmark screen delete bookmark navigation bar button -->
+  <string name="bookmark_delete_bookmark_content_description">Выдаліць закладку</string>
+  <!-- Content description for the bookmark screen delete bookmark folder navigation bar button -->
+  <string name="bookmark_delete_folder_content_description">Выдаліць папку</string>
   <!-- Content description for bookmark search floating action button -->
   <string name="bookmark_search_button_content_description">Шукаць у закладках</string>
   <!--

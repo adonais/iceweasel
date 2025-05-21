@@ -84,7 +84,7 @@
 #include "nsISimpleEnumerator.h"
 #include "nsJSEnvironment.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/LayoutMetrics.h"
 
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -764,9 +764,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 #ifndef ANDROID /* bug 1142079 */
     if (XRE_IsParentProcess()) {
       TimeDuration vsyncLatency = TimeStamp::Now() - aVsyncTimestamp;
-      uint32_t sample = (uint32_t)vsyncLatency.ToMilliseconds();
-      Telemetry::Accumulate(Telemetry::FX_REFRESH_DRIVER_CHROME_FRAME_DELAY_MS,
-                            sample);
+      glean::layout::refresh_driver_chrome_frame_delay.AccumulateRawDuration(
+          vsyncLatency);
     } else if (mVsyncRate != TimeDuration::Forever()) {
       TimeDuration contentDelay =
           (TimeStamp::Now() - mLastTickStart) - mVsyncRate;
@@ -776,9 +775,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         // delay.
         contentDelay = TimeDuration::FromMilliseconds(0);
       }
-      uint32_t sample = (uint32_t)contentDelay.ToMilliseconds();
-      Telemetry::Accumulate(Telemetry::FX_REFRESH_DRIVER_CONTENT_FRAME_DELAY_MS,
-                            sample);
+      glean::layout::refresh_driver_content_frame_delay.AccumulateRawDuration(
+          contentDelay);
     } else {
       // Request the vsync rate which VsyncChild stored the last time it got a
       // vsync notification.
@@ -841,11 +839,17 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       sMostRecentHighRate = rate;
     }
 
+#ifdef DEBUG
     // On 32-bit Windows we sometimes get times where TimeStamp::Now() is not
     // monotonic because the underlying system apis produce non-monontonic
-    // results. (bug 1306896)
-#if !defined(_WIN32)
+    // results; see bug 1306896.
+    // On Wayland, vsync timestamp might not precisely match system time; see
+    // bug 1958043.
+#  if defined(_WIN32) || defined(MOZ_WAYLAND)
+    Unused << NS_WARN_IF(aVsyncTimestamp > tickStart);
+#  else
     MOZ_ASSERT(aVsyncTimestamp <= tickStart);
+#  endif
 #endif
 
     bool shouldGiveNonVSyncTasksMoreTime = ShouldGiveNonVsyncTasksMoreTime();
@@ -1167,6 +1171,14 @@ static StaticRefPtr<RefreshDriverTimer> sRegularRateTimer;
 static StaticAutoPtr<nsTArray<RefreshDriverTimer*>> sRegularRateTimerList;
 static StaticRefPtr<InactiveRefreshDriverTimer> sThrottledRateTimer;
 
+static bool IsPresentingInVR() {
+#ifdef MOZ_WIDGET_ANDROID
+  return gfx::VRManagerChild::IsPresenting();
+#else
+  return false;
+#endif
+}
+
 void nsRefreshDriver::CreateVsyncRefreshTimer() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1241,6 +1253,67 @@ static uint32_t GetFirstFrameDelay(imgIRequest* req) {
   }
 
   return static_cast<uint32_t>(delay);
+}
+
+static constexpr nsLiteralCString sRenderingPhaseNames[] = {
+    "Flush autofocus candidates"_ns,                 // FlushAutoFocusCandidates
+    "Resize steps"_ns,                               // ResizeSteps
+    "Scroll steps"_ns,                               // ScrollSteps
+    "Evaluate media queries and report changes"_ns,  // EvaluateMediaQueriesAndReportChanges
+    "Update animations and send events"_ns,    // UpdateAnimationsAndSendEvents
+    "Fullscreen steps"_ns,                     // FullscreenSteps
+    "Animation and video frame callbacks"_ns,  // AnimationFrameCallbacks
+    "Layout, content-visibility and resize observers"_ns,  // Layout
+    "View transition operations"_ns,        // ViewTransitionOperations
+    "Update intersection observations"_ns,  // UpdateIntersectionObservations
+    "Paint"_ns,                             // Paint
+};
+
+static_assert(std::size(sRenderingPhaseNames) == size_t(RenderingPhase::Count),
+              "Unexpected rendering phase?");
+
+template <typename Callback>
+void nsRefreshDriver::RunRenderingPhaseLegacy(RenderingPhase aPhase,
+                                              Callback&& aCallback) {
+  if (!mRenderingPhasesNeeded.contains(aPhase)) {
+    return;
+  }
+  mRenderingPhasesNeeded -= aPhase;
+
+  AUTO_PROFILER_LABEL_DYNAMIC_CSTR_RELEVANT_FOR_JS(
+      "Update the rendering", LAYOUT,
+      sRenderingPhaseNames[size_t(aPhase)].get());
+  aCallback();
+}
+
+template <typename Callback>
+void nsRefreshDriver::RunRenderingPhase(RenderingPhase aPhase,
+                                        Callback&& aCallback,
+                                        DocFilter aExtraFilter) {
+  RunRenderingPhaseLegacy(aPhase, [&] {
+    if (MOZ_UNLIKELY(!mPresContext)) {
+      return;
+    }
+    // https://html.spec.whatwg.org/#update-the-rendering step 3
+    //
+    //     Remove from docs any Document object doc for which any of the
+    //     following are true.
+    //
+    // TODO(emilio): Per spec we should collect all these upfront, once.
+    AutoTArray<RefPtr<Document>, 32> documents;
+    auto ShouldCollect = [aExtraFilter](const Document* aDocument) {
+      return !aDocument->IsRenderingSuppressed() &&
+             (!aExtraFilter || aExtraFilter(*aDocument));
+    };
+    if (ShouldCollect(mPresContext->Document())) {
+      documents.AppendElement(mPresContext->Document());
+    }
+    mPresContext->Document()->CollectDescendantDocuments(documents,
+                                                         ShouldCollect);
+    for (auto& doc : documents) {
+      aCallback(*doc);
+    }
+  });
 }
 
 /* static */
@@ -1354,19 +1427,10 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mThrottled(false),
       mNeedToRecomputeVisibility(false),
       mTestControllingRefreshes(false),
-      mViewManagerFlushIsPending(false),
-      mHasScheduleFlush(false),
       mInRefresh(false),
       mWaitingForTransaction(false),
       mSkippedPaints(false),
       mResizeSuppressed(false),
-      mNeedToUpdateIntersectionObservations(false),
-      mNeedToUpdateResizeObservers(false),
-      mNeedToUpdateViewTransitions(false),
-      mNeedToRunFrameRequestCallbacks(false),
-      mNeedToUpdateAnimations(false),
-      mMightNeedMediaQueryListenerUpdate(false),
-      mNeedToUpdateContentRelevancy(false),
       mInNormalTick(false),
       mAttemptedExtraTickSinceLastVsync(false),
       mHasExceededAfterLoadTickPeriod(false),
@@ -1433,16 +1497,6 @@ void nsRefreshDriver::RestoreNormalRefresh() {
   mPendingTransactions.Clear();
 }
 
-TimeStamp nsRefreshDriver::MostRecentRefresh(bool aEnsureTimerStarted) const {
-  // In case of stylo traversal, we have already activated the refresh driver in
-  // RestyleManager::ProcessPendingRestyles().
-  if (aEnsureTimerStarted && !ServoStyleSet::IsInServoTraversal()) {
-    const_cast<nsRefreshDriver*>(this)->EnsureTimerStarted();
-  }
-
-  return mMostRecentRefresh;
-}
-
 void nsRefreshDriver::AddRefreshObserver(nsARefreshObserver* aObserver,
                                          FlushType aFlushType,
                                          const char* aObserverDescription) {
@@ -1488,94 +1542,6 @@ bool nsRefreshDriver::RemoveRefreshObserver(nsARefreshObserver* aObserver,
              "Registration count shouldn't be able to go negative");
 #endif
   return true;
-}
-
-void nsRefreshDriver::PostVisualViewportResizeEvent(
-    VVPResizeEvent* aResizeEvent) {
-  mVisualViewportResizeEvents.AppendElement(aResizeEvent);
-  EnsureTimerStarted();
-}
-
-void nsRefreshDriver::DispatchVisualViewportResizeEvents() {
-  // We're taking a hint from scroll events and only dispatch the current set
-  // of queued resize events. If additional events are posted in response to
-  // the current events being dispatched, we'll dispatch them on the next tick.
-  VisualViewportResizeEventArray events =
-      std::move(mVisualViewportResizeEvents);
-  for (auto& event : events) {
-    event->Run();
-  }
-}
-
-void nsRefreshDriver::PostScrollEvent(mozilla::Runnable* aScrollEvent,
-                                      bool aDelayed) {
-  if (aDelayed) {
-    mDelayedScrollEvents.AppendElement(aScrollEvent);
-  } else {
-    mScrollEvents.AppendElement(aScrollEvent);
-    EnsureTimerStarted();
-  }
-}
-
-void nsRefreshDriver::PostScrollEndEvent(mozilla::Runnable* aScrollEndEvent,
-                                         bool aDelayed) {
-  if (aDelayed) {
-    mDelayedScrollEndEvents.AppendElement(aScrollEndEvent);
-  } else {
-    mScrollEndEvents.AppendElement(aScrollEndEvent);
-    EnsureTimerStarted();
-  }
-}
-
-void nsRefreshDriver::DispatchScrollEvents() {
-  // Scroll events are one-shot, so after running them we can drop them.
-  // However, dispatching a scroll event can potentially cause more scroll
-  // events to be posted, so we move the initial set into a temporary array
-  // first. (Newly posted scroll events will be dispatched on the next tick.)
-  ScrollEventArray events = std::move(mScrollEvents);
-  for (auto& event : events) {
-    event->Run();
-  }
-}
-
-void nsRefreshDriver::DispatchScrollEndEvents() {
-  ScrollEventArray events = std::move(mScrollEndEvents);
-  for (auto& event : events) {
-    event->Run();
-  }
-}
-
-void nsRefreshDriver::PostVisualViewportScrollEvent(
-    VVPScrollEvent* aScrollEvent) {
-  mVisualViewportScrollEvents.AppendElement(aScrollEvent);
-  EnsureTimerStarted();
-}
-
-void nsRefreshDriver::DispatchVisualViewportScrollEvents() {
-  // Scroll events are one-shot, so after running them we can drop them.
-  // However, dispatching a scroll event can potentially cause more scroll
-  // events to be posted, so we move the initial set into a temporary array
-  // first. (Newly posted scroll events will be dispatched on the next tick.)
-  VisualViewportScrollEventArray events =
-      std::move(mVisualViewportScrollEvents);
-  for (auto& event : events) {
-    event->Run();
-  }
-}
-
-// https://drafts.csswg.org/cssom-view/#evaluate-media-queries-and-report-changes
-void nsRefreshDriver::EvaluateMediaQueriesAndReportChanges() {
-  if (!mMightNeedMediaQueryListenerUpdate) {
-    return;
-  }
-  mMightNeedMediaQueryListenerUpdate = false;
-  if (!mPresContext) {
-    return;
-  }
-  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS(
-      "Evaluate media queries and report changes", LAYOUT);
-  RefPtr<Document> doc = mPresContext->Document();
-  doc->EvaluateMediaQueriesAndReportChanges(/* aRecurse = */ true);
 }
 
 void nsRefreshDriver::AddPostRefreshObserver(
@@ -1653,24 +1619,6 @@ void nsRefreshDriver::FlushForceNotifyContentfulPaintPresContext() {
       presContext->NotifyContentfulPaint();
     }
   }
-}
-
-void nsRefreshDriver::RunDelayedEventsSoon() {
-  // Place entries for delayed events into their corresponding normal list,
-  // and schedule a refresh. When these delayed events run, if their document
-  // still has events suppressed then they will be readded to the delayed
-  // events list.
-
-  mScrollEvents.AppendElements(mDelayedScrollEvents);
-  mDelayedScrollEvents.Clear();
-
-  mScrollEndEvents.AppendElements(mDelayedScrollEvents);
-  mDelayedScrollEndEvents.Clear();
-
-  mResizeEventFlushObservers.AppendElements(mDelayedResizeEventFlushObservers);
-  mDelayedResizeEventFlushObservers.Clear();
-
-  EnsureTimerStarted();
 }
 
 bool nsRefreshDriver::CanDoCatchUpTick() {
@@ -1841,15 +1789,6 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
     }
   }
 
-  // When switching from an inactive timer to an active timer, the root
-  // refresh driver is skipped due to being set to the content refresh
-  // driver's timestamp. In case of EnsureTimerStarted is called from
-  // ScheduleViewManagerFlush, we should avoid this behavior to flush
-  // a paint in the same tick on the root refresh driver.
-  if (aFlags & eNeverAdjustTimer) {
-    return;
-  }
-
   // Since the different timers are sampled at different rates, when switching
   // timers, the most recent refresh of the new timer may be *before* the
   // most recent refresh of the old timer.
@@ -1881,18 +1820,7 @@ uint32_t nsRefreshDriver::ObserverCount() const {
   for (const ObserverArray& array : mObservers) {
     sum += array.Length();
   }
-
-  // Even while throttled, we need to process layout and style changes.  Style
-  // changes can trigger transitions which fire events when they complete, and
-  // layout changes can affect media queries on child documents, triggering
-  // style changes, etc.
-  sum += mAnimationEventFlushObservers.Length();
-  sum += mResizeEventFlushObservers.Length();
-  sum += mStyleFlushObservers.Length();
-  sum += mPendingFullscreenEvents.Length();
-  sum += mViewManagerFlushIsPending;
   sum += mEarlyRunners.Length();
-  sum += mAutoFocusFlushDocuments.Length();
   return sum;
 }
 
@@ -1903,12 +1831,7 @@ bool nsRefreshDriver::HasObservers() const {
     }
   }
 
-  return (mViewManagerFlushIsPending && !mThrottled) ||
-         !mStyleFlushObservers.IsEmpty() ||
-         !mAnimationEventFlushObservers.IsEmpty() ||
-         !mResizeEventFlushObservers.IsEmpty() ||
-         !mPendingFullscreenEvents.IsEmpty() ||
-         !mAutoFocusFlushDocuments.IsEmpty() || !mEarlyRunners.IsEmpty();
+  return !mEarlyRunners.IsEmpty();
 }
 
 void nsRefreshDriver::AppendObserverDescriptionsToString(
@@ -1918,29 +1841,6 @@ void nsRefreshDriver::AppendObserverDescriptionsToString(
       aStr.AppendPrintf("%s [%s], ", observer.mDescription,
                         kFlushTypeNames[observer.mFlushType]);
     }
-  }
-  if (mViewManagerFlushIsPending && !mThrottled) {
-    aStr.AppendLiteral("View manager flush pending, ");
-  }
-  if (!mAnimationEventFlushObservers.IsEmpty()) {
-    aStr.AppendPrintf("%zux Animation event flush observer, ",
-                      mAnimationEventFlushObservers.Length());
-  }
-  if (!mResizeEventFlushObservers.IsEmpty()) {
-    aStr.AppendPrintf("%zux Resize event flush observer, ",
-                      mResizeEventFlushObservers.Length());
-  }
-  if (!mStyleFlushObservers.IsEmpty()) {
-    aStr.AppendPrintf("%zux Style flush observer, ",
-                      mStyleFlushObservers.Length());
-  }
-  if (!mPendingFullscreenEvents.IsEmpty()) {
-    aStr.AppendPrintf("%zux Pending fullscreen event, ",
-                      mPendingFullscreenEvents.Length());
-  }
-  if (!mAutoFocusFlushDocuments.IsEmpty()) {
-    aStr.AppendPrintf("%zux AutoFocus flush doc, ",
-                      mAutoFocusFlushDocuments.Length());
   }
   if (!mEarlyRunners.IsEmpty()) {
     aStr.AppendPrintf("%zux Early runner, ", mEarlyRunners.Length());
@@ -1960,96 +1860,51 @@ bool nsRefreshDriver::HasImageRequests() const {
 }
 
 auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
-  TickReasons reasons = TickReasons::eNone;
+  TickReasons reasons = TickReasons::None;
   if (HasObservers()) {
-    reasons |= TickReasons::eHasObservers;
+    reasons |= TickReasons::HasObservers;
   }
   if (HasImageRequests() && !mThrottled) {
-    reasons |= TickReasons::eHasImageRequests;
+    reasons |= TickReasons::HasImageRequests;
   }
-  if (mNeedToUpdateResizeObservers) {
-    reasons |= TickReasons::eNeedsToNotifyResizeObservers;
-  }
-  if (mNeedToUpdateViewTransitions) {
-    reasons |= TickReasons::eNeedsToUpdateViewTransitions;
-  }
-  if (mNeedToUpdateAnimations) {
-    reasons |= TickReasons::eNeedsToUpdateAnimations;
-  }
-  if (mNeedToUpdateIntersectionObservations) {
-    reasons |= TickReasons::eNeedsToUpdateIntersectionObservations;
-  }
-  if (mMightNeedMediaQueryListenerUpdate) {
-    reasons |= TickReasons::eHasPendingMediaQueryListeners;
-  }
-  if (mNeedToUpdateContentRelevancy) {
-    reasons |= TickReasons::eNeedsToUpdateContentRelevancy;
-  }
-  if (mNeedToRunFrameRequestCallbacks) {
-    reasons |= TickReasons::eNeedsToRunFrameRequestCallbacks;
-  }
-  if (!mVisualViewportResizeEvents.IsEmpty()) {
-    reasons |= TickReasons::eHasVisualViewportResizeEvents;
-  }
-  if (!mScrollEvents.IsEmpty() || !mScrollEndEvents.IsEmpty()) {
-    reasons |= TickReasons::eHasScrollEvents;
-  }
-  if (!mVisualViewportScrollEvents.IsEmpty()) {
-    reasons |= TickReasons::eHasVisualViewportScrollEvents;
+  if (!mRenderingPhasesNeeded.isEmpty()) {
+    reasons |= TickReasons::HasPendingRenderingSteps;
   }
   if (mPresContext && mPresContext->IsRoot() &&
       mPresContext->NeedsMoreTicksForUserInput()) {
-    reasons |= TickReasons::eRootNeedsMoreTicksForUserInput;
+    reasons |= TickReasons::RootNeedsMoreTicksForUserInput;
   }
   return reasons;
 }
 
 void nsRefreshDriver::AppendTickReasonsToString(TickReasons aReasons,
                                                 nsACString& aStr) const {
-  if (aReasons == TickReasons::eNone) {
+  if (aReasons == TickReasons::None) {
     aStr.AppendLiteral(" <none>");
     return;
   }
 
-  if (aReasons & TickReasons::eHasObservers) {
+  if (aReasons & TickReasons::HasObservers) {
     aStr.AppendLiteral(" HasObservers (");
     AppendObserverDescriptionsToString(aStr);
     aStr.AppendLiteral(")");
   }
-  if (aReasons & TickReasons::eHasImageRequests) {
+  if (aReasons & TickReasons::HasImageRequests) {
     aStr.AppendLiteral(" HasImageAnimations");
   }
-  if (aReasons & TickReasons::eNeedsToNotifyResizeObservers) {
-    aStr.AppendLiteral(" NeedsToNotifyResizeObservers");
+  if (aReasons & TickReasons::HasPendingRenderingSteps) {
+    aStr.AppendLiteral(" HasPendingRenderingSteps(");
+    bool first = true;
+    for (auto phase : mRenderingPhasesNeeded) {
+      if (!first) {
+        aStr.AppendLiteral(", ");
+      }
+      first = false;
+      aStr.Append(sRenderingPhaseNames[size_t(phase)]);
+    }
+    aStr.AppendLiteral(")");
   }
-  if (aReasons & TickReasons::eNeedsToUpdateViewTransitions) {
-    aStr.AppendLiteral(" NeedsToUpdateViewTransitions");
-  }
-  if (aReasons & TickReasons::eNeedsToUpdateAnimations) {
-    aStr.AppendLiteral(" NeedsToUpdateAnimations");
-  }
-  if (aReasons & TickReasons::eNeedsToUpdateIntersectionObservations) {
-    aStr.AppendLiteral(" NeedsToUpdateIntersectionObservations");
-  }
-  if (aReasons & TickReasons::eHasPendingMediaQueryListeners) {
-    aStr.AppendLiteral(" HasPendingMediaQueryListeners");
-  }
-  if (aReasons & TickReasons::eNeedsToUpdateContentRelevancy) {
-    aStr.AppendLiteral(" NeedsToUpdateContentRelevancy");
-  }
-  if (aReasons & TickReasons::eNeedsToRunFrameRequestCallbacks) {
-    aStr.AppendLiteral(" NeedsToRunFrameRequestCallbacks");
-  }
-  if (aReasons & TickReasons::eHasVisualViewportResizeEvents) {
-    aStr.AppendLiteral(" HasVisualViewportResizeEvents");
-  }
-  if (aReasons & TickReasons::eHasScrollEvents) {
-    aStr.AppendLiteral(" HasScrollEvents");
-  }
-  if (aReasons & TickReasons::eHasVisualViewportScrollEvents) {
-    aStr.AppendLiteral(" HasVisualViewportScrollEvents");
-  }
-  if (aReasons & TickReasons::eRootNeedsMoreTicksForUserInput) {
+  if (aReasons & TickReasons::RootNeedsMoreTicksForUserInput) {
     aStr.AppendLiteral(" RootNeedsMoreTicksForUserInput");
   }
 }
@@ -2148,178 +2003,17 @@ void nsRefreshDriver::DoTick() {
   }
 }
 
-void nsRefreshDriver::ScheduleAutoFocusFlush(Document* aDocument) {
-  MOZ_ASSERT(!mAutoFocusFlushDocuments.Contains(aDocument));
-  mAutoFocusFlushDocuments.AppendElement(aDocument);
-  EnsureTimerStarted();
-}
-
-void nsRefreshDriver::FlushAutoFocusDocuments() {
-  nsTArray<RefPtr<Document>> docs(std::move(mAutoFocusFlushDocuments));
-
-  for (const auto& doc : docs) {
-    MOZ_KnownLive(doc)->FlushAutoFocusCandidates();
-  }
-}
-
-void nsRefreshDriver::DispatchResizeEvents() {
-  AutoTArray<RefPtr<PresShell>, 16> observers;
-  observers.AppendElements(mResizeEventFlushObservers);
-  for (RefPtr<PresShell>& presShell : Reversed(observers)) {
-    if (!mPresContext || !mPresContext->GetPresShell()) {
-      break;
-    }
-    // Make sure to not process observers which might have been removed during
-    // previous iterations.
-    if (!mResizeEventFlushObservers.RemoveElement(presShell)) {
-      continue;
-    }
-    // MOZ_KnownLive because 'observers' is guaranteed to keep it alive.
-    //
-    // Fixing https://bugzilla.mozilla.org/show_bug.cgi?id=1620312 on its own
-    // won't help here, because 'observers' is non-const and we have the
-    // Reversed() going on too...
-    MOZ_KnownLive(presShell)->FireResizeEvent();
-  }
-}
-
-void nsRefreshDriver::FlushLayoutOnPendingDocsAndFixUpFocus() {
-  AutoTArray<RefPtr<PresShell>, 16> observers;
-  observers.AppendElements(mStyleFlushObservers);
-  for (RefPtr<PresShell>& presShell : Reversed(observers)) {
-    if (!mPresContext || !mPresContext->GetPresShell()) {
-      break;
-    }
-    // Make sure to not process observers which might have been removed during
-    // previous iterations.
-    if (!mStyleFlushObservers.RemoveElement(presShell)) {
-      continue;
-    }
-
-    LogPresShellObserver::Run run(presShell, this);
-    presShell->mWasLastReflowInterrupted = false;
-    const ChangesToFlush ctf(FlushType::InterruptibleLayout, false);
-    // MOZ_KnownLive because 'observers' is guaranteed to keep it alive.
-    MOZ_KnownLive(presShell)->FlushPendingNotifications(ctf);
-    const bool fixedUpFocus = MOZ_KnownLive(presShell)->FixUpFocus();
-    if (fixedUpFocus) {
-      MOZ_KnownLive(presShell)->FlushPendingNotifications(ctf);
-    }
-    // This is a bit subtle: We intentionally mark the pres shell as not
-    // observing style flushes here, rather than above the flush, so that
-    // reflows scheduled from the style flush, but processed by the (same)
-    // layout flush, don't end up needlessly scheduling another tick.
-    // Instead, we re-observe only if after a flush we still need a style /
-    // layout flush / focus fix-up. These should generally never happen, but
-    // the later can for example if you have focus shifts during the focus
-    // fixup event listeners etc.
-    presShell->mObservingStyleFlushes = false;
-    if (NS_WARN_IF(presShell->NeedStyleFlush()) ||
-        NS_WARN_IF(presShell->NeedLayoutFlush()) ||
-        NS_WARN_IF(fixedUpFocus && presShell->NeedsFocusFixUp())) {
-      presShell->ObserveStyleFlushes();
-    }
-
-    // Inform the FontFaceSet that we ticked, so that it can resolve its ready
-    // promise if it needs to.
-    presShell->NotifyFontFaceSetOnRefresh();
-    mNeedToRecomputeVisibility = true;
-  }
-}
-
 void nsRefreshDriver::MaybeIncreaseMeasuredTicksSinceLoading() {
   if (mPresContext && mPresContext->IsRoot()) {
     mPresContext->MaybeIncreaseMeasuredTicksSinceLoading();
   }
 }
 
-void nsRefreshDriver::CancelFlushAutoFocus(Document* aDocument) {
-  mAutoFocusFlushDocuments.RemoveElement(aDocument);
-}
-
-// https://fullscreen.spec.whatwg.org/#run-the-fullscreen-steps
-void nsRefreshDriver::RunFullscreenSteps() {
-  // Swap out the current pending events
-  nsTArray<UniquePtr<PendingFullscreenEvent>> pendings(
-      std::move(mPendingFullscreenEvents));
-  for (UniquePtr<PendingFullscreenEvent>& event : pendings) {
-    event->Dispatch();
-  }
-}
-
-void nsRefreshDriver::PerformPendingViewTransitionOperations() {
-  if (!mNeedToUpdateViewTransitions) {
-    return;
-  }
-  mNeedToUpdateViewTransitions = false;
-  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("View Transitions", LAYOUT);
-  RefPtr doc = mPresContext->Document();
-  doc->PerformPendingViewTransitionOperations();
-}
-
-void nsRefreshDriver::UpdateIntersectionObservations(TimeStamp aNowTime) {
-  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Compute intersections", LAYOUT);
-  mPresContext->Document()->UpdateIntersections(aNowTime);
-  mNeedToUpdateIntersectionObservations = false;
-}
-
 void nsRefreshDriver::UpdateRemoteFrameEffects() {
   mPresContext->Document()->UpdateRemoteFrameEffects();
 }
 
-void nsRefreshDriver::UpdateRelevancyOfContentVisibilityAutoFrames() {
-  if (!mNeedToUpdateContentRelevancy) {
-    return;
-  }
-
-  if (RefPtr<PresShell> topLevelPresShell = mPresContext->GetPresShell()) {
-    topLevelPresShell->UpdateRelevancyOfContentVisibilityAutoFrames();
-  }
-
-  mPresContext->Document()->EnumerateSubDocuments([](Document& aSubDoc) {
-    if (PresShell* presShell = aSubDoc.GetPresShell()) {
-      presShell->UpdateRelevancyOfContentVisibilityAutoFrames();
-    }
-    return CallState::Continue;
-  });
-
-  mNeedToUpdateContentRelevancy = false;
-}
-
-void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
-  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Update the rendering: step 14", LAYOUT);
-  // NotifyResizeObservers might re-schedule us for next tick.
-  mNeedToUpdateResizeObservers = false;
-
-  if (MOZ_UNLIKELY(!mPresContext)) {
-    return;
-  }
-
-  auto ShouldCollect = [](const Document* aDocument) {
-    PresShell* ps = aDocument->GetPresShell();
-    if (!ps || !ps->DidInitialize()) {
-      // If there's no shell or it didn't initialize, then we'll run this code
-      // when the pres shell does the initial reflow.
-      return false;
-    }
-    return ps->HasContentVisibilityAutoFrames() ||
-           aDocument->HasResizeObservers() ||
-           aDocument->HasElementsWithLastRememberedSize();
-  };
-
-  AutoTArray<RefPtr<Document>, 32> documents;
-  if (ShouldCollect(mPresContext->Document())) {
-    documents.AppendElement(mPresContext->Document());
-  }
-  mPresContext->Document()->CollectDescendantDocuments(documents,
-                                                       ShouldCollect);
-
-  for (const RefPtr<Document>& doc : documents) {
-    MOZ_KnownLive(doc)->DetermineProximityToViewportAndNotifyResizeObservers();
-  }
-}
-
-static CallState UpdateAndReduceAnimations(Document& aDocument) {
+static void UpdateAndReduceAnimations(Document& aDocument) {
   for (DocumentTimeline* tl :
        ToTArray<AutoTArray<RefPtr<DocumentTimeline>, 32>>(
            aDocument.Timelines())) {
@@ -2330,42 +2024,6 @@ static CallState UpdateAndReduceAnimations(Document& aDocument) {
     if (pc->EffectCompositor()->NeedsReducing()) {
       pc->EffectCompositor()->ReduceAnimations();
     }
-  }
-  aDocument.EnumerateSubDocuments(UpdateAndReduceAnimations);
-  return CallState::Continue;
-}
-
-void nsRefreshDriver::UpdateAnimationsAndSendEvents() {
-  // TODO(emilio): Can we early-return here if mNeedToUpdateAnimations is
-  // already false?
-  mNeedToUpdateAnimations = false;
-  if (!mPresContext) {
-    return;
-  }
-
-  {
-    // Animation updates may queue Promise resolution microtasks. We shouldn't
-    // run these, however, until we have fully updated the animation state. As
-    // per the "update animations and send events" procedure[1], we should
-    // remove replaced animations and then run these microtasks before
-    // dispatching the corresponding animation events.
-    //
-    // [1]:
-    // https://drafts.csswg.org/web-animations-1/#update-animations-and-send-events
-    nsAutoMicroTask mt;
-    RefPtr doc = mPresContext->Document();
-    UpdateAndReduceAnimations(*doc);
-  }
-
-  // Hold all AnimationEventDispatcher in mAnimationEventFlushObservers as
-  // a RefPtr<> array since each AnimationEventDispatcher might be destroyed
-  // during processing the previous dispatcher.
-  AutoTArray<RefPtr<AnimationEventDispatcher>, 16> dispatchers;
-  dispatchers.AppendElements(mAnimationEventFlushObservers);
-  mAnimationEventFlushObservers.Clear();
-
-  for (auto& dispatcher : dispatchers) {
-    dispatcher->DispatchEvents();
   }
 }
 
@@ -2477,10 +2135,6 @@ void nsRefreshDriver::RunFrameRequestCallbacks(
 }
 
 void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
-  if (!mNeedToRunFrameRequestCallbacks) {
-    return;
-  }
-  mNeedToRunFrameRequestCallbacks = false;
   const bool tickThrottledFrameRequests = [&] {
     if (mThrottled) {
       // We always tick throttled frame requests if the entire refresh driver is
@@ -2499,34 +2153,37 @@ void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
   if (NS_WARN_IF(!mPresContext)) {
     return;
   }
+  bool skippedAnyThrottledDoc = false;
   // Grab all of our documents that can fire frame request callbacks up front.
   AutoTArray<RefPtr<Document>, 8> docs;
-  auto ShouldCollect = [](const Document* aDoc) {
-    // TODO(emilio): Consider removing HasFrameRequestCallbacks() to deal with
-    // callbacks posted from other documents more per spec?
-    //
-    // If we do that we also need to tweak the throttling code to not set
-    // mNeedToRunFrameRequestCallbacks unnecessarily... Check what other engines
-    // do too.
-    return aDoc->HasFrameRequestCallbacks() &&
-           aDoc->ShouldFireFrameRequestCallbacks();
+  auto ShouldCollect = [&](const Document* aDoc) {
+    if (aDoc->IsRenderingSuppressed()) {
+      return false;
+    }
+    if (!aDoc->HasFrameRequestCallbacks()) {
+      // TODO(emilio): Consider removing this check to deal with callbacks
+      // posted from other documents more per spec... If we do that we also need
+      // to tweak the throttling code to not set mRenderingPhasesNeeded below.
+      // Check what other engines do too.
+      return false;
+    }
+    if (!tickThrottledFrameRequests && aDoc->ShouldThrottleFrameRequests()) {
+      // Skip throttled docs if it's not time to un-throttle them yet.
+      skippedAnyThrottledDoc = true;
+      return false;
+    }
+    return true;
   };
   if (ShouldCollect(mPresContext->Document())) {
     docs.AppendElement(mPresContext->Document());
   }
   mPresContext->Document()->CollectDescendantDocuments(docs, ShouldCollect);
-  // Skip throttled docs if it's not time to un-throttle them yet.
-  if (!tickThrottledFrameRequests) {
-    const size_t sizeBefore = docs.Length();
-    docs.RemoveElementsBy(
-        [](Document* aDoc) { return aDoc->ShouldThrottleFrameRequests(); });
-    if (sizeBefore != docs.Length()) {
-      // FIXME(emilio): It's a bit subtle to just set this to true here, but
-      // matches pre-existing behavior for throttled docs. It seems at least we
-      // should EnsureTimerStarted too? But that kinda defeats the throttling, a
-      // little bit? For now, preserve behavior.
-      mNeedToRunFrameRequestCallbacks = true;
-    }
+  if (skippedAnyThrottledDoc) {
+    // FIXME(emilio): It's a bit subtle to just set this here, but matches
+    // pre-existing behavior for throttled docs. It seems at least we should
+    // EnsureTimerStarted too? But that kinda defeats the throttling, a little
+    // bit? For now, preserve behavior.
+    mRenderingPhasesNeeded += RenderingPhase::AnimationFrameCallbacks;
   }
 
   if (docs.IsEmpty()) {
@@ -2602,12 +2259,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   auto cleanupInExtraTick = MakeScopeExit([&] { mInNormalTick = false; });
   mInNormalTick = aIsExtraTick != IsExtraTick::Yes;
 
-  bool isPresentingInVR = false;
-#if defined(MOZ_WIDGET_ANDROID)
-  isPresentingInVR = gfx::VRManagerChild::IsPresenting();
-#endif  // defined(MOZ_WIDGET_ANDROID)
-
-  if (!isPresentingInVR && IsWaitingForPaint(aNowTime)) {
+  if (!IsPresentingInVR() && IsWaitingForPaint(aNowTime)) {
     // In immersive VR mode, we do not get notifications when frames are
     // presented, so we do not wait for the compositor in that mode.
 
@@ -2636,7 +2288,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   }
 
   TickReasons tickReasons = GetReasonsToTick();
-  if (tickReasons == TickReasons::eNone) {
+  if (tickReasons == TickReasons::None) {
     // We no longer have any observers.
     // Discard composition payloads because there is no paint.
     mCompositionPayloads.Clear();
@@ -2663,22 +2315,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
       StopTimer();
     }
     return;
-  }
-
-  if (StaticPrefs::layout_skip_ticks_while_page_suspended()) {
-    Document* doc = mPresContext->Document();
-    nsGlobalWindowInner* win =
-        doc ? nsGlobalWindowInner::Cast(doc->GetInnerWindow()) : nullptr;
-    if (doc && doc->GetInnerWindow()) {
-      MOZ_ASSERT(nsGlobalWindowInner::Cast(doc->GetInnerWindow()));
-    }
-    // Synchronous DOM operations mark the document being in such. Window's
-    // suspend can be used also by external code. So we check here them both
-    // in order to limit rAF skipping to only those synchronous DOM APIs which
-    // also suspend window.
-    if (win && win->IsSuspended() && doc->IsInSyncOperation()) {
-      return;
-    }
   }
 
   AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("RefreshDriver tick", LAYOUT);
@@ -2737,26 +2373,67 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   // Step 7. For each doc of docs, flush autofocus candidates for doc if its
   // node navigable is a top-level traversable.
-  FlushAutoFocusDocuments();
+  // NOTE(emilio): Docs with autofocus candidates must be the top-level.
+  RunRenderingPhase(
+      RenderingPhase::FlushAutoFocusCandidates,
+      [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        MOZ_KnownLive(aDoc).FlushAutoFocusCandidates();
+      },
+      [](const Document& aDoc) { return aDoc.HasAutoFocusCandidates(); });
 
   // Step 8. For each doc of docs, run the resize steps for doc.
-  DispatchResizeEvents();
-  DispatchVisualViewportResizeEvents();
+  RunRenderingPhase(RenderingPhase::ResizeSteps,
+                    [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      if (RefPtr<PresShell> ps = aDoc.GetPresShell()) {
+                        ps->RunResizeSteps();
+                      }
+                    });
 
   // Step 9. For each doc of docs, run the scroll steps for doc.
-  DispatchScrollEvents();
-  DispatchVisualViewportScrollEvents();
-  DispatchScrollEndEvents();
+  RunRenderingPhase(RenderingPhase::ScrollSteps,
+                    [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      if (RefPtr<PresShell> ps = aDoc.GetPresShell()) {
+                        ps->RunScrollSteps();
+                      }
+                    });
 
   // Step 10. For each doc of docs, evaluate media queries and report changes
   // for doc.
-  EvaluateMediaQueriesAndReportChanges();
+  // https://drafts.csswg.org/cssom-view/#evaluate-media-queries-and-report-changes
+  RunRenderingPhase(
+      RenderingPhase::EvaluateMediaQueriesAndReportChanges,
+      [&](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        MOZ_KnownLive(aDoc).EvaluateMediaQueriesAndReportChanges();
+      });
 
   // Step 11. For each doc of docs, update animations and send events for doc.
-  UpdateAnimationsAndSendEvents();
+  RunRenderingPhase(RenderingPhase::UpdateAnimationsAndSendEvents,
+                    [&](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      {
+                        // Animation updates may queue Promise resolution
+                        // microtasks. We shouldn't run these, however, until we
+                        // have fully updated the animation state. As per the
+                        // "update animations and send events" procedure[1], we
+                        // should remove replaced animations and then run these
+                        // microtasks before dispatching the corresponding
+                        // animation events.
+                        //
+                        // [1]:
+                        // https://drafts.csswg.org/web-animations-1/#update-animations-and-send-events
+                        nsAutoMicroTask mt;
+                        UpdateAndReduceAnimations(aDoc);
+                      }
+                      if (RefPtr pc = aDoc.GetPresContext()) {
+                        RefPtr dispatcher = pc->AnimationEventDispatcher();
+                        dispatcher->DispatchEvents();
+                      }
+                    });
 
   // Step 12. For each doc of docs, run the fullscreen steps for doc.
-  RunFullscreenSteps();
+  RunRenderingPhase(RenderingPhase::FullscreenSteps,
+                    [&](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      MOZ_KnownLive(aDoc).RunFullscreenSteps();
+                    });
 
   // TODO: Step 13. For each doc of docs, if the user agent detects that the
   // backing storage associated with a CanvasRenderingContext2D or an
@@ -2772,20 +2449,38 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   // Step 14. For each doc of docs, run the animation frame callbacks for doc,
   // passing in the relative high resolution time given frameTimestamp and doc's
   // relevant global object as the timestamp.
-  RunVideoAndFrameRequestCallbacks(aNowTime);
+  RunRenderingPhaseLegacy(RenderingPhase::AnimationFrameCallbacks,
+                          [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                            RunVideoAndFrameRequestCallbacks(aNowTime);
+                          });
 
   MaybeIncreaseMeasuredTicksSinceLoading();
 
-  // Step 17. For each doc of docs, if the focused area of doc is not a
-  // focusable area, then run the focusing steps for doc's viewport [..].
-  //
-  // FIXME(emilio, bug 1788741): This should happen after resize observer
-  // handling. Also, Step 16 is supposed to be what updates layout (as part of
-  // ResizeObserver handling), not quite this. Try to consolidate it.
-  FlushLayoutOnPendingDocsAndFixUpFocus();
-
   if (!mPresContext || !mPresContext->GetPresShell()) {
     return StopTimer();
+  }
+
+  if (mRenderingPhasesNeeded.contains(RenderingPhase::Layout)) {
+    mNeedToRecomputeVisibility = true;
+    // Layout changes can cause intersection observers to need updates.
+    mRenderingPhasesNeeded += RenderingPhase::UpdateIntersectionObservations;
+  }
+
+  // Steps 16 and 17.
+  RunRenderingPhase(
+      RenderingPhase::Layout,
+      [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        MOZ_KnownLive(aDoc)
+            .DetermineProximityToViewportAndNotifyResizeObservers();
+      });
+  if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
+    return StopTimer();
+  }
+
+  // Update any popups that may need to be moved or hidden due to their
+  // anchor changing.
+  if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
+    pm->UpdatePopupPositions(this);
   }
 
   // Recompute approximate frame visibility if it's necessary and enough time
@@ -2795,42 +2490,22 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
       !presShell->IsPaintingSuppressed()) {
     mNextRecomputeVisibilityTick = aNowTime + mMinRecomputeVisibilityInterval;
     mNeedToRecomputeVisibility = false;
-
     presShell->ScheduleApproximateFrameVisibilityUpdateNow();
   }
 
-  // Update any popups that may need to be moved or hidden due to their
-  // anchor changing.
-  if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
-    pm->UpdatePopupPositions(this);
-  }
-
-  // Update the relevancy of the content of any `content-visibility: auto`
-  // elements. The specification says: "Specifically, such changes will
-  // take effect between steps 13 and 14 of Update the Rendering step of
-  // the Processing Model (between “run the animation frame callbacks” and
-  // “run the update intersection observations steps”)."
-  // https://drafts.csswg.org/css-contain/#cv-notes
-  //
-  // FIXME(emilio): There are more steps in between now, the content-visibility
-  // stuff should probably be integrated into the HTML spec.
-  UpdateRelevancyOfContentVisibilityAutoFrames();
-
-  // Step 16.
-  DetermineProximityToViewportAndNotifyResizeObservers();
-  if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
-    return StopTimer();
-  }
-
-  // TODO(emilio): Step 17, focus fix-up should happen here.
-
   // Step 18: For each doc of docs, perform pending transition operations for
   // doc.
-  PerformPendingViewTransitionOperations();
+  RunRenderingPhase(
+      RenderingPhase::ViewTransitionOperations,
+      [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        MOZ_KnownLive(aDoc).PerformPendingViewTransitionOperations();
+      });
 
   // Step 19. For each doc of docs, run the update intersection observations
   // steps for doc.
-  UpdateIntersectionObservations(aNowTime);
+  RunRenderingPhase(
+      RenderingPhase::UpdateIntersectionObservations,
+      [&](Document& aDoc) { aDoc.UpdateIntersections(aNowTime); });
 
   // Notify display flush observers (like a11y).
   if (!TickObserverArray(2, aNowTime)) {
@@ -2839,58 +2514,19 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   UpdateAnimatedImages(previousRefresh, aNowTime);
 
-  bool dispatchTasksAfterTick = false;
-  if (mViewManagerFlushIsPending && !mThrottled) {
-    nsCString transactionId;
-    if (profiler_thread_is_being_profiled_for_markers()) {
-      transactionId.AppendLiteral("Transaction ID: ");
-      transactionId.AppendInt((uint64_t)mNextTransactionId);
-    }
-    AUTO_PROFILER_MARKER_TEXT(
-        "ViewManagerFlush", GRAPHICS,
-        MarkerOptions(
-            MarkerInnerWindowIdFromDocShell(GetDocShell(mPresContext)),
-            MarkerStack::TakeBacktrace(std::move(mViewManagerFlushCause))),
-        transactionId);
+  bool painted = false;
+  RunRenderingPhaseLegacy(
+      RenderingPhase::Paint,
+      [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA { painted = PaintIfNeeded(); });
 
-    // Forward our composition payloads to the layer manager.
-    if (!mCompositionPayloads.IsEmpty()) {
-      nsCOMPtr<nsIWidget> widget = mPresContext->GetRootWidget();
-      WindowRenderer* renderer = widget ? widget->GetWindowRenderer() : nullptr;
-      if (renderer && renderer->AsWebRender()) {
-        renderer->AsWebRender()->RegisterPayloads(mCompositionPayloads);
-      }
-      mCompositionPayloads.Clear();
-    }
-
-#ifdef MOZ_DUMP_PAINTING
-    if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
-      printf_stderr("Starting ProcessPendingUpdates\n");
-    }
-#endif
-
-    mViewManagerFlushIsPending = false;
-    RefPtr<nsViewManager> vm = mPresContext->GetPresShell()->GetViewManager();
-    const bool skipPaint = isPresentingInVR;
-    // Skip the paint in immersive VR mode because whatever we paint here will
-    // not end up on the screen. The screen is displaying WebGL content from a
-    // single canvas in that mode.
-    if (!skipPaint) {
-      PaintTelemetry::AutoRecordPaint record;
-      vm->ProcessPendingUpdates();
-    }
-
-#ifdef MOZ_DUMP_PAINTING
-    if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
-      printf_stderr("Ending ProcessPendingUpdates\n");
-    }
-#endif
-
-    dispatchTasksAfterTick = true;
-    mHasScheduleFlush = false;
-  } else {
+  if (!painted) {
     // No paint happened, discard composition payloads.
     mCompositionPayloads.Clear();
+    mPaintCause = nullptr;
+  }
+
+  if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
+    return StopTimer();
   }
 
   // This needs to happen after DL building since we rely on the raster scales
@@ -2898,9 +2534,8 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   UpdateRemoteFrameEffects();
 
 #ifndef ANDROID /* bug 1142079 */
-  double totalMs = (TimeStamp::Now() - mTickStart).ToMilliseconds();
-  mozilla::Telemetry::Accumulate(mozilla::Telemetry::REFRESH_DRIVER_TICK,
-                                 static_cast<uint32_t>(totalMs));
+  mozilla::glean::layout::refresh_driver_tick.AccumulateRawDuration(
+      TimeStamp::Now() - mTickStart);
 #endif
 
   for (nsAPostRefreshObserver* observer :
@@ -2912,15 +2547,59 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   if (mPresContext->IsRoot() && XRE_IsContentProcess() &&
       StaticPrefs::gfx_content_always_paint()) {
-    ScheduleViewManagerFlush();
+    SchedulePaint();
   }
 
-  if (dispatchTasksAfterTick && sPendingIdleTasks) {
+  if (painted && sPendingIdleTasks) {
     UniquePtr<AutoTArray<RefPtr<Task>, 8>> tasks(sPendingIdleTasks.forget());
     for (RefPtr<Task>& taskWithDelay : *tasks) {
       TaskController::Get()->AddTask(taskWithDelay.forget());
     }
   }
+}
+
+bool nsRefreshDriver::PaintIfNeeded() {
+  if (mThrottled) {
+    return false;
+  }
+  if (IsPresentingInVR()) {
+    // Skip the paint in immersive VR mode because whatever we paint here will
+    // not end up on the screen. The screen is displaying WebGL content from a
+    // single canvas in that mode.
+    return false;
+  }
+  if (mPresContext->Document()->IsRenderingSuppressed()) {
+    // If the top level document is suppressed, skip painting altogether.
+    // TODO(emilio): Deal with this properly for subdocuments.
+    return false;
+  }
+  nsCString transactionId;
+  if (profiler_thread_is_being_profiled_for_markers()) {
+    transactionId.AppendLiteral("Transaction ID: ");
+    transactionId.AppendInt((uint64_t)mNextTransactionId);
+  }
+  AUTO_PROFILER_MARKER_TEXT(
+      "ViewManagerFlush", GRAPHICS,
+      MarkerOptions(MarkerInnerWindowIdFromDocShell(GetDocShell(mPresContext)),
+                    MarkerStack::TakeBacktrace(std::move(mPaintCause))),
+      transactionId);
+
+  // Forward our composition payloads to the layer manager.
+  if (!mCompositionPayloads.IsEmpty()) {
+    nsCOMPtr<nsIWidget> widget = mPresContext->GetRootWidget();
+    WindowRenderer* renderer = widget ? widget->GetWindowRenderer() : nullptr;
+    if (renderer && renderer->AsWebRender()) {
+      renderer->AsWebRender()->RegisterPayloads(
+          std::move(mCompositionPayloads));
+    }
+    mCompositionPayloads.Clear();
+  }
+  RefPtr<nsViewManager> vm = mPresContext->PresShell()->GetViewManager();
+  {
+    PaintTelemetry::AutoRecordPaint record;
+    vm->ProcessPendingUpdates();
+  }
+  return true;
 }
 
 void nsRefreshDriver::UpdateAnimatedImages(TimeStamp aPreviousRefresh,
@@ -3183,7 +2862,7 @@ void nsRefreshDriver::SetActivity(bool aIsActive) {
     return;
   }
   mThrottled = shouldThrottle;
-  if (mActiveTimer || GetReasonsToTick() != TickReasons::eNone) {
+  if (mActiveTimer || GetReasonsToTick() != TickReasons::None) {
     // We want to switch our timer type here, so just stop and restart the
     // timer.
     EnsureTimerStarted(eForceAdjustTimer);
@@ -3207,37 +2886,14 @@ bool nsRefreshDriver::IsRefreshObserver(nsARefreshObserver* aObserver,
 }
 #endif
 
-void nsRefreshDriver::ScheduleViewManagerFlush() {
+void nsRefreshDriver::SchedulePaint() {
   NS_ASSERTION(mPresContext && mPresContext->IsRoot(),
                "Should only schedule view manager flush on root prescontexts");
-  mViewManagerFlushIsPending = true;
-  if (!mViewManagerFlushCause) {
-    mViewManagerFlushCause = profiler_capture_backtrace();
+  if (!mPaintCause) {
+    mPaintCause = profiler_capture_backtrace();
   }
-  mHasScheduleFlush = true;
-  EnsureTimerStarted(eNeverAdjustTimer);
-}
-
-void nsRefreshDriver::ScheduleFullscreenEvent(
-    UniquePtr<PendingFullscreenEvent> aEvent) {
-  mPendingFullscreenEvents.AppendElement(std::move(aEvent));
-  // make sure that the timer is running
+  ScheduleRenderingPhase(RenderingPhase::Paint);
   EnsureTimerStarted();
-}
-
-void nsRefreshDriver::CancelPendingFullscreenEvents(Document* aDocument) {
-  for (auto i : Reversed(IntegerRange(mPendingFullscreenEvents.Length()))) {
-    if (mPendingFullscreenEvents[i]->Document() == aDocument) {
-      mPendingFullscreenEvents.RemoveElementAt(i);
-    }
-  }
-}
-
-void nsRefreshDriver::CancelPendingAnimationEvents(
-    AnimationEventDispatcher* aDispatcher) {
-  MOZ_ASSERT(aDispatcher);
-  aDispatcher->ClearEventQueue();
-  mAnimationEventFlushObservers.RemoveElement(aDispatcher);
 }
 
 /* static */

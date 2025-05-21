@@ -11,6 +11,7 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/MessageManagerCallback.h"
 #include "mozilla/dom/MediaSessionBinding.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/JSProcessActorParent.h"
@@ -65,6 +66,10 @@ class ParentIdleListener;
 class nsIWidget;
 class nsIX509Cert;
 
+namespace CrashReporter {
+class CrashReporterInitArgs;
+}
+
 namespace mozilla {
 class PClipboardWriteRequestParent;
 class PRemoteSpellcheckEngineParent;
@@ -75,7 +80,6 @@ class SandboxBrokerPolicyFactory;
 #endif
 
 class PreallocatedProcessManagerImpl;
-class BenchmarkStorageParent;
 
 using mozilla::loader::PScriptCacheParent;
 
@@ -99,6 +103,7 @@ class MemoryReport;
 class TabContext;
 class GetFilesHelper;
 class MemoryReportRequestHost;
+class RemoteWorkerDebuggerManagerParent;
 class RemoteWorkerManager;
 class RemoteWorkerServiceParent;
 class ThreadsafeContentParentHandle;
@@ -483,7 +488,7 @@ class ContentParent final : public PContentParent,
   void FriendlyName(nsAString& aName, bool aAnonymize = false);
 
   mozilla::ipc::IPCResult RecvInitCrashReporter(
-      const NativeThreadId& aThreadId);
+      const CrashReporter::CrashReporterInitArgs& aInitArgs);
 
   already_AddRefed<PNeckoParent> AllocPNeckoParent();
 
@@ -653,11 +658,6 @@ class ContentParent final : public PContentParent,
 
   // Whenever receiving a Principal we need to validate that Principal case
   // by case, where we grant individual callsites to customize the checks!
-  enum class ValidatePrincipalOptions {
-    AllowNullPtr,  // Not a NullPrincipal but a nullptr as Principal.
-    AllowSystem,
-    AllowExpanded,
-  };
   bool ValidatePrincipal(
       nsIPrincipal* aPrincipal,
       const EnumSet<ValidatePrincipalOptions>& aOptions = {});
@@ -950,10 +950,6 @@ class ContentParent final : public PContentParent,
 
   bool DeallocPMediaParent(PMediaParent* aActor);
 
-  PBenchmarkStorageParent* AllocPBenchmarkStorageParent();
-
-  bool DeallocPBenchmarkStorageParent(PBenchmarkStorageParent* aActor);
-
 #ifdef MOZ_WEBSPEECH
   already_AddRefed<PSpeechSynthesisParent> AllocPSpeechSynthesisParent();
 
@@ -1150,9 +1146,6 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvGetHyphDict(
       nsIURI* aURIParams, mozilla::ipc::ReadOnlySharedMemoryHandle* aOutHandle);
-
-  mozilla::ipc::IPCResult RecvNotifyBenchmarkResult(const nsAString& aCodecName,
-                                                    const uint32_t& aDecodeFPS);
 
   mozilla::ipc::IPCResult RecvNotifyPushObservers(const nsACString& aScope,
                                                   nsIPrincipal* aPrincipal,
@@ -1559,6 +1552,8 @@ class ContentParent final : public PContentParent,
   RefPtr<PProcessHangMonitorParent> mHangMonitorActor;
 
   RefPtr<RemoteWorkerServiceParent> mRemoteWorkerServiceActor;
+
+  RefPtr<RemoteWorkerDebuggerManagerParent> mRemoteWorkerDebuggerManagerActor;
 
   UniquePtr<gfx::DriverCrashGuard> mDriverCrashGuard;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;

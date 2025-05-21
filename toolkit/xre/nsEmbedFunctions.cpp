@@ -352,8 +352,14 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   if (!CrashReporter::IsDummy()) {
     auto crashReporterArg = geckoargs::sCrashReporter.Get(aArgc, aArgv);
     if (crashReporterArg) {
+      Maybe<CrashReporter::ProcessId> crashHelperPid;
+#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+      crashHelperPid = geckoargs::sCrashHelperPid.Get(aArgc, aArgv);
+      MOZ_ASSERT(crashHelperPid.isSome());
+#endif  // defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+
       exceptionHandlerIsSet = CrashReporter::SetRemoteExceptionHandler(
-          std::move(*crashReporterArg));
+          std::move(*crashReporterArg), crashHelperPid);
       MOZ_ASSERT(exceptionHandlerIsSet,
                  "Should have been able to set remote exception handler");
 

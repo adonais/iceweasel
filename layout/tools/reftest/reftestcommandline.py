@@ -2,10 +2,10 @@ import argparse
 import os
 import sys
 from collections import OrderedDict
+from urllib.parse import urlparse
 
 import mozinfo
 import mozlog
-from six.moves.urllib.parse import urlparse
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -509,7 +509,7 @@ class DesktopArgumentsParser(ReftestArgumentsParser):
                 try:
                     bin_dir = self.build_obj.get_binary_path()
                 except BinaryNotFoundException as e:
-                    print("{}\n\n{}\n".format(e, e.help()), file=sys.stderr)
+                    print(f"{e}\n\n{e.help()}\n", file=sys.stderr)
                     sys.exit(1)
             else:
                 bin_dir = None

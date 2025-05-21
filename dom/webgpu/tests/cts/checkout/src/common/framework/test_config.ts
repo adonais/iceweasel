@@ -52,11 +52,17 @@ export type TestConfig = {
   enforceDefaultLimits: boolean;
 
   /**
+   * Block all features on the adapter
+   */
+  blockAllFeatures: boolean;
+
+  /**
    * Whether to enable the `logToWebSocket` function used for out-of-band test logging.
    */
   logToWebSocket: boolean;
 };
 
+/** Test configuration options. Globally modifiable global state. */
 export const globalTestConfig: TestConfig = {
   enableDebugLogs: false,
   maxSubcasesInFlight: 100,
@@ -67,6 +73,7 @@ export const globalTestConfig: TestConfig = {
   compatibility: false,
   forceFallbackAdapter: false,
   enforceDefaultLimits: false,
+  blockAllFeatures: false,
   logToWebSocket: false,
 };
 

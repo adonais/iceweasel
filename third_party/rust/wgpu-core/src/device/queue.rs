@@ -10,6 +10,7 @@ use smallvec::SmallVec;
 use thiserror::Error;
 
 use super::{life::LifetimeTracker, Device};
+use crate::device::resource::CommandIndices;
 #[cfg(feature = "trace")]
 use crate::device::trace::Action;
 use crate::scratch::ScratchBuffer;
@@ -267,6 +268,8 @@ pub(crate) struct EncoderInFlight {
     inner: crate::command::CommandEncoder,
     pub(crate) trackers: Tracker,
     pub(crate) temp_resources: Vec<TempResource>,
+    /// We only need to keep these resources alive.
+    _indirect_draw_validation_resources: crate::indirect_validation::DrawResources,
 
     /// These are the buffers that have been tracked by `PendingWrites`.
     pub(crate) pending_buffers: FastHashMap<TrackerIndex, Arc<Buffer>>,
@@ -377,6 +380,9 @@ impl PendingWrites {
                 },
                 trackers: Tracker::new(),
                 temp_resources: mem::take(&mut self.temp_resources),
+                _indirect_draw_validation_resources: crate::indirect_validation::DrawResources::new(
+                    device.clone(),
+                ),
                 pending_buffers,
                 pending_textures,
             };
@@ -442,9 +448,7 @@ pub enum QueueSubmitError {
     #[error(transparent)]
     CommandEncoder(#[from] CommandEncoderError),
     #[error(transparent)]
-    ValidateBlasActionsError(#[from] crate::ray_tracing::ValidateBlasActionsError),
-    #[error(transparent)]
-    ValidateTlasActionsError(#[from] crate::ray_tracing::ValidateTlasActionsError),
+    ValidateAsActionsError(#[from] crate::ray_tracing::ValidateAsActionsError),
 }
 
 //TODO: move out common parts of write_xxx.
@@ -459,6 +463,8 @@ impl Queue {
         profiling::scope!("Queue::write_buffer");
         api_log!("Queue::write_buffer");
 
+        self.device.check_is_valid()?;
+
         let buffer = buffer.get()?;
 
         let data_size = data.len() as wgt::BufferAddress;
@@ -471,6 +477,8 @@ impl Queue {
             log::trace!("Ignoring write_buffer of size 0");
             return Ok(());
         };
+
+        let snatch_guard = self.device.snatchable_lock.read();
 
         // Platform validation requires that the staging buffer always be
         // freed, even if an error occurs. All paths from here must call
@@ -485,6 +493,7 @@ impl Queue {
         };
 
         let result = self.write_staging_buffer_impl(
+            &snatch_guard,
             &mut pending_writes,
             &staging_buffer,
             buffer,
@@ -502,6 +511,8 @@ impl Queue {
         profiling::scope!("Queue::create_staging_buffer");
         resource_log!("Queue::create_staging_buffer");
 
+        self.device.check_is_valid()?;
+
         let staging_buffer = StagingBuffer::new(&self.device, buffer_size)?;
         let ptr = unsafe { staging_buffer.ptr() };
 
@@ -516,8 +527,11 @@ impl Queue {
     ) -> Result<(), QueueWriteError> {
         profiling::scope!("Queue::write_staging_buffer");
 
+        self.device.check_is_valid()?;
+
         let buffer = buffer.get()?;
 
+        let snatch_guard = self.device.snatchable_lock.read();
         let mut pending_writes = self.pending_writes.lock();
 
         // At this point, we have taken ownership of the staging_buffer from the
@@ -527,6 +541,7 @@ impl Queue {
         let staging_buffer = staging_buffer.flush();
 
         let result = self.write_staging_buffer_impl(
+            &snatch_guard,
             &mut pending_writes,
             &staging_buffer,
             buffer,
@@ -544,6 +559,8 @@ impl Queue {
         buffer_size: wgt::BufferSize,
     ) -> Result<(), QueueWriteError> {
         profiling::scope!("Queue::validate_write_buffer");
+
+        self.device.check_is_valid()?;
 
         let buffer = buffer.get()?;
 
@@ -579,11 +596,14 @@ impl Queue {
 
     fn write_staging_buffer_impl(
         &self,
+        snatch_guard: &SnatchGuard,
         pending_writes: &mut PendingWrites,
         staging_buffer: &FlushedStagingBuffer,
         buffer: Arc<Buffer>,
         buffer_offset: u64,
     ) -> Result<(), QueueWriteError> {
+        self.device.check_is_valid()?;
+
         let transition = {
             let mut trackers = self.device.trackers.lock();
             trackers
@@ -591,8 +611,7 @@ impl Queue {
                 .set_single(&buffer, wgt::BufferUses::COPY_DST)
         };
 
-        let snatch_guard = self.device.snatchable_lock.read();
-        let dst_raw = buffer.try_raw(&snatch_guard)?;
+        let dst_raw = buffer.try_raw(snatch_guard)?;
 
         self.same_device_as(buffer.as_ref())?;
 
@@ -610,7 +629,7 @@ impl Queue {
                 to: wgt::BufferUses::COPY_SRC,
             },
         })
-        .chain(transition.map(|pending| pending.into_hal(&buffer, &snatch_guard)))
+        .chain(transition.map(|pending| pending.into_hal(&buffer, snatch_guard)))
         .collect::<Vec<_>>();
         let encoder = pending_writes.activate();
         unsafe {
@@ -641,6 +660,8 @@ impl Queue {
     ) -> Result<(), QueueWriteError> {
         profiling::scope!("Queue::write_texture");
         api_log!("Queue::write_texture");
+
+        self.device.check_is_valid()?;
 
         if size.width == 0 || size.height == 0 || size.depth_or_array_layers == 0 {
             log::trace!("Ignoring write_texture of size 0");
@@ -864,6 +885,8 @@ impl Queue {
     ) -> Result<(), QueueWriteError> {
         profiling::scope!("Queue::copy_external_image_to_texture");
 
+        self.device.check_is_valid()?;
+
         if size.width == 0 || size.height == 0 || size.depth_or_array_layers == 0 {
             log::trace!("Ignoring write_texture of size 0");
             return Ok(());
@@ -1063,11 +1086,15 @@ impl Queue {
 
             // Fence lock must be acquired after the snatch lock everywhere to avoid deadlocks.
             let mut fence = self.device.fence.write();
-            submit_index = self
-                .device
-                .active_submission_index
-                .fetch_add(1, Ordering::SeqCst)
-                + 1;
+
+            let mut command_index_guard = self.device.command_indices.write();
+            command_index_guard.active_submission_index += 1;
+            submit_index = command_index_guard.active_submission_index;
+
+            if let Err(e) = self.device.check_is_valid() {
+                break 'error Err(e.into());
+            }
+
             let mut active_executions = Vec::new();
 
             let mut used_surface_textures = track::TextureUsageScope::default();
@@ -1122,6 +1149,7 @@ impl Queue {
                                     &snatch_guard,
                                     &mut submit_surface_textures_owned,
                                     &mut used_surface_textures,
+                                    &mut command_index_guard,
                                 );
                                 if let Err(err) = res {
                                     first_error.get_or_insert(err);
@@ -1196,6 +1224,8 @@ impl Queue {
                             inner: baked.encoder,
                             trackers: baked.trackers,
                             temp_resources: baked.temp_resources,
+                            _indirect_draw_validation_resources: baked
+                                .indirect_draw_validation_resources,
                             pending_buffers: FastHashMap::default(),
                             pending_textures: FastHashMap::default(),
                         });
@@ -1285,6 +1315,8 @@ impl Queue {
                     break 'error Err(e.into());
                 }
 
+                drop(command_index_guard);
+
                 // Advance the successful submission index.
                 self.device
                     .last_successful_submission_index
@@ -1328,6 +1360,8 @@ impl Queue {
 
         // the closures should execute with nothing locked!
         callbacks.fire();
+
+        self.device.lose_if_oom();
 
         api_log!("Queue::submit returned submit index {submit_index}");
 
@@ -1481,6 +1515,11 @@ impl Global {
 
     pub fn queue_get_timestamp_period(&self, queue_id: QueueId) -> f32 {
         let queue = self.hub.queues.get(queue_id);
+
+        if queue.device.timestamp_normalizer.get().unwrap().enabled() {
+            return 1.0;
+        }
+
         queue.get_timestamp_period()
     }
 
@@ -1505,6 +1544,7 @@ fn validate_command_buffer(
     snatch_guard: &SnatchGuard,
     submit_surface_textures_owned: &mut FastHashMap<*const Texture, Arc<Texture>>,
     used_surface_textures: &mut track::TextureUsageScope,
+    command_index_guard: &mut RwLockWriteGuard<CommandIndices>,
 ) -> Result<(), QueueSubmitError> {
     command_buffer.same_device_as(queue)?;
 
@@ -1544,10 +1584,9 @@ fn validate_command_buffer(
             }
         }
 
-        if let Err(e) = cmd_buf_data.validate_blas_actions() {
-            return Err(e.into());
-        }
-        if let Err(e) = cmd_buf_data.validate_tlas_actions(snatch_guard) {
+        if let Err(e) =
+            cmd_buf_data.validate_acceleration_structure_actions(snatch_guard, command_index_guard)
+        {
             return Err(e.into());
         }
     }

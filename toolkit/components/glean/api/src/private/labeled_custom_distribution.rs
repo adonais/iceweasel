@@ -4,10 +4,12 @@
 
 use inherent::inherent;
 
-use glean::traits::CustomDistribution;
-
 use crate::ipc::with_ipc_payload;
-use crate::private::{CustomDistributionMetric, DistributionData, MetricId};
+use crate::private::{
+    BaseMetric, BaseMetricId, BaseMetricResult, CustomDistributionMetric, DistributionData,
+    MetricMetadataGetterImpl,
+};
+use glean::traits::CustomDistribution;
 use std::collections::HashMap;
 
 #[cfg(feature = "with_gecko")]
@@ -23,12 +25,21 @@ use super::profiler_utils::{
 #[derive(Clone)]
 pub enum LabeledCustomDistributionMetric {
     Parent(CustomDistributionMetric),
-    Child { id: MetricId, label: String },
+    Child { id: BaseMetricId, label: String },
 }
+
+crate::define_metric_metadata_getter!(
+    CustomDistributionMetric,
+    LabeledCustomDistributionMetric,
+    CUSTOM_DISTRIBUTION_MAP,
+    LABELED_CUSTOM_DISTRIBUTION_MAP
+);
+
+crate::define_metric_namer!(LabeledCustomDistributionMetric, LABELED);
 
 impl LabeledCustomDistributionMetric {
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> crate::private::MetricGetter {
+    pub(crate) fn metric_id(&self) -> crate::private::MetricId {
         match self {
             LabeledCustomDistributionMetric::Parent(p) => p.metric_id(),
             LabeledCustomDistributionMetric::Child { id, .. } => (*id).into(),
@@ -46,7 +57,7 @@ impl CustomDistribution for LabeledCustomDistributionMetric {
                 gecko_profiler::lazy_add_marker!(
                     "CustomDistribution::accumulate",
                     TelemetryProfilerCategory,
-                    DistributionMetricMarker::new(
+                    DistributionMetricMarker::<LabeledCustomDistributionMetric, i64>::new(
                         (*id).into(),
                         Some(label.clone()),
                         DistributionValues::Samples(truncate_vector_for_marker(&samples)),
@@ -78,7 +89,7 @@ impl CustomDistribution for LabeledCustomDistributionMetric {
                 gecko_profiler::lazy_add_marker!(
                     "CustomDistribution::accumulate",
                     TelemetryProfilerCategory,
-                    DistributionMetricMarker::new(
+                    DistributionMetricMarker::<LabeledCustomDistributionMetric, i64>::new(
                         (*id).into(),
                         Some(label.clone()),
                         DistributionValues::Sample(sample),
@@ -125,6 +136,20 @@ impl CustomDistribution for LabeledCustomDistributionMetric {
     }
 }
 
+impl BaseMetric for LabeledCustomDistributionMetric {
+    type BaseMetricT = CustomDistributionMetric;
+    fn get_base_metric<'a>(&'a self) -> BaseMetricResult<'a, Self::BaseMetricT> {
+        match self {
+            LabeledCustomDistributionMetric::Parent(custom_distribution_metric) => {
+                BaseMetricResult::BaseMetric(&custom_distribution_metric)
+            }
+            LabeledCustomDistributionMetric::Child { id, label } => {
+                BaseMetricResult::IndexLabelPair(*id, &label)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::{common_test::*, ipc, metrics};
@@ -166,8 +191,8 @@ mod test {
 
             let metric_id = child_metric
                 .metric_id()
-                .metric_id()
-                .expect("Cannot perform IPC calls without a MetricId");
+                .base_metric_id()
+                .expect("Cannot perform IPC calls without a BaseMetricId");
 
             child_metric.accumulate_single_sample_signed(42);
 

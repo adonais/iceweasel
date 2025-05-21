@@ -114,11 +114,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">പുതിയ വഴികാട്ടല്വവസ്ഥയൊപ്പം ഇനിയും വേഗത്തിൽ പരതുക</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">പുതിയ വഴികാട്ടല്വവസ്ഥയൊപ്പം ഇനിയും വേഗത്തിൽ പരതുക</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">ഒരു വെബ്‌സൈറ്റിൽ, കൂടുതൽ തിരച്ചിൽ സ്ഥലത്തിനായി താങ്ങൾ താഴേക്ക് ഗതിമാറ്റുമ്പോൾ ഈ പട്ട അകന്നുപോകുന്നു.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">ഒരു വെബ്‌സൈറ്റിൽ, കൂടുതൽ തിരച്ചിൽ സ്ഥലത്തിനായി താങ്ങൾ താഴേക്ക് ഗതിമാറ്റുമ്പോൾ ഈ പട്ട അകന്നുപോകുന്നു.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">ഈ ടാബിന്റെ നാൾവഴിത്തിലേ താളുകൾക്കിടയിൽ ചാടാൻ അമ്പടയാളങ്ങൾ പിടിച്ചുവയ്ക്കുക.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">ഈ ടാബിന്റെ നാൾവഴിത്തിലേ താളുകൾക്കിടയിൽ ചാടാൻ അമ്പടയാളങ്ങൾ പിടിച്ചുവയ്ക്കുക.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -619,7 +619,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">വേഗതയേറിയതും സുരക്ഷിതവുമായ വെബ് തിരയൽ</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">സമ്മതിച്ച് തുടരുക</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">സമ്മതിച്ച് തുടരുക</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">തുടരുക</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">തുടരുന്നതിലൂടെ, താങ്ങൾ %1$s അംഗീകരിക്കുന്നു.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -812,8 +814,6 @@
   <string name="preferences_override_account_server">ഇഷ്ടനുസൃത മോസില്ല അക്കൗണ്ടു് സേവനദാതാവു്</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">ഇഷ്‌ടാനുസൃത സമന്വയ സെർവർ</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">ഫയർ‌ഫോക്സ് അകൗണ്ട്/സമന്വയ പ്രദായിണി പുതുച്ചു. മാറ്റങ്ങൾ പ്രയോഗിക്കുന്നതിന് പ്രയോഗത്തിൽ  നിന്നു പുറത്തുകടക്കുന്നു…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">അക്കൗണ്ട്</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -970,6 +970,8 @@
   <string name="wallpaper_classic_title">ക്ലാസിക് %s</string>
   <!-- Wallpaper onboarding dialog header text. -->
   <string name="wallpapers_onboarding_dialog_title_text">നിറത്തിന്റെ നീർത്തെറിപ്പ് ഉരച്ചുനോക്കുക</string>
+  <!-- Wallpaper onboarding dialog body text. -->
+  <string name="wallpapers_onboarding_dialog_body_text">താങ്ങൾക്കു് കൊള്ളുന്നയൊരു ചുവൎക്കടലാസ്സു് തിരഞ്ഞെടുക്കുക.</string>
   <!-- Wallpaper onboarding dialog learn more button text. The button navigates to the wallpaper settings screen. -->
   <string name="wallpapers_onboarding_dialog_explore_more_button_text">ഇനിയും ചുവർകടലാസുകൾ ആരായുക</string>
   <!--
@@ -1080,6 +1082,8 @@
   <string name="preference_usage_data_learn_more">കൂടുതലറിയുക</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">വില്പനദത്തയെ കുറിച്ചു് കൂടുതൽ അറിയുക</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preferences_daily_usage_ping_title">പ്രതിദിന ഉപയോഗ പിംഗ്</string>
   <string name="preferences_daily_usage_ping_description">സജീവ ഉപയോക്താക്കളുടെ കണക്കെടുക്കാൻ ഇതു് മോസ്സില്ലയെ സഹായിക്കുന്നു.</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title">തകർച്ച വിവരങ്ങൾ തന്നെതാന്നെ അയയ്ക്കുക</string>
@@ -1136,7 +1140,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ടാബുകൾ തുറക്കുന്നതിന് കരുപ്പട്ട മുകളിലേക്ക് സ്വൈപ്പുചെയ്യുക</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">വിലാസപ്പട്ടയും കരുപ്പട്ടയും മറയ്ക്കാൻ ഗതിമാറ്റുക</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">വിലാസപ്പട്ടയും കരുപ്പട്ടയും മറയ്ക്കാൻ ഗതിമാറ്റുക</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ടാബുകൾ മാറാൻ വിലാസപ്പട്ട ഒരുവശത്തേക്കു് നീക്കുക</string>
   <!--
@@ -1168,6 +1172,11 @@
     %d is a placeholder for the number of tabs that will be opened
   -->
   <string name="open_all_warning_title">%d ടാബുകൾ തുറക്കണോ?</string>
+  <!--
+    Message to warn users that a large number of tabs will be opened
+    %s will be replaced by app name.
+  -->
+  <string name="open_all_warning_message"> താളുകള്‍ ലഭ്യമാക്കുമ്പോഴു് ഇത്രോളം ടാബുകൾ തുറന്നാൽ %s-ന്റെ വേഗത കുറയ്ക്കുവാന്‍ ഇതു് ചിലപ്പോള്‍ കാരണമാകുന്നു. തുടരണമെന്നു് ഉറപ്പാണോ?</string>
   <!-- Dialog button text for confirming open all tabs -->
   <string name="open_all_warning_confirm">തുറന്ന ടാബുകള്‍</string>
   <!-- Dialog button text for canceling open all tabs -->
@@ -1264,6 +1273,8 @@
   <string name="studies_remove">മാറ്റുക</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">സജീവം</string>
+  <!-- Description for studies -->
+  <string name="studies_description_3">എല്ലാവൎക്കും കിട്ടുന്നതിനു് മുമ്പെ പുതിയ സവിശേഷകൾ ഉപയോഗിച്ചു നോക്കുക.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title">പാഠനങ്ങൾ സ്ഥാപിച്ചിട്ടു് അവയെ നടത്തുക</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
@@ -1405,12 +1416,33 @@
   <string name="download_multi_select_title">%1$d തിരഞ്ഞെടുത്തിരിക്കുന്നു</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">മാറ്റുക</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">ഇടക്കുറവു്</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">&lt;b&gt;%s&lt;/b&gt; ഇറക്കിവയ്ക്കാൻ ഈ ഉപകരണത്തിനു് ആവിശ്യമായ ഇടമില്ല.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">ഫയലുകൾ കൈകാര്യം ചെയ്യുക</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">റദ്ദാക്കുക</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">മായ്ക്കുക</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">പുറകോട്ട് ചെല്ലുക</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">മുകളിലേക്ക്  ചെല്ലുക</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">മുകളിലേക്ക്  ചെല്ലുക</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">തിരിച്ചുപ്പോയിയിട്ടു് തിരയൽ അടയ്ക്കുക</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">വെടിപ്പാക്കുക</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">കണ്ണി പങ്കിടുക</string>
   <!-- Text for the button to share the download file -->
@@ -1451,9 +1483,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">ഇറക്കിവയ്ക്കൽ തോറ്റു</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">ഇറക്കിവച്ചതിലു് തിരയുക</string>
+  <string name="download_search_placeholder">ഇറക്കിവച്ചതിലു് തിരയുക</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">ഫലങ്ങളൊന്നും കിട്ടിയില്ല</string>
+  <string name="download_search_no_results_found">ഫലങ്ങളൊന്നും കിട്ടിയില്ല</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
   <!--
@@ -1570,6 +1602,8 @@
   <string name="bookmark_menu_copy_button">പകര്‍ത്തുക</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">പങ്കിടുക</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">മൊത്തം തിരഞ്ഞെടുക്കുക</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">പുതിയ ടാബില്‍ തുറക്കുക</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1582,6 +1616,8 @@
   <string name="bookmark_menu_delete_button">നീക്കം ചെയ്യുക</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">സൂക്ഷിക്കുക</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">ഇഷ്ടാനുസൃതക്രമത്തിലാക്കുക</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">ഏറ്റവും പുതിയത് അനുസരിച്ച് അടുക്കുക</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -1702,6 +1738,8 @@
   <string name="preference_phone_feature_notification">അറിയിപ്പ്</string>
   <!-- Preference for altering the persistent storage access for all websites -->
   <string name="preference_phone_feature_persistent_storage">സ്ഥിരമായ സംഭരണം</string>
+  <!-- Preference for altering the storage access setting for all websites -->
+  <string name="preference_phone_feature_cross_origin_storage_access">വെബിടക്കുറുകെ കുക്കികൾ</string>
   <!-- Preference for altering the EME access for all websites -->
   <string name="preference_phone_feature_media_key_system_access">DRM- നിയന്ത്രിത ഉള്ളടക്കം</string>
   <!-- Label that indicates that a permission must be asked always -->
@@ -2093,6 +2131,8 @@
   <string name="preference_enhanced_tracking_protection_standard_info_button">സ്റ്റാൻഡേർഡ് പിന്തുടർച്ച പരിരക്ഷണം എന്തെല്ലാം തടഞ്ഞു</string>
   <!-- Preference for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict">കർശനം</string>
+  <!-- Preference description for enhanced tracking protection for the strict protection settings -->
+  <string name="preference_enhanced_tracking_protection_strict_description_4">കരുത്തുറ്റ പിന്തുടൎച്ച പരിരക്ഷണവും വേഗേറിയ പ്രകടനവും എന്നാൽ ചില വെബിടങ്ങൾ ശരിയായിട്ടു് പ്രവൎത്തിക്കത്തില്ല.</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">കർശന പിന്തുടർച്ച സംരക്ഷണം എന്തെല്ലാം തടയുന്നു</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2115,6 +2155,8 @@
   <string name="preference_enhanced_tracking_protection_custom_cookies_3">എല്ലാ മൂന്നാം കക്ഷി കുക്കികളും (വെബ്‌സൈറ്റുകൾ തകരാൻ കാരണമായേക്കാം)</string>
   <!-- Option for enhanced tracking protection for the custom protection settings for cookies -->
   <string name="preference_enhanced_tracking_protection_custom_cookies_4">എല്ലാ കുക്കികളും (വെബ്‌സൈറ്റുകൾ തകരാൻ ഇടയാക്കും)</string>
+  <!-- Option for enhanced tracking protection for the custom protection settings for cookies -->
+  <string name="preference_enhanced_tracking_protection_custom_cookies_5">വെബിടക്കുറുകെ കുക്കികളെ അകറ്റുക</string>
   <!-- Preference for Global Privacy Control for the custom privacy settings for Global Privacy Control. '&amp;' is replaced with the ampersand symbol: & -->
   <string name="preference_enhanced_tracking_protection_custom_global_privacy_control">ദത്ത പങ്കിടുകയോ വിൽക്കുകയോ ചെയ്യരുതെന്ന് വെബ്‌സൈറ്റുകളോട് പറയുക</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings for tracking content -->
@@ -2139,6 +2181,8 @@
   <string name="etp_social_media_trackers_description">വെബിലുടനീളം താങ്കളുടെ തിരയൽ പ്രവർത്തനം പിന്തുടരാനുള്ള സോഷ്യൽ നെറ്റ്‌വർക്കുകളുടെ കഴിവ് പരിമിതപ്പെടുത്തുന്നു.</string>
   <!-- Category of trackers (cross-site tracking cookies) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cookies_title">ക്രോസ്-സൈറ്റ് പിന്തുടരൽ കുക്കികൾ</string>
+  <!-- Category of trackers (cross-site tracking cookies) that can be blocked by Enhanced Tracking Protection -->
+  <string name="etp_cookies_title_2">വെബിടക്കുറുകെ കുക്കികൾ</string>
   <!-- Description of cross-site tracking cookies that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cookies_description">താങ്കളുടെ തിരച്ചിൽദത്ത സമാഹരിക്കാൻ നിരവധി സൈറ്റുകളിൽ പരസ്യ ശൃംഘലകളും അനലിറ്റിക്സ് കമ്പനികളും ഉപയോഗിക്കുന്ന കൂക്കികളെ തടയുന്നു.</string>
   <!-- Category of trackers (cryptominers) that can be blocked by Enhanced Tracking Protection -->
@@ -2183,15 +2227,13 @@
   -->
   <string name="preference_etp_exceptions_icon_description">മെച്ചപ്പെടുത്തിയ പിന്തുടൎച്ച പരിരക്ഷണ ഒഴിവാക്കൽ മുൻഗണന അടയാളം</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
   <string name="preference_doh_title">HTTPS മീതെ DNS</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">കൂടുതലറിയുക</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">മുകളിലേക്ക്  ചെല്ലുക</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">വിട്ടുവീഴ്ചകള്‍</string>
   <!-- Content description for the "Info" button -->
@@ -2783,6 +2825,8 @@
   <string name="translations_bottom_sheet_title_translation_completed">%1$s നിന്നു് %2$s-ലേക്കു് വിവർത്തനം ചെയ്തു</string>
   <!-- Title for the translation dialog that allows a user to translate the webpage when a user uses the translation feature the first time. %1$s is the name of the app (for example "Firefox"). -->
   <string name="translations_bottom_sheet_title_first_time">%1$s-ൽ സ്വകാര്യ വിവർത്തനങ്ങൾ പരിശോധിച്ചു് നോക്കൂ</string>
+  <!-- Additional information on the translation dialog that appears when a user uses the translation feature the first time. %1$s is a link using translations_bottom_sheet_info_message_learn_more as text. -->
+  <string name="translations_bottom_sheet_info_message">താങ്ങളുടെ സ്വകാര്യതയ്ക്കു് വേണ്ടി വിവൎത്തനങ്ങൾ ഒരിക്കലും താങ്ങളുടെ ഉപകരണത്തിൽ നിന്നു് പുറത്തുപോകത്തില്ല. പുതിയ ഭാഷകളും പുതുമകളും ഉടൻ വരുന്നു! %1$s</string>
   <!-- Text that links to additional information about the Firefox translations feature. -->
   <string name="translations_bottom_sheet_info_message_learn_more">കൂടുതല്‍ അറിയുക</string>
   <!-- Label for the dropdown to select which language to translate from on the translations dialog. Usually the translate from language selected will be the same as the page language. -->
@@ -3042,6 +3086,8 @@
   <string name="protection_panel_no_trackers_blocked">പിന്തുടർച്ചയന്ത്രങ്ങൾ കണ്ടെത്താൻ കഴിഞ്ഞില്ല</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">സ്വകാര്യതയും സുരക്ഷ ക്രമീകരണങ്ങൾ</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">അനുമതികൾ</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3306,6 +3352,8 @@
   <string name="setup_checklist_title_state_incomplete">%1$s സജ്ജീകരിക്കുന്നതു് തീൎക്കുക</string>
   <!-- Title for the setup checklist feature when the state is 'completed' -->
   <string name="setup_checklist_title_state_completed">അഭിനന്ദനങ്ങള്‍!</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">നല്ല തുടക്കം. താങ്ങൾ 3-ൽ 1 പടി തീൎത്തു.</string>
   <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
   <string name="setup_checklist_subtitle_3_steps_second_step">ഏതാണ്ടു് തീരാറായി! രണ്ടു പടി കഴിഞ്ഞിരിക്കുന്നു, ഇനി ഒരു പടി കൂടെ മിച്ചമിരിപ്പുണ്ടു്.</string>
   <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
@@ -3316,6 +3364,12 @@
   <string name="setup_checklist_subtitle_6_steps_third_step">പകുതി കഴിഞ്ഞു, ഇനിയും 3 പടികൾ മാത്രം മിച്ചമിരിപ്പുണ്ടു്.</string>
   <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
   <string name="setup_checklist_subtitle_6_steps_fourth_step">4 പടികൾ കഴിഞ്ഞിരിക്കുന്നു. ഇനി രണ്ടു പടി മാത്രം മിച്ചം!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">നല്ല തുടക്കം. താങ്ങൾ 5-ൽ 1 പടി തീൎത്തു.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">5-ൽ 2 എണ്ണം കിഴിഞ്ഞു. നല്ലോണം പോയിക്കൊണ്ടിരിക്കുന്നു!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">പകുതി കഴിഞ്ഞു, ഇനിയും 2 പടികൾ മാത്രം മിച്ചമിരിപ്പുണ്ടു്.</string>
   <!--
     ===== Setup checklist feature: Task titles =====
 
@@ -3330,6 +3384,8 @@
   <string name="setup_checklist_task_toolbar_selection">കരുപ്പട്ട ഇടം തിരഞ്ഞെടുക്കുക</string>
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">വിപുലീകരണങ്ങൾ കാണുക</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget">തിരയൽ വിജ്ജറ്റു് സ്ഥാപിക്കുക</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 
@@ -3364,4 +3420,16 @@
   <string name="pbm_authentication_unlock">പൂട്ടുതുറക്കുക</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">സ്വകാര്യ ടാബുകളിലുള്ള പൂട്ടുതുറക്കുക</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">സ്വകാര്യ ടാബുപ്രതലപ്പൂട്ടൽ പ്രവൎത്തനക്ഷമമാക്കുക</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">സ്വകാര്യ ടാബുപ്രതലപ്പൂട്ടൽ പ്രവൎത്തനരഹിതമാക്കുക</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">ടാബുകൾ മറയ്ക്കാൻ പ്രതലപൂട്ടൽ സജ്ജമാക്കുക</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">സ്വകാര്യ ടാബുകൾ മറയ്ക്കാൻ പ്രതലപ്പൂട്ടുപയോഗിക്കണോ?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">വേണ്ട, നന്ദി</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">ടാബുകൾ പൂട്ടുക</string>
 </resources>

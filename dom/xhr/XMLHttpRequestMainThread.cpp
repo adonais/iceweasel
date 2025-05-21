@@ -87,7 +87,7 @@
 #include "nsIConsoleService.h"
 #include "nsAsyncRedirectVerifyHelper.h"
 #include "nsIFileChannel.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomMetrics.h"
 #include "js/ArrayBuffer.h"  // JS::{Create,Release}MappedArrayBufferContents,New{,Mapped}ArrayBufferWithContents
 #include "js/JSON.h"         // JS_ParseJSON
 #include "js/MemoryFunctions.h"
@@ -1541,8 +1541,10 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
         DeprecatedOperations::eSyncXMLHttpRequestDeprecated);
   }
 
-  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC,
-                        aAsync ? 0 : 1);
+  glean::dom::xmlhttprequest_async_or_sync
+      .EnumGet(static_cast<glean::dom::XmlhttprequestAsyncOrSyncLabel>(
+          aAsync ? 0 : 1))
+      .Add();
 
   // Step 1
   nsCOMPtr<Document> responsibleDocument = GetDocumentIfCurrent();
@@ -2180,7 +2182,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
     rv = NS_NewDOMDocument(
         getter_AddRefs(mResponseXML), emptyStr, emptyStr, nullptr, docURI,
         baseURI, requestingPrincipal, true, global,
-        mIsHtml ? DocumentFlavorHTML : DocumentFlavorLegacyGuess);
+        mIsHtml ? DocumentFlavor::HTML : DocumentFlavor::LegacyGuess);
     NS_ENSURE_SUCCESS(rv, rv);
     mResponseXML->SetChromeXHRDocURI(chromeXHRDocURI);
     mResponseXML->SetChromeXHRDocBaseURI(chromeXHRDocBaseURI);

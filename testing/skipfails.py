@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import gzip
-import io
 import json
 import logging
 import os
@@ -104,7 +103,7 @@ WPT_META2 = WPT2.replace("tests", "meta")
 WPT_MOZILLA = "/_mozilla"
 
 
-class Mock(object):
+class Mock:
     def __init__(self, data, defaults={}, inits=[]):
         self._data = data
         self._defaults = defaults
@@ -121,7 +120,7 @@ class Mock(object):
         return ""
 
 
-class Classification(object):
+class Classification:
     "Classification of the failure (not the task result)"
 
     DISABLE_INTERMITTENT = "disable_intermittent"  # reftest [40%, 80%)
@@ -135,7 +134,7 @@ class Classification(object):
     UNKNOWN = "unknown"
 
 
-class Kind(object):
+class Kind:
     "Kind of manifest"
 
     LIST = "list"
@@ -144,7 +143,7 @@ class Kind(object):
     WPT = "wpt"
 
 
-class Skipfails(object):
+class Skipfails:
     "mach manifest skip-fails implementation: Update manifests to skip failing tests"
 
     REPO = "repo"
@@ -794,7 +793,11 @@ class Skipfails(object):
                 "summary",
                 "blocks",
             ]
-            bugs = self._bzapi.query(query)
+            try:
+                bugs = self._bzapi.query(query)
+            except requests.exceptions.HTTPError:
+                if not self.dry_run:
+                    raise
         return bugs
 
     def create_bug(
@@ -1012,6 +1015,7 @@ class Skipfails(object):
         For wpt anyjs is a dictionary mapping from alternate basename to
         a boolean (indicating if the basename has been handled in the manifest)
         """
+        path = path.split(":")[-1]
 
         self.vinfo(f"\n\n===== Skip failure in manifest: {manifest} =====")
         self.vinfo(f"    path: {path}")
@@ -1030,7 +1034,6 @@ class Skipfails(object):
         manifest_path = self.full_path(manifest)
         manifest_str = ""
         additional_comment = ""
-        path = path.split(":")[-1]
         comment, bug_reference, bugid, attachments = self.generate_bugzilla_comment(
             manifest,
             kind,
@@ -1049,7 +1052,7 @@ class Skipfails(object):
         )
         if kind == Kind.WPT:
             if os.path.exists(manifest_path):
-                manifest_str = io.open(manifest_path, "r", encoding="utf-8").read()
+                manifest_str = open(manifest_path, encoding="utf-8").read()
             else:
                 # ensure parent directories exist
                 os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
@@ -1060,7 +1063,7 @@ class Skipfails(object):
             mp = ManifestParser(use_toml=True, document=True)
             try:
                 mp.read(manifest_path)
-            except IOError:
+            except OSError:
                 raise Exception(f"Unable to find path: {manifest_path}")
 
             document = mp.source_documents[manifest_path]
@@ -1085,7 +1088,7 @@ class Skipfails(object):
             elif not os.path.exists(manifest_path):
                 self.error(f"manifest does not exist: {manifest_path}")
             else:
-                manifest_str = io.open(manifest_path, "r", encoding="utf-8").read()
+                manifest_str = open(manifest_path, encoding="utf-8").read()
                 if status == PASS:
                     self.info(f"Unexpected status: {status}")
                 if (
@@ -1110,7 +1113,7 @@ class Skipfails(object):
         if additional_comment:
             comment += "\n" + additional_comment
         if len(manifest_str) > 0:
-            fp = io.open(manifest_path, "w", encoding="utf-8", newline="\n")
+            fp = open(manifest_path, "w", encoding="utf-8", newline="\n")
             fp.write(manifest_str)
             fp.close()
             self.info(f'Edited ["{filename}"] in manifest: "{manifest}"')
@@ -1144,7 +1147,7 @@ class Skipfails(object):
         if len(self.variants) == 0:
             variants_file = "taskcluster/kinds/test/variants.yml"
             variants_path = self.full_path(variants_file)
-            fp = io.open(variants_path, "r", encoding="utf-8")
+            fp = open(variants_path, encoding="utf-8")
             raw_variants = load(fp, Loader=Loader)
             fp.close()
             for k, v in raw_variants.items():
@@ -1316,11 +1319,12 @@ class Skipfails(object):
         if os is not None:
             if kind == Kind.LIST:
                 skip_if = self._get_list_skip_if(extra)
-            elif os_version == "11.2009":
-                skip_if = "win11_2009"  # mozinfo.py:137
             elif os_version is not None:
                 skip_if = "os" + eq + qq + os + qq
-                skip_if += aa + "os_version" + eq + qq + os_version + qq
+                if os == "android":
+                    skip_if += aa + "android_version" + eq + qq + os_version + qq
+                else:
+                    skip_if += aa + "os_version" + eq + qq + os_version + qq
 
         processor = extra.arch
         if skip_if is not None and kind != Kind.LIST:
@@ -1348,9 +1352,13 @@ class Skipfails(object):
                 self.failed_platforms[failure_key] = FailedPlatform(permutations)
 
             build_types = extra.build_type
-            skip_if += self.failed_platforms[failure_key].get_skip_string(
+            skip_cond = self.failed_platforms[failure_key].get_skip_string(
                 aa, build_types, extra.test_variant
             )
+            if kind == Kind.WPT:
+                # ensure ! -> 'not', primarily fission and e10s
+                skip_cond = skip_cond.replace("!", "not ")
+            skip_if += skip_cond
         return skip_if
 
     def get_file_info(self, path, product="Testing", component="General"):
@@ -1477,7 +1485,7 @@ class Skipfails(object):
     def read_json(self, filename):
         """read data as JSON from filename"""
 
-        fp = io.open(filename, "r", encoding="utf-8")
+        fp = open(filename, encoding="utf-8")
         data = json.load(fp)
         fp.close()
         return data
@@ -1519,7 +1527,7 @@ class Skipfails(object):
 
     def write_json(self, filename, data):
         """saves data as JSON to filename"""
-        fp = io.open(filename, "w", encoding="utf-8")
+        fp = open(filename, "w", encoding="utf-8")
         json.dump(data, fp, indent=2, sort_keys=True)
         fp.close()
 
@@ -1553,7 +1561,12 @@ class Skipfails(object):
             if self.failure_types is not None and task.id in self.failure_types:
                 failure_types = self.failure_types[task.id]  # use cache
             else:
-                failure_types = task.failure_types
+                try:
+                    failure_types = task.failure_types
+                except requests.exceptions.HTTPError:
+                    continue
+                except TaskclusterRestFailure:
+                    continue
             for k in failure_types:
                 jft[k] = [[f[0], f[1].value] for f in task.failure_types[k]]
             jtask["failure_types"] = jft
@@ -1846,7 +1859,7 @@ class Skipfails(object):
             else:
                 mods.append(modifiers[i])
         m = len(mods)
-        manifest_str = io.open(manifest, "r", encoding="utf-8").read()
+        manifest_str = open(manifest, encoding="utf-8").read()
         lines = manifest_str.splitlines()
         defaults = []
         found = False

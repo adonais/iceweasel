@@ -1408,7 +1408,7 @@ const BASE_MESSAGES = () => [
 
 const PREONBOARDING_MESSAGES = () => [
   {
-    id: "ON_TRAIN_ROLLOUT",
+    id: "NEW_USER_TOU_ONBOARDING",
     enabled: true,
     requireAction: true,
     currentPolicyVersion: 3,
@@ -1554,7 +1554,7 @@ const PREONBOARDING_MESSAGES = () => [
           ],
           primary_button: {
             label: {
-              string_id: "preonboarding-primary-cta",
+              string_id: "preonboarding-primary-cta-v2",
               marginBlock: "24px 0",
             },
             should_focus_button: true,

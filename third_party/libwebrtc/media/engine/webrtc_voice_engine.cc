@@ -333,7 +333,7 @@ bool CheckRedParameters(
 
   // Check the FMTP line for the empty parameter which should match
   // <primary codec>/<primary codec>[/...]
-  auto red_parameters = red_codec.params.find("");
+  auto red_parameters = red_codec.params.find(kCodecParamNotInNameValueFormat);
   if (red_parameters == red_codec.params.end()) {
     RTC_LOG(LS_WARNING) << "audio/RED missing fmtp parameters.";
     return false;
@@ -369,11 +369,10 @@ std::vector<Codec> LegacyCollectCodecs(
   std::vector<Codec> out;
 
   // Only generate CN payload types for these clockrates:
-  std::map<int, bool, std::greater<int>> generate_cn = {
-      {8000, false}, {16000, false}, {32000, false}};
+  std::map<int, bool, std::greater<int>> generate_cn = {{8000, false}};
   // Only generate telephone-event payload types for these clockrates:
-  std::map<int, bool, std::greater<int>> generate_dtmf = {
-      {8000, false}, {16000, false}, {32000, false}, {48000, false}};
+  std::map<int, bool, std::greater<int>> generate_dtmf = {{8000, false},
+                                                          {48000, false}};
 
   for (const auto& spec : specs) {
     cricket::Codec codec = CreateAudioCodec(spec.format);
@@ -413,8 +412,8 @@ std::vector<Codec> LegacyCollectCodecs(
       if (allocate_pt) {
         std::string red_fmtp =
             rtc::ToString(codec.id) + "/" + rtc::ToString(codec.id);
-        cricket::Codec red_codec =
-            CreateAudioCodec({kRedCodecName, 48000, 2, {{"", red_fmtp}}});
+        cricket::Codec red_codec = CreateAudioCodec(
+            {kRedCodecName, codec.clockrate, codec.channels, {{"", red_fmtp}}});
         red_codec.id = pt_mapper.SuggestMapping(red_codec, nullptr).value();
         out.push_back(red_codec);
       } else {
@@ -1481,8 +1480,7 @@ bool WebRtcVoiceSendChannel::SetSendCodecs(
         if (cn_codec.channels != 1) {
           RTC_LOG(LS_WARNING)
               << "CN #channels " << cn_codec.channels << " not supported.";
-        } else if (cn_codec.clockrate != 8000 && cn_codec.clockrate != 16000 &&
-                   cn_codec.clockrate != 32000) {
+        } else if (cn_codec.clockrate != 8000) {
           RTC_LOG(LS_WARNING)
               << "CN frequency " << cn_codec.clockrate << " not supported.";
         } else {
@@ -1807,7 +1805,10 @@ bool WebRtcVoiceSendChannel::GetStats(VoiceMediaSendInfo* info) {
     sinfo.packets_lost = stats.packets_lost;
     sinfo.fraction_lost = stats.fraction_lost;
     sinfo.nacks_received = stats.nacks_received;
-    sinfo.target_bitrate = stats.target_bitrate_bps;
+    sinfo.target_bitrate = stats.target_bitrate_bps > 0
+                               ? std::optional(webrtc::DataRate::BitsPerSec(
+                                     stats.target_bitrate_bps))
+                               : std::nullopt;
     sinfo.codec_name = stats.codec_name;
     sinfo.codec_payload_type = stats.codec_payload_type;
     sinfo.jitter_ms = stats.jitter_ms;
@@ -2449,17 +2450,17 @@ void WebRtcVoiceReceiveChannel::OnDemuxerCriteriaUpdateComplete() {}
 
 bool WebRtcVoiceReceiveChannel::SetOutputVolume(uint32_t ssrc, double volume) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  RTC_LOG(LS_INFO) << rtc::StringFormat("WRVMC::%s({ssrc=%u}, {volume=%.2f})",
-                                        __func__, ssrc, volume);
+  RTC_LOG(LS_INFO) << webrtc::StringFormat(
+      "WRVMC::%s({ssrc=%u}, {volume=%.2f})", __func__, ssrc, volume);
   const auto it = recv_streams_.find(ssrc);
   if (it == recv_streams_.end()) {
-    RTC_LOG(LS_WARNING) << rtc::StringFormat(
+    RTC_LOG(LS_WARNING) << webrtc::StringFormat(
         "WRVMC::%s => (WARNING: no receive stream for SSRC %u)", __func__,
         ssrc);
     return false;
   }
   it->second->SetOutputVolume(volume);
-  RTC_LOG(LS_INFO) << rtc::StringFormat(
+  RTC_LOG(LS_INFO) << webrtc::StringFormat(
       "WRVMC::%s => (stream with SSRC %u now uses volume %.2f)", __func__, ssrc,
       volume);
   return true;

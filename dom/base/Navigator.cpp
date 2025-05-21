@@ -38,7 +38,6 @@
 #include "mozilla/StaticPrefs_pdfjs.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
-#include "mozilla/Telemetry.h"
 #include "BatteryManager.h"
 #include "mozilla/dom/CredentialsContainer.h"
 #include "mozilla/dom/Clipboard.h"
@@ -1236,7 +1235,7 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
   }
 
   // Spec disallows any schemes save for HTTP/HTTPs
-  if (!uri->SchemeIs("http") && !uri->SchemeIs("https")) {
+  if (!net::SchemeIsHttpOrHttps(uri)) {
     aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>("Beacon",
                                                uri->GetSpecOrDefault());
     return false;

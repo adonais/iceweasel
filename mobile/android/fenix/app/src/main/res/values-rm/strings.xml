@@ -114,11 +114,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Navighescha pli svelt cun il nov sistem da navigaziun</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Navighescha pli svelt cun il nov sistem da navigaziun</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Sin ina website vegn questa trav zuppentada cun defilar engiu. Uschia resta dapli spazi per la navigaziun.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Sin ina website vegn questa trav zuppentada cun defilar engiu. Uschia resta dapli spazi per la navigaziun.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Tutga e tegna smatgà las frizzas per siglir dad ina pagina a tschella entaifer la cronologia da quest tab.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Tutga e tegna smatgà las frizzas per siglir dad ina pagina a tschella entaifer la cronologia da quest tab.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -629,7 +629,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Navigaziun svelta e segira en il web</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Acceptar e cuntinuar</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Acceptar e cuntinuar</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Cun cuntinuar acceptas ti las %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -834,8 +834,6 @@
   <string name="preferences_override_account_server">Agen server per contos Mozilla</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Server persunalisà per Sync</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Il server per il conto da Mozilla/Sync è vegnì modifitgà. L\'applicaziun vegn serrada per applitgar las midadas…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Conto</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1205,7 +1203,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Stritgar ensi la trav d\'utensils per avrir tabs</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Defilar per zuppentar la trav d’adressas e la trav d’utensils</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Defilar per zuppentar la trav d’adressas e la trav d’utensils</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Stritgar da la vart la trav d’adressas per midar tabs</string>
   <!--
@@ -1486,7 +1484,7 @@
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Navigar enavos</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Navigar ensi</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Navigar ensi</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Parter l’URL</string>
   <!-- Text for the button to share the download file -->
@@ -1527,9 +1525,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Telechargiada betg reussida</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Retschertgar las telechargiadas</string>
+  <string name="download_search_placeholder">Retschertgar las telechargiadas</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Na chattà nagins resultats</string>
+  <string name="download_search_no_results_found">Na chattà nagins resultats</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Selecziunar tut</string>
   <!--
@@ -2282,7 +2280,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Icona da las preferenzas per las excepziuns da la protecziun avanzada cunter il fastizar</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2291,8 +2289,6 @@
   <string name="preference_doh_summary">Il DNS (Domain Name System) via HTTPS trametta tia dumonda per in num da domena cun agid d’ina connexiun criptada che porscha in DNS segirà. Quai renda pli difficil per auters da vesair tge websites che ti visitas. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Ulteriuras infurmaziuns</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Navigar ensi</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Excepziuns</string>
   <!-- Content description for the "Info" button -->
@@ -2830,8 +2826,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox propona</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Tschertgas actualmain popularas</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.

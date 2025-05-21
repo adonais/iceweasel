@@ -1177,6 +1177,11 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       // No GTK API for checking if inverted colors is enabled
       aResult = 0;
       break;
+    case IntID::TooltipRadius: {
+      EnsureInit();
+      aResult = EffectiveTheme().mTooltipRadius;
+      break;
+    }
     case IntID::TitlebarRadius: {
       EnsureInit();
       aResult = EffectiveTheme().mTitlebarRadius;
@@ -1226,6 +1231,23 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
     }
     case IntID::TouchDeviceSupportPresent:
       aResult = widget::WidgetUtilsGTK::IsTouchDeviceSupportPresent();
+      break;
+    case IntID::NativeMenubar:
+      aResult = []() {
+        if (!StaticPrefs::widget_gtk_global_menu_enabled()) {
+          return false;
+        }
+#ifdef MOZ_WAYLAND
+        if (GdkIsWaylandDisplay()) {
+          return StaticPrefs::widget_gtk_global_menu_wayland_enabled() &&
+                 !!WaylandDisplayGet()->GetAppMenuManager();
+        }
+#endif
+        // TODO: Maybe detect whether we can register the window or something?
+        // Though the X11 code just hides the native menubar without
+        // communicating it to the front-end...
+        return false;
+      }();
       break;
     default:
       aResult = 0;
@@ -2085,6 +2107,7 @@ void nsLookAndFeel::PerThemeData::Init() {
   mInfo.mFg = GetTextColor(style);
   style = GetStyleContext(MOZ_GTK_TOOLTIP);
   mInfo.mBg = GetBackgroundColor(style, mInfo.mFg);
+  mTooltipRadius = GetBorderRadius(style);
 
   style = GetStyleContext(MOZ_GTK_MENUITEM);
   {

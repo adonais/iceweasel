@@ -754,8 +754,8 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 # Bug 1928416
                 # For ARM coverage, this will only run on M2 machines at the moment.
                 if "jetstream2" in try_name:
-                    # Bug 1947649 - Disable js2 on 1400 mac for custom-car due to near perma
-                    if "m-car" in try_name and "1400" in platform:
+                    # Bug 1963732 - Disable js2 on 1500 mac for custom-car due to near perma
+                    if "m-car" in try_name and "1500" in platform:
                         return False
                     return True
                 return True
@@ -770,10 +770,11 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 # Bug 1954124 - Don't run JS3 + Android on a cron yet.
                 if "jetstream3" in try_name:
                     return False
-                # Bug 1898514: avoid tp6m or non-essential tp6 jobs in cron on non-a55 platform
-                if "tp6m" in try_name and "a55" not in platform:
+                # Bug 1898514 - Avoid tp6m or non-essential tp6 jobs in cron on non-a55 platform
+                # Bug 1961831 - Disable pageload tests temporarily during provider switch
+                if "tp6m" in try_name:
                     return False
-                # Bug 1945165 Disable ebay-kleinanzeigen on cstm-car-m because of permafail
+                # Bug 1945165 - Disable ebay-kleinanzeigen on cstm-car-m because of permafail
                 if (
                     "ebay-kleinanzeigen" in try_name
                     and "ebay-kleinanzeigen-search" not in try_name
@@ -838,6 +839,8 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     # Bug 1954202 Safari + JS3 seems to be perma failing on CI.
                     if "jetstream3" in try_name and "safari-tp" not in try_name:
                         return False
+                    if "jetstream2" in try_name and "safari" in try_name:
+                        return False
                     return True
         # Android selection
         elif accept_raptor_android_build(platform):
@@ -847,6 +850,13 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 return False
             # Bug 1929960 - Enable all chrome-m tp6m tests on a55 only
             if "chrome-m" in try_name and "tp6m" in try_name and "hw-a55" in platform:
+                # Bug 1954923 - Disable ebay-kleinanzeigen
+                if (
+                    "ebay-kleinanzeigen" in try_name
+                    and "search" not in try_name
+                    and "nofis" in try_name
+                ):
+                    return False
                 return True
             if "chrome-m" in try_name and (
                 ("ebay" in try_name and "live" not in try_name)
@@ -1623,14 +1633,17 @@ def target_tasks_holly(full_task_graph, parameters, graph_config):
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
 
 
-@register_target_task("snap_upstream_tests")
-def target_tasks_snap_upstream_tests(full_task_graph, parameters, graph_config):
+@register_target_task("snap_upstream_tasks")
+def target_tasks_snap_upstream_tasks(full_task_graph, parameters, graph_config):
     """
-    Select tasks for testing Snap package built as upstream. Omit -try because
-    it does not really make sense on a m-c cron
+    Select tasks for building/testing Snap package built as upstream. Omit -try
+    because it does not really make sense on a m-c cron
+
+    Use test tasks for linux64 builds and only builds for arm* until there is
+    support for running tests (bug 1855463)
     """
     for name, task in full_task_graph.tasks.items():
-        if "snap-upstream-test" in name and not "-try" in name:
+        if "snap-upstream" in name and not "-local" in name:
             yield name
 
 

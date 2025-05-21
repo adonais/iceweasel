@@ -202,10 +202,14 @@ def use_system_python(config, jobs):
                 platform = "win64"
             elif "linux" in job["worker"]["os"]:
                 platform = "linux64"
+                if "aarch64" in job["worker-type"] or "arm64" in job["worker-type"]:
+                    platform = f"{platform}-aarch64"
             elif "macosx" in job["worker"]["os"]:
                 platform = "macosx64"
             else:
-                raise ValueError("unexpected worker.os value {}".format(platform))
+                raise ValueError(
+                    "unexpected worker.os value {}".format(job["worker"]["os"])
+                )
 
             toolchain.append(f"{platform}-{python_version}")
 
@@ -279,9 +283,7 @@ def use_fetches(config, jobs):
                     label = aliases.get(label, label)
                     if label not in artifact_names:
                         raise Exception(
-                            "Missing fetch job for {kind}-{name}: {fetch}".format(
-                                kind=config.kind, name=name, fetch=fetch_name
-                            )
+                            f"Missing fetch job for {config.kind}-{name}: {fetch_name}"
                         )
                     if label in extra_env:
                         env.update(extra_env[label])
@@ -302,8 +304,8 @@ def use_fetches(config, jobs):
             else:
                 if kind not in dependencies:
                     raise Exception(
-                        "{name} can't fetch {kind} artifacts because "
-                        "it has no {kind} dependencies!".format(name=name, kind=kind)
+                        f"{name} can't fetch {kind} artifacts because "
+                        f"it has no {kind} dependencies!"
                     )
                 dep_label = dependencies[kind]
                 if dep_label in artifact_prefixes:
@@ -311,12 +313,8 @@ def use_fetches(config, jobs):
                 else:
                     if dep_label not in config.kind_dependencies_tasks:
                         raise Exception(
-                            "{name} can't fetch {kind} artifacts because "
-                            "there are no tasks with label {label} in kind dependencies!".format(
-                                name=name,
-                                kind=kind,
-                                label=dependencies[kind],
-                            )
+                            f"{name} can't fetch {kind} artifacts because "
+                            f"there are no tasks with label {dependencies[kind]} in kind dependencies!"
                         )
 
                     prefix = get_artifact_prefix(
@@ -407,11 +405,7 @@ def run_job_using(worker_implementation, run_using, schema=None, defaults={}):
         for_run_using = registry.setdefault(run_using, {})
         if worker_implementation in for_run_using:
             raise Exception(
-                "run_job_using({!r}, {!r}) already exists: {!r}".format(
-                    run_using,
-                    worker_implementation,
-                    for_run_using[worker_implementation],
-                )
+                f"run_job_using({run_using!r}, {worker_implementation!r}) already exists: {for_run_using[worker_implementation]!r}"
             )
         for_run_using[worker_implementation] = (func, schema, defaults)
         return func
@@ -440,9 +434,7 @@ def configure_taskdesc_for_run(config, job, taskdesc, worker_implementation):
 
     if worker_implementation not in registry[run_using]:
         raise Exception(
-            "no functions for run.using {!r} on {!r}".format(
-                run_using, worker_implementation
-            )
+            f"no functions for run.using {run_using!r} on {worker_implementation!r}"
         )
 
     func, schema, defaults = registry[run_using][worker_implementation]

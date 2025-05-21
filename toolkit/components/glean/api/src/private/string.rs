@@ -5,7 +5,7 @@
 use inherent::inherent;
 use std::sync::Arc;
 
-use super::{CommonMetricData, MetricGetter, MetricId};
+use super::{BaseMetricId, CommonMetricData, MetricId};
 use crate::ipc::need_ipc;
 
 /// A string metric.
@@ -43,7 +43,7 @@ pub enum StringMetric {
         /// The metric's ID. Used for testing and profiler markers. String
         /// metrics can be labeled, so we may have either a metric ID or
         /// sub-metric ID.
-        id: MetricGetter,
+        id: MetricId,
         inner: Arc<glean::private::StringMetric>,
     },
     Child(StringMetricIpc),
@@ -51,9 +51,12 @@ pub enum StringMetric {
 #[derive(Clone, Debug)]
 pub struct StringMetricIpc;
 
+crate::define_metric_metadata_getter!(StringMetric, STRING_MAP, LABELED_STRING_MAP);
+crate::define_metric_namer!(StringMetric, PARENT_ONLY);
+
 impl StringMetric {
     /// Create a new string metric.
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             StringMetric::Child(StringMetricIpc)
         } else {
@@ -93,7 +96,7 @@ impl glean::traits::String for StringMetric {
                 gecko_profiler::lazy_add_marker!(
                     "String::set",
                     super::profiler_utils::TelemetryProfilerCategory,
-                    super::profiler_utils::StringLikeMetricMarker::new(*id, &value)
+                    super::profiler_utils::StringLikeMetricMarker::<StringMetric>::new(*id, &value)
                 );
                 inner.set(value);
             }

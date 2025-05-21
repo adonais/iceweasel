@@ -63,7 +63,6 @@
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoTraversalStatistics.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/TimelineManager.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/dom/Element.h"
@@ -1286,8 +1285,8 @@ void AssertIsMainThreadOrServoFontMetricsLocked() {
 GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext* aPresContext,
                                       bool aIsVertical,
                                       const nsStyleFont* aFont,
-                                      Length aFontSize, bool aUseUserFontSet,
-                                      bool aRetrieveMathScales) {
+                                      Length aFontSize,
+                                      StyleQueryFontMetricsFlags flags) {
   AutoWriteLock guard(*sServoFFILock);
 
   // Getting font metrics can require some main thread only work to be
@@ -1303,13 +1302,14 @@ GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext* aPresContext,
 
   nsPresContext* presContext = const_cast<nsPresContext*>(aPresContext);
   RefPtr<nsFontMetrics> fm = nsLayoutUtils::GetMetricsFor(
-      presContext, aIsVertical, aFont, aFontSize, aUseUserFontSet);
+      presContext, aIsVertical, aFont, aFontSize,
+      bool(flags & StyleQueryFontMetricsFlags::USE_USER_FONT_SET));
   auto* fontGroup = fm->GetThebesFontGroup();
-  auto metrics = fontGroup->GetMetricsForCSSUnits(fm->Orientation());
+  auto metrics = fontGroup->GetMetricsForCSSUnits(fm->Orientation(), flags);
 
   float scriptPercentScaleDown = 0;
   float scriptScriptPercentScaleDown = 0;
-  if (aRetrieveMathScales) {
+  if (flags & StyleQueryFontMetricsFlags::NEEDS_MATH_SCALES) {
     RefPtr<gfxFont> font = fontGroup->GetFirstValidFont();
     if (font->TryGetMathTable()) {
       scriptPercentScaleDown = static_cast<float>(

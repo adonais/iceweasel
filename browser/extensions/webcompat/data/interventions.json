@@ -792,10 +792,6 @@
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.aptsovation.com/*"]
       },
-      "1894682": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://*.arboretumapartments.com/*"]
-      },
       "1898964": {
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.breakpointeandcoronado.com/*"]
@@ -883,21 +879,6 @@
       {
         "platforms": ["android"],
         "ua_string": ["Chrome"]
-      }
-    ]
-  },
-  "1786404": {
-    "label": "business.help.royalmail.com",
-    "bugs": {
-      "1786404": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://business.help.royalmail.com/app/webforms/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["change_Firefox_to_FireFox"]
       }
     ]
   },
@@ -1587,88 +1568,6 @@
       }
     ]
   },
-  "1961710": {
-    "label": "Office 365 email attachment download filename fix",
-    "bugs": {
-      "1961710": {
-        "issue": "user-interface-frustration",
-        "matches": [
-          "*://*.live.com/*/GetFileAttachment*",
-          "*://*.live.net/*/GetFileAttachment*",
-          "*://*.office.com/*/GetFileAttachment*",
-          "*://*.office.net/*/GetFileAttachment*",
-          "*://*.office365.com/*/GetFileAttachment*",
-          "*://*.office365.us/*/GetFileAttachment*",
-          "*://*.outlook.cn/*/GetFileAttachment*",
-          "*://*.outlook.com/*/GetFileAttachment*",
-          "*://*.sharepoint.com/*/GetFileAttachment*"
-        ]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "alter_response_headers": [
-          {
-            "headers": ["content-disposition"],
-            "replace": "filename\\*=UTF-8''([^;]+)",
-            "replacement": "filename=\"$1\""
-          }
-        ]
-      }
-    ]
-  },
-  "1844503": {
-    "label": "nicochannel.jp",
-    "bugs": {
-      "1844503": {
-        "issue": "firefox-blocked-completely",
-        "matches": [
-          "*://*.ado-dokidokihimitsukichi-daigakuimo.com/*",
-          "*://*.ahnbohyun-fc.com/*",
-          "*://*.banbanzai-fc.com/*",
-          "*://*.canan8181.com/*",
-          "*://*.gs-ch.com/*",
-          "*://*.itomiku-fc.jp/*",
-          "*://*.kawahara-no.jp/*",
-          "*://*.keisuke-ueda.jp/*",
-          "*://*.kemomimirefle.net/*",
-          "*://*.kyoten-waku-officialfc.com/*",
-          "*://*.maziyabacity.com/*",
-          "*://*.nicochannel.jp/*",
-          "*://*.p-jinriki-fc.com/*",
-          "*://*.pizzaradio.jp/*",
-          "*://*.quizknock-schole.com/*",
-          "*://*.rnqq.jp/*",
-          "*://*.ryogomatsumaru.com/*",
-          "*://*.sae-okazaki.com/*",
-          "*://*.sakuraknights.com/*",
-          "*://*.salon-de-horizon.jp/*",
-          "*://*.serina-official.com/*",
-          "*://*.shibuya-abemas.com/*",
-          "*://*.styleparty-fc.jp/*",
-          "*://*.suzuka-ouji-officialfc.com/*",
-          "*://*.takahashifumiya.com/*",
-          "*://*.tokinosora-fc.com/*",
-          "*://*.tymstorage.jp/*",
-          "*://*.yamingfc.net/*"
-        ]
-      },
-      "1948817": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://*.qlover.jp/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "js": ["bug1849058-nicochannel.jp-picture-in-picture-shim.js"]
-        },
-        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
-      }
-    ]
-  },
   "1845299": {
     "label": "Google Slides",
     "bugs": {
@@ -2016,23 +1915,6 @@
         "platforms": ["all"],
         "content_scripts": {
           "css": ["bug1886566-quezoncity.gov.ph-iframe-height.css"]
-        }
-      }
-    ]
-  },
-  "1886591": {
-    "label": "la-vache-noire.com",
-    "bugs": {
-      "1886591": {
-        "issue": "broken-cookie-banner",
-        "matches": ["*://la-vache-noire.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "css": ["bug1886591-la-vache-noire.com-cookie-banner-fix.css"]
         }
       }
     ]
@@ -2597,6 +2479,21 @@
       {
         "platforms": ["all"],
         "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+      }
+    ]
+  },
+  "1902403": {
+    "label": "musicstore.auone.jp",
+    "bugs": {
+      "1385206": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://musicstore.auone.jp/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome"]
       }
     ]
   },
@@ -3488,6 +3385,37 @@
         "content_scripts": {
           "js": ["bug1956165-www.youtube.com-picture-in-picture-fix.js"]
         }
+      }
+    ]
+  },
+  "1961710": {
+    "label": "Office 365 email attachment download filename fix",
+    "bugs": {
+      "1961710": {
+        "issue": "user-interface-frustration",
+        "matches": [
+          "*://*.live.com/*/GetFileAttachment*",
+          "*://*.live.net/*/GetFileAttachment*",
+          "*://*.office.com/*/GetFileAttachment*",
+          "*://*.office.net/*/GetFileAttachment*",
+          "*://*.office365.com/*/GetFileAttachment*",
+          "*://*.office365.us/*/GetFileAttachment*",
+          "*://*.outlook.cn/*/GetFileAttachment*",
+          "*://*.outlook.com/*/GetFileAttachment*",
+          "*://*.sharepoint.com/*/GetFileAttachment*"
+        ]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "alter_response_headers": [
+          {
+            "headers": ["content-disposition"],
+            "replace": "filename\\*=UTF-8''([^;]+)",
+            "replacement": "filename=\"$1\""
+          }
+        ]
       }
     ]
   }

@@ -59,6 +59,8 @@ function templateHTML(options) {
    - License, v. 2.0. If a copy of the MPL was not distributed with this file,
    - You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<!-- Note: This page is pre-rendered by render-activity-stream-html.js -->
+
 <!doctype html>
 <html>
   <head>
@@ -79,7 +81,6 @@ function templateHTML(options) {
     <link rel="localization" href="toolkit/branding/brandings.ftl" />
     <link rel="localization" href="browser/newtab/newtab.ftl" />
     <link rel="localization" href="toolkit/global/mozMessageBar.ftl" />
-    <link rel="localization" href="preview/reportContentTemporary.ftl" />
     <link
       rel="stylesheet"
       href="chrome://global/skin/design-system/tokens-brand.css"

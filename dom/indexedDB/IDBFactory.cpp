@@ -27,7 +27,6 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StorageAccess.h"
-#include "mozilla/Telemetry.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
@@ -404,8 +403,8 @@ void IDBFactory::UpdateActiveDatabaseCount(int32_t aDelta) {
                         (mActiveDatabaseCount + aDelta) < mActiveDatabaseCount);
   mActiveDatabaseCount += aDelta;
 
-  if (nsGlobalWindowInner* win = GetOwnerWindow()) {
-    win->UpdateActiveIndexedDBDatabaseCount(aDelta);
+  if (nsIGlobalObject* global = GetOwnerGlobal()) {
+    global->UpdateActiveIndexedDBDatabaseCount(aDelta);
   }
 }
 

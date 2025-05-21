@@ -31,7 +31,6 @@
 #include "nsThreadUtils.h"
 
 #ifdef MOZ_BUNDLED_FONTS
-#  include "mozilla/Telemetry.h"
 #  include "nsDirectoryServiceDefs.h"
 #  include "mozilla/StaticPrefs_gfx.h"
 #endif
@@ -138,7 +137,7 @@ already_AddRefed<gfxASurface> gfxPlatformMac::CreateOffscreenSurface(
 }
 
 void gfxPlatformMac::GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
-                                            eFontPresentation aPresentation,
+                                            FontPresentation aPresentation,
                                             nsTArray<const char*>& aFontList) {
   if (PrefersColor(aPresentation)) {
     aFontList.AppendElement("Apple Color Emoji");

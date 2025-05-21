@@ -21,12 +21,14 @@ import mozilla.components.support.ktx.kotlin.toNormalizedUrl
  * @param addNewTabUseCase [TabsUseCases.AddNewTabUseCase] used for adding new tabs.
  * @param loadUrlUseCase [SessionUseCases.DefaultLoadUrlUseCase] used for loading a URL.
  * @param searchUseCases [SearchUseCases] used for performing a search.
+ * @param homepageTitle The title of the new homepage tab.
  * @param profiler [Profiler] used to add profiler markers.
  */
 class FenixBrowserUseCases(
     private val addNewTabUseCase: TabsUseCases.AddNewTabUseCase,
     private val loadUrlUseCase: SessionUseCases.DefaultLoadUrlUseCase,
     private val searchUseCases: SearchUseCases,
+    private val homepageTitle: String,
     private val profiler: Profiler?,
 ) {
     /**
@@ -34,8 +36,8 @@ class FenixBrowserUseCases(
      *
      * @param searchTermOrURL The entered search term to search or URL to be loaded.
      * @param newTab Whether or not to load the URL in a new tab.
-     * @param forceSearch Whether or not to force performing a search.
      * @param private Whether or not the tab should be private.
+     * @param forceSearch Whether or not to force performing a search.
      * @param searchEngine Optional [SearchEngine] to use when performing a search.
      * @param flags Flags that will be used when loading the URL (not applied to searches).
      * @param historyMetadata The [HistoryMetadataKey] of the new tab in case this tab
@@ -45,9 +47,9 @@ class FenixBrowserUseCases(
     fun loadUrlOrSearch(
         searchTermOrURL: String,
         newTab: Boolean,
-        forceSearch: Boolean,
         private: Boolean,
-        searchEngine: SearchEngine?,
+        forceSearch: Boolean = false,
+        searchEngine: SearchEngine? = null,
         flags: EngineSession.LoadUrlFlags = EngineSession.LoadUrlFlags.none(),
         historyMetadata: HistoryMetadataKey? = null,
         additionalHeaders: Map<String, String>? = null,
@@ -108,5 +110,27 @@ class FenixBrowserUseCases(
                 text = "newTab: $newTab",
             )
         }
+    }
+
+    /**
+     * Adds a new homepage ("about:home") tab.
+     *
+     * @param private Whether or not the new homepage tab should be private.
+     * @return The ID of the created tab.
+     */
+    fun addNewHomepageTab(private: Boolean): String {
+        return addNewTabUseCase.invoke(
+            url = ABOUT_HOME,
+            startLoading = false,
+            title = homepageTitle,
+            private = private,
+        )
+    }
+
+    /**
+     * Contains constants used by [FenixBrowserUseCases].
+     */
+    companion object {
+        const val ABOUT_HOME = "about:home"
     }
 }

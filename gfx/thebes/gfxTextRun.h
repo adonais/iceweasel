@@ -1072,7 +1072,11 @@ class gfxFontGroup final : public gfxTextRunFactory {
   // to render specific characters, not simply the "first available" font.
   // https://drafts.csswg.org/css-values-4/#ch
   // https://drafts.csswg.org/css-values-4/#ic
-  gfxFont::Metrics GetMetricsForCSSUnits(gfxFont::Orientation aOrientation);
+  // Whether extra font resources may be loaded to resolve 'ch' and 'ic'
+  // depends on the corresponding flags passed by the caller.
+  gfxFont::Metrics GetMetricsForCSSUnits(
+      gfxFont::Orientation aOrientation,
+      mozilla::StyleQueryFontMetricsFlags aFlags);
 
  protected:
   friend class mozilla::PostTraversalTask;
@@ -1097,11 +1101,11 @@ class gfxFontGroup final : public gfxTextRunFactory {
   // search through pref fonts for a character, return nullptr if no matching
   // pref font
   already_AddRefed<gfxFont> WhichPrefFontSupportsChar(
-      uint32_t aCh, uint32_t aNextCh, eFontPresentation aPresentation);
+      uint32_t aCh, uint32_t aNextCh, FontPresentation aPresentation);
 
   already_AddRefed<gfxFont> WhichSystemFontSupportsChar(
       uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   template <typename T>
   void ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
@@ -1394,7 +1398,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   bool mResolvedFonts = false;  // Whether the mFonts array has been set up.
 
-  eFontPresentation mEmojiPresentation = eFontPresentation::Any;
+  FontPresentation mEmojiPresentation = FontPresentation::Any;
 
   // Generic font family used to select among font prefs during fallback.
   mozilla::StyleGenericFontFamily mFallbackGeneric =
@@ -1468,15 +1472,15 @@ class gfxFontGroup final : public gfxTextRunFactory {
   // whether the family might have a font for a given character
   already_AddRefed<gfxFont> FindFallbackFaceForChar(
       const FamilyFace& aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   already_AddRefed<gfxFont> FindFallbackFaceForChar(
       mozilla::fontlist::Family* aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   already_AddRefed<gfxFont> FindFallbackFaceForChar(
       gfxFontFamily* aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   // helper methods for looking up fonts
 

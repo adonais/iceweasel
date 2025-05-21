@@ -99,6 +99,7 @@ const SCHEMAS = {
 };
 
 export const MatchStatus = Object.freeze({
+  ENROLLMENT_PAUSED: "ENROLLMENT_PAUSED",
   NOT_SEEN: "NOT_SEEN",
   NO_MATCH: "NO_MATCH",
   TARGETING_ONLY: "TARGETING_ONLY",
@@ -168,10 +169,10 @@ export class _RemoteSettingsExperimentLoader {
   }
 
   get SOURCE() {
-    return "rs-loader";
+    return lazy.NimbusTelemetry.EnrollmentSource.RS_LOADER;
   }
 
-  constructor() {
+  constructor(manager) {
     // Has the timer been set?
     this._enabled = false;
     // Are we in the middle of updating recipes already?
@@ -182,7 +183,7 @@ export class _RemoteSettingsExperimentLoader {
     this._updatingDeferred = Promise.withResolvers();
 
     // Make it possible to override for testing
-    this.manager = lazy.ExperimentManager;
+    this.manager = manager ?? lazy.ExperimentManager;
 
     this.remoteSettingsClients = {};
     ChromeUtils.defineLazyGetter(
@@ -805,6 +806,11 @@ export class EnrollmentsContext {
       return CheckRecipeResult.UnsupportedFeatures(unsupportedFeatureIds);
     }
 
+    if (recipe.isEnrollmentPaused) {
+      lazy.log.debug(`${recipe.slug}: enrollment paused`);
+      return CheckRecipeResult.Ok(MatchStatus.ENROLLMENT_PAUSED);
+    }
+
     if (this.shouldCheckTargeting) {
       const match = await this.checkTargeting(recipe);
 
@@ -859,11 +865,6 @@ export class EnrollmentsContext {
       }
 
       return result;
-    }
-
-    if (recipe.isEnrollmentPaused) {
-      lazy.log.debug(`${recipe.slug}: enrollment paused`);
-      return CheckRecipeResult.Ok(MatchStatus.TARGETING_ONLY);
     }
 
     if (!(await this.manager.isInBucketAllocation(recipe.bucketConfig))) {

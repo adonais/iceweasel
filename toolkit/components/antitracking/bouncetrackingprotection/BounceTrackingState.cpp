@@ -204,9 +204,14 @@ nsresult BounceTrackingState::Init(
   dom::BrowsingContext* browsingContext = aWebProgress->GetBrowsingContext();
   NS_ENSURE_TRUE(browsingContext, NS_ERROR_FAILURE);
   mBrowserId = browsingContext->BrowserId();
+
   // Create a copy of the BC's OriginAttributes so we can use it later without
   // having to hold a reference to the BC.
   mOriginAttributes = browsingContext->OriginAttributesRef();
+  // We don't need first party domain. Many things in BTP are keyed by
+  // OriginAttributes and we don't want to create unecessary partitions.
+  mOriginAttributes.mFirstPartyDomain.Truncate();
+
   MOZ_ASSERT(mOriginAttributes.mPartitionKey.IsEmpty(),
              "Top level BCs mus not have a partition key.");
 
@@ -452,7 +457,7 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   rv = aChannel->GetURI(getter_AddRefs(channelURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (channelURI->SchemeIs("http") || channelURI->SchemeIs("https")) {
+  if (mozilla::net::SchemeIsHttpOrHttps(channelURI)) {
     nsCOMPtr<nsIEffectiveTLDService> tldService =
         do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -506,6 +511,18 @@ BounceTrackingState::OnStateChange(nsIWebProgress* aWebProgress,
   // Filter for window loads.
   if (!(aStateFlags & nsIWebProgressListener::STATE_STOP) ||
       !(aStateFlags & nsIWebProgressListener::STATE_IS_WINDOW)) {
+    return NS_OK;
+  }
+
+  MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Verbose,
+              "{}: Top level window load: aStateFlags: {}, aStatus: {:#x}",
+              __PRETTY_FUNCTION__, aStateFlags, static_cast<uint32_t>(aStatus));
+
+  // Discard failed loads. Those are not valid destinations.
+  if (NS_FAILED(aStatus)) {
+    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Verbose,
+                "{}: Discarding failed load. aStatus: {:#x}",
+                __PRETTY_FUNCTION__, static_cast<uint32_t>(aStatus));
     return NS_OK;
   }
 

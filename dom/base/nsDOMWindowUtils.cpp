@@ -293,13 +293,14 @@ CompositorBridgeChild* nsDOMWindowUtils::GetCompositorBridge() {
 
 nsresult nsDOMWindowUtils::GetWidgetOpaqueRegion(
     nsTArray<RefPtr<DOMRect>>& aRects) {
+  const nsPresContext* pc = GetPresContext();
   nsIWidget* widget = GetWidget();
-  if (!widget) {
+  if (!widget || !pc) {
     return NS_ERROR_FAILURE;
   }
   auto AddRect = [&](const LayoutDeviceIntRect& aRect) {
     RefPtr rect = new DOMRect(mWindow);
-    CSSRect cssRect = aRect / widget->GetDefaultScale();
+    CSSRect cssRect = aRect / pc->CSSToDevPixelScale();
     rect->SetRect(cssRect.x, cssRect.y, cssRect.width, cssRect.height);
     aRects.AppendElement(std::move(rect));
   };
@@ -417,12 +418,8 @@ nsDOMWindowUtils::GetDocumentMetadata(const nsAString& aName,
 
 NS_IMETHODIMP
 nsDOMWindowUtils::UpdateLayerTree() {
+  FlushLayoutWithoutThrottledAnimations();
   if (RefPtr<PresShell> presShell = GetPresShell()) {
-    // Don't flush throttled animations since it might fire MozAfterPaint event
-    // (in WebRender it constantly does), thus the reftest harness can't take
-    // any snapshot until the throttled animations finished.
-    presShell->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Layout, false /* flush animations */));
     RefPtr<nsViewManager> vm = presShell->GetViewManager();
     if (nsView* view = vm->GetRootView()) {
       nsAutoScriptBlocker scriptBlocker;
@@ -812,7 +809,8 @@ nsDOMWindowUtils::SendWheelEvent(float aX, float aY, double aDeltaX,
   wheelEvent.mRefPoint =
       nsContentUtils::ToWidgetPoint(CSSPoint(aX, aY), offset, presContext);
 
-  if (StaticPrefs::test_events_async_enabled()) {
+  if ((aOptions & WHEEL_EVENT_ASYNC_ENABLED) ||
+      StaticPrefs::test_events_async_enabled()) {
     widget->DispatchInputEvent(&wheelEvent);
   } else {
     nsEventStatus status = nsEventStatus_eIgnore;
@@ -2170,12 +2168,11 @@ nsDOMWindowUtils::NeedsFlush(int32_t aFlushType, bool* aResult) {
 
 NS_IMETHODIMP
 nsDOMWindowUtils::FlushLayoutWithoutThrottledAnimations() {
-  nsCOMPtr<Document> doc = GetDocument();
-  if (doc) {
+  if (nsCOMPtr<Document> doc = GetDocument()) {
     doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Layout, false /* flush animations */));
+        ChangesToFlush(FlushType::Layout, /* aFlushAnimations = */ false,
+                       /* aUpdateRelevancy = */ true));
   }
-
   return NS_OK;
 }
 
@@ -3685,7 +3682,7 @@ static void PrepareForFullscreenChange(nsIDocShell* aDocShell,
     // Since we are suppressing the resize reflow which would originally
     // be triggered by view manager, we need to ensure that the refresh
     // driver actually schedules a flush, otherwise it may get stuck.
-    rd->ScheduleViewManagerFlush();
+    rd->SchedulePaint();
   }
   if (!aSize.IsEmpty()) {
     nsCOMPtr<nsIDocumentViewer> viewer;
@@ -4861,8 +4858,7 @@ nsDOMWindowUtils::GetEffectivelyThrottlesFrameRequests(bool* aResult) {
   if (!doc) {
     return NS_ERROR_FAILURE;
   }
-  *aResult = !doc->ShouldFireFrameRequestCallbacks() ||
-             doc->ShouldThrottleFrameRequests();
+  *aResult = doc->IsRenderingSuppressed() || doc->ShouldThrottleFrameRequests();
   return NS_OK;
 }
 

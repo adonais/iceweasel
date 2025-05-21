@@ -23,6 +23,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/BitSet.h"
+#include "mozilla/RenderingPhase.h"
 #include "mozilla/OriginTrials.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/CORSMode.h"
@@ -199,6 +200,7 @@ class FullscreenExit;
 class FullscreenRequest;
 class HTMLEditor;
 struct LangGroupFontPrefs;
+class PendingFullscreenEvent;
 class PermissionDelegateHandler;
 class PresShell;
 class ScrollTimelineAnimationTracker;
@@ -323,6 +325,7 @@ enum BFCacheStatus {
   BEFOREUNLOAD_LISTENER = 1 << 15,       // Status 15
   ACTIVE_LOCK = 1 << 16,                 // Status 16
   ACTIVE_WEBTRANSPORT = 1 << 17,         // Status 17
+  PAGE_LOADING = 1 << 18,                // Status 18
 };
 
 }  // namespace dom
@@ -997,8 +1000,6 @@ class Document : public nsINode,
    * the document no longer contains bidi data.
    */
   void SetBidiEnabled() { mBidiEnabled = true; }
-
-  void SetMathMLEnabled() { mMathMLEnabled = true; }
 
   /**
    * Ask this document whether it's the initial document in its window.
@@ -1888,6 +1889,10 @@ class Document : public nsINode,
   // Whether we has pending fullscreen request.
   bool HasPendingFullscreenRequests();
 
+  void AddPendingFullscreenEvent(UniquePtr<PendingFullscreenEvent>);
+
+  MOZ_CAN_RUN_SCRIPT void RunFullscreenSteps();
+
   /**
    * When Esc key is pressed, cancel the dialog element if the document is
    * blocked by the dialog or hide popover if popover is shown.
@@ -2324,7 +2329,7 @@ class Document : public nsINode,
    * Collect all the descendant documents for which |aCalback| returns true.
    * The callback function must not mutate any state for the given document.
    */
-  using nsDocTestFunc = bool (*)(const Document* aDocument);
+  using nsDocTestFunc = mozilla::FunctionRef<bool(const Document* aDocument)>;
   void CollectDescendantDocuments(nsTArray<RefPtr<Document>>& aDescendants,
                                   nsDocTestFunc aCallback) const;
 
@@ -2690,6 +2695,29 @@ class Document : public nsINode,
     return inner && inner->IsCurrentInnerWindow() && inner->GetDoc() == this;
   }
 
+  /*
+   * Return true if the documents current url can be re-written to `aTargetURL`.
+   * This implements https://html.spec.whatwg.org/#can-have-its-url-rewritten.
+   */
+  bool CanRewriteURL(nsIURI* aTargetURL) const;
+
+  /**
+   * Return true if this document is fully active as described by spec.
+   * https://html.spec.whatwg.org/multipage/document-sequences.html#fully-active
+   */
+  bool IsFullyActive() const {
+    nsPIDOMWindowInner* inner = GetInnerWindow();
+    return inner && inner->IsFullyActive();
+  }
+
+  /*
+   * Return if this document ever has been scrolled.
+   * We'd like this to be
+   * https://html.spec.whatwg.org/#has-been-scrolled-by-the-user, but better to
+   * check for any scroll than no scroll.
+   */
+  bool HasBeenScrolled() const;
+
   /**
    * Returns whether this document should perform image loads.
    */
@@ -2766,26 +2794,21 @@ class Document : public nsINode,
     return !EventHandlingSuppressed() && mScriptGlobalObject;
   }
 
-  void MaybeScheduleFrameRequestCallbacks();
-  // If this function changes make sure to call
-  // MaybeScheduleFrameRequestCallbacks at the right places.
-  bool ShouldFireFrameRequestCallbacks() const {
-    if (!mPresShell) {
-      return false;
-    }
-    if (!IsEventHandlingEnabled()) {
-      return false;
-    }
-    if (mRenderingSuppressedForViewTransitions) {
-      return false;
-    }
-    return true;
+  void MaybeScheduleRenderingPhases(RenderingPhases);
+  void MaybeScheduleRendering() {
+    MaybeScheduleRenderingPhases(AllRenderingPhases());
   }
+  void MaybeScheduleFrameRequestCallbacks() {
+    if (HasFrameRequestCallbacks()) {
+      MaybeScheduleRenderingPhases({RenderingPhase::AnimationFrameCallbacks});
+    }
+  }
+  bool IsRenderingSuppressed() const;
 
   void DecreaseEventSuppression() {
     MOZ_ASSERT(mEventsSuppressed);
     --mEventsSuppressed;
-    MaybeScheduleFrameRequestCallbacks();
+    MaybeScheduleRendering();
   }
 
   /**
@@ -2814,8 +2837,6 @@ class Document : public nsINode,
    * Run any suspended postMessage events, or clear them.
    */
   void FireOrClearPostMessageEvents(bool aFireEvents);
-
-  void SetHasDelayedRefreshEvent() { mHasDelayedRefreshEvent = true; }
 
   /**
    * Flag whether we're about to fire the window's load event for this document.
@@ -3609,7 +3630,7 @@ class Document : public nsINode,
   void SetDevToolsWatchingDOMMutations(bool aValue);
 
   // https://drafts.csswg.org/cssom-view/#evaluate-media-queries-and-report-changes
-  void EvaluateMediaQueriesAndReportChanges(bool aRecurse);
+  void EvaluateMediaQueriesAndReportChanges();
 
   nsTHashSet<RefPtr<WakeLockSentinel>>& ActiveWakeLocks(WakeLockType aType);
 
@@ -3859,7 +3880,7 @@ class Document : public nsINode,
   }
   bool HasResizeObservers() const { return !mResizeObservers.IsEmpty(); }
 
-  void ScheduleResizeObserversNotification() const;
+  void ScheduleResizeObserversNotification();
   /**
    * Calls GatherActiveObservations(aDepth) for all ResizeObservers.
    * All observations in each ResizeObserver with element's depth more than
@@ -4245,7 +4266,7 @@ class Document : public nsINode,
 
   // Recompute the current resist fingerprinting state. Returns true when
   // the state was changed.
-  bool RecomputeResistFingerprinting();
+  bool RecomputeResistFingerprinting(bool aForceRefreshRTPCallerType = false);
 
   // Recompute the partitionKey for this document if needed. This is for
   // handling the case where the principal of the document is changed during the
@@ -4728,8 +4749,6 @@ class Document : public nsINode,
   bool mBidiEnabled : 1;
   // True if we may need to recompute the language prefs for this document.
   bool mMayNeedFontPrefsUpdate : 1;
-  // True if a MathML element has ever been owned by this document.
-  bool mMathMLEnabled : 1;
 
   // True if this document is the initial document for a window.  This should
   // basically be true only for documents that exist in newly-opened windows or
@@ -4924,10 +4943,6 @@ class Document : public nsINode,
   bool mReportedDocumentUseCounters : 1;
 
   bool mHasReportedShadowDOMUsage : 1;
-
-  // Whether an event triggered by the refresh driver was delayed because this
-  // document has suppressed events.
-  bool mHasDelayedRefreshEvent : 1;
 
   // The HTML spec has a "iframe load in progress" flag, but that doesn't seem
   // to have the right semantics.  See
@@ -5493,6 +5508,9 @@ class Document : public nsINode,
   // which is required due to its CloneDocHelper() call site.  :-(
   mutable nsCOMPtr<nsIPrincipal> mActiveCookiePrincipal;
 
+  // https://fullscreen.spec.whatwg.org/#list-of-pending-fullscreen-events
+  nsTArray<UniquePtr<PendingFullscreenEvent>> mPendingFullscreenEvents;
+
   // See GetNextFormNumber and GetNextControlNumber.
   int32_t mNextFormNumber;
   int32_t mNextControlNumber;
@@ -5555,6 +5573,11 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT static already_AddRefed<Document> ParseHTMLUnsafe(
       GlobalObject& aGlobal, const TrustedHTMLOrString& aHTML,
       ErrorResult& aError);
+
+  static already_AddRefed<Document> ParseHTML(GlobalObject& aGlobal,
+                                              const nsAString& aHTML,
+                                              const SetHTMLOptions& aOptions,
+                                              ErrorResult& aError);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Document, NS_IDOCUMENT_IID)
@@ -5694,12 +5717,12 @@ nsresult NS_NewVideoDocument(mozilla::dom::Document** aInstancePtrResult,
                              nsIPrincipal* aPartitionedPrincipal);
 
 // Enum for requesting a particular type of document when creating a doc
-enum DocumentFlavor {
-  DocumentFlavorLegacyGuess,  // compat with old code until made HTML5-compliant
-  DocumentFlavorHTML,         // HTMLDocument with HTMLness bit set to true
-  DocumentFlavorSVG,          // SVGDocument
-  DocumentFlavorXML,          // XMLDocument
-  DocumentFlavorPlain,        // Just a Document
+enum class DocumentFlavor : uint8_t {
+  LegacyGuess,  // compat with old code until made HTML5-compliant
+  HTML,         // HTMLDocument with HTMLness bit set to true
+  SVG,          // SVGDocument
+  XML,          // XMLDocument
+  Plain,        // Just a Document
 };
 
 // Note: it's the caller's responsibility to create or get aPrincipal as needed

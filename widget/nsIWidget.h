@@ -82,6 +82,7 @@ namespace layers {
 class AsyncDragMetrics;
 class Compositor;
 class CompositorBridgeChild;
+struct CompositorScrollUpdate;
 struct FrameMetrics;
 class LayerManager;
 class WebRenderBridgeChild;
@@ -139,9 +140,6 @@ typedef void* nsNativeWidget;
 #define NS_RAW_NATIVE_IME_CONTEXT 14
 #define NS_NATIVE_WINDOW_WEBRTC_DEVICE_ID 15
 #ifdef XP_WIN
-#  define NS_NATIVE_TSF_THREAD_MGR 100
-#  define NS_NATIVE_TSF_CATEGORY_MGR 101
-#  define NS_NATIVE_TSF_DISPLAY_ATTR_MGR 102
 #  define NS_NATIVE_ICOREWINDOW 103  // winrt specific
 #endif
 #if defined(MOZ_WIDGET_GTK)
@@ -2012,6 +2010,13 @@ class nsIWidget : public nsISupports {
     MOZ_ASSERT(false, "This function should only execute in Windows");
   }
 
+  /**
+   * NotifyCompositorScrollUpdate notify widget about an update to the
+   * composited scroll offset and zoom
+   */
+  virtual void NotifyCompositorScrollUpdate(
+      const mozilla::layers::CompositorScrollUpdate& aUpdate) = 0;
+
 #if defined(MOZ_WIDGET_ANDROID)
   /**
    * RecvToolbarAnimatorMessageFromCompositor receive message from compositor
@@ -2020,16 +2025,6 @@ class nsIWidget : public nsISupports {
    * @param aMessage message being sent to Android UI thread.
    */
   virtual void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) = 0;
-
-  /**
-   * UpdateRootFrameMetrics steady state frame metrics send from compositor
-   * thread
-   *
-   * @param aScrollOffset  page scroll offset value in screen pixels.
-   * @param aZoom          current page zoom.
-   */
-  virtual void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset,
-                                      const CSSToScreenScale& aZoom) = 0;
 
   /**
    * RecvScreenPixels Buffer containing the pixel from the frame buffer. Used

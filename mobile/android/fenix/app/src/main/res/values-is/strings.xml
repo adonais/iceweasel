@@ -116,11 +116,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Vafraðu hraðar með nýjum flakkeiginleikum</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Vafraðu hraðar með nýjum flakkeiginleikum</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">Þessi stika víkur frá þegar þú flettir niður vefsíðu til að fá meira pláss undir efnið.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Þessi stika víkur frá þegar þú flettir niður vefsíðu til að fá meira pláss undir efnið.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Ýttu á og haltu örvunum inni til að hoppa á milli síðna í ferli þessa flipa.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Ýttu á og haltu örvunum inni til að hoppa á milli síðna í ferli þessa flipa.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -631,7 +631,9 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Hratt og öruggt vafur á netinu</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Samþykkja og halda áfram</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Samþykkja og halda áfram</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Halda áfram</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Með því að halda áfram, samþykkir þú %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -836,8 +838,6 @@
   <string name="preferences_override_account_server">Sérsniðinn netþjónn fyrir Mozilla-aðganga</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Sérsniðinn samstillingarþjónn</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Mozilla-reikningi / samstillingarþjóni hefur verið breytt. Slekk á forritinu til að innleiða breytingar…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Reikningur</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1203,11 +1203,11 @@
   -->
   <string name="preference_gestures_website_pull_to_refresh">Dragðu til að endurlesa</string>
   <!-- Preference for using the dynamic toolbar -->
-  <string name="preference_gestures_dynamic_toolbar">Skrunaðu til að fela verkfæraslána</string>
+  <string name="preference_gestures_dynamic_toolbar">Skrunaðu til að fela verkfærastikuna</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">Strjúka verkfæraslánni upp til að opna flipa</string>
+  <string name="preference_gestures_swipe_toolbar_show_tabs">Strjúktu verkfærastikunni upp til að opna flipa</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Skrunaðu til að fela veffangastiku og verkfærastiku</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Skrunaðu til að fela veffangastiku og verkfærastiku</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Strjúktu veffangastikuna til hliðar til að skipta um flipa</string>
   <!--
@@ -1223,7 +1223,7 @@
   <!-- Option in library to open Desktop Bookmarks "menu" page -->
   <string name="library_desktop_bookmarks_menu">Bókarmerkja valmynd</string>
   <!-- Option in library to open Desktop Bookmarks "toolbar" page -->
-  <string name="library_desktop_bookmarks_toolbar">Bókamerkjaslá</string>
+  <string name="library_desktop_bookmarks_toolbar">Bókamerkjastika</string>
   <!-- Option in library to open Desktop Bookmarks "unfiled" page -->
   <string name="library_desktop_bookmarks_unfiled">Önnur bókamerki</string>
   <!-- Option in Library to open History page -->
@@ -1483,12 +1483,33 @@
   <string name="download_multi_select_title">%1$d valið</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Fjarlægja</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">Ekki nægilegt pláss</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Þetta tæki hefur ekki nægilegt pláss til að sækja &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Sýsla með skrár</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Hætta við</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Eyða</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Fara til baka</string>
   <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="download_navigate_up_description">Fara upp</string>
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Fara upp</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Til baka og loka leit</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Hreinsa</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Deila vefslóð</string>
   <!-- Text for the button to share the download file -->
@@ -1529,9 +1550,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Niðurhal mistókst</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Leita í sóttum skrám</string>
+  <string name="download_search_placeholder">Leita í sóttum skrám</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">Engar niðurstöður fundust</string>
+  <string name="download_search_no_results_found">Engar niðurstöður fundust</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Velja allt</string>
   <!--
@@ -1660,6 +1681,8 @@
   <string name="bookmark_menu_delete_button">Eyða</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button">Vista</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Raða eftir sérsniðinni röð</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_newest">Raða eftir nýjasta</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2284,7 +2307,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Tákn fyrir undantekningartilvik varðandi auka rakningarvernd</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2293,8 +2316,6 @@
   <string name="preference_doh_summary">DNS yfir HTTPS (Domain Name System) sendir beiðni þína um lén í gegnum dulritaða tengingu, veitir öruggt DNS og gerir erfiðara fyrir aðra að sjá hvaða vefsvæði þú ert að fara að fara á. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Kanna nánar</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Flakka upp</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Undanþágur</string>
   <!-- Content description for the "Info" button -->
@@ -2833,8 +2854,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox-tillögur</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Vinsælar leitir</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3199,6 +3218,8 @@
   <string name="protection_panel_no_trackers_blocked">Engir rekjarar fundust</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Friðhelgi og öryggisstillingar</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Heimildir</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3404,6 +3425,8 @@
   <string name="debug_drawer_override_current_region_label">Yfirtaka núverandi svæði</string>
   <!-- The title of the button for overriding home and current region. -->
   <string name="debug_drawer_override_region">Yfirtaka heima- og núverandi svæði</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Yfirskrifa heimilissvæði varanlega</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3507,6 +3530,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Þú hefur lokið öllum 6 uppsetningarskrefunum. Njóttu hraða, friðhelgi og öryggis í %1$s.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Ljúktu öllum 5 skrefum við uppsetningu á %1$s til að fá sem mest út úr vafrinu þínu.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">Frábær byrjun! Þú hefur lokið 1 af 5 skrefum.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Þú hefur lokið 2 af 5 skrefum. Frábær framvinda!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">Þetta er hálfnað! Þremur skrefum lokið og 2 eftir.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Næstum komið! Þú ert aðeins 1 skrefi frá marklínunni.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Þú hefur lokið öllum 5 uppsetningarskrefunum. Njóttu hraða, friðhelgi og öryggis í %1$s.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3556,4 +3595,14 @@
   <string name="pbm_authentication_unlock">Aflæsa</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Aflæsa huliðsflipum</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Virkja skjálás fyrir huliðsflipa</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Gera skjálás fyrir huliðsflipa óvirkan</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">Nota skjálás til að fela huliðsflipa?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Nei takk</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Læsa flipum</string>
 </resources>

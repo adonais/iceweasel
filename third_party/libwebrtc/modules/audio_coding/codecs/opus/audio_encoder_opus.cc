@@ -94,7 +94,7 @@ int CalculateBitrate(int max_playback_rate_hz,
       CalculateDefaultBitrate(max_playback_rate_hz, num_channels);
 
   if (bitrate_param) {
-    const auto bitrate = rtc::StringToNumber<int>(*bitrate_param);
+    const auto bitrate = StringToNumber<int>(*bitrate_param);
     if (bitrate) {
       const int chosen_bitrate =
           std::max(AudioEncoderOpusConfig::kMinBitrateBps,
@@ -319,7 +319,7 @@ class AudioEncoderOpusImpl::PacketLossFractionSmoother {
   // Gets the smoothed packet loss fraction.
   float GetAverage() const {
     float value = smoother_.filtered();
-    return (value == rtc::ExpFilter::kValueUndefined) ? 0.0f : value;
+    return (value == ExpFilter::kValueUndefined) ? 0.0f : value;
   }
 
   // Add new observation to the packet loss fraction smoother.
@@ -334,7 +334,7 @@ class AudioEncoderOpusImpl::PacketLossFractionSmoother {
   int64_t last_sample_time_ms_;
 
   // An exponential filter is used to smooth the packet loss fraction.
-  rtc::ExpFilter smoother_;
+  ExpFilter smoother_;
 };
 
 std::unique_ptr<AudioEncoderOpusImpl> AudioEncoderOpusImpl::CreateForTesting(
@@ -733,9 +733,9 @@ void AudioEncoderOpusImpl::SetProjectedPacketLossRate(float fraction) {
 }
 
 void AudioEncoderOpusImpl::SetTargetBitrate(int bits_per_second) {
-  const int new_bitrate = rtc::SafeClamp<int>(
-      bits_per_second, AudioEncoderOpusConfig::kMinBitrateBps,
-      AudioEncoderOpusConfig::kMaxBitrateBps);
+  const int new_bitrate =
+      SafeClamp<int>(bits_per_second, AudioEncoderOpusConfig::kMinBitrateBps,
+                     AudioEncoderOpusConfig::kMaxBitrateBps);
   if (config_.bitrate_bps && *config_.bitrate_bps != new_bitrate) {
     config_.bitrate_bps = new_bitrate;
     RTC_DCHECK(config_.IsOk());

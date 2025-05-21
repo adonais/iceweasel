@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-"
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import io
 import logging
 import os
 import sys
@@ -76,13 +74,15 @@ class CleanSkipfails:
         parser = ManifestParser(use_toml=True, document=True)
         for manifest_path in manifest_path_set:
             parser.read(manifest_path)
-            manifest: TOMLDocument = parser.source_documents[manifest_path]
+            manifest: TOMLDocument = parser.source_documents[
+                os.path.abspath(manifest_path)
+            ]
             has_removed_items = remove_skip_if(
                 manifest, self.os_name, self.os_version, self.processor
             )
             manifest_str = alphabetize_toml_str(manifest)
             if len(manifest_str) > 0:
-                fp = io.open(manifest_path, "w", encoding="utf-8", newline="\n")
+                fp = open(manifest_path, "w", encoding="utf-8", newline="\n")
                 fp.write(manifest_str)
                 fp.close()
                 removed_condition: List[str] = []
@@ -107,5 +107,11 @@ class CleanSkipfails:
             tests = list(resolver.resolve_tests(paths=[self.manifest_search_path]))
             manifest_paths = set(t["manifest"] for t in tests)
         else:
-            manifest_paths = set(self.manifest_search_path)
+            myPath = Path(".").parent
+            manifest_paths = set(
+                [
+                    str(x).replace("\\", "/")
+                    for x in myPath.glob(self.manifest_search_path)
+                ]
+            )
         return manifest_paths

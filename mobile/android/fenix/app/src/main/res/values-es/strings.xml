@@ -115,11 +115,11 @@
 
     Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
   -->
-  <string name="navbar_cfr_title">Navega más rápido con la nueva navegación</string>
+  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Navega más rápido con la nueva navegación</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2">En un sitio web, esta barra se oculta a medida que te desplazas hacia abajo para tener más espacio de navegación.</string>
+  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">En un sitio web, esta barra se oculta a medida que te desplazas hacia abajo para tener más espacio de navegación.</string>
   <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message">Mantén pulsadas las flechas para saltar entre las páginas del historial de esta pestaña.</string>
+  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Mantén pulsadas las flechas para saltar entre las páginas del historial de esta pestaña.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -128,6 +128,8 @@
   <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Desliza la barra de herramientas para cambiar de pestaña</string>
   <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
   <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Desliza hacia la izquierda o derecha para cambiar. Desliza hacia la izquierda en la última pestaña para abrir una nueva.</string>
+  <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
+  <string name="address_bar_swipe_cfr_message_2">Desliza la barra de herramientas hacia la izquierda o hacia la derecha para cambiar de pestaña.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Se necesita acceso a la cámara. Ve a la configuración de Android, pulsa Permisos y luego Permitir.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -628,7 +630,7 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Navegación web rápida y segura</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label">Aceptar y continuar</string>
+  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Aceptar y continuar</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Al continuar, aceptas los %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -833,8 +835,6 @@
   <string name="preferences_override_account_server">Servidor personalizado de cuenta de Mozilla</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Servidor personalizado de Sync</string>
-  <!-- Toast shown after updating the Mozilla account/Sync server override preferences -->
-  <string name="toast_override_account_sync_server_done">Servidores de cuenta de Mozilla y Sync modificados. Cerrando la aplicación para aplicar los cambios…</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Cuenta</string>
   <!-- Preference for changing where the AddressBar is positioned -->
@@ -1204,7 +1204,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Deslizar la barra de herramientas hacia arriba para abrir pestañas</string>
   <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2">Desplazar para ocultar la barra de direcciones y la barra de herramientas</string>
+  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Desplazar para ocultar la barra de direcciones y la barra de herramientas</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Deslizar la barra de direcciones hacia los costados para cambiar de pestaña</string>
   <!--
@@ -1480,8 +1480,33 @@
   <string name="download_multi_select_title">%1$d seleccionado(s)</string>
   <!-- Text for the button to remove a single download item -->
   <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Eliminar</string>
+  <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+  <string name="download_file_has_not_enough_storage_dialog_title">No hay espacio suficiente</string>
+  <!--
+    Message for the dialog that is shown when there is not enough storage space to download a file.
+    %s is the name of the file to download.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_message">Este dispositivo no tiene suficiente espacio para descargar &lt;b&gt;%s&lt;/b&gt;.</string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Administrar archivos</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Cancelar</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Eliminar</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">Ir a la página anterior</string>
+  <!-- Content description for the toolbar "Navigate up" button -->
+  <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Navegar hacia arriba</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Volver atrás y cerrar búsqueda</string>
+  <!-- Content description for the search bar clear text button on the downloads screen -->
+  <string name="download_clear_search_description">Limpiar</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">Compartir URL</string>
   <!-- Text for the button to share the download file -->
@@ -1522,9 +1547,9 @@
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed" tools:ignore="UnusedResources">Descarga fallida</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
-  <string name="download_search_placeholder" tools:ignore="UnusedResources">Buscar en descargas</string>
+  <string name="download_search_placeholder">Buscar en descargas</string>
   <!-- Text to indicate that no downloads match the search query. -->
-  <string name="download_search_no_results_found" tools:ignore="UnusedResources">No se han encontrado resultados</string>
+  <string name="download_search_no_results_found">No se han encontrado resultados</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Seleccionar todo</string>
   <!--
@@ -2277,7 +2302,7 @@
   -->
   <string name="preference_etp_exceptions_icon_description">Icono de preferencia de excepción de protección contra el rastreo mejorada</string>
   <!--
-    DNS Over HTTPS (DoH)
+    DNS over HTTPS (DoH)
 
     Preference title for DNS over HTTPS settings
   -->
@@ -2286,8 +2311,6 @@
   <string name="preference_doh_summary">El sistema de nombres de dominio (DNS) a través de HTTPS envía la solicitud de un nombre de dominio a través de una conexión cifrada, lo que proporciona un DNS seguro y dificulta que otros vean a qué sitio web estás a punto de acceder. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Saber más</string>
-  <!-- Content description for the toolbar "Navigate up" button -->
-  <string name="preference_doh_up_description">Navegar hacia arriba</string>
   <!-- Content description for the "Exceptions" button -->
   <string name="preference_doh_exceptions_description">Excepciones</string>
   <!-- Content description for the "Info" button -->
@@ -2825,8 +2848,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Búsquedas más populares</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
@@ -3191,6 +3212,8 @@
   <string name="protection_panel_no_trackers_blocked">No se han encontrado rastreadores</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings">Ajustes de privacidad y seguridad</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Permisos</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3377,6 +3400,26 @@
   -->
   <string name="glean_debug_tools_title">Herramientas de depuración de Glean</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">Herramientas de región</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">Temporalmente reemplaza los valores de la región de inicio y actual para la prueba.</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">Región de origen</string>
+  <!-- The text label for displaying current region. -->
+  <string name="debug_drawer_current_region_label">Región actual</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Reemplazar región de origen</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Reemplazar región actual</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Reemplazar la región de inicio y la actual</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3479,6 +3522,22 @@
   <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_6_steps_completed_state">Has completado los 6 pasos de configuración. Disfruta de la velocidad, privacidad y seguridad de %1$s.</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Completa los 5 pasos para configurar %1$s para la mejor experiencia de navegación.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">¡Buen comienzo! Has completado 1 de 5 pasos.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Has completado 2 de 5 pasos. ¡Gran progreso!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">¡Estás a mitad de camino! Tres pasos terminados y 2 restantes.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">¡Ya casi está! Estás a solo 1 paso de la línea de meta.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Has completado los 5 pasos de configuración. Disfruta de la velocidad, privacidad y seguridad de %1$s.</string>
+  <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
@@ -3528,4 +3587,10 @@
   <string name="pbm_authentication_unlock">Desbloquear</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Desbloquear pestañas privadas</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">¿Usar el bloqueo de pantalla para ocultar pestañas privadas?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">No, gracias</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Bloquear pestañas</string>
 </resources>

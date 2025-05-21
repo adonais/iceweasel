@@ -9,6 +9,9 @@ import android.graphics.Color
 import android.graphics.Color.rgb
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
+import androidx.core.graphics.scale
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -74,7 +77,7 @@ class PdfCreationTest : BaseSessionTest() {
             val pdfRenderer = PdfRenderer(createFileDescriptor(pdfInputStream))
             for (pageNo in 0 until pdfRenderer.pageCount) {
                 val page = pdfRenderer.openPage(pageNo)
-                var bitmap = Bitmap.createBitmap(deviceWidth, deviceHeight, Bitmap.Config.ARGB_8888)
+                var bitmap = createBitmap(deviceWidth, deviceHeight, Bitmap.Config.ARGB_8888)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 bitmaps.add(bitmap)
                 page.close()
@@ -95,8 +98,8 @@ class PdfCreationTest : BaseSessionTest() {
             val pdfInputStream = mainSession.saveAsPdf()
             sessionRule.waitForResult(pdfInputStream).let {
                 val bitmap = pdfToBitmap(it)!![0]
-                val scaled = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, false)
-                val centerPixel = scaled.getPixel(scaledWidth / 2, scaledHeight / 2)
+                val scaled = bitmap.scale(scaledWidth, scaledHeight, filter = false)
+                val centerPixel = scaled[scaledWidth / 2, scaledHeight / 2]
                 val orange = rgb(255, 113, 57)
                 assertTrue("The PDF orange color matches.", centerPixel == orange)
             }
@@ -112,12 +115,12 @@ class PdfCreationTest : BaseSessionTest() {
             val pdfInputStream = mainSession.saveAsPdf()
             sessionRule.waitForResult(pdfInputStream).let {
                 val bitmap = pdfToBitmap(it)!![0]
-                val scaled = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, false)
-                val redPixel = scaled.getPixel(2, scaledHeight / 2)
+                val scaled = bitmap.scale(scaledWidth, scaledHeight, filter = false)
+                val redPixel = scaled[2, scaledHeight / 2]
                 assertTrue("The PDF red color matches.", redPixel == Color.RED)
-                val greenPixel = scaled.getPixel(scaledWidth / 2, scaledHeight / 2)
+                val greenPixel = scaled[scaledWidth / 2, scaledHeight / 2]
                 assertTrue("The PDF green color matches.", greenPixel == Color.GREEN)
-                val bluePixel = scaled.getPixel(scaledWidth - 2, scaledHeight / 2)
+                val bluePixel = scaled[scaledWidth - 2, scaledHeight / 2]
                 assertTrue("The PDF blue color matches.", bluePixel == Color.BLUE)
                 val doPixelsMatch = (
                     redPixel == Color.RED &&
@@ -181,8 +184,6 @@ class PdfCreationTest : BaseSessionTest() {
     @NullDelegate(Autofill.Delegate::class)
     @Test
     fun dontTryToOpenNullContent() {
-        // Bug 1881927.
-        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
         activityRule.scenario.onActivity {
             TestContentProvider.setNullTestData("application/pdf")
             mainSession.loadUri("content://org.mozilla.geckoview.test.provider/pdf")

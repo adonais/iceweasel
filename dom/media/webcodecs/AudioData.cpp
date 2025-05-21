@@ -100,8 +100,7 @@ AudioData::AudioData(const AudioData& aOther)
 }
 
 Result<already_AddRefed<AudioDataResource>, nsresult>
-AudioDataResource::Construct(
-    const OwningMaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aInit) {
+AudioDataResource::Construct(const OwningAllowSharedBufferSource& aInit) {
   FallibleTArray<uint8_t> copied;
   uint8_t* rv = ProcessTypedArraysFixed(
       aInit, [&](const Span<uint8_t>& aData) -> uint8_t* {
@@ -252,6 +251,9 @@ uint32_t AudioData::NumberOfChannels() const {
 // https://w3c.github.io/webcodecs/#dom-audiodata-duration
 uint64_t AudioData::Duration() const {
   AssertIsOnOwningThread();
+  if (!mNumberOfFrames) {
+    return 0;
+  }
   // The spec isn't clear in which direction to convert to integer.
   // https://github.com/w3c/webcodecs/issues/726
   return static_cast<uint64_t>(
@@ -532,9 +534,9 @@ void DoCopy(Span<uint8_t> aSource, Span<uint8_t> aDest,
 }
 
 // https://w3c.github.io/webcodecs/#dom-audiodata-copyto
-void AudioData::CopyTo(
-    const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aDestination,
-    const AudioDataCopyToOptions& aOptions, ErrorResult& aRv) {
+void AudioData::CopyTo(const AllowSharedBufferSource& aDestination,
+                       const AudioDataCopyToOptions& aOptions,
+                       ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
   size_t destLength = ProcessTypedArraysFixed(
