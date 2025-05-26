@@ -48,7 +48,7 @@ if [ -z "$compiler_version" ]; then
 fi
 compiler_path=$(dirname $(dirname $compiler))
 if [ "$OS" != "Windows_NT" ]; then
-  export LIB="$compiler_path/lib64:$compiler_path/lib64/clang/$compiler_version/lib/x86_64-unknown-linux-gnu"
+  export LIB="$compiler_path/lib:$compiler_path/lib/clang/$compiler_version/lib/linux"
 else
   export LIB="$compiler_path/lib:$compiler_path/lib/clang/$compiler_version/lib/windows"
 fi
@@ -57,7 +57,22 @@ reconfig_files
 rm -rf "../$MYOBJ_DIR"
 mkdir "../$MYOBJ_DIR" && cd "../$MYOBJ_DIR"
 $ICEWEASEL_TREE/configure --enable-profile-generate=cross
-source ./old-configure.vars
+if [ "$OS" != "Windows_NT" ]; then
+TMP_MOZBUILD=$HOME/.mozbuild/srcdirs
+else
+TMP_MOZBUILD=$USERPROFILE/.mozbuild/srcdirs
+fi
+TMP_PYTHON=`ls -lt $USERPROFILE/.mozbuild/srcdirs|grep ff-git|head -n 1|awk '{print $9}'`
+if [ "$OS" != "Windows_NT" ]; then
+PYTHON3=$TMP_MOZBUILD/$TMP_PYTHON/_virtualenvs/build/bin/python
+else
+PYTHON3=$TMP_MOZBUILD/$TMP_PYTHON/_virtualenvs/build/Scripts/python.exe
+fi
+if [ -z "$PYTHON3" ]; then
+  echo python3 not exit
+  exit 1;
+fi
+
 echo we find python[$PYTHON3]
 $MAKE -j4
 if [ "$?" != "0" ]; then
