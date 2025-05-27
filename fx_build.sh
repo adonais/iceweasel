@@ -62,7 +62,7 @@ TMP_MOZBUILD=$HOME/.mozbuild/srcdirs
 else
 TMP_MOZBUILD=$USERPROFILE/.mozbuild/srcdirs
 fi
-TMP_PYTHON=`ls -lt $USERPROFILE/.mozbuild/srcdirs|grep ff-git|head -n 1|awk '{print $9}'`
+TMP_PYTHON=`ls -lt $TMP_MOZBUILD|grep ff-git|head -n 1|awk '{print $9}'`
 if [ "$OS" != "Windows_NT" ]; then
 PYTHON3=$TMP_MOZBUILD/$TMP_PYTHON/_virtualenvs/build/bin/python
 else
