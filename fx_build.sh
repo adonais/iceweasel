@@ -74,7 +74,7 @@ if [ -z "$PYTHON3" ]; then
 fi
 
 echo we find python[$PYTHON3]
-$MAKE -j4
+$MAKE -j8
 if [ "$?" != "0" ]; then
   echo First compilation failed. > error.log
   exit 1;
@@ -126,7 +126,7 @@ elif [ "$MYOBJ_DIR" == "obju32-release" ]; then
 else
   $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross
 fi
-$MAKE -j4
+$MAKE -j8
 
 if [ "$?" != "0" ]; then
   echo Second compilation failed. >> error.log
