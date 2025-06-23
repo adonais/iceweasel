@@ -15,6 +15,10 @@ const { UnenrollmentCause } = ChromeUtils.importESModule(
   "resource://nimbus/lib/ExperimentManager.sys.mjs"
 );
 
+const { ProfilesDatastoreService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs"
+);
+
 /**
  * onStartup()
  * - should set call setExperimentActive for each active experiment
@@ -62,10 +66,10 @@ add_task(async function test_onStartup_setExperimentActive_called() {
     )
   );
 
-  manager.unenroll("foo");
-  manager.unenroll("bar");
+  await manager.unenroll("foo");
+  await manager.unenroll("bar");
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_startup_unenroll() {
@@ -102,7 +106,7 @@ add_task(async function test_startup_unenroll() {
 
   Services.prefs.clearUserPref("app.shield.optoutstudies.enabled");
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_onRecipe_enroll() {
@@ -113,7 +117,7 @@ add_task(async function test_onRecipe_enroll() {
   sandbox.spy(manager, "enroll");
   sandbox.spy(manager, "updateEnrollment");
 
-  const recipe = ExperimentFakes.recipe("foo");
+  const recipe = NimbusTestUtils.factories.recipe("foo");
 
   Assert.deepEqual(
     manager.store.getAllActiveExperiments(),
@@ -137,9 +141,9 @@ add_task(async function test_onRecipe_enroll() {
     "should add recipe to the store"
   );
 
-  manager.unenroll(recipe.slug);
+  await manager.unenroll(recipe.slug);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_onRecipe_update() {
@@ -150,6 +154,7 @@ add_task(async function test_onRecipe_update() {
 
   const recipe = NimbusTestUtils.factories.recipe("foo");
 
+  await manager.store.init();
   await manager.onStartup();
   await manager.enroll(recipe, "test");
   await manager.onRecipe(recipe, "test", {
@@ -171,9 +176,9 @@ add_task(async function test_onRecipe_update() {
     "should call .updateEnrollment() if the recipe has already been enrolled"
   );
 
-  manager.unenroll(recipe.slug);
+  await manager.unenroll(recipe.slug);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_onRecipe_rollout_update() {
@@ -241,7 +246,7 @@ add_task(async function test_onRecipe_rollout_update() {
     "updateEnrollment will unenroll because the branch slug changed"
   );
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_onRecipe_isFirefoxLabsOptin_recipe() {
@@ -284,7 +289,7 @@ add_task(async function test_onRecipe_isFirefoxLabsOptin_recipe() {
     "should try to enroll the fxLabsOptOutRecipe since it is a targetting match"
   );
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_context_paramters() {
@@ -316,8 +321,8 @@ add_task(async function test_context_paramters() {
     "rollout",
   ]);
 
-  manager.unenroll(experiment.slug);
-  manager.unenroll(rollout.slug);
+  await manager.unenroll(experiment.slug);
+  await manager.unenroll(rollout.slug);
 
   targetingCtx = manager.createTargetingContext();
   Assert.deepEqual(await targetingCtx.activeExperiments, []);
@@ -329,7 +334,7 @@ add_task(async function test_context_paramters() {
     "rollout",
   ]);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_experimentStore_updateEvent() {
@@ -347,7 +352,7 @@ add_task(async function test_experimentStore_updateEvent() {
   );
   stub.resetHistory();
 
-  manager.unenroll(
+  await manager.unenroll(
     "experiment",
     UnenrollmentCause.fromReason(
       NimbusTelemetry.UnenrollReason.INDIVIDUAL_OPT_OUT
@@ -361,5 +366,210 @@ add_task(async function test_experimentStore_updateEvent() {
     })
   );
 
-  cleanup();
+  await cleanup();
+});
+
+add_task(async function testDb() {
+  const conn = await ProfilesDatastoreService.getConnection();
+
+  function processRow(row) {
+    const fields = [
+      "profileId",
+      "slug",
+      "branchSlug",
+      "recipe",
+      "active",
+      "unenrollReason",
+      "lastSeen",
+      "setPrefs",
+      "prefFlips",
+      "source",
+    ];
+
+    const processed = {};
+
+    for (const field of fields) {
+      processed[field] = row.getResultByName(field);
+    }
+
+    processed.recipe = JSON.parse(processed.recipe);
+    processed.setPrefs = JSON.parse(processed.setPrefs);
+    processed.prefFlips = JSON.parse(processed.prefFlips);
+
+    return processed;
+  }
+
+  async function getEnrollment(slug) {
+    const results = await conn.execute(
+      `
+      SELECT
+        profileId,
+        slug,
+        branchSlug,
+        json(recipe) AS recipe,
+        active,
+        unenrollReason,
+        lastSeen,
+        json(setPrefs) AS setPrefs,
+        json(prefFlips) AS prefFlips,
+        source
+      FROM NimbusEnrollments
+      WHERE
+        slug = :slug AND
+        profileId = :profileId;
+    `,
+      { slug, profileId: ExperimentAPI.profileId }
+    );
+
+    Assert.equal(
+      results.length,
+      1,
+      `Exactly one enrollment should be returned for ${slug}`
+    );
+    return processRow(results[0]);
+  }
+
+  async function getEnrollmentSlugs() {
+    const result = await conn.execute(
+      `
+      SELECT
+        slug
+      FROM NimbusEnrollments
+      WHERE
+        profileId = :profileId;
+    `,
+      { profileId: ExperimentAPI.profileId }
+    );
+
+    return result.map(row => row.getResultByName("slug")).sort();
+  }
+
+  const { manager, cleanup } = await NimbusTestUtils.setupTest();
+
+  const experimentRecipe = NimbusTestUtils.factories.recipe("experiment", {
+    branches: [
+      {
+        ratio: 1,
+        slug: "control",
+        features: [
+          {
+            featureId: "no-feature-firefox-desktop",
+            value: {},
+          },
+        ],
+      },
+      {
+        ratio: 0, // Force enrollment in control
+        slug: "treatment",
+        features: [
+          {
+            featureId: "no-feature-firefox-desktop",
+            value: {},
+          },
+        ],
+      },
+    ],
+  });
+
+  const rolloutRecipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "rollout",
+    { branchSlug: "rollout", featureId: "no-feature-firefox-desktop" }
+  );
+
+  Assert.deepEqual(
+    await getEnrollmentSlugs(),
+    [],
+    "There are no database entries"
+  );
+
+  // Enroll in an experiment
+  await manager.enroll(experimentRecipe, "test");
+  Assert.deepEqual(
+    await getEnrollmentSlugs(),
+    [experimentRecipe.slug],
+    "There is one enrollment"
+  );
+
+  let experimentEnrollment = await getEnrollment(experimentRecipe.slug);
+  Assert.ok(experimentEnrollment.active, "experiment enrollment is active");
+  Assert.deepEqual(
+    experimentEnrollment.recipe,
+    experimentRecipe,
+    "experiment enrollment has the correct recipe"
+  );
+  Assert.equal(
+    experimentEnrollment.branchSlug,
+    manager.store.get(experimentRecipe.slug).branch.slug,
+    "experiment branch slug matches"
+  );
+
+  // Enroll in a rollout.
+  await manager.enroll(rolloutRecipe, "test");
+  Assert.deepEqual(
+    await getEnrollmentSlugs(),
+    [experimentRecipe.slug, rolloutRecipe.slug].sort(),
+    "There are two enrollments"
+  );
+
+  let rolloutEnrollment = await getEnrollment(rolloutRecipe.slug);
+  Assert.ok(rolloutEnrollment.active, "rollout enrollment is active");
+  Assert.deepEqual(
+    rolloutEnrollment.recipe,
+    rolloutRecipe,
+    "rollout enrollment has the correct recipe"
+  );
+  Assert.equal(
+    rolloutEnrollment.branchSlug,
+    manager.store.get(rolloutRecipe.slug).branch.slug,
+    "rollout branch slug matches"
+  );
+
+  // Unenroll from the rollout.
+  await manager.unenroll(rolloutRecipe.slug, { reason: "recipe-not-seen" });
+  Assert.deepEqual(
+    await getEnrollmentSlugs(),
+    [experimentRecipe.slug, rolloutRecipe.slug].sort(),
+    "There are two enrollments"
+  );
+
+  rolloutEnrollment = await getEnrollment(rolloutRecipe.slug);
+  Assert.ok(!rolloutEnrollment.active, "rollout enrollment is inactive");
+  Assert.equal(
+    rolloutEnrollment.recipe,
+    null,
+    "rollout enrollment recipe is null"
+  );
+  Assert.equal(
+    rolloutEnrollment.unenrollReason,
+    "recipe-not-seen",
+    "rollout unenrollReason"
+  );
+  Assert.equal(
+    rolloutEnrollment.branchSlug,
+    manager.store.get(rolloutRecipe.slug).branch.slug,
+    "rollout branch slug matches"
+  );
+
+  // Unenroll from the experiment.
+  await manager.unenroll(experimentEnrollment.slug, { reason: "targeting" });
+
+  experimentEnrollment = await getEnrollment(experimentRecipe.slug);
+  Assert.ok(!experimentEnrollment.active, "experiment enrollment is inactive");
+  Assert.equal(
+    experimentEnrollment.recipe,
+    null,
+    "experiment enrollment recipe is null"
+  );
+  Assert.equal(
+    experimentEnrollment.unenrollReason,
+    "targeting",
+    "experiment unenrollReason"
+  );
+  Assert.equal(
+    experimentEnrollment.branchSlug,
+    manager.store.get(experimentRecipe.slug).branch.slug,
+    "experiment branch slug matches"
+  );
+
+  await cleanup();
 });

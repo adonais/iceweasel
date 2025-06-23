@@ -1960,7 +1960,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
     return CreateSimilarDrawTarget(aSize, aFormat);
   }
 
-
   /**
    * Get the BackendType of Paths/PathBuilders created from this DrawTarget.
    * This will usually just be the same as the DrawTarget's BackendType.

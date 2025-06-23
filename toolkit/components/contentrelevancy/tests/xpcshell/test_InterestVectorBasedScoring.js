@@ -6,8 +6,10 @@
 ChromeUtils.defineESModuleGetters(this, {
   ContentRelevancyManager:
     "resource://gre/modules/ContentRelevancyManager.sys.mjs",
-  Interest: "resource://gre/modules/RustRelevancy.sys.mjs",
-  InterestVector: "resource://gre/modules/RustRelevancy.sys.mjs",
+  Interest:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustRelevancy.sys.mjs",
+  InterestVector:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustRelevancy.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
@@ -178,8 +180,7 @@ add_task(async function test_score_with_interest_adjustment() {
   ContentRelevancyManager.init(gFakeRustRelevancyStore);
 
   const score = await ContentRelevancyManager.score(
-    SINGLE_INTEREST_HIT_ORIGINAL_ENCODING,
-    true // Adjustment needed for original encoded interests.
+    SINGLE_INTEREST_HIT_ORIGINAL_ENCODING
   );
 
   Assert.greater(
@@ -189,8 +190,7 @@ add_task(async function test_score_with_interest_adjustment() {
   );
 
   const scoreInconclusive = await ContentRelevancyManager.score(
-    INTEREST_INCONCLUSIVE_ORIGINAL_ENCODING,
-    true // Adjustment needed for original encoded interests.
+    INTEREST_INCONCLUSIVE_ORIGINAL_ENCODING
   );
 
   Assert.equal(

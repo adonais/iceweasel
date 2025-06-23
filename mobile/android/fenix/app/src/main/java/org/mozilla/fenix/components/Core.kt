@@ -12,12 +12,9 @@ import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import mozilla.appservices.search.SearchApplicationName
-import mozilla.appservices.search.SearchDeviceType
-import mozilla.appservices.search.SearchEngineSelector
-import mozilla.appservices.search.SearchUpdateChannel
 import mozilla.components.browser.domains.autocomplete.BaseDomainAutocompleteProvider
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.engine.gecko.GeckoEngine
@@ -29,6 +26,7 @@ import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.engine.middleware.SessionPrioritizationMiddleware
+import mozilla.components.browser.state.engine.middleware.TranslationsMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
@@ -44,6 +42,8 @@ import mozilla.components.concept.engine.mediaquery.PreferredColorScheme
 import mozilla.components.concept.fetch.Client
 import mozilla.components.feature.awesomebar.provider.SessionAutocompleteProvider
 import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
+import mozilla.components.feature.downloads.DateTimeProvider
+import mozilla.components.feature.downloads.DefaultDateTimeProvider
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.DownloadMiddleware
 import mozilla.components.feature.downloads.FileSizeFormatter
@@ -60,6 +60,10 @@ import mozilla.components.feature.pwa.WebAppShortcutManager
 import mozilla.components.feature.readerview.ReaderViewMiddleware
 import mozilla.components.feature.recentlyclosed.RecentlyClosedMiddleware
 import mozilla.components.feature.recentlyclosed.RecentlyClosedTabsStorage
+import mozilla.components.feature.search.SearchApplicationName
+import mozilla.components.feature.search.SearchDeviceType
+import mozilla.components.feature.search.SearchEngineSelector
+import mozilla.components.feature.search.SearchUpdateChannel
 import mozilla.components.feature.search.middleware.AdsTelemetryMiddleware
 import mozilla.components.feature.search.middleware.SearchExtraParams
 import mozilla.components.feature.search.middleware.SearchMiddleware
@@ -190,6 +194,7 @@ class Core(
             parallelMarkingEnabled = FxNimbus.features.javascript.value().parallelMarkingEnabled,
             certificateTransparencyMode = FxNimbus.features.pki.value().certificateTransparencyMode,
             postQuantumKeyExchangeEnabled = FxNimbus.features.pqcrypto.value().postQuantumKeyExchangeEnabled,
+            dohAutoselectEnabled = FxNimbus.features.doh.value().autoselectEnabled,
             bannedPorts = FxNimbus.features.networkingBannedPorts.value().bannedPortList,
         )
 
@@ -302,7 +307,7 @@ class Core(
         }
 
         val middlewareList =
-            mutableListOf(
+            listOf(
                 LastAccessMiddleware(),
                 RecentlyClosedMiddleware(recentlyClosedTabsStorage, RECENTLY_CLOSED_MAX),
                 DownloadMiddleware(context, DownloadService::class.java),
@@ -333,6 +338,14 @@ class Core(
                     ),
                 ),
                 ApplicationSearchMiddleware(context),
+                // We are disabling automatically initializing translations so that we can control when
+                // we start this process. For details, see:
+                // https://bugzilla.mozilla.org/show_bug.cgi?id=1958042
+                TranslationsMiddleware(engine, MainScope(), false),
+                StartupMiddleware(
+                    applicationContext = context,
+                    repository = DefaultHomepageAsANewTabPreferenceRepository(context.settings()),
+                ),
             )
 
         BrowserStore(
@@ -346,10 +359,6 @@ class Core(
                 // https://github.com/mozilla-mobile/android-components/issues/11300
                 // https://github.com/mozilla-mobile/android-components/issues/11653
                 trimMemoryAutomatically = false,
-                // We are disabling automatically initializing translations so that we can control when
-                // we start this process. For details, see:
-                // https://bugzilla.mozilla.org/show_bug.cgi?id=1958042
-                automaticallyInitializeTranslations = false,
             ),
         ).apply {
             // Install the "icons" WebExtension to automatically load icons for every visited website.
@@ -398,6 +407,11 @@ class Core(
      * [FileSizeFormatter] used to format the size of the file items.
      */
     val fileSizeFormatter: FileSizeFormatter by lazyMonitored { DefaultFileSizeFormatter(context.applicationContext) }
+
+    /**
+     * [DateTimeProvider] used to provide date and time information.
+     */
+    val dateTimeProvider: DateTimeProvider by lazyMonitored { DefaultDateTimeProvider() }
 
     /**
      * The [RelationChecker] checks Digital Asset Links relationships for Trusted Web Activities.

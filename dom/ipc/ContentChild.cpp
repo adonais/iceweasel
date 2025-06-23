@@ -292,6 +292,10 @@
 #  include "mozilla/CodeCoverageHandler.h"
 #endif
 
+#ifdef MOZ_WMF_CDM
+#  include "mozilla/dom/MediaKeySystemAccess.h"
+#endif
+
 extern mozilla::LazyLogModule gSHIPBFCacheLog;
 
 using namespace mozilla;
@@ -4319,6 +4323,14 @@ mozilla::ipc::IPCResult ContentChild::RecvHistoryCommitIndexAndLength(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult ContentChild::RecvConsumeHistoryActivation(
+    const MaybeDiscarded<BrowsingContext>& aTop) {
+  if (!aTop.IsNullOrDiscarded()) {
+    aTop->ConsumeHistoryActivation();
+  }
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult ContentChild::RecvGetLayoutHistoryState(
     const MaybeDiscarded<BrowsingContext>& aContext,
     GetLayoutHistoryStateResolver&& aResolver) {
@@ -4672,6 +4684,14 @@ void ContentChild::ConfigureThreadPerformanceHints(
     mPerformanceHintSession = nullptr;
   }
 }
+
+#ifdef MOZ_WMF_CDM
+mozilla::ipc::IPCResult ContentChild::RecvUpdateMFCDMOriginEntries(
+    const nsTArray<IPCOriginStatusEntry>& aEntries) {
+  MediaKeySystemAccess::UpdateMFCDMOriginEntries(aEntries);
+  return IPC_OK();
+}
+#endif
 
 }  // namespace dom
 

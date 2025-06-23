@@ -10,7 +10,7 @@ task-defaults:
         kind: test
         tier: 1
     platform: lint/opt
-    worker-type: t-linux-xlarge-source
+    worker-type: t-linux-docker
     worker:
         docker-image: {in-tree: "lint"}
         max-run-time: 1800
@@ -109,7 +109,7 @@ eslint:
             - '**/*.sjs'
             - '**/*.html'
             - '**/*.xhtml'
-            - '**/*.xml'
+            - '**/*.ts'
             - 'tools/lint/eslint.yml'
             # Run when eslint or prettier policies change.
             - '**/*eslintrc*'
@@ -459,6 +459,8 @@ clippy:
     treeherder:
         symbol: rust(clippy)
     run:
+        prefix-env:
+            PATH: "$MOZ_FETCHES_DIR/rustc/bin/:"
         mach: lint -v -l clippy -f treeherder -f json:/builds/worker/mozlint.json -j 1 .
     when:
         files-changed:
@@ -551,6 +553,7 @@ file-perm:
             - '**/*.rst'
             - '**/*.svg'
             - '**/*.toml'
+            - '**/*.ts'
             - '**/*.ttf'
             - '**/*.wasm'
             - '**/*.webidl'

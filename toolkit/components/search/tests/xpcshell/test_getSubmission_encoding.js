@@ -99,34 +99,20 @@ add_task(async function test_encoding_of_spaces() {
   await Services.search.removeEngine(engine);
 
   info("Testing spaces in post data.");
-  let formData = new FormData();
-  formData.append("q", "{searchTerms}");
+  let params = new URLSearchParams();
+  params.append("q", "{searchTerms}");
   engine = await Services.search.addUserEngine({
     name: "user",
     url: "https://example.com/user",
-    formData,
+    params,
     method: "POST",
   });
   let submission = engine.getSubmission("f o o");
   Assert.equal(submission.uri.spec, "https://example.com/user");
   Assert.equal(
-    postDataToString(submission.postData),
+    SearchTestUtils.getPostDataString(submission),
     "q=f+o+o",
     "Encodes spaces in body as +."
   );
   await Services.search.removeEngine(engine);
 });
-
-function postDataToString(postData) {
-  if (!postData) {
-    return undefined;
-  }
-  let binaryStream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
-    Ci.nsIBinaryInputStream
-  );
-  binaryStream.setInputStream(postData.data);
-
-  return binaryStream
-    .readBytes(binaryStream.available())
-    .replace("searchTerms", "%s");
-}

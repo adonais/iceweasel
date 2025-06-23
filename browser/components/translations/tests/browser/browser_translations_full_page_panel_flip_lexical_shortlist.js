@@ -11,13 +11,13 @@
  */
 add_task(
   async function test_full_page_translations_panel_lexical_shortlist_starting_false() {
-    const { cleanup, resolveDownloads, runInPage } = await loadTestPage({
+    const { tab, cleanup, resolveDownloads, runInPage } = await loadTestPage({
       page: SPANISH_PAGE_URL,
       languagePairs: LANGUAGE_PAIRS,
       prefs: [["browser.translations.useLexicalShortlist", false]],
     });
 
-    await FullPageTranslationsTestUtils.assertPageIsUntranslated(runInPage);
+    await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
     await FullPageTranslationsTestUtils.openPanel({
       expectedFromLanguage: "es",
@@ -28,11 +28,13 @@ add_task(
     await FullPageTranslationsTestUtils.clickTranslateButton({
       downloadHandler: resolveDownloads,
     });
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
-      fromLanguage: "es",
-      toLanguage: "en",
-      runInPage,
-    });
+    await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated(
+      {
+        fromLanguage: "es",
+        toLanguage: "en",
+        runInPage,
+      }
+    );
 
     await waitForTranslationModelRecordsChanged(() => {
       Services.prefs.setBoolPref(
@@ -41,58 +43,32 @@ add_task(
       );
     });
 
-    info(
-      "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
-    );
-    await resolveDownloads(1);
-
-    await FullPageTranslationsTestUtils.openPanel({
-      expectedToLanguage: "en",
-      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,
-    });
-    await FullPageTranslationsTestUtils.changeSelectedToLanguage({
-      langTag: "fr",
-    });
-
-    await FullPageTranslationsTestUtils.clickTranslateButton({
-      pivotTranslation: true,
-      downloadHandler: resolveDownloads,
-    });
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
-      fromLanguage: "es",
-      toLanguage: "fr",
-      runInPage,
-    });
-
-    await waitForTranslationModelRecordsChanged(() => {
-      Services.prefs.setBoolPref(
-        "browser.translations.useLexicalShortlist",
-        false
-      );
-    });
+    await openFindBar(tab);
 
     info(
       "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
     );
     await resolveDownloads(1);
 
-    await FullPageTranslationsTestUtils.openPanel({
-      expectedToLanguage: "en",
-      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,
-    });
-    await FullPageTranslationsTestUtils.changeSelectedToLanguage({
-      langTag: "uk",
-    });
-
-    await FullPageTranslationsTestUtils.clickTranslateButton({
-      pivotTranslation: true,
-      downloadHandler: resolveDownloads,
-    });
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
+    await FullPageTranslationsTestUtils.assertAllPageContentIsTranslated({
       fromLanguage: "es",
-      toLanguage: "uk",
+      toLanguage: "en",
       runInPage,
     });
+    await FullPageTranslationsTestUtils.assertPageH1TitleIsTranslated({
+      fromLanguage: "es",
+      toLanguage: "en",
+      runInPage,
+      message:
+        "The page's H1's title should be translated because it intersects with the viewport.",
+    });
+    await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsNotTranslated(
+      {
+        runInPage,
+        message:
+          "Attribute translations are always lazy based on intersection, so the final paragraph's title should remain untranslated.",
+      }
+    );
 
     await cleanup();
   }
@@ -106,13 +82,13 @@ add_task(
  */
 add_task(
   async function test_full_page_translations_panel_lexical_shortlist_starting_true() {
-    const { cleanup, resolveDownloads, runInPage } = await loadTestPage({
+    const { tab, cleanup, resolveDownloads, runInPage } = await loadTestPage({
       page: SPANISH_PAGE_URL,
       languagePairs: LANGUAGE_PAIRS,
       prefs: [["browser.translations.useLexicalShortlist", true]],
     });
 
-    await FullPageTranslationsTestUtils.assertPageIsUntranslated(runInPage);
+    await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
     await FullPageTranslationsTestUtils.openPanel({
       expectedFromLanguage: "es",
@@ -123,11 +99,13 @@ add_task(
     await FullPageTranslationsTestUtils.clickTranslateButton({
       downloadHandler: resolveDownloads,
     });
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
-      fromLanguage: "es",
-      toLanguage: "en",
-      runInPage,
-    });
+    await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated(
+      {
+        fromLanguage: "es",
+        toLanguage: "en",
+        runInPage,
+      }
+    );
 
     await waitForTranslationModelRecordsChanged(() => {
       Services.prefs.setBoolPref(
@@ -136,58 +114,32 @@ add_task(
       );
     });
 
-    info(
-      "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
-    );
-    await resolveDownloads(1);
-
-    await FullPageTranslationsTestUtils.openPanel({
-      expectedToLanguage: "en",
-      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,
-    });
-    await FullPageTranslationsTestUtils.changeSelectedToLanguage({
-      langTag: "fr",
-    });
-
-    await FullPageTranslationsTestUtils.clickTranslateButton({
-      pivotTranslation: true,
-      downloadHandler: resolveDownloads,
-    });
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
-      fromLanguage: "es",
-      toLanguage: "fr",
-      runInPage,
-    });
-
-    await waitForTranslationModelRecordsChanged(() => {
-      Services.prefs.setBoolPref(
-        "browser.translations.useLexicalShortlist",
-        true
-      );
-    });
+    await openFindBar(tab);
 
     info(
       "Awaiting new downloads since the active TranslationsEngine will be rebuilt."
     );
     await resolveDownloads(1);
 
-    await FullPageTranslationsTestUtils.openPanel({
-      expectedToLanguage: "en",
-      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewRevisit,
-    });
-    await FullPageTranslationsTestUtils.changeSelectedToLanguage({
-      langTag: "uk",
-    });
-
-    await FullPageTranslationsTestUtils.clickTranslateButton({
-      pivotTranslation: true,
-      downloadHandler: resolveDownloads,
-    });
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
+    await FullPageTranslationsTestUtils.assertAllPageContentIsTranslated({
       fromLanguage: "es",
-      toLanguage: "uk",
+      toLanguage: "en",
       runInPage,
     });
+    await FullPageTranslationsTestUtils.assertPageH1TitleIsTranslated({
+      fromLanguage: "es",
+      toLanguage: "en",
+      runInPage,
+      message:
+        "The page's H1's title should be translated because it intersects with the viewport.",
+    });
+    await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsNotTranslated(
+      {
+        runInPage,
+        message:
+          "Attribute translations are always lazy based on intersection, so the final paragraph's title should remain untranslated.",
+      }
+    );
 
     await cleanup();
   }

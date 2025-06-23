@@ -149,10 +149,7 @@ Structure:
             servicePackMinor: <number>, // windows only or null on failure
             windowsBuildNumber: <number>, // windows only or null on failure
             windowsUBR: <number>, // windows 10 only or null on failure
-            installYear: <number>, // windows only or null on failure
             locale: <string>, // "en" or null on failure
-            hasPrefetch: <bool>, // windows only, or null on failure
-            hasSuperfetch: <bool>, // windows only, or null on failure
             distro: <string>, // linux only, or null on failure
             distroVersion: <string>, // linux only, or null on failure
         },
@@ -251,7 +248,7 @@ Structure:
             },
           },
         appleModelId: <string>, // Mac only or null on failure
-        sec: { // This feature is Windows 8+ only
+        sec: { // This feature is Windows only
           antivirus: [ <string>, ... ],    // null if unavailable on platform: Product name(s) of registered antivirus programs
           antispyware: [ <string>, ... ],  // null if unavailable on platform: Product name(s) of registered antispyware programs
           firewall: [ <string>, ... ],     // null if unavailable on platform: Product name(s) of registered firewall programs
@@ -495,7 +492,7 @@ Specific keys are:
   - MissingRemoteWebGL = 5
   - MissingNonNativeTheming = 6
   - DisabledByEnvVar = 7 - MOZ_ENABLE_WIN32K is set
-  - DisabledBySafeMode = 8
+  - DisabledBySafeMode = 8 - From Firefox 140 onwards, this value will no longer appear in Telemetry.
   - DisabledByE10S = 9 - E10S is disabled for whatever reason
   - DisabledByUserPref = 10 - The user manually set security.sandbox.content.win32k-disable to false
   - EnabledByUserPref = 11 - The user manually set security.sandbox.content.win32k-disable to true

@@ -25,6 +25,7 @@
 #include "GMPServiceParent.h"
 #include "HandlerServiceParent.h"
 #include "IHistory.h"
+#include <cstdint>
 #include <map>
 #include <utility>
 
@@ -330,6 +331,61 @@
 #include "mozilla/RemoteDecodeUtils.h"
 #include "nsIToolkitProfileService.h"
 #include "nsIToolkitProfile.h"
+
+#ifdef MOZ_WMF_CDM
+#  include "mozilla/EMEUtils.h"
+#  include "nsIWindowsMediaFoundationCDMOriginsListService.h"
+
+namespace mozilla {
+class OriginsListLoadCallback final : public nsIOriginsListLoadCallback {
+ public:
+  explicit OriginsListLoadCallback(ContentParent* aContentParent)
+      : mContentParent(aContentParent) {
+    MOZ_ASSERT(mContentParent);
+  }
+
+  NS_DECL_ISUPPORTS
+
+  // nsIOriginsListLoadCallback
+  NS_IMETHODIMP OnOriginsListLoaded(nsIArray* aEntries) {
+    if (NS_WARN_IF(!mContentParent)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    uint32_t length = 0;
+    nsresult rv = aEntries->GetLength(&length);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    nsTArray<dom::IPCOriginStatusEntry> ipcEntries;
+    for (uint32_t i = 0; i < length; ++i) {
+      nsCOMPtr<nsIOriginStatusEntry> entry;
+      aEntries->QueryElementAt(i, NS_GET_IID(nsIOriginStatusEntry),
+                               getter_AddRefs(entry));
+      if (!entry) {
+        NS_WARNING("OriginsListLoadCallback, skip bad entry?");
+        continue;
+      }
+      nsAutoCString origin;
+      int32_t status = 0;
+      entry->GetOrigin(origin);
+      entry->GetStatus(&status);
+      dom::IPCOriginStatusEntry ipcEntry(origin, status);
+      ipcEntries.AppendElement(ipcEntry);
+    }
+    Unused << mContentParent->SendUpdateMFCDMOriginEntries(ipcEntries);
+    return NS_OK;
+  }
+
+ private:
+  ~OriginsListLoadCallback() = default;
+
+  RefPtr<ContentParent> mContentParent;
+};
+NS_IMPL_ISUPPORTS(OriginsListLoadCallback, nsIOriginsListLoadCallback)
+}  // namespace mozilla
+#endif
 
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 
@@ -855,8 +911,8 @@ UniqueContentParentKeepAlive ContentParent::GetUsedBrowserProcess(
       PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
     }
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("GetUsedProcess: Reused process %p (%d) for %s", selected.get(),
-             (unsigned int)selected->ChildID(),
+            ("GetUsedProcess: Reused process id=%p childID=%" PRIu64 " for %s",
+             selected.get(), (uint64_t)selected->ChildID(),
              PromiseFlatCString(aRemoteType).get()));
     selected->AssertAlive();
     return selected->AddKeepAlive(aBrowserId);
@@ -880,10 +936,12 @@ UniqueContentParentKeepAlive ContentParent::GetUsedBrowserProcess(
           preallocated->IsLaunching() ? " (still launching)" : "");
       PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
     }
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Adopted preallocated process %p for type %s%s",
-             preallocated.get(), PromiseFlatCString(aRemoteType).get(),
-             preallocated->IsLaunching() ? " (still launching)" : ""));
+    MOZ_LOG(
+        ContentParent::GetLog(), LogLevel::Debug,
+        ("Adopted preallocated process id=%p childID=%" PRIu64 " for type %s%s",
+         preallocated.get(), (uint64_t)preallocated->ChildID(),
+         PromiseFlatCString(aRemoteType).get(),
+         preallocated->IsLaunching() ? " (still launching)" : ""));
 
     // This ensures that the preallocator won't shut down the process once
     // it finishes starting
@@ -945,9 +1003,12 @@ UniqueContentParentKeepAlive ContentParent::GetNewOrUsedLaunchingBrowserProcess(
   if (aGroup) {
     if (RefPtr<ContentParent> candidate = aGroup->GetHostProcess(aRemoteType)) {
       MOZ_DIAGNOSTIC_ASSERT(!candidate->IsShuttingDown());
-      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-              ("GetNewOrUsedProcess: Existing host process %p (launching %d)",
-               candidate.get(), candidate->IsLaunching()));
+      MOZ_LOG(
+          ContentParent::GetLog(), LogLevel::Debug,
+          ("GetNewOrUsedProcess: Existing host process id=%p childID=%" PRIu64
+           " (launching %d)",
+           candidate.get(), (uint64_t)candidate->ChildID(),
+           candidate->IsLaunching()));
       contentParent = candidate->TryAddKeepAlive(aBrowserId);
     }
   }
@@ -990,7 +1051,8 @@ UniqueContentParentKeepAlive ContentParent::GetNewOrUsedLaunchingBrowserProcess(
 
     MOZ_LOG(
         ContentParent::GetLog(), LogLevel::Debug,
-        ("GetNewOrUsedProcess: new immediate process %p", contentParent.get()));
+        ("GetNewOrUsedProcess: new immediate process id=%p childID=%" PRIu64,
+         contentParent.get(), (uint64_t)contentParent->ChildID()));
   }
   // else we have an existing or preallocated process (which may be
   // still launching)
@@ -1062,7 +1124,9 @@ RefPtr<ContentParent::LaunchPromise> ContentParent::WaitForLaunchAsync(
         if (aValue.IsResolve() &&
             self->LaunchSubprocessResolve(/* aIsSync = */ false, aPriority)) {
           MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-                  ("WaitForLaunchAsync: async, now launched"));
+                  ("WaitForLaunchAsync: async, now launched, process id=%p, "
+                   "childID=%" PRIu64,
+                   self.get(), (uint64_t)self->ChildID()));
           self->mActivateTS = TimeStamp::Now();
           return LaunchPromise::CreateAndResolve(std::move(self), __func__);
         }
@@ -1536,7 +1600,8 @@ void ContentParent::Init() {
 
 void ContentParent::AsyncSendShutDownMessage() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
-          ("AsyncSendShutDownMessage %p", this));
+          ("AsyncSendShutDownMessage id=%p, childID=%" PRIu64, this,
+           (uint64_t)this->ChildID()));
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(IsDead());
   if (mShutdownPending || !CanSend()) {
@@ -1557,9 +1622,10 @@ void MaybeLogBlockShutdownDiagnostics(ContentParent* aSelf, const char* aMsg,
                                       const char* aFile, int32_t aLine) {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   if (aSelf->IsBlockingShutdown()) {
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Info,
-            ("ContentParent: id=%p pid=%d - %s at %s(%d)", aSelf, aSelf->Pid(),
-             aMsg, aFile, aLine));
+    MOZ_LOG(
+        ContentParent::GetLog(), LogLevel::Info,
+        ("ContentParent: id=%p childID=%" PRIu64 " pid=%d - %s at %s(%d)",
+         aSelf, (uint64_t)aSelf->ChildID(), aSelf->Pid(), aMsg, aFile, aLine));
   }
 #else
   Unused << aSelf;
@@ -1572,7 +1638,8 @@ void MaybeLogBlockShutdownDiagnostics(ContentParent* aSelf, const char* aMsg,
 bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   bool result = false;
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("ShutDownProcess: %p", this));
+          ("ShutDownProcess: id=%p childID=%" PRIu64, this,
+           (uint64_t)this->ChildID()));
   // NB: must MarkAsDead() here so that this isn't accidentally
   // returned from Get*() while in the midst of shutdown.
   MarkAsDead();
@@ -1756,7 +1823,8 @@ void ContentParent::RemoveFromList() {
 
 void ContentParent::MarkAsDead() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
-          ("Marking ContentProcess %p as dead", this));
+          ("Marking ContentProcess id=%p childID=%" PRIu64 " as dead", this,
+           (uint64_t)this->ChildID()));
   MOZ_DIAGNOSTIC_ASSERT(!sInProcessSelector);
   RemoveFromList();
 
@@ -1876,6 +1944,17 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
 
   RecvRemoveGeolocationListener();
 
+#ifdef MOZ_WMF_CDM
+  if (mOriginsListCallback) {
+    nsCOMPtr<nsIWindowsMediaFoundationCDMOriginsListService> rsService =
+        do_GetService("@mozilla.org/media/wmfcdm-origins-list;1");
+    if (rsService) {
+      rsService->RemoveCallback(mOriginsListCallback);
+    }
+    mOriginsListCallback = nullptr;
+  }
+#endif
+
   // Destroy our JSProcessActors, and reject any pending queries.
   JSActorDidDestroy();
 
@@ -1890,6 +1969,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
       props->SetPropertyAsBool(u"abnormal"_ns, true);
 
       nsAutoString dumpID;
+      nsAutoCString processType;
       // There's a window in which child processes can crash
       // after IPC is established, but before a crash reporter
       // is created.
@@ -1909,12 +1989,17 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
         if (mCrashReporter->HasMinidump()) {
           dumpID = mCrashReporter->MinidumpID();
         }
+        processType = mCrashReporter->ProcessType();
       } else {
         HandleOrphanedMinidump(&dumpID);
+        processType = XRE_GeckoProcessTypeToString(GeckoProcessType_Content);
       }
 
       if (!dumpID.IsEmpty()) {
         props->SetPropertyAsAString(u"dumpID"_ns, dumpID);
+      }
+      if (!processType.IsEmpty()) {
+        props->SetPropertyAsACString(u"processType"_ns, processType);
       }
     }
     nsAutoString cpId;
@@ -1938,20 +2023,21 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   }
 
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
-          ("destroying Subprocess in ActorDestroy: ContentParent %p "
-           "mSubprocess %p handle %" PRIuPTR,
+          ("destroying Subprocess in ActorDestroy: ContentParent id=%p "
+           "mSubprocess id=%p handle %" PRIuPTR,
            this, mSubprocess,
            mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
   // FIXME (bug 1520997): does this really need an additional dispatch?
   if (GetCurrentSerialEventTarget()) {
     GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
         "DelayedDeleteSubprocessRunnable", [subprocess = mSubprocess] {
-          MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-                  ("destroyed Subprocess in ActorDestroy: Subprocess %p handle "
-                   "%" PRIuPTR,
-                   subprocess,
-                   subprocess ? (uintptr_t)subprocess->GetChildProcessHandle()
-                              : -1));
+          MOZ_LOG(
+              ContentParent::GetLog(), LogLevel::Debug,
+              ("destroyed Subprocess in ActorDestroy: Subprocess id=%p handle "
+               "%" PRIuPTR,
+               subprocess,
+               subprocess ? (uintptr_t)subprocess->GetChildProcessHandle()
+                          : -1));
           subprocess->Destroy();
         }));
   }
@@ -2543,8 +2629,8 @@ ContentParent::ContentParent(const nsACString& aRemoteType)
 #endif
 
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
-          ("CreateSubprocess: ContentParent %p mSubprocess %p childID %d", this,
-           mSubprocess, mSubprocess->GetChildID()));
+          ("CreateSubprocess: ContentParent id=%p mSubprocess id=%p childID=%d",
+           this, mSubprocess, mSubprocess->GetChildID()));
 }
 
 ContentParent::~ContentParent() {
@@ -2562,7 +2648,9 @@ ContentParent::~ContentParent() {
 
   if (mIsAPreallocBlocker) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Removing blocker on ContentProcess destruction"));
+            ("Removing blocker on ContentProcess id=%p childID=%" PRIu64
+             " destruction",
+             this, (uint64_t)this->ChildID()));
     PreallocatedProcessManager::RemoveBlocker(mRemoteType, this);
     mIsAPreallocBlocker = false;
   }
@@ -2575,8 +2663,10 @@ ContentParent::~ContentParent() {
   if (mSubprocess) {
     MOZ_LOG(
         ContentParent::GetLog(), LogLevel::Verbose,
-        ("DestroySubprocess: ContentParent %p mSubprocess %p handle %" PRIuPTR,
-         this, mSubprocess,
+        ("DestroySubprocess: ContentParent id=%p childID=%" PRIu64
+         " mSubprocess id=%p handle "
+         "%" PRIuPTR,
+         this, (uint64_t)this->ChildID(), mSubprocess,
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
     mSubprocess->Destroy();
   }
@@ -2594,7 +2684,8 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   XPCOMInitData xpcomInit;
 
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("ContentParent::InitInternal: %p", (void*)this));
+          ("ContentParent::InitInternal: id=%p, childID=%" PRIu64, (void*)this,
+           (uint64_t)this->ChildID()));
   nsCOMPtr<nsIIOService> io(do_GetIOService());
   MOZ_ASSERT(io, "No IO service?");
   DebugOnly<nsresult> rv = io->GetOffline(&xpcomInit.isOffline());
@@ -2880,6 +2971,17 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
                                          nsIStyleSheetService::AUTHOR_SHEET);
     }
   }
+
+#ifdef MOZ_WMF_CDM
+  if (!mOriginsListCallback && IsMediaFoundationCDMPlaybackEnabled()) {
+    mOriginsListCallback = new OriginsListLoadCallback(this);
+    nsCOMPtr<nsIWindowsMediaFoundationCDMOriginsListService> rsService =
+        do_GetService("@mozilla.org/media/wmfcdm-origins-list;1");
+    if (rsService) {
+      rsService->SetCallback(mOriginsListCallback);
+    }
+  }
+#endif
 
 #ifdef MOZ_SANDBOX
   bool shouldSandbox = true;
@@ -3379,9 +3481,9 @@ mozilla::ipc::IPCResult ContentParent::RecvFirstIdle() {
   // which we use as a good time to signal the PreallocatedProcessManager
   // that it can start allocating processes from now on.
   if (mIsAPreallocBlocker) {
-    MOZ_LOG(
-        ContentParent::GetLog(), LogLevel::Verbose,
-        ("RecvFirstIdle %p: Removing Blocker for %s", this, mRemoteType.get()));
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
+            ("RecvFirstIdle id=%p childID=%" PRIu64 ": Removing Blocker for %s",
+             this, (uint64_t)this->ChildID(), mRemoteType.get()));
     PreallocatedProcessManager::RemoveBlocker(mRemoteType, this);
     mIsAPreallocBlocker = false;
   }
@@ -4187,7 +4289,7 @@ void ContentParent::HandleOrphanedMinidump(nsString* aDumpId) {
     CrashReporterHost::RecordCrash(GeckoProcessType_Content,
                                    nsICrashService::CRASH_TYPE_CRASH, *aDumpId);
   } else {
-    NS_WARNING(nsPrintfCString("content process childid = %d pid = %" PRIPID
+    NS_WARNING(nsPrintfCString("content process childID = %d pid = %" PRIPID
                                " crashed without leaving a minidump behind",
                                OtherChildID(), OtherPid())
                    .get());
@@ -4247,7 +4349,8 @@ void ContentParent::KillHard(const char* aReason) {
   if (mSubprocess) {
     MOZ_LOG(
         ContentParent::GetLog(), LogLevel::Verbose,
-        ("KillHard Subprocess(%s): ContentParent %p mSubprocess %p handle "
+        ("KillHard Subprocess(%s): ContentParent id=%p mSubprocess id=%p "
+         "handle "
          "%" PRIuPTR,
          aReason, this, mSubprocess,
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
@@ -7687,6 +7790,17 @@ mozilla::ipc::IPCResult ContentParent::RecvHistoryReload(
       shistory->Reload(aReloadFlags);
     }
   }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvConsumeHistoryActivation(
+    const MaybeDiscarded<BrowsingContext>& aTop) {
+  if (aTop.IsNullOrDiscarded()) {
+    return IPC_OK();
+  }
+  aTop->Group()->EachOtherParent(this, [aTop](ContentParent* aParent) {
+    Unused << aParent->SendConsumeHistoryActivation(aTop);
+  });
   return IPC_OK();
 }
 

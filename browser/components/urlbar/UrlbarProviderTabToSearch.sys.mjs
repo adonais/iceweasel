@@ -115,9 +115,7 @@ class ProviderTabToSearch extends UrlbarProvider {
   }
 
   /**
-   * Returns the type of this provider.
-   *
-   * @returns {integer} one of the types from UrlbarUtils.PROVIDER_TYPE.*
+   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
    */
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.PROFILE;
@@ -129,7 +127,6 @@ class ProviderTabToSearch extends UrlbarProvider {
    * with this provider, to save on resources.
    *
    * @param {UrlbarQueryContext} queryContext The query context object
-   * @returns {boolean} Whether this provider should be invoked for the search.
    */
   async isActive(queryContext) {
     return (
@@ -138,7 +135,7 @@ class ProviderTabToSearch extends UrlbarProvider {
       !queryContext.searchMode &&
       lazy.UrlbarPrefs.get("suggest.engines") &&
       !(
-        lazy.UrlbarProviderGlobalActions.isActive(queryContext) &&
+        (await lazy.UrlbarProviderGlobalActions.isActive(queryContext)) &&
         lazy.ActionsProviderContextualSearch.isActive(queryContext)
       )
     );

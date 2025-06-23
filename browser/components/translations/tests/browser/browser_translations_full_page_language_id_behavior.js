@@ -31,6 +31,12 @@
  */
 
 /**
+ * Request 2x longer timeout for this test.
+ * There are lot of test cases in this file, but it doesn't make sense to split them up.
+ */
+requestLongerTimeout(2);
+
+/**
  * Definitions for the test cases.
  *
  * @typedef {object} Case
@@ -182,6 +188,7 @@ add_task(async function test_language_identification_behavior() {
       page,
       languagePairs: LANGUAGE_PAIRS,
       autoDownloadFromRemoteSettings: true,
+      contentEagerMode: true,
       prefs: [
         [
           "browser.translations.alwaysTranslateLanguages",
@@ -208,7 +215,7 @@ add_task(async function test_language_identification_behavior() {
       throw new Error("Expected only 1 main outcome.");
     }
 
-    if (buttonShown || offerTranslation) {
+    if (buttonShown || offerTranslation || translatePage) {
       await FullPageTranslationsTestUtils.assertTranslationsButton(
         {
           button: true,
@@ -226,14 +233,44 @@ add_task(async function test_language_identification_behavior() {
     }
 
     if (translatePage) {
-      await FullPageTranslationsTestUtils.assertPageIsTranslated({
+      await FullPageTranslationsTestUtils.assertAllPageContentIsTranslated({
         fromLanguage: translatePage,
         toLanguage: "en",
         runInPage,
         message,
       });
+      await FullPageTranslationsTestUtils.assertPageH1TitleIsTranslated({
+        fromLanguage: "es",
+        toLanguage: "en",
+        runInPage,
+        message:
+          "The page's H1's title should be translated because it intersects with the viewport.",
+      });
+
+      if (
+        page === SPANISH_PAGE_SHORT_URL ||
+        page === SPANISH_PAGE_MISMATCH_SHORT_URL
+      ) {
+        await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsTranslated(
+          {
+            fromLanguage: "es",
+            toLanguage: "en",
+            runInPage,
+            message:
+              "The page's final paragraph's title should be translated because it intersects with the viewport.",
+          }
+        );
+      } else {
+        await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsNotTranslated(
+          {
+            runInPage,
+            message:
+              "Attribute translations are always lazy based on intersection, so the final paragraph's title should remain untranslated.",
+          }
+        );
+      }
     } else {
-      await FullPageTranslationsTestUtils.assertPageIsUntranslated(
+      await FullPageTranslationsTestUtils.assertPageIsNotTranslated(
         runInPage,
         message
       );

@@ -25,7 +25,7 @@
     <!-- Application Services abbreviation used in AboutFragment -->
     <string name="app_services_abbreviation" translatable="false">AS</string>
     <!-- Name for the Pocket product -->
-    <string name="pocket_product_name" translatable="false">Pocket</string>
+    <string name="pocket_product_name" translatable="false" tools:ignore="UnusedResources" moz:removedIn="140">Pocket</string>
 
     <!-- App preference label for keeping the debug menu (secret settings, secret debug info, nimbus experiments, etc.) permanently revealed -->
     <string name="preferences_persistent_debug_menu" translatable="false">Keep Debug Menu revealed</string>
@@ -73,8 +73,6 @@
     <string name="preferences_sync_debug_temporary_auth_error_button_title">Simulate temporary account auth error</string>
     <!-- Button title for simulating an FxA permanent auth error inside the Sync Debug menu -->
     <string name="preferences_sync_debug_permanent_auth_error_button_title">Simulate permanent account auth error</string>
-    <!-- Label for enabling the Compose Top Sites -->
-    <string name="preferences_debug_settings_compose_top_sites" translatable="false">Enable Compose Top Sites</string>
     <!-- Label for enabling the Compose Homepage -->
     <string name="preferences_debug_settings_compose_homepage" translatable="false">Enable Compose Homepage</string>
     <!-- Label for enabling the Compose Bookmarks -->
@@ -93,8 +91,6 @@
     <string name="preferences_debug_settings_menu_redesign" translatable="false">Enable Menu Redesign</string>
     <!-- Label for enabling Firefox Suggest -->
     <string name="preferences_debug_settings_fxsuggest" translatable="false">Enable Firefox Suggest</string>
-    <!-- Label for enabling Navigation Toolbar -->
-    <string name="preferences_debug_settings_navigation_toolbar" translatable="false">Enable Navigation Toolbar</string>
     <!-- Label for enabling the redesigned toolbar -->
     <string name="preferences_debug_settings_composable_toolbar" translatable="false">Enable Composable Toolbar</string>
     <!-- Label for enabling Felt Privacy -->
@@ -131,6 +127,7 @@
     <string name="debug_info_region_current" translatable="false">Current region</string>
     <string name="debug_info_distribution_id" translatable="false">Distribution ID</string>
     <string name="debug_info_play_referrer" translatable="false">Play install referrer</string>
+    <string name="debug_info_run_query_provider_test" translatable="false">Run query provider test</string>
 
     <!-- Profiler settings -->
     <string name="preferences_start_profiler">Start Profiler</string>
@@ -178,10 +175,8 @@
     <string name="debug_drawer_cfr_tools_toolbar_cfr_title">Toolbar CFRs</string>
     <!-- The title of the other CFRs section in CFR Tools -->
     <string name="debug_drawer_cfr_tools_other_cfr_title">Other CFRs</string>
-    <!-- The homepage nav toolbar CFR title in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_homepage_nav_toolbar_title">Homepage Navigation Toolbar</string>
     <!-- The homepage nav toolbar CFR description in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_homepage_nav_toolbar_description">Displayed when the user is on the homepage and sees the new navigation bar for the first time. Note that this CFR must be displayed in order for the Homepage Sync CFR to be shown.</string>
+    <string name="debug_drawer_cfr_tools_homepage_nav_toolbar_description" moz:removedIn="140" tools:ignore="UnusedResources">Displayed when the user is on the homepage and sees the new navigation bar for the first time. Note that this CFR must be displayed in order for the Homepage Sync CFR to be shown.</string>
     <!-- The homepage search bar CFR title in CFR Tools -->
     <string name="debug_drawer_cfr_tools_homepage_searchbar_title">Homepage Searchbar</string>
     <!-- The homepage searchbar CFR description in CFR Tools -->
@@ -199,9 +194,9 @@
     <!-- The tab auto close banner description in CFR Tools -->
     <string name="debug_drawer_cfr_tools_tab_auto_close_description">Displayed the first time the user has at least 6 normal tabs or 6 private tabs open at once and a CFR has not been shown in at least 3 days.</string>
     <!-- The navigation buttons CFR title in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_navigation_buttons_title">Navigation Buttons</string>
+    <string name="debug_drawer_cfr_tools_navigation_buttons_title" moz:removedIn="140" tools:ignore="UnusedResources">Navigation Buttons</string>
     <!-- The navigation buttons CFR description in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_navigation_buttons_description">Displayed the first time the user double taps on the forward or backward navigation buttons within 5 seconds.</string>
+    <string name="debug_drawer_cfr_tools_navigation_buttons_description" moz:removedIn="140" tools:ignore="UnusedResources">Displayed the first time the user double taps on the forward or backward navigation buttons within 5 seconds.</string>
     <!-- The open in app CFR title in CFR Tools -->
     <string name="debug_drawer_cfr_tools_open_in_app_title">Open in App</string>
     <!-- The open in app CFR description in CFR Tools -->

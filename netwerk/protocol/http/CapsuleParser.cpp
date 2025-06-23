@@ -11,6 +11,15 @@
 
 namespace mozilla::net {
 
+bool CapsuleParserListener::OnCapsule(Capsule&& aParsed) {
+  mParsedCapsules.AppendElement(std::move(aParsed));
+  return true;
+}
+
+void CapsuleParserListener::OnCapsuleParseFailure(nsresult aError) {
+  mError = Some(aError);
+}
+
 CapsuleParser::CapsuleParser(Listener* aListener) : mListener(aListener) {}
 
 bool CapsuleParser::ProcessCapsuleData(const uint8_t* aData, uint32_t aCount) {
@@ -127,10 +136,32 @@ Result<Capsule, nsresult> CapsuleParser::ParseCapsulePayload(
       break;
     case CapsuleType::PADDING:
       break;
-    case CapsuleType::WT_RESET_STREAM:
-      break;
-    case CapsuleType::WT_STOP_SENDING:
-      break;
+    case CapsuleType::WT_RESET_STREAM: {
+      auto id = aDecoder.DecodeVarint();
+      if (!id) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      auto error = aDecoder.DecodeVarint();
+      if (!error) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      auto size = aDecoder.DecodeVarint();
+      if (!size) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportResetStream(*error, *size, *id);
+    }
+    case CapsuleType::WT_STOP_SENDING: {
+      auto id = aDecoder.DecodeVarint();
+      if (!id) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      auto error = aDecoder.DecodeVarint();
+      if (!error) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportStopSending(*error, *id);
+    }
     case CapsuleType::WT_STREAM: {
       auto id = aDecoder.DecodeVarint();
       if (!id) {
@@ -154,20 +185,67 @@ Result<Capsule, nsresult> CapsuleParser::ParseCapsulePayload(
       }
       return Capsule::WebTransportMaxData(*value);
     }
-    case CapsuleType::WT_MAX_STREAM_DATA:
-      break;
-    case CapsuleType::WT_MAX_STREAMS_BIDI:
-      break;
-    case CapsuleType::WT_MAX_STREAMS_UNIDI:
-      break;
-    case CapsuleType::WT_DATA_BLOCKED:
-      break;
-    case CapsuleType::WT_STREAM_DATA_BLOCKED:
-      break;
-    case CapsuleType::WT_STREAMS_BLOCKED_BIDI:
-      break;
-    case CapsuleType::WT_STREAMS_BLOCKED_UNIDI:
-      break;
+    case CapsuleType::WT_MAX_STREAM_DATA: {
+      auto id = aDecoder.DecodeVarint();
+      if (!id) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      auto limit = aDecoder.DecodeVarint();
+      if (!limit) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportMaxStreamData(*limit, *id);
+    }
+    case CapsuleType::WT_MAX_STREAMS_BIDI: {
+      auto value = aDecoder.DecodeVarint();
+      if (!value) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportMaxStreams(*value, true);
+    }
+    case CapsuleType::WT_MAX_STREAMS_UNIDI: {
+      auto value = aDecoder.DecodeVarint();
+      if (!value) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportMaxStreams(*value, false);
+    }
+    case CapsuleType::WT_DATA_BLOCKED: {
+      auto limit = aDecoder.DecodeVarint();
+      if (!limit) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportDataBlocked(*limit);
+    }
+    case CapsuleType::WT_STREAM_DATA_BLOCKED: {
+      auto id = aDecoder.DecodeVarint();
+      if (!id) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      auto limit = aDecoder.DecodeVarint();
+      if (!limit) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportStreamDataBlocked(*limit, *id);
+    }
+    case CapsuleType::WT_STREAMS_BLOCKED_BIDI: {
+      auto value = aDecoder.DecodeVarint();
+      if (!value) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportStreamsBlocked(*value, true);
+    }
+    case CapsuleType::WT_STREAMS_BLOCKED_UNIDI: {
+      auto value = aDecoder.DecodeVarint();
+      if (!value) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+      return Capsule::WebTransportStreamsBlocked(*value, false);
+    }
+    case CapsuleType::DATAGRAM: {
+      nsTArray<uint8_t> payload(aDecoder.GetRemaining());
+      return Capsule::WebTransportDatagram(std::move(payload));
+    }
     default:
       break;
   }

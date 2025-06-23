@@ -379,9 +379,19 @@ nsIFrame* NS_NewImageFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
                                        nsImageFrame::Kind::ImageLoadingContent);
 }
 
+static bool ShouldCreateImageFrameForContentProperty(
+    const ComputedStyle& aStyle) {
+  Span<const StyleContentItem> items =
+      aStyle.StyleContent()->NonAltContentItems();
+  return items.Length() == 1 && items[0].IsImage();
+}
+
 nsIFrame* NS_NewXULImageFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell) nsImageFrame(aStyle, aPresShell->GetPresContext(),
-                                       nsImageFrame::Kind::XULImage);
+  auto kind = ShouldCreateImageFrameForContentProperty(*aStyle)
+                  ? nsImageFrame::Kind::ContentProperty
+                  : nsImageFrame::Kind::XULImage;
+  return new (aPresShell)
+      nsImageFrame(aStyle, aPresShell->GetPresContext(), kind);
 }
 
 nsIFrame* NS_NewImageFrameForContentProperty(PresShell* aPresShell,
@@ -852,7 +862,7 @@ IntrinsicSize nsImageFrame::ComputeIntrinsicSize(
   }
 
   nsSize size;
-  if (mImage && NS_SUCCEEDED(mImage->GetIntrinsicSize(&size))) {
+  if (mImage && NS_SUCCEEDED(mImage->GetIntrinsicSizeInAppUnits(&size))) {
     IntrinsicSize intrinsicSize;
     intrinsicSize.width = size.width == -1 ? Nothing() : Some(size.width);
     intrinsicSize.height = size.height == -1 ? Nothing() : Some(size.height);
@@ -1035,7 +1045,8 @@ bool nsImageFrame::GetSourceToDestTransform(nsTransform2D& aTransform) {
   // size (mIntrinsicSize), which can be scaled due to ResponsiveImageSelector,
   // see ScaleIntrinsicSizeForDensity.
   nsSize intrinsicSize;
-  if (!mImage || !NS_SUCCEEDED(mImage->GetIntrinsicSize(&intrinsicSize)) ||
+  if (!mImage ||
+      !NS_SUCCEEDED(mImage->GetIntrinsicSizeInAppUnits(&intrinsicSize)) ||
       intrinsicSize.IsEmpty()) {
     return false;
   }
@@ -1118,9 +1129,7 @@ bool nsImageFrame::ShouldCreateImageFrameForContentProperty(
   if (aElement.IsRootOfNativeAnonymousSubtree()) {
     return false;
   }
-  Span<const StyleContentItem> items =
-      aStyle.StyleContent()->NonAltContentItems();
-  return items.Length() == 1 && items[0].IsImage();
+  return ::ShouldCreateImageFrameForContentProperty(aStyle);
 }
 
 // Check if we want to use an image frame or just let the frame constructor make
@@ -2805,13 +2814,16 @@ nsresult nsImageFrame::HandleEvent(nsPresContext* aPresContext,
           rv = NS_MutateURI(uri).SetSpec(spec).Finalize(uri);
           NS_ENSURE_SUCCESS(rv, rv);
 
-          bool clicked = false;
           if (aEvent->mMessage == ePointerClick &&
               !aEvent->DefaultPrevented()) {
             *aEventStatus = nsEventStatus_eConsumeDoDefault;
-            clicked = true;
+            nsContentUtils::TriggerLinkClick(
+                anchorNode, uri, target,
+                aEvent->IsTrusted() ? UserNavigationInvolvement::Activation
+                                    : UserNavigationInvolvement::None);
+          } else {
+            nsContentUtils::TriggerLinkMouseOver(anchorNode, uri, target);
           }
-          nsContentUtils::TriggerLink(anchorNode, uri, target, clicked);
         }
       }
     }

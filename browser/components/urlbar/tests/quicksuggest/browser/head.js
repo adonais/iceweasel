@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
   CONTEXTUAL_SERVICES_PING_TYPES:
     "resource:///modules/PartnerLinkAttribution.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.sys.mjs",
@@ -176,6 +177,18 @@ async function doQuickSuggestPingTest({
       fireInputEvent: true,
     }),
 }) {
+  Assert.ok(Region.home, "Sanity check: Region should be non-null/empty");
+
+  let allExpectedPings = [
+    impressionOnly,
+    ...click,
+    ...commands.map(({ pings }) => pings),
+  ].flat();
+
+  for (let ping of allExpectedPings) {
+    ping.country = Region.home;
+  }
+
   await doImpressionOnlyTest({
     index,
     suggestion,
@@ -297,11 +310,11 @@ async function doImpressionOnlyTest({
   info("Waiting for page to load after clicking different row");
   await loadPromise;
 
-  Assert.equal(
-    expectedPings.length,
-    gleanPingCount.value,
-    "Submitted one Glean ping per expected ping"
-  );
+  // The pings are sent asynchronously, so we wait until we've seen them all
+  // be sent.
+  await TestUtils.waitForCondition(() => {
+    return expectedPings.length == gleanPingCount.value;
+  }, "Submitted one Glean ping per expected ping");
 
   // Clean up.
   await PlacesUtils.history.clear();
@@ -357,11 +370,11 @@ async function doClickTest({
   await loadPromise;
   await TestUtils.waitForTick();
 
-  Assert.equal(
-    expectedPings.length,
-    gleanPingCount.value,
-    "Submitted one Glean ping per expected ping"
-  );
+  // The pings are sent asynchronously, so we wait until we've seen them all
+  // be sent.
+  await TestUtils.waitForCondition(() => {
+    return expectedPings.length == gleanPingCount.value;
+  }, "Submitted one Glean ping per expected ping");
 
   await PlacesUtils.history.clear();
 
@@ -437,11 +450,11 @@ async function doCommandTest({
     }
   }
 
-  Assert.equal(
-    expectedPings.length,
-    gleanPingCount.value,
-    "Submitted one Glean ping per expected ping"
-  );
+  // The pings are sent asynchronously, so we wait until we've seen them all
+  // be sent.
+  await TestUtils.waitForCondition(() => {
+    return expectedPings.length == gleanPingCount.value;
+  }, "Submitted one Glean ping per expected ping");
 
   if (command == "dismiss") {
     await QuickSuggest.clearDismissedSuggestions();
@@ -567,6 +580,7 @@ function watchQuickSuggestPings(pings) {
 function assertQuickSuggestPing(expectedPing) {
   let expectedKeys = [
     "pingType",
+    "country",
     "matchType",
     "advertiser",
     "blockId",

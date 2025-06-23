@@ -465,7 +465,7 @@ release-promotion:
 
 merge-automation:
     behaviors:
-        central-to-beta:
+        main-to-beta:
             fetch-version-from: "browser/config/version.txt"
             version-files:
                 - filename: "config/milestone.txt"
@@ -536,11 +536,11 @@ merge-automation:
             replacements:
                 - - .arcconfig
                   - FIREFOXRELEASE
-                  - FIREFOXESRONETWOEIGHT
+                  - FIREFOXESRONEFOURZERO
             merge-old-head: false
             end-tag: "FIREFOX_ESR_{major_version}_BASE"
-            to-branch: 'esr128'
-        bump-central:
+            to-branch: 'esr140'
+        bump-main:
             fetch-version-from: "browser/config/version.txt"
             version-files:
                 - filename: "config/milestone.txt"
@@ -569,7 +569,7 @@ merge-automation:
             merge-old-head: false
             end-tag: 'FIREFOX_NIGHTLY_{major_version}_END'
             to-branch: 'main'
-        bump-esr128:
+        bump-esr140:
             fetch-version-from: "browser/config/version.txt"
             version-files:
                 - filename: "config/milestone.txt"
@@ -581,7 +581,7 @@ merge-automation:
                   new-suffix: "esr"
             replacements: []
             merge-old-head: false
-            to-branch: 'esr128'
+            to-branch: 'esr140'
 
 scriptworker:
     # See additional configuration in taskcluster/gecko_taskgraph/util/scriptworker.py
@@ -833,6 +833,11 @@ workers:
             implementation: generic-worker
             os: linux-lambda
             worker-type: 'gecko-{alias}'
+        t-linux-docker(|-noscratch):
+            provisioner: '{trust-domain}-t'
+            implementation: docker-worker
+            os: linux
+            worker-type: '{alias}'
         t-linux(-large|-xlarge|-xlarge-source):
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
@@ -847,7 +852,7 @@ workers:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
             os: linux
-            worker-type: 't-linux-kvm-noscratch-gcp'
+            worker-type: 't-linux-docker-kvm'
         t-linux-talos:
             provisioner: releng-hardware
             implementation: generic-worker
@@ -929,42 +934,17 @@ workers:
                 by-level:
                     '3': 'gecko-3-b-osx-arm64'
                     default: 'gecko-1-b-osx-arm64'
-        t-win10-64(|-gpu-s|-source):
-            provisioner: '{trust-domain}-t'
-            implementation: generic-worker
-            os: windows
-            worker-type: '{alias}'
-        t-win10-64(-hw|-1803-hw):
-            provisioner: releng-hardware
-            implementation: generic-worker
-            os: windows
-            worker-type: 'gecko-{alias}'
-        win11-64-2009(-hw-ref):
-            provisioner: releng-hardware
-            implementation: generic-worker
-            os: windows
-            worker-type: '{alias}'
         win10-64-2009-hw:
             provisioner: releng-hardware
             implementation: generic-worker
             os: windows
             worker-type: '{alias}'
-        win11-64-2009-hw:
-            provisioner: releng-hardware
-            implementation: generic-worker
-            os: windows
-            worker-type: '{alias}'
-        win10-64-2009(|-gpu|-ssd|-source|-ssd-gpu):
+        win10-64-2009:
             provisioner: 'gecko-t'
             implementation: generic-worker
             os: windows
             worker-type: '{alias}'
-        t-win11-64(|-gpu-s|-source):
-            provisioner: '{trust-domain}-t'
-            implementation: generic-worker
-            os: windows
-            worker-type: '{alias}'
-        win11-64-2009(|-gpu|-ssd|-source|-ssd-gpu):
+        win10-64-2009(-gpu):
             provisioner: 'gecko-t'
             implementation: generic-worker
             os: windows
@@ -994,11 +974,6 @@ workers:
             implementation: generic-worker
             os: windows
             worker-type: 'gecko-{alias}-hw'
-        t-win64-aarch64-laptop:
-            provisioner: bitbar
-            implementation: generic-worker
-            os: windows
-            worker-type: 'gecko-{alias}'
         succeed:
             provisioner: built-in
             implementation: succeed
@@ -1022,14 +997,14 @@ mac-signing:
                 - deep: false
                   runtime: true
                   force: true
-                  entitlements: security/mac/hardenedruntime/v2/production/plugin-container.xml
+                  entitlements: security/mac/hardenedruntime/production/plugin-container.xml
                   globs:
                       - "/Contents/MacOS/plugin-container.app"
 
                 - deep: false
                   runtime: true
                   force: true
-                  entitlements: security/mac/hardenedruntime/v2/production/media-plugin-helper.xml
+                  entitlements: security/mac/hardenedruntime/production/media-plugin-helper.xml
                   globs:
                       - "/Contents/MacOS/media-plugin-helper.app"
 
@@ -1055,11 +1030,11 @@ mac-signing:
                   force: true
                   entitlements:
                       by-build-platform:
-                          .*devedition.*: security/mac/hardenedruntime/v2/production/firefoxdeveloperedition.browser.xml
+                          .*devedition.*: security/mac/hardenedruntime/production/firefoxdeveloperedition.browser.xml
                           default:
                               by-project:
-                                  mozilla-central: security/mac/hardenedruntime/v2/production/nightly.browser.xml
-                                  default: security/mac/hardenedruntime/v2/production/firefox.browser.xml
+                                  mozilla-central: security/mac/hardenedruntime/production/nightly.browser.xml
+                                  default: security/mac/hardenedruntime/production/firefox.browser.xml
                   globs:
                       - "/"  # The .app
 
@@ -1067,21 +1042,21 @@ mac-signing:
                 - deep: false
                   runtime: true
                   force: true
-                  entitlements: security/mac/hardenedruntime/v2/developer/plugin-container.xml
+                  entitlements: security/mac/hardenedruntime/developer/plugin-container.xml
                   globs:
                       - "/Contents/MacOS/plugin-container.app"
 
                 - deep: false
                   runtime: true
                   force: true
-                  entitlements: security/mac/hardenedruntime/v2/developer/media-plugin-helper.xml
+                  entitlements: security/mac/hardenedruntime/developer/media-plugin-helper.xml
                   globs:
                       - "/Contents/MacOS/media-plugin-helper.app"
 
                 - deep: false
                   runtime: true
                   force: true
-                  entitlements: security/mac/hardenedruntime/v2/developer/utility.xml
+                  entitlements: security/mac/hardenedruntime/developer/utility.xml
                   globs:
                       - "/Contents/MacOS/crashhelper"
                       - "/Contents/MacOS/crashreporter.app"
@@ -1104,7 +1079,7 @@ mac-signing:
                 - deep: false
                   runtime: true
                   force: true
-                  entitlements: security/mac/hardenedruntime/v2/developer/browser.xml
+                  entitlements: security/mac/hardenedruntime/developer/browser.xml
                   globs:
                       - "/"  # The .app
 

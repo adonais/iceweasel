@@ -6,7 +6,6 @@
 
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/net/NeqoHttp3Conn.h"
 
 #include "Capsule.h"
 #include "CapsuleEncoder.h"
@@ -52,6 +51,86 @@ void CapsuleEncoder::EncodeCapsule(Capsule& aCapsule) {
         .EncodeVarint(length)
         .EncodeVarint(value.mID)
         .EncodeBuffer(value.mData);
+    mStreamMetadata = Some(StreamMetadata{
+        value.mID, value.mData.Length(),
+        CapsuleEncoder::VarintLength(static_cast<uint64_t>(value.Type())) +
+            CapsuleEncoder::VarintLength(length) +
+            CapsuleEncoder::VarintLength(value.mID)});
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportStreamsBlockedCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportStreamsBlockedCapsule>();
+    EncodeVarint(value.Type())
+        .EncodeVarint(CapsuleEncoder::VarintLength(value.mLimit))
+        .EncodeVarint(value.mLimit);
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportMaxStreamsCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportMaxStreamsCapsule>();
+    EncodeVarint(value.Type())
+        .EncodeVarint(CapsuleEncoder::VarintLength(value.mLimit))
+        .EncodeVarint(value.mLimit);
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportStreamDataBlockedCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportStreamDataBlockedCapsule>();
+    EncodeVarint(value.Type())
+        .EncodeVarint(CapsuleEncoder::VarintLength(value.mID) +
+                      CapsuleEncoder::VarintLength(value.mLimit))
+        .EncodeVarint(value.mID)
+        .EncodeVarint(value.mLimit);
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportMaxStreamDataCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportMaxStreamDataCapsule>();
+    EncodeVarint(value.Type())
+        .EncodeVarint(CapsuleEncoder::VarintLength(value.mID) +
+                      CapsuleEncoder::VarintLength(value.mLimit))
+        .EncodeVarint(value.mID)
+        .EncodeVarint(value.mLimit);
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportDataBlockedCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportDataBlockedCapsule>();
+    EncodeVarint(value.Type())
+        .EncodeVarint(CapsuleEncoder::VarintLength(value.mLimit))
+        .EncodeVarint(value.mLimit);
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportStopSendingCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportStopSendingCapsule>();
+    EncodeVarint(value.Type())
+        .EncodeVarint(CapsuleEncoder::VarintLength(value.mID) +
+                      CapsuleEncoder::VarintLength(value.mErrorCode))
+        .EncodeVarint(value.mID)
+        .EncodeVarint(value.mErrorCode);
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportResetStreamCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportResetStreamCapsule>();
+    EncodeVarint(value.Type())
+        .EncodeVarint(CapsuleEncoder::VarintLength(value.mID) +
+                      CapsuleEncoder::VarintLength(value.mErrorCode) +
+                      CapsuleEncoder::VarintLength(value.mReliableSize))
+        .EncodeVarint(value.mID)
+        .EncodeVarint(value.mErrorCode)
+        .EncodeVarint(value.mReliableSize);
+    return;
+  }
+
+  if (aCapsule.mCapsule.is<WebTransportDatagramCapsule>()) {
+    auto& value = aCapsule.mCapsule.as<WebTransportDatagramCapsule>();
+    uint64_t length = value.mPayload.Length();
+    EncodeVarint(value.Type())
+        .EncodeVarint(length)
+        .EncodeBuffer(value.mPayload);
     return;
   }
 }

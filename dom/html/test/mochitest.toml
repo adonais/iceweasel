@@ -660,8 +660,6 @@ skip-if = [
 
 ["test_bug666200.html"]
 
-["test_bug666666.html"]
-
 ["test_bug669012.html"]
 
 ["test_bug674558.html"]
@@ -758,8 +756,10 @@ skip-if = [
 ["test_bug1166138.html"]
 skip-if = [
   "os == 'android' && processor == 'x86_64' && debug", # Bug 1912735
-  "os == 'win' && os_version == '11.2009' && opt", # Bug 1912735
+  "os == 'win' && os_version == '10.2009' && opt", # Bug 1912735
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1912735
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt && xorigin", # Bug 1912735
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov", # Bug 1912735
 ]
 
 ["test_bug1203668.html"]

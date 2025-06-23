@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { ExperimentFakes } = ChromeUtils.importESModule(
+const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
@@ -46,7 +46,7 @@ add_task(async function test_nimbus_exposure() {
   );
 
   info("Enroll into the experiment which enables BTP.");
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "bounceTrackingProtection",
     value: {
       mode: Ci.nsIBounceTrackingProtection.MODE_ENABLED,
@@ -96,7 +96,7 @@ add_task(async function test_nimbus_exposure() {
   Services.fog.testResetFOG();
 });
 
-add_task(async function test_nimbus_no_exposure_dry_run() {
+add_task(async function test_nimbus_exposure_dry_run() {
   Services.fog.testResetFOG();
 
   Assert.equal(
@@ -106,7 +106,7 @@ add_task(async function test_nimbus_no_exposure_dry_run() {
   );
 
   info("Enroll into the experiment which enables BTP in MODE_ENABLED_DRY_RUN.");
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "bounceTrackingProtection",
     value: {
       mode: Ci.nsIBounceTrackingProtection.MODE_ENABLED_DRY_RUN,
@@ -134,9 +134,14 @@ add_task(async function test_nimbus_no_exposure_dry_run() {
 
   exposureEvents = Glean.normandy.exposeNimbusExperiment.testGetValue();
   Assert.equal(
-    undefined,
-    exposureEvents,
-    "No Glean exposure events after BTP dry-run purge."
+    1,
+    exposureEvents?.length,
+    "There should be one exposure event after BTP purged."
+  );
+  Assert.equal(
+    "bounceTrackingProtection",
+    exposureEvents[0].extra.featureId,
+    "Feature ID matches BTP."
   );
 
   await doExperimentCleanup();

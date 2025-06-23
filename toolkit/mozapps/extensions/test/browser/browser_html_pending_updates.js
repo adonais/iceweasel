@@ -326,10 +326,29 @@ add_task(async function test_pending_update_no_prompted_permission() {
   await extension.unload();
 });
 
-add_task(async function test_pending_update_with_prompted_permission() {
+add_task(async function test_pending_update_with_prompted_data_permission() {
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.dataCollectionPermissions.enabled", true]],
   });
+
+  const assertSectionHeaders = (popupContentEl, expectedHeaders = []) => {
+    for (const { id, isVisible, fluentId } of expectedHeaders) {
+      const titleEl = popupContentEl.querySelector(`#${id}`);
+      ok(titleEl, `Expected element for ${id}`);
+      Assert.equal(
+        BrowserTestUtils.isVisible(titleEl),
+        isVisible,
+        `Expected ${id} to${isVisible ? "" : " not"} be visible`
+      );
+      if (isVisible) {
+        Assert.equal(
+          titleEl.textContent,
+          PERMISSION_L10N.formatValueSync(fluentId),
+          `Expected formatted string for ${id}`
+        );
+      }
+    }
+  };
 
   const TEST_CASES = [
     {
@@ -342,24 +361,46 @@ add_task(async function test_pending_update_with_prompted_permission() {
           popupContentEl.querySelector(".popup-notification-description")
             .textContent,
           PERMISSION_L10N.formatValueSync(
-            "webext-perms-update-data-collection-only-text",
+            "webext-perms-update-text-with-data-collection",
             { extension: extensionId }
           ),
-          "Expected header string without perms"
+          "Expected header string"
         );
         Assert.equal(
-          popupContentEl.permsListEl.childElementCount,
+          popupContentEl.introEl.textContent,
+          PERMISSION_L10N.formatValueSync(
+            "webext-perms-update-list-intro-with-data-collection"
+          ),
+          "Expected list intro string"
+        );
+        assertSectionHeaders(popupContentEl, [
+          {
+            id: "addon-webext-perm-title-required",
+            isVisible: false,
+          },
+          {
+            id: "addon-webext-perm-title-data-collection",
+            isVisible: true,
+            fluentId: "webext-perms-header-update-data-collection-perms",
+          },
+          {
+            id: "addon-webext-perm-title-optional",
+            isVisible: false,
+          },
+        ]);
+        Assert.equal(
+          popupContentEl.permsListDataCollectionEl.childElementCount,
           1,
-          "Expected a permission entry in the list"
+          "Expected a data collection permission"
         );
         Assert.ok(
-          popupContentEl.permsListEl.querySelector(
+          popupContentEl.permsListDataCollectionEl.querySelector(
             "li.webext-data-collection-perm-granted"
           ),
           "Expected data collection item"
         );
         Assert.equal(
-          popupContentEl.permsListEl.firstChild.textContent,
+          popupContentEl.permsListDataCollectionEl.textContent,
           PERMISSION_L10N.formatValueSync(
             "webext-perms-description-data-some-update",
             {
@@ -377,6 +418,9 @@ add_task(async function test_pending_update_with_prompted_permission() {
     {
       title: "With data collection and required permission",
       permissions: ["bookmarks"],
+      old_data_collection_permissions: {
+        required: ["locationInfo"],
+      },
       data_collection_permissions: {
         required: ["locationInfo", "healthInfo"],
       },
@@ -385,27 +429,48 @@ add_task(async function test_pending_update_with_prompted_permission() {
           popupContentEl.querySelector(".popup-notification-description")
             .textContent,
           PERMISSION_L10N.formatValueSync(
-            "webext-perms-update-data-collection-text",
+            "webext-perms-update-text-with-data-collection",
             { extension: extensionId }
           ),
           "Expected header string with perms"
         );
+        assertSectionHeaders(popupContentEl, [
+          {
+            id: "addon-webext-perm-title-required",
+            isVisible: true,
+            fluentId: "webext-perms-header-update-required-perms",
+          },
+          {
+            id: "addon-webext-perm-title-data-collection",
+            isVisible: true,
+            fluentId: "webext-perms-header-update-data-collection-perms",
+          },
+          {
+            id: "addon-webext-perm-title-optional",
+            isVisible: false,
+          },
+        ]);
         Assert.equal(
           popupContentEl.permsListEl.childElementCount,
-          2,
-          "Expected two permission entries in the list"
+          1,
+          "Expected a required permission"
         );
         Assert.equal(
-          popupContentEl.permsListEl.firstChild.textContent,
+          popupContentEl.permsListDataCollectionEl.childElementCount,
+          1,
+          "Expected a data collection permission"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.textContent,
           PERMISSION_L10N.formatValueSync("webext-perms-description-bookmarks"),
           "Expected formatted permission string"
         );
         Assert.equal(
-          popupContentEl.permsListEl.lastChild.textContent,
+          popupContentEl.permsListDataCollectionEl.textContent,
           PERMISSION_L10N.formatValueSync(
             "webext-perms-description-data-some-update",
             {
-              permissions: "location, health information",
+              permissions: "health information",
             }
           ),
           "Expected formatted data collection permission string"
@@ -431,23 +496,44 @@ add_task(async function test_pending_update_with_prompted_permission() {
           popupContentEl.querySelector(".popup-notification-description")
             .textContent,
           PERMISSION_L10N.formatValueSync(
-            "webext-perms-update-data-collection-text",
+            "webext-perms-update-text-with-data-collection",
             { extension: extensionId }
           ),
           "Expected header string with perms"
         );
+        assertSectionHeaders(popupContentEl, [
+          {
+            id: "addon-webext-perm-title-required",
+            isVisible: true,
+            fluentId: "webext-perms-header-update-required-perms",
+          },
+          {
+            id: "addon-webext-perm-title-data-collection",
+            isVisible: true,
+            fluentId: "webext-perms-header-update-data-collection-perms",
+          },
+          {
+            id: "addon-webext-perm-title-optional",
+            isVisible: false,
+          },
+        ]);
         Assert.equal(
           popupContentEl.permsListEl.childElementCount,
-          2,
-          "Expected two permission entries in the list"
+          1,
+          "Expected a required permission"
         );
         Assert.equal(
-          popupContentEl.permsListEl.childNodes[0].textContent,
+          popupContentEl.permsListDataCollectionEl.childElementCount,
+          1,
+          "Expected a data collection permission"
+        );
+        Assert.equal(
+          popupContentEl.permsListEl.textContent,
           PERMISSION_L10N.formatValueSync("webext-perms-description-bookmarks"),
           "Expected formatted bookmarks permission string"
         );
         Assert.equal(
-          popupContentEl.permsListEl.childNodes[1].textContent,
+          popupContentEl.permsListDataCollectionEl.textContent,
           PERMISSION_L10N.formatValueSync(
             "webext-perms-description-data-some-update",
             {

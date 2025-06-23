@@ -31,6 +31,7 @@ enum class CapsuleType : uint64_t {
   WT_STREAM_DATA_BLOCKED = 0x190B4D42,
   WT_STREAMS_BLOCKED_BIDI = 0x190B4D43,
   WT_STREAMS_BLOCKED_UNIDI = 0x190B4D44,
+  DATAGRAM = 0x00,
 };
 
 struct UnknownCapsule {
@@ -63,9 +64,75 @@ struct WebTransportStreamDataCapsule {
   }
 };
 
-using CapsuleValue =
-    mozilla::Variant<UnknownCapsule, CloseWebTransportSessionCapsule,
-                     WebTransportMaxDataCapsule, WebTransportStreamDataCapsule>;
+struct WebTransportStreamsBlockedCapsule {
+  uint64_t mLimit = 0;
+  bool mBidi = true;
+
+  CapsuleType Type() const {
+    return mBidi ? CapsuleType::WT_STREAMS_BLOCKED_BIDI
+                 : CapsuleType::WT_STREAMS_BLOCKED_UNIDI;
+  }
+};
+
+struct WebTransportMaxStreamsCapsule {
+  uint64_t mLimit = 0;
+  bool mBidi = true;
+
+  CapsuleType Type() const {
+    return mBidi ? CapsuleType::WT_MAX_STREAMS_BIDI
+                 : CapsuleType::WT_MAX_STREAMS_UNIDI;
+  }
+};
+
+struct WebTransportStreamDataBlockedCapsule {
+  uint64_t mLimit = 0;
+  uint64_t mID{0};
+
+  CapsuleType Type() const { return CapsuleType::WT_STREAM_DATA_BLOCKED; }
+};
+
+struct WebTransportMaxStreamDataCapsule {
+  uint64_t mLimit = 0;
+  uint64_t mID{0};
+
+  CapsuleType Type() const { return CapsuleType::WT_MAX_STREAM_DATA; }
+};
+
+struct WebTransportDataBlockedCapsule {
+  uint64_t mLimit = 0;
+  uint64_t mID{0};
+
+  CapsuleType Type() const { return CapsuleType::WT_DATA_BLOCKED; }
+};
+
+struct WebTransportStopSendingCapsule {
+  uint64_t mErrorCode = 0;
+  uint64_t mID{0};
+
+  CapsuleType Type() const { return CapsuleType::WT_STOP_SENDING; }
+};
+
+struct WebTransportResetStreamCapsule {
+  uint64_t mErrorCode = 0;
+  uint64_t mReliableSize{0};
+  uint64_t mID{0};
+
+  CapsuleType Type() const { return CapsuleType::WT_RESET_STREAM; }
+};
+
+struct WebTransportDatagramCapsule {
+  nsTArray<uint8_t> mPayload;
+
+  CapsuleType Type() const { return CapsuleType::DATAGRAM; }
+};
+
+using CapsuleValue = mozilla::Variant<
+    UnknownCapsule, CloseWebTransportSessionCapsule, WebTransportMaxDataCapsule,
+    WebTransportStreamDataCapsule, WebTransportStreamsBlockedCapsule,
+    WebTransportMaxStreamsCapsule, WebTransportStreamDataBlockedCapsule,
+    WebTransportMaxStreamDataCapsule, WebTransportDataBlockedCapsule,
+    WebTransportStopSendingCapsule, WebTransportResetStreamCapsule,
+    WebTransportDatagramCapsule>;
 
 class Capsule final {
  public:
@@ -75,6 +142,15 @@ class Capsule final {
   static Capsule WebTransportMaxData(uint64_t aValue);
   static Capsule WebTransportStreamData(uint64_t aID, bool aFin,
                                         nsTArray<uint8_t>&& aData);
+  static Capsule WebTransportStreamsBlocked(uint64_t aLimit, bool aBidi);
+  static Capsule WebTransportMaxStreams(uint64_t aLimit, bool aBidi);
+  static Capsule WebTransportStreamDataBlocked(uint64_t aLimit, uint64_t aID);
+  static Capsule WebTransportMaxStreamData(uint64_t aLimit, uint64_t aID);
+  static Capsule WebTransportDataBlocked(uint64_t aLimit);
+  static Capsule WebTransportStopSending(uint64_t aError, uint64_t aID);
+  static Capsule WebTransportResetStream(uint64_t aError, uint64_t aSize,
+                                         uint64_t aID);
+  static Capsule WebTransportDatagram(nsTArray<uint8_t>&& aData);
 
   CapsuleType Type() const;
 
@@ -101,6 +177,62 @@ class Capsule final {
   const WebTransportStreamDataCapsule& GetWebTransportStreamDataCapsule()
       const {
     return mCapsule.as<WebTransportStreamDataCapsule>();
+  }
+  WebTransportStreamsBlockedCapsule& GetWebTransportStreamsBlockedCapsule() {
+    return mCapsule.as<WebTransportStreamsBlockedCapsule>();
+  }
+  const WebTransportStreamsBlockedCapsule&
+  GetWebTransportStreamsBlockedCapsule() const {
+    return mCapsule.as<WebTransportStreamsBlockedCapsule>();
+  }
+  WebTransportMaxStreamsCapsule& GetWebTransportMaxStreamsCapsule() {
+    return mCapsule.as<WebTransportMaxStreamsCapsule>();
+  }
+  const WebTransportMaxStreamsCapsule& GetWebTransportMaxStreamsCapsule()
+      const {
+    return mCapsule.as<WebTransportMaxStreamsCapsule>();
+  }
+  WebTransportStreamDataBlockedCapsule&
+  GetWebTransportStreamDataBlockedCapsule() {
+    return mCapsule.as<WebTransportStreamDataBlockedCapsule>();
+  }
+  const WebTransportStreamDataBlockedCapsule&
+  GetWebTransportStreamDataBlockedCapsule() const {
+    return mCapsule.as<WebTransportStreamDataBlockedCapsule>();
+  }
+  WebTransportMaxStreamDataCapsule& GetWebTransportMaxStreamDataCapsule() {
+    return mCapsule.as<WebTransportMaxStreamDataCapsule>();
+  }
+  const WebTransportMaxStreamDataCapsule& GetWebTransportMaxStreamDataCapsule()
+      const {
+    return mCapsule.as<WebTransportMaxStreamDataCapsule>();
+  }
+  WebTransportDataBlockedCapsule& GetWebTransportDataBlockedCapsule() {
+    return mCapsule.as<WebTransportDataBlockedCapsule>();
+  }
+  const WebTransportDataBlockedCapsule& GetWebTransportDataBlockedCapsule()
+      const {
+    return mCapsule.as<WebTransportDataBlockedCapsule>();
+  }
+  WebTransportStopSendingCapsule& GetWebTransportStopSendingCapsule() {
+    return mCapsule.as<WebTransportStopSendingCapsule>();
+  }
+  const WebTransportStopSendingCapsule& GetWebTransportStopSendingCapsule()
+      const {
+    return mCapsule.as<WebTransportStopSendingCapsule>();
+  }
+  WebTransportResetStreamCapsule& GetWebTransportResetStreamCapsule() {
+    return mCapsule.as<WebTransportResetStreamCapsule>();
+  }
+  const WebTransportResetStreamCapsule& GetWebTransportResetStreamCapsule()
+      const {
+    return mCapsule.as<WebTransportResetStreamCapsule>();
+  }
+  WebTransportDatagramCapsule& GetWebTransportDatagramCapsule() {
+    return mCapsule.as<WebTransportDatagramCapsule>();
+  }
+  const WebTransportDatagramCapsule& GetWebTransportDatagramCapsule() const {
+    return mCapsule.as<WebTransportDatagramCapsule>();
   }
 
   template <typename CapsuleStruct>

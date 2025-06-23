@@ -5,7 +5,7 @@
 
 /**
  * Tests the effect of toggling the always-translate-language menuitem.
- * Checking the box on an untranslated page should immediately translate the page.
+ * Checking the box on an not translated page should immediately translate the page.
  * Unchecking the box on a translated page should immediately restore the page.
  */
 add_task(async function test_toggle_always_translate_language_menuitem() {
@@ -19,7 +19,7 @@ add_task(async function test_toggle_always_translate_language_menuitem() {
     "The translations button is visible."
   );
 
-  await FullPageTranslationsTestUtils.assertPageIsUntranslated(runInPage);
+  await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
   await FullPageTranslationsTestUtils.openPanel({
     expectedFromLanguage: "es",
@@ -38,7 +38,7 @@ add_task(async function test_toggle_always_translate_language_menuitem() {
     checked: true,
   });
 
-  await FullPageTranslationsTestUtils.assertPageIsTranslated({
+  await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated({
     fromLanguage: "es",
     toLanguage: "en",
     runInPage,
@@ -49,7 +49,7 @@ add_task(async function test_toggle_always_translate_language_menuitem() {
     url: SPANISH_PAGE_URL_DOT_ORG,
   });
 
-  await FullPageTranslationsTestUtils.assertPageIsTranslated({
+  await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated({
     fromLanguage: "es",
     toLanguage: "en",
     runInPage,
@@ -75,7 +75,7 @@ add_task(async function test_toggle_always_translate_language_menuitem() {
     "Only the button appears"
   );
 
-  await FullPageTranslationsTestUtils.assertPageIsUntranslated(runInPage);
+  await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
   await cleanup();
 });

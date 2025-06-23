@@ -497,7 +497,7 @@ function makeDefaultPropsBucket(propertiesNames, parent, ownProperties) {
     ownProperties
   );
 
-  if (defaultProperties.length > 0) {
+  if (defaultProperties.length) {
     const defaultPropertiesNode = createNode({
       parent,
       name: "<default properties>",
@@ -544,6 +544,7 @@ function makeNodesForOwnProps(propertiesNames, parent, ownProperties) {
   });
 }
 
+// eslint-disable-next-line complexity
 function makeNodesForProperties(objProps, parent) {
   const {
     ownProperties = {},

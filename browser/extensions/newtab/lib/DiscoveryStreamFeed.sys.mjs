@@ -4,11 +4,10 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  ClientEnvironmentBase:
-    "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs",
-  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   pktApi: "chrome://pocket/content/pktApi.sys.mjs",
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -30,17 +29,6 @@ import {
   actionTypes as at,
   actionCreators as ac,
 } from "resource://newtab/common/Actions.mjs";
-
-// `contextId` is a unique identifier used by Contextual Services
-const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
-ChromeUtils.defineLazyGetter(lazy, "contextId", () => {
-  let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
-  if (!_contextId) {
-    _contextId = String(Services.uuid.generateUUID());
-    Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
-  }
-  return _contextId;
-});
 
 const CACHE_KEY = "discovery_stream";
 const STARTUP_CACHE_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000; // 1 week
@@ -67,6 +55,10 @@ const PREF_ENDPOINTS = "discoverystream.endpoints";
 const PREF_IMPRESSION_ID = "browser.newtabpage.activity-stream.impressionId";
 const PREF_LAYOUT_EXPERIMENT_A = "newtabLayouts.variant-a";
 const PREF_LAYOUT_EXPERIMENT_B = "newtabLayouts.variant-b";
+const PREF_CONTEXTUAL_SPOC_PLACEMENTS =
+  "discoverystream.placements.contextualSpocs";
+const PREF_CONTEXTUAL_SPOC_COUNTS =
+  "discoverystream.placements.contextualSpocs.counts";
 const PREF_SPOC_PLACEMENTS = "discoverystream.placements.spocs";
 const PREF_SPOC_COUNTS = "discoverystream.placements.spocs.counts";
 const PREF_SPOC_POSITIONS = "discoverystream.spoc-positions";
@@ -107,6 +99,7 @@ const PREF_CONTEXTUAL_CONTENT_ENABLED =
   "discoverystream.contextualContent.enabled";
 const PREF_FAKESPOT_ENABLED =
   "discoverystream.contextualContent.fakespot.enabled";
+const PREF_CONTEXTUAL_ADS = "discoverystream.sections.contextualAds.enabled";
 const PREF_CONTEXTUAL_CONTENT_SELECTED_FEED =
   "discoverystream.contextualContent.selectedFeed";
 const PREF_CONTEXTUAL_CONTENT_LISTFEED_TITLE =
@@ -119,6 +112,10 @@ const PREF_CONTEXTUAL_CONTENT_FAKESPOT_CTA_COPY =
   "discoverystream.contextualContent.fakespot.ctaCopy";
 const PREF_CONTEXTUAL_CONTENT_FAKESPOT_CTA_URL =
   "discoverystream.contextualContent.fakespot.ctaUrl";
+const PREF_USER_INFERRED_PERSONALIZATION =
+  "discoverystream.sections.personalization.inferred.user.enabled";
+const PREF_SYSTEM_INFERRED_PERSONALIZATION =
+  "discoverystream.sections.personalization.inferred.enabled";
 
 const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_SECTIONS_FOLLOWING = "discoverystream.sections.following";
@@ -205,6 +202,31 @@ export class DiscoveryStreamFeed {
     }
 
     return this._isBff;
+  }
+
+  get isContextualAds() {
+    if (this._isContextualAds === undefined) {
+      // We care about if the contextual ads pref is on, if contextual is supported,
+      // and if inferred is on, but OHTTP is off.
+      const state = this.store.getState();
+      const marsOhttpEnabled = Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled",
+        false
+      );
+      const contextualAds = state.Prefs.values[PREF_CONTEXTUAL_ADS];
+      const inferredPersonalization =
+        state.Prefs.values[PREF_USER_INFERRED_PERSONALIZATION] &&
+        state.Prefs.values[PREF_SYSTEM_INFERRED_PERSONALIZATION];
+      const sectionsEnabled = state.Prefs.values[PREF_SECTIONS_ENABLED];
+      // We want this if contextual ads are on, and also if inferred personalization is on, we also use OHTTP.
+      const useContextualAds =
+        contextualAds &&
+        ((inferredPersonalization && marsOhttpEnabled) ||
+          !inferredPersonalization);
+      this._isContextualAds = sectionsEnabled && useContextualAds;
+    }
+
+    return this._isContextualAds;
   }
 
   get isMerino() {
@@ -307,21 +329,12 @@ export class DiscoveryStreamFeed {
   }
 
   setupPrefs(isStartup = false) {
-    const pocketNewtabExperiment = lazy.ExperimentAPI.getExperimentMetaData({
-      featureId: "pocketNewtab",
-    });
-
-    const pocketNewtabRollout = lazy.ExperimentAPI.getRolloutMetaData({
-      featureId: "pocketNewtab",
-    });
-
-    // We want to know if the user is in an experiment or rollout,
-    // but we prioritize experiments over rollouts.
-    const experimentMetaData = pocketNewtabExperiment || pocketNewtabRollout;
+    const experimentMetadata =
+      lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata();
 
     let utmSource = "pocket-newtab";
-    let utmCampaign = experimentMetaData?.slug;
-    let utmContent = experimentMetaData?.branch?.slug;
+    let utmCampaign = experimentMetadata?.slug;
+    let utmContent = experimentMetadata?.branch;
 
     this.store.dispatch(
       ac.BroadcastToContent({
@@ -383,6 +396,9 @@ export class DiscoveryStreamFeed {
       })
     );
 
+    // sync redux store with PersistantCache personalization data
+    this.configureFollowedSections(isStartup);
+
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.DISCOVERY_STREAM_COLLECTION_DISMISSIBLE_TOGGLE,
@@ -397,7 +413,7 @@ export class DiscoveryStreamFeed {
     );
   }
 
-  async configureFollowedSections() {
+  async configureFollowedSections(isStartup = false) {
     const prefs = this.store.getState().Prefs.values;
     const cachedData = (await this.cache.get()) || {};
     let { sectionPersonalization } = cachedData;
@@ -438,9 +454,12 @@ export class DiscoveryStreamFeed {
       );
     }
     this.store.dispatch(
-      ac.AlsoToMain({
+      ac.BroadcastToContent({
         type: at.SECTION_PERSONALIZATION_UPDATE,
         data: sectionPersonalization || {},
+        meta: {
+          isStartup,
+        },
       })
     );
   }
@@ -489,7 +508,8 @@ export class DiscoveryStreamFeed {
     this._prefCache = {};
   }
 
-  async fetchFromEndpoint(rawEndpoint, options = {}) {
+  async fetchFromEndpoint(rawEndpoint, options = {}, useOhttp = false) {
+    let fetchPromise;
     if (!rawEndpoint) {
       console.error("Tried to fetch endpoint but none was configured.");
       return null;
@@ -497,6 +517,14 @@ export class DiscoveryStreamFeed {
 
     const apiKeyPref = this.config.api_key_pref;
     const apiKey = Services.prefs.getCharPref(apiKeyPref, "");
+    const ohttpRelayURL = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL",
+      ""
+    );
+    const ohttpConfigURL = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL",
+      ""
+    );
 
     const endpoint = rawEndpoint
       .replace("$apiKey", apiKey)
@@ -518,17 +546,42 @@ export class DiscoveryStreamFeed {
       const controller = new AbortController();
       const { signal } = controller;
 
-      const fetchPromise = fetch(endpoint, {
-        ...options,
-        credentials: "omit",
-        signal,
-      });
+      if (useOhttp && ohttpConfigURL && ohttpRelayURL) {
+        let config = await lazy.ObliviousHTTP.getOHTTPConfig(ohttpConfigURL);
+
+        if (!config) {
+          console.error(
+            new Error(
+              `OHTTP was configured for ${endpoint} but we couldn't fetch a valid config`
+            )
+          );
+          return null;
+        }
+        fetchPromise = lazy.ObliviousHTTP.ohttpRequest(
+          ohttpRelayURL,
+          config,
+          endpoint,
+          {
+            ...options,
+            credentials: "omit",
+            signal,
+          }
+        );
+      } else {
+        fetchPromise = fetch(endpoint, {
+          ...options,
+          credentials: "omit",
+          signal,
+        });
+      }
+
       // istanbul ignore next
       const timeoutId = setTimeout(() => {
         controller.abort();
       }, FETCH_TIMEOUT);
 
       const response = await fetchPromise;
+
       if (!response.ok) {
         throw new Error(`Unexpected status (${response.status})`);
       }
@@ -1146,6 +1199,82 @@ export class DiscoveryStreamFeed {
     }
   }
 
+  // This returns ad placements that contain IAB content.
+  // The results are ads that are contextual, and match an IAB category.
+  getContextualAdsPlacements() {
+    const state = this.store.getState();
+    const placementsArray = state.Prefs.values[
+      PREF_CONTEXTUAL_SPOC_PLACEMENTS
+    ]?.split(`,`)
+      .map(s => s.trim())
+      .filter(item => item);
+    const countsArray = state.Prefs.values[PREF_CONTEXTUAL_SPOC_COUNTS]?.split(
+      `,`
+    )
+      .map(s => s.trim())
+      .filter(item => item)
+      .map(item => parseInt(item, 10));
+
+    const feeds = state.DiscoveryStream.feeds.data;
+    const recsFeed = Object.values(feeds).find(
+      feed => feed?.data?.sections?.length
+    );
+
+    let iabPlacements = [];
+
+    // If we don't have recsFeed, it means we are loading for the first time,
+    // and don't have any cached data.
+    // In this situation, we don't fill iabPlacements,
+    // and go with the non IAB default contextual placement prefs.
+    if (recsFeed) {
+      // An array of all iab placements, flattened, sorted, and filtered.
+      iabPlacements = recsFeed.data.sections
+        .filter(section => section.iab)
+        .sort((a, b) => a.receivedRank - b.receivedRank)
+        .reduce((acc, section) => {
+          const iabArray = section.layout.responsiveLayouts[0].tiles
+            .filter(tile => tile.hasAd)
+            .map(() => {
+              return section.iab;
+            });
+          return [...acc, ...iabArray];
+        }, []);
+    }
+
+    return placementsArray.map((placement, index) => ({
+      placement,
+      count: countsArray[index],
+      ...(iabPlacements[index] ? { content: iabPlacements[index] } : {}),
+    }));
+  }
+
+  // This returns ad placements that don't contain IAB content.
+  // The results are ads that are not contextual, and can be of any IAB category.
+  getSimpleAdsPlacements() {
+    const state = this.store.getState();
+    const placementsArray = state.Prefs.values[PREF_SPOC_PLACEMENTS]?.split(`,`)
+      .map(s => s.trim())
+      .filter(item => item);
+    const countsArray = state.Prefs.values[PREF_SPOC_COUNTS]?.split(`,`)
+      .map(s => s.trim())
+      .filter(item => item)
+      .map(item => parseInt(item, 10));
+
+    return placementsArray.map((placement, index) => ({
+      placement,
+      count: countsArray[index],
+    }));
+  }
+
+  getAdsPlacements() {
+    // We can replace unifiedAdsPlacements if we have and can use contextual ads.
+    // No longer relying on pref based placements and counts.
+    if (this.isContextualAds) {
+      return this.getContextualAdsPlacements();
+    }
+    return this.getSimpleAdsPlacements();
+  }
+
   async loadSpocs(sendUpdate, isStartup) {
     const cachedData = (await this.cache.get()) || {};
     const unifiedAdsEnabled =
@@ -1208,41 +1337,35 @@ export class DiscoveryStreamFeed {
         if (unifiedAdsEnabled) {
           const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
           endpoint = `${endpointBaseUrl}v1/ads`;
-          const placementsArray = state.Prefs.values[
-            PREF_SPOC_PLACEMENTS
-          ]?.split(`,`)
-            .map(s => s.trim())
-            .filter(item => item);
-          const countsArray = state.Prefs.values[PREF_SPOC_COUNTS]?.split(`,`)
-            .map(s => s.trim())
-            .filter(item => item)
-            .map(item => parseInt(item, 10));
-
-          unifiedAdsPlacements = placementsArray.map((placement, index) => ({
-            placement,
-            count: countsArray[index],
-          }));
-
+          unifiedAdsPlacements = this.getAdsPlacements();
           const blockedSponsors =
             this.store.getState().Prefs.values[PREF_UNIFIED_ADS_BLOCKED_LIST];
 
           body = {
-            context_id: lazy.contextId,
+            context_id: await lazy.ContextId.request(),
             placements: unifiedAdsPlacements,
             blocks: blockedSponsors.split(","),
           };
         }
 
         const headers = new Headers();
+        const marsOhttpEnabled = Services.prefs.getBoolPref(
+          "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled",
+          false
+        );
         headers.append("content-type", "application/json");
 
         let spocsResponse;
         try {
-          spocsResponse = await this.fetchFromEndpoint(endpoint, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(body),
-          });
+          spocsResponse = await this.fetchFromEndpoint(
+            endpoint,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify(body),
+            },
+            marsOhttpEnabled
+          );
         } catch (error) {
           console.error("Error trying to load spocs feeds:", error);
         }
@@ -1330,8 +1453,18 @@ export class DiscoveryStreamFeed {
                 fetchTimestamp
               );
 
-              const { data: scoredResults, personalized } =
-                await this.scoreItems(spocsWithFetchTimestamp, "spocs");
+              let items = spocsWithFetchTimestamp;
+              let personalized = false;
+
+              // We only need to rank if we don't have contextual ads.
+              if (!this.isContextualAds) {
+                const scoreResults = await this.scoreItems(
+                  spocsWithFetchTimestamp,
+                  "spocs"
+                );
+                items = scoreResults.data;
+                personalized = scoreResults.personalized;
+              }
 
               spocsState.spocs = {
                 ...spocsState.spocs,
@@ -1341,7 +1474,7 @@ export class DiscoveryStreamFeed {
                   sponsor,
                   sponsored_by_override,
                   personalized,
-                  items: scoredResults,
+                  items,
                 },
               };
             }
@@ -1401,10 +1534,17 @@ export class DiscoveryStreamFeed {
         return;
       }
 
-      endpoint = `${endpointBaseUrl}v1/delete_user`;
-      body = {
-        context_id: lazy.contextId,
-      };
+      // If rotation is enabled, then the module is going to take care of
+      // sending the request to MARS to delete the context_id. Otherwise,
+      // we do it manually here.
+      if (lazy.ContextId.rotationEnabled) {
+        await lazy.ContextId.forceRotation();
+      } else {
+        endpoint = `${endpointBaseUrl}v1/delete_user`;
+        body = {
+          context_id: await lazy.ContextId.request(),
+        };
+      }
     }
 
     if (!endpoint) {
@@ -1645,20 +1785,13 @@ export class DiscoveryStreamFeed {
   }
 
   getExperimentInfo() {
-    const pocketNewtabExperiment = lazy.ExperimentAPI.getExperimentMetaData({
-      featureId: "pocketNewtab",
-    });
-
-    const pocketNewtabRollout = lazy.ExperimentAPI.getRolloutMetaData({
-      featureId: "pocketNewtab",
-    });
-
     // We want to know if the user is in an experiment or rollout,
     // but we prioritize experiments over rollouts.
-    const experimentMetaData = pocketNewtabExperiment || pocketNewtabRollout;
+    const experimentMetadata =
+      lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata();
 
-    let experimentName = experimentMetaData?.slug || "";
-    let experimentBranch = experimentMetaData?.branch?.slug || "";
+    let experimentName = experimentMetadata?.slug ?? "";
+    let experimentBranch = experimentMetadata?.branch ?? "";
 
     return {
       experimentName,
@@ -1673,6 +1806,11 @@ export class DiscoveryStreamFeed {
     const sectionsEnabled = prefs[PREF_SECTIONS_ENABLED];
     let isFakespot;
     const selectedFeedPref = prefs[PREF_CONTEXTUAL_CONTENT_SELECTED_FEED];
+    // Should we fetch /curated-recommendations over OHTTP
+    const merinoOhttpEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.discoverystream.merino-provider.ohttp.enabled",
+      false
+    );
     let sections = [];
     const { feeds } = cachedData;
 
@@ -1682,7 +1820,11 @@ export class DiscoveryStreamFeed {
         cachedData.sectionPersonalization
       );
 
-      const feedResponse = await this.fetchFromEndpoint(feedUrl, options);
+      const feedResponse = await this.fetchFromEndpoint(
+        feedUrl,
+        options,
+        merinoOhttpEnabled
+      );
 
       if (feedResponse) {
         const { settings = {} } = feedResponse;
@@ -1695,6 +1837,7 @@ export class DiscoveryStreamFeed {
             url: item.url,
             title: item.title,
             topic: item.topic,
+            features: item.features,
             excerpt: item.excerpt,
             publisher: item.publisher,
             raw_image_src: item.imageUrl,
@@ -1759,6 +1902,7 @@ export class DiscoveryStreamFeed {
                     url: item.url,
                     title: item.title,
                     topic: item.topic,
+                    features: item.features,
                     excerpt: item.excerpt,
                     publisher: item.publisher,
                     raw_image_src: item.imageUrl,
@@ -1775,6 +1919,7 @@ export class DiscoveryStreamFeed {
                   subtitle: sectionData.subtitle || "",
                   receivedRank: sectionData.receivedFeedRank,
                   layout: sectionData.layout,
+                  iab: sectionData.iab,
                   // property if initially shown (with interest picker)
                   visible: sectionData.isInitiallyVisible,
                 });
@@ -1827,7 +1972,14 @@ export class DiscoveryStreamFeed {
               return { sectionId, title };
             });
         }
-
+        if (feedResponse.inferredLocalModel) {
+          this.store.dispatch(
+            ac.AlsoToMain({
+              type: at.INFERRED_PERSONALIZATION_MODEL_UPDATE,
+              data: feedResponse.inferredLocalModel || {},
+            })
+          );
+        }
         // We can cleanup any impressions we have that are old before we rotate.
         // In theory we can do this anywhere, but doing it just before rotate is optimal.
         // Rotate is also the only place that uses these impressions.
@@ -1911,6 +2063,13 @@ export class DiscoveryStreamFeed {
 
   formatComponentFeedRequest(sectionPersonalization = {}) {
     const prefs = this.store.getState().Prefs.values;
+    const inferredPersonalization =
+      prefs[PREF_USER_INFERRED_PERSONALIZATION] &&
+      prefs[PREF_SYSTEM_INFERRED_PERSONALIZATION];
+    const merinoOhttpEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.discoverystream.merino-provider.ohttp.enabled",
+      false
+    );
     const headers = new Headers();
     if (this.isMerino) {
       const topicSelectionEnabled = prefs[PREF_TOPIC_SELECTION_ENABLED];
@@ -1940,11 +2099,16 @@ export class DiscoveryStreamFeed {
       // To display the inline interest picker pass `enableInterestPicker` into the request
       const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
 
+      let inferredInterests = null;
+      if (inferredPersonalization && merinoOhttpEnabled) {
+        inferredInterests =
+          this.store.getState().InferredPersonalization.inferredInterests || {};
+      }
       const requestMetadata = {
-        utc_offset: lazy.NewTabUtils.getUtcOffset(),
+        utc_offset: lazy.NewTabUtils.getUtcOffset(prefs[PREF_SURFACE_ID]),
         coarse_os: lazy.NewTabUtils.normalizeOs(),
-        coarse_os_version: lazy.ClientEnvironmentBase.os.version,
         surface_id: prefs[PREF_SURFACE_ID] || "",
+        inferredInterests,
       };
 
       headers.append("content-type", "application/json");
@@ -2220,6 +2384,7 @@ export class DiscoveryStreamFeed {
     // Reset in-memory caches.
     this._isBff = undefined;
     this._isMerino = undefined;
+    this._isContextualAds = undefined;
     this._spocsCacheUpdateTime = undefined;
   }
 
@@ -2469,6 +2634,11 @@ export class DiscoveryStreamFeed {
         // This is a config reset directly related to Discovery Stream pref.
         this.configReset();
         break;
+      case PREF_CONTEXTUAL_ADS:
+      case PREF_USER_INFERRED_PERSONALIZATION:
+      case PREF_SYSTEM_INFERRED_PERSONALIZATION:
+        this._isContextualAds = undefined;
+        break;
       case PREF_COLLECTIONS_ENABLED:
         this.onCollectionsChanged();
         break;
@@ -2572,7 +2742,6 @@ export class DiscoveryStreamFeed {
         if (this.config.enabled) {
           await this.enable({ updateOpenTabs: true, isStartup: true });
         }
-        await this.configureFollowedSections();
         Services.prefs.addObserver(PREF_POCKET_BUTTON, this);
         // This function is async but just for devtools,
         // so we don't need to wait for it.
@@ -2838,8 +3007,17 @@ export class DiscoveryStreamFeed {
       case at.TOPIC_SELECTION_IMPRESSION:
         this.topicSelectionImpressionEvent();
         break;
-      case at.SECTION_PERSONALIZATION_UPDATE:
+      case at.SECTION_PERSONALIZATION_SET:
         await this.cache.set("sectionPersonalization", action.data);
+        this.store.dispatch(
+          ac.BroadcastToContent({
+            type: at.SECTION_PERSONALIZATION_UPDATE,
+            data: action.data,
+          })
+        );
+        break;
+      case at.INFERRED_PERSONALIZATION_MODEL_UPDATE:
+        await this.cache.set("inferredModel", action.data);
     }
   }
 }

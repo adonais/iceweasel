@@ -16,6 +16,7 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/net/CookieCommons.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/StorageAccess.h"
 #include "nsICookie.h"
 #include "nsIGlobalObject.h"
@@ -30,6 +31,15 @@ namespace mozilla::dom {
 
 namespace {
 
+int64_t ComputeExpiry(const CookieInit& aOptions) {
+  if (aOptions.mExpires.IsNull()) {  // Session cookie
+    return INT64_MAX;
+  }
+
+  return CookieCommons::MaybeReduceExpiry(
+      PR_Now() / PR_USEC_PER_SEC, aOptions.mExpires.Value() / PR_MSEC_PER_SEC);
+}
+
 int32_t SameSiteToConst(const CookieSameSite& aSameSite) {
   switch (aSameSite) {
     case CookieSameSite::Strict:
@@ -43,12 +53,12 @@ int32_t SameSiteToConst(const CookieSameSite& aSameSite) {
 }
 
 bool ValidateCookieNameOrValue(const nsAString& aStr) {
+  if (aStr.Length() > 0 && (aStr.First() == 0x20 || aStr.Last() == 0x20)) {
+    return false;
+  }
   for (auto iter = aStr.BeginReading(), end = aStr.EndReading(); iter < end;
        ++iter) {
     if (*iter == 0x3B || *iter == 0x7F || (*iter <= 0x1F && *iter != 0x09)) {
-      return false;
-    }
-    if (*iter == 0x20) {
       return false;
     }
   }
@@ -207,16 +217,11 @@ bool ValidateCookieNamePrefix(const nsAString& aName, const nsAString& aValue,
   return true;
 }
 
-void CookieDataToItem(const CookieData& aData, CookieListItem* aItem) {
-  aItem->mName.Construct(aData.name());
-  aItem->mValue.Construct(aData.value());
-}
-
-void CookieDataToList(const nsTArray<CookieData>& aData,
-                      nsTArray<CookieListItem>& aResult) {
-  for (const CookieData& data : aData) {
+void CookieStructToList(const nsTArray<CookieStruct>& aData,
+                        nsTArray<CookieListItem>& aResult) {
+  for (const CookieStruct& data : aData) {
     CookieListItem* item = aResult.AppendElement();
-    CookieDataToItem(data, item);
+    CookieStore::CookieStructToItem(data, item);
   }
 }
 
@@ -442,10 +447,7 @@ already_AddRefed<Promise> CookieStore::Set(const CookieInit& aOptions,
                 isOn3PCBExceptionList, nsString(aOptions.mName),
                 nsString(aOptions.mValue),
                 // If expires is not set, it's a session cookie.
-                aOptions.mExpires.IsNull(),
-                aOptions.mExpires.IsNull()
-                    ? INT64_MAX
-                    : static_cast<int64_t>(aOptions.mExpires.Value() / 1000),
+                aOptions.mExpires.IsNull(), ComputeExpiry(aOptions),
                 aOptions.mDomain, path, SameSiteToConst(aOptions.mSameSite),
                 aOptions.mPartitioned, operationID);
         if (NS_WARN_IF(!ipcPromise)) {
@@ -777,7 +779,7 @@ already_AddRefed<Promise> CookieStore::GetInternal(
               }
 
               nsTArray<CookieListItem> list;
-              CookieDataToList(aResult.ResolveValue(), list);
+              CookieStructToList(aResult.ResolveValue(), list);
 
               if (!aOnlyTheFirstMatch) {
                 promise->MaybeResolve(list);
@@ -812,6 +814,46 @@ Document* CookieStore::MaybeGetDocument() const {
   }
 
   return nullptr;
+}
+
+// static
+void CookieStore::CookieStructToItem(const CookieStruct& aData,
+                                     CookieListItem* aItem) {
+  aItem->mName.Construct(aData.name());
+  aItem->mValue.Construct(aData.value());
+  aItem->mPath.Construct(aData.path());
+
+  if (aData.host().IsEmpty() || aData.host()[0] != '.') {
+    aItem->mDomain.Construct(VoidCString());
+  } else {
+    aItem->mDomain.Construct(nsDependentCSubstring(aData.host(), 1));
+  }
+
+  if (!aData.isSession()) {
+    aItem->mExpires.Construct(aData.expiry() * PR_MSEC_PER_SEC);
+  } else {
+    aItem->mExpires.Construct(nullptr);
+  }
+
+  aItem->mSecure.Construct(aData.isSecure());
+
+  CookieSameSite sameSite = CookieSameSite::None;
+  switch (aData.sameSite()) {
+    case nsICookie::SAMESITE_STRICT:
+      sameSite = CookieSameSite::Strict;
+      break;
+
+    case nsICookie::SAMESITE_LAX:
+      sameSite = CookieSameSite::Lax;
+      break;
+
+    default:
+      // FIXME: lax by default?
+      break;
+  }
+
+  aItem->mSameSite.Construct(sameSite);
+  aItem->mPartitioned.Construct(aData.isPartitioned());
 }
 
 }  // namespace mozilla::dom

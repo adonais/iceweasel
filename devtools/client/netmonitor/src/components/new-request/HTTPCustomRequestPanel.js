@@ -269,20 +269,23 @@ class HTTPCustomRequestPanel extends Component {
 
   onUpdateQueryParams() {
     const { urlQueryParams, url } = this.state;
-    let queryString = "";
+
+    const searchParams = new URLSearchParams();
     for (const { name, value, checked } of urlQueryParams) {
-      if (checked) {
-        queryString += `${encodeURIComponent(name)}=${encodeURIComponent(
-          value
-        )}&`;
+      // We only want to add checked parameters with a non-empty name
+      if (checked && name) {
+        searchParams.append(name, value);
       }
     }
 
+    // We can't use `getUrl` here as `url` is the value of the input and might not be a
+    // valid URL. We still want to try to set the params in the URL input in such case,
+    // so append them after the first "?" char we find.
     let finalURL = url.split("?")[0];
-
-    if (queryString.length) {
-      finalURL += `?${queryString.substring(0, queryString.length - 1)}`;
+    if (searchParams.size) {
+      finalURL += `?${searchParams}`;
     }
+
     this.setState({
       url: finalURL,
     });

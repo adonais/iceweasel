@@ -205,6 +205,7 @@
                          placespopup="true"
                          is="places-popup"
 #endif
+                         needsgutter="always"
                          tooltip="bhTooltip"
                          popupsinherittooltip="true">
                 <menuitem id="menu_showAllHistory"
@@ -263,6 +264,7 @@
                placespopup="true"
                is="places-popup"
 #endif
+               needsgutter="always"
                context="placesContext"
                openInTabs="children"
                tooltip="bhTooltip" popupsinherittooltip="true">
@@ -335,7 +337,7 @@
                         command="Tools:Downloads" data-l10n-id="menu-tools-downloads"/>
               <menuitem id="menu_openAddons"
                         key="key_openAddons"
-                        command="Tools:Addons" data-l10n-id="menu-tools-addons-and-themes"/>
+                        command="Tools:Addons" data-l10n-id="menu-tools-extensions-and-themes"/>
 
               <!-- only one of sync-setup, sync-enable, sync-unverifieditem, sync-syncnowitem or sync-reauthitem will be showing at once -->
               <menuitem id="sync-setup"

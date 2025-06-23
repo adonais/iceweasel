@@ -498,7 +498,10 @@ this.browserAction = class extends ExtensionAPIPersistent {
     }
 
     if (this.widget.areaType == CustomizableUI.TYPE_PANEL) {
-      await window.gUnifiedExtensions.togglePanel();
+      await window.gUnifiedExtensions.openPanel(
+        null,
+        "extension_browser_action_popup"
+      );
     }
 
     // This should already have been checked by callers, but acts as an
@@ -726,11 +729,16 @@ this.browserAction = class extends ExtensionAPIPersistent {
     const action =
       this.extension.manifestVersion < 3 ? "onBrowserAction" : "onAction";
 
-    global.actionContextMenu({
-      extension: this.extension,
-      [action]: true,
-      menu,
-    });
+    if (
+      this.extension.hasPermission("contextMenus") ||
+      this.extension.hasPermission("menus")
+    ) {
+      global.actionContextMenu({
+        extension: this.extension,
+        [action]: true,
+        menu,
+      });
+    }
   }
 
   /**

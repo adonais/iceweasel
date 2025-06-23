@@ -26,8 +26,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.LightDarkPreview
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -58,7 +58,7 @@ private val RippleRadius = 24.dp
 @Composable
 fun IconButton(
     onClick: () -> Unit,
-    contentDescription: String,
+    contentDescription: String?,
     modifier: Modifier = Modifier,
     onClickLabel: String? = null,
     enabled: Boolean = true,
@@ -68,7 +68,11 @@ fun IconButton(
     val view = LocalView.current
     Box(
         modifier = modifier
-            .semantics { this.contentDescription = contentDescription }
+            .semantics {
+                if (contentDescription != null) {
+                    this.contentDescription = contentDescription
+                }
+            }
             .minimumInteractiveComponentSize()
             .clickable(
                 interactionSource = interactionSource,
@@ -92,7 +96,7 @@ fun IconButton(
     }
 }
 
-@LightDarkPreview
+@PreviewLightDark
 @Composable
 private fun IconButtonPreview() {
     AcornTheme {
@@ -110,7 +114,7 @@ private fun IconButtonPreview() {
     }
 }
 
-@LightDarkPreview
+@PreviewLightDark
 @Composable
 private fun TextButtonPreview() {
     AcornTheme {

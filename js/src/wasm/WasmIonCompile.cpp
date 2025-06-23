@@ -275,6 +275,7 @@ struct InliningStats {
   size_t inlinedDirectFunctions = 0;      // number of inlinees
   size_t inlinedCallRefBytecodeSize = 0;  // sum of sizes of inlinees
   size_t inlinedCallRefFunctions = 0;     // number of inlinees
+  bool largeFunctionBackoff = false;      // did large function backoff happen?
 };
 
 // Encapsulates the generation of MIR for a wasm function and any functions
@@ -303,11 +304,10 @@ class RootCompiler {
   // The current stack of bytecode offsets of the caller functions of the
   // function currently being inlined.
   BytecodeOffsetVector inlinedCallerOffsets_;
-  // A copy of the above stack for efficient sharing.
-  SharedBytecodeOffsetVector inlinedCallerOffsetsVector_;
+  InlinedCallerOffsetIndex inlinedCallerOffsetsIndex_;
 
-  // Accumulated statistics about this tier.
-  TierStats tierStats_;
+  // Compilation statistics for this function.
+  CompileStats funcStats_;
 
   // Accumulated inlining statistics for this function.
   InliningStats inliningStats_;
@@ -325,12 +325,16 @@ class RootCompiler {
   // Reference to masm.tryNotes()
   wasm::TryNoteVector& tryNotes_;
 
+  // Reference to masm.inliningContext()
+  wasm::InliningContext& inliningContext_;
+
  public:
   RootCompiler(const CompilerEnvironment& compilerEnv,
                const CodeMetadata& codeMeta,
                const CodeTailMetadata* codeTailMeta, TempAllocator& alloc,
                const ValTypeVector& locals, const FuncCompileInput& func,
-               Decoder& decoder, wasm::TryNoteVector& tryNotes)
+               Decoder& decoder, wasm::TryNoteVector& tryNotes,
+               wasm::InliningContext& inliningContext)
       : compilerEnv_(compilerEnv),
         codeMeta_(codeMeta),
         codeTailMeta_(codeTailMeta),
@@ -345,17 +349,22 @@ class RootCompiler {
                 IonOptimizations.get(OptimizationLevel::Wasm), &codeMeta),
         loopDepth_(0),
         localInliningBudget_(0),
-        tryNotes_(tryNotes) {}
+        tryNotes_(tryNotes),
+        inliningContext_(inliningContext) {}
 
   const CompilerEnvironment& compilerEnv() const { return compilerEnv_; }
   const CodeMetadata& codeMeta() const { return codeMeta_; }
   const CodeTailMetadata* codeTailMeta() const { return codeTailMeta_; }
+  const FuncCompileInput& func() const { return func_; }
   TempAllocator& alloc() { return alloc_; }
   MIRGraph& mirGraph() { return mirGraph_; }
   MIRGenerator& mirGen() { return mirGen_; }
   int64_t inliningBudget() const { return localInliningBudget_; }
   FeatureUsage observedFeatures() const { return observedFeatures_; }
-  const TierStats& tierStats() const { return tierStats_; }
+  const CompileStats& funcStats() const { return funcStats_; }
+  void noteLargeFunctionBackoffWasApplied() {
+    inliningStats_.largeFunctionBackoff = true;
+  }
 
   uint32_t loopDepth() const { return loopDepth_; }
   void startLoop() { loopDepth_++; }
@@ -363,8 +372,8 @@ class RootCompiler {
 
   [[nodiscard]] bool generate();
 
-  const ShareableBytecodeOffsetVector* inlinedCallerOffsets() {
-    return inlinedCallerOffsetsVector_.get();
+  InlinedCallerOffsetIndex inlinedCallerOffsetsIndex() const {
+    return inlinedCallerOffsetsIndex_;
   }
 
   // Add a compile info for an inlined function. This keeps the inlined
@@ -533,11 +542,11 @@ class FunctionCompiler {
   BytecodeOffset bytecodeOffset() const { return iter_.bytecodeOffset(); }
   TrapSiteDesc trapSiteDesc() {
     return TrapSiteDesc(wasm::BytecodeOffset(bytecodeOffset()),
-                        rootCompiler_.inlinedCallerOffsets());
+                        rootCompiler_.inlinedCallerOffsetsIndex());
   }
   TrapSiteDesc trapSiteDescWithCallSiteLineNumber() {
     return TrapSiteDesc(wasm::BytecodeOffset(readCallSiteLineOrBytecode()),
-                        rootCompiler_.inlinedCallerOffsets());
+                        rootCompiler_.inlinedCallerOffsetsIndex());
   }
   FeatureUsage featureUsage() const { return iter_.featureUsage(); }
 
@@ -2058,7 +2067,7 @@ class FunctionCompiler {
         curBlock_->add(store);
 
         // Call the post-write barrier
-        return postBarrierPrecise(lineOrBytecode, valueAddr, prevValue);
+        return postBarrierEdgePrecise(lineOrBytecode, valueAddr, prevValue);
       }
 
       auto* store = MWasmStoreGlobalCell::New(alloc(), v, valueAddr);
@@ -2089,7 +2098,7 @@ class FunctionCompiler {
       curBlock_->add(store);
 
       // Call the post-write barrier
-      return postBarrierPrecise(lineOrBytecode, valueAddr, prevValue);
+      return postBarrierEdgePrecise(lineOrBytecode, valueAddr, prevValue);
     }
 
     auto* store = MWasmStoreInstanceDataField::New(alloc(), global.offset(), v,
@@ -2205,7 +2214,7 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     // Perform the post barrier
-    return postBarrierPrecise(lineOrBytecode, loc, prevValue);
+    return postBarrierEdgePrecise(lineOrBytecode, loc, prevValue);
   }
 
   void addInterruptCheck() {
@@ -2217,42 +2226,13 @@ class FunctionCompiler {
   }
 
   // Perform a post-write barrier to update the generational store buffer. This
-  // version will remove a previous store buffer entry if it is no longer
-  // needed.
-  [[nodiscard]] bool postBarrierPrecise(uint32_t lineOrBytecode,
-                                        MDefinition* valueAddr,
-                                        MDefinition* value) {
-    return emitInstanceCall2(lineOrBytecode, SASigPostBarrierPrecise, valueAddr,
-                             value);
-  }
-
-  // Perform a post-write barrier to update the generational store buffer. This
-  // version will remove a previous store buffer entry if it is no longer
-  // needed.
-  [[nodiscard]] bool postBarrierPreciseWithOffset(uint32_t lineOrBytecode,
-                                                  MDefinition* valueBase,
-                                                  uint32_t valueOffset,
-                                                  MDefinition* value) {
-    MDefinition* valueOffsetDef = constantI32(int32_t(valueOffset));
-    if (!valueOffsetDef) {
-      return false;
-    }
-    return emitInstanceCall3(lineOrBytecode, SASigPostBarrierPreciseWithOffset,
-                             valueBase, valueOffsetDef, value);
-  }
-
-  // Perform a post-write barrier to update the generational store buffer. This
-  // version is the most efficient and only requires the address to store the
-  // value and the new value. It does not remove a previous store buffer entry
-  // if it is no longer needed, you must use a precise post-write barrier for
-  // that.
-  [[nodiscard]] bool postBarrierImmediate(uint32_t lineOrBytecode,
+  // version stores the entire containing object (e.g. a struct) rather than a
+  // single edge.
+  [[nodiscard]] bool postBarrierWholeCell(uint32_t lineOrBytecode,
                                           MDefinition* object,
-                                          MDefinition* valueBase,
-                                          uint32_t valueOffset,
                                           MDefinition* newValue) {
-    auto* barrier = MWasmPostWriteBarrierImmediate::New(
-        alloc(), instancePointer_, object, valueBase, valueOffset, newValue);
+    auto* barrier = MWasmPostWriteBarrierWholeCell::New(
+        alloc(), instancePointer_, object, newValue);
     if (!barrier) {
       return false;
     }
@@ -2260,12 +2240,25 @@ class FunctionCompiler {
     return true;
   }
 
-  [[nodiscard]] bool postBarrierIndex(uint32_t lineOrBytecode,
-                                      MDefinition* object,
-                                      MDefinition* valueBase,
-                                      MDefinition* index, uint32_t scale,
-                                      MDefinition* newValue) {
-    auto* barrier = MWasmPostWriteBarrierIndex::New(
+  // Perform a post-write barrier to update the generational store buffer. This
+  // version tracks a single tenured -> nursery edge, and will remove a previous
+  // store buffer entry if it is no longer needed.
+  [[nodiscard]] bool postBarrierEdgePrecise(uint32_t lineOrBytecode,
+                                            MDefinition* valueAddr,
+                                            MDefinition* value) {
+    return emitInstanceCall2(lineOrBytecode, SASigPostBarrierEdgePrecise,
+                             valueAddr, value);
+  }
+
+  // Perform a post-write barrier to update the generational store buffer. This
+  // version does not remove a previous store buffer entry if it is no longer
+  // needed.
+  [[nodiscard]] bool postBarrierEdgeAtIndex(uint32_t lineOrBytecode,
+                                            MDefinition* object,
+                                            MDefinition* valueBase,
+                                            MDefinition* index, uint32_t scale,
+                                            MDefinition* newValue) {
+    auto* barrier = MWasmPostWriteBarrierEdgeAtIndex::New(
         alloc(), instancePointer_, object, valueBase, index, scale, newValue);
     if (!barrier) {
       return false;
@@ -2651,8 +2644,15 @@ class FunctionCompiler {
       // Ask the heuristics system if we're allowed to inline a function of
       // this size and kind at the current inlining depth.
       uint32_t inlineeBodySize = codeTailMeta()->funcDefRange(funcIndex).size;
-      if (!InliningHeuristics::isSmallEnoughToInline(kind, inliningDepth(),
-                                                     inlineeBodySize)) {
+      uint32_t rootFunctionBodySize = rootCompiler_.func().bytecodeSize();
+      bool largeFunctionBackoff;
+      bool smallEnough = InliningHeuristics::isSmallEnoughToInline(
+          kind, inliningDepth(), inlineeBodySize, rootFunctionBodySize,
+          &largeFunctionBackoff);
+      if (largeFunctionBackoff) {
+        rootCompiler_.noteLargeFunctionBackoffWasApplied();
+      }
+      if (!smallEnough) {
         continue;
       }
 
@@ -2780,7 +2780,7 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     CallCompileState callState;
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
                       CallSiteKind::Func);
     ResultType resultType = ResultType::Vector(funcType.results());
     auto callee = CalleeDesc::function(funcIndex);
@@ -2934,7 +2934,7 @@ class FunctionCompiler {
       }
     }
 
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
                       CallSiteKind::Indirect);
     ArgTypeVector argTypes(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
@@ -2951,7 +2951,7 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     CallCompileState callState;
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
                       CallSiteKind::Import);
     auto callee = CalleeDesc::import(instanceDataOffset);
     ArgTypeVector argTypes(funcType);
@@ -2973,7 +2973,7 @@ class FunctionCompiler {
 
     MOZ_ASSERT(builtin.failureMode == FailureMode::Infallible);
 
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
                       CallSiteKind::Symbolic);
     auto callee = CalleeDesc::builtin(builtin.identity);
 
@@ -3053,7 +3053,7 @@ class FunctionCompiler {
       return true;
     }
 
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
                       CallSiteKind::Symbolic);
     if (builtin.failureMode != FailureMode::Infallible &&
         !beginCatchableCall(callState)) {
@@ -3244,7 +3244,7 @@ class FunctionCompiler {
 
     CallCompileState callState;
     CalleeDesc callee = CalleeDesc::wasmFuncRef();
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
                       CallSiteKind::FuncRef);
     ArgTypeVector argTypes(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
@@ -4055,7 +4055,8 @@ class FunctionCompiler {
         alloc(), instancePointer_, exceptionAddr, /*valueOffset=*/0, exception,
         AliasSet::WasmPendingException, WasmPreBarrierKind::Normal);
     curBlock_->add(setException);
-    if (!postBarrierPrecise(/*lineOrBytecode=*/0, exceptionAddr, exception)) {
+    if (!postBarrierEdgePrecise(/*lineOrBytecode=*/0, exceptionAddr,
+                                exception)) {
       return false;
     }
 
@@ -4067,7 +4068,7 @@ class FunctionCompiler {
         alloc(), instancePointer_, exceptionTagAddr, /*valueOffset=*/0, tag,
         AliasSet::WasmPendingException, WasmPreBarrierKind::Normal);
     curBlock_->add(setExceptionTag);
-    return postBarrierPrecise(/*lineOrBytecode=*/0, exceptionTagAddr, tag);
+    return postBarrierEdgePrecise(/*lineOrBytecode=*/0, exceptionTagAddr, tag);
   }
 
   [[nodiscard]] bool endWithPadPatch(
@@ -4652,8 +4653,7 @@ class FunctionCompiler {
       curBlock_->add(store);
 
       // Call the post-write barrier
-      if (!postBarrierImmediate(bytecodeOffset, exception, data, offset,
-                                argValues[i])) {
+      if (!postBarrierWholeCell(bytecodeOffset, exception, argValues[i])) {
         return false;
       }
     }
@@ -4853,7 +4853,7 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     // Call the post-write barrier
-    return postBarrierImmediate(lineOrBytecode, keepAlive, base, offset, value);
+    return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
   }
 
   // Generate a write of `value` at address `base + index * scale`, where
@@ -4900,8 +4900,8 @@ class FunctionCompiler {
     }
     curBlock_->add(store);
 
-    return postBarrierIndex(lineOrBytecode, keepAlive, base, index,
-                            sizeof(void*), value);
+    return postBarrierEdgeAtIndex(lineOrBytecode, keepAlive, base, index,
+                                  sizeof(void*), value);
   }
 
   // Generate a read from address `base + offset`, where `offset` is known at
@@ -10566,14 +10566,16 @@ bool RootCompiler::generate() {
 
   MOZ_ASSERT(loopDepth_ == 0);
 
-  tierStats_.numFuncs += 1;
-  tierStats_.bytecodeSize += func_.end - func_.begin;
-  tierStats_.inlinedDirectCallCount += inliningStats_.inlinedDirectFunctions;
-  tierStats_.inlinedCallRefCount += inliningStats_.inlinedCallRefFunctions;
-  tierStats_.inlinedDirectCallBytecodeSize +=
+  funcStats_.numFuncs += 1;
+  funcStats_.bytecodeSize += func_.bytecodeSize();
+  funcStats_.inlinedDirectCallCount += inliningStats_.inlinedDirectFunctions;
+  funcStats_.inlinedCallRefCount += inliningStats_.inlinedCallRefFunctions;
+  funcStats_.inlinedDirectCallBytecodeSize +=
       inliningStats_.inlinedDirectBytecodeSize;
-  tierStats_.inlinedCallRefBytecodeSize +=
+  funcStats_.inlinedCallRefBytecodeSize +=
       inliningStats_.inlinedCallRefBytecodeSize;
+  funcStats_.numLargeFunctionBackoffs +=
+      inliningStats_.largeFunctionBackoff ? 1 : 0;
 
   if (codeTailMeta_) {
     auto guard = codeTailMeta_->inliningBudget.lock();
@@ -10593,7 +10595,7 @@ bool RootCompiler::generate() {
     // If this particular root function overran the function-level
     // limit, note that in the module too.
     if (localInliningBudget_ < 0) {
-      tierStats_.numInliningBudgetOverruns += 1;
+      funcStats_.numInliningBudgetOverruns += 1;
     }
   }
 
@@ -10635,13 +10637,15 @@ CompileInfo* RootCompiler::startInlineCall(
 
   // Cache a copy of the current stack of inlined caller offsets that can be
   // shared across all call sites
-  MutableBytecodeOffsetVector inlinedCallerOffsetsVector =
-      js_new<ShareableBytecodeOffsetVector>();
-  if (!inlinedCallerOffsetsVector ||
-      !inlinedCallerOffsetsVector->appendAll(inlinedCallerOffsets_)) {
+  InlinedCallerOffsets inlinedCallerOffsets;
+  if (!inlinedCallerOffsets.appendAll(inlinedCallerOffsets_)) {
     return nullptr;
   }
-  inlinedCallerOffsetsVector_ = inlinedCallerOffsetsVector;
+
+  if (!inliningContext_.append(std::move(inlinedCallerOffsets),
+                               &inlinedCallerOffsetsIndex_)) {
+    return nullptr;
+  }
 
   UniqueCompileInfo compileInfo = MakeUnique<CompileInfo>(numLocals);
   if (!compileInfo || !compileInfos_.append(std::move(compileInfo))) {
@@ -10707,7 +10711,8 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
 
     // Set up for Ion compilation.
     RootCompiler rootCompiler(compilerEnv, codeMeta, codeTailMeta, alloc,
-                              locals, func, d, masm.tryNotes());
+                              locals, func, d, masm.tryNotes(),
+                              masm.inliningContext());
     if (!rootCompiler.generate()) {
       return false;
     }
@@ -10715,9 +10720,6 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
     // Record observed feature usage
     FeatureUsage observedFeatures = rootCompiler.observedFeatures();
     code->featureUsage |= observedFeatures;
-
-    // Record our tier stats
-    code->tierStats.merge(rootCompiler.tierStats());
 
     // Compile MIR graph
     {
@@ -10764,6 +10766,9 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
       }
     }
 
+    // Record this function's compilation stats
+    code->compileStats.merge(rootCompiler.funcStats());
+
     // Record this function's specific feature usage
     if (!code->funcs.emplaceBack(func.index, observedFeatures)) {
       return false;
@@ -10805,8 +10810,9 @@ bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
   }
 
   TryNoteVector tryNotes;
+  InliningContext inliningContext;
   RootCompiler rootCompiler(compilerEnv, codeMeta, nullptr, alloc, locals, func,
-                            d, tryNotes);
+                            d, tryNotes, inliningContext);
   if (!rootCompiler.generate()) {
     return false;
   }

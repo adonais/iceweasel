@@ -18,6 +18,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutPreferences: "resource://newtab/lib/AboutPreferences.sys.mjs",
   AdsFeed: "resource://newtab/lib/AdsFeed.sys.mjs",
+  InferredPersonalizationFeed:
+    "resource://newtab/lib/InferredPersonalizationFeed.sys.mjs",
   DEFAULT_SITES: "resource://newtab/lib/DefaultSites.sys.mjs",
   DefaultPrefs: "resource://newtab/lib/ActivityStreamPrefs.sys.mjs",
   DiscoveryStreamFeed: "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs",
@@ -81,6 +83,11 @@ const REGION_CONTEXTUAL_CONTENT_CONFIG =
 const LOCALE_CONTEXTUAL_CONTENT_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.contextualContent.locale-content-config";
 
+const REGION_CONTEXTUAL_AD_CONFIG =
+  "browser.newtabpage.activity-stream.discoverystream.sections.contextualAds.region-config";
+const LOCALE_CONTEXTUAL_AD_CONFIG =
+  "browser.newtabpage.activity-stream.discoverystream.sections.contextualAds.locale-config";
+
 const REGION_SECTIONS_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.region-content-config";
 const LOCALE_SECTIONS_CONFIG =
@@ -104,6 +111,13 @@ function useInferredPersonalization({ geo, locale }) {
   return (
     csvPrefHasValue(REGION_INFERRED_PERSONALIZATION_CONFIG, geo) &&
     csvPrefHasValue(LOCALE_INFERRED_PERSONALIZATION_CONFIG, locale)
+  );
+}
+
+function useContextualAds({ geo, locale }) {
+  return (
+    csvPrefHasValue(REGION_CONTEXTUAL_AD_CONFIG, geo) &&
+    csvPrefHasValue(LOCALE_CONTEXTUAL_AD_CONFIG, locale)
   );
 }
 
@@ -259,6 +273,14 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Boolean flag to turn download Firefox for mobile promo variant C on and off",
+      value: false,
+    },
+  ],
+  [
+    "discoverystream.refinedCardsLayout.enabled",
+    {
+      title:
+        "Boolean flag enable layout and styling refinements for content and ad cards across different card sizes",
       value: false,
     },
   ],
@@ -432,6 +454,21 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "telemetry.privatePing.redactNewtabPing.enabled",
+    {
+      title: "Redacts content interaction ids from original New Tab ping",
+      value: false,
+    },
+  ],
+  [
+    "telemetry.privatePing.inferredInterests.enabled",
+    {
+      title:
+        "Includes interest vector with private ping when user has enabeled inferred personalization",
+      value: false,
+    },
+  ],
+  [
     "section.highlights.includeVisited",
     {
       title:
@@ -492,13 +529,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "newtabWallpapers.v2.enabled",
-    {
-      title: "Boolean flag to turn wallpaper v2 functionality on and off",
-      value: false,
-    },
-  ],
-  [
     "newtabWallpapers.customColor.enabled",
     {
       title: "Boolean flag to turn show custom color select box",
@@ -540,20 +570,6 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Number pref of maximum file size (in MB) a user can upload",
       value: 0,
-    },
-  ],
-  [
-    "newtabAdSize.variant-a",
-    {
-      title: "Boolean flag to turn ad size variant A on and off",
-      value: false,
-    },
-  ],
-  [
-    "newtabAdSize.variant-b",
-    {
-      title: "Boolean flag to turn ad size variant B on and off",
-      value: false,
     },
   ],
   [
@@ -646,6 +662,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "discoverystream.sections.contextualAds.enabled",
+    {
+      title: "Boolean flag to enable contextual ads",
+      getValue: useContextualAds,
+    },
+  ],
+  [
     "discoverystream.sections.personalization.inferred.enabled",
     {
       title: "Boolean flag to enable inferred personalizaton",
@@ -654,26 +677,17 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.sections.personalization.inferred.position",
-    {
-      title:
-        "Position of inferred personalizaton card. Should correlate to a row in Card Sections",
-      value: "1",
-    },
-  ],
-  [
-    "discoverystream.sections.personalization.inferred.blocked",
-    {
-      title:
-        "Boolean determining if personalized card is dismissed or visible on the page",
-      value: false,
-    },
-  ],
-  [
     "discoverystream.sections.personalization.inferred.user.enabled",
     {
       title: "User pref to toggle inferred personalizaton",
       value: false,
+    },
+  ],
+  [
+    "discoverystream.sections.personalization.inferred.model.override",
+    {
+      title:
+        "Override inferred personalization model JSON string that typically comes from rec API. Or 'TEST' for a test model",
     },
   ],
   [
@@ -724,6 +738,20 @@ export const PREFS_CONFIG = new Map([
     {
       title: "CSV string of spoc position indexes on newtab Pocket grid",
       value: "1,5,7,11,18,20",
+    },
+  ],
+  [
+    "discoverystream.placements.contextualSpocs",
+    {
+      title:
+        "CSV string of spoc placement ids on newtab Pocket grid. A placement id tells our ad server where the ads are intended to be displayed.",
+    },
+  ],
+  [
+    "discoverystream.placements.contextualSpocs.counts",
+    {
+      title:
+        "CSV string of spoc placement counts on newtab Pocket grid. The count tells the ad server how many ads to return for this position and placement.",
     },
   ],
   [
@@ -1166,6 +1194,23 @@ export const PREFS_CONFIG = new Map([
       },
     },
   ],
+  // Sponsored checkboxes placement experiment
+  [
+    "system.showSponsoredCheckboxes",
+    {
+      title:
+        "Switches on grouping of sponsored checkboxes on 'about:settings#home' page",
+      value: false,
+    },
+  ],
+  [
+    "showSponsoredCheckboxes",
+    {
+      title:
+        "'Support Firefox' pref on 'about:settings#home' page. Toggles all sponsored results on and off at the same time",
+      value: true,
+    },
+  ],
 ]);
 
 // Array of each feed's FEEDS_CONFIG factory and values to add to PREFS_CONFIG
@@ -1319,6 +1364,13 @@ const FEEDS_DATA = [
     name: "adsfeed",
     factory: () => new lazy.AdsFeed(),
     title: "Handles fetching and caching ads data",
+    value: true,
+  },
+  {
+    name: "inferredpersonalizationfeed",
+    factory: () => new lazy.InferredPersonalizationFeed(),
+    title:
+      "Handles generating and caching an interest vector for inferred personalization",
     value: true,
   },
   {

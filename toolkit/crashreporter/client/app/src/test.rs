@@ -453,14 +453,45 @@ fn error_dialog() {
     gui_interact(
         || {
             let cfg = Config::default();
-            ui::error_dialog(&cfg, "an error occurred");
+            ui::error_dialog(Arc::new(cfg), "an error occurred");
             Ok(())
         },
         |interact| {
-            interact.element("close", |_style, b: &model::Button| b.click.fire(&()));
+            interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
         },
     )
     .unwrap();
+}
+
+#[test]
+fn error_dialog_restart() {
+    let mut config = Config::default();
+    config.restart_command = Some("my_process".into());
+    config.restart_args = vec!["a".into(), "b".into()];
+    let ran_process = Counter::new();
+    let mock_ran_process = ran_process.clone();
+    mock::builder()
+        .set(
+            Command::mock("my_process"),
+            Box::new(move |cmd| {
+                assert_eq!(cmd.args, &["a", "b"]);
+                mock_ran_process.inc();
+                Ok(crate::std::process::success_output())
+            }),
+        )
+        .run(|| {
+            gui_interact(
+                move || {
+                    ui::error_dialog(Arc::new(config), "an error occurred");
+                    Ok(())
+                },
+                |interact| {
+                    interact.element("restart", |_style, b: &model::Button| b.click.fire(&()));
+                },
+            )
+        })
+        .unwrap();
+    ran_process.assert_one();
 }
 
 #[test]
@@ -473,6 +504,14 @@ fn no_dump_file() {
     assert!(try_run(&mut cfg).is_err());
     Arc::get_mut(&mut cfg).unwrap().auto_submit = true;
     assert!(try_run(&mut cfg).is_ok());
+}
+
+#[test]
+fn dump_file_does_not_exist() {
+    let mut test = GuiTest::new();
+    test.config.dump_file = Some("does_not_exist.dmp".into());
+    test.try_run(|_interact| {})
+        .expect_err("the gui should fail with an error");
 }
 
 #[test]
@@ -1228,10 +1267,9 @@ fn assert_mock_memtest(cmd: &Command) -> std::io::Result<Output> {
     assert_eq!(cmd.args.len(), 3);
     assert_eq!(cmd.args[0], "--memtest");
     assert!(cmd.args[1].to_string_lossy().parse::<u32>().is_ok());
-    assert!(serde_json::from_str::<memtest::MemtestRunnerArgs>(
-        cmd.args[2].to_string_lossy().borrow()
-    )
-    .is_ok());
+    assert!(
+        serde_json::from_str::<memtest::RunnerArgs>(cmd.args[2].to_string_lossy().borrow()).is_ok()
+    );
 
     let mut output = crate::std::process::success_output();
     output.stdout = "memtest output".into();

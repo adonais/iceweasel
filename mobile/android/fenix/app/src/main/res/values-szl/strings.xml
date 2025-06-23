@@ -50,39 +50,26 @@
     Explanation for private browsing displayed to users on home view when they first enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="private_browsing_placeholder_description_2">
-        %1$s ôprōżnio historyjo wyszukowanio i przeglōndanio ze prywatnych kart, jak zawrzisz je abo aplikacyjo. Skuli tego niy je sie anonimowym do strōn ani dostowcōw necowych usug. Snadnij ale możesz skryć swoja aktywność w internecie przed inkszymi, co używajōm tyj masziny.</string>
-  <string name="private_browsing_common_myths">
-       Czynste mity ô prywatnym przeglōndaniu
-    </string>
-  <!--
-    Private mode shortcut "contextual feature recommendation" (CFR)
-
-    Text for the Private mode shortcut CFR message for adding a private mode shortcut to open private tabs from the Home screen
-  -->
-  <string name="private_mode_cfr_message_2" moz:removedIn="138" tools:ignore="UnusedResources">Ôdewrzij nastympno prywatno karta jednym tykniyńciym.</string>
-  <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
-  <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Przidej do dōmowego ekranu</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Niy, dziynkuja</string>
+  <string name="private_browsing_placeholder_description_2">%1$s ôprōżnio historyjo wyszukowanio i przeglōndanio ze prywatnych kart, jak zawrzisz je abo aplikacyjo. Skuli tego niy je sie anonimowym do strōn ani dostowcōw necowych usug. Snadnij ale możesz skryć swoja aktywność w internecie przed inkszymi, co używajōm tyj masziny.</string>
+  <string name="private_browsing_common_myths">Czynste mity ô prywatnym przeglōndaniu</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
 
     Text for the info message. %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="open_in_app_cfr_info_message_2">Możesz nastawić aplikacyjo %1$s, coby autōmatycznie ôtwiyrała linki w aplikacyjach. </string>
+  <string name="open_in_app_cfr_info_message_2">Możesz nastawić aplikacyjo %1$s, coby autōmatycznie ôtwiyrała linki w aplikacyjach.</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">Idź do sztalōnkōw</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Ôdkoż</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
-  <string name="camera_permissions_needed_message">Trza dostympu do kamery. Idź do sztalōnkōw Androida, tyknij "dozwolyństwa" i tyknij "zgoda".</string>
+  <string name="camera_permissions_needed_message">Trza dostympu do kamery. Idź do sztalōnkōw Androida, tyknij \"dozwolyństwa\" i tyknij \"zgoda\".</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">Idź do sztalōnkōw</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
   <string name="camera_permissions_needed_negative_button_text">Ôdkoż</string>
   <!-- Text for the banner message to tell users about our auto close feature. -->
-  <string name="tab_tray_close_tabs_banner_message">Nastow, coby ôtwarte karty autōmatycznie sie zawiyrały, jak bez ôstatni dziyń, tydziyń abo rok niy były nawiedzōne. </string>
+  <string name="tab_tray_close_tabs_banner_message">Nastow, coby ôtwarte karty autōmatycznie sie zawiyrały, jak bez ôstatni dziyń, tydziyń abo rok niy były nawiedzōne.</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
   <string name="tab_tray_close_tabs_banner_positive_button_text">Pokoż ôpcyje</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
@@ -255,19 +242,19 @@
 
     Home onboarding dialog welcome screen title text.
   -->
-  <string name="onboarding_home_welcome_title_2">Witej we prywatniyjszym internecie</string>
+  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">Witej we prywatniyjszym internecie</string>
   <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description">Wiyncyj farbōw. Lepszo prywatnoś. Te same stowianie ludzi nad profitym.</string>
+  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">Wiyncyj farbōw. Lepszo prywatnoś. Te same stowianie ludzi nad profitym.</string>
   <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3">Przełōnczanie ekranōw jeszcze żodyn roz niy było take leke</string>
+  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">Przełōnczanie ekranōw jeszcze żodyn roz niy było take leke</string>
   <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description">Na swojij dōmowyj strōnie rōb dalij na kartach, co mosz ôtwarte na inkszych maszinach.</string>
+  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">Na swojij dōmowyj strōnie rōb dalij na kartach, co mosz ôtwarte na inkszych maszinach.</string>
   <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button">Zaczynōmy</string>
+  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">Zaczynōmy</string>
   <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button">Wloguj sie</string>
+  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">Wloguj sie</string>
   <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button">Przeskocz</string>
+  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Przeskocz</string>
   <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message">Twoje karty sie synchrōnizujōm! Rōb dalij na kartach, co mosz ôtwarte na inkszyj maszinie.</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
@@ -340,7 +327,7 @@
   <!-- Preference for adding private browsing shortcut -->
   <string name="preferences_add_private_browsing_shortcut">Przidej skrōt do prywatnego przeglōndanio</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
-  <string name="preferences_https_only_title">Tryb "Ino HTTPS"</string>
+  <string name="preferences_https_only_title">Tryb \"Ino HTTPS\"</string>
   <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle -->
   <string name="reduce_cookie_banner_off_for_site">Wyłōnczōne do tyj strōny</string>
   <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner details view. -->
@@ -376,7 +363,7 @@
   <!-- Message shown in the error page for when trying to access a http website while https only mode is enabled. The message has two paragraphs. This is the first. -->
   <string name="errorpage_httpsonly_message_title">Zdowo sie, że to strōna niy ôbsuguje HTTPS.</string>
   <!-- Message shown in the error page for when trying to access a http website while https only mode is enabled. The message has two paragraphs. This is the second. -->
-  <string name="errorpage_httpsonly_message_summary">Może ale tyż sie rozchodzić ô jaki atak. Jak przyńdziesz na strōna, to niy ôstawiej na nij żodnych prywatnych informacyji. Jak na nia pudziesz, tryb "Ino HTTPS" czasowo sie wyłōnczy do tyj strōny. </string>
+  <string name="errorpage_httpsonly_message_summary">Może ale tyż sie rozchodzić ô jaki atak. Jak przyńdziesz na strōna, to niy ôstawiej na nij żodnych prywatnych informacyji. Jak na nia pudziesz, tryb \"Ino HTTPS\" czasowo sie wyłōnczy do tyj strōny.</string>
   <!-- Preference for accessibility -->
   <string name="preferences_accessibility">Dostympność</string>
   <!-- Preference to override the Sync token server -->
@@ -465,9 +452,9 @@
   -->
   <string name="customize_toggle_recently_visited">Niydowno nawiedzōne</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2">Historyje do pōmedykowanio</string>
+  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Historyje do pōmedykowanio</string>
   <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary">Historyje z usugi %s</string>
+  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Historyje z usugi %s</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Spōnsorowane nowiny</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -581,7 +568,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">Skanuj kod pokozany na &lt;b&gt;firefox.com/pair&lt;/b&gt;</string>
+  <string name="pair_instructions_2"><![CDATA[Skanuj kod pokozany na <b>firefox.com/pair</b>]]></string>
   <!--
     Toolbar Preferences
 
@@ -830,22 +817,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Niy ma sam żodnyj historyje</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Pobrane sōm skasowane</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">Skasowane zbiory: %1$s</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Niy ma żodnych pobranych zbiorōw</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">Ôbrane: %1$d</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Skasuj</string>
   <!--
     Crashes
 
@@ -1133,7 +1108,7 @@
     Title shown in the notification that pops up to remind the user to set fenix as default browser.
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
-  <string name="nimbus_notification_default_browser_title" tools:ignore="BrandUsage,UnusedResources">Firefox je gibki i prywatny</string>
+  <string name="nimbus_notification_default_browser_title" tools:ignore="BrandUsage,UnusedResources">Firefox je gibki i prywatny</string>
   <!--
     Text shown in the notification that pops up to remind the user to set fenix as default browser.
     The app name is in the text, due to limitations with localizing Nimbus experiments
@@ -1218,7 +1193,7 @@
   <!-- Title for the Delete browsing data on quit preference -->
   <string name="preferences_delete_browsing_data_on_quit">Skasuj dane przeglōndanio przi zawiyraniu</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
-  <string name="preference_summary_delete_browsing_data_on_quit_2">Autōmatycznie kasuje dane przeglōndanio, jak we głōwnym myni ôbieresz "Skōńcz"</string>
+  <string name="preference_summary_delete_browsing_data_on_quit_2">Autōmatycznie kasuje dane przeglōndanio, jak we głōwnym myni ôbieresz \"Skōńcz\"</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
   <string name="delete_browsing_data_on_quit_action">Skōńcz</string>
   <!-- Title text of a delete browsing data dialog. -->
@@ -1270,7 +1245,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">Skanuj kod</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">Ôdewrzij Firefoxa na kōmputrze i idź na strōna &lt;b&gt;https://firefox.com/pair&lt;/b&gt;</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[Ôdewrzij Firefoxa na kōmputrze i idź na strōna <b>https://firefox.com/pair</b>]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">Fertich, coby skanować</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1278,7 +1253,7 @@
   <!-- Text shown for settings option for sign with email -->
   <string name="sign_in_with_email">Użyj lepij emaila</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
-  <string name="sign_in_create_account_text" tools:ignore="BrandUsage">Niy mosz kōnta? &lt;u&gt;Zrychtuj je&lt;/u&gt;, coby synchrōnizować Firefoxa miyndzy maszinami.</string>
+  <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Niy mosz kōnta? <u>Zrychtuj je</u>, coby synchrōnizować Firefoxa miyndzy maszinami.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s skōńczy sie synchrōnizować ze twojim kōntym, ale niy skasuje żodnych danych przeglōndanio na tyj maszinie.</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
@@ -1364,7 +1339,7 @@
   <!-- Category of trackers (cryptominers) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cryptominers_title">Elymynty, co fedrujōm kryptopiniōndze</string>
   <!-- Description of cryptominers that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_cryptominers_description">Niy dowo ôszydnym skryptōm fedrować cyfrowych piniyndzy na twojij maszinie. </string>
+  <string name="etp_cryptominers_description">Niy dowo ôszydnym skryptōm fedrować cyfrowych piniyndzy na twojij maszinie.</string>
   <!-- Category of trackers (tracking content) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_tracking_content_title">Śledzōnco zawartość</string>
   <!-- Text displayed that links to website about enhanced tracking protection SmartBlock -->

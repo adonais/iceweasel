@@ -34,12 +34,21 @@ internal sealed class BookmarksListSortOrder {
             }
     }
 
+    data object Positional : BookmarksListSortOrder() {
+        override val asString: String
+            get() = "positional"
+
+        override val comparator: Comparator<BookmarkItem>
+            get() = compareBy<BookmarkItem> { it.position }
+    }
+
     companion object {
         val default: BookmarksListSortOrder
             get() = Alphabetical(true)
 
         fun fromString(value: String, default: BookmarksListSortOrder = Alphabetical(true)): BookmarksListSortOrder {
             return when (value) {
+                "positional" -> Positional
                 "created-true" -> Created(true)
                 "created-false" -> Created(false)
                 "alphabetical-true" -> Alphabetical(true)
@@ -68,6 +77,7 @@ internal sealed class BookmarksListSortOrder {
  * @property bookmarksSelectFolderState State representing the select folder subscreen, if visible.
  * @property bookmarksEditFolderState State representing the edit folder subscreen, if visible.
  * @property bookmarksMultiselectMoveState State representing multi-select moving.
+ * @property isLoading State representing if the initial load has completed.
  */
 internal data class BookmarksState(
     val bookmarkItems: List<BookmarkItem>,
@@ -85,6 +95,7 @@ internal data class BookmarksState(
     val bookmarksSelectFolderState: BookmarksSelectFolderState?,
     val bookmarksEditFolderState: BookmarksEditFolderState?,
     val bookmarksMultiselectMoveState: MultiselectMoveState?,
+    val isLoading: Boolean,
 ) : State {
     val showNewFolderButton: Boolean
         get() = bookmarksSelectFolderState?.innerSelectionGuid == null &&
@@ -97,7 +108,7 @@ internal data class BookmarksState(
             sortMenuShown = false,
             sortOrder = BookmarksListSortOrder.default,
             recursiveSelectedCount = null,
-            currentFolder = BookmarkItem.Folder("", ""),
+            currentFolder = BookmarkItem.Folder("", "", null),
             isSignedIntoSync = false,
             openTabsConfirmationDialog = OpenTabsConfirmationDialog.None,
             bookmarksSnackbarState = BookmarksSnackbarState.None,
@@ -107,6 +118,7 @@ internal data class BookmarksState(
             bookmarksSelectFolderState = null,
             bookmarksEditFolderState = null,
             bookmarksMultiselectMoveState = null,
+            isLoading = true,
         )
     }
 }

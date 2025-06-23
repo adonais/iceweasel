@@ -34,7 +34,7 @@ add_task(async function test_browser_translations_full_page_multiple_windows() {
   await FullPageTranslationsTestUtils.clickTranslateButton({
     downloadHandler: testPage1.resolveDownloads,
   });
-  await FullPageTranslationsTestUtils.assertPageIsTranslated({
+  await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated({
     fromLanguage: "es",
     toLanguage: "en",
     runInPage: testPage1.runInPage,
@@ -51,7 +51,7 @@ add_task(async function test_browser_translations_full_page_multiple_windows() {
     expectedToLanguage: "en",
   });
   await FullPageTranslationsTestUtils.clickTranslateButton({ win: window2 });
-  await FullPageTranslationsTestUtils.assertPageIsTranslated({
+  await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated({
     fromLanguage: "es",
     toLanguage: "en",
     runInPage: testPage2.runInPage,

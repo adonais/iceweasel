@@ -169,7 +169,7 @@ class PresShell final : public nsStubDocumentObserver,
   // nsISupports
   NS_DECL_ISUPPORTS
 
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_PRESSHELL_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_PRESSHELL_IID)
 
   static bool AccessibleCaretEnabled(nsIDocShell* aDocShell);
 
@@ -737,6 +737,11 @@ class PresShell final : public nsStubDocumentObserver,
   static void SetVerifyReflowEnable(bool aEnabled);
 
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
+
+  // https://drafts.csswg.org/css-anchor-position-1/#target
+  nsIFrame* GetAnchorPosAnchor(const nsAtom* aName) const;
+  void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
+  void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
 
 #ifdef MOZ_REFLOW_PERF
   void DumpReflows();
@@ -1991,6 +1996,15 @@ class PresShell final : public nsStubDocumentObserver,
   // Utility method to restore the root scrollframe state
   void RestoreRootScrollPosition();
 
+  /**
+   * Dispatch eMouseRawUpdate or eTouchRawUpdate event if aSourceEvent requires
+   * a preceding "pointerrawupdate" event and there are some windows which have
+   * its listener.
+   */
+  MOZ_CAN_RUN_SCRIPT nsresult EnsurePrecedingPointerRawUpdate(
+      AutoWeakFrame& aWeakFrameForPresShell, const WidgetGUIEvent& aSourceEvent,
+      bool aDontRetargetEvents);
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void MaybeReleaseCapturingContent();
 
   class DelayedEvent {
@@ -2179,7 +2193,11 @@ class PresShell final : public nsStubDocumentObserver,
      * EventTargetData struct stores a set of a PresShell (event handler),
      * a frame (to handle the event) and a content (event target for the frame).
      */
-    struct MOZ_STACK_CLASS EventTargetData final {
+    struct MOZ_STACK_CLASS EventTargetData {
+     protected:
+      EventTargetData(EventTargetData&& aOther) = default;
+
+     public:
       EventTargetData() = delete;
       EventTargetData(const EventTargetData& aOther) = delete;
       explicit EventTargetData(nsIFrame* aFrameToHandleEvent) {
@@ -2190,6 +2208,14 @@ class PresShell final : public nsStubDocumentObserver,
       void SetFrameAndComputePresShellAndContent(nsIFrame* aFrameToHandleEvent,
                                                  WidgetGUIEvent* aGUIEvent);
       void SetContentForEventFromFrame(WidgetGUIEvent* aGUIEvent);
+
+      void ClearFrameToHandleEvent() { mFrame = nullptr; }
+      virtual void Clear() {
+        mFrame = nullptr;
+        mContent = nullptr;
+        mPresShell = nullptr;
+        mOverrideClickTarget = nullptr;
+      }
 
       nsPresContext* GetPresContext() const {
         return mPresShell ? mPresShell->GetPresContext() : nullptr;
@@ -2287,6 +2313,7 @@ class PresShell final : public nsStubDocumentObserver,
       nsCOMPtr<nsIContent> mOverrideClickTarget;
 
      private:
+      // FIXME: Use AutoWeakFrame instead of nsIFrame*.
       nsIFrame* mFrame = nullptr;
       // mContent is the event target content for mFrame->GetContent().
       // This may be nullptr even if mFrame is not nullptr.
@@ -2340,6 +2367,109 @@ class PresShell final : public nsStubDocumentObserver,
         EventTargetData* aEventTargetData);
 
     /**
+     * EventTargetDataWithCapture additionally stores the pointer capture
+     * content/element and how they are treated.
+     */
+    struct MOZ_STACK_CLASS EventTargetDataWithCapture final
+        : public EventTargetData {
+      enum class Query : bool {
+        // The constructor won't process the pending pointer captures nor flush
+        // the pending notifications.  I.e., specifying this value makes the
+        // constructor never run script.
+        // Then, the constructor treats the pending capture element as the
+        // override element because if the caller would dispatch the event,
+        // processing the pending pointer capture changes the pending element to
+        // the override element.  Therefore, this should be used when the caller
+        // may not dispatch the event, i.e., when the caller just wants to know
+        // the event target document/window/PresShell.
+        PendingState,
+        // The constructor may process the pending pointer captures and flush
+        // the pending notifications.  Then, it computs the target.  Therefore,
+        // this should be used when the caller will actually dispatch the event.
+        // The result may be different from the result when you compute that
+        // with specifying PendingState if the pending notifications or the
+        // running script change the layout.
+        LatestState,
+      };
+
+      /**
+       * Compute the event target data of aGUIEvent with capturing content and
+       * pointer capturing element.
+       *
+       * @param aWeakFrameForPresShell
+       *                      A frame for PresShell.  This should match with
+       *                      aEventTargetData->GetFrame().
+       * @param aQueryState   Whether the caller of this constructor expects
+       *                      to compute the target with pending state or the
+       *                      latest state.  See the enum class definition above
+       *                      for the detail.
+       * @param aGUIEvent     A widget event whose target should be computed
+       *                      with the coordinates.
+       *                      If aQueryState is set to "PendingState", this must
+       *                      not be eMouseDown nor eMouseUp which may require
+       *                      to flush pending notifications of the child
+       *                      document.
+       * @param aEventTargetData
+       *                      [in/out] Must be initialized with the frame which
+       *                      aWeakFrameForPresShell refers to.  Then, this will
+       *                      be modified with the proper target of aGUIEvent
+       *                      and store the capturing content, pointer capture
+       *                      elements and how the capturing data was handled.
+       * @param aEventStatus  [optional, out] Will be set to
+       *                      nsEventStatus_eIgnore when there is no event
+       *                      target which can handle aGUIEvent.
+       * @return              true if the caller can keep handling the event
+       *                      with aEventTargetData (it may not have frame if
+       *                      there is a pointer capture element).
+       */
+      [[nodiscard]] static MOZ_CAN_RUN_SCRIPT EventTargetDataWithCapture
+      QueryEventTargetUsingCoordinates(EventHandler& aEventHandler,
+                                       AutoWeakFrame& aWeakFrameForPresShell,
+                                       Query aQueryState,
+                                       WidgetGUIEvent* aGUIEvent,
+                                       nsEventStatus* aEventStatus = nullptr) {
+        return EventTargetDataWithCapture(aEventHandler, aWeakFrameForPresShell,
+                                          aQueryState, aGUIEvent, aEventStatus);
+      }
+
+      [[nodiscard]] bool CanHandleEvent() const {
+        return GetFrame() || GetContent() || mCapturingContent ||
+               mPointerCapturingElement;
+      }
+
+      void Clear() override {
+        EventTargetData::Clear();
+        mCapturingContent = nullptr;
+        mPointerCapturingElement = nullptr;
+        mCapturingContentIgnored = false;
+        mCaptureRetargeted = false;
+      }
+
+     private:
+      MOZ_CAN_RUN_SCRIPT explicit EventTargetDataWithCapture(
+          EventHandler& aEventHandler, AutoWeakFrame& aWeakFrameForPresShell,
+          Query aQueryState, WidgetGUIEvent* aGUIEvent,
+          nsEventStatus* aEventStatus = nullptr);
+
+      EventTargetDataWithCapture(EventTargetDataWithCapture&& aOther) = default;
+
+     public:
+      // [out] The capturing content.  See
+      // EventHandler::GetCapturingContentFor().
+      nsCOMPtr<nsIContent> mCapturingContent;
+      // [out] The pointer capturing element of the pointerId of aGUIEvent of
+      // the constructor.  This is set to the override element if the our owner
+      // queries the latest state.  Otherwise, this is set to the pending
+      // element which will be the override element once the pointer capture is
+      // processed.
+      RefPtr<Element> mPointerCapturingElement;
+      // [out] Whether the capturing content was ignored.
+      bool mCapturingContentIgnored = false;
+      // [out] Whether the capture was retargeted.
+      bool mCaptureRetargeted = false;
+    };
+
+    /**
      * DispatchPrecedingPointerEvent() dispatches preceding pointer event for
      * aGUIEvent if Pointer Events is enabled.
      *
@@ -2347,7 +2477,7 @@ class PresShell final : public nsStubDocumentObserver,
      *                                  explanation of HandleEvent() for the
      *                                  details.
      * @param aGUIEvent                 The handled event.
-     * @param aPointerCapturingContent  The content which is capturing pointer
+     * @param aPointerCapturingElement  The element which is capturing pointer
      *                                  events if there is.  Otherwise, nullptr.
      * @param aDontRetargetEvents       Set aDontRetargetEvents of
      *                                  HandleEvent() which called this method.
@@ -2361,7 +2491,7 @@ class PresShell final : public nsStubDocumentObserver,
      */
     MOZ_CAN_RUN_SCRIPT bool DispatchPrecedingPointerEvent(
         AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
-        nsIContent* aPointerCapturingContent, bool aDontRetargetEvents,
+        Element* aPointerCapturingElement, bool aDontRetargetEvents,
         EventTargetData* aEventTargetData, nsEventStatus* aEventStatus);
 
     /**
@@ -2590,7 +2720,7 @@ class PresShell final : public nsStubDocumentObserver,
      *                                  explanation of HandleEvent() for the
      *                                  details.
      * @param aGUIEvent                 The handling event.
-     * @param aPointerCapturingContent  Current pointer capturing content.
+     * @param aPointerCapturingElement  Current pointer capturing element.
      *                                  Must not be nullptr.
      * @param aEventStatus              [in/out] The event status of aGUIEvent.
      * @return                          Basically, result of
@@ -2599,7 +2729,7 @@ class PresShell final : public nsStubDocumentObserver,
     MOZ_CAN_RUN_SCRIPT nsresult
     HandleEventWithPointerCapturingContentWithoutItsFrame(
         AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
-        nsIContent* aPointerCapturingContent, nsEventStatus* aEventStatus);
+        dom::Element* aPointerCapturingElement, nsEventStatus* aEventStatus);
 
     /**
      * HandleEventAtFocusedContent() handles aGUIEvent at focused content.
@@ -2796,7 +2926,8 @@ class PresShell final : public nsStubDocumentObserver,
      * the event.
      */
     [[nodiscard]] Result<nsIContent*, nsresult> GetOverrideClickTarget(
-        WidgetGUIEvent* aGUIEvent, nsIFrame* aFrameForPresShell);
+        WidgetGUIEvent* aGUIEvent, nsIFrame* aFrameForPresShell,
+        nsIContent* aPointerCapturingContent);
 
     /**
      * DispatchEvent() tries to dispatch aEvent and notifies aEventStateManager
@@ -3023,6 +3154,8 @@ class PresShell final : public nsStubDocumentObserver,
   // A hash table of heap allocated weak frames.
   nsTHashSet<WeakFrame*> mWeakFrames;
 
+  nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>> mAnchorPosAnchors;
+
   // Reflow roots that need to be reflowed.
   DepthOrderedFrameList mDirtyRoots;
 
@@ -3163,6 +3296,12 @@ class PresShell final : public nsStubDocumentObserver,
   // middle of frame construction and the like... it really shouldn't be
   // needed, one hopes, but it is for now.
   uint16_t mChangeNestCount;
+
+  // This is the input source which set mMouseLocation.
+  uint16_t mMouseLocationInputSource = 0;  // MOZ_SOURCE_UNKNOWN by default
+
+  // This is the pointerId which set mMouseLocation.
+  uint32_t mMouseLocationPointerId = 0;
 
   // Flags controlling how our document is rendered.  These persist
   // between paints and so are tied with retained layer pixels.
@@ -3312,8 +3451,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   static bool sProcessInteractable;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(PresShell, NS_PRESSHELL_IID)
 
 }  // namespace mozilla
 

@@ -28,7 +28,7 @@ option(
 )
 
 
-@depends("--enable-artifact-build-symbols", "MOZ_AUTOMATION", target)
+@depends("--enable-artifact-build-symbols", moz_automation, target)
 def enable_artifact_build_symbols(value, automation, target):
     if len(value):
         return value[0]
@@ -42,9 +42,9 @@ def enable_artifact_build_symbols(value, automation, target):
 set_config("MOZ_ARTIFACT_BUILD_SYMBOLS", enable_artifact_build_symbols)
 
 
-@depends("--enable-artifact-builds")
-def imply_disable_compile_environment(value):
-    if value:
+@depends("--enable-artifact-builds", build_project)
+def imply_disable_compile_environment(value, build_project):
+    if value or build_project == "browser/extensions":
         return False
 
 
@@ -75,7 +75,9 @@ option(
 
 set_config("MOZ_COPY_PDBS", depends_if("MOZ_COPY_PDBS")(lambda _: True))
 
-imply_option("--enable-compile-environment", imply_disable_compile_environment)
+imply_option(
+    "--enable-compile-environment", imply_disable_compile_environment, reason="default"
+)
 
 option("--disable-compile-environment", help="Disable compiler/library checks")
 
@@ -182,7 +184,7 @@ imply_option("--enable-release", mozilla_official)
 
 option(
     "--enable-release",
-    default=milestone.is_release_or_beta | depends("MOZ_AUTOMATION")(lambda x: bool(x)),
+    default=milestone.is_release_or_beta | moz_automation,
     help="{Build|Do not build} with more conservative, release "
     "engineering-oriented options.{ This may slow down builds.|}",
 )
@@ -559,7 +561,7 @@ set_config("BUILD_BACKENDS", build_backends)
 @depends(
     build_project,
     target,
-    "MOZ_AUTOMATION",
+    moz_automation,
     enable_tests,
     when="--enable-compile-environment",
 )
@@ -947,7 +949,7 @@ set_config("MOZ_SYSTEM_ZLIB", True, when="--with-system-zlib")
 
 option(
     env="USE_LIBZ_RS",
-    default=milestone.is_nightly,
+    default=milestone.is_early_beta_or_earlier,
     help="Use libz-rs-sys instead of zlib",
     when=toolkit & ~with_system_zlib_option,
 )

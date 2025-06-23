@@ -451,8 +451,8 @@ namespace mozilla {
  * Windows touchscreen code works by setting a global WH_GETMESSAGE hook and
  * injecting tiptsf.dll. The touchscreen process then posts registered messages
  * to our main thread. The tiptsf hook picks up those registered messages and
- * uses them as commands, some of which call into UIA, which then calls into
- * MSAA, which then sends WM_GETOBJECT to us.
+ * uses them as commands, some of which call into UIA, which then sends
+ * WM_GETOBJECT to us.
  *
  * We can get ahead of this by installing our own thread-local WH_GETMESSAGE
  * hook. Since thread-local hooks are called ahead of global hooks, we will
@@ -560,8 +560,10 @@ class TIPMessageHandler {
     // want to block, and the aHwnd is a nsWindow that belongs to the current
     // (i.e., main) thread.
     if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
-        static_cast<LONG>(aLParam) != OBJID_CLIENT || !::NS_IsMainThread() ||
-        !WinUtils::GetNSWindowPtr(aHwnd) || !IsA11yBlocked()) {
+        (static_cast<LONG>(aLParam) != OBJID_CLIENT &&
+         static_cast<LONG>(aLParam) != UiaRootObjectId) ||
+        !::NS_IsMainThread() || !WinUtils::GetNSWindowPtr(aHwnd) ||
+        !IsA11yBlocked()) {
       return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam, aFlags,
                                       aTimeout, aMsgResult);
     }
@@ -671,8 +673,6 @@ nsWindow::nsWindow()
       mCachedHitTestTime(TimeStamp::Now()),
       mSizeConstraintsScale(GetDefaultScale().scale),
       mDesktopId("DesktopIdMutex") {
-  MOZ_ASSERT(mWindowType == WindowType::Child);
-
   if (!gInitializedVirtualDesktopManager) {
     TaskController::Get()->AddTask(
         MakeAndAddRef<InitializeVirtualDesktopManagerTask>());
@@ -873,7 +873,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   if (!aInitData) aInitData = &defaultInitData;
 
   MOZ_DIAGNOSTIC_ASSERT(aInitData->mWindowType != WindowType::Invisible);
-  MOZ_DIAGNOSTIC_ASSERT(aInitData->mWindowType != WindowType::Child);
 
   mBounds = aRect;
 
@@ -1310,10 +1309,6 @@ static DWORD WindowStylesRemovedForBorderStyle(BorderStyle aStyle) {
 DWORD nsWindow::WindowStyle() {
   DWORD style;
   switch (mWindowType) {
-    case WindowType::Child:
-      style = WS_OVERLAPPED;
-      break;
-
     case WindowType::Dialog:
       style = WS_OVERLAPPED | WS_BORDER | WS_DLGFRAME | WS_SYSMENU |
               DS_MODALFRAME | WS_CLIPCHILDREN;
@@ -1345,8 +1340,6 @@ DWORD nsWindow::WindowStyle() {
 // Return nsWindow extended styles
 DWORD nsWindow::WindowExStyle() {
   switch (mWindowType) {
-    case WindowType::Child:
-      return 0;
     case WindowType::Popup: {
       DWORD extendedStyle = WS_EX_TOOLWINDOW;
       if (mPopupLevel == PopupLevel::Top) {
@@ -1443,14 +1436,7 @@ static int32_t RoundDown(double aDouble) {
                      : static_cast<int32_t>(ceil(aDouble));
 }
 
-float nsWindow::GetDPI() {
-  float dpi = 96.0f;
-  nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
-  if (screen) {
-    screen->GetDpi(&dpi);
-  }
-  return dpi;
-}
+float nsWindow::GetDPI() { return GetDefaultScaleInternal() * 96.0f; }
 
 double nsWindow::GetDefaultScaleInternal() {
   if (mDefaultScale <= 0.0) {
@@ -2612,6 +2598,9 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   }
 
   const nsSizeMode sizeMode = mFrameState->GetSizeMode();
+  if (sizeMode == nsSizeMode_Minimized) {
+    return false;
+  }
 
   const bool hasCaption =
       bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
@@ -2655,9 +2644,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
       hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CYCAPTION, dpi) : 0;
 
   metrics.mOffset = {};
-  if (sizeMode == nsSizeMode_Minimized) {
-    // Use default frame size for minimized windows (so, do nothing).
-  } else if (sizeMode == nsSizeMode_Fullscreen) {
+  if (sizeMode == nsSizeMode_Fullscreen) {
     // Remove the default frame from the top of our fullscreen window.  This
     // makes the whole caption part of our client area, allowing us to draw
     // in the whole caption area.  Additionally remove the default frame from

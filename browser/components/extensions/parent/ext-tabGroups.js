@@ -239,7 +239,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
         },
 
         query: query => {
-          return Array.from(this.queryGroups(query ?? {}), group =>
+          return Array.from(this.queryGroups(query), group =>
             this.convert(group)
           );
         },

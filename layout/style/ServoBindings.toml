@@ -28,6 +28,7 @@ headers = [
     "mozilla/PresShell.h",
     "mozilla/ServoTraversalStatistics.h",
     "mozilla/SizeOfState.h",
+    "nsDeviceContext.h",
     "nsCSSProps.h",
     "nsNameSpaceManager.h",
 ]
@@ -311,6 +312,7 @@ opaque-types = [
     "RefPtr_Proxy_member_function",
     "nsAutoPtr_Proxy",
     "nsAutoPtr_Proxy_member_function",
+    "nsRegion_.*",
     "mozilla::detail::HashTable", # <- We should be able to remove this and
                                   # HashSet below once
                                   # https://github.com/rust-lang/rust-bindgen/pull/1515
@@ -418,6 +420,7 @@ cbindgen-types = [
     { gecko = "StyleTimelineName", servo = "crate::values::computed::TimelineName" },
     { gecko = "StyleScrollAxis", servo = "crate::values::computed::ScrollAxis" },
     { gecko = "StyleViewTimelineInset", servo = "crate::values::computed::ViewTimelineInset" },
+    { gecko = "StyleViewTransitionClass", servo = "crate::values::computed::ViewTransitionClass" },
     { gecko = "StyleViewTransitionName", servo = "crate::values::computed::ViewTransitionName" },
     { gecko = "StyleResize", servo = "crate::values::computed::Resize" },
     { gecko = "StyleOverflowClipBox", servo = "crate::values::computed::OverflowClipBox" },
@@ -635,7 +638,8 @@ cbindgen-types = [
     { gecko = "StyleMargin", servo = "crate::values::computed::length::Margin" },
     { gecko = "StyleGenericAnchorFunction", servo = "crate::values::generics::position::GenericAnchorFunction" },
     { gecko = "StylePositionProperty", servo = "crate::values::computed::PositionProperty" },
-    { gecko = "StyleQueryFontMetricsFlags", servo = "crate::gecko::media_queries::QueryFontMetricsFlags" },
+    { gecko = "StyleQueryFontMetricsFlags", servo = "crate::values::specified::font::QueryFontMetricsFlags" },
+    { gecko = "StyleWritingModeProperty", servo = "crate::values::computed::box_::WritingModeProperty" },
 ]
 
 mapped-generic-types = [

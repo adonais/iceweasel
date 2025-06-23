@@ -9,6 +9,7 @@ import android.os.Environment
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
@@ -30,14 +31,12 @@ import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import org.jetbrains.annotations.VisibleForTesting
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.databinding.DownloadDialogLayoutBinding
 import org.mozilla.fenix.downloads.DownloadService
 import org.mozilla.fenix.downloads.dialog.DynamicDownloadDialog
-import org.mozilla.fenix.downloads.dialog.FirstPartyDownloadDialog
 import org.mozilla.fenix.downloads.dialog.StartDownloadDialog
 import org.mozilla.fenix.downloads.dialog.ThirdPartyDownloadDialog
 import org.mozilla.fenix.ext.components
@@ -57,6 +56,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
     protected var engineSession: EngineSession? = null
     private var canGoBack: Boolean = false
     private var currentStartDownloadDialog: StartDownloadDialog? = null
+    private var firstPartyDownloadDialog: AlertDialog? = null
 
     @Suppress("DEPRECATION", "LongMethod")
     // https://github.com/mozilla-mobile/fenix/issues/19920
@@ -113,32 +113,37 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                 },
                 customFirstPartyDownloadDialog = { filename, contentSize, positiveAction, negativeAction ->
                     run {
-                        if (currentStartDownloadDialog == null) {
-                            requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
-                                Breadcrumb("FirstPartyDownloadDialog created"),
-                            )
-                            FirstPartyDownloadDialog(
-                                activity = requireActivity(),
-                                filename = filename.value,
-                                contentSize = contentSize.value,
-                                fileSizeFormatter = requireComponents.core.fileSizeFormatter,
-                                positiveButtonAction = positiveAction.value,
-                                negativeButtonAction = negativeAction.value,
-                            ).onDismiss {
-                                requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
-                                    Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+                        if (firstPartyDownloadDialog == null && currentStartDownloadDialog == null) {
+                            val contentSizeInBytes =
+                                requireComponents.core.fileSizeFormatter.formatSizeInBytes(contentSize.value)
+
+                            firstPartyDownloadDialog = AlertDialog.Builder(requireContext())
+                                .setTitle(
+                                    getString(
+                                        R.string.mozac_feature_downloads_dialog_title_3,
+                                        contentSizeInBytes,
+                                    ),
                                 )
-                                currentStartDownloadDialog = null
-                            }.show(provideDownloadContainer())
-                                .also {
-                                    currentStartDownloadDialog = it
+                                .setMessage(filename.value)
+                                .setPositiveButton(R.string.mozac_feature_downloads_dialog_download) { dialog, _ ->
+                                    positiveAction.value.invoke()
+                                    dialog.dismiss()
                                 }
+                                .setNegativeButton(R.string.mozac_feature_downloads_dialog_cancel) { dialog, _ ->
+                                    negativeAction.value.invoke()
+                                    dialog.dismiss()
+                                }.setOnDismissListener {
+                                    firstPartyDownloadDialog = null
+                                    requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
+                                        Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+                                    )
+                                }.show()
                         }
                     }
                 },
                 customThirdPartyDownloadDialog = { downloaderApps, onAppSelected, negativeActionCallback ->
                     run {
-                        if (currentStartDownloadDialog == null) {
+                        if (firstPartyDownloadDialog == null && currentStartDownloadDialog == null) {
                             requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
                                 Breadcrumb("ThirdPartyDownloadDialog created"),
                             )
@@ -208,8 +213,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
         }
     }
 
-    @VisibleForTesting
-    internal fun provideBrowserStore() = requireComponents.core.store
+    private fun provideBrowserStore() = requireComponents.core.store
 
     /**
      * Provides a container for download-related views.
@@ -242,6 +246,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
         super.onStop()
         engineSession?.unregister(this)
         currentStartDownloadDialog?.dismiss()
+        firstPartyDownloadDialog?.dismiss()
     }
 
     override fun onPromptRequest(promptRequest: PromptRequest) {

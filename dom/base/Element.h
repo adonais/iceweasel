@@ -119,6 +119,7 @@ struct URLValue;
 namespace dom {
 struct CheckVisibilityOptions;
 struct CustomElementData;
+struct SetHTMLUnsafeOptions;
 struct SetHTMLOptions;
 struct GetHTMLOptions;
 struct GetAnimationsOptions;
@@ -145,6 +146,7 @@ template <typename T>
 class Optional;
 enum class CallerType : uint32_t;
 enum class ReferrerPolicy : uint8_t;
+enum class FetchPriority : uint8_t;
 }  // namespace dom
 }  // namespace mozilla
 
@@ -307,7 +309,7 @@ class Element : public FragmentOrElement {
 
 #endif  // MOZILLA_INTERNAL_API
 
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_ELEMENT_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_ELEMENT_IID)
 
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
@@ -1450,13 +1452,13 @@ class Element : public FragmentOrElement {
   void RequestPointerLock(CallerType aCallerType);
   Attr* GetAttributeNode(const nsAString& aName);
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Attr> SetAttributeNode(
-      Attr& aNewAttr, ErrorResult& aError);
+      Attr& aNewAttr, nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
   already_AddRefed<Attr> RemoveAttributeNode(Attr& aOldAttr,
                                              ErrorResult& aError);
   Attr* GetAttributeNodeNS(const nsAString& aNamespaceURI,
                            const nsAString& aLocalName);
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Attr> SetAttributeNodeNS(
-      Attr& aNewAttr, ErrorResult& aError);
+      Attr& aNewAttr, nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
 
   MOZ_CAN_RUN_SCRIPT already_AddRefed<DOMRectList> GetClientRects();
   MOZ_CAN_RUN_SCRIPT already_AddRefed<DOMRect> GetBoundingClientRect();
@@ -1679,14 +1681,23 @@ class Element : public FragmentOrElement {
   void GetOuterHTML(OwningTrustedHTMLOrNullIsEmptyString& aOuterHTML);
 
   MOZ_CAN_RUN_SCRIPT void SetOuterHTML(
-      const TrustedHTMLOrNullIsEmptyString& aOuterHTML, ErrorResult& aError);
+      const TrustedHTMLOrNullIsEmptyString& aOuterHTML,
+      nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
 
   MOZ_CAN_RUN_SCRIPT void InsertAdjacentHTML(
       const nsAString& aPosition,
-      const TrustedHTMLOrString& aTrustedHTMLOrString, ErrorResult& aError);
+      const TrustedHTMLOrString& aTrustedHTMLOrString,
+      nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
 
-  void SetHTML(const nsAString& aInnerHTML, const SetHTMLOptions& aOptions,
-               ErrorResult& aError);
+  virtual void SetHTML(const nsAString& aInnerHTML,
+                       const SetHTMLOptions& aOptions, ErrorResult& aError);
+
+  MOZ_CAN_RUN_SCRIPT
+  virtual void SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
+                             const SetHTMLUnsafeOptions& aOptions,
+                             nsIPrincipal* aSubjectPrincipal,
+                             ErrorResult& aError);
+
   void GetHTML(const GetHTMLOptions& aOptions, nsAString& aResult);
 
   //----------------------------------------
@@ -2228,6 +2239,10 @@ class Element : public FragmentOrElement {
   MOZ_CAN_RUN_SCRIPT
   nsresult PostHandleEventForLinks(EventChainPostVisitor& aVisitor);
 
+  mozilla::dom::FetchPriority GetFetchPriority() const;
+
+  static void ParseFetchPriority(const nsAString& aValue, nsAttrValue& aResult);
+
  public:
   /**
    * Check if this element is a link. This matches the CSS definition of the
@@ -2272,10 +2287,6 @@ class Element : public FragmentOrElement {
   virtual void GetLinkTargetImpl(nsAString& aTarget);
 
   virtual bool Translate() const;
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual void SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
-                             ErrorResult& aError);
 
   MOZ_CAN_RUN_SCRIPT
   void FireBeforematchEvent(ErrorResult& aRv);
@@ -2350,8 +2361,6 @@ class Element : public FragmentOrElement {
   // Array containing all attributes for this element
   AttrArray mAttrs;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(Element, NS_ELEMENT_IID)
 
 inline bool Element::HasNonEmptyAttr(int32_t aNameSpaceID,
                                      const nsAtom* aName) const {

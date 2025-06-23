@@ -115,12 +115,12 @@ class InputTestHelpers extends LitTestHelpers {
     let { activatedProperty } = this;
 
     function trackEvent(event) {
-      let reactiveProps = event.target.constructor.properties;
+      let reactiveProps = event.target.constructor?.properties;
       seenEvents.push({
         type: event.type,
-        value: event.target.value,
+        value: event.currentTarget.value,
         localName: event.currentTarget.localName,
-        ...(reactiveProps.hasOwnProperty(activatedProperty) && {
+        ...(reactiveProps?.hasOwnProperty(activatedProperty) && {
           [activatedProperty]: event.target[activatedProperty],
         }),
       });
@@ -422,10 +422,23 @@ class InputTestHelpers extends LitTestHelpers {
     await firstInput.updateComplete;
 
     is(
-      getSupportLink().parentElement.id,
+      getSupportLink().previousElementSibling.id,
       "description",
-      "Support link is rendered in the description if a description is present."
+      "Support link is rendered next to the description if a description is present."
     );
+
+    if (firstInput.isInlineLayout) {
+      ok(
+        !getSupportLink().getAttribute("aria-describedby"),
+        "aria-describedby is not set on the support link."
+      );
+    } else {
+      is(
+        getSupportLink().getAttribute("aria-describedby"),
+        "label description",
+        "Support link is described by the label and description elements."
+      );
+    }
 
     let getSlottedSupportLink = () =>
       secondInput.shadowRoot
@@ -468,9 +481,9 @@ class InputTestHelpers extends LitTestHelpers {
     await slottedDescriptionPresent;
 
     is(
-      getSlottedSupportLink().assignedSlot.parentElement.id,
+      getSlottedSupportLink().assignedSlot.previousElementSibling.id,
       "description",
-      "Support link is rendered in the slotted description if a slotted description is present."
+      "Support link is rendered next to the slotted description if a slotted description is present."
     );
   }
 
@@ -630,7 +643,7 @@ class InputTestHelpers extends LitTestHelpers {
     let renderTarget = await this.renderTemplate(whitespaceTemplate);
     let firstInput = renderTarget.querySelector(selector);
 
-    if (firstInput.constructor.inputLayout == "block") {
+    if (!firstInput.isInlineLayout) {
       return;
     }
 

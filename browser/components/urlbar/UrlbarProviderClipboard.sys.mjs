@@ -38,6 +38,9 @@ class ProviderClipboard extends UrlbarProvider {
     return "UrlbarProviderClipboard";
   }
 
+  /**
+   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   */
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
@@ -46,7 +49,7 @@ class ProviderClipboard extends UrlbarProvider {
     this.#previousClipboard.value = newValue;
   }
 
-  isActive(queryContext, controller) {
+  async isActive(queryContext, controller) {
     // Return clipboard results only for empty searches.
     if (
       !lazy.UrlbarPrefs.get("clipboard.featureGate") ||

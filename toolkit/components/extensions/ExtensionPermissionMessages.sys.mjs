@@ -14,7 +14,6 @@ export const PERMISSION_L10N = new Localization(
     "toolkit/global/extensions.ftl",
     "toolkit/global/extensionPermissions.ftl",
     "branding/brand.ftl",
-    "locales-preview/dataCollectionPermissions.ftl",
   ],
   true
 );
@@ -62,12 +61,13 @@ export const PERMISSIONS_WITH_MESSAGE = new Set([
 export const DATA_COLLECTION_PERMISSIONS = new Set([
   "authenticationInfo",
   "bookmarksInfo",
-  "browsingHistory",
+  "browsingActivity",
   "financialAndPaymentInfo",
   "healthInfo",
   "locationInfo",
   "personalCommunications",
   "personallyIdentifyingInfo",
+  "searchTerms",
   "technicalAndInteraction",
   "websiteActivity",
   "websiteContent",

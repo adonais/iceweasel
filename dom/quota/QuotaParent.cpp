@@ -625,7 +625,17 @@ mozilla::ipc::IPCResult Quota::RecvInitializePersistentClient(
                 QuotaManager::GetOrCreate(),
                 ResolveBoolResponseAndReturn(aResolve));
 
-  quotaManager->InitializePersistentClient(aPrincipalInfo, aClientType)
+  QM_TRY_UNWRAP(
+      PrincipalMetadata principalMetadata,
+      GetInfoFromValidatedPrincipalInfo(*quotaManager, aPrincipalInfo),
+      ResolveBoolResponseAndReturn(aResolve));
+
+  OriginMetadata originMetadata{std::move(principalMetadata),
+                                PERSISTENCE_TYPE_PERSISTENT};
+
+  ClientMetadata clientMetadata{std::move(originMetadata), aClientType};
+
+  quotaManager->InitializePersistentClient(clientMetadata)
       ->Then(GetCurrentSerialEventTarget(), __func__,
              BoolPromiseResolveOrRejectCallback(this, std::move(aResolve)));
 
@@ -635,6 +645,7 @@ mozilla::ipc::IPCResult Quota::RecvInitializePersistentClient(
 mozilla::ipc::IPCResult Quota::RecvInitializeTemporaryClient(
     const PersistenceType& aPersistenceType,
     const PrincipalInfo& aPrincipalInfo, const Type& aClientType,
+    const bool& aCreateIfNonExistent,
     InitializeTemporaryClientResolver&& aResolve) {
   AssertIsOnBackgroundThread();
 
@@ -656,8 +667,16 @@ mozilla::ipc::IPCResult Quota::RecvInitializeTemporaryClient(
                 QuotaManager::GetOrCreate(),
                 ResolveBoolResponseAndReturn(aResolve));
 
-  quotaManager
-      ->InitializeTemporaryClient(aPersistenceType, aPrincipalInfo, aClientType)
+  QM_TRY_UNWRAP(
+      PrincipalMetadata principalMetadata,
+      GetInfoFromValidatedPrincipalInfo(*quotaManager, aPrincipalInfo),
+      ResolveBoolResponseAndReturn(aResolve));
+
+  OriginMetadata originMetadata{std::move(principalMetadata), aPersistenceType};
+
+  ClientMetadata clientMetadata{std::move(originMetadata), aClientType};
+
+  quotaManager->InitializeTemporaryClient(clientMetadata, aCreateIfNonExistent)
       ->Then(GetCurrentSerialEventTarget(), __func__,
              BoolPromiseResolveOrRejectCallback(this, std::move(aResolve)));
 

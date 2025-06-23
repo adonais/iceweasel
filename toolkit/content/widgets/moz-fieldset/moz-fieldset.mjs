@@ -18,6 +18,8 @@ export default class MozFieldset extends MozLitElement {
     label: { type: String, fluent: true },
     description: { type: String, fluent: true },
     supportPage: { type: String, attribute: "support-page" },
+    ariaLabel: { type: String, fluent: true, mapped: true },
+    ariaOrientation: { type: String, mapped: true },
   };
 
   descriptionTemplate() {
@@ -29,6 +31,7 @@ export default class MozFieldset extends MozLitElement {
     }
     return "";
   }
+
   supportPageTemplate() {
     if (this.supportPage) {
       return html`<a
@@ -40,6 +43,10 @@ export default class MozFieldset extends MozLitElement {
     return html`<slot name="support-link"></slot>`;
   }
 
+  legendTemplate() {
+    return html`<legend part="label">${this.label}</legend>`;
+  }
+
   render() {
     return html`
       <link
@@ -47,9 +54,13 @@ export default class MozFieldset extends MozLitElement {
         href="chrome://global/content/elements/moz-fieldset.css"
       />
       <fieldset
-        aria-describedby=${ifDefined(this.description ? "description" : null)}
+        aria-label=${ifDefined(this.ariaLabel)}
+        aria-describedby=${ifDefined(
+          this.description ? "description" : undefined
+        )}
+        aria-orientation=${ifDefined(this.ariaOrientation)}
       >
-        <legend part="label">${this.label}</legend>
+        ${this.label ? this.legendTemplate() : ""}
         ${!this.description ? this.supportPageTemplate() : ""}
         ${this.descriptionTemplate()}
         <div id="inputs" part="inputs">

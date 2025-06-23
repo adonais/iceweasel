@@ -4193,14 +4193,17 @@ bool jit::EliminateRedundantGCBarriers(MIRGraph& graph) {
 
   for (ReversePostorderIterator block = graph.rpoBegin();
        block != graph.rpoEnd(); block++) {
-    for (MInstructionIterator insIter(block->begin());
-         insIter != block->end();) {
+    for (MInstructionIterator insIter(block->begin()); insIter != block->end();
+         insIter++) {
       MInstruction* ins = *insIter;
-      insIter++;
-
       if (ins->isNewCallObject()) {
-        if (!TryEliminateGCBarriersForAllocation(graph.alloc(), ins)) {
-          return false;
+        MNewCallObject* allocation = ins->toNewCallObject();
+        // We can only eliminate the post barrier if we know the call object
+        // will be allocated in the nursery.
+        if (allocation->initialHeap() == gc::Heap::Default) {
+          if (!TryEliminateGCBarriersForAllocation(graph.alloc(), allocation)) {
+            return false;
+          }
         }
       }
     }
@@ -4306,6 +4309,24 @@ bool jit::MarkLoadsUsedAsPropertyKeys(MIRGraph& graph) {
   return true;
 }
 
+// Updates the wasm ref type of a node and verifies that in this pass we only
+// narrow types, and never widen.
+static bool UpdateWasmRefType(MDefinition* def) {
+  wasm::MaybeRefType newRefType = def->computeWasmRefType();
+  bool changed = newRefType != def->wasmRefType();
+
+  // Ensure that we do not regress from Some to Nothing.
+  MOZ_ASSERT(!(def->wasmRefType().isSome() && newRefType.isNothing()));
+  // Ensure that the new ref type is a subtype of the previous one (i.e. we
+  // only narrow ref types).
+  MOZ_ASSERT_IF(def->wasmRefType().isSome(),
+                wasm::RefType::isSubTypeOf(newRefType.value(),
+                                           def->wasmRefType().value()));
+
+  def->setWasmRefType(newRefType);
+  return changed;
+}
+
 // Since wasm has a fairly rich type system enforced in validation, we can use
 // this type system within MIR to robustly track the types of ref values. This
 // allows us to make MIR-level optimizations such as eliding null checks or
@@ -4335,7 +4356,7 @@ bool jit::TrackWasmRefTypes(MIRGraph& graph) {
         continue;
       }
 
-      bool hasType = def->updateWasmRefType();
+      bool hasType = UpdateWasmRefType(*def);
       if (hasType) {
         for (MUseIterator use(def->usesBegin()); use != def->usesEnd(); use++) {
           MNode* consumer = use->consumer();
@@ -4345,7 +4366,7 @@ bool jit::TrackWasmRefTypes(MIRGraph& graph) {
           MPhi* phi = consumer->toDefinition()->toPhi();
           if (phi->block()->isLoopHeader() &&
               *def == phi->getLoopBackedgeOperand()) {
-            bool changed = phi->updateWasmRefType();
+            bool changed = UpdateWasmRefType(phi);
             if (changed && !worklist.append(phi)) {
               return false;
             }
@@ -4368,7 +4389,7 @@ bool jit::TrackWasmRefTypes(MIRGraph& graph) {
       if (!use->consumer()->isDefinition()) {
         continue;
       }
-      bool changed = use->consumer()->toDefinition()->updateWasmRefType();
+      bool changed = UpdateWasmRefType(use->consumer()->toDefinition());
       if (changed && !worklist.append(use->consumer()->toDefinition())) {
         return false;
       }

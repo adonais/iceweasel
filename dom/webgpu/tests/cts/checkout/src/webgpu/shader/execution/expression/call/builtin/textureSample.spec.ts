@@ -12,10 +12,10 @@ import {
   isDepthTextureFormat,
   kDepthStencilFormats,
   kAllTextureFormats,
-  textureDimensionAndFormatCompatible,
+  textureFormatAndDimensionPossiblyCompatible,
   isTextureFormatPossiblyFilterableAsTextureF32,
 } from '../../../../../format_info.js';
-import { TextureTestMixin } from '../../../../../gpu_test.js';
+import { AllFeaturesMaxLimitsGPUTest } from '../../../../../gpu_test.js';
 
 import {
   vec2,
@@ -36,13 +36,11 @@ import {
   isPotentiallyFilterableAndFillable,
   skipIfTextureFormatNotSupportedOrNeedsFilteringAndIsUnfilterable,
   getTextureTypeForTextureViewDimension,
-  WGSLTextureSampleTest,
-  isSupportedViewFormatCombo,
   vec1,
   generateTextureBuiltinInputs1D,
 } from './texture_utils.js';
 
-export const g = makeTestGroup(TextureTestMixin(WGSLTextureSampleTest));
+export const g = makeTestGroup(AllFeaturesMaxLimitsGPUTest);
 
 g.test('sampled_1d_coords')
   .specURL('https://www.w3.org/TR/WGSL/#texturesample')
@@ -59,7 +57,7 @@ Parameters:
   .params(u =>
     u
       .combine('format', kAllTextureFormats)
-      .filter(t => textureDimensionAndFormatCompatible('1d', t.format))
+      .filter(t => textureFormatAndDimensionPossiblyCompatible('1d', t.format))
       .filter(t => isPotentiallyFilterableAndFillable(t.format))
       .combine('filt', ['nearest', 'linear'] as const)
       .combine('modeU', kShortAddressModes)
@@ -68,6 +66,7 @@ Parameters:
   )
   .fn(async t => {
     const { format, samplePoints, modeU, filt: minFilter } = t.params;
+    t.skipIfTextureFormatAndDimensionNotCompatible(format, '1d');
     skipIfTextureFormatNotSupportedOrNeedsFilteringAndIsUnfilterable(t, minFilter, format);
 
     // We want at least 4 blocks or something wide enough for 3 mip levels.
@@ -340,7 +339,6 @@ Parameters:
       .combine('format', kAllTextureFormats)
       .filter(t => isPotentiallyFilterableAndFillable(t.format))
       .combine('dim', ['3d', 'cube'] as const)
-      .filter(t => isSupportedViewFormatCombo(t.format, t.dim))
       .combine('filt', ['nearest', 'linear'] as const)
       .filter(t => t.filt === 'nearest' || isTextureFormatPossiblyFilterableAsTextureF32(t.format))
       .combine('modeU', kShortAddressModes)
@@ -364,6 +362,7 @@ Parameters:
       offset,
     } = t.params;
     skipIfTextureFormatNotSupportedOrNeedsFilteringAndIsUnfilterable(t, minFilter, format);
+    t.skipIfTextureFormatAndViewDimensionNotCompatible(format, viewDimension);
 
     const size = chooseTextureSize({ minSize: 8, minBlocks: 2, format, viewDimension });
     const descriptor: GPUTextureDescriptor = {

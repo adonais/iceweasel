@@ -15,6 +15,12 @@ support-files = ["topstories.json"]
 
 ["test_HighlightsFeed.js"]
 
+["test_InferredFeatureModel.js"]
+
+["test_NewTabContentPing.js"]
+
+["test_NewTabGleanUtils.js"]
+
 ["test_NewTabMessaging.js"]
 
 ["test_PlacesFeed.js"]

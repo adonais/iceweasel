@@ -204,7 +204,7 @@ main {
   button {
     background-color: transparent;
     border: 0;
-    border-radius: 2px;
+    border-radius: var(--button-border-radius);
     cursor: pointer;
     inset-inline-end: 15px;
     padding: 15px;
@@ -225,7 +225,7 @@ main {
 
 .wallpaper-attribution {
   padding: 0 $section-horizontal-padding;
-  font-size: 14px;
+  font-size: var(--font-size-small);
   color: var(--newtab-contextual-text-primary-color);
 
   // Bug 1902063 - Edge case where user has single element

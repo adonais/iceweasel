@@ -9,14 +9,14 @@ function setupTest({ ...ctx }) {
   return NimbusTestUtils.setupTest({ ...ctx, clearTelemetry: true });
 }
 
+add_setup(function () {
+  Services.fog.initializeFOG();
+});
+
 add_task(async function test_all() {
   const { sandbox, manager, initExperimentAPI, cleanup } = await setupTest({
     experiments: [
-      ExperimentFakes.recipe("opt-in-rollout", {
-        bucketConfig: {
-          ...ExperimentFakes.recipe.bucketConfig,
-          count: 1000,
-        },
+      NimbusTestUtils.factories.recipe("opt-in-rollout", {
         isRollout: true,
         isFirefoxLabsOptIn: true,
         firefoxLabsTitle: "title",
@@ -25,14 +25,10 @@ add_task(async function test_all() {
         firefoxLabsGroup: "group",
         requiresRestart: false,
       }),
-      ExperimentFakes.recipe("opt-in-experiment", {
-        bucketConfig: {
-          ...ExperimentFakes.recipe.bucketConfig,
-          count: 1000,
-        },
+      NimbusTestUtils.factories.recipe("opt-in-experiment", {
         branches: [
           {
-            ...ExperimentFakes.recipe.branches[0],
+            ...NimbusTestUtils.factories.recipe.branches[0],
             firefoxLabsTitle: "title",
           },
         ],
@@ -43,11 +39,7 @@ add_task(async function test_all() {
         firefoxLabsGroup: "group",
         requiresRestart: false,
       }),
-      ExperimentFakes.recipe("targeting-fail", {
-        bucketConfig: {
-          ...ExperimentFakes.recipe.bucketConfig,
-          count: 1000,
-        },
+      NimbusTestUtils.factories.recipe("targeting-fail", {
         targeting: "false",
         isRollout: true,
         isFirefoxLabsOptIn: true,
@@ -57,9 +49,9 @@ add_task(async function test_all() {
         firefoxLabsGroup: "group",
         requiresRestart: false,
       }),
-      ExperimentFakes.recipe("bucketing-fail", {
+      NimbusTestUtils.factories.recipe("bucketing-fail", {
         bucketConfig: {
-          ...ExperimentFakes.recipe.bucketConfig,
+          ...NimbusTestUtils.factories.recipe.bucketConfig,
           count: 0,
         },
         isRollout: true,
@@ -70,8 +62,8 @@ add_task(async function test_all() {
         firefoxLabsGroup: "group",
         requiresRestart: false,
       }),
-      ExperimentFakes.recipe("experiment"),
-      ExperimentFakes.recipe("rollout", { isRollout: true }),
+      NimbusTestUtils.factories.recipe("experiment"),
+      NimbusTestUtils.factories.recipe("rollout", { isRollout: true }),
     ],
     init: false,
   });
@@ -90,30 +82,23 @@ add_task(async function test_all() {
     "Should return all opt in recipes that match targeting and bucketing"
   );
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_enroll() {
-  const recipe = ExperimentFakes.recipe("opt-in", {
-    bucketConfig: {
-      ...ExperimentFakes.recipe.bucketConfig,
-      count: 1000,
-    },
-    branches: [
-      {
-        slug: "control",
-        ratio: 1,
-        features: [{ featureId: "nimbus-qa-1", value: {} }],
-      },
-    ],
-    isRollout: true,
-    isFirefoxLabsOptIn: true,
-    firefoxLabsTitle: "placeholder",
-    firefoxLabsDescription: "placeholder",
-    firefoxLabsDescriptionLinks: null,
-    firefoxLabsGroup: "placeholder",
-    requiresRestart: false,
-  });
+  const recipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "opt-in",
+    { featureId: "nimbus-qa-1" },
+    {
+      isRollout: true,
+      isFirefoxLabsOptIn: true,
+      firefoxLabsTitle: "placeholder",
+      firefoxLabsDescription: "placeholder",
+      firefoxLabsDescriptionLinks: null,
+      firefoxLabsGroup: "placeholder",
+      requiresRestart: false,
+    }
+  );
 
   const { sandbox, manager, initExperimentAPI, cleanup } = await setupTest({
     experiments: [recipe],
@@ -125,14 +110,6 @@ add_task(async function test_enroll() {
   await initExperimentAPI();
 
   const labs = await FirefoxLabs.create();
-
-  Services.fog.applyServerKnobsConfig(
-    JSON.stringify({
-      metrics_enabled: {
-        "nimbus_events.enrollment_status": true,
-      },
-    })
-  );
 
   await Assert.rejects(
     labs.enroll(),
@@ -180,23 +157,13 @@ add_task(async function test_enroll() {
 
   Assert.ok(manager.store.get(recipe.slug)?.active, "Active enrollment exists");
 
-  labs.unenroll(recipe.slug);
+  await labs.unenroll(recipe.slug);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_reenroll() {
-  const recipe = ExperimentFakes.recipe("opt-in", {
-    bucketConfig: {
-      ...ExperimentFakes.recipe.bucketConfig,
-      count: 1000,
-    },
-    branches: [
-      {
-        ...ExperimentFakes.recipe.branches[0],
-        slug: "control",
-      },
-    ],
+  const recipe = NimbusTestUtils.factories.recipe("opt-in", {
     isFirefoxLabsOptIn: true,
     firefoxLabsTitle: "placeholder",
     firefoxLabsDescription: "placeholder",
@@ -221,7 +188,7 @@ add_task(async function test_reenroll() {
     `Active enrollment for ${recipe.slug}`
   );
 
-  labs.unenroll(recipe.slug);
+  await labs.unenroll(recipe.slug);
   Assert.ok(
     manager.store.get(recipe.slug)?.active === false,
     `Inactive enrollment for ${recipe.slug}`
@@ -239,58 +206,32 @@ add_task(async function test_reenroll() {
     `Active enrollment for ${recipe.slug}`
   );
 
-  labs.unenroll(recipe.slug);
+  await labs.unenroll(recipe.slug);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function test_unenroll() {
   const { manager, cleanup } = await setupTest({
     experiments: [
-      ExperimentFakes.recipe("rollout", {
-        bucketConfig: {
-          ...ExperimentFakes.recipe.bucketConfig,
-          count: 1000,
-        },
-        isRollout: true,
-        branches: [
-          {
-            slug: "control",
-            ratio: 1,
-            features: [
-              {
-                featureId: "nimbus-qa-1",
-                value: {},
-              },
-            ],
-          },
-        ],
-      }),
-      ExperimentFakes.recipe("opt-in", {
-        bucketConfig: {
-          ...ExperimentFakes.recipe.bucketConfig,
-          count: 1000,
-        },
-        isRollout: true,
-        branches: [
-          {
-            slug: "control",
-            ratio: 1,
-            features: [
-              {
-                featureId: "nimbus-qa-2",
-                value: {},
-              },
-            ],
-          },
-        ],
-        isFirefoxLabsOptIn: true,
-        firefoxLabsTitle: "title",
-        firefoxLabsDescription: "description",
-        firefoxLabsDescriptionLinks: null,
-        firefoxLabsGroup: "group",
-        requiresRestart: false,
-      }),
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        "rollout",
+        { featureId: "nimbus-qa-1" },
+        { isRollout: true }
+      ),
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        "opt-in",
+        { featureId: "nimbus-qa-2" },
+        {
+          isRollout: true,
+          isFirefoxLabsOptIn: true,
+          firefoxLabsTitle: "title",
+          firefoxLabsDescription: "description",
+          firefoxLabsDescriptionLinks: null,
+          firefoxLabsGroup: "group",
+          requiresRestart: false,
+        }
+      ),
     ],
   });
 
@@ -305,29 +246,21 @@ add_task(async function test_unenroll() {
   await labs.enroll("opt-in", "control");
   Assert.ok(manager.store.get("opt-in")?.active, "Enrolled in opt-in");
 
-  Services.fog.applyServerKnobsConfig(
-    JSON.stringify({
-      metrics_enabled: {
-        "nimbus_events.enrollment_status": true,
-      },
-    })
-  );
+  // Should not throw.
+  await labs.unenroll("bogus");
 
   // Should not throw.
-  labs.unenroll("bogus");
-
-  // Should not throw.
-  labs.unenroll("rollout");
+  await labs.unenroll("rollout");
   Assert.ok(
     manager.store.get("rollout").active,
     "Enrolled in rollout after attempting to unenroll with incorrect API"
   );
 
-  labs.unenroll("opt-in");
+  await labs.unenroll("opt-in");
   Assert.ok(!manager.store.get("opt-in").active, "Unenrolled from opt-in");
 
   // Should not throw.
-  labs.unenroll("opt-in");
+  await labs.unenroll("opt-in");
 
   Assert.deepEqual(
     Glean.nimbusEvents.enrollmentStatus
@@ -335,14 +268,26 @@ add_task(async function test_unenroll() {
       ?.map(ev => ev.extra),
     [
       {
-        slug: "opt-in",
         branch: "control",
-        status: "Disqualified",
+        status: "Enrolled",
+        slug: "rollout",
+        reason: "Qualified",
+      },
+      {
+        status: "Enrolled",
+        slug: "opt-in",
+        reason: "OptIn",
+        branch: "control",
+      },
+      {
+        branch: "control",
         reason: "OptOut",
+        slug: "opt-in",
+        status: "Disqualified",
       },
     ]
   );
 
-  manager.unenroll("rollout");
-  cleanup();
+  await manager.unenroll("rollout");
+  await cleanup();
 });

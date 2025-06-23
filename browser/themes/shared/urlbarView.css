@@ -40,6 +40,7 @@
   --urlbarView-favicon-margin-end: var(--urlbarView-icon-margin-end);
 
   --urlbarView-rich-suggestion-default-icon-size: 28px;
+  --urlbarView-top-pick-large-icon-box-size: 52px;
 
   --urlbarView-result-button-size: 24px;
   --urlbarView-result-button-background-opacity: 60%;
@@ -664,6 +665,8 @@
 /* Action labels */
 
 .urlbarView-action {
+  white-space: nowrap;
+
   .urlbarView-title:not(:empty) ~ & {
     font-size: var(--urlbarView-small-font-size);
 
@@ -699,6 +702,7 @@
   .urlbarView[action-override] .urlbarView-row[type=switchtab] > .urlbarView-row-inner > .urlbarView-no-wrap > & {
     visibility: hidden;
     width: 0;
+    margin-inline: 0;
     padding-inline: 0;
     border-inline: 0;
   }
@@ -855,6 +859,12 @@
     flex-basis: 24px;
   }
 
+  &[icon-size="32"] {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
   &[icon-size="38"] {
     width: 38px;
     height: 38px;
@@ -928,20 +938,18 @@
 
 /* Other Firefox Suggest rows */
 
-.urlbarView-row[type$=_pocket] > .urlbarView-row-inner > .urlbarView-favicon,
-.urlbarView-row[type$=_pocket] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon {
-  fill: var(--pocket-icon-fill);
-  fill-opacity: 1;
-}
-
-.urlbarView-row:is([type$=_amo], [type$=_pocket])[icon-size="24"] > .urlbarView-row-inner > .urlbarView-favicon {
-  padding: calc((52px - 24px) / 2);
+.urlbarView-row[type$=_amo][icon-size="24"] > .urlbarView-row-inner > .urlbarView-favicon {
+  padding: calc((var(--urlbarView-top-pick-large-icon-box-size) - 24px) / 2);
   background-color: var(--urlbar-box-focus-bgcolor);
   border-radius: 2px;
 }
 
-.urlbarView-row:is([type$=_amo], [type$=_pocket])[icon-size="24"]:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-favicon {
+.urlbarView-row[type$=_amo][icon-size="24"]:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-favicon {
   background-color: var(--urlbarView-result-button-selected-background-color);
+}
+
+.urlbarView-row[type$=_vpn][icon-size="32"] > .urlbarView-row-inner > .urlbarView-favicon {
+  padding: calc((var(--urlbarView-top-pick-large-icon-box-size) - 32px) / 2);
 }
 
 .urlbarView-row[dynamicType=weather],
@@ -1040,10 +1048,10 @@
 /* Actions */
 .urlbarView-results[actionmode] {
   white-space: wrap;
-}
 
-.urlbarView-row[dynamicType="actions"] {
-  display: inline-flex;
+  > .urlbarView-row {
+    display: inline-flex;
+  }
 }
 
 /* To align the label and action button */
@@ -1095,6 +1103,7 @@
   &[data-action^=tabgroup-] {
     color: light-dark(var(--tab-group-color-pale), var(--tab-group-label-text-dark));
     background-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+    max-width: 30%;
 
     /* Add offset to the focus / selection indicator as the outline color could
        be close to the group color. */
@@ -1103,6 +1112,11 @@
 
     &:hover {
       opacity: 0.8;
+    }
+
+    > .urlbarView-action-btn-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }

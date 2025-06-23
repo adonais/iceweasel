@@ -43,12 +43,6 @@ const POLICIES_TESTS = [
     },
   },
 
-  // POLICY: DisableBuiltinPDFViewer
-  {
-    policies: { DisableBuiltinPDFViewer: true },
-    lockedPrefs: { "pdfjs.disabled": true },
-  },
-
   // POLICY: DisableFormHistory
   {
     policies: { DisableFormHistory: true },
@@ -629,19 +623,6 @@ const POLICIES_TESTS = [
     lockedPrefs: {
       "browser.urlbar.suggest.searches": false,
       "browser.search.suggest.enabled": false,
-    },
-  },
-
-  // POLICY: FirefoxHome
-  {
-    policies: {
-      FirefoxHome: {
-        Pocket: false,
-        Locked: true,
-      },
-    },
-    lockedPrefs: {
-      "browser.newtabpage.activity-stream.feeds.system.topstories": false,
     },
   },
 

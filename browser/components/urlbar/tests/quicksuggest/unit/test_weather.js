@@ -18,6 +18,18 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const { WEATHER_SUGGESTION } = MerinoTestUtils;
 
+const EXPECTED_MERINO_PARAMS_WATERLOO_IA = {
+  city: "Waterloo",
+  region: "IA,013,94597",
+  country: "US",
+};
+
+const EXPECTED_MERINO_PARAMS_WATERLOO_AL = {
+  city: "Waterloo",
+  region: "AL,077",
+  country: "US",
+};
+
 let gWeather;
 
 add_setup(async () => {
@@ -28,7 +40,8 @@ add_setup(async () => {
     ],
     remoteSettingsRecords: [
       QuickSuggestTestUtils.weatherRecord(),
-      QuickSuggestTestUtils.geonamesRecord(),
+      ...QuickSuggestTestUtils.geonamesRecords(),
+      ...QuickSuggestTestUtils.geonamesAlternatesRecords(),
     ],
   });
 
@@ -253,14 +266,36 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
     await QuickSuggestTestUtils.withLocales({
       locales: [locale],
       callback: async () => {
+        let expectedResult = QuickSuggestTestUtils.weatherResult({
+          temperatureUnit,
+        });
+        if (locale == "de") {
+          delete expectedResult.payload.titleL10n;
+          delete expectedResult.payload.bottomTextL10n;
+          let temperatureStr = temperatureUnit == "c" ? "15.5°C" : "60°F";
+          expectedResult.payload.titleHtml = `<strong>${temperatureStr}</strong> · San Francisco, CA`;
+          expectedResult.payload.bottomText = "AccuWeather® · Gesponsert";
+        }
+
         info("Checking locale: " + locale);
         await check_results({
           context: createContext("weather", {
             providers: [UrlbarProviderQuickSuggest.name],
             isPrivate: false,
           }),
-          matches: [QuickSuggestTestUtils.weatherResult({ temperatureUnit })],
+          matches: [expectedResult],
         });
+
+        expectedResult = QuickSuggestTestUtils.weatherResult({
+          temperatureUnit: osUnit,
+        });
+        if (locale == "de") {
+          delete expectedResult.payload.titleL10n;
+          delete expectedResult.payload.bottomTextL10n;
+          let temperatureStr = osUnit == "c" ? "15.5°C" : "60°F";
+          expectedResult.payload.titleHtml = `<strong>${temperatureStr}</strong> · San Francisco, CA`;
+          expectedResult.payload.bottomText = "AccuWeather® · Gesponsert";
+        }
 
         info(
           "Checking locale with intl.regional_prefs.use_os_locales: " + locale
@@ -271,14 +306,70 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
             providers: [UrlbarProviderQuickSuggest.name],
             isPrivate: false,
           }),
-          matches: [
-            QuickSuggestTestUtils.weatherResult({ temperatureUnit: osUnit }),
-          ],
+          matches: [expectedResult],
         });
         Services.prefs.clearUserPref("intl.regional_prefs.use_os_locales");
       },
     });
   }
+}
+
+add_task(async function locale140_de() {
+  await do140LocaleTest({
+    locale: "de",
+    expectedBottomText: "AccuWeather® · Gesponsert",
+  });
+});
+
+add_task(async function locale140_fr() {
+  await do140LocaleTest({
+    locale: "fr",
+    expectedBottomText: "AccuWeather® · Sponsorisé",
+  });
+});
+
+add_task(async function locale140_it() {
+  await do140LocaleTest({
+    locale: "it",
+    expectedBottomText: "AccuWeather® · Sponsorizzato",
+  });
+});
+
+add_task(async function locale140_pl() {
+  await do140LocaleTest({
+    locale: "pl",
+    expectedBottomText: "AccuWeather® · sponsorowane",
+  });
+});
+
+async function do140LocaleTest({ locale, expectedBottomText }) {
+  await QuickSuggestTestUtils.withLocales({
+    locales: [locale],
+    callback: async () => {
+      Assert.equal(
+        Services.locale.appLocaleAsBCP47,
+        locale,
+        "Sanity check: App locale should be as expected"
+      );
+
+      let expectedResult = QuickSuggestTestUtils.weatherResult({
+        temperatureUnit: "C",
+      });
+      delete expectedResult.payload.titleL10n;
+      delete expectedResult.payload.bottomTextL10n;
+      expectedResult.payload.titleHtml =
+        "<strong>15.5°C</strong> · San Francisco, CA";
+      expectedResult.payload.bottomText = expectedBottomText;
+
+      await check_results({
+        context: createContext("weather", {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        matches: [expectedResult],
+      });
+    },
+  });
 }
 
 // Tests dismissal.
@@ -347,11 +438,7 @@ add_task(async function cityQueries_noGeo() {
     geolocation: null,
     expected: {
       geolocationCalled: true,
-      weatherParams: {
-        city: "Waterloo",
-        region: "IA",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_IA,
       suggestionCity: "Waterloo",
     },
   });
@@ -371,11 +458,7 @@ add_task(async function cityQueries_geoCoords() {
     },
     expected: {
       geolocationCalled: true,
-      weatherParams: {
-        city: "Waterloo",
-        region: "IA",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_IA,
       suggestionCity: "Waterloo",
     },
   });
@@ -391,11 +474,7 @@ add_task(async function cityQueries_geoCoords() {
     },
     expected: {
       geolocationCalled: true,
-      weatherParams: {
-        city: "Waterloo",
-        region: "AL",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_AL,
       suggestionCity: "Waterloo",
     },
   });
@@ -437,11 +516,7 @@ add_task(async function cityQueries_geoRegion() {
     },
     expected: {
       geolocationCalled: true,
-      weatherParams: {
-        city: "Waterloo",
-        region: "IA",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_IA,
       suggestionCity: "Waterloo",
     },
   });
@@ -455,11 +530,7 @@ add_task(async function cityQueries_geoRegion() {
     },
     expected: {
       geolocationCalled: true,
-      weatherParams: {
-        city: "Waterloo",
-        region: "AL",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_AL,
       suggestionCity: "Waterloo",
     },
   });
@@ -473,11 +544,7 @@ add_task(async function cityQueries_geoRegion() {
     },
     expected: {
       geolocationCalled: true,
-      weatherParams: {
-        city: "Waterloo",
-        region: "IA",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_IA,
       suggestionCity: "Waterloo",
     },
   });
@@ -491,11 +558,7 @@ add_task(async function cityQueries_geoRegion() {
     },
     expected: {
       geolocationCalled: true,
-      weatherParams: {
-        city: "Waterloo",
-        region: "IA",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_IA,
       suggestionCity: "Waterloo",
     },
   });
@@ -545,11 +608,7 @@ add_task(async function cityRegionQueries() {
     geolocation: null,
     expected: {
       geolocationCalled: false,
-      weatherParams: {
-        city: "Waterloo",
-        region: "IA",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_IA,
       suggestionCity: "Waterloo",
     },
   });
@@ -560,11 +619,7 @@ add_task(async function cityRegionQueries() {
     geolocation: null,
     expected: {
       geolocationCalled: false,
-      weatherParams: {
-        city: "Waterloo",
-        region: "AL",
-        country: "US",
-      },
+      weatherParams: EXPECTED_MERINO_PARAMS_WATERLOO_AL,
       suggestionCity: "Waterloo",
     },
   });
@@ -616,6 +671,8 @@ async function doCityTest({ desc, query, geolocation, expected }) {
     "accuweather provider should have been called the correct number of times"
   );
   if (expected) {
+    expected.weatherParams.source = "urlbar";
+
     for (let [key, value] of Object.entries(expected.weatherParams)) {
       Assert.strictEqual(
         callsByProvider.accuweather[0].get(key),

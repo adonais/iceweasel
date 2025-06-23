@@ -80,6 +80,8 @@ skip-if = ["os == 'android'"] # android: TIMED_OUT
 ["test_bug418986-3.html"]
 
 ["test_bug422132.html"]
+support-files = ["file_bug422132.html"]
+
 
 ["test_bug426082.html"]
 skip-if = [
@@ -472,6 +474,8 @@ skip-if = [
 ["test_hover_mouseleave.html"]
 
 ["test_legacy_event.html"]
+
+["test_legacy_mouse_events_prevent_default_wheel.html"]
 
 ["test_legacy_touch_api.html"]
 tags = "os_integration"

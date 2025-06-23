@@ -6,7 +6,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   UrlbarProviderAutofill: "resource:///modules/UrlbarProviderAutofill.sys.mjs",
   UrlbarProviderQuickSuggest:
@@ -136,7 +136,8 @@ async function doMigrateTest({
     // Reinitialize Suggest.
     await QuickSuggest._test_reinit({
       ...testOverrides,
-      shouldEnable,
+      region: shouldEnable ? "US" : "XX",
+      locale: shouldEnable ? "en-US" : "xx-XX",
     });
 
     // Check expected pref values. Store expected effective values as we go so

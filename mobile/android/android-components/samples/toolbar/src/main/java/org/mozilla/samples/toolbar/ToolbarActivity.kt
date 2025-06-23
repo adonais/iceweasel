@@ -12,7 +12,6 @@ import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
@@ -40,7 +39,6 @@ import mozilla.components.browser.menu2.BrowserMenuController
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.compose.browser.toolbar.BrowserToolbarDefaults
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
@@ -60,7 +58,7 @@ import mozilla.components.support.ktx.android.content.res.resolveAttribute
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.ktx.util.URLStringUtils
-import mozilla.components.ui.tabcounter.TabCounter
+import mozilla.components.ui.tabcounter.TabCounterView
 import org.mozilla.samples.toolbar.compose.BrowserToolbar
 import org.mozilla.samples.toolbar.databinding.ActivityToolbarBinding
 import org.mozilla.samples.toolbar.middleware.BrowserToolbarMiddleware
@@ -328,7 +326,7 @@ class ToolbarActivity : AppCompatActivity() {
     }
 
     private class FakeTabCounterToolbarButton : Toolbar.Action {
-        override fun createView(parent: ViewGroup): View = TabCounter(parent.context).apply {
+        override fun createView(parent: ViewGroup): View = TabCounterView(parent.context).apply {
             setCount(2)
             setBackgroundResource(
                 parent.context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless),
@@ -532,8 +530,6 @@ class ToolbarActivity : AppCompatActivity() {
 
         binding.composeToolbar.setContent {
             AcornTheme {
-                val iconPrimaryTint = AcornTheme.colors.iconPrimary.toArgb()
-
                 val store = remember {
                     BrowserToolbarStore(
                         initialState = BrowserToolbarState(
@@ -543,7 +539,6 @@ class ToolbarActivity : AppCompatActivity() {
                                     ActionButton(
                                         icon = iconsR.drawable.mozac_ic_cross_24,
                                         contentDescription = R.string.page_action_clear_input_description,
-                                        tint = iconPrimaryTint,
                                         onClick = object : BrowserToolbarEvent {},
                                     ),
                                 ),
@@ -551,7 +546,6 @@ class ToolbarActivity : AppCompatActivity() {
                                     ActionButton(
                                         icon = iconsR.drawable.mozac_ic_arrow_clockwise_24,
                                         contentDescription = R.string.page_action_refresh_description,
-                                        tint = iconPrimaryTint,
                                         onClick = object : BrowserToolbarEvent {},
                                     ),
                                 ),
@@ -564,7 +558,6 @@ class ToolbarActivity : AppCompatActivity() {
                     store = store,
                     onTextEdit = {},
                     onTextCommit = {},
-                    colors = BrowserToolbarDefaults.colors(),
                     url = "https://www.mozilla.org/en-US/firefox/mobile/",
                 )
             }

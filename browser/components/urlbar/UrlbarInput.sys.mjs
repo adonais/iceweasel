@@ -23,7 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   SearchModeSwitcher: "resource:///modules/SearchModeSwitcher.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   UrlbarController: "resource:///modules/UrlbarController.sys.mjs",
   UrlbarEventBufferer: "resource:///modules/UrlbarEventBufferer.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
@@ -3158,9 +3158,9 @@ export class UrlbarInput {
    *   The options object.
    * @param {string} options.value
    *   The value to autofill.
-   * @param {integer} options.selectionStart
+   * @param {number} options.selectionStart
    *   The new selectionStart.
-   * @param {integer} options.selectionEnd
+   * @param {number} options.selectionEnd
    *   The new selectionEnd.
    * @param {"origin" | "url" | "adaptive"} options.type
    *   The autofill type, one of: "origin", "url", "adaptive"

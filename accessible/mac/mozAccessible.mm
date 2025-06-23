@@ -496,8 +496,9 @@ struct RoleDescrComparator {
   }
 
   if (![self providesLabelNotTitle]) {
-    NSArray* relations = [self getRelationsByType:RelationType::LABELLED_BY];
-    if ([relations count] == 1) {
+    Relation rel = mGeckoAccessible->RelationByType(RelationType::LABELLED_BY);
+    if (rel.Next() && !rel.Next()) {
+      // A single label relation.
       return nil;
     }
   }
@@ -510,6 +511,12 @@ struct RoleDescrComparator {
 
   // In some special cases we provide the name in the label (AXDescription).
   if ([self providesLabelNotTitle]) {
+    return nil;
+  }
+
+  Relation rel = mGeckoAccessible->RelationByType(RelationType::LABELLED_BY);
+  if (rel.Next() && !rel.Next()) {
+    // A single label relation. Use AXUITitleElement instead of AXTitle
     return nil;
   }
 
@@ -584,6 +591,26 @@ struct RoleDescrComparator {
   }
 
   return @YES;
+}
+
+- (NSString*)moxInvalid {
+  // For controls that support text input, we will expose
+  // the string value of `aria-invalid` when it exists.
+  // See mozTextAccessible::moxInvalid for that work.
+  // Unfortunately, NSBools do not autoconvert to usable
+  // NSStrings, so we expose "true" and "false" manually.
+  return ([self stateWithMask:states::INVALID] != 0) ? @"true" : @"false";
+}
+
+- (NSArray*)moxErrorMessageElements {
+  if (![[self moxInvalid] isEqualToString:@"false"]) {
+    NSArray* relations = [self getRelationsByType:RelationType::ERRORMSG];
+    if ([relations count] > 0) {
+      return relations;
+    }
+  }
+
+  return nil;
 }
 
 - (NSNumber*)moxFocused {
@@ -769,6 +796,19 @@ struct RoleDescrComparator {
   return nsCocoaUtils::ToNSString(lang);
 }
 
+- (NSString*)moxKeyShortcutsValue {
+  MOZ_ASSERT(mGeckoAccessible);
+
+  nsAutoString shortcut;
+
+  if (!mGeckoAccessible->GetStringARIAAttr(nsGkAtoms::aria_keyshortcuts,
+                                           shortcut)) {
+    return nil;
+  }
+
+  return nsCocoaUtils::ToNSString(shortcut);
+}
+
 #ifndef RELEASE_OR_BETA
 - (NSString*)moxMozDebugDescription {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
@@ -937,6 +977,7 @@ struct RoleDescrComparator {
                                inserted:(BOOL)isInserted
                             inContainer:(Accessible*)container
                                      at:(int32_t)start {
+  [self maybePostValidationErrorChanged];
 }
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
@@ -998,6 +1039,32 @@ struct RoleDescrComparator {
       MOZ_ASSERT(mIsLiveRegion);
       [self moxPostNotification:@"AXLiveRegionChanged"];
       break;
+    case nsIAccessibleEvent::EVENT_ERRORMESSAGE_CHANGED: {
+      // aria-errormessage was changed. If aria-invalid != "true", it means that
+      // VoiceOver should (a) expose a new message or (b) remove an
+      // old message
+      if (![[self moxInvalid] isEqualToString:@"false"]) {
+        [self moxPostNotification:@"AXValidationErrorChanged"];
+      }
+
+      break;
+    }
+  }
+}
+
+- (void)maybePostValidationErrorChanged {
+  NSArray* relations =
+      [self getRelationsByType:(mozilla::a11y::RelationType::ERRORMSG_FOR)];
+  if ([relations count] > 0) {
+    // only fire AXValidationErrorChanged if related node is not
+    // `aria-invalid="false"`
+    for (mozAccessible* related : relations) {
+      NSString* invalidStr = [related moxInvalid];
+      if (![invalidStr isEqualToString:@"false"]) {
+        [self moxPostNotification:@"AXValidationErrorChanged"];
+        break;
+      }
+    }
   }
 }
 

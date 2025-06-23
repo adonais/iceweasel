@@ -579,15 +579,34 @@ void Http2Session::CreateStream(nsAHttpTransaction* aHttpTransaction,
   }
 }
 
-already_AddRefed<nsHttpConnection> Http2Session::CreateTunnelStream(
-    nsAHttpTransaction* aHttpTransaction, nsIInterfaceRequestor* aCallbacks,
-    PRIntervalTime aRtt, bool aIsExtendedCONNECT) {
+Result<already_AddRefed<nsHttpConnection>, nsresult>
+Http2Session::CreateTunnelStream(nsAHttpTransaction* aHttpTransaction,
+                                 nsIInterfaceRequestor* aCallbacks,
+                                 PRIntervalTime aRtt, bool aIsExtendedCONNECT) {
+  bool isWebTransport =
+      aIsExtendedCONNECT && aHttpTransaction->IsForWebTransport();
+
+  // Check if the WebTransport session limit is exceeded
+  if (isWebTransport &&
+      mOngoingWebTransportSessions >= mWebTransportMaxSessions) {
+    LOG(
+        ("Http2Session::CreateTunnelStream WebTransport session limit "
+         "exceeded: Ongoing: %u, Max: %u",
+         mOngoingWebTransportSessions + 1, mWebTransportMaxSessions));
+    aHttpTransaction->Close(NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED);
+    return Err(NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED);
+  }
+
   RefPtr<Http2StreamTunnel> refStream = CreateTunnelStreamFromConnInfo(
       this, mCurrentBrowserId, aHttpTransaction->ConnectionInfo(),
       aIsExtendedCONNECT ? aHttpTransaction->IsForWebTransport()
                                ? ExtendedCONNECTType::WebTransport
                                : ExtendedCONNECTType::WebSocket
                          : ExtendedCONNECTType::Proxy);
+
+  if (isWebTransport) {
+    ++mOngoingWebTransportSessions;
+  }
 
   RefPtr<nsHttpConnection> newConn = refStream->CreateHttpConnection(
       aHttpTransaction, aCallbacks, aRtt, aIsExtendedCONNECT);
@@ -1191,10 +1210,10 @@ bool Http2Session::VerifyStream(Http2StreamBase* aStream,
   // This is annoying, but at least it is O(1)
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-#ifndef DEBUG
-  // Only do the real verification in debug builds
+#ifndef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  // Only do the real verification in early beta builds
   return true;
-#else   // DEBUG
+#else   // MOZ_DIAGNOSTIC_ASSERT_ENABLED
 
   if (!aStream) return true;
 
@@ -1254,8 +1273,18 @@ Http2StreamTunnel* Http2Session::CreateTunnelStreamFromConnInfo(
     LOG(("Http2Session creating Http2WebTransportSession"));
     MOZ_ASSERT(session->GetExtendedCONNECTSupport() ==
                ExtendedCONNECTSupport::SUPPORTED);
+    Http2WebTransportInitialSettings settings;
+    settings.mInitialMaxStreamsUni =
+        session->mInitialWebTransportMaxStreamsUnidi;
+    settings.mInitialMaxStreamsBidi =
+        session->mInitialWebTransportMaxStreamsBidi;
+    settings.mInitialMaxStreamDataUni =
+        session->mInitialWebTransportMaxStreamDataUnidi;
+    settings.mInitialMaxStreamDataBidi =
+        session->mInitialWebTransportMaxStreamDataBidi;
+    settings.mInitialMaxData = session->mInitialWebTransportMaxData;
     return new Http2WebTransportSession(
-        session, nsISupportsPriority::PRIORITY_NORMAL, bcId, info);
+        session, nsISupportsPriority::PRIORITY_NORMAL, bcId, info, settings);
   }
 
   if (aType == ExtendedCONNECTType::WebSocket) {
@@ -1303,20 +1332,9 @@ void Http2Session::CleanupStream(Http2StreamBase* aStream, nsresult aResult,
 
   CloseStream(aStream, aResult);
 
-  // Remove the stream from the ID hash table and, if an even id, the pushed
-  // table too.
-  uint32_t id = aStream->StreamID();
-  if (id > 0) {
-    mStreamIDHash.Remove(id);
-  }
-
   RemoveStreamFromQueues(aStream);
+  RemoveStreamFromTables(aStream);
 
-  // removing from the stream transaction hash will
-  // delete the Http2StreamBase and drop the reference to
-  // its transaction
-  nsAHttpTransaction* trans = aStream->Transaction();
-  mStreamTransactionHash.Remove(trans);
   mTunnelStreams.RemoveElement(aStream);
 
   if (mShouldGoAway && !mStreamTransactionHash.Count()) Close(NS_OK);
@@ -1339,6 +1357,17 @@ void Http2Session::RemoveStreamFromQueues(Http2StreamBase* aStream) {
   RemoveStreamFromQueue(aStream, mQueuedStreams);
   RemoveStreamFromQueue(aStream, mPushesReadyForRead);
   RemoveStreamFromQueue(aStream, mSlowConsumersReadyForRead);
+}
+
+void Http2Session::RemoveStreamFromTables(Http2StreamBase* aStream) {
+  // Remove the stream from the ID hash table
+  if (aStream->HasRegisteredID()) {
+    mStreamIDHash.Remove(aStream->StreamID());
+  }
+  // removing from the stream transaction hash will
+  // delete the Http2StreamBase and drop the reference to
+  // its transaction
+  mStreamTransactionHash.Remove(aStream->Transaction());
 }
 
 void Http2Session::CloseStream(Http2StreamBase* aStream, nsresult aResult,
@@ -1779,6 +1808,49 @@ nsresult Http2Session::RecvSettings(Http2Session* self) {
         self->mHasTransactionWaitingForExtendedCONNECT = true;
       } break;
 
+      case SETTINGS_WEBTRANSPORT_MAX_SESSIONS: {
+        // If the value is 0, the server doesn't want to accept webtransport
+        // session. An error will ultimately be returned when the transaction
+        // attempts to create a webtransport session.
+        LOG3(("SETTINGS_WEBTRANSPORT_MAX_SESSIONS set to %u", value));
+        self->mWebTransportMaxSessions = value;
+      } break;
+
+      case SETTINGS_WEBTRANSPORT_INITIAL_MAX_DATA: {
+        if (!self->mPeerAllowsExtendedCONNECT) {
+          return self->SessionError(PROTOCOL_ERROR);
+        }
+        self->mInitialWebTransportMaxData = value;
+      } break;
+
+      case SETTINGS_WEBTRANSPORT_INITIAL_MAX_STREAM_DATA_UNI: {
+        if (!self->mPeerAllowsExtendedCONNECT) {
+          return self->SessionError(PROTOCOL_ERROR);
+        }
+        self->mInitialWebTransportMaxStreamDataUnidi = value;
+      } break;
+
+      case SETTINGS_WEBTRANSPORT_INITIAL_MAX_STREAM_DATA_BIDI: {
+        if (!self->mPeerAllowsExtendedCONNECT) {
+          return self->SessionError(PROTOCOL_ERROR);
+        }
+        self->mInitialWebTransportMaxStreamDataBidi = value;
+      } break;
+
+      case SETTINGS_WEBTRANSPORT_INITIAL_MAX_STREAMS_UNI: {
+        if (!self->mPeerAllowsExtendedCONNECT) {
+          return self->SessionError(PROTOCOL_ERROR);
+        }
+        self->mInitialWebTransportMaxStreamsUnidi = value;
+      } break;
+
+      case SETTINGS_WEBTRANSPORT_INITIAL_MAX_STREAMS_BIDI: {
+        if (!self->mPeerAllowsExtendedCONNECT) {
+          return self->SessionError(PROTOCOL_ERROR);
+        }
+        self->mInitialWebTransportMaxStreamsBidi = value;
+      } break;
+
       default:
         LOG3(("Received an unknown SETTING id %d. Ignoring.", id));
         break;
@@ -1893,10 +1965,7 @@ nsresult Http2Session::RecvGoAway(Http2Session* self) {
       stream->DisableSpdy();
     }
     self->CloseStream(stream, NS_ERROR_NET_RESET);
-    if (stream->HasRegisteredID()) {
-      self->mStreamIDHash.Remove(stream->StreamID());
-    }
-    self->mStreamTransactionHash.Remove(stream->Transaction());
+    self->RemoveStreamFromTables(stream);
   }
 
   // Queued streams can also be deleted from this session and restarted
@@ -1909,7 +1978,7 @@ nsresult Http2Session::RecvGoAway(Http2Session* self) {
       stream->DisableSpdy();
     }
     self->CloseStream(stream, NS_ERROR_NET_RESET, false);
-    self->mStreamTransactionHash.Remove(stream->Transaction());
+    self->RemoveStreamFromTables(stream);
   }
   self->mQueuedStreams.Clear();
 
@@ -3891,7 +3960,10 @@ WebTransportSessionBase* Http2Session::GetWebTransportSession(
     return nullptr;
   }
   RemoveStreamFromQueues(stream);
-  return stream->GetHttp2WebTransportSession();
+
+  return static_cast<Http2WebTransportSession*>(
+             stream->GetHttp2WebTransportSession())
+      ->GetHttp2WebTransportSessionImpl();
 }
 
 already_AddRefed<HttpConnectionBase> Http2Session::TakeHttpConnection() {

@@ -3160,8 +3160,7 @@ class nsIFrame : public nsQueryFrame {
   void FinishReflowWithAbsoluteFrames(nsPresContext* aPresContext,
                                       ReflowOutput& aDesiredSize,
                                       const ReflowInput& aReflowInput,
-                                      nsReflowStatus& aStatus,
-                                      bool aConstrainBSize = true);
+                                      nsReflowStatus& aStatus);
 
   /**
    * Updates the overflow areas of the frame. This can be called if an
@@ -3707,6 +3706,13 @@ class nsIFrame : public nsQueryFrame {
    * Note that very few frames are, so default to false.
    */
   virtual bool IsFloatContainingBlock() const { return false; }
+
+  /**
+   * If this frame is absolute positioned, attempts to lookup and return the
+   * Archor Positioning anchor given by aAnchorSpec.
+   * https://drafts.csswg.org/css-anchor-position-1/#target
+   */
+  nsIFrame* FindAnchorPosAnchor(const nsAtom* aAnchorSpec) const;
 
   /**
    * Marks all display items created by this frame as needing a repaint,
@@ -4557,8 +4563,7 @@ class nsIFrame : public nsQueryFrame {
   void ReflowAbsoluteFrames(nsPresContext* aPresContext,
                             ReflowOutput& aDesiredSize,
                             const ReflowInput& aReflowInput,
-                            nsReflowStatus& aStatus,
-                            bool aConstrainBSize = true);
+                            nsReflowStatus& aStatus);
 
  private:
   nscoord ComputeISizeValueFromAspectRatio(
@@ -4694,6 +4699,13 @@ class nsIFrame : public nsQueryFrame {
   inline bool IsFlexOrGridContainer() const;
 
   /**
+   * Is this flex container emulating legacy display:-webkit-{inline-}box?
+   *
+   * @note only valid to call on nsFlexContainerFrames.
+   */
+  inline bool IsLegacyWebkitBox() const;
+
+  /**
    * Return true if this frame has masonry layout in aAxis.
    * @note only valid to call on nsGridContainerFrames
    */
@@ -4711,6 +4723,8 @@ class nsIFrame : public nsQueryFrame {
   inline bool IsAbsPosContainingBlock() const;
   inline bool IsFixedPosContainingBlock() const;
   inline bool IsRelativelyOrStickyPositioned() const;
+  // TODO: create implicit anchor and explicit anchor versions of this method:
+  inline bool HasAnchorPosName() const;
 
   // Note: In general, you'd want to call IsRelativelyOrStickyPositioned()
   // unless you want to deal with "position:relative" and "position:sticky"

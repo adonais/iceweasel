@@ -11,14 +11,10 @@
 #include "ImageContainer.h"
 #include "MediaContainerType.h"
 #include "MediaResource.h"
-#include "PDMFactory.h"
 #include "TimeUnits.h"
 #include "mozilla/Base64.h"
-#include "mozilla/EnumeratedRange.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/SchedulerGroup.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_media.h"
@@ -278,7 +274,13 @@ already_AddRefed<SharedThreadPool> GetMediaThreadPool(MediaThreadType aType) {
       SharedThreadPool::Get(nsDependentCString(name), threads);
 
   // Ensure a larger stack for platform decoder threads
-  if (aType == MediaThreadType::PLATFORM_DECODER) {
+  bool needsLargerStacks = aType == MediaThreadType::PLATFORM_DECODER;
+// On Windows, platform encoder threads require larger stacks as well for
+// libaom.
+#ifdef XP_WIN
+  needsLargerStacks |= aType == MediaThreadType::PLATFORM_ENCODER;
+#endif
+  if (needsLargerStacks) {
     const uint32_t minStackSize = 512 * 1024;
     uint32_t stackSize;
     MOZ_ALWAYS_SUCCEEDS(pool->GetThreadStackSize(&stackSize));
@@ -1233,13 +1235,12 @@ bool OnCellularConnection() {
     case nsINetworkLinkService::LINK_TYPE_ETHERNET:
     case nsINetworkLinkService::LINK_TYPE_USB:
     case nsINetworkLinkService::LINK_TYPE_WIFI:
+    default:
       return false;
     case nsINetworkLinkService::LINK_TYPE_WIMAX:
     case nsINetworkLinkService::LINK_TYPE_MOBILE:
       return true;
   }
-
-  return false;
 }
 
 bool IsWaveMimetype(const nsACString& aMimeType) {

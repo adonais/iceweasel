@@ -23,6 +23,8 @@ skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'",
   "os == 'win' && os_version == '11.2009' && processor == 'x86' && opt", # Bug 1879673
   "os == 'win' && os_version == '11.2009' && processor == 'x86_64' && opt", # Bug 1879673
+  "os == 'win' && os_version == '11.26100' && processor == 'x86' && opt", # Bug 1879673
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1879673
 ]
 
 ["browser_keyboard_shortcuts.js"]
@@ -40,6 +42,7 @@ skip-if = [
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && !debug", #  Bug 1804441
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", #  Bug 1804441
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug", # Bug 1869912
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && !debug", #  Bug 1804441
 ]
 
 ["browser_screenshots_drag_test.js"]

@@ -62,11 +62,8 @@
     Explanation for private browsing displayed to users on home view when they first enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="private_browsing_placeholder_description_2">
-        %1$s ሲዘጉ ወይም መተግበሪያውን ሲያቆሙ የፍለጋ እና የአሰሳ ታሪክዎን ከግል ትሮች ያጸዳል። ይህ እርስዎን ለድር ጣቢያዎች ወይም የበይነመረብ አገልግሎት አቅራቢዎ ስም-አልባ ባያደርግም፣ በመስመር ላይ የሚያደርጉትን ይህን መሳሪያ ከሚጠቀም ከማንኛውም ሰው የግል ማድረግን ቀላል ያደርገዋል።</string>
-  <string name="private_browsing_common_myths">
-       ስለግል አሰሳ የተለመዱ አፈ ታሪኮች
-    </string>
+  <string name="private_browsing_placeholder_description_2">%1$s ሲዘጉ ወይም መተግበሪያውን ሲያቆሙ የፍለጋ እና የአሰሳ ታሪክዎን ከግል ትሮች ያጸዳል። ይህ እርስዎን ለድር ጣቢያዎች ወይም የበይነመረብ አገልግሎት አቅራቢዎ ስም-አልባ ባያደርግም፣ በመስመር ላይ የሚያደርጉትን ይህን መሳሪያ ከሚጠቀም ከማንኛውም ሰው የግል ማድረግን ቀላል ያደርገዋል።</string>
+  <string name="private_browsing_common_myths">ስለግል አሰሳ የተለመዱ አፈ ታሪኮች</string>
   <!--
     True Private Browsing Mode
 
@@ -86,16 +83,6 @@
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
   -->
   <string name="felt_privacy_info_card_subtitle_link_text">የእኔን እንቅስቃሴ ማን ማየት ይችላል?</string>
-  <!--
-    Private mode shortcut "contextual feature recommendation" (CFR)
-
-    Text for the Private mode shortcut CFR message for adding a private mode shortcut to open private tabs from the Home screen
-  -->
-  <string name="private_mode_cfr_message_2" moz:removedIn="138" tools:ignore="UnusedResources">አንዴ መታ በማድረግ ቀጣዩን የግል ትር አስጀምር።</string>
-  <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
-  <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">ወደ መነሻ ማያ ገጽ ጨምር</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">አልፈልግም፣አመሰግናለሁ</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
 
@@ -222,25 +209,25 @@
     Browser menu banner header text for extensions onboarding.
     %s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_extensions_banner_onboarding_header">%s የራስዎ ያድርጉት</string>
+  <string name="browser_menu_extensions_banner_onboarding_header" moz:removedIn="141" tools:ignore="UnusedResources">%s የራስዎ ያድርጉት</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
   <string name="browser_menu_disabled_extensions_banner_onboarding_header">የተጫኑ ቅጥያዎች አሉዎት፣ ግን አልነቁም</string>
   <!--
     Browser menu banner body text for extensions onboarding.
     %s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_extensions_banner_onboarding_body">ቅጥያዎች የአሰሳዎን ደረጃ ከፍ ያደርጋሉ፣ %s ምን እንደሚመስል እና እንዴት እንደሚሰራ ከመቀየር ጀምሮ እስከ ግላዊነትን እና ደህንነትን ማሳደግ ድረስ።</string>
+  <string name="browser_menu_extensions_banner_onboarding_body" moz:removedIn="141" tools:ignore="UnusedResources">ቅጥያዎች የአሰሳዎን ደረጃ ከፍ ያደርጋሉ፣ %s ምን እንደሚመስል እና እንዴት እንደሚሰራ ከመቀየር ጀምሮ እስከ ግላዊነትን እና ደህንነትን ማሳደግ ድረስ።</string>
   <!--
     Browser menu banner body text for extensions onboarding when all installed extensions have been disabled.
     %s is the label of the button that opens the extension manager (for example "Manage extensions").
   -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_body">ቅጥያዎችን ለመጠቀም በቅንብሮች ውስጥ ወይም ከታች “%s” ን በመምረጥ አንቃቸው።</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_body" moz:removedIn="141" tools:ignore="UnusedResources">ቅጥያዎችን ለመጠቀም በቅንብሮች ውስጥ ወይም ከታች “%s” ን በመምረጥ አንቃቸው።</string>
   <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more">ተጨማሪ ይወቁ</string>
+  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">ተጨማሪ ይወቁ</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">ቅጥያዎችን ያስተዳድሩ</string>
   <!-- Content description (not visible, for screen readers etc.): Section heading for recommended extensions. -->
-  <string name="browser_menu_recommended_section_content_description">የሚመከሩ ቅጥያዎች</string>
+  <string name="browser_menu_recommended_section_content_description" moz:removedIn="141" tools:ignore="UnusedResources">የሚመከሩ ቅጥያዎች</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -271,9 +258,9 @@
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
   <string name="browser_menu_add_app_to_homescreen">መተግበሪያ ወደ መነሻ ማያ ገጽ ያክሉ</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
-  <string name="browser_menu_add_to_homescreen_2">ወደ መነሻ ማያ ገጽ አክል…</string>
+  <string name="browser_menu_add_to_homescreen_2" moz:removedIn="141" tools:ignore="UnusedResources">ወደ መነሻ ማያ ገጽ አክል…</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
-  <string name="browser_menu_add_app_to_homescreen_2">መተግበሪያን ወደ መነሻ ማያ ገጽ አክል…</string>
+  <string name="browser_menu_add_app_to_homescreen_2" moz:removedIn="141" tools:ignore="UnusedResources">መተግበሪያን ወደ መነሻ ማያ ገጽ አክል…</string>
   <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
   <string name="browser_menu_add_to_homescreen_xiaomi">የXiaomi መሳሪያዎች ወደ መነሻ ስክሪን አቋራጮችን ለመጨመር ተጨማሪ ፈቃዶች ያስፈልጉ ይሆናል። እባክዎን ቅንብሮችዎን ያረጋግጡ።</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
@@ -281,17 +268,17 @@
   <!-- Browser menu button that opens the find in page menu -->
   <string name="browser_menu_find_in_page">በገጽ ውስጥ ያግኙ</string>
   <!-- Browser menu button that opens the find in page menu -->
-  <string name="browser_menu_find_in_page_2">በገጽ ውስጥ ያግኙ…</string>
+  <string name="browser_menu_find_in_page_2" moz:removedIn="141" tools:ignore="UnusedResources">በገጽ ውስጥ ያግኙ…</string>
   <!-- Browser menu button that opens the translations dialog, which has options to translate the current browser page. -->
   <string name="browser_menu_translations">ገጽ ተርጉም</string>
   <!-- Browser menu button that saves the current tab to a collection -->
-  <string name="browser_menu_save_to_collection">ወደ ስብስብ አስቀምጥ…</string>
+  <string name="browser_menu_save_to_collection" moz:removedIn="141" tools:ignore="UnusedResources">ወደ ስብስብ አስቀምጥ…</string>
   <!-- Browser menu button that saves the current tab to a collection -->
   <string name="browser_menu_save_to_collection_2">ወደ ስብስብ አስቀምጥ</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">አጋራ</string>
   <!-- Browser menu button that open a share menu to share the current site -->
-  <string name="browser_menu_share_2">ያጋሩ…</string>
+  <string name="browser_menu_share_2" moz:removedIn="141" tools:ignore="UnusedResources">ያጋሩ…</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -326,7 +313,7 @@
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">ይግቡ</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
-  <string name="browser_menu_sign_in_caption">የይለፍ ቃላትን፣ ትሮችን እና ሌሎችን አመሳስል</string>
+  <string name="browser_menu_sign_in_caption" moz:removedIn="141" tools:ignore="UnusedResources">የይለፍ ቃላትን፣ ትሮችን እና ሌሎችን አመሳስል</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">ለማመሳሰል ተመልሰው ይግቡ</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
@@ -345,9 +332,9 @@
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
   <string name="browser_menu_switch_to_mobile_site">ወደ ሞባይል ጣቢያ ቀይር</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools">መሳሪያዎች</string>
+  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">መሳሪያዎች</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
-  <string name="browser_menu_back_button_content_description">ወደ ዋናው ምናሌ ተመለስ</string>
+  <string name="browser_menu_back_button_content_description" moz:removedIn="141" tools:ignore="UnusedResources">ወደ ዋናው ምናሌ ተመለስ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
   <string name="browser_main_menu_handlebar_content_description">ዋናውን የምናሌ ገፅ ዝጋ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
@@ -363,34 +350,34 @@
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">ብጁ የትር ምናሌ ገፅን ዝጋ</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu when the "Report broken site" feature is available -->
-  <string name="browser_menu_tools_description_with_translate_with_report_site_2">የአንባቢ እይታ፣ ተርጉም፣ የተበላሸ ጣቢያን ሪፖርት አድርግ፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
+  <string name="browser_menu_tools_description_with_translate_with_report_site_2" moz:removedIn="141" tools:ignore="UnusedResources">የአንባቢ እይታ፣ ተርጉም፣ የተበላሸ ጣቢያን ሪፖርት አድርግ፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-  <string name="browser_menu_tools_description_with_translate_without_report_site">የአንባቢ እይታ፣ ተርጉም፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
+  <string name="browser_menu_tools_description_with_translate_without_report_site" moz:removedIn="141" tools:ignore="UnusedResources">የአንባቢ እይታ፣ ተርጉም፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu when the "Report broken site" feature is available -->
-  <string name="browser_menu_tools_description_with_report_site_2">የአንባቢ እይታ፣ የተበላሸ ጣቢያን ሪፖርት አድርግ፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
+  <string name="browser_menu_tools_description_with_report_site_2" moz:removedIn="141" tools:ignore="UnusedResources">የአንባቢ እይታ፣ የተበላሸ ጣቢያን ሪፖርት አድርግ፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-  <string name="browser_menu_tools_description_without_report_site">የአንባቢ እይታ፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
+  <string name="browser_menu_tools_description_without_report_site" moz:removedIn="141" tools:ignore="UnusedResources">የአንባቢ እይታ፣ አትም፣ አጋራ፣ መተግበሪያን ክፈት</string>
   <!--
     Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
     bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
   -->
-  <string name="browser_menu_save">አስቀምጥ</string>
+  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">አስቀምጥ</string>
   <!-- Browser menu description that describes the various save related menu items inside of the save sub-menu -->
-  <string name="browser_menu_save_description">ዕልባት አክል፣ አቋራጭ፣ ዋና ገፅ፣ ስብስብ፣ ፒዲኤፍ</string>
+  <string name="browser_menu_save_description" moz:removedIn="141" tools:ignore="UnusedResources">ዕልባት አክል፣ አቋራጭ፣ ዋና ገፅ፣ ስብስብ፣ ፒዲኤፍ</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
-  <string name="browser_menu_bookmark_this_page">ለዚህ ገጽ ዕልባት ያድርጉ</string>
+  <string name="browser_menu_bookmark_this_page" moz:removedIn="141" tools:ignore="UnusedResources">ለዚህ ገጽ ዕልባት ያድርጉ</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">እልባት አርትዕ</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
-  <string name="browser_menu_save_as_pdf">እንደ ፒዲኤፍ አስቀምጥ…</string>
+  <string name="browser_menu_save_as_pdf" moz:removedIn="141" tools:ignore="UnusedResources">እንደ ፒዲኤፍ አስቀምጥ…</string>
   <!-- Browser menu label for turning ON reader view of the current visited page -->
-  <string name="browser_menu_turn_on_reader_view">የአንባቢ እይታን ያብሩ</string>
+  <string name="browser_menu_turn_on_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">የአንባቢ እይታን ያብሩ</string>
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
-  <string name="browser_menu_turn_off_reader_view">የአንባቢ እይታን ያጥፉ</string>
+  <string name="browser_menu_turn_off_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">የአንባቢ እይታን ያጥፉ</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_normal_tab">ወደ የግል ያልሆነ ትር ይሂዱ</string>
+  <string name="browser_menu_open_in_normal_tab" moz:removedIn="141" tools:ignore="UnusedResources">ወደ የግል ያልሆነ ትር ይሂዱ</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
-  <string name="browser_menu_translate_page">ገጽ ተርጉም…</string>
+  <string name="browser_menu_translate_page" moz:removedIn="141" tools:ignore="UnusedResources">ገጽ ተርጉም…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter">የተበላሽ ጣቢያ አሳውቅ…</string>
   <!--
@@ -399,7 +386,7 @@
   -->
   <string name="browser_menu_translated_to">ወደ %1$s ተተርጉሟል</string>
   <!-- Browser menu label for the print feature -->
-  <string name="browser_menu_print">አትም…</string>
+  <string name="browser_menu_print" moz:removedIn="141" tools:ignore="UnusedResources">አትም…</string>
   <!--
     Browser menu label for the Delete browsing data on quit feature.
     %1$s is the name of the app (for example "Firefox").
@@ -490,19 +477,19 @@
 
     Home onboarding dialog welcome screen title text.
   -->
-  <string name="onboarding_home_welcome_title_2">ወደ የግል በይነመረብ እንኳን በደህና መጡ</string>
+  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">ወደ የግል በይነመረብ እንኳን በደህና መጡ</string>
   <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description">ተጨማሪ ቀለሞች። የተሻለ ግላዊነት። ከትርፍ በላይ ለሰዎች ተመሳሳይ ቁርጠኝነት።</string>
+  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">ተጨማሪ ቀለሞች። የተሻለ ግላዊነት። ከትርፍ በላይ ለሰዎች ተመሳሳይ ቁርጠኝነት።</string>
   <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3">ስክሪን መቀየር ከመቼውም ጊዜ በበለጠ ቀላል ነው</string>
+  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">ስክሪን መቀየር ከመቼውም ጊዜ በበለጠ ቀላል ነው</string>
   <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description">ከሌሎች መሳሪያዎች ትሮች ካቆሙበት አሁን በመነሻ ገጽዎ ላይ ይምረጡ።</string>
+  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">ከሌሎች መሳሪያዎች ትሮች ካቆሙበት አሁን በመነሻ ገጽዎ ላይ ይምረጡ።</string>
   <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button">ይጀምሩ</string>
+  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">ይጀምሩ</string>
   <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button">ይግቡ</string>
+  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">ይግቡ</string>
   <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button">ዝለል</string>
+  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">ዝለል</string>
   <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message">የእርስዎ ትሮች እየተመሳሰሉ ናቸው! በሌላኛው መሣሪያዎ ላይ ካቆሙበት ይቀጥሉ።</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
@@ -578,41 +565,41 @@
     Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
     Note: The word "Firefox" should NOT be translated
   -->
-  <string name="onboarding_add_on_header" tools:ignore="BrandUsage,UnusedResources">Firefoxዎን በቅጥያዎች ያብጁት</string>
+  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefoxዎን በቅጥያዎች ያብጁት</string>
   <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" tools:ignore="UnusedResources">የእርስዎን ደህንነት፣ ምርታማነት እና ሌሎችንም ለማሻሻል የሶስተኛ ወገን ቅጥያዎችን ያክሉ።</string>
+  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">የእርስዎን ደህንነት፣ ምርታማነት እና ሌሎችንም ለማሻሻል የሶስተኛ ወገን ቅጥያዎችን ያክሉ።</string>
   <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2">ተጨማሪ ቅጥያዎችን ያስሱ</string>
+  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">ተጨማሪ ቅጥያዎችን ያስሱ</string>
   <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2">ማሰስ ይጀምሩ</string>
+  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">ማሰስ ይጀምሩ</string>
   <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" tools:ignore="UnusedResources">uBlock Origin</string>
+  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
   <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" tools:ignore="UnusedResources">ማስታወቂያዎችን በብቃት እና በጥራት አግድ።</string>
+  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">ማስታወቂያዎችን በብቃት እና በጥራት አግድ።</string>
   <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" tools:ignore="UnusedResources">Privacy Badger</string>
+  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
   <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" tools:ignore="UnusedResources">ፀረ-ክትትል ዕንቁ. የማይታዩ መከታተያዎች እና የስለላ ማስታወቂያዎችን ያቁሙ።</string>
+  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">ፀረ-ክትትል ዕንቁ. የማይታዩ መከታተያዎች እና የስለላ ማስታወቂያዎችን ያቁሙ።</string>
   <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" tools:ignore="UnusedResources">በምስል ይፈልጉ</string>
+  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">በምስል ይፈልጉ</string>
   <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" tools:ignore="UnusedResources">አንድ አስደሳች ፎቶ ይመልከቱ እና ስለሱ የበለጠ ይረዱ።</string>
+  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">አንድ አስደሳች ፎቶ ይመልከቱ እና ስለሱ የበለጠ ይረዱ።</string>
   <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" tools:ignore="UnusedResources">Dark Reader</string>
+  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
   <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" tools:ignore="UnusedResources">ለሞባይል ድር ብጁ ጨለማ ሁነታ።</string>
+  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">ለሞባይል ድር ብጁ ጨለማ ሁነታ።</string>
   <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label">ግምገማዎች፡- %1$s</string>
+  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">ግምገማዎች፡- %1$s</string>
   <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description">የተጨማሪ አዶ</string>
+  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">የተጨማሪ አዶ</string>
   <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description">የተጫነ ተጨማሪ አዶ</string>
+  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">የተጫነ ተጨማሪ አዶ</string>
   <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description">የተጨማሪ አዶን በመጫን ላይ</string>
+  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">የተጨማሪ አዶን በመጫን ላይ</string>
   <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description">የተጨማሪ ቁልፍ ያክሉ</string>
+  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">የተጨማሪ ቁልፍ ያክሉ</string>
   <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description">ከ5 %1$s ደረጃ ተሰጥቶታል</string>
+  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ከ5 %1$s ደረጃ ተሰጥቶታል</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Firefoxን የተሻለ እንድናደርግ ያግዙን</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -778,7 +765,7 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">በግል አሰሳ ውስጥ ትሮችን ለመደበቅ የማያ ገጽ መቆለፊያን ይጠቀሙ</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary">በጣት አሻራ፣ በመልክ መክፈቻ ወይም በፒን ትሮችን ይመልከቱ።</string>
+  <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">በጣት አሻራ፣ በመልክ መክፈቻ ወይም በፒን ትሮችን ይመልከቱ።</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">የኩኪ ባነር ማገጃ</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -910,7 +897,7 @@
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="link_sharing_toggle_title">በWhatsApp ማጋራቶች ላይ %1$s የማውረድ አገናኝ ያካትቱ</string>
   <!-- Body for the link sharing toggle.  %1$s is replaced by the brand name (e.g. Firefox). -->
-  <string name="link_sharing_toggle_body">በWhatsApp ላይ አገናኝ ባጋሩ ቁጥር ጓደኞችዎን ፈጣኑን እና  ደህንነቱ የተጠበቀ አሰሳ  በ%1$s እንዲሞክሩ ይጋብዙ።</string>
+  <string name="link_sharing_toggle_body">በWhatsApp ላይ አገናኝ ባጋሩ ቁጥር ጓደኞችዎን ፈጣኑን እና ደህንነቱ የተጠበቀ አሰሳ በ%1$s እንዲሞክሩ ይጋብዙ።</string>
   <!-- Snackbar message shown when user shares a link -->
   <string name="link_shared_snackbar_message">አገናኝ ተጋርቷል</string>
   <!-- Snackbar action label shown when user shares a link -->
@@ -983,9 +970,9 @@
   -->
   <string name="customize_toggle_recently_visited">በቅርብ ጊዜ የተጎበኙ</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2">አነቃቂ ታሪኮች</string>
+  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">አነቃቂ ታሪኮች</string>
   <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary">በ%s የተጎላበተ መጣጥፎች</string>
+  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">በ%s የተጎላበተ መጣጥፎች</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">ስፖንሰር የተደረጉ ታሪኮች</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1131,8 +1118,6 @@
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">ተጨማሪ ይወቁ</string>
   <!-- Preference switch for usage and technical data collection -->
-  <string name="preference_usage_data_1" tools:ignore="UnusedResources" moz:removedIn="138">ቴክኒካዊ እና መስተጋብር ውሂብ</string>
-  <!-- Preference switch for usage and technical data collection -->
   <string name="preference_usage_data_2">ቴክኒካዊ እና መስተጋብር ውሂብ ላክ</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more">ተጨማሪ ይወቁ</string>
@@ -1176,7 +1161,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">በ&lt;b&gt;firefox.com/pair&lt;/b&gt; ላይ የሚታየውን የQR ኮድ ይቃኙ</string>
+  <string name="pair_instructions_2"><![CDATA[በ<b>firefox.com/pair</b> ላይ የሚታየውን የQR ኮድ ይቃኙ]]></string>
   <!--
     Toolbar Preferences
 
@@ -1449,30 +1434,22 @@
   <!--
     Downloads
 
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">ውርዶች ተወግደዋል</string>
-  <!--
     Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
     %1$d is the number of items deleted.
   -->
   <string name="download_delete_multiple_items_snackbar_2">እቃዎች ተሰርዘዋል፡ %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s ተወግዷል</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar_2">"%1$s" ተሰርዟል</string>
+  <string name="download_delete_single_item_snackbar_2">\"%1$s\" ተሰርዟል</string>
   <!-- Text for the snackbar to confirm that downloads are in progress. -->
-  <string name="download_in_progress_snackbar" tools:ignore="UnusedResources">ማውረድ በሂደት ላይ…</string>
+  <string name="download_in_progress_snackbar">ማውረድ በሂደት ላይ…</string>
   <!-- Text for the snackbar action button to view in progress download details. -->
-  <string name="download_in_progress_snackbar_action_details" tools:ignore="UnusedResources">ዝርዝር ማብራሪያዎች</string>
+  <string name="download_in_progress_snackbar_action_details">ዝርዝር ማብራሪያዎች</string>
   <!-- Text for the snackbar to confirm that a download has completed. -->
-  <string name="download_completed_snackbar" tools:ignore="UnusedResources">ማውረድ ተጠናቅቋል</string>
+  <string name="download_completed_snackbar">ማውረድ ተጠናቅቋል</string>
   <!-- Text for the snackbar action button to open a completed download. -->
-  <string name="download_completed_snackbar_action_open" tools:ignore="UnusedResources">ክፈት</string>
+  <string name="download_completed_snackbar_action_open">ክፈት</string>
   <!-- Text for the snackbar action button to undo deleting a download. -->
   <string name="download_undo_delete_snackbar_action">ቀልብስ</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">ምንም የወረዱ ፋይሎች የሉም</string>
   <!-- Text shown when no download exists -->
   <string name="download_empty_message_2">እስካሁን ምንም ማውረድ የለም</string>
   <!-- Text description shown when no download exists -->
@@ -1482,15 +1459,13 @@
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d ተመርጧል</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">አስወግድ</string>
   <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
   <string name="download_file_has_not_enough_storage_dialog_title">በቂ ቦታ የለም</string>
   <!--
     Message for the dialog that is shown when there is not enough storage space to download a file.
     %s is the name of the file to download.
   -->
-  <string name="download_file_has_not_enough_storage_dialog_message">ይህ መሳሪያ &lt;b&gt;%s&lt;/b&gt;ን ለማውረድ በቂ ቦታ የለውም።</string>
+  <string name="download_file_has_not_enough_storage_dialog_message"><![CDATA[ይህ መሳሪያ <b>%s</b>ን ለማውረድ በቂ ቦታ የለውም።]]></string>
   <!--
     Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
     This button will navigate the user to the device's storage management settings.
@@ -1509,7 +1484,6 @@
   <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">ወደ ላይ አስስ</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">ተመለስ እና ፍለጋን ዝጋ</string>
-  <!-- Content description for the search bar clear text button on the downloads screen -->
   <string name="download_clear_search_description">አጽዳ</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">URL አጋራ</string>
@@ -1522,7 +1496,7 @@
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">ተወው</string>
   <!-- Text for the header of in progress downloads -->
-  <string name="download_header_in_progress" tools:ignore="UnusedResources">በሂደት ላይ</string>
+  <string name="download_header_in_progress">በሂደት ላይ</string>
   <!--
     Time period headers for downloads
 
@@ -1543,13 +1517,13 @@
     %2$s is the total size of the downloaded file.
     %3$s is the amount of time remaining to complete the download.
   -->
-  <string name="download_item_in_progress_description" tools:ignore="UnusedResources">%1$s / %2$s • %3$s ይቀራል</string>
+  <string name="download_item_in_progress_description" moz:removedIn="141" tools:ignore="UnusedResources">%1$s / %2$s • %3$s ይቀራል</string>
   <!-- Text to indicate that an in progress download is paused. -->
-  <string name="download_item_status_paused" tools:ignore="UnusedResources">ለአፍታ ቆሟል</string>
+  <string name="download_item_status_paused" moz:removedIn="141" tools:ignore="UnusedResources">ለአፍታ ቆሟል</string>
   <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
-  <string name="download_item_download_speed_pending" tools:ignore="UnusedResources">በመጠባበቅ ላይ</string>
+  <string name="download_item_download_speed_pending" moz:removedIn="141" tools:ignore="UnusedResources">በመጠባበቅ ላይ</string>
   <!-- Text to indicate that a download has failed to download. -->
-  <string name="download_item_status_failed" tools:ignore="UnusedResources">ማውረድ አልተሳካም</string>
+  <string name="download_item_status_failed">ማውረድ አልተሳካም</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
   <string name="download_search_placeholder">ውርዶችን ይፈልጉ</string>
   <!-- Text to indicate that no downloads match the search query. -->
@@ -1569,15 +1543,7 @@
   <!-- Text for the filter button to show only documents in the downloads list -->
   <string name="download_content_type_filter_document">ሠነዶች</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
-  <string name="download_content_type_filter_other" moz:removedIn="138" tools:ignore="UnusedResources">ሌሎች</string>
-  <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">ሌላ</string>
-  <!--
-    Description of a downloaded item, displayed in the downloads list.
-    %1$s: The size of the downloaded file.
-    %2$s: The URL of the downloaded file.
-  -->
-  <string name="download_item_description" moz:removedIn="138" tools:ignore="UnusedResources">%1$s • %2$s</string>
   <!--
     WebCompat Reporter
 
@@ -1613,15 +1579,15 @@
 
     Broken site reason text for site slow or not working
   -->
-  <string name="webcompat_reporter_reason_slow">ጣቢያ ቀርፋፋ ወይም አይሰራም</string>
+  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">ጣቢያ ቀርፋፋ ወይም አይሰራም</string>
   <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media">ምስሎች ወይም ተንቀሳቃሽ-ምስሎች</string>
+  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">ምስሎች ወይም ተንቀሳቃሽ-ምስሎች</string>
   <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content">አዝራሮች፣ አገናኞች እና ሌሎች ይዘቶች</string>
+  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">አዝራሮች፣ አገናኞች እና ሌሎች ይዘቶች</string>
   <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account">መግባት ወይም መውጣት</string>
+  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">መግባት ወይም መውጣት</string>
   <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker">ማስታወቂያ ማገጃ</string>
+  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">ማስታወቂያ ማገጃ</string>
   <!-- Broken site reason text for something else -->
   <string name="webcompat_reporter_reason_other">ሌላ ነገር</string>
   <!--
@@ -2134,7 +2100,7 @@
   <!-- Text for the snackbar to show the user that the deletion of browsing data is in progress -->
   <string name="deleting_browsing_data_in_progress">የአሰሳ ውሂብን በመሰረዝ ላይ…</string>
   <!-- Dialog message to the user asking to delete all history items inside the opened group. %s is a history group name. -->
-  <string name="delete_all_history_group_prompt_message">በ "%s" ውስጥ ያሉትን ሁሉንም ድረ-ገፆች ሰርዝ</string>
+  <string name="delete_all_history_group_prompt_message">በ \"%s\" ውስጥ ያሉትን ሁሉንም ድረ-ገፆች ሰርዝ</string>
   <!-- Text for the cancel button for the history group deletion dialog -->
   <string name="delete_history_group_prompt_cancel">ተወው</string>
   <!-- Text for the allow button for the history group dialog -->
@@ -2162,7 +2128,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">ኮዱን ይቃኙ</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">በኮምፒተርዎ ላይ Firefox ን ይክፈቱ እና ወደ &lt;b&gt;https://firefox.com/pair&lt;/b&gt; ይሂዱ</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[በኮምፒተርዎ ላይ Firefox ን ይክፈቱ እና ወደ <b>https://firefox.com/pair</b> ይሂዱ]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">ለመቃኘት ዝግጁ</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -2170,7 +2136,7 @@
   <!-- Text shown for settings option for sign with email -->
   <string name="sign_in_with_email">በምትኩ ኢሜይል ተጠቀም</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
-  <string name="sign_in_create_account_text" tools:ignore="BrandUsage">መለያ የለም? ፋየርፎክስን በመሳሪያዎች መካከል ለማመሳሰል &lt;u&gt;አንድ ይፍጠሩ&lt;/u&gt;።</string>
+  <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[መለያ የለም? ፋየርፎክስን በመሳሪያዎች መካከል ለማመሳሰል <u>አንድ ይፍጠሩ</u>።]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s ከመለያዎ ጋር ማመሳሰል ያቆማል፣ ነገር ግን በዚህ መሳሪያ ላይ የትኛውንም የአሰሳ ውሂብዎን አይሰርዝም።</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
@@ -2340,7 +2306,7 @@
   <!-- Text displayed above provider textfield under "DNS over HTTPS" -->
   <string name="preference_doh_provider_custom_dialog_textfield">አቅራቢ</string>
   <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL does not start with "https://" or its scheme is not "https" -->
-  <string name="preference_doh_provider_custom_dialog_error_https">URL በ "https://" መጀመር አለበት</string>
+  <string name="preference_doh_provider_custom_dialog_error_https">URL በ \"https://\" መጀመር አለበት</string>
   <!-- Error text displayed for provider textfield under "DNS over HTTPS" if the URL is invalid -->
   <string name="preference_doh_provider_custom_dialog_error_invalid">ልክ ያልሆነ URL</string>
   <!-- Cancel button text for provider textfield under "DNS over HTTPS" -->
@@ -2430,8 +2396,7 @@
   <!-- Preference to access list of saved passwords -->
   <string name="preferences_passwords_saved_logins_2">የተቀመጡ የይለፍ ቃላት</string>
   <!-- Description of empty list of saved passwords. %s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_passwords_saved_logins_description_empty_text_2">ከ%s ጋር ያስቀመጧቸው ወይም ያሰናሰሏቸው የይለፍ ቃሎች እዚህ ይዘረዘራሉ። የሚያስቀምጡት ሁሉም የይለፍ ቃሎች የተመሰጠሩ ናቸው።
-</string>
+  <string name="preferences_passwords_saved_logins_description_empty_text_2">ከ%s ጋር ያስቀመጧቸው ወይም ያሰናሰሏቸው የይለፍ ቃሎች እዚህ ይዘረዘራሉ። የሚያስቀምጡት ሁሉም የይለፍ ቃሎች የተመሰጠሩ ናቸው።</string>
   <!-- Clickable text for opening an external link for more information about Sync. -->
   <string name="preferences_passwords_saved_logins_description_empty_learn_more_link_2">ስለ ማሰናሰል የበለጠ ይረዱ</string>
   <!-- Preference to access list of login exceptions that we never save logins for -->
@@ -2629,7 +2594,7 @@
   <!-- Placeholder text shown in the Search String TextField before a user enters text -->
   <string name="search_add_custom_engine_search_string_hint_2">ለፍለጋ የሚጠቀሙት URL</string>
   <!-- Description text for the Search String TextField. The %s is part of the string -->
-  <string name="search_add_custom_engine_search_string_example" formatted="false">ጥያቄውን በ "%s" ይተኩ። ምሳሌ፡- \nhttps://www.google.com/search?q=%s</string>
+  <string name="search_add_custom_engine_search_string_example" formatted="false">ጥያቄውን በ \"%s\" ይተኩ። ምሳሌ፡- \nhttps://www.google.com/search?q=%s</string>
   <!-- Accessibility description for the form in which details about the custom search engine are entered -->
   <string name="search_add_custom_engine_form_description">ብጁ የፍለጋ ፍርግም ዝርዝር ማብራሪያዎች</string>
   <!-- Label for the TextField in which user enters custom search engine suggestion URL -->
@@ -2643,11 +2608,11 @@
   <!-- Text shown when a user leaves the name field empty -->
   <string name="search_add_custom_engine_error_empty_name">የፍለጋ ፍርግም ስም ያስገቡ</string>
   <!-- Text shown when a user leaves the search string field empty -->
-  <string name="search_add_custom_engine_error_empty_search_string">የፍለጋ ሕብረቁምፊ  ያስገቡ</string>
+  <string name="search_add_custom_engine_error_empty_search_string">የፍለጋ ሕብረቁምፊ ያስገቡ</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">የፍለጋ ሕብረቁምፊ ና የምሳሌ ቅርጸት እንደ ሚመሳሰሉ ያረጋግጡ</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">ከ "%s" ጋር መገናኘት ላይ ስህተት</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">ከ \"%s\" ጋር መገናኘት ላይ ስህተት</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s ተፈጠረ</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -2659,9 +2624,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. ወደ አንድሮይድ መቼቶች ይሂዱ</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;ፍቃዶችን&lt;/b&gt;ን መታ ያድርጉ</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>ፍቃዶችን</b>ን መታ ያድርጉ]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. &lt;b&gt;%1$s&lt;/b&gt; ን ወደ አብራ ቀይር</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. <b>%1$s</b> ን ወደ አብራ ቀይር]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">ግንኙነት ደህንነቱ የተጠበቀ ነው</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -2671,7 +2636,7 @@
   <!-- Label to clear site data -->
   <string name="clear_site_data">ኩኪዎች እና የድረ-ገፅ ውሂብ ያጽዱ</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data"> የ&lt;b&gt;%s&lt;/b&gt; ድረ-ገፅን ሁሉንም ኩኪዎች እና ውሂቦች ማጽዳት እንደሚፈልጉ እርግጠኛ ነዎት?</string>
+  <string name="confirm_clear_site_data"><![CDATA[የ<b>%s</b> ድረ-ገፅን ሁሉንም ኩኪዎች እና ውሂቦች ማጽዳት እንደሚፈልጉ እርግጠኛ ነዎት?]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">እርግጠኛ ነዎት በሁሉም ድረ-ገፆች ላይ ያሉትን ሁሉንም ፈቃዶች ማጽዳት ይፈልጋሉ?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -2732,7 +2697,7 @@
   <!-- This is the hint text that is shown inline on the hostname field of the create new login page. 'https://www.example.com' intentionally hardcoded here -->
   <string name="add_login_hostname_hint_text">https://www.example.com</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname does not contain http or https. -->
-  <string name="add_login_hostname_invalid_text_3">የድር አድራሻ "https://" ወይም "http://" መያዝ አለበት</string>
+  <string name="add_login_hostname_invalid_text_3">የድር አድራሻ \"https://\" ወይም \"http://\" መያዝ አለበት</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname is invalid. -->
   <string name="add_login_hostname_invalid_text_2">ትክክለኛ የአስተናጋጅ ስም ያስፈልጋል</string>
   <!--
@@ -2829,7 +2794,7 @@
   -->
   <string name="trending_searches_header_2">በ%s ላይ በመታየት ላይ ያለ</string>
   <!-- Title for search suggestions when Google is the default search suggestion engine. -->
-  <string name="google_search_engine_suggestion_header"> የጉግል ፍለጋ</string>
+  <string name="google_search_engine_suggestion_header">የጉግል ፍለጋ</string>
   <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. %s is default search engine name. -->
   <string name="other_default_search_engine_suggestion_header">%s ፍለጋ</string>
   <!-- Title for recent search suggestions. -->
@@ -2855,17 +2820,17 @@
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1">አነቃቂ ታሪኮች</string>
+  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">አነቃቂ ታሪኮች</string>
   <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header">ታሪኮች በርዕስ</string>
+  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">ታሪኮች በርዕስ</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">ተጨማሪ ያግኙ</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">ተጨማሪ ያግኙ</string>
   <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2">በ%s የተጎላበተ።</string>
+  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">በ%s የተጎላበተ።</string>
   <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" tools:ignore="BrandUsage">የፋየርፎክስ ቤተሰብ አካል። %s</string>
+  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">የፋየርፎክስ ቤተሰብ አካል። %s</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">የበለጠ ለማወቅ</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">የበለጠ ለማወቅ</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">ስፖንሰር የተደረገ</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2877,11 +2842,11 @@
 
     Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
   -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources">የእያንዳንዱን ምርት ግምገማዎች በ&lt;b&gt;ፊደል ደረጃ&lt;/b&gt; ከሀ እስከ ረ እንመድባለን።</string>
+  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[የእያንዳንዱን ምርት ግምገማዎች በ<b>ፊደል ደረጃ</b> ከሀ እስከ ረ እንመድባለን።]]></string>
   <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources">የ&lt;b&gt;የተስተካከለ ደረጃ&lt;/b&gt; አስተማማኝ ናቸው ብለን ባመንባቸው ግምገማዎች ላይ ብቻ የተመሰረተ ነው።</string>
+  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[የ<b>የተስተካከለ ደረጃ</b> አስተማማኝ ናቸው ብለን ባመንባቸው ግምገማዎች ላይ ብቻ የተመሰረተ ነው።]]></string>
   <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources">&lt;b&gt;ዋና ዋናዎቹ&lt;/b&gt; አስተማማኝ ናቸው ብለን የምናምንባቸው ባለፉት 80 ቀናት ውስጥ ከ%s ግምገማዎች የተገኙ ናቸው።</string>
+  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>ዋና ዋናዎቹ</b> አስተማማኝ ናቸው ብለን የምናምንባቸው ባለፉት 80 ቀናት ውስጥ ከ%s ግምገማዎች የተገኙ ናቸው።]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -2899,7 +2864,7 @@
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article">ጽሑፉን ያንብቡ</string>
   <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more">የበለጠ ለማወቅ አገናኝ ይክፈቱ</string>
+  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">የበለጠ ለማወቅ አገናኝ ይክፈቱ</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s፣ ርዕስ</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -3103,12 +3068,12 @@
     The title of the warning card informs the user that an error has occurred at downloading a language.
     %1$s is the language name, for example, "Spanish".
   -->
-  <string name="download_languages_error_warning_text">&lt;b&gt;%1$s&lt;/b&gt;ን ማውረድ አልተቻለም። እባክዎ እንደገና ይሞክሩ።</string>
+  <string name="download_languages_error_warning_text"><![CDATA[<b>%1$s</b>ን ማውረድ አልተቻለም። እባክዎ እንደገና ይሞክሩ።]]></string>
   <!--
     The title of the warning card informs the user that an error has occurred at deleting a language.
     %1$s is the language name, for example, "Spanish".
   -->
-  <string name="download_languages_delete_error_warning_text">&lt;b&gt;%1$s&lt;/b&gt;ን መሰረዝ አልተቻለም። እባክዎ እንደገና ይሞክሩ።</string>
+  <string name="download_languages_delete_error_warning_text"><![CDATA[<b>%1$s</b>ን መሰረዝ አልተቻለም። እባክዎ እንደገና ይሞክሩ።]]></string>
   <!--
     Title for the dialog used by the translations feature to confirm deleting a language.
     The dialog will be presented when the user requests deletion of a language.

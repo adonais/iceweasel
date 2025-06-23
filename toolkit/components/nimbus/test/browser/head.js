@@ -5,13 +5,9 @@
 
 const { _ExperimentFeature: ExperimentFeature, ExperimentAPI } =
   ChromeUtils.importESModule("resource://nimbus/ExperimentAPI.sys.mjs");
-const { ExperimentManager } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/ExperimentManager.sys.mjs"
+const { NimbusTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
-const { ExperimentFakes, ExperimentTestUtils, NimbusTestUtils } =
-  ChromeUtils.importESModule(
-    "resource://testing-common/NimbusTestUtils.sys.mjs"
-  );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -28,13 +24,13 @@ add_setup(async function () {
    * the schema and no records have missing (or extra) properties while in tests
    */
 
-  const origAddExperiment = ExperimentManager.store.addEnrollment.bind(
-    ExperimentManager.store
+  const origAddExperiment = ExperimentAPI.manager.store.addEnrollment.bind(
+    ExperimentAPI.manager.store
   );
   sandbox
-    .stub(ExperimentManager.store, "addEnrollment")
+    .stub(ExperimentAPI.manager.store, "addEnrollment")
     .callsFake(enrollment => {
-      ExperimentTestUtils.validateEnrollment(enrollment);
+      NimbusTestUtils.validateEnrollment(enrollment);
       return origAddExperiment(enrollment);
     });
 
@@ -42,8 +38,8 @@ add_setup(async function () {
   // functions. This lets tests use registerCleanupFunction to clean up any
   // stray enrollments.
   registerCleanupFunction(() => {
-    registerCleanupFunction(() => {
-      NimbusTestUtils.assert.storeIsEmpty(ExperimentManager.store);
+    registerCleanupFunction(async () => {
+      await NimbusTestUtils.assert.storeIsEmpty(ExperimentAPI.manager.store);
       sandbox.restore();
     });
   });
@@ -63,10 +59,72 @@ async function setupTest() {
   await ExperimentAPI._rsLoader.updateRecipes("test");
 
   return async function cleanup() {
-    await NimbusTestUtils.removeStore(ExperimentAPI._manager.store);
+    await NimbusTestUtils.removeStore(ExperimentAPI.manager.store);
   };
 }
 
-async function assertEmptyStore(store) {
-  await NimbusTestUtils.removeStore(store);
+/**
+ * Wait for a message from a child process.
+ *
+ * @param {string} msg
+ * The message to wait for.
+ *
+ * @returns {Promise<void>}
+ * A promise that resolves when the message is received for the first time.
+ */
+function waitForChildMessage(msg) {
+  return new Promise(resolve => {
+    const listener = () => {
+      resolve();
+      info(`parent received ${msg}`);
+      Services.ppmm.removeMessageListener(msg, listener);
+    };
+
+    info(`parent waiting for ${msg}`);
+    Services.ppmm.addMessageListener(msg, listener);
+  });
+}
+
+/**
+ * Set up a listener for a SharedData update in the process corresponding to the
+ * specified browser.
+ *
+ * You must await the promise returned by this function *before* triggering a
+ * SharedData flush.
+ *
+ * After triggering the flush, you must await the promise inside the returned
+ * object.
+ *
+ * Example:
+ *
+ * ```js
+ * const childUpdated = await childSharedDataChanged(browser);
+ * // Do something to modify SharedData
+ * Services.ppmm.sharedData.flush();
+ * await childUpdated.promise;
+ * ```
+ *
+ * @returns {Promise<object>}
+ * A promise that resolves to an object containing a promise. The outer promise
+ * resolves when the event handler has been registered in the child. The inner
+ * promise resolves when the event has fired in the child.
+ */
+async function childSharedDataChanged(browser) {
+  const MESSAGE = "nimbus-browser-test:shared-data-changed";
+
+  const promise = waitForChildMessage(MESSAGE);
+  await SpecialPowers.spawn(browser, [MESSAGE], async MESSAGE => {
+    Services.cpmm.sharedData.addEventListener(
+      "change",
+      async () => {
+        await Services.cpmm.sendAsyncMessage(MESSAGE);
+      },
+      { once: true }
+    );
+  });
+
+  // We can't return promise here because JavaScript will collapse it and
+  // awaiting this function will await *that* promise, which we don't want to
+  // do.
+  return { promise };
 }

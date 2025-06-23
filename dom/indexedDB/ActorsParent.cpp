@@ -120,7 +120,6 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/CachingDatabaseConnection.h"
-#include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
 #include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
@@ -2125,10 +2124,9 @@ class WaitForTransactionsHelper final : public Runnable {
   NS_DECL_NSIRUNNABLE
 };
 
-class Database final
-    : public PBackgroundIDBDatabaseParent,
-      public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>>,
-      public AtomicSafeRefCounted<Database> {
+class Database final : public PBackgroundIDBDatabaseParent,
+                       public LinkedListElement<Database>,
+                       public AtomicSafeRefCounted<Database> {
   friend class VersionChangeTransaction;
 
   class StartTransactionOp;
@@ -2318,6 +2316,7 @@ class Database final
   ~Database() override {
     MOZ_ASSERT(mClosed);
     MOZ_ASSERT_IF(mActorWasAlive, mActorDestroyed);
+    MOZ_DIAGNOSTIC_ASSERT(!isInList());
 
     NS_ProxyRelease("ReleaseIDBFactory", mBackgroundThread.get(),
                     mFactory.forget());
@@ -2931,9 +2930,8 @@ class VersionChangeTransaction final
       const OpenCursorParams& aParams) override;
 };
 
-class FactoryOp
-    : public DatabaseOperationBase,
-      public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
+class FactoryOp : public DatabaseOperationBase,
+                  public LinkedListElement<FactoryOp> {
  public:
   struct MaybeBlockedDatabaseInfo final {
     SafeRefPtr<Database> mDatabase;
@@ -3040,7 +3038,7 @@ class FactoryOp
   ClientDirectoryLockHandle mDirectoryLockHandle;
 
   nsTArray<NotNull<RefPtr<FactoryOp>>> mBlocking;
-  nsTArray<NotNull<RefPtr<FactoryOp>>> mBlockedOn;
+  nsTHashSet<RefPtr<FactoryOp>> mBlockedOn;
 
   nsTArray<MaybeBlockedDatabaseInfo> mMaybeBlockedDatabases;
 
@@ -3110,6 +3108,7 @@ class FactoryOp
     // MSVC 2010 fails to link for some reason if it is not inlined here...
     MOZ_ASSERT_IF(OperationMayProceed(),
                   mState == State::Initial || mState == State::Completed);
+    MOZ_DIAGNOSTIC_ASSERT(!isInList());
   }
 
   nsresult Open();
@@ -3172,13 +3171,13 @@ class FactoryOp
   void AddBlockedOnOp(FactoryOp& aOp) {
     AssertIsOnOwningThread();
 
-    mBlockedOn.AppendElement(WrapNotNull(&aOp));
+    mBlockedOn.Insert(&aOp);
   }
 
   void MaybeUnblock(FactoryOp& aOp) {
     AssertIsOnOwningThread();
 
-    mBlockedOn.RemoveElement(&aOp);
+    mBlockedOn.Remove(&aOp);
     if (mBlockedOn.IsEmpty()) {
       MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(this));
     }
@@ -4722,7 +4721,13 @@ struct DatabaseActorInfo final {
   friend class mozilla::DefaultDelete<DatabaseActorInfo>;
 
   SafeRefPtr<FullDatabaseMetadata> mMetadata;
-  nsTArray<NotNull<CheckedUnsafePtr<Database>>> mLiveDatabases;
+  // We don't use LinkedList<CheckedUnsafePtr<Database>> because
+  // CheckedUnsafePtr is not suitable for use within LinkedList. While it's
+  // theoretically possible to adapt LinkedList to support it, doing so would
+  // introduce unnecessary overhead. Instead, we use a simpler and more
+  // efficient approach. Each Database instance asserts !isInList() in its
+  // destructor to catch dangling pointer issues.
+  LinkedList<Database> mLiveDatabases;
   RefPtr<FactoryOp> mWaitingFactoryOp;
 
   DatabaseActorInfo(SafeRefPtr<FullDatabaseMetadata> aMetadata,
@@ -4730,12 +4735,12 @@ struct DatabaseActorInfo final {
       : mMetadata(std::move(aMetadata)) {
     MOZ_COUNT_CTOR(DatabaseActorInfo);
 
-    mLiveDatabases.AppendElement(aDatabase);
+    mLiveDatabases.insertBack(aDatabase);
   }
 
  private:
   ~DatabaseActorInfo() {
-    MOZ_ASSERT(mLiveDatabases.IsEmpty());
+    MOZ_ASSERT(mLiveDatabases.isEmpty());
     MOZ_ASSERT(!mWaitingFactoryOp || !mWaitingFactoryOp->HasBlockedDatabases());
 
     MOZ_COUNT_DTOR(DatabaseActorInfo);
@@ -5872,7 +5877,13 @@ nsresult RemoveDatabaseFilesAndDirectory(nsIFile& aBaseDirectory,
 // Counts the number of "live" Factory, FactoryOp and Database instances.
 uint64_t gBusyCount = 0;
 
-using FactoryOpArray = nsTArray<CheckedUnsafePtr<FactoryOp>>;
+// We don't use LinkedList<CheckedUnsafePtr<FactoryOp>> because
+// CheckedUnsafePtr is not suitable for use within LinkedList. While it's
+// theoretically possible to adapt LinkedList to support it, doing so would
+// introduce unnecessary overhead. Instead, we use a simpler and more
+// efficient approach. Each FactoryOp instance asserts !isInList() in its
+// destructor to catch dangling pointer issues.
+using FactoryOpArray = LinkedList<FactoryOp>;
 
 StaticAutoPtr<FactoryOpArray> gFactoryOps;
 
@@ -5977,7 +5988,7 @@ void DecreaseBusyCount() {
     gLiveDatabaseHashtable = nullptr;
 
     MOZ_ASSERT(gFactoryOps);
-    MOZ_ASSERT(gFactoryOps->IsEmpty());
+    MOZ_ASSERT(gFactoryOps->isEmpty());
     gFactoryOps = nullptr;
 
 #ifdef DEBUG
@@ -6022,10 +6033,10 @@ void InvalidateLiveDatabasesMatching(const Condition& aCondition) {
   nsTArray<SafeRefPtr<Database>> databases;
 
   for (const auto& liveDatabasesEntry : gLiveDatabaseHashtable->Values()) {
-    for (const auto& database : liveDatabasesEntry->mLiveDatabases) {
+    for (Database* const database : liveDatabasesEntry->mLiveDatabases) {
       if (aCondition(*database)) {
         databases.AppendElement(
-            SafeRefPtr{database.get(), AcquireStrongRefFromRawPtr{}});
+            SafeRefPtr{database, AcquireStrongRefFromRawPtr{}});
       }
     }
   }
@@ -9079,7 +9090,7 @@ Factory::AllocPBackgroundIDBFactoryRequestParent(
     }
   }();
 
-  gFactoryOps->AppendElement(actor);
+  gFactoryOps->insertBack(actor);
 
   // Balanced in CleanupMetadata() which is/must always called by SendResults().
   IncreaseBusyCount();
@@ -9146,7 +9157,7 @@ mozilla::ipc::IPCResult Factory::RecvGetDatabases(
                                        aPersistenceType, aPrincipalInfo,
                                        std::move(aResolve));
 
-  gFactoryOps->AppendElement(op);
+  gFactoryOps->insertBack(op);
 
   // Balanced in CleanupMetadata() which is/must always called by SendResults().
   IncreaseBusyCount();
@@ -9498,7 +9509,7 @@ bool Database::CloseInternal() {
   DatabaseActorInfo* info;
   MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(Id(), &info));
 
-  MOZ_ASSERT(info->mLiveDatabases.Contains(this));
+  MOZ_ASSERT(info->mLiveDatabases.contains(this));
 
   if (info->mWaitingFactoryOp) {
     info->mWaitingFactoryOp->NoteDatabaseClosed(this);
@@ -9550,12 +9561,12 @@ void Database::CleanupMetadata() {
 
   DatabaseActorInfo* info;
   MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(Id(), &info));
-  MOZ_ALWAYS_TRUE(info->mLiveDatabases.RemoveElement(this));
+  removeFrom(info->mLiveDatabases);
 
   QuotaManager::MaybeRecordQuotaClientShutdownStep(
       quota::Client::IDB, "Live database entry removed"_ns);
 
-  if (info->mLiveDatabases.IsEmpty()) {
+  if (info->mLiveDatabases.isEmpty()) {
     MOZ_ASSERT(!info->mWaitingFactoryOp ||
                !info->mWaitingFactoryOp->HasBlockedDatabases());
     gLiveDatabaseHashtable->Remove(Id());
@@ -9757,7 +9768,7 @@ mozilla::ipc::IPCResult Database::RecvBlocked() {
 
   DatabaseActorInfo* info;
   MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(Id(), &info));
-  MOZ_ASSERT(info->mLiveDatabases.Contains(this));
+  MOZ_ASSERT(info->mLiveDatabases.contains(this));
 
   if (NS_WARN_IF(!info->mWaitingFactoryOp)) {
     return IPC_FAIL(this, "Database info has no mWaitingFactoryOp!");
@@ -10778,14 +10789,14 @@ bool VersionChangeTransaction::CopyDatabaseMetadata() {
   // Replace the live metadata with the new mutable copy.
   DatabaseActorInfo* info;
   MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(origMetadata.mDatabaseId, &info));
-  MOZ_ASSERT(!info->mLiveDatabases.IsEmpty());
+  MOZ_ASSERT(!info->mLiveDatabases.isEmpty());
   MOZ_ASSERT(info->mMetadata == &origMetadata);
 
   mOldMetadata = std::move(info->mMetadata);
   info->mMetadata = std::move(newMetadata);
 
   // Replace metadata pointers for all live databases.
-  for (const auto& liveDatabase : info->mLiveDatabases) {
+  for (Database* const liveDatabase : info->mLiveDatabases) {
     liveDatabase->mMetadata = info->mMetadata.clonePtr();
   }
 
@@ -10809,7 +10820,7 @@ void VersionChangeTransaction::UpdateMetadata(nsresult aResult) {
     return;
   }
 
-  MOZ_ASSERT(!info->mLiveDatabases.IsEmpty());
+  MOZ_ASSERT(!info->mLiveDatabases.isEmpty());
 
   if (NS_SUCCEEDED(aResult)) {
     // Remove all deleted objectStores and indexes, then mark immutable.
@@ -10840,7 +10851,7 @@ void VersionChangeTransaction::UpdateMetadata(nsresult aResult) {
     // Replace metadata pointers for all live databases.
     info->mMetadata = std::move(oldMetadata);
 
-    for (auto& liveDatabase : info->mLiveDatabases) {
+    for (Database* const liveDatabase : info->mLiveDatabases) {
       liveDatabase->mMetadata = info->mMetadata.clonePtr();
     }
   }
@@ -12599,7 +12610,7 @@ void QuotaClient::InitiateShutdown() {
 }
 
 bool QuotaClient::IsShutdownCompleted() const {
-  return (!gFactoryOps || gFactoryOps->IsEmpty()) &&
+  return (!gFactoryOps || gFactoryOps->isEmpty()) &&
          (!gLiveDatabaseHashtable || !gLiveDatabaseHashtable->Count()) &&
          !mCurrentMaintenance && !DeleteFilesRunnable::IsDeletionPending();
 }
@@ -12613,16 +12624,17 @@ nsCString QuotaClient::GetShutdownStatus() const {
 
   nsCString data;
 
-  if (gFactoryOps && !gFactoryOps->IsEmpty()) {
+  if (gFactoryOps && !gFactoryOps->isEmpty()) {
     data.Append("FactoryOperations: "_ns +
-                IntToCString(static_cast<uint32_t>(gFactoryOps->Length())) +
+                IntToCString(static_cast<uint32_t>(gFactoryOps->length())) +
                 " ("_ns);
 
     // XXX It might be confusing to remove duplicates here, as the actual list
     // won't match the count then.
     nsTHashSet<nsCString> ids;
-    std::transform(gFactoryOps->cbegin(), gFactoryOps->cend(),
-                   MakeInserter(ids), [](const auto& factoryOp) {
+
+    std::transform(gFactoryOps->begin(), gFactoryOps->end(), MakeInserter(ids),
+                   [](const FactoryOp* const factoryOp) {
                      MOZ_ASSERT(factoryOp);
 
                      nsCString id;
@@ -12639,16 +12651,15 @@ nsCString QuotaClient::GetShutdownStatus() const {
     data.Append("LiveDatabases: "_ns +
                 IntToCString(gLiveDatabaseHashtable->Count()) + " ("_ns);
 
-    // XXX What's the purpose of adding these to a hashtable before joining them
-    // to the string? (Maybe this used to be an ordered container before???)
+    // XXX It might be confusing to remove duplicates here, as the actual list
+    // won't match the count then.
     nsTHashSet<nsCString> ids;
 
     for (const auto& entry : gLiveDatabaseHashtable->Values()) {
       MOZ_ASSERT(entry);
 
-      std::transform(entry->mLiveDatabases.cbegin(),
-                     entry->mLiveDatabases.cend(), MakeInserter(ids),
-                     [](const auto& database) {
+      std::transform(entry->mLiveDatabases.begin(), entry->mLiveDatabases.end(),
+                     MakeInserter(ids), [](const Database* const database) {
                        nsCString id;
                        database->Stringify(id);
                        return id;
@@ -13424,9 +13435,10 @@ nsresult Maintenance::BeginDatabaseMaintenance() {
    public:
     static bool IsSafeToRunMaintenance(const nsAString& aDatabasePath) {
       if (gFactoryOps) {
-        for (uint32_t index = gFactoryOps->Length(); index > 0; index--) {
-          CheckedUnsafePtr<FactoryOp>& existingOp = (*gFactoryOps)[index - 1];
-
+        // XXX LinkedList should support reverse iteration via rbegin() and
+        // rend(), see bug 1964967.
+        for (const FactoryOp* existingOp = gFactoryOps->getLast(); existingOp;
+             existingOp = existingOp->getPrevious()) {
           if (existingOp->DatabaseNameRef().isNothing()) {
             return false;
           }
@@ -13442,16 +13454,19 @@ nsresult Maintenance::BeginDatabaseMaintenance() {
       }
 
       if (gLiveDatabaseHashtable) {
-        return std::all_of(
-            gLiveDatabaseHashtable->Values().cbegin(),
-            gLiveDatabaseHashtable->Values().cend(),
-            [&aDatabasePath](const auto& liveDatabasesEntry) {
-              const auto& liveDatabases = liveDatabasesEntry->mLiveDatabases;
-              return std::all_of(liveDatabases.cbegin(), liveDatabases.cend(),
-                                 [&aDatabasePath](const auto& database) {
-                                   return database->FilePath() != aDatabasePath;
-                                 });
-            });
+        return std::all_of(gLiveDatabaseHashtable->Values().cbegin(),
+                           gLiveDatabaseHashtable->Values().cend(),
+                           [&aDatabasePath](const auto& liveDatabasesEntry) {
+                             // XXX std::all_of currently doesn't work with
+                             // LinkedList's iterator. See bug 1964969.
+                             for (const Database* const database :
+                                  liveDatabasesEntry->mLiveDatabases) {
+                               if (database->FilePath() == aDatabasePath) {
+                                 return false;
+                               }
+                             }
+                             return true;
+                           });
       }
 
       return true;
@@ -14904,7 +14919,10 @@ nsresult FactoryOp::DirectoryWorkDone() {
     bool foundThis = false;
     bool blocked = false;
 
-    for (const auto& existingOp : Reversed(*gFactoryOps)) {
+    // XXX LinkedList should support reverse iteration via rbegin() and rend(),
+    // see bug 1964967.
+    for (FactoryOp* existingOp = gFactoryOps->getLast(); existingOp;
+         existingOp = existingOp->getPrevious()) {
       if (existingOp == &self) {
         foundThis = true;
         continue;
@@ -14996,7 +15014,7 @@ void FactoryOp::CleanupMetadata() {
   mBlocking.Clear();
 
   MOZ_ASSERT(gFactoryOps);
-  gFactoryOps->RemoveElement(this);
+  removeFrom(*gFactoryOps);
 
   // We might get here even after QuotaManagerOpen failed, so we need to check
   // if we have a quota manager.
@@ -15028,15 +15046,14 @@ nsresult FactoryOp::SendVersionChangeMessages(
   MOZ_ASSERT(!IsActorDestroyed());
 
   const uint32_t expectedCount = mDeleting ? 0 : 1;
-  const uint32_t liveCount = aDatabaseActorInfo->mLiveDatabases.Length();
+  const uint32_t liveCount = aDatabaseActorInfo->mLiveDatabases.length();
   if (liveCount > expectedCount) {
     nsTArray<MaybeBlockedDatabaseInfo> maybeBlockedDatabases;
-    for (const auto& database : aDatabaseActorInfo->mLiveDatabases) {
-      if ((!aOpeningDatabase || database.get() != &aOpeningDatabase.ref()) &&
+    for (Database* const database : aDatabaseActorInfo->mLiveDatabases) {
+      if ((!aOpeningDatabase || database != &aOpeningDatabase.ref()) &&
           !database->IsClosed() &&
           NS_WARN_IF(!maybeBlockedDatabases.AppendElement(
-              SafeRefPtr{database.get(), AcquireStrongRefFromRawPtr{}},
-              fallible))) {
+              SafeRefPtr{database, AcquireStrongRefFromRawPtr{}}, fallible))) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
     }
@@ -15784,7 +15801,7 @@ nsresult OpenDatabaseOp::BeginVersionChange() {
   DatabaseActorInfo* info;
   MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(mDatabaseId.ref(), &info));
 
-  MOZ_ASSERT(info->mLiveDatabases.Contains(mDatabase.unsafeGetRawPtr()));
+  MOZ_ASSERT(info->mLiveDatabases.contains(mDatabase.unsafeGetRawPtr()));
   MOZ_ASSERT(!info->mWaitingFactoryOp);
   MOZ_ASSERT(info->mMetadata == mMetadata);
 
@@ -16086,8 +16103,7 @@ void OpenDatabaseOp::EnsureDatabaseActor() {
       std::move(mDirectoryLockHandle), mInPrivateBrowsing, maybeKey);
 
   if (info) {
-    info->mLiveDatabases.AppendElement(
-        WrapNotNullUnchecked(mDatabase.unsafeGetRawPtr()));
+    info->mLiveDatabases.insertBack(mDatabase.unsafeGetRawPtr());
   } else {
     // XXX Maybe use LookupOrInsertWith above, to avoid a second lookup here?
     info = gLiveDatabaseHashtable
@@ -16704,19 +16720,18 @@ void DeleteDatabaseOp::VersionChangeOp::RunOnOwningThread() {
     // Inform all the other databases that they are now invalidated. That
     // should remove the previous metadata from our table.
     if (gLiveDatabaseHashtable->Get(deleteOp->mDatabaseId.ref(), &info)) {
-      MOZ_ASSERT(!info->mLiveDatabases.IsEmpty());
+      MOZ_ASSERT(!info->mLiveDatabases.isEmpty());
       MOZ_ASSERT(!info->mWaitingFactoryOp);
 
       nsTArray<SafeRefPtr<Database>> liveDatabases;
-      if (NS_WARN_IF(!liveDatabases.SetCapacity(info->mLiveDatabases.Length(),
+      if (NS_WARN_IF(!liveDatabases.SetCapacity(info->mLiveDatabases.length(),
                                                 fallible))) {
         deleteOp->SetFailureCode(NS_ERROR_OUT_OF_MEMORY);
       } else {
-        std::transform(info->mLiveDatabases.cbegin(),
-                       info->mLiveDatabases.cend(),
+        std::transform(info->mLiveDatabases.begin(), info->mLiveDatabases.end(),
                        MakeBackInserter(liveDatabases),
-                       [](const auto& aDatabase) -> SafeRefPtr<Database> {
-                         return {aDatabase.get(), AcquireStrongRefFromRawPtr{}};
+                       [](Database* const aDatabase) -> SafeRefPtr<Database> {
+                         return {aDatabase, AcquireStrongRefFromRawPtr{}};
                        });
 
 #ifdef DEBUG
@@ -16877,7 +16892,8 @@ nsresult GetDatabasesOp::DoDatabaseWork() {
         }
 
         QM_TRY_RETURN(quotaManager->EnsureTemporaryClientIsInitialized(
-            ClientMetadata{mOriginMetadata, Client::IDB}));
+            ClientMetadata{mOriginMetadata, Client::IDB},
+            /* aCreateIfNonExistent */ true));
       }()
                   .map([](const auto& res) { return res.first; })));
 

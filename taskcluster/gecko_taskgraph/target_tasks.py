@@ -48,7 +48,6 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"android-geckoview-docs",
     r"android-hw",
     # Windows tasks
-    r"windows11-64-2009-hw-ref",
     r"windows11-64-24h2-hw-ref",
     r"windows10-aarch64-qr",
     # Linux tasks
@@ -547,8 +546,8 @@ def target_tasks_mozilla_release(full_task_graph, parameters, graph_config):
     ]
 
 
-@register_target_task("mozilla_esr128_tasks")
-def target_tasks_mozilla_esr128(full_task_graph, parameters, graph_config):
+@register_target_task("mozilla_esr140_tasks")
+def target_tasks_mozilla_esr140(full_task_graph, parameters, graph_config):
     """Select the set of tasks required for a promotable beta or release build
     of desktop, without android CI. The candidates build process involves a pipeline
     of builds and signing, but does not include beetmover or balrog jobs."""
@@ -780,6 +779,9 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                     and "ebay-kleinanzeigen-search" not in try_name
                 ):
                     return False
+                # Bug 1960921 Disable ebay-kleinanzeigen-search-nofis on custom-car
+                if "ebay-kleinanzeigen-search-nofis" in try_name:
+                    return False
                 return True
         return False
 
@@ -819,6 +821,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             if "responsiveness" in try_name and "chrome" in try_name:
                 # Disabled chrome responsiveness tests temporarily in bug 1898351
                 # due to frequent failures
+                return False
+            # Bug 1961145 - Disable bing-search for test-windows11-64-24h2-shippable
+            if "windows11" in platform and "bing-search" in try_name:
                 return False
             if "browsertime" in try_name:
                 if "chrome" in try_name:
@@ -1166,6 +1171,9 @@ def target_tasks_build_linux64_clang_trunk_perf(
 
     # Only keep tasks generated from platform `linux1804-64-clang-trunk-qr/opt`
     def filter(task_label):
+        # Bug 1961141 - Disable unity webgl for linux1804-64-clang-trunk-qr
+        if "linux1804-64-clang-trunk-qr/opt" in task_label and "unity" in task_label:
+            return False
         if "linux1804-64-clang-trunk-qr/opt" in task_label and "live" not in task_label:
             return True
         return False
@@ -1248,7 +1256,7 @@ def _filter_by_release_project(parameters):
         "nightly": "mozilla-central",
         "beta": "mozilla-beta",
         "release": "mozilla-release",
-        "esr128": "mozilla-esr128",
+        "esr140": "mozilla-esr140",
     }
     target_project = project_by_release.get(parameters["release_type"])
     if target_project is None:

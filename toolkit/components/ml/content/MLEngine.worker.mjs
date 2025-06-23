@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(
     PromiseWorker: "resource://gre/modules/workers/PromiseWorker.mjs",
     getBackend: "chrome://global/content/ml/backends/Pipeline.mjs",
     modelToResponse: "chrome://global/content/ml/Utils.sys.mjs",
+    generateUUID: "chrome://global/content/ml/Utils.sys.mjs",
   },
   { global: "current" }
 );
@@ -19,6 +20,7 @@ ChromeUtils.defineESModuleGetters(
  */
 class MLEngineWorker {
   #pipeline;
+  #sessionId;
 
   constructor() {
     // Connect the provider to the worker.
@@ -53,16 +55,17 @@ class MLEngineWorker {
   }
 
   async getModelFile(...args) {
-    let result = await self.callMainThread("getModelFile", args);
+    let result = await self.callMainThread("getModelFile", [
+      ...args,
+      this.#sessionId,
+    ]);
     return result;
   }
 
-  async getInferenceProcessInfo(...args) {
-    let res = await self.callMainThread("getInferenceProcessInfo", args);
-    if (res.fail) {
-      return new Map();
-    }
-    return res.ok;
+  async notifyModelDownloadComplete() {
+    return self.callMainThread("notifyModelDownloadComplete", [
+      this.#sessionId,
+    ]);
   }
 
   /**
@@ -79,7 +82,15 @@ class MLEngineWorker {
    * @param {object} options received as an object, converted to a PipelineOptions instance
    */
   async initializeEngine(wasm, options) {
-    this.#pipeline = await lazy.getBackend(this, wasm, options);
+    this.#sessionId = lazy.generateUUID();
+    this.#pipeline = await lazy
+      .getBackend(this, wasm, options)
+      .finally(async () => {
+        // Notifying here means the backend doesn't need to notify. But the backend could notify
+        // so that we receive completion as soon as possible. Otherwise, we receive download completion
+        // once pipeline is fully initialized.
+        await this.notifyModelDownloadComplete();
+      });
   }
   /**
    * Run the worker.

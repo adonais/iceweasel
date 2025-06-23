@@ -18,10 +18,12 @@
     --background-color-warning: light-dark(var(--color-yellow-0), var(--color-yellow-90));
 
     /** Border **/
+    --border-color: light-dark(#CFCFD8, #3A3944);
     --border-color-card: color-mix(in srgb, currentColor 10%, transparent);
     --border-color-interactive-hover: var(--border-color-interactive);
     --border-color-interactive-active: var(--border-color-interactive);
     --border-color-interactive-disabled: var(--border-color-interactive);
+    --border-color-transparent: transparent;
     --border-radius-circle: 9999px;
     --border-radius-small: 4px;
     --border-radius-medium: 8px;
@@ -236,10 +238,10 @@
 
     /** Icon **/
     --icon-color: light-dark(var(--color-gray-70), var(--color-gray-05));
-    --icon-color-critical: light-dark(var(--color-red-70), var(--color-red-20));
-    --icon-color-information: light-dark(var(--color-blue-70), var(--color-blue-20));
-    --icon-color-success: light-dark(var(--color-green-70), var(--color-green-20));
-    --icon-color-warning: light-dark(var(--color-yellow-70), var(--color-yellow-20));
+    --icon-color-critical: light-dark(var(--color-red-60), var(--color-red-20));
+    --icon-color-information: light-dark(var(--color-blue-60), var(--color-blue-20));
+    --icon-color-success: light-dark(var(--color-green-60), var(--color-green-20));
+    --icon-color-warning: light-dark(var(--color-yellow-60), var(--color-yellow-20));
     --icon-size-default: var(--icon-size-small);
     --icon-size-small: var(--size-item-small);
     --icon-size-medium: 20px;
@@ -265,7 +267,7 @@
 
     /** Size **/
     --size-item-small: 16px;
-    --size-item-medium: 28px;
+    --size-item-medium: 24px;
     --size-item-large: 32px;
 
     /** Space **/
@@ -305,10 +307,11 @@
       --background-color-warning: var(--background-color-canvas);
 
       /** Border **/
-      --border-color: var(--text-color);
+      --border-color: CanvasText;
       --border-color-card: color-mix(in srgb, currentColor 41%, transparent);
       --border-color-deemphasized: currentColor;
       --border-color-interactive: var(--text-color);
+      --border-color-transparent: CanvasText;
 
       /** Button **/
       --button-border-color: var(--button-text-color);

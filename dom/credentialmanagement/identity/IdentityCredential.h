@@ -39,15 +39,17 @@ class IdentityCredential final : public Credential {
       GetIPCIdentityCredentialPromise;
   typedef MozPromise<CopyableTArray<IPCIdentityCredential>, nsresult, true>
       GetIPCIdentityCredentialsPromise;
-  typedef MozPromise<IdentityProviderConfig, nsresult, true>
-      GetIdentityProviderConfigPromise;
+  typedef MozPromise<IdentityProviderRequestOptions, nsresult, true>
+      GetIdentityProviderRequestOptionsPromise;
   typedef MozPromise<bool, nsresult, true> ValidationPromise;
+  typedef MozPromise<Maybe<IdentityProviderWellKnown>, nsresult, true>
+      GetRootManifestPromise;
   typedef MozPromise<IdentityProviderAPIConfig, nsresult, true>
       GetManifestPromise;
-  typedef std::tuple<IdentityProviderConfig, IdentityProviderAPIConfig>
-      IdentityProviderConfigWithManifest;
-  typedef MozPromise<IdentityProviderConfigWithManifest, nsresult, true>
-      GetIdentityProviderConfigWithManifestPromise;
+  typedef std::tuple<IdentityProviderRequestOptions, IdentityProviderAPIConfig>
+      IdentityProviderRequestOptionsWithManifest;
+  typedef MozPromise<IdentityProviderRequestOptionsWithManifest, nsresult, true>
+      GetIdentityProviderRequestOptionsWithManifestPromise;
   typedef MozPromise<
       std::tuple<IdentityProviderAPIConfig, IdentityProviderAccountList>,
       nsresult, true>
@@ -118,12 +120,22 @@ class IdentityCredential final : public Credential {
 
   static RefPtr<GetIPCIdentityCredentialPromise> GetCredentialInMainProcess(
       nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions,
-      const CredentialMediationRequirement& aMediationRequirement);
+      IdentityCredentialRequestOptions&& aOptions,
+      const CredentialMediationRequirement& aMediationRequirement,
+      bool aHasUserActivation);
 
   static nsresult CanSilentlyCollect(nsIPrincipal* aPrincipal,
                                      nsIPrincipal* aIDPPrincipal,
                                      bool* aResult);
+
+  static Maybe<IdentityProviderAccount> FindAccountToReauthenticate(
+      const IdentityProviderRequestOptions& aProvider,
+      nsIPrincipal* aRPPrincipal,
+      const IdentityProviderAccountList& aAccountList);
+
+  static Maybe<IdentityProviderRequestOptionsWithManifest> SkipAccountChooser(
+      const Sequence<IdentityProviderRequestOptions>& aProviders,
+      const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
 
   static RefPtr<GenericPromise> AllowedToCollectCredential(
       nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
@@ -163,7 +175,8 @@ class IdentityCredential final : public Credential {
   static RefPtr<GetIPCIdentityCredentialPromise>
   DiscoverFromExternalSourceInMainProcess(
       nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions);
+      const IdentityCredentialRequestOptions& aOptions,
+      const CredentialMediationRequirement& aMediationRequirement);
 
   static RefPtr<GetIPCIdentityCredentialPromise>
   DiscoverLightweightFromExternalSourceInMainProcess(
@@ -189,24 +202,25 @@ class IdentityCredential final : public Credential {
   static RefPtr<GetIPCIdentityCredentialPromise>
   CreateHeavyweightCredentialDuringDiscovery(
       nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
-      const IdentityProviderConfig& aProvider,
-      const IdentityProviderAPIConfig& aManifest);
+      const IdentityProviderRequestOptions& aProvider,
+      const IdentityProviderAPIConfig& aManifest,
+      const CredentialMediationRequirement& aMediationRequirement);
 
   // Performs a Fetch for the root manifest of the provided identity provider
-  // and validates it as correct. The returned promise resolves with a bool
-  // that is true if everything is valid.
+  // if needed and validates its structure. The returned promise resolves
+  // if a regular manifest fetch can proceed, with a root manifest value if
+  // one was fetched
   //
   //  Arguments:
   //    aPrincipal: the caller of navigator.credentials.get()'s principal
   //    aProvider: the provider to validate the root manifest of
   //  Return value:
-  //    promise that resolves to a bool that indicates success. Will reject
+  //    promise that resolves to a root manifest if one is fetched. Will reject
   //    when there are network or other errors.
   //  Side effects:
-  //    Network request to the IDP's well-known from inside a NullPrincipal
-  //    sandbox
+  //    Network request to the IDP's well-known if it is needed
   //
-  static RefPtr<ValidationPromise> CheckRootManifest(
+  static RefPtr<GetRootManifestPromise> FetchRootManifest(
       nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
 
   // Performs a Fetch for the internal manifest of the provided identity
@@ -222,7 +236,7 @@ class IdentityCredential final : public Credential {
   //    Network request to the URL in aProvider as the manifest from inside a
   //    NullPrincipal sandbox
   //
-  static RefPtr<GetManifestPromise> FetchInternalManifest(
+  static RefPtr<GetManifestPromise> FetchManifest(
       nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
 
   // Performs a Fetch for the account list from the provided identity
@@ -242,7 +256,7 @@ class IdentityCredential final : public Credential {
   //    credentials but without any indication of aPrincipal.
   //
   static RefPtr<GetAccountListPromise> FetchAccountList(
-      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest);
 
   // Performs a Fetch for a bearer token to the provided identity
@@ -264,7 +278,7 @@ class IdentityCredential final : public Credential {
   //    credentials and including information about the requesting principal.
   //
   static RefPtr<GetTokenPromise> FetchToken(
-      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest,
       const IdentityProviderAccount& aAccount);
 
@@ -283,7 +297,7 @@ class IdentityCredential final : public Credential {
   //    credentials and including information about the requesting principal.
   //
   static RefPtr<GetMetadataPromise> FetchMetadata(
-      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest);
 
   // Show the user a dialog to select what identity provider they would like
@@ -298,10 +312,10 @@ class IdentityCredential final : public Credential {
   //    to select. This promise may reject with nsresult errors.
   //  Side effects:
   //    Will show a dialog to the user.
-  static RefPtr<GetIdentityProviderConfigWithManifestPromise>
+  static RefPtr<GetIdentityProviderRequestOptionsWithManifestPromise>
   PromptUserToSelectProvider(
       BrowsingContext* aBrowsingContext,
-      const Sequence<IdentityProviderConfig>& aProviders,
+      const Sequence<IdentityProviderRequestOptions>& aProviders,
       const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
 
   // Show the user a dialog to select what account they would like
@@ -320,7 +334,7 @@ class IdentityCredential final : public Credential {
   static RefPtr<GetAccountPromise> PromptUserToSelectAccount(
       BrowsingContext* aBrowsingContext,
       const IdentityProviderAccountList& aAccounts,
-      const IdentityProviderConfig& aProvider,
+      const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest);
 
   // Show the user a dialog to select what account they would like
@@ -343,7 +357,7 @@ class IdentityCredential final : public Credential {
       BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
       const IdentityProviderAccount& aAccount,
       const IdentityProviderAPIConfig& aManifest,
-      const IdentityProviderConfig& aProvider);
+      const IdentityProviderRequestOptions& aProvider);
 
   // Close all dialogs associated with IdentityCredential generation on the
   // provided browsing context

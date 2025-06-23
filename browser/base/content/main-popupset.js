@@ -88,16 +88,28 @@ document.addEventListener(
           TabContextMenu.closeContextTabs();
           break;
         case "context_closeDuplicateTabs":
-          gBrowser.removeDuplicateTabs(TabContextMenu.contextTab);
+          gBrowser.removeDuplicateTabs(
+            TabContextMenu.contextTab,
+            lazy.TabMetrics.userTriggeredContext()
+          );
           break;
         case "context_closeTabsToTheStart":
-          gBrowser.removeTabsToTheStartFrom(TabContextMenu.contextTab);
+          gBrowser.removeTabsToTheStartFrom(
+            TabContextMenu.contextTab,
+            lazy.TabMetrics.userTriggeredContext()
+          );
           break;
         case "context_closeTabsToTheEnd":
-          gBrowser.removeTabsToTheEndFrom(TabContextMenu.contextTab);
+          gBrowser.removeTabsToTheEndFrom(
+            TabContextMenu.contextTab,
+            lazy.TabMetrics.userTriggeredContext()
+          );
           break;
         case "context_closeOtherTabs":
-          gBrowser.removeAllTabsBut(TabContextMenu.contextTab);
+          gBrowser.removeAllTabsBut(
+            TabContextMenu.contextTab,
+            lazy.TabMetrics.userTriggeredContext()
+          );
           break;
         case "context_unloadTab":
           TabContextMenu.explicitUnloadTabs();
@@ -222,7 +234,20 @@ document.addEventListener(
         case "toolbar-context-autohide-downloads-button":
           ToolbarContextMenu.onDownloadsAutoHideChange(event);
           break;
+        case "toolbar-context-always-show-extensions-button":
+          if (event.target.getAttribute("checked") == "true") {
+            gUnifiedExtensions.showExtensionsButtonInToolbar();
+          } else {
+            gUnifiedExtensions.hideExtensionsButtonFromToolbar();
+          }
+          break;
         case "toolbar-context-remove-from-toolbar":
+          if (
+            event.target.parentNode.triggerNode === gUnifiedExtensions.button
+          ) {
+            gUnifiedExtensions.hideExtensionsButtonFromToolbar();
+            break;
+          }
           gCustomizeMode.removeFromArea(
             event.target.parentNode.triggerNode,
             "toolbar-context-menu"
@@ -466,7 +491,8 @@ document.addEventListener(
           );
           ToolbarContextMenu.updateDownloadsAutoHide(event.target);
           ToolbarContextMenu.updateDownloadsAlwaysOpenPanel(event.target);
-          ToolbarContextMenu.updateExtension(event.target, event);
+          ToolbarContextMenu.updateExtensionsButtonContextMenu(event.target);
+          ToolbarContextMenu.updateExtension(event.target);
           break;
         case "pageActionContextMenu":
           BrowserPageActions.onContextMenuShowing(event, event.target);

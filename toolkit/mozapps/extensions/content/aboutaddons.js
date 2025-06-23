@@ -23,6 +23,11 @@ ChromeUtils.defineESModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  recordListViewTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+  recordDetailsViewTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+  recordRemoveInitiatedTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+  recordRemoveConfirmationTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+  recordListItemManageTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -1826,7 +1831,7 @@ class InlineOptionsBrowser extends HTMLElement {
       } else {
         // browser custom element does opt-in the delayConnectedCallback
         // behavior (see connectedCallback in the custom element definition
-        // from browser-custom-element.js) and so calling browser.loadURI
+        // from browser-custom-element.mjs) and so calling browser.loadURI
         // would fail if the about:addons document is not yet fully loaded.
         Promise.race([
           promiseEvent("DOMContentLoaded", document),
@@ -2318,10 +2323,11 @@ class AddonDetails extends HTMLElement {
       addon.type !== "sitepermission";
 
     // Set the add-on for the mlmodel details.
-    this.mlModelDetails = this.querySelector("addon-mlmodel-details");
-    this.mlModelDetails.addon = addon.type == "mlmodel" ? addon : null;
-    this.querySelector(".addon-detail-mlmodel").hidden =
-      addon.type != "mlmodel";
+    if (addon.type == "mlmodel") {
+      this.mlModelDetails = this.querySelector("addon-mlmodel-details");
+      this.mlModelDetails.setAddon(addon);
+      this.querySelector(".addon-detail-mlmodel").hidden = false;
+    }
 
     // Set the add-on for the preferences section.
     this.inlineOptions = this.querySelector("inline-options-browser");
@@ -2627,9 +2633,16 @@ class AddonCard extends HTMLElement {
               this.sendEvent("remove-disabled");
               return;
             }
+            if (addon.type == "mlmodel") {
+              const source = e.target.nodeName == "BUTTON" ? "details" : "list";
+              recordRemoveInitiatedTelemetry(addon, source);
+            }
             let { BrowserAddonUI } = windowRoot.ownerGlobal;
             let { remove, report } =
               await BrowserAddonUI.promptRemoveExtension(addon);
+            if (addon.type == "mlmodel") {
+              recordRemoveConfirmationTelemetry(addon, remove);
+            }
             if (remove) {
               await addon.uninstall(true);
               this.sendEvent("remove");
@@ -2645,6 +2658,9 @@ class AddonCard extends HTMLElement {
           }
           break;
         case "expand":
+          if (addon.type == "mlmodel") {
+            recordListItemManageTelemetry(addon);
+          }
           gViewController.loadView(`detail/${this.addon.id}`);
           break;
         case "more-options":
@@ -2877,6 +2893,21 @@ class AddonCard extends HTMLElement {
       this.details.update();
     }
 
+    if (addon.type == "mlmodel") {
+      this.optionsButton.hidden = this.expanded;
+      const mlmodelHeaderAdditions = this.card.querySelector(
+        "mlmodel-card-header-additions"
+      );
+      mlmodelHeaderAdditions.setAddon(addon);
+      mlmodelHeaderAdditions.expanded = this.expanded;
+
+      const mlmodelListAdditions = this.card.querySelector(
+        "mlmodel-card-list-additions"
+      );
+      mlmodelListAdditions.setAddon(addon);
+      mlmodelListAdditions.expanded = this.expanded;
+    }
+
     this.sendEvent("update");
   }
 
@@ -2969,7 +3000,6 @@ class AddonCard extends HTMLElement {
     if (addon.type != "extension" && addon.type != "sitepermission") {
       this.card.querySelector(".extension-enable-button").remove();
     }
-
     let nameContainer = this.card.querySelector(".addon-name-container");
     let headingLevel = this.expanded ? "h1" : "h3";
     let nameHeading = document.createElement(headingLevel);
@@ -3398,6 +3428,10 @@ class AddonList extends HTMLElement {
 
     if (type == "theme") {
       await BuiltInThemes.ensureBuiltInThemes();
+    }
+
+    if (type == "mlmodel") {
+      recordListViewTelemetry(addons.length);
     }
 
     // Put the add-ons into the sections, an add-on goes in the first section
@@ -4218,6 +4252,10 @@ gViewController.defineView("detail", async param => {
 
   if (!addon) {
     return null;
+  }
+
+  if (addon.type === "mlmodel") {
+    recordDetailsViewTelemetry(addon);
   }
 
   let card = document.createElement("addon-card");

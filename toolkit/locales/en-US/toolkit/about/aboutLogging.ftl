@@ -17,6 +17,8 @@ about-logging-set-log-file = Set Log File
 about-logging-set-log-modules = Set Log Modules
 about-logging-start-logging = Start Logging
 about-logging-stop-logging = Stop Logging
+about-logging-copy-as-url = Copy current settings as URL
+about-logging-url-copied = Logging settings copied to the clipboard as a preset URL
 about-logging-buttons-disabled = Logging configured via environment variables, dynamic configuration unavailable.
 about-logging-some-elements-disabled = Logging configured via URL, some configuration options are unavailable
 about-logging-info = Info:
@@ -29,6 +31,8 @@ about-logging-no-log-modules = None
 about-logging-no-log-file = None
 about-logging-logging-preset-selector-text = Logging preset:
 about-logging-with-profiler-stacks-checkbox = Enable stack traces for log messages
+about-logging-menu =
+  .title = Advanced options
 
 ## Logging presets
 

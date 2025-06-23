@@ -339,6 +339,11 @@ export class ExtensionControlledPopup {
       popupnotification.removeAttribute("learnmoreurl");
     }
     popupnotification.show();
+    if (anchor?.id == "unified-extensions-button") {
+      const { gUnifiedExtensions } = anchor.ownerGlobal;
+      gUnifiedExtensions.recordButtonTelemetry("extension_controlled_setting");
+      gUnifiedExtensions.ensureButtonShownBeforeAttachingPanel(panel);
+    }
     panel.openPopup(anchor);
   }
 

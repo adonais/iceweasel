@@ -322,13 +322,19 @@ void CookieStorage::RemoveCookie(const nsACString& aBaseDomain,
                                  const OriginAttributes& aOriginAttributes,
                                  const nsACString& aHost,
                                  const nsACString& aName,
-                                 const nsACString& aPath,
+                                 const nsACString& aPath, bool aFromHttp,
                                  const nsID* aOperationID) {
   CookieListIter matchIter{};
   RefPtr<Cookie> cookie;
   if (FindCookie(aBaseDomain, aOriginAttributes, aHost, aName, aPath,
                  matchIter)) {
     cookie = matchIter.Cookie();
+
+    // If the old cookie is httponly, make sure we're not coming from script.
+    if (cookie && !aFromHttp && cookie->IsHttpOnly()) {
+      return;
+    }
+
     RemoveCookieFromList(matchIter);
   }
 
@@ -701,7 +707,6 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
           oldCookie->IsSession() == aCookie->IsSession() &&
           oldCookie->IsHttpOnly() == aCookie->IsHttpOnly() &&
           oldCookie->SameSite() == aCookie->SameSite() &&
-          oldCookie->RawSameSite() == aCookie->RawSameSite() &&
           oldCookie->SchemeMap() == aCookie->SchemeMap() &&
           // We don't want to perform this optimization if the cookie is
           // considered stale, since in this case we would need to update the

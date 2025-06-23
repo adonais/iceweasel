@@ -95,7 +95,7 @@ export const AdBanner = ({
         <SafeAnchor
           className="ad-banner-link"
           url={spoc.url}
-          title={spoc.title}
+          title={spoc.title || spoc.sponsor || spoc.alt_text}
           onLinkClick={onLinkClick}
           dispatch={dispatch}
         >
@@ -130,7 +130,7 @@ export const AdBanner = ({
         <div className="ad-banner-sponsored">
           <span
             className="ad-banner-sponsored-label"
-            data-l10n-id="newtab-topsite-sponsored"
+            data-l10n-id="newtab-label-sponsored-fixed"
           />
         </div>
       </div>

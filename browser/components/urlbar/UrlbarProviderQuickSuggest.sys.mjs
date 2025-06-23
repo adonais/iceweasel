@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContentRelevancyManager:
     "resource://gre/modules/ContentRelevancyManager.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarProviderSearchSuggestions:
     "resource:///modules/UrlbarProviderSearchSuggestions.sys.mjs",
@@ -39,9 +39,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
   }
 
   /**
-   * The type of the provider.
-   *
-   * @returns {UrlbarUtils.PROVIDER_TYPE}
+   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
    */
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.NETWORK;
@@ -63,9 +61,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
    * with this provider, to save on resources.
    *
    * @param {UrlbarQueryContext} queryContext The query context object
-   * @returns {boolean} Whether this provider should be invoked for the search.
    */
-  isActive(queryContext) {
+  async isActive(queryContext) {
     // If the sources don't include search or the user used a restriction
     // character other than search, don't allow any suggestions.
     if (
@@ -265,7 +262,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let { result } = details;
 
     // Delegate to the result's feature if there is one.
-    let feature = lazy.QuickSuggest.getFeatureByResult(details.result);
+    let feature = lazy.QuickSuggest.getFeatureByResult(result);
     if (feature) {
       feature.onEngagement(
         queryContext,
@@ -385,7 +382,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
           );
         } else if (
           lazy.UrlbarPrefs.get("showSearchSuggestionsFirst") &&
-          lazy.UrlbarProviderSearchSuggestions.isActive(queryContext) &&
+          (await lazy.UrlbarProviderSearchSuggestions.isActive(queryContext)) &&
           lazy.UrlbarSearchUtils.getDefaultEngine(
             queryContext.isPrivate
           ).supportsResponseType(lazy.SearchUtils.URL_TYPE.SUGGEST_JSON)
@@ -521,10 +518,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
     let score;
     try {
-      score = await lazy.ContentRelevancyManager.score(
-        suggestion.categories,
-        true // adjustment needed b/c Merino uses the original encoding
-      );
+      score = await lazy.ContentRelevancyManager.score(suggestion.categories);
     } catch (error) {
       Glean.suggestRelevance.status.failure.add(1);
       this.logger.error("Error updating suggestion score", error);
@@ -545,7 +539,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
    *
    * @param {UrlbarResult} result
    *   The result to check.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *   Whether the result can be added.
    */
   async #canAddResult(result) {

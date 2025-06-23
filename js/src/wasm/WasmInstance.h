@@ -41,6 +41,7 @@ namespace js {
 class SharedArrayRawBuffer;
 class WasmBreakpointSite;
 
+class WasmGcObject;
 class WasmStructObject;
 class WasmArrayObject;
 
@@ -143,7 +144,7 @@ class alignas(16) Instance {
   // to assert that we can use compact offsets on x86(-64) for these fields.
   // We cannot have the assertion here, due to C++ 'offsetof' rules.
   static constexpr size_t offsetOfLastCommonJitField() {
-    return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
+    return offsetof(Instance, allocSites_);
   }
 
   // The number of baseline scratch storage words available.
@@ -218,6 +219,10 @@ class alignas(16) Instance {
 #ifdef JS_GC_ZEAL
   const void* addressOfGCZealModeBits_;
 #endif
+
+  // A copy of the runtime's addressOfLastBufferedWholeCell, used for whole-cell
+  // store buffer entries.
+  const void* addressOfLastBufferedWholeCell_;
 
   // Pointer to a per-module builtin stub that will request tier-up for the
   // wasm function that calls it.
@@ -323,6 +328,9 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfAllocSites() {
     return offsetof(Instance, allocSites_);
   }
+  static constexpr size_t offsetOfAddressOfLastBufferedWholeCell() {
+    return offsetof(Instance, addressOfLastBufferedWholeCell_);
+  }
   static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
     return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
   }
@@ -392,7 +400,8 @@ class alignas(16) Instance {
   void setTemporaryStackLimit(JS::NativeStackLimit limit);
   void resetTemporaryStackLimit(JSContext* cx);
 
-  int32_t computeInitialHotnessCounter(uint32_t funcIndex);
+  int32_t computeInitialHotnessCounter(uint32_t funcIndex,
+                                       size_t codeSectionSize);
   void resetHotnessCounter(uint32_t funcIndex);
   int32_t readHotnessCounter(uint32_t funcIndex) const;
   void submitCallRefHints(uint32_t funcIndex);
@@ -589,11 +598,10 @@ class alignas(16) Instance {
   static int32_t wake_m64(Instance* instance, uint64_t byteOffset,
                           int32_t count, uint32_t memoryIndex);
   static void* refFunc(Instance* instance, uint32_t funcIndex);
-  static void postBarrier(Instance* instance, void** location);
-  static void postBarrierPrecise(Instance* instance, void** location,
-                                 void* prev);
-  static void postBarrierPreciseWithOffset(Instance* instance, void** base,
-                                           uint32_t offset, void* prev);
+  static void postBarrierEdge(Instance* instance, AnyRef* location);
+  static void postBarrierEdgePrecise(Instance* instance, AnyRef* location,
+                                     void* prev);
+  static void postBarrierWholeCell(Instance* instance, gc::Cell* object);
   static void* exceptionNew(Instance* instance, void* exceptionArg);
   static int32_t throwException(Instance* instance, void* exceptionArg);
   template <bool ZeroFields>

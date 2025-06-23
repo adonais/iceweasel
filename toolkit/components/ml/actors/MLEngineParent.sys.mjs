@@ -28,8 +28,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   ModelHub: "chrome://global/content/ml/ModelHub.sys.mjs",
-  getInferenceProcessInfo: "chrome://global/content/ml/Utils.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
+  isAddonEngineId: "chrome://global/content/ml/Utils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -126,12 +126,13 @@ export class MLEngineParent extends JSProcessActorParent {
    * - 2 => Transformers < 3.1
    * - 3 => Transformers < 3.4
    * - 4 => Transformers >= 3.4.0
+   * - 5 => Transformers >= 3.5.1
    *
    * wllama:
    * - 3 => wllama 2.x
    */
   static WASM_MAJOR_VERSION = {
-    onnx: 4,
+    onnx: 5,
     wllama: 3,
   };
 
@@ -304,8 +305,11 @@ export class MLEngineParent extends JSProcessActorParent {
       case "MLEngine:GetModelFile":
         return this.getModelFile(message.data);
 
-      case "MLEngine:GetInferenceProcessInfo":
-        return lazy.getInferenceProcessInfo();
+      case "MLEngine:NotifyModelDownloadComplete":
+        return this.notifyModelDownloadComplete(message.data);
+
+      case "MLEngine:GetWorkerConfig":
+        return MLEngineParent.getWorkerConfig();
 
       case "MLEngine:DestroyEngineProcess":
         if (this.processKeepAlive) {
@@ -348,31 +352,18 @@ export class MLEngineParent extends JSProcessActorParent {
       lazy.console.debug(
         "Ignored attempt to delete previous models when the engine is not fully initialized."
       );
+      return;
     }
-
-    const deletePromises = [];
-
-    for (const [
-      key,
-      { taskName, model, revision },
-    ] of this.#modelFilesInUse.entries()) {
-      lazy.console.debug("Deleting previous version for ", {
-        taskName,
-        model,
-        revision,
-      });
-      deletePromises.push(
-        this.modelHub
-          .deleteNonMatchingModelRevisions({
-            taskName,
-            model,
-            targetRevision: revision,
-          })
-          .then(() => this.#modelFilesInUse.delete(key))
-      );
-    }
-
-    await Promise.all(deletePromises);
+    await Promise.all(
+      [...this.#modelFilesInUse].map(async ([key, entry]) => {
+        await this.modelHub.deleteNonMatchingModelRevisions({
+          modelWithHostname: entry.modelWithHostname,
+          taskName: entry.taskName,
+          targetRevision: entry.revision,
+        });
+        this.#modelFilesInUse.delete(key);
+      })
+    );
   }
 
   /**
@@ -390,9 +381,19 @@ export class MLEngineParent extends JSProcessActorParent {
    * the model hub root or an absolute URL.
    * @param {string} config.urlTemplate - The URL of the model file to fetch. Can be a path relative to
    * the model hub root or an absolute URL.
+   * @param {string} config.featureId - The engine id.
+   * @param {string} config.sessionId - Shared across the same model download session.
    * @returns {Promise<[string, object]>} The file local path and headers
    */
-  async getModelFile({ engineId, taskName, url, rootUrl, urlTemplate }) {
+  async getModelFile({
+    engineId,
+    taskName,
+    url,
+    rootUrl,
+    urlTemplate,
+    featureId,
+    sessionId,
+  }) {
     // Create the model hub instance if needed
     if (!this.modelHub) {
       lazy.console.debug("Creating model hub instance");
@@ -418,10 +419,14 @@ export class MLEngineParent extends JSProcessActorParent {
     const [data, headers] = await this.modelHub.getModelDataAsFile({
       engineId,
       taskName,
-      ...parsedUrl,
+      model: parsedUrl.model,
+      revision: parsedUrl.revision,
+      file: parsedUrl.file,
       modelHubRootUrl: rootUrl,
       modelHubUrlTemplate: urlTemplate,
       progressCallback: this.notificationsCallback?.bind(this),
+      featureId,
+      sessionId,
     });
 
     // Keep the latest revision for each task, model
@@ -437,6 +442,33 @@ export class MLEngineParent extends JSProcessActorParent {
     );
 
     return [data, headers];
+  }
+
+  /**
+   * Notify that a model download is complete.
+   *
+   * @param {object} config
+   * @param {string} config.engineId - The engine id.
+   * @param {string} config.model - The model name (organization/name).
+   * @param {string} config.revision - The model revision.
+   * @param {string} config.featureId - The engine id.
+   * @param {string} config.sessionId - Shared across the same model download session.
+   * @returns {Promise<[string, object]>} The file local path and headers
+   */
+  async notifyModelDownloadComplete({
+    engineId,
+    model,
+    revision,
+    featureId,
+    sessionId,
+  }) {
+    return this.modelHub.notifyModelDownloadComplete({
+      engineId,
+      sessionId,
+      featureId,
+      model,
+      revision,
+    });
   }
 
   /** Gets the wasm file from remote settings.
@@ -481,6 +513,18 @@ export class MLEngineParent extends JSProcessActorParent {
       record
     );
     return record;
+  }
+
+  /**
+   * Gets the configuration of the worker
+   *
+   * @returns {Promise<object>}
+   */
+  static getWorkerConfig() {
+    return {
+      url: "chrome://global/content/ml/MLEngine.worker.mjs",
+      options: { type: "module" },
+    };
   }
 
   /**
@@ -819,7 +863,7 @@ class MLEngine {
    * @returns {string}
    */
   getGleanLabel() {
-    if (this.engineId.startsWith("ML-ENGINE-")) {
+    if (lazy.isAddonEngineId(this.engineId)) {
       return "webextension";
     }
     return this.engineId;

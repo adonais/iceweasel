@@ -1,3 +1,4 @@
+import org.gradle.api.services.BuildServiceParameters
 import org.tomlj.Toml
 import org.tomlj.TomlParseResult
 import org.tomlj.TomlTable
@@ -200,7 +201,6 @@ allprojects {
     }
 }
 
-import  org.gradle.api.services.BuildServiceParameters
 abstract class MozconfigService implements BuildService<MozconfigService.Params>, AutoCloseable {
     interface Params extends BuildServiceParameters {
         MapProperty<String, Object> getMozconfigParam()
@@ -496,7 +496,18 @@ subprojects { project ->
                     include '**/*.kt'
                     exclude '**/thirdparty/**'
                 }
-                ktlint("${libs.versions.ktlint.get()}")
+                ktlint("${libs.versions.ktlint.get()}").editorConfigOverride([
+                        // Disable some of the new ktlint rules for GV code.
+                        'ktlint_standard_annotation'                 : 'disabled',
+                        'ktlint_standard_argument-list-wrapping'     : 'disabled',
+                        'ktlint_standard_class-signature'            : 'disabled',
+                        'ktlint_standard_enum-wrapping'              : 'disabled',
+                        'ktlint_standard_function-expression-body'   : 'disabled',
+                        'ktlint_standard_function-signature'         : 'disabled',
+                        'ktlint_standard_max-line-length'            : 'disabled',
+                        'ktlint_standard_property-naming'            : 'disabled',
+                        'ktlint_standard_statement-wrapping'         : 'disabled',
+                ])
             }
         }
     }
@@ -520,6 +531,15 @@ subprojects { project ->
                 select(toBeSelected)
             }
             because 'use GeckoView Glean instead of standalone Glean'
+        }
+    }
+}
+
+tasks.register("lint-a-c") {
+    subprojects.each{
+        if (it.tasks.findByName("lint") != null && it.projectDir.absolutePath.contains("android-components")) {
+            dependsOn it.tasks.named("lint")
+            println("Subproject ${it.name} has a lint task")
         }
     }
 }

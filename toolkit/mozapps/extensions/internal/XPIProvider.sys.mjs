@@ -1236,10 +1236,11 @@ class SystemAddonLocation extends DirectoryLocation {
    *        The directory for the install location.
    * @param {integer} scope
    *        The scope of add-ons installed in this location.
-   * @param {boolean} resetSet
-   *        True to throw away the current add-on set
+   * @param {boolean} appChanged
+   *        True if the app version has changed from the one that has
+   *        last run on the current profile.
    */
-  constructor(name, dir, scope, resetSet) {
+  constructor(name, dir, scope, appChanged) {
     let addonSet = SystemAddonLocation._loadAddonSet();
     let directory = null;
 
@@ -1258,8 +1259,25 @@ class SystemAddonLocation extends DirectoryLocation {
     this._addonSet = addonSet;
     this._baseDir = dir;
 
-    if (resetSet) {
+    // Resetting system-signed addon set got from Balrog on:
+    // - a startup detected as an application version downgrade
+    // - a startup detected as an application version upgrade where there is a builtin addon version
+    //   higher than the addon version part of the system-signed addon set.
+    const isAppVersionDowngrade =
+      appChanged &&
+      Services.appinfo.lastAppVersion &&
+      Services.vc.compare(
+        Services.appinfo.version,
+        Services.appinfo.lastAppVersion
+      ) < 0;
+    if (isAppVersionDowngrade) {
+      logger.info(
+        "SystemAddonLocation directory reset on detected application downgrade"
+      );
       this.installer.resetAddonSet();
+    } else if (appChanged && addonSet.directory) {
+      const builtInsMap = SystemBuiltInLocation.readAddons();
+      this.installer.updateAddonSetOnAppVersionChanged(builtInsMap);
     }
   }
 
@@ -1519,6 +1537,78 @@ var XPIStates = {
         Services.appinfo.appBuildID
       );
       startupScanScopes = AddonManager.SCOPE_ALL;
+    }
+
+    const hasScanScopeAll = startupScanScopes & AddonManager.SCOPE_ALL;
+
+    // Restrict logic to recreate "app-builtin-addons" and "app-system-addons" locations
+    // data (in case of missing/corrupted/stale addonStartup.json.lz4 file) to the first
+    // XPIStates.scanForChanges call originated early on the XPIProvider startup.
+    if (!hasScanScopeAll && shouldRestoreLocationData) {
+      if (!oldLocations.size) {
+        // Scan all locations if there are no locations found in addonStartup.json.lz4.
+        logger.warn(
+          "Force scan SCOPE_ALL locations on empty XPIStates locations data"
+        );
+        startupScanScopes = AddonManager.SCOPE_ALL;
+      }
+
+      const hasScopeApplication =
+        startupScanScopes & AddonManager.SCOPE_APPLICATION;
+      const hasScopeProfile = startupScanScopes & AddonManager.SCOPE_PROFILE;
+      const systemAddonSet = SystemAddonLocation._loadAddonSet();
+      const hasSystemAddonDirectory = !!systemAddonSet.directory;
+      const getMissingIds = ({ knownIds, expectedIds }) => {
+        return new Set(expectedIds).difference(new Set(knownIds));
+      };
+
+      // Recover from lost or stale XPIStates data for the "app-builtin-addons" location.
+      if (!hasScopeApplication && !oldLocations.has(KEY_APP_SYSTEM_BUILTINS)) {
+        logger.warn(
+          `Force scan SCOPE_APPLICATION (${KEY_APP_SYSTEM_BUILTINS} location missing from XPIStates)`
+        );
+        startupScanScopes |= AddonManager.SCOPE_APPLICATION;
+      } else if (!hasScopeApplication) {
+        // Detect stale/incomplete location data.
+        const missingIds = getMissingIds({
+          knownIds: new Set(
+            Object.keys(oldState[KEY_APP_SYSTEM_BUILTINS].addons ?? {})
+          ),
+          expectedIds: new Set(SystemBuiltInLocation.readAddons().keys()),
+        });
+        if (missingIds.size) {
+          logger.warn(
+            `Force scan SCOPE_APPLICATION location (detected missing builtins: ${JSON.stringify(Array.from(missingIds))})`
+          );
+          startupScanScopes |= AddonManager.SCOPE_APPLICATION;
+        }
+      }
+
+      // Recover from lost or stale XPIStates data for the "app-system-addons" location.
+      if (
+        hasSystemAddonDirectory &&
+        !hasScopeProfile &&
+        !oldLocations.has(KEY_APP_SYSTEM_ADDONS)
+      ) {
+        logger.warn(
+          `Force scan SCOPE_PROFILE (${KEY_APP_SYSTEM_ADDONS} location missing from XPIStates)`
+        );
+        startupScanScopes |= AddonManager.SCOPE_PROFILE;
+      } else if (hasSystemAddonDirectory && !hasScopeProfile) {
+        // Detect stale/incomplete location data.
+        const missingIds = getMissingIds({
+          knownIds: new Set(
+            Object.keys(oldState[KEY_APP_SYSTEM_ADDONS].addons ?? {})
+          ),
+          expectedIds: new Set(Object.keys(systemAddonSet.addons ?? {})),
+        });
+        if (missingIds.size) {
+          logger.warn(
+            `Force scan SCOPE_PROFILE location (detected missing system-addons: ${JSON.stringify(Array.from(missingIds))})`
+          );
+          startupScanScopes |= AddonManager.SCOPE_PROFILE;
+        }
+      }
     }
 
     for (let loc of XPIStates.locations()) {
@@ -2425,7 +2515,7 @@ export var XPIProvider = {
       } catch (e) {
         return null;
       }
-      return new SystemAddonLocation(aName, dir, aScope, aAppChanged !== false);
+      return new SystemAddonLocation(aName, dir, aScope, aAppChanged);
     }
 
     function RegistryLoc(aName, aScope, aKey) {

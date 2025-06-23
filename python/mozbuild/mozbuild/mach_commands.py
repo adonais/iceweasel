@@ -57,6 +57,18 @@ warning heuristic.
 """
 
 
+class MissingL10nError(Exception):
+    """Raised when the l10n repositories haven’t been checked out."""
+
+    pass
+
+
+class NotAGitRepositoryError(Exception):
+    """Raised when the directory isn’t a git repository."""
+
+    pass
+
+
 class StoreDebugParamsAndWarnAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         sys.stderr.write(
@@ -539,6 +551,14 @@ def clobber(command_context, what, full=False):
             raise
 
     if "python" in what:
+        topsrcdir = Path(command_context.topsrcdir)
+
+        def _pure_python_clean(srcdir: Path):
+            for file in srcdir.rglob("*.py[cod]"):
+                file.unlink()
+            for cache_dir in srcdir.rglob("__pycache__"):
+                shutil.rmtree(cache_dir, ignore_errors=True)
+
         if conditions.is_hg(command_context):
             cmd = [
                 "hg",
@@ -551,26 +571,20 @@ def clobber(command_context, what, full=False):
                 "-I",
                 "glob:**/__pycache__",
             ]
-        elif conditions.is_git(command_context):
+            ret = subprocess.call(cmd, cwd=topsrcdir)
+        elif conditions.is_git(command_context) or conditions.is_jj(command_context):
             cmd = ["git", "clean", "-d", "-f", "-x", "*.py[cdo]", "*/__pycache__/*"]
+            result = subprocess.run(cmd, cwd=topsrcdir, stderr=subprocess.DEVNULL)
+            # We assume the `jj` repo is a colocated `git` repo, if not, fall back to a pure python approach
+            if conditions.is_jj(command_context) and result.returncode != 0:
+                _pure_python_clean(topsrcdir)
         else:
-            cmd = ["find", ".", "-type", "f", "-name", "*.py[cdo]", "-delete"]
-            subprocess.call(cmd, cwd=command_context.topsrcdir)
-            cmd = [
-                "find",
-                ".",
-                "-type",
-                "d",
-                "-name",
-                "__pycache__",
-                "-empty",
-                "-delete",
-            ]
-        ret = subprocess.call(cmd, cwd=command_context.topsrcdir)
+            # If no supported vcs we use a pure python approach
+            _pure_python_clean(topsrcdir)
 
         # We'll keep this around to delete the legacy "_virtualenv" dir folders
         # so that people don't get confused if they see it and try to manipulate
-        # it but it has no effect.
+        # it, but it has no effect.
         shutil.rmtree(
             mozpath.join(command_context.topobjdir, "_virtualenvs"),
             ignore_errors=True,
@@ -1673,6 +1687,8 @@ def _run_android(
     no_attach=False,
     use_existing_process=False,
 ):
+    from shlex import quote as shlex_quote
+
     from mozrunner.devices.android_device import (
         InstallIntent,
         UninstallIntent,
@@ -1680,7 +1696,6 @@ def _run_android(
         metadata_for_app,
         verify_android_device,
     )
-    from six.moves import shlex_quote
 
     metadata = metadata_for_app(app)
 
@@ -2567,6 +2582,101 @@ def repackage_deb_l10n(
     )
 
 
+@SubCommand(
+    "repackage",
+    "rpm",
+    description="Repackage a tar file into a .rpm for Linux",
+    virtualenv_name="repackage-desktop-file",
+)
+@CommandArgument(
+    "--input", "-i", type=str, required=True, help="Input tarfile filename"
+)
+@CommandArgument(
+    "--input-xpi-dir",
+    "-x",
+    type=str,
+    required=True,
+    help="Directory which contains the .xpi langpacks",
+)
+@CommandArgument(
+    "--output",
+    "-o",
+    type=str,
+    required=True,
+    help="Output directory for the .rpm files",
+)
+@CommandArgument("--arch", type=str, required=True, help="One of ['x86', 'x86_64']")
+@CommandArgument(
+    "--version",
+    type=str,
+    required=True,
+    help="The Firefox version used to create the installer",
+)
+@CommandArgument(
+    "--build-number",
+    type=str,
+    required=True,
+    help="The release's build number",
+)
+@CommandArgument(
+    "--templates",
+    type=str,
+    required=True,
+    help="Location of the templates used to generate the rpm/ directory files",
+)
+@CommandArgument(
+    "--release-product",
+    type=str,
+    required=True,
+    help="The product being shipped. Used to disambiguate beta/devedition etc.",
+)
+@CommandArgument(
+    "--release-type",
+    type=str,
+    required=True,
+    help="The release being shipped. Used to disambiguate nightly/try etc.",
+)
+def repackage_rpm(
+    command_context,
+    input,
+    input_xpi_dir,
+    output,
+    arch,
+    version,
+    build_number,
+    templates,
+    release_product,
+    release_type,
+):
+    if not os.path.exists(input):
+        print("Input file does not exist: %s" % input)
+        return 1
+
+    template_dir = os.path.join(
+        command_context.topsrcdir,
+        templates,
+    )
+
+    from fluent.runtime.fallback import FluentLocalization, FluentResourceLoader
+
+    from mozbuild.repackaging.rpm import repackage_rpm
+
+    repackage_rpm(
+        command_context.log,
+        input,
+        input_xpi_dir,
+        output,
+        template_dir,
+        arch,
+        version,
+        build_number,
+        release_product,
+        release_type,
+        FluentLocalization,
+        FluentResourceLoader,
+    )
+
+
 @SubCommand("repackage", "dmg", description="Repackage a tar file into a .dmg for OSX")
 @CommandArgument("--input", "-i", type=str, required=True, help="Input filename")
 @CommandArgument("--output", "-o", type=str, required=True, help="Output filename")
@@ -3343,7 +3453,7 @@ def repackage_desktop_file(
         # debian repackage code that serves the same purpose on Flatpak, so
         # it is just directly re-used here.
         build_variables = {
-            "DEB_PKG_NAME": release_product,
+            "PKG_NAME": release_product,
             "DBusActivatable": "false",
             "Icon": "org.mozilla.firefox",
             "StartupWMClass": release_product,
@@ -3381,6 +3491,46 @@ def repackage_desktop_file(
         desktop_file.write(desktop)
 
 
+def _ensure_l10n_central(command_context):
+    # For nightly builds, we automatically check out missing localizations
+    # from firefox-l10n.  We never automatically check out in automation:
+    # automation builds check out revisions that have been signed-off by
+    # l10n drivers prior to use.
+    l10n_base_dir = Path(command_context.substs["L10NBASEDIR"])
+    moz_automation = os.environ.get("MOZ_AUTOMATION")
+    if moz_automation:
+        if not l10n_base_dir.exists():
+            raise MissingL10nError(
+                f"Automation requires l10n repositories to be checked out: {l10n_base_dir}"
+            )
+
+    nightly_build = command_context.substs.get("NIGHTLY_BUILD")
+    if nightly_build:
+        git = os.environ.get("GIT", "git")
+        if not l10n_base_dir.exists():
+            l10n_base_dir.mkdir(parents=True)
+            subprocess.run(
+                [
+                    git,
+                    "clone",
+                    "https://github.com/mozilla-l10n/firefox-l10n.git",
+                    str(l10n_base_dir),
+                    "--depth",
+                    "1",
+                ],
+                check=True,
+            )
+        if not moz_automation:
+            if (l10n_base_dir / ".git").exists():
+                subprocess.run(
+                    [git, "-C", str(l10n_base_dir), "pull", "--quiet"], check=True
+                )
+            else:
+                raise NotAGitRepositoryError(
+                    f"Directory is not a git repository: {l10n_base_dir}"
+                )
+
+
 @Command(
     "package-multi-locale",
     category="post-build",
@@ -3416,6 +3566,8 @@ def package_l10n(command_context, verbose=False, locales=[]):
         "GRADLE_INVOKED_WITHIN_MACH_BUILD": "1",
         "MOZ_CHROME_MULTILOCALE": " ".join(locales),
     }
+
+    _ensure_l10n_central(command_context)
 
     command_context.log(
         logging.INFO,

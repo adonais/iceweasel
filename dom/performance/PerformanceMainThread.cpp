@@ -293,21 +293,24 @@ void PerformanceMainThread::BufferLargestContentfulPaintEntryIfNeeded(
 void PerformanceMainThread::DispatchPendingEventTimingEntries() {
   DOMHighResTimeStamp renderingTime = NowUnclamped();
 
-  bool allEntriesHaveKnownInteractionIds = true;
-  for (auto* entry : mPendingEventTimingEntries) {
+  auto entriesToBeQueuedEnd = mPendingEventTimingEntries.end();
+  for (auto it = mPendingEventTimingEntries.begin();
+       it != mPendingEventTimingEntries.end(); ++it) {
     // Set its duration if it's not set already.
+    PerformanceEventTiming* entry = *it;
     if (entry->RawDuration() == 0) {
       entry->SetDuration(renderingTime - entry->RawStartTime());
     }
 
-    if (!entry->HasKnownInteractionId()) {
-      allEntriesHaveKnownInteractionIds = false;
+    if (!(mPendingEventTimingEntries.end() != entriesToBeQueuedEnd) &&
+        !entry->HasKnownInteractionId()) {
+      entriesToBeQueuedEnd = it;
     }
   }
 
   if (!StaticPrefs::dom_performance_event_timing_enable_interactionid() ||
-      allEntriesHaveKnownInteractionIds) {
-    while (!mPendingEventTimingEntries.isEmpty()) {
+      mPendingEventTimingEntries.begin() != entriesToBeQueuedEnd) {
+    while (mPendingEventTimingEntries.begin() != entriesToBeQueuedEnd) {
       RefPtr<PerformanceEventTiming> entry =
           mPendingEventTimingEntries.popFirst();
       if (entry->RawDuration() >= kDefaultEventTimingMinDuration) {
@@ -366,19 +369,17 @@ PerformanceMainThread::GetPerformanceInteractionMetrics() {
   return mInteractionMetrics;
 }
 
-Maybe<uint64_t> PerformanceMainThread::ComputeInteractionId(
-    const WidgetEvent* aEvent) {
+void PerformanceMainThread::SetInteractionId(
+    PerformanceEventTiming* aEventTiming, const WidgetEvent* aEvent) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!StaticPrefs::dom_performance_event_timing_enable_interactionid() ||
       aEvent->mFlags.mOnlyChromeDispatch || !aEvent->IsTrusted()) {
-    return Some(0);
+    aEventTiming->SetInteractionId(0);
+    return;
   }
 
-  if (aEvent->mMessage == ePointerDown || aEvent->mMessage == eKeyDown) {
-    return Nothing();
-  }
-
-  return Some(mInteractionMetrics.ComputeInteractionId(aEvent));
+  aEventTiming->SetInteractionId(
+      mInteractionMetrics.ComputeInteractionId(aEventTiming, aEvent));
 }
 
 DOMHighResTimeStamp PerformanceMainThread::GetPerformanceTimingFromString(

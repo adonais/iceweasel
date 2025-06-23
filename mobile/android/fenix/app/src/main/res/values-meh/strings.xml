@@ -82,16 +82,6 @@
   -->
   <string name="felt_privacy_info_card_subtitle_link_text">¿Neva kuvi kune\'ya a sá\'áni?</string>
   <!--
-    Private mode shortcut "contextual feature recommendation" (CFR)
-
-    Text for the Private mode shortcut CFR message for adding a private mode shortcut to open private tabs from the Home screen
-  -->
-  <string name="private_mode_cfr_message_2" moz:removedIn="138" tools:ignore="UnusedResources">Kuaxin sa kaji\'e síne pestaña yu\'u.</string>
-  <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
-  <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Chisó ya´a nuu kajie´e</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Ntuvi, kuta´vini</string>
-  <!--
     Open in App "contextual feature recommendation" (CFR)
 
     Text for the info message. %1$s is the name of the app (for example "Firefox").
@@ -198,7 +188,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Extensiones</string>
   <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more">Ka´vi kue´eka</string>
+  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">Ka´vi kue´eka</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Tetiñu extensión</string>
   <!-- Browser menu button that opens AMO in a tab -->
@@ -220,23 +210,23 @@
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Chisó ya´a nuu kajie´e</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
-  <string name="browser_menu_add_to_homescreen_2">Chisó ya´a nuu kajie´e…</string>
+  <string name="browser_menu_add_to_homescreen_2" moz:removedIn="141" tools:ignore="UnusedResources">Chisó ya´a nuu kajie´e…</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
   <string name="resync_button_content_description">Resincronizar</string>
   <!-- Browser menu button that opens the find in page menu -->
   <string name="browser_menu_find_in_page">Nánuku nuu página</string>
   <!-- Browser menu button that opens the find in page menu -->
-  <string name="browser_menu_find_in_page_2">Nánuku nuu página…</string>
+  <string name="browser_menu_find_in_page_2" moz:removedIn="141" tools:ignore="UnusedResources">Nánuku nuu página…</string>
   <!-- Browser menu button that opens the translations dialog, which has options to translate the current browser page. -->
   <string name="browser_menu_translations">Traducir página</string>
   <!-- Browser menu button that saves the current tab to a collection -->
-  <string name="browser_menu_save_to_collection">Chuva\'a nuu colección…</string>
+  <string name="browser_menu_save_to_collection" moz:removedIn="141" tools:ignore="UnusedResources">Chuva\'a nuu colección…</string>
   <!-- Browser menu button that saves the current tab to a collection -->
   <string name="browser_menu_save_to_collection_2">Chuva\'a nuu colección</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">Kua´a</string>
   <!-- Browser menu button that open a share menu to share the current site -->
-  <string name="browser_menu_share_2">Kua´a…</string>
+  <string name="browser_menu_share_2" moz:removedIn="141" tools:ignore="UnusedResources">Kua´a…</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -284,26 +274,26 @@
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
   <string name="browser_menu_switch_to_mobile_site">Sama nuu móvil</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools">Daa ka̱a̱</string>
+  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Daa ka̱a̱</string>
   <!--
     Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
     bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
   -->
-  <string name="browser_menu_save">Chuva´a</string>
+  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">Chuva´a</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
-  <string name="browser_menu_bookmark_this_page">Tee página ya´a nuu a ta´an ini noo´o</string>
+  <string name="browser_menu_bookmark_this_page" moz:removedIn="141" tools:ignore="UnusedResources">Tee página ya´a nuu a ta´an ini noo´o</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">Tee a ta´an ini noo\'o</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
-  <string name="browser_menu_save_as_pdf">Chuva´a kua PDF…</string>
+  <string name="browser_menu_save_as_pdf" moz:removedIn="141" tools:ignore="UnusedResources">Chuva´a kua PDF…</string>
   <!-- Browser menu label for turning ON reader view of the current visited page -->
-  <string name="browser_menu_turn_on_reader_view">Tee vista ka\'vi</string>
+  <string name="browser_menu_turn_on_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Tee vista ka\'vi</string>
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
-  <string name="browser_menu_turn_off_reader_view">Xita vista ka\'vi</string>
+  <string name="browser_menu_turn_off_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Xita vista ka\'vi</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
-  <string name="browser_menu_translate_page">Traducir página…</string>
+  <string name="browser_menu_translate_page" moz:removedIn="141" tools:ignore="UnusedResources">Traducir página…</string>
   <!-- Browser menu label for the print feature -->
-  <string name="browser_menu_print">Nátava…</string>
+  <string name="browser_menu_print" moz:removedIn="141" tools:ignore="UnusedResources">Nátava…</string>
   <!--
     Browser menu label for the Delete browsing data on quit feature.
     %1$s is the name of the app (for example "Firefox").
@@ -361,17 +351,17 @@
 
     Home onboarding dialog welcome screen title text.
   -->
-  <string name="onboarding_home_welcome_title_2">Kusɨɨ inidáni nkantanu nu iin internet kua jiniñu\'unuma</string>
+  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">Kusɨɨ inidáni nkantanu nu iin internet kua jiniñu\'unuma</string>
   <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description">Kue\'eka da teku. Ku\'eka privacidad. Iin compromiso jíí da ñivɨ por encima de los beneficios.</string>
+  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">Kue\'eka da teku. Ku\'eka privacidad. Iin compromiso jíí da ñivɨ por encima de los beneficios.</string>
   <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3">Sama pantalla kuviji iin ntu viji</string>
+  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">Sama pantalla kuviji iin ntu viji</string>
   <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button">Kajie´e</string>
+  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">Kajie´e</string>
   <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button">Kajie´e sesión</string>
+  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">Kajie´e sesión</string>
   <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button">Ignorar</string>
+  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Ignorar</string>
   <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message">¡Tus pestañas se están sincronizando! Kaka nu inkinonu nu inka ka̱a̱ noo\'o</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
@@ -645,9 +635,9 @@
   -->
   <string name="customize_toggle_recently_visited">Daa skuata nne\'yanu</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2">Daa tu\'un sá´á a kajie\'o kaninio</string>
+  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Daa tu\'un sá´á a kajie\'o kaninio</string>
   <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary">Artículos desarrollados por %s</string>
+  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Artículos desarrollados por %s</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Historias patrocinadas</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -797,7 +787,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">Escanea el código QR kene jíí &lt;b&gt;firefox.com/pair&lt;/b&gt;</string>
+  <string name="pair_instructions_2"><![CDATA[Escanea el código QR kene jíí <b>firefox.com/pair</b>]]></string>
   <!--
     Toolbar Preferences
 
@@ -1046,22 +1036,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Ntu íyo a nnákunu</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Daa nxinuu removidas</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s removido</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Ntu íyo archivos nxinuu</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d nkaji</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Xita</string>
   <!--
     Crashes
 
@@ -1247,7 +1225,7 @@
   <!-- Content description (not visible, for screen readers etc.): Opens the collection menu when pressed -->
   <string name="collection_menu_button_content_description">Menú de la colección</string>
   <!-- Label to describe what collections are to a new user without any collections -->
-  <string name="no_collections_description2">Nake\'e daa natiñu jitu ininu. \n Stutu daa nnanuku, daa nuu jíi daa pestañas inu saa kuvi kuvɨnu ñama.</string>
+  <string name="no_collections_description2">Nake\'e daa natiñu jitu ininu. \nStutu daa nnanuku, daa nuu jíi daa pestañas inu saa kuvi kuvɨnu ñama.</string>
   <!-- Title for the "select tabs" step of the collection creator -->
   <string name="create_collection_select_tabs">Kaji daa pestañas</string>
   <!-- Title for the "select collection" step of the collection creator -->
@@ -1483,7 +1461,7 @@
   <!-- Title for the Delete browsing data on quit preference -->
   <string name="preferences_delete_browsing_data_on_quit">Xina daa datos nnánuku de nkenenu</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
-  <string name="preference_summary_delete_browsing_data_on_quit_2">Xita automáticamente daa datos nkakanu sa kajinu  \"Kene\" nu menú principal</string>
+  <string name="preference_summary_delete_browsing_data_on_quit_2">Xita automáticamente daa datos nkakanu sa kajinu \"Kene\" nu menú principal</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
   <string name="delete_browsing_data_on_quit_action">Kene</string>
   <!-- Title text of a delete browsing data dialog. -->
@@ -1535,7 +1513,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">Escanear el código</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">Nuu ka̱a̱ noo\'o síne Firefoz je kua\'an nu &lt;b&gt;https://firefox.com/pair&lt;/b&gt;</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[Nuu ka̱a̱ noo\'o síne Firefoz je kua\'an nu <b>https://firefox.com/pair</b>]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">Kuvi sa escanear</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1543,7 +1521,7 @@
   <!-- Text shown for settings option for sign with email -->
   <string name="sign_in_with_email">Ni\'i correo electrónico en su lugar</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
-  <string name="sign_in_create_account_text" tools:ignore="BrandUsage">¿Ntu kuminu cuenta? &lt;u&gt;Sá´á iin&lt;/u&gt; saa kuvi sa sincronizar Firefox jíí da ka̱a̱.</string>
+  <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[¿Ntu kuminu cuenta? <u>Sá´á iin</u> saa kuvi sa sincronizar Firefox jíí da ka̱a̱.]]></string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Kene</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -1919,7 +1897,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Kune´ya dee tu´un nánukunu íyo kua vají nuu ya´a</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">Nkene error sa kivɨnu %s</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Nkene error sa kivɨnu %s</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">Nsá´á %s</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -1931,9 +1909,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. Kua´an nuu ke´i Android</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. Kuaxin &lt;b&gt;Permisos&lt;/b&gt;</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. Kuaxin <b>Permisos</b>]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. Sama &lt;b&gt;%1$s&lt;/b&gt; a activado</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. Sama <b>%1$s</b> a activado]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">Conexión va´a</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -1941,7 +1919,7 @@
   <!-- Label to clear site data -->
   <string name="clear_site_data">Sa noo cookies ji datos sitio</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data">¿A mana kuvinu xinonu kuaiyo daa cookies jíí datos sitio &lt;b&gt;%s&lt;/b&gt;?</string>
+  <string name="confirm_clear_site_data"><![CDATA[¿A mana kuvinu xinonu kuaiyo daa cookies jíí datos sitio <b>%s</b>?]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">¿A mana kuvinu xinonu kuaiyo daa permiso ntaka daa nuu?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -1996,7 +1974,7 @@
   <!-- This is the hint text that is shown inline on the hostname field of the create new login page. 'https://www.example.com' intentionally hardcoded here -->
   <string name="add_login_hostname_hint_text">https://www.example.com</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname does not contain http or https. -->
-  <string name="add_login_hostname_invalid_text_3">Nuu web nejika kumi "https://" o "http://"</string>
+  <string name="add_login_hostname_invalid_text_3">Nuu web nejika kumi \"https://\" o \"http://\"</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname is invalid. -->
   <string name="add_login_hostname_invalid_text_2">Jiniñu\'u sivɨ servidor vatu</string>
   <!--
@@ -2100,17 +2078,17 @@
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1">Daa tu\'un sá´á a kajie\'o kaninio</string>
+  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Daa tu\'un sá´á a kajie\'o kaninio</string>
   <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header">Daa tu\'un por tema</string>
+  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Daa tu\'un por tema</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">Nani\'i ku\'eka</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Nani\'i ku\'eka</string>
   <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2">Ya´a nsa´a %1$s</string>
+  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">Ya´a nsa´a %1$s</string>
   <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" tools:ignore="BrandUsage">Ya\'a kuvi ñani Firefox. %s</string>
+  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Ya\'a kuvi ñani Firefox. %s</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">Ka´vi kue´eka</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Ka´vi kue´eka</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Patrocinado</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2134,7 +2112,7 @@
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article">ka\'vi articulo</string>
   <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more">Síne enlace sa kuninuka</string>
+  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Síne enlace sa kuninuka</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, Xini</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->

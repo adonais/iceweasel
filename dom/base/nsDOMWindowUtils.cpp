@@ -105,6 +105,7 @@
 #include "nsIBaseWindow.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIInterfaceRequestorUtils.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Preferences.h"
 #include "nsContentPermissionHelper.h"
 #include "nsCSSPseudoElements.h"  // for PseudoStyleType
@@ -3122,41 +3123,50 @@ static nsTArray<ScrollContainerFrame*> CollectScrollableAncestors(
   return result;
 }
 
-static std::pair<nsIContent*, CSSRect> GetCaretContentAndBounds(
+struct CaretInfo {
+  /* the text content including the caret */
+  nsIContent* textContent;
+  /* the text frame bounds relative to the root scroll contaner frame */
+  CSSRect textFrameBoundsRelativeToRootScroller;
+  /* the caret rect relative to the text frame */
+  Maybe<nsRect> caretRectRelativeToTextFrame;
+};
+
+static CaretInfo GetCaretContentAndBounds(
     const ScrollContainerFrame* aRootScrollContainerFrame, Element* aElement) {
   nsIContent* content = aElement;
   CSSRect bounds;
 
   if (!aRootScrollContainerFrame) {
-    return {content, bounds};
+    return CaretInfo{content, bounds, Nothing()};
   }
 
-  if (aElement->IsHTMLElement(nsGkAtoms::input)) {
-    bounds = nsLayoutUtils::GetBoundingContentRect(aElement,
-                                                   aRootScrollContainerFrame);
-  } else {
-    // When focused elment is content editable or <textarea> element,
-    // focused element will have multi-line content.
-    nsIFrame* frame = aElement->GetPrimaryFrame();
-    if (frame) {
-      RefPtr<nsCaret> caret = frame->PresShell()->GetCaret();
-      if (caret && caret->IsVisible()) {
-        nsRect rect;
-        if (nsIFrame* frame = caret->GetGeometry(&rect)) {
-          bounds = nsLayoutUtils::GetBoundingFrameRect(
-              frame, aRootScrollContainerFrame);
-          content = frame->GetContent();
-        }
+  Maybe<nsRect> caretRect;
+  // When focused elment is content editable or <textarea> element,
+  // focused element will have multi-line content.
+  nsIFrame* frame = aElement->GetPrimaryFrame();
+  if (frame) {
+    RefPtr<nsCaret> caret = frame->PresShell()->GetCaret();
+    if (caret && caret->IsVisible()) {
+      nsRect rect;
+      if (nsIFrame* frame = caret->GetGeometry(&rect)) {
+        // This |frame| is a text frame and the returned rectangle represents
+        // the caret position relative to the text frame, so we need to pass the
+        // rectangle to ScrollFrameIntoView along with the text frame.
+        bounds = nsLayoutUtils::GetBoundingFrameRect(frame,
+                                                     aRootScrollContainerFrame);
+        content = frame->GetContent();
+        caretRect = Some(rect);
       }
     }
-    if (bounds.IsEmpty()) {
-      // Fallback if no caret frame.
-      bounds = nsLayoutUtils::GetBoundingContentRect(aElement,
-                                                     aRootScrollContainerFrame);
-    }
+  }
+  if (bounds.IsEmpty()) {
+    // Fallback if no caret frame.
+    bounds = nsLayoutUtils::GetBoundingContentRect(aElement,
+                                                   aRootScrollContainerFrame);
   }
 
-  return {content, bounds};
+  return CaretInfo{content, bounds, caretRect};
 }
 
 NS_IMETHODIMP
@@ -3191,19 +3201,21 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
 
   ScrollContainerFrame* rootScrollContainerFrame =
       presShell->GetRootScrollContainerFrame();
-  auto [targetContent, bounds] =
-      GetCaretContentAndBounds(rootScrollContainerFrame, element);
+  auto caretInfo = GetCaretContentAndBounds(rootScrollContainerFrame, element);
 
   // Hold a strong reference of the target content.
-  RefPtr<nsIContent> refContent = targetContent;
+  RefPtr<nsIContent> refContent = caretInfo.textContent;
   // The content may be inside a scrollable subframe inside a non-scrollable
   // root content document. In this scenario, we want to ensure that the
   // main-thread side knows to scroll the content into view before we get
   // the bounding content rect and ask APZ to zoom in to the target content.
-  presShell->ScrollContentIntoView(
-      refContent, ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
-      ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
-      ScrollFlags::ScrollOverflowHidden);
+  if (nsIFrame* frame = refContent->GetPrimaryFrame()) {
+    presShell->ScrollFrameIntoView(
+        frame, caretInfo.caretRectRelativeToTextFrame,
+        ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
+        ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
+        ScrollFlags::ScrollOverflowHidden);
+  }
 
   RefPtr<Document> document = presShell->GetDocument();
   if (!document) {
@@ -3231,12 +3243,12 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     flags |= layers::ONLY_ZOOM_TO_DEFAULT_SCALE;
   }
 
-  if (bounds.IsEmpty()) {
+  if (caretInfo.textFrameBoundsRelativeToRootScroller.IsEmpty()) {
     // Do not zoom on empty bounds. Bail out.
     return NS_OK;
   }
 
-  bounds -=
+  caretInfo.textFrameBoundsRelativeToRootScroller -=
       CSSPoint::FromAppUnits(rootScrollContainerFrame->GetScrollPosition());
 
   bool waitForRefresh = false;
@@ -3253,8 +3265,10 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
       waitForRefresh = true;
       presContext->RegisterManagedPostRefreshObserver(
           new ManagedPostRefreshObserver(
-              presContext, [widget = RefPtr<nsIWidget>(widget), presShellId,
-                            viewId, bounds = bounds, flags](bool aWasCanceled) {
+              presContext,
+              [widget = RefPtr<nsIWidget>(widget), presShellId, viewId,
+               bounds = caretInfo.textFrameBoundsRelativeToRootScroller,
+               flags](bool aWasCanceled) {
                 if (!aWasCanceled) {
                   widget->ZoomToRect(presShellId, viewId, bounds, flags);
                 }
@@ -3263,7 +3277,8 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     }
   }
   if (!waitForRefresh) {
-    widget->ZoomToRect(presShellId, viewId, bounds, flags);
+    widget->ZoomToRect(presShellId, viewId,
+                       caretInfo.textFrameBoundsRelativeToRootScroller, flags);
   }
 
   return NS_OK;
@@ -4971,4 +4986,20 @@ nsDOMWindowUtils::SendMozMouseHitTestEvent(float aX, float aY,
       0 /* aInputSourceArg */, DEFAULT_MOUSE_POINTER_ID /* aIdentifier */,
       false /* aToWindow */, nullptr /* aPreventDefault */,
       true /* aIsDOMEventSynthesized */, true /* aIsWidgetEventSynthesized */);
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::GetMicroTaskLevel(uint32_t* aLevel) {
+  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+  NS_ENSURE_STATE(ccjs);
+  *aLevel = ccjs->MicroTaskLevel();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::SetMicroTaskLevel(uint32_t aLevel) {
+  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+  NS_ENSURE_STATE(ccjs);
+  ccjs->SetMicroTaskLevel(aLevel);
+  return NS_OK;
 }

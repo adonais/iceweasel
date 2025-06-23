@@ -72,6 +72,9 @@ document.addEventListener(
         case "context-copylink":
           gContextMenu.copyLink();
           break;
+        case "context-previewlink":
+          gContextMenu.previewLink();
+          break;
         case "context-stripOnShareLink":
           gContextMenu.copyStrippedLink();
           break;

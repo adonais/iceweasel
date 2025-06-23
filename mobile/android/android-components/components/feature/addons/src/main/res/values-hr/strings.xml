@@ -3,7 +3,7 @@
   <!-- Description for privacy add-on permission. -->
   <string name="mozac_feature_addons_permissions_privacy_description">Čitaj i promijeni postavke privatnosti</string>
   <!-- Description for all_urls add-on permission. -->
-  <string name="mozac_feature_addons_permissions_all_urls_description">Pristupi tvojim podacima za sve web-stranice</string>
+  <string name="mozac_feature_addons_permissions_all_urls_description">Pristupi tvojim podacima za sve web stranice</string>
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">Pristup podatcima za %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -30,6 +30,8 @@
     %1$d will be replaced by an integer indicating the number of additional domains for which this web extension is requesting permission.
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate">Pristup podatcima na ovom broju drugih domena: %1$d</string>
+  <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Pristupi svojim podacima za web stranice u %1$d domena</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d od %3$d</string>
   <!-- Description for tabs add-on permission. -->
@@ -49,7 +51,7 @@
   <!-- Description for declarativeNetRequest permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_description">Blokiraj sadržaj na svim stranicama</string>
   <!-- Description for declarativeNetRequestFeedback permission. -->
-  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">Pročitaj svoju povijest pretraživanja</string>
+  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">Pročitaj svoju povijest pregledavanja</string>
   <!-- Description for downloads permission. -->
   <string name="mozac_feature_addons_permissions_downloads_description">Preuzmi datoteke i pročitaj i promijeni povijest preuzimanja preglednika</string>
   <!-- Description for downloads_open permission. -->
@@ -80,8 +82,14 @@
   <string name="mozac_feature_addons_permissions_trial_ml_description">Preuzmi i pokreni UI modele na tvom uređaju</string>
   <!-- Description for userScripts permission. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description">Dozvoli neprovjerenim skriptama trećih strana pristup tvojim podacima</string>
+  <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
+  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Neprovjerena skripta mogu predstavljati rizike za sigurnost i privatnost. Pokreći samo skripta iz proširenja ili izvora kojima vjeruješ.</string>
   <!-- Description for devtools permission. -->
   <string name="mozac_feature_addons_permissions_devtools_description">Proširi alate za razvojne programere za pristup podacima u otvorenim karticama</string>
+  <!-- Description for text button that expands the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_all_sites">Prikaži sve stranice</string>
+  <!-- Description for text button that hides the majority of the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_fewer_sites">Prikaži manje stranica</string>
   <!-- The version on of add-on. -->
   <string name="mozac_feature_addons_version">Verzija</string>
   <!-- The author of an add-on. -->
@@ -159,7 +167,7 @@
   <!-- The title of the "crash" notification in the extensions manager -->
   <string name="mozac_feature_extensions_manager_notification_title_text">Dodaci su privremeno onemogućeni</string>
   <!-- The content of the "crash" notification in the extensions manager -->
-  <string name="mozac_feature_extensions_manager_notification_content_text">Jedan ili više dodataka prestalo je raditi, što čini vaš sustav nestabilnim.</string>
+  <string name="mozac_feature_extensions_manager_notification_content_text">Jedno ili više proširenja su prestala raditi te su prouzročili nestabilnost sustava.</string>
   <!-- Button to re-enable the extensions in the "crash" notification -->
   <string name="mozac_feature_extensions_manager_notification_restart_button">Ponovno pokrenite dodatke</string>
   <!-- Button in the extensions manager that opens AMO in a tab -->

@@ -193,11 +193,18 @@ struct FeatureImplementationStatus {
       case dom::GPUFeatureName::Texture_compression_bc:
         return implemented(WGPUWEBGPU_FEATURE_TEXTURE_COMPRESSION_BC);
 
+      case dom::GPUFeatureName::Texture_compression_bc_sliced_3d:
+        return implemented(WGPUWEBGPU_FEATURE_TEXTURE_COMPRESSION_BC_SLICED_3D);
+
       case dom::GPUFeatureName::Texture_compression_etc2:
         return implemented(WGPUWEBGPU_FEATURE_TEXTURE_COMPRESSION_ETC2);
 
       case dom::GPUFeatureName::Texture_compression_astc:
         return implemented(WGPUWEBGPU_FEATURE_TEXTURE_COMPRESSION_ASTC);
+
+      case dom::GPUFeatureName::Texture_compression_astc_sliced_3d:
+        return implemented(
+            WGPUWEBGPU_FEATURE_TEXTURE_COMPRESSION_ASTC_SLICED_3D);
 
       case dom::GPUFeatureName::Timestamp_query:
         return implemented(WGPUWEBGPU_FEATURE_TIMESTAMP_QUERY);

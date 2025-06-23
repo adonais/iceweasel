@@ -506,7 +506,7 @@ class XPCJSRuntime final : public mozilla::CycleCollectedJSRuntime {
   }
 
   virtual bool UsefulToMergeZones() const override;
-  void TraceNativeBlackRoots(JSTracer* trc) override;
+  void TraceAdditionalNativeBlackRoots(JSTracer* trc) override;
   void TraceAdditionalNativeGrayRoots(JSTracer* aTracer) override;
   void TraverseAdditionalNativeRoots(
       nsCycleCollectionNoteRootCallback& cb) override;
@@ -2097,7 +2097,7 @@ class XPCVariant : public nsIVariant {
 
   // We #define and iid so that out module local code can use QI to detect
   // if a given nsIVariant is in fact an XPCVariant.
-  NS_DECLARE_STATIC_IID_ACCESSOR(XPCVARIANT_IID)
+  NS_INLINE_DECL_STATIC_IID(XPCVARIANT_IID)
 
   static already_AddRefed<XPCVariant> newVariant(JSContext* cx,
                                                  const JS::Value& aJSVal);
@@ -2147,8 +2147,6 @@ class XPCVariant : public nsIVariant {
   JS::Heap<JS::Value> mJSVal;
   bool mReturnRawObject;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(XPCVariant, XPCVARIANT_IID)
 
 /***************************************************************************/
 // Utilities

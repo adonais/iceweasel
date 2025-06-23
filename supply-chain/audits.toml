@@ -542,7 +542,7 @@ notes = "Maintained by the Glean and Application Services teams"
 [[wildcard-audits.uniffi_internal_macros]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
+user-id = 111105
 start = "2025-03-18"
 end = "2026-03-25"
 
@@ -575,6 +575,14 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-08-31"
+end = "2026-02-01"
+notes = "Maintained by the Glean and Application Services teams"
+
+[[wildcard-audits.uniffi_pipeline]]
+who = "Ben Dean-Kawamura <bdk@mozilla.com>"
+criteria = "safe-to-deploy"
+user-id = 127697 # bendk
+start = "2021-10-27"
 end = "2026-02-01"
 notes = "Maintained by the Glean and Application Services teams"
 
@@ -844,6 +852,46 @@ version = "0.11.1"
 notes = """
 Just contains some traits and re-exports for use by a broader package of related
 crates. No unsafe code or ambient capability usage.
+"""
+
+[[audits.askama]]
+who = "Ben Dean-Kawamura <bdk@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.13.1"
+notes = """
+Template crate.  This is only used to generate the Rust/JS code for UniFFI.
+
+We used to use askama, then we switched to rinja which was a fork.  Now rinja and
+askama have merged again.
+
+The differences from askama 0.12, are pretty straightforward and don't seem risky to me.  There's
+some unsafe code and macros, but nothing that complicated.
+"""
+
+[[audits.askama_derive]]
+who = "Ben Dean-Kawamura <bdk@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.13.1"
+notes = """
+Template crate.  This is only used to generate the Rust/JS code for UniFFI.
+
+We used to use askama, then we switched to rinja which was a fork.  Now rinja and
+askama have merged again.
+
+I did a quick scan of the current code and couldn't find any issues.
+"""
+
+[[audits.askama_parser]]
+who = "Ben Dean-Kawamura <bdk@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.13.0"
+notes = """
+Template crate.  This is only used to generate the Rust/JS code for UniFFI.
+
+We used to use askama, then we switched to rinja which was a fork.  Now rinja and
+askama have merged again.
+
+I did a quick scan of the current code and couldn't find any issues.
 """
 
 [[audits.async-task]]
@@ -2515,6 +2563,19 @@ In addition, I've checked Linux, Windows, Mac, and Android more thoroughly again
 documentation.
 """
 
+[[audits.getrandom]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.3.3"
+notes = """
+Biggest non-trivial change is a new UEFI back-end, which looks reasonable to
+the best of my ability: There's some trickiness on initialization but doesn't
+look unsafe, at worse it leaks, and it might not if the relevant pointers are
+static/non-owning. Other changes also look reasonable too: some tweaks to
+inlining and a syscall-based linux back-end, whose relevant unsafe code looks
+reasonable.
+"""
+
 [[audits.gimli]]
 who = "Alex Franchuk <afranchuk@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -3082,6 +3143,12 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.1.24 -> 0.1.25"
 
+[[audits.jobserver]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.1.32 -> 0.1.33"
+notes = "No unsafe added, only non-trivial change is switching to the getrandom crate on Windows."
+
 [[audits.keccak]]
 who = "Simon Friedberger <simon@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -3329,6 +3396,12 @@ notes = "This crate is written and maintained by Mozilla employees."
 who = "Brian Tsoi <brian.s.tsoi@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.1.3 -> 0.3.1"
+
+[[audits.memtest]]
+who = "Alex Franchuk <afranchuk@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.4.0"
+notes = "This crate is written and maintained by Mozilla employees."
 
 [[audits.metal]]
 who = "Jim Blandy <jimb@red-bean.com>"
@@ -3732,11 +3805,12 @@ delta = "24.0.0 -> 25.0.0"
 
 [[audits.naga]]
 who = [
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:35f131ff10153e48b790e1f156c864734063ce71"
+delta = "25.0.0 -> 25.0.0@git:85001b2436f686451d6d783225311c06b60e6680"
 importable = false
 
 [[audits.net2]]
@@ -5298,6 +5372,11 @@ who = "Makoto Kato <m_kato@ga2.so-net.ne.jp>"
 criteria = "safe-to-deploy"
 delta = "0.7.4 -> 0.7.6"
 
+[[audits.tinyvec_macros]]
+who = "Drew Willcoxon <adw@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.1.1"
+
 [[audits.to_shmem]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
@@ -6026,11 +6105,12 @@ delta = "24.0.0 -> 25.0.0"
 
 [[audits.wgpu-core]]
 who = [
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:35f131ff10153e48b790e1f156c864734063ce71"
+delta = "25.0.0 -> 25.0.0@git:85001b2436f686451d6d783225311c06b60e6680"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -6040,11 +6120,12 @@ version = "25.0.0"
 
 [[audits.wgpu-core-deps-apple]]
 who = [
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:35f131ff10153e48b790e1f156c864734063ce71"
+delta = "25.0.0 -> 25.0.0@git:85001b2436f686451d6d783225311c06b60e6680"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -6054,11 +6135,12 @@ version = "25.0.0"
 
 [[audits.wgpu-core-deps-windows-linux-android]]
 who = [
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:35f131ff10153e48b790e1f156c864734063ce71"
+delta = "25.0.0 -> 25.0.0@git:85001b2436f686451d6d783225311c06b60e6680"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -6146,11 +6228,12 @@ delta = "24.0.0 -> 25.0.0"
 
 [[audits.wgpu-hal]]
 who = [
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:35f131ff10153e48b790e1f156c864734063ce71"
+delta = "25.0.0 -> 25.0.0@git:85001b2436f686451d6d783225311c06b60e6680"
 importable = false
 
 [[audits.wgpu-types]]
@@ -6233,11 +6316,12 @@ delta = "24.0.0 -> 25.0.0"
 
 [[audits.wgpu-types]]
 who = [
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:35f131ff10153e48b790e1f156c864734063ce71"
+delta = "25.0.0 -> 25.0.0@git:85001b2436f686451d6d783225311c06b60e6680"
 importable = false
 
 [[audits.whatsys]]
@@ -6675,7 +6759,7 @@ end = "2024-05-06"
 criteria = "safe-to-deploy"
 user-id = 2915 # Amanieu d'Antras (Amanieu)
 start = "2019-05-04"
-end = "2024-05-05"
+end = "2026-04-29"
 
 [[trusted.parking_lot_core]]
 criteria = "safe-to-deploy"
@@ -6801,7 +6885,7 @@ end = "2025-05-31"
 criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-02-28"
-end = "2024-04-25"
+end = "2026-04-30"
 
 [[trusted.serde_repr]]
 criteria = "safe-to-deploy"
@@ -6897,7 +6981,7 @@ end = "2024-05-08"
 criteria = "safe-to-deploy"
 user-id = 1 # Alex Crichton (alexcrichton)
 start = "2020-06-03"
-end = "2024-05-05"
+end = "2026-05-19"
 
 [[trusted.wasm-encoder]]
 criteria = "safe-to-deploy"
@@ -6964,6 +7048,12 @@ criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2021-11-15"
 end = "2024-09-12"
+
+[[trusted.winnow]]
+criteria = "safe-to-deploy"
+user-id = 6743 # Ed Page (epage)
+start = "2023-02-22"
+end = "2026-05-05"
 
 [[trusted.zlib-rs]]
 criteria = "safe-to-deploy"

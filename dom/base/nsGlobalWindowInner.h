@@ -338,6 +338,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   virtual bool HasActiveIndexedDBDatabases() const override;
   virtual bool HasActivePeerConnections() override;
   virtual bool HasOpenWebSockets() const override;
+  void AudioPlaybackChanged(bool aIsPlayingAudio);
   virtual bool HasScheduledNormalOrHighPriorityWebTasks() const override;
   void SyncStateFromParentWindow();
   virtual void UpdateWebSocketCount(int32_t aDelta) override;
@@ -721,7 +722,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       JSContext* aCx,
       const mozilla::dom::FunctionOrTrustedScriptOrString& aHandler,
       int32_t aTimeout, const mozilla::dom::Sequence<JS::Value>& /* unused */,
-      mozilla::ErrorResult& aError);
+      nsIPrincipal* aSubjectPrincipal, mozilla::ErrorResult& aError);
 
   MOZ_CAN_RUN_SCRIPT
   void ClearTimeout(int32_t aHandle);
@@ -732,7 +733,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       const mozilla::dom::FunctionOrTrustedScriptOrString& aHandler,
       const int32_t aTimeout,
       const mozilla::dom::Sequence<JS::Value>& /* unused */,
-      mozilla::ErrorResult& aError);
+      nsIPrincipal* aSubjectPrincipal, mozilla::ErrorResult& aError);
 
   MOZ_CAN_RUN_SCRIPT
   void ClearInterval(int32_t aHandle);
@@ -1043,7 +1044,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   template <typename Method, typename... Args>
   mozilla::CallState CallOnInProcessDescendants(Method aMethod,
                                                 Args&&... aArgs) {
-    MOZ_ASSERT(IsCurrentInnerWindow());
     return CallOnInProcessDescendantsInternal(GetBrowsingContext(), false,
                                               aMethod, aArgs...);
   }
@@ -1081,7 +1081,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       JSContext* aCx,
       const mozilla::dom::FunctionOrTrustedScriptOrString& aHandler,
       int32_t aTimeout, const mozilla::dom::Sequence<JS::Value>& aArguments,
-      bool aIsInterval, mozilla::ErrorResult& aError);
+      bool aIsInterval, nsIPrincipal* aSubjectPrincipal,
+      mozilla::ErrorResult& aError);
 
   // Return true if |aTimeout| was cleared while its handler ran.
   MOZ_CAN_RUN_SCRIPT
@@ -1179,7 +1180,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   friend class nsPIDOMWindowOuter;
 
   bool IsBackgroundInternal() const override;
-  bool IsPlayingAudio() override;
 
   // NOTE: Chrome Only
   void DisconnectAndClearGroupMessageManagers() {
@@ -1217,6 +1217,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
  public:
   static uint32_t GetShortcutsPermission(nsIPrincipal* aPrincipal);
+  bool IsPlayingAudio() override;
 
   // Dispatch a runnable related to the global.
   nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const final;

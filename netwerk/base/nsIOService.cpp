@@ -1183,9 +1183,9 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
     const Maybe<ServiceWorkerDescriptor>& aController, uint32_t aSecurityFlags,
     nsContentPolicyType aContentPolicyType, uint32_t aSandboxFlags,
     nsIChannel** result) {
-  nsCOMPtr<nsILoadInfo> loadInfo = new LoadInfo(
+  nsCOMPtr<nsILoadInfo> loadInfo = MOZ_TRY(LoadInfo::Create(
       aLoadingPrincipal, aTriggeringPrincipal, aLoadingNode, aSecurityFlags,
-      aContentPolicyType, aLoadingClientInfo, aController, aSandboxFlags);
+      aContentPolicyType, aLoadingClientInfo, aController, aSandboxFlags));
   return NewChannelFromURIWithProxyFlagsInternal(aURI, aProxyURI, aProxyFlags,
                                                  loadInfo, result);
 }
@@ -1460,6 +1460,11 @@ nsIOService::SetConnectivity(bool aConnectivity) {
   if (XRE_IsParentProcess()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
+  return SetConnectivityInternal(aConnectivity);
+}
+
+NS_IMETHODIMP
+nsIOService::SetConnectivityForTesting(bool aConnectivity) {
   return SetConnectivityInternal(aConnectivity);
 }
 
@@ -2153,10 +2158,10 @@ nsresult nsIOService::SpeculativeConnectInternal(
   // connection from http to https.
   nsCOMPtr<nsIURI> httpsURI;
   if (aURI->SchemeIs("http")) {
-    nsCOMPtr<nsILoadInfo> httpsOnlyCheckLoadInfo =
-        new LoadInfo(loadingPrincipal, loadingPrincipal, nullptr,
-                     nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-                     nsIContentPolicy::TYPE_SPECULATIVE);
+    nsCOMPtr<nsILoadInfo> httpsOnlyCheckLoadInfo = MOZ_TRY(
+        LoadInfo::Create(loadingPrincipal, loadingPrincipal, nullptr,
+                         nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                         nsIContentPolicy::TYPE_SPECULATIVE));
 
     // Check if https-only, or https-first would upgrade the request
     if (nsHTTPSOnlyUtils::ShouldUpgradeRequest(aURI, httpsOnlyCheckLoadInfo) ||
@@ -2189,6 +2194,20 @@ nsresult nsIOService::SpeculativeConnectInternal(
     channel->GetLoadFlags(&loadFlags);
     loadFlags |= nsIRequest::LOAD_ANONYMOUS;
     channel->SetLoadFlags(loadFlags);
+  }
+
+  if (!aCallbacks) {
+    // Proxy filters are registered, but no callbacks were provided.
+    // When proxyDNS is true, this speculative connection would likely leak a
+    // DNS lookup, so we should return early to avoid that.
+    bool hasProxyFilterRegistered = false;
+    Unused << pps->GetHasProxyFilterRegistered(&hasProxyFilterRegistered);
+    if (hasProxyFilterRegistered) {
+      return NS_ERROR_FAILURE;
+    }
+  } else {
+    rv = channel->SetNotificationCallbacks(aCallbacks);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   nsCOMPtr<nsICancelable> cancelable;

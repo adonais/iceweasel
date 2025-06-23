@@ -251,8 +251,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   // This function selects transactions from mPendingTransactionTable to
   // dispatch according to the following conditions:
-  // 1. When ActiveTabPriority() is false, only get transactions from the
-  //    queue whose window id is 0.
+  // 1. When network.http.active_tab_priority is false, only get transactions
+  //    from the queue whose window id is 0.
   // 2. If |considerAll| is false, either get transactions from the focused
   //    window queue or non-focused ones.
   // 3. If |considerAll| is true, fill the |pendingQ| with the transactions from
@@ -399,7 +399,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   // these methods track this time.
   bool InThrottlingTimeWindow();
 
-  // Two hashtalbes keeping track of active transactions regarding window id and
+  // Two hashtables keeping track of active transactions regarding window id and
   // throttling. Used by the throttling algorithm to obtain number of
   // transactions for the active tab and for inactive tabs according their
   // throttle status. mActiveTransactions[0] are all unthrottled transactions,

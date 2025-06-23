@@ -188,13 +188,7 @@ export class ChromeProfileMigrator extends MigratorBase {
    * @returns {boolean}
    */
   get showsManualPasswordImport() {
-    // We show the CSV workflow on Windows, but _only_ in English locales, until
-    // bug 1965231 is closed.
-    return (
-      AppConstants.platform == "win" &&
-      this.constructor.key == "chrome" &&
-      Services.locale.appLocaleAsBCP47.startsWith("en")
-    );
+    return AppConstants.platform == "win" && this.constructor.key == "chrome";
   }
 
   _keychainServiceName = "Chrome Safe Storage";
@@ -553,9 +547,12 @@ export class ChromeProfileMigrator extends MigratorBase {
       return null;
     }
 
-    // We no longer support importing payment methods from Chrome on
+    // We no longer support importing payment methods from Chrome or Edge on
     // Windows.
-    if (AppConstants.platform == "win" && aBrowserKey == "chrome") {
+    if (
+      AppConstants.platform == "win" &&
+      (aBrowserKey == "chrome" || aBrowserKey == "chromium-edge")
+    ) {
       return null;
     }
 

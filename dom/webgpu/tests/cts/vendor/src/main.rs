@@ -73,6 +73,21 @@ fn run(args: CliArgs) -> miette::Result<()> {
     );
     npm_ci_cmd.run().into_diagnostic()?;
 
+    let test_listing_join_handle = {
+        let mut cmd = EasyCommand::new_with(node_bin, |cmd| {
+            cmd.args(["tools/run_node", "--list", "webgpu:*"])
+                .stderr(Stdio::inherit())
+        });
+        log::info!("requesting exhaustive list of tests in a separate thread using {cmd}…");
+        std::thread::spawn(move || {
+            let stdout = cmd.output().into_diagnostic()?.stdout;
+
+            String::from_utf8(stdout)
+                .into_diagnostic()
+                .context("failed to read output of exhaustive test listing command")
+        })
+    };
+
     let out_wpt_dir = cts_ckt.regen_dir("out-wpt", |out_wpt_dir| {
         let mut npm_run_wpt_cmd = EasyCommand::simple(&npm_bin, ["run", "wpt"]);
         log::info!("generating WPT test cases into {out_wpt_dir} with {npm_run_wpt_cmd}…");
@@ -287,19 +302,12 @@ fn run(args: CliArgs) -> miette::Result<()> {
             .map(|(test_path, config)| (test_path, test_split::Entry::from_config(config)))
             .collect::<BTreeMap<_, _>>();
 
-        let mut cmd = EasyCommand::new_with(&node_bin, |cmd| {
-            cmd.args(["tools/run_node", "--list", "webgpu:*"])
-                .stderr(Stdio::inherit())
-        });
-        log::info!("  requesting exhaustive list of tests using {cmd}…");
-        test_listing_buf = {
-            let stdout = cmd.output().into_diagnostic()?.stdout;
-            String::from_utf8(stdout)
-                .into_diagnostic()
-                .context("failed to read output of exhaustive test listing command")?
-        };
-
-        log::info!("  building index from list of tests…");
+        log::debug!("blocking on list of tests…");
+        test_listing_buf = test_listing_join_handle
+            .join()
+            .expect("failed to get value from test listing thread")
+            .unwrap();
+        log::info!("building index from list of tests…");
         for full_path in test_listing_buf.lines() {
             let (subtest_path, params) = split_at_nth_colon(2, full_path)
                 .wrap_err_with(|| "failed to parse configured split entry")?;
@@ -307,7 +315,9 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 entry.process_listing_line(params)?;
             }
         }
-        test_split::assert_seen(tests_to_split.iter(), |seen| &seen.listing);
+        test_split::assert_seen("test listing output", tests_to_split.iter(), |seen| {
+            &seen.listing
+        });
 
         tests_to_split
     };
@@ -355,7 +365,7 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 }
             };
             let (test_group_path, _test_name) = test_path.rsplit_once(':').unwrap();
-            let test_group_path_components = test_group_path.split([':', ',']);
+            let mut test_group_path_components = test_group_path.split([':', ',']);
 
             if let Some(entry) = tests_to_split.get_mut(test_path) {
                 let test_split::Entry { seen, ref config } = entry;
@@ -364,10 +374,13 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     split_by,
                 } = config;
 
-                let file_path = test_group_path_components
-                    .chain([*new_sibling_basename])
-                    .join_with("/")
-                    .to_string();
+                let file_path = {
+                    test_group_path_components.next_back();
+                    test_group_path_components
+                        .chain([*new_sibling_basename])
+                        .join_with("/")
+                        .to_string()
+                };
 
                 seen.wpt_files = true;
 
@@ -397,7 +410,9 @@ fn run(args: CliArgs) -> miette::Result<()> {
             };
         }
 
-        test_split::assert_seen(tests_to_split.iter(), |seen| &seen.wpt_files);
+        test_split::assert_seen("WPT test output", tests_to_split.iter(), |seen| {
+            &seen.wpt_files
+        });
 
         struct WptEntry<'a> {
             cases: BTreeSet<Cow<'a, str>>,

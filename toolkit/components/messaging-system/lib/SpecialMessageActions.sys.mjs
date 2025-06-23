@@ -11,7 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
-  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
@@ -206,11 +206,6 @@ export const SpecialMessageActions = {
       "browser.migrate.preferences-entrypoint.enabled",
       "browser.shell.checkDefaultBrowser",
       "browser.shell.setDefaultGuidanceNotifications",
-      "browser.shopping.experience2023.active",
-      "browser.shopping.experience2023.optedIn",
-      "browser.shopping.experience2023.survey.optedInTime",
-      "browser.shopping.experience2023.survey.hasSeen",
-      "browser.shopping.experience2023.survey.pdpVisits",
       "browser.startup.homepage",
       "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
       "browser.privateWindowSeparation.enabled",
@@ -481,11 +476,6 @@ export const SpecialMessageActions = {
     await lazy.SelectableProfileService.createNewProfile();
   },
 
-  // For mocking during tests.
-  get _experimentManager() {
-    return lazy.ExperimentManager;
-  },
-
   async submitOnboardingOptOutPing() {
     // `onboarding-opt-out` pings can always be sent.
     GleanPings.onboardingOptOut.setEnabled(true);
@@ -494,7 +484,7 @@ export const SpecialMessageActions = {
     // therefore needs to capture experiments and rollouts independently.  This
     // data layout agrees with the `nimbus-targeting-context` ping for ease of
     // analysis.
-    let ctx = this._experimentManager.createTargetingContext();
+    let ctx = lazy.ExperimentAPI.manager.createTargetingContext();
 
     Glean.onboardingOptOut.activeExperiments.set(await ctx.activeExperiments);
     Glean.onboardingOptOut.activeRollouts.set(await ctx.activeRollouts);

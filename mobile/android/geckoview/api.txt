@@ -53,6 +53,7 @@ import java.lang.Boolean;
 import java.lang.CharSequence;
 import java.lang.Class;
 import java.lang.Comparable;
+import java.lang.Deprecated;
 import java.lang.Double;
 import java.lang.Exception;
 import java.lang.Float;
@@ -74,6 +75,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.AbstractSequentialList;
 import java.util.Collection;
@@ -87,8 +89,10 @@ import org.mozilla.geckoview.CompositorController;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ContentBlockingController;
 import org.mozilla.geckoview.CrashHandler;
+import org.mozilla.geckoview.DeprecationSchedule;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
+import org.mozilla.geckoview.GeckoPreferenceController;
 import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoRuntimeSettings;
@@ -756,6 +760,46 @@ package org.mozilla.geckoview {
     method @NonNull @UiThread public GeckoDisplay.SurfaceInfo.Builder surfaceControl(@Nullable SurfaceControl);
   }
 
+  public class GeckoPreferenceController {
+    ctor public GeckoPreferenceController();
+    method @AnyThread @NonNull public static GeckoResult<Void> clearGeckoUserPref(@NonNull String);
+    method @AnyThread @NonNull public static GeckoResult<GeckoPreferenceController.GeckoPreference<?>> getGeckoPref(@NonNull String);
+    method @AnyThread @NonNull public static GeckoResult<Void> setGeckoPref(@NonNull String, @NonNull String, int);
+    method @AnyThread @NonNull public static GeckoResult<Void> setGeckoPref(@NonNull String, @NonNull Integer, int);
+    method @AnyThread @NonNull public static GeckoResult<Void> setGeckoPref(@NonNull String, @NonNull Boolean, int);
+    field public static final int PREF_BRANCH_DEFAULT = 1;
+    field public static final int PREF_BRANCH_USER = 0;
+    field public static final int PREF_TYPE_BOOL = 128;
+    field public static final int PREF_TYPE_INT = 64;
+    field public static final int PREF_TYPE_INVALID = 0;
+    field public static final int PREF_TYPE_STRING = 32;
+  }
+
+  public static class GeckoPreferenceController.GeckoPreference<T> {
+    method @AnyThread public boolean getHasUserChangedValue();
+    method @AnyThread @Nullable public T getValue();
+    field @Nullable public final T defaultValue;
+    field @NonNull public final String pref;
+    field public final int type;
+    field @Nullable public final T userValue;
+  }
+
+  public static final class GeckoPreferenceController.Observer {
+    ctor public Observer();
+    method @AnyThread @NonNull public static GeckoResult<Void> registerPreference(@NonNull String);
+    method @NonNull @UiThread public static GeckoResult<Void> unregisterPreference(@NonNull String);
+  }
+
+  public static interface GeckoPreferenceController.Observer.Delegate {
+    method @AnyThread default public void onGeckoPreferenceChange(@NonNull GeckoPreferenceController.GeckoPreference<?>);
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoPreferenceController.PrefBranch {
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoPreferenceController.PrefType {
+  }
+
   @AnyThread public class GeckoResult<T> {
     ctor public GeckoResult();
     ctor public GeckoResult(Handler);
@@ -825,6 +869,7 @@ package org.mozilla.geckoview {
     method @NonNull @UiThread public static synchronized GeckoRuntime getDefault(@NonNull Context);
     method @Nullable @UiThread public GeckoRuntime.Delegate getDelegate();
     method @NonNull @UiThread public OrientationController getOrientationController();
+    method @AnyThread @Nullable public GeckoPreferenceController.Observer.Delegate getPreferencesObserverDelegate();
     method @NonNull @UiThread public ProfilerController getProfilerController();
     method @Nullable @UiThread public GeckoRuntime.ServiceWorkerDelegate getServiceWorkerDelegate();
     method @AnyThread @NonNull public GeckoRuntimeSettings getSettings();
@@ -839,15 +884,20 @@ package org.mozilla.geckoview {
     method @UiThread public void setActivityDelegate(@Nullable GeckoRuntime.ActivityDelegate);
     method @UiThread public void setAutocompleteStorageDelegate(@Nullable Autocomplete.StorageDelegate);
     method @UiThread public void setDelegate(@Nullable GeckoRuntime.Delegate);
+    method @AnyThread public void setPreferencesObserverDelegate(@Nullable GeckoPreferenceController.Observer.Delegate);
     method @UiThread public void setServiceWorkerDelegate(@Nullable GeckoRuntime.ServiceWorkerDelegate);
     method @UiThread public void setWebNotificationDelegate(@Nullable WebNotificationDelegate);
     method @AnyThread public void shutdown();
     field public static final String ACTION_CRASHED = "org.mozilla.gecko.ACTION_CRASHED";
-    field public static final String CRASHED_PROCESS_TYPE_BACKGROUND_CHILD = "BACKGROUND_CHILD";
-    field public static final String CRASHED_PROCESS_TYPE_FOREGROUND_CHILD = "FOREGROUND_CHILD";
-    field public static final String CRASHED_PROCESS_TYPE_MAIN = "MAIN";
+    field @Deprecated @DeprecationSchedule(id="GeckoRuntime-CRASHED_PROCESS_TYPE_BACKGROUND_CHILD",version=142) public static final String CRASHED_PROCESS_TYPE_BACKGROUND_CHILD = "BACKGROUND_CHILD";
+    field @Deprecated @DeprecationSchedule(id="GeckoRuntime-CRASHED_PROCESS_TYPE_FOREGROUND_CHILD",version=142) public static final String CRASHED_PROCESS_TYPE_FOREGROUND_CHILD = "FOREGROUND_CHILD";
+    field @Deprecated @DeprecationSchedule(id="GeckoRuntime-CRASHED_PROCESS_TYPE_MAIN",version=142) public static final String CRASHED_PROCESS_TYPE_MAIN = "MAIN";
+    field public static final String CRASHED_PROCESS_VISIBILITY_BACKGROUND_CHILD = "BACKGROUND_CHILD";
+    field public static final String CRASHED_PROCESS_VISIBILITY_FOREGROUND_CHILD = "FOREGROUND_CHILD";
+    field public static final String CRASHED_PROCESS_VISIBILITY_MAIN = "MAIN";
     field public static final Parcelable.Creator<GeckoRuntime> CREATOR;
     field public static final String EXTRA_CRASH_PROCESS_TYPE = "processType";
+    field public static final String EXTRA_CRASH_PROCESS_VISIBILITY = "processVisibility";
     field public static final String EXTRA_CRASH_REMOTE_TYPE = "remoteType";
     field public static final String EXTRA_EXTRAS_PATH = "extrasPath";
     field public static final String EXTRA_MINIDUMP_PATH = "minidumpPath";
@@ -857,7 +907,10 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread public GeckoResult<Intent> onStartActivityForResult(@NonNull PendingIntent);
   }
 
-  @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoRuntime.CrashedProcessType {
+  @Deprecated @DeprecationSchedule(id="GeckoRuntime-CrashedProcessType",version=142) @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoRuntime.CrashedProcessType {
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoRuntime.CrashedProcessVisibility {
   }
 
   public static interface GeckoRuntime.Delegate {
@@ -885,6 +938,7 @@ package org.mozilla.geckoview {
     method @Nullable public Boolean getDisableShip();
     method @Nullable public Float getDisplayDensityOverride();
     method @Nullable public Integer getDisplayDpiOverride();
+    method public boolean getDohAutoselectEnabled();
     method public boolean getDoubleTapZoomingEnabled();
     method public boolean getEnterpriseRootsEnabled();
     method @AnyThread @Nullable public ExperimentDelegate getExperimentDelegate();
@@ -918,6 +972,8 @@ package org.mozilla.geckoview {
     method public int getPreferredColorScheme();
     method public boolean getRemoteDebuggingEnabled();
     method @Nullable public GeckoRuntime getRuntime();
+    method @NonNull public boolean getSameDocumentNavigationOverridesLoadType();
+    method @NonNull public String getSameDocumentNavigationOverridesLoadTypeForceDisable();
     method @Nullable public Rect getScreenSizeOverride();
     method public boolean getTranslationsOfferPopup();
     method @NonNull public List<String> getTrustedRecursiveResolverExcludedDomains();
@@ -937,6 +993,7 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings setCookieBehaviorOptInPartitioning(boolean);
     method @NonNull public GeckoRuntimeSettings setCookieBehaviorOptInPartitioningPBM(boolean);
     method @NonNull public GeckoRuntimeSettings setDefaultRecursiveResolverUri(@NonNull String);
+    method @NonNull public GeckoRuntimeSettings setDohAutoselectEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setDoubleTapZoomingEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setEnterpriseRootsEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setExtensionsProcessCrashThreshold(@NonNull Integer);
@@ -963,6 +1020,8 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings setPostQuantumKeyExchangeEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setPreferredColorScheme(int);
     method @NonNull public GeckoRuntimeSettings setRemoteDebuggingEnabled(boolean);
+    method @NonNull public GeckoRuntimeSettings setSameDocumentNavigationOverridesLoadType(boolean);
+    method @NonNull public GeckoRuntimeSettings setSameDocumentNavigationOverridesLoadTypeForceDisable(@NonNull String);
     method @NonNull public GeckoRuntimeSettings setTranslationsOfferPopup(boolean);
     method @NonNull public GeckoRuntimeSettings setTrustedRecursiveResolverExcludedDomains(@NonNull List<String>);
     method @NonNull public GeckoRuntimeSettings setTrustedRecursiveResolverMode(int);
@@ -1026,6 +1085,8 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings.Builder preferredColorScheme(int);
     method @NonNull public GeckoRuntimeSettings.Builder remoteDebuggingEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder screenSizeOverride(int, int);
+    method @NonNull public GeckoRuntimeSettings.Builder setSameDocumentNavigationOverridesLoadType(boolean);
+    method @NonNull public GeckoRuntimeSettings.Builder setSameDocumentNavigationOverridesLoadTypeForceDisable(@NonNull String);
     method @NonNull public GeckoRuntimeSettings.Builder translationsOfferPopup(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder trustedRecursiveResolverMode(int);
     method @NonNull public GeckoRuntimeSettings.Builder trustedRecursiveResolverUri(@NonNull String);
@@ -1557,9 +1618,11 @@ package org.mozilla.geckoview {
   }
 
   public static class GeckoSession.PromptDelegate.CertificateRequest extends GeckoSession.PromptDelegate.BasePrompt {
-    ctor protected CertificateRequest(@NonNull String, GeckoSession.PromptDelegate.BasePrompt.Observer, String);
+    ctor @Deprecated @DeprecationSchedule(id="CertificateRequest-CertificateRequest",version=143) protected CertificateRequest(@NonNull String, GeckoSession.PromptDelegate.BasePrompt.Observer, String);
+    ctor protected CertificateRequest(@NonNull String, GeckoSession.PromptDelegate.BasePrompt.Observer, String, Principal[]);
     method @NonNull @UiThread public GeckoSession.PromptDelegate.PromptResponse confirm(@Nullable String);
     field @NonNull public final String host;
+    field @Nullable public final Principal[] issuers;
   }
 
   public static class GeckoSession.PromptDelegate.ChoicePrompt extends GeckoSession.PromptDelegate.BasePrompt {

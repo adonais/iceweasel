@@ -11,6 +11,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
 });
@@ -28,7 +29,8 @@ class ProviderTabGroups extends ActionsProvider {
   isActive(queryContext) {
     return (
       Services.prefs.getBoolPref("browser.tabs.groups.enabled") &&
-      !queryContext.searchMode &&
+      (!queryContext.restrictSource ||
+        queryContext.restrictSource == lazy.UrlbarUtils.RESULT_SOURCE.TABS) &&
       queryContext.trimmedSearchString.length < 50 &&
       queryContext.trimmedSearchString.length >=
         lazy.UrlbarPrefs.get(MIN_SEARCH_PREF)
@@ -47,43 +49,59 @@ class ProviderTabGroups extends ActionsProvider {
     let results = [];
     let i = 0;
 
-    for (let group of window.gBrowser.getAllTabGroups()) {
-      if (this.#matches(group.label, queryContext)) {
-        results.push(
-          this.#makeResult({
-            key: `tabgroup-${i++}`,
-            l10nId: "urlbar-result-action-switch-to-tabgroup",
-            l10nArgs: { group: group.label },
-            onPick: (_queryContext, _controller) => {
-              this.#switchToGroup(group);
-            },
-            color: group.color,
-          })
-        );
+    for (let group of window.gBrowser.getAllTabGroups({
+      sortByLastSeenActive: true,
+    })) {
+      if (
+        group.ownerGlobal == window &&
+        window.gBrowser.selectedTab.group == group
+      ) {
+        // This group is already the active group, so don't offer switching to it.
+        continue;
       }
+      if (!this.#matches(group.label, queryContext)) {
+        continue;
+      }
+      results.push(
+        this.#makeResult({
+          key: `tabgroup-${i++}`,
+          l10nId: "urlbar-result-action-switch-to-tabgroup",
+          l10nArgs: { group: group.label },
+          onPick: (_queryContext, _controller) => {
+            this.#switchToGroup(group);
+          },
+          color: group.color,
+        })
+      );
+    }
+
+    if (queryContext.isPrivate) {
+      // Tab groups can't be saved or reopened in private windows.
+      return results;
     }
 
     for (let savedGroup of lazy.SessionStore.getSavedTabGroups()) {
-      if (this.#matches(savedGroup.name, queryContext)) {
-        results.push(
-          this.#makeResult({
-            key: `tabgroup-${i++}`,
-            l10nId: "urlbar-result-action-open-saved-tabgroup",
-            l10nArgs: { group: savedGroup.name },
-            onPick: (_queryContext, _controller) => {
-              let group = lazy.SessionStore.openSavedTabGroup(
-                savedGroup.id,
-                window,
-                {
-                  source: lazy.TabMetrics.METRIC_SOURCE.SUGGEST,
-                }
-              );
-              this.#switchToGroup(group);
-            },
-            color: savedGroup.color,
-          })
-        );
+      if (!this.#matches(savedGroup.name, queryContext)) {
+        continue;
       }
+      results.push(
+        this.#makeResult({
+          key: `tabgroup-${i++}`,
+          l10nId: "urlbar-result-action-open-saved-tabgroup",
+          l10nArgs: { group: savedGroup.name },
+          onPick: (_queryContext, _controller) => {
+            let group = lazy.SessionStore.openSavedTabGroup(
+              savedGroup.id,
+              window,
+              {
+                source: lazy.TabMetrics.METRIC_SOURCE.SUGGEST,
+              }
+            );
+            this.#switchToGroup(group);
+          },
+          color: savedGroup.color,
+        })
+      );
     }
 
     return results;

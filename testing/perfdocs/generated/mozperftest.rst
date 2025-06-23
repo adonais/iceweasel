@@ -439,6 +439,24 @@ browser_ml_smart_tab_clustering_perf.js
 
 **Testing Smart Tab Clustering**
 
+browser_ml_speecht5_tts.js
+==========================
+
+:owner: GenAI Team
+:name: ML Speech T5 TTS
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:False, name:memory,unit:MiB,shouldAlert:False
+ --verbose
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**Testing Speech T5 TTS**
+
 browser_ml_autofill_perf.js
 ===========================
 
@@ -582,6 +600,27 @@ browser_ml_summarizer_perf.js
  --try-platform linux, mac, win
 
 **Template test for latency for Summarizer model**
+
+
+toolkit/components/url-classifier/tests/performance
+---------------------------------------------------
+Performance tests for the URL Classifier
+
+perftest_exceptionListLookup.js
+===============================
+
+:owner: Privacy Team
+:name: UrlClassifier.ExceptionListLookup
+:tags: url-classifier
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:UrlClassifier.ExceptionListLookup iterations,unit:iterations, name:UrlClassifier.ExceptionListLookup accumulatedTime,unit:ms, name:UrlClassifier.ExceptionListLookup perCallTime,unit:ms
+ --verbose
+
+**Test the speed of nsIUrlClassifierExceptionList#matches.**
 
 
 If you have any questions, please see this `wiki page <https://wiki.mozilla.org/TestEngineering/Performance#Where_to_find_us>`_.

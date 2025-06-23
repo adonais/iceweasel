@@ -56,7 +56,6 @@ object MockWebServerHelper {
  * If the dispatcher is unable to read a requested asset, it will fail the test by throwing an
  * Exception on the main thread.
  *
- * @sample [org.mozilla.fenix.ui.BookmarksTest.verifyBookmarkButtonTest]
  */
 const val HTTP_OK = 200
 const val HTTP_NOT_FOUND = 404
@@ -71,7 +70,8 @@ class AndroidAssetDispatcher : Dispatcher() {
             assetManager.open(pathWithoutQueryParams!!).use { inputStream ->
                 return fileToResponse(pathWithoutQueryParams, inputStream)
             }
-        } catch (e: IOException) { // e.g. file not found.
+        // e.g. file not found.
+        } catch (e: IOException) {
             // We're on a background thread so we need to forward the exception to the main thread.
             mainThreadHandler.postAtFrontOfQueue { throw e }
             return MockResponse().setResponseCode(HTTP_NOT_FOUND)

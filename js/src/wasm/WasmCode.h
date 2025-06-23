@@ -581,6 +581,7 @@ class CodeBlock {
   // All offsets are relative to `codeBase` not the segment base.
   FuncToCodeRangeMap funcToCodeRange;
   CodeRangeVector codeRanges;
+  InliningContext inliningContext;
   CallSites callSites;
   TrapSites trapSites;
   FuncExportVector funcExports;
@@ -659,7 +660,7 @@ class CodeBlock {
   bool lookupCallSite(void* pc, CallSite* callSite) const;
   const StackMap* lookupStackMap(uint8_t* pc) const;
   const TryNote* lookupTryNote(const void* pc) const;
-  bool lookupTrap(void* pc, Trap* kindOut, TrapSiteDesc* trapOut) const;
+  bool lookupTrap(void* pc, Trap* kindOut, TrapSite* trapOut) const;
   const CodeRangeUnwindInfo* lookupUnwindInfo(void* pc) const;
   FuncExport& lookupFuncExport(uint32_t funcIndex,
                                size_t* funcExportIndex = nullptr);
@@ -972,8 +973,8 @@ class Code : public ShareableBase<Code> {
     SharedCodeSegmentVector lazyFuncSegments;
 
     // Statistics for tiers of code.
-    TierStats tier1Stats;
-    TierStats tier2Stats;
+    CompileAndLinkStats tier1Stats;
+    CompileAndLinkStats tier2Stats;
   };
   using ReadGuard = RWExclusiveData<ProtectedData>::ReadGuard;
   using WriteGuard = RWExclusiveData<ProtectedData>::WriteGuard;
@@ -1091,10 +1092,10 @@ class Code : public ShareableBase<Code> {
                                 UniqueLinkData sharedStubsLinkData,
                                 UniqueCodeBlock tier1CodeBlock,
                                 UniqueLinkData tier1LinkData,
-                                const TierStats& tier1Stats);
+                                const CompileAndLinkStats& tier1Stats);
   [[nodiscard]] bool finishTier2(UniqueCodeBlock tier2CodeBlock,
                                  UniqueLinkData tier2LinkData,
-                                 const TierStats& tier2Stats) const;
+                                 const CompileAndLinkStats& tier2Stats) const;
 
   [[nodiscard]] bool getOrCreateInterpEntry(uint32_t funcIndex,
                                             const FuncExport** funcExport,
@@ -1227,7 +1228,7 @@ class Code : public ShareableBase<Code> {
     }
     return (*block)->lookupTryNote(pc);
   }
-  bool lookupTrap(void* pc, Trap* kindOut, TrapSiteDesc* trapOut) const {
+  bool lookupTrap(void* pc, Trap* kindOut, TrapSite* trapOut) const {
     const CodeBlock* block = blockMap_.lookup(pc);
     if (!block) {
       return false;

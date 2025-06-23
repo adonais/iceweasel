@@ -22,18 +22,16 @@
     Alert dialog confirmation before downloading a previously downloaded file, this is the title.
     %1$s will be replaced with the size of the file.
   -->
-  <string name="mozac_feature_downloads_again_dialog_title" tools:ignore="UnusedResources">گرؽڌن دووارته فایل؟ (%1$s)</string>
+  <string name="mozac_feature_downloads_again_dialog_title" tools:ignore="UnusedResources">دانلود دووارته فایل؟ (%1$s)</string>
   <!--
     Alert dialog confirmation before downloading a file, this is the title.
     %1$s will be replaced with the size of the file.
   -->
-  <string name="mozac_feature_downloads_dialog_title_3">گرؽڌن فایل؟ (%1$s)</string>
-  <!-- Alert dialog confirmation before download a file, this is the title. %1$s will be replaced with the name of the file. -->
-  <string name="mozac_feature_downloads_dialog_title2" moz:removedIn="138" tools:ignore="UnusedResources">دانلود (%1$s)</string>
+  <string name="mozac_feature_downloads_dialog_title_3">دانلود فایل؟ (%1$s)</string>
   <!-- Alert dialog confirmation before download a file, this is the positive action. -->
   <string name="mozac_feature_downloads_dialog_download">دانلود</string>
   <!-- Alert dialog confirmation before downloading a file again, this is the positive action. -->
-  <string name="mozac_feature_downloads_dialog_download_again" tools:ignore="UnusedResources">گرؽڌن دووارته</string>
+  <string name="mozac_feature_downloads_dialog_download_again" tools:ignore="UnusedResources">دانلود دووارته</string>
   <!-- Alert dialog confirmation before download a file, this is the negative action. -->
   <string name="mozac_feature_downloads_dialog_cancel">لقو</string>
   <!--
@@ -45,7 +43,7 @@
     Alert dialog confirmation before downloading a file without network connection, this is the description.
     %1$s will be replaced with the name of the file.
   -->
-  <string name="mozac_feature_downloads_file_failure_no_connection" tools:ignore="UnusedResources">%1$s نگؽرست.</string>
+  <string name="mozac_feature_downloads_file_failure_no_connection" tools:ignore="UnusedResources">%1$s دانلود نوابی.</string>
   <!-- Alert dialog confirmation before downloading a file without network connection, this is the description. -->
   <string name="mozac_feature_downloads_file_check_connection" tools:ignore="UnusedResources">منپیز خوتۉݩ ن واجۊری کۊنین وو دووارته امتهووݩ کۊنین.</string>
   <!-- Error shown when the user is trying to download a invalid file. %1$s will be replaced with the name of the app. -->
@@ -70,6 +68,8 @@
   <string name="mozac_feature_downloads_third_party_app_chooser_dialog_title">کامل کردن عملکرد وا و کار گرؽڌن</string>
   <!-- Message that appears when trying to download with an external app fails. %1$s will be replaced with the name the external app. -->
   <string name="mozac_feature_downloads_unable_to_open_third_party_app">نترست %1$s ن بوگوشه</string>
+  <!-- Text for the info dialog when write to storage permissions have been denied but user tries to download a file. -->
+  <string name="mozac_feature_downloads_write_external_storage_permissions_needed_message">سی دانلود فایلا، هشتن دسرسی و فایلا وو وارسگر ن اخو. و سامووا ٱندروید ریوین، ری هشتنا بزنین وو دیندا هشتن ن بزنین.</string>
   <!-- Alert dialog confirmation before cancelling downloads, this is the title -->
   <string name="mozac_feature_downloads_cancel_active_downloads_warning_content_title">دانلودا سیخومی لقو بۊن؟</string>
   <!-- Alert dialog confirmation before cancelling private downloads, this is the body. %1$s will be replaced with the name of the file. -->

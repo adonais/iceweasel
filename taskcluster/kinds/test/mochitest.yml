@@ -62,7 +62,7 @@ mochitest-plain:
         - http3
         - http2
         - geckoview-fission-isolate-high-value
-        - geckoview-no-fission-ship
+        - geckoview-no-fission-no-ship
         - inc-origin-init
     run-on-projects:
         by-variant:
@@ -72,6 +72,7 @@ mochitest-plain:
                     .*-asan.*: []
                     .*-wayland.*: []
                     linux1804-64(-shippable)?(-qr)?/opt: ['trunk']
+                    linux2404-64(-shippable)?/opt: ['trunk']
                     windows11-64.*(-shippable)?(-qr)?/opt: []
                     default: []
             xorigin:
@@ -92,6 +93,7 @@ mochitest-plain:
                     .*-asan.*: []
                     .*-wayland.*: []
                     linux1804-64(-qr)?/debug: ['autoland', 'mozilla-central']
+                    linux2404-64/debug: ['autoland', 'mozilla-central']
                     default: []
             aab+no-fission:
                 by-test-platform:
@@ -101,6 +103,7 @@ mochitest-plain:
                 by-test-platform:
                     .*-wayland.*: []
                     linux1804-64.*: ['mozilla-central']
+                    linux2404-64.*: ['mozilla-central']
                     default: []
             no-fission:
                 by-test-platform:
@@ -109,21 +112,26 @@ mochitest-plain:
                     linux1804-64(-qr)?/debug: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                     linux1804-64(-shippable)?(-qr)?/opt: ['mozilla-central']
+                    linux2404-64/debug: ['mozilla-central']
+                    linux2404-64-asan/opt: ['mozilla-central']
+                    linux2404-64(-shippable)?/opt: ['mozilla-central']
                     default: []
             http3:
                 by-test-platform:
                     linux1804-64(-qr)?/debug: built-projects
+                    linux2404-64/debug: built-projects
                     default: []
             http2:
                 by-test-platform:
                     linux1804-64(-qr)?/debug: built-projects
+                    linux2404-64/debug: built-projects
                     default: []
             geckoview-fission-isolate-high-value:
                 by-test-platform:
                     android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
                     android-em.*: built-projects
                     default: []
-            geckoview-no-fission-ship:
+            geckoview-no-fission-no-ship:
                 by-test-platform:
                     android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
                     android-em.*: built-projects
@@ -187,10 +195,14 @@ mochitest-plain:
                     - linux64-node
                     - linux64-minidump-stackwalk
                     - linux64-fix-stacks
-                macosx.*:
+                macosx.*-64.*:
                     - macosx64-node
                     - macosx64-minidump-stackwalk
                     - macosx64-fix-stacks
+                macosx.*-aarch64.*:
+                    - macosx64-aarch64-node
+                    - macosx64-aarch64-minidump-stackwalk
+                    - macosx64-aarch64-fix-stacks
                 win.*-64.*:
                     - win64-node
                     - win32-minidump-stackwalk
@@ -464,6 +476,7 @@ mochitest-browser-screenshots:
     run-on-projects:
         by-test-platform:
             linux1804-64.*/opt: ['trunk']
+            linux2404-64.*/opt: ['trunk']
             default: []
     max-run-time: 3600
     mozharness:
@@ -518,6 +531,7 @@ mochitest-chrome:
                     .*-asan.*: []
                     .*-ccov.*: []
                     linux1804-64(-qr)?/debug: ['autoland', 'mozilla-central']
+                    linux2404-64/debug: ['autoland', 'mozilla-central']
                     default: []
             webrender-sw+1proc:
                 by-test-platform:
@@ -563,7 +577,6 @@ mochitest-devtools-chrome:
         - a11y-checks
         - socketprocess_networking
         - http3
-        - cm5
     run-on-projects:
         by-variant:
             a11y-checks:
@@ -573,16 +586,14 @@ mochitest-devtools-chrome:
             http3:
                 by-test-platform:
                     linux1804-64(-qr)?/debug: built-projects
+                    linux2404-64/debug: built-projects
                     default: []
             socketprocess_networking:
                 by-test-platform:
                     .*-asan.*: []
                     .*-ccov.*: []
                     linux1804-64(-qr)?/debug: ['autoland', 'mozilla-central']
-                    default: []
-            cm5:
-                by-test-platform:
-                    linux.*64(-shippable)?(-qr)?/opt: ['trunk']
+                    linux2404-64/debug: ['autoland', 'mozilla-central']
                     default: []
             default:
                 by-test-platform:
@@ -624,10 +635,14 @@ mochitest-devtools-chrome:
                     - linux64-node
                     - linux64-minidump-stackwalk
                     - linux64-fix-stacks
-                macosx.*:
+                macosx.*-64.*:
                     - macosx64-node
                     - macosx64-minidump-stackwalk
                     - macosx64-fix-stacks
+                macosx.*-aarch64.*:
+                    - macosx64-aarch64-node
+                    - macosx64-aarch64-minidump-stackwalk
+                    - macosx64-aarch64-fix-stacks
                 win.*-64.*:
                     - win64-node
                     - win32-minidump-stackwalk
@@ -708,6 +723,7 @@ mochitest-plain-gpu:
                     android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
                     linux.*64-ccov(-qr)?/opt: []
                     linux1804-32.*: []
+                    linux2404-32.*: []
                     .*-tsan(-qr)?/opt: []
                     .*-wayland.*: []
                     linux.*: ['mozilla-central']  # linux opt/debug/asan
@@ -810,6 +826,9 @@ mochitest-media:
                     linux1804-64(-qr)?/debug: ['mozilla-central']
                     linux1804-64(-shippable)?(-qr)?/opt: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
+                    linux2404-64/debug: ['mozilla-central']
+                    linux2404-64(-shippable)/opt: ['mozilla-central']
+                    linux2404-64-asan/opt: ['mozilla-central']
                     default: []
             socketprocess:
                 by-test-platform:
@@ -832,12 +851,16 @@ mochitest-media:
                     linux1804-64(-qr)?/.*: ['mozilla-central']
                     linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
+                    linux2404-64/.*: ['mozilla-central']
+                    linux2404-64-shippable/opt: ['mozilla-central']
+                    linux2404-64-asan/opt: ['mozilla-central']
                     default: []
             webrender-sw:
                 by-test-platform:
                     android.*: []
                     .*hw-ref.*: []
                     linux1804-64(-qr)?/debug: ['autoland', 'mozilla-central']
+                    linux2404-64/debug: ['autoland', 'mozilla-central']
                     default: []
             no-fission:
                 by-test-platform:
@@ -849,6 +872,9 @@ mochitest-media:
                     linux1804-64(-qr)?/.*: ['mozilla-central']
                     linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
+                    linux2404-64/.*: ['mozilla-central']
+                    linux2404-64-shippable/opt: ['mozilla-central']
+                    linux2404-64-asan/opt: ['mozilla-central']
                     default: []
             wmf-media-engine:
                 by-test-platform:
@@ -984,6 +1010,9 @@ mochitest-webgl1-core:
                     linux1804-64(-qr)?/debug: ['trunk']
                     linux1804-64(-shippable)?(-qr)?/opt: ['trunk']
                     linux1804-64-asan(-qr)?/opt: ['trunk']
+                    linux2404-64/debug: ['trunk']
+                    linux2404-64(-shippable)?/opt: ['trunk']
+                    linux2404-64-asan/opt: ['trunk']
                     default: []
             default:
                 by-test-platform:
@@ -1025,6 +1054,9 @@ mochitest-webgl1-ext:
                     linux1804-64(-qr)?/.*: ['trunk']
                     linux1804-64-shippable(-qr)?/opt: ['trunk']
                     linux1804-64-asan(-qr)?/opt: ['trunk']
+                    linux2404-64/.*: ['trunk']
+                    linux2404-64-shippable/opt: ['trunk']
+                    linux2404-64-asan/opt: ['trunk']
                     default: []
             default:
                 by-test-platform:
@@ -1070,6 +1102,9 @@ mochitest-webgl2-core:
                     linux1804-64(-qr)?/.*: ['trunk']
                     linux1804-64-shippable(-qr)?/opt: ['trunk']
                     linux1804-64-asan(-qr)?/opt: ['trunk']
+                    linux2404-64/.*: ['trunk']
+                    linux2404-64-shippable/opt: ['trunk']
+                    linux2404-64-asan/opt: ['trunk']
                     default: []
             default:
                 by-test-platform:
@@ -1106,6 +1141,8 @@ mochitest-webgl2-ext:
                 by-test-platform:
                     linux1804-64(-qr)?/debug: ['trunk']
                     linux1804-64(-shippable|-asan)?(-qr)?/opt: ['trunk']
+                    linux2404-64/debug: ['trunk']
+                    linux2404-64(-shippable|-asan)?/opt: ['trunk']
                     android.*: built-projects
                     default: []
             default:
@@ -1188,12 +1225,16 @@ mochitest-remote:
                     .*-asan.*: []
                     .*-ccov.*: []
                     linux1804-64(-qr)?/debug: ['autoland', 'mozilla-central']
+                    linux2404-64/debug: ['autoland', 'mozilla-central']
                     default: []
             no-fission:
                 by-test-platform:
                     linux1804-64(-qr)?/.*: ['trunk']
                     linux1804-64-shippable(-qr)?/opt: ['trunk']
                     linux1804-64-asan(-qr)?/opt: ['trunk']
+                    linux2404-64/.*: ['trunk']
+                    linux2404-64-shippable/opt: ['trunk']
+                    linux2404-64-asan/opt: ['trunk']
                     default: []
             default:
                 by-test-platform:

@@ -24,6 +24,7 @@
 #include "nsContentUtils.h"
 #include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/GeckoBindings.h"
@@ -94,6 +95,10 @@ static nsSize GetDeviceSize(const Document& aDocument) {
 
 bool Gecko_MediaFeatures_IsResourceDocument(const Document* aDocument) {
   return aDocument->IsResourceDoc();
+}
+
+bool Gecko_MediaFeatures_InAndroidPipMode(const Document* aDocument) {
+  return aDocument->InAndroidPipMode();
 }
 
 bool Gecko_MediaFeatures_UseOverlayScrollbars(const Document* aDocument) {
@@ -343,6 +348,11 @@ StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
       !StaticPrefs::layout_css_video_dynamic_range_allows_high()) {
     return StyleDynamicRange::Standard;
   }
+#ifdef MOZ_WAYLAND
+  if (!StaticPrefs::gfx_wayland_hdr_AtStartup()) {
+    return StyleDynamicRange::Standard;
+  }
+#endif
   // video-dynamic-range: high has 3 requirements:
   // 1) high peak brightness
   // 2) high contrast ratio

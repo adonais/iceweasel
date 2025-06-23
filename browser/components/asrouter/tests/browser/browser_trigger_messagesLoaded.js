@@ -8,13 +8,10 @@ const { ASRouter } = ChromeUtils.importESModule(
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
-const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
-);
-const { ExperimentAPI } = ChromeUtils.importESModule(
+const { EnrollmentType, ExperimentAPI } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
-const { ExperimentFakes, ExperimentTestUtils } = ChromeUtils.importESModule(
+const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
@@ -58,20 +55,13 @@ add_task(async function test_messagesLoaded_reach_experiment() {
   const reachSpy = sandbox.spy(ASRouter, "_recordReachEvent");
   const triggerMatch = sandbox.match({ id: "messagesLoaded" });
   const featureId = "cfr";
-  const recipe = ExperimentFakes.recipe(
+  const recipe = NimbusTestUtils.factories.recipe(
     `messages_loaded_test_${Services.uuid
       .generateUUID()
       .toString()
       .slice(1, -1)}`,
     {
       id: `messages-loaded-test`,
-      bucketConfig: {
-        count: 100,
-        start: 0,
-        total: 100,
-        namespace: "mochitest",
-        randomizationUnit: "normandy_id",
-      },
       branches: [
         {
           slug: "control",
@@ -96,7 +86,7 @@ add_task(async function test_messagesLoaded_reach_experiment() {
       ],
     }
   );
-  await ExperimentTestUtils.validateExperiment(recipe);
+  await NimbusTestUtils.validateExperiment(recipe);
 
   await client.db.importChanges({}, Date.now(), [recipe], { clear: true });
   await SpecialPowers.pushPrefEnv({
@@ -109,9 +99,12 @@ add_task(async function test_messagesLoaded_reach_experiment() {
       ],
     ],
   });
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
   await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI.getExperimentMetaData({ featureId }),
+    () =>
+      NimbusFeatures[featureId].getEnrollmentMetadata(
+        EnrollmentType.EXPERIMENT
+      ),
     "ExperimentAPI should return an experiment"
   );
 

@@ -95,8 +95,6 @@ class MenuTelemetryMiddleware(
                 ),
             )
 
-            MenuAction.Navigate.Help -> HomeMenu.helpTapped.record(NoExtras())
-
             MenuAction.Navigate.History -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = "history",
@@ -287,6 +285,9 @@ class MenuTelemetryMiddleware(
             is MenuAction.UpdateShowDisabledExtensionsOnboarding,
             is MenuAction.UpdateManageExtensionsMenuItemVisibility,
             is MenuAction.UpdateAvailableAddons,
+            is MenuAction.Navigate.Back,
+            is MenuAction.Navigate.Forward,
+            is MenuAction.Navigate.Reload,
             -> Unit
         }
     }

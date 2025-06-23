@@ -448,6 +448,7 @@ bool Code::createManyLazyEntryStubs(const WriteGuard& guard,
 
   masm.finish();
 
+  MOZ_ASSERT(masm.inliningContext().empty());
   MOZ_ASSERT(masm.callSites().empty());
   MOZ_ASSERT(masm.callSiteTargets().empty());
   MOZ_ASSERT(masm.trapSites().empty());
@@ -646,10 +647,9 @@ class Module::PartialTier2CompileTaskImpl : public PartialTier2CompileTask {
       UniqueCharsVector warnings;
       bool success = CompilePartialTier2(*code_, funcIndex_, &error, &warnings,
                                          &cancelled_);
-
-      ReportTier2ResultsOffThread(success, mozilla::Some(funcIndex_),
-                                  code_->codeMeta().scriptedCaller(), error,
-                                  warnings);
+      ReportTier2ResultsOffThread(
+          cancelled_, success, mozilla::Some(funcIndex_),
+          code_->codeMeta().scriptedCaller(), error, warnings);
     }
 
     // The task is finished, release it.
@@ -685,7 +685,7 @@ bool Code::requestTierUp(uint32_t funcIndex) const {
 
 bool Code::finishTier2(UniqueCodeBlock tier2CodeBlock,
                        UniqueLinkData tier2LinkData,
-                       const TierStats& tier2Stats) const {
+                       const CompileAndLinkStats& tier2Stats) const {
   MOZ_RELEASE_ASSERT(mode_ == CompileMode::EagerTiering ||
                      mode_ == CompileMode::LazyTiering);
   MOZ_RELEASE_ASSERT(hasCompleteTier2_ == false &&
@@ -1010,6 +1010,7 @@ void CodeBlock::addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
   segment->addSizeOfMisc(mallocSizeOf, code, data);
   *data += funcToCodeRange.sizeOfExcludingThis(mallocSizeOf) +
            codeRanges.sizeOfExcludingThis(mallocSizeOf) +
+           inliningContext.sizeOfExcludingThis(mallocSizeOf) +
            callSites.sizeOfExcludingThis(mallocSizeOf) +
            tryNotes.sizeOfExcludingThis(mallocSizeOf) +
            codeRangeUnwindInfos.sizeOfExcludingThis(mallocSizeOf) +
@@ -1026,7 +1027,7 @@ const CodeRange* CodeBlock::lookupRange(const void* pc) const {
 
 bool CodeBlock::lookupCallSite(void* pc, CallSite* callSite) const {
   uint32_t target = ((uint8_t*)pc) - base();
-  return callSites.lookup(target, callSite);
+  return callSites.lookup(target, inliningContext, callSite);
 }
 
 const StackMap* CodeBlock::lookupStackMap(uint8_t* pc) const {
@@ -1049,11 +1050,10 @@ const wasm::TryNote* CodeBlock::lookupTryNote(const void* pc) const {
   return nullptr;
 }
 
-bool CodeBlock::lookupTrap(void* pc, Trap* kindOut,
-                           TrapSiteDesc* trapOut) const {
+bool CodeBlock::lookupTrap(void* pc, Trap* kindOut, TrapSite* trapOut) const {
   MOZ_ASSERT(containsCodePC(pc));
   uint32_t target = ((uint8_t*)pc) - base();
-  return trapSites.lookup(target, kindOut, trapOut);
+  return trapSites.lookup(target, inliningContext, kindOut, trapOut);
 }
 
 struct UnwindInfoPCOffset {
@@ -1178,6 +1178,7 @@ Code::Code(CompileMode mode, const CodeMetadata& codeMeta,
 Code::~Code() { printStats(); }
 
 void Code::printStats() const {
+#ifdef JS_JITSPEW
   auto guard = data_.readLock();
 
   JS_LOG(wasmPerf, Info, "CM=..%06lx  Code::~Code <<<<",
@@ -1190,17 +1191,18 @@ void Code::printStats() const {
   uint32_t numCallRefs = codeTailMeta_->numCallRefMetrics == UINT32_MAX
                              ? 0
                              : codeTailMeta_->numCallRefMetrics;
-  JS_LOG(wasmPerf, Info, "    %7u call_refs in module.", numCallRefs);
+  JS_LOG(wasmPerf, Info, "    %7u call_refs in module", numCallRefs);
 
   // Tier information
-  JS_LOG(wasmPerf, Info, "    Tier1:");
+  JS_LOG(wasmPerf, Info, "            ------ Tier 1 ------");
   guard->tier1Stats.print();
   if (mode() != CompileMode::Once) {
-    JS_LOG(wasmPerf, Info, "    Tier2:");
+    JS_LOG(wasmPerf, Info, "            ------ Tier 2 ------");
     guard->tier2Stats.print();
   }
 
   JS_LOG(wasmPerf, Info, ">>>>");
+#endif
 }
 
 bool Code::initialize(FuncImportVector&& funcImports,
@@ -1208,11 +1210,12 @@ bool Code::initialize(FuncImportVector&& funcImports,
                       UniqueLinkData sharedStubsLinkData,
                       UniqueCodeBlock tier1CodeBlock,
                       UniqueLinkData tier1LinkData,
-                      const TierStats& tier1Stats) {
+                      const CompileAndLinkStats& tier1Stats) {
   funcImports_ = std::move(funcImports);
 
   auto guard = data_.writeLock();
 
+  MOZ_ASSERT(guard->tier1Stats.empty());
   guard->tier1Stats = tier1Stats;
 
   sharedStubs_ = sharedStubs.get();

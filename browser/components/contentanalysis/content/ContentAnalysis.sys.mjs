@@ -348,7 +348,7 @@ export const ContentAnalysis = {
             response.requestToken,
             response.userActionId,
             responseResult,
-            response.isAgentResponse,
+            response.isSyntheticResponse,
             response.cancelError
           );
         }
@@ -394,6 +394,14 @@ export const ContentAnalysis = {
         // in-browser notification
         let browser =
           caView.notification.dialogBrowsingContext.top.embedderElement;
+        // If we're showing a dialog in the sidebar, the dialog is managed
+        // by the embedderElement.
+        let isSidebar =
+          browser?.ownerGlobal?.browsingContext?.embedderElement?.id ==
+          "sidebar";
+        if (isSidebar) {
+          browser = browser.ownerGlobal.browsingContext.embedderElement;
+        }
         // browser will be null if the tab was closed
         let win = browser?.ownerGlobal;
         if (win) {
@@ -791,7 +799,7 @@ export const ContentAnalysis = {
    * @param {string} aRequestToken
    * @param {string} aUserActionId
    * @param {number} aCAResult
-   * @param {boolean} aIsAgentResponse
+   * @param {boolean} aIsSyntheticResponse
    * @param {number} aRequestCancelError
    * @returns {Promise<NotificationInfo?>} a notification object (if shown)
    */
@@ -801,7 +809,7 @@ export const ContentAnalysis = {
     aRequestToken,
     aUserActionId,
     aCAResult,
-    aIsAgentResponse,
+    aIsSyntheticResponse,
     aRequestCancelError
   ) {
     let message = null;
@@ -866,7 +874,7 @@ export const ContentAnalysis = {
         return null;
       }
       case Ci.nsIContentAnalysisResponse.eBlock: {
-        if (aIsAgentResponse && !lazy.showBlockedResult) {
+        if (!aIsSyntheticResponse && !lazy.showBlockedResult) {
           // Don't show anything
           return null;
         }

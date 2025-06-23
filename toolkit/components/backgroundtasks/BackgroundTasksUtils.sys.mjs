@@ -37,10 +37,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/ASRouterDefaultConfig.sys.mjs",
 
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
-  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
-
-  RemoteSettingsExperimentLoader:
-    "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
 });
 
 class CannotLockProfileError extends Error {
@@ -137,7 +133,7 @@ export var BackgroundTasksUtils = {
    * @template T
    * @param {(lock: nsIProfileLock) => Promise<T>} callback
    * @param {nsIToolkitProfile} [profile] defaults to default profile
-   * @return {Promise<T>}
+   * @returns {Promise<T>}
    */
   async withProfileLock(callback, profile = this.getDefaultProfile()) {
     if (!profile) {
@@ -327,11 +323,9 @@ export var BackgroundTasksUtils = {
           branch: params.get("optin_branch"),
           collection: params.get("optin_collection"),
         };
-        await lazy.RemoteSettingsExperimentLoader.optInToExperiment(data);
+        await lazy.ExperimentAPI.optInToExperiment(data);
         lazy.log.info(`Opted in to experiment: ${JSON.stringify(data)}`);
-      }
-
-      if (uri.schemeIs("file")) {
+      } else if (uri.schemeIs("file")) {
         let branchSlug = params.get("optin_branch");
         let path = decodeURIComponent(uri.filePath);
         let response = await fetch(uri.spec);
@@ -343,7 +337,7 @@ export var BackgroundTasksUtils = {
         }
         let branch = recipe.branches.find(b => b.slug == branchSlug);
 
-        lazy.ExperimentManager.forceEnroll(recipe, branch);
+        await lazy.ExperimentAPI.manager.forceEnroll(recipe, branch);
         lazy.log.info(`Forced enrollment into: ${path}, branch: ${branchSlug}`);
       }
     }

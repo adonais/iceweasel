@@ -55,8 +55,6 @@ skip-if = ["verify && debug && os == 'mac'"]
 
 ["browser_policy_disable_password_reveal.js"]
 
-["browser_policy_disable_pocket.js"]
-
 ["browser_policy_disable_popup_blocker.js"]
 
 ["browser_policy_disable_privatebrowsing.js"]
@@ -107,6 +105,8 @@ https_first_disabled = true
 ["browser_policy_pageinfo_permissions.js"]
 
 ["browser_policy_passwordmanager.js"]
+
+["browser_policy_pdfviewer.js"]
 
 ["browser_policy_privatebrowsingmodeavailability.js"]
 

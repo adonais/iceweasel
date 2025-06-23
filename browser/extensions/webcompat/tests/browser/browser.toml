@@ -15,13 +15,15 @@ support-files = [
 ["browser_aboutcompat.js"]
 skip-if = ["debug"] # disabled until bug 1961939 is fixed.
 
-["browser_console_messages.js"]
-skip-if = ["true"] # disabled in bug 1960374 to verify if the bug which added it has caused regressions.
-
 ["browser_custom_functions.js"]
 support-files = ["download_server.sjs"]
 
+["browser_intervention_gating.js"]
+skip-if = ["debug"] # disabled until bug 1961939 is fixed.
+
 ["browser_interventions.js"]
+
+["browser_pref_check.js"]
 
 ["browser_shims.js"]
 https_first_disabled = true
@@ -30,6 +32,9 @@ skip-if = ["verify"]
 ["browser_smartblockembeds.js"]
 
 ["browser_smartblockembeds_mutation.js"]
-skip-if = ["os == 'linux' && asan"] # Bug 1858919
+skip-if = [
+  "os == 'linux' && asan", # Bug 1858919
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1858919
+]
 
 ["browser_ua_helpers.js"]

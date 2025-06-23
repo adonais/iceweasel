@@ -176,13 +176,19 @@ main-context-menu-copy-email =
     .label = Copy Email Address
     .accesskey = l
 
+main-context-menu-copy-link-simple =
+    .label = Copy Link
+    .accesskey = L
+
+##
+
 main-context-menu-copy-phone =
     .label = Copy Phone Number
     .accesskey = o
 
-main-context-menu-copy-link-simple =
-    .label = Copy Link
-    .accesskey = L
+main-context-menu-preview-link =
+    .label = Preview Link
+    .accesskey = r
 
 # "Copy Clean Link" means that Firefox will remove things from the link you
 # copied, like items that identify you for advertising purposes, and other items

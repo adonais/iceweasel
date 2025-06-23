@@ -77,15 +77,32 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
   return matrix;
 }
 
+// Let the rect be snapshot containing block if capturedElement is the document
+// element, otherwise, capturedElement’s border box. NOTE: Needs ink overflow
+// rect instead to get the correct rendering, see
+// https://github.com/w3c/csswg-drafts/issues/12092.
+// TODO(emilio, bug 1961139): Maybe revisit this.
+static inline nsRect CapturedRect(const nsIFrame* aFrame) {
+  return aFrame->Style()->IsRootElementStyle()
+             ? ViewTransition::SnapshotContainingBlockRect(
+                   aFrame->PresContext())
+             : aFrame->InkOverflowRectRelativeToSelf();
+}
+static inline nsSize CapturedSize(const nsIFrame* aFrame,
+                                  const nsSize& aSnapshotContainingBlockSize) {
+  return aFrame->Style()->IsRootElementStyle()
+             ? aSnapshotContainingBlockSize
+             : aFrame->InkOverflowRectRelativeToSelf().Size();
+}
+
 static RefPtr<gfx::DataSourceSurface> CaptureFallbackSnapshot(
     nsIFrame* aFrame) {
   VT_LOG_DEBUG("CaptureFallbackSnapshot(%s)", aFrame->ListTag().get());
   nsPresContext* pc = aFrame->PresContext();
-  const bool isRoot = aFrame->Style()->IsRootElementStyle();
-  nsIFrame* frameToCapture =
-      isRoot ? pc->PresShell()->GetCanvasFrame() : aFrame;
-  const nsRect rect = isRoot ? ViewTransition::SnapshotContainingBlockRect(pc)
-                             : aFrame->InkOverflowRectRelativeToSelf();
+  nsIFrame* frameToCapture = aFrame->Style()->IsRootElementStyle()
+                                 ? pc->PresShell()->GetCanvasFrame()
+                                 : aFrame;
+  const nsRect& rect = CapturedRect(aFrame);
   const auto surfaceRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
       rect, pc->AppUnitsPerDevPixel());
 
@@ -126,8 +143,9 @@ struct OldSnapshotData {
 
   OldSnapshotData() = default;
 
-  explicit OldSnapshotData(nsIFrame* aFrame)
-      : mSize(aFrame->InkOverflowRectRelativeToSelf().Size()) {
+  explicit OldSnapshotData(nsIFrame* aFrame,
+                           const nsSize& aSnapshotContainingBlockSize)
+      : mSize(CapturedSize(aFrame, aSnapshotContainingBlockSize)) {
     if (!StaticPrefs::dom_viewTransitions_wr_old_capture()) {
       mFallback = CaptureFallbackSnapshot(aFrame);
     }
@@ -191,11 +209,9 @@ struct CapturedElementOldState {
 
   CapturedElementOldState(nsIFrame* aFrame,
                           const nsSize& aSnapshotContainingBlockSize)
-      : mSnapshot(aFrame),
+      : mSnapshot(aFrame, aSnapshotContainingBlockSize),
         mTriedImage(true),
-        mSize(aFrame->Style()->IsRootElementStyle()
-                  ? aSnapshotContainingBlockSize
-                  : aFrame->InkOverflowRect().Size()),
+        mSize(CapturedSize(aFrame, aSnapshotContainingBlockSize)),
         mTransform(EffectiveTransform(aFrame)),
         mWritingMode(aFrame->StyleVisibility()->mWritingMode),
         mDirection(aFrame->StyleVisibility()->mDirection),
@@ -250,7 +266,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ViewTransition, mDocument,
                                       mUpdateCallback,
                                       mUpdateCallbackDonePromise, mReadyPromise,
                                       mFinishedPromise, mNamedElements,
-                                      mViewTransitionRoot)
+                                      mSnapshotContainingBlock)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ViewTransition)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -265,6 +281,12 @@ ViewTransition::ViewTransition(Document& aDoc,
     : mDocument(&aDoc), mUpdateCallback(aCb) {}
 
 ViewTransition::~ViewTransition() { ClearTimeoutTimer(); }
+
+Element* ViewTransition::GetViewTransitionTreeRoot() const {
+  return mSnapshotContainingBlock
+             ? mSnapshotContainingBlock->GetFirstElementChild()
+             : nullptr;
+}
 
 Maybe<nsSize> ViewTransition::GetOldSize(nsAtom* aName) const {
   auto* el = mNamedElements.Get(aName);
@@ -306,10 +328,6 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
     wr::IpcResourceUpdateQueue& aResources) const {
   MOZ_ASSERT(aFrame);
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION));
-
-  if (!StaticPrefs::dom_viewTransitions_live_capture()) {
-    return nullptr;
-  }
 
   nsAtom* name = aFrame->StyleUIReset()->mViewTransitionName._0.AsAtom();
   if (NS_WARN_IF(name->IsEmpty())) {
@@ -519,8 +537,7 @@ static already_AddRefed<Element> MakePseudo(Document& aDoc,
                                             PseudoStyleType aType,
                                             nsAtom* aName) {
   RefPtr<Element> el = aDoc.CreateHTMLElement(nsGkAtoms::div);
-  if (!aName) {
-    MOZ_ASSERT(aType == PseudoStyleType::viewTransition);
+  if (aType == PseudoStyleType::mozSnapshotContainingBlock) {
     el->SetIsNativeAnonymousRoot();
   }
   el->SetPseudoElementType(aType);
@@ -644,8 +661,9 @@ static nsTArray<Keyframe> BuildGroupKeyframes(
   return result;
 }
 
-bool ViewTransition::GetGroupKeyframes(nsAtom* aAnimationName,
-                                       nsTArray<Keyframe>& aResult) const {
+bool ViewTransition::GetGroupKeyframes(
+    nsAtom* aAnimationName, const StyleComputedTimingFunction& aTimingFunction,
+    nsTArray<Keyframe>& aResult) {
   MOZ_ASSERT(StringBeginsWith(nsDependentAtomString(aAnimationName),
                               kGroupAnimPrefix));
   RefPtr<nsAtom> transitionName = NS_Atomize(Substring(
@@ -655,12 +673,29 @@ bool ViewTransition::GetGroupKeyframes(nsAtom* aAnimationName,
     return false;
   }
   aResult = el->mGroupKeyframes.Clone();
+  // We assign the timing function always to make sure we don't use the default
+  // linear timing function.
+  MOZ_ASSERT(aResult.Length() == 2);
+  aResult[0].mTimingFunction = Some(aTimingFunction);
+  aResult[1].mTimingFunction = Some(aTimingFunction);
   return true;
 }
 
+// In general, we are trying to generate the following pseudo-elements tree:
+// ::-moz-snapshot-containing-block
+// └─ ::view-transition
+//    ├─ ::view-transition-group(name)
+//    │  └─ ::view-transition-image-pair(name)
+//    │     ├─ ::view-transition-old(name)
+//    │     └─ ::view-transition-new(name)
+//    └─ ...other groups...
+//
+// ::-moz-snapshot-containing-block is the top-layer of the tree. It is the
+// wrapper of the view transition pseudo-elements tree for the snapshot
+// containing block concept. And it is the child of the document element.
 // https://drafts.csswg.org/css-view-transitions-1/#setup-transition-pseudo-elements
 void ViewTransition::SetupTransitionPseudoElements() {
-  MOZ_ASSERT(!mViewTransitionRoot);
+  MOZ_ASSERT(!mSnapshotContainingBlock);
 
   nsAutoScriptBlocker scriptBlocker;
 
@@ -669,33 +704,38 @@ void ViewTransition::SetupTransitionPseudoElements() {
     return;
   }
 
+  // We don't need to notify while constructing the tree.
+  constexpr bool kNotify = false;
+
   // Step 1 is a declaration.
 
   // Step 2: Set document's show view transition tree to true.
   // (we lazily create this pseudo-element so we don't need the flag for now at
   // least).
-  mViewTransitionRoot =
+  // Note: Use mSnapshotContainingBlock to wrap the pseudo-element tree.
+  mSnapshotContainingBlock = MakePseudo(
+      *mDocument, PseudoStyleType::mozSnapshotContainingBlock, nullptr);
+  RefPtr<Element> root =
       MakePseudo(*mDocument, PseudoStyleType::viewTransition, nullptr);
+  mSnapshotContainingBlock->AppendChildTo(root, kNotify, IgnoreErrors());
 #ifdef DEBUG
   // View transition pseudos don't care about frame tree ordering, so can be
   // restyled just fine.
-  mViewTransitionRoot->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                                   reinterpret_cast<void*>(true));
+  mSnapshotContainingBlock->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                                        reinterpret_cast<void*>(true));
 #endif
 
   MOZ_ASSERT(mNames.Length() == mNamedElements.Count());
   // Step 3: For each transitionName -> capturedElement of transition’s named
   // elements:
   for (nsAtom* transitionName : mNames) {
-    // We don't need to notify while constructing the tree.
-    constexpr bool kNotify = false;
     CapturedElement& capturedElement = *mNamedElements.Get(transitionName);
     // Let group be a new ::view-transition-group(), with its view transition
     // name set to transitionName.
     RefPtr<Element> group = MakePseudo(
         *mDocument, PseudoStyleType::viewTransitionGroup, transitionName);
     // Append group to transition’s transition root pseudo-element.
-    mViewTransitionRoot->AppendChildTo(group, kNotify, IgnoreErrors());
+    root->AppendChildTo(group, kNotify, IgnoreErrors());
     // Let imagePair be a new ::view-transition-image-pair(), with its view
     // transition name set to transitionName.
     RefPtr<Element> imagePair = MakePseudo(
@@ -791,16 +831,17 @@ void ViewTransition::SetupTransitionPseudoElements() {
     }
   }
   BindContext context(*docElement, BindContext::ForNativeAnonymous);
-  if (NS_FAILED(mViewTransitionRoot->BindToTree(context, *docElement))) {
-    mViewTransitionRoot->UnbindFromTree();
-    mViewTransitionRoot = nullptr;
+  if (NS_FAILED(mSnapshotContainingBlock->BindToTree(context, *docElement))) {
+    mSnapshotContainingBlock->UnbindFromTree();
+    mSnapshotContainingBlock = nullptr;
     return;
   }
   if (mDocument->DevToolsAnonymousAndShadowEventsEnabled()) {
-    mViewTransitionRoot->QueueDevtoolsAnonymousEvent(/* aIsRemove = */ false);
+    mSnapshotContainingBlock->QueueDevtoolsAnonymousEvent(
+        /* aIsRemove = */ false);
   }
   if (PresShell* ps = mDocument->GetPresShell()) {
-    ps->ContentAppended(mViewTransitionRoot);
+    ps->ContentAppended(mSnapshotContainingBlock);
   }
 }
 
@@ -828,15 +869,12 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
       return false;
     }
     auto* rule = EnsureRule(capturedElement.mGroupRule);
-    // Let newRect be snapshot containing block if capturedElement is the
-    // document element, otherwise, capturedElement’s border box.
-    // NOTE: Needs ink overflow rect instead to get the correct rendering, see
-    // https://github.com/w3c/csswg-drafts/issues/12092.
-    // TODO(emilio, bug 1961139): Maybe revisit this.
-    auto newRect = frame->Style()->IsRootElementStyle()
-                       ? SnapshotContainingBlockRect()
-                       : frame->InkOverflowRectRelativeToSelf();
-    auto size = CSSPixel::FromAppUnits(newRect);
+    // Note: mInitialSnapshotContainingBlockSize should be the same as the
+    // current snapshot containing block size because the caller checks it
+    // before calling us.
+    const auto& newSize =
+        CapturedSize(frame, mInitialSnapshotContainingBlockSize);
+    auto size = CSSPixel::FromAppUnits(newSize);
     // NOTE(emilio): Intentionally not short-circuiting. Int cast is needed to
     // silence warning.
     bool groupStyleChanged =
@@ -871,8 +909,7 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
     // 5. Live capturing (nothing to do here regarding the capture itself, but
     // if the size has changed, then we need to invalidate the new frame).
     auto oldSize = capturedElement.mNewSnapshotSize;
-    capturedElement.mNewSnapshotSize =
-        frame->InkOverflowRectRelativeToSelf().Size();
+    capturedElement.mNewSnapshotSize = newSize;
     if (oldSize != capturedElement.mNewSnapshotSize && aNeedsInvalidation) {
       frame->PresShell()->FrameNeedsReflow(
           frame, IntrinsicDirty::FrameAndAncestors, NS_FRAME_IS_DIRTY);
@@ -888,6 +925,8 @@ void ViewTransition::Activate() {
     return;
   }
 
+  // Step 2: Set transition’s relevant global object’s associated document’s
+  // rendering suppression for view transitions to false.
   mDocument->SetRenderingSuppressedForViewTransitions(false);
 
   // Step 3: If transition's initial snapshot containing block size is not
@@ -958,6 +997,7 @@ void ViewTransition::PerformPendingOperations() {
 
 // https://drafts.csswg.org/css-view-transitions/#snapshot-containing-block
 nsRect ViewTransition::SnapshotContainingBlockRect(nsPresContext* aPc) {
+  // FIXME: Bug 1960762. Tweak this for mobile OS.
   return aPc ? aPc->GetVisibleArea() : nsRect();
 }
 
@@ -968,10 +1008,11 @@ nsRect ViewTransition::SnapshotContainingBlockRect() const {
 }
 
 Element* ViewTransition::FindPseudo(const PseudoStyleRequest& aRequest) const {
-  Element* root = GetRoot();
+  Element* root = GetViewTransitionTreeRoot();
   if (!root) {
     return nullptr;
   }
+  MOZ_ASSERT(root->GetPseudoElementType() == PseudoStyleType::viewTransition);
 
   if (aRequest.mType == PseudoStyleType::viewTransition) {
     return root;
@@ -1218,8 +1259,11 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
       mNames.AppendElement(name);
     }
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
+    // Note: mInitialSnapshotContainingBlockSize should be the same as the
+    // current snapshot containing block size at this moment because the caller
+    // checks it before calling us.
     capturedElement->mNewSnapshotSize =
-        aFrame->InkOverflowRectRelativeToSelf().Size();
+        CapturedSize(aFrame, mInitialSnapshotContainingBlockSize);
     SetCaptured(aFrame, true);
     return true;
   });
@@ -1424,16 +1468,17 @@ void ViewTransition::ClearActiveTransition(bool aIsDocumentHidden) {
 
   // Step 4: Clear show transition tree flag (we just destroy the pseudo tree,
   // see SetupTransitionPseudoElements).
-  if (mViewTransitionRoot) {
+  if (mSnapshotContainingBlock) {
     nsAutoScriptBlocker scriptBlocker;
     if (mDocument->DevToolsAnonymousAndShadowEventsEnabled()) {
-      mViewTransitionRoot->QueueDevtoolsAnonymousEvent(/* aIsRemove = */ true);
+      mSnapshotContainingBlock->QueueDevtoolsAnonymousEvent(
+          /* aIsRemove = */ true);
     }
     if (PresShell* ps = mDocument->GetPresShell()) {
-      ps->ContentWillBeRemoved(mViewTransitionRoot, nullptr);
+      ps->ContentWillBeRemoved(mSnapshotContainingBlock, nullptr);
     }
-    mViewTransitionRoot->UnbindFromTree();
-    mViewTransitionRoot = nullptr;
+    mSnapshotContainingBlock->UnbindFromTree();
+    mSnapshotContainingBlock = nullptr;
 
     // If the document is being destroyed, we cannot get the animation data
     // (e.g. it may crash when using nsINode::GetBoolFlag()), so we have to skip
@@ -1510,6 +1555,10 @@ void ViewTransition::SkipTransition(
       case SkipTransitionReason::DuplicateTransitionNameCapturingNewState:
         readyPromise->MaybeRejectWithInvalidStateError(
             "Duplicate view-transition-name value while capturing new state");
+        break;
+      case SkipTransitionReason::RootRemoved:
+        readyPromise->MaybeRejectWithInvalidStateError(
+            "Skipped view transition due to root element going away");
         break;
       case SkipTransitionReason::Resize:
         readyPromise->MaybeRejectWithInvalidStateError(

@@ -32,6 +32,12 @@ class GitRepository(Repository):
     def head_ref(self):
         return self._run("rev-parse", "HEAD").strip()
 
+    def is_cinnabar_repo(self) -> bool:
+        """Return `True` if the repo is a git-cinnabar clone."""
+        output = self._run("for-each-ref")
+
+        return "refs/cinnabar" in output
+
     def get_mozilla_upstream_remotes(self) -> Iterator[str]:
         """Return the Mozilla-official upstream remotes for this repo."""
         out = self._run("remote", "-v")
@@ -42,6 +48,27 @@ class GitRepository(Repository):
         if not remotes:
             return
 
+        is_cinnabar_repo = self.is_cinnabar_repo()
+
+        def is_official_remote(url: str) -> bool:
+            """Determine if a remote is official.
+
+            Account for `git-cinnabar` remotes with `hg.mozilla.org` in the name,
+            as well as SSH and HTTP remotes for Git-native.
+            """
+            if is_cinnabar_repo:
+                return "hg.mozilla.org" in url and not url.endswith(
+                    "hg.mozilla.org/try"
+                )
+
+            return any(
+                remote in url
+                for remote in (
+                    "github.com/mozilla-firefox/",
+                    "github.com:mozilla-firefox/",
+                )
+            )
+
         for line in remotes:
             name, url, action = line.split()
 
@@ -49,8 +76,7 @@ class GitRepository(Repository):
             if action != "(fetch)":
                 continue
 
-            # Return any `hg.mozilla.org` remotes, ignoring `try`.
-            if "hg.mozilla.org" in url and not url.endswith("hg.mozilla.org/try"):
+            if is_official_remote(url):
                 yield name
 
     def get_mozilla_remote_args(self) -> List[str]:
@@ -78,6 +104,9 @@ class GitRepository(Repository):
             return self._run("cinnabar", "git2hg", base_ref).strip()
         except subprocess.CalledProcessError:
             return
+
+    def base_ref_as_commit(self):
+        return self.base_ref
 
     @property
     def branch(self):
@@ -271,11 +300,16 @@ class GitRepository(Repository):
     def set_config(self, name, value):
         self._run("config", name, value)
 
-    def get_branch_nodes(self, head: Optional[str] = None) -> List[str]:
+    def get_commits(
+        self,
+        head: Optional[str] = None,
+        limit: Optional[int] = None,
+        follow: Optional[List[str]] = None,
+    ) -> List[str]:
         """Return a list of commit SHAs for nodes on the current branch."""
         remote_args = self.get_mozilla_remote_args()
 
-        return self._run(
+        cmd = [
             "log",
             head or "HEAD",
             "--reverse",
@@ -283,7 +317,12 @@ class GitRepository(Repository):
             "--not",
             *remote_args,
             "--pretty=%H",
-        ).splitlines()
+        ]
+        if limit is not None:
+            cmd.append(f"-n{limit}")
+        if follow is not None:
+            cmd += ["--", *follow]
+        return self._run(*cmd).splitlines()
 
     def get_commit_patches(self, nodes: List[str]) -> List[bytes]:
         """Return the contents of the patch `node` in the VCS' standard format."""

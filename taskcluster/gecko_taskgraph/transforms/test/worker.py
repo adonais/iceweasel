@@ -6,11 +6,12 @@ from taskgraph.transforms.base import TransformSequence
 
 # default worker types keyed by instance-size
 LINUX_WORKER_TYPES = {
-    "large": "t-linux-large",
-    "large-noscratch": "t-linux-large-noscratch",
-    "xlarge": "t-linux-xlarge",
-    "xlarge-noscratch": "t-linux-xlarge-noscratch",
-    "default": "t-linux-large-noscratch",
+    "large": "t-linux-docker",
+    "large-noscratch": "t-linux-docker-noscratch",
+    "xlarge": "t-linux-docker",
+    "xlarge-noscratch": "t-linux-docker-noscratch",
+    "large-dw": "t-linux-large-noscratch",
+    "default": "t-linux-docker-noscratch",
 }
 
 # windows worker types keyed by test-platform and virtualization
@@ -25,6 +26,11 @@ WINDOWS_WORKER_TYPES = {
         "virtual-with-gpu": "t-win10-64-gpu-s",
         "hardware": "win10-64-2009-hw",
     },
+    "windows10-64-2009": {
+        "virtual": "win10-64-2009",
+        "virtual-with-gpu": "win10-64-2009-gpu",
+        "hardware": "win10-64-2009-hw",
+    },
     "windows10-64-2009-qr": {
         "virtual": "win10-64-2009",
         "virtual-with-gpu": "win10-64-2009-gpu",
@@ -34,18 +40,6 @@ WINDOWS_WORKER_TYPES = {
         "virtual": "win10-64-2009",
         "virtual-with-gpu": "win10-64-2009-gpu",
         "hardware": "win10-64-2009-hw",
-    },
-    "windows11-32-2009-mingwclang-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-    },
-    "windows11-32-2009-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-    },
-    "windows11-32-2009-shippable-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
     },
     "windows11-32-24h2-mingwclang": {
         "virtual": "win11-64-24h2",
@@ -68,54 +62,6 @@ WINDOWS_WORKER_TYPES = {
         "virtual": "win11-64-24h2-hw-ref",
         "virtual-with-gpu": "win11-64-24h2-hw-ref",
         "hardware": "win11-64-24h2-hw-ref",
-    },
-    "windows11-a64-2009-shippable": {
-        "virtual": "win11-a64-24h2",
-        "virtual-with-gpu": "win11-a64-24h2",
-    },
-    "windows11-64-2009": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-        "hardware": "win11-64-2009-hw",
-    },
-    "windows11-64-2009-ccov": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-    },
-    "windows11-64-2009-ccov-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-    },
-    "windows11-64-2009-devedition": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-    },
-    "windows11-64-2009-shippable": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-        "hardware": "win11-64-2009-hw",
-    },
-    "windows11-64-2009-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-        "hardware": "win11-64-2009-hw",
-    },
-    "windows11-64-2009-shippable-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-        "hardware": "win11-64-2009-hw",
-    },
-    "windows11-64-2009-devedition-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-    },
-    "windows11-64-2009-asan-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
-    },
-    "windows11-64-2009-mingwclang-qr": {
-        "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
     },
     "windows11-64-24h2": {
         "virtual": "win11-64-24h2",
@@ -150,10 +96,8 @@ WINDOWS_WORKER_TYPES = {
 MACOSX_WORKER_TYPES = {
     "macosx1015-64": "t-osx-1015-r8",
     "macosx1470-64": "t-osx-1400-r8",
-    "macosx1100-64": "t-osx-1100-m1",
     "macosx1400-64": "t-osx-1400-m2",
     "macosx1500-64": "t-osx-1500-m4",
-    "macosx1100-aarch64": "t-osx-1100-m1",
     "macosx1500-aarch64": "t-osx-1500-m4",
 }
 
@@ -187,11 +131,7 @@ def set_worker_type(config, tasks):
             # figure out what platform the job needs to run on
             if task["virtualization"] == "hardware":
                 # some jobs like talos and reftest run on real h/w
-                if test_platform.startswith("windows11-64-2009-hw-ref"):
-                    win_worker_type_platform = WINDOWS_WORKER_TYPES[
-                        "windows11-64-2009-hw-ref"
-                    ]
-                elif test_platform.startswith("windows11-64-24h2-hw-ref"):
+                if test_platform.startswith("windows11-64-24h2-hw-ref"):
                     win_worker_type_platform = WINDOWS_WORKER_TYPES[
                         "windows11-64-24h2-hw-ref"
                     ]
@@ -200,9 +140,7 @@ def set_worker_type(config, tasks):
                 elif test_platform.startswith("windows11-64-24h2"):
                     win_worker_type_platform = WINDOWS_WORKER_TYPES["windows11-64-24h2"]
                 else:
-                    win_worker_type_platform = WINDOWS_WORKER_TYPES[
-                        "windows11-64-2009-qr"
-                    ]
+                    raise Exception(f"Unknown worker type for {test_platform}")
             else:
                 # the other jobs run on a vm which may or may not be a win10 vm
                 win_worker_type_platform = WINDOWS_WORKER_TYPES[

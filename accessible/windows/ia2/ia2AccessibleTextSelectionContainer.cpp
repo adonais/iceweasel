@@ -68,10 +68,9 @@ ia2AccessibleTextSelectionContainer::setSelections(
   AutoTArray<TextLeafRange, 1> newRanges;
   newRanges.SetCapacity(nSelections);
   for (long r = 0; r < nSelections; ++r) {
-    TextLeafRange range(GetTextLeafPointFrom(selections[r].startObj,
-                                             selections[r].startOffset, false),
-                        GetTextLeafPointFrom(selections[r].endObj,
-                                             selections[r].endOffset, true));
+    TextLeafRange range(
+        GetTextLeafPointFrom(selections[r].startObj, selections[r].startOffset),
+        GetTextLeafPointFrom(selections[r].endObj, selections[r].endOffset));
     if (!range) {
       return E_INVALIDARG;
     }
@@ -106,7 +105,7 @@ RefPtr<IAccessibleText> ia2AccessibleTextSelectionContainer::GetIATextFrom(
 
 /* static */
 TextLeafPoint ia2AccessibleTextSelectionContainer::GetTextLeafPointFrom(
-    IAccessibleText* aText, long aOffset, bool aDescendToEnd) {
+    IAccessibleText* aText, long aOffset) {
   if (!aText) {
     return TextLeafPoint();
   }
@@ -118,5 +117,5 @@ TextLeafPoint ia2AccessibleTextSelectionContainer::GetTextLeafPointFrom(
   if (!hyp) {
     return TextLeafPoint();
   }
-  return hyp->ToTextLeafPoint(aOffset, aDescendToEnd);
+  return hyp->ToTextLeafPoint(aOffset);
 }

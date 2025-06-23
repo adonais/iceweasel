@@ -24,12 +24,6 @@ interface FeatureSettingsHelper {
     var isPocketEnabled: Boolean
 
     /**
-     * Whether the "Navigation bar" CFR should be shown or not.
-     * It should appear on the first visit to homescreen given that there is a navigation bar.
-     */
-    var isNavigationBarCFREnabled: Boolean
-
-    /**
      * Whether the onboarding dialog for choosing wallpapers should be shown or not.
      */
     var isWallpaperOnboardingEnabled: Boolean
@@ -69,19 +63,9 @@ interface FeatureSettingsHelper {
     var isOpenInAppBannerEnabled: Boolean
 
     /**
-     * Enable or disable the Top Sites to Compose rewrite.
-     */
-    var composeTopSitesEnabled: Boolean
-
-    /**
      * Enable or disable all location permission requests.
      */
     var isLocationPermissionEnabled: SitePermissionsRules.Action
-
-    /**
-     * Enable or disable the new navigation toolbar.
-     */
-    var isNavigationToolbarEnabled: Boolean
 
     /**
      * Enable or disable the new main menu.
@@ -92,11 +76,6 @@ interface FeatureSettingsHelper {
      * Enable or disable the new main menu CFR.
      */
     var isMenuRedesignCFREnabled: Boolean
-
-    /**
-     * Enable or disable the new bookmarks UI.
-     */
-    var isNewBookmarksEnabled: Boolean
 
     /**
      * Enable or disable the new microsurvey feature.

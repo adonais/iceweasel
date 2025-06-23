@@ -27,6 +27,10 @@ ChromeUtils.defineESModuleGetters(this, {
 const FAKE_UUID = "{foo-123-foo}";
 const PREF_IMPRESSION_ID = "browser.newtabpage.activity-stream.impressionId";
 const PREF_TELEMETRY = "browser.newtabpage.activity-stream.telemetry";
+const PREF_PRIVATE_PING_ENABLED =
+  "browser.newtabpage.activity-stream.telemetry.privatePing.enabled";
+const PREF_REDACT_NEWTAB_PING_ENABLED =
+  "browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled";
 const PREF_EVENT_TELEMETRY =
   "browser.newtabpage.activity-stream.telemetry.ut.events";
 
@@ -2160,6 +2164,8 @@ add_task(
       "TelemetryFeed.handleDiscoveryStreamUserEvent instruments an organic " +
         "top stories click"
     );
+    Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, false);
+    Services.prefs.setBoolPref(PREF_REDACT_NEWTAB_PING_ENABLED, false);
 
     let sandbox = sinon.createSandbox();
     let instance = new TelemetryFeed();
@@ -2170,7 +2176,8 @@ add_task(
       action_position: ACTION_POSITION,
       value: {
         card_type: "organic",
-        recommendation_id: "decaf-c0ff33",
+        corpus_item_id: "decaf-beef",
+        scheduled_corpus_item_id: "dead-beef",
         tile_id: 314623757745896,
       },
     });
@@ -2185,8 +2192,9 @@ add_task(
     Assert.deepEqual(clicks[0].extra, {
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(false),
-      position: ACTION_POSITION,
-      recommendation_id: "decaf-c0ff33",
+      position: String(ACTION_POSITION),
+      corpus_item_id: "decaf-beef",
+      scheduled_corpus_item_id: "dead-beef",
       tile_id: String(314623757745896),
     });
 
@@ -2196,6 +2204,142 @@ add_task(
     );
 
     sandbox.restore();
+    Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
+    Services.prefs.clearUserPref(PREF_REDACT_NEWTAB_PING_ENABLED);
+  }
+);
+
+add_task(
+  async function test_handleDiscoveryStreamUserEvent_private_ping_without_redactions_organic_top_stories_click() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamUserEvent instruments an organic " +
+        "top stories click with private ping fully enabled"
+    );
+
+    Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
+    Services.prefs.setBoolPref(PREF_REDACT_NEWTAB_PING_ENABLED, false);
+
+    let sandbox = sinon.createSandbox();
+    let instance = new TelemetryFeed();
+    Services.fog.testResetFOG();
+    const ACTION_POSITION = 42;
+    let action = actionCreators.DiscoveryStreamUserEvent({
+      event: "CLICK",
+      action_position: ACTION_POSITION,
+      value: {
+        card_type: "organic",
+        corpus_item_id: "decaf-beef",
+        scheduled_corpus_item_id: "dead-beef",
+        tile_id: 314623757745896,
+      },
+    });
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+    sandbox.spy(instance.newtabContentPing, "recordEvent");
+
+    instance.handleDiscoveryStreamUserEvent(action);
+
+    let clicks = Glean.pocket.click.testGetValue();
+
+    Assert.equal(clicks.length, 1, "Recorded 1 content click");
+    Assert.equal(clicks.length, 1, "Recorded 1 private click");
+    Assert.deepEqual(clicks[0].extra, {
+      newtab_visit_id: SESSION_ID,
+      is_sponsored: String(false),
+      corpus_item_id: "decaf-beef",
+      scheduled_corpus_item_id: "dead-beef",
+      position: String(ACTION_POSITION),
+      tile_id: 314623757745896,
+    });
+
+    Assert.ok(
+      instance.newtabContentPing.recordEvent.calledWith(
+        "click",
+        sinon.match({
+          newtab_visit_id: SESSION_ID,
+          is_sponsored: false,
+          position: ACTION_POSITION,
+          tile_id: 314623757745896,
+          corpus_item_id: "decaf-beef",
+          scheduled_corpus_item_id: "dead-beef",
+        })
+      ),
+      "NewTabContentPing passed the expected arguments."
+    );
+
+    Assert.ok(
+      !Glean.pocket.shim.testGetValue(),
+      "Pocket shim was not recorded"
+    );
+
+    sandbox.restore();
+    Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
+    Services.prefs.clearUserPref(PREF_REDACT_NEWTAB_PING_ENABLED);
+  }
+);
+
+add_task(
+  async function test_handleDiscoveryStreamUserEvent_private_ping_with_redactions_organic_top_stories_click() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamUserEvent instruments an organic " +
+        "top stories click with private ping fully enabled"
+    );
+
+    Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
+    Services.prefs.setBoolPref(PREF_REDACT_NEWTAB_PING_ENABLED, true);
+
+    let sandbox = sinon.createSandbox();
+    let instance = new TelemetryFeed();
+    Services.fog.testResetFOG();
+    const ACTION_POSITION = 42;
+    let action = actionCreators.DiscoveryStreamUserEvent({
+      event: "CLICK",
+      action_position: ACTION_POSITION,
+      value: {
+        card_type: "organic",
+        corpus_item_id: "decaf-beef",
+        scheduled_corpus_item_id: "dead-beef",
+        tile_id: 314623757745896,
+      },
+    });
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+    sandbox.spy(instance.newtabContentPing, "recordEvent");
+
+    instance.handleDiscoveryStreamUserEvent(action);
+
+    let clicks = Glean.pocket.click.testGetValue();
+
+    Assert.equal(clicks.length, 1, "Recorded 1 content click");
+    Assert.equal(clicks.length, 1, "Recorded 1 private click");
+    Assert.deepEqual(clicks[0].extra, {
+      newtab_visit_id: SESSION_ID,
+      is_sponsored: String(false),
+      position: String(ACTION_POSITION),
+    });
+
+    Assert.ok(
+      instance.newtabContentPing.recordEvent.calledWith(
+        "click",
+        sinon.match({
+          newtab_visit_id: SESSION_ID,
+          is_sponsored: false,
+          position: ACTION_POSITION,
+        })
+      ),
+      "NewTabContentPing passed the expected arguments."
+    );
+
+    Assert.ok(
+      !Glean.pocket.shim.testGetValue(),
+      "Pocket shim was not recorded"
+    );
+
+    sandbox.restore();
+    Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
+    Services.prefs.clearUserPref(PREF_REDACT_NEWTAB_PING_ENABLED);
   }
 );
 
@@ -2609,7 +2753,7 @@ add_task(async function test_handleBlockUrl_record_dismiss_on_action() {
     },
   ];
 
-  await instance.handleBlockUrl({ data });
+  await instance.handleBlockUrl({ data, source: "TOP_SITES" });
 
   let dismisses = Glean.topsites.dismiss.testGetValue();
   Assert.equal(dismisses.length, 1, "Should have recorded 1 dismiss");
@@ -2646,7 +2790,7 @@ add_task(
       },
     ];
 
-    await instance.handleBlockUrl({ data });
+    await instance.handleBlockUrl({ data, source: "TOP_SITES" });
 
     let dismisses = Glean.topsites.dismiss.testGetValue();
     Assert.equal(dismisses.length, 1, "Should have recorded 1 dismiss");

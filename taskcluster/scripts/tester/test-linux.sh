@@ -69,6 +69,15 @@ maybe_start_pulse() {
         pw_pids=()
         pipewire &
         pw_pids+=($!)
+
+        SOCKET="$XDG_RUNTIME_DIR/pipewire-0"
+        attempts=10
+        while [ ! -S "$SOCKET" ] && [ $attempts -gt 0 ]; do
+            sleep 0.1
+            attempts=$((attempts - 1))
+        done
+        [ -S "$SOCKET" ] || exit 1
+
         wireplumber &
         pw_pids+=($!)
         pipewire-pulse &
@@ -265,11 +274,6 @@ if $NEED_WINDOW_MANAGER && [ $DISPLAY == ':0' ]; then
 fi
 
 maybe_start_pulse
-
-# For telemetry purposes, the build process wants information about the
-# source it is running
-export MOZ_SOURCE_REPO="${GECKO_HEAD_REPOSITORY}"
-export MOZ_SOURCE_CHANGESET="${GECKO_HEAD_REV}"
 
 # support multiple, space delimited, config files
 config_cmds=""

@@ -4,10 +4,7 @@
 
 package org.mozilla.fenix.home.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,11 +21,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
@@ -71,6 +74,7 @@ import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.store.NimbusMessageState
 import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.topsites.TopSites
+import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.utils.isLargeScreenSize
@@ -86,6 +90,7 @@ private const val MIDDLE_SEARCH_SCROLL_THRESHOLD_PX = 10
  * @param onMiddleSearchBarVisibilityChanged Invoked when the middle search is shown/hidden.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("LongMethod")
 @Composable
 internal fun Homepage(
@@ -98,8 +103,11 @@ internal fun Homepage(
 
     Column(
         modifier = Modifier
-            .verticalScroll(scrollState)
-            .animateContentSize(),
+            .semantics {
+                testTagsAsResourceId = true
+                testTag = HOMEPAGE
+            }
+            .verticalScroll(scrollState),
     ) {
         HomepageHeader(
             browsingMode = state.browsingMode,
@@ -150,14 +158,15 @@ internal fun Homepage(
                             onMiddleSearchBarVisibilityChanged(atTopOfList)
                         }
 
-                        AnimatedVisibility(
-                            visible = showSearchBar && atTopOfList,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                        ) {
-                            SearchBar(onClick = interactor::onNavigateSearch)
+                            val alpha by animateFloatAsState(
+                                targetValue = if (showSearchBar && atTopOfList) 1f else 0f,
+                            )
+
+                            SearchBar(
+                                modifier = Modifier.graphicsLayer { this.alpha = alpha },
+                                onClick = interactor::onNavigateSearch,
+                            )
                         }
-                    }
 
                     MaybeAddSetupChecklist(setupChecklistState, interactor)
 
@@ -429,11 +438,12 @@ private fun CollectionsSection(
 
 @Composable
 private fun CustomizeHomeButton(buttonBackgroundColor: Color, interactor: CustomizeHomeIteractor) {
-    Spacer(modifier = Modifier.height(68.dp))
+    Spacer(modifier = Modifier.height(24.dp))
 
     TertiaryButton(
         text = stringResource(R.string.browser_menu_customize_home_1),
         modifier = Modifier
+            .heightIn(min = 48.dp)
             .padding(horizontal = dimensionResource(R.dimen.home_item_horizontal_margin))
             .fillMaxWidth(),
         backgroundColor = buttonBackgroundColor,

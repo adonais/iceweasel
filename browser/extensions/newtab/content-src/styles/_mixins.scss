@@ -6,16 +6,16 @@
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   box-shadow: $shadow-image-inset;
 }
 
 // Note: lineHeight and fontSize should be unitless but can be derived from pixel values
 // Bug 1550624 to clean up / remove this mixin to avoid duplicate styles
 @mixin limit-visible-lines($line-count, $line-height, $font-size) {
-  font-size: $font-size * 1px;
+  font-size: $font-size;
   -webkit-line-clamp: $line-count;
-  line-height: $line-height * 1px;
+  line-height: $line-height;
 }
 
 @mixin dark-theme-only {
@@ -47,7 +47,7 @@
 @mixin ds-fade-in($halo-color: $blue-50-30) {
   box-shadow: 0 0 0 5px $halo-color;
   transition: box-shadow 150ms;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   outline: none;
 }
 

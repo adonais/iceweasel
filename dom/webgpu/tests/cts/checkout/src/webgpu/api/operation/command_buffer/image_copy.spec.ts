@@ -47,7 +47,7 @@ import {
   kDepthStencilFormats,
   kColorTextureFormats,
   depthStencilBufferTextureCopySupported,
-  textureDimensionAndFormatCompatible,
+  textureFormatAndDimensionPossiblyCompatible,
   depthStencilFormatAspectSize,
   DepthStencilFormat,
   ColorTextureFormat,
@@ -59,8 +59,10 @@ import {
   getBlockInfoForColorTextureFormat,
   canCopyToAllAspectsOfTextureFormat,
   canCopyFromAllAspectsOfTextureFormat,
+  getMaxValidTextureSizeForFormatAndDimension,
 } from '../../../format_info.js';
-import { AllFeaturesMaxLimitsGPUTest, TextureTestMixin } from '../../../gpu_test.js';
+import { AllFeaturesMaxLimitsGPUTest } from '../../../gpu_test.js';
+import * as ttu from '../../../texture_test_utils.js';
 import { checkElementsEqual } from '../../../util/check_contents.js';
 import { align } from '../../../util/math.js';
 import { physicalMipSizeFromTexture } from '../../../util/texture/base.js';
@@ -125,7 +127,7 @@ const kMethodsToTest = [
 const dataGenerator = new DataArrayGenerator();
 const altDataGenerator = new DataArrayGenerator();
 
-class ImageCopyTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
+class ImageCopyTest extends AllFeaturesMaxLimitsGPUTest {
   /**
    * This is used for testing passing undefined members of `GPUTexelCopyBufferLayout` instead of actual
    * values where possible. Passing arguments as values and not as objects so that they are passed
@@ -292,8 +294,8 @@ class ImageCopyTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
       {
         const rowLength = bytesInACompleteRow(size.width, format);
         let lastOffset = 0;
-        for (const texel of this.iterateBlockRows(size, format)) {
-          const offset = this.getTexelOffsetInBytes(dataLayout, format, texel, zero);
+        for (const texel of ttu.iterateBlockRows(size, format)) {
+          const offset = ttu.getTexelOffsetInBytes(dataLayout, format, texel, zero);
           const actualPart = actual.subarray(lastOffset, offset);
           const expectedPart = expected.subarray(lastOffset, offset);
           const error = checkElementsEqual(actualPart, expectedPart);
@@ -467,7 +469,7 @@ class ImageCopyTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
 
     // update the data for the entire mip level with the data
     // that would be copied to the "actual" texture
-    this.updateLinearTextureDataSubBox(format, copySize, {
+    ttu.updateLinearTextureDataSubBox(this, format, copySize, {
       src: {
         dataLayout: expectedDataLayout,
         origin: { x: 0, y: 0, z: 0 },
@@ -488,7 +490,8 @@ class ImageCopyTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
       mipSize
     );
 
-    this.expectTexturesToMatchByRendering(
+    ttu.expectTexturesToMatchByRendering(
+      this,
       actualTexture,
       expectedTexture,
       mipLevel,
@@ -542,7 +545,7 @@ class ImageCopyTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
     // bufferData has ...... in it.
     // Update bufferData to have the same contents as buffer.
     // When done, bufferData now has t.t.t. because the rows are padded.
-    this.updateLinearTextureDataSubBox(format, checkSize, {
+    ttu.updateLinearTextureDataSubBox(this, format, checkSize, {
       src: {
         dataLayout: expectedDataLayout,
         origin: { x: 0, y: 0, z: 0 },
@@ -592,7 +595,7 @@ class ImageCopyTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
     // other eventual async expectations to ensure it will be correct.
     this.eventualAsyncExpectation(async () => {
       const readback = await readbackPromise;
-      this.updateLinearTextureDataSubBox(format, copySize, {
+      ttu.updateLinearTextureDataSubBox(this, format, copySize, {
         dest: {
           dataLayout: { offset: 0, ...fullTextureCopyLayout },
           origin,
@@ -701,7 +704,8 @@ class ImageCopyTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
             mipLevel,
           });
 
-          const fullData = this.copyWholeTextureToNewBuffer(
+          const fullData = ttu.copyWholeTextureToNewBuffer(
+            this,
             { texture, mipLevel },
             fullTextureCopyLayout
           );
@@ -1215,7 +1219,9 @@ bytes in copy works for every format.
       .combine('format', kColorTextureFormats)
       .filter(formatCanBeTested)
       .combine('dimension', kTextureDimensions)
-      .filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format))
+      .filter(({ dimension, format }) =>
+        textureFormatAndDimensionPossiblyCompatible(dimension, format)
+      )
       .beginSubcases()
       .combineWithParams(kRowsPerImageAndBytesPerRowParams.paddings)
       .expandWithParams(p => {
@@ -1237,16 +1243,19 @@ bytes in copy works for every format.
       initMethod,
       checkMethod,
     } = t.params;
-    t.skipIfTextureFormatNotSupported(t.params.format);
+    t.skipIfTextureFormatNotSupported(format);
+    t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
     const info = getBlockInfoForTextureFormat(format);
+    const maxSize = getMaxValidTextureSizeForFormatAndDimension(t.device, format, dimension);
+
     // For CopyB2T and CopyT2B we need to have bytesPerRow 256-aligned,
     // to make this happen we align the bytesInACompleteRow value and multiply
     // bytesPerRowPadding by 256.
     const bytesPerRowAlignment =
       initMethod === 'WriteTexture' && checkMethod === 'FullCopyT2B' ? 1 : 256;
 
-    const copyWidth = copyWidthInBlocks * info.blockWidth;
-    const copyHeight = copyHeightInBlocks * info.blockHeight;
+    const copyWidth = Math.min(copyWidthInBlocks * info.blockWidth, maxSize[0]);
+    const copyHeight = Math.min(copyHeightInBlocks * info.blockHeight, maxSize[1]);
     const rowsPerImage = copyHeightInBlocks + rowsPerImagePadding;
     const bytesPerRow =
       align(bytesInACompleteRow(copyWidth, format), bytesPerRowAlignment) +
@@ -1318,7 +1327,9 @@ works for every format with 2d and 2d-array textures.
       .combine('format', kColorTextureFormats)
       .filter(formatCanBeTested)
       .combine('dimension', kTextureDimensions)
-      .filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format))
+      .filter(({ dimension, format }) =>
+        textureFormatAndDimensionPossiblyCompatible(dimension, format)
+      )
       .beginSubcases()
       .combineWithParams(kOffsetsAndSizesParams.offsetsAndPaddings)
       .combine('copyDepth', kOffsetsAndSizesParams.copyDepth) // 2d and 2d-array textures
@@ -1349,6 +1360,7 @@ works for every format with 2d and 2d-array textures.
       rowsPerImageEqualsCopyHeight,
     } = t.params;
     t.skipIfTextureFormatNotSupported(format);
+    t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
 
     // Skip test cases designed for special cases coverage on compatibility mode to save run time.
     if (!(t.isCompatibility && (format === 'r8snorm' || format === 'rg8snorm'))) {
@@ -1417,7 +1429,9 @@ for all formats. We pass origin and copyExtent as [number, number, number].`
       .combine('format', kColorTextureFormats)
       .filter(formatCanBeTested)
       .combine('dimension', kTextureDimensions)
-      .filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format))
+      .filter(({ dimension, format }) =>
+        textureFormatAndDimensionPossiblyCompatible(dimension, format)
+      )
       .beginSubcases()
       .combine('originValueInBlocks', [0, 7, 8])
       .combine('copySizeValueInBlocks', [0, 7, 8])
@@ -1441,6 +1455,7 @@ for all formats. We pass origin and copyExtent as [number, number, number].`
       checkMethod,
     } = t.params;
     t.skipIfTextureFormatNotSupported(format);
+    t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
     const info = getBlockInfoForColorTextureFormat(format);
 
     let originBlocks = [1, 1, 1];
@@ -1578,7 +1593,9 @@ TODO: Make a variant for depth-stencil formats.
       .combine('format', kColorTextureFormats)
       .filter(formatCanBeTested)
       .combine('dimension', ['2d', '3d'] as const)
-      .filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format))
+      .filter(({ dimension, format }) =>
+        textureFormatAndDimensionPossiblyCompatible(dimension, format)
+      )
       .beginSubcases()
       .combineWithParams([
         // origin + copySize = texturePhysicalSizeAtMipLevel for all coordinates, 2d texture */
@@ -1638,6 +1655,8 @@ TODO: Make a variant for depth-stencil formats.
       checkMethod,
     } = t.params;
     t.skipIfTextureFormatNotSupported(format);
+    t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
+
     const info = getBlockInfoForColorTextureFormat(format);
 
     const origin = {

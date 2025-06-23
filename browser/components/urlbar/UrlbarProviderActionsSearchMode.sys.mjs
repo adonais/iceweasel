@@ -32,11 +32,14 @@ class ProviderActionsSearchMode extends UrlbarProvider {
     return "UrlbarProviderActionsSearchMode";
   }
 
+  /**
+   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   */
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
-  isActive(queryContext) {
+  async isActive(queryContext) {
     return queryContext.searchMode?.source == UrlbarUtils.RESULT_SOURCE.ACTIONS;
   }
 

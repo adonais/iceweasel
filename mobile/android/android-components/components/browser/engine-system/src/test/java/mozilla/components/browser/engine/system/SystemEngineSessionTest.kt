@@ -306,7 +306,7 @@ class SystemEngineSessionTest {
         var onGotoHistoryIndexTriggered = false
         val engineSession = spy(SystemEngineSession(testContext))
         val settings = mock<WebSettings>()
-        val webView = mock<WebView>() {
+        val webView = mock<WebView> {
             whenever(this.settings).thenReturn(settings)
             whenever(copyBackForwardList()).thenReturn(mock())
         }
@@ -332,7 +332,9 @@ class SystemEngineSessionTest {
         try {
             engineSession.restoreState(mock())
             fail("Expected IllegalArgumentException")
-        } catch (e: IllegalArgumentException) {}
+        } catch (e: IllegalArgumentException) {
+            // Expected
+        }
         assertFalse(engineSession.restoreState(SystemEngineSessionState(Bundle())))
         verify(webView, never()).restoreState(mockitoAny(Bundle::class.java))
 
@@ -353,7 +355,7 @@ class SystemEngineSessionTest {
     @ExperimentalCoroutinesApi
     @Test
     fun enableTrackingProtection() = runTest {
-        SystemEngineView.URL_MATCHER = UrlMatcher(arrayOf(""))
+        SystemEngineView.urlMatcher = UrlMatcher(arrayOf(""))
 
         val engineSession = spy(SystemEngineSession(testContext))
         val webView = mock<WebView>()

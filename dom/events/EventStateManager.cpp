@@ -38,6 +38,7 @@
 #include "mozilla/dom/DragEvent.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
+#include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
@@ -179,7 +180,7 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
  */
 static nsINode* GetCommonAncestorForMouseUp(
     nsINode* aCurrentMouseUpTarget, nsINode* aLastMouseDownTarget,
-    Maybe<FormControlType>& aLastMouseDownInputControlType) {
+    const Maybe<FormControlType>& aLastMouseDownInputControlType) {
   if (!aCurrentMouseUpTarget || !aLastMouseDownTarget) {
     return nullptr;
   }
@@ -560,12 +561,21 @@ void OverOutElementsWrapper::UpdateDeepestEnterEventTarget(
       // `mouseout` event target below for considering whether we'll dispatch
       // `pointerout` on the last `pointerover` target.
       mPendingRemovingOverEventTarget = nullptr;
+    } else if (
+        !StaticPrefs::
+            dom_event_mouse_boundary_restore_last_over_target_from_temporary_removal()) {
+      // The spec of UI Events do not define that browsers should keep storing
+      // the last `mouseover` target when it's removed temporarily and
+      // reconnected immediately.  We've decided to follow Chrome's behavior for
+      // now.  However, there is a pref to bring back the old behavior if
+      // needed.
+      mPendingRemovingOverEventTarget = nullptr;
     } else {
-      // Now, the `mouseout` event target is removed from the DOM at least
-      // temporarily.  Let's keep storing it for restoring it if it's
-      // reconnected into mDeepestEnterEventTarget in a tick because the other
-      // browsers do not treat temporary removal of the last `mouseover` target
-      // keeps storing it as the next `mouseout` event target.
+      // However, Safari and old Chrome restore the last `mouseover` target when
+      // it's temporarily removed and reconnected immediately.  Therefore, we
+      // should follow them by default.  However, we should keep the old
+      // behavior for making it easier to backout the new behavior with
+      // disabling the pref.
       MOZ_ASSERT(!mPendingRemovingOverEventTarget);
       MOZ_ASSERT(mDeepestEnterEventTarget);
       mPendingRemovingOverEventTarget =
@@ -994,6 +1004,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     if (touchEvent->mMessage == eTouchMove) {
       GenerateDragGesture(aPresContext, touchEvent);
     } else {
+      MOZ_ASSERT(touchEvent->mMessage != eTouchRawUpdate);
       mInTouchDrag = false;
       StopTrackingDragGesture(true);
     }
@@ -1038,16 +1049,22 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         case MouseButton::ePrimary:
           BeginTrackingDragGesture(aPresContext, mouseEvent, aTargetFrame);
           mLastLeftMouseDownInfo.mClickCount = mouseEvent->mClickCount;
-          SetClickCount(mouseEvent, aStatus);
+          PrepareForFollowingClickEvent(*mouseEvent);
           sNormalLMouseEventInProcess = true;
           break;
         case MouseButton::eMiddle:
           mLastMiddleMouseDownInfo.mClickCount = mouseEvent->mClickCount;
-          SetClickCount(mouseEvent, aStatus);
+          PrepareForFollowingClickEvent(*mouseEvent);
           break;
         case MouseButton::eSecondary:
           mLastRightMouseDownInfo.mClickCount = mouseEvent->mClickCount;
-          SetClickCount(mouseEvent, aStatus);
+          PrepareForFollowingClickEvent(*mouseEvent);
+          break;
+        case MouseButton::eX1:
+        case MouseButton::eX2:
+          // XXX FIXME: We won't dispatch `auxclick` for 4th nor 5th button.
+          break;
+        default:
           break;
       }
       break;
@@ -1064,10 +1081,17 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
           // then fall through...
           [[fallthrough]];
         case MouseButton::eSecondary:
-        case MouseButton::eMiddle:
+        case MouseButton::eMiddle: {
           RefPtr<EventStateManager> esm =
               ESMFromContentOrThis(aOverrideClickTarget);
-          esm->SetClickCount(mouseEvent, aStatus, aOverrideClickTarget);
+          esm->PrepareForFollowingClickEvent(*mouseEvent, aOverrideClickTarget);
+          break;
+        }
+        case MouseButton::eX1:
+        case MouseButton::eX2:
+          // XXX FIXME: We won't dispatch `auxclick` for 4th nor 5th button.
+          break;
+        default:
           break;
       }
       break;
@@ -1137,10 +1161,12 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         }
 
         LightDismissOpenPopovers(aEvent, aTargetContent);
+        LightDismissOpenDialogs(aEvent, aTargetContent);
       }
       [[fallthrough]];
     case eMouseMove:
-    case ePointerMove: {
+    case ePointerMove:
+    case ePointerRawUpdate: {
       if (aEvent->mMessage == ePointerMove) {
         PointerEventHandler::UpdateActivePointerState(mouseEvent,
                                                       aTargetContent);
@@ -1171,6 +1197,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
     case ePointerUp:
       LightDismissOpenPopovers(aEvent, aTargetContent);
+      LightDismissOpenDialogs(aEvent, aTargetContent);
       GenerateMouseEnterExit(mouseEvent);
       if (mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
         NotifyTargetUserActivation(aEvent, aTargetContent);
@@ -1506,6 +1533,89 @@ void EventStateManager::LightDismissOpenPopovers(WidgetEvent* aEvent,
   }
   RefPtr<Document> doc(ancestor->OwnerDoc());
   doc->HideAllPopoversUntil(*ancestor, false, true);
+}
+
+// https://html.spec.whatwg.org/multipage/interactive-elements.html#run-light-dismiss-activities
+// https://html.spec.whatwg.org/multipage/interactive-elements.html#light-dismiss-open-dialogs
+void EventStateManager::LightDismissOpenDialogs(WidgetEvent* aEvent,
+                                                nsIContent* aTargetContent) {
+  // 1. Assert: event's isTrusted attribute is true.
+  // 2. Let document be event's target's node document.
+  // (Skipped - not applicable)
+
+  if (!StaticPrefs::dom_dialog_light_dismiss_enabled()) {
+    return;
+  }
+
+  MOZ_ASSERT(aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp,
+             "Light dismiss must be called for pointer up/down only");
+
+  if (aEvent->mFlags.mDefaultPrevented || !aEvent->IsTrusted() ||
+      !aTargetContent) {
+    return;
+  }
+
+  auto* doc = aTargetContent->OwnerDoc();
+
+  // 3. If document's open dialogs list is empty, then return.
+  if (!doc->HasOpenDialogs()) {
+    return;
+  }
+
+  // 4. Let ancestor be the result of running nearest clicked dialog given
+  // event.
+  RefPtr<HTMLDialogElement> ancestor =
+      aTargetContent->NearestClickedDialog(aEvent);
+
+  // 5. If event's type is "pointerdown", then set document's dialog pointerdown
+  // target to ancestor.
+  if (aEvent->mMessage == ePointerDown) {
+    // XXX: "document's dialog pointerdown target" can be null, but
+    // `SetLastDialogPointerdownTarget` takes `&` to avoid incidental nullptrs,
+    // meaning we need to nullcheck `ancestor` & call
+    // `ClearLastDialogPointerdownTarget` instead.
+    if (!ancestor) {
+      doc->ClearLastDialogPointerdownTarget();
+    } else {
+      doc->SetLastDialogPointerdownTarget(*ancestor);
+    }
+    return;
+  }
+
+  MOZ_ASSERT(aEvent->mMessage == ePointerUp);
+
+  // 6.1 Let sameTarget be true if ancestor is document's dialog pointerdown
+  // target.
+  RefPtr<HTMLDialogElement> lastDialog = doc->GetLastDialogPointerdownTarget();
+  bool sameTarget = ancestor == lastDialog;
+
+  // 6.2 Set document's dialog pointerdown target to null.
+  doc->ClearLastDialogPointerdownTarget();
+
+  // 6.3 If sameTarget is false, then return.
+  if (!sameTarget) {
+    return;
+  }
+
+  // 6.4 Let topmostDialog be the last element of document's open dialogs list.
+  RefPtr<HTMLDialogElement> topmostDialog = doc->GetTopMostOpenDialog();
+
+  // 6.5 If ancestor is topmostDialog, then return.
+  if (ancestor == topmostDialog) {
+    return;
+  }
+
+  // 6.6 If topmostDialog's computed closed-by state is not Any, then return.
+  if (!topmostDialog ||
+      topmostDialog->GetClosedBy() != HTMLDialogElement::ClosedBy::Any) {
+    return;
+  }
+
+  // 7. Assert: topmostDialog's close watcher is not null.
+
+  // 8. Request to close topmostDialog's close watcher with false.
+  const mozilla::dom::Optional<nsAString> returnValue;
+  topmostDialog->RequestClose(returnValue);
 }
 
 already_AddRefed<EventStateManager> EventStateManager::ESMFromContentOrThis(
@@ -4135,6 +4245,12 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
             esm->PostHandleMouseUp(mouseUpEvent, aStatus, aOverrideClickTarget);
       }
 
+      // After dispatching click events for this eMouseUp, nobody needs to refer
+      // to the preceding ePointerUp event target anymore because it was
+      // required by the click event dispatcher to consider the target.
+      // Therefore, PointerEventHandler should forget the target now.
+      PointerEventHandler::ReleasePointerCapturingElementAtLastPointerUp();
+
       if (PresShell* presShell = presContext->GetPresShell()) {
         RefPtr<nsFrameSelection> frameSelection = presShell->FrameSelection();
         frameSelection->SetDragState(false);
@@ -4271,9 +4387,38 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               // For events that can trigger swipes, APZ needs to know whether
               // scrolling is possible in the requested direction. It does this
               // by looking at the scroll overflow values on mCanTriggerSwipe
-              // events after they have been processed.
-              allDeltaOverflown = !ComputeScrollTarget(
-                  mCurrentTarget, wheelEvent, COMPUTE_DEFAULT_ACTION_TARGET);
+              // events after they have been processed. When determining if
+              // a swipe should occur, we should not prefer the current wheel
+              // transaction.
+              nsIFrame* lastScrollFrame =
+                  WheelTransaction::GetScrollTargetFrame();
+              bool wheelTransactionHandlesInput = false;
+              if (lastScrollFrame) {
+                ScrollContainerFrame* scrollContainerFrame =
+                    lastScrollFrame->GetScrollTargetFrame();
+                if (scrollContainerFrame->IsRootScrollFrameOfDocument()) {
+                  // If the current wheel transaction target is the root scroll
+                  // frame and is not scrollable on the x-axis, all delta is
+                  // overflown and swipe-to-nav may occur.
+                  wheelTransactionHandlesInput = true;
+                  allDeltaOverflown = !WheelHandlingUtils::CanScrollOn(
+                      scrollContainerFrame, wheelEvent->mDeltaX, 0.0);
+                } else if (WheelHandlingUtils::CanScrollOn(
+                               scrollContainerFrame, wheelEvent->mDeltaX,
+                               wheelEvent->mDeltaY)) {
+                  // If the current wheel transaction target is not the root
+                  // scroll frame, ensure that swipe to nav does not occur if
+                  // the scroll frame is scrollable on the x or y axis. If the
+                  // scroll frame cannot scroll, all delta _may_ be overflown.
+                  wheelTransactionHandlesInput = true;
+                  allDeltaOverflown = false;
+                }
+              }
+              if (!wheelTransactionHandlesInput) {
+                allDeltaOverflown = !ComputeScrollTarget(
+                    mCurrentTarget, wheelEvent,
+                    COMPUTE_DEFAULT_ACTION_TARGET_WITHOUT_WHEEL_TRANSACTION);
+              }
             }
           } else {
             // The event was processed neither by APZ nor by us, so all of the
@@ -5445,7 +5590,8 @@ void EventStateManager::GeneratePointerEnterExit(EventMessage aMessage,
 /* static */
 void EventStateManager::UpdateLastRefPointOfMouseEvent(
     WidgetMouseEvent* aMouseEvent) {
-  if (aMouseEvent->mMessage != eMouseMove &&
+  if (aMouseEvent->mMessage != ePointerRawUpdate &&
+      aMouseEvent->mMessage != eMouseMove &&
       aMouseEvent->mMessage != ePointerMove) {
     return;
   }
@@ -5478,7 +5624,8 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
 void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     WidgetMouseEvent* aMouseEvent) {
   MOZ_ASSERT(PointerLockManager::IsLocked());
-  if ((aMouseEvent->mMessage != eMouseMove &&
+  if ((aMouseEvent->mMessage != ePointerRawUpdate &&
+       aMouseEvent->mMessage != eMouseMove &&
        aMouseEvent->mMessage != ePointerMove) ||
       !aMouseEvent->mWidget) {
     return;
@@ -5539,6 +5686,7 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
   switch (aMouseEvent->mMessage) {
     case eMouseMove:
     case ePointerMove:
+    case ePointerRawUpdate:
     case ePointerDown:
     case ePointerGotCapture: {
       // Get the target content target (mousemove target == mouseover target)
@@ -5865,12 +6013,11 @@ void EventStateManager::UpdateDragDataTransfer(WidgetDragEvent* dragEvent) {
   }
 }
 
-nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
-                                          nsEventStatus* aStatus,
-                                          nsIContent* aOverrideClickTarget) {
+void EventStateManager::PrepareForFollowingClickEvent(
+    WidgetMouseEvent& aEvent, nsIContent* aOverrideClickTarget) {
   nsCOMPtr<nsIContent> mouseContent = aOverrideClickTarget;
   if (!mouseContent && mCurrentTarget) {
-    mouseContent = mCurrentTarget->GetContentForEvent(aEvent);
+    mouseContent = mCurrentTarget->GetContentForEvent(&aEvent);
   }
   if (mouseContent && mouseContent->IsText()) {
     nsINode* parent = mouseContent->GetFlattenedTreeParentNode();
@@ -5879,10 +6026,10 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
     }
   }
 
-  LastMouseDownInfo& mouseDownInfo = GetLastMouseDownInfo(aEvent->mButton);
-  if (aEvent->mMessage == eMouseDown) {
+  LastMouseDownInfo& mouseDownInfo = GetLastMouseDownInfo(aEvent.mButton);
+  if (aEvent.mMessage == eMouseDown) {
     mouseDownInfo.mLastMouseDownContent =
-        !aEvent->mClickEventPrevented ? mouseContent : nullptr;
+        !aEvent.mClickEventPrevented ? mouseContent : nullptr;
 
     if (mouseDownInfo.mLastMouseDownContent) {
       if (HTMLInputElement* input = HTMLInputElement::FromNodeOrNull(
@@ -5900,23 +6047,37 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
       }
     }
   } else {
-    aEvent->mClickTarget =
-        !aEvent->mClickEventPrevented
-            ? GetCommonAncestorForMouseUp(
-                  mouseContent, mouseDownInfo.mLastMouseDownContent,
-                  mouseDownInfo.mLastMouseDownInputControlType)
-            : nullptr;
-    if (aEvent->mClickTarget) {
-      aEvent->mClickCount = mouseDownInfo.mClickCount;
+    MOZ_ASSERT(aEvent.mMessage == eMouseUp);
+    aEvent.mClickTarget = [&]() -> EventTarget* {
+      if (aEvent.mClickEventPrevented || !mouseDownInfo.mLastMouseDownContent) {
+        return nullptr;
+      }
+      // If an element was capturing the pointer at dispatching ePointerUp, we
+      // should dispatch click/auxclick/contextmenu event on it to conform to
+      // Pointer Events. https://w3c.github.io/pointerevents/#event-dispatch
+      if (PointerEventHandler::ShouldDispatchClickEventOnCapturingElement(
+              &aEvent)) {
+        const RefPtr<Element> capturingElementAtLastPointerUp =
+            PointerEventHandler::GetPointerCapturingElementAtLastPointerUp();
+        if (capturingElementAtLastPointerUp &&
+            capturingElementAtLastPointerUp->GetPresContext(
+                Element::PresContextFor::eForComposedDoc) == mPresContext) {
+          return capturingElementAtLastPointerUp;
+        }
+      }
+      return GetCommonAncestorForMouseUp(
+          mouseContent, mouseDownInfo.mLastMouseDownContent,
+          mouseDownInfo.mLastMouseDownInputControlType);
+    }();
+    if (aEvent.mClickTarget) {
+      aEvent.mClickCount = mouseDownInfo.mClickCount;
       mouseDownInfo.mClickCount = 0;
     } else {
-      aEvent->mClickCount = 0;
+      aEvent.mClickCount = 0;
     }
     mouseDownInfo.mLastMouseDownContent = nullptr;
     mouseDownInfo.mLastMouseDownInputControlType = Nothing();
   }
-
-  return NS_OK;
 }
 
 // static

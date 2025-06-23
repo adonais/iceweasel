@@ -50,6 +50,8 @@ VERSIONS:
 
 cff-font-creation.patch: make cairo_cff_font_t allocation consistent
 
+27-windows-sdk-26100.patch: fix build bustage with Windows SDK 26100
+
 ==== pixman patches ====
 
 pixman-armasm.patch: add an ifdef guard around pixman-config.h include
@@ -57,7 +59,5 @@ pixman-armasm.patch: add an ifdef guard around pixman-config.h include
 pixman-export.patch: make sure pixman symbols are not exported in libxul
 
 pixman-interp.patch: use lower quality interpolation by default on mobile
-
-pixman-neon.patch: fix for a build failure with clang on armhf linux
 
 pixman-rename.patch: include pixman-rename.h for renaming of external symbols

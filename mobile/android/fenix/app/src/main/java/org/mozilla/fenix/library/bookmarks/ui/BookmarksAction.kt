@@ -38,6 +38,8 @@ internal data class RecursiveSelectionCountLoaded(
 ) : BookmarksAction
 
 internal sealed class BookmarksListMenuAction : BookmarksAction {
+    internal data object SelectAll : BookmarksListMenuAction()
+
     internal sealed class Bookmark : BookmarksListMenuAction() {
         data class EditClicked(val bookmark: BookmarkItem.Bookmark) : Bookmark()
         data class CopyClicked(val bookmark: BookmarkItem.Bookmark) : Bookmark()
@@ -64,6 +66,7 @@ internal sealed class BookmarksListMenuAction : BookmarksAction {
     internal sealed class SortMenu : BookmarksListMenuAction() {
         data object SortMenuButtonClicked : SortMenu()
         data object SortMenuDismissed : SortMenu()
+        data object CustomSortClicked : SortMenu()
         data object NewestClicked : SortMenu()
         data object OldestClicked : SortMenu()
         data object AtoZClicked : SortMenu()
@@ -83,6 +86,7 @@ internal data object SignIntoSyncClicked : BookmarksAction
 internal data class EditBookmarkClicked(val bookmark: BookmarkItem.Bookmark) : BookmarksAction
 internal data class ReceivedSyncSignInUpdate(val isSignedIn: Boolean) : BookmarksAction
 internal data object FirstSyncCompleted : BookmarksAction
+internal data object PrivateBrowsingAuthorized : BookmarksAction
 
 /**
  * Actions specific to the Add Folder screen.

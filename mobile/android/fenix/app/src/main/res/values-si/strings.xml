@@ -62,11 +62,8 @@
     Explanation for private browsing displayed to users on home view when they first enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="private_browsing_placeholder_description_2">
-  ඔබ පෞද්. පටිති වසා දැමූ විට හෝ යෙදුමෙන් ඉවත් වූ විට %1$s ඔබගේ සෙවුම් සහ පිරික්සුම් ඉතිහාසය හිස් කරයි, නමුත් ඔබව අඩවි වලින් හෝ අන්තර්ජාල සැපයුම්කරුගෙන් නිර්නාමික නොකරයි. මෙය ඔබ මාර්ගගතව කරන දෑ මෙම උපාංගය භාවිතා කරන වෙනත් අයගෙන් පෞද්ගලිකව තබා ගැනීම පහසු කරයි.</string>
-  <string name="private_browsing_common_myths">
-  පෞද්ගලික පිරික්සීම පිළිබඳව සුලබ මිථ්‍යා
-  </string>
+  <string name="private_browsing_placeholder_description_2">ඔබ පෞද්. පටිති වසා දැමූ විට හෝ යෙදුමෙන් ඉවත් වූ විට %1$s ඔබගේ සෙවුම් සහ පිරික්සුම් ඉතිහාසය හිස් කරයි, නමුත් ඔබව අඩවි වලින් හෝ අන්තර්ජාල සැපයුම්කරුගෙන් නිර්නාමික නොකරයි. මෙය ඔබ මාර්ගගතව කරන දෑ මෙම උපාංගය භාවිතා කරන වෙනත් අයගෙන් පෞද්ගලිකව තබා ගැනීම පහසු කරයි.</string>
+  <string name="private_browsing_common_myths">පෞද්ගලික පිරික්සීම පිළිබඳව සුලබ මිථ්‍යා</string>
   <!--
     True Private Browsing Mode
 
@@ -86,16 +83,6 @@
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
   -->
   <string name="felt_privacy_info_card_subtitle_link_text">මාගේ ක්‍රියාකාරකම් දකින අය කවුරුන්ද?</string>
-  <!--
-    Private mode shortcut "contextual feature recommendation" (CFR)
-
-    Text for the Private mode shortcut CFR message for adding a private mode shortcut to open private tabs from the Home screen
-  -->
-  <string name="private_mode_cfr_message_2" moz:removedIn="138" tools:ignore="UnusedResources">එක් තට්ටුවකින් ඊළඟ පෞද්. පටිත්ත අරින්න.</string>
-  <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
-  <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">මුල් තිරයට දමන්න</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">එපා, ස්තුතියි</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
 
@@ -199,11 +186,11 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">දිගු</string>
   <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more">තව දැනගන්න</string>
+  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">තව දැනගන්න</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">දිගු කළමනාකරණය</string>
   <!-- Content description (not visible, for screen readers etc.): Section heading for recommended extensions. -->
-  <string name="browser_menu_recommended_section_content_description">නිර්දේශිත දිගු</string>
+  <string name="browser_menu_recommended_section_content_description" moz:removedIn="141" tools:ignore="UnusedResources">නිර්දේශිත දිගු</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -234,9 +221,9 @@
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
   <string name="browser_menu_add_app_to_homescreen">මුල් තිරයට යෙදුම දමන්න</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
-  <string name="browser_menu_add_to_homescreen_2">මුල් තිරයට දමන්න…</string>
+  <string name="browser_menu_add_to_homescreen_2" moz:removedIn="141" tools:ignore="UnusedResources">මුල් තිරයට දමන්න…</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
-  <string name="browser_menu_add_app_to_homescreen_2">මුල් තිරයට යෙදුම දමන්න…</string>
+  <string name="browser_menu_add_app_to_homescreen_2" moz:removedIn="141" tools:ignore="UnusedResources">මුල් තිරයට යෙදුම දමන්න…</string>
   <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
   <string name="browser_menu_add_to_homescreen_xiaomi">මුල් තිරයට කෙටිමං එක් කිරීමට සියෝමි උපාංග වලට අමතර අවසර වුවමනා විය හැකිය. කරුණාකර ඔබගේ සැකසුම් පරීක්‍ෂා කරන්න.</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
@@ -244,17 +231,17 @@
   <!-- Browser menu button that opens the find in page menu -->
   <string name="browser_menu_find_in_page">පිටුවේ සොයන්න</string>
   <!-- Browser menu button that opens the find in page menu -->
-  <string name="browser_menu_find_in_page_2">පිටුවේ සොයන්න…</string>
+  <string name="browser_menu_find_in_page_2" moz:removedIn="141" tools:ignore="UnusedResources">පිටුවේ සොයන්න…</string>
   <!-- Browser menu button that opens the translations dialog, which has options to translate the current browser page. -->
   <string name="browser_menu_translations">පිටුව පරිවර්තනය</string>
   <!-- Browser menu button that saves the current tab to a collection -->
-  <string name="browser_menu_save_to_collection">එකතුවට සුරකින්න…</string>
+  <string name="browser_menu_save_to_collection" moz:removedIn="141" tools:ignore="UnusedResources">එකතුවට සුරකින්න…</string>
   <!-- Browser menu button that saves the current tab to a collection -->
   <string name="browser_menu_save_to_collection_2">එකතුවට සුරකින්න</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">බෙදාගන්න</string>
   <!-- Browser menu button that open a share menu to share the current site -->
-  <string name="browser_menu_share_2">බෙදාගන්න…</string>
+  <string name="browser_menu_share_2" moz:removedIn="141" tools:ignore="UnusedResources">බෙදාගන්න…</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -287,7 +274,7 @@
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">පිවිසෙන්න</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
-  <string name="browser_menu_sign_in_caption">මුරපද, පටිති සහ තවත් දෑ සමමුහූර්ත කරන්න</string>
+  <string name="browser_menu_sign_in_caption" moz:removedIn="141" tools:ignore="UnusedResources">මුරපද, පටිති සහ තවත් දෑ සමමුහූර්ත කරන්න</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">සමමුහූර්තයට පිවිසෙන්න</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
@@ -306,9 +293,9 @@
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
   <string name="browser_menu_switch_to_mobile_site">ජංගම අඩවිය</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools">මෙවලම්</string>
+  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">මෙවලම්</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
-  <string name="browser_menu_back_button_content_description">ප්‍රධාන වට්ටෝරුවට ආපසු</string>
+  <string name="browser_menu_back_button_content_description" moz:removedIn="141" tools:ignore="UnusedResources">ප්‍රධාන වට්ටෝරුවට ආපසු</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
   <string name="browser_main_menu_handlebar_content_description">ප්‍රධාන වට්ටෝරු පත්‍රය වසන්න</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
@@ -324,35 +311,35 @@
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">අභිරුචි පටිති වට්ටෝරු පත්‍රය වසන්න</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-  <string name="browser_menu_tools_description_with_translate_without_report_site">කියවීමේ දැක්ම, පරිවර්තනය, මුද්‍රණය, බෙදාගන්න, යෙදුම අරින්න</string>
+  <string name="browser_menu_tools_description_with_translate_without_report_site" moz:removedIn="141" tools:ignore="UnusedResources">කියවීමේ දැක්ම, පරිවර්තනය, මුද්‍රණය, බෙදාගන්න, යෙදුම අරින්න</string>
   <!-- Browser menu description that describes the various tools related menu items inside of the tools sub-menu -->
-  <string name="browser_menu_tools_description_without_report_site">කියවීමේ දැක්ම, මුද්‍රණය, බෙදාගන්න, යෙදුම අරින්න</string>
+  <string name="browser_menu_tools_description_without_report_site" moz:removedIn="141" tools:ignore="UnusedResources">කියවීමේ දැක්ම, මුද්‍රණය, බෙදාගන්න, යෙදුම අරින්න</string>
   <!--
     Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
     bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
   -->
-  <string name="browser_menu_save">සුරකින්න</string>
+  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">සුරකින්න</string>
   <!-- Browser menu description that describes the various save related menu items inside of the save sub-menu -->
-  <string name="browser_menu_save_description">පොත්යොමු, කෙටිමං, මුල් පිටු, එකතු, PDF එක් කරන්න</string>
+  <string name="browser_menu_save_description" moz:removedIn="141" tools:ignore="UnusedResources">පොත්යොමු, කෙටිමං, මුල් පිටු, එකතු, PDF එක් කරන්න</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
-  <string name="browser_menu_bookmark_this_page">මෙම පිටුවට පොත්යොමුවක්</string>
+  <string name="browser_menu_bookmark_this_page" moz:removedIn="141" tools:ignore="UnusedResources">මෙම පිටුවට පොත්යොමුවක්</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">පොත්යොමුව සංස්කරණය</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
-  <string name="browser_menu_save_as_pdf">PDF ලෙස සුරකින්න…</string>
+  <string name="browser_menu_save_as_pdf" moz:removedIn="141" tools:ignore="UnusedResources">PDF ලෙස සුරකින්න…</string>
   <!-- Browser menu label for turning ON reader view of the current visited page -->
-  <string name="browser_menu_turn_on_reader_view">කියවීමේ දැක්ම සක්‍රිය කරන්න</string>
+  <string name="browser_menu_turn_on_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">කියවීමේ දැක්ම සක්‍රිය කරන්න</string>
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
-  <string name="browser_menu_turn_off_reader_view">කියවීමේ දැක්ම අක්‍රිය කරන්න</string>
+  <string name="browser_menu_turn_off_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">කියවීමේ දැක්ම අක්‍රිය කරන්න</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
-  <string name="browser_menu_translate_page">පිටුව පරිවර්තනය…</string>
+  <string name="browser_menu_translate_page" moz:removedIn="141" tools:ignore="UnusedResources">පිටුව පරිවර්තනය…</string>
   <!--
     Browser menu label that is displayed when the current page has been translated by the translation feature.
     %1$s is the name of the language that page was translated to (e.g. English).
   -->
   <string name="browser_menu_translated_to">%1$s වෙත පරිවර්තනය විය</string>
   <!-- Browser menu label for the print feature -->
-  <string name="browser_menu_print">මුද්‍රණය…</string>
+  <string name="browser_menu_print" moz:removedIn="141" tools:ignore="UnusedResources">මුද්‍රණය…</string>
   <!--
     Browser menu label for the Delete browsing data on quit feature.
     %1$s is the name of the app (for example "Firefox").
@@ -429,19 +416,19 @@
 
     Home onboarding dialog welcome screen title text.
   -->
-  <string name="onboarding_home_welcome_title_2">වඩාත් පෞද්ගලික අන්තර්ජාලයකට පිළිගනිමු</string>
+  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">වඩාත් පෞද්ගලික අන්තර්ජාලයකට පිළිගනිමු</string>
   <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description">බොහෝ වර්ණ. ඉහළ පෞද්ගලිකත්‍වය. එලෙසම ලාභයට වඩා මිනිසුන්ට කැපවීම.</string>
+  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">බොහෝ වර්ණ. ඉහළ පෞද්ගලිකත්‍වය. එලෙසම ලාභයට වඩා මිනිසුන්ට කැපවීම.</string>
   <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3">තිර අතර මාරු වීම වෙනදාට වඩා පහසුය</string>
+  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">තිර අතර මාරු වීම වෙනදාට වඩා පහසුය</string>
   <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description">දැන් මුල් පිටුවේ තිබෙන අන් උපාංගවල පටිති සමඟ ඔබ නතර කළ තැනින් අතට ගන්න.</string>
+  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">දැන් මුල් පිටුවේ තිබෙන අන් උපාංගවල පටිති සමඟ ඔබ නතර කළ තැනින් අතට ගන්න.</string>
   <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button">පටන් ගන්න</string>
+  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">පටන් ගන්න</string>
   <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button">පිවිසෙන්න</string>
+  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">පිවිසෙන්න</string>
   <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button">මඟහරින්න</string>
+  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">මඟහරින්න</string>
   <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message">පටිති සමමුහූර්ත වෙමින්! අනෙක් උපාංගයේ ඔබ නතර කළ තැනින් අතට ගන්න.</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
@@ -500,23 +487,23 @@
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">දැන් නොවේ</string>
   <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2">තව දිගු ගවේශනය</string>
+  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">තව දිගු ගවේශනය</string>
   <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2">පිරික්සුම අරඹන්න</string>
+  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">පිරික්සුම අරඹන්න</string>
   <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" tools:ignore="UnusedResources">uBlock Origin</string>
+  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
   <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" tools:ignore="UnusedResources">රූපයකින් සොයන්න</string>
+  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">රූපයකින් සොයන්න</string>
   <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" tools:ignore="UnusedResources">ඩාර්ක් රීඩර්</string>
+  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">ඩාර්ක් රීඩර්</string>
   <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" tools:ignore="UnusedResources">ජංගම පිටු සඳහා අභිරුචි අඳුරු ප්‍රකාරය.</string>
+  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">ජංගම පිටු සඳහා අභිරුචි අඳුරු ප්‍රකාරය.</string>
   <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label">සමාලෝචන: %1$s</string>
+  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">සමාලෝචන: %1$s</string>
   <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description">එක්කහුවේ නිරූපකය</string>
+  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">එක්කහුවේ නිරූපකය</string>
   <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description">එක්කහුවේ බොත්තම</string>
+  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">එක්කහුවේ බොත්තම</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_title">බිඳවැටුම් වාර්තා ස්වයංක්‍රීයව යවන්න</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -642,7 +629,7 @@
   <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
   <string name="reduce_cookie_banner_details_panel_title_off_for_site_1">%1$s සඳහා දත්තකඩ පතාක අවහිරය අක්‍රිය කරන්නද?</string>
   <!-- Title text for a detail explanation indicating cookie banner reducer didn't work for the current site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="reduce_cookie_banner_details_panel_title_unsupported_site_request_2">%1$s මඟින්  මෙම අඩවියේ දත්තකඩ ඉල්ලීම් ස්වයංක්‍රීයව ඉවතලීමට නොහැක. ඉදිරියේ දී මෙම අඩවිය සඳහා සහාය දැක්වීමට ඉල්ලීමක් යැවීමට හැකිය.</string>
+  <string name="reduce_cookie_banner_details_panel_title_unsupported_site_request_2">%1$s මඟින් මෙම අඩවියේ දත්තකඩ ඉල්ලීම් ස්වයංක්‍රීයව ඉවතලීමට නොහැක. ඉදිරියේ දී මෙම අඩවිය සඳහා සහාය දැක්වීමට ඉල්ලීමක් යැවීමට හැකිය.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
   <string name="reduce_cookie_banner_details_panel_description_off_for_site_1">අක්‍රිය කරන්න සහ %1$s දත්තකඩ මකා මෙම අඩවිය නැවත පූරණය කරනු ඇත. මෙය ඔබව නික්මවීමට හෝ බඩු කරත්ත හිස් කිරීමට ඉඩ ඇත.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
@@ -801,9 +788,9 @@
   -->
   <string name="customize_toggle_recently_visited">මෑතදී ගොඩවැදුණු</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2">සිතුවිලි අවුස්සන කතා</string>
+  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">සිතුවිලි අවුස්සන කතා</string>
   <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary">%s මගින් ලිපි බලගැන්වේ</string>
+  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">%s මගින් ලිපි බලගැන්වේ</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">අනුග්‍රහය ලද කතා</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -963,7 +950,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">&lt;b&gt;firefox.com/pair&lt;/b&gt; හි පෙන්වන QR කේතය සුපිරික්සන්න</string>
+  <string name="pair_instructions_2"><![CDATA[<b>firefox.com/pair</b> හි පෙන්වන QR කේතය සුපිරික්සන්න]]></string>
   <!--
     Toolbar Preferences
 
@@ -1212,22 +1199,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">මෙහි ඉතිහාසයක් නැත</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">බාගැනීම් ඉවත් කෙරිණි</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s ඉවත් කෙරිණි</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">බාගත වූ ගොනු නැත</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d ක් තෝරා ඇත</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">ඉවත් කරන්න</string>
   <!--
     WebCompat Reporter
 
@@ -1253,15 +1228,15 @@
 
     Broken site reason text for site slow or not working
   -->
-  <string name="webcompat_reporter_reason_slow">අඩවිය මන්දගාමී හෝ වැඩ නොකරයි</string>
+  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">අඩවිය මන්දගාමී හෝ වැඩ නොකරයි</string>
   <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media">රූප හෝ දෘශ්‍යක</string>
+  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">රූප හෝ දෘශ්‍යක</string>
   <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content">බොත්තම්, සබැඳි සහ වෙනත් අන්තර්ගත</string>
+  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">බොත්තම්, සබැඳි සහ වෙනත් අන්තර්ගත</string>
   <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account">පිවිසීම හෝ නික්මීම</string>
+  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">පිවිසීම හෝ නික්මීම</string>
   <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker">දැන්වීම් අවහිරකය</string>
+  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">දැන්වීම් අවහිරකය</string>
   <!-- Broken site reason text for something else -->
   <string name="webcompat_reporter_reason_other">වෙනත් යමක්</string>
   <!--
@@ -1782,7 +1757,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">කේතය සුපිරික්සන්න</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">පරිගණකයෙහි ෆයර්ෆොක්ස් විවෘත කර &lt;b&gt;https://firefox.com/pair&lt;/b&gt; වෙත යන්න</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[පරිගණකයෙහි ෆයර්ෆොක්ස් විවෘත කර <b>https://firefox.com/pair</b> වෙත යන්න]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">පරිලෝකනයට ඔබන්න</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1790,7 +1765,7 @@
   <!-- Text shown for settings option for sign with email -->
   <string name="sign_in_with_email">වි-තැපෑල යොදාගන්න</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
-  <string name="sign_in_create_account_text" tools:ignore="BrandUsage">ගිණුමක් නැද්ද? උපාංග අතර ෆයර්ෆොක්ස් සමමුහූර්තයට &lt;u&gt;එකක් සාදන්න&lt;/u&gt;</string>
+  <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[ගිණුමක් නැද්ද? උපාංග අතර ෆයර්ෆොක්ස් සමමුහූර්තයට <u>එකක් සාදන්න</u>]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s ඔබගේ ගිණුම සමග සමමුහූර්ත වීම නවත්වනු ඇත, නමුත් මෙම උපාංගයෙහි ඔබගේ පිරික්සුම් දත්ත කිසිවක් මකා නොදමනු ඇත.</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
@@ -2182,7 +2157,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">සෙවුම් තන්තු උදාහරණ ආකෘතියට ගැළපෙන බව පරීක්‍ෂා කරන්න</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">“%s” වෙත සම්බන්ධ වීමේ දෝෂයකි</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” වෙත සම්බන්ධ වීමේ දෝෂයකි</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s සෑදිණි</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -2194,9 +2169,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. ඇන්ඩ්‍රොයිඩ් සැකසුම් වෙත යන්න</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;අවසර&lt;/b&gt; තට්ටු කරන්න</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>අවසර</b> තට්ටු කරන්න]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. &lt;b&gt;%1$s&lt;/b&gt; සබල කරන්න</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. <b>%1$s</b> සබල කරන්න]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">සම්බන්‍ධතාව ආරක්‍ෂිතයි</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -2204,7 +2179,7 @@
   <!-- Label to clear site data -->
   <string name="clear_site_data">දත්තකඩ හා අඩවි දත්ත මකන්න</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data">&lt;b&gt;%s&lt;/b&gt; අඩවිය සඳහා සමස්ත දත්තකඩ හා වෙනත් දත්ත හිස් කිරීමට වුවමනා ද?</string>
+  <string name="confirm_clear_site_data"><![CDATA[<b>%s</b> අඩවිය සඳහා සමස්ත දත්තකඩ හා වෙනත් දත්ත හිස් කිරීමට වුවමනා ද?]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">ඔබට සියළුම අඩවි සඳහා සියළු අවසර හිස් කිරීමට වුවමනා ද?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -2257,7 +2232,7 @@
   <!-- This is the hint text that is shown inline on the hostname field of the create new login page. 'https://www.example.com' intentionally hardcoded here -->
   <string name="add_login_hostname_hint_text">https://www.example.com</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname does not contain http or https. -->
-  <string name="add_login_hostname_invalid_text_3">ලිපිනයෙහි "https://" හෝ "http://" අඩංගු විය යුතුය</string>
+  <string name="add_login_hostname_invalid_text_3">ලිපිනයෙහි \"https://\" හෝ \"http://\" අඩංගු විය යුතුය</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname is invalid. -->
   <string name="add_login_hostname_invalid_text_2">වලංගු සත්කාරක නාමයක් අවශ්‍යයි</string>
   <!--
@@ -2373,17 +2348,17 @@
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1">සිතුවිලි අවුස්සන කතා</string>
+  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">සිතුවිලි අවුස්සන කතා</string>
   <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header">මාතෘකාව අනුව කතා</string>
+  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">මාතෘකාව අනුව කතා</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">තව සොයා ගන්න</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">තව සොයා ගන්න</string>
   <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2">%s මගින් බලගැන්වේ.</string>
+  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">%s මගින් බලගැන්වේ.</string>
   <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" tools:ignore="BrandUsage">ෆයර්ෆොක්ස් පවුලේ කොටසකි. %s</string>
+  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">ෆයර්ෆොක්ස් පවුලේ කොටසකි. %s</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">තව දැනගන්න</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">තව දැනගන්න</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">අනුග්‍රහය ලද</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
@@ -2401,7 +2376,7 @@
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article">ලිපිය කියවන්න</string>
   <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more">තව දැන ගැනීමට සබැඳිය අරින්න</string>
+  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">තව දැන ගැනීමට සබැඳිය අරින්න</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
   <string name="a11y_links_title">සබැඳි</string>
   <!-- Additional content description for text bodies that contain urls. -->

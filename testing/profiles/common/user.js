@@ -83,7 +83,6 @@ user_pref("browser.topsites.contile.enabled", false);
 user_pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "");
 // Don't pull wallpaper content from the network
 user_pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
-user_pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", false);
 // Don't pull sponsored Top Sites content from the network
 user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 // Default Glean to "record but don't report" mode, and to never trigger
@@ -102,3 +101,5 @@ user_pref("widget.gtk.overlay-scrollbars.enabled", false);
 // Generally, we don't want daily idle tasks run during tests. Specific tests
 // can re-enable if needed.
 user_pref("idle.lastDailyNotification", -1);
+// Honor logging prefs set for certain test suites.
+user_pref("logging.config.clear_on_startup", false);

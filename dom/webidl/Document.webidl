@@ -122,8 +122,8 @@ interface Document : Node {
 
 // https://html.spec.whatwg.org/multipage/dom.html#the-document-object
 partial interface Document {
-  [Pref="dom.webcomponents.shadowdom.declarative.enabled", Throws]
-  static Document parseHTMLUnsafe((TrustedHTML or DOMString) html);
+  [Throws, NeedsSubjectPrincipal=NonSystem]
+  static Document parseHTMLUnsafe((TrustedHTML or DOMString) html, optional SetHTMLUnsafeOptions options = {});
 
   [PutForwards=href, LegacyUnforgeable] readonly attribute Location? location;
   [SetterThrows]                           attribute DOMString domain;
@@ -443,6 +443,9 @@ partial interface Document {
   [ChromeOnly]
   attribute boolean devToolsAnonymousAndShadowEventsEnabled;
 
+  [ChromeOnly]
+  attribute boolean pausedByDevTools;
+
   [ChromeOnly, BinaryName="contentLanguageForBindings"] readonly attribute DOMString contentLanguage;
 
   [ChromeOnly] readonly attribute nsILoadGroup? documentLoadGroup;
@@ -521,12 +524,8 @@ partial interface Document {
  * content on top of the current page displayed in the document.
  */
 partial interface Document {
-  /**
-   * If aForce is true, tries to update layout to be able to insert the element
-   * synchronously.
-   */
   [ChromeOnly, NewObject, Throws]
-  AnonymousContent insertAnonymousContent(optional boolean aForce = false);
+  AnonymousContent insertAnonymousContent();
 
   /**
    * Removes the element inserted into the CanvasFrame given an AnonymousContent

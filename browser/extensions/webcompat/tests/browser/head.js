@@ -33,6 +33,107 @@ const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlClassifierTestUtils.sys.mjs"
 );
 
+const WebCompatExtension = new (class WebCompatExtension {
+  constructor() {
+    const { extension } = WebExtensionPolicy.getByID("webcompat@mozilla.org");
+    this.extension = extension;
+  }
+
+  async started() {
+    await this.extension.promiseBackgroundStarted();
+  }
+
+  // Note that the `extensions.background.idle.timeout` pref needs to be set to a
+  // a high value if using the following APIs, to avoid intermittent failures due
+  // to the background being stopped for being idle.
+  async #run(command, ...args) {
+    return await SpecialPowers.spawn(
+      this.extension.backgroundContext.xulBrowser,
+      args,
+      command
+    );
+  }
+
+  async interventionsReady() {
+    return this.#run(async function () {
+      await content.wrappedJSObject.interventions.ready();
+    });
+  }
+
+  async overrideFirefoxVersion(_ver) {
+    this.#run(async function (ver) {
+      content.wrappedJSObject.interventions.versionForTesting = ver;
+    }, _ver);
+  }
+
+  async noOngoingInterventionChanges() {
+    return this.#run(async function () {
+      await new Promise(lock1 => {
+        return new Promise(lock2 => {
+          content.wrappedJSObject.navigator.locks.request(
+            "pref_check_lock",
+            lock2
+          );
+        }).then(() =>
+          content.wrappedJSObject.navigator.locks.request(
+            "intervention_lock",
+            lock1
+          )
+        );
+      });
+    });
+  }
+
+  async getInterventionById(_id) {
+    return this.#run(function (id) {
+      return content.wrappedJSObject.interventions._availableInterventions.find(
+        i => i.id === id
+      );
+    }, _id);
+  }
+
+  getCheckableGlobalPrefs() {
+    return this.extension.experimentAPIManager.global.aboutConfigPrefs
+      .ALLOWED_GLOBAL_PREFS;
+  }
+
+  async shimsReady() {
+    return this.#run(async function () {
+      await content.wrappedJSObject.shims.ready();
+    });
+  }
+
+  async getRegisteredContentScriptsFor(_id) {
+    return this.#run(async function (id) {
+      const scripts =
+        await content.wrappedJSObject.browser.scripting.getRegisteredContentScripts();
+      return scripts.filter(script =>
+        script.id.startsWith(`webcompat intervention for ${id}`)
+      );
+    }, _id);
+  }
+
+  async disableInterventions(_ids) {
+    return this.#run(async function (ids) {
+      const which =
+        content.wrappedJSObject.interventions._availableInterventions.filter(
+          i => ids.includes(i.id)
+        );
+      return await content.wrappedJSObject.interventions.disableInterventions(
+        Cu.cloneInto(which, content)
+      );
+    }, _ids);
+  }
+
+  async updateInterventions(_config) {
+    return this.#run(async function (config) {
+      return await content.wrappedJSObject.interventions.updateInterventions(
+        Cu.cloneInto(config, content)
+      );
+    }, _config);
+  }
+})();
+
 async function testShimRuns(
   testPage,
   frame,

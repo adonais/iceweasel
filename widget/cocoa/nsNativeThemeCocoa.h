@@ -44,7 +44,7 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
     eDisclosureButtonOpen
   };
 
-  enum class SegmentType : uint8_t { eToolbarButton, eTab };
+  enum class SegmentType : uint8_t { eToolbarButton };
 
   enum class OptimumState : uint8_t { eOptimum, eSubOptimum, eSubSubOptimum };
 
@@ -149,7 +149,6 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
     eScale,               // ScaleParams
     eMultilineTextField,  // bool
     eListBox,
-    eTabPanel,
   };
 
   struct WidgetInfo {
@@ -199,9 +198,6 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
       return WidgetInfo(Widget::eMultilineTextField, aParams);
     }
     static WidgetInfo ListBox() { return WidgetInfo(Widget::eListBox, false); }
-    static WidgetInfo TabPanel(bool aParams) {
-      return WidgetInfo(Widget::eTabPanel, aParams);
-    }
 
     template <typename T>
     T Params() const {
@@ -230,10 +226,9 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
   NS_DECL_ISUPPORTS_INHERITED
 
   // The nsITheme interface.
-  NS_IMETHOD DrawWidgetBackground(gfxContext* aContext, nsIFrame*,
-                                  StyleAppearance, const nsRect& aRect,
-                                  const nsRect& aDirtyRect,
-                                  DrawOverflow) override;
+  void DrawWidgetBackground(gfxContext* aContext, nsIFrame*, StyleAppearance,
+                            const nsRect& aRect, const nsRect& aDirtyRect,
+                            DrawOverflow) override;
   bool CreateWebRenderCommandsForWidget(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -254,7 +249,6 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
                                            StyleAppearance) override;
   bool WidgetAttributeChangeRequiresRepaint(StyleAppearance,
                                             nsAtom* aAttribute) override;
-  NS_IMETHOD ThemeChanged() override;
   bool ThemeSupportsWidget(nsPresContext* aPresContext, nsIFrame*,
                            StyleAppearance) override;
   bool WidgetIsContainer(StyleAppearance) override;

@@ -245,7 +245,7 @@ export class MozBaseInputElement extends MozLitElement {
     name: { type: String },
     value: { type: String },
     iconSrc: { type: String },
-    disabled: { type: Boolean, reflect: true },
+    disabled: { type: Boolean },
     description: { type: String, fluent: true },
     supportPage: { type: String, attribute: "support-page" },
     accessKey: { type: String, mapped: true, fluent: true },
@@ -296,6 +296,11 @@ export class MozBaseInputElement extends MozLitElement {
   }
 
   updateNestedElements() {
+    if (this.isDisabled) {
+      this.#internals.states.add("disabled");
+    } else {
+      this.#internals.states.delete("disabled");
+    }
     for (let el of this.nestedEls) {
       if ("parentDisabled" in el) {
         el.parentDisabled =
@@ -338,6 +343,14 @@ export class MozBaseInputElement extends MozLitElement {
     return this.#internals.states.has("has-label");
   }
 
+  get isInlineLayout() {
+    return this.constructor.inputLayout == "inline";
+  }
+
+  get isDisabled() {
+    return !!(this.disabled || this.parentDisabled);
+  }
+
   click() {
     this.inputEl.click();
   }
@@ -378,7 +391,6 @@ export class MozBaseInputElement extends MozLitElement {
   }
 
   render() {
-    let isInlineLayout = this.constructor.inputLayout == "inline";
     return html`
       <link
         rel="stylesheet"
@@ -388,16 +400,17 @@ export class MozBaseInputElement extends MozLitElement {
       <span class="label-wrapper">
         <label
           is="moz-label"
+          id="label"
           part="label"
           for="input"
           shownaccesskey=${ifDefined(this.accessKey)}
-          >${isInlineLayout
+          >${this.isInlineLayout
             ? this.inputTemplate()
             : ""}${this.labelTemplate()}</label
         >${this.hasDescription ? "" : this.supportLinkTemplate()}
       </span>
       ${this.descriptionTemplate()}
-      ${!isInlineLayout ? this.inputTemplate() : ""}
+      ${!this.isInlineLayout ? this.inputTemplate() : ""}
       ${this.nestedFieldsTemplate()}
     `;
   }
@@ -411,13 +424,14 @@ export class MozBaseInputElement extends MozLitElement {
 
   descriptionTemplate() {
     return html`
-      <div id="description" class="description text-deemphasized">
-        ${this.description
-          ? html`<span class="description-text">${this.description}</span>`
-          : html`<slot
-              name="description"
-              @slotchange=${this.onSlotchange}
-            ></slot>`}${this.hasDescription ? this.supportLinkTemplate() : ""}
+      <div class="description text-deemphasized">
+        <span id="description" class="description-text">
+          ${this.description ??
+          html`<slot
+            name="description"
+            @slotchange=${this.onSlotchange}
+          ></slot>`}</span
+        >${this.hasDescription ? this.supportLinkTemplate() : ""}
       </div>
     `;
   }
@@ -435,6 +449,7 @@ export class MozBaseInputElement extends MozLitElement {
         is="moz-support-link"
         support-page=${this.supportPage}
         part="support-link"
+        aria-describedby=${this.isInlineLayout ? nothing : "label description"}
       ></a>`;
     }
     return html`<slot

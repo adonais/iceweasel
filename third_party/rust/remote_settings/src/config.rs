@@ -10,6 +10,7 @@
 
 use url::Url;
 
+use crate::error::warn;
 use crate::{ApiResult, Error, RemoteSettingsContext, Result};
 
 /// Remote settings configuration
@@ -86,7 +87,7 @@ impl RemoteSettingsServer {
             Ok(url) => url,
             // The unwrap below will never fail, since prod is a hard-coded/valid URL.
             Err(_) => {
-                log::warn!("Invalid Custom URL: {}", self.raw_url());
+                warn!("Invalid Custom URL: {}", self.raw_url());
                 BaseUrl::parse(Self::Prod.raw_url()).unwrap()
             }
         }
@@ -164,5 +165,9 @@ impl BaseUrl {
         // Unwrap is safe, because the path_segments_mut() docs say that it only will
         // error for cannot-be-a-base URLs.
         self.url.path_segments_mut().unwrap()
+    }
+
+    pub fn query_pairs_mut(&mut self) -> url::form_urlencoded::Serializer<'_, url::UrlQuery<'_>> {
+        self.url.query_pairs_mut()
     }
 }

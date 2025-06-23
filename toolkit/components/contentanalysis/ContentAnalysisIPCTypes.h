@@ -13,6 +13,7 @@
 #include "mozilla/Variant.h"
 #include "nsIContentAnalysis.h"
 #include "mozilla/RefPtr.h"
+#include "nsHashtablesFwd.h"
 
 namespace mozilla {
 namespace contentanalysis {
@@ -38,9 +39,9 @@ class ContentAnalysisActionResult : public nsIContentAnalysisResult {
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&...);
   explicit ContentAnalysisActionResult(
       nsIContentAnalysisResponse::Action aAction)
-      : mValue(aAction) {}
+      : mAction(aAction) {}
   virtual ~ContentAnalysisActionResult() = default;
-  nsIContentAnalysisResponse::Action mValue;
+  nsIContentAnalysisResponse::Action mAction;
 };
 
 class ContentAnalysisNoResult : public nsIContentAnalysisResult {
@@ -57,6 +58,8 @@ class ContentAnalysisNoResult : public nsIContentAnalysisResult {
   virtual ~ContentAnalysisNoResult() = default;
   NoContentAnalysisResult mValue;
 };
+
+using StringHashSet = nsTHashSet<nsString>;
 
 }  // namespace contentanalysis
 }  // namespace mozilla

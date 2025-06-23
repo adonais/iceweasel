@@ -327,23 +327,31 @@ bool WarpBuilder::buildInline() {
 
 MInstruction* WarpBuilder::buildNamedLambdaEnv(MDefinition* callee,
                                                MDefinition* env,
-                                               NamedLambdaObject* templateObj) {
+                                               NamedLambdaObject* templateObj,
+                                               gc::Heap initialHeap) {
   MOZ_ASSERT(templateObj->numDynamicSlots() == 0);
 
-  MInstruction* namedLambda = MNewNamedLambdaObject::New(alloc(), templateObj);
+  MInstruction* namedLambda =
+      MNewNamedLambdaObject::New(alloc(), templateObj, initialHeap);
   current->add(namedLambda);
 
+  // Initialize the object's reserved slots.
+  if (initialHeap == gc::Heap::Default) {
+    // No post barrier is needed here: the object will be allocated in the
+    // nursery if possible, and if the tenured heap is used instead, a minor
+    // collection will have been performed that moved env/callee to the tenured
+    // heap.
 #ifdef DEBUG
-  // Assert in debug mode we can elide the post write barriers.
-  current->add(MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, env));
-  current->add(
-      MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, callee));
+    current->add(
+        MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, env));
+    current->add(
+        MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, callee));
 #endif
+  } else {
+    current->add(MPostWriteBarrier::New(alloc(), namedLambda, env));
+    current->add(MPostWriteBarrier::New(alloc(), namedLambda, callee));
+  }
 
-  // Initialize the object's reserved slots. No post barrier is needed here:
-  // the object will be allocated in the nursery if possible, and if the
-  // tenured heap is used instead, a minor collection will have been performed
-  // that moved env/callee to the tenured heap.
   size_t enclosingSlot = NamedLambdaObject::enclosingEnvironmentSlot();
   size_t lambdaSlot = NamedLambdaObject::lambdaSlot();
   current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda,
@@ -356,20 +364,28 @@ MInstruction* WarpBuilder::buildNamedLambdaEnv(MDefinition* callee,
 
 MInstruction* WarpBuilder::buildCallObject(MDefinition* callee,
                                            MDefinition* env,
-                                           CallObject* templateObj) {
+                                           CallObject* templateObj,
+                                           gc::Heap initialHeap) {
   MConstant* templateCst = constant(ObjectValue(*templateObj));
 
-  MNewCallObject* callObj = MNewCallObject::New(alloc(), templateCst);
+  MNewCallObject* callObj =
+      MNewCallObject::New(alloc(), templateCst, initialHeap);
   current->add(callObj);
 
+  // Initialize the object's reserved slots.
+  if (initialHeap == gc::Heap::Default) {
+    // No post barrier is needed here, for the same reason as in
+    // buildNamedLambdaEnv.
 #ifdef DEBUG
-  // Assert in debug mode we can elide the post write barriers.
-  current->add(MAssertCanElidePostWriteBarrier::New(alloc(), callObj, env));
-  current->add(MAssertCanElidePostWriteBarrier::New(alloc(), callObj, callee));
+    current->add(MAssertCanElidePostWriteBarrier::New(alloc(), callObj, env));
+    current->add(
+        MAssertCanElidePostWriteBarrier::New(alloc(), callObj, callee));
 #endif
+  } else {
+    current->add(MPostWriteBarrier::New(alloc(), callObj, env));
+    current->add(MPostWriteBarrier::New(alloc(), callObj, callee));
+  }
 
-  // Initialize the object's reserved slots. No post barrier is needed here,
-  // for the same reason as in buildNamedLambdaEnv.
   size_t enclosingSlot = CallObject::enclosingEnvironmentSlot();
   size_t calleeSlot = CallObject::calleeSlot();
   current->add(
@@ -399,10 +415,10 @@ bool WarpBuilder::buildEnvironmentChain() {
         MInstruction* envDef = MFunctionEnvironment::New(alloc(), callee);
         current->add(envDef);
         if (NamedLambdaObject* obj = env.namedLambdaTemplate) {
-          envDef = buildNamedLambdaEnv(callee, envDef, obj);
+          envDef = buildNamedLambdaEnv(callee, envDef, obj, env.initialHeap);
         }
         if (CallObject* obj = env.callObjectTemplate) {
-          envDef = buildCallObject(callee, envDef, obj);
+          envDef = buildCallObject(callee, envDef, obj, env.initialHeap);
           if (!envDef) {
             return nullptr;
           }
@@ -3051,16 +3067,7 @@ bool WarpBuilder::build_InitElemInc(BytecodeLocation loc) {
 
 bool WarpBuilder::build_Lambda(BytecodeLocation loc) {
   MOZ_ASSERT(usesEnvironmentChain());
-
-  MDefinition* env = current->environmentChain();
-
-  JSFunction* fun = loc.getFunction(script_);
-  MConstant* funConst = constant(ObjectValue(*fun));
-
-  auto* ins = MLambda::New(alloc(), env, funConst);
-  current->add(ins);
-  current->push(ins);
-  return resumeAfter(ins, loc);
+  return buildIC(loc, CacheKind::Lambda, {});
 }
 
 bool WarpBuilder::build_FunWithProto(BytecodeLocation loc) {
@@ -3609,10 +3616,18 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
       current->push(ins);
       return resumeAfter(ins, loc);
     }
+    case CacheKind::Lambda: {
+      MDefinition* env = current->environmentChain();
+      JSFunction* fun = loc.getFunction(script_);
+      MConstant* funConst = constant(ObjectValue(*fun));
+      auto* ins = MLambda::New(alloc(), env, funConst, gc::Heap::Default);
+      current->add(ins);
+      current->push(ins);
+      return resumeAfter(ins, loc);
+    }
     case CacheKind::LazyConstant:
     case CacheKind::ToBool:
     case CacheKind::Call:
-    case CacheKind::Lambda:
     case CacheKind::GetImport:
       // We're currently not using an IC or transpiling CacheIR for these kinds.
       MOZ_CRASH("Unexpected kind");

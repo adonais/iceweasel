@@ -83,7 +83,7 @@ objdir:
    mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-@CONFIG_GUESS@
 
 It is a good idea to have your objdir name start with ``obj`` so that
-Mercurial ignores it.
+the VCS ignores it.
 
 Sometimes it can be useful to build multiple versions of the source
 (such as with and without diagnostic asserts). To avoid the time it
@@ -326,7 +326,7 @@ directory within each repository.
    builds."
 
 -  .. rubric:: Firefox, `Debugging Build (macOS
-      64bits) <http://hg.mozilla.org/mozilla-central/file/tip/browser/config/mozconfigs/macosx64/debug>`__
+      64bits) <https://github.com/mozilla-firefox/firefox/blob/main/browser/config/mozconfigs/macosx64/debug>`__
       :name: Firefox.2C_Default_Release_Configuration
 
 Building multiple projects from the same source tree
@@ -406,7 +406,7 @@ Adding a statement like the following to a ``mozconfig`` file:
 
 will cause this file to be appended to each ``moz.build`` file of the tree. It
 is recommended to place this file outside of the tree, so that it is not wiped
-when cleaning up the tree via ``hg clean`` or ``git clean``.
+when cleaning up the tree via ``git clean``.
 
 This hook file is written in the same subset of Python as ``moz.build`` files.
 

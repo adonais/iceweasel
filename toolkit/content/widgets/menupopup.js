@@ -11,22 +11,33 @@
     "resource://gre/modules/AppConstants.sys.mjs"
   );
 
+  // For the non-native context menu styling, we need to know if we need a
+  // gutter for checkboxes or icons. On linux any checkbox / radio / icon
+  // requires a gutter. On Windows, only checked items do. On macOS, we also
+  // need selected to deal with the menulists (like `<select>`).
+  const ITEM_NEEDS_GUTTER_SELECTOR = (() => {
+    if (AppConstants.platform == "macosx") {
+      return "[checked=true], [selected=true]";
+    }
+    if (AppConstants.platform == "windows") {
+      return "[checked=true]";
+    }
+    return "[type=checkbox], [type=radio]";
+  })();
+
+  const GUTTER_SELECTOR = `:scope > menuitem:not([hidden]):is(${ITEM_NEEDS_GUTTER_SELECTOR})`;
+
   document.addEventListener(
     "popupshowing",
     function (e) {
-      // For the non-native context menu styling, we need to know if we need
-      // a gutter for checkboxes. To do this, check whether there are any
-      // radio/checkbox type menuitems in a menupopup when showing it.
-      if (e.target.nodeName == "menupopup") {
-        let haveCheckableChild = e.target.querySelector(
-          `:scope > menuitem:not([hidden]):is(${
-            // On macOS, selected menuitems are checked regardless of type
-            AppConstants.platform == "macosx"
-              ? "[checked=true],[selected=true]"
-              : "[type=checkbox],[type=radio]"
-          })`
+      if (
+        e.target.nodeName == "menupopup" &&
+        e.target.getAttribute("needsgutter") != "always"
+      ) {
+        e.target.toggleAttribute(
+          "needsgutter",
+          !!e.target.querySelector(GUTTER_SELECTOR)
         );
-        e.target.toggleAttribute("needsgutter", haveCheckableChild);
       }
     },
     // we use a system bubbling event listener to ensure we run *after* the

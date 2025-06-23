@@ -179,21 +179,12 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
             return HistoryRobot.Transition()
         }
 
-        fun closeToolbarReturnToBookmarks(interact: BookmarksRobot.() -> Unit): BookmarksRobot.Transition {
-            Log.i(TAG, "closeToolbarReturnToBookmarks: Trying to click the navigate up toolbar button")
-            closeToolbarButton().click()
-            Log.i(TAG, "closeToolbarReturnToBookmarks: Clicked the navigate up toolbar button")
-
-            BookmarksRobot().interact()
-            return BookmarksRobot.Transition()
-        }
-
         fun clickOpenNewTab(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
             Log.i(TAG, "clickOpenNewTab: Trying to click the multi-select \"Open in a new tab\" context menu button")
             openInNewTabButton().click()
             Log.i(TAG, "clickOpenNewTab: Clicked the multi-select \"Open in a new tab\" context menu button")
             Log.i(TAG, "clickOpenNewTab: Trying to verify that the tabs tray exists")
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.tabsTray).assertExists()
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.TABS_TRAY).assertExists()
             Log.i(TAG, "clickOpenNewTab: Verified that the tabs tray exists")
 
             TabDrawerRobot(composeTestRule).interact()
@@ -205,7 +196,7 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
             redesignedBookmarksOpenInNewTabButton(composeTestRule).performClick()
             Log.i(TAG, "clickOpenInNewTabButton: Clicked the multi-select \"Open in a new tab\" context menu button")
             Log.i(TAG, "clickOpenInNewTabButton: Trying to verify that the tabs tray exists")
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.tabsTray).assertExists()
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.TABS_TRAY).assertExists()
             Log.i(TAG, "clickOpenInNewTabButton: Verified that the tabs tray exists")
 
             TabDrawerRobot(composeTestRule).interact()

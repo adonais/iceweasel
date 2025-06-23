@@ -39,6 +39,7 @@ import mozilla.components.support.ktx.kotlin.isContentUrl
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
+import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.components.accounts.FenixAccountManager
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
@@ -74,7 +75,6 @@ open class DefaultToolbarMenu(
 
     private val shouldDeleteDataOnQuit = context.settings().shouldDeleteBrowsingDataOnQuit
     private val shouldUseBottomToolbar = context.settings().shouldUseBottomToolbar
-    private val shouldShowMenuToolbar = !context.settings().navigationToolbarEnabled
     private val shouldShowTopSites = context.settings().showTopSitesFeature
     private val accountManager = FenixAccountManager(context)
 
@@ -432,7 +432,7 @@ open class DefaultToolbarMenu(
     val coreMenuItems by lazy {
         val menuItems =
             listOfNotNull(
-                if (shouldUseBottomToolbar || !shouldShowMenuToolbar) null else menuToolbar,
+                if (shouldUseBottomToolbar) null else menuToolbar,
                 newTabItem,
                 BrowserMenuDivider(),
                 bookmarksItem,
@@ -444,7 +444,7 @@ open class DefaultToolbarMenu(
                 BrowserMenuDivider(),
                 findInPageItem,
                 translationsItem.apply { visible = ::shouldShowTranslations },
-                desktopSiteItem,
+                desktopSiteItem.apply { visible = { store.state.selectedTab?.content?.isPdf == false } },
                 openInRegularTabItem.apply { visible = ::shouldShowOpenInRegularTab },
                 customizeReaderView.apply { visible = ::shouldShowReaderViewCustomization },
                 openInApp.apply { visible = ::shouldShowOpenInApp },
@@ -454,12 +454,18 @@ open class DefaultToolbarMenu(
                 addAppToHomeScreenItem.apply { visible = ::canAddAppToHomescreen },
                 if (shouldShowTopSites) addRemoveTopSitesItem else null,
                 saveToCollectionItem,
-                if (FxNimbus.features.print.value().browserPrintEnabled) printPageItem else null,
+                if (FxNimbus.features.print.value().browserPrintEnabled &&
+                    !context.isAndroidAutomotiveAvailable()
+                ) {
+                    printPageItem
+                } else {
+                    null
+                },
                 BrowserMenuDivider(),
                 settingsItem,
                 if (shouldDeleteDataOnQuit) deleteDataOnQuit else null,
                 if (shouldUseBottomToolbar) BrowserMenuDivider() else null,
-                if (shouldUseBottomToolbar && shouldShowMenuToolbar) menuToolbar else null,
+                if (shouldUseBottomToolbar) menuToolbar else null,
             )
 
         registerForIsBookmarkedUpdates()

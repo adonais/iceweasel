@@ -9,7 +9,8 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.sys.mjs",
+  SearchEngineSelector:
+    "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs",
 });
 
 const CONFIG_EVERYWHERE = [
@@ -65,6 +66,9 @@ const CONFIG_EVERYWHERE = [
       },
     ],
   },
+  // We use en-CA as a locale in the test, so we need to add that as an
+  // available locale to avoid falling back to en-US.
+  { recordType: "availableLocales", locales: ["en-CA", "en-GB", "en-US"] },
 ];
 
 const CONFIG_EXPERIMENT = [

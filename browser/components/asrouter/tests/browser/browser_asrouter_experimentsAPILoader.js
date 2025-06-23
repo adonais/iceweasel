@@ -4,17 +4,11 @@ const { RemoteSettings } = ChromeUtils.importESModule(
 const { ASRouter } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouter.sys.mjs"
 );
-const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
-);
-const { ExperimentAPI } = ChromeUtils.importESModule(
+const { EnrollmentType, ExperimentAPI } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
-const { ExperimentFakes, ExperimentTestUtils } = ChromeUtils.importESModule(
+const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
-);
-const { ExperimentManager } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/ExperimentManager.sys.mjs"
 );
 const { NimbusTelemetry } = ChromeUtils.importESModule(
   "resource://nimbus/lib/Telemetry.sys.mjs"
@@ -116,20 +110,13 @@ const MESSAGE_CONTENT = {
 };
 
 const getExperiment = async feature => {
-  let recipe = ExperimentFakes.recipe(
+  let recipe = NimbusTestUtils.factories.recipe(
     // In tests by default studies/experiments are turned off. We turn them on
     // to run the test and rollback at the end. Cleanup causes unenrollment so
     // for cases where the test runs multiple times we need unique ids.
     `test_xman_${feature}_${Date.now()}`,
     {
       id: "xman_test_message",
-      bucketConfig: {
-        count: 100,
-        start: 0,
-        total: 100,
-        namespace: "mochitest",
-        randomizationUnit: "normandy_id",
-      },
     }
   );
   recipe.branches[0].features[0].featureId = feature;
@@ -137,7 +124,7 @@ const getExperiment = async feature => {
   recipe.branches[1].features[0].featureId = feature;
   recipe.branches[1].features[0].value = MESSAGE_CONTENT;
   recipe.featureIds = [feature];
-  await ExperimentTestUtils.validateExperiment(recipe);
+  await NimbusTestUtils.validateExperiment(recipe);
   return recipe;
 };
 
@@ -199,9 +186,9 @@ add_task(async function test_loading_experimentsAPI() {
   const experiment = await getCFRExperiment();
   await setup(experiment);
   // Fetch the new recipe from RS
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
   await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI.getExperimentMetaData({ featureId: "cfr" }),
+    () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
 
@@ -217,9 +204,12 @@ add_task(async function test_loading_fxms_message_1_feature() {
   const experiment = await getExperiment("fxms-message-1");
   await setup(experiment);
   // Fetch the new recipe from RS
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
   await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI.getExperimentMetaData({ featureId: "fxms-message-1" }),
+    () =>
+      NimbusFeatures["fxms-message-1"].getEnrollmentMetadata(
+        EnrollmentType.EXPERIMENT
+      ),
     "ExperimentAPI should return an experiment"
   );
 
@@ -234,9 +224,9 @@ add_task(async function test_loading_experimentsAPI_rollout() {
   rollout.branches.pop();
 
   await setup(rollout);
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
   await BrowserTestUtils.waitForCondition(() =>
-    ExperimentAPI.getRolloutMetaData({ featureId: "cfr" })
+    NimbusFeatures.cfr.getEnrollmentMetadata("rollout")
   );
 
   await assertMessageInState("xman_test_message");
@@ -251,9 +241,9 @@ add_task(async function test_exposure_ping() {
   await setup(experiment);
   Services.telemetry.clearScalars();
   // Fetch the new recipe from RS
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
   await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI.getExperimentMetaData({ featureId: "cfr" }),
+    () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
 
@@ -290,14 +280,14 @@ add_task(async function test_forceEnrollUpdatesMessages() {
 
   await assertMessageInState("xman_test_message", false, false);
 
-  await RemoteSettingsExperimentLoader.optInToExperiment({
+  await ExperimentAPI.optInToExperiment({
     slug: experiment.slug,
     branch: experiment.branches[0].slug,
   });
 
   await assertMessageInState("xman_test_message");
 
-  await ExperimentManager.unenroll(`optin-${experiment.slug}`);
+  await ExperimentAPI.manager.unenroll(`optin-${experiment.slug}`);
   await SpecialPowers.popPrefEnv();
   await cleanup();
 });
@@ -309,10 +299,10 @@ add_task(async function test_update_on_enrollments_changed() {
   const experiment = await getCFRExperiment();
   let enrollmentChanged = TestUtils.topicObserved("nimbus:enrollments-updated");
   await setup(experiment);
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
 
   await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI.getExperimentMetaData({ featureId: "cfr" }),
+    () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
   await enrollmentChanged;
@@ -323,33 +313,21 @@ add_task(async function test_update_on_enrollments_changed() {
 });
 
 add_task(async function test_emptyMessage() {
-  const experiment = ExperimentFakes.recipe(`empty_${Date.now()}`, {
-    id: "empty",
-    branches: [
-      {
-        slug: "a",
-        ratio: 1,
-        features: [
-          {
-            featureId: "cfr",
-            value: {},
-          },
-        ],
-      },
-    ],
-    bucketConfig: {
-      start: 0,
-      count: 100,
-      total: 100,
-      namespace: "mochitest",
-      randomizationUnit: "normandy_id",
+  const experiment = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    `empty_${Date.now()}`,
+    {
+      branchSlug: "a",
+      featureId: "cfr",
     },
-  });
+    {
+      id: "empty",
+    }
+  );
 
   await setup(experiment);
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
   await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI.getExperimentMetaData({ featureId: "cfr" }),
+    () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
 
@@ -382,29 +360,28 @@ add_task(async function test_multiMessageTreatment() {
     { ...MESSAGE_CONTENT, id: "multi-message-1" },
     { ...MESSAGE_CONTENT, id: "multi-message-2" },
   ];
-  const recipe = ExperimentFakes.recipe(`multi-message_${Date.now()}`, {
-    id: `multi-message`,
-    bucketConfig: {
-      count: 100,
-      start: 0,
-      total: 100,
-      namespace: "mochitest",
-      randomizationUnit: "normandy_id",
-    },
-    branches: [
-      {
-        slug: "control",
-        ratio: 1,
-        features: [{ featureId, value: { template: "multi", messages } }],
-      },
-    ],
-  });
-  await ExperimentTestUtils.validateExperiment(recipe);
+  const recipe = NimbusTestUtils.factories.recipe(
+    `multi-message_${Date.now()}`,
+    {
+      id: `multi-message`,
+      branches: [
+        {
+          slug: "control",
+          ratio: 1,
+          features: [{ featureId, value: { template: "multi", messages } }],
+        },
+      ],
+    }
+  );
+  await NimbusTestUtils.validateExperiment(recipe);
 
   await setup(recipe);
-  await RemoteSettingsExperimentLoader.updateRecipes();
+  await ExperimentAPI._rsLoader.updateRecipes();
   await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI.getExperimentMetaData({ featureId }),
+    () =>
+      NimbusFeatures[featureId].getEnrollmentMetadata(
+        EnrollmentType.EXPERIMENT
+      ),
     "ExperimentAPI should return an experiment"
   );
 

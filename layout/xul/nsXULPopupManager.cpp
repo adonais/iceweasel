@@ -686,8 +686,6 @@ void nsXULPopupManager::PopupMoved(nsIFrame* aFrame,
     return;
   }
 
-  menuPopupFrame->WidgetPositionOrSizeDidChange();
-
   // Don't do anything if the popup is already at the specified location. This
   // prevents recursive calls when a popup is positioned.
   LayoutDeviceIntRect curDevBounds = view->RecalcWidgetBounds();
@@ -720,8 +718,6 @@ void nsXULPopupManager::PopupResized(nsIFrame* aFrame,
   if (!menuPopupFrame) {
     return;
   }
-
-  menuPopupFrame->WidgetPositionOrSizeDidChange();
 
   nsView* view = menuPopupFrame->GetView();
   if (!view) {
@@ -936,6 +932,12 @@ void nsXULPopupManager::ShowPopupAtScreen(Element* aPopup, int32_t aXPos,
   popupFrame->InitializePopupAtScreen(triggerContent, aXPos, aYPos,
                                       aIsContextMenu);
   BeginShowingPopup(pendingPopup, aIsContextMenu, false);
+}
+
+void ToggleTouchMode(const PendingPopup& aPopup) {
+  aPopup.mPopup->SetBoolAttr(
+      nsGkAtoms::touchmode,
+      aPopup.MouseInputSource() == MouseEvent_Binding::MOZ_SOURCE_TOUCH);
 }
 
 bool nsXULPopupManager::ShowPopupAsNativeMenu(Element* aPopup, int32_t aXPos,
@@ -1691,6 +1693,8 @@ void nsXULPopupManager::BeginShowingPopup(const PendingPopup& aPendingPopup,
                               NS_FRAME_IS_DIRTY);
 
   PopupType popupType = popupFrame->GetPopupType();
+
+  ToggleTouchMode(aPendingPopup);
 
   nsEventStatus status = FirePopupShowingEvent(aPendingPopup, presContext);
 

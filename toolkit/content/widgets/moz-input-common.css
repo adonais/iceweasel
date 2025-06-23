@@ -33,7 +33,7 @@
   }
 
   @media (forced-colors) {
-    :host([disabled]) {
+    :host(:state(disabled)) {
       color: GrayText;
     }
   }
@@ -54,7 +54,7 @@
       margin-inline-end: var(--space-xsmall);
     }
 
-    :host([disabled]) & {
+    :host(:state(disabled)) & {
       color: var(--text-color-disabled);
     }
   }
@@ -106,8 +106,7 @@
     margin-block-start: var(--space-xxsmall);
   }
 
-  :host(:state(has-description):state(has-support-link)) .description-text,
-  :host(:state(has-description):state(has-support-link)) ::slotted([slot="description"]) {
+  :host(:state(has-description):state(has-support-link)) .description-text {
     margin-inline-end: var(--space-xsmall);
   }
 

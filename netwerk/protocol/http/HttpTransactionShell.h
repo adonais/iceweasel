@@ -46,12 +46,10 @@ union NetAddr;
 
 class HttpTransactionShell : public nsISupports {
  public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(HTTPTRANSACTIONSHELL_IID)
+  NS_INLINE_DECL_STATIC_IID(HTTPTRANSACTIONSHELL_IID)
 
   using TransactionObserverFunc =
       std::function<void(TransactionObserverResult&&)>;
-  using OnPushCallback = std::function<nsresult(
-      uint32_t, const nsACString&, const nsACString&, HttpTransactionShell*)>;
 
   //
   // called to initialize the transaction
@@ -82,10 +80,7 @@ class HttpTransactionShell : public nsISupports {
       HttpTrafficCategory trafficCategory, nsIRequestContext* requestContext,
       ClassOfService classOfService, uint32_t initialRwin,
       bool responseTimeoutEnabled, uint64_t channelId,
-      TransactionObserverFunc&& transactionObserver,
-      OnPushCallback&& aOnPushCallback,
-      HttpTransactionShell* aTransWithPushedStream,
-      uint32_t aPushedStreamId) = 0;
+      TransactionObserverFunc&& transactionObserver) = 0;
 
   // @param aListener
   //        receives notifications.
@@ -173,8 +168,6 @@ class HttpTransactionShell : public nsISupports {
   virtual TimeStamp GetOnStopRequestStartTime() const { return TimeStamp(); }
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(HttpTransactionShell, HTTPTRANSACTIONSHELL_IID)
-
 #define NS_DECL_HTTPTRANSACTIONSHELL                                           \
   virtual nsresult Init(                                                       \
       uint32_t caps, nsHttpConnectionInfo* connInfo,                           \
@@ -185,10 +178,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(HttpTransactionShell, HTTPTRANSACTIONSHELL_IID)
       HttpTrafficCategory trafficCategory, nsIRequestContext* requestContext,  \
       ClassOfService classOfService, uint32_t initialRwin,                     \
       bool responseTimeoutEnabled, uint64_t channelId,                         \
-      TransactionObserverFunc&& transactionObserver,                           \
-      OnPushCallback&& aOnPushCallback,                                        \
-      HttpTransactionShell* aTransWithPushedStream, uint32_t aPushedStreamId)  \
-      override;                                                                \
+      TransactionObserverFunc&& transactionObserver) override;                 \
   virtual nsresult AsyncRead(nsIStreamListener* listener, nsIRequest** pump)   \
       override;                                                                \
   virtual UniquePtr<nsHttpResponseHead> TakeResponseHeadAndConnInfo(           \

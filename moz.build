@@ -29,6 +29,9 @@ with Files("docs/**"):
     BUG_COMPONENT = ("Developer Infrastructure", "Source Documentation")
     SCHEDULES.exclusive = ["docs"]
 
+with Files("eslint*"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
 with Files("mach*"):
     BUG_COMPONENT = ("Firefox Build System", "Mach Core")
 
@@ -52,8 +55,14 @@ with Files("**/l10n.toml"):
     BUG_COMPONENT = ("Core", "Localization")
     FINAL = True
 
-with Files("README.txt"):
+with Files("README.md"):
     BUG_COMPONENT = ("Core", "General")
+
+with Files("CODE_OF_CONDUCT.md"):
+    BUG_COMPONENT = ("Core", "General")
+
+with Files("SECURITY.md"):
+    BUG_COMPONENT = ("Core", "DOM: Security")
 
 with Files("nsprpub/**"):
     BUG_COMPONENT = ("NSPR", "NSPR")

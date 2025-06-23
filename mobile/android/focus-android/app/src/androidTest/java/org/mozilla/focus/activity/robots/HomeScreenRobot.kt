@@ -27,8 +27,6 @@ class HomeScreenRobot {
         assertTrue(editURLBar.text.equals(getStringResource(R.string.urlbar_hint)))
     }
 
-    fun skipFirstRun() = onView(withId(R.id.skip)).perform(click())
-
     fun verifyOnboardingFirstSlide() = assertTrue(firstSlideTitle.waitForExists(waitingTime))
 
     fun verifyOnboardingSecondSlide() = assertTrue(secondSlideTitle.waitForExists(waitingTime))
@@ -221,7 +219,7 @@ private val onboardingFirstScreenPrivacyNotice =
     )
 
 private val onboardingAgreeAndContinueButton =
-    mDevice.findObject(UiSelector().textContains("Agree and continue"))
+    mDevice.findObject(UiSelector().textContains("Continue"))
 
 private val onboardingSetAsDefaultBrowserButton =
     mDevice.findObject(

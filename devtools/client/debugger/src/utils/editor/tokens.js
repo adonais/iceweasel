@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-import { features } from "../prefs";
-
 function _isInvalidTarget(target) {
   if (!target || !target.innerText) {
     return true;
@@ -24,16 +22,11 @@ function _isInvalidTarget(target) {
   // - operators
   // - tags
   const INVALID_TARGET_CLASSES = [
-    // CM5 tokens,
-    "cm-atom",
-    "cm-number",
-    "cm-operator",
-    "cm-string",
-    "cm-tag",
     // CM6 tokens,
     "tok-string",
     "tok-punctuation",
     "tok-number",
+    "tok-bool",
     "tok-operator",
     // also exclude editor element (defined in Editor component)
     "editor-mount",
@@ -41,6 +34,14 @@ function _isInvalidTarget(target) {
   if (
     target.className === "" ||
     INVALID_TARGET_CLASSES.some(cls => target.classList.contains(cls))
+  ) {
+    return true;
+  }
+
+  // `undefined` isn't flagged with any useful class name to ignore it
+  if (
+    target.classList.contains("tok-variableName") &&
+    tokenText == "undefined"
   ) {
     return true;
   }
@@ -84,11 +85,7 @@ function _isInvalidTarget(target) {
 }
 
 function _dispatch(editor, eventName, data) {
-  if (features.codemirrorNext) {
-    editor.emit(eventName, data);
-  } else {
-    editor.codeMirror.constructor.signal(editor.codeMirror, eventName, data);
-  }
+  editor.emit(eventName, data);
 }
 
 function _invalidLeaveTarget(target) {

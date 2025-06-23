@@ -9,7 +9,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import junit.framework.TestCase.assertTrue
-import org.hamcrest.Matchers.* // ktlint-disable no-wildcard-imports
+import org.hamcrest.Matchers.closeTo
+import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.greaterThan
+import org.hamcrest.Matchers.`is`
+import org.hamcrest.Matchers.lessThan
 import org.junit.Assume.assumeThat
 import org.junit.Ignore
 import org.junit.Test
@@ -804,6 +808,111 @@ class RuntimeSettingsTest : BaseSessionTest() {
         assertThat(
             "The network.http.http3.enable_kyber preference should be set to true",
             http3Preference,
+            equalTo(true),
+        )
+    }
+
+    @Test
+    fun sameDocumentNavigationOverridesLoadTypeEnabled() {
+        val geckoRuntimeSettings = sessionRule.runtime.settings
+
+        geckoRuntimeSettings.setSameDocumentNavigationOverridesLoadType(false)
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadType pref set to false.",
+            geckoRuntimeSettings.sameDocumentNavigationOverridesLoadType,
+            equalTo(false),
+        )
+
+        var enabled =
+            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType").get(0)) as Boolean
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadType pref should be set to the expected value",
+            enabled,
+            equalTo(false),
+        )
+
+        geckoRuntimeSettings.setSameDocumentNavigationOverridesLoadType(true)
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadType pref set to true.",
+            geckoRuntimeSettings.sameDocumentNavigationOverridesLoadType,
+            equalTo(true),
+        )
+
+        enabled =
+            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType").get(0)) as Boolean
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadType pref should be set to the expected value",
+            enabled,
+            equalTo(true),
+        )
+    }
+
+    @Test
+    fun sameDocumentNavigationOverridesLoadTypeForceDisable() {
+        val geckoRuntimeSettings = sessionRule.runtime.settings
+
+        geckoRuntimeSettings.setSameDocumentNavigationOverridesLoadTypeForceDisable("https://www.mozilla.org")
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadTypeForceDisable pref set to the specified uri.",
+            geckoRuntimeSettings.sameDocumentNavigationOverridesLoadTypeForceDisable,
+            equalTo("https://www.mozilla.org"),
+        )
+
+        var sameDocumentNavigationOverridesLoadTypeForceDisable =
+            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable").get(0)) as String
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadTypeForceDisable pref should be set to the expected value",
+            sameDocumentNavigationOverridesLoadTypeForceDisable,
+            equalTo("https://www.mozilla.org"),
+        )
+
+        geckoRuntimeSettings.setSameDocumentNavigationOverridesLoadTypeForceDisable("")
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadType pref set to the specified uri.",
+            geckoRuntimeSettings.sameDocumentNavigationOverridesLoadTypeForceDisable,
+            equalTo(""),
+        )
+
+        sameDocumentNavigationOverridesLoadTypeForceDisable =
+            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable").get(0)) as String
+
+        assertThat(
+            "sameDocumentNavigationOverridesLoadTypeForceDisable pref should be set to the expected value",
+            sameDocumentNavigationOverridesLoadTypeForceDisable,
+            equalTo(""),
+        )
+    }
+
+    @Test
+    fun dohAutoselectEnabled() {
+        val geckoRuntimeSettings = sessionRule.runtime.settings
+
+        assertThat(
+            "doh rollout should be disabled",
+            geckoRuntimeSettings.dohAutoselectEnabled,
+            equalTo(false),
+        )
+
+        geckoRuntimeSettings.setDohAutoselectEnabled(true)
+
+        assertThat(
+            "doh rollout should be enabled",
+            geckoRuntimeSettings.dohAutoselectEnabled,
+            equalTo(true),
+        )
+
+        val prefEnabled =
+            (sessionRule.getPrefs("network.android_doh.autoselect_enabled").get(0)) as Boolean
+        assertThat(
+            "The network.android_doh.autoselect_enabled preference should be set to true",
+            prefEnabled,
             equalTo(true),
         )
     }

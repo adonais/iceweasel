@@ -8,7 +8,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
@@ -527,25 +527,12 @@ class SearchAdImpression {
       return "";
     }
 
-    // Avoid extracting or fixing up Javascript URLs.
-    if (href.startsWith("javascript")) {
+    let url = URL.parse(href, origin);
+    if (!url || (url.protocol !== "https:" && url.protocol !== "http:")) {
       return "";
     }
 
-    // Hrefs can be relative.
-    if (!href.startsWith("https://") && !href.startsWith("http://")) {
-      href = origin + href;
-    }
-    // Per Bug 376844, apostrophes in query params are escaped, and thus, are
-    // percent-encoded by the time they are observed in the network. Even
-    // though it's more comprehensive, we avoid using newURI because its more
-    // expensive and conversions should be the exception.
-    // e.g. /path'?q=Mozilla's -> /path'?q=Mozilla%27s
-    let arr = href.split("?");
-    if (arr.length == 2 && arr[1].includes("'")) {
-      href = arr[0] + "?" + arr[1].replaceAll("'", "%27");
-    }
-    return href;
+    return url.href;
   }
 
   /**
@@ -1520,7 +1507,6 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
         }
         this.sendAsyncMessage("SearchTelemetry:Action", {
           target: info.target,
-          url: info.url,
           action: info.action,
         });
       };

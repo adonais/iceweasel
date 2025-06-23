@@ -86,7 +86,7 @@ mozilla::ipc::IPCResult CookieStoreParent::RecvGetRequest(
                aPartitionedOriginAttributes, aThirdPartyContext,
                aPartitionForeign, aUsingStorageAccess, aIsOn3PCBExceptionList,
                aMatchName, aName, aPath, aOnlyFirstMatch]() {
-                CopyableTArray<CookieData> results;
+                CopyableTArray<CookieStruct> results;
                 self->GetRequestOnMainThread(
                     uri, aOriginAttributes, aPartitionedOriginAttributes,
                     aThirdPartyContext, aPartitionForeign, aUsingStorageAccess,
@@ -269,7 +269,7 @@ void CookieStoreParent::GetRequestOnMainThread(
     bool aThirdPartyContext, bool aPartitionForeign, bool aUsingStorageAccess,
     bool aIsOn3PCBExceptionList, bool aMatchName, const nsAString& aName,
     const nsACString& aPath, bool aOnlyFirstMatch,
-    nsTArray<CookieData>& aResults) {
+    nsTArray<CookieStruct>& aResults) {
   nsresult rv;
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -303,7 +303,7 @@ void CookieStoreParent::GetRequestOnMainThread(
     attrsList.AppendElement(aPartitionedOriginAttributes.value());
   }
 
-  nsTArray<CookieData> list;
+  nsTArray<CookieStruct> list;
 
   for (const OriginAttributes& attrs : attrsList) {
     nsTArray<RefPtr<Cookie>> cookies;
@@ -319,7 +319,7 @@ void CookieStoreParent::GetRequestOnMainThread(
 
       if (aThirdPartyContext &&
           !CookieCommons::ShouldIncludeCrossSiteCookie(
-              cookie, aPartitionForeign, attrs.IsPrivateBrowsing(),
+              cookie, aCookieURI, aPartitionForeign, attrs.IsPrivateBrowsing(),
               aUsingStorageAccess, aIsOn3PCBExceptionList)) {
         continue;
       }
@@ -332,9 +332,7 @@ void CookieStoreParent::GetRequestOnMainThread(
         continue;
       }
 
-      CookieData* data = list.AppendElement();
-      data->name() = NS_ConvertUTF8toUTF16(cookie->Name());
-      data->value() = NS_ConvertUTF8toUTF16(cookie->Value());
+      list.AppendElement(cookie->ToIPC());
 
       if (aOnlyFirstMatch) {
         break;
@@ -391,7 +389,8 @@ bool CookieStoreParent::SetRequestOnMainThread(
 
   if (aThirdPartyContext &&
       !CookieCommons::ShouldIncludeCrossSiteCookie(
-          aSameSite, aPartitioned && !aOriginAttributes.mPartitionKey.IsEmpty(),
+          aCookieURI, aSameSite,
+          aPartitioned && !aOriginAttributes.mPartitionKey.IsEmpty(),
           aPartitionForeign, aOriginAttributes.IsPrivateBrowsing(),
           aUsingStorageAccess, aIsOn3PCBExceptionList)) {
     return false;
@@ -418,11 +417,10 @@ bool CookieStoreParent::SetRequestOnMainThread(
   rv = service->AddNative(
       aCookieURI, domainWithDot, NS_ConvertUTF16toUTF8(aPath),
       NS_ConvertUTF16toUTF8(aName), NS_ConvertUTF16toUTF8(aValue),
-      true,   //  secure
-      false,  // mHttpOnly,
-      aSession, aSession ? INT64_MAX : aExpires, &attrs, aSameSite,
-      nsICookie::SCHEME_HTTPS, aPartitioned, &aOperationID,
-      [&](mozilla::net::CookieStruct& aCookieStruct) -> bool {
+      /* secure: */ true,
+      /* http-only: */ false, aSession, aSession ? INT64_MAX : aExpires, &attrs,
+      aSameSite, nsICookie::SCHEME_HTTPS, aPartitioned, /* from http: */ false,
+      &aOperationID, [&](mozilla::net::CookieStruct& aCookieStruct) -> bool {
         return CookieParser::CheckCookieStruct(aCookieStruct, aCookieURI, ""_ns,
                                                domain, requireMatch, false) ==
                CookieParser::NoRejection;
@@ -502,7 +500,7 @@ bool CookieStoreParent::DeleteRequestOnMainThread(
       int32_t sameSiteAttr = cookie->SameSite();
 
       if (!CookieCommons::ShouldIncludeCrossSiteCookie(
-              sameSiteAttr,
+              aCookieURI, sameSiteAttr,
               aPartitioned && !aOriginAttributes.mPartitionKey.IsEmpty(),
               aPartitionForeign, attrs.IsPrivateBrowsing(), aUsingStorageAccess,
               aIsOn3PCBExceptionList)) {
@@ -522,7 +520,8 @@ bool CookieStoreParent::DeleteRequestOnMainThread(
     notificationWatcher->CallbackWhenNotified(aOperationID, notificationCb);
 
     rv = cookieManager->RemoveNative(cookie->Host(), matchName, cookie->Path(),
-                                     &attrs, &aOperationID);
+                                     &attrs, /* from http: */ false,
+                                     &aOperationID);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return false;
     }

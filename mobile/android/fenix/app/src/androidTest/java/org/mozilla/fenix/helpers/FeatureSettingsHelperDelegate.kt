@@ -32,7 +32,6 @@ class FeatureSettingsHelperDelegate() : FeatureSettingsHelper {
         isHomeOnboardingDialogEnabled = settings.showHomeOnboardingDialog,
         homeOnboardingDialogVersion = getHomeOnboardingVersion(),
         isPocketEnabled = settings.showPocketRecommendationsFeature,
-        isNavigationBarCFREnabled = settings.shouldShowNavigationBarCFR,
         isRecentTabsFeatureEnabled = settings.showRecentTabsFeature,
         isRecentlyVisitedFeatureEnabled = settings.historyMetadataUIFeature,
         isPWAsPromptEnabled = !settings.userKnowsAboutPwas,
@@ -40,9 +39,7 @@ class FeatureSettingsHelperDelegate() : FeatureSettingsHelper {
         isDeleteSitePermissionsEnabled = settings.deleteSitePermissions,
         isOpenInAppBannerEnabled = settings.shouldShowOpenInAppBanner,
         etpPolicy = getETPPolicy(settings),
-        composeTopSitesEnabled = settings.enableComposeTopSites,
         isLocationPermissionEnabled = getFeaturePermission(PhoneFeature.LOCATION, settings),
-        isNavigationToolbarEnabled = settings.navigationToolbarEnabled,
         isMenuRedesignEnabled = settings.enableMenuRedesign,
         isMenuRedesignCFREnabled = settings.shouldShowMenuCFR,
         isNewBookmarksEnabled = settings.useNewBookmarks,
@@ -69,19 +66,15 @@ class FeatureSettingsHelperDelegate() : FeatureSettingsHelper {
         }
 
     override var isPocketEnabled: Boolean by updatedFeatureFlags::isPocketEnabled
-    override var isNavigationBarCFREnabled: Boolean by updatedFeatureFlags::isNavigationBarCFREnabled
     override var isWallpaperOnboardingEnabled: Boolean by updatedFeatureFlags::isWallpaperOnboardingEnabled
     override var isRecentTabsFeatureEnabled: Boolean by updatedFeatureFlags::isRecentTabsFeatureEnabled
     override var isRecentlyVisitedFeatureEnabled: Boolean by updatedFeatureFlags::isRecentlyVisitedFeatureEnabled
     override var isPWAsPromptEnabled: Boolean by updatedFeatureFlags::isPWAsPromptEnabled
     override var isOpenInAppBannerEnabled: Boolean by updatedFeatureFlags::isOpenInAppBannerEnabled
     override var etpPolicy: ETPPolicy by updatedFeatureFlags::etpPolicy
-    override var composeTopSitesEnabled: Boolean by updatedFeatureFlags::composeTopSitesEnabled
     override var isLocationPermissionEnabled: SitePermissionsRules.Action by updatedFeatureFlags::isLocationPermissionEnabled
-    override var isNavigationToolbarEnabled: Boolean by updatedFeatureFlags::isNavigationToolbarEnabled
     override var isMenuRedesignEnabled: Boolean by updatedFeatureFlags::isMenuRedesignEnabled
     override var isMenuRedesignCFREnabled: Boolean by updatedFeatureFlags::isMenuRedesignCFREnabled
-    override var isNewBookmarksEnabled: Boolean by updatedFeatureFlags::isNewBookmarksEnabled
     override var isMicrosurveyEnabled: Boolean by updatedFeatureFlags::isMicrosurveyEnabled
     override var shouldUseBottomToolbar: Boolean by updatedFeatureFlags::shouldUseBottomToolbar
     override var onboardingFeatureEnabled: Boolean by updatedFeatureFlags::onboardingFeatureEnabled
@@ -105,15 +98,12 @@ class FeatureSettingsHelperDelegate() : FeatureSettingsHelper {
         settings.showHomeOnboardingDialog = featureFlags.isHomeOnboardingDialogEnabled
         setHomeOnboardingVersion(featureFlags.homeOnboardingDialogVersion)
         settings.showPocketRecommendationsFeature = featureFlags.isPocketEnabled
-        settings.shouldShowNavigationBarCFR = featureFlags.isNavigationBarCFREnabled
         settings.showRecentTabsFeature = featureFlags.isRecentTabsFeatureEnabled
         settings.historyMetadataUIFeature = featureFlags.isRecentlyVisitedFeatureEnabled
         settings.userKnowsAboutPwas = !featureFlags.isPWAsPromptEnabled
         settings.showWallpaperOnboarding = featureFlags.isWallpaperOnboardingEnabled
         settings.deleteSitePermissions = featureFlags.isDeleteSitePermissionsEnabled
         settings.shouldShowOpenInAppBanner = featureFlags.isOpenInAppBannerEnabled
-        settings.enableComposeTopSites = featureFlags.composeTopSitesEnabled
-        settings.navigationToolbarEnabled = featureFlags.isNavigationToolbarEnabled
         settings.enableMenuRedesign = featureFlags.isMenuRedesignEnabled
         settings.shouldShowMenuCFR = featureFlags.isMenuRedesignCFREnabled
         settings.useNewBookmarks = featureFlags.isNewBookmarksEnabled
@@ -130,7 +120,6 @@ private data class FeatureFlags(
     var isHomeOnboardingDialogEnabled: Boolean,
     var homeOnboardingDialogVersion: Int,
     var isPocketEnabled: Boolean,
-    var isNavigationBarCFREnabled: Boolean,
     var isRecentTabsFeatureEnabled: Boolean,
     var isRecentlyVisitedFeatureEnabled: Boolean,
     var isPWAsPromptEnabled: Boolean,
@@ -138,9 +127,7 @@ private data class FeatureFlags(
     var isDeleteSitePermissionsEnabled: Boolean,
     var isOpenInAppBannerEnabled: Boolean,
     var etpPolicy: ETPPolicy,
-    var composeTopSitesEnabled: Boolean,
     var isLocationPermissionEnabled: SitePermissionsRules.Action,
-    var isNavigationToolbarEnabled: Boolean,
     var isMenuRedesignEnabled: Boolean,
     var isMenuRedesignCFREnabled: Boolean,
     var isNewBookmarksEnabled: Boolean,

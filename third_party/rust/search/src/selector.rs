@@ -160,7 +160,6 @@ impl SearchEngineSelector {
 mod tests {
     use super::*;
     use crate::{types::*, SearchApiError};
-    use env_logger;
     use mockito::mock;
     use pretty_assertions::assert_eq;
     use remote_settings::{RemoteSettingsConfig2, RemoteSettingsContext, RemoteSettingsServer};
@@ -912,6 +911,10 @@ mod tests {
                 {
                   "recordType": "defaultEngines",
                   "globalDefault": "test1"
+                },
+                {
+                  "recordType": "availableLocales",
+                  "locales": ["en-CA", "fr"]
                 }
               ]
             })
@@ -1588,7 +1591,7 @@ mod tests {
                   "recordType": "engine",
                   "identifier": "b-engine",
                   "base": {
-                    "name": "b-engine",
+                    "name": "First Alphabetical",
                     "classification": "general",
                     "urls": {
                       "search": {
@@ -1607,7 +1610,7 @@ mod tests {
                   "recordType": "engine",
                   "identifier": "a-engine",
                   "base": {
-                    "name": "a-engine",
+                    "name": "Last Alphabetical",
                     "classification": "general",
                     "urls": {
                       "search": {
@@ -1677,6 +1680,10 @@ mod tests {
                     },
                   ],
                 },
+                {
+                  "recordType": "availableLocales",
+                  "locales": ["en-CA", "fr"]
+                }
               ]
             })
             .to_string(),
@@ -1723,10 +1730,10 @@ mod tests {
                 "default-engine".to_string(),
                 "default-private-engine".to_string(),
                 "after-defaults".to_string(),
-                "a-engine".to_string(),
                 "b-engine".to_string(),
+                "a-engine".to_string(),
             ],
-            "Should order the default engine first, default private engine second, and the rest of the engines based on order hint then alphabetically."
+            "Should order the default engine first, default private engine second, and the rest of the engines based on order hint then alphabetically by name."
         );
 
         let starts_with_wiki_config = Arc::clone(&selector).set_search_config(
@@ -1829,6 +1836,11 @@ mod tests {
                     },
                   ],
                 },
+                {
+                  "recordType": "availableLocales",
+                  "locales": ["en-CA", "en-GB", "fr"]
+                }
+
               ]
             })
             .to_string(),
@@ -1877,7 +1889,7 @@ mod tests {
         should_apply_overrides: bool,
         expect_sync_successful: bool,
     ) -> Arc<SearchEngineSelector> {
-        let _ = env_logger::builder().try_init();
+        error_support::init_for_tests();
         viaduct_reqwest::use_reqwest_backend();
 
         let config = RemoteSettingsConfig2 {
@@ -1904,6 +1916,18 @@ mod tests {
         );
 
         selector
+    }
+
+    fn mock_changes_endpoint() -> mockito::Mock {
+        mock(
+            "GET",
+            "/v1/buckets/monitor/collections/changes/changeset?_expected=0",
+        )
+        .with_body(response_body_changes())
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_header("etag", "\"1000\"")
+        .create()
     }
 
     fn response_body() -> String {
@@ -2008,6 +2032,89 @@ mod tests {
         .to_string()
     }
 
+    fn response_body_changes() -> String {
+        json!({
+          "timestamp": 1000,
+          "changes": [
+            {
+              "collection": "search-config-v2",
+              "bucket": "main",
+              "last_modified": 1000,
+            }
+        ],
+        })
+        .to_string()
+    }
+
+    fn response_body_locales() -> String {
+        json!({
+          "metadata": {
+            "id": "search-config-v2",
+            "last_modified": 1000,
+            "bucket": "main",
+            "signature": {
+              "x5u": "fake",
+              "signature": "fake",
+            },
+          },
+          "timestamp": 1000,
+          "changes": [
+            {
+              "recordType": "engine",
+              "identifier": "engine-de",
+              "base": {
+                "name": "German Engine",
+                "classification": "general",
+                "urls": {
+                  "search": {
+                    "base": "https://example.com",
+                    "method": "GET",
+                  }
+                }
+              },
+              "variants": [{
+                "environment": {
+                  "locales": ["de"]
+                }
+              }],
+              "id": "c5dcd1da-7126-4abb-846b-ec85b0d4d0d7",
+              "schema": 1001,
+              "last_modified": 1000
+            },
+            {
+              "recordType": "engine",
+              "identifier": "engine-en-us",
+              "base": {
+                "name": "English US Engine",
+                "classification": "general",
+                "urls": {
+                  "search": {
+                    "base": "https://example.com",
+                    "method": "GET"
+                  }
+                }
+              },
+              "variants": [{
+                "environment": {
+                  "locales": ["en-US"]
+                }
+              }],
+              "id": "c5dcd1da-7126-4abb-846b-ec85b0d4d0d8",
+              "schema": 1002,
+              "last_modified": 1000
+            },
+            {
+              "recordType": "availableLocales",
+              "locales": ["de", "en-US"],
+              "id": "c5dcd1da-7126-4abb-846b-ec85b0d4d0e0",
+              "schema": 1004,
+              "last_modified": 1000,
+            }
+          ]
+        })
+        .to_string()
+    }
+
     fn response_body_overrides() -> String {
         json!({
           "metadata": {
@@ -2047,6 +2154,7 @@ mod tests {
 
     #[test]
     fn test_remote_settings_empty_search_config_records_throws_error() {
+        let changes_mock = mock_changes_endpoint();
         let m = mock(
             "GET",
             "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
@@ -2086,11 +2194,13 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("No search config v2 records received from remote settings"));
+        changes_mock.expect(1).assert();
         m.expect(1).assert();
     }
 
     #[test]
     fn test_remote_settings_search_config_records_is_none_throws_error() {
+        let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
             "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
@@ -2115,11 +2225,13 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("No search config v2 records received from remote settings"));
+        changes_mock.expect(1).assert();
         m1.expect(1).assert();
     }
 
     #[test]
     fn test_remote_settings_empty_search_config_overrides_filtered_without_error() {
+        let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
             "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
@@ -2166,12 +2278,14 @@ mod tests {
             "Should have filtered the configuration using an empty search config overrides without causing an error. {:?}",
             result
         );
+        changes_mock.expect(1).assert();
         m1.expect(1).assert();
         m2.expect(1).assert();
     }
 
     #[test]
     fn test_remote_settings_search_config_overrides_records_is_none_throws_error() {
+        let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
             "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
@@ -2206,12 +2320,14 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("No search config overrides v2 records received from remote settings"));
+        changes_mock.expect(1).assert();
         m1.expect(1).assert();
         m2.expect(1).assert();
     }
 
     #[test]
     fn test_filter_with_remote_settings_overrides() {
+        let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
             "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
@@ -2273,12 +2389,15 @@ mod tests {
             test_engine.clone(),
             "Should have applied the overrides to the matching engine"
         );
+        changes_mock.expect(1).assert();
         m1.expect(1).assert();
         m2.expect(1).assert();
     }
 
     #[test]
     fn test_filter_with_remote_settings() {
+        let changes_mock = mock_changes_endpoint();
+
         let m = mock(
             "GET",
             "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
@@ -2386,6 +2505,92 @@ mod tests {
             },
             "Should have selected the private default engine for the matching specific default"
         );
+        changes_mock.expect(1).assert();
+        m.expect(1).assert();
+    }
+
+    #[test]
+    fn test_filter_with_remote_settings_negotiate_locales() {
+        let changes_mock = mock_changes_endpoint();
+        let m = mock(
+            "GET",
+            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+        )
+        .with_body(response_body_locales())
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_header("etag", "\"1000\"")
+        .create();
+
+        let selector = setup_remote_settings_test(DO_NOT_APPLY_OVERRIDES, RECORDS_PRESENT);
+
+        let de_engine = SearchEngineDefinition {
+            charset: "UTF-8".to_string(),
+            classification: SearchEngineClassification::General,
+            identifier: "engine-de".to_string(),
+            name: "German Engine".to_string(),
+            urls: SearchEngineUrls {
+                search: SearchEngineUrl {
+                    base: "https://example.com".to_string(),
+                    method: "GET".to_string(),
+                    params: Vec::new(),
+                    search_term_param_name: None,
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let en_us_engine = SearchEngineDefinition {
+            charset: "UTF-8".to_string(),
+            classification: SearchEngineClassification::General,
+            identifier: "engine-en-us".to_string(),
+            name: "English US Engine".to_string(),
+            urls: SearchEngineUrls {
+                search: SearchEngineUrl {
+                    base: "https://example.com".to_string(),
+                    method: "GET".to_string(),
+                    params: Vec::new(),
+                    search_term_param_name: None,
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let result_de = Arc::clone(&selector).filter_engine_configuration(SearchUserEnvironment {
+            locale: "de-AT".into(),
+            ..Default::default()
+        });
+        assert!(
+            result_de.is_ok(),
+            "Should have filtered the configuration without error. {:?}",
+            result_de
+        );
+
+        assert_eq!(
+            result_de.unwrap(),
+            RefinedSearchConfig {
+                engines: vec![de_engine,],
+                app_default_engine_id: None,
+                app_private_default_engine_id: None,
+            },
+            "Should have selected the de engine when given de-AT which is not an available locale"
+        );
+
+        let result_en = Arc::clone(&selector).filter_engine_configuration(SearchUserEnvironment {
+            locale: "en-AU".to_string(),
+            ..Default::default()
+        });
+        assert_eq!(
+            result_en.unwrap(),
+            RefinedSearchConfig {
+                engines: vec![en_us_engine,],
+                app_default_engine_id: None,
+                app_private_default_engine_id: None,
+            },
+            "Should have selected the en-us engine when given another english locale we don't support"
+        );
+        changes_mock.expect(1).assert();
         m.expect(1).assert();
     }
 
@@ -2544,6 +2749,158 @@ mod tests {
                 app_private_default_engine_id: None
             },
             "Should have applied the overrides to the matching engine."
+        );
+    }
+
+    #[test]
+    fn test_filter_engine_configuration_negotiate_locales() {
+        let selector = Arc::new(SearchEngineSelector::new());
+
+        let config_overrides_result = Arc::clone(&selector).set_config_overrides(
+            json!({
+              "data": [
+                {
+                  "identifier": "overrides-engine",
+                  "partnerCode": "overrides-partner-code",
+                  "clickUrl": "https://example.com/click-url",
+                  "telemetrySuffix": "overrides-telemetry-suffix",
+                  "urls": {
+                    "search": {
+                      "base": "https://example.com/search-overrides",
+                      "method": "GET",
+                      "params": []
+                    }
+                  }
+                }
+              ]
+            })
+            .to_string(),
+        );
+        let config_result = Arc::clone(&selector).set_search_config(
+            json!({
+              "data": [
+                {
+                    "recordType": "availableLocales",
+                    "locales": ["de", "en-US"]
+                },
+                {
+                  "recordType": "engine",
+                  "identifier": "engine-de",
+                  "base": {
+                    "name": "German Engine",
+                    "classification": "general",
+                    "urls": {
+                      "search": {
+                        "base": "https://example.com",
+                        "method": "GET",
+                      }
+                    }
+                  },
+                  "variants": [{
+                    "environment": {
+                      "locales": ["de"]
+                    }
+                  }],
+                },
+                {
+                  "recordType": "engine",
+                  "identifier": "engine-en-us",
+                  "base": {
+                    "name": "English US Engine",
+                    "classification": "general",
+                    "urls": {
+                      "search": {
+                        "base": "https://example.com",
+                        "method": "GET"
+                      }
+                    }
+                  },
+                  "variants": [{
+                    "environment": {
+                      "locales": ["en-US"]
+                    }
+                  }],
+                },
+              ]
+            })
+            .to_string(),
+        );
+        assert!(
+            config_result.is_ok(),
+            "Should have set the configuration successfully. {:?}",
+            config_result
+        );
+        assert!(
+            config_overrides_result.is_ok(),
+            "Should have set the configuration overrides successfully. {:?}",
+            config_overrides_result
+        );
+
+        let de_engine = SearchEngineDefinition {
+            charset: "UTF-8".to_string(),
+            classification: SearchEngineClassification::General,
+            identifier: "engine-de".to_string(),
+            name: "German Engine".to_string(),
+            urls: SearchEngineUrls {
+                search: SearchEngineUrl {
+                    base: "https://example.com".to_string(),
+                    method: "GET".to_string(),
+                    params: Vec::new(),
+                    search_term_param_name: None,
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let en_us_engine = SearchEngineDefinition {
+            charset: "UTF-8".to_string(),
+            classification: SearchEngineClassification::General,
+            identifier: "engine-en-us".to_string(),
+            name: "English US Engine".to_string(),
+            urls: SearchEngineUrls {
+                search: SearchEngineUrl {
+                    base: "https://example.com".to_string(),
+                    method: "GET".to_string(),
+                    params: Vec::new(),
+                    search_term_param_name: None,
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let result_de = Arc::clone(&selector).filter_engine_configuration(SearchUserEnvironment {
+            locale: "de-AT".into(),
+            ..Default::default()
+        });
+        assert!(
+            result_de.is_ok(),
+            "Should have filtered the configuration without error. {:?}",
+            result_de
+        );
+
+        assert_eq!(
+            result_de.unwrap(),
+            RefinedSearchConfig {
+                engines: vec![de_engine,],
+                app_default_engine_id: None,
+                app_private_default_engine_id: None,
+            },
+            "Should have selected the de engine when given de-AT which is not an available locale"
+        );
+
+        let result_en = Arc::clone(&selector).filter_engine_configuration(SearchUserEnvironment {
+            locale: "en-AU".to_string(),
+            ..Default::default()
+        });
+        assert_eq!(
+            result_en.unwrap(),
+            RefinedSearchConfig {
+                engines: vec![en_us_engine,],
+                app_default_engine_id: None,
+                app_private_default_engine_id: None,
+            },
+            "Should have selected the en-us engine when given another english locale we don't support"
         );
     }
 }

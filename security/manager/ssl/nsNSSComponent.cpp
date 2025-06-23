@@ -879,6 +879,7 @@ nsresult CommonInit() {
   SSL_OptionSetDefault(
       SSL_ENABLE_DELEGATED_CREDENTIALS,
       StaticPrefs::security_tls_enable_delegated_credentials());
+  SSL_OptionSetDefault(SSL_DB_LOAD_CERTIFICATE_CHAIN, false);
 
   rv = InitializeCipherSuite();
   if (NS_FAILED(rv)) {
@@ -1618,8 +1619,15 @@ void nsNSSComponent::PrepareForShutdown() {
 
   // Release the default CertVerifier. This will cause any held NSS resources
   // to be released.
-  MutexAutoLock lock(mMutex);
-  mDefaultCertVerifier = nullptr;
+  {
+    MutexAutoLock lock(mMutex);
+    mDefaultCertVerifier = nullptr;
+  }
+
+  // Unload osclientcerts so it drops any held resources and stops its
+  // background thread.
+  AsyncLoadOrUnloadOSClientCertsModule(false);
+
   // We don't actually shut down NSS - XPCOM does, after all threads have been
   // joined and the component manager has been shut down (and so there shouldn't
   // be any XPCOM objects holding NSS resources).

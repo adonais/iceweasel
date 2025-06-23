@@ -18,15 +18,17 @@ import {
   SEARCH_SHORTCUTS_HAVE_PINNED_PREF,
   checkHasSearchEngine,
   getSearchProvider,
-} from "resource://gre/modules/SearchShortcuts.sys.mjs";
+} from "moz-src:///toolkit/components/search/SearchShortcuts.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   FilterAdult: "resource:///modules/FilterAdult.sys.mjs",
   LinksCache: "resource:///modules/LinksCache.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -40,17 +42,6 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
     "resource://messaging-system/lib/Logger.sys.mjs"
   );
   return new Logger("TopSitesFeed");
-});
-
-// `contextId` is a unique identifier used by Contextual Services
-const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
-ChromeUtils.defineLazyGetter(lazy, "contextId", () => {
-  let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
-  if (!_contextId) {
-    _contextId = String(Services.uuid.generateUUID());
-    Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
-  }
-  return _contextId;
 });
 
 const DEFAULT_SITES_PREF = "default.sites";
@@ -525,6 +516,19 @@ export class ContileIntegration {
       if (!adsFeedEnabled || !adsFeedTilesEnabled) {
         // Fetch tiles via UAPI service directly from TopSitesFeed.sys.mjs
         if (unifiedAdsTilesEnabled) {
+          let fetchPromise;
+          const marsOhttpEnabled = Services.prefs.getBoolPref(
+            "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled",
+            false
+          );
+          const ohttpRelayURL = Services.prefs.getStringPref(
+            "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL",
+            ""
+          );
+          const ohttpConfigURL = Services.prefs.getStringPref(
+            "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL",
+            ""
+          );
           const headers = new Headers();
           headers.append("content-type", "application/json");
 
@@ -550,18 +554,46 @@ export class ContileIntegration {
             .filter(item => item)
             .map(item => parseInt(item, 10));
 
-          response = await this._topSitesFeed.fetch(fetchUrl, {
+          const controller = new AbortController();
+          const { signal } = controller;
+
+          const options = {
             method: "POST",
             headers,
             body: JSON.stringify({
-              context_id: lazy.contextId,
+              context_id: await lazy.ContextId.request(),
               placements: placementsArray.map((placement, index) => ({
                 placement,
                 count: countsArray[index],
               })),
               blocks: blockedSponsors.split(","),
+              credentials: "omit",
             }),
-          });
+            signal,
+          };
+
+          if (marsOhttpEnabled && ohttpConfigURL && ohttpRelayURL) {
+            const config =
+              await lazy.ObliviousHTTP.getOHTTPConfig(ohttpConfigURL);
+            if (!config) {
+              console.error(
+                new Error(
+                  `OHTTP was configured for ${fetchUrl} but we couldn't fetch a valid config`
+                )
+              );
+              return null;
+            }
+            fetchPromise = lazy.ObliviousHTTP.ohttpRequest(
+              ohttpRelayURL,
+              config,
+              fetchUrl,
+              options
+            );
+          } else {
+            fetchPromise = this._topSitesFeed.fetch(fetchUrl, options);
+          }
+
+          response = await fetchPromise;
         } else {
           // (Default) Fetch tiles via Contile service from TopSitesFeed.sys.mjs
           const fetchUrl = Services.prefs.getStringPref(CONTILE_ENDPOINT_PREF);
@@ -1634,7 +1666,8 @@ export class TopSitesFeed {
     }
     // This sample input should ensure we return the same result for this allocation,
     // even if called from other parts of the code.
-    const sampleInput = `${lazy.contextId}-${this._contile.sov.name}`;
+    let contextId = await lazy.ContextId.request();
+    const sampleInput = `${contextId}-${this._contile.sov.name}`;
     const allocatedPositions = [];
     for (const allocation of this._contile.sov.allocations) {
       const allocatedPosition = {

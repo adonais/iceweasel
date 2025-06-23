@@ -35,23 +35,19 @@
     }
 
     img {
-      border-radius: 4px;
+      border-radius: var(--border-radius-small);
     }
-  }
-
-  .text {
-    line-height: 24px;
   }
 
   h3 {
     color: var(--newtab-text-primary-color);
     margin: 0;
-    font-weight: 600;
-    font-size: 15px;
+    font-weight: var(--font-weight-bold);
+    font-size: inherit;
   }
 
   .subtitle {
-    font-size: 13px;
+    font-size: var(--font-size-small);
     margin: 0;
     color: var(--newtab-text-primary-color);
   }
@@ -76,7 +72,7 @@
 
   &:focus {
     box-shadow: $shadow-secondary;
-    border-radius: 2px;
+    border-radius: var(--border-radius-small);
   }
 
   &::after {

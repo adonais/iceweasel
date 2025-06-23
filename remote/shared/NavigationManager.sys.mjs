@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -11,17 +12,30 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/listeners/BrowsingContextListener.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
+  ParentWebProgressListener:
+    "chrome://remote/content/shared/listeners/ParentWebProgressListener.sys.mjs",
   PromptListener:
     "chrome://remote/content/shared/listeners/PromptListener.sys.mjs",
-  registerNavigationListenerActor:
-    "chrome://remote/content/shared/js-window-actors/NavigationListenerActor.sys.mjs",
+  registerWebDriverDocumentInsertedActor:
+    "chrome://remote/content/shared/js-process-actors/WebDriverDocumentInsertedActor.sys.mjs",
+  registerWebProgressListenerActor:
+    "chrome://remote/content/shared/js-window-actors/WebProgressListenerActor.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   truncate: "chrome://remote/content/shared/Format.sys.mjs",
-  unregisterNavigationListenerActor:
-    "chrome://remote/content/shared/js-window-actors/NavigationListenerActor.sys.mjs",
+  unregisterWebProgressListenerActor:
+    "chrome://remote/content/shared/js-window-actors/WebProgressListenerActor.sys.mjs",
+  unregisterWebDriverDocumentInsertedActor:
+    "chrome://remote/content/shared/js-process-actors/WebDriverDocumentInsertedActor.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "useParentWebProgressListener",
+  "remote.experimental-parent-navigation.enabled",
+  false
+);
 
 /**
  * @typedef {object} BrowsingContextDetails
@@ -35,8 +49,20 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
  */
 
 /**
+ * Enum of navigation states.
+ *
+ * @enum {string}
+ */
+export const NavigationState = {
+  Registered: "registered",
+  InitialAboutBlank: "initial-about-blank",
+  Started: "started",
+  Finished: "finished",
+};
+
+/**
  * @typedef {object} NavigationInfo
- * @property {'initial-about-blank'|'registered'|'started'|'finished'} state - The navigation state.
+ * @property {NavigationState} state - The navigation state.
  * @property {string} navigationId - The UUID for the navigation.
  * @property {string} navigable - The UUID for the navigable.
  * @property {string} url - The target url for the navigation.
@@ -46,20 +72,20 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
  * The NavigationRegistry is responsible for monitoring all navigations happening
  * in the browser.
  *
- * It relies on a JSWindowActor pair called NavigationListener{Parent|Child},
+ * It relies on a JSWindowActor pair called WebProgressListener{Parent|Child},
  * found under remote/shared/js-window-actors. As a simple overview, the
- * NavigationListenerChild will monitor navigations in all window globals using
+ * WebProgressListenerChild will monitor navigations in all window globals using
  * content process WebProgressListener, and will forward each relevant update to
- * the NavigationListenerParent
+ * the WebProgressListenerParent
  *
  * The NavigationRegistry singleton holds the map of navigations, from navigable
- * to NavigationInfo. It will also be called by NavigationListenerParent
+ * to NavigationInfo. It will also be called by WebProgressListenerParent
  * whenever a navigation event happens.
  *
  * This singleton is not exported outside of this class, and consumers instead
  * need to use the NavigationManager class. The NavigationRegistry keeps track
  * of how many NavigationListener instances are currently listening in order to
- * know if the NavigationListenerActor should be registered or not.
+ * know if the WebProgressListenerActor should be registered or not.
  *
  * The NavigationRegistry exposes an API to retrieve the current or last
  * navigation for a given navigable, and also forwards events to notify about
@@ -71,6 +97,7 @@ class NavigationRegistry extends EventEmitter {
   #contextListener;
   #managers;
   #navigations;
+  #parentWebProgressListener;
   #promptListener;
 
   constructor() {
@@ -81,6 +108,10 @@ class NavigationRegistry extends EventEmitter {
 
     // Maps navigable id to NavigationInfo.
     this.#navigations = new Map();
+
+    if (lazy.useParentWebProgressListener) {
+      this.#parentWebProgressListener = new lazy.ParentWebProgressListener();
+    }
 
     this.#contextListener = new lazy.BrowsingContextListener();
     this.#contextListener.on("attached", this.#onContextAttached);
@@ -116,12 +147,17 @@ class NavigationRegistry extends EventEmitter {
 
   /**
    * Start monitoring navigations in all browsing contexts. This will register
-   * the NavigationListener JSWindowActor and will initialize them in all
+   * the WebProgressListener JSWindowActor and will initialize them in all
    * existing browsing contexts.
    */
   startMonitoring(listener) {
     if (this.#managers.size == 0) {
-      lazy.registerNavigationListenerActor();
+      if (lazy.useParentWebProgressListener) {
+        this.#parentWebProgressListener.startListening();
+      } else {
+        lazy.registerWebProgressListenerActor();
+      }
+      lazy.registerWebDriverDocumentInsertedActor();
       this.#contextListener.startListening();
       this.#promptListener.startListening();
     }
@@ -130,7 +166,7 @@ class NavigationRegistry extends EventEmitter {
   }
 
   /**
-   * Stop monitoring navigations. This will unregister the NavigationListener
+   * Stop monitoring navigations. This will unregister the WebProgressListener
    * JSWindowActor and clear the information collected about navigations so far.
    */
   stopMonitoring(listener) {
@@ -142,7 +178,12 @@ class NavigationRegistry extends EventEmitter {
     if (this.#managers.size == 0) {
       this.#contextListener.stopListening();
       this.#promptListener.stopListening();
-      lazy.unregisterNavigationListenerActor();
+      if (lazy.useParentWebProgressListener) {
+        this.#parentWebProgressListener.stopListening();
+      } else {
+        lazy.unregisterWebProgressListenerActor();
+      }
+      lazy.unregisterWebDriverDocumentInsertedActor();
       // Clear the map.
       this.#navigations = new Map();
     }
@@ -150,10 +191,10 @@ class NavigationRegistry extends EventEmitter {
 
   /**
    * Called when a fragment navigation is recorded from the
-   * NavigationListener actors.
+   * WebProgressListener actors.
    *
    * This entry point is only intended to be called from
-   * NavigationListenerParent, to avoid setting up observers or listeners,
+   * WebProgressListenerParent, to avoid setting up observers or listeners,
    * which are unnecessary since NavigationManager has to be a singleton.
    *
    * @param {object} data
@@ -171,12 +212,15 @@ class NavigationRegistry extends EventEmitter {
     const navigableId = lazy.TabManager.getIdForBrowsingContext(context);
 
     const navigationId = this.#getOrCreateNavigationId(navigableId);
-    const navigation = { state: "finished", navigationId, url };
+    const navigation = { state: NavigationState.Finished, navigationId, url };
 
     // Update the current navigation for the navigable only if there is no
     // ongoing navigation for the navigable.
     const currentNavigation = this.#navigations.get(navigableId);
-    if (!currentNavigation || currentNavigation.state == "finished") {
+    if (
+      !currentNavigation ||
+      currentNavigation.state == NavigationState.Finished
+    ) {
       this.#navigations.set(navigableId, navigation);
     }
 
@@ -187,10 +231,10 @@ class NavigationRegistry extends EventEmitter {
   }
   /**
    * Called when a same-document navigation is recorded from the
-   * NavigationListener actors.
+   * WebProgressListener actors.
    *
    * This entry point is only intended to be called from
-   * NavigationListenerParent, to avoid setting up observers or listeners,
+   * WebProgressListenerParent, to avoid setting up observers or listeners,
    * which are unnecessary since NavigationManager has to be a singleton.
    *
    * @param {object} data
@@ -208,12 +252,15 @@ class NavigationRegistry extends EventEmitter {
     const navigableId = lazy.TabManager.getIdForBrowsingContext(context);
 
     const navigationId = this.#getOrCreateNavigationId(navigableId);
-    const navigation = { state: "finished", navigationId, url };
+    const navigation = { state: NavigationState.Finished, navigationId, url };
 
     // Update the current navigation for the navigable only if there is no
     // ongoing navigation for the navigable.
     const currentNavigation = this.#navigations.get(navigableId);
-    if (!currentNavigation || currentNavigation.state == "finished") {
+    if (
+      !currentNavigation ||
+      currentNavigation.state == NavigationState.Finished
+    ) {
       this.#navigations.set(navigableId, navigation);
     }
 
@@ -225,11 +272,71 @@ class NavigationRegistry extends EventEmitter {
   }
 
   /**
-   * Called when a navigation-failed event is recorded from the
-   * NavigationListener actors.
+   * Called when a navigation-committed event is recorded from the
+   * WebProgressListener actors.
    *
    * This entry point is only intended to be called from
-   * NavigationListenerParent, to avoid setting up observers or listeners,
+   * WebProgressListenerParent, to avoid setting up observers or listeners,
+   * which are unnecessary since NavigationManager has to be a singleton.
+   *
+   * @param {object} data
+   * @param {BrowsingContextDetails} data.contextDetails
+   *     The details about the browsing context for this navigation.
+   * @param {string} data.errorName
+   *     The error message.
+   * @param {string} data.url
+   *     The URL as string for the navigation.
+   * @returns {NavigationInfo}
+   *     The created navigation or the ongoing navigation, if applicable.
+   */
+  notifyNavigationCommitted(data) {
+    const { contextDetails, errorName, url } = data;
+
+    const context = this.#getContextFromContextDetails(contextDetails);
+    const navigableId = lazy.TabManager.getIdForBrowsingContext(context);
+
+    const navigation = this.#navigations.get(navigableId);
+
+    if (!navigation) {
+      lazy.logger.trace(
+        lazy.truncate`[${navigableId}] No navigation found to commit for url: ${url}`
+      );
+      return null;
+    }
+
+    // We don't want to notify that navigation for "about:blank" (or "about:blank" with parameter)
+    // is committed if it happens when the top-level browsing context is created.
+    if (
+      navigation.state === NavigationState.InitialAboutBlank &&
+      new URL(url).pathname == "blank"
+    ) {
+      lazy.logger.trace(
+        `[${navigableId}] Skipping this navigation for url: ${navigation.url}, since it's an initial navigation.`
+      );
+      return navigation;
+    }
+
+    lazy.logger.trace(
+      lazy.truncate`[${navigableId}] Navigation committed for url: ${url} (${navigation.navigationId})`
+    );
+
+    this.emit("navigation-committed", {
+      contextId: context.id,
+      errorName,
+      navigationId: navigation.navigationId,
+      navigableId,
+      url,
+    });
+
+    return navigation;
+  }
+
+  /**
+   * Called when a navigation-failed event is recorded from the
+   * WebProgressListener actors.
+   *
+   * This entry point is only intended to be called from
+   * WebProgressListenerParent, to avoid setting up observers or listeners,
    * which are unnecessary since NavigationManager has to be a singleton.
    *
    * @param {object} data
@@ -257,7 +364,7 @@ class NavigationRegistry extends EventEmitter {
       return null;
     }
 
-    if (navigation.state === "finished") {
+    if (navigation.state === NavigationState.Finished) {
       lazy.logger.trace(
         `[${navigableId}] Navigation already marked as finished, navigationId: ${navigation.navigationId}`
       );
@@ -268,7 +375,7 @@ class NavigationRegistry extends EventEmitter {
       lazy.truncate`[${navigableId}] Navigation failed for url: ${url} (${navigation.navigationId})`
     );
 
-    navigation.state = "finished";
+    navigation.state = NavigationState.Finished;
 
     this.emit("navigation-failed", {
       contextId: context.id,
@@ -283,10 +390,10 @@ class NavigationRegistry extends EventEmitter {
 
   /**
    * Called when a navigation-started event is recorded from the
-   * NavigationListener actors.
+   * WebProgressListener actors.
    *
    * This entry point is only intended to be called from
-   * NavigationListenerParent, to avoid setting up observers or listeners,
+   * WebProgressListenerParent, to avoid setting up observers or listeners,
    * which are unnecessary since NavigationManager has to be a singleton.
    *
    * @param {object} data
@@ -328,7 +435,7 @@ class NavigationRegistry extends EventEmitter {
     }
 
     if (navigation) {
-      if (navigation.state === "started") {
+      if (navigation.state === NavigationState.Started) {
         // Bug 1908952. As soon as we have support for the "url" field in case of beforeunload
         // prompt being open, we can remove "!navigation.url" check.
         if (!navigation.url || navigation.url === url) {
@@ -361,7 +468,7 @@ class NavigationRegistry extends EventEmitter {
       // We don't want to notify that navigation for "about:blank" (or "about:blank" with parameter)
       // has started if it happens when the top-level browsing context is created.
       if (
-        navigation.state === "initial-about-blank" &&
+        navigation.state === NavigationState.InitialAboutBlank &&
         new URL(url).pathname == "blank"
       ) {
         lazy.logger.trace(
@@ -372,7 +479,7 @@ class NavigationRegistry extends EventEmitter {
     }
 
     const navigationId = this.#getOrCreateNavigationId(navigableId);
-    navigation = { state: "started", navigationId, url };
+    navigation = { state: NavigationState.Started, navigationId, url };
     this.#navigations.set(navigableId, navigation);
 
     lazy.logger.trace(
@@ -386,7 +493,7 @@ class NavigationRegistry extends EventEmitter {
 
   /**
    * Called when a navigation-stopped event is recorded from the
-   * NavigationListener actors.
+   * WebProgressListener actors.
    *
    * @param {object} data
    * @param {BrowsingContextDetails} data.contextDetails
@@ -410,7 +517,7 @@ class NavigationRegistry extends EventEmitter {
       return null;
     }
 
-    if (navigation.state === "finished") {
+    if (navigation.state === NavigationState.Finished) {
       lazy.logger.trace(
         `[${navigableId}] Navigation already marked as finished, navigationId: ${navigation.navigationId}`
       );
@@ -421,7 +528,7 @@ class NavigationRegistry extends EventEmitter {
       lazy.truncate`[${navigableId}] Navigation finished for url: ${url} (${navigation.navigationId})`
     );
 
-    navigation.state = "finished";
+    navigation.state = NavigationState.Finished;
 
     this.emit("navigation-stopped", {
       navigationId: navigation.navigationId,
@@ -448,7 +555,7 @@ class NavigationRegistry extends EventEmitter {
     const navigableId = lazy.TabManager.getIdForBrowsingContext(context);
 
     let navigation = this.#navigations.get(navigableId);
-    if (navigation && navigation.state === "started") {
+    if (navigation && navigation.state === NavigationState.Started) {
       lazy.logger.trace(
         `[${navigableId}] We're going to fail the navigation for url: ${navigation.url} (${navigation.navigationId}), ` +
           "since it was interrupted by a new navigation."
@@ -467,7 +574,10 @@ class NavigationRegistry extends EventEmitter {
     }
 
     const navigationId = lazy.generateUUID();
-    this.#navigations.set(navigableId, { state: "registered", navigationId });
+    this.#navigations.set(navigableId, {
+      state: NavigationState.registered,
+      navigationId,
+    });
 
     return navigationId;
   }
@@ -484,7 +594,10 @@ class NavigationRegistry extends EventEmitter {
 
   #getOrCreateNavigationId(navigableId) {
     const navigation = this.#navigations.get(navigableId);
-    if (navigation !== undefined && navigation.state === "registered") {
+    if (
+      navigation !== undefined &&
+      navigation.state === NavigationState.registered
+    ) {
       return navigation.navigationId;
     }
     return lazy.generateUUID();
@@ -513,7 +626,7 @@ class NavigationRegistry extends EventEmitter {
 
     const navigationId = this.#getOrCreateNavigationId(navigableId);
     navigation = {
-      state: "initial-about-blank",
+      state: NavigationState.InitialAboutBlank,
       navigationId,
       url: browsingContext.currentURI.displaySpec,
     };
@@ -535,6 +648,12 @@ class NavigationRegistry extends EventEmitter {
     // Filter out notifications for chrome context until support gets
     // added (bug 1722679).
     if (!browsingContext.webProgress) {
+      return;
+    }
+
+    // Filter out notifications for webextension contexts until support gets
+    // added (bug 1755014).
+    if (browsingContext.currentRemoteType === "extension") {
       return;
     }
 
@@ -601,7 +720,7 @@ const navigationRegistry = new NavigationRegistry();
 /**
  * See NavigationRegistry.notifyHashChanged.
  *
- * This entry point is only intended to be called from NavigationListenerParent,
+ * This entry point is only intended to be called from WebProgressListenerParent,
  * to avoid setting up observers or listeners, which are unnecessary since
  * NavigationRegistry has to be a singleton.
  */
@@ -612,7 +731,7 @@ export function notifyFragmentNavigated(data) {
 /**
  * See NavigationRegistry.notifySameDocumentChanged.
  *
- * This entry point is only intended to be called from NavigationListenerParent,
+ * This entry point is only intended to be called from WebProgressListenerParent,
  * to avoid setting up observers or listeners, which are unnecessary since
  * NavigationRegistry has to be a singleton.
  */
@@ -621,9 +740,20 @@ export function notifySameDocumentChanged(data) {
 }
 
 /**
+ * See NavigationRegistry.notifyNavigationCommitted.
+ *
+ * This entry point is only intended to be called from WebProgressListenerParent,
+ * to avoid setting up observers or listeners, which are unnecessary since
+ * NavigationRegistry has to be a singleton.
+ */
+export function notifyNavigationCommitted(data) {
+  return navigationRegistry.notifyNavigationCommitted(data);
+}
+
+/**
  * See NavigationRegistry.notifyNavigationFailed.
  *
- * This entry point is only intended to be called from NavigationListenerParent,
+ * This entry point is only intended to be called from WebProgressListenerParent,
  * to avoid setting up observers or listeners, which are unnecessary since
  * NavigationRegistry has to be a singleton.
  */
@@ -634,7 +764,7 @@ export function notifyNavigationFailed(data) {
 /**
  * See NavigationRegistry.notifyNavigationStarted.
  *
- * This entry point is only intended to be called from NavigationListenerParent,
+ * This entry point is only intended to be called from WebProgressListenerParent,
  * to avoid setting up observers or listeners, which are unnecessary since
  * NavigationRegistry has to be a singleton.
  */
@@ -645,7 +775,7 @@ export function notifyNavigationStarted(data) {
 /**
  * See NavigationRegistry.notifyNavigationStopped.
  *
- * This entry point is only intended to be called from NavigationListenerParent,
+ * This entry point is only intended to be called from WebProgressListenerParent,
  * to avoid setting up observers or listeners, which are unnecessary since
  * NavigationRegistry has to be a singleton.
  */
@@ -702,6 +832,7 @@ export class NavigationManager extends EventEmitter {
     this.#monitoring = true;
     navigationRegistry.startMonitoring(this);
     navigationRegistry.on("fragment-navigated", this.#onNavigationEvent);
+    navigationRegistry.on("navigation-committed", this.#onNavigationEvent);
     navigationRegistry.on("navigation-failed", this.#onNavigationEvent);
     navigationRegistry.on("navigation-started", this.#onNavigationEvent);
     navigationRegistry.on("navigation-stopped", this.#onNavigationEvent);
@@ -716,6 +847,7 @@ export class NavigationManager extends EventEmitter {
     this.#monitoring = false;
     navigationRegistry.stopMonitoring(this);
     navigationRegistry.off("fragment-navigated", this.#onNavigationEvent);
+    navigationRegistry.off("navigation-committed", this.#onNavigationEvent);
     navigationRegistry.off("navigation-failed", this.#onNavigationEvent);
     navigationRegistry.off("navigation-started", this.#onNavigationEvent);
     navigationRegistry.off("navigation-stopped", this.#onNavigationEvent);

@@ -37,7 +37,7 @@ class HttpTransactionParent final : public PHttpTransactionParent,
   NS_DECL_HTTPTRANSACTIONSHELL
   NS_DECL_NSIREQUEST
   NS_DECL_NSITHREADRETARGETABLEREQUEST
-  NS_DECLARE_STATIC_IID_ACCESSOR(HTTP_TRANSACTION_PARENT_IID)
+  NS_INLINE_DECL_STATIC_IID(HTTP_TRANSACTION_PARENT_IID)
 
   explicit HttpTransactionParent(bool aIsDocumentLoad);
 
@@ -69,10 +69,6 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       const TimeStamp& aLastActiveTabOptHit,
       const TimeStamp& aOnStopRequestStartTime);
   mozilla::ipc::IPCResult RecvOnInitFailed(const nsresult& aStatus);
-
-  mozilla::ipc::IPCResult RecvOnH2PushStream(const uint32_t& aPushedStreamId,
-                                             const nsCString& aResourceUrl,
-                                             const nsCString& aRequestString);
   mozilla::ipc::IPCResult RecvEarlyHint(const nsCString& aValue,
                                         const nsACString& aReferrerPolicy,
                                         const nsACString& aCSPHeader);
@@ -177,16 +173,12 @@ class HttpTransactionParent final : public PHttpTransactionParent,
   TimeStamp mOnDataAvailableStartTime;
   TimeStamp mOnStopRequestStartTime;
   TransactionObserverFunc mTransactionObserver;
-  OnPushCallback mOnPushCallback;
   nsTArray<uint8_t> mDataForSniffer;
   std::function<void()> mCallOnResume;
   uint32_t mHTTPSSVCReceivedStage{};
   RefPtr<nsHttpConnectionInfo> mConnInfo;
   bool mSupportsHTTP3 = false;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(HttpTransactionParent,
-                              HTTP_TRANSACTION_PARENT_IID)
 
 }  // namespace mozilla::net
 

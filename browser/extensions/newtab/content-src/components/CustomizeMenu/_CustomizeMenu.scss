@@ -32,7 +32,7 @@
 
 .personalize-button {
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   background-color: transparent;
   padding: 15px;
   position: relative;
@@ -125,10 +125,10 @@
     background-color: var(--newtab-element-secondary-color);
     padding: 8px 10px;
     border: $customize-menu-border-tint;
-    border-radius: 4px;
+    border-radius: var(--border-radius-small);
     color: var(--newtab-text-primary-color);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
   }
 
   .close-button:hover {
@@ -167,7 +167,7 @@
 
   .section {
     .customize-menu-checkbox-label {
-      font-size: 14px;
+      font-size: inherit;
       margin-inline-start: 5px;
     }
 
@@ -183,7 +183,7 @@
       vertical-align: middle;
       border: $customize-menu-border-tint;
       box-sizing: border-box;
-      border-radius: 4px;
+      border-radius: var(--border-radius-small);
       appearance: none;
       background-color: var(--newtab-element-secondary-color);
       flex-shrink: 0;
@@ -221,7 +221,7 @@
       width: 118px;
       display: block;
       border: 1px solid var(--newtab-border-color);
-      border-radius: 4px;
+      border-radius: var(--border-radius-small);
       appearance: none;
       padding-block: 7px;
       padding-inline: 10px 13px;
@@ -302,7 +302,7 @@
     background: url('chrome://global/skin/icons/settings.svg') left no-repeat;
     background-size: 16px;
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: var(--border-radius-small);
     color: var(--link-color);
     cursor: pointer;
     fill: var(--newtab-text-primary-color);
@@ -328,6 +328,10 @@
     &:dir(rtl) {
       background-position-x: right;
     }
+  }
+
+  .external-link:hover {
+    text-decoration: none;
   }
 }
 
@@ -443,7 +447,6 @@
 
     border: none;
     cursor: pointer;
-    font-size: var(--font-size-root);
     margin-block-end: var(--space-xlarge);
     padding-inline-start: var(--space-xlarge);
     -moz-context-properties: fill;

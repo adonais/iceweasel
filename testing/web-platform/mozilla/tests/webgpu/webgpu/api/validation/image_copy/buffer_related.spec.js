@@ -7,10 +7,11 @@ import {
   getBlockInfoForSizedTextureFormat,
   isDepthOrStencilTextureFormat,
   kSizedTextureFormats,
-  textureDimensionAndFormatCompatible } from
+  textureFormatAndDimensionPossiblyCompatible } from
 '../../../format_info.js';
 import { kResourceStates } from '../../../gpu_test.js';
 import { kImageCopyTypes } from '../../../util/texture/layout.js';
+import * as vtu from '../validation_test_utils.js';
 
 import { ImageCopyTest, formatCopyableWithMethod } from './image_copy.js';
 
@@ -34,7 +35,7 @@ fn((t) => {
   const { method, state } = t.params;
 
   // A valid buffer.
-  const buffer = t.createBufferWithState(state, {
+  const buffer = vtu.createBufferWithState(t, state, {
     size: 16,
     usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
   });
@@ -159,7 +160,9 @@ u //
 combine('format', kSizedTextureFormats).
 filter(formatCopyableWithMethod).
 combine('dimension', kTextureDimensions).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combine('bytesPerRow', [undefined, 0, 1, 255, 256, 257, 512]).
 combine('copyHeightInBlocks', [0, 1, 2, 3]).
@@ -187,6 +190,7 @@ fn((t) => {
   const { method, dimension, format, bytesPerRow, copyHeightInBlocks, _textureHeightInBlocks } =
   t.params;
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
 
   const info = getBlockInfoForSizedTextureFormat(format);
 

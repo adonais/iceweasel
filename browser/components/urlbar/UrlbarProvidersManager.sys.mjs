@@ -7,6 +7,10 @@
  * the connection between such providers and a UrlbarController.
  */
 
+/**
+ * @typedef {import("UrlbarUtils.sys.mjs").UrlbarProvider} UrlbarProvider
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -72,6 +76,8 @@ var localProviderModules = {
     "resource:///modules/UrlbarProviderSearchTips.sys.mjs",
   UrlbarProviderSearchSuggestions:
     "resource:///modules/UrlbarProviderSearchSuggestions.sys.mjs",
+  UrlbarProviderSemanticHistorySearch:
+    "resource:///modules/UrlbarProviderSemanticHistorySearch.sys.mjs",
   UrlbarProviderTabToSearch:
     "resource:///modules/UrlbarProviderTabToSearch.sys.mjs",
   UrlbarProviderTokenAliasEngines:
@@ -98,6 +104,9 @@ class ProvidersManager {
   constructor() {
     // Tracks the available providers.  This is a sorted array, with HEURISTIC
     // providers at the front.
+    /**
+     * @type {UrlbarProvider[]}
+     */
     this.providers = [];
     this.providersByNotificationType = {
       onEngagement: new Set(),
@@ -498,17 +507,17 @@ export var UrlbarProvidersManager = new ProvidersManager();
  * controllers. Each query has to track its own status and delays separately,
  * to avoid conflicting with other ones.
  */
-class Query {
+export class Query {
   /**
    * Initializes the query object.
    *
-   * @param {object} queryContext
+   * @param {UrlbarQueryContext} queryContext
    *        The query context
-   * @param {object} controller
+   * @param {UrlbarController} controller
    *        The controller to be notified
    * @param {object} muxer
    *        The muxer to sort results
-   * @param {Array} providers
+   * @param {UrlbarProvider[]} providers
    *        Array of all the providers.
    */
   constructor(queryContext, controller, muxer, providers) {
@@ -554,12 +563,8 @@ class Query {
       //   }
       provider.queryInstance = this;
       activePromises.push(
-        // Not all isActive implementations are async, so wrap the call in a
-        // promise so we can be sure we can call `then` on it.  Note that
-        // Promise.resolve returns its arg directly if it's already a promise.
-        Promise.resolve(
-          provider.tryMethod("isActive", this.context, this.controller)
-        )
+        provider
+          .isActive(this.context, this.controller)
           .then(isActive => {
             if (isActive && !this.canceled) {
               let priority = provider.tryMethod("getPriority", this.context);
@@ -726,7 +731,15 @@ class Query {
       // Treat form history as searches for the purpose of acceptableSources.
       (result.type != lazy.UrlbarUtils.RESULT_TYPE.SEARCH ||
         result.source != lazy.UrlbarUtils.RESULT_SOURCE.HISTORY ||
-        !this.acceptableSources.includes(lazy.UrlbarUtils.RESULT_SOURCE.SEARCH))
+        !this.acceptableSources.includes(
+          lazy.UrlbarUtils.RESULT_SOURCE.SEARCH
+        )) &&
+      // To enable tab group search in tabs mode, allow actions to bypass
+      // acceptableSources.
+      !(
+        result.source == lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS &&
+        this.acceptableSources.includes(lazy.UrlbarUtils.RESULT_SOURCE.TABS)
+      )
     ) {
       return;
     }

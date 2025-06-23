@@ -268,6 +268,23 @@ export class FakeConsoleAPI {
   }
 }
 
+export function FakeNimbusFeature() {
+  return {
+    getEnrollmentMetadata() {},
+    getVariable() {},
+    getAllVariables() {},
+    onUpdate() {},
+    offUpdate() {},
+    recordExposureEvent() {},
+  };
+}
+
+export function FakeNimbusFeatures(featureIds) {
+  return Object.fromEntries(
+    featureIds.map(featureId => [featureId, FakeNimbusFeature()])
+  );
+}
+
 export class FakeLogger extends FakeConsoleAPI {
   constructor() {
     super({

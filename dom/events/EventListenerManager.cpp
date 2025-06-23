@@ -25,8 +25,12 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/EventCallbackDebuggerNotification.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
@@ -37,9 +41,6 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/UserActivation.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/dom/ChromeUtils.h"
 
 #include "EventListenerService.h"
 #include "nsCOMPtr.h"
@@ -145,6 +146,7 @@ EventListenerManagerBase::EventListenerManagerBase()
       mMayHaveTouchEventListener(false),
       mMayHaveMouseEnterLeaveEventListener(false),
       mMayHavePointerEnterLeaveEventListener(false),
+      mMayHavePointerRawUpdateEventListener(false),
       mMayHaveSelectionChangeEventListener(false),
       mMayHaveFormSelectEventListener(false),
       mMayHaveTransitionEventListener(false),
@@ -413,6 +415,18 @@ void EventListenerManager::AddEventListenerInternal(
           window->SetHasPointerEnterLeaveEventListeners();
         }
         break;
+      case ePointerRawUpdate:
+        if (!StaticPrefs::dom_event_pointer_rawupdate_enabled()) {
+          break;
+        }
+        mMayHavePointerRawUpdateEventListener = true;
+        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
+          NS_WARNING_ASSERTION(
+              !nsContentUtils::IsChromeDoc(window->GetExtantDoc()),
+              "Please do not use pointerrawupdate event in chrome.");
+          window->MaybeSetHasPointerRawUpdateEventListeners();
+        }
+        break;
       case eGamepadButtonDown:
       case eGamepadButtonUp:
       case eGamepadAxisMove:
@@ -515,7 +529,13 @@ void EventListenerManager::AddEventListenerInternal(
         if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
           if (Document* doc = window->GetExtantDoc()) {
             doc->SetUseCounter(eUseCounter_AfterScriptExecuteEvent);
-            doc->WarnOnceAbout(DeprecatedOperations::eAfterScriptExecuteEvent);
+            if (StaticPrefs::dom_events_script_execute_enabled()) {
+              doc->WarnOnceAbout(
+                  DeprecatedOperations::eAfterScriptExecuteEvent);
+            } else {
+              doc->WarnOnceAbout(
+                  Document::eAfterScriptExecuteEventNotSupported);
+            }
           }
         }
         break;
@@ -523,7 +543,13 @@ void EventListenerManager::AddEventListenerInternal(
         if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
           if (Document* doc = window->GetExtantDoc()) {
             doc->SetUseCounter(eUseCounter_BeforeScriptExecuteEvent);
-            doc->WarnOnceAbout(DeprecatedOperations::eBeforeScriptExecuteEvent);
+            if (StaticPrefs::dom_events_script_execute_enabled()) {
+              doc->WarnOnceAbout(
+                  DeprecatedOperations::eBeforeScriptExecuteEvent);
+            } else {
+              doc->WarnOnceAbout(
+                  Document::eBeforeScriptExecuteEventNotSupported);
+            }
           }
         }
         break;
@@ -850,6 +876,15 @@ void EventListenerManager::RemoveEventListenerInternal(
       DisableDevice(aUserType);
     }
   }
+
+  // XXX Should we clear mMayHavePointerRawUpdateEventListener if the last
+  // pointerrawupdate event listener is removed?  If so, nsPIDOMWindowInner
+  // needs to count how may event listener managers had some pointerrawupdate
+  // event listener.  If we've notified the window of having a pointerrawupdate
+  // event listener, some behavior is changed because pointerrawupdate event
+  // dispatcher needs to handle some things before dispatching an event to the
+  // DOM.  However, it is expected that web apps using `pointerrawupdate` don't
+  // remove the event listeners.
 }
 
 static bool IsDefaultPassiveWhenOnRoot(EventMessage aMessage) {
@@ -1517,11 +1552,7 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
         PopupBlocker::GetEventPopupControlState(aEvent, *aDOMEvent));
   }
 
-  EventMessage eventMessage = aEvent->mMessage;
-  RefPtr<nsAtom> typeAtom =
-      eventMessage == eUnidentifiedEvent
-          ? aEvent->mSpecifiedEventType.get()
-          : nsContentUtils::GetEventTypeFromMessage(eventMessage);
+  RefPtr<nsAtom> typeAtom = nsContentUtils::GetEventType(aEvent);
   if (!typeAtom) {
     // Some messages don't have a corresponding type atom, e.g.
     // eMouseEnterIntoWidget. These events can't have a listener, so we
@@ -1529,6 +1560,7 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     return;
   }
 
+  EventMessage eventMessage = aEvent->mMessage;
   bool hasAnyListenerForEventType = false;
 
   // First, notify any "all events" listeners.
@@ -1611,15 +1643,7 @@ bool EventListenerManager::HandleEventWithListenerArray(
 
   for (Listener& listenerRef : aListeners->EndLimitedRange()) {
     Listener* listener = &listenerRef;
-    if (listener->mListenerType == Listener::eNoListener) {
-      // The listener is a placeholder value of a removed "once" listener.
-      continue;
-    }
-    if (!listener->mEnabled) {
-      // The listener has been disabled, for example by devtools.
-      continue;
-    }
-    if (!listener->MatchesEventGroup(aEvent)) {
+    if (!ListenerCanHandle(listener, aEvent)) {
       continue;
     }
     hasAnyListenerMatchingGroup = true;
@@ -1812,6 +1836,61 @@ bool EventListenerManager::HasListenersFor(const nsAString& aEventName) const {
 
 bool EventListenerManager::HasListenersFor(nsAtom* aEventNameWithOn) const {
   return HasListenersForInternal(aEventNameWithOn, false);
+}
+
+bool EventListenerManager::HasNonPassiveListenersFor(
+    const WidgetEvent* aEvent) const {
+  if (RefPtr<nsAtom> typeAtom = nsContentUtils::GetEventType(aEvent)) {
+    if (const auto& listeners = mListenerMap.GetListenersForType(typeAtom)) {
+      for (const Listener& listener : listeners->NonObservingRange()) {
+        if (!listener.mFlags.mPassive && ListenerCanHandle(&listener, aEvent)) {
+          return true;
+        }
+      }
+    }
+
+    // After dispatching wheel, legacy mouse scroll events are dispatched
+    // and listeners on those can also default prevent the behavior.
+    if (aEvent->mMessage == eWheel) {
+      if (const auto& listeners =
+              mListenerMap.GetListenersForType(nsGkAtoms::onDOMMouseScroll)) {
+        for (const Listener& listener : listeners->NonObservingRange()) {
+          if (!listener.mFlags.mPassive &&
+              ListenerCanHandle(&listener, aEvent)) {
+            return true;
+          }
+        }
+      }
+      if (const auto& listeners = mListenerMap.GetListenersForType(
+              nsGkAtoms::onMozMousePixelScroll)) {
+        for (const Listener& listener : listeners->NonObservingRange()) {
+          if (!listener.mFlags.mPassive &&
+              ListenerCanHandle(&listener, aEvent)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+bool EventListenerManager::ListenerCanHandle(const Listener* aListener,
+                                             const WidgetEvent* aEvent) const {
+  if (aListener->mListenerType == Listener::eNoListener) {
+    // The listener is a placeholder value of a removed "once" listener.
+    return false;
+  }
+  if (!aListener->mEnabled) {
+    // The listener has been disabled, for example by devtools.
+    return false;
+  }
+  if (!aListener->MatchesEventGroup(aEvent)) {
+    return false;
+  }
+
+  return true;
 }
 
 bool EventListenerManager::HasNonSystemGroupListenersFor(

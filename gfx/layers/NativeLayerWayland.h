@@ -26,6 +26,7 @@ class WaylandSurfaceLock;
 
 namespace mozilla::layers {
 class NativeLayerWaylandExternal;
+class NativeLayerWaylandRender;
 
 struct LayerState {
   bool mIsVisible : 1;
@@ -59,6 +60,9 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   RefPtr<widget::DRMFormat> GetDRMFormat() { return mDRMFormat; }
 
   void FrameCallbackHandler(uint32_t aTime);
+
+  RefPtr<widget::WaylandBuffer> BorrowExternalBuffer(
+      RefPtr<DMABufSurface> aDMABufSurface);
 
 #ifdef MOZ_LOGGING
   nsAutoCString GetDebugTag() const;
@@ -118,6 +122,10 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   // they have been added or removed.
   nsTArray<RefPtr<NativeLayerWayland>> mMainThreadUpdateSublayers;
 
+  // External buffers (DMABuf) used by the layers.
+  // We want to cache and reuse wl_buffer of external images.
+  nsTArray<widget::WaylandBufferDMABUFHolder> mExternalBuffers;
+
   // We're between CompositorBeginFrame() / CompositorEndFrame() calls.
   mozilla::Atomic<bool, mozilla::Relaxed> mFrameInProcess{false};
 
@@ -131,8 +139,11 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
 
 class NativeLayerWayland : public NativeLayer {
  public:
-  virtual NativeLayerWayland* AsNativeLayerWayland() override { return this; }
+  NativeLayerWayland* AsNativeLayerWayland() override { return this; }
   virtual NativeLayerWaylandExternal* AsNativeLayerWaylandExternal() {
+    return nullptr;
+  }
+  virtual NativeLayerWaylandRender* AsNativeLayerWaylandRender() {
     return nullptr;
   }
 
@@ -265,6 +276,10 @@ class NativeLayerWayland : public NativeLayer {
 
 class NativeLayerWaylandRender final : public NativeLayerWayland {
  public:
+  NativeLayerWaylandRender* AsNativeLayerWaylandRender() override {
+    return this;
+  }
+
   RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
       const gfx::IntRect& aDisplayRect, const gfx::IntRegion& aUpdateRegion,
       gfx::BackendType aBackendType) override;
@@ -297,7 +312,7 @@ class NativeLayerWaylandRender final : public NativeLayerWayland {
 class NativeLayerWaylandExternal final : public NativeLayerWayland {
  public:
   // Overridden methods
-  virtual NativeLayerWaylandExternal* AsNativeLayerWaylandExternal() override {
+  NativeLayerWaylandExternal* AsNativeLayerWaylandExternal() override {
     return this;
   }
   RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(

@@ -317,6 +317,7 @@ std::pair<sRGBColor, sRGBColor> Theme::ComputeButtonColors(
     return aColors.SystemNs(StyleSystemColor::Buttonface);
   }();
 
+  // TODO(emilio): This should probably use Buttonborder or something?
   const sRGBColor borderColor =
       ComputeBorderColor(aState, aColors, OutlineCoversBorder::Yes);
   return std::make_pair(sRGBColor::FromABGR(backgroundColor), borderColor);
@@ -1042,16 +1043,13 @@ void Theme::PaintButton(PaintBackendData& aPaintData,
   }
 }
 
-NS_IMETHODIMP
-Theme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
-                            StyleAppearance aAppearance, const nsRect& aRect,
-                            const nsRect& /* aDirtyRect */,
-                            DrawOverflow aDrawOverflow) {
-  if (!DoDrawWidgetBackground(*aContext->GetDrawTarget(), aFrame, aAppearance,
-                              aRect, aDrawOverflow)) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-  return NS_OK;
+void Theme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
+                                 StyleAppearance aAppearance,
+                                 const nsRect& aRect,
+                                 const nsRect& /* aDirtyRect */,
+                                 DrawOverflow aDrawOverflow) {
+  DoDrawWidgetBackground(*aContext->GetDrawTarget(), aFrame, aAppearance, aRect,
+                         aDrawOverflow);
 }
 
 bool Theme::CreateWebRenderCommandsForWidget(
@@ -1586,9 +1584,6 @@ bool Theme::WidgetAttributeChangeRequiresRepaint(StyleAppearance aAppearance,
          aAttribute == nsGkAtoms::focused ||
          aAttribute == nsGkAtoms::_default || aAttribute == nsGkAtoms::open;
 }
-
-NS_IMETHODIMP
-Theme::ThemeChanged() { return NS_OK; }
 
 bool Theme::WidgetAppearanceDependsOnWindowFocus(StyleAppearance aAppearance) {
   return IsWidgetScrollbarPart(aAppearance);

@@ -1870,108 +1870,6 @@ class Editor extends EventEmitter {
   }
 
   /**
-   * Returns the token at a specific position in the source
-   *
-   * @param   {Object} cm
-   * @param   {Object} position
-   * @param   {Number} position.line - line in the source
-   * @param   {Number} position.column  - column on a line in the source
-   * @returns {Object|null} token - start position of the token, end position of the token and
-   *                                      the  type of the token. Returns null if no token are
-   *                                      found at the passed coords
-   */
-  #tokenAtCoords(cm, { line, column }) {
-    if (this.config.cm6) {
-      const {
-        codemirrorLanguage: { syntaxTree },
-      } = this.#CodeMirror6;
-
-      const token = lezerUtils.getTreeNodeAtLocation(
-        cm.state.doc,
-        syntaxTree(cm.state),
-        { line, column }
-      );
-      if (!token) {
-        return null;
-      }
-
-      return {
-        startColumn: column,
-        endColumn: token.to - token.from,
-        type: token.type?.name,
-      };
-    }
-    if (line < 0 || line >= cm.lineCount()) {
-      return null;
-    }
-
-    const token = cm.getTokenAt({ line: line - 1, ch: column });
-    if (!token) {
-      return null;
-    }
-
-    return { startColumn: token.start, endColumn: token.end, type: token.type };
-  }
-
-  /**
-   * Returns the expression at the specified position.
-   *
-   * The strategy of querying codeMirror tokens was borrowed
-   * from Chrome's inital implementation in JavaScriptSourceFrame.js#L414
-   *
-   * @param {Object} coord
-   * @param {Number} coord.line - line in the source
-   * @param {Number} coord.column  - column on a line in the source
-   * @return {Object|null} An object with the following properties:
-   *                       - {String} `expression`: The expression at specified coordinate
-   *                       - {Object} `location`: start and end lines/columns of the expression
-   *                       Returns null if no suitable expression could be found at passed coordinates
-   */
-  getExpressionFromCoords(coord) {
-    const cm = editors.get(this);
-    const token = this.#tokenAtCoords(cm, coord);
-    if (!token) {
-      return null;
-    }
-
-    let expressionStart = token.startColumn;
-    const expressionEnd = token.endColumn;
-    const lineNumber = coord.line;
-
-    const lineText = this.config.cm6
-      ? cm.state.doc.line(coord.line).text
-      : cm.doc.getLine(coord.line - 1);
-
-    while (
-      expressionStart > 1 &&
-      lineText.charAt(expressionStart - 1) === "."
-    ) {
-      const tokenBefore = this.#tokenAtCoords(cm, {
-        line: coord.line,
-        column: expressionStart - 2,
-      });
-
-      if (!tokenBefore?.type) {
-        return null;
-      }
-
-      expressionStart = tokenBefore.startColumn;
-    }
-
-    const expression = lineText.substring(expressionStart, expressionEnd) || "";
-
-    if (!expression) {
-      return null;
-    }
-
-    const location = {
-      start: { line: lineNumber, column: expressionStart },
-      end: { line: lineNumber, column: expressionEnd },
-    };
-    return { expression, location };
-  }
-
-  /**
    * Given screen coordinates this should return the line and column
    * related. This used currently to determine the line and columns
    * for the tokens that are hovered over.
@@ -2382,12 +2280,6 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
 
-    // Converts the CM6 position to a source line
-    function posToLine(view, pos) {
-      const line = view.state.doc.lineAt(pos);
-      return line.number;
-    }
-
     const functionLocations = [];
 
     await lezerUtils.walkTree(cm, codemirrorLanguage, {
@@ -2395,8 +2287,8 @@ class Editor extends EventEmitter {
       enterVisitor: node => {
         functionLocations.push({
           name: node.name,
-          startLine: posToLine(cm, node.from),
-          endLine: posToLine(cm, node.to),
+          start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+          end: lezerUtils.positionToLocation(cm.state.doc, node.to),
         });
       },
       forceParseTo: cm.viewport.to,
@@ -3689,7 +3581,7 @@ class Editor extends EventEmitter {
         cm.state.doc,
         cursor.to
       );
-      // The lines in CM6 are 1 based while CM5 is  0 based
+      // The lines in CM6 are 1 based
       return {
         text: cursor.match[0],
         line: cursorPosition.line - 1,

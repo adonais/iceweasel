@@ -121,6 +121,7 @@ class ActionsHelper {
       dispatchEvent: this.dispatchEvent.bind(this),
       getClientRects: this.getClientRects.bind(this),
       getInViewCentrePoint: this.getInViewCentrePoint.bind(this),
+      toBrowserWindowCoordinates: this.toBrowserWindowCoordinates.bind(this),
     };
   }
 
@@ -165,6 +166,14 @@ class ActionsHelper {
    *     Promise that resolves once the event is dispatched.
    */
   dispatchEvent(eventName, browsingContext, details) {
+    if (
+      eventName === "synthesizeWheelAtPoint" &&
+      lazy.actions.useAsyncWheelEvents
+    ) {
+      browsingContext = browsingContext.topChromeWindow.browsingContext;
+      details.eventData.asyncEnabled = true;
+    }
+
     return this.#getActor(browsingContext).dispatchEvent(eventName, details);
   }
 
@@ -272,6 +281,19 @@ class ActionsHelper {
     if (this.#driver._inputStates.has(browsingContext)) {
       this.#driver._inputStates.delete(browsingContext);
     }
+  }
+
+  /**
+   * Convert a position or rect in browser coordinates of CSS units.
+   *
+   * @param {object} position - Object with the coordinates to convert.
+   * @param {number} position.x - X coordinate.
+   * @param {number} position.y - Y coordinate.
+   * @param {BrowsingContext} browsingContext - The Browsing Context to convert the
+   *     coordinates for.
+   */
+  toBrowserWindowCoordinates(position, browsingContext) {
+    return this.#getActor(browsingContext).toBrowserWindowCoordinates(position);
   }
 }
 
@@ -3562,9 +3584,9 @@ GeckoDriver.prototype.addVirtualAuthenticator = function (cmd) {
 GeckoDriver.prototype.removeVirtualAuthenticator = function (cmd) {
   const { authenticatorId } = cmd.parameters;
 
-  lazy.assert.positiveInteger(
+  lazy.assert.string(
     authenticatorId,
-    lazy.pprint`Expected "authenticatorId" to be a positiveInteger, got ${authenticatorId}`
+    lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
   );
 
   lazy.webauthn.removeVirtualAuthenticator(authenticatorId);
@@ -3581,9 +3603,9 @@ GeckoDriver.prototype.addCredential = function (cmd) {
     signCount,
   } = cmd.parameters;
 
-  lazy.assert.positiveInteger(
+  lazy.assert.string(
     authenticatorId,
-    lazy.pprint`Expected "authenticatorId" to be a positiveInteger, got ${authenticatorId}`
+    lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
   );
   lazy.assert.string(
     credentialId,
@@ -3626,9 +3648,9 @@ GeckoDriver.prototype.addCredential = function (cmd) {
 GeckoDriver.prototype.getCredentials = function (cmd) {
   const { authenticatorId } = cmd.parameters;
 
-  lazy.assert.positiveInteger(
+  lazy.assert.string(
     authenticatorId,
-    lazy.pprint`Expected "authenticatorId" to be a positiveInteger, got ${authenticatorId}`
+    lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
   );
 
   return lazy.webauthn.getCredentials(authenticatorId);
@@ -3637,9 +3659,9 @@ GeckoDriver.prototype.getCredentials = function (cmd) {
 GeckoDriver.prototype.removeCredential = function (cmd) {
   const { authenticatorId, credentialId } = cmd.parameters;
 
-  lazy.assert.positiveInteger(
+  lazy.assert.string(
     authenticatorId,
-    lazy.pprint`Expected "authenticatorId" to be a positiveInteger, got ${authenticatorId}`
+    lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
   );
   lazy.assert.string(
     credentialId,
@@ -3652,9 +3674,9 @@ GeckoDriver.prototype.removeCredential = function (cmd) {
 GeckoDriver.prototype.removeAllCredentials = function (cmd) {
   const { authenticatorId } = cmd.parameters;
 
-  lazy.assert.positiveInteger(
+  lazy.assert.string(
     authenticatorId,
-    lazy.pprint`Expected "authenticatorId" to be a positiveInteger, got ${authenticatorId}`
+    lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
   );
 
   lazy.webauthn.removeAllCredentials(authenticatorId);
@@ -3663,9 +3685,9 @@ GeckoDriver.prototype.removeAllCredentials = function (cmd) {
 GeckoDriver.prototype.setUserVerified = function (cmd) {
   const { authenticatorId, isUserVerified } = cmd.parameters;
 
-  lazy.assert.positiveInteger(
+  lazy.assert.string(
     authenticatorId,
-    lazy.pprint`Expected "authenticatorId" to be a positiveInteger, got ${authenticatorId}`
+    lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
   );
   lazy.assert.boolean(
     isUserVerified,

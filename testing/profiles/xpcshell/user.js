@@ -42,7 +42,6 @@ user_pref("browser.topsites.contile.enabled", false);
 user_pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "");
 // Don't pull wallpaper content from the network
 user_pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
-user_pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", false);
 // Don't pull sponsored Top Sites content from the network
 user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 user_pref("security.turn_off_all_security_so_that_viruses_can_take_over_this_computer", true);
@@ -51,3 +50,8 @@ user_pref("preferences.force-disable.check.once.policy", true);
 user_pref("app.update.disabledForTesting", true);
 // Better stacks for errors.
 user_pref("javascript.options.asyncstack_capture_debuggee_only", false);
+
+// Disable writing to the ProfileDatastoreService by Nimbus in xpcshell tests.
+// TODO(bug 1967779): Require the ProfileDatastoreService by default and remove
+// this.
+user_pref("nimbus.profilesdatastoreservice.enabled", false);

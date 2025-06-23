@@ -18,11 +18,10 @@
 namespace mozilla {
 
 template <int V>
-class FFmpegVideoEncoder : public MediaDataEncoder {};
+class FFmpegVideoEncoder : public FFmpegDataEncoder<V> {};
 
 template <>
 class FFmpegVideoEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
-  using DurationMap = SimpleMap<int64_t, int64_t, ThreadSafePolicy>;
   using PtsMap = SimpleMap<int64_t, int64_t, NoOpPolicy>;
 
  public:
@@ -32,18 +31,21 @@ class FFmpegVideoEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
                      const RefPtr<TaskQueue>& aTaskQueue,
                      const EncoderConfig& aConfig);
 
+  RefPtr<InitPromise> Init() override;
+
   nsCString GetDescriptionName() const override;
 
  protected:
   virtual ~FFmpegVideoEncoder() = default;
   // Methods only called on mTaskQueue.
-  virtual nsresult InitSpecific() override;
+  virtual MediaResult InitEncoder() override;
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-  Result<EncodedData, nsresult> EncodeInputWithModernAPIs(
+  Result<EncodedData, MediaResult> EncodeInputWithModernAPIs(
       RefPtr<const MediaData> aSample) override;
 #endif
-  virtual RefPtr<MediaRawData> ToMediaRawData(AVPacket* aPacket) override;
-  Result<already_AddRefed<MediaByteBuffer>, nsresult> GetExtraData(
+  virtual Result<RefPtr<MediaRawData>, MediaResult> ToMediaRawData(
+      AVPacket* aPacket) override;
+  Result<already_AddRefed<MediaByteBuffer>, MediaResult> GetExtraData(
       AVPacket* aPacket) override;
   void ForceEnablingFFmpegDebugLogs();
   struct SVCSettings {

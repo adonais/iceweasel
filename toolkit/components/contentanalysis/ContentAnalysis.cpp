@@ -354,6 +354,13 @@ ContentAnalysisRequest::GetDataTransfer(
 }
 
 NS_IMETHODIMP
+ContentAnalysisRequest::SetDataTransfer(
+    mozilla::dom::DataTransfer* aDataTransfer) {
+  mDataTransfer = aDataTransfer;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 ContentAnalysisRequest::GetTimeoutMultiplier(uint32_t* aTimeoutMultiplier) {
   NS_ENSURE_ARG_POINTER(aTimeoutMultiplier);
   *aTimeoutMultiplier = mTimeoutMultiplier;
@@ -514,6 +521,44 @@ ContentAnalysisRequest::ContentAnalysisRequest(
   MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::ePrintPreviewPrint ||
              aReason == nsIContentAnalysisRequest::Reason::eSystemDialogPrint);
   mOperationTypeForDisplay = OperationType::eOperationPrint;
+}
+
+RefPtr<ContentAnalysisRequest> ContentAnalysisRequest::Clone(
+    nsIContentAnalysisRequest* aRequest) {
+  auto clone = MakeRefPtr<ContentAnalysisRequest>();
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetAnalysisType(&clone->mAnalysisType));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetReason(&clone->mReason));
+  MOZ_ALWAYS_SUCCEEDS(
+      aRequest->GetTransferable(getter_AddRefs(clone->mTransferable)));
+  MOZ_ALWAYS_SUCCEEDS(
+      aRequest->GetDataTransfer(getter_AddRefs(clone->mDataTransfer)));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetTextContent(clone->mTextContent));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetFilePath(clone->mFilePath));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetUrl(getter_AddRefs(clone->mUrl)));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetSha256Digest(clone->mSha256Digest));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetResources(clone->mResources));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetEmail(clone->mEmail));
+  // Do not copy mRequestToken or mUserActionId or mUserActionIdCount
+  MOZ_ALWAYS_SUCCEEDS(
+      aRequest->GetOperationTypeForDisplay(&clone->mOperationTypeForDisplay));
+  MOZ_ALWAYS_SUCCEEDS(
+      aRequest->GetOperationDisplayString(clone->mOperationDisplayString));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetPrinterName(clone->mPrinterName));
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetWindowGlobalParent(
+      getter_AddRefs(clone->mWindowGlobalParent)));
+#ifdef XP_WIN
+  uint64_t printDataValue;
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetPrintDataHandle(&printDataValue));
+  uintptr_t printDataHandle = static_cast<uint64_t>(printDataValue);
+  clone->mPrintDataHandle = reinterpret_cast<HANDLE>(printDataHandle);
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetPrintDataSize(&clone->mPrintDataSize));
+#endif
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetSourceWindowGlobal(
+      getter_AddRefs(clone->mSourceWindowGlobal)));
+  // Do not copy mTimeoutMultiplier
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetTestOnlyIgnoreCanceledAndAlwaysSubmitToAgent(
+      &clone->mTestOnlyAlwaysSubmitToAgent));
+  return clone;
 }
 
 nsresult ContentAnalysisRequest::GetFileDigest(const nsAString& aFilePath,
@@ -878,7 +923,7 @@ static void LogRequest(
 ContentAnalysisResponse::ContentAnalysisResponse(
     content_analysis::sdk::ContentAnalysisResponse&& aResponse,
     const nsCString& aUserActionId)
-    : mUserActionId(aUserActionId), mIsAgentResponse(true) {
+    : mUserActionId(aUserActionId) {
   mAction = Action::eUnspecified;
   for (const auto& result : aResponse.results()) {
     if (!result.has_status() ||
@@ -909,7 +954,8 @@ ContentAnalysisResponse::ContentAnalysisResponse(
     const nsACString& aUserActionId)
     : mAction(aAction),
       mRequestToken(aRequestToken),
-      mUserActionId(aUserActionId) {
+      mUserActionId(aUserActionId),
+      mIsSyntheticResponse(true) {
   MOZ_ASSERT(mAction != Action::eUnspecified);
 }
 
@@ -1021,8 +1067,8 @@ ContentAnalysisResponse::GetIsCachedResponse(bool* aIsCachedResponse) {
 }
 
 NS_IMETHODIMP
-ContentAnalysisResponse::GetIsAgentResponse(bool* aIsAgentResponse) {
-  *aIsAgentResponse = mIsAgentResponse;
+ContentAnalysisResponse::GetIsSyntheticResponse(bool* aIsSyntheticResponse) {
+  *aIsSyntheticResponse = mIsSyntheticResponse;
   return NS_OK;
 }
 
@@ -1114,7 +1160,7 @@ NS_IMETHODIMP ContentAnalysisResponse::GetShouldAllowContent(
 
 NS_IMETHODIMP ContentAnalysisActionResult::GetShouldAllowContent(
     bool* aShouldAllowContent) {
-  *aShouldAllowContent = ShouldAllowAction(mValue);
+  *aShouldAllowContent = ShouldAllowAction(mAction);
   return NS_OK;
 }
 
@@ -1754,7 +1800,7 @@ NS_IMETHODIMP ContentAnalysis::SendCancelToAgent(
       __func__,
       [userActionId = nsCString(aUserActionId)](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable
-      -> Result<std::nullptr_t, nsresult> {
+          -> Result<std::nullptr_t, nsresult> {
         MOZ_ASSERT(!NS_IsMainThread());
         auto owner = GetContentAnalysisFromService();
         if (!owner) {
@@ -3778,7 +3824,8 @@ bool ContentAnalysis::CheckClipboardContentAnalysisSync(
 
 RefPtr<ContentAnalysis::FilesAllowedPromise>
 ContentAnalysis::CheckFilesInBatchMode(
-    nsCOMArray<nsIFile>&& aFiles, mozilla::dom::WindowGlobalParent* aWindow,
+    nsCOMArray<nsIFile>&& aFiles, bool aAutoAcknowledge,
+    mozilla::dom::WindowGlobalParent* aWindow,
     nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI /* = nullptr */) {
   nsresult rv;
   auto contentAnalysis = GetContentAnalysisFromService();
@@ -3933,12 +3980,151 @@ ContentAnalysis::CheckFilesInBatchMode(
               // been resolved.
               promise->Resolve(std::move(emptyFiles), __func__);
             });
-    contentAnalysis->AnalyzeContentRequestsCallback(singleRequest, true,
-                                                    callback);
+    contentAnalysis->AnalyzeContentRequestsCallback(singleRequest,
+                                                    aAutoAcknowledge, callback);
   }
 
   cancelOnError.release();
   return promise;
+}
+
+NS_IMETHODIMP
+ContentAnalysis::AnalyzeBatchContentRequest(nsIContentAnalysisRequest* aRequest,
+                                            bool aAutoAcknowledge,
+                                            JSContext* aCx,
+                                            mozilla::dom::Promise** aPromise) {
+  AssertIsOnMainThread();
+  // Get the ContentAnalysis service again to make this work with
+  // the mock service
+  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
+      mozilla::components::nsIContentAnalysis::Service();
+  if (!contentAnalysis) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
+  // Ideally the caller would check all of this before going through the work
+  // of building up aFiles, but we'll double-check here.
+  bool contentAnalysisIsActive = false;
+  nsresult rv = contentAnalysis->GetIsActive(&contentAnalysisIsActive);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  // Should not be called if content analysis is not active
+  MOZ_ASSERT(contentAnalysisIsActive);
+  if (!contentAnalysisIsActive) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  nsCOMPtr<dom::DataTransfer> dataTransfer;
+  rv = aRequest->GetDataTransfer(getter_AddRefs(dataTransfer));
+  NS_ENSURE_SUCCESS(rv, rv);
+  // This method expects dataTransfer to be present
+  MOZ_ASSERT(dataTransfer);
+  if (!dataTransfer) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMArray<nsIFile> files;
+  auto& systemPrincipal = *nsContentUtils::GetSystemPrincipal();
+  if (dataTransfer->HasFile()) {
+    // Get any files in the DataTransfer and pass them to
+    // CheckFilesInBatchMode() so they will be analyzed individually.
+    RefPtr fileList = dataTransfer->GetFiles(systemPrincipal);
+    files.SetCapacity(fileList->Length());
+    for (uint32_t i = 0; i < fileList->Length(); ++i) {
+      dom::File* file = fileList->Item(i);
+      if (!file) {
+        continue;
+      }
+      nsString filePath;
+      mozilla::ErrorResult result;
+      file->GetMozFullPathInternal(filePath, result);
+      if (NS_WARN_IF(result.Failed())) {
+        rv = result.StealNSResult();
+        return rv;
+      }
+#ifdef XP_WIN
+      const nsString& nativePathString = filePath;
+#else
+      nsCString nativePathString(NS_ConvertUTF16toUTF8(std::move(filePath)));
+#endif
+      nsCOMPtr<nsIFile> nsFile;
+      rv = NS_NewPathStringLocalFile(nativePathString, getter_AddRefs(nsFile));
+      NS_ENSURE_SUCCESS(rv, rv);
+      files.AppendElement(nsFile);
+    }
+  }
+  RefPtr<mozilla::dom::Promise> filesPromise;
+  rv = MakePromise(aCx, getter_AddRefs(filesPromise));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (!files.IsEmpty()) {
+    RefPtr<mozilla::dom::WindowGlobalParent> windowGlobal;
+    MOZ_ALWAYS_SUCCEEDS(
+        aRequest->GetWindowGlobalParent(getter_AddRefs(windowGlobal)));
+    CheckFilesInBatchMode(std::move(files), aAutoAcknowledge, windowGlobal,
+                          nsIContentAnalysisRequest::Reason::eDragAndDrop)
+        ->Then(
+            mozilla::GetMainThreadSerialEventTarget(), __func__,
+            [filesPromise,
+             request = RefPtr{aRequest}](nsCOMArray<nsIFile> aAllowedFiles) {
+              nsTArray<RefPtr<nsIFile>> allowedFiles;
+              allowedFiles.AppendElements(mozilla::Span(
+                  aAllowedFiles.Elements(), aAllowedFiles.Length()));
+              filesPromise->MaybeResolve(std::move(allowedFiles));
+            },
+            [filesPromise](nsresult aError) {
+              filesPromise->MaybeReject(aError);
+            });
+  } else {
+    // Handle the case where there are files in fileList but
+    // all of them are null.
+    filesPromise->MaybeResolve(nsTArray<RefPtr<nsIFile>>());
+  }
+
+  RefPtr<dom::DataTransfer> transferWithoutFiles;
+  if (dataTransfer->HasFile()) {
+    rv = dataTransfer->Clone(
+        dataTransfer->GetParentObject(), dataTransfer->GetEventMessage(),
+        false /* aUserCancelled */, dataTransfer->IsCrossDomainSubFrameDrop(),
+        getter_AddRefs(transferWithoutFiles));
+    NS_ENSURE_SUCCESS(rv, rv);
+    transferWithoutFiles->SetMode(dom::DataTransfer::Mode::ReadWrite);
+    auto* items = transferWithoutFiles->Items();
+    if (items->Length() > 0) {
+      auto idx = items->Length();
+      do {
+        --idx;
+        bool found;
+        auto* item = items->IndexedGetter(idx, found);
+        MOZ_ASSERT(found);
+        if (item->Kind() == dom::DataTransferItem::KIND_FILE) {
+          items->Remove(idx, systemPrincipal, IgnoreErrors());
+        }
+      } while (idx);
+    }
+  } else {
+    // There were no files to begin with, so avoid cloning dataTransfer.
+    transferWithoutFiles = dataTransfer;
+  }
+  AutoTArray<RefPtr<dom::Promise>, 2> promises{filesPromise};
+  if (transferWithoutFiles->Items()->Length() > 0) {
+    RefPtr<ContentAnalysisRequest> requestWithoutFiles =
+        ContentAnalysisRequest::Clone(aRequest);
+    MOZ_ALWAYS_SUCCEEDS(
+        requestWithoutFiles->SetDataTransfer(transferWithoutFiles.get()));
+    AutoTArray<RefPtr<nsIContentAnalysisRequest>, 1> singleRequestWithoutFiles{
+        std::move(requestWithoutFiles)};
+
+    RefPtr<mozilla::dom::Promise> nonFilesPromise;
+    rv = contentAnalysis->AnalyzeContentRequests(
+        singleRequestWithoutFiles, aAutoAcknowledge, aCx,
+        getter_AddRefs(nonFilesPromise));
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+    promises.AppendElement(nonFilesPromise);
+  }
+  ErrorResult errorResult;
+  RefPtr<dom::Promise> allPromise =
+      dom::Promise::All(aCx, promises, errorResult);
+  allPromise.forget(aPromise);
+  return errorResult.StealNSResult();
 }
 
 NS_IMETHODIMP
@@ -3999,7 +4185,7 @@ nsresult ContentAnalysis::RunAcknowledgeTask(
       __func__,
       [pbAck = std::move(pbAck)](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable
-      -> Result<std::nullptr_t, nsresult> {
+          -> Result<std::nullptr_t, nsresult> {
         MOZ_ASSERT(!NS_IsMainThread());
         RefPtr<ContentAnalysis> owner = GetContentAnalysisFromService();
         if (!owner) {
@@ -4038,7 +4224,7 @@ ContentAnalysis::GetDiagnosticInfo(JSContext* aCx, dom::Promise** aPromise) {
       __func__,
       [promiseHolder](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable
-      -> Result<std::nullptr_t, nsresult> {
+          -> Result<std::nullptr_t, nsresult> {
         MOZ_ASSERT(!NS_IsMainThread());
         // I don't think this will be slow, but do it on the background thread
         // just to be safe
@@ -4149,8 +4335,11 @@ NS_IMETHODIMP ContentAnalysis::MakeResponseForTest(
     nsIContentAnalysisResponse::Action aAction, const nsACString& aToken,
     const nsACString& aUserActionId,
     nsIContentAnalysisResponse** aNewResponse) {
-  MakeRefPtr<ContentAnalysisResponse>(aAction, aToken, aUserActionId)
-      .forget(aNewResponse);
+  auto response =
+      MakeRefPtr<ContentAnalysisResponse>(aAction, aToken, aUserActionId);
+  // Pretend this is not synthetic so dialogs will show in tests
+  response->SetIsSyntheticResponse(false);
+  response.forget(aNewResponse);
   return NS_OK;
 }
 

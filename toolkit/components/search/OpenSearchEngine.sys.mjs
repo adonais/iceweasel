@@ -11,14 +11,14 @@
 import {
   EngineURL,
   SearchEngine,
-} from "resource://gre/modules/SearchEngine.sys.mjs";
+} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   loadAndParseOpenSearchEngine:
-    "resource://gre/modules/OpenSearchLoader.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+    "moz-src:///toolkit/components/search/OpenSearchLoader.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
@@ -69,7 +69,10 @@ export class OpenSearchEngine extends SearchEngine {
 
     if (options.faviconURL) {
       this._setIcon(options.faviconURL, undefined, false).catch(e =>
-        lazy.logConsole.error("Error while setting search engine icon:", e)
+        lazy.logConsole.error(
+          `Error while setting icon for search engine ${options.engineData.name}:`,
+          e.message
+        )
       );
     }
 
@@ -256,7 +259,10 @@ export class OpenSearchEngine extends SearchEngine {
 
     for (let image of data.images) {
       this._setIcon(image.url, image.size).catch(e =>
-        lazy.logConsole.log("Error while setting search engine icon:", e)
+        lazy.logConsole.error(
+          `Error while setting icon for search engine ${data.name}:`,
+          e.message
+        )
       );
     }
   }

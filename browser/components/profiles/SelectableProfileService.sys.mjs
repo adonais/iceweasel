@@ -5,7 +5,7 @@
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { DeferredTask } from "resource://gre/modules/DeferredTask.sys.mjs";
 import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
-import { ProfilesDatastoreService } from "resource:///modules/profiles/ProfilesDatastoreService.sys.mjs";
+import { ProfilesDatastoreService } from "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs";
 import { SelectableProfile } from "resource:///modules/profiles/SelectableProfile.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   CryptoUtils: "resource://services-crypto/utils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -516,21 +517,44 @@ class SelectableProfileServiceClass extends EventEmitter {
   }
 
   /**
+   * Sends a command line via the remote service. Useful for mocking from automated tests.
+   *
+   * @param {...any} args Arguments to pass to nsIRemoteService.sendCommandLine.
+   */
+  sendCommandLine(...args) {
+    Cc["@mozilla.org/remote;1"]
+      .getService(Ci.nsIRemoteService)
+      .sendCommandLine(...args);
+  }
+
+  /**
    * Launch a new Firefox instance using the given selectable profile.
    *
    * @param {SelectableProfile} aProfile The profile to launch
    * @param {string} aUrl A url to open in launched profile
    */
   launchInstance(aProfile, aUrl) {
-    let args = ["--profile", aProfile.path];
-    if (Services.appinfo.OS === "Darwin") {
-      args.unshift("-foreground");
-    }
+    let args = [];
 
     if (aUrl) {
       args.push("-url", aUrl);
     } else {
       args.push(`--${COMMAND_LINE_ACTIVATE}`);
+    }
+
+    // If the other instance is already running we can just use the remoting
+    // service directly.
+    try {
+      this.sendCommandLine(aProfile.path, args, true);
+
+      return;
+    } catch (e) {
+      // This is expected to fail if no instance is running with the profile.
+    }
+
+    args.unshift("--profile", aProfile.path);
+    if (Services.appinfo.OS === "Darwin") {
+      args.unshift("-foreground");
     }
 
     this.execProcess(args);
@@ -542,10 +566,6 @@ class SelectableProfileServiceClass extends EventEmitter {
    * check for updates and refresh their UI accordingly.
    */
   async #notifyRunningInstances() {
-    let remoteService = Cc["@mozilla.org/remote;1"].getService(
-      Ci.nsIRemoteService
-    );
-
     let profiles = await this.getAllProfiles();
     for (let profile of profiles) {
       // The current profile was notified above.
@@ -554,11 +574,7 @@ class SelectableProfileServiceClass extends EventEmitter {
       }
 
       try {
-        remoteService.sendCommandLine(
-          profile.path,
-          [`--${COMMAND_LINE_UPDATE}`],
-          false
-        );
+        this.sendCommandLine(profile.path, [`--${COMMAND_LINE_UPDATE}`], false);
       } catch (e) {
         // This is expected to fail if no instance is running with the profile.
       }
@@ -708,8 +724,8 @@ class SelectableProfileServiceClass extends EventEmitter {
 
     let theme = isDark && !!data.darkTheme ? data.darkTheme : data.theme;
 
-    let themeFg = theme.toolbar_text;
-    let themeBg = theme.toolbarColor;
+    let themeFg = theme.toolbar_text || theme.textcolor;
+    let themeBg = theme.toolbarColor || theme.accentcolor;
 
     if (theme.id === DEFAULT_THEME_ID || !themeFg || !themeBg) {
       window.addEventListener(
@@ -820,9 +836,14 @@ class SelectableProfileServiceClass extends EventEmitter {
       if (
         name === GROUPID_PREF_NAME &&
         value !== lazy.TelemetryUtils.knownProfileGroupID &&
-        value !== Services.prefs.getCharPref(GROUPID_PREF_NAME)
+        value !== Services.prefs.getCharPref(GROUPID_PREF_NAME, "")
       ) {
-        await lazy.ClientID.setProfileGroupID(value); // Sets the pref for us.
+        try {
+          await lazy.ClientID.setProfileGroupID(value); // Sets the pref for us.
+        } catch (e) {
+          // This may throw if the group ID is invalid. This happens in some tests.
+          console.error(e);
+        }
         continue;
       }
 
@@ -1183,10 +1204,21 @@ class SelectableProfileServiceClass extends EventEmitter {
 
     await this.#connection.executeBeforeShutdown(
       "SelectableProfileService: deleteCurrentProfile",
-      db =>
-        db.execute("DELETE FROM Profiles WHERE id = :id;", {
+      async db => {
+        await db.execute("DELETE FROM Profiles WHERE id = :id;", {
           id: this.currentProfile.id,
-        })
+        });
+
+        // TODO(bug 1969488): Make this less tightly coupled so consumers of the
+        // ProfilesDatastoreService can register cleanup actions to occur during
+        // profile deletion.
+        await db.execute(
+          "DELETE FROM NimbusEnrollments WHERE profileId = :profileId;",
+          {
+            profileId: lazy.ExperimentAPI.profileId,
+          }
+        );
+      }
     );
 
     if (AppConstants.MOZ_BACKGROUNDTASKS) {
@@ -1469,6 +1501,84 @@ export class CommandLineHandler {
 
   QueryInterface = ChromeUtils.generateQI([Ci.nsICommandLineHandler]);
 
+  /**
+   * Finds the current default profile path for the current profile group.
+   *
+   * @returns {Promise<string|null>}
+   */
+  async findDefaultProfilePath() {
+    try {
+      let profilesRoot =
+        ProfilesDatastoreService.constructor.getDirectory("DefProfRt").parent
+          .path;
+
+      let iniPath = PathUtils.join(profilesRoot, "profiles.ini");
+
+      let iniData = await IOUtils.readUTF8(iniPath);
+
+      let iniParser = Cc["@mozilla.org/xpcom/ini-parser-factory;1"]
+        .getService(Ci.nsIINIParserFactory)
+        .createINIParser(null);
+      iniParser.initFromString(iniData);
+
+      // loop is guaranteed to exit once it finds a profile section with no path.
+      // eslint-disable-next-line no-constant-condition
+      for (let i = 0; true; i++) {
+        let section = `Profile${i}`;
+
+        let path;
+        try {
+          path = iniParser.getString(section, "Path");
+        } catch (e) {
+          // No path means this section doesn't exist so we've seen them all.
+          break;
+        }
+
+        try {
+          let storeID = iniParser.getString(section, "StoreID");
+
+          if (storeID != SelectableProfileService.storeID) {
+            continue;
+          }
+
+          let isRelative = iniParser.getString(section, "IsRelative") == "1";
+          if (isRelative) {
+            path = PathUtils.joinRelative(profilesRoot, path);
+          }
+
+          return path;
+        } catch (e) {
+          // Ignore missing keys and just continue to the next section.
+          continue;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    return null;
+  }
+
+  async redirectCommandLine(args) {
+    let defaultPath = await this.findDefaultProfilePath();
+
+    if (defaultPath) {
+      // Attempt to use the remoting service to send the arguments to any
+      // existing instance of this profile (this even works for the current
+      // instance on macOS which is the only platform we call this for).
+      try {
+        SelectableProfileService.sendCommandLine(defaultPath, args, true);
+
+        return;
+      } catch (e) {
+        // This is expected to fail if no instance is running with the profile.
+      }
+    }
+
+    // Fall back to re-launching.
+    SelectableProfileService.execProcess(["-foreground", ...args]);
+  }
+
   handle(cmdLine) {
     // This is only ever sent when the application is already running.
     if (cmdLine.handleFlag(COMMAND_LINE_UPDATE, true)) {
@@ -1516,22 +1626,19 @@ export class CommandLineHandler {
         return;
       }
 
-      // Ideally here we would be able to find which profile we should load the link in, to do so we
-      // would need to load `profiles.ini` as we can't rely on the current in-memory state in
-      // `nsIToolkitProfileService`. But we have to handle the command line synchronously. So we
-      // just assume that the current profile may not be correct and re-launch Firefox with the
-      // command line and let the startup code figure out which profile to use. If necessary it will
-      // remote the command line back to this instance.
-
-      let args = ["-foreground"];
+      // We need to parse profiles.ini to determine whether this profile is the
+      // current default and this requires async I/O. So we're just going to
+      // tell other command line handlers that this command line has been handled
+      // as we can't wait for the async operation to complete.
+      let args = [];
       for (let i = 0; i < cmdLine.length; i++) {
         args.push(cmdLine.getArgument(i));
       }
 
+      this.redirectCommandLine(args).catch(console.error);
+
       cmdLine.removeArguments(0, cmdLine.length - 1);
       cmdLine.preventDefault = true;
-
-      SelectableProfileService.execProcess(args);
     }
   }
 }

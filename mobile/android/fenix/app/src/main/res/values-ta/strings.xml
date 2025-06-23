@@ -42,8 +42,6 @@
   -->
   <string name="private_browsing_placeholder_description_2">நீங்கள் கமுக்கக் கீற்றுகளை மூடும்போது அல்லது செயலியை விட்டு வெளியேறும் போது உங்கள் தேடல், உலாவல் வரலாற்றை %1$s துடைக்கிறது. இது வலைத்தளங்கள் அல்லது இணைய சேவை வழங்குநர்களிடமிருந்து உங்களை அடையாளமற்றவராக மாற்றாது, ஆனால் இந்தக் கணினியைப் பயன்படுத்தும் மற்றவர்களிடமிருந்தும் இயங்கலையில் நீங்கள் செய்பவற்றை கமுக்கமாக வைப்பதை எளிதாக்குகிறது.</string>
   <string name="private_browsing_common_myths">கமுக்க உலாவல் பற்றிய பொதுவான தொன்மங்கள்</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">பரவாயில்லை நன்றி</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">அமைவுகளுக்கு செல்</string>
   <!-- Text for the negative action button -->
@@ -289,7 +287,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">&lt;b&gt;firefox.com/pair&lt;/b&gt; தளத்தில் குறியீட்டை வருடிச் சேர்</string>
+  <string name="pair_instructions_2"><![CDATA[<b>firefox.com/pair</b> தளத்தில் குறியீட்டை வருடிச் சேர்]]></string>
   <!--
     Toolbar Preferences
 
@@ -571,7 +569,7 @@
   <!-- Content description (not visible, for screen readers etc.): Opens the collection menu when pressed -->
   <string name="collection_menu_button_content_description">திரட்டு பட்டி</string>
   <!-- Label to describe what collections are to a new user without any collections -->
-  <string name="no_collections_description2">உங்களுக்கு முக்கியமான விடயங்களைத் திரட்டவும்.\n எதிர்வரும் விரைவு அணுகலுக்கு ஒத்த தேடல்கள், தளங்கள் மற்றும் தாவல்களை குழுவாகச் சேர்க்கவும்.</string>
+  <string name="no_collections_description2">உங்களுக்கு முக்கியமான விடயங்களைத் திரட்டவும்.\nஎதிர்வரும் விரைவு அணுகலுக்கு ஒத்த தேடல்கள், தளங்கள் மற்றும் தாவல்களை குழுவாகச் சேர்க்கவும்.</string>
   <!-- Title for the "select tabs" step of the collection creator -->
   <string name="create_collection_select_tabs">கீற்றுகளைத் தேர்</string>
   <!-- Title for the "select collection" step of the collection creator -->
@@ -694,7 +692,7 @@
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">தானியிக்க எழுத்துரு அளவு</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
-  <string name="preference_accessibility_auto_size_summary">எழுத்துரு அளவு உங்கள் ஆண்டராய்டு  அமைவுகளுடன் பொருந்தும். எழுத்துரு அளவை நிர்வகிக்க இங்கே முடக்கு.</string>
+  <string name="preference_accessibility_auto_size_summary">எழுத்துரு அளவு உங்கள் ஆண்டராய்டு அமைவுகளுடன் பொருந்தும். எழுத்துரு அளவை நிர்வகிக்க இங்கே முடக்கு.</string>
   <!-- Title for the Delete browsing data preference -->
   <string name="preferences_delete_browsing_data">உலாவி வரலாற்றை அழி</string>
   <!-- Title for the tabs item in Delete browsing data -->
@@ -753,7 +751,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">குறியீட்டை வருடு</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">உங்கள் கணினியில் பயர்பாக்சைத் திறந்து &lt;b&gt;https://firefox.com/pair&lt;/b&gt; பக்கத்திற்கு செல்லவும்</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[உங்கள் கணினியில் பயர்பாக்சைத் திறந்து <b>https://firefox.com/pair</b> பக்கத்திற்கு செல்லவும்]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">வருடத் தயார்</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -833,7 +831,7 @@
   <!-- Category of trackers (tracking content) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_tracking_content_title">உள்ளடக்கப் பின்தொடரல்</string>
   <!-- Description of tracking content that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_tracking_content_description">பின்தொடரி குறியீட்டைக் கொண்ட விளம்பரங்கள், காணொளிகள் மற்றும் பிற உள்ளடக்கங்களை ஏற்றுவதிலிருந்து  நிறுத்துகிறது. வலைத்தள செயல்பாட்டைப் பாதிக்கலாம்.</string>
+  <string name="etp_tracking_content_description">பின்தொடரி குறியீட்டைக் கொண்ட விளம்பரங்கள், காணொளிகள் மற்றும் பிற உள்ளடக்கங்களை ஏற்றுவதிலிருந்து நிறுத்துகிறது. வலைத்தள செயல்பாட்டைப் பாதிக்கலாம்.</string>
   <!-- Enhanced Tracking Protection message that protection is currently on for this site -->
   <string name="etp_panel_on">இத்தளத்திற்கான பாதுகாப்புகள் இயக்கத்தில் உள்ளன</string>
   <!-- Enhanced Tracking Protection message that protection is currently off for this site -->
@@ -957,7 +955,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">தேடல் தொடர் எ.கா வடிவத்தை ஒத்துள்ளதா எனப் பாருங்கள்</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">“%s” உடன் இணைப்பதில் பிழை</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” உடன் இணைப்பதில் பிழை</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s உருவாக்கப்பட்டது</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -969,9 +967,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. ஆண்ட்ராய்டு அமைவுகளுக்குச் செல்க</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;அனுமதிகளைத்&lt;/b&gt; தட்டுக</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>அனுமதிகளைத்</b> தட்டுக]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. &lt;b&gt;%1$s&lt;/b&gt; ஐ இயக்கத்திற்கு மாற்றுக</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. <b>%1$s</b> ஐ இயக்கத்திற்கு மாற்றுக]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">அனைத்து தளங்களிலும் எல்லா அனுமதிகளையும் நீக்க விரும்புகிறீர்களா?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->

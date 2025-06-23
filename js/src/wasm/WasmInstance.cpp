@@ -487,8 +487,11 @@ static int32_t PerformWake(Instance* instance, PtrT byteOffset, int32_t count,
   }
 
   MOZ_ASSERT(byteOffset <= SIZE_MAX, "Bounds check is broken");
-  int64_t woken = atomics_notify_impl(instance->sharedMemoryBuffer(memoryIndex),
-                                      size_t(byteOffset), int64_t(count));
+  int64_t woken;
+  if (!atomics_notify_impl(cx, instance->sharedMemoryBuffer(memoryIndex),
+                           size_t(byteOffset), int64_t(count), &woken)) {
+    return -1;
+  }
 
   if (woken > INT32_MAX) {
     ReportTrapError(cx, JSMSG_WASM_WAKE_OVERFLOW);
@@ -1400,30 +1403,29 @@ static int32_t MemDiscardShared(Instance* instance, I byteOffset, I byteLen,
 //
 // AnyRef support.
 
-/* static */ void Instance::postBarrier(Instance* instance, void** location) {
-  MOZ_ASSERT(SASigPostBarrier.failureMode == FailureMode::Infallible);
+/* static */ void Instance::postBarrierEdge(Instance* instance,
+                                            AnyRef* location) {
+  MOZ_ASSERT(SASigPostBarrierEdge.failureMode == FailureMode::Infallible);
   MOZ_ASSERT(location);
-  instance->storeBuffer_->putWasmAnyRef(
-      reinterpret_cast<wasm::AnyRef*>(location));
+  instance->storeBuffer_->putWasmAnyRef(location);
 }
 
-/* static */ void Instance::postBarrierPrecise(Instance* instance,
-                                               void** location, void* prev) {
-  MOZ_ASSERT(SASigPostBarrierPrecise.failureMode == FailureMode::Infallible);
-  postBarrierPreciseWithOffset(instance, location, /*offset=*/0, prev);
-}
-
-/* static */ void Instance::postBarrierPreciseWithOffset(Instance* instance,
-                                                         void** base,
-                                                         uint32_t offset,
-                                                         void* prev) {
-  MOZ_ASSERT(SASigPostBarrierPreciseWithOffset.failureMode ==
+/* static */ void Instance::postBarrierEdgePrecise(Instance* instance,
+                                                   AnyRef* location,
+                                                   void* prev) {
+  MOZ_ASSERT(SASigPostBarrierEdgePrecise.failureMode ==
              FailureMode::Infallible);
-  MOZ_ASSERT(base);
-  wasm::AnyRef* location = (wasm::AnyRef*)(uintptr_t(base) + size_t(offset));
-  wasm::AnyRef next = *location;
+  MOZ_ASSERT(location);
+  AnyRef next = *location;
   InternalBarrierMethods<AnyRef>::postBarrier(
       location, wasm::AnyRef::fromCompiledCode(prev), next);
+}
+
+/* static */ void Instance::postBarrierWholeCell(Instance* instance,
+                                                 gc::Cell* object) {
+  MOZ_ASSERT(SASigPostBarrierWholeCell.failureMode == FailureMode::Infallible);
+  MOZ_ASSERT(object);
+  instance->storeBuffer_->putWholeCell(object);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2275,7 +2277,9 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
       maybeDebug_(std::move(maybeDebug)),
       debugFilter_(nullptr),
       callRefMetrics_(nullptr),
-      maxInitializedGlobalsIndexPlus1_(0) {
+      maxInitializedGlobalsIndexPlus1_(0),
+      addressOfLastBufferedWholeCell_(
+          cx->runtime()->gc.addressOfLastBufferedWholeCell()) {
   for (size_t i = 0; i < N_BASELINE_SCRATCH_WORDS; i++) {
     baselineScratchWords_[i] = 0;
   }
@@ -2342,10 +2346,12 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
   // Initialize the hotness counters, if relevant.
   if (code().mode() == CompileMode::LazyTiering) {
+    // Computing the initial hotness counters requires the code section size.
+    const size_t codeSectionSize = codeMeta().codeSectionSize();
     for (uint32_t funcIndex = codeMeta().numFuncImports;
          funcIndex < codeMeta().numFuncs(); funcIndex++) {
       funcDefInstanceData(funcIndex)->hotnessCounter =
-          computeInitialHotnessCounter(funcIndex);
+          computeInitialHotnessCounter(funcIndex, codeSectionSize);
     }
   }
 
@@ -2735,10 +2741,13 @@ void Instance::resetTemporaryStackLimit(JSContext* cx) {
   onSuspendableStack_ = false;
 }
 
-int32_t Instance::computeInitialHotnessCounter(uint32_t funcIndex) {
+int32_t Instance::computeInitialHotnessCounter(uint32_t funcIndex,
+                                               size_t codeSectionSize) {
   MOZ_ASSERT(code().mode() == CompileMode::LazyTiering);
+  MOZ_ASSERT(codeSectionSize > 0);
   uint32_t bodyLength = codeTailMeta().funcDefRange(funcIndex).size;
-  return LazyTieringHeuristics::estimateIonCompilationCost(bodyLength);
+  return LazyTieringHeuristics::estimateIonCompilationCost(bodyLength,
+                                                           codeSectionSize);
 }
 
 void Instance::resetHotnessCounter(uint32_t funcIndex) {

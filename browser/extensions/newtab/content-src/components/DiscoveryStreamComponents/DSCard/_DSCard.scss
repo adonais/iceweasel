@@ -1,8 +1,8 @@
 // Type sizes
-$header-font-size: 17;
-$header-line-height: 24;
-$excerpt-font-size: 14;
-$excerpt-line-height: 20;
+$header-font-size: var(--font-size-large);
+$header-line-height: normal;
+$excerpt-font-size: var(--font-size-small);
+$excerpt-line-height: normal;
 $ds-card-image-gradient-fade: rgba(0, 0, 0, 0%);
 $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
@@ -62,7 +62,12 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       inset-inline-start: -100%;
       height: 100%;
       width: 100%;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0%) 0%, var(--newtab-background-color-secondary) 50%, rgba(255, 255, 255, 0%) 100%);
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0%) 0%,
+        var(--newtab-background-color-secondary) 50%,
+        rgba(255, 255, 255, 0%) 100%
+      );
       z-index: 2;
 
       @media (prefers-reduced-motion: no-preference) {
@@ -76,7 +81,8 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       }
 
       // We apply the same frame from 50-100% to account for a delay in a repeating animation.
-      50%, 100% {
+      50%,
+      100% {
         inset-inline-start: 100%;
       }
     }
@@ -92,18 +98,17 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     width: 100%;
     position: absolute;
     top: 0;
-    height: 0;
     transition: opacity;
     transition-duration: 0s;
     padding-block-start: 50%;
     pointer-events: none;
     background: $black-40;
-    border-radius: 8px 8px 0 0;
+    border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
 
     .card-stp-button-position-wrapper {
       position: absolute;
       inset-inline-end: 10px;
-      top: 10px;
+      inset-block-start: 10px;
       display: flex;
       justify-content: end;
       align-items: center;
@@ -135,7 +140,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
   .context-menu-button {
     position: static;
     transition: none;
-    border-radius: 3px;
+    border-radius: var(--border-radius-small);
     background-color: var(--newtab-button-static-background);
 
     &:hover {
@@ -192,7 +197,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     aspect-ratio: 2/1;
 
     img {
-      border-radius: 4px;
+      border-radius: var(--border-radius-small);
       box-shadow: $shadow-image-inset;
     }
   }
@@ -221,11 +226,12 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     color: var(--newtab-text-primary-color);
     padding: var(--space-small);
     margin: var(--space-small);
-    font-size: 14px;
+    font-size: var(--font-size-small);
   }
 
   .meta {
     display: flex;
+    justify-content: space-between;
     flex-direction: column;
     padding: 12px 16px;
     flex-grow: 1;
@@ -239,16 +245,12 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       @include limit-visible-lines(3, $header-line-height, $header-font-size);
 
       margin-block: 0;
-      font-weight: 600;
+      font-weight: var(--font-weight-bold);
     }
 
     .excerpt {
       // show only 3 lines of copy
-      @include limit-visible-lines(
-        3,
-        $excerpt-line-height,
-        $excerpt-font-size
-      );
+      @include limit-visible-lines(3, $excerpt-line-height, $excerpt-font-size);
     }
 
     .source-wrapper {
@@ -273,7 +275,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     }
 
     .new-sponsored-label {
-      font-size: 13px;
+      font-size: var(--font-size-small);
       margin-bottom: 2px;
     }
   }
@@ -304,7 +306,11 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
   &.ds-card-image-gradient {
     img {
-      mask-image: linear-gradient(to top, $ds-card-image-gradient-fade, $ds-card-image-gradient-solid 40px);
+      mask-image: linear-gradient(
+        to top,
+        $ds-card-image-gradient-fade,
+        $ds-card-image-gradient-solid 40px
+      );
     }
 
     .meta {
@@ -365,96 +371,20 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
   }
 
   h3 {
-    line-height: $header-line-height * 1px;
-    font-size: $header-font-size * 1px;
+    font-size: $header-font-size;
     color: var(--newtab-text-primary-color);
   }
 
   p {
-    font-size: $excerpt-font-size * 1px;
-    line-height: $excerpt-line-height * 1px;
+    font-size: $excerpt-font-size;
     color: var(--newtab-text-primary-color);
     margin: 0;
-  }
-}
-
-.ds-card-grid, .ds-section-grid {
-  &.ad-sizing-variant-a .ds-card.ds-spoc-rectangle,
-  &.ad-sizing-variant-b .ds-card.ds-spoc-rectangle {
-    box-shadow: none;
-
-    .ds-image {
-      padding-block-start: 83.4%;
-    }
-
-    .card-stp-button-hover-background {
-      padding-block-start: 83.4%;
-    }
-  }
-
-  &.ad-sizing-variant-a .ds-card.ds-spoc-rectangle {
-    background: none;
-
-    .img-wrapper .ds-image img {
-      border-radius: var(--border-radius-medium);
-    }
-
-    .meta {
-      padding-inline: 0;
-      padding-block: var(--space-medium);
-
-      .title {
-        // Contrast fix for users who have wallpapers set
-        @include wallpaper-contrast-fix;
-
-        text-transform: uppercase;
-        font-size: var(--font-size-small);
-        font-weight: normal;
-        color: var(--newtab-contextual-text-secondary-color);
-      }
-
-      .excerpt {
-        display: none;
-      }
-    }
-
-    .card-stp-button-hover-background {
-      border-radius: var(--border-radius-medium);
-    }
-
-    &.sections-card-ui {
-      .img-wrapper .ds-image img {
-        border-radius: var(--border-radius-large);
-      }
-    }
-
-    &.sections-card-ui:hover {
-      box-shadow: none;
-
-      .img-wrapper .ds-image img {
-        box-shadow: 0 2px 14px 0 var(--newtab-section-card-box-shadow-color);
-      }
-    }
-  }
-
-  &.ad-sizing-variant-b .ds-card.ds-spoc-rectangle {
-    border: var(--border-width) solid var(--border-color-deemphasized);
-
-    .meta {
-      padding-block-start: var(--space-small);
-      padding-block-end: var(--space-medium);
-
-      .title {
-        text-transform: capitalize;
-      }
-    }
   }
 }
 
 // Class is applied to .ds-card element
 // See _CardSections.scss for large and small card style mixins
 .sections-card-ui {
-
   // Loading Animation
   &.placeholder {
     box-shadow: 0 2px 6px #15141A24;
@@ -486,7 +416,6 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
         // show only 3 lines of copy
         -webkit-line-clamp: 3;
         font-size: var(--font-size-root);
-        line-height: normal;
         margin-bottom: var(--space-small);
         font-weight: var(--font-weight-bold);
       }
@@ -495,7 +424,6 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
         // show only 3 lines of copy
         -webkit-line-clamp: 3;
         font-size: var(--font-size-small);
-        line-height: normal;
       }
 
       .source {
@@ -547,6 +475,197 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
     .ds-card-link:focus {
       border-radius: var(--border-radius-large);
+    }
+  }
+}
+
+.ds-card-grid,
+.ds-section-grid {
+  // Intentionally duplicated classname to increase
+  // specificity to override .sections-card-ui styles
+  .ds-card.ds-spoc-rectangle.ds-spoc-rectangle {
+    box-shadow: none;
+    background: none;
+
+    .ds-image {
+      padding-block-start: 83.4%;
+    }
+
+    .card-stp-button-hover-background {
+      padding-block-start: 83.4%;
+    }
+
+    .img-wrapper .ds-image img {
+      border-radius: var(--border-radius-medium);
+    }
+
+    .meta {
+      padding-inline: 0;
+      padding-block: var(--space-medium);
+
+      .title {
+        // Contrast fix for users who have wallpapers set
+        @include wallpaper-contrast-fix;
+
+        text-transform: uppercase;
+        font-size: var(--font-size-small);
+        font-weight: normal;
+        color: var(--newtab-contextual-text-secondary-color);
+      }
+
+      .excerpt {
+        display: none;
+      }
+    }
+
+    .card-stp-button-hover-background {
+      border-radius: var(--border-radius-medium);
+    }
+
+    &.sections-card-ui {
+      .img-wrapper .ds-image img {
+        border-radius: var(--border-radius-large);
+      }
+    }
+
+    &.sections-card-ui:hover {
+      box-shadow: none;
+
+      .img-wrapper .ds-image img {
+        box-shadow: 0 2px 14px 0 var(--newtab-section-card-box-shadow-color);
+      }
+    }
+
+    &.refined-cards {
+      .img-wrapper .ds-image img {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      .meta {
+        z-index: 10;
+        padding: var(--space-small) var(--space-large);
+        padding-block-end: 0;
+
+      }
+
+      .info-wrap {
+        margin-block-start: auto;
+      }
+
+      .title {
+        text-transform: none;
+      }
+
+      .sections-card-footer {
+        display: none;
+      }
+
+      .card-stp-button-position-wrapper {
+        z-index: 10;
+        top: 0;
+        position: absolute;
+
+      }
+
+      .card-stp-button-position-wrapper .context-menu-position-container {
+        align-self: flex-start;
+        padding-block-start: var(--space-medium);
+      }
+    }
+  }
+
+}
+
+.ds-card-grid .refined-cards {
+  .meta {
+    color: var(--newtab-text-primary-color);
+    padding: var(--space-small) var(--space-large);
+
+    .excerpt {
+      display: none;
+    }
+  }
+
+  .sections-card-footer {
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    max-width: 230px;
+    margin-block-start: var(--space-xsmall);
+
+    .source-wrapper {
+      margin-block-end: 0;
+      margin-inline-end: var(--space-xxsmall);
+      max-width: 175px;
+    }
+
+    .card-stp-thumbs-buttons-wrapper {
+      position: static;
+      inset-block-start: 0;
+      transform: translateY(0);
+      margin-block-start: 0;
+
+      .card-stp-thumbs-buttons {
+        pointer-events: auto;
+      }
+    }
+  }
+
+  &:has(.story-footer .story-sponsored-label) {
+    .sections-card-footer {
+      display: none;
+    }
+
+    .card-stp-button-position-wrapper {
+      inset-block-end: var(--space-small);
+    }
+  }
+
+  .story-footer {
+    margin-block: 0 var(--space-xsmall);
+  }
+
+  .card-stp-button-hover-background {
+    height: 100%;
+    padding-block-start: 0;
+    background: transparent;
+
+    .card-stp-button-position-wrapper {
+      inset-block-start: unset;
+      // this value needs to equal the current padding of the card
+      inset-block-end: var(--space-medium);
+      inset-inline-end: var(--space-large);
+    }
+  }
+
+  &:hover,
+  &.active {
+    h3 {
+      color: var(--color-accent-primary);
+    }
+
+    .context-menu-button {
+      background-color: transparent;
+    }
+
+    .context-menu-button:hover {
+      background-color: var(--newtab-button-static-hover-background);
+
+      &:active {
+        background-color: var(--newtab-button-static-active-background);
+      }
+    }
+
+    .context-menu-button:focus-visible {
+      outline: 2px solid var(--newtab-button-focus-border);
+      background-color: var(--newtab-button-static-focus-background);
+    }
+  }
+
+  .sections-card-footer {
+    .source {
+      display: block;
     }
   }
 }

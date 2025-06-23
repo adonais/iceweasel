@@ -18,7 +18,7 @@ Services.scriptloader.loadSubScript(
 const { ExperimentAPI } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
-const { ExperimentFakes } = ChromeUtils.importESModule(
+const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
@@ -34,20 +34,23 @@ let EXPERIMENT_CLEANUPS;
 add_setup(async function () {
   await ExperimentAPI.ready();
   EXPERIMENT_CLEANUPS = [
-    await ExperimentFakes.enrollWithFeatureConfig(
-      { featureId: "feature", value: { enabled: true } },
+    await NimbusTestUtils.enrollWithFeatureConfig(
+      { featureId: "no-feature-firefox-desktop", value: {} },
       { slug: "test-experiment", branchSlug: "branch" }
     ),
-    await ExperimentFakes.enrollWithFeatureConfig(
-      { featureId: "feature", value: { enabled: true } },
+    await NimbusTestUtils.enrollWithFeatureConfig(
+      { featureId: "no-feature-firefox-desktop", value: {} },
       { slug: "test-experiment-rollout", isRollout: true, branchSlug: "branch" }
     ),
+    () =>
+      ExperimentAPI.manager.store._deleteForTests("test-experiment-disabled"),
   ];
-  const disable = await ExperimentFakes.enrollWithFeatureConfig(
-    { featureId: "feature-disabled", value: { enabled: false } },
-    { slug: "test-experiment-disabled", active: false }
+
+  await NimbusTestUtils.enrollWithFeatureConfig(
+    { featureId: "no-feature-firefox-desktop", value: {} },
+    { slug: "test-experiment-disabled" }
   );
-  disable();
+  await ExperimentAPI.manager.unenroll("test-experiment-disabled");
 });
 
 add_task(async function testSendButton() {
@@ -78,6 +81,6 @@ add_task(async function testSendingMoreInfo() {
 
 add_task(async function teardown() {
   for (const cleanup of EXPERIMENT_CLEANUPS) {
-    cleanup();
+    await cleanup();
   }
 });

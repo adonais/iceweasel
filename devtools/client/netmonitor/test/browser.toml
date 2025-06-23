@@ -4,6 +4,7 @@ tags = "devtools"
 subsuite = "devtools"
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 support-files = [
   "dropmarker.svg",
@@ -66,7 +67,6 @@ support-files = [
   "html_websocket-test-page.html",
   "html_ws-early-connection-page.html",
   "html_ws-test-page.html",
-  "html_sse-test-page.html",
   "html_ws-sse-test-page.html",
   "html_image-cache.html",
   "html_script-cache.html",
@@ -174,6 +174,8 @@ skip-if = [
 
 ["browser_net_charts-07.js"]
 
+["browser_net_chunked-response.js"]
+
 ["browser_net_clear.js"]
 
 ["browser_net_column-resize-fit.js"]
@@ -233,6 +235,8 @@ https_first_disabled = true # Bug 1898241
 
 ["browser_net_decode-url.js"]
 
+["browser_net_delayed-response.js"]
+
 ["browser_net_details_copy.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
@@ -283,6 +287,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_frame.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1479782
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1479782
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1479782
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1479782
 ]
@@ -358,6 +363,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_new_request_panel_context_menu.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1858037 to investigate intermittent a11y_checks results
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858037
 ]
 
 ["browser_net_new_request_panel_persisted_content.js"]
@@ -376,6 +382,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_open_request_in_tab.js"]
 
 ["browser_net_overrides.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1949050
+]
 
 ["browser_net_overrides_with_debugger.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
@@ -436,6 +445,8 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_net_save_response_as.js"]
 
+["browser_net_save_response_as_sanitization.js"]
+
 ["browser_net_script_cache.js"]
 
 ["browser_net_search-results.js"]
@@ -474,6 +485,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_simple-request-data.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1667115
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1667115
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1667115
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1667115
 ]
@@ -496,7 +508,10 @@ skip-if = [
 skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug"] # Bug 1373558
 
 ["browser_net_statistics-02.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks"] # Bug 1767655
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1767655
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1767655
+]
 
 ["browser_net_statistics-edge-case.js"]
 
@@ -537,11 +552,7 @@ skip-if = [
 ["browser_net_throttling_profiles.js"]
 
 ["browser_net_timeline_ticks.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # TODO: fix the test
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # TODO: fix the test
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # TODO: fix the test
-]
+skip-if = ["true"] # TODO: fix the test
 
 ["browser_net_timing-division.js"]
 
@@ -549,7 +560,10 @@ skip-if = [
 
 ["browser_net_truncate-post-data.js"]
 https_first_disabled = true # Intermittent crashes on macos when using HTTPS, Bug 1732865
-skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && socketprocess_networking"] # Bug 1772211
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && socketprocess_networking", # Bug 1772211
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1772211
+]
 
 ["browser_net_truncate.js"]
 

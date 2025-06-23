@@ -231,8 +231,7 @@ static inline bool IsAnonymousItem(const nsIFrame* aFrame) {
 // Returns true IFF the given nsIFrame is a nsFlexContainerFrame and represents
 // a -webkit-{inline-}box container.
 static inline bool IsFlexContainerForLegacyWebKitBox(const nsIFrame* aFrame) {
-  return aFrame->IsFlexContainerFrame() &&
-         aFrame->HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
+  return aFrame->IsFlexContainerFrame() && aFrame->IsLegacyWebkitBox();
 }
 
 #if DEBUG
@@ -1230,8 +1229,8 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
     nsIFrame* firstNewFrame = aFrameList.FirstChild();
 
     // Cache the ancestor chain so that we can reuse it if needed.
-    AutoTArray<nsIFrame*, 20> firstNewFrameAncestors;
-    nsIFrame* notCommonAncestor = nullptr;
+    AutoTArray<const nsIFrame*, 20> firstNewFrameAncestors;
+    const nsIFrame* notCommonAncestor = nullptr;
     if (lastChild) {
       notCommonAncestor = nsLayoutUtils::FillAncestors(
           firstNewFrame, containingBlock, &firstNewFrameAncestors);
@@ -2131,15 +2130,14 @@ nsIFrame* nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
   nsFrameList captionList;
   PullOutCaptionFrames(childList, captionList);
 
-  // Set the inner table frame's initial primary list
+  // Set the inner table frame's principal child list.
   innerFrame->SetInitialChildList(FrameChildListID::Principal,
                                   std::move(childList));
 
-  // Set the table wrapper frame's secondary childlist lists
+  // Append caption frames to the table wrapper frame's principal child list.
   if (captionList.NotEmpty()) {
     captionList.ApplySetParent(newFrame);
-    newFrame->SetInitialChildList(FrameChildListID::Caption,
-                                  std::move(captionList));
+    newFrame->AppendFrames(FrameChildListID::Principal, std::move(captionList));
   }
 
   return newFrame;
@@ -2379,6 +2377,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   }
 
   // Ensure the document element is styled at this point.
+  // FIXME(emilio, bug 1852735): This is only needed because of the sync frame
+  // construction from PresShell::Initialize.
   if (!aDocElement->HasServoData()) {
     mPresShell->StyleSet()->StyleNewSubtree(aDocElement);
   }
@@ -2628,8 +2628,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   // changing nsCanvasFrame (and a whole lot of other potentially unknown code)
   // to look at the last child to find the root frame rather than the first
   // child.
-  ConstructAnonymousContentForCanvas(
-      state, mCanvasFrame, mRootElementFrame->GetContent(), frameList);
+  ConstructAnonymousContentForRoot(state, mCanvasFrame,
+                                   mRootElementFrame->GetContent(), frameList);
   mCanvasFrame->AppendFrames(FrameChildListID::Principal, std::move(frameList));
 
   return newFrame;
@@ -2884,23 +2884,38 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   }
 }
 
-void nsCSSFrameConstructor::ConstructAnonymousContentForCanvas(
-    nsFrameConstructorState& aState, nsContainerFrame* aFrame,
+void nsCSSFrameConstructor::ConstructAnonymousContentForRoot(
+    nsFrameConstructorState& aState, nsContainerFrame* aCanvasFrame,
     nsIContent* aDocElement, nsFrameList& aFrameList) {
-  NS_ASSERTION(aFrame->IsCanvasFrame(), "aFrame should be canvas frame!");
+  NS_ASSERTION(aCanvasFrame->IsCanvasFrame(), "aFrame should be canvas frame!");
   MOZ_ASSERT(mRootElementFrame->GetContent() == aDocElement);
 
   AutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> anonymousItems;
-  GetAnonymousContent(aDocElement, aFrame, anonymousItems);
+  GetAnonymousContent(aDocElement, aCanvasFrame, anonymousItems);
+
+  // If we get here, we are rebuilding the anonymous content of the root
+  // element. In this case, we also need to deal with the custom content
+  // container.
+  if (auto* container =
+          aState.mPresContext->Document()->GetCustomContentContainer()) {
+    // FIXME(emilio, bug 1852735): This is only needed because of the sync frame
+    // construction from PresShell::Initialize. See the similar code-path in
+    // ConstructDocElementFrame.
+    if (!container->HasServoData()) {
+      mPresShell->StyleSet()->StyleNewSubtree(container);
+    }
+    anonymousItems.AppendElement(container);
+  }
+
   if (anonymousItems.IsEmpty()) {
     return;
   }
 
   AutoFrameConstructionItemList itemsToConstruct(this);
-  AutoFrameConstructionPageName pageNameTracker(aState, aFrame);
-  AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
+  AutoFrameConstructionPageName pageNameTracker(aState, aCanvasFrame);
+  AddFCItemsForAnonymousContent(aState, aCanvasFrame, anonymousItems,
                                 itemsToConstruct, pageNameTracker);
-  ConstructFramesFromItemList(aState, itemsToConstruct, aFrame,
+  ConstructFramesFromItemList(aState, itemsToConstruct, aCanvasFrame,
                               /* aParentIsWrapperAnonBox = */ false,
                               aFrameList);
 }
@@ -6650,7 +6665,8 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
     NS_ASSERTION(LayoutFrameType::Table == frameType, "how did that happen?");
     nsContainerFrame* outerTable = parentFrame->GetParent();
     captionList.ApplySetParent(outerTable);
-    AppendFrames(outerTable, FrameChildListID::Caption, std::move(captionList));
+    AppendFrames(outerTable, FrameChildListID::Principal,
+                 std::move(captionList));
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -6701,11 +6717,12 @@ void nsCSSFrameConstructor::ContentInserted(nsIContent* aChild,
 // pass the first node in the range to GetInsertionPrevSibling, and if
 // IsValidSibling (the only place GetInsertionPrevSibling might look at the
 // passed in node itself) needs to resolve style on the node we record this and
-// return that this range needs to be split up and inserted separately. Table
-// captions need extra attention as we need to determine where to insert them
-// in the caption list, while skipping any nodes in the range being inserted
-// (because when we treat the caption frames the other nodes have had their
-// frames constructed but not yet inserted into the frame tree).
+// return that this range needs to be split up and inserted separately.
+// Table captions require special handling, as we need to determine where to
+// insert them in the table wrapper frame's principal child list while skipping
+// any nodes in the range being inserted. This is because when we process the
+// caption frames, the other nodes have already had their frames constructed,
+// but those frames have not yet been inserted into the frame tree.
 void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
                                                  nsIContent* aEndChild,
                                                  InsertionKind aInsertionKind) {
@@ -7111,8 +7128,8 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     CheckForFirstLineInsertion(insertion.mParentFrame, captionList);
   }
 
-  // We might have captions; put them into the caption list of the
-  // table wrapper frame.
+  // We might have captions; put them into the principal child list of the table
+  // wrapper frame.
   if (captionList.NotEmpty()) {
     NS_ASSERTION(LayoutFrameType::Table == frameType ||
                      LayoutFrameType::TableWrapper == frameType,
@@ -7153,17 +7170,18 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
 
     // If the parent of our current prevSibling is different from the frame
     // we'll actually use as the parent, then the calculated insertion
-    // point is now invalid (bug 341382).
-    if (captionPrevSibling && captionPrevSibling->GetParent() != outerTable) {
-      captionPrevSibling = nullptr;
+    // point is now invalid (bug 341382). Insert right after the table frame
+    // instead.
+    if (!captionPrevSibling || captionPrevSibling->GetParent() != outerTable) {
+      captionPrevSibling = outerTable->PrincipalChildList().FirstChild();
     }
 
     captionList.ApplySetParent(outerTable);
     if (captionIsAppend) {
-      AppendFrames(outerTable, FrameChildListID::Caption,
+      AppendFrames(outerTable, FrameChildListID::Principal,
                    std::move(captionList));
     } else {
-      InsertFrames(outerTable, FrameChildListID::Caption, captionPrevSibling,
+      InsertFrames(outerTable, FrameChildListID::Principal, captionPrevSibling,
                    std::move(captionList));
     }
   }
@@ -7219,9 +7237,13 @@ static bool IsSyntheticColGroup(const nsIFrame* aFrame) {
          static_cast<const nsTableColGroupFrame*>(aFrame)->IsSynthetic();
 }
 
-static bool IsOnlyNonWhitespaceFrameInList(const nsFrameList& aFrameList,
-                                           const nsIFrame* aFrame) {
+static bool IsOnlyNonWhitespaceFrameInList(
+    const nsFrameList& aFrameList, const nsIFrame* aFrame,
+    const nsIFrame* aIgnoreFrame = nullptr) {
   for (const nsIFrame* f : aFrameList) {
+    if (f == aIgnoreFrame) {
+      continue;
+    }
     if (f == aFrame) {
       // If we have continuations, ignore them too.
       aFrame = aFrame->GetNextContinuation();
@@ -7272,7 +7294,7 @@ static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
     // We can't remove the table if there are any captions present (captions are
     // never anonymous themselves), because table wrapper always relies on
     // having a table frame.
-    if (!wrapper->GetChildList(FrameChildListID::Caption).IsEmpty()) {
+    if (!wrapper->PrincipalChildList().OnlyChild()) {
       return false;
     }
     // Similarly we can't remove the table if there's still a non-anonymous col
@@ -7293,14 +7315,15 @@ static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
   }
   if (aFrame->IsTableCaption()) {
     MOZ_ASSERT(aParent->IsTableWrapperFrame());
-    MOZ_ASSERT(aParent->PrincipalChildList().OnlyChild());
-    MOZ_ASSERT(aParent->PrincipalChildList().OnlyChild()->IsTableFrame());
-    return IsOnlyNonWhitespaceFrameInList(
-               aParent->GetChildList(FrameChildListID::Caption), aFrame) &&
+    auto* table = aParent->PrincipalChildList().FirstChild();
+    MOZ_ASSERT(table);
+    MOZ_ASSERT(table->IsTableFrame());
+    return IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame,
+                                          /* aIgnoreFrame = */ table) &&
            // This checks for both colgroups and the principal list of the table
            // frame.
            AllChildListsAreEffectivelyEmpty(
-               aParent->PrincipalChildList().OnlyChild());
+               aParent->PrincipalChildList().FirstChild());
   }
   MOZ_ASSERT(!aFrame->IsTableColGroupFrame());
   return IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame);
@@ -7855,18 +7878,16 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingOuterTableFrame(
 
   newFrame->Init(aContent, aParentFrame, aFrame);
 
-  // Create a continuing inner table frame, and if there's a caption then
-  // replicate the caption
+  // Create a continuing inner table frame. Note we don't replicate the
+  // captions: a comment used to hint at that, but the code dealing with that
+  // never worked and was removed in bug 309322.
   nsFrameList newChildFrames;
 
-  nsIFrame* childFrame = aFrame->PrincipalChildList().FirstChild();
-  if (childFrame) {
+  if (nsIFrame* childFrame = aFrame->PrincipalChildList().FirstChild()) {
+    MOZ_ASSERT(childFrame->IsTableFrame());
     nsIFrame* continuingTableFrame =
         CreateContinuingFrame(childFrame, newFrame);
     newChildFrames.AppendFrame(nullptr, continuingTableFrame);
-
-    NS_ASSERTION(!childFrame->GetNextSibling(),
-                 "there can be only one inner table frame");
   }
 
   // Set the table wrapper's initial child list
@@ -8433,6 +8454,12 @@ static bool ShouldRecreateContainerForNativeAnonymousContentRoot(
     return false;
   }
   if (auto* el = Element::FromNode(aContent)) {
+    if (el->GetPseudoElementType() ==
+        PseudoStyleType::mozSnapshotContainingBlock) {
+      // Much like above, all abspos and on its own top layer so insertion order
+      // wouldn't really matter anyways.
+      return false;
+    }
     if (auto* classes = el->GetClasses()) {
       if (classes->Contains(nsGkAtoms::mozCustomContentContainer,
                             eCaseMatters)) {

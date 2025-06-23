@@ -37,7 +37,8 @@ private const val WARN_OPEN_ALL_SIZE = 15
  * @param wasPreviousAppDestinationHome Check whether the previous destination before entering bookmarks was home.
  * @param navigateToSearch Navigate to search.
  * @param navigateToSignIntoSync Invoked when handling [SignIntoSyncClicked].
- * @param shareBookmark Invoked when the share option is selected from a menu.
+ * @param shareBookmarks Invoked when the share option is selected from a menu. Allows sharing of
+ * one or more bookmarks
  * @param showTabsTray Invoked after opening tabs from menus.
  * @param resolveFolderTitle Invoked to lookup user-friendly bookmark titles.
  * @param showUrlCopiedSnackbar Invoked when a bookmark url is copied.
@@ -57,7 +58,7 @@ internal class BookmarksMiddleware(
     private val wasPreviousAppDestinationHome: () -> Boolean,
     private val navigateToSearch: () -> Unit,
     private val navigateToSignIntoSync: () -> Unit,
-    private val shareBookmark: (url: String, title: String) -> Unit,
+    private val shareBookmarks: (List<BookmarkItem.Bookmark>) -> Unit = {},
     private val showTabsTray: (isPrivateMode: Boolean) -> Unit,
     private val resolveFolderTitle: (BookmarkNode) -> String,
     private val showUrlCopiedSnackbar: () -> Unit,
@@ -94,11 +95,17 @@ internal class BookmarksMiddleware(
                 Result.runCatching {
                     val bookmarkNode = bookmarksStorage.getBookmark(action.guid)
                     val bookmark = bookmarkNode?.let {
-                        BookmarkItem.Bookmark(it.url!!, it.title ?: "", it.url!!, it.guid)
+                        BookmarkItem.Bookmark(it.url!!, it.title ?: "", it.url!!, it.guid, it.position)
                     }
                     val folder = bookmarkNode?.parentGuid
                         ?.let { bookmarksStorage.getBookmark(it) }
-                        ?.let { BookmarkItem.Folder(guid = it.guid, title = resolveFolderTitle(it)) }
+                        ?.let {
+                            BookmarkItem.Folder(
+                                guid = it.guid,
+                                title = resolveFolderTitle(it),
+                                position = it.position,
+                            )
+                        }
 
                     InitEditLoaded(bookmark = bookmark!!, folder = folder!!)
                 }.getOrNull()?.also {
@@ -146,9 +153,11 @@ internal class BookmarksMiddleware(
                                     parentGuid = preReductionState.bookmarksAddFolderState.parent.guid,
                                     title = newFolderTitle,
                                 )
+                                val position = bookmarksStorage.getBookmark(guid)?.position
                                 val folder = BookmarkItem.Folder(
                                     guid = guid,
                                     title = newFolderTitle,
+                                    position = position,
                                 )
 
                                 context.store.dispatch(AddFolderAction.FolderCreated(folder))
@@ -329,6 +338,7 @@ internal class BookmarksMiddleware(
             is SelectFolderAction.ItemClicked,
             EditFolderAction.DeleteClicked,
             is ReceivedSyncSignInUpdate,
+            PrivateBrowsingAuthorized,
             -> Unit
         }
     }
@@ -371,6 +381,7 @@ internal class BookmarksMiddleware(
                 val folder = BookmarkItem.Folder(
                     guid = guid,
                     title = resolveFolderTitle(rootNode),
+                    position = rootNode.position,
                 )
 
                 val items = when (guid) {
@@ -424,12 +435,14 @@ internal class BookmarksMiddleware(
                         previewImageUrl = node.url!!,
                         dateAdded = node.dateAdded,
                         guid = node.guid,
+                        position = node.position,
                     )
 
                     BookmarkNodeType.FOLDER -> BookmarkItem.Folder(
                         title = node.title ?: "",
                         dateAdded = node.dateAdded,
                         guid = node.guid,
+                        position = node.position,
                     )
 
                     BookmarkNodeType.SEPARATOR -> null
@@ -451,6 +464,7 @@ internal class BookmarksMiddleware(
                     folder = BookmarkItem.Folder(
                         guid = node.guid,
                         title = resolveFolderTitle(node),
+                        position = node.position,
                     ),
                 ),
             )
@@ -484,7 +498,7 @@ internal class BookmarksMiddleware(
             }
 
             is BookmarksListMenuAction.Bookmark.ShareClicked -> {
-                shareBookmark(bookmark.url, bookmark.title)
+                shareBookmarks(listOf(bookmark))
             }
 
             is BookmarksListMenuAction.Bookmark.OpenInNormalTabClicked -> {
@@ -563,12 +577,13 @@ internal class BookmarksMiddleware(
             }
 
             BookmarksListMenuAction.MultiSelect.ShareClicked -> {
-                preReductionState.selectedItems.filterIsInstance<BookmarkItem.Bookmark>()
-                    .forEach { shareBookmark(it.url, it.title) }
+                val selectedItems = preReductionState.selectedItems.filterIsInstance<BookmarkItem.Bookmark>()
+                shareBookmarks(selectedItems)
             }
             is BookmarksListMenuAction.SortMenu -> scope.launch {
                 saveBookmarkSortOrder(store.state.sortOrder)
             }
+            is BookmarksListMenuAction.SelectAll -> store.tryDispatchReceivedRecursiveCountUpdate()
             is BookmarksListMenuAction.MultiSelect.DeleteClicked,
             is BookmarksListMenuAction.Folder.DeleteClicked,
             is BookmarksListMenuAction.Bookmark.DeleteClicked,
@@ -600,7 +615,7 @@ private fun BookmarksState.createBookmarkInfo() = when {
     bookmarksEditFolderState != null -> bookmarksEditFolderState.let { state ->
         BookmarkInfo(
             parentGuid = state.parent.guid,
-            position = bookmarkItems.indexOfFirst { it.guid == state.folder.guid }.toUInt(),
+            position = bookmarkItems.firstOrNull { it.guid == state.folder.guid }?.position,
             title = state.folder.title,
             url = null,
         )
@@ -608,7 +623,7 @@ private fun BookmarksState.createBookmarkInfo() = when {
     bookmarksEditBookmarkState != null -> bookmarksEditBookmarkState.let { state ->
         BookmarkInfo(
             parentGuid = state.folder.guid,
-            position = bookmarkItems.indexOfFirst { it.guid == state.bookmark.guid }.toUInt(),
+            position = bookmarkItems.firstOrNull { it.guid == state.bookmark.guid }?.position,
             title = state.bookmark.title,
             url = state.bookmark.url,
         )

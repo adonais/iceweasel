@@ -44,6 +44,7 @@ bool CompiledCode::swap(MacroAssembler& masm) {
     return false;
   }
 
+  inliningContext.swap(masm.inliningContext());
   callSites.swap(masm.callSites());
   callSiteTargets.swap(masm.callSiteTargets());
   trapSites.swap(masm.trapSites());
@@ -219,10 +220,11 @@ bool ModuleGenerator::linkCallSites() {
   OffsetMap existingCallFarJumps;
   for (; lastPatchedCallSite_ < codeBlock_->callSites.length();
        lastPatchedCallSite_++) {
-    const CallSite& callSite = codeBlock_->callSites[lastPatchedCallSite_];
+    CallSiteKind kind = codeBlock_->callSites.kind(lastPatchedCallSite_);
+    uint32_t callerOffset =
+        codeBlock_->callSites.returnAddressOffset(lastPatchedCallSite_);
     const CallSiteTarget& target = callSiteTargets_[lastPatchedCallSite_];
-    uint32_t callerOffset = callSite.returnAddressOffset();
-    switch (callSite.kind()) {
+    switch (kind) {
       case CallSiteKind::Import:
       case CallSiteKind::Indirect:
       case CallSiteKind::IndirectFast:
@@ -239,12 +241,12 @@ bool ModuleGenerator::linkCallSites() {
         break;
       case CallSiteKind::ReturnFunc:
       case CallSiteKind::Func: {
-        auto patch = [this, callSite](uint32_t callerOffset,
-                                      uint32_t calleeOffset) {
-          if (callSite.kind() == CallSiteKind::ReturnFunc) {
+        auto patch = [this, kind](uint32_t callerOffset,
+                                  uint32_t calleeOffset) {
+          if (kind == CallSiteKind::ReturnFunc) {
             masm_->patchFarJump(CodeOffset(callerOffset), calleeOffset);
           } else {
-            MOZ_ASSERT(callSite.kind() == CallSiteKind::Func);
+            MOZ_ASSERT(kind == CallSiteKind::Func);
             masm_->patchCall(callerOffset, calleeOffset);
           }
         };
@@ -395,8 +397,8 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   // Combine observed features from the compiled code into the metadata
   featureUsage_ |= code.featureUsage;
 
-  // Combine the tier stats from all compiled functions in this block
-  tierStats_.merge(code.tierStats);
+  // Fold in compilation stats from all compiled functions in this block
+  tierStats_.mergeCompileStats(code.compileStats);
 
   if (compilingTier1() && mode() == CompileMode::LazyTiering) {
     // All the CallRefMetrics from this batch of functions will start indexing
@@ -494,8 +496,15 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
     return false;
   }
 
-  code.callSites.offsetBy(offsetInModule);
-  if (!codeBlock_->callSites.appendAll(std::move(code.callSites))) {
+  InlinedCallerOffsetIndex baseInlinedCallerOffsetIndex =
+      InlinedCallerOffsetIndex(codeBlock_->inliningContext.length());
+  if (!codeBlock_->inliningContext.appendAll(std::move(code.inliningContext))) {
+    return false;
+  }
+
+  if (!codeBlock_->callSites.appendAll(std::move(code.callSites),
+                                       offsetInModule,
+                                       baseInlinedCallerOffsetIndex)) {
     return false;
   }
 
@@ -503,8 +512,9 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
     return false;
   }
 
-  code.trapSites.offsetBy(offsetInModule);
-  if (!codeBlock_->trapSites.appendAll(std::move(code.trapSites))) {
+  if (!codeBlock_->trapSites.appendAll(std::move(code.trapSites),
+                                       offsetInModule,
+                                       baseInlinedCallerOffsetIndex)) {
     return false;
   }
 
@@ -911,6 +921,7 @@ bool ModuleGenerator::finishCodeBlock(CodeBlockResult* result) {
 
   // None of the linking or far-jump operations should emit masm metadata.
 
+  MOZ_ASSERT(masm_->inliningContext().empty());
   MOZ_ASSERT(masm_->callSites().empty());
   MOZ_ASSERT(masm_->callSiteTargets().empty());
   MOZ_ASSERT(masm_->trapSites().empty());
@@ -931,9 +942,13 @@ bool ModuleGenerator::finishCodeBlock(CodeBlockResult* result) {
 
   codeBlock_->funcToCodeRange.shrinkStorageToFit();
   codeBlock_->codeRanges.shrinkStorageToFit();
+  codeBlock_->inliningContext.shrinkStorageToFit();
   codeBlock_->callSites.shrinkStorageToFit();
   codeBlock_->trapSites.shrinkStorageToFit();
   codeBlock_->tryNotes.shrinkStorageToFit();
+
+  // Mark the inlining context as done.
+  codeBlock_->inliningContext.setImmutable();
 
   // Allocate the code storage, copy/link the code from `masm_` into it, set up
   // `codeBlock_->segment / codeBase / codeLength`, and adjust the metadata
@@ -1179,7 +1194,7 @@ bool ModuleGenerator::startPartialTier(uint32_t funcIndex) {
   return true;
 }
 
-bool ModuleGenerator::finishTier(TierStats* tierStats,
+bool ModuleGenerator::finishTier(CompileAndLinkStats* tierStats,
                                  CodeBlockResult* result) {
   MOZ_ASSERT(finishedFuncDefs_);
 
@@ -1211,7 +1226,7 @@ bool ModuleGenerator::finishTier(TierStats* tierStats,
 
   // Return the tier statistics and clear them
   *tierStats = tierStats_;
-  tierStats_ = TierStats();
+  tierStats_.clear();
 
   return finishCodeBlock(result);
 }
@@ -1224,7 +1239,7 @@ SharedModule ModuleGenerator::finishModule(
   MOZ_ASSERT(compilingTier1());
 
   CodeBlockResult tier1Result;
-  TierStats tier1Stats;
+  CompileAndLinkStats tier1Stats;
   if (!finishTier(&tier1Stats, &tier1Result)) {
     return nullptr;
   }
@@ -1449,7 +1464,7 @@ SharedModule ModuleGenerator::finishModule(
       (mozilla::TimeStamp::Now() - completeTierStartTime_).ToSeconds();
   JS_LOG(wasmPerf, Info,
          "CM=..%06lx  ModuleGenerator::finishModule      "
-         "(%s tier, %.2f MB in %.3fs = %.2f MB/s)",
+         "(%s, %.2f MB in %.3fs = %.2f MB/s)",
          (unsigned long)(uintptr_t(codeMeta_) & 0xFFFFFFL),
          tier() == Tier::Baseline ? "baseline" : "optimizing",
          double(bytecodeSize) / 1.0e6, wallclockSeconds,
@@ -1472,7 +1487,7 @@ bool ModuleGenerator::finishTier2(const Module& module) {
   }
 
   CodeBlockResult tier2Result;
-  TierStats tier2Stats;
+  CompileAndLinkStats tier2Stats;
   if (!finishTier(&tier2Stats, &tier2Result)) {
     return false;
   }
@@ -1504,7 +1519,7 @@ bool ModuleGenerator::finishPartialTier2() {
   }
 
   CodeBlockResult tier2Result;
-  TierStats tier2Stats;
+  CompileAndLinkStats tier2Stats;
   if (!finishTier(&tier2Stats, &tier2Result)) {
     return false;
   }
@@ -1543,6 +1558,7 @@ size_t CompiledCode::sizeOfExcludingThis(
          funcBaselineSpewers.sizeOfExcludingThis(mallocSizeOf) +
          bytes.sizeOfExcludingThis(mallocSizeOf) +
          codeRanges.sizeOfExcludingThis(mallocSizeOf) +
+         inliningContext.sizeOfExcludingThis(mallocSizeOf) +
          callSites.sizeOfExcludingThis(mallocSizeOf) +
          callSiteTargets.sizeOfExcludingThis(mallocSizeOf) +
          trapSites.sizeOfExcludingThis(mallocSizeOf) +

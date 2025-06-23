@@ -20,6 +20,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import mozilla.appservices.Megazord
+import mozilla.appservices.RustComponentsInitializer
 import mozilla.appservices.autofill.AutofillApiException
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.browser.state.selector.selectedTab
@@ -95,6 +96,8 @@ import org.mozilla.fenix.ext.containsQueryParameters
 import org.mozilla.fenix.ext.isCustomEngine
 import org.mozilla.fenix.ext.isKnownSearchDomain
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_LIMIT
+import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_MAX_THRESHOLD
 import org.mozilla.fenix.lifecycle.StoreLifecycleObserver
 import org.mozilla.fenix.lifecycle.VisibilityLifecycleObserver
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -110,14 +113,11 @@ import org.mozilla.fenix.push.WebPushEngineIntegration
 import org.mozilla.fenix.session.PerformanceActivityLifecycleCallbacks
 import org.mozilla.fenix.session.VisibilityLifecycleCallback
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.utils.Settings.Companion.TOP_SITES_PROVIDER_LIMIT
-import org.mozilla.fenix.utils.Settings.Companion.TOP_SITES_PROVIDER_MAX_THRESHOLD
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.Wallpaper
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
-import mozilla.appservices.init_rust_components.initialize as InitializeRustComponents
 
 private const val RAM_THRESHOLD_MEGABYTES = 1024
 private const val BYTES_TO_MEGABYTES_CONVERSION = 1024.0 * 1024.0
@@ -186,8 +186,15 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     protected open fun initializeGlean() {
         val settings = settings()
         // We delay the Glean initialization until, we have user consent (After onboarding).
-        if (components.fenixOnboarding.userHasBeenOnboarded()) {
+        // If onboarding is disabled (when in local builds), continue to initialize Glean.
+        if (components.fenixOnboarding.userHasBeenOnboarded() || !FeatureFlags.onboardingFeatureEnabled) {
             initializeGlean(this, logger, settings.isTelemetryEnabled, components.core.client)
+        }
+
+        // We avoid blocking the main thread on startup by setting startup metrics on the background thread.
+        val store = components.core.store
+        GlobalScope.launch(IO) {
+            setStartupMetrics(store, settings)
         }
     }
 
@@ -212,9 +219,10 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         ProfilerMarkerFactProcessor.create { components.core.engine.profiler }.register()
 
         run {
-            // Make sure the engine and BrowserStore are initialized and ready to use.
-            components.core.engine.warmUp()
-            components.core.store
+            // Make sure the engine is initialized and ready to use.
+            components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+                components.core.engine.warmUp()
+            }
 
             initializeGlean()
 
@@ -283,7 +291,9 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
 
         components.analytics.metricsStorage.tryRegisterAsUsageRecorder(this)
 
-        downloadWallpapers()
+        CoroutineScope(IO).launch {
+            components.useCases.wallpaperUseCases.fetchCurrentWallpaperUseCase.invoke()
+        }
     }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
@@ -377,12 +387,11 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
 
         fun queueMetrics() {
-            queue.runIfReadyOrQueue {
-                setStartupMetrics(components.core.store, settings())
-                // Because it may be slow to capture the storage stats, it might be preferred to
-                // create a WorkManager task for this metric, however, I ran out of
-                // implementation time and WorkManager is harder to test.
-                if (SDK_INT >= Build.VERSION_CODES.O) { // required by StorageStatsMetrics.
+            if (SDK_INT >= Build.VERSION_CODES.O) { // required by StorageStatsMetrics.
+                queue.runIfReadyOrQueue {
+                    // Because it may be slow to capture the storage stats, it might be preferred to
+                    // create a WorkManager task for this metric, however, I ran out of
+                    // implementation time and WorkManager is harder to test.
                     StorageStatsMetrics.report(this.applicationContext)
                 }
             }
@@ -434,6 +443,12 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             }
         }
 
+        fun queueDownloadWallpapers() {
+            queue.runIfReadyOrQueue {
+                downloadWallpapers()
+            }
+        }
+
         initQueue()
 
         // We init these items in the visual completeness queue to avoid them initing in the critical
@@ -444,6 +459,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         queueRestoreLocale()
         queueStorageMaintenance()
         queueNimbusFetchInForeground()
+        queueDownloadWallpapers()
         if (settings().enableFxSuggest) {
             queueSuggestIngest()
         }
@@ -519,10 +535,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
      */
     private fun beginSetupMegazord() {
         // Rust components must be initialized at the very beginning, before any other Rust call, ...
-        InitializeRustComponents()
-
-        // ... then Megazord.init() must be called as soon as possible, ...
-        Megazord.init()
+        RustComponentsInitializer.init()
 
         initializeRustErrors(components.analytics.crashReporter)
         // ... but RustHttpConfig.setClient() and RustLog.enable() can be called later.
@@ -721,13 +734,12 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
      */
     @Suppress("ComplexMethod", "LongMethod")
     @VisibleForTesting
-    @OptIn(DelicateCoroutinesApi::class)
     internal fun setStartupMetrics(
         browserStore: BrowserStore,
         settings: Settings,
         browsersCache: BrowsersCache = BrowsersCache,
         mozillaProductDetector: MozillaProductDetector = MozillaProductDetector,
-    ) = GlobalScope.launch(Dispatchers.IO) {
+    ) {
         setPreferenceMetrics(settings)
         with(Metrics) {
             // Set this early to guarantee it's in every ping from here on.

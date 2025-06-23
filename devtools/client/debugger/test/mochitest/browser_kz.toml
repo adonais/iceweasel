@@ -61,10 +61,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_dbg-outline-focus.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-skip-if = [
-  "verify",
-  "cm5",
-]
+skip-if = ["verify"]
 
 ["browser_dbg-outline-pretty.js"]
 
@@ -114,6 +111,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-pretty-print-sourcemap.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1817966
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1817966
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov", # Bug 1817966
 ]
 
@@ -122,17 +120,12 @@ skip-if = [
 ["browser_dbg-preview-bucketed-array.js"]
 
 ["browser_dbg-preview-frame.js"]
-skip-if = ["cm5"]
 
 ["browser_dbg-preview-getter.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_dbg-preview-invalid-tokens.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # This specific test is heavily intermittent, and sometimes leaks on debug.
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1958748
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'",
-]
+skip-if = ["debug"] # Bug 1958748 intermittent toolbox documents leaks
 
 ["browser_dbg-preview-jump-to-definition.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
@@ -151,6 +144,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 .threads-pane .thread is not accessible
 ["browser_dbg-preview-switch.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1849028 .theme-twisty is inconsistently not accessible
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1849028 .theme-twisty is inconsistently not accessible
 ]
 
 ["browser_dbg-preview-wrapped-lines.js"]
@@ -178,6 +172,7 @@ skip-if = [
 ["browser_dbg-reloading.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'",
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'",
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'",
 ]
@@ -202,6 +197,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_dbg-scroll-run-to-completion.js"]
+skip-if = ["true"] # See bug 1968387
+
+["browser_dbg-scrolling-with-search.js"]
 
 ["browser_dbg-search-file-paused.js"]
 
@@ -226,6 +224,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 # Bug 1441545, 1536253 - very slow on debug
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bugs 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
 ]
 
 ["browser_dbg-sourcemapped-stepping.js"]
@@ -263,6 +262,8 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_dbg-sources-project-search.js"]
 
+["browser_dbg-sources-tree.js"]
+
 ["browser_dbg-state-based-panels.js"]
 
 ["browser_dbg-step-in-navigate.js"]
@@ -291,6 +292,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-watchpoints.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1814093
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1814093
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1814093
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1814093
 ]

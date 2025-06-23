@@ -156,7 +156,7 @@ export class BaseContent extends React.PureComponent {
     global.addEventListener("scroll", this.onWindowScroll);
     global.addEventListener("keydown", this.handleOnKeyDown);
     const prefs = this.props.Prefs.values;
-    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
+    const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     if (this.props.document.visibilityState === VISIBLE) {
       this.setFirstVisibleTimestamp();
       this.shouldDisplayTopicSelectionModal();
@@ -187,15 +187,15 @@ export class BaseContent extends React.PureComponent {
       this.handleColorModeChange
     );
     this.handleColorModeChange();
-    if (wallpapersV2Enabled) {
+    if (wallpapersEnabled) {
       this.updateWallpaper();
     }
   }
 
   componentDidUpdate(prevProps) {
     const prefs = this.props.Prefs.values;
-    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
-    if (wallpapersV2Enabled) {
+    const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
+    if (wallpapersEnabled) {
       // destructure current and previous props with fallbacks
       // (preventing undefined errors)
       const {
@@ -603,7 +603,7 @@ export class BaseContent extends React.PureComponent {
     const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
 
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
-    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
+    const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
     const { showTopicSelection } = DiscoveryStream;
     const mayShowTopicSelection =
@@ -678,6 +678,7 @@ export class BaseContent extends React.PureComponent {
       prefs["discoverystream.sections.customizeMenuPanel.enabled"];
     const sectionsPersonalizationEnabled =
       prefs["discoverystream.sections.personalization.enabled"];
+
     // Logic to show follow/block topic mgmt panel in Customize panel
     const mayHavePersonalizedTopicSections =
       sectionsPersonalizationEnabled &&
@@ -720,7 +721,7 @@ export class BaseContent extends React.PureComponent {
     ]
       .filter(v => v)
       .join(" ");
-    if (wallpapersV2Enabled) {
+    if (wallpapersEnabled) {
       // Add helper class to body if user has a wallpaper selected
       if (this.state.wallpaperTheme === "light") {
         global.document?.body.classList.add("lightWallpaper");
@@ -749,7 +750,7 @@ export class BaseContent extends React.PureComponent {
             openPreferences={this.openPreferences}
             setPref={this.setPref}
             enabledSections={enabledSections}
-            wallpapersV2Enabled={wallpapersV2Enabled}
+            wallpapersEnabled={wallpapersEnabled}
             activeWallpaper={activeWallpaper}
             pocketRegion={pocketRegion}
             mayHaveTopicSections={mayHavePersonalizedTopicSections}
@@ -836,7 +837,7 @@ export class BaseContent extends React.PureComponent {
               )}
             </div>
             <ConfirmDialog />
-            {wallpapersV2Enabled && this.renderWallpaperAttribution()}
+            {wallpapersEnabled && this.renderWallpaperAttribution()}
           </main>
           <aside>
             {this.props.Notifications?.showNotifications && (

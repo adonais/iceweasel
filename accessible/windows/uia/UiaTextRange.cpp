@@ -135,6 +135,19 @@ static NotNull<Accessible*> GetSelectionContainer(TextLeafRange& aRange) {
   return WrapNotNull(nsAccUtils::DocumentFor(acc));
 }
 
+static TextLeafPoint NormalizePoint(Accessible* aAcc, int32_t aOffset) {
+  if (!aAcc) {
+    return TextLeafPoint(aAcc, aOffset);
+  }
+  int32_t length = static_cast<int32_t>(nsAccUtils::TextLength(aAcc));
+  if (aOffset > length) {
+    // This range was created when this leaf contained more characters, but some
+    // characters were since removed. Restrict to the new length.
+    aOffset = length;
+  }
+  return TextLeafPoint(aAcc, aOffset);
+}
+
 // UiaTextRange
 
 UiaTextRange::UiaTextRange(const TextLeafRange& aRange) {
@@ -163,12 +176,12 @@ TextLeafRange UiaTextRange::GetRange() const {
   // handle this case.
   if (mIsEndOfLineInsertionPoint) {
     MOZ_ASSERT(mStartAcc == mEndAcc && mStartOffset == mEndOffset);
-    TextLeafPoint point(mStartAcc->Acc(), mStartOffset);
+    TextLeafPoint point = NormalizePoint(mStartAcc->Acc(), mStartOffset);
     point.mIsEndOfLineInsertionPoint = true;
     return TextLeafRange(point, point);
   }
-  return TextLeafRange({mStartAcc->Acc(), mStartOffset},
-                       {mEndAcc->Acc(), mEndOffset});
+  return TextLeafRange(NormalizePoint(mStartAcc->Acc(), mStartOffset),
+                       NormalizePoint(mEndAcc->Acc(), mEndOffset));
 }
 
 /* static */
@@ -690,7 +703,21 @@ UiaTextRange::GetBoundingRectangles(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
   }
 
   // Get the rectangles for each line.
-  const nsTArray<LayoutDeviceIntRect> lineRects = range.LineRects();
+  nsTArray<LayoutDeviceIntRect> lineRects = range.LineRects();
+  if (lineRects.IsEmpty() && !mIsEndOfLineInsertionPoint &&
+      range.Start() == range.End()) {
+    // The documentation for GetBoundingRectangles says that we should return
+    // "An empty array for a degenerate range.":
+    // https://learn.microsoft.com/en-us/windows/win32/api/uiautomationcore/nf-uiautomationcore-itextrangeprovider-getboundingrectangles#return-value
+    // This is exactly what range.LineRects() just did. However, contrary to
+    // this, some clients (including Microsoft Text Cursor Indicator) call
+    // GetBoundingRectangles on a degenerate range when querying the caret and
+    // expect rectangles to be returned. Therefore, use the character bounds.
+    // Bug 1966812: Ideally, we would also return a rectangle when
+    // mIsEndOfLineInsertionPoint is true. However, we don't currently have code
+    // to calculate a rectangle in that case.
+    lineRects.AppendElement(range.Start().CharBounds());
+  }
 
   // For UIA's purposes, the rectangles of this array are four doubles arranged
   // in order {left, top, width, height}.

@@ -7,18 +7,9 @@ const lazy = {
 };
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
-});
-
-// `contextId` is a unique identifier used by Contextual Services
-const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
-ChromeUtils.defineLazyGetter(lazy, "contextId", () => {
-  let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
-  if (!_contextId) {
-    _contextId = String(Services.uuid.generateUUID());
-    Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
-  }
-  return _contextId;
 });
 
 import {
@@ -187,6 +178,7 @@ export class AdsFeed {
   async getAdsData(isStartup = false) {
     const supportedAdTypes = this.getSupportedAdTypes();
     const cachedData = (await this.cache.get()) || {};
+
     const { ads } = cachedData;
     const adsCacheValid = ads
       ? this.Date().now() - ads.lastUpdated < ADS_UPDATE_TIME
@@ -229,6 +221,18 @@ export class AdsFeed {
     headers.append("content-type", "application/json");
 
     const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
+    const marsOhttpEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled",
+      false
+    );
+    const ohttpRelayURL = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL",
+      ""
+    );
+    const ohttpConfigURL = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL",
+      ""
+    );
 
     let blockedSponsors =
       this.store.getState().Prefs.values[PREF_UNIFIED_ADS_BLOCKED_LIST];
@@ -250,18 +254,47 @@ export class AdsFeed {
         .map(item => parseInt(item, 10));
     }
 
-    const response = await this.fetch(fetchUrl, {
+    let fetchPromise;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const options = {
       method: "POST",
       headers,
       body: JSON.stringify({
-        context_id: lazy.contextId,
+        context_id: await lazy.ContextId.request(),
         placements: placements.map((placement, index) => ({
           placement,
           count: counts[index],
         })),
         blocks: blockedSponsors.split(","),
+        credentials: "omit",
       }),
-    });
+      signal,
+    };
+
+    if (marsOhttpEnabled && ohttpConfigURL && ohttpRelayURL) {
+      let config = await lazy.ObliviousHTTP.getOHTTPConfig(ohttpConfigURL);
+      if (!config) {
+        console.error(
+          new Error(
+            `OHTTP was configured for ${fetchUrl} but we couldn't fetch a valid config`
+          )
+        );
+        return null;
+      }
+      fetchPromise = lazy.ObliviousHTTP.ohttpRequest(
+        ohttpRelayURL,
+        config,
+        fetchUrl,
+        options
+      );
+    } else {
+      fetchPromise = this.fetch(fetchUrl, options);
+    }
+
+    const response = await fetchPromise;
 
     // If supportedAdTypes tiles type, normalize it!
     if (supportedAdTypes.tiles) {
@@ -349,7 +382,7 @@ export class AdsFeed {
 }
 
 /**
- * Creating a thin wrapper around PersistentCache and Date.
+ * Creating a thin wrapper around PersistentCache, ObliviousHTTP and Date.
  * This makes it easier for us to write automated tests that simulate responses.
  */
 
@@ -359,4 +392,8 @@ AdsFeed.prototype.PersistentCache = (...args) => {
 
 AdsFeed.prototype.Date = () => {
   return Date;
+};
+
+AdsFeed.prototype.ObliviousHTTP = (...args) => {
+  return lazy.ObliviousHTTP(...args);
 };

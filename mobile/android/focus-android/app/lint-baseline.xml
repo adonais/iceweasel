@@ -455,17 +455,6 @@
     <issue
         id="ButtonStyleXmlDetector"
         message="All buttons must have a style, try using NeutralButton or similar."
-        errorLine1="            &lt;Button"
-        errorLine2="             ~~~~~~">
-        <location
-            file="src/main/res/layout/firstrun_page.xml"
-            line="84"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="ButtonStyleXmlDetector"
-        message="All buttons must have a style, try using NeutralButton or similar."
         errorLine1="    &lt;Button"
         errorLine2="     ~~~~~~">
         <location
@@ -482,17 +471,6 @@
         <location
             file="src/main/res/layout/fragment_exceptions_domains.xml"
             line="30"
-            column="6"/>
-    </issue>
-
-    <issue
-        id="ButtonStyleXmlDetector"
-        message="All buttons must have a style, try using NeutralButton or similar."
-        errorLine1="    &lt;Button"
-        errorLine2="     ~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_firstrun.xml"
-            line="13"
             column="6"/>
     </issue>
 
@@ -887,72 +865,6 @@
         errorLine1=" * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"
         errorLine2="                                                             ~">
         <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesAdapter.kt"
-            line="3"
-            column="62"/>
-    </issue>
-
-    <issue
-        id="InvalidLicenseFormat"
-        message="The license comment must be followed by a newline character"
-        errorLine1=" * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"
-        errorLine2="                                                             ~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesFragment.kt"
-            line="3"
-            column="62"/>
-    </issue>
-
-    <issue
-        id="InvalidLicenseFormat"
-        message="The license comment must be followed by a newline character"
-        errorLine1=" * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"
-        errorLine2="                                                             ~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesListItem.kt"
-            line="3"
-            column="62"/>
-    </issue>
-
-    <issue
-        id="InvalidLicenseFormat"
-        message="The license comment must be followed by a newline character"
-        errorLine1=" * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"
-        errorLine2="                                                             ~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesRecyclerView.kt"
-            line="3"
-            column="62"/>
-    </issue>
-
-    <issue
-        id="InvalidLicenseFormat"
-        message="The license comment must be followed by a newline character"
-        errorLine1=" * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"
-        errorLine2="                                                             ~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesViewHolder.kt"
-            line="3"
-            column="62"/>
-    </issue>
-
-    <issue
-        id="InvalidLicenseFormat"
-        message="The license comment must be followed by a newline character"
-        errorLine1=" * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"
-        errorLine2="                                                             ~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesViewModel.kt"
-            line="3"
-            column="62"/>
-    </issue>
-
-    <issue
-        id="InvalidLicenseFormat"
-        message="The license comment must be followed by a newline character"
-        errorLine1=" * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"
-        errorLine2="                                                             ~">
-        <location
             file="src/main/java/org/mozilla/focus/session/ui/TabsPopup.kt"
             line="3"
             column="62"/>
@@ -1044,28 +956,6 @@
             file="src/main/java/org/mozilla/focus/open/InstallBannerViewHolder.kt"
             line="37"
             column="31"/>
-    </issue>
-
-    <issue
-        id="NonConstantResourceId"
-        message="Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in const fields"
-        errorLine1="const val SECTION_LAYOUT_ID = R.layout.studies_section_item"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesViewHolder.kt"
-            line="15"
-            column="31"/>
-    </issue>
-
-    <issue
-        id="NonConstantResourceId"
-        message="Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in const fields"
-        errorLine1="const val ACTIVE_STUDY_LAYOUT_ID = R.layout.active_study_item"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/studies/StudiesViewHolder.kt"
-            line="16"
-            column="36"/>
     </issue>
 
     <issue
@@ -1340,17 +1230,6 @@
         <location
             file="src/main/res/layout/fragment_settings.xml"
             line="11"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="Overdraw"
-        message="Possible overdraw: Root element paints background `@color/settings_background` with a theme that also paints a background (inferred theme is `@style/Theme.App.Starting`)"
-        errorLine1="    android:background=&quot;@color/settings_background&quot;>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_studies.xml"
-            line="10"
             column="5"/>
     </issue>
 
@@ -1796,17 +1675,6 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.dimen.firstrun_container_width` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;firstrun_container_width&quot;>@dimen/match_parent&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="16"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.dimen.customtabs_toolbar_icon_size` appears to be unused"
         errorLine1="    &lt;dimen name=&quot;customtabs_toolbar_icon_size&quot;>24dp&lt;/dimen>"
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -2115,34 +1983,12 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.anim.fab_reveal` appears to be unused"
-        errorLine1="&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/anim/fab_reveal.xml"
-            line="5"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.drawable.find_in_page_background` appears to be unused"
         errorLine1="&lt;layer-list xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
         errorLine2="^">
         <location
             file="src/main/res/drawable/find_in_page_background.xml"
             line="4"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.firstrun_button_background` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/firstrun_button_background.xml"
-            line="6"
             column="1"/>
     </issue>
 
@@ -2513,17 +2359,6 @@
         <location
             file="src/main/res/values/strings.xml"
             line="37"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.menu_rights` appears to be unused"
-        errorLine1="    &lt;string name=&quot;menu_rights&quot; moz:removedIn=&quot;137&quot;>Your Rights&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="62"
             column="13"/>
     </issue>
 
@@ -2991,61 +2826,6 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.string.your_rights_content1` appears to be unused"
-        errorLine1="    &lt;string name=&quot;your_rights_content1&quot; moz:removedIn=&quot;137&quot;>&lt;![CDATA[%1$s is free and open source software made by Mozilla and other contributors.]]&gt;&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="614"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.your_rights_content2` appears to be unused"
-        errorLine1="    &lt;string name=&quot;your_rights_content2&quot; moz:removedIn=&quot;137&quot; tools:ignore=&quot;IncorrectStraightDoubleQuote&quot;>&lt;![CDATA[%1$s is made available to you under the terms of the &lt;a href=&quot;%2$s&quot;>Mozilla Public License&lt;/a> and other open source licenses.]]&gt;&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="619"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.your_rights_content3` appears to be unused"
-        errorLine1="    &lt;string name=&quot;your_rights_content3&quot; moz:removedIn=&quot;137&quot; tools:ignore=&quot;BrandUsage,IncorrectStraightDoubleQuote&quot;>&lt;![CDATA[You are not granted any rights or licenses to the trademarks of the Mozilla Foundation or any party, including the Mozilla, Firefox or %1$s names or logos. Additional information may be found &lt;a href=&quot;%2$s&quot;>here&lt;/a>.]]&gt;&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="624"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.your_rights_content4` appears to be unused"
-        errorLine1="    &lt;string name=&quot;your_rights_content4&quot; moz:removedIn=&quot;137&quot; tools:ignore=&quot;IncorrectStraightDoubleQuote&quot;>&lt;![CDATA[Additional source code for %1$s is available under various other free and open source &lt;a href=&quot;%2$s&quot;>licenses&lt;/a>.]]&gt;&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="629"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.your_rights_content5` appears to be unused"
-        errorLine1="    &lt;string name=&quot;your_rights_content5&quot; moz:removedIn=&quot;137&quot; tools:ignore=&quot;IncorrectStraightDoubleQuote&quot;>&lt;![CDATA[%1$s also uses blocklists provided by Disconnect, Inc. as separate and independent works under the &lt;a href=&quot;%2$s&quot;>GNU General Public License v3&lt;/a>, and available &lt;a href=&quot;%3$s&quot;>here&lt;/a>.]]&gt;&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="635"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.string.gv_prompt_username_hint` appears to be unused"
         errorLine1="    &lt;string name=&quot;gv_prompt_username_hint&quot;>Username&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -3195,17 +2975,6 @@
         <location
             file="src/main/res/values/strings.xml"
             line="676"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.studies_restart_app` appears to be unused"
-        errorLine1="    &lt;string name=&quot;studies_restart_app&quot; moz:removedIn=&quot;137&quot;>The application will quit to apply changes&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="832"
             column="13"/>
     </issue>
 
@@ -3660,17 +3429,6 @@
             file="src/main/java/org/mozilla/focus/exceptions/ExceptionsListFragment.kt"
             line="303"
             column="43"/>
-    </issue>
-
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="                    &lt;ImageView"
-        errorLine2="                     ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/firstrun_page.xml"
-            line="41"
-            column="22"/>
     </issue>
 
     <issue

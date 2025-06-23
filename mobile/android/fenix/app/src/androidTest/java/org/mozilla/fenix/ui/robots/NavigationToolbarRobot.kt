@@ -21,17 +21,13 @@ import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
-import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
-import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isCompletelyDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withParent
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.By.textContains
@@ -102,37 +98,11 @@ class NavigationToolbarRobot {
         Log.i(TAG, "verifyTabButtonShortcutMenuItemsForPrivateHomescreen: Verified tab counter shortcut options")
     }
 
-    fun verifyReaderViewDetected(visible: Boolean = false) {
-        Log.i(TAG, "verifyReaderViewDetected: Waiting for $waitingTime ms for reader view button to exist")
-        mDevice.findObject(
-            UiSelector()
-                .description("Reader view"),
-        ).waitForExists(waitingTime)
-        Log.i(TAG, "verifyReaderViewDetected: Waited for $waitingTime ms for reader view button to exist")
-        Log.i(TAG, "verifyReaderViewDetected: Trying to verify that the reader view button is visible")
-        onView(
-            allOf(
-                withParent(withId(R.id.mozac_browser_toolbar_page_actions)),
-                withContentDescription("Reader view"),
-            ),
-        ).check(
-            if (visible) {
-                matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE))
-            } else {
-                ViewAssertions.doesNotExist()
-            },
-        )
-        Log.i(TAG, "verifyReaderViewDetected: Verified that the reader view button is visible")
+    fun verifyReaderViewDetected(exists: Boolean = false) {
+        assertUIObjectExists(readerViewToggle(), exists = exists)
     }
 
     fun toggleReaderView() {
-        Log.i(TAG, "toggleReaderView: Waiting for $waitingTime ms for reader view button to exist")
-        mDevice.findObject(
-            UiSelector()
-                .resourceId("$packageName:id/mozac_browser_toolbar_page_actions"),
-        )
-            .waitForExists(waitingTime)
-        Log.i(TAG, "toggleReaderView: Waited for $waitingTime ms for reader view button to exist")
         Log.i(TAG, "toggleReaderView: Trying to click the reader view button")
         readerViewToggle().click()
         Log.i(TAG, "toggleReaderView: Clicked the reader view button")
@@ -406,7 +376,7 @@ class NavigationToolbarRobot {
                     tabTrayButton().click()
                     Log.i(TAG, "openTabDrawer: Clicked the tabs tray button")
                     Log.i(TAG, "openTabDrawer: Trying to verify that the tabs tray exists")
-                    composeTestRule.onNodeWithTag(TabsTrayTestTag.tabsTray).assertExists()
+                    composeTestRule.onNodeWithTag(TabsTrayTestTag.TABS_TRAY).assertExists()
                     Log.i(TAG, "openTabDrawer: Verified that the tabs tray exists")
 
                     break
@@ -422,7 +392,7 @@ class NavigationToolbarRobot {
                 }
             }
             Log.i(TAG, "openTabDrawer: Trying to verify the tabs tray new tab FAB button exists")
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.fab).assertExists()
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertExists()
             Log.i(TAG, "openTabDrawer: Verified the tabs tray new tab FAB button exists")
 
             TabDrawerRobot(composeTestRule).interact()
@@ -652,7 +622,7 @@ private fun tabsCounter() = onView(
 private fun fillLinkButton() = onView(withId(R.id.fill_link_from_clipboard))
 private fun clearAddressBarButton() = itemWithResId("$packageName:id/mozac_browser_toolbar_clear_view")
 private fun readerViewToggle() =
-    onView(withParent(withId(R.id.mozac_browser_toolbar_page_actions)))
+    itemWithDescription(getStringResource(R.string.browser_menu_read))
 
 private fun searchSelectorButton() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/search_selector"))

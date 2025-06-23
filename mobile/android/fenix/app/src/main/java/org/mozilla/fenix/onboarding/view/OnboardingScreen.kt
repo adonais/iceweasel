@@ -11,7 +11,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -35,11 +34,11 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import mozilla.components.compose.base.annotation.LightDarkPreview
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
@@ -50,7 +49,6 @@ import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.onboarding.WidgetPinnedReceiver.WidgetPinnedState
-import org.mozilla.fenix.onboarding.store.OnboardingAction
 import org.mozilla.fenix.onboarding.store.OnboardingAction.OnboardingThemeAction
 import org.mozilla.fenix.onboarding.store.OnboardingAction.OnboardingToolbarAction
 import org.mozilla.fenix.onboarding.store.OnboardingStore
@@ -70,8 +68,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param onAddFirefoxWidgetClick Invoked when positive button on add search widget page is clicked.
  * @param onSkipFirefoxWidgetClick Invoked when negative button on add search widget page is clicked.
  * @param onboardingStore The store which contains all the state related to the add-ons onboarding screen.
- * @param onAddOnsButtonClick Invoked when the primary button on add-ons page is clicked.
- * @param onInstallAddOnButtonClick Invoked when a button for installing an add-on is clicked.
  * @param termsOfServiceEventHandler Invoked when the primary button on the terms of service page is clicked.
  * @param onCustomizeToolbarClick Invoked when positive button customize toolbar page is clicked.
  * @param onCustomizeThemeClick Invoked when the primary button on the theme selection page is clicked.
@@ -96,8 +92,6 @@ fun OnboardingScreen(
     onAddFirefoxWidgetClick: () -> Unit,
     onSkipFirefoxWidgetClick: () -> Unit,
     onboardingStore: OnboardingStore? = null,
-    onAddOnsButtonClick: () -> Unit,
-    onInstallAddOnButtonClick: (AddOn) -> Unit,
     termsOfServiceEventHandler: OnboardingTermsOfServiceEventHandler,
     onCustomizeToolbarClick: () -> Unit,
     onCustomizeThemeClick: () -> Unit,
@@ -233,11 +227,6 @@ fun OnboardingScreen(
             scrollToNextPageOrDismiss()
             onSkipFirefoxWidgetClick()
         },
-        onAddOnsButtonClick = {
-            scrollToNextPageOrDismiss()
-            onAddOnsButtonClick()
-        },
-        onInstallAddOnButtonClick = onInstallAddOnButtonClick,
         onCustomizeToolbarButtonClick = {
             scrollToNextPageOrDismiss()
             onCustomizeToolbarClick()
@@ -297,8 +286,6 @@ private fun OnboardingContent(
     onAddFirefoxWidgetClick: () -> Unit,
     onSkipFirefoxWidgetClick: () -> Unit,
     onboardingStore: OnboardingStore? = null,
-    onAddOnsButtonClick: () -> Unit,
-    onInstallAddOnButtonClick: (AddOn) -> Unit,
     onCustomizeToolbarButtonClick: () -> Unit,
     onCustomizeThemeButtonClick: () -> Unit,
     termsOfServiceEventHandler: OnboardingTermsOfServiceEventHandler,
@@ -312,8 +299,7 @@ private fun OnboardingContent(
     Column(
         modifier = Modifier
             .background(FirefoxTheme.colors.layer1)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+            .statusBarsPadding(),
     ) {
         HorizontalPager(
             state = pagerState,
@@ -333,7 +319,6 @@ private fun OnboardingContent(
                 onNotificationPermissionSkipClick = onNotificationPermissionSkipClick,
                 onAddFirefoxWidgetClick = onAddFirefoxWidgetClick,
                 onAddFirefoxWidgetSkipClick = onSkipFirefoxWidgetClick,
-                onAddOnsButtonClick = onAddOnsButtonClick,
                 onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
                 onCustomizeThemeClick = onCustomizeThemeButtonClick,
                 onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
@@ -343,7 +328,6 @@ private fun OnboardingContent(
                 state = onboardingPageState,
                 onboardingStore = onboardingStore,
                 termsOfServiceEventHandler = termsOfServiceEventHandler,
-                onInstallAddOnButtonClick = onInstallAddOnButtonClick,
                 onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
                 onMarketingOptInToggle = onMarketingOptInToggle,
                 onMarketingDataContinueClick = onMarketingDataContinueClick,
@@ -368,7 +352,6 @@ private fun OnboardingPageForType(
     state: OnboardingPageState,
     onboardingStore: OnboardingStore? = null,
     termsOfServiceEventHandler: OnboardingTermsOfServiceEventHandler,
-    onInstallAddOnButtonClick: (AddOn) -> Unit,
     onMarketingDataLearnMoreClick: () -> Unit,
     onMarketingOptInToggle: (optIn: Boolean) -> Unit,
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
@@ -425,14 +408,6 @@ private fun OnboardingPageForType(
             onMarketingDataContinueClick = onMarketingDataContinueClick,
         )
 
-        OnboardingPageUiData.Type.ADD_ONS,
-        -> onboardingStore?.let { store ->
-            state.addOns?.let { addOns ->
-                store.dispatch(OnboardingAction.OnboardingAddOnsAction.UpdateAddons(addOns))
-            }
-            AddOnsOnboardingPage(store, state, onInstallAddOnButtonClick)
-        }
-
         OnboardingPageUiData.Type.TERMS_OF_SERVICE -> TermsOfServiceOnboardingPage(
             state,
             termsOfServiceEventHandler,
@@ -461,7 +436,7 @@ private class DisableForwardSwipeNestedScrollConnection(
         }
 }
 
-@LightDarkPreview
+@PreviewLightDark
 @Composable
 private fun OnboardingScreenPreview() {
     val pageCount = defaultPreviewPages().size
@@ -479,8 +454,6 @@ private fun OnboardingScreenPreview() {
             onNotificationPermissionSkipClick = {},
             onAddFirefoxWidgetClick = {},
             onSkipFirefoxWidgetClick = {},
-            onAddOnsButtonClick = {},
-            onInstallAddOnButtonClick = {},
             onCustomizeToolbarButtonClick = {},
             onCustomizeThemeButtonClick = {},
             onAgreeAndConfirmTermsOfService = {},

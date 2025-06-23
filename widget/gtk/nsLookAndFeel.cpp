@@ -113,6 +113,14 @@ static void kde_colors_changed(GFileMonitor* self, void*, void*,
   OnSettingsChange(lnf, NativeChangeKind::GtkTheme);
 }
 
+static float GetGtkTextScaleFactor() {
+  GdkScreen* s = gdk_screen_get_default();
+  if (!s) {
+    return 1.0f;
+  }
+  return float(gdk_screen_get_resolution(s) / 96.0);
+}
+
 static bool sCSDAvailable;
 
 static nsCString GVariantToString(GVariant* aVariant) {
@@ -526,85 +534,35 @@ static bool GetColorFromImagePattern(const GValue* aValue, nscolor* aColor) {
   return false;
 }
 
-static bool GetUnicoBorderGradientColors(GtkStyleContext* aContext,
-                                         GdkRGBA* aLightColor,
-                                         GdkRGBA* aDarkColor) {
-  // Ubuntu 12.04 has GTK engine Unico-1.0.2, which overrides render_frame,
-  // providing its own border code.  Ubuntu 14.04 has
-  // Unico-1.0.3+14.04.20140109, which does not override render_frame, and
-  // so does not need special attention.  The earlier Unico can be detected
-  // by the -unico-border-gradient style property it registers.
-  // gtk_style_properties_lookup_property() is checked first to avoid the
-  // warning from gtk_style_context_get_property() when the property does
-  // not exist.  (gtk_render_frame() of GTK+ 3.16 no longer uses the
-  // engine.)
-  const char* propertyName = "-unico-border-gradient";
-  if (!gtk_style_properties_lookup_property(propertyName, nullptr, nullptr))
-    return false;
-
-  // -unico-border-gradient is used only when the CSS node's engine is Unico.
-  GtkThemingEngine* engine;
-  GtkStateFlags state = gtk_style_context_get_state(aContext);
-  gtk_style_context_get(aContext, state, "engine", &engine, nullptr);
-  if (strcmp(g_type_name(G_TYPE_FROM_INSTANCE(engine)), "UnicoEngine") != 0)
-    return false;
-
-  // draw_border() of Unico engine uses -unico-border-gradient
-  // in preference to border-color.
-  GValue value = G_VALUE_INIT;
-  gtk_style_context_get_property(aContext, propertyName, state, &value);
-
-  bool result = GetGradientColors(&value, aLightColor, aDarkColor);
-
-  g_value_unset(&value);
-  return result;
-}
-
 // Sets |aLightColor| and |aDarkColor| to colors from |aContext|.  Returns
 // true if |aContext| uses these colors to render a visible border.
 // If returning false, then the colors returned are a fallback from the
 // border-color value even though |aContext| does not use these colors to
 // render a border.
-static bool GetBorderColors(GtkStyleContext* aContext, GdkRGBA* aLightColor,
-                            GdkRGBA* aDarkColor) {
+static Maybe<nscolor> GetBorderColor(GtkStyleContext* aContext) {
   // Determine whether the border on this style context is visible.
   GtkStateFlags state = gtk_style_context_get_state(aContext);
-  GtkBorderStyle borderStyle;
+  GtkBorderStyle borderStyle = GTK_BORDER_STYLE_NONE;
   gtk_style_context_get(aContext, state, GTK_STYLE_PROPERTY_BORDER_STYLE,
                         &borderStyle, nullptr);
-  bool visible = borderStyle != GTK_BORDER_STYLE_NONE &&
-                 borderStyle != GTK_BORDER_STYLE_HIDDEN;
-  if (visible) {
-    // GTK has an initial value of zero for border-widths, and so themes
-    // need to explicitly set border-widths to make borders visible.
-    GtkBorder border;
-    gtk_style_context_get_border(aContext, state, &border);
-    visible = border.top != 0 || border.right != 0 || border.bottom != 0 ||
-              border.left != 0;
+  if (borderStyle == GTK_BORDER_STYLE_NONE ||
+      borderStyle == GTK_BORDER_STYLE_HIDDEN) {
+    return {};
   }
-
-  if (visible &&
-      GetUnicoBorderGradientColors(aContext, aLightColor, aDarkColor))
-    return true;
+  // GTK has an initial value of zero for border-widths, and so themes
+  // need to explicitly set border-widths to make borders visible.
+  GtkBorder border;
+  gtk_style_context_get_border(aContext, state, &border);
+  if (!border.top && !border.right && !border.bottom && !border.left) {
+    return {};
+  }
 
   // The initial value for the border-color is the foreground color, and so
   // this will usually return a color distinct from the background even if
   // there is no visible border detected.
-  gtk_style_context_get_border_color(aContext, state, aDarkColor);
-  // TODO GTK3 - update aLightColor
-  // for GTK_BORDER_STYLE_INSET/OUTSET/GROVE/RIDGE border styles.
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=978172#c25
-  *aLightColor = *aDarkColor;
-  return visible;
-}
-
-static bool GetBorderColors(GtkStyleContext* aContext, nscolor* aLightColor,
-                            nscolor* aDarkColor) {
-  GdkRGBA lightColor, darkColor;
-  bool ret = GetBorderColors(aContext, &lightColor, &darkColor);
-  *aLightColor = GDK_RGBA_TO_NS_RGBA(lightColor);
-  *aDarkColor = GDK_RGBA_TO_NS_RGBA(darkColor);
-  return ret;
+  GdkRGBA color{};
+  gtk_style_context_get_border_color(aContext, state, &color);
+  return Some(GDK_RGBA_TO_NS_RGBA(color));
 }
 
 // Finds ideal cell highlight colors used for unfocused+selected cells distinct
@@ -696,6 +654,7 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::MozCombobox:
       aColor = mWindow.mBg;
       break;
+    case ColorID::MozComboboxtext:
     case ColorID::Windowtext:
       aColor = mWindow.mFg;
       break;
@@ -844,10 +803,13 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       aColor = mHeaderBarInactive.mFg;
       break;
     case ColorID::Threedface:
-    case ColorID::Buttonface:
     case ColorID::MozButtondisabledface:
       // 3-D face color
       aColor = mWindow.mBg;
+      break;
+
+    case ColorID::Buttonface:
+      aColor = mButton.mBg;
       break;
 
     case ColorID::Buttontext:
@@ -856,18 +818,13 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       break;
 
     case ColorID::Buttonhighlight:
-      // 3-D highlighted edge color
+    case ColorID::Buttonshadow:
     case ColorID::Threedhighlight:
+    case ColorID::Threedshadow:
       // 3-D highlighted outer edge color
-      aColor = mThreeDHighlight;
+      aColor = mFrameBorder;
       break;
 
-    case ColorID::Buttonshadow:
-      // 3-D shadow edge color
-    case ColorID::Threedshadow:
-      // 3-D shadow inner edge color
-      aColor = mThreeDShadow;
-      break;
     case ColorID::Buttonborder:
       aColor = mButtonBorder;
       break;
@@ -879,7 +836,6 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       aColor = mIsDark ? *GenericDarkColor(aID) : NS_RGB(0xDC, 0xDC, 0xDC);
       break;
 
-    case ColorID::MozEventreerow:
     case ColorID::Field:
       aColor = mField.mBg;
       break;
@@ -913,20 +869,15 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::MozMenuhovertext:
       aColor = mMenuHover.mFg;
       break;
+    case ColorID::MozOddtreerow:
     case ColorID::MozMenuhoverdisabled:
       aColor = NS_TRANSPARENT;
-      break;
-    case ColorID::MozOddtreerow:
-      aColor = mOddCellBackground;
       break;
     case ColorID::Linktext:
       aColor = mNativeHyperLinkText;
       break;
     case ColorID::Visitedtext:
       aColor = mNativeVisitedHyperLinkText;
-      break;
-    case ColorID::MozComboboxtext:
-      aColor = mComboBoxText;
       break;
     case ColorID::MozColheader:
       aColor = mMozColHeader.mBg;
@@ -1271,7 +1222,7 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
       aResult = mSystemTheme.mCaretRatio;
       break;
     case FloatID::TextScaleFactor:
-      aResult = gfxPlatformGtk::GetFontScaleFactor();
+      aResult = mTextScaleFactor;
       break;
     default:
       aResult = -1.0;
@@ -1308,7 +1259,7 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
   // pixels.
   if (pango_font_description_get_size_is_absolute(desc)) {
     // Undo the already-applied font scale.
-    size /= gfxPlatformGtk::GetFontScaleFactor();
+    size /= GetGtkTextScaleFactor();
   } else {
     // |size| is in pango-points, so convert to pixels.
     size *= 96 / POINTS_PER_INCH_FLOAT;
@@ -1322,11 +1273,12 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
 
 bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                   gfxFontStyle& aFontStyle) {
-  return mSystemTheme.GetFont(aID, aFontName, aFontStyle);
+  return mSystemTheme.GetFont(aID, aFontName, aFontStyle, mTextScaleFactor);
 }
 
 bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
-                                          gfxFontStyle& aFontStyle) const {
+                                          gfxFontStyle& aFontStyle,
+                                          float aTextScaleFactor) const {
   switch (aID) {
     case FontID::Menu:             // css2
     case FontID::MozPullDownMenu:  // css3
@@ -1356,12 +1308,10 @@ bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
       break;
   }
 
-  // Convert GDK unscaled pixels to CSS pixels.
-  // When "layout.css.devPixelsPerPx" > 0, this is not a direct conversion.
-  // The difference produces a scaling of system fonts in proportion with
-  // other scaling from the change in CSS pixel sizes.
-  aFontStyle.size *=
-      gfxPlatformGtk::GetFontScaleFactor() / LookAndFeel::GetTextScaleFactor();
+  // Convert GDK pixels to CSS pixels.
+  // Note that this is generally a no-op, except when text scale factor is
+  // overridden by pref.
+  aFontStyle.size *= aTextScaleFactor / LookAndFeel::GetTextScaleFactor();
   return true;
 }
 
@@ -1506,7 +1456,8 @@ bool nsLookAndFeel::ConfigureAltTheme() {
 }
 
 // We override some adwaita colors from GTK3 to LibAdwaita, see:
-// https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/named-colors.html
+// https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.7/css-variables.html
+// https://gitlab.gnome.org/GNOME/libadwaita/-/blob/690c0a70315c74b95b2cb5fa29622370b3195b0d/src/stylesheet/_defaults.scss
 void nsLookAndFeel::MaybeApplyColorOverrides() {
   auto& dark = mSystemTheme.mIsDark ? mSystemTheme : mAltTheme;
   auto& light = mSystemTheme.mIsDark ? mAltTheme : mSystemTheme;
@@ -1539,35 +1490,88 @@ void nsLookAndFeel::MaybeApplyColorOverrides() {
   }
 
   if (StaticPrefs::widget_gtk_libadwaita_colors_enabled()) {
+    // https://gitlab.gnome.org/GNOME/libadwaita/-/blob/main/src/stylesheet/widgets/_buttons.scss
+    // (which is somewhat confusingly also reused for fields).
+    auto ApplyLibadwaitaButtonColors = [](PerThemeData& aTheme) {
+      aTheme.mButtonBorder = NS_TRANSPARENT;
+      aTheme.mButton = aTheme.mButtonHover = aTheme.mButtonActive =
+          aTheme.mField = aTheme.mWindow;
+      // Window background combined with 10%, 15% and 30% of the foreground
+      // color, respectively.
+      aTheme.mButton.mBg = aTheme.mField.mBg = NS_ComposeColors(
+          aTheme.mWindow.mBg,
+          NS_RGBA(NS_GET_R(aTheme.mWindow.mFg), NS_GET_G(aTheme.mWindow.mFg),
+                  NS_GET_B(aTheme.mWindow.mFg), 26));
+      aTheme.mButtonHover.mBg = NS_ComposeColors(
+          aTheme.mWindow.mBg,
+          NS_RGBA(NS_GET_R(aTheme.mWindow.mFg), NS_GET_G(aTheme.mWindow.mFg),
+                  NS_GET_B(aTheme.mWindow.mFg), 39));
+      aTheme.mButtonActive.mBg = NS_ComposeColors(
+          aTheme.mWindow.mBg,
+          NS_RGBA(NS_GET_R(aTheme.mWindow.mFg), NS_GET_G(aTheme.mWindow.mFg),
+                  NS_GET_B(aTheme.mWindow.mFg), 77));
+    };
+
     if (light.mFamily == ThemeFamily::Adwaita) {
       // #323232 is rgba(0,0,0,.8) over #fafafa.
-      light.mWindow =
-          light.mDialog = {NS_RGB(0xfa, 0xfa, 0xfa), NS_RGB(0x32, 0x32, 0x32)};
-      light.mField = {NS_RGB(0xff, 0xff, 0xff), NS_RGB(0x32, 0x32, 0x32)};
+      light.mWindow.mBg = NS_RGB(0xfa, 0xfa, 0xfb);
+      light.mWindow.mFg =
+          NS_ComposeColors(light.mWindow.mBg, NS_RGBA(0, 0, 6, 204));
+      light.mDialog = light.mWindow;
+
+      ApplyLibadwaitaButtonColors(light);
+
+      // FIXME(emilio): This is _technically_ not right, but the Firefox
+      // front-end relies on this right now to not look really ugly. Arguably
+      // Menu backgrounds or so is what should be used for the urlbar popups,
+      // rather than Field...
+      light.mField.mBg = NS_RGB(0xff, 0xff, 0xff);
+
+      // rgba(0,0,6,.8) over the background.
+      light.mSidebar.mBg = NS_RGB(0xeb, 0xeb, 0xed);
+      light.mSidebar.mFg =
+          NS_ComposeColors(light.mSidebar.mBg, NS_RGBA(0, 0, 6, 204));
 
       // We use the sidebar colors for the headerbar in light mode background
       // because it creates much better contrast. GTK headerbar colors are
-      // white, and meant to "blend" with the contents otherwise. #2f2f2f is
-      // rgba(0,0,0,.8) over #ebebeb.
-      light.mSidebar = light.mHeaderBar = light.mTitlebar = {
-          NS_RGB(0xeb, 0xeb, 0xeb), NS_RGB(0x2f, 0x2f, 0x2f)};
-      light.mHeaderBarInactive = light.mTitlebarInactive = {
-          NS_RGB(0xf2, 0xf2, 0xf2), NS_RGB(0x2f, 0x2f, 0x2f)};
-      light.mThreeDShadow = NS_RGB(0xe0, 0xe0, 0xe0);
+      // white, and meant to "blend" with the contents otherwise, but that
+      // doesn't work fine for Firefox's toolbars.
+      light.mHeaderBar = light.mTitlebar = light.mHeaderBarInactive =
+          light.mTitlebarInactive = light.mSidebar;
+
+      // headerbar_backdrop_color
+      light.mHeaderBarInactive.mBg = light.mTitlebarInactive.mBg =
+          light.mWindow.mBg;
+
+      light.mFrameBorder = NS_RGB(0xe0, 0xe0, 0xe0);
       light.mSidebarBorder = NS_RGBA(0, 0, 0, 18);
+
+      // popover_bg_color, popover_fg_color
+      light.mMenu.mBg = NS_RGB(0xff, 0xff, 0xff);
+      light.mMenu.mFg =
+          NS_ComposeColors(light.mMenu.mBg, NS_RGBA(0, 0, 6, 204));
     }
 
     if (dark.mFamily == ThemeFamily::Adwaita) {
-      dark.mWindow = {NS_RGB(0x24, 0x24, 0x24), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mDialog = {NS_RGB(0x38, 0x38, 0x38), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mField = {NS_RGB(0x3a, 0x3a, 0x3a), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mSidebar = dark.mHeaderBar =
-          dark.mTitlebar = {NS_RGB(0x30, 0x30, 0x30), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mHeaderBarInactive = dark.mTitlebarInactive = {
-          NS_RGB(0x24, 0x24, 0x24), NS_RGB(0xff, 0xff, 0xff)};
+      dark.mWindow = {NS_RGB(0x22, 0x22, 0x26), NS_RGB(0xff, 0xff, 0xff)};
+      dark.mDialog = {NS_RGB(0x36, 0x36, 0x3a), NS_RGB(0xff, 0xff, 0xff)};
+
+      ApplyLibadwaitaButtonColors(dark);
+
+      dark.mSidebar = dark.mHeaderBar = dark.mTitlebar =
+          dark.mHeaderBarInactive = dark.mTitlebarInactive = {
+              NS_RGB(0x2e, 0x2e, 0x32), NS_RGB(0xff, 0xff, 0xff)};
+
+      // headerbar_backdrop_color
+      dark.mHeaderBarInactive.mBg = dark.mTitlebarInactive.mBg =
+          dark.mWindow.mBg;
+
       // headerbar_shade_color
-      dark.mThreeDShadow = NS_RGB(0x1f, 0x1f, 0x1f);
+      dark.mFrameBorder = NS_RGB(0x1f, 0x1f, 0x1f);
       dark.mSidebarBorder = NS_RGBA(0, 0, 0, 92);
+
+      // popover_bg_color, popover_fg_color
+      dark.mMenu = {NS_RGB(0x36, 0x36, 0x3a), NS_RGB(0xff, 0xff, 0xff)};
     }
   }
 
@@ -1707,6 +1711,8 @@ void nsLookAndFeel::Initialize() {
 void nsLookAndFeel::InitializeGlobalSettings() {
   GtkSettings* settings = gtk_settings_get_default();
 
+  mTextScaleFactor = GetGtkTextScaleFactor();
+
   mColorSchemePreference = ComputeColorSchemeSetting();
 
   gboolean enableAnimations = false;
@@ -1756,19 +1762,17 @@ void nsLookAndFeel::InitializeGlobalSettings() {
     const ButtonLayout& layout = buttonLayout[i];
     int32_t* pos = nullptr;
     switch (layout.mType) {
-      case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
+      case ButtonLayout::Type::Minimize:
         mCSDMinimizeButton = true;
         pos = &mCSDMinimizeButtonPosition;
         break;
-      case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
+      case ButtonLayout::Type::Maximize:
         mCSDMaximizeButton = true;
         pos = &mCSDMaximizeButtonPosition;
         break;
-      case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
+      case ButtonLayout::Type::Close:
         mCSDCloseButton = true;
         pos = &mCSDCloseButtonPosition;
-        break;
-      default:
         break;
     }
 
@@ -2126,9 +2130,9 @@ void nsLookAndFeel::PerThemeData::Init() {
     g_object_unref(accelStyle);
   }
 
-  const auto effectiveTitlebarStyle =
-      HeaderBarShouldDrawContainer(MOZ_GTK_HEADER_BAR) ? MOZ_GTK_HEADERBAR_FIXED
-                                                       : MOZ_GTK_HEADER_BAR;
+  const auto effectiveTitlebarStyle = HeaderBarShouldDrawContainer()
+                                          ? MOZ_GTK_HEADERBAR_FIXED
+                                          : MOZ_GTK_HEADER_BAR;
   style = GetStyleContext(effectiveTitlebarStyle);
   {
     mTitlebar = GetColorPair(style, GTK_STATE_FLAG_NORMAL);
@@ -2311,33 +2315,14 @@ void nsLookAndFeel::PerThemeData::Init() {
   mButtonBorder = GDK_RGBA_TO_NS_RGBA(color);
   mButton = GetColorPair(style);
   mButtonHover = GetColorPair(style, GTK_STATE_FLAG_PRELIGHT);
-  mButtonActive = GetColorPair(style, GTK_STATE_FLAG_ACTIVE);
+  mButtonActive = GetColorPair(
+      style, GtkStateFlags(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE));
   if (!NS_GET_A(mButtonHover.mBg)) {
     mButtonHover.mBg = mWindow.mBg;
   }
   if (!NS_GET_A(mButtonActive.mBg)) {
     mButtonActive.mBg = mWindow.mBg;
   }
-
-  // Combobox text color
-  style = GetStyleContext(MOZ_GTK_COMBOBOX_ENTRY_TEXTAREA);
-  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-  mComboBoxText = GDK_RGBA_TO_NS_RGBA(color);
-
-  // GTK's guide to fancy odd row background colors:
-  // 1) Check if a theme explicitly defines an odd row color
-  // 2) If not, check if it defines an even row color, and darken it
-  //    slightly by a hardcoded value (gtkstyle.c)
-  // 3) If neither are defined, take the base background color and
-  //    darken that by a hardcoded value
-  style = GetStyleContext(MOZ_GTK_TREEVIEW);
-
-  // Get odd row background color
-  gtk_style_context_save(style);
-  gtk_style_context_add_region(style, GTK_STYLE_REGION_ROW, GTK_REGION_ODD);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-  mOddCellBackground = GDK_RGBA_TO_NS_RGBA(color);
-  gtk_style_context_restore(style);
 
   // Column header colors
   style = GetStyleContext(MOZ_GTK_TREE_HEADER_CELL);
@@ -2353,13 +2338,14 @@ void nsLookAndFeel::PerThemeData::Init() {
   // root node, so check the root node if no border is found on the border
   // node.
   style = GetStyleContext(MOZ_GTK_FRAME_BORDER);
-  bool themeUsesColors =
-      GetBorderColors(style, &mThreeDHighlight, &mThreeDShadow);
-  if (!themeUsesColors) {
-    style = GetStyleContext(MOZ_GTK_FRAME);
-    GetBorderColors(style, &mThreeDHighlight, &mThreeDShadow);
+  if (auto color = GetBorderColor(GetStyleContext(MOZ_GTK_FRAME_BORDER))) {
+    mFrameBorder = *color;
+  } else if (auto color = GetBorderColor(GetStyleContext(MOZ_GTK_FRAME))) {
+    mFrameBorder = *color;
+  } else {
+    mFrameBorder = kBlack;
   }
-  mSidebarBorder = mThreeDShadow;
+  mSidebarBorder = mFrameBorder;
 
   // Some themes have a unified menu bar, and support window dragging on it
   gboolean supports_menubar_drag = FALSE;

@@ -514,26 +514,35 @@ already_AddRefed<nsICookieJarSettings> CookieCommons::GetCookieJarSettings(
 }
 
 // static
-bool CookieCommons::ShouldIncludeCrossSiteCookie(Cookie* aCookie,
-                                                 bool aPartitionForeign,
-                                                 bool aInPrivateBrowsing,
-                                                 bool aUsingStorageAccess,
-                                                 bool aOn3pcbException) {
+bool CookieCommons::ShouldIncludeCrossSiteCookie(
+    Cookie* aCookie, nsIURI* aHostURI, bool aPartitionForeign,
+    bool aInPrivateBrowsing, bool aUsingStorageAccess, bool aOn3pcbException) {
   MOZ_ASSERT(aCookie);
 
   int32_t sameSiteAttr = 0;
   aCookie->GetSameSite(&sameSiteAttr);
 
   return ShouldIncludeCrossSiteCookie(
-      sameSiteAttr, aCookie->IsPartitioned() && aCookie->RawIsPartitioned(),
+      aHostURI, sameSiteAttr,
+      aCookie->IsPartitioned() && aCookie->RawIsPartitioned(),
       aPartitionForeign, aInPrivateBrowsing, aUsingStorageAccess,
       aOn3pcbException);
 }
 
 // static
 bool CookieCommons::ShouldIncludeCrossSiteCookie(
-    int32_t aSameSiteAttr, bool aCookiePartitioned, bool aPartitionForeign,
-    bool aInPrivateBrowsing, bool aUsingStorageAccess, bool aOn3pcbException) {
+    nsIURI* aHostURI, int32_t aSameSiteAttr, bool aCookiePartitioned,
+    bool aPartitionForeign, bool aInPrivateBrowsing, bool aUsingStorageAccess,
+    bool aOn3pcbException) {
+  if (aSameSiteAttr == nsICookie::SAMESITE_UNSET) {
+    bool laxByDefault =
+        StaticPrefs::network_cookie_sameSite_laxByDefault() &&
+        !nsContentUtils::IsURIInPrefList(
+            aHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
+    aSameSiteAttr =
+        laxByDefault ? nsICookie::SAMESITE_LAX : nsICookie::SAMESITE_NONE;
+  }
+
   // CHIPS - If a third-party has storage access it can access both it's
   // partitioned and unpartitioned cookie jars, else its cookies are blocked.
   //
@@ -940,9 +949,6 @@ CookieCommons::CheckGlobalAndRetrieveCookiePrincipals(
         workerPrivate->StorageAccess() == StorageAccess::eAllow;
 
     if (isCHIPS && workerHasStorageAccess) {
-      // Assert that the cookie principal is unpartitioned.
-      MOZ_ASSERT(
-          cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
       // Only retrieve the partitioned originAttributes if the partitionKey is
       // set. The partitionKey could be empty for partitionKey in partitioned
       // originAttributes if the aWorker is for privilege context, such as the
@@ -1008,9 +1014,6 @@ CookieCommons::CheckGlobalAndRetrieveCookiePrincipals(
     }
 
     if (isCHIPS && documentHasStorageAccess) {
-      // Assert that the cookie principal is unpartitioned.
-      MOZ_ASSERT(
-          cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
       // Only append the partitioned originAttributes if the partitionKey is
       // set. The partitionKey could be empty for partitionKey in partitioned
       // originAttributes if the aDocument is for privilege context, such as the
@@ -1048,6 +1051,18 @@ void CookieCommons::GetServerDateHeader(nsIChannel* aChannel,
   }
 
   Unused << channel->GetResponseHeader("Date"_ns, aServerDateHeader);
+}
+
+// static
+int64_t CookieCommons::MaybeReduceExpiry(int64_t aCurrentTimeInSec,
+                                         int64_t aExpiryInSec) {
+  int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
+
+  if (maxageCap) {
+    aExpiryInSec = std::min(aExpiryInSec, aCurrentTimeInSec + maxageCap);
+  }
+
+  return aExpiryInSec;
 }
 
 }  // namespace net

@@ -37,10 +37,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,14 +49,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.BidiFormatter
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.Divider
-import mozilla.components.compose.base.annotation.LightDarkPreview
-import mozilla.components.support.ktx.kotlin.MAX_URI_LENGTH
+import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
@@ -104,7 +104,7 @@ fun TabGridItem(
     onClick: (tab: TabSessionState) -> Unit,
     onLongClick: ((tab: TabSessionState) -> Unit)? = null,
 ) {
-    if (FeatureFlags.swipeToDismiss2) {
+    if (FeatureFlags.SWIPE_TO_DISMISS_2) {
         SwipeToDismissBox2(
             state = swipeState2,
             backgroundContent = {},
@@ -179,7 +179,7 @@ private fun TabContent(
     Box(
         modifier = Modifier
             .wrapContentSize()
-            .testTag(TabsTrayTestTag.tabItemRoot),
+            .testTag(TabsTrayTestTag.TAB_ITEM_ROOT),
     ) {
         val clickableModifier = if (onLongClick == null) {
             Modifier.clickable(
@@ -208,6 +208,7 @@ private fun TabContent(
                 .padding(4.dp)
                 .then(tabBorderModifier)
                 .padding(4.dp)
+                .clip(RoundedCornerShape(dimensionResource(id = R.dimen.tab_tray_grid_item_border_radius)))
                 .then(clickableModifier)
                 .semantics {
                     selected = isSelected
@@ -276,7 +277,7 @@ private fun TabContent(
                         IconButton(
                             modifier = Modifier
                                 .size(24.dp)
-                                .testTag(TabsTrayTestTag.tabItemClose),
+                                .testTag(TabsTrayTestTag.TAB_ITEM_CLOSE),
                             onClick = {
                                 onCloseClick(tab)
                             },
@@ -339,7 +340,7 @@ private fun Thumbnail(
             .fillMaxSize()
             .background(FirefoxTheme.colors.layer2)
             .semantics(mergeDescendants = true) {
-                testTag = TabsTrayTestTag.tabItemThumbnail
+                testTag = TabsTrayTestTag.TAB_ITEM_THUMBNAIL
             },
     ) {
         TabThumbnail(
@@ -368,7 +369,7 @@ private fun Thumbnail(
                         .matchParentSize()
                         .padding(all = 8.dp),
                     contentDescription = null,
-                    tint = colorResource(id = R.color.mozac_ui_icons_fill),
+                    tint = FirefoxTheme.colors.iconActionPrimary,
                 )
             }
         }
@@ -376,7 +377,7 @@ private fun Thumbnail(
 }
 
 @Composable
-@LightDarkPreview
+@PreviewLightDark
 private fun TabGridItemPreview() {
     FirefoxTheme {
         TabContent(
@@ -393,7 +394,7 @@ private fun TabGridItemPreview() {
 }
 
 @Composable
-@LightDarkPreview
+@PreviewLightDark
 private fun TabGridItemSelectedPreview() {
     FirefoxTheme {
         TabContent(
@@ -409,7 +410,7 @@ private fun TabGridItemSelectedPreview() {
 }
 
 @Composable
-@LightDarkPreview
+@PreviewLightDark
 private fun TabGridItemMultiSelectedPreview() {
     FirefoxTheme {
         TabContent(

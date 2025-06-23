@@ -46,6 +46,7 @@ class nsIHttpChannel;
 class nsIRequest;
 class nsISerialEventTarget;
 class nsIWebProgress;
+class nsPIDOMWindowInner;
 class nsWebBrowser;
 class nsDocShellLoadState;
 
@@ -184,7 +185,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
     return mUniqueId;
   }
 
-  NS_DECLARE_STATIC_IID_ACCESSOR(DOM_BROWSERCHILD_IID)
+  NS_INLINE_DECL_STATIC_IID(DOM_BROWSERCHILD_IID)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIWEBBROWSERCHROME
   NS_DECL_NSIINTERFACEREQUESTOR
@@ -640,13 +641,35 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   // may reentry the event loop and access to the same hashtable. It's
   // called when dispatching some mouse events other than mousemove.
   void FlushAllCoalescedMouseData();
+
   void ProcessPendingCoalescedMouseDataAndDispatchEvents();
 
   void ProcessPendingCoalescedTouchData();
 
+  /**
+   * Dispatch an eMouseRawUpdate event for dispatching ePointerRawUpdate event
+   * into the DOM immediately when aPendingEvent will be dispatched later.
+   * This does nothing if there is no window which has at least one
+   * `pointerrawupdate` event listener.
+   */
+  void HandleMouseRawUpdateEvent(const WidgetMouseEvent& aPendingMouseEvent,
+                                 const ScrollableLayerGuid& aGuid,
+                                 const uint64_t& aInputBlockId);
+
   void HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
                                   const ScrollableLayerGuid& aGuid,
                                   const uint64_t& aInputBlockId);
+
+  /**
+   * Dispatch an eTouchRawUpdate event for dispatching ePointerRawUpdate event
+   * into the DOM immediately when aPendingEvent will be dispatched later.
+   * This does nothing if there is no window which has at least one
+   * `pointerrawupdate` event listener.
+   */
+  void HandleTouchRawUpdateEvent(const WidgetTouchEvent& aPendingTouchEvent,
+                                 const ScrollableLayerGuid& aGuid,
+                                 const uint64_t& aInputBlockId,
+                                 const nsEventStatus& aApzResponse);
 
   void SetCancelContentJSEpoch(int32_t aEpoch) {
     mCancelContentJSEpoch = aEpoch;
@@ -710,7 +733,14 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvDispatchToDropTargetAndResumeEndDragSession(
-      bool aShouldDrop);
+      bool aShouldDrop, nsTHashSet<nsString>&& aAllowedFilesPaths);
+
+  void OnPointerRawUpdateEventListenerAdded(const nsPIDOMWindowInner* aWindow);
+  void OnPointerRawUpdateEventListenerRemoved(
+      const nsPIDOMWindowInner* aWindow);
+  [[nodiscard]] bool HasPointerRawUpdateEventListeners() const {
+    return !!mPointerRawUpdateWindowCount;
+  }
 
  protected:
   virtual ~BrowserChild();
@@ -823,6 +853,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   Maybe<CodeNameIndex> mPreviousConsumedKeyDownCode;
   uint32_t mChromeFlags;
   uint32_t mMaxTouchPoints;
+  // The number of windows which may have ePointerRawUpdate event listener.
+  uint32_t mPointerRawUpdateWindowCount = 0;
   layers::LayersId mLayersId;
   CSSRect mUnscaledOuterRect;
   Maybe<bool> mLayersConnected;
@@ -928,8 +960,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   DISALLOW_EVIL_CONSTRUCTORS(BrowserChild);
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(BrowserChild, DOM_BROWSERCHILD_IID)
 
 }  // namespace dom
 }  // namespace mozilla

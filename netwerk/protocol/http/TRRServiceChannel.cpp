@@ -461,19 +461,9 @@ nsresult TRRServiceChannel::BeginConnect() {
     mCaps &= ~(NS_HTTP_ALLOW_KEEPALIVE);
   }
 
-  if (gHttpHandler->CriticalRequestPrioritization()) {
-    if (mClassOfService.Flags() & nsIClassOfService::Leader) {
-      mCaps |= NS_HTTP_LOAD_AS_BLOCKING;
-    }
-    if (mClassOfService.Flags() & nsIClassOfService::Unblocked) {
-      mCaps |= NS_HTTP_LOAD_UNBLOCKED;
-    }
-    if (mClassOfService.Flags() & nsIClassOfService::UrgentStart &&
-        gHttpHandler->IsUrgentStartEnabled()) {
-      mCaps |= NS_HTTP_URGENT_START;
-      SetPriority(nsISupportsPriority::PRIORITY_HIGHEST);
-    }
-  }
+  // TRR requests should never be blocked.
+  mCaps |= (NS_HTTP_LOAD_UNBLOCKED | NS_HTTP_URGENT_START);
+  SetPriority(nsISupportsPriority::PRIORITY_HIGHEST);
 
   if (mCanceled) {
     return mStatus;
@@ -656,12 +646,12 @@ nsresult TRRServiceChannel::SetupTransaction() {
 
   EnsureRequestContext();
 
-  rv = mTransaction->Init(
-      mCaps, mConnectionInfo, &mRequestHead, mUploadStream, mReqContentLength,
-      LoadUploadStreamHasHeaders(), mCurrentEventTarget, callbacks, this,
-      mBrowserId, HttpTrafficCategory::eInvalid, mRequestContext,
-      mClassOfService, mInitialRwin, LoadResponseTimeoutEnabled(), mChannelId,
-      nullptr, nullptr, nullptr, 0);
+  rv = mTransaction->Init(mCaps, mConnectionInfo, &mRequestHead, mUploadStream,
+                          mReqContentLength, LoadUploadStreamHasHeaders(),
+                          mCurrentEventTarget, callbacks, this, mBrowserId,
+                          HttpTrafficCategory::eInvalid, mRequestContext,
+                          mClassOfService, mInitialRwin,
+                          LoadResponseTimeoutEnabled(), mChannelId, nullptr);
 
   if (NS_FAILED(rv)) {
     mTransaction = nullptr;
@@ -934,7 +924,9 @@ TRRServiceChannel::OnStartRequest(nsIRequest* request) {
     // mTransactionPump doesn't hit OnInputStreamReady and call this until
     // all of the response headers have been acquired, so we can take
     // ownership of them from the transaction.
-    mResponseHead = mTransaction->TakeResponseHeadAndConnInfo(nullptr);
+    RefPtr<nsHttpConnectionInfo> connInfo;
+    mResponseHead =
+        mTransaction->TakeResponseHeadAndConnInfo(getter_AddRefs(connInfo));
     if (mResponseHead) {
       uint32_t httpStatus = mResponseHead->Status();
       if (mTransaction->ProxyConnectFailed()) {
@@ -949,9 +941,7 @@ TRRServiceChannel::OnStartRequest(nsIRequest* request) {
       }
 
       if ((httpStatus < 500) && (httpStatus != 421) && (httpStatus != 407)) {
-        RefPtr<nsHttpConnectionInfo> connectionInfo =
-            mTransaction->GetConnInfo();
-        ProcessAltService(connectionInfo);
+        ProcessAltService(connInfo);
       }
 
       if (httpStatus == 300 || httpStatus == 301 || httpStatus == 302 ||

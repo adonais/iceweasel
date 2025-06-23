@@ -8,6 +8,8 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/BufferSourceBindingFwd.h"
+#include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/DecompressionStreamBinding.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/WritableStream.h"
@@ -47,7 +49,7 @@ class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     // https://compression.spec.whatwg.org/#decompress-and-enqueue-a-chunk
 
     // Step 1: If chunk is not a BufferSource type, then throw a TypeError.
-    RootedUnion<OwningArrayBufferViewOrArrayBuffer> bufferSource(cx);
+    RootedUnion<OwningBufferSource> bufferSource(cx);
     if (!bufferSource.Init(cx, aChunk)) {
       aRv.MightThrowJSException();
       aRv.StealExceptionFromJSContext(cx);

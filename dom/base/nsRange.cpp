@@ -87,26 +87,31 @@ using namespace mozilla::dom;
 
 template already_AddRefed<nsRange> nsRange::Create(
     const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary,
-    ErrorResult& aRv);
+    ErrorResult& aRv, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template already_AddRefed<nsRange> nsRange::Create(
     const RangeBoundary& aStartBoundary, const RawRangeBoundary& aEndBoundary,
-    ErrorResult& aRv);
+    ErrorResult& aRv, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template already_AddRefed<nsRange> nsRange::Create(
     const RawRangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary,
-    ErrorResult& aRv);
+    ErrorResult& aRv, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template already_AddRefed<nsRange> nsRange::Create(
     const RawRangeBoundary& aStartBoundary,
-    const RawRangeBoundary& aEndBoundary, ErrorResult& aRv);
+    const RawRangeBoundary& aEndBoundary, ErrorResult& aRv,
+    AllowRangeCrossShadowBoundary aAlloCrossShadowBoundary);
 
-template nsresult nsRange::SetStartAndEnd(const RangeBoundary& aStartBoundary,
-                                          const RangeBoundary& aEndBoundary);
-template nsresult nsRange::SetStartAndEnd(const RangeBoundary& aStartBoundary,
-                                          const RawRangeBoundary& aEndBoundary);
 template nsresult nsRange::SetStartAndEnd(
-    const RawRangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary);
+    const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+template nsresult nsRange::SetStartAndEnd(
+    const RangeBoundary& aStartBoundary, const RawRangeBoundary& aEndBoundary,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+template nsresult nsRange::SetStartAndEnd(
+    const RawRangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template nsresult nsRange::SetStartAndEnd(
     const RawRangeBoundary& aStartBoundary,
-    const RawRangeBoundary& aEndBoundary);
+    const RawRangeBoundary& aEndBoundary,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 
 template void nsRange::DoSetRange(const RangeBoundary& aStartBoundary,
                                   const RangeBoundary& aEndBoundary,
@@ -209,11 +214,13 @@ already_AddRefed<nsRange> nsRange::Create(nsINode* aNode) {
 template <typename SPT, typename SRT, typename EPT, typename ERT>
 already_AddRefed<nsRange> nsRange::Create(
     const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, ErrorResult& aRv) {
+    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, ErrorResult& aRv,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   // If we fail to initialize the range a lot, nsRange should have a static
   // initializer since the allocation cost is not cheap in hot path.
   RefPtr<nsRange> range = nsRange::Create(aStartBoundary.GetContainer());
-  aRv = range->SetStartAndEnd(aStartBoundary, aEndBoundary);
+  aRv = range->SetStartAndEnd(aStartBoundary, aEndBoundary,
+                              aAllowCrossShadowBoundary);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -285,12 +292,21 @@ static RangeBehaviour GetRangeBehaviour(
   const RangeBoundary& otherSideExistingBoundary =
       aIsSetStart ? aRange->EndRef() : aRange->StartRef();
 
+  auto ComparePoints = [aAllowCrossShadowBoundary](
+                           const RawRangeBoundary& aBoundary1,
+                           const RawRangeBoundary& aBoundary2) {
+    if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
+      return nsContentUtils::ComparePoints<TreeKind::Flat>(aBoundary1,
+                                                           aBoundary2);
+    }
+    return nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+        aBoundary1, aBoundary2);
+  };
   // Both bondaries are in the same root, now check for their position
   const Maybe<int32_t> order =
-      aIsSetStart ? nsContentUtils::ComparePoints(aNewBoundary,
-                                                  otherSideExistingBoundary)
-                  : nsContentUtils::ComparePoints(otherSideExistingBoundary,
-                                                  aNewBoundary);
+      aIsSetStart
+          ? ComparePoints(aNewBoundary, otherSideExistingBoundary.AsRaw())
+          : ComparePoints(otherSideExistingBoundary.AsRaw(), aNewBoundary);
 
   if (order) {
     if (*order != 1) {
@@ -324,11 +340,12 @@ static RangeBehaviour GetRangeBehaviour(
     // otherSideExistingBoundary. However, it's possible that aNewBoundary
     // is valid with the otherSideExistingCrossShadowBoundaryBoundary.
     const Maybe<int32_t> withCrossShadowBoundaryOrder =
-        aIsSetStart
-            ? nsContentUtils::ComparePoints(
-                  aNewBoundary, otherSideExistingCrossShadowBoundaryBoundary)
-            : nsContentUtils::ComparePoints(
-                  otherSideExistingCrossShadowBoundaryBoundary, aNewBoundary);
+        aIsSetStart ? ComparePoints(
+                          aNewBoundary,
+                          otherSideExistingCrossShadowBoundaryBoundary.AsRaw())
+                    : ComparePoints(
+                          otherSideExistingCrossShadowBoundaryBoundary.AsRaw(),
+                          aNewBoundary);
 
     // Valid to the cross boundary boundary.
     if (withCrossShadowBoundaryOrder && *withCrossShadowBoundaryOrder != 1) {
@@ -2729,7 +2746,8 @@ already_AddRefed<DocumentFragment> nsRange::CreateContextualFragment(
 }
 
 already_AddRefed<DocumentFragment> nsRange::CreateContextualFragment(
-    const TrustedHTMLOrString& aFragment, ErrorResult& aRv) const {
+    const TrustedHTMLOrString& aFragment, nsIPrincipal* aSubjectPrincipal,
+    ErrorResult& aRv) const {
   if (!mIsPositioned) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -2741,7 +2759,7 @@ already_AddRefed<DocumentFragment> nsRange::CreateContextualFragment(
   nsCOMPtr<nsINode> node = mStart.GetContainer();
   const nsAString* compliantString =
       TrustedTypeUtils::GetTrustedTypesCompliantString(
-          aFragment, sink, kTrustedTypesOnlySinkGroup, *node,
+          aFragment, sink, kTrustedTypesOnlySinkGroup, *node, aSubjectPrincipal,
           compliantStringHolder, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -3245,8 +3263,7 @@ void nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges) {
       nsINode* node = preOrderIter.GetCurrentNode();
       preOrderIter.Next();
       bool selectable = true;
-      nsIContent* content =
-          node && node->IsContent() ? node->AsContent() : nullptr;
+      nsIContent* content = nsIContent::FromNodeOrNull(node);
       if (content) {
         if (firstNonSelectableContent &&
             ExcludeIfNextToNonSelectable(content)) {

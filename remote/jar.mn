@@ -53,12 +53,18 @@ remote.jar:
   content/shared/listeners/NavigationListener.sys.mjs (shared/listeners/NavigationListener.sys.mjs)
   content/shared/listeners/NetworkEventRecord.sys.mjs (shared/listeners/NetworkEventRecord.sys.mjs)
   content/shared/listeners/NetworkListener.sys.mjs (shared/listeners/NetworkListener.sys.mjs)
+  content/shared/listeners/ParentWebProgressListener.sys.mjs (shared/listeners/ParentWebProgressListener.sys.mjs)
   content/shared/listeners/PromptListener.sys.mjs (shared/listeners/PromptListener.sys.mjs)
 
+  # JSProcessActors
+  content/shared/js-process-actors/WebDriverDocumentInsertedActor.sys.mjs (shared/js-process-actors/WebDriverDocumentInsertedActor.sys.mjs)
+  content/shared/js-process-actors/WebDriverDocumentInsertedChild.sys.mjs (shared/js-process-actors/WebDriverDocumentInsertedChild.sys.mjs)
+  content/shared/js-process-actors/WebDriverDocumentInsertedParent.sys.mjs (shared/js-process-actors/WebDriverDocumentInsertedParent.sys.mjs)
+
   # JSWindowActors
-  content/shared/js-window-actors/NavigationListenerActor.sys.mjs (shared/js-window-actors/NavigationListenerActor.sys.mjs)
-  content/shared/js-window-actors/NavigationListenerChild.sys.mjs (shared/js-window-actors/NavigationListenerChild.sys.mjs)
-  content/shared/js-window-actors/NavigationListenerParent.sys.mjs (shared/js-window-actors/NavigationListenerParent.sys.mjs)
+  content/shared/js-window-actors/WebProgressListenerActor.sys.mjs (shared/js-window-actors/WebProgressListenerActor.sys.mjs)
+  content/shared/js-window-actors/WebProgressListenerChild.sys.mjs (shared/js-window-actors/WebProgressListenerChild.sys.mjs)
+  content/shared/js-window-actors/WebProgressListenerParent.sys.mjs (shared/js-window-actors/WebProgressListenerParent.sys.mjs)
 
   # shared modules (messagehandler architecture)
   content/shared/messagehandler/Errors.sys.mjs (shared/messagehandler/Errors.sys.mjs)
@@ -83,6 +89,7 @@ remote.jar:
   content/shared/webdriver/Actions.sys.mjs (shared/webdriver/Actions.sys.mjs)
   content/shared/webdriver/Assert.sys.mjs (shared/webdriver/Assert.sys.mjs)
   content/shared/webdriver/Capabilities.sys.mjs (shared/webdriver/Capabilities.sys.mjs)
+  content/shared/webdriver/Certificates.sys.mjs (shared/webdriver/Certificates.sys.mjs)
   content/shared/webdriver/Errors.sys.mjs (shared/webdriver/Errors.sys.mjs)
   content/shared/webdriver/Event.sys.mjs (shared/webdriver/Event.sys.mjs)
   content/shared/webdriver/KeyData.sys.mjs (shared/webdriver/KeyData.sys.mjs)

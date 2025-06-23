@@ -46,6 +46,72 @@ Capsule Capsule::WebTransportStreamData(uint64_t aID, bool aFin,
 }
 
 // static
+Capsule Capsule::WebTransportStreamsBlocked(uint64_t aLimit, bool aBidi) {
+  WebTransportStreamsBlockedCapsule capsule;
+  capsule.mLimit = aLimit;
+  capsule.mBidi = aBidi;
+  return Capsule(std::move(capsule));
+}
+
+// static
+Capsule Capsule::WebTransportMaxStreams(uint64_t aLimit, bool aBidi) {
+  WebTransportMaxStreamsCapsule capsule;
+  capsule.mLimit = aLimit;
+  capsule.mBidi = aBidi;
+  return Capsule(std::move(capsule));
+}
+
+// static
+Capsule Capsule::WebTransportStreamDataBlocked(uint64_t aLimit, uint64_t aID) {
+  WebTransportStreamDataBlockedCapsule capsule;
+  capsule.mLimit = aLimit;
+  capsule.mID = aID;
+  return Capsule(std::move(capsule));
+}
+
+// static
+Capsule Capsule::WebTransportMaxStreamData(uint64_t aLimit, uint64_t aID) {
+  WebTransportMaxStreamDataCapsule capsule;
+  capsule.mLimit = aLimit;
+  capsule.mID = aID;
+  return Capsule(std::move(capsule));
+}
+
+// static
+Capsule Capsule::WebTransportDataBlocked(uint64_t aLimit) {
+  WebTransportDataBlockedCapsule capsule;
+  capsule.mLimit = aLimit;
+  return Capsule(std::move(capsule));
+}
+
+// static
+Capsule Capsule::WebTransportStopSending(uint64_t aError, uint64_t aID) {
+  WebTransportStopSendingCapsule capsule;
+  capsule.mErrorCode = aError;
+  capsule.mID = aID;
+  return Capsule(std::move(capsule));
+}
+
+// static
+Capsule Capsule::WebTransportResetStream(uint64_t aError, uint64_t aSize,
+                                         uint64_t aID) {
+  WebTransportResetStreamCapsule capsule;
+  capsule.mErrorCode = aError;
+  capsule.mReliableSize = aSize;
+  capsule.mID = aID;
+  return Capsule(std::move(capsule));
+}
+
+// static
+Capsule Capsule::WebTransportDatagram(nsTArray<uint8_t>&& aPayload) {
+  Capsule capsule;
+  capsule.mCapsule = AsVariant(WebTransportDatagramCapsule());
+  capsule.mCapsule.as<WebTransportDatagramCapsule>().mPayload.AppendElements(
+      std::move(aPayload));
+  return capsule;
+}
+
+// static
 Capsule Capsule::Unknown(uint64_t aType, nsTArray<uint8_t>&& aData) {
   UnknownCapsule capsule;
   capsule.mType = aType;
@@ -63,6 +129,30 @@ CapsuleType Capsule::Type() const {
         return aCapsule.Type();
       },
       [](const WebTransportStreamDataCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportStreamsBlockedCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportMaxStreamsCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportStreamDataBlockedCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportMaxStreamDataCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportDataBlockedCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportStopSendingCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportResetStreamCapsule& aCapsule) {
+        return aCapsule.Type();
+      },
+      [](const WebTransportDatagramCapsule& aCapsule) {
         return aCapsule.Type();
       });
 }

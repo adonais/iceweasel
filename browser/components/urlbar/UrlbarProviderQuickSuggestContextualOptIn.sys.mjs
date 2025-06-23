@@ -84,6 +84,9 @@ class ProviderQuickSuggestContextualOptIn extends UrlbarProvider {
     return "UrlbarProviderQuickSuggestContextualOptIn";
   }
 
+  /**
+   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   */
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
   }
@@ -149,7 +152,7 @@ class ProviderQuickSuggestContextualOptIn extends UrlbarProvider {
     return Date.now() / 1000 - lastDismissedTime > time;
   }
 
-  isActive(queryContext) {
+  async isActive(queryContext) {
     if (!this.#shouldDisplayContextualOptIn(queryContext)) {
       return false;
     }

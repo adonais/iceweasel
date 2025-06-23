@@ -573,18 +573,6 @@ class MDefinition : public MNode {
     setBlockAndKind(block, Kind::Definition);
   }
 
-  void setWasmRefType(wasm::MaybeRefType refType) {
-    // Ensure that we do not regress from Some to Nothing.
-    MOZ_ASSERT(!(wasmRefType_.isSome() && refType.isNothing()));
-    // Ensure that the new ref type is a subtype of the previous one (i.e. we
-    // only narrow ref types).
-    MOZ_ASSERT_IF(
-        wasmRefType_.isSome(),
-        wasm::RefType::isSubTypeOf(refType.value(), wasmRefType_.value()));
-
-    wasmRefType_ = refType;
-  }
-
   static HashNumber addU32ToHash(HashNumber hash, uint32_t data) {
     return data + (hash << 6) + (hash << 16) - hash;
   }
@@ -751,14 +739,21 @@ class MDefinition : public MNode {
   static_assert(static_cast<size_t>(MIRType::Last) <
                 sizeof(MIRTypeEnumSet::serializedType) * CHAR_BIT);
 
-  // Get the wasm reference type stored on the node.
+  // Get the wasm reference type stored on the node. Do NOT use in congruentTo,
+  // as this value can change throughout the optimization process. See
+  // ReplaceAllUsesWith in ValueNumbering.cpp.
   wasm::MaybeRefType wasmRefType() const { return wasmRefType_; }
+
+  // Sets the wasm reference type stored on the node. Does not check if there
+  // was already a type on the node, which may lead to bugs; consider using
+  // `initWasmRefType` instead if it applies.
+  void setWasmRefType(wasm::MaybeRefType refType) { wasmRefType_ = refType; }
 
   // Sets the wasm reference type stored on the node. To be used for nodes that
   // have a fixed ref type that is set up front, which is a common case. Must be
   // called only during the node constructor and never again afterward.
   void initWasmRefType(wasm::MaybeRefType refType) {
-    MOZ_RELEASE_ASSERT(!wasmRefType_);
+    MOZ_ASSERT(!wasmRefType_);
     setWasmRefType(refType);
   }
 
@@ -767,13 +762,6 @@ class MDefinition : public MNode {
   // which means it will return either Nothing or a value set by
   // initWasmRefType.
   virtual wasm::MaybeRefType computeWasmRefType() const { return wasmRefType_; }
-
-  // Updates the wasm reference type stored on the node by calling
-  // computeWasmRefType and setWasmRefType. Returns true if the type changed.
-  //
-  // This is used in an analysis pass to assign the type to the node, multiple
-  // times if necessary as type information is computed.
-  bool updateWasmRefType();
 
   // Return true if the result type is a member of the given types.
   bool typeIsOneOf(MIRTypeEnumSet types) const {
@@ -6642,10 +6630,14 @@ class MStringReplace : public MTernaryInstruction,
 };
 
 class MLambda : public MBinaryInstruction, public SingleObjectPolicy::Data {
-  MLambda(MDefinition* envChain, MConstant* cst)
-      : MBinaryInstruction(classOpcode, envChain, cst) {
+  MLambda(MDefinition* envChain, MConstant* cst, gc::Heap initialHeap)
+      : MBinaryInstruction(classOpcode, envChain, cst),
+        initialHeap_(initialHeap) {
     setResultType(MIRType::Object);
   }
+
+  // Heap where the lambda should be allocated.
+  gc::Heap initialHeap_;
 
  public:
   INSTRUCTION_HEADER(Lambda)
@@ -6656,6 +6648,8 @@ class MLambda : public MBinaryInstruction, public SingleObjectPolicy::Data {
   JSFunction* templateFunction() const {
     return &functionOperand()->toObject().as<JSFunction>();
   }
+
+  gc::Heap initialHeap() const { return initialHeap_; }
 
   [[nodiscard]] bool writeRecoverData(
       CompactBufferWriter& writer) const override;
@@ -8822,18 +8816,22 @@ class MPostWriteElementBarrier
 
 class MNewCallObject : public MUnaryInstruction,
                        public SingleObjectPolicy::Data {
+  gc::Heap initialHeap_;
+
  public:
   INSTRUCTION_HEADER(NewCallObject)
   TRIVIAL_NEW_WRAPPERS
 
-  explicit MNewCallObject(MConstant* templateObj)
-      : MUnaryInstruction(classOpcode, templateObj) {
+  explicit MNewCallObject(MConstant* templateObj, gc::Heap initialHeap)
+      : MUnaryInstruction(classOpcode, templateObj), initialHeap_(initialHeap) {
     setResultType(MIRType::Object);
   }
 
   CallObject* templateObject() const {
     return &getOperand(0)->toConstant()->toObject().as<CallObject>();
   }
+  gc::Heap initialHeap() const { return initialHeap_; }
+
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
   [[nodiscard]] bool writeRecoverData(

@@ -67,11 +67,11 @@ class JujutsuRepository(Repository):
         See bug 1962245 and bug 1962389.
 
         An alternative option would be to add an extra argument to methods such as
-        `get_branch_nodes`.
+        `get_commits`.
         """
         self._run("log", "-n0")
 
-    def resolve_to_change(self, revset: str) -> Optional[str]:
+    def _resolve_to_change(self, revset: str) -> Optional[str]:
         change_id = self._run_read_only(
             "log", "--no-graph", "-n1", "-r", revset, "-T", "change_id.short()"
         ).rstrip()
@@ -86,27 +86,29 @@ class JujutsuRepository(Repository):
         # This is not really a defined concept in jj. Map it to @, or rather the
         # persistent change id for the current @. Warning: this cannot be passed
         # directly to a git command, it must be converted to a commit id first
-        # (eg via convert_change_to_commit). This isn't done here because
+        # (eg via resolve_to_commit). This isn't done here because
         # callers should be aware when they're dropping down to git semantics.
-        return self.resolve_to_change("@")
+        return self._resolve_to_change("@")
+
+    def is_cinnabar_repo(self) -> bool:
+        return self._git.is_cinnabar_repo()
 
     @property
     def base_ref(self):
-        ref = self.resolve_to_change("latest(roots(::@ & mutable())-)")
+        ref = self._resolve_to_change("latest(roots(::@ & mutable())-)")
         return ref if ref else self.head_ref
 
-    def resolve_to_commit(self, revset):
+    def _resolve_to_commit(self, revset):
         commit = self._run_read_only(
             "log", "--no-graph", "-r", f"latest({revset})", "-T", "commit_id"
         ).rstrip()
         return commit
 
     def base_ref_as_hg(self):
-        base_ref = self.resolve_to_commit(self.base_ref)
-        try:
-            return self._git._run("cinnabar", "git2hg", base_ref).strip()
-        except subprocess.CalledProcessError:
-            return
+        return self._git.base_ref_as_hg()
+
+    def base_ref_as_commit(self):
+        return self._resolve_to_commit(self.base_ref)
 
     @property
     def branch(self):
@@ -172,8 +174,8 @@ class JujutsuRepository(Repository):
 
     def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
         if rev is None:
-            rev = "latest((@ | @-) ~ empty())"
-        rev = self.resolve_to_commit(rev)
+            rev = "latest((@ ~ empty()) | @-)"
+        rev = self._resolve_to_commit(rev)
         return self._git.diff_stream(
             rev=rev, extensions=extensions, exclude_file=exclude_file, context=context
         )
@@ -200,21 +202,19 @@ class JujutsuRepository(Repository):
                 outgoing.append(mozpath.normsep(file))
         return outgoing
 
-    def add_remove_files(self, *paths: Union[str, Path]):
+    def add_remove_files(self, *paths: Union[str, Path], force: bool = False):
         if not paths:
             return
 
-        paths = [str(path) for path in paths]
-
-        self._run("file", "track", *paths)
+        relative_paths = [self._repo_root_relative_path(p) for p in paths]
+        self._run("file", "track", *relative_paths)
 
     def forget_add_remove_files(self, *paths: Union[str, Path]):
         if not paths:
             return
 
-        paths = [str(path) for path in paths]
-
-        self._run_read_only("file", "untrack", *paths)
+        relative_paths = [self._repo_root_relative_path(p) for p in paths]
+        self._run("file", "untrack", *relative_paths)
 
     def get_tracked_files_finder(self, path=None):
         files = [mozpath.normsep(p) for p in self._run("file", "list").splitlines()]
@@ -299,26 +299,33 @@ class JujutsuRepository(Repository):
     def set_config(self, name, value):
         self._run_read_only("config", name, value)
 
-    def get_branch_nodes(self, head: Optional[str] = "@") -> List[str]:
+    def get_commits(
+        self,
+        head: Optional[str] = "@",
+        limit: Optional[int] = None,
+        follow: Optional[List[str]] = None,
+    ) -> List[str]:
         """Return a list of commit SHAs for nodes on the current branch, in order that they should be applied."""
         # Note: lando gets grumpy if you try to push empty commits.
-        return list(
-            reversed(
-                self._run_read_only(
-                    "log",
-                    "--no-graph",
-                    "-r",
-                    f"(::{head} & mutable()) ~ empty()",
-                    "-T",
-                    'commit_id ++ "\n"',
-                ).splitlines()
-            )
-        )
+        cmd = [
+            "log",
+            "--no-graph",
+            "-r",
+            f"(::{head} & mutable()) ~ empty()",
+            "-T",
+            'commit_id ++ "\n"',
+        ]
+        if limit is not None:
+            cmd.append(f"-n{limit}")
+        if follow is not None:
+            cmd.extend(follow)
 
-    def looks_like_change_id(self, id):
+        return list(reversed(self._run_read_only(*cmd).splitlines()))
+
+    def _looks_like_change_id(self, id):
         return len(id) > 0 and all(letter >= "k" and letter <= "z" for letter in id)
 
-    def looks_like_commit_id(self, id):
+    def _looks_like_commit_id(self, id):
         return len(id) > 0 and all(letter in string.hexdigits for letter in id)
 
     def get_commit_patches(self, nodes: List[str]) -> List[bytes]:
@@ -326,7 +333,7 @@ class JujutsuRepository(Repository):
         # Warning: tests, at least, may call this with change ids rather than
         # commit ids.
         nodes = [
-            id if self.looks_like_commit_id(id) else self.resolve_to_commit(id)
+            id if self._looks_like_commit_id(id) else self._resolve_to_commit(id)
             for id in nodes
         ]
         return [
@@ -352,14 +359,14 @@ class JujutsuRepository(Repository):
             "operation", "log", "-n1", "--no-graph", "-T", "id.short(16)"
         ).rstrip()
         try:
-            self._run("new", "-m", commit_message, "latest((@ | @-) ~ empty())")
+            self._run("new", "-m", commit_message, "latest((@ ~ empty()) | @-)")
             for path, content in (changed_files or {}).items():
                 p = self.path / Path(path)
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text(content)
             # Update the jj commit with the changes we just made.
             self._snapshot()
-            yield self.resolve_to_change("@")
+            yield self._resolve_to_change("@")
         finally:
             self._run("operation", "restore", opid)
 
@@ -371,6 +378,6 @@ class JujutsuRepository(Repository):
             "-n1",
             "-T",
             "committer.timestamp()",
-            str(path),
+            '"%s"' % str(path).replace("\\", "\\\\"),
         ).rstrip()
         return datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f %z")

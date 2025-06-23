@@ -60,7 +60,8 @@ export const HeuristicsRegExp = {
         "|miasto|miejscowosc|miejscowość", //pl-PL
       "address-housenumber":
         "(house|building)\\s*number|hausnummer|haus|house[a-z\-]*n(r|o)" +
-        "|n[úu]mero",
+        "|n[úu]mero" +
+        "|domu", // pl-PL
       "address-level3":
         "(^address-?level-?3$)" +
         "|neighbou*rhood|barrio|bairro|colonia|suburb", // en/es/pt/mx/au/nz
@@ -671,6 +672,11 @@ export const HeuristicsRegExp = {
     },
   ],
 
+  EXTRA_RULES: {
+    "lookup":
+      "lookup|search|suchen",
+  },
+
   _getRules(rules, rulesets) {
     function computeRule(name) {
       let regexps = [];
@@ -710,6 +716,10 @@ export const HeuristicsRegExp = {
   getRules() {
     return this._getRules(this.RULES, this.RULE_SETS);
   },
+
+  getExtraRules(fieldName) {
+    return new RegExp(this.EXTRA_RULES[fieldName], "iug");
+  }
 };
 
 export default HeuristicsRegExp;

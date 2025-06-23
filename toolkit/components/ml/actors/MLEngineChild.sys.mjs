@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PipelineOptions: "chrome://global/content/ml/EngineProcess.sys.mjs",
   DEFAULT_ENGINE_ID: "chrome://global/content/ml/EngineProcess.sys.mjs",
   DEFAULT_MODELS: "chrome://global/content/ml/EngineProcess.sys.mjs",
+  WASM_BACKENDS: "chrome://global/content/ml/EngineProcess.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", () => {
@@ -203,6 +204,15 @@ export class MLEngineChild extends JSProcessActorChild {
   }
 
   /**
+   * Gets the configuration of the worker
+   *
+   * @returns {Promise<object>}
+   */
+  getWorkerConfig() {
+    return this.sendQuery("MLEngine:GetWorkerConfig");
+  }
+
+  /**
    * Gets the inference options from RemoteSettings.
    *
    * @returns {Promise<object>}
@@ -225,8 +235,13 @@ export class MLEngineChild extends JSProcessActorChild {
     return this.sendQuery("MLEngine:GetModelFile", config);
   }
 
-  getInferenceProcessInfo() {
-    return this.sendQuery("MLEngine:GetInferenceProcessInfo");
+  /**
+   * Notify that the model download is completed by communicating with the parent actor.
+   *
+   * @param {object} config - The configuration accepted by the parent function.
+   */
+  async notifyModelDownloadComplete(config) {
+    this.sendQuery("MLEngine:NotifyModelDownloadComplete", config);
   }
 
   /**
@@ -336,11 +351,6 @@ class EngineDispatcher {
    * @returns {Promise<Engine>}
    */
   async initializeInferenceEngine(pipelineOptions, notificationsCallback) {
-    // Create the inference engine given the wasm runtime and the options.
-    const wasm = await this.mlEngineChild.getWasmArrayBuffer(
-      pipelineOptions.backend
-    );
-
     let remoteSettingsOptions = await this.mlEngineChild.getInferenceOptions(
       this.#featureId,
       this.#taskName,
@@ -365,16 +375,27 @@ class EngineDispatcher {
     }
 
     lazy.console.debug("Inference engine options:", mergedOptions);
-
     this.pipelineOptions = mergedOptions;
 
+    // load the wasm if required.
+    let wasm = null;
+    if (lazy.WASM_BACKENDS.includes(pipelineOptions.backend || "onnx")) {
+      wasm = await this.mlEngineChild.getWasmArrayBuffer(
+        pipelineOptions.backend
+      );
+    }
+
+    const workerConfig = await this.mlEngineChild.getWorkerConfig();
+
     return InferenceEngine.create({
+      workerUrl: workerConfig.url,
+      workerOptions: workerConfig.options,
       wasm,
       pipelineOptions: mergedOptions,
       notificationsCallback,
       getModelFileFn: this.mlEngineChild.getModelFile.bind(this.mlEngineChild),
-      getInferenceProcessInfoFn:
-        this.mlEngineChild.getInferenceProcessInfo.bind(this.mlEngineChild),
+      notifyModelDownloadCompleteFn:
+        this.mlEngineChild.notifyModelDownloadComplete.bind(this.mlEngineChild),
     });
   }
 
@@ -607,6 +628,9 @@ class EngineDispatcher {
  * @param {string} config.modelHubRootUrl - root url of the model hub. When not provided, uses the default from prefs.
  * @param {string} config.modelHubUrlTemplate - url template of the model hub. When not provided, uses the default from prefs.
  * @param {?function(object):Promise<[string, object]>} config.getModelFileFn - A function that actually retrieves the model and headers.
+ * @param {string} config.featureId - The feature id
+ * @param {string} config.sessionId - Shared across the same session.
+ * @param {object} config.telemetryData - Additional telemetry data.
  * @returns {Promise} A promise that resolves to a Meta object containing the URL, response headers,
  * and model path.
  */
@@ -617,6 +641,9 @@ async function getModelFile({
   getModelFileFn,
   modelHubRootUrl,
   modelHubUrlTemplate,
+  featureId,
+  sessionId,
+  telemetryData,
 }) {
   const [data, headers] = await getModelFileFn({
     engineId: engineId || lazy.DEFAULT_ENGINE_ID,
@@ -624,6 +651,9 @@ async function getModelFile({
     url,
     rootUrl: modelHubRootUrl || lazy.MODEL_HUB_ROOT_URL,
     urlTemplate: modelHubUrlTemplate || lazy.MODEL_HUB_URL_TEMPLATE,
+    featureId,
+    sessionId,
+    telemetryData,
   });
   return new lazy.BasePromiseWorker.Meta([url, headers, data], {});
 }
@@ -639,42 +669,59 @@ class InferenceEngine {
    * Initialize the worker.
    *
    * @param {object} config
+   * @param {string} config.workerUrl  The url of the worker
+   * @param {object} config.workerOptions the options to pass to BasePromiseWorker
    * @param {ArrayBuffer} config.wasm
    * @param {PipelineOptions} config.pipelineOptions
    * @param {?function(ProgressAndStatusCallbackParams):void} config.notificationsCallback The callback to call for updating about notifications such as dowload progress status.
    * @param {?function(object):Promise<[string, object]>} config.getModelFileFn - A function that actually retrieves the model and headers.
-   * @param {?function(object):Promise<object>} config.getInferenceProcessInfoFn - A function to get inference process info
+   * @param {?function(object):Promise<void>} config.notifyModelDownloadCompleteFn - A function to notify that all files needing downloads are completed.
    * @returns {InferenceEngine}
    */
   static async create({
+    workerUrl,
+    workerOptions,
     wasm,
     pipelineOptions,
     notificationsCallback, // eslint-disable-line no-unused-vars
     getModelFileFn,
-    getInferenceProcessInfoFn,
+    notifyModelDownloadCompleteFn,
   }) {
     // Check for the numThreads value. If it's not set, use the best value for the platform, which is the number of physical cores
     pipelineOptions.numThreads =
       pipelineOptions.numThreads || lazy.mlUtils.getOptimalCPUConcurrency();
 
     /** @type {BasePromiseWorker} */
-    const worker = new lazy.BasePromiseWorker(
-      "chrome://global/content/ml/MLEngine.worker.mjs",
-      { type: "module" },
-      {
-        getModelFile: async url =>
-          getModelFile({
-            engineId: pipelineOptions.engineId,
-            url,
-            taskName: pipelineOptions.taskName,
-            getModelFileFn,
-            modelHubRootUrl: pipelineOptions.modelHubRootUrl,
-            modelHubUrlTemplate: pipelineOptions.modelHubUrlTemplate,
-          }),
-        getInferenceProcessInfo: getInferenceProcessInfoFn,
-        onInferenceProgress: notificationsCallback,
-      }
-    );
+    const worker = new lazy.BasePromiseWorker(workerUrl, workerOptions, {
+      getModelFile: async (url, sessionId = "") =>
+        getModelFile({
+          engineId: pipelineOptions.engineId,
+          url,
+          taskName: pipelineOptions.taskName,
+          getModelFileFn,
+          modelHubRootUrl: pipelineOptions.modelHubRootUrl,
+          modelHubUrlTemplate: pipelineOptions.modelHubUrlTemplate,
+          featureId: pipelineOptions.featureId,
+          sessionId,
+          // We have model, revision that are parsed for the url.
+          // However, we want to save in telemetry the ones that are configured
+          // for the pipeline. This allows consistent reporting regarding of how
+          // the backend constructs the url.
+          telemetryData: {
+            modelId: pipelineOptions.modelId,
+            modelRevision: pipelineOptions.modelRevision,
+          },
+        }),
+      onInferenceProgress: notificationsCallback,
+      notifyModelDownloadComplete: async (sessionId = "") =>
+        notifyModelDownloadCompleteFn({
+          sessionId,
+          featureId: pipelineOptions.featureId,
+          engineId: pipelineOptions.engineId,
+          modelId: pipelineOptions.modelId,
+          modelRevision: pipelineOptions.modelRevision,
+        }),
+    });
 
     const args = [wasm, pipelineOptions];
     const closure = {};

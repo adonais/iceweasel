@@ -362,6 +362,7 @@ const ProxyMessenger = {
 
   async recvPortConnect(arg, { sender }) {
     if (arg.native) {
+      /** @type {ParentPort} */
       let port = this.openNative(arg.name, sender).onConnect(arg.portId, this);
       port.senderChildId = sender.childId;
       port.native = true;
@@ -2387,3 +2388,11 @@ ChromeUtils.defineLazyGetter(ExtensionParent, "PlatformInfo", () => {
     })(),
   });
 });
+
+// Register WPTMessages actor when running under WPT.
+if (ExtensionCommon.isInWPT && AppConstants.NIGHTLY_BUILD) {
+  const { WPTMessagesParent } = ChromeUtils.importESModule(
+    "resource://gre/modules/WPTMessagesParent.sys.mjs"
+  );
+  WPTMessagesParent.init(apiManager);
+}

@@ -168,6 +168,8 @@ function makeMockContentAnalysis() {
 
     setupForTestWithError(errorValue) {
       this.errorValue = errorValue;
+      this.waitForEvent = false;
+      this.showDialogs = false;
       this.clearCalls();
     },
 
@@ -195,6 +197,12 @@ function makeMockContentAnalysis() {
     analyzeContentRequests(requests, autoAcknowledge) {
       return this.realCAService.analyzeContentRequests(
         requests,
+        autoAcknowledge
+      );
+    },
+    analyzeBatchContentRequest(request, autoAcknowledge) {
+      return this.realCAService.analyzeBatchContentRequest(
+        request,
         autoAcknowledge
       );
     },
@@ -334,8 +342,13 @@ function makeMockContentAnalysis() {
       this.agentCancelCalls = this.agentCancelCalls + 1;
     },
 
-    getDiagnosticInfo() {
-      return this.realCAService.getDiagnosticInfo();
+    async getDiagnosticInfo() {
+      return {
+        connectedToAgent: true,
+        agentPath: "AFakePath",
+        failedSignatureVerification: false,
+        requestCount: this.calls.length,
+      };
     },
 
     cancelRequestsByUserAction(aUserActionId) {

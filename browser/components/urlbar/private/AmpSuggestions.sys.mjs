@@ -7,25 +7,18 @@ import { SuggestProvider } from "resource:///modules/urlbar/private/SuggestFeatu
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AmpMatchingStrategy: "resource://gre/modules/RustSuggest.sys.mjs",
+  AmpMatchingStrategy:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
   CONTEXTUAL_SERVICES_PING_TYPES:
     "resource:///modules/PartnerLinkAttribution.sys.mjs",
+  ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
-  rawSuggestionUrlMatches: "resource://gre/modules/RustSuggest.sys.mjs",
+  rawSuggestionUrlMatches:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
   UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
-});
-
-// `contextId` is a unique identifier used by Contextual Services
-const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
-ChromeUtils.defineLazyGetter(lazy, "contextId", () => {
-  let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
-  if (!_contextId) {
-    _contextId = String(Services.uuid.generateUUID());
-    Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
-  }
-  return _contextId;
 });
 
 const TIMESTAMP_TEMPLATE = "%YYYYMMDDHH%";
@@ -272,13 +265,21 @@ export class AmpSuggestions extends SuggestProvider {
     return TIMESTAMP_REGEXP.test(maybeTimestamp);
   }
 
-  #submitQuickSuggestPing({ queryContext, result, pingType, ...pingData }) {
+  async #submitQuickSuggestPing({
+    queryContext,
+    result,
+    pingType,
+    ...pingData
+  }) {
     if (queryContext.isPrivate) {
       return;
     }
 
     let allPingData = {
       pingType,
+      // Suggest initialization awaits `Region.init()`, so safe to assume it's
+      // already been initialized here.
+      country: lazy.Region.home,
       ...pingData,
       matchType: result.isBestMatch ? "best-match" : "firefox-suggest",
       // Always use lowercase to make the reporting consistent.
@@ -293,7 +294,7 @@ export class AmpSuggestions extends SuggestProvider {
       suggestedIndexRelativeToGroup: !!result.isSuggestedIndexRelativeToGroup,
       requestId: result.payload.requestId,
       source: result.payload.source,
-      contextId: lazy.contextId,
+      contextId: await lazy.ContextId.request(),
     };
 
     for (let [gleanKey, value] of Object.entries(allPingData)) {
@@ -318,9 +319,15 @@ export class AmpSuggestions extends SuggestProvider {
     });
   }
 
-  #submitQuickSuggestDeletionRequestPing() {
-    Glean.quickSuggest.contextId.set(lazy.contextId);
-    GleanPings.quickSuggestDeletionRequest.submit();
+  async #submitQuickSuggestDeletionRequestPing() {
+    if (lazy.ContextId.rotationEnabled) {
+      // The ContextId module will take care of sending the appropriate
+      // deletion requests if rotation is enabled.
+      lazy.ContextId.forceRotation();
+    } else {
+      Glean.quickSuggest.contextId.set(await lazy.ContextId.request());
+      GleanPings.quickSuggestDeletionRequest.submit();
+    }
   }
 
   /**

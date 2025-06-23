@@ -20,10 +20,12 @@ const DYNAMIC_TYPE_NAME = "actions";
 
 // The suggestion index of the actions row within the urlbar results.
 const SUGGESTED_INDEX = 1;
+const SUGGESTED_INDEX_TABS_MODE = 0;
 
 const SCOTCH_BONNET_PREF = "scotchBonnet.enableOverride";
 const ACTIONS_PREF = "secondaryActions.featureGate";
 const QUICK_ACTIONS_PREF = "suggest.quickactions";
+const MAX_ACTIONS_PREF = "secondaryActions.maxActionsShown";
 
 // Prefs relating to the onboarding label shown to new users.
 const TIMES_TO_SHOW_PREF = "quickactions.timesToShowOnboardingLabel";
@@ -52,11 +54,14 @@ class ProviderGlobalActions extends UrlbarProvider {
     return "UrlbarProviderGlobalActions";
   }
 
+  /**
+   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   */
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
-  isActive() {
+  async isActive() {
     return (
       (lazy.UrlbarPrefs.get(SCOTCH_BONNET_PREF) ||
         lazy.UrlbarPrefs.get(ACTIONS_PREF)) &&
@@ -77,6 +82,7 @@ class ProviderGlobalActions extends UrlbarProvider {
             // We only allow one action that provides an engine search mode.
             continue;
           }
+          action.providerName = provider.name;
           actionsResults.push(action);
         }
       }
@@ -84,6 +90,10 @@ class ProviderGlobalActions extends UrlbarProvider {
 
     if (!actionsResults.length) {
       return;
+    }
+
+    if (actionsResults.length > lazy.UrlbarPrefs.get(MAX_ACTIONS_PREF)) {
+      actionsResults.length = lazy.UrlbarPrefs.get(MAX_ACTIONS_PREF);
     }
 
     let showOnboardingLabel =
@@ -113,7 +123,10 @@ class ProviderGlobalActions extends UrlbarProvider {
       UrlbarUtils.RESULT_SOURCE.ACTIONS,
       payload
     );
-    result.suggestedIndex = SUGGESTED_INDEX;
+    result.suggestedIndex =
+      queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.TABS
+        ? SUGGESTED_INDEX_TABS_MODE
+        : SUGGESTED_INDEX;
     addCallback(this, result);
   }
 
@@ -169,6 +182,7 @@ class ProviderGlobalActions extends UrlbarProvider {
           {
             name: `label-${i}`,
             tag: "span",
+            classList: ["urlbarView-action-btn-label"],
           },
         ],
       };

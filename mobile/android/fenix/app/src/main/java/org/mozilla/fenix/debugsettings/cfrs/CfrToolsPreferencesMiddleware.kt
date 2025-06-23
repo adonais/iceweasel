@@ -49,27 +49,11 @@ class CfrToolsPreferencesMiddleware(
                     ),
                 )
             }
-            is CfrToolsAction.HomepageNavToolbarShownToggled -> {
-                cfrPreferencesRepository.updateCfrPreference(
-                    CfrPreferencesRepository.CfrPreferenceUpdate(
-                        preferenceType = CfrPreferencesRepository.CfrPreference.HomepageNavToolbar,
-                        value = context.state.homepageNavToolbarShown,
-                    ),
-                )
-            }
             is CfrToolsAction.HomepageSearchBarShownToggled -> {
                 cfrPreferencesRepository.updateCfrPreference(
                     CfrPreferencesRepository.CfrPreferenceUpdate(
                         preferenceType = CfrPreferencesRepository.CfrPreference.HomepageSearchBar,
                         value = context.state.homepageSearchBarShown,
-                    ),
-                )
-            }
-            is CfrToolsAction.NavButtonsShownToggled -> {
-                cfrPreferencesRepository.updateCfrPreference(
-                    CfrPreferencesRepository.CfrPreferenceUpdate(
-                        preferenceType = CfrPreferencesRepository.CfrPreference.NavButtons,
-                        value = context.state.navButtonsShown,
                     ),
                 )
             }
@@ -104,7 +88,7 @@ class CfrToolsPreferencesMiddleware(
             is CfrToolsAction.ResetLastCFRTimestampButtonClicked -> {
                 cfrPreferencesRepository.resetLastCfrTimestamp()
             }
-            is CfrToolsAction.CfrPreferenceUpdate -> {} // No-op
+            is CfrToolsAction.LoadCfrPreference -> {} // No-op
         }
     }
 
@@ -114,19 +98,15 @@ class CfrToolsPreferencesMiddleware(
     ): CfrToolsAction {
         return when (cfrPreferenceUpdate.preferenceType) {
             CfrPreferencesRepository.CfrPreference.HomepageSync ->
-                CfrToolsAction.HomepageSyncCfrUpdated(newValue = !cfrPreferenceUpdate.value)
-            CfrPreferencesRepository.CfrPreference.HomepageNavToolbar ->
-                CfrToolsAction.HomepageNavToolbarCfrUpdated(newValue = !cfrPreferenceUpdate.value)
+                CfrToolsAction.HomepageSyncCfrLoaded(newValue = !cfrPreferenceUpdate.value)
             CfrPreferencesRepository.CfrPreference.HomepageSearchBar ->
-                CfrToolsAction.HomepageSearchbarCfrUpdated(newValue = !cfrPreferenceUpdate.value)
-            CfrPreferencesRepository.CfrPreference.NavButtons ->
-                CfrToolsAction.NavButtonsCfrUpdated(newValue = !cfrPreferenceUpdate.value)
+                CfrToolsAction.HomepageSearchbarCfrLoaded(newValue = !cfrPreferenceUpdate.value)
             CfrPreferencesRepository.CfrPreference.TabAutoCloseBanner ->
-                CfrToolsAction.TabAutoCloseBannerCfrUpdated(newValue = !cfrPreferenceUpdate.value)
+                CfrToolsAction.TabAutoCloseBannerCfrLoaded(newValue = !cfrPreferenceUpdate.value)
             CfrPreferencesRepository.CfrPreference.InactiveTabs ->
-                CfrToolsAction.InactiveTabsCfrUpdated(newValue = !cfrPreferenceUpdate.value)
+                CfrToolsAction.InactiveTabsCfrLoaded(newValue = !cfrPreferenceUpdate.value)
             CfrPreferencesRepository.CfrPreference.OpenInApp ->
-                CfrToolsAction.OpenInAppCfrUpdated(newValue = !cfrPreferenceUpdate.value)
+                CfrToolsAction.OpenInAppCfrLoaded(newValue = !cfrPreferenceUpdate.value)
         }
     }
 }

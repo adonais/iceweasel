@@ -49,7 +49,6 @@ class PocketTest : TestSetup() {
                 }.openSettings {
                 }.goBack {
                     verifyThoughtProvokingStories(true)
-                    verifyStoriesByTopicItems()
                 }
 
                 break
@@ -69,14 +68,12 @@ class PocketTest : TestSetup() {
         runWithCondition(isNetworkConnected()) {
             homeScreen {
                 verifyThoughtProvokingStories(true)
-                scrollToPocketProvokingStories()
-                verifyPocketRecommendedStoriesItems()
+                verifyPocketRecommendedStoriesItems(activityTestRule)
                 // Sponsored Pocket stories are only advertised for a limited time.
                 // See also known issue https://bugzilla.mozilla.org/show_bug.cgi?id=1828629
                 // verifyPocketSponsoredStoriesItems(2, 8)
-                verifyDiscoverMoreStoriesButton()
+                verifyDiscoverMoreStoriesButton(activityTestRule)
                 verifyStoriesByTopic(true)
-                verifyPoweredByPocket()
             }.openThreeDotMenu {
             }.openCustomizeHome {
                 clickPocketButton()
@@ -93,7 +90,6 @@ class PocketTest : TestSetup() {
         runWithCondition(isNetworkConnected()) {
             homeScreen {
                 verifyThoughtProvokingStories(true)
-                scrollToPocketProvokingStories()
                 firstPocketStoryPublisher = getProvokingStoryPublisher(1)
             }.clickPocketStoryItem(firstPocketStoryPublisher, 1) {
                 verifyUrl(Constants.POCKET_RECOMMENDED_STORIES_UTM_PARAM)
@@ -106,7 +102,7 @@ class PocketTest : TestSetup() {
     fun pocketDiscoverMoreButtonTest() {
         runWithCondition(isNetworkConnected()) {
             homeScreen {
-                verifyDiscoverMoreStoriesButton()
+                verifyDiscoverMoreStoriesButton(activityTestRule)
             }.clickPocketDiscoverMoreButton(activityTestRule) {
                 verifyUrl("getpocket.com/explore")
             }
@@ -121,18 +117,6 @@ class PocketTest : TestSetup() {
                 verifyStoriesByTopicItemState(activityTestRule, false, 1)
                 clickStoriesByTopicItem(activityTestRule, 1)
                 verifyStoriesByTopicItemState(activityTestRule, true, 1)
-            }
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2252516
-    @Test
-    fun pocketLearnMoreButtonTest() {
-        runWithCondition(isNetworkConnected()) {
-            homeScreen {
-                verifyPoweredByPocket()
-            }.clickPocketLearnMoreLink(activityTestRule) {
-                verifyUrl("mozilla.org/en-US/firefox/pocket")
             }
         }
     }

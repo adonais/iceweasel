@@ -89,6 +89,7 @@ modules["ERRORRESULT"] = Mod(43)
 # see Bug 1686041.
 modules["WIN32"] = Mod(44)
 modules["WDBA"] = Mod(45)
+modules["DOM_QM"] = Mod(46)
 
 # NS_ERROR_MODULE_GENERAL should be used by modules that do not
 # care if return code values overlap. Callers of methods that
@@ -462,6 +463,9 @@ with modules["NETWORK"]:
     # nsIInterceptedChannel
     # Generic error for non-specific failures during service worker interception
     errors["NS_ERROR_INTERCEPTION_FAILED"] = FAILURE(100)
+
+    # WebTransport Session Limit (mWebTransportMaxSessions) Exceeded
+    errors["NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED"] = FAILURE(199)
 
     errors["NS_ERROR_WEBTRANSPORT_CODE_BASE"] = FAILURE(200)
     errors["NS_ERROR_WEBTRANSPORT_CODE_END"] = (
@@ -1234,6 +1238,11 @@ with modules["WDBA"]:
     errors["NS_ERROR_WDBA_REJECTED"] = FAILURE(3)
     errors["NS_ERROR_WDBA_BUILD"] = FAILURE(4)
 
+# =======================================================================
+# 46: NS_ERROR_MODULE_DOM_QM
+# =======================================================================
+with modules["DOM_QM"]:
+    errors["NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED"] = FAILURE(1)
 
 # =======================================================================
 # 51: NS_ERROR_MODULE_GENERAL

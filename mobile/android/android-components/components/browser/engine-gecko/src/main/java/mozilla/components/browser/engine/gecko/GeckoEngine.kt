@@ -472,8 +472,7 @@ class GeckoEngine(
     override fun listInstalledWebExtensions(onSuccess: (List<WebExtension>) -> Unit, onError: (Throwable) -> Unit) {
         runtime.webExtensionController.list().then(
             {
-                val extensions = it?.map {
-                        extension ->
+                val extensions = it?.map { extension ->
                     GeckoWebExtension(extension, runtime)
                 } ?: emptyList()
 
@@ -752,8 +751,7 @@ class GeckoEngine(
                 onSuccess()
                 GeckoResult<Void>()
             },
-            {
-                    throwable ->
+            { throwable ->
                 onError(throwable)
                 GeckoResult<Void>()
             },
@@ -820,8 +818,7 @@ class GeckoEngine(
                 if (it != null) {
                     val listOfModels = mutableListOf<LanguageModel>()
                     for (each in it) {
-                        val language = each.language?.let {
-                                language ->
+                        val language = each.language?.let { language ->
                             Language(language.code, each.language?.localizedDisplayName)
                         }
                         val status = if (each.isDownloaded) ModelState.DOWNLOADED else ModelState.NOT_DOWNLOADED
@@ -1475,9 +1472,13 @@ class GeckoEngine(
             get() = runtime.settings.certificateTransparencyMode
             set(value) { runtime.settings.setCertificateTransparencyMode(value) }
 
-        override var postQuantumKeyExchangeEnabled: Boolean
-            get() = runtime.settings.postQuantumKeyExchangeEnabled
-            set(value) { runtime.settings.setPostQuantumKeyExchangeEnabled(value) }
+        override var postQuantumKeyExchangeEnabled: Boolean?
+            get() = runtime.settings.postQuantumKeyExchangeEnabled.or(false)
+            set(value) { value?.let { runtime.settings.setPostQuantumKeyExchangeEnabled(value) } }
+
+        override var dohAutoselectEnabled: Boolean
+            get() = runtime.settings.dohAutoselectEnabled
+            set(value) { runtime.settings.setDohAutoselectEnabled(value) }
 
         override var bannedPorts: String
             get() = runtime.settings.bannedPorts
@@ -1524,6 +1525,7 @@ class GeckoEngine(
             this.cookieBehaviorOptInPartitioningPBM = it.cookieBehaviorOptInPartitioningPBM
             this.certificateTransparencyMode = it.certificateTransparencyMode
             this.postQuantumKeyExchangeEnabled = it.postQuantumKeyExchangeEnabled
+            this.dohAutoselectEnabled = it.dohAutoselectEnabled
             this.bannedPorts = it.bannedPorts
         }
     }

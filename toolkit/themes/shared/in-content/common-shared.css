@@ -140,7 +140,7 @@
      * In theory, we shouldn't be conveying invalid state just with a colour
      * change... */
     --in-content-border-invalid: ThreeDShadow;
-    --in-content-border-color: var(--border-color);
+    --in-content-border-color: CanvasText;
 
     --in-content-button-text-color: ButtonText;
     --in-content-button-text-color-hover: SelectedItemText;
@@ -204,70 +204,63 @@ html|hr {
 /* tabpanels and tabs */
 
 xul|tabpanels {
-  appearance: none;
   border: none;
   padding: 0;
-  background-color: transparent;
-  color: inherit;
-  color-scheme: unset;
 }
 
 xul|tabs {
   margin-bottom: 10px;
   border-bottom: 1px solid var(--in-content-border-color);
-  background-color: transparent;
-  color: inherit;
 }
 
 xul|tab {
-  appearance: none;
-  margin: 0;
   padding: 2px 20px 0;
   min-height: 44px;
-  color: inherit;
-  background-color: transparent;
   border-bottom: 2px solid transparent;
   transition: background-color 50ms ease 0s;
-  color-scheme: unset;
-}
 
-xul|tab:where(:hover) {
-  border-bottom-color: var(--in-content-border-color);
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
-}
-
-xul|tab:where(:hover:active) {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
-}
-
-xul|tab[selected] {
-  color: var(--color-accent-primary);
-  border-bottom-color: currentColor;
-}
-
-xul|tab[selected]:hover {
-  background-color: var(--in-content-button-background-hover);
-}
-
-xul|tab[selected]:hover:active {
-  background-color: var(--in-content-button-background-active);
-}
-
-@media (forced-colors) {
-  xul|tab:hover,
-  xul|tab:hover:active {
-    border-bottom-color: currentColor;
-  }
-
-  xul|tab[selected]:hover {
+  &:where(:hover) {
+    border-bottom-color: var(--in-content-border-color);
+    background-color: var(--in-content-button-background-hover);
     color: var(--in-content-button-text-color-hover);
   }
 
-  xul|tab[selected]:hover:active {
+  &:where(:hover:active) {
+    background-color: var(--in-content-button-background-active);
     color: var(--in-content-button-text-color-active);
   }
+
+  &[selected] {
+    color: var(--color-accent-primary);
+    border-bottom-color: currentColor;
+    &:hover {
+      background-color: var(--in-content-button-background-hover);
+    }
+    &:hover:active {
+      background-color: var(--in-content-button-background-active);
+    }
+  }
+
+  @media (forced-colors) {
+    &:hover,
+    &:hover:active {
+      border-bottom-color: currentColor;
+    }
+    &[selected]:hover {
+      color: var(--in-content-button-text-color-hover);
+    }
+    &[selected]:hover:active {
+      color: var(--in-content-button-text-color-active);
+    }
+  }
+}
+
+.tabs-left {
+  flex: 0;
+}
+
+.tabs-right {
+  flex: 1;
 }
 
 /* html buttons */
@@ -315,10 +308,6 @@ xul|button > .button-box > .button-text {
 button {
   /* Use the same margin of other elements for the alignment */
   margin-inline: 4px;
-}
-
-::-moz-focus-inner {
-  border: none;
 }
 
 button:focus-visible,

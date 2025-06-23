@@ -34,6 +34,81 @@ MIRROR_TYPES = {
     for metric_type in metric_types
 }
 
+# Event probes for which we permit the weaker event compatiblity checks:
+# only ensuring that all the metric's extra keys are present in the probe,
+# not ensuring that all the probe's extra keys are defined in the metric.
+WEAKER_EVENT_COMPATIBILITY_PROBES = [
+    "security.ui.protectionspopup#click",
+    "intl.ui.browserLanguage#action",
+    "privacy.ui.fpp#click",
+    "slow_script_warning#shown",
+    "address#address_form",
+    "pwmgr#mgmt_interaction",
+    "relay_integration#popup_option",
+    "relay_integration#mask_panel",
+    "security.ui.certerror#click",
+    "security.ui.certerror#load",
+]
+
+# Event probes for which we permit there to be no mirror.
+# Only included here are those with combinations of method+object that are unused.
+UNMIRRORED_EVENT_ALLOWLIST = [
+    "intl.ui.browserLanguage#action",
+    "messaging_experiments#reach",
+    "pwmgr#mgmt_interaction",
+    "pwmgr#open_management",
+]
+
+# Histograms permitted to be not mirrored, pending bug 1949494.
+BUG_1949494_ALLOWLIST = [
+    "GC_REASON_2",
+    "GC_IS_COMPARTMENTAL",
+    "GC_ZONE_COUNT",
+    "GC_ZONES_COLLECTED",
+    "GC_MS",
+    "GC_BUDGET_MS_2",
+    "GC_BUDGET_WAS_INCREASED",
+    "GC_SLICE_WAS_LONG",
+    "GC_ANIMATION_MS",
+    "GC_MAX_PAUSE_MS_2",
+    "GC_PREPARE_MS",
+    "GC_MARK_MS",
+    "GC_SWEEP_MS",
+    "GC_COMPACT_MS",
+    "GC_MARK_ROOTS_US",
+    "GC_MARK_GRAY_MS_2",
+    "GC_MARK_WEAK_MS",
+    "GC_SLICE_MS",
+    "GC_SLOW_PHASE",
+    "GC_SLOW_TASK",
+    "GC_MMU_50",
+    "GC_RESET",
+    "GC_RESET_REASON",
+    "GC_NON_INCREMENTAL",
+    "GC_NON_INCREMENTAL_REASON",
+    "GC_MINOR_REASON",
+    "GC_MINOR_REASON_LONG",
+    "GC_MINOR_US",
+    "GC_NURSERY_BYTES_2",
+    "GC_PRETENURE_COUNT_2",
+    "GC_BUDGET_OVERRUN",
+    "GC_NURSERY_PROMOTION_RATE",
+    "GC_TENURED_SURVIVAL_RATE",
+    "GC_MARK_RATE_2",
+    "GC_TIME_BETWEEN_S",
+    "GC_TIME_BETWEEN_SLICES_MS",
+    "GC_SLICE_COUNT",
+    "GC_EFFECTIVENESS",
+    "GC_PARALLEL_MARK",
+    "GC_PARALLEL_MARK_SPEEDUP",
+    "GC_PARALLEL_MARK_UTILIZATION",
+    "GC_PARALLEL_MARK_INTERRUPTIONS",
+    "GC_TASK_START_DELAY_US",
+    "DESERIALIZE_BYTES",
+    "DESERIALIZE_ITEMS",
+    "DESERIALIZE_US",
+]
+
 # This import can error, but in that case we want the test to fail anyway.
 from mozbuild.base import MozbuildObject
 
@@ -56,18 +131,23 @@ def mirroring_metrics(objs):
 
 # Events are compatible if their extra keys are compatible.
 def ensure_compatible_event(metric, probe):
-    # Alas, there is a pattern where Telemetry event definitions will have extra
-    # keys that are only used by _some_ of the method+object pairs, so we can't
-    # assert that the lists are the same.
-    # So, instead, assert all extras allowed in the metric exist in the probe.
-    for key in metric.allowed_extra_keys:
-        # `event` metrics may have a `value` extra for mapping to a
-        # mirror's value parameter.
-        if key == "value":
-            continue
+    # There is a pattern where Telemetry event definitions will have extra
+    # keys that are only used by _some_ of the method+object pairs.
+    # We only permit that pattern for old definitions that rely on it.
+    if probe.identifier in WEAKER_EVENT_COMPATIBILITY_PROBES:
+        for key in metric.allowed_extra_keys:
+            # `event` metrics may have a `value` extra for mapping to a
+            # mirror's value parameter.
+            if key == "value":
+                continue
+            assert (
+                key in probe.extra_keys
+            ), f"Key {key} not in mirrored event probe {probe.identifier}. Be sure to add it."
+    else:
         assert (
-            key in probe.extra_keys
-        ), f"Key {key} not in mirrored event probe {probe.identifier}. Be sure to add it."
+            metric.allowed_extra_keys == probe.extra_keys
+            or metric.allowed_extra_keys == sorted(probe.extra_keys + ["value"])
+        ), f"Metric {metric.identifier()}'s extra keys {metric.allowed_extra_keys} are not the same as probe {probe.identifier}'s extras {probe.extra_keys}."
 
 
 # Histograms are compatible with metrics if they are
@@ -133,7 +213,7 @@ def ensure_compatible_scalar(metric, probe):
     ) or metric.type in ["string_list", "rate"]
     assert (
         mirror_should_be_keyed == probe.keyed
-    ), f"Metric {metric.identifier()}'s type ({metric.type}) must have appropriate keyedness in the mirrored scalar probe {probe.name}."
+    ), f"Metric {metric.identifier()}'s type ({metric.type}) must have appropriate keyedness in the mirrored scalar probe {probe.label}."
 
     TYPE_MAP = {
         "boolean": "boolean",
@@ -152,7 +232,7 @@ def ensure_compatible_scalar(metric, probe):
     }
     assert (
         TYPE_MAP[metric.type] == probe.kind
-    ), f"Metric {metric.identifier()}'s type ({metric.type}) requires a mirror probe scalar of kind '{TYPE_MAP[metric.type]}' which doesn't match mirrored scalar probe {probe.name}'s kind ({probe.kind})"
+    ), f"Metric {metric.identifier()}'s type ({metric.type}) requires a mirror probe scalar of kind '{TYPE_MAP[metric.type]}' which doesn't match mirrored scalar probe {probe.label}'s kind ({probe.kind})"
 
 
 class TestTelemetryMirrors(unittest.TestCase):
@@ -228,6 +308,47 @@ class TestTelemetryMirrors(unittest.TestCase):
             assert (
                 found
             ), f"Mirror {metric.telemetry_mirror} not found for metric {metric.identifier()}"
+
+        # Step 3: Forbid unmirrored-to probes
+        for event in events:
+            for enum in event.enum_labels:
+                event_id = event.category_cpp + "_" + enum
+                if event.identifier in UNMIRRORED_EVENT_ALLOWLIST:
+                    # Some combinations of object+method are never used,
+                    # but are nevertheless possible.
+                    continue
+                if event.category in ("telemetry.test", "telemetry.test.second"):
+                    continue
+                assert any(
+                    metric.telemetry_mirror == event_id
+                    for metric in mirroring_metrics(objs)
+                ), f"No mirror metric found for event probe {event.identifier}."
+
+        for hgram in hgrams:
+            if hgram.keyed() and hgram.kind() in ("categorical", "boolean"):
+                continue  # bug 1960567
+            if hgram.name() in BUG_1949494_ALLOWLIST:
+                continue  # bug 1949494
+            if hgram.name().startswith("TELEMETRY_TEST_"):
+                continue
+            assert any(
+                metric.telemetry_mirror == hgram.name()
+                or metric.telemetry_mirror == "h#" + hgram.name()
+                for metric in mirroring_metrics(objs)
+            ), f"No mirror metric found for histogram probe {hgram.name()}."
+
+        for scalar in scalars:
+            if scalar.label == "mathml.doc_count":
+                continue  # bug 1962732
+            if scalar.category in ("telemetry", "telemetry.discarded"):
+                # Internal Scalars for use inside the Telemetry component.
+                continue
+            if scalar.category == "telemetry.test":
+                continue
+            assert any(
+                metric.telemetry_mirror == scalar.enum_label
+                for metric in mirroring_metrics(objs)
+            ), f"No mirror metric found for scalar probe {scalar.label}."
 
 
 if __name__ == "__main__":

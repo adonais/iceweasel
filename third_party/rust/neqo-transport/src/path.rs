@@ -408,6 +408,12 @@ impl Paths {
         }
     }
 
+    pub fn acked_ecn(&self) {
+        if let Some(path) = self.primary() {
+            path.borrow_mut().acked_ecn();
+        }
+    }
+
     pub fn lost_ecn(&self, pt: PacketType, stats: &mut Stats) {
         if let Some(path) = self.primary() {
             path.borrow_mut().lost_ecn(pt, stats);
@@ -826,6 +832,10 @@ impl Path {
         self.rtt.frame_lost(lost);
     }
 
+    pub fn acked_ecn(&mut self) {
+        self.ecn_info.acked_ecn();
+    }
+
     pub fn lost_ecn(&mut self, pt: PacketType, stats: &mut Stats) {
         self.ecn_info.lost_ecn(pt, stats);
     }
@@ -865,11 +875,6 @@ impl Path {
     /// This only considers retransmissions of probes, not cleanup of the path.
     /// If there is no other activity, then there is no real need to schedule a
     /// timer to cleanup old paths.
-    #[allow(
-        clippy::allow_attributes,
-        clippy::missing_const_for_fn,
-        reason = "TODO: False positive on nightly."
-    )]
     pub fn next_timeout(&self, pto: Duration) -> Option<Instant> {
         if let ProbeState::Probing { sent, .. } = &self.state {
             Some(*sent + pto)

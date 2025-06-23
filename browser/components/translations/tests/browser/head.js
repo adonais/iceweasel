@@ -373,6 +373,58 @@ async function toggleReaderMode() {
 }
 
 /**
+ * Scrolls to the top of the content page.
+ *
+ * @param {Function} runInPage - Runs a closure within the content context of the content page.
+ *
+ * @returns {Promise<void>} Resolves once the scroll position has been updated and a paint has occurred.
+ */
+async function scrollToTopOfPage(runInPage) {
+  logAction();
+  await runInPage(async ({ waitForCondition }) => {
+    content.scrollTo({ top: 0, behavior: "smooth" });
+
+    await waitForCondition(
+      () => content.scrollY <= 10,
+      "Waiting for scroll animation to complete."
+    );
+
+    // Wait for the new position to be painted.
+    await new Promise(resolve => {
+      content.requestAnimationFrame(() =>
+        content.requestAnimationFrame(resolve)
+      );
+    });
+  });
+}
+
+/**
+ * Scrolls the content page to the very bottom.
+ *
+ * @param {Function} runInPage - Runs a closure within the content context of the content page.
+ *
+ * @returns {Promise<void>} Resolves once the scroll position has been updated and a paint has occurred.
+ */
+async function scrollToBottomOfPage(runInPage) {
+  logAction();
+  await runInPage(async ({ waitForCondition }) => {
+    const scrollHeight = content.document.documentElement.scrollHeight;
+    content.scrollTo({ top: scrollHeight, behavior: "smooth" });
+
+    await waitForCondition(() => {
+      return content.scrollY >= scrollHeight - content.innerHeight - 10;
+    }, "Waiting for scroll animation to complete.");
+
+    // Wait for the new position to be painted.
+    await new Promise(resolve => {
+      content.requestAnimationFrame(() =>
+        content.requestAnimationFrame(resolve)
+      );
+    });
+  });
+}
+
+/**
  * A class for benchmarking translation performance and reporting
  * metrics to our perftest infrastructure.
  */
@@ -715,6 +767,7 @@ class TranslationsBencher {
           { fromLang: "en", toLang: targetLanguage },
         ],
         prefs: [["browser.translations.logLevel", "Error"]],
+        contentEagerMode: true,
       });
 
       // Create a new PeakMemorySampler using the provided interval.
@@ -722,7 +775,9 @@ class TranslationsBencher {
         memorySampleInterval
       );
 
-      await TranslationsBencher.#injectTranslationCompleteObserver(runInPage);
+      await TranslationsBencher.#injectFinalParagraphTranslatedObserver(
+        runInPage
+      );
 
       await FullPageTranslationsTestUtils.assertTranslationsButton(
         { button: true, circleArrows: false, locale: false, icon: true },
@@ -799,9 +854,12 @@ class TranslationsBencher {
           { fromLang: "en", toLang: targetLanguage },
         ],
         prefs: [["browser.translations.logLevel", "Error"]],
+        contentEagerMode: true,
       });
 
-      await TranslationsBencher.#injectTranslationCompleteObserver(runInPage);
+      await TranslationsBencher.#injectFinalParagraphTranslatedObserver(
+        runInPage
+      );
 
       await FullPageTranslationsTestUtils.assertTranslationsButton(
         { button: true, circleArrows: false, locale: false, icon: true },
@@ -854,24 +912,27 @@ class TranslationsBencher {
   }
 
   /**
-   * Injects a mutation observer into the test page to detect when translation is complete.
+   * Injects a mutation observer into the test page to detect when the final paragraph
+   * has been translated, and dispatch an event when that happens. This is a signal that
+   * we are nearing the end of translating, at which point we can wait for the pending
+   * request count to reduce to zero.
    *
    * @param {Function} runInPage - Runs a closure within the content context of the page.
    * @returns {Promise<void>} Resolves when the observer is injected.
    */
-  static async #injectTranslationCompleteObserver(runInPage) {
+  static async #injectFinalParagraphTranslatedObserver(runInPage) {
     await runInPage(TranslationsTest => {
-      const { getLastParagraph } = TranslationsTest.getSelectors();
-      const lastParagraph = getLastParagraph();
+      const { getFinalParagraph } = TranslationsTest.getSelectors();
+      const lastParagraph = getFinalParagraph();
 
       if (!lastParagraph) {
-        throw new Error("Unable to find the last paragraph for observation.");
+        throw new Error("Unable to find the final paragraph for observation.");
       }
 
       const observer = new content.MutationObserver(
         (_mutationsList, _observer) => {
           content.document.dispatchEvent(
-            new CustomEvent("TranslationComplete")
+            new CustomEvent("FinalParagraphTranslated")
           );
         }
       );
@@ -919,14 +980,32 @@ class TranslationsBencher {
    * @returns {Promise<number>} The timestamp when the translation is complete.
    */
   static async #getTranslationCompleteTimestampPromise(runInPage) {
-    await runInPage(async () => {
-      const { promise, resolve } = Promise.withResolvers();
-
-      content.document.addEventListener("TranslationComplete", resolve, {
-        once: true,
+    await runInPage(async ({ waitForCondition }) => {
+      // First, wait for the final paragraph to be translated.
+      await new Promise(resolve => {
+        content.document.addEventListener("FinalParagraphTranslated", resolve, {
+          once: true,
+        });
       });
 
-      await promise;
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      if (
+        translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop() ||
+        translationsChild.translatedDoc?.hasPendingTranslationRequests() ||
+        translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection()
+      ) {
+        // The final paragraph was translated, but it wasn't the final request,
+        // so we must still wait for every translation request to complete.
+        await waitForCondition(
+          () =>
+            !translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop() &&
+            !translationsChild.translatedDoc?.hasPendingTranslationRequests() &&
+            !translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection(),
+          "Waiting for all pending translation requests to complete."
+        );
+      }
     });
 
     return performance.now();
@@ -1299,8 +1378,131 @@ class FullPageTranslationsTestUtils {
   }
 
   /**
-   * Asserts that the Spanish test page has been translated by checking
-   * that the H1 element has been modified from its original form.
+   * Waits for all pending translation requests in the TranslationsDocument to complete.
+   *
+   * @param {Function} runInPage - A function run a closure in the content page.
+   */
+  static async waitForAllPendingTranslationsToComplete(runInPage) {
+    await runInPage(async ({ waitForCondition }) => {
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      while (
+        translationsChild.translatedDoc?.hasPendingTranslationRequests() ||
+        translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop()
+      ) {
+        await waitForCondition(
+          () =>
+            !translationsChild.translatedDoc?.hasPendingTranslationRequests(),
+          "Waiting for all pending translation requests to complete."
+        );
+
+        await waitForCondition(
+          () =>
+            !translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop(),
+          "Waiting for pending event-loop callbacks to resolve in the TranslationsDocument."
+        );
+      }
+    });
+  }
+
+  /**
+   * Waits until no elements are being observed for content intersection,
+   * indicating that every content-translation request has completed
+   * (barring future DOM mutations).
+   *
+   * @param {Function} runInPage – Executes an async closure in the content page.
+   */
+  static async assertNoElementsAreObservedForContentIntersection(runInPage) {
+    await runInPage(async ({ waitForCondition }) => {
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      await waitForCondition(
+        () =>
+          !translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection(),
+        "Waiting until no elements are observed for content intersection."
+      );
+    });
+  }
+
+  /**
+   * Waits until no elements are being observed for attribute intersection,
+   * indicating that every attribute-translation request has completed
+   * (barring future DOM mutations).
+   *
+   * @param {Function} runInPage – Executes an async closure in the content page.
+   */
+  static async assertNoElementsAreObservedForAttributeIntersection(runInPage) {
+    await runInPage(async ({ waitForCondition }) => {
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      await waitForCondition(
+        () =>
+          !translationsChild.translatedDoc?.isObservingAnyElementForAttributeIntersection(),
+        "Waiting until no elements are observed for attribute intersection."
+      );
+    });
+  }
+
+  /**
+   * Waits until at least one element is being observed for content
+   * intersection.
+   *
+   * @param {Function} runInPage – Executes an async closure in the content page.
+   */
+  static async assertAnyElementIsObservedForContentIntersection(runInPage) {
+    await runInPage(async ({ waitForCondition }) => {
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      await waitForCondition(
+        () =>
+          translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection(),
+        "Waiting until an element is observed for content intersection."
+      );
+    });
+  }
+
+  /**
+   * Waits until at least one element is being observed for attribute
+   * intersection.
+   *
+   * @param {Function} runInPage – Executes an async closure in the content page.
+   */
+  static async assertAnyElementIsObservedForAttributeIntersection(runInPage) {
+    await runInPage(async ({ waitForCondition }) => {
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      await waitForCondition(
+        () =>
+          translationsChild.translatedDoc?.isObservingAnyElementForAttributeIntersection(),
+        "Waiting until an element is observed for attribute intersection."
+      );
+    });
+  }
+
+  /**
+   * Waits for any translation request to initialize and become pending within the TranslationsDocument.
+   *
+   * @param {Function} runInPage - A function run a closure in the content page.
+   */
+  static async waitForAnyRequestToInitialize(runInPage) {
+    await runInPage(async ({ waitForCondition }) => {
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      await waitForCondition(
+        () => translationsChild.translatedDoc?.hasPendingTranslationRequests(),
+        "Waiting for any translation request to initialize."
+      );
+    });
+  }
+
+  /**
+   * Asserts that the Spanish test page H1 element's content has been translated into the target language.
    *
    * @param {object} options - The options for the assertion.
    *
@@ -1309,20 +1511,18 @@ class FullPageTranslationsTestUtils {
    * @param {Function} options.runInPage - Allows running a closure in the content page.
    * @param {boolean} [options.endToEndTest=false] - Whether this assertion is for an end-to-end test.
    * @param {string} [options.message] - An optional message to log to info.
-   * @param {ChromeWindow} [options.win=window] - The window in which to perform the check (defaults to the current window).
    */
-  static async assertPageIsTranslated({
+  static async assertPageH1ContentIsTranslated({
     fromLanguage,
     toLanguage,
     runInPage,
     endToEndTest = false,
     message = null,
-    win = window,
   }) {
     if (message) {
       info(message);
     }
-    info("Checking that the page is translated");
+    info("Checking that the page header is translated");
     let callback;
     if (endToEndTest) {
       callback = async TranslationsTest => {
@@ -1339,39 +1539,388 @@ class FullPageTranslationsTestUtils {
         await TranslationsTest.assertTranslationResult(
           "The page's H1 is translated.",
           getH1,
-          `DON QUIJOTE DE LA MANCHA [${fromLang} to ${toLang}, html]`
+          `DON QUIJOTE DE LA MANCHA [${fromLang} to ${toLang}]`
         );
       };
     }
 
     await runInPage(callback, { fromLang: fromLanguage, toLang: toLanguage });
+  }
+
+  /**
+   * Asserts that the Spanish test page H1 element's content is not translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} [options.message] - An optional message to log to info.
+   */
+  static async assertPageH1ContentIsNotTranslated({
+    runInPage,
+    message = null,
+  }) {
+    if (message) {
+      info(message);
+    }
+
+    info("Checking that the page header is not translated");
+    await runInPage(async TranslationsTest => {
+      const { getH1 } = TranslationsTest.getSelectors();
+      await TranslationsTest.assertTranslationResult(
+        "The page's H1 is not translated and is in the original Spanish.",
+        getH1,
+        "Don Quijote de La Mancha"
+      );
+    });
+  }
+
+  /**
+   * Asserts that the Spanish test page H1 element's title has been translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {boolean} [options.endToEndTest=false] - Whether this assertion is for an end-to-end test.
+   * @param {string} [options.message] - An optional message to log to info.
+   */
+  static async assertPageH1TitleIsTranslated({
+    fromLanguage,
+    toLanguage,
+    runInPage,
+    endToEndTest = false,
+    message = null,
+  }) {
+    if (message) {
+      info(message);
+    }
+    info("Checking that the page header's title attribute is translated");
+    let callback;
+    if (endToEndTest) {
+      callback = async TranslationsTest => {
+        const { getH1Title } = TranslationsTest.getSelectors();
+        await TranslationsTest.assertTranslationResult(
+          "The page's H1's title attribute is translated.",
+          getH1Title,
+          "This is the title of the page header"
+        );
+      };
+    } else {
+      callback = async (TranslationsTest, { fromLang, toLang }) => {
+        const { getH1Title } = TranslationsTest.getSelectors();
+        await TranslationsTest.assertTranslationResult(
+          "The page's H1's title attribute is translated.",
+          getH1Title,
+          `ESTE ES EL TÍTULO DEL ENCABEZADO DE PÁGINA [${fromLang} to ${toLang}]`
+        );
+      };
+    }
+
+    await runInPage(callback, { fromLang: fromLanguage, toLang: toLanguage });
+  }
+
+  /**
+   * Asserts that the Spanish test page H1 element's title attribute is not translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} [options.message] - An optional message to log to info.
+   */
+  static async assertPageH1TitleIsNotTranslated({ runInPage, message = null }) {
+    if (message) {
+      info(message);
+    }
+
+    info("Checking that the page header's title is not translated");
+    await runInPage(async TranslationsTest => {
+      const { getH1Title } = TranslationsTest.getSelectors();
+      await TranslationsTest.assertTranslationResult(
+        "The page's H1's title is not translated and is in the original Spanish.",
+        getH1Title,
+        "Este es el título del encabezado de página"
+      );
+    });
+  }
+
+  /**
+   * Asserts that the Spanish test page final <p> element has been translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {boolean} [options.endToEndTest=false] - Whether this assertion is for an end-to-end test.
+   * @param {string} [options.message] - An optional message to log to info.
+   */
+  static async assertPageFinalParagraphContentIsTranslated({
+    fromLanguage,
+    toLanguage,
+    runInPage,
+    endToEndTest = false,
+    message = null,
+  }) {
+    if (message) {
+      info(message);
+    }
+    info("Checking that the page's final paragraph is translated");
+    let callback;
+    if (endToEndTest) {
+      callback = async TranslationsTest => {
+        const { getFinalParagraph } = TranslationsTest.getSelectors();
+        await TranslationsTest.assertTranslationResult(
+          "The page's final paragraph is translated.",
+          getFinalParagraph,
+          [
+            // TODO (Bug 1967764) We need to investigate why some machines may produce
+            // a different translated output, given the same models and the same WASM binary.
+            "Well, even if you're more arms than those of the giant Briareo, you'll pay me.",
+            "For, though you're more arms than those of the giant Briareo, you'll pay me.",
+          ]
+        );
+      };
+    } else {
+      callback = async (TranslationsTest, { fromLang, toLang }) => {
+        const { getFinalParagraph } = TranslationsTest.getSelectors();
+        await TranslationsTest.assertTranslationResult(
+          "The page's final paragraph is translated.",
+          getFinalParagraph,
+          `— PUES, AUNQUE MOVÁIS MÁS BRAZOS QUE LOS DEL GIGANTE BRIAREO, ME LO HABÉIS DE PAGAR. [${fromLang} to ${toLang}]`
+        );
+      };
+    }
+
+    await runInPage(callback, { fromLang: fromLanguage, toLang: toLanguage });
+  }
+
+  /**
+   * Asserts that the Spanish test page final <p> element is still in its original form.
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} [options.message] - An optional message to log to info.
+   */
+  static async assertPageFinalParagraphContentIsNotTranslated({
+    runInPage,
+    message = null,
+  }) {
+    if (message) {
+      info(message);
+    }
+
+    info("Checking that the page's final paragraph is not translated");
+    await runInPage(async TranslationsTest => {
+      const { getFinalParagraph } = TranslationsTest.getSelectors();
+      await TranslationsTest.assertTranslationResult(
+        "The page's final paragraph is not translated and is in the original Spanish.",
+        getFinalParagraph,
+        "— Pues, aunque mováis más brazos que los del gigante Briareo, me lo habéis de pagar."
+      );
+    });
+  }
+
+  /**
+   * Asserts that the Spanish test page final <p> element's title attribute has been translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {boolean} [options.endToEndTest=false] - Whether this assertion is for an end-to-end test.
+   * @param {string} [options.message] - An optional message to log to info.
+   */
+  static async assertPageFinalParagraphTitleIsTranslated({
+    fromLanguage,
+    toLanguage,
+    runInPage,
+    endToEndTest = false,
+    message = null,
+  }) {
+    if (message) {
+      info(message);
+    }
+    info("Checking that the final paragraph's title attribute is translated");
+    let callback;
+    if (endToEndTest) {
+      callback = async TranslationsTest => {
+        const { getFinalParagraphTitle } = TranslationsTest.getSelectors();
+        await TranslationsTest.assertTranslationResult(
+          "The final paragraph's title attribute is translated.",
+          getFinalParagraphTitle,
+          "This is the title of the final paragraph"
+        );
+      };
+    } else {
+      callback = async (TranslationsTest, { fromLang, toLang }) => {
+        const { getFinalParagraphTitle } = TranslationsTest.getSelectors();
+        await TranslationsTest.assertTranslationResult(
+          "The final paragraph's title attribute is translated.",
+          getFinalParagraphTitle,
+          `ESTE ES EL TÍTULO DEL ÚLTIMO PÁRRAFO [${fromLang} to ${toLang}]`
+        );
+      };
+    }
+
+    await runInPage(callback, { fromLang: fromLanguage, toLang: toLanguage });
+  }
+
+  /**
+   * Asserts that the Spanish test page final <p> element's title attribute is not translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} [options.message] - An optional message to log to info.
+   */
+  static async assertPageFinalParagraphTitleIsNotTranslated({
+    runInPage,
+    message = null,
+  }) {
+    if (message) {
+      info(message);
+    }
+
+    info(
+      "Checking that the final paragraph's title attribute is not translated"
+    );
+    await runInPage(async TranslationsTest => {
+      const { getFinalParagraphTitle } = TranslationsTest.getSelectors();
+      await TranslationsTest.assertTranslationResult(
+        "The final paragraph's title attribute is not translated and is in the original Spanish.",
+        getFinalParagraphTitle,
+        "Este es el título del último párrafo"
+      );
+    });
+  }
+
+  /**
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {boolean} [options.endToEndTest=false] - Whether this assertion is for an end-to-end test.
+   * @param {string} [options.message] - An optional message to log to info.
+   * @param {ChromeWindow} [options.win=window] - The window in which to perform the check (defaults to the current window).
+   */
+  static async assertAllPageContentIsTranslated(options) {
+    await FullPageTranslationsTestUtils.assertPageH1ContentIsTranslated(
+      options
+    );
+    await FullPageTranslationsTestUtils.assertPageFinalParagraphContentIsTranslated(
+      options
+    );
+
+    const { win, fromLanguage, toLanguage, runInPage } = options;
+
     await FullPageTranslationsTestUtils.assertLangTagIsShownOnTranslationsButton(
       fromLanguage,
       toLanguage,
       win
     );
+
+    await FullPageTranslationsTestUtils.waitForAllPendingTranslationsToComplete(
+      runInPage
+    );
+
+    await FullPageTranslationsTestUtils.assertNoElementsAreObservedForContentIntersection(
+      runInPage
+    );
   }
 
   /**
-   * Asserts that the Spanish test page is untranslated by checking
+   *
+   * @param {object} options - The options for the assertion.
+   *
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {boolean} [options.endToEndTest=false] - Whether this assertion is for an end-to-end test.
+   * @param {string} [options.message] - An optional message to log to info.
+   * @param {ChromeWindow} [options.win=window] - The window in which to perform the check (defaults to the current window).
+   */
+  static async assertOnlyIntersectingNodesAreTranslated(options) {
+    await FullPageTranslationsTestUtils.assertPageH1ContentIsTranslated(
+      options
+    );
+    await FullPageTranslationsTestUtils.assertPageH1TitleIsTranslated(options);
+
+    const { win, fromLanguage, toLanguage, runInPage } = options;
+
+    await FullPageTranslationsTestUtils.assertLangTagIsShownOnTranslationsButton(
+      fromLanguage,
+      toLanguage,
+      win
+    );
+
+    await FullPageTranslationsTestUtils.waitForAllPendingTranslationsToComplete(
+      runInPage
+    );
+
+    await FullPageTranslationsTestUtils.assertPageFinalParagraphContentIsNotTranslated(
+      options
+    );
+
+    await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsNotTranslated(
+      options
+    );
+
+    await FullPageTranslationsTestUtils.assertAnyElementIsObservedForContentIntersection(
+      runInPage
+    );
+
+    await FullPageTranslationsTestUtils.assertAnyElementIsObservedForAttributeIntersection(
+      runInPage
+    );
+  }
+
+  /**
+   * Asserts that the Spanish test page is not translated by checking
    * that the H1 element is still in its original Spanish form.
    *
    * @param {Function} runInPage - Allows running a closure in the content page.
    * @param {string} message - An optional message to log to info.
    */
-  static async assertPageIsUntranslated(runInPage, message = null) {
+  static async assertPageIsNotTranslated(runInPage, message = null) {
     if (message) {
       info(message);
     }
-    info("Checking that the page is untranslated");
-    await runInPage(async TranslationsTest => {
-      const { getH1 } = TranslationsTest.getSelectors();
-      await TranslationsTest.assertTranslationResult(
-        "The page's H1 is untranslated and in the original Spanish.",
-        getH1,
-        "Don Quijote de La Mancha"
-      );
+
+    info("Ensuring that no translation requests are pending.");
+    await FullPageTranslationsTestUtils.waitForAllPendingTranslationsToComplete(
+      runInPage
+    );
+
+    info("Checking that the page is not translated");
+
+    await FullPageTranslationsTestUtils.assertPageH1ContentIsNotTranslated({
+      runInPage,
+      message,
     });
+
+    await FullPageTranslationsTestUtils.assertPageH1TitleIsNotTranslated({
+      runInPage,
+      message,
+    });
+
+    await FullPageTranslationsTestUtils.assertPageFinalParagraphContentIsNotTranslated(
+      {
+        runInPage,
+        message,
+      }
+    );
+
+    await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsNotTranslated(
+      {
+        runInPage,
+        message,
+      }
+    );
   }
 
   /**

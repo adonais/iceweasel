@@ -555,11 +555,6 @@ SubDialog.prototype = {
       boxHorizontalBorder + frameHorizontalMargin
     }px + ${frameMinWidth})`;
 
-    // Temporary fix to allow parent chrome to collapse properly to min width.
-    // See Bug 1658722.
-    if (this._window.isChromeWindow) {
-      boxMinWidth = `min(80vw, ${boxMinWidth})`;
-    }
     this._box.style.minWidth = boxMinWidth;
   },
 
@@ -603,16 +598,11 @@ SubDialog.prototype = {
       if (sizeTo == "limitheight") {
         this._overlay.style.setProperty("--doc-height-px", getDocHeight());
         contentPane?.classList.add("sizeDetermined");
-      } else {
-        if (docEl.style.maxHeight) {
-          this._box.style.setProperty(
-            "--box-max-height-requested",
-            this._emToPx(docEl.style.maxHeight)
-          );
-        }
-        // Inform the CSS of the toolbar height so the bottom padding can be
-        // correctly calculated.
-        this._box.style.setProperty("--box-top-px", `${boxRect.top}px`);
+      } else if (docEl.style.maxHeight) {
+        this._box.style.setProperty(
+          "--box-max-height-requested",
+          this._emToPx(docEl.style.maxHeight)
+        );
       }
       return;
     }

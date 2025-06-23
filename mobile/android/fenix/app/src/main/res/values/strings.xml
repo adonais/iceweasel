@@ -100,11 +100,11 @@
 
     <!-- Toolbar "contextual feature recommendation" (CFR) -->
     <!-- Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-    <string name="navbar_cfr_title">Browse faster with new navigation</string>
+    <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Browse faster with new navigation</string>
     <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-    <string name="navbar_cfr_message_2">On a website, this bar tucks away as you scroll down for extra browsing space.</string>
+    <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">On a website, this bar tucks away as you scroll down for extra browsing space.</string>
     <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-    <string name="navbar_navigation_buttons_cfr_message">Tap and hold the arrows to jump between pages in this tab’s history.</string>
+    <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Tap and hold the arrows to jump between pages in this tab’s history.</string>
 
     <!-- Address bar swipe "contextual feature recommendation" (CFR) -->
     <!-- Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
@@ -489,41 +489,41 @@
     <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Not now</string>
     <!-- Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
     Note: The word "Firefox" should NOT be translated -->
-    <string name="onboarding_add_on_header" tools:ignore="BrandUsage,UnusedResources">Customize your Firefox with extensions</string>
+    <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Customize your Firefox with extensions</string>
     <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-    <string name="onboarding_add_on_sub_header" tools:ignore="UnusedResources">Add third-party extensions to enhance your security, productivity, and more.</string>
+    <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">Add third-party extensions to enhance your security, productivity, and more.</string>
     <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-    <string name="onboarding_add_on_explore_more_extensions_2">Explore more extensions</string>
+    <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">Explore more extensions</string>
     <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-    <string name="onboarding_add_on_start_browsing_button_2">Start browsing</string>
+    <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">Start browsing</string>
     <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-    <string name="onboarding_add_on_ublock_name" tools:ignore="UnusedResources">uBlock Origin</string>
+    <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
     <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-    <string name="onboarding_add_on_ublock_description" tools:ignore="UnusedResources">Block ads effectively and efficiently.</string>
+    <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">Block ads effectively and efficiently.</string>
     <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-    <string name="onboarding_add_on_privacy_badger_name" tools:ignore="UnusedResources">Privacy Badger</string>
+    <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
     <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-    <string name="onboarding_add_on_privacy_badger_description" tools:ignore="UnusedResources">Anti-tracking gem. Stop invisible trackers and spying ads.</string>
+    <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">Anti-tracking gem. Stop invisible trackers and spying ads.</string>
     <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-    <string name="onboarding_add_on_search_by_image_name" tools:ignore="UnusedResources">Search by Image</string>
+    <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">Search by Image</string>
     <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-    <string name="onboarding_add_on_search_by_image_description" tools:ignore="UnusedResources">See an interesting pic and learn more about it.</string>
+    <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">See an interesting pic and learn more about it.</string>
     <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-    <string name="onboarding_add_on_dark_reader_name" tools:ignore="UnusedResources">Dark Reader</string>
+    <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
     <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-    <string name="onboarding_add_on_dark_reader_description" tools:ignore="UnusedResources">Custom dark mode for the mobile web.</string>
+    <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">Custom dark mode for the mobile web.</string>
     <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-    <string name="onboarding_add_on_reviews_label">Reviews: %1$s</string>
+    <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">Reviews: %1$s</string>
     <!-- Content description for the add-on icon. -->
-    <string name="onboarding_add_on_icon_content_description">Add-on icon</string>
+    <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Add-on icon</string>
     <!-- Content description for the an installed add-on icon. -->
-    <string name="onboarding_installed_add_on_icon_content_description">Installed add-on icon</string>
+    <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Installed add-on icon</string>
     <!-- Content description for the an installing add-on icon. -->
-    <string name="onboarding_installing_add_on_icon_content_description">Installing add-on icon</string>
+    <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Installing add-on icon</string>
     <!-- Content description for the add add-on button. -->
-    <string name="onboarding_add_on_add_button_content_description">Add add-on button</string>
+    <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Add add-on button</string>
     <!-- Content description for the star rating group. %1$s is the rating. -->
-    <string name="onboarding_add_on_star_rating_content_description">Rated %1$s out of 5</string>
+    <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Rated %1$s out of 5</string>
     <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
     <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Help us make Firefox better</string>
     <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -543,7 +543,9 @@
     <!-- Terms of service sub header label. -->
     <string name="onboarding_terms_of_service_sub_header_2">Fast and secure web browsing</string>
     <!-- Terms of service onboarding page continue button label. -->
-    <string name="onboarding_term_of_service_agree_and_continue_button_label">Agree and continue</string>
+    <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Agree and continue</string>
+    <!-- Terms of service onboarding page continue button label. -->
+    <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Continue</string>
     <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
     <string name="onboarding_term_of_service_line_one_2">By continuing, you agree to the %1$s.</string>
     <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -682,7 +684,9 @@
     <!-- Preference title for using the screen lock to hide tabs in private browsing -->
     <string name="preferences_pbm_lock_screen_title">Use screen lock to hide tabs in private browsing</string>
     <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-    <string name="preferences_pbm_lock_screen_summary">View tabs with fingerprint, face unlock, or PIN.</string>
+    <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">View tabs with fingerprint, face unlock, or PIN.</string>
+    <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+    <string name="preferences_pbm_lock_screen_summary_2">View tabs with your fingerprint, PIN, or face unlock.</string>
 
     <!-- Label for cookie banner section in quick settings panel. -->
     <string name="cookie_banner_blocker">Cookie Banner Blocker</string>
@@ -878,9 +882,11 @@
     a section where users see a list of tabs that they have visited in the past few days -->
     <string name="customize_toggle_recently_visited">Recently visited</string>
     <!-- Title for the customize home screen section with Pocket. -->
-    <string name="customize_toggle_pocket_2">Thought-provoking stories</string>
+    <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Thought-provoking stories</string>
+    <!-- Title for the customize home screen section with Pocket. -->
+    <string name="customize_toggle_pocket_3">Stories</string>
     <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-    <string name="customize_toggle_pocket_summary">Articles powered by %s</string>
+    <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Articles powered by %s</string>
     <!-- Title for the customize home screen section with sponsored Pocket stories. -->
     <string name="customize_toggle_pocket_sponsored">Sponsored stories</string>
     <!-- Title for the opening wallpaper settings screen -->
@@ -917,6 +923,54 @@
     <string name="wallpapers_onboarding_dialog_body_text">Choose a wallpaper that speaks to you.</string>
     <!-- Wallpaper onboarding dialog learn more button text. The button navigates to the wallpaper settings screen. -->
     <string name="wallpapers_onboarding_dialog_explore_more_button_text">Explore more wallpapers</string>
+
+    <!-- Icon picker -->
+    <!-- Title for the "Default" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_default">Default</string>
+    <!-- Title for the "Light" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_light">Light</string>
+    <!-- Title for the "Dark" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_dark">Dark</string>
+    <!-- Title for the "Red" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_red">Red</string>
+    <!-- Title for the "Green" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_green">Green</string>
+    <!-- Title for the "Blue" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_blue">Blue</string>
+    <!-- Title for the "Purple" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_purple">Purple</string>
+    <!-- Title for the "Purple Dark" alternative app icon variant in the icon picker screen. -->
+    <string name="alternative_app_icon_option_purple_dark">Dark Purple</string>
+    <!-- Title for the "Sunrise" gradient alternative app icon variant in the icon picker screen. The app icon features a soft yellow-to-blue gradient background, resembling the colors of early morning light. -->
+    <string name="alternative_app_icon_option_gradient_sunrise">Sunrise</string>
+    <!-- Title for the "Golden Hour" gradient alternative app icon variant in the icon picker screen. The app icon features a warm golden-to-pink gradient background, resembling the colors of the sunlight shortly before sunset. -->
+    <string name="alternative_app_icon_option_gradient_golden_hour">Golden Hour</string>
+    <!-- Title for the "Sunset" gradient alternative app icon variant in the icon picker screen. The app icon has a rich red-to-purple gradient background, resembling the tones of a sunset sky. -->
+    <string name="alternative_app_icon_option_gradient_sunset">Sunset</string>
+    <!-- Title for the "Blue Hour" gradient alternative app icon variant in the icon picker screen. The app icon has a cool blue gradient background, resembling the sky color around the time just after sunset or before sunrise. -->
+    <string name="alternative_app_icon_option_gradient_blue_hour">Blue Hour</string>
+    <!-- Title for the "Twilight" gradient alternative app icon variant in the icon picker screen. The app icon has a purple-toned gradient background, resembling the sky color during twilight. -->
+    <string name="alternative_app_icon_option_gradient_twilight">Twilight</string>
+    <!-- Title for the "Midnight" gradient alternative app icon variant in the icon picker screen. The app icon features a dark gradient background, resembling the deep tones of the night sky. -->
+    <string name="alternative_app_icon_option_gradient_midnight">Midnight</string>
+    <!-- Title for the "Northern Lights" gradient alternative app icon variant in the icon picker screen. The app icon has a dynamic green, blue, and purple gradient background, resembling the aurora borealis. -->
+    <string name="alternative_app_icon_option_gradient_northern_lights">Northern Lights</string>
+    <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
+    <string name="alternative_app_icon_option_retro_2004">Retro 2004</string>
+    <!-- Title for the "Retro 2017" themed alternative app icon variant in the icon picker screen. This app icon uses the Firefox logo from 2017, with a more modernized design. -->
+    <string name="alternative_app_icon_option_retro_2017">Retro 2017</string>
+    <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
+    <string name="alternative_app_icon_option_pixelated">Pixelated</string>
+    <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
+    <string name="alternative_app_icon_option_minimal">Minimal</string>
+    <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
+    <string name="alternative_app_icon_option_pride">Pride</string>
+    <!-- Title for the "Cute" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
+    <string name="alternative_app_icon_option_cute">Cute</string>
+    <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
+    <string name="alternative_app_icon_option_momo">Momo</string>
+    <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
+    <string name="alternative_app_icon_option_momo_subtitle">Created by @heyheymomodraws</string>
 
     <!-- Add-ons general availability nimbus message-->
     <!-- Title of the Nimbus message for extension general availability-->
@@ -1032,7 +1086,7 @@
 
     <!-- Preference switch description for automatically submitting crash reports -->
     <string name="preferences_automatically_send_crashes_description">This helps us diagnose and fix issues with the browser. Reports may include personal or sensitive data.</string>
-    
+
     <!-- Learn more link for crash reporting preference -->
     <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Learn more about crash reports</string>
 
@@ -1077,7 +1131,7 @@
     <!-- Preference for showing the opened tabs by swiping up on the toolbar-->
     <string name="preference_gestures_swipe_toolbar_show_tabs">Swipe toolbar up to open tabs</string>
     <!-- Preference for using the dynamic toolbars -->
-    <string name="preference_gestures_dynamic_toolbar_2">Scroll to hide address bar and toolbar</string>
+    <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Scroll to hide address bar and toolbar</string>
     <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
     <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Swipe address bar sideways to switch tabs</string>
 
@@ -1320,12 +1374,28 @@
     <string name="download_multi_select_title">%1$d selected</string>
     <!-- Text for the button to remove a single download item -->
     <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Remove</string>
+    <!-- Title for the dialog that is shown when there is not enough storage space to download a file. -->
+    <string name="download_file_has_not_enough_storage_dialog_title">Not enough space</string>
+    <!-- Message for the dialog that is shown when there is not enough storage space to download a file.
+         %s is the name of the file to download. -->
+    <string name="download_file_has_not_enough_storage_dialog_message"><![CDATA[This device doesn’t have enough space to download <b>%s</b>.]]></string>
+    <!-- Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings. -->
+    <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Manage Files</string>
+    <!-- Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+         This button will dismiss the dialog. -->
+    <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Cancel</string>
+
     <!-- Text for the button to delete a single downloaded file item -->
     <string name="download_delete_item">Delete</string>
     <!-- Content description for the toolbar "Navigate back" button -->
     <string name="download_navigate_back_description">Navigate back</string>
     <!-- Content description for the toolbar "Navigate up" button -->
-    <string name="download_navigate_up_description">Navigate up</string>
+    <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Navigate up</string>
+    <!-- Content description for the toolbar back button while searching the downloads -->
+    <string name="download_close_search_description">Back and close search</string>
+    <!-- Content description for the search bar clear text button on the downloads screen -->
+    <string name="download_clear_search_description">Clear</string>
     <!-- Text for the button to share the download URL -->
     <string name="download_share_url">Share URL</string>
     <!-- Text for the button to share the download file -->
@@ -1416,15 +1486,31 @@
 
     <!-- These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site. -->
     <!-- Broken site reason text for site slow or not working -->
-    <string name="webcompat_reporter_reason_slow">Site slow or not working</string>
+    <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">Site slow or not working</string>
+    <!-- Broken site reason text for site doesn’t load -->
+    <string name="webcompat_reporter_reason_load">Site doesn’t load</string>
+    <!-- Broken site reason text for can’t pay, check out or shop -->
+    <string name="webcompat_reporter_reason_checkout">Can’t pay, check out or shop</string>
     <!-- Broken site reason text for images or videos -->
-    <string name="webcompat_reporter_reason_media">Images or videos</string>
+    <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">Images or videos</string>
     <!-- Broken site reason text for buttons, links, and other content -->
-    <string name="webcompat_reporter_reason_content">Buttons, links, and other content</string>
+    <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">Buttons, links, and other content</string>
     <!-- Broken site reason text for sign in or sign out -->
-    <string name="webcompat_reporter_reason_account">Sign-in or sign-out</string>
+    <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">Sign-in or sign-out</string>
+    <!-- Broken site reason text for site is slow -->
+    <string name="webcompat_reporter_reason_slow2">Site is slow</string>
+    <!-- Broken site reason text for video isn’t playing or loading -->
+    <string name="webcompat_reporter_reason_media2">Video isn’t playing or loading</string>
+    <!-- Broken site reason text for missing content -->
+    <string name="webcompat_reporter_reason_content2">Missing content</string>
+    <!-- Broken site reason text for can’t sign in or register -->
+    <string name="webcompat_reporter_reason_account2">Can’t sign in or register</string>
     <!-- Broken site reason text for ad blocker -->
-    <string name="webcompat_reporter_reason_ad_blocker">Ad blocker</string>
+    <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">Ad blocker</string>
+    <!-- Broken site reason text for site asked to turn off ad blocker -->
+    <string name="webcompat_reporter_reason_turn_off_adblocker">Site asked to turn off ad blocker</string>
+    <!-- Broken site reason text for browser isn’t supported or blocked -->
+    <string name="webcompat_reporter_reason_notsupported">Browser isn’t supported or blocked</string>
     <!-- Broken site reason text for something else -->
     <string name="webcompat_reporter_reason_other">Something else</string>
 
@@ -1469,6 +1555,8 @@
     <string name="bookmark_menu_copy_button">Copy</string>
     <!-- Bookmark overflow menu share button -->
     <string name="bookmark_menu_share_button">Share</string>
+    <!-- Bookmark overflow menu select all bookmarks -->
+    <string name="bookmark_menu_select_all_bookmarks">Select all</string>
     <!-- Bookmark overflow menu open in new tab button -->
     <string name="bookmark_menu_open_in_new_tab_button">Open in new tab</string>
     <!-- Bookmark overflow menu open in private tab button -->
@@ -1481,6 +1569,8 @@
     <string name="bookmark_menu_delete_button">Delete</string>
     <!--Bookmark overflow menu save button -->
     <string name="bookmark_menu_save_button">Save</string>
+    <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+    <string name="bookmark_sort_menu_custom">Sort by custom order</string>
     <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
     <string name="bookmark_sort_menu_newest">Sort by newest</string>
     <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
@@ -2065,8 +2155,6 @@
     <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
     <string name="preference_doh_learn_more">Learn more</string>
 
-    <!-- Content description for the toolbar "Navigate up" button -->
-    <string name="preference_doh_up_description">Navigate up</string>
     <!-- Content description for the "Exceptions" button -->
     <string name="preference_doh_exceptions_description">Exceptions</string>
     <!-- Content description for the "Info" button -->
@@ -2231,6 +2319,8 @@
     <string name="preferences_passwords_exceptions_remove_all">Delete all exceptions</string>
     <!-- Hint for search box in passwords list -->
     <string name="preferences_passwords_saved_logins_search_2">Search passwords</string>
+    <!-- Content description for the logins navigation bar back button -->
+    <string name="logins_navigate_back_button_content_description">Back</string>
     <!-- The header for the site that a login is for -->
     <string name="preferences_passwords_saved_logins_site">Site</string>
     <!-- The header for the username for a login -->
@@ -2436,7 +2526,7 @@
     <!-- Text shown when a user leaves out the required template string -->
     <string name="search_add_custom_engine_error_missing_template">Check that search string matches Example format</string>
     <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-    <string name="search_add_custom_engine_error_cannot_reach">Error connecting to “%s”</string>
+    <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Error connecting to “%s”</string>
     <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
     <string name="search_add_custom_engine_success_message">Created %s</string>
     <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -2602,8 +2692,6 @@
     <!-- Awesome bar suggestion's headers -->
     <!-- Search suggestions title for Firefox Suggest. -->
     <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
-    <!-- Search suggestions title for trending searches. -->
-    <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Trending Searches</string>
     <!-- Search suggestions title for trending search suggestions.
         %s is a placeholder for the name of the search engine providing the trending search suggestions. -->
     <string name="trending_searches_header_2">Trending on %s</string>
@@ -2634,17 +2722,19 @@
 
     <!-- Pocket recommended stories -->
     <!-- Header text for a section on the home screen. -->
-    <string name="pocket_stories_header_1">Thought-provoking stories</string>
+    <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Thought-provoking stories</string>
+    <!-- Header text for a section on the home screen. -->
+    <string name="pocket_stories_header_2">Stories</string>
     <!-- Header text for a section on the home screen. -->
     <string name="pocket_stories_categories_header">Stories by topic</string>
     <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
     <string name="pocket_stories_placeholder_text">Discover more</string>
     <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-    <string name="pocket_stories_feature_title_2">Powered by %s.</string>
+    <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">Powered by %s.</string>
     <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked.  -->
-    <string name="pocket_stories_feature_caption" tools:ignore="BrandUsage">Part of the Firefox family. %s</string>
+    <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Part of the Firefox family. %s</string>
     <!-- Clickable text for opening an external link for more information about Pocket. -->
-    <string name="pocket_stories_feature_learn_more">Learn more</string>
+    <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Learn more</string>
     <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
     <string name="pocket_stories_sponsor_indication">Sponsored</string>
 
@@ -2675,7 +2765,7 @@
     <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
     <string name="a11y_action_label_read_article">read the article</string>
     <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-    <string name="a11y_action_label_pocket_learn_more">open link to learn more</string>
+    <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">open link to learn more</string>
     <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
     <string name="a11y_heading">%s, Heading</string>
     <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -3096,6 +3186,8 @@
     <string name="debug_drawer_override_current_region_label">Override current region</string>
     <!-- The title of the button for overriding home and current region. -->
     <string name="debug_drawer_override_region">Override home and current region</string>
+    <!-- The title of the button for overriding home region permanently. -->
+    <string name="debug_drawer_override_home_region_permanently">Override home region permanently</string>
 
     <!-- Messages explaining how to exit fullscreen mode -->
     <!-- Message shown to explain how to exit fullscreen mode when gesture navigation is enabled. -->
@@ -3232,11 +3324,17 @@
     <string name="pbm_authentication_unlock">Unlock</string>
     <!-- Title text instructing the user to unlock private tabs -->
     <string name="pbm_authentication_unlock_private_tabs">Unlock private tabs</string>
+    <!-- Authentication prompt title to enable the private tabs mode -->
+    <string name="pbm_authentication_enable_lock">Enable private tabs screen lock</string>
+    <!-- Authentication prompt title to disable the private tabs mode -->
+    <string name="pbm_authentication_disable_lock">Disable private tabs screen lock</string>
+    <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+    <string name="pbm_authentication_lock_device_feature_disabled">Set up screen lock to hide tabs</string>
     <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
-    <string name="private_tab_cfr_title" tools:ignore="UnusedResources">Use screen lock to hide private tabs?</string>
+    <string name="private_tab_cfr_title">Use screen lock to hide private tabs?</string>
     <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
-    <string name="private_tab_cfr_negative" tools:ignore="UnusedResources">No thanks</string>
+    <string name="private_tab_cfr_negative">No thanks</string>
     <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
-    <string name="private_tab_cfr_positive" tools:ignore="UnusedResources">Lock tabs</string>
+    <string name="private_tab_cfr_positive">Lock tabs</string>
 
 </resources>

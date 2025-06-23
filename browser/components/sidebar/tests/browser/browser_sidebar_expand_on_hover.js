@@ -6,23 +6,21 @@
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["sidebar.verticalTabs", true],
+      [VERTICAL_TABS_PREF, true],
       ["sidebar.expandOnHover", true],
     ],
   });
 });
 registerCleanupFunction(async () => {
   await SpecialPowers.popPrefEnv();
-  while (gBrowser.tabs.length > 1) {
-    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
-  }
+  cleanUpExtraTabs();
 });
 
 async function mouseOverSidebarToExpand() {
   // Disable non-test mouse events
   window.windowUtils.disableNonTestMouseEvents(true);
 
-  EventUtils.synthesizeMouse(SidebarController.sidebarContainer, 1, 80, {
+  EventUtils.synthesizeMouse(SidebarController.sidebarContainer, 1, 150, {
     type: "mousemove",
   });
 
@@ -169,57 +167,6 @@ add_task(async function test_enable_expand_on_hover() {
   );
 });
 
-add_task(async function test_expand_on_hover_pinned_tabs() {
-  await SidebarController.toggleExpandOnHover(true);
-  await SidebarController.waitUntilStable();
-
-  let newTabButton = document.getElementById("tabs-newtab-button");
-  info("Open 2 new tabs using the new tab button.");
-  newTabButton.click();
-  newTabButton.click();
-  is(gBrowser.tabs.length, 3, "Tabstrip now has three tabs");
-  gBrowser.selectedTab.toggleMuteAudio();
-  gBrowser.pinTab(gBrowser.selectedTab);
-  let unpinnedTabs = gBrowser.visibleTabs.filter(tab => !tab.pinned);
-  gBrowser.pinTab(unpinnedTabs[0]);
-  let pinnedTabs = gBrowser.visibleTabs.filter(tab => tab.pinned);
-  let verticalPinnedTabsContainer = document.getElementById(
-    "vertical-pinned-tabs-container"
-  );
-  let verticalTabsComputedStyle = window.getComputedStyle(
-    verticalPinnedTabsContainer
-  );
-  let inlineMuteButton =
-    gBrowser.selectedTab.querySelector(".tab-audio-button");
-  let muteButtonComputedStyle = window.getComputedStyle(inlineMuteButton);
-  let pinnedTabComputedStyle = window.getComputedStyle(pinnedTabs[0]);
-  await mouseOverSidebarToExpand();
-  await SidebarController.waitUntilStable();
-  await BrowserTestUtils.waitForMutationCondition(
-    SidebarController.sidebarContainer,
-    { attributes: true },
-    () =>
-      SidebarController._state.launcherExpanded &&
-      SidebarController.sidebarMain.hasAttribute("expanded"),
-    "The launcher is expanded"
-  );
-  is(
-    Math.round(parseInt(verticalTabsComputedStyle.width)),
-    Math.round(parseInt(pinnedTabComputedStyle.width)),
-    "The pinned tabs are full width when expanded"
-  );
-
-  is(
-    muteButtonComputedStyle.display,
-    "none",
-    "The expanded pinned tab is not showing the inline audio button."
-  );
-
-  await mouseOutSidebarToCollapse();
-  await SidebarController.toggleExpandOnHover(false);
-  await SidebarController.waitUntilStable();
-});
-
 add_task(async function test_expand_on_hover_context_menu() {
   await SidebarController.toggleExpandOnHover(true);
   await SidebarController.waitUntilStable();
@@ -248,6 +195,56 @@ add_task(async function test_expand_on_hover_context_menu() {
     }
   );
   toolbarContextMenu.hidePopup();
+  await mouseOutSidebarToCollapse();
+  await SidebarController.toggleExpandOnHover(false);
+  await SidebarController.waitUntilStable();
+});
+
+add_task(async function test_expand_on_hover_pinned_tabs() {
+  await SidebarController.toggleExpandOnHover(true);
+  await SidebarController.waitUntilStable();
+
+  info("Open 2 new tabs.");
+  for (let i = 0; i < 2; i++) {
+    await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      `data:text/html,<title>${i + 1}</title>`
+    );
+    gBrowser.pinTab(gBrowser.selectedTab);
+  }
+  is(gBrowser.tabs.length, 3, "Tabstrip now has three tabs");
+  gBrowser.selectedTab.toggleMuteAudio();
+  let pinnedTabs = gBrowser.visibleTabs.filter(tab => tab.pinned);
+  let inlineMuteButton =
+    gBrowser.selectedTab.querySelector(".tab-audio-button");
+  let muteButtonComputedStyle = window.getComputedStyle(inlineMuteButton);
+  let pinnedTabOriginalWidth = pinnedTabs[0].clientWidth;
+  await mouseOverSidebarToExpand();
+  await SidebarController.waitUntilStable();
+  await BrowserTestUtils.waitForMutationCondition(
+    SidebarController.sidebarContainer,
+    { attributes: true },
+    () =>
+      SidebarController._state.launcherExpanded &&
+      SidebarController.sidebarMain.hasAttribute("expanded"),
+    "The launcher is expanded"
+  );
+  let verticalPinnedTabsContainer = document.getElementById(
+    "vertical-pinned-tabs-container"
+  );
+  let verticalTabsWidth = verticalPinnedTabsContainer.clientWidth;
+  Assert.greater(
+    Math.round(parseInt(verticalTabsWidth)),
+    Math.round(parseInt(pinnedTabOriginalWidth)),
+    "The pinned tabs are full width when expanded"
+  );
+
+  is(
+    muteButtonComputedStyle.display,
+    "none",
+    "The expanded pinned tab is not showing the inline audio button."
+  );
+
   await mouseOutSidebarToCollapse();
   await SidebarController.toggleExpandOnHover(false);
   await SidebarController.waitUntilStable();

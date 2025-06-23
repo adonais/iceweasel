@@ -43,12 +43,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import mozilla.components.compose.base.annotation.LightDarkPreview
 import mozilla.components.compose.base.modifier.rightClickable
 import mozilla.components.feature.top.sites.TopSite
 import org.mozilla.fenix.R
@@ -58,6 +59,7 @@ import org.mozilla.fenix.compose.MenuItem
 import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.sessioncontrol.TopSiteInteractor
+import org.mozilla.fenix.home.topsites.TopSitesTestTag.TOP_SITE_CARD_FAVICON
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.WallpaperState
@@ -150,7 +152,7 @@ fun TopSites(
             .semantics {
                 testTagsAsResourceId = true
             }
-            .testTag(TopSitesTestTag.topSites),
+            .testTag(TopSitesTestTag.TOP_SITES),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val pagerState = rememberPagerState(
@@ -331,7 +333,7 @@ private fun TopSiteItem(
             .semantics {
                 testTagsAsResourceId = true
             }
-            .testTag(TopSitesTestTag.topSiteItemRoot),
+            .testTag(TopSitesTestTag.TOP_SITE_ITEM_ROOT),
     ) {
         Column(
             modifier = Modifier
@@ -377,7 +379,7 @@ private fun TopSiteItem(
                         .semantics {
                             testTagsAsResourceId = true
                         }
-                        .testTag(TopSitesTestTag.topSiteTitle),
+                        .testTag(TopSitesTestTag.TOP_SITE_TITLE),
                     text = topSite.title ?: topSite.url,
                     color = topSiteColors.titleTextColor,
                     overflow = TextOverflow.Ellipsis,
@@ -400,7 +402,7 @@ private fun TopSiteItem(
 
         ContextualMenu(
             modifier = Modifier
-                .testTag(TopSitesTestTag.topSiteContextualMenu),
+                .testTag(TopSitesTestTag.TOP_SITE_CONTEXTUAL_MENU),
             menuItems = menuItems,
             showMenu = menuExpanded,
             onDismissRequest = { menuExpanded = false },
@@ -424,13 +426,19 @@ private fun TopSiteItem(
  * @param topSite The [TopSite] to display.
  * @param backgroundColor The background [Color] of the card.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TopSiteFaviconCard(
     topSite: TopSite,
     backgroundColor: Color,
 ) {
     Card(
-        modifier = Modifier.size(TOP_SITES_FAVICON_CARD_SIZE.dp),
+        modifier = Modifier
+            .semantics {
+                testTagsAsResourceId = true
+                testTag = TOP_SITE_CARD_FAVICON
+            }
+            .size(TOP_SITES_FAVICON_CARD_SIZE.dp),
         shape = RoundedCornerShape(8.dp),
         backgroundColor = backgroundColor,
         elevation = 6.dp,
@@ -456,7 +464,8 @@ private fun FaviconImage(painter: Painter) {
     Image(
         painter = painter,
         contentDescription = null,
-        modifier = Modifier.size(TOP_SITES_FAVICON_SIZE.dp),
+        modifier = Modifier
+            .size(TOP_SITES_FAVICON_SIZE.dp),
         contentScale = ContentScale.Crop,
     )
 }
@@ -486,7 +495,7 @@ private fun getMenuItems(
     result.add(
         MenuItem(
             title = stringResource(id = R.string.bookmark_menu_open_in_private_tab_button),
-            testTag = TopSitesTestTag.openInPrivateTab,
+            testTag = TopSitesTestTag.OPEN_IN_PRIVATE_TAB,
             onClick = { onOpenInPrivateTabClicked(topSite) },
         ),
     )
@@ -495,7 +504,7 @@ private fun getMenuItems(
         result.add(
             MenuItem(
                 title = stringResource(id = R.string.top_sites_edit_top_site),
-                testTag = TopSitesTestTag.edit,
+                testTag = TopSitesTestTag.EDIT,
                 onClick = { onEditTopSiteClicked(topSite) },
             ),
         )
@@ -511,7 +520,7 @@ private fun getMenuItems(
                         R.string.delete_from_history
                     },
                 ),
-                testTag = TopSitesTestTag.remove,
+                testTag = TopSitesTestTag.REMOVE,
                 onClick = { onRemoveTopSiteClicked(topSite) },
             ),
         )
@@ -522,7 +531,7 @@ private fun getMenuItems(
             listOf(
                 MenuItem(
                     title = stringResource(id = R.string.delete_from_history),
-                    testTag = TopSitesTestTag.remove,
+                    testTag = TopSitesTestTag.REMOVE,
                     onClick = { onRemoveTopSiteClicked(topSite) },
                 ),
                 MenuItem(
@@ -541,7 +550,7 @@ private fun getMenuItems(
 }
 
 @Composable
-@LightDarkPreview
+@PreviewLightDark
 private fun TopSitesPreview() {
     FirefoxTheme {
         Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {

@@ -56,9 +56,7 @@
   <string name="home_bookmarks_menu_item_remove">Бетерү</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s Mozilla тарафыннан җитештерелә.</string>
-  <string name="private_browsing_common_myths">
-       Хосусый гизү турында киң таралган мифлар
-    </string>
+  <string name="private_browsing_common_myths">Хосусый гизү турында киң таралган мифлар</string>
   <!--
     True Private Browsing Mode
 
@@ -71,10 +69,6 @@
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
   -->
   <string name="felt_privacy_info_card_subtitle_link_text">Активлыгымны кемнәр күрә ала?</string>
-  <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
-  <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Өй экранына өстәү</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Юк, рәхмәт</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">Көйләүләргә күчү</string>
   <!-- Text for the negative action button -->
@@ -86,13 +80,13 @@
   -->
   <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Яңа навигация белән тизрәк гизегез</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
-  <string name="camera_permissions_needed_message">Камера куллануга рөхсәт кирәк. Android көйләүләренә кереп, "рөхсәтләр" дигән битне ачып, "рөхсәт итү" дигәнгә басыгыз.</string>
+  <string name="camera_permissions_needed_message">Камера куллануга рөхсәт кирәк. Android көйләүләренә кереп, \"рөхсәтләр\" дигән битне ачып, \"рөхсәт итү\" дигәнгә басыгыз.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">Көйләүләргә күчү</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
   <string name="camera_permissions_needed_negative_button_text">Яшерү</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
-  <string name="tab_tray_close_tabs_banner_positive_button_text">Опцияләрне карау </string>
+  <string name="tab_tray_close_tabs_banner_positive_button_text">Опцияләрне карау</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
   <string name="tab_tray_close_tabs_banner_negative_button_text">Яшерү</string>
   <!-- Text for the banner message to tell users about our inactive tabs feature. -->
@@ -165,11 +159,11 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Киңәйтүләр</string>
   <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more">Күбрәк белү</string>
+  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">Күбрәк белү</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Киңәйтүләр белән идарә итү</string>
   <!-- Content description (not visible, for screen readers etc.): Section heading for recommended extensions. -->
-  <string name="browser_menu_recommended_section_content_description">Киңәш ителгән киңәйтүләр</string>
+  <string name="browser_menu_recommended_section_content_description" moz:removedIn="141" tools:ignore="UnusedResources">Киңәш ителгән киңәйтүләр</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -196,23 +190,23 @@
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Өй экранына өстәү</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
-  <string name="browser_menu_add_to_homescreen_2">Өй экранына өстәү…</string>
+  <string name="browser_menu_add_to_homescreen_2" moz:removedIn="141" tools:ignore="UnusedResources">Өй экранына өстәү…</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
   <string name="resync_button_content_description">Яңадан синхронлау</string>
   <!-- Browser menu button that opens the find in page menu -->
   <string name="browser_menu_find_in_page">Биттән табу</string>
   <!-- Browser menu button that opens the find in page menu -->
-  <string name="browser_menu_find_in_page_2">Биттән табу…</string>
+  <string name="browser_menu_find_in_page_2" moz:removedIn="141" tools:ignore="UnusedResources">Биттән табу…</string>
   <!-- Browser menu button that opens the translations dialog, which has options to translate the current browser page. -->
   <string name="browser_menu_translations">Битне тәрҗемә итү</string>
   <!-- Browser menu button that saves the current tab to a collection -->
-  <string name="browser_menu_save_to_collection">Җыентыкка саклау…</string>
+  <string name="browser_menu_save_to_collection" moz:removedIn="141" tools:ignore="UnusedResources">Җыентыкка саклау…</string>
   <!-- Browser menu button that saves the current tab to a collection -->
   <string name="browser_menu_save_to_collection_2">Җыентыкка саклау</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">Уртаклашу</string>
   <!-- Browser menu button that open a share menu to share the current site -->
-  <string name="browser_menu_share_2">Уртаклашу…</string>
+  <string name="browser_menu_share_2" moz:removedIn="141" tools:ignore="UnusedResources">Уртаклашу…</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -247,7 +241,7 @@
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Керү</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
-  <string name="browser_menu_sign_in_caption">Серсүзләрне, табларны һ. б. синхронлау</string>
+  <string name="browser_menu_sign_in_caption" moz:removedIn="141" tools:ignore="UnusedResources">Серсүзләрне, табларны һ. б. синхронлау</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">Синхронлауга кире керү</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
@@ -266,9 +260,9 @@
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
   <string name="browser_menu_switch_to_mobile_site">Сайтның мобиль версиясенә күчү</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools">Кораллар</string>
+  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Кораллар</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
-  <string name="browser_menu_back_button_content_description">Төп менюга кире кайту</string>
+  <string name="browser_menu_back_button_content_description" moz:removedIn="141" tools:ignore="UnusedResources">Төп менюга кире кайту</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
   <string name="browser_main_menu_content_description_help_button">Ярдәм</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
@@ -277,28 +271,28 @@
     Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
     bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
   -->
-  <string name="browser_menu_save">Саклау</string>
+  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">Саклау</string>
   <!-- Browser menu description that describes the various save related menu items inside of the save sub-menu -->
-  <string name="browser_menu_save_description">Кыстыргыч өстәү, Ярлык, Баш бит, Җыентык, PDF</string>
+  <string name="browser_menu_save_description" moz:removedIn="141" tools:ignore="UnusedResources">Кыстыргыч өстәү, Ярлык, Баш бит, Җыентык, PDF</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
-  <string name="browser_menu_bookmark_this_page">Бу битне кыстыргычларга өстәү</string>
+  <string name="browser_menu_bookmark_this_page" moz:removedIn="141" tools:ignore="UnusedResources">Бу битне кыстыргычларга өстәү</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">Кыстыргычны үзгәртү</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
-  <string name="browser_menu_save_as_pdf">PDF буларак саклау…</string>
+  <string name="browser_menu_save_as_pdf" moz:removedIn="141" tools:ignore="UnusedResources">PDF буларак саклау…</string>
   <!-- Browser menu label for turning ON reader view of the current visited page -->
-  <string name="browser_menu_turn_on_reader_view">Уку режимын кабызу</string>
+  <string name="browser_menu_turn_on_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Уку режимын кабызу</string>
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
-  <string name="browser_menu_turn_off_reader_view">Уку режимын сүндерү</string>
+  <string name="browser_menu_turn_off_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Уку режимын сүндерү</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
-  <string name="browser_menu_translate_page">Битне тәрҗемә итү…</string>
+  <string name="browser_menu_translate_page" moz:removedIn="141" tools:ignore="UnusedResources">Битне тәрҗемә итү…</string>
   <!--
     Browser menu label that is displayed when the current page has been translated by the translation feature.
     %1$s is the name of the language that page was translated to (e.g. English).
   -->
   <string name="browser_menu_translated_to">%1$s теленә тәрҗемә ителде</string>
   <!-- Browser menu label for the print feature -->
-  <string name="browser_menu_print">Бастыру…</string>
+  <string name="browser_menu_print" moz:removedIn="141" tools:ignore="UnusedResources">Бастыру…</string>
   <!--
     Browser menu label for the Delete browsing data on quit feature.
     %1$s is the name of the app (for example "Firefox").
@@ -340,7 +334,7 @@
 
     Content description for tick mark on selected language
   -->
-  <string name="a11y_selected_locale_content_description">Сайланган тел </string>
+  <string name="a11y_selected_locale_content_description">Сайланган тел</string>
   <!-- Text for default locale item -->
   <string name="default_locale_text">Җиһаз теленә иярү</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
@@ -381,19 +375,19 @@
 
     Home onboarding dialog welcome screen title text.
   -->
-  <string name="onboarding_home_welcome_title_2">Шәхсирәк бер интернетка рәхим итегез</string>
+  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">Шәхсирәк бер интернетка рәхим итегез</string>
   <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description">Күптөслерәк. Хосусыйрак. Элеккечә табыш өчен түгел, кешеләр өчен.</string>
+  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">Күптөслерәк. Хосусыйрак. Элеккечә табыш өчен түгел, кешеләр өчен.</string>
   <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3">Җиһаздан җиһазга күчү тагын да җиңеләйде</string>
+  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">Җиһаздан җиһазга күчү тагын да җиңеләйде</string>
   <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description">Хәзер баш биттә күренүче, башка җиһазларыгыздагы табларны сайлап, туктаган җирегездән дәвам итегез.</string>
+  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">Хәзер баш биттә күренүче, башка җиһазларыгыздагы табларны сайлап, туктаган җирегездән дәвам итегез.</string>
   <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button">Башлап җибәрү</string>
+  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">Башлап җибәрү</string>
   <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button">Керү</string>
+  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">Керү</string>
   <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button">Калдырып тору</string>
+  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Калдырып тору</string>
   <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message">Сезнең таблар синхронлана! Башка җиһазыгызда туктап калган җирегездән дәвам итегез.</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
@@ -436,21 +430,21 @@
     Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
     Note: The word "Firefox" should NOT be translated
   -->
-  <string name="onboarding_add_on_header" tools:ignore="BrandUsage,UnusedResources">Firefox-ны киңәйтүләр ярдәмендә шәхсиләштерегез</string>
+  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox-ны киңәйтүләр ярдәмендә шәхсиләштерегез</string>
   <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2">Башка киңәйтүләр белән дә танышып чыгыгыз</string>
+  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">Башка киңәйтүләр белән дә танышып чыгыгыз</string>
   <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2">Гизүне башлау</string>
+  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">Гизүне башлау</string>
   <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" tools:ignore="UnusedResources">uBlock Origin</string>
+  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
   <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" tools:ignore="UnusedResources">Privacy Badger</string>
+  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
   <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" tools:ignore="UnusedResources">Search by Image</string>
+  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">Search by Image</string>
   <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" tools:ignore="UnusedResources">Dark Reader</string>
+  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
   <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label">Бәяләмә: %1$s</string>
+  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">Бәяләмә: %1$s</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Әзер</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
@@ -701,9 +695,9 @@
   -->
   <string name="customize_toggle_recently_visited">Соңгы каралганнар</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2">Уйландыра торган мәкаләләр</string>
+  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Уйландыра торган мәкаләләр</string>
   <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary">%s тәкъдим иткән мәкаләләр</string>
+  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">%s тәкъдим иткән мәкаләләр</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Иганәчеләр мәкаләләре</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -859,7 +853,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">&lt;b&gt;Firefox.com/pair&lt;/b&gt; адресында күрсәтелгән QR кодны сканерлагыз</string>
+  <string name="pair_instructions_2"><![CDATA[<b>Firefox.com/pair</b> адресында күрсәтелгән QR кодны сканерлагыз]]></string>
   <!--
     Toolbar Preferences
 
@@ -936,7 +930,7 @@
   <!-- Option in library for Recently Closed Tabs -->
   <string name="library_recently_closed_tabs">Күптән түгел ябылган таблар</string>
   <!-- Option in library to open Recently Closed Tabs page -->
-  <string name="recently_closed_show_full_history">Тулы тарихны күрсәтү </string>
+  <string name="recently_closed_show_full_history">Тулы тарихны күрсәтү</string>
   <!--
     Text to show users they have multiple tabs saved in the Recently Closed Tabs section of history.
     %d is a placeholder for the number of tabs selected.
@@ -1018,7 +1012,7 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Таб өстәү</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
-  <string name="add_private_tab">Хосусый таб өстәү </string>
+  <string name="add_private_tab">Хосусый таб өстәү</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
   <string name="tab_drawer_fab_content">Хосусый</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
@@ -1101,22 +1095,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Тарих юк</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Йөкләүләр бетерелде</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s бетерелде</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Йөкләп алынган файллар юк</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d сайланган</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Бетерү</string>
   <!--
     WebCompat Reporter
 
@@ -1130,9 +1112,9 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Җибәрү</string>
   <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media">Рәсемнәр яки видеолар</string>
+  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">Рәсемнәр яки видеолар</string>
   <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account">Керү яки чыгу</string>
+  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">Керү яки чыгу</string>
   <!--
     Crashes
 
@@ -1499,7 +1481,7 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Ябылган таблар: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Кыстыргычлар "%s" эчендә cакланды!</string>
+  <string name="snackbar_message_bookmarks_saved_in">Кыстыргычлар \"%s\" эчендә cакланды!</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Ярлыкларга өстәлде!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -1623,7 +1605,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">Кодны сканерлау</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">Компьютерыгызда Firefox-ны ачыгыз һәм &lt;b&gt;https://firefox.com/pair&lt;/b&gt; адресына үтегез</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[Компьютерыгызда Firefox-ны ачыгыз һәм <b>https://firefox.com/pair</b> адресына үтегез]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">Сканерлауга әзер</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1631,7 +1613,7 @@
   <!-- Text shown for settings option for sign with email -->
   <string name="sign_in_with_email">Моның урынына эл. почта кулланыгыз</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
-  <string name="sign_in_create_account_text" tools:ignore="BrandUsage">Аккаунтыгыз юкмы? Firefox-ны җиһазлар арасында синхронлау өчен, бер &lt;u&gt;хисап булдырыгыз&lt;/u&gt;.</string>
+  <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Аккаунтыгыз юкмы? Firefox-ны җиһазлар арасында синхронлау өчен, бер <u>хисап булдырыгыз</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s хисабыгыз белән синхронлауны туктатачак, ләкин бу җиһаздагы гизү мәгълүматларының берсен дә бетермәячәк.</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
@@ -1811,7 +1793,7 @@
   <!-- Content Description (for screenreaders etc) read for the button to copy a password in logins -->
   <string name="saved_logins_copy_password">Серсүзне күчереп алу</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear a password while editing a login -->
-  <string name="saved_logins_clear_password">Серсүзне чистарту </string>
+  <string name="saved_logins_clear_password">Серсүзне чистарту</string>
   <!-- Content Description (for screenreaders etc) read for the button to copy a username in logins -->
   <string name="saved_login_copy_username">Кулланучы исемен күчереп алу</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear a username while editing a login -->
@@ -1819,7 +1801,7 @@
   <!-- Content Description (for screenreaders etc) read for the button to clear the hostname field while creating a login -->
   <string name="saved_login_clear_hostname">Сервер исемен чистарту</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
-  <string name="saved_login_open_site">Сайтны браузерда ачу </string>
+  <string name="saved_login_open_site">Сайтны браузерда ачу</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
   <string name="saved_login_reveal_password">Серсүзне күрсәтү</string>
   <!-- Content Description (for screenreaders etc) read for the button to hide a password in logins -->
@@ -1985,7 +1967,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Эзләнәсе сүзтезмәнең Мисал форматына туры килүен тикшерегез</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">“%s” адресына тоташу хатасы</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” адресына тоташу хатасы</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s ясалды</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -1997,9 +1979,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. Android көйләүләренә керегез</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;Рөхсәтләр&lt;/b&gt;’гә басыгыз</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>Рөхсәтләр</b>’гә басыгыз]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. &lt;b&gt;%1$s&lt;/b&gt; көйләнешен кабызыгыз</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. <b>%1$s</b> көйләнешен кабызыгыз]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">Бәйләнеш хәвефсез</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -2007,7 +1989,7 @@
   <!-- Label to clear site data -->
   <string name="clear_site_data">Кукиларны һәм сайт мәгълүматларын чистарту</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data">&lt;b&gt;%s&lt;/b&gt; сайты өчен барлык кукиларны һәм мәгълүматларны да чистартуны раслыйсызмы?</string>
+  <string name="confirm_clear_site_data"><![CDATA[<b>%s</b> сайты өчен барлык кукиларны һәм мәгълүматларны да чистартуны раслыйсызмы?]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">Барлык сайтлардагы барлык рөхсәтләрне дә чистартуны раслыйсызмы?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -2062,7 +2044,7 @@
   <!-- This is the hint text that is shown inline on the hostname field of the create new login page. 'https://www.example.com' intentionally hardcoded here -->
   <string name="add_login_hostname_hint_text">https://www.example.com</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname does not contain http or https. -->
-  <string name="add_login_hostname_invalid_text_3">Веб-адреста "https://" яки "http://" булырга тиеш</string>
+  <string name="add_login_hostname_invalid_text_3">Веб-адреста \"https://\" яки \"http://\" булырга тиеш</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname is invalid. -->
   <string name="add_login_hostname_invalid_text_2">Дөрес бер хост исеме кирәк</string>
   <!--
@@ -2172,17 +2154,17 @@
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1">Уйландыра торган мәкаләләр</string>
+  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Уйландыра торган мәкаләләр</string>
   <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header">Темалар буенча хикәяләр</string>
+  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Темалар буенча хикәяләр</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">Күбрәген күрү</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Күбрәген күрү</string>
   <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2">%s нигезендә.</string>
+  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">%s нигезендә.</string>
   <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" tools:ignore="BrandUsage">Firefox гаиләсеннән. %s</string>
+  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox гаиләсеннән. %s</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">Күбрәк белү</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Күбрәк белү</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Спонсорланган</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2204,7 +2186,7 @@
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article">мәкаләне уку</string>
   <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more">күбрәк белү өчен сылтаманы ачыгыз</string>
+  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">күбрәк белү өчен сылтаманы ачыгыз</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, Башлык</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -2508,13 +2490,13 @@
 
     Localisation note: this text should be as short as possible, max 68 chars
   -->
-  <string name="exit_fullscreen_with_gesture_short">Чыгу өчен экранны өстән тартып, "кире кайту" ишарәсен кулланыгыз</string>
+  <string name="exit_fullscreen_with_gesture_short">Чыгу өчен экранны өстән тартып, \"кире кайту\" ишарәсен кулланыгыз</string>
   <!--
     Message shown to explain how to exit fullscreen mode when using back button navigation.
 
     Localisation note: this text should be as short as possible, max 68 chars
   -->
-  <string name="exit_fullscreen_with_back_button_short">Чыгу өчен экранны өстән тартып, "кире кайту" төймәсенә басыгыз</string>
+  <string name="exit_fullscreen_with_back_button_short">Чыгу өчен экранны өстән тартып, \"кире кайту\" төймәсенә басыгыз</string>
   <!--
     Beta Label Component !
 

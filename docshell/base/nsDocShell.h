@@ -15,6 +15,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsCOMPtr.h"
 #include "nsCharsetSource.h"
@@ -228,11 +229,13 @@ class nsDocShell final : public nsDocLoader,
    *        aCsp was not passed explicitly we fall back to using
    *        aContent's document's CSP if that document holds any.
    */
+  MOZ_CAN_RUN_SCRIPT
   nsresult OnLinkClick(nsIContent* aContent, nsIURI* aURI,
                        const nsAString& aTargetSpec, const nsAString& aFileName,
                        nsIInputStream* aPostDataStream,
                        nsIInputStream* aHeadersDataStream,
                        bool aIsUserTriggered,
+                       mozilla::dom::UserNavigationInvolvement aUserInvolvement,
                        nsIPrincipal* aTriggeringPrincipal,
                        nsIContentSecurityPolicy* aCsp);
   /**
@@ -385,6 +388,8 @@ class nsDocShell final : public nsDocLoader,
     EnsureScriptEnvironment();
     return mozilla::dom::WindowProxyHolder(mBrowsingContext);
   }
+
+  nsPIDOMWindowInner* GetActiveWindow();
 
   /**
    * Loads the given URI. See comments on nsDocShellLoadState members for more
@@ -1131,7 +1136,16 @@ class nsDocShell final : public nsDocLoader,
   bool IsSameDocumentAsActiveEntry(
       const mozilla::dom::SessionHistoryInfo& aSHInfo);
 
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ReloadNavigable(JSContext* aCx, uint32_t aReloadFlags,
+                  nsIStructuredCloneContainer* aNavigationAPIState = nullptr,
+                  mozilla::dom::UserNavigationInvolvement aUserInvolvement =
+                      mozilla::dom::UserNavigationInvolvement::None);
+
  private:
+  MOZ_CAN_RUN_SCRIPT
+  void InformNavigationAPIAboutAbortingNavigation(JSContext* aCx);
+
   void SetCurrentURIInternal(nsIURI* aURI);
 
   // data members

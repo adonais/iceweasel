@@ -219,6 +219,17 @@ export class GeckoViewStartup {
           ],
         });
 
+        GeckoViewUtils.addLazyGetter(this, "GeckoViewPreferences", {
+          module: "resource://gre/modules/GeckoViewPreferences.sys.mjs",
+          ged: [
+            "GeckoView:Preferences:GetPref",
+            "GeckoView:Preferences:SetPref",
+            "GeckoView:Preferences:ClearPref",
+            "GeckoView:Preferences:RegisterObserver",
+            "GeckoView:Preferences:UnregisterObserver",
+          ],
+        });
+
         break;
       }
 
@@ -235,6 +246,24 @@ export class GeckoViewStartup {
           },
           {
             handler: _ => this.GeckoViewRemoteDebugger,
+          }
+        );
+
+        GeckoViewUtils.addLazyPrefObserver(
+          {
+            name: "network.android_doh.autoselect_enabled",
+            default: false,
+          },
+          {
+            handler: _ => {
+              if (
+                Services.prefs.getBoolPref(
+                  "network.android_doh.autoselect_enabled"
+                )
+              ) {
+                lazy.DoHController.init();
+              }
+            },
           }
         );
 
@@ -273,8 +302,6 @@ export class GeckoViewStartup {
         // Notify the start up crash tracker that the browser has successfully
         // started up so the startup cache isn't rebuilt on next startup.
         Services.startup.trackStartupCrashEnd();
-
-        lazy.DoHController.init();
         break;
       }
       case "handlersvc-store-initialized": {

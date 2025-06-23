@@ -4,9 +4,9 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.Constants.defaultTopSitesList
 import org.mozilla.fenix.helpers.DataGenerationHelper.getSponsoredShortcutTitle
@@ -26,7 +26,9 @@ class SponsoredShortcutsTest : TestSetup() {
     private lateinit var sponsoredShortcutTitle2: String
 
     @get:Rule
-    val activityIntentTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true)
+    val activityIntentTestRule = AndroidComposeTestRule(
+        HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true),
+    ) { it.activity }
 
     @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
@@ -37,8 +39,9 @@ class SponsoredShortcutsTest : TestSetup() {
     @Test
     fun verifySponsoredShortcutsListTest() {
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
             defaultTopSitesList.values.forEach { value ->
-                verifyExistingTopSitesTabs(value)
+                verifyExistingTopSitesTabs(activityIntentTestRule, value)
             }
         }.openThreeDotMenu {
         }.openCustomizeHome {
@@ -54,20 +57,21 @@ class SponsoredShortcutsTest : TestSetup() {
     @Test
     fun openSponsoredShortcutTest() {
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
             sponsoredShortcutTitle = getSponsoredShortcutTitle(2)
-        }.openSponsoredShortcut(sponsoredShortcutTitle) {
+        }.openTopSiteTabWithTitle(activityIntentTestRule, sponsoredShortcutTitle) {
             verifyUrl(sponsoredShortcutTitle)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1729334
     @Test
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1959107"])
     fun openSponsoredShortcutInPrivateTabTest() {
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
             sponsoredShortcutTitle = getSponsoredShortcutTitle(2)
-        }.openContextMenuOnSponsoredShortcut(sponsoredShortcutTitle) {
-        }.openTopSiteInPrivateTab {
+        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, sponsoredShortcutTitle) {
+        }.openTopSiteInPrivateTab(activityIntentTestRule) {
             verifyUrl(sponsoredShortcutTitle)
         }
     }
@@ -76,9 +80,10 @@ class SponsoredShortcutsTest : TestSetup() {
     @Test
     fun openSponsorsAndYourPrivacyOptionTest() {
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
             sponsoredShortcutTitle = getSponsoredShortcutTitle(2)
-        }.openContextMenuOnSponsoredShortcut(sponsoredShortcutTitle) {
-        }.clickSponsorsAndPrivacyButton {
+        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, sponsoredShortcutTitle) {
+        }.clickSponsorsAndPrivacyButton(activityIntentTestRule) {
             verifySponsoredShortcutsLearnMoreURL()
         }
     }
@@ -87,9 +92,10 @@ class SponsoredShortcutsTest : TestSetup() {
     @Test
     fun openSponsoredShortcutsSettingsOptionTest() {
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
             sponsoredShortcutTitle = getSponsoredShortcutTitle(2)
-        }.openContextMenuOnSponsoredShortcut(sponsoredShortcutTitle) {
-        }.clickSponsoredShortcutsSettingsButton {
+        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, sponsoredShortcutTitle) {
+        }.clickSponsoredShortcutsSettingsButton(activityIntentTestRule) {
             verifyHomePageView()
         }
     }
@@ -98,6 +104,7 @@ class SponsoredShortcutsTest : TestSetup() {
     @Test
     fun verifySponsoredShortcutsDetailsTest() {
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
             sponsoredShortcutTitle = getSponsoredShortcutTitle(2)
             sponsoredShortcutTitle2 = getSponsoredShortcutTitle(3)
 
@@ -116,6 +123,7 @@ class SponsoredShortcutsTest : TestSetup() {
         val fourthWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 4)
 
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
             sponsoredShortcutTitle = getSponsoredShortcutTitle(2)
             sponsoredShortcutTitle2 = getSponsoredShortcutTitle(3)
 
@@ -127,31 +135,31 @@ class SponsoredShortcutsTest : TestSetup() {
         }.openThreeDotMenu {
             expandMenuFully()
         }.addToFirefoxHome {
-        }.goToHomescreen {
-            verifyExistingTopSitesTabs(firstWebPage.title)
+        }.goToHomescreen(activityIntentTestRule) {
+            verifyExistingTopSitesTabs(activityIntentTestRule, firstWebPage.title)
         }.openNavigationToolbar {
         }.enterURLAndEnterToBrowser(secondWebPage.url) {
             verifyPageContent(secondWebPage.content)
         }.openThreeDotMenu {
             expandMenuFully()
         }.addToFirefoxHome {
-        }.goToHomescreen {
-            verifyExistingTopSitesTabs(secondWebPage.title)
+        }.goToHomescreen(activityIntentTestRule) {
+            verifyExistingTopSitesTabs(activityIntentTestRule, secondWebPage.title)
         }.openNavigationToolbar {
         }.enterURLAndEnterToBrowser(thirdWebPage.url) {
             verifyPageContent(thirdWebPage.content)
         }.openThreeDotMenu {
             expandMenuFully()
         }.addToFirefoxHome {
-        }.goToHomescreen {
-            verifyExistingTopSitesTabs(thirdWebPage.title)
+        }.goToHomescreen(activityIntentTestRule) {
+            verifyExistingTopSitesTabs(activityIntentTestRule, thirdWebPage.title)
         }.openNavigationToolbar {
         }.enterURLAndEnterToBrowser(fourthWebPage.url) {
             verifyPageContent(fourthWebPage.content)
         }.openThreeDotMenu {
             expandMenuFully()
         }.addToFirefoxHome {
-        }.goToHomescreen {
+        }.goToHomescreen(activityIntentTestRule) {
             verifySponsoredShortcutDetails(sponsoredShortcutTitle, 2)
             verifySponsoredShortcutDoesNotExist(sponsoredShortcutTitle2, 3)
         }
@@ -170,6 +178,8 @@ class SponsoredShortcutsTest : TestSetup() {
         )
 
         homeScreen {
+            verifyExistingTopSitesList(activityIntentTestRule)
+
             sponsoredShortcutTitle = getSponsoredShortcutTitle(2)
             sponsoredShortcutTitle2 = getSponsoredShortcutTitle(3)
 
@@ -182,7 +192,7 @@ class SponsoredShortcutsTest : TestSetup() {
                 Pair(pagesList[2].title, pagesList[2].url.toString()),
                 Pair(pagesList[3].title, pagesList[3].url.toString()),
                 Pair(pagesList[4].title, pagesList[4].url.toString()),
-                activityTestRule = activityIntentTestRule,
+                activityTestRule = activityIntentTestRule.activityRule,
             )
 
             verifySponsoredShortcutDoesNotExist(sponsoredShortcutTitle, 2)

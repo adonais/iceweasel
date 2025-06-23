@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.filters.SdkSuppress
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
@@ -231,6 +232,7 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416042
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1964989")
     @SdkSuppress(minSdkVersion = 34)
     @SmokeTest
     @Test
@@ -238,8 +240,8 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
         val pocketTopArticles = getStringResource(R.string.pocket_pinned_top_articles)
 
         homeScreen {
-            verifyExistingTopSitesTabs(pocketTopArticles)
-        }.openTopSiteTabWithTitle(pocketTopArticles) {
+            verifyExistingTopSitesTabs(composeTestRule, pocketTopArticles)
+        }.openTopSiteTabWithTitle(composeTestRule, pocketTopArticles) {
             verifyPocketPageContent()
         }.openTabDrawer(composeTestRule) {
         }.openNewTab {

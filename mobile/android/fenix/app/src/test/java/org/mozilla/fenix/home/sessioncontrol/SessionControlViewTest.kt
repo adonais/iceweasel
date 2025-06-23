@@ -204,8 +204,7 @@ class SessionControlViewTest {
         assertTrue(results[0] is AdapterItem.TopPlaceholderItem)
         assertTrue(results[1] is AdapterItem.PocketStoriesItem)
         assertTrue(results[2] is AdapterItem.PocketCategoriesItem)
-        assertTrue(results[3] is AdapterItem.PocketRecommendationsFooterItem)
-        assertTrue(results[4] is AdapterItem.CustomizeHomeButton)
+        assertTrue(results[3] is AdapterItem.CustomizeHomeButton)
 
         // When the first frame has not yet drawn don't add pocket.
         val results2 = normalModeAdapterItems(
@@ -316,7 +315,6 @@ class SessionControlViewTest {
         every { settings.showBookmarksHomeFeature } returns false
         every { settings.historyMetadataUIFeature } returns false
         every { settings.showPocketRecommendationsFeature } returns false
-        every { settings.enableComposeTopSites } returns false
         every { settings.showSetupChecklist } returns true
 
         val results = normalModeAdapterItems(
@@ -360,7 +358,6 @@ class SessionControlViewTest {
         every { settings.showBookmarksHomeFeature } returns true
         every { settings.historyMetadataUIFeature } returns true
         every { settings.showPocketRecommendationsFeature } returns true
-        every { settings.enableComposeTopSites } returns false
         every { settings.showSetupChecklist } returns true
 
         val results = normalModeAdapterItems(

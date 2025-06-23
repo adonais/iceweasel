@@ -613,6 +613,33 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mLowMemoryDetection = enable;
       return this;
     }
+
+    /**
+     * Sets whether the same document navigation should override the load type or not.
+     *
+     * @param value A flag determining whether same document navigation should override the load
+     *     type or not.
+     * @return The builder instance.
+     */
+    public @NonNull Builder setSameDocumentNavigationOverridesLoadType(final boolean value) {
+      getSettings().setSameDocumentNavigationOverridesLoadType(value);
+      return this;
+    }
+
+    /**
+     * Sets the uri to force-disable the same document navigation overriding the load type. If it is
+     * an empty string (default value), there's no specific domain that the same document navigation
+     * overriding the load type is disabled.
+     *
+     * @param uri URI that will be used to force-disable the same document navigation overriding the
+     *     load type on a specific domain.
+     * @return The builder instance.
+     */
+    public @NonNull Builder setSameDocumentNavigationOverridesLoadTypeForceDisable(
+        @NonNull final String uri) {
+      getSettings().setSameDocumentNavigationOverridesLoadTypeForceDisable(uri);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -712,11 +739,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning.pbmode", false);
   /* package */ final Pref<Integer> mCertificateTransparencyMode =
       new Pref<Integer>("security.pki.certificate_transparency.mode", 0);
-  /* package */ final Pref<Boolean> mPostQuantumKeyExchangeTLSEnabled =
-      new Pref<Boolean>("security.tls.enable_kyber", false);
-  /* package */ final Pref<Boolean> mPostQuantumKeyExchangeHttp3Enabled =
-      new Pref<Boolean>("network.http.http3.enable_kyber", false);
-
+  /* package */ final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeTLSEnabled =
+      new PrefWithoutDefault<Boolean>("security.tls.enable_kyber");
+  /* package */ final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeHttp3Enabled =
+      new PrefWithoutDefault<Boolean>("network.http.http3.enable_kyber");
+  /* package */ final Pref<Boolean> mDohAutoselectEnabled =
+      new Pref<Boolean>("network.android_doh.autoselect_enabled", false);
+  /* package */ final Pref<Boolean> mSameDocumentNavigationOverridesLoadType =
+      new Pref<Boolean>("docshell.shistory.sameDocumentNavigationOverridesLoadType", true);
+  /* package */ final Pref<String> mSameDocumentNavigationOverridesLoadTypeForceDisable =
+      new Pref<String>(
+          "docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable", "");
   /* package */ final Pref<String> mBannedPorts =
       new Pref<String>("network.security.ports.banned", "");
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
@@ -1589,6 +1622,35 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   }
 
   /**
+   * Set the pref to control whether network.android_doh.autoselect_enabled is enabled. When the
+   * pref is enabled the browser will automatically select a DoH provider from a region specific
+   * list provided by remote-settings if the browser is using the 'Default protection' mode for DNS
+   * over HTTPS. This means `network.trr.mode` was previously set to 0 by calling
+   * `setTrustedRecursiveResolverMode(TRR_MODE_OFF)`
+   *
+   * <p>When automatic selection is enabled the browser will run heuristic checks to determine
+   * whether DoH can be enabled for the current network (checks for parental controls, split horizon
+   * DNS, canary domain, etc) and if these pass it will set the `doh-rollout.mode` pref to 2
+   * (TRR_MODE_FIRST) and `doh-rollout.uri` to the URL of the automatically selected provider.
+   *
+   * @param enabled Whether to enable the DoHController component
+   * @return This GeckoRuntimeSettings instance
+   */
+  public @NonNull GeckoRuntimeSettings setDohAutoselectEnabled(final boolean enabled) {
+    mDohAutoselectEnabled.commit(enabled);
+    return this;
+  }
+
+  /**
+   * Get whether network.trr.android_rollout_enabled is enabled.
+   *
+   * @return Whether the DoHController component will be initialized
+   */
+  public boolean getDohAutoselectEnabled() {
+    return mDohAutoselectEnabled.get();
+  }
+
+  /**
    * Gets whether double-tap zooming is enabled.
    *
    * @return True if double-tap zooming is enabled, false otherwise.
@@ -2063,7 +2125,9 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    * @return Whether post-quantum key exchange mechanisms are enabled.
    */
   public @NonNull boolean getPostQuantumKeyExchangeEnabled() {
-    return mPostQuantumKeyExchangeTLSEnabled.get() && mPostQuantumKeyExchangeHttp3Enabled.get();
+    final Boolean tlsEnabled = mPostQuantumKeyExchangeTLSEnabled.get();
+    final Boolean h3Enabled = mPostQuantumKeyExchangeHttp3Enabled.get();
+    return (tlsEnabled != null && tlsEnabled) && (h3Enabled != null && h3Enabled);
   }
 
   /**
@@ -2091,6 +2155,55 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   GeckoRuntimeSettings setProcessCount(final int processCount) {
     mProcessCount.commit(processCount);
     return this;
+  }
+
+  /**
+   * Sets whether the same document navigation should override the load type or not.
+   *
+   * @param value A flag determining whether same document navigation should override the load type
+   *     or not.
+   * @return This GeckoRuntimeSettings instance.
+   */
+  public @NonNull GeckoRuntimeSettings setSameDocumentNavigationOverridesLoadType(
+      final boolean value) {
+    mSameDocumentNavigationOverridesLoadType.commit(value);
+    return this;
+  }
+
+  /**
+   * Gets whether the same document navigation should override the load type or not.
+   *
+   * @return Whether the same document navigation should override the load type or not.
+   */
+  public @NonNull boolean getSameDocumentNavigationOverridesLoadType() {
+    return mSameDocumentNavigationOverridesLoadType.get();
+  }
+
+  /**
+   * Sets the uri to force-disable the same document navigation overriding the load type. If it is
+   * an empty string (default value), there's no specific domain that the same document navigation
+   * overriding the load type is disabled.
+   *
+   * @param uri URI that will be used to force-disable the same document navigation overriding the
+   *     load type on a specific domain.
+   * @return This GeckoRuntimeSettings instance.
+   */
+  public @NonNull GeckoRuntimeSettings setSameDocumentNavigationOverridesLoadTypeForceDisable(
+      @NonNull final String uri) {
+    mSameDocumentNavigationOverridesLoadTypeForceDisable.commit(uri);
+    return this;
+  }
+
+  /**
+   * Gets the uri to force-disable the same document navigation overriding the load type. If it is
+   * an empty string (default value), there's no specific domain that the same document navigation
+   * overriding the load type is disabled.
+   *
+   * @return URI that will be used to force-disable the same document navigation overriding the load
+   *     type on a specific domain.
+   */
+  public @NonNull String getSameDocumentNavigationOverridesLoadTypeForceDisable() {
+    return mSameDocumentNavigationOverridesLoadTypeForceDisable.get();
   }
 
   @Override // Parcelable

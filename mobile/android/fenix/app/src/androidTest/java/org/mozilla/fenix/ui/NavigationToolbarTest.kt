@@ -150,7 +150,7 @@ class NavigationToolbarTest : TestSetup() {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             mDevice.waitForIdle()
-        }.goToHomescreen {
+        }.goToHomescreen(composeTestRule) {
             verifyHomeScreen()
         }
     }
@@ -158,18 +158,17 @@ class NavigationToolbarTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2256552
     @SmokeTest
     @Test
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1959107"])
     fun goToHomeScreenInPrivateModeTest() {
         val genericURL = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 
         homeScreen {
-            togglePrivateBrowsingModeOnOff()
+            togglePrivateBrowsingModeOnOff(composeTestRule = composeTestRule)
         }
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             mDevice.waitForIdle()
-        }.goToHomescreen {
+        }.goToHomescreen(composeTestRule) {
             verifyHomeScreen()
         }
     }

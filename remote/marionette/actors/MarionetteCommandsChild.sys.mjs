@@ -5,6 +5,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  LayoutUtils: "resource://gre/modules/LayoutUtils.sys.mjs",
+
   accessibility:
     "chrome://remote/content/shared/webdriver/Accessibility.sys.mjs",
   AnimationFramePromise: "chrome://remote/content/shared/Sync.sys.mjs",
@@ -69,6 +71,13 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
     const { eventName, details } = options;
     const win = this.contentWindow;
 
+    const windowUtils = win.windowUtils;
+    const microTaskLevel = windowUtils.microTaskLevel;
+    // Since we're being called as a webidl callback,
+    // CallbackObjectBase::CallSetup::CallSetup has increased the microtask
+    // level. Undo that temporarily so that microtask handling works closer
+    // the way it would work when dispatching events natively.
+    windowUtils.microTaskLevel = 0;
     try {
       switch (eventName) {
         case "synthesizeKeyDown":
@@ -112,6 +121,8 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
       }
 
       throw e;
+    } finally {
+      windowUtils.microTaskLevel = microTaskLevel;
     }
   }
 
@@ -135,6 +146,22 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
     const { rect } = options;
 
     return lazy.dom.getInViewCentrePoint(rect, this.contentWindow);
+  }
+
+  #toBrowserWindowCoordinates(options, _context) {
+    const { position } = options;
+
+    const [x, y] = position;
+    const dpr = this.contentWindow.devicePixelRatio;
+
+    const val = lazy.LayoutUtils.rectToTopLevelWidgetRect(this.contentWindow, {
+      left: x,
+      top: y,
+      height: 0,
+      width: 0,
+    });
+
+    return [val.x / dpr, val.y / dpr];
   }
 
   // eslint-disable-next-line complexity
@@ -171,6 +198,9 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
           break;
         case "MarionetteCommandsParent:_finalizeAction":
           this.#finalizeAction();
+          break;
+        case "MarionetteCommandsParent:_toBrowserWindowCoordinates":
+          result = this.#toBrowserWindowCoordinates(data);
           break;
         case "MarionetteCommandsParent:clearElement":
           this.clearElement(data);

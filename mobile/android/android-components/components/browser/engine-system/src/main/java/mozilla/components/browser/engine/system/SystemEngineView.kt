@@ -266,7 +266,12 @@ class SystemEngineView @JvmOverloads constructor(
                             is InterceptionResponse.AppIntent -> {
                                 if (request.isForMainFrame) {
                                     session.notifyObservers {
-                                        onLaunchIntentRequest(url = url, appIntent = appIntent)
+                                        onLaunchIntentRequest(
+                                            url = url,
+                                            appIntent = appIntent,
+                                            fallbackUrl = fallbackUrl,
+                                            appName = appName,
+                                        )
                                     }
                                 }
 
@@ -814,7 +819,7 @@ class SystemEngineView @JvmOverloads constructor(
         internal const val SECOND_MS: Int = 1000
 
         @Volatile
-        internal var URL_MATCHER: UrlMatcher? = null
+        internal var urlMatcher: UrlMatcher? = null
 
         private val urlMatcherCategoryMap = mapOf(
             UrlMatcher.ADVERTISING to TrackingProtectionPolicy.TrackingCategory.AD,
@@ -838,8 +843,8 @@ class SystemEngineView @JvmOverloads constructor(
         internal fun getOrCreateUrlMatcher(resources: Resources, policy: TrackingProtectionPolicy): UrlMatcher {
             val categories = urlMatcherCategoryMap.filterValues { policy.contains(it) }.keys
 
-            URL_MATCHER?.setCategoriesEnabled(categories) ?: run {
-                URL_MATCHER = UrlMatcher.createMatcher(
+            urlMatcher?.setCategoriesEnabled(categories) ?: run {
+                urlMatcher = UrlMatcher.createMatcher(
                     resources,
                     R.raw.domain_blocklist,
                     R.raw.domain_safelist,
@@ -847,7 +852,7 @@ class SystemEngineView @JvmOverloads constructor(
                 )
             }
 
-            return URL_MATCHER as UrlMatcher
+            return urlMatcher as UrlMatcher
         }
     }
 }

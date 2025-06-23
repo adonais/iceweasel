@@ -13,6 +13,7 @@ import string
 import textwrap
 
 from Configuration import (
+    Configuration,
     Descriptor,
     MemberIsLegacyUnforgeable,
     NoSuchDescriptorError,
@@ -33,6 +34,7 @@ from WebIDL import (
     IDLNullValue,
     IDLSequenceType,
     IDLType,
+    IDLTypedef,
     IDLUndefinedValue,
 )
 
@@ -421,6 +423,10 @@ class CGThing:
     def define(self):
         """Produce code for a cpp file."""
         assert False  # Override me!
+
+    def forward_declare(self):
+        """Produce code for a header file."""
+        return ""  # This can be skipped for most of the classes
 
     def deps(self):
         """Produce the deps for a pp file"""
@@ -1069,6 +1075,11 @@ class CGList(CGThing):
     def define(self):
         return self.join(child.define() for child in self.children if child is not None)
 
+    def forward_declare(self):
+        return self.join(
+            child.forward_declare() for child in self.children if child is not None
+        )
+
     def deps(self):
         deps = set()
         for child in self.children:
@@ -1087,15 +1098,19 @@ class CGGeneric(CGThing):
     separate string for the declaration too.
     """
 
-    def __init__(self, define="", declare=""):
+    def __init__(self, define="", declare="", forward_declare=""):
         self.declareText = declare
         self.defineText = define
+        self.forwardDeclareText = forward_declare
 
     def declare(self):
         return self.declareText
 
     def define(self):
         return self.defineText
+
+    def forward_declare(self):
+        return self.forwardDeclareText
 
     def deps(self):
         return set()
@@ -1132,13 +1147,15 @@ class CGWrapper(CGThing):
 
     def __init__(
         self,
-        child,
+        child: CGThing,
         pre="",
         post="",
         declarePre=None,
         declarePost=None,
         definePre=None,
         definePost=None,
+        forwardDeclarePre=None,
+        forwardDeclarePost=None,
         declareOnly=False,
         defineOnly=False,
         reindent=False,
@@ -1149,6 +1166,8 @@ class CGWrapper(CGThing):
         self.declarePost = declarePost or post
         self.definePre = definePre or pre
         self.definePost = definePost or post
+        self.forwardDeclarePre = forwardDeclarePre or pre
+        self.forwardDeclarePost = forwardDeclarePost or post
         self.declareOnly = declareOnly
         self.defineOnly = defineOnly
         self.reindent = reindent
@@ -1168,6 +1187,14 @@ class CGWrapper(CGThing):
         if self.reindent:
             defn = self.reindentString(defn, self.definePre)
         return self.definePre + defn + self.definePost
+
+    def forward_declare(self):
+        if self.defineOnly:
+            return ""
+        decl = self.child.forward_declare()
+        if self.reindent:
+            decl = self.reindentString(decl, self.forwardDeclarePre)
+        return self.forwardDeclarePre + decl + self.forwardDeclarePost
 
     @staticmethod
     def reindentString(stringToIndent, widthString):
@@ -1272,6 +1299,12 @@ class CGNamespace(CGThing):
             return ""
         return self.pre + defn + self.post
 
+    def forward_declare(self):
+        decl = self.child.forward_declare()
+        if len(decl.strip()) == 0:
+            return ""
+        return self.pre + decl + self.post
+
     def deps(self):
         return self.child.deps()
 
@@ -1293,11 +1326,15 @@ class CGIncludeGuard(CGWrapper):
     def __init__(self, prefix, child):
         """|prefix| is the filename without the extension."""
         define = "DOM_%s_H_" % prefix.upper()
+        forward_define = "DOM_%sFWD_H_" % prefix.upper()
         CGWrapper.__init__(
             self,
             child,
             declarePre="#ifndef %s\n#define %s\n\n" % (define, define),
             declarePost="\n#endif // %s\n" % define,
+            forwardDeclarePre="#ifndef %s\n#define %s\n\n"
+            % (forward_define, forward_define),
+            forwardDeclarePost="\n#endif // %s\n" % forward_define,
         )
 
 
@@ -12661,6 +12698,46 @@ class CGMaxContiguousEnumValue(CGThing):
         return self.enum.getDeps()
 
 
+class CGUnionTypedef(CGThing):
+    def __init__(self, typedef: IDLTypedef, config: Configuration):
+        assert typedef.innerType.isUnion, "only union typedefs are supported"
+        super().__init__()
+        self.typedef = typedef
+
+        builder = ForwardDeclarationBuilder()
+        builder.forwardDeclareForType(typedef.innerType, config)
+
+        name = self.typedef.identifier.name
+        innerName = self.typedef.innerType.name
+        declare = dedent(
+            f"""
+            using {name} = {innerName};
+            using Owning{name} = Owning{innerName};
+            """
+        )
+        self.root = CGList(
+            [
+                builder.build(),
+                CGNamespace.build(
+                    ["mozilla", "dom"], CGGeneric(forward_declare=declare)
+                ),
+            ],
+            joiner="\n",
+        )
+
+    def declare(self):
+        return ""
+
+    def define(self):
+        return ""
+
+    def forward_declare(self):
+        return self.root.forward_declare()
+
+    def deps(self):
+        return self.typedef.getDeps()
+
+
 def getUnionAccessorSignatureType(type, descriptorProvider):
     """
     Returns the types that are used in the getter and setter signatures for
@@ -14580,6 +14657,9 @@ class CGClassForwardDeclare(CGThing):
         # Header only
         return ""
 
+    def forward_declare(self):
+        return self.declare()
+
     def deps(self):
         return set()
 
@@ -15040,21 +15120,13 @@ def findAncestorWithInstrumentedProps(desc):
     return None
 
 
-class CGCountMaybeMissingProperty(CGAbstractMethod):
-    def __init__(self, descriptor):
+class CGAbstractPropertySwitchMethod(CGAbstractMethod):
+    def __init__(self, *args):
         """
-        Returns whether we counted the property involved.
+        Create an optimized switch tree for matching (property) names.
         """
-        CGAbstractMethod.__init__(
-            self,
-            descriptor,
-            "CountMaybeMissingProperty",
-            "bool",
-            [
-                Argument("JS::Handle<JSObject*>", "proxy"),
-                Argument("JS::Handle<jsid>", "id"),
-            ],
-        )
+
+        CGAbstractMethod.__init__(self, *args)
 
     def gen_switch(self, switchDecriptor):
         """
@@ -15062,7 +15134,7 @@ class CGCountMaybeMissingProperty(CGAbstractMethod):
         dictionary must have the following properties:
 
         1) A "precondition" property that contains code to run before the
-           switch statement.  Its value ie a string.
+           switch statement.  Its value is a string.
         2) A "condition" property for the condition.  Its value is a string.
         3) A "cases" property.  Its value is an object that has property names
            corresponding to the case labels.  The values of those properties
@@ -15097,29 +15169,26 @@ class CGCountMaybeMissingProperty(CGAbstractMethod):
             cases="".join(cases),
         )
 
-    def charSwitch(self, props, charIndex):
+    def charSwitch(
+        self, props, charIndex, initializeChars, charIndexer, propertyMatcher
+    ):
         """
         Create a switch for the given props, based on the first char where
-        they start to differ at index charIndex or more.  Each prop is a tuple
-        containing interface name and prop name.
+        they start to differ at index charIndex or more.
+
+        initializeChars is used for initializing the characters should be matched.
+        charIndexer is used for matching a specific character. Must return a single char.
+        propertyMatcher checks whether the given string really matches the property name.
 
         Incoming props should be a sorted list.
         """
         if len(props) == 1:
             # We're down to one string: just check whether we match it.
-            return fill(
-                """
-                if (JS_LinearStringEqualsLiteral(str, "${name}")) {
-                  counter.emplace(eUseCounter_${iface}_${name});
-                }
-                """,
-                iface=self.descriptor.name,
-                name=props[0],
-            )
+            return propertyMatcher(props[0])
 
         switch = dict()
         if charIndex == 0:
-            switch["precondition"] = "StringIdChars chars(nogc, str);\n"
+            switch["precondition"] = initializeChars
         else:
             switch["precondition"] = ""
 
@@ -15127,7 +15196,7 @@ class CGCountMaybeMissingProperty(CGAbstractMethod):
         while all(prop[charIndex] == props[0][charIndex] for prop in props):
             charIndex += 1
 
-        switch["condition"] = "chars[%d]" % charIndex
+        switch["condition"] = charIndexer(charIndex)
         switch["cases"] = dict()
         current_props = None
         curChar = None
@@ -15137,14 +15206,37 @@ class CGCountMaybeMissingProperty(CGAbstractMethod):
             if nextChar != curChar:
                 if curChar:
                     switch["cases"][curChar] = self.charSwitch(
-                        current_props, charIndex + 1
+                        current_props,
+                        charIndex + 1,
+                        initializeChars,
+                        charIndexer,
+                        propertyMatcher,
                     )
                 current_props = []
                 curChar = nextChar
             current_props.append(props[idx])
             idx += 1
-        switch["cases"][curChar] = self.charSwitch(current_props, charIndex + 1)
+        switch["cases"][curChar] = self.charSwitch(
+            current_props, charIndex + 1, initializeChars, charIndexer, propertyMatcher
+        )
         return switch
+
+
+class CGCountMaybeMissingProperty(CGAbstractPropertySwitchMethod):
+    def __init__(self, descriptor):
+        """
+        Returns whether we counted the property involved.
+        """
+        CGAbstractPropertySwitchMethod.__init__(
+            self,
+            descriptor,
+            "CountMaybeMissingProperty",
+            "bool",
+            [
+                Argument("JS::Handle<JSObject*>", "proxy"),
+                Argument("JS::Handle<jsid>", "id"),
+            ],
+        )
 
     def definition_body(self):
         ancestor = findAncestorWithInstrumentedProps(self.descriptor)
@@ -15170,13 +15262,30 @@ class CGCountMaybeMissingProperty(CGAbstractMethod):
                 """
             )
 
+        initializeChars = "StringIdChars chars(nogc, str);\n"
+        charIndexer = lambda index: "chars[%d]" % index
+
+        def property_matcher(name):
+            return fill(
+                """
+                if (JS_LinearStringEqualsLiteral(str, "${name}")) {
+                  counter.emplace(eUseCounter_${iface}_${name});
+                }
+                """,
+                iface=self.descriptor.name,
+                name=name,
+            )
+
         lengths = set(len(prop) for prop in instrumentedProps)
         switchDesc = {"condition": "JS::GetLinearStringLength(str)", "precondition": ""}
         switchDesc["cases"] = dict()
-        for length in sorted(lengths):
-            switchDesc["cases"][str(length)] = self.charSwitch(
+        for length in sorted(lengths, key=int):
+            switchDesc["cases"][length] = self.charSwitch(
                 list(sorted(prop for prop in instrumentedProps if len(prop) == length)),
                 0,
+                initializeChars,
+                charIndexer,
+                property_matcher,
             )
 
         return body + fill(
@@ -15198,6 +15307,76 @@ class CGCountMaybeMissingProperty(CGAbstractMethod):
             return false;
             """,
             pref=prefIdentifier(MISSING_PROP_PREF),
+            switch=self.gen_switch(switchDesc),
+        )
+
+
+class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
+    def __init__(self, descriptor):
+        """
+        Returns whether the given string a property of this or any of its
+        ancestors interfaces.
+        """
+        CGAbstractPropertySwitchMethod.__init__(
+            self,
+            descriptor,
+            "InterfaceHasNonEventHandlerProperty",
+            "bool",
+            [
+                Argument("const nsAString&", "name"),
+            ],
+        )
+
+    def definition_body(self):
+        names = set()
+
+        iface = self.descriptor.interface
+        while iface:
+            for m in iface.members:
+                if not m.isAttr() or isChromeOnly(m):
+                    continue
+
+                name = m.identifier.name
+                # Skip event handler attributes, because they are always function objects (or null)
+                # which means it's unlikely they are used in a confusable manner.
+                if name.startswith("on"):
+                    continue
+
+                names.add(name)
+
+            iface = iface.parent
+
+        initializeChars = ""
+        charIndexer = lambda index: "name[%d]" % index
+
+        def property_matcher(name):
+            return fill(
+                """
+                if (name == u\"${name}\"_ns) {
+                  return true;
+                }
+                """,
+                name=name,
+            )
+
+        lengths = set(len(name) for name in names)
+        switchDesc = {"condition": "name.Length()", "precondition": ""}
+        switchDesc["cases"] = dict()
+        for length in sorted(lengths):
+            switchDesc["cases"][length] = self.charSwitch(
+                list(sorted(name for name in names if len(name) == length)),
+                0,
+                initializeChars,
+                charIndexer,
+                property_matcher,
+            )
+
+        return fill(
+            """
+            $*{switch}
+
+            return false;
+            """,
             switch=self.gen_switch(switchDesc),
         )
 
@@ -16920,7 +17099,7 @@ def memberProperties(m, descriptor):
 
 
 class CGDescriptor(CGThing):
-    def __init__(self, descriptor, attributeTemplates):
+    def __init__(self, descriptor: Descriptor, attributeTemplates):
         CGThing.__init__(self)
 
         assert (
@@ -16929,6 +17108,7 @@ class CGDescriptor(CGThing):
             or descriptor.hasOrdinaryObjectPrototype()
         )
 
+        self.name = descriptor.interface.getClassName()
         self._deps = descriptor.interface.getDeps()
 
         iteratorCGThings = None
@@ -17218,6 +17398,9 @@ class CGDescriptor(CGThing):
         if descriptor.needsMissingPropUseCounters:
             cgThings.append(CGCountMaybeMissingProperty(descriptor))
 
+        if descriptor.interface.identifier.name == "HTMLDocument":
+            cgThings.append(CGInterfaceHasNonEventHandlerProperty(descriptor))
+
         # CGDOMProxyJSClass/CGDOMJSClass need GetProtoObjectHandle, but we don't
         # want to export it for the iterator interfaces, or if we don't need it
         # for child interfaces or for the named properties object.
@@ -17363,6 +17546,9 @@ class CGDescriptor(CGThing):
     def define(self):
         return self.cgRoot.define()
 
+    def forward_declare(self):
+        return f"class {self.name};"
+
     def deps(self):
         return self._deps
 
@@ -17444,7 +17630,7 @@ def initIdsClassMethod(identifiers, atomCacheName):
 
 
 class CGDictionary(CGThing):
-    def __init__(self, dictionary, descriptorProvider):
+    def __init__(self, dictionary: IDLDictionary, descriptorProvider):
         self.dictionary = dictionary
         self.descriptorProvider = descriptorProvider
         self.needToInitIds = len(dictionary.members) > 0
@@ -17491,6 +17677,9 @@ class CGDictionary(CGThing):
 
     def define(self):
         return self.structs.define()
+
+    def forward_declare(self):
+        return f"struct {self.dictionary.identifier.name};"
 
     def base(self):
         if self.dictionary.parent:
@@ -18934,6 +19123,9 @@ class CGForwardDeclarations(CGWrapper):
 
         CGWrapper.__init__(self, builder.build())
 
+    def forward_declare(self):
+        return ""
+
 
 def dependencySortDictionariesAndUnionsAndCallbacks(types):
     def getDependenciesFromType(type):
@@ -18992,7 +19184,7 @@ class CGBindingRoot(CGThing):
     declare or define to generate header or cpp code (respectively).
     """
 
-    def __init__(self, config, prefix, webIDLFile):
+    def __init__(self, config: Configuration, prefix, webIDLFile):
         bindingHeaders = dict.fromkeys(
             ("mozilla/dom/NonRefcountedDOMObject.h", "MainThreadUtils.h"), True
         )
@@ -19469,6 +19661,12 @@ class CGBindingRoot(CGThing):
             "\n",
         )
 
+        unionTypedefs = config.getUnionTypedefs(webIDLFile)
+        cgUnionTypedefs = CGList(
+            [CGUnionTypedef(t, config) for t in unionTypedefs], joiner="\n"
+        )
+        curr = CGList([cgUnionTypedefs, curr], joiner="\n")
+
         # Add header includes.
         bindingHeaders = [
             header for header, include in bindingHeaders.items() if include
@@ -19509,6 +19707,9 @@ class CGBindingRoot(CGThing):
 
     def define(self):
         return stripTrailingWhitespace(self.root.define())
+
+    def forward_declare(self):
+        return stripTrailingWhitespace(self.root.forward_declare())
 
     def deps(self):
         return self.root.deps()

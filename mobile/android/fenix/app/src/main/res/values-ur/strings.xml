@@ -35,8 +35,6 @@
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s ءMozilla کے ذریعہ تیار کیا گیا ہے۔</string>
   <string name="private_browsing_common_myths">نجی براؤزنگ کے بارے میں عمومی فرضی داستان</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">نہیں شکریہ</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">سیٹنگز پر جائیں</string>
   <!-- Text for the negative action button -->
@@ -265,7 +263,7 @@
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">اکاؤنٹ کی سیٹنگز</string>
   <!-- Preference for enabling url autocomplete -->
-  <string name="preferences_enable_autocomplete_urls">خودکار تکميلURLs </string>
+  <string name="preferences_enable_autocomplete_urls">خودکار تکميلURLs</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">ایپس میں ربط کھولیں</string>
   <!-- Preference for open download with an external download manager app -->
@@ -366,7 +364,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">&lt;b&gt;firefox.com/pair&lt;/b&gt; پر دیے گئے QR کوڈ کو سکین کریں</string>
+  <string name="pair_instructions_2"><![CDATA[<b>firefox.com/pair</b> پر دیے گئے QR کوڈ کو سکین کریں]]></string>
   <!--
     Toolbar Preferences
 
@@ -470,7 +468,7 @@
   <!-- Option for always opening the user's last-open tab when re-opening the app -->
   <string name="opening_screen_last_tab">آخری ٹیب</string>
   <!-- Option for always opening the homepage when re-opening the app after four hours of inactivity -->
-  <string name="opening_screen_after_four_hours_of_inactivity">چار گھنٹے کی غیرفعالیت کے بعد  ابتدائی صفحہ</string>
+  <string name="opening_screen_after_four_hours_of_inactivity">چار گھنٹے کی غیرفعالیت کے بعد ابتدائی صفحہ</string>
   <!-- Summary for tabs preference when auto closing tabs setting is set to manual close -->
   <string name="close_tabs_manually_summary">دستی طور پر بند کریں</string>
   <!-- Summary for tabs preference when auto closing tabs setting is set to auto close tabs after one day -->
@@ -575,22 +573,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">یہاں کوئی سابقات نہیں ہے</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">ڈاؤن لوڈز کو ہٹا دیا گیا</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s ہٹائیں</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">ڈاؤن لوڈ فائلیں نہیں ہیں</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d منتخب کیا گیا</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">ہٹائیں</string>
   <!--
     Crashes
 
@@ -939,7 +925,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">کوڈ کو اسکین کریں</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">اپنے کمپیوٹر پر Firefox کھولیں اور &lt;b&gt;https://firefox.com/pair&lt;/b&gt; پر جائیں</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[اپنے کمپیوٹر پر Firefox کھولیں اور <b>https://firefox.com/pair</b> پر جائیں]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">سکین کرنے کے لئے تیار</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1100,7 +1086,7 @@
   <!-- Content Description (for screenreaders etc) read for the button to copy a password in logins -->
   <string name="saved_logins_copy_password">پاس ورڈ نقل کریں</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear a password while editing a login -->
-  <string name="saved_logins_clear_password">پاس ورڈ صاف کریں </string>
+  <string name="saved_logins_clear_password">پاس ورڈ صاف کریں</string>
   <!-- Content Description (for screenreaders etc) read for the button to copy a username in logins -->
   <string name="saved_login_copy_username">صارف نام نقل کریں</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear a username while editing a login -->
@@ -1128,7 +1114,7 @@
   <!-- Preference option for syncing credit cards across devices. This is displayed when the user is not signed into sync -->
   <string name="preferences_credit_cards_sync_cards_across_devices">اپنے آلات کے مابین کارڈز سنک کریں</string>
   <!-- Preference option for syncing credit cards across devices. This is displayed when the user is signed into sync -->
-  <string name="preferences_credit_cards_sync_cards">کارڈ سنک کریں </string>
+  <string name="preferences_credit_cards_sync_cards">کارڈ سنک کریں</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">کارڈ شامل کریں</string>
   <!-- Title of the "Edit card" screen -->
@@ -1182,7 +1168,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">چیک کریں کہ سرچ سٹرنگ مثال کی شکل سے میل کھاتا ہے</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">”%s“ سے رابطہ کرنے میں خرابی</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">”%s“ سے رابطہ کرنے میں خرابی</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s بنایا گیا</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -1194,9 +1180,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. Android کی سیٹنگز پر جائیں</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;اجازتوں&lt;/b&gt; پر دبایں</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>اجازتوں</b> پر دبایں]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. &lt;b&gt;%1$s&lt;/b&gt; کو چالو کرنے کے لئے ٹو گل کریں</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. <b>%1$s</b> کو چالو کرنے کے لئے ٹو گل کریں]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">کنکشن محفوظ ہے۔</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -1287,14 +1273,14 @@
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1">فکر انگیز کہانیاں</string>
+  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">فکر انگیز کہانیاں</string>
   <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header">موضوع کے لحاظ سے کہانیاں</string>
+  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">موضوع کے لحاظ سے کہانیاں</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">مزید تلاش کریں</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">مزید تلاش کریں</string>
   <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" tools:ignore="BrandUsage">%s کے خاندان کا حصہ</string>
+  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">%s کے خاندان کا حصہ</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">مزید سیکھیں</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">مزید سیکھیں</string>
   <!-- Translations feature -->
 </resources>

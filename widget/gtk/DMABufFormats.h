@@ -57,9 +57,6 @@ class DRMFormat final {
     aModifiersNum = mModifiers.Length();
     return mModifiers.Elements();
   }
-  uint64_t GetModifier() {
-    return mModifiers.Length() ? mModifiers[0] : DRM_FORMAT_MOD_INVALID;
-  }
   nsTArray<uint64_t>* GetModifiers() { return &mModifiers; }
 
  private:
@@ -109,6 +106,28 @@ RefPtr<DMABufFormats> CreateDMABufFeedbackFormats(
     wl_surface* aSurface,
     const std::function<void(DMABufFormats*)>& aFormatRefreshCB = nullptr);
 #endif
+
+class GlobalDMABufFormats final {
+ public:
+  DRMFormat* GetDRMFormat(int32_t aFOURCCFormat);
+
+  GlobalDMABufFormats();
+
+ private:
+  void LoadFormatModifiers();
+  void SetModifiersToGfxVars();
+  void GetModifiersFromGfxVars();
+
+  // Formats passed to RDD process to WebGL process
+  // where we can't get formats/modifiers from Wayland display.
+  // RGBA formats are mandatory, YUV ones are optional.
+  RefPtr<DRMFormat> mFormatRGBA;
+  RefPtr<DRMFormat> mFormatRGBX;
+  RefPtr<DRMFormat> mFormatP010;
+  RefPtr<DRMFormat> mFormatNV12;
+};
+
+GlobalDMABufFormats* GetGlobalDMABufFormats();
 
 }  // namespace mozilla::widget
 

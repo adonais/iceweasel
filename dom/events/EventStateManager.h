@@ -647,8 +647,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
       AutoWeakFrame aCurrentTarget, bool aNoContentDispatch,
       nsIContent* aOverrideClickTarget);
 
-  nsresult SetClickCount(WidgetMouseEvent* aEvent, nsEventStatus* aStatus,
-                         nsIContent* aOverrideClickTarget = nullptr);
+  /**
+   * Prepare aEvent and corresponding LastMouseDownInfo for dispatching
+   * ePointerClick, ePointerAuxClick or eContextMenu later.
+   */
+  void PrepareForFollowingClickEvent(
+      WidgetMouseEvent& aEvent, nsIContent* aOverrideClickTarget = nullptr);
 
   /**
    * EventCausesClickEvents() returns true when aMouseEvent is an eMouseUp
@@ -997,6 +1001,11 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
         (PREFER_MOUSE_WHEEL_TRANSACTION |
          PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_X_AXIS |
          PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_Y_AXIS),
+    // Compute the default action target without considering the current wheel
+    // transaction.
+    COMPUTE_DEFAULT_ACTION_TARGET_WITHOUT_WHEEL_TRANSACTION =
+        (PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_X_AXIS |
+         PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_Y_AXIS),
     COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR =
         (COMPUTE_DEFAULT_ACTION_TARGET | MAY_BE_ADJUSTED_BY_AUTO_DIR),
     // Look for the nearest scrollable ancestor which can be scrollable with
@@ -1314,6 +1323,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
    */
   MOZ_CAN_RUN_SCRIPT void LightDismissOpenPopovers(WidgetEvent* aEvent,
                                                    nsIContent* aTargetContent);
+
+  /**
+   * https://html.spec.whatwg.org/multipage/interactive-elements.html#light-dismiss-open-dialogs
+   */
+  MOZ_CAN_RUN_SCRIPT void LightDismissOpenDialogs(WidgetEvent* aEvent,
+                                                  nsIContent* aTargetContent);
 
   already_AddRefed<EventStateManager> ESMFromContentOrThis(
       nsIContent* aContent);

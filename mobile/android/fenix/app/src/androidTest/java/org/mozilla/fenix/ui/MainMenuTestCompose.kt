@@ -10,11 +10,11 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.rule.ActivityTestRule
 import mozilla.components.concept.engine.utils.EngineReleaseChannel
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
@@ -54,21 +54,20 @@ import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.mainMenuScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 
+@Ignore("Bugzilla issue: https://bugzilla.mozilla.org/show_bug.cgi?id=1963618")
 class MainMenuTestCompose : TestSetup() {
     @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityIntentTestRule(
                 skipOnboarding = true,
-                isNavigationToolbarEnabled = true,
-                isNavigationBarCFREnabled = false,
                 isMenuRedesignEnabled = true,
                 isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = false,
             ),
         ) { it.activity }
 
-    @get: Rule
+    @get:Rule
     val intentReceiverActivityTestRule = ActivityTestRule(
         IntentReceiverActivity::class.java,
         true,
@@ -122,7 +121,6 @@ class MainMenuTestCompose : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2860843
     @SmokeTest
     @Test
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1959107"])
     fun verifyTheNewPrivateTabButtonTest() {
         val testPage = getGenericAsset(mockWebServer, 1)
 
@@ -195,8 +193,8 @@ class MainMenuTestCompose : TestSetup() {
         }.enterURLAndEnterToBrowser(testPage.url) {
         }.openThreeDotMenuFromRedesignedToolbar(composeTestRule) {
             expandMainMenu()
-        }.openBookmarks {
-            verifyBookmarksMenuView()
+        }.openBookmarks(composeTestRule) {
+            verifyEmptyBookmarksMenuView()
         }.goBackToBrowserScreen {
             verifyPageContent(testPage.content)
         }
@@ -363,7 +361,7 @@ class MainMenuTestCompose : TestSetup() {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openThreeDotMenuFromRedesignedToolbar(composeTestRule) {
             expandMainMenu()
-        }.openExtensionsFromMainMenu() {
+        }.openExtensionsFromMainMenu {
             clickManageExtensionsButtonFromRedesignedMainMenu(composeTestRule)
         }.openDetailedMenuForAddon(addonName) {
         }.removeAddon(composeTestRule.activityRule) {
@@ -438,10 +436,9 @@ class MainMenuTestCompose : TestSetup() {
         }.openThreeDotMenuFromRedesignedToolbar(composeTestRule) {
             expandMainMenu()
             clickSaveButton()
-        }.clickEditBookmarkButton {
+        }.clickEditBookmarkButton(composeTestRule) {
             verifyEditBookmarksView()
-            clickDeleteInEditModeButton()
-            confirmDeletion()
+            clickDeleteBookmarkButtonInEditMode()
         }
         browserScreen {
         }.openThreeDotMenuFromRedesignedToolbar(composeTestRule) {
@@ -463,18 +460,18 @@ class MainMenuTestCompose : TestSetup() {
         }.openThreeDotMenuFromRedesignedToolbar(composeTestRule) {
             expandMainMenu()
             clickSaveButton()
-        }.clickAddToShortcutsButton() {
+        }.clickAddToShortcutsButton {
             verifySnackBarText(getStringResource(R.string.snackbar_added_to_shortcuts))
         }.goToHomescreenWithRedesignedToolbar {
-            verifyExistingTopSitesTabs(testPage.title)
-        }.openTopSiteTabWithTitle(testPage.title) {
+            verifyExistingTopSitesTabs(composeTestRule, testPage.title)
+        }.openTopSiteTabWithTitle(composeTestRule, testPage.title) {
         }.openThreeDotMenuFromRedesignedToolbar(composeTestRule) {
             expandMainMenu()
             clickSaveButton()
         }.clickRemoveFromShortcutsButton {
             verifySnackBarText(getStringResource(R.string.snackbar_top_site_removed))
         }.goToHomescreenWithRedesignedToolbar {
-            verifyNotExistingTopSitesList(testPage.title)
+            verifyNotExistingTopSiteItem(composeTestRule, testPage.title)
         }
     }
 
@@ -533,9 +530,9 @@ class MainMenuTestCompose : TestSetup() {
         }.selectExistingCollection(collectionTitle) {
             verifySnackBarText("Tab saved!")
         }.goToHomescreenWithRedesignedToolbar {
-        }.expandCollection(collectionTitle) {
-            verifyTabSavedInCollection(firstTestPage.title)
-            verifyTabSavedInCollection(secondTestPage.title)
+        }.expandCollection(composeTestRule, collectionTitle) {
+            verifyTabSavedInCollection(composeTestRule, firstTestPage.title)
+            verifyTabSavedInCollection(composeTestRule, secondTestPage.title)
         }
     }
 
@@ -772,7 +769,7 @@ class MainMenuTestCompose : TestSetup() {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openThreeDotMenuFromRedesignedToolbar(composeTestRule) {
             expandMainMenu()
-        }.openExtensionsFromMainMenu() {
+        }.openExtensionsFromMainMenu {
             clickManageExtensionsButtonFromRedesignedMainMenu(composeTestRule)
         }.openDetailedMenuForAddon(addonName) {
             disableExtension()

@@ -1591,11 +1591,6 @@ impl Renderer {
                     "Received frame depends on a later GPU cache epoch ({:?}) than one we received last via `UpdateGpuCache` ({:?})",
                     frame.gpu_cache_frame_id, self.gpu_cache_frame_id);
 
-                {
-                    profile_scope!("gl.flush");
-                    self.device.gl().flush();  // early start on gpu cache updates
-                }
-
                 self.draw_frame(
                     frame,
                     device_size,
@@ -3516,6 +3511,7 @@ impl Renderer {
     fn composite_simple(
         &mut self,
         composite_state: &CompositeState,
+        frame_device_size: DeviceIntSize,
         fb_draw_target: DrawTarget,
         projection: &default::Transform3D<f32>,
         results: &mut RenderResults,
@@ -3532,12 +3528,12 @@ impl Renderer {
             .filter(|tile| tile.kind != TileKind::Clear).count();
         self.profile.set(profiler::PICTURE_TILES, num_tiles);
 
-        let window_is_opaque = match self.compositor_config.layer_compositor() {
+        let (window_is_opaque, enable_screenshot)  = match self.compositor_config.layer_compositor() {
             Some(ref compositor) => {
                 let props = compositor.get_window_properties();
-                props.is_opaque
+                (props.is_opaque, props.enable_screenshot)
             }
-            None => true,
+            None => (true, true)
         };
 
         let mut input_layers: Vec<CompositorInputLayer> = Vec::new();
@@ -3581,11 +3577,14 @@ impl Renderer {
                     CompositorSurfaceUsage::Content
                 }
                 CompositeTileSurface::ExternalSurface { external_surface_index } => {
-                    match self.current_compositor_kind {
-                        CompositorKind::Native { .. } | CompositorKind::Draw { .. } => {
+                    match (self.current_compositor_kind, enable_screenshot) {
+                        (CompositorKind::Native { .. }, _) | (CompositorKind::Draw { .. }, _) => {
                             CompositorSurfaceUsage::Content
                         }
-                        CompositorKind::Layer { .. } => {
+                        (CompositorKind::Layer { .. }, true) => {
+                            CompositorSurfaceUsage::Content
+                        }
+                        (CompositorKind::Layer { .. }, false) => {
                             let surface = &composite_state.external_surfaces[external_surface_index.0];
 
                             // TODO(gwc): For now, we only select a hardware overlay swapchain if we
@@ -3789,6 +3788,7 @@ impl Renderer {
         // Start compositing if using OS compositor
         if let Some(ref mut compositor) = self.compositor_config.layer_compositor() {
             let input = CompositorInputConfig {
+                enable_screenshot,
                 layers: &input_layers,
             };
             compositor.begin_frame(&input);
@@ -3818,7 +3818,7 @@ impl Renderer {
                     DrawTarget::NativeSurface {
                         offset: -layer.offset,
                         external_fbo_id: 0,
-                        dimensions: fb_draw_target.dimensions(),
+                        dimensions: frame_device_size,
                     }
                 }
                 // Native can be hit when switching compositors (disable when using Layer)
@@ -5044,10 +5044,6 @@ impl Renderer {
                 &mut self.device,
                 &pass.textures_to_invalidate,
             );
-            {
-                profile_scope!("gl.flush");
-                self.device.gl().flush();
-            }
         }
 
         self.composite_frame(
@@ -5130,6 +5126,7 @@ impl Renderer {
                 CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
                     self.composite_simple(
                         &frame.composite_state,
+                        frame.device_rect.size(),
                         draw_target,
                         &projection,
                         results,

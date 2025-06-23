@@ -66,7 +66,7 @@ class nsITheme : public nsISupports {
   using ComputedStyle = mozilla::ComputedStyle;
 
  public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_ITHEME_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_ITHEME_IID)
 
   /**
    * Draw the actual theme background.
@@ -80,10 +80,11 @@ class nsITheme : public nsISupports {
    *        box-shadow, though it's not a hard requirement.
    */
   enum class DrawOverflow { No, Yes };
-  NS_IMETHOD DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
-                                  StyleAppearance aWidgetType,
-                                  const nsRect& aRect, const nsRect& aDirtyRect,
-                                  DrawOverflow = DrawOverflow::Yes) = 0;
+  virtual void DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
+                                    StyleAppearance aWidgetType,
+                                    const nsRect& aRect,
+                                    const nsRect& aDirtyRect,
+                                    DrawOverflow = DrawOverflow::Yes) = 0;
 
   /**
    * Create WebRender commands for the theme background.
@@ -182,7 +183,7 @@ class nsITheme : public nsISupports {
   virtual bool WidgetAttributeChangeRequiresRepaint(StyleAppearance,
                                                     nsAtom* aAttribute) = 0;
 
-  NS_IMETHOD ThemeChanged() = 0;
+  virtual void ThemeChanged() {}
 
   virtual bool WidgetAppearanceDependsOnWindowFocus(
       StyleAppearance aWidgetType) {
@@ -229,9 +230,6 @@ class nsITheme : public nsISupports {
    */
   virtual bool ThemeDrawsFocusForWidget(nsIFrame*, StyleAppearance) = 0;
 
-  // Whether we want an inner focus ring for buttons and menulists.
-  virtual bool ThemeWantsButtonInnerFocusRing() { return false; }
-
   /**
    * Should we insert a dropmarker inside of combobox button?
    */
@@ -239,8 +237,6 @@ class nsITheme : public nsISupports {
 
   virtual bool ThemeSupportsScrollbarButtons() = 0;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsITheme, NS_ITHEME_IID)
 
 // Singleton accessor functions, these should never return null.
 //

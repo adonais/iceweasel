@@ -32,18 +32,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
-import mozilla.components.compose.base.annotation.LightDarkPreview
-import mozilla.components.support.ktx.kotlin.MAX_URI_LENGTH
+import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
@@ -93,13 +94,15 @@ fun TabListItem(
 ) {
     val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
     val density = LocalDensity.current
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
-    if (FeatureFlags.swipeToDismiss2) {
+    if (FeatureFlags.SWIPE_TO_DISMISS_2) {
         val swipeState = remember(multiSelectionEnabled, swipingEnabled) {
             SwipeToDismissState2(
                 density = density,
                 enabled = !multiSelectionEnabled && swipingEnabled,
                 decayAnimationSpec = decayAnimationSpec,
+                isRtl = isRtl,
             )
         }
 
@@ -217,7 +220,7 @@ private fun TabContent(
             .background(contentBackgroundColor)
             .then(clickableModifier)
             .padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
-            .testTag(TabsTrayTestTag.tabItemRoot)
+            .testTag(TabsTrayTestTag.TAB_ITEM_ROOT)
             .semantics {
                 selected = isSelected
             },
@@ -259,7 +262,7 @@ private fun TabContent(
                 onClick = { onCloseClick(tab) },
                 modifier = Modifier
                     .size(size = 48.dp)
-                    .testTag(TabsTrayTestTag.tabItemClose),
+                    .testTag(TabsTrayTestTag.TAB_ITEM_CLOSE),
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.mozac_ic_cross_24),
@@ -297,7 +300,7 @@ private fun Thumbnail(
             size = size,
             modifier = Modifier
                 .size(width = 92.dp, height = 72.dp)
-                .testTag(TabsTrayTestTag.tabItemThumbnail),
+                .testTag(TabsTrayTestTag.TAB_ITEM_THUMBNAIL),
             contentDescription = stringResource(id = R.string.mozac_browser_tabstray_open_tab),
         )
 
@@ -322,7 +325,7 @@ private fun Thumbnail(
                         .matchParentSize()
                         .padding(all = 8.dp),
                     contentDescription = null,
-                    tint = colorResource(id = R.color.mozac_ui_icons_fill),
+                    tint = FirefoxTheme.colors.iconActionPrimary,
                 )
             }
         }
@@ -339,7 +342,7 @@ private fun Thumbnail(
 }
 
 @Composable
-@LightDarkPreview
+@PreviewLightDark
 private fun TabListItemPreview() {
     FirefoxTheme {
         TabListItem(
@@ -353,7 +356,7 @@ private fun TabListItemPreview() {
 }
 
 @Composable
-@LightDarkPreview
+@PreviewLightDark
 private fun SelectedTabListItemPreview() {
     FirefoxTheme {
         TabListItem(

@@ -8,6 +8,11 @@ import { UniFFITypeError } from "resource://gre/modules/UniFFI.sys.mjs";
 // Objects intended to be used in the unit tests
 export var UnitTestObjs = {};
 
+let lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "decoder", () => new TextDecoder());
+ChromeUtils.defineLazyGetter(lazy, "encoder", () => new TextEncoder());
+
 // Write/Read data to/from an ArrayBuffer
 class ArrayBufferDataStream {
     constructor(arrayBuffer) {
@@ -128,11 +133,10 @@ class ArrayBufferDataStream {
 
 
     writeString(value) {
-      const encoder = new TextEncoder();
       // Note: in order to efficiently write this data, we first write the
       // string data, reserving 4 bytes for the size.
       const dest = new Uint8Array(this.dataView.buffer, this.pos + 4);
-      const encodeResult = encoder.encodeInto(value, dest);
+      const encodeResult = lazy.encoder.encodeInto(value, dest);
       if (encodeResult.read != value.length) {
         throw new UniFFIError(
             "writeString: out of space when writing to ArrayBuffer.  Did the computeSize() method returned the wrong result?"
@@ -146,10 +150,9 @@ class ArrayBufferDataStream {
     }
 
     readString() {
-      const decoder = new TextDecoder();
       const size = this.readUint32();
       const source = new Uint8Array(this.dataView.buffer, this.pos, size)
-      const value = decoder.decode(source);
+      const value = lazy.decoder.decode(source);
       this.pos += size;
       return value;
     }
@@ -172,7 +175,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     readPointerSearchEngineSelector() {
-        const pointerId = 4; // search:SearchEngineSelector
+        const pointerId = 5; // search:SearchEngineSelector
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -182,7 +185,7 @@ class ArrayBufferDataStream {
     // UniFFI Pointers are **always** 8 bytes long. That is enforced
     // by the C++ and Rust Scaffolding code.
     writePointerSearchEngineSelector(value) {
-        const pointerId = 4; // search:SearchEngineSelector
+        const pointerId = 5; // search:SearchEngineSelector
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -346,13 +349,11 @@ export class FfiConverterString extends FfiConverter {
     }
 
     static lift(buf) {
-        const decoder = new TextDecoder();
         const utf8Arr = new Uint8Array(buf);
-        return decoder.decode(utf8Arr);
+        return lazy.decoder.decode(utf8Arr);
     }
     static lower(value) {
-        const encoder = new TextEncoder();
-        return encoder.encode(value).buffer;
+        return lazy.encoder.encode(value).buffer;
     }
 
     static write(dataStream, value) {
@@ -364,8 +365,7 @@ export class FfiConverterString extends FfiConverter {
     }
 
     static computeSize(value) {
-        const encoder = new TextEncoder();
-        return 4 + encoder.encode(value).length
+        return 4 + lazy.encoder.encode(value).length
     }
 }
 
@@ -396,7 +396,7 @@ export class SearchEngineSelector {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                32, // search:uniffi_search_fn_constructor_searchengineselector_new
+                36, // search:uniffi_search_fn_constructor_searchengineselector_new
             )
         }
         return handleRustResult(functionCall(), liftResult, liftError);}
@@ -411,7 +411,7 @@ export class SearchEngineSelector {
         const liftError = null;
         const functionCall = () => {
             return UniFFIScaffolding.callSync(
-                27, // search:uniffi_search_fn_method_searchengineselector_clear_search_config
+                31, // search:uniffi_search_fn_method_searchengineselector_clear_search_config
                 FfiConverterTypeSearchEngineSelector.lower(this),
             )
         }
@@ -437,7 +437,7 @@ export class SearchEngineSelector {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                28, // search:uniffi_search_fn_method_searchengineselector_filter_engine_configuration
+                32, // search:uniffi_search_fn_method_searchengineselector_filter_engine_configuration
                 FfiConverterTypeSearchEngineSelector.lower(this),
                 FfiConverterTypeSearchUserEnvironment.lower(userEnvironment),
             )
@@ -461,7 +461,7 @@ export class SearchEngineSelector {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                29, // search:uniffi_search_fn_method_searchengineselector_set_config_overrides
+                33, // search:uniffi_search_fn_method_searchengineselector_set_config_overrides
                 FfiConverterTypeSearchEngineSelector.lower(this),
                 FfiConverterString.lower(overrides),
             )
@@ -489,7 +489,7 @@ export class SearchEngineSelector {
                 throw e;
             }
             return UniFFIScaffolding.callSync(
-                30, // search:uniffi_search_fn_method_searchengineselector_set_search_config
+                34, // search:uniffi_search_fn_method_searchengineselector_set_search_config
                 FfiConverterTypeSearchEngineSelector.lower(this),
                 FfiConverterString.lower(configuration),
             )
@@ -530,7 +530,7 @@ export class SearchEngineSelector {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                31, // search:uniffi_search_fn_method_searchengineselector_use_remote_settings_server
+                35, // search:uniffi_search_fn_method_searchengineselector_use_remote_settings_server
                 FfiConverterTypeSearchEngineSelector.lower(this),
                 FfiConverterTypeRemoteSettingsService.lower(service),
                 FfiConverterBool.lower(applyEngineOverrides),
@@ -615,7 +615,7 @@ export class JsonEngineUrl {
         }
         /**
          * The PrePath and FilePath of the URL. May include variables for engines
-         * which have a variable FilePath, e.g. `{searchTerm}` for when a search
+         * which have a variable FilePath, e.g. `{searchTerms}` for when a search
          * term is within the path of the url.
          * @type {?string}
          */
@@ -633,7 +633,7 @@ export class JsonEngineUrl {
         this.params = params;
         /**
          * The name of the query parameter for the search term. Automatically
-         * appended to the end of the query. This may be skipped if `{searchTerm}`
+         * appended to the end of the query. This may be skipped if `{searchTerms}`
          * is included in the base.
          * @type {?string}
          */
@@ -1343,7 +1343,7 @@ export class SearchEngineUrl {
         }
         /**
          * The PrePath and FilePath of the URL. May include variables for engines
-         * which have a variable FilePath, e.g. `{searchTerm}` for when a search
+         * which have a variable FilePath, e.g. `{searchTerms}` for when a search
          * term is within the path of the url.
          * @type {string}
          */
@@ -1361,7 +1361,7 @@ export class SearchEngineUrl {
         this.params = params;
         /**
          * The name of the query parameter for the search term. Automatically
-         * appended to the end of the query. This may be skipped if `{searchTerm}`
+         * appended to the end of the query. This may be skipped if `{searchTerms}`
          * is included in the base.
          * @type {?string}
          */
@@ -1965,17 +1965,20 @@ export const JsonEngineMethod = {
     /**
      * POST
      */
-    POST: 1,
+    POST:2,
     /**
      * GET
      */
-    GET: 2,
+    GET:1,
 };
 
 Object.freeze(JsonEngineMethod);
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeJsonEngineMethod extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(JsonEngineMethod);
+
     static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match Python bindings
         switch (dataStream.readInt32()) {
             case 1:
                 return JsonEngineMethod.POST
@@ -2003,7 +2006,8 @@ export class FfiConverterTypeJsonEngineMethod extends FfiConverterArrayBuffer {
     }
 
     static checkType(value) {
-      if (!Number.isInteger(value) || value < 1 || value > 2) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
           throw new UniFFITypeError(`${value} is not a valid value for JsonEngineMethod`);
       }
     }
@@ -2078,29 +2082,32 @@ export const SearchApplicationName = {
     /**
      * FIREFOX_ANDROID
      */
-    FIREFOX_ANDROID: 1,
+    FIREFOX_ANDROID:1,
     /**
      * FIREFOX_IOS
      */
-    FIREFOX_IOS: 2,
+    FIREFOX_IOS:2,
     /**
      * FOCUS_ANDROID
      */
-    FOCUS_ANDROID: 3,
+    FOCUS_ANDROID:3,
     /**
      * FOCUS_IOS
      */
-    FOCUS_IOS: 4,
+    FOCUS_IOS:4,
     /**
      * FIREFOX
      */
-    FIREFOX: 5,
+    FIREFOX:5,
 };
 
 Object.freeze(SearchApplicationName);
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeSearchApplicationName extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchApplicationName);
+
     static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match Python bindings
         switch (dataStream.readInt32()) {
             case 1:
                 return SearchApplicationName.FIREFOX_ANDROID
@@ -2146,7 +2153,8 @@ export class FfiConverterTypeSearchApplicationName extends FfiConverterArrayBuff
     }
 
     static checkType(value) {
-      if (!Number.isInteger(value) || value < 1 || value > 5) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
           throw new UniFFITypeError(`${value} is not a valid value for SearchApplicationName`);
       }
     }
@@ -2161,21 +2169,24 @@ export const SearchDeviceType = {
     /**
      * SMARTPHONE
      */
-    SMARTPHONE: 1,
+    SMARTPHONE:1,
     /**
      * TABLET
      */
-    TABLET: 2,
+    TABLET:2,
     /**
      * NONE
      */
-    NONE: 3,
+    NONE:3,
 };
 
 Object.freeze(SearchDeviceType);
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeSearchDeviceType extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchDeviceType);
+
     static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match Python bindings
         switch (dataStream.readInt32()) {
             case 1:
                 return SearchDeviceType.SMARTPHONE
@@ -2209,7 +2220,8 @@ export class FfiConverterTypeSearchDeviceType extends FfiConverterArrayBuffer {
     }
 
     static checkType(value) {
-      if (!Number.isInteger(value) || value < 1 || value > 3) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
           throw new UniFFITypeError(`${value} is not a valid value for SearchDeviceType`);
       }
     }
@@ -2224,17 +2236,20 @@ export const SearchEngineClassification = {
     /**
      * GENERAL
      */
-    GENERAL: 1,
+    GENERAL:2,
     /**
      * UNKNOWN
      */
-    UNKNOWN: 2,
+    UNKNOWN:1,
 };
 
 Object.freeze(SearchEngineClassification);
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeSearchEngineClassification extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchEngineClassification);
+
     static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match Python bindings
         switch (dataStream.readInt32()) {
             case 1:
                 return SearchEngineClassification.GENERAL
@@ -2262,7 +2277,8 @@ export class FfiConverterTypeSearchEngineClassification extends FfiConverterArra
     }
 
     static checkType(value) {
-      if (!Number.isInteger(value) || value < 1 || value > 2) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
           throw new UniFFITypeError(`${value} is not a valid value for SearchEngineClassification`);
       }
     }
@@ -2278,33 +2294,36 @@ export const SearchUpdateChannel = {
     /**
      * NIGHTLY
      */
-    NIGHTLY: 1,
+    NIGHTLY:1,
     /**
      * AURORA
      */
-    AURORA: 2,
+    AURORA:2,
     /**
      * BETA
      */
-    BETA: 3,
+    BETA:3,
     /**
      * RELEASE
      */
-    RELEASE: 4,
+    RELEASE:4,
     /**
      * ESR
      */
-    ESR: 5,
+    ESR:5,
     /**
      * DEFAULT
      */
-    DEFAULT: 6,
+    DEFAULT:6,
 };
 
 Object.freeze(SearchUpdateChannel);
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeSearchUpdateChannel extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchUpdateChannel);
+
     static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match Python bindings
         switch (dataStream.readInt32()) {
             case 1:
                 return SearchUpdateChannel.NIGHTLY
@@ -2356,7 +2375,8 @@ export class FfiConverterTypeSearchUpdateChannel extends FfiConverterArrayBuffer
     }
 
     static checkType(value) {
-      if (!Number.isInteger(value) || value < 1 || value > 6) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
           throw new UniFFITypeError(`${value} is not a valid value for SearchUpdateChannel`);
       }
     }
@@ -2720,7 +2740,7 @@ export class FfiConverterSequenceTypeSearchUrlParam extends FfiConverterArrayBuf
 import {
   FfiConverterTypeRemoteSettingsService,
   RemoteSettingsService,
-} from "resource://gre/modules/RustRemoteSettings.sys.mjs";
+} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustRemoteSettings.sys.mjs";
 
 // Export the FFIConverter object to make external types work.
 export { FfiConverterTypeRemoteSettingsService, RemoteSettingsService };

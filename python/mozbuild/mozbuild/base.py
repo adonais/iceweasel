@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 
 import mozpack.path as mozpath
-import six
 from mach.mixin.process import ProcessExecutionMixin
 from mozboot.mozconfig import MozconfigFindException
 from mozfile import which
@@ -20,6 +19,7 @@ from mozversioncontrol import (
     GitRepository,
     HgRepository,
     InvalidRepoPath,
+    JujutsuRepository,
     MissingConfigureInfo,
     MissingVCSTool,
     get_repository_from_build_config,
@@ -278,7 +278,7 @@ class MozbuildObject(ProcessExecutionMixin):
         # the environment variable, which has an impact on autodetection (when
         # path is MozconfigLoader.AUTODETECT), and memoization wouldn't account
         # for it without the explicit (unused) argument.
-        out = six.StringIO()
+        out = io.StringIO()
         env = os.environ
         if path and path != MozconfigLoader.AUTODETECT:
             env = dict(env)
@@ -1040,6 +1040,14 @@ class MachCommandConditions:
         """Must have a git source checkout."""
         try:
             return isinstance(cls.repository, GitRepository)
+        except InvalidRepoPath:
+            return False
+
+    @staticmethod
+    def is_jj(cls):
+        """Must have a jj source checkout."""
+        try:
+            return isinstance(cls.repository, JujutsuRepository)
         except InvalidRepoPath:
             return False
 

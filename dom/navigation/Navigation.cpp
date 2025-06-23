@@ -13,11 +13,13 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
+#include "nsIPrincipal.h"
 #include "nsIStructuredCloneContainer.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
 #include "nsTHashtable.h"
 
+#include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/HoldDropJSObjects.h"
@@ -172,7 +174,7 @@ NavigationActivation* Navigation::GetActivation() const { return mActivation; }
 
 // https://html.spec.whatwg.org/#has-entries-and-events-disabled
 bool Navigation::HasEntriesAndEventsDisabled() const {
-  Document* doc = GetDocumentIfCurrent();
+  Document* doc = GetAssociatedDocument();
   return !doc || !doc->IsCurrentActiveDocument() ||
          (NS_IsAboutBlankAllowQueryAndFragment(doc->GetDocumentURI()) &&
           doc->IsInitialDocument()) ||
@@ -300,6 +302,159 @@ void Navigation::ScheduleEventsFromNavigation(
       }));
 }
 
+// https://html.spec.whatwg.org/#navigation-api-early-error-result
+void Navigation::SetEarlyErrorResult(NavigationResult& aResult,
+                                     ErrorResult&& aRv) const {
+  MOZ_ASSERT(aRv.Failed());
+  // An early error result for an exception e is a NavigationResult dictionary
+  // instance given by
+  // «[ "committed" → a promise rejected with e,
+  //    "finished" → a promise rejected with e ]».
+
+  RefPtr global = GetOwnerGlobal();
+  if (!global) {
+    // Creating a promise should only fail if there is no global.
+    // In this case, the only solution is to ignore the error.
+    aRv.SuppressException();
+    return;
+  }
+  ErrorResult rv2;
+  aRv.CloneTo(rv2);
+  aResult.mCommitted.Reset();
+  aResult.mCommitted.Construct(
+      Promise::CreateRejectedWithErrorResult(global, aRv));
+  aResult.mFinished.Reset();
+  aResult.mFinished.Construct(
+      Promise::CreateRejectedWithErrorResult(global, rv2));
+}
+
+// https://html.spec.whatwg.org/#navigation-api-method-tracker-derived-result
+static void CreateResultFromAPIMethodTracker(
+    NavigationAPIMethodTracker* aApiMethodTracker, NavigationResult& aResult) {
+  // A navigation API method tracker-derived result for a navigation API
+  // method tracker is a NavigationResult dictionary instance given by
+  // «[ "committed" → apiMethodTracker's committed promise,
+  //    "finished" → apiMethodTracker's finished promise ]».
+  MOZ_ASSERT(aApiMethodTracker);
+  aResult.mCommitted.Reset();
+  aResult.mCommitted.Construct(aApiMethodTracker->mCommittedPromise.forget());
+  aResult.mFinished.Reset();
+  aResult.mFinished.Construct(aApiMethodTracker->mFinishedPromise.forget());
+}
+
+bool Navigation::CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(
+    const Document* aDocument, NavigationResult& aResult) const {
+  if (!aDocument || !aDocument->IsFullyActive()) {
+    ErrorResult rv;
+    rv.ThrowInvalidStateError("Document is not fully active");
+    SetEarlyErrorResult(aResult, std::move(rv));
+    return false;
+  }
+  return true;
+}
+
+bool Navigation::CheckDocumentUnloadCounterAndMaybeSetEarlyErrorResult(
+    const Document* aDocument, NavigationResult& aResult) const {
+  if (!aDocument || aDocument->ShouldIgnoreOpens()) {
+    ErrorResult rv;
+    rv.ThrowInvalidStateError("Document is unloading");
+    SetEarlyErrorResult(aResult, std::move(rv));
+    return false;
+  }
+  return true;
+}
+
+already_AddRefed<nsIStructuredCloneContainer>
+Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
+    JSContext* aCx, const JS::Value& aState, NavigationResult& aResult) const {
+  JS::Rooted<JS::Value> state(aCx, aState);
+  RefPtr global = GetOwnerGlobal();
+  MOZ_DIAGNOSTIC_ASSERT(global);
+
+  RefPtr<nsIStructuredCloneContainer> serializedState =
+      new nsStructuredCloneContainer();
+  const nsresult rv = serializedState->InitFromJSVal(state, aCx);
+  if (NS_FAILED(rv)) {
+    JS::Rooted<JS::Value> exception(aCx);
+    if (JS_GetPendingException(aCx, &exception)) {
+      JS_ClearPendingException(aCx);
+      aResult.mCommitted.Reset();
+      aResult.mCommitted.Construct(
+          Promise::Reject(global, exception, IgnoreErrors()));
+      aResult.mFinished.Reset();
+      aResult.mFinished.Construct(
+          Promise::Reject(global, exception, IgnoreErrors()));
+      return nullptr;
+    }
+    SetEarlyErrorResult(aResult, ErrorResult(rv));
+    return nullptr;
+  }
+  return serializedState.forget();
+}
+
+// https://html.spec.whatwg.org/#dom-navigation-reload
+void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
+                        NavigationResult& aResult) {
+  // 1. Let document be this's relevant global object's associated Document.
+  const RefPtr<Document> document = GetAssociatedDocument();
+  if (!document) {
+    return;
+  }
+
+  // 2. Let serializedState be StructuredSerializeForStorage(undefined).
+  RefPtr<nsIStructuredCloneContainer> serializedState;
+
+  // 3. If options["state"] exists, then set serializedState to
+  //    StructuredSerializeForStorage(options["state"]). If this throws an
+  //    exception, then return an early error result for that exception.
+  if (!aOptions.mState.isUndefined()) {
+    serializedState = CreateSerializedStateAndMaybeSetEarlyErrorResult(
+        aCx, aOptions.mState, aResult);
+    if (!serializedState) {
+      return;
+    }
+  } else {
+    // 4. Otherwise:
+    // 4.1 Let current be the current entry of this.
+    // 4.2 If current is not null, then set serializedState to current's
+    //     session history entry's navigation API state.
+    if (RefPtr<NavigationHistoryEntry> current = GetCurrentEntry()) {
+      serializedState = current->GetNavigationState();
+    }
+  }
+  // 5. If document is not fully active, then return an early error result for
+  //    an "InvalidStateError" DOMException.
+  if (!CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(document,
+                                                               aResult)) {
+    return;
+  }
+
+  // 6. If document's unload counter is greater than 0, then return an early
+  //    error result for an "InvalidStateError" DOMException.
+  if (!CheckDocumentUnloadCounterAndMaybeSetEarlyErrorResult(document,
+                                                             aResult)) {
+    return;
+  }
+
+  // 7. Let info be options["info"], if it exists; otherwise, undefined.
+  JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
+  // 8. Let apiMethodTracker be the result of maybe setting the upcoming
+  //    non-traverse API method tracker for this given info and serializedState.
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      MaybeSetUpcomingNonTraverseAPIMethodTracker(info, serializedState);
+  MOZ_ASSERT(apiMethodTracker);
+  // 9. Reload document's node navigable with navigationAPIState set to
+  //    serializedState.
+  RefPtr docShell = nsDocShell::Cast(document->GetDocShell());
+  MOZ_ASSERT(docShell);
+  docShell->ReloadNavigable(aCx, nsIWebNavigation::LOAD_FLAGS_NONE,
+                            serializedState);
+
+  // 10. Return a navigation API method tracker-derived result for
+  //     apiMethodTracker.
+  CreateResultFromAPIMethodTracker(apiMethodTracker, aResult);
+}
+
 namespace {
 
 void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
@@ -369,16 +524,16 @@ bool Navigation::FireTraverseNavigateEvent(
       aCx, NavigationType::Traverse, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None),
       /* aSourceElement */ nullptr,
-      /* aFormDataEntryList*/ Nothing(),
+      /* aFormDataEntryList*/ nullptr,
       /* aClassicHistoryAPIState */ nullptr,
-      /* aDownloadRequestFilename */ u""_ns);
+      /* aDownloadRequestFilename */ VoidString());
 }
 
 // https://html.spec.whatwg.org/#fire-a-push/replace/reload-navigate-event
 bool Navigation::FirePushReplaceReloadNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
     bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
-    Element* aSourceElement, Maybe<const FormData&> aFormDataEntryList,
+    Element* aSourceElement, already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
     nsIStructuredCloneContainer* aClassicHistoryAPIState) {
   // To not unnecessarily create an event that's never used, step 1 and step 2
@@ -396,8 +551,8 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
   return InnerFireNavigateEvent(
       aCx, aNavigationType, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
-      aFormDataEntryList, aClassicHistoryAPIState,
-      /* aDownloadRequestFilename */ u""_ns);
+      std::move(aFormDataEntryList), aClassicHistoryAPIState,
+      /* aDownloadRequestFilename */ VoidString());
 }
 
 // https://html.spec.whatwg.org/#fire-a-download-request-navigate-event
@@ -419,7 +574,7 @@ bool Navigation::FireDownloadRequestNavigateEvent(
   // Step 8
   return InnerFireNavigateEvent(
       aCx, NavigationType::Push, destination, aUserInvolvement, aSourceElement,
-      /* aFormDataEntryList */ Nothing(),
+      /* aFormDataEntryList */ nullptr,
       /* aClassicHistoryAPIState */ nullptr, aFilename);
 }
 
@@ -449,7 +604,14 @@ static bool HasUAVisualTransition(Maybe<Document&>) { return false; }
 static bool EqualsExceptRef(nsIURI* aURI, nsIURI* aOtherURI) {
   bool equalsExceptRef = false;
   return aURI && aOtherURI &&
-         NS_SUCCEEDED(aURI->EqualsExceptRef(aOtherURI, &equalsExceptRef));
+         NS_SUCCEEDED(aURI->EqualsExceptRef(aOtherURI, &equalsExceptRef)) &&
+         equalsExceptRef;
+}
+
+static bool Equals(nsIURI* aURI, nsIURI* aOtherURI) {
+  bool equals = false;
+  return aURI && aOtherURI && NS_SUCCEEDED(aURI->Equals(aOtherURI, &equals)) &&
+         equals;
 }
 
 static bool HasIdenticalFragment(nsIURI* aURI, nsIURI* aOtherURI) {
@@ -501,7 +663,7 @@ bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
     NavigationDestination* aDestination,
     UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
-    Maybe<const FormData&> aFormDataEntryList,
+    already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename) {
   // Step 1
@@ -572,7 +734,7 @@ bool Navigation::InnerFireNavigateEvent(
 
   // Step 17
   init.mHasUAVisualTransition =
-      HasUAVisualTransition(ToMaybeRef(GetDocumentIfCurrent()));
+      HasUAVisualTransition(ToMaybeRef(GetAssociatedDocument()));
 
   // Step 18
   init.mSourceElement = aSourceElement;
@@ -596,7 +758,7 @@ bool Navigation::InnerFireNavigateEvent(
   init.mUserInitiated = aUserInvolvement != UserNavigationInvolvement::None;
 
   // Step 24
-  init.mFormData = aFormDataEntryList ? aFormDataEntryList->Clone() : nullptr;
+  init.mFormData = aFormDataEntryList;
 
   // Step 25
   MOZ_DIAGNOSTIC_ASSERT(!mOngoingNavigateEvent);
@@ -609,6 +771,9 @@ bool Navigation::InnerFireNavigateEvent(
   // delay it until here.
   RefPtr<NavigateEvent> event = NavigateEvent::Constructor(
       this, u"navigate"_ns, init, aClassicHistoryAPIState, abortController);
+  // Here we're running #concept-event-create from https://dom.spec.whatwg.org/
+  // which explicitly sets event's isTrusted attribute to true.
+  event->SetTrusted(true);
 
   // Step 26
   mOngoingNavigateEvent = event;
@@ -674,7 +839,8 @@ bool Navigation::InnerFireNavigateEvent(
           docShell->UpdateURLAndHistory(
               document, aDestination->GetURI(), event->ClassicHistoryAPIState(),
               *NavigationUtils::NavigationHistoryBehavior(aNavigationType),
-              document->GetDocumentURI(), aDestination->SameDocument());
+              document->GetDocumentURI(),
+              Equals(aDestination->GetURI(), document->GetDocumentURI()));
         }
         break;
       case NavigationType::Reload:
@@ -890,7 +1056,7 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
   }
 
   // Step 6
-  if (event->HasBeenDispatched()) {
+  if (event->IsBeingDispatched()) {
     event->PreventDefault();
   }
 
@@ -929,6 +1095,16 @@ bool Navigation::FocusedChangedDuringOngoingNavigation() const {
 void Navigation::SetFocusedChangedDuringOngoingNavigation(
     bool aFocusChangedDUringOngoingNavigation) {
   mFocusChangedDuringOngoingNavigation = aFocusChangedDUringOngoingNavigation;
+}
+
+bool Navigation::HasOngoingNavigateEvent() const {
+  return mOngoingNavigateEvent;
+}
+
+// The associated document of navigation's relevant global object.
+Document* Navigation::GetAssociatedDocument() const {
+  nsGlobalWindowInner* window = GetOwnerWindow();
+  return window ? window->GetDocument() : nullptr;
 }
 
 void Navigation::LogHistory() const {

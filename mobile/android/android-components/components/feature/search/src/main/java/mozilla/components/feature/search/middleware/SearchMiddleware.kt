@@ -5,16 +5,19 @@
 package mozilla.components.feature.search.middleware
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import mozilla.appservices.remotesettings.RemoteSettingsClient
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
+import mozilla.components.feature.search.R
 import mozilla.components.feature.search.storage.BundledSearchEnginesStorage
 import mozilla.components.feature.search.storage.CustomSearchEngineStorage
 import mozilla.components.feature.search.storage.SearchEngineSelectorConfig
@@ -37,6 +40,8 @@ data class SearchExtraParams(
     val channelIdName: String,
     val channelIdParam: String,
 )
+
+internal const val SEARCH_CONFIG_ICONS_COLLECTION_NAME = "search-config-icons"
 
 /**
  * [Middleware] implementation for loading and saving [SearchEngine]s whenever the state changes.
@@ -68,8 +73,16 @@ class SearchMiddleware(
 ) : Middleware<BrowserState, BrowserAction> {
     private val logger = Logger("SearchMiddleware")
     private val scope = CoroutineScope(ioDispatcher)
+    private val defaultSearchEngineIcon = BitmapFactory.decodeResource(
+        context.resources,
+        R.drawable.search_engine_placeholder,
+    )
+    private val client: RemoteSettingsClient? =
+        searchEngineSelectorConfig?.service?.remoteSettingsService?.makeClient(SEARCH_CONFIG_ICONS_COLLECTION_NAME)
     private val searchEngineSelectorRepository: SearchEngineRepository? =
-        searchEngineSelectorConfig?.let { SearchEngineSelectorRepository(it) }
+        searchEngineSelectorConfig?.let {
+                SearchEngineSelectorRepository(it, defaultSearchEngineIcon, client)
+        }
 
     override fun invoke(
         context: MiddlewareContext<BrowserState, BrowserAction>,

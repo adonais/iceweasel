@@ -11,6 +11,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
+  LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
@@ -144,6 +145,11 @@ Preferences.addAll([
   { id: "layout.css.always_underline_links", type: "bool" },
   { id: "layout.spellcheckDefault", type: "int" },
   { id: "accessibility.tabfocus", type: "int" },
+  { id: "browser.ml.linkPreview.enabled", type: "bool" },
+  { id: "browser.ml.linkPreview.optin", type: "bool" },
+  { id: "browser.ml.linkPreview.shift", type: "bool" },
+  { id: "browser.ml.linkPreview.shiftAlt", type: "bool" },
+  { id: "browser.ml.linkPreview.longPress", type: "bool" },
 
   {
     id: "browser.preferences.defaultPerformanceSettings.enabled",
@@ -263,6 +269,29 @@ Preferences.addSetting({
   },
 });
 Preferences.addSetting({
+  id: "linkPreviewEnabled",
+  pref: "browser.ml.linkPreview.enabled",
+  visible: () => LinkPreview.canShowPreferences,
+});
+Preferences.addSetting({
+  id: "linkPreviewKeyPoints",
+  pref: "browser.ml.linkPreview.optin",
+  visible: () => LinkPreview.canShowKeyPoints,
+});
+Preferences.addSetting({
+  id: "linkPreviewShift",
+  pref: "browser.ml.linkPreview.shift",
+});
+Preferences.addSetting({
+  id: "linkPreviewShiftAlt",
+  pref: "browser.ml.linkPreview.shiftAlt",
+  visible: () => LinkPreview.canShowLegacy,
+});
+Preferences.addSetting({
+  id: "linkPreviewLongPress",
+  pref: "browser.ml.linkPreview.longPress",
+});
+Preferences.addSetting({
   id: "alwaysUnderlineLinks",
   pref: "layout.css.always_underline_links",
 });
@@ -304,6 +333,7 @@ Preferences.addSetting({
 
 let SETTINGS_CONFIG = {
   browsing: {
+    l10nId: "browsing-group-label",
     items: [
       {
         id: "useAutoScroll",
@@ -358,6 +388,29 @@ let SETTINGS_CONFIG = {
         l10nId: "browsing-cfr-features",
         supportPage: "extensionrecommendations",
         subcategory: "cfrfeatures",
+      },
+      {
+        id: "linkPreviewEnabled",
+        l10nId: "link-preview-settings-enable",
+        subcategory: "link-preview",
+        items: [
+          {
+            id: "linkPreviewKeyPoints",
+            l10nId: "link-preview-settings-key-points",
+          },
+          {
+            id: "linkPreviewShift",
+            l10nId: "link-preview-settings-shift",
+          },
+          {
+            id: "linkPreviewShiftAlt",
+            l10nId: "link-preview-settings-shift-alt",
+          },
+          {
+            id: "linkPreviewLongPress",
+            l10nId: "link-preview-settings-long-press",
+          },
+        ],
       },
     ],
   },
@@ -3754,8 +3807,7 @@ var gMainPane = {
     }
     // note: downloadFolder.value is not read elsewhere in the code, its only purpose is to display to the user
     downloadFolder.value = folderDisplayName;
-    downloadFolder.style.backgroundImage =
-      "url(moz-icon://" + iconUrlSpec + "?size=16)";
+    downloadFolder.style.backgroundImage = `image-set("moz-icon://${iconUrlSpec}?size=16&scale=1" 1x, "moz-icon://${iconUrlSpec}?size=16&scale=2" 2x, "moz-icon://${iconUrlSpec}?size=16&scale=3" 3x)`;
   },
 
   async _getSystemDownloadFolderDetails(folderIndex) {
@@ -3969,12 +4021,11 @@ function getLocalHandlerApp(aFile) {
 let gHandlerListItemFragment = MozXULElement.parseXULToFragment(`
   <richlistitem>
     <hbox class="typeContainer" flex="1" align="center">
-      <image class="typeIcon" width="16" height="16"
-              src="moz-icon://goat?size=16"/>
+      <html:img class="typeIcon" width="16" height="16" />
       <label class="typeDescription" flex="1" crop="end"/>
     </hbox>
     <hbox class="actionContainer" flex="1" align="center">
-      <image class="actionIcon" width="16" height="16"/>
+      <html:img class="actionIcon" width="16" height="16"/>
       <label class="actionDescription" flex="1" crop="end"/>
     </hbox>
     <hbox class="actionsMenuContainer" flex="1">
@@ -4024,7 +4075,7 @@ class HandlerListItem {
     let typeDescription = this.handlerInfoWrapper.typeDescription;
     this.setOrRemoveAttributes([
       [null, "type", this.handlerInfoWrapper.type],
-      [".typeIcon", "src", this.handlerInfoWrapper.smallIcon],
+      [".typeIcon", "srcset", this.handlerInfoWrapper.iconSrcSet],
     ]);
     localizeElement(
       this.node.querySelector(".typeDescription"),
@@ -4039,8 +4090,8 @@ class HandlerListItem {
       [null, APP_ICON_ATTR_NAME, actionIconClass],
       [
         ".actionIcon",
-        "src",
-        actionIconClass ? null : this.handlerInfoWrapper.actionIcon,
+        "srcset",
+        actionIconClass ? null : this.handlerInfoWrapper.actionIconSrcset,
       ],
     ]);
     const selectedItem = this.node.querySelector("[selected=true]");
@@ -4173,6 +4224,20 @@ class HandlerInfoWrapper {
     }
 
     return "";
+  }
+
+  get actionIconSrcset() {
+    let icon = this.actionIcon;
+    if (!icon || !icon.startsWith("moz-icon:")) {
+      return icon;
+    }
+    // We rely on the icon already having the ?size= parameter.
+    let srcset = [];
+    for (let scale of [1, 2, 3]) {
+      let scaledIcon = icon + "&scale=" + scale;
+      srcset.push(`${scaledIcon} ${scale}x`);
+    }
+    return srcset.join(", ");
   }
 
   get actionIcon() {
@@ -4336,17 +4401,25 @@ class HandlerInfoWrapper {
     gHandlerService.store(this.wrappedHandlerInfo);
   }
 
-  get smallIcon() {
-    return this._getIcon(16);
+  get iconSrcSet() {
+    let srcset = [];
+    for (let scale of [1, 2]) {
+      let icon = this._getIcon(16, scale);
+      if (!icon) {
+        return null;
+      }
+      srcset.push(`${icon} ${scale}x`);
+    }
+    return srcset.join(", ");
   }
 
-  _getIcon(aSize) {
+  _getIcon(aSize, aScale = 1) {
     if (this.primaryExtension) {
-      return "moz-icon://goat." + this.primaryExtension + "?size=" + aSize;
+      return `moz-icon://goat.${this.primaryExtension}?size=${aSize}&scale=${aScale}`;
     }
 
     if (this.wrappedHandlerInfo instanceof Ci.nsIMIMEInfo) {
-      return "moz-icon://goat?size=" + aSize + "&contentType=" + this.type;
+      return `moz-icon://goat?size=${aSize}&scale=${aScale}&contentType=${this.type}`;
     }
 
     // FIXME: consider returning some generic icon when we can't get a URL for

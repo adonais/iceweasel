@@ -48,12 +48,8 @@
     Explanation for private browsing displayed to users on home view when they first enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="private_browsing_placeholder_description_2">Ilovadan chiqsangiz yoki ularni yopsangiz, qidiruv va brauzer tarixini  %1$s shaxsiy yorliqlardan tozalaydi. Garchi bu sizni veb-saytlar yoki Internet-provayderingiz uchun nomaʼlum qilmasa ham, Internetda qilgan ishingizni ushbu qurilmadan foydalanadigan har kimdan maxfiy saqlashni osonlashtiradi.</string>
+  <string name="private_browsing_placeholder_description_2">Ilovadan chiqsangiz yoki ularni yopsangiz, qidiruv va brauzer tarixini %1$s shaxsiy yorliqlardan tozalaydi. Garchi bu sizni veb-saytlar yoki Internet-provayderingiz uchun nomaʼlum qilmasa ham, Internetda qilgan ishingizni ushbu qurilmadan foydalanadigan har kimdan maxfiy saqlashni osonlashtiradi.</string>
   <string name="private_browsing_common_myths">Maxfiy koʻrish haqidagi umumiy afsonalar</string>
-  <!-- Text for the positive button to accept adding a Private Browsing shortcut to the Home screen -->
-  <string name="private_mode_cfr_pos_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Bosh ekranga qoʻshish</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">Kerak emas</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
 
@@ -236,19 +232,19 @@
 
     Home onboarding dialog welcome screen title text.
   -->
-  <string name="onboarding_home_welcome_title_2">Shaxsiy internetga xush kelibsiz</string>
+  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">Shaxsiy internetga xush kelibsiz</string>
   <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description">Koʻplab ranglar. Yaxshiroq maxfiylik. Odamlarga foydali bir xil majburiyat.</string>
+  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">Koʻplab ranglar. Yaxshiroq maxfiylik. Odamlarga foydali bir xil majburiyat.</string>
   <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3">Ekranlarga oʻtish har doimgidan osonroq</string>
+  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">Ekranlarga oʻtish har doimgidan osonroq</string>
   <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description">Endi bosh sahifangizda boshqa qurilmalardagi varaqlarda toʻxtagan joydan davom etasiz.</string>
+  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">Endi bosh sahifangizda boshqa qurilmalardagi varaqlarda toʻxtagan joydan davom etasiz.</string>
   <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button">Boshlash</string>
+  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">Boshlash</string>
   <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button">Kirish</string>
+  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">Kirish</string>
   <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button">Tashlab ketish</string>
+  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Tashlab ketish</string>
   <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message">Varaqlar sinxronlanmoqda! Ishni qolgan joyidan boshqa qurilmada davom ettiring.</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
@@ -280,7 +276,7 @@
   <!-- Preference for settings related to Search -->
   <string name="preferences_search">Izlash</string>
   <!-- Preference link to rating Fenix on the Play Store -->
-  <string name="preferences_rate">"Google Play"da baholash</string>
+  <string name="preferences_rate">\"Google Play\"da baholash</string>
   <!--
     Preference linking to about page for Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -323,7 +319,7 @@
   <!-- Message shown in the error page for when trying to access a http website while https only mode is enabled. The message has two paragraphs. This is the first. -->
   <string name="errorpage_httpsonly_message_title">Katta ehtimollik bilan sayt HTTPS protokoli bilan ishlamaydi.</string>
   <!-- Message shown in the error page for when trying to access a http website while https only mode is enabled. The message has two paragraphs. This is the second. -->
-  <string name="errorpage_httpsonly_message_summary">Biroq, hujumchi ishtirok etishi ham mumkin. Agar saytga kirishda davom etsangiz, hech qanday shaxsiy maʼlumotlarni kiritmasligingiz kerak. Davom etsangiz, sayt uchun "faqat HTTPS rejimi" vaqtinchalik oʻchirib qoʻyiladi.</string>
+  <string name="errorpage_httpsonly_message_summary">Biroq, hujumchi ishtirok etishi ham mumkin. Agar saytga kirishda davom etsangiz, hech qanday shaxsiy maʼlumotlarni kiritmasligingiz kerak. Davom etsangiz, sayt uchun \"faqat HTTPS rejimi\" vaqtinchalik oʻchirib qoʻyiladi.</string>
   <!-- Preference for accessibility -->
   <string name="preferences_accessibility">Qulaylik</string>
   <!-- Preference to override the Sync token server -->
@@ -394,9 +390,9 @@
   -->
   <string name="customize_toggle_recently_visited">Oxirgi ochilgan</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2">Oʻylantiruvchi hikoyalar</string>
+  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Oʻylantiruvchi hikoyalar</string>
   <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary">%s maqolalari</string>
+  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">%s maqolalari</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Homiy maqolalari</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -506,7 +502,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">&lt;b&gt;firefox.com/pair&lt;/b&gt; manzilida koʻrsatilgan QR kodni skanerlang</string>
+  <string name="pair_instructions_2"><![CDATA[<b>firefox.com/pair</b> manzilida koʻrsatilgan QR kodni skanerlang]]></string>
   <!--
     Toolbar Preferences
 
@@ -739,22 +735,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Tarix yoʻq</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Yuklanmalar olib tashlandi</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s olib tashlandi</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">Yuklab olingan fayllar yoʻq</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">Tanlandi: %1$d</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Olib tashlash</string>
   <!--
     Crashes
 
@@ -1157,7 +1141,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">Kodni skanerlang</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">KompYuteringizda Firefoxni oching va &lt;b&gt;https://firefox.com/pair&lt;/b&gt;ga oʻting</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[KompYuteringizda Firefoxni oching va <b>https://firefox.com/pair</b>ga oʻting]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">Skanerlashga tayyor</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1165,7 +1149,7 @@
   <!-- Text shown for settings option for sign with email -->
   <string name="sign_in_with_email">Buning oʻrniga e-pochtadan foydalaning</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
-  <string name="sign_in_create_account_text" tools:ignore="BrandUsage">Hisobingiz yoʻqmi? &lt;u&gt;Unda yangisini yarating&lt;/u&gt; va Firefoxni qurilmalararo sinxronlang.</string>
+  <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Hisobingiz yoʻqmi? <u>Unda yangisini yarating</u> va Firefoxni qurilmalararo sinxronlang.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s hisobingiz bilan sinxronlashni toʻxtatadi, ammo qurilmangizdagi brauzer tarixini oʻchirmaydi.</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
@@ -1187,7 +1171,7 @@
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standart</string>
   <!-- Accessibility text for the Standard protection information icon -->
-  <string name="preference_enhanced_tracking_protection_standard_info_button">Standart kuzatuv muhofazasi orqali nimalar  bloklangan?</string>
+  <string name="preference_enhanced_tracking_protection_standard_info_button">Standart kuzatuv muhofazasi orqali nimalar bloklangan?</string>
   <!-- Preference for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict">Qatʼiy</string>
   <!-- Accessibility text for the Strict protection information icon -->
@@ -1482,7 +1466,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Qidiruv qatorining Namuna formatiga mos kelishini tekshiring</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">“%s”ga ulanishda xatolik yuz berdi</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s”ga ulanishda xatolik yuz berdi</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s yaratildi</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -1494,9 +1478,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. Android Sozlamalarini oching</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;Ruxsatlar&lt;/b&gt; ustiga bosing</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>Ruxsatlar</b> ustiga bosing]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. &lt;b&gt;%1$s&lt;/b&gt;YONIQ ustiga bosing</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. <b>%1$s</b>YONIQ ustiga bosing]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">Ulanish xavfsiz</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -1504,7 +1488,7 @@
   <!-- Label to clear site data -->
   <string name="clear_site_data">Cookie va sayt maʼlumotlarini tozalash</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data">&lt;b&gt;%s&lt;/b&gt; saytining barcha cookie fayllari va maʼlumotlarini oʻchirib tashlashni istaysizmi?</string>
+  <string name="confirm_clear_site_data"><![CDATA[<b>%s</b> saytining barcha cookie fayllari va maʼlumotlarini oʻchirib tashlashni istaysizmi?]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">Barcha saytlarga berilgan barcha ruxsatlarni olib tashlashni xoxhlaysizmi?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -1543,7 +1527,7 @@
   <!-- This is the hint text that is shown inline on the hostname field of the create new login page. 'https://www.example.com' intentionally hardcoded here -->
   <string name="add_login_hostname_hint_text">https://www.example.com</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname does not contain http or https. -->
-  <string name="add_login_hostname_invalid_text_3">Veb manzilda "https://" yoki "http://" boʻlishi kerak</string>
+  <string name="add_login_hostname_invalid_text_3">Veb manzilda \"https://\" yoki \"http://\" boʻlishi kerak</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname is invalid. -->
   <string name="add_login_hostname_invalid_text_2">Host nomi xatosiz kiritilishi kerak</string>
   <!--
@@ -1615,7 +1599,7 @@
   <!-- A call to action below the description to allow the user to turn on the auto closing of inactive tabs. -->
   <string name="inactive_tabs_auto_close_message_action" tools:ignore="UnusedResources">AVTOMATIK YOPISHNI YOQISH</string>
   <!-- Text for the snackbar to confirm auto-close is enabled for inactive tabs -->
-  <string name="inactive_tabs_auto_close_message_snackbar">Avtomatik  yoqish yoniq</string>
+  <string name="inactive_tabs_auto_close_message_snackbar">Avtomatik yoqish yoniq</string>
   <!--
     Awesome bar suggestion's headers
 
@@ -1637,17 +1621,17 @@
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1">Oʻylantiruvchi hikoyalar</string>
+  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Oʻylantiruvchi hikoyalar</string>
   <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header">Mavzu boʻyicha hikoyalar</string>
+  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Mavzu boʻyicha hikoyalar</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">Koʻproq bilib oling</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Koʻproq bilib oling</string>
   <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2">%s tomonidan quvvatlanadi.</string>
+  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">%s tomonidan quvvatlanadi.</string>
   <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" tools:ignore="BrandUsage">Firefox oilasining bir qismi hisoblanadi. %s</string>
+  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox oilasining bir qismi hisoblanadi. %s</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">Batafsil ma’lumot</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Batafsil ma’lumot</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Homiylik qilgan</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->

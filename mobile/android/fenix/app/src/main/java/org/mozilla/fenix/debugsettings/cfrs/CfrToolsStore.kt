@@ -13,9 +13,7 @@ import mozilla.components.lib.state.UiStore
  * Value type that represents the state of the CFR Tools.
  *
  * @property homepageSyncShown Whether the homepage sync CFR has been shown.
- * @property homepageNavToolbarShown Whether the homepage navigation toolbar CFR has been shown.
  * @property homepageSearchBarShown Whether the homepage search toolbar CFR has been shown.
- * @property navButtonsShown Whether the navigation buttons CFR has been shown.
  * @property tabAutoCloseBannerShown Whether the tab auto close banner CFR has been shown.
  * @property inactiveTabsShown Whether the inactive tabs CFR has been shown.
  * @property openInAppShown Whether the open in app CFR has been shown.
@@ -23,9 +21,7 @@ import mozilla.components.lib.state.UiStore
  */
 data class CfrToolsState(
     val homepageSyncShown: Boolean = false,
-    val homepageNavToolbarShown: Boolean = false,
     val homepageSearchBarShown: Boolean = false,
-    val navButtonsShown: Boolean = false,
     val tabAutoCloseBannerShown: Boolean = false,
     val inactiveTabsShown: Boolean = false,
     val openInAppShown: Boolean = false,
@@ -48,19 +44,9 @@ sealed class CfrToolsAction : Action {
     data object HomepageSyncShownToggled : CfrToolsAction()
 
     /**
-     * Toggle whether the homepage navigation toolbar CFR has been shown.
-     */
-    data object HomepageNavToolbarShownToggled : CfrToolsAction()
-
-    /**
      * Toggle whether the homepage searchbar CFR has been shown.
      */
     data object HomepageSearchBarShownToggled : CfrToolsAction()
-
-    /**
-     * Toggle whether the navigation buttons CFR has been shown.
-     */
-    data object NavButtonsShownToggled : CfrToolsAction()
 
     /**
      * Toggle whether the tab auto close banner CFR has been shown.
@@ -90,70 +76,54 @@ sealed class CfrToolsAction : Action {
     /**
      * [Action] fired when the user toggles a CFR.
      */
-    sealed interface CfrPreferenceUpdate
+    sealed interface LoadCfrPreference
 
     /**
-     * [CfrPreferenceUpdate] fired when the user toggles the homepage sync CFR.
+     * Action fired when initializing the [CfrPreferencesRepository]
      *
      * @property newValue The updated value of the pref indicating whether or not to show the homepage
      * sync CFR.
      */
-    data class HomepageSyncCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
+    data class HomepageSyncCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
     /**
-     * [CfrPreferenceUpdate] fired when the user toggles the homepage nav toolbar CFR.
-     *
-     * @property newValue The updated value of the pref indicating whether or not to show the homepage
-     * nav toolbar CFR.
-     */
-    data class HomepageNavToolbarCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
-
-    /**
-     * [CfrPreferenceUpdate] fired when the user toggles the homepage searchbar CFR.
+     * [LoadCfrPreference] fired when the user toggles the homepage searchbar CFR.
      *
      * @property newValue The updated value of the pref indicating whether or not to show the homepage
      * searchbar CFR.
      */
-    data class HomepageSearchbarCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
+    data class HomepageSearchbarCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
     /**
-     * [CfrPreferenceUpdate] fired when the user toggles the nav buttons CFR.
-     *
-     * @property newValue The updated value of the pref indicating whether or not to show the nav
-     * buttons CFR.
-     */
-    data class NavButtonsCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
-
-    /**
-     * [CfrPreferenceUpdate] fired when the user toggles the tab auto close banner CFR.
+     * [LoadCfrPreference] fired when the user toggles the tab auto close banner CFR.
      *
      * @property newValue The updated value of the pref indicating whether or not to show the tab auto
      * close banner CFR.
      */
-    data class TabAutoCloseBannerCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
+    data class TabAutoCloseBannerCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
     /**
-     * [CfrPreferenceUpdate] fired when the user toggles the inactive tabs CFR.
+     * [LoadCfrPreference] fired when the user toggles the inactive tabs CFR.
      *
      * @property newValue The updated value of the pref indicating whether or not to show the inactive
      * tabs CFR.
      */
-    data class InactiveTabsCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
+    data class InactiveTabsCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
     /**
-     * [CfrPreferenceUpdate] fired when the user toggles the open in app CFR.
+     * [LoadCfrPreference] fired when the user toggles the open in app CFR.
      *
      * @property newValue The updated value of the pref indicating whether or not to show the open in
      * app CFR.
      */
-    data class OpenInAppCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
+    data class OpenInAppCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
     /**
-     * [CfrPreferenceUpdate] fired when the user toggles the PWA CFR.
+     * [LoadCfrPreference] fired when the user toggles the PWA CFR.
      *
      * @property newValue The updated value of the pref indicating whether or not to show PWA CFR.
      */
-    data class PwaCfrUpdated(val newValue: Boolean) : CfrToolsAction(), CfrPreferenceUpdate
+    data class PwaCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 }
 
 /**
@@ -166,12 +136,8 @@ internal object CfrToolsReducer {
             is CfrToolsAction.Init -> state
             is CfrToolsAction.HomepageSyncShownToggled ->
                 state.copy(homepageSyncShown = !state.homepageSyncShown)
-            is CfrToolsAction.HomepageNavToolbarShownToggled ->
-                state.copy(homepageNavToolbarShown = !state.homepageNavToolbarShown)
             is CfrToolsAction.HomepageSearchBarShownToggled ->
                 state.copy(homepageSearchBarShown = !state.homepageSearchBarShown)
-            is CfrToolsAction.NavButtonsShownToggled ->
-                state.copy(navButtonsShown = !state.navButtonsShown)
             is CfrToolsAction.TabAutoCloseBannerShownToggled ->
                 state.copy(tabAutoCloseBannerShown = !state.tabAutoCloseBannerShown)
             is CfrToolsAction.InactiveTabsShownToggled ->
@@ -181,21 +147,17 @@ internal object CfrToolsReducer {
             is CfrToolsAction.PwaShownToggled ->
                 state.copy(pwaShown = !state.pwaShown)
             is CfrToolsAction.ResetLastCFRTimestampButtonClicked -> state
-            is CfrToolsAction.HomepageNavToolbarCfrUpdated ->
-                state.copy(homepageNavToolbarShown = action.newValue)
-            is CfrToolsAction.HomepageSearchbarCfrUpdated ->
+            is CfrToolsAction.HomepageSearchbarCfrLoaded ->
                 state.copy(homepageSearchBarShown = action.newValue)
-            is CfrToolsAction.HomepageSyncCfrUpdated ->
+            is CfrToolsAction.HomepageSyncCfrLoaded ->
                 state.copy(homepageSyncShown = action.newValue)
-            is CfrToolsAction.InactiveTabsCfrUpdated ->
+            is CfrToolsAction.InactiveTabsCfrLoaded ->
                 state.copy(inactiveTabsShown = action.newValue)
-            is CfrToolsAction.NavButtonsCfrUpdated ->
-                state.copy(navButtonsShown = action.newValue)
-            is CfrToolsAction.OpenInAppCfrUpdated ->
+            is CfrToolsAction.OpenInAppCfrLoaded ->
                 state.copy(openInAppShown = action.newValue)
-            is CfrToolsAction.PwaCfrUpdated ->
+            is CfrToolsAction.PwaCfrLoaded ->
                 state.copy(pwaShown = action.newValue)
-            is CfrToolsAction.TabAutoCloseBannerCfrUpdated ->
+            is CfrToolsAction.TabAutoCloseBannerCfrLoaded ->
                 state.copy(tabAutoCloseBannerShown = action.newValue)
         }
     }

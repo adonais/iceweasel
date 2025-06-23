@@ -14,10 +14,9 @@ const { ASRouterTelemetry } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(this, {
   AboutWelcomeTelemetry:
     "resource:///modules/aboutwelcome/AboutWelcomeTelemetry.sys.mjs",
-  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   JsonSchemaValidator:
     "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs",
-  sinon: "resource://testing-common/Sinon.sys.mjs",
   TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
 });
@@ -126,8 +125,10 @@ add_task(async function test_applyCFRPolicy_experiment_release() {
   );
   let sandbox = sinon.createSandbox();
   sandbox.stub(UpdateUtils, "getUpdateChannel").returns("release");
-  sandbox.stub(ExperimentAPI, "getExperimentMetaData").returns({
+  sandbox.stub(NimbusFeatures.cfr, "getEnrollmentMetadata").returns({
     slug: "SOME-CFR-EXP",
+    branch: "branch-slug",
+    isRollout: false,
   });
 
   let instance = new ASRouterTelemetry();
@@ -191,8 +192,10 @@ add_task(
     );
     let sandbox = sinon.createSandbox();
     sandbox.stub(UpdateUtils, "getUpdateChannel").returns("release");
-    sandbox.stub(ExperimentAPI, "getExperimentMetaData").returns({
+    sandbox.stub(NimbusFeatures.cfr, "getEnrollmentMetadata").returns({
       slug: "SOME-CFR-EXP",
+      branch: "branch-slug",
+      isRollout: false,
     });
 
     let instance = new ASRouterTelemetry();
@@ -345,8 +348,10 @@ add_task(async function test_applyMomentsPolicy_experiment_release() {
   );
   let sandbox = sinon.createSandbox();
   sandbox.stub(UpdateUtils, "getUpdateChannel").returns("release");
-  sandbox.stub(ExperimentAPI, "getExperimentMetaData").returns({
+  sandbox.stub(NimbusFeatures.cfr, "getEnrollmentMetadata").returns({
     slug: "SOME-CFR-EXP",
+    branch: "branch-slug",
+    isRollout: false,
   });
 
   let instance = new ASRouterTelemetry();
@@ -663,15 +668,13 @@ add_task(
     let sandbox = sinon.createSandbox();
     let instance = new ASRouterTelemetry();
 
-    sandbox.stub(ExperimentAPI, "getExperimentMetaData").returns({
+    sandbox.stub(NimbusFeatures.cfr, "getEnrollmentMetadata").returns({
       slug: "SOME-CFR-EXP",
+      branch: "branch-slug",
+      isRollout: false,
     });
 
     Assert.ok(instance.isInCFRCohort, "Should be in a CFR cohort");
-    Assert.equal(
-      ExperimentAPI.getExperimentMetaData.firstCall.args[0].featureId,
-      "cfr"
-    );
 
     sandbox.restore();
   }

@@ -18,7 +18,9 @@ use crate::string_cache::Atom;
 use crate::values::computed::font::GenericFontFamily;
 use crate::values::computed::{ColorScheme, Length, NonNegativeLength};
 use crate::values::specified::color::{ColorSchemeFlags, ForcedColors, SystemColor};
-use crate::values::specified::font::{FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX};
+use crate::values::specified::font::{
+    FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX, QueryFontMetricsFlags,
+};
 use crate::values::specified::ViewportVariant;
 use crate::values::{CustomIdent, KeyframesName};
 use app_units::{Au, AU_PER_PX};
@@ -28,23 +30,6 @@ use servo_arc::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use std::{cmp, fmt};
 use style_traits::{CSSPixel, DevicePixel};
-
-/// Flags for the query_font_metrics() function.
-#[repr(C)]
-pub struct QueryFontMetricsFlags(u8);
-
-bitflags! {
-    impl QueryFontMetricsFlags: u8 {
-        /// Should we use the user font set?
-        const USE_USER_FONT_SET = 1 << 0;
-        /// Does the caller need the `ch` unit (width of the ZERO glyph)?
-        const NEEDS_CH = 1 << 1;
-        /// Does the caller need the `ic` unit (width of the WATER ideograph)?
-        const NEEDS_IC = 1 << 2;
-        /// Does the caller need math scales to be retrieved?
-        const NEEDS_MATH_SCALES = 1 << 3;
-    }
-}
 
 /// The `Device` in Gecko wraps a pres context, has a default values computed,
 /// and contains all the viewport rule state.
@@ -491,6 +476,20 @@ impl Device {
             Some(pc) => pc.mCurAppUnitsPerDevPixel,
             None => AU_PER_PX,
         }
+    }
+
+    /// Returns app units per pixel at 1x full-zoom.
+    fn app_units_per_device_pixel_at_unit_full_zoom(&self) -> i32 {
+        match self.pres_context() {
+            Some(pc) => unsafe { (*pc.mDeviceContext.mRawPtr).mAppUnitsPerDevPixelAtUnitFullZoom },
+            None => AU_PER_PX,
+        }
+    }
+
+    /// Returns the device pixel ratio, ignoring the full zoom factor.
+    pub fn device_pixel_ratio_ignoring_full_zoom(&self) -> Scale<f32, CSSPixel, DevicePixel> {
+        let au_per_px = AU_PER_PX as f32;
+        Scale::new(au_per_px / self.app_units_per_device_pixel_at_unit_full_zoom() as f32)
     }
 
     /// Returns the device pixel ratio.

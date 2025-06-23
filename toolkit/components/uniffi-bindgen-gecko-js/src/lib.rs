@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use anyhow::{Context, Result};
+use askama::Template;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use rinja::Template;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs::File;
@@ -71,7 +71,7 @@ fn render(out_path: Utf8PathBuf, template: impl Template) -> Result<()> {
     let contents = template.render()?;
     let mut f =
         File::create(&out_path).context(format!("Failed to create {:?}", out_path.file_name()))?;
-    write!(f, "{}\n", contents).context(format!("Failed to write to {}", out_path))
+    writeln!(f, "{}", contents).context(format!("Failed to write to {}", out_path))
 }
 
 fn render_cpp(
@@ -100,6 +100,7 @@ fn render_js(
     function_ids: &FunctionIds,
     object_ids: &ObjectIds,
     callback_ids: &CallbackIds,
+    js_dir: &Utf8PathBuf,
 ) -> Result<()> {
     for c in components {
         let template = JSBindingsTemplate {
@@ -108,6 +109,7 @@ fn render_js(
             function_ids,
             object_ids,
             callback_ids,
+            js_dir,
         };
         let path = out_dir.join(template.js_module_name());
         render(path, template)?;
@@ -136,6 +138,7 @@ pub fn run_main() -> Result<()> {
         &function_ids,
         &object_ids,
         &callback_ids,
+        &args.js_dir,
     )?;
     render_js(
         &args.fixture_js_dir,
@@ -143,6 +146,7 @@ pub fn run_main() -> Result<()> {
         &function_ids,
         &object_ids,
         &callback_ids,
+        &args.js_dir,
     )?;
     docs::render_docs(&args.docs_path, &components.components)?;
 

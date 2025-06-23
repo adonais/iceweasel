@@ -111,6 +111,7 @@ abstract class AbstractFetchDownloadService : Service() {
     internal var downloadJobs = mutableMapOf<String, DownloadJobState>()
 
     protected abstract val fileSizeFormatter: FileSizeFormatter
+    protected abstract val dateTimeProvider: DateTimeProvider
 
     // TODO Move this to browser store and make immutable:
     // https://github.com/mozilla-mobile/android-components/issues/7050
@@ -124,6 +125,7 @@ abstract class AbstractFetchDownloadService : Service() {
         var notifiedStopped: Boolean = false,
         var lastNotificationUpdate: Long = 0L,
         var createdTime: Long = System.currentTimeMillis(),
+        val downloadEstimator: DownloadEstimator? = null,
     ) {
         internal fun canUpdateNotification(): Boolean {
             return isUnderNotificationUpdateLimit() && !notifiedStopped
@@ -303,6 +305,14 @@ abstract class AbstractFetchDownloadService : Service() {
             state = download.copy(status = actualStatus, notificationId = foregroundServiceId),
             foregroundServiceId = foregroundServiceId,
             status = actualStatus,
+            downloadEstimator = if (download.contentLength == null) {
+                null
+            } else {
+                DownloadEstimator(
+                    totalBytes = download.contentLength!!,
+                    dateTimeProvider = dateTimeProvider,
+                )
+            },
         )
 
         store.dispatch(DownloadAction.UpdateDownloadAction(downloadJobState.state))
@@ -396,25 +406,29 @@ abstract class AbstractFetchDownloadService : Service() {
         val notification = when (latestUIStatus) {
             DOWNLOADING -> DownloadNotification.createOngoingDownloadNotification(
                 context = context,
-                downloadJobState = download,
+                downloadState = download.state,
                 fileSizeFormatter = fileSizeFormatter,
                 notificationAccentColor = style.notificationAccentColor,
+                downloadEstimator = download.downloadEstimator,
             )
             PAUSED -> DownloadNotification.createPausedDownloadNotification(
                 context,
-                download,
+                download.state,
+                download.createdTime,
                 style.notificationAccentColor,
             )
             FAILED -> DownloadNotification.createDownloadFailedNotification(
                 context,
-                download,
+                download.state,
+                download.createdTime,
                 style.notificationAccentColor,
             )
             COMPLETED -> {
                 addToDownloadSystemDatabaseCompat(download.state, scope)
                 DownloadNotification.createDownloadCompletedNotification(
                     context,
-                    download,
+                    download.state,
+                    download.createdTime,
                     style.notificationAccentColor,
                 )
             }
@@ -623,9 +637,10 @@ abstract class AbstractFetchDownloadService : Service() {
         val notification =
             DownloadNotification.createOngoingDownloadNotification(
                 context = context,
-                downloadJobState = downloadJobState,
+                downloadState = downloadJobState.state,
                 fileSizeFormatter = fileSizeFormatter,
                 notificationAccentColor = style.notificationAccentColor,
+                downloadEstimator = downloadJobState.downloadEstimator,
             )
         compatForegroundNotificationId = downloadJobState.foregroundServiceId
 
@@ -736,7 +751,14 @@ abstract class AbstractFetchDownloadService : Service() {
         val headers = MutableHeaders()
 
         if (isResumingDownload) {
-            headers.append(RANGE, "bytes=${currentDownloadJobState.currentBytesCopied}-")
+            logger.debug("Resuming download")
+            if (currentDownloadJobState.currentBytesCopied == download.contentLength) {
+                logger.debug("Already at 100%, verifying download")
+                verifyDownload(currentDownloadJobState)
+                return
+            } else {
+                headers.append(RANGE, "bytes=${currentDownloadJobState.currentBytesCopied}-")
+            }
         }
 
         var isUsingHttpClient = false

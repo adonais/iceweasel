@@ -99,6 +99,11 @@ class FirefoxWebDriver(WebDriver):
         if "no_overlay_scrollbars" in test_config:
             prefs["widget.gtk.overlay-scrollbars.enabled"] = False
 
+        if "enable_moztransform" in test_config:
+            prefs["layout.css.prefixes.transforms"] = True
+        elif "disable_moztransform" in test_config:
+            prefs["layout.css.prefixes.transforms"] = False
+
         # keep system addon updates off to prevent bug 1882562
         prefs[SYSTEM_ADDON_UPDATES_PREF] = False
 
@@ -244,7 +249,27 @@ def event_loop():
 
 @pytest.fixture(scope="function")
 async def client(request, session, event_loop):
-    return Client(request, session, event_loop)
+    client = Client(request, session, event_loop)
+    yield client
+
+    # force-cancel any active downloads to prevent dialogs on exit
+    with client.using_context("chrome"):
+        client.execute_async_script(
+            """
+            const done = arguments[0];
+            const { Downloads } = ChromeUtils.importESModule(
+              "resource://gre/modules/Downloads.sys.mjs"
+            );
+            Downloads.getList(Downloads.ALL).then(list => {
+              list.getAll().then(downloads => {
+                Promise.allSettled(downloads.map(download => [
+                  list.remove(download),
+                  download.finalize(true)
+                ]).flat()).then(done);
+              });
+            });
+        """
+        )
 
 
 def install_addon(session, addon_file_path):

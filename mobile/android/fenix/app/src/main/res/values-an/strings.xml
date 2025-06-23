@@ -41,10 +41,7 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="private_browsing_placeholder_description_2">%1$s limpia lo tuyo historial de busquedas y de navegación en as pestanyas privadas quan las zarras u en salir de l’aplicación. Encara que no te fa invisible debant d’os puestos web u d’o tuyo furnidor de servicios, ye mas facil salvaguardar la tuya vida privada de qualsequier persona que faga servir este dispositivo.</string>
-  <string name="private_browsing_common_myths">
-       Mitos comuns sobre la navegación privada</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">No, gracias</string>
+  <string name="private_browsing_common_myths">Mitos comuns sobre la navegación privada</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
 
@@ -56,7 +53,7 @@
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Descartar</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
-  <string name="camera_permissions_needed_message">La camara precisa acceso. Ves ta los achustes d\'Android, toca "permisos" y toca "permitir".</string>
+  <string name="camera_permissions_needed_message">La camara precisa acceso. Ves ta los achustes d\'Android, toca \"permisos\" y toca \"permitir\".</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">Ir ta los achustes</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -401,7 +398,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">Escaneya lo codigo QR amostrau en &lt;b&gt;firefox.com/pair&lt;/b&gt;</string>
+  <string name="pair_instructions_2"><![CDATA[Escaneya lo codigo QR amostrau en <b>firefox.com/pair</b>]]></string>
   <!--
     Toolbar Preferences
 
@@ -608,22 +605,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">No i hai garra historial</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">Descargas eliminadas</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s eliminau</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">No hi ha descargas aquí</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d seleccionaus</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Eliminar</string>
   <!--
     Crashes
 
@@ -978,7 +963,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">Escaniar lo codigo</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">En o tuyo equipo, ubre Firefox y ves ta &lt;b&gt;https://firefox.com/pair&lt;/b&gt;</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[En o tuyo equipo, ubre Firefox y ves ta <b>https://firefox.com/pair</b>]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">Listo pa escaniar</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1010,7 +995,7 @@
   <!-- Preference for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict">Estricto</string>
   <!-- Accessibility text for the Strict protection information icon -->
-  <string name="preference_enhanced_tracking_protection_strict_info_button">Qué ye lo que ye blocau per la protección estricta contra lo seguimiento </string>
+  <string name="preference_enhanced_tracking_protection_strict_info_button">Qué ye lo que ye blocau per la protección estricta contra lo seguimiento</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
   <string name="preference_enhanced_tracking_protection_custom">Personalizau</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
@@ -1172,7 +1157,7 @@
   <!-- Text for the menu button to delete a search engine -->
   <string name="search_engine_delete">Borrar</string>
   <!-- Description text for the Search String TextField. The %s is part of the string -->
-  <string name="search_add_custom_engine_search_string_example" formatted="false">Substituyir la consulta con “%s”. Eixemplo:\n https://www.google.com/search?q=%s</string>
+  <string name="search_add_custom_engine_search_string_example" formatted="false">Substituyir la consulta con “%s”. Eixemplo:\nhttps://www.google.com/search?q=%s</string>
   <!-- Accessibility description for the form in which details about the custom search engine are entered -->
   <string name="search_add_custom_engine_form_description">Detalles d’o buscador personalizau</string>
   <!-- Text shown when a user leaves the name field empty -->
@@ -1182,7 +1167,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Compreba que la cadena de busqueda coincide con o formato de l’eixemplo</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">Error en connectar con “%s”</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Error en connectar con “%s”</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">S’ha creau %s</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -1194,9 +1179,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. Ves ta los achustes de Android</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. Toca en &lt;b&gt;Permisos&lt;/b&gt;</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. Toca en <b>Permisos</b>]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. Activa &lt;b&gt;%1$s&lt;/b&gt;</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. Activa <b>%1$s</b>]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">Seguro que quiers eliminar totz los permisos de totz los puestos?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->

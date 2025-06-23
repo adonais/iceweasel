@@ -11,13 +11,13 @@
 
 #include "jstypes.h"
 
+#include "builtin/AtomicsObject.h"
 #include "gc/Memory.h"
 #include "vm/ArrayBufferObject.h"
 #include "wasm/WasmMemory.h"
 
 namespace js {
 
-class FutexWaiter;
 class WasmSharedArrayRawBuffer;
 
 /*
@@ -64,9 +64,9 @@ class SharedArrayRawBuffer {
   mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> refcount_;
   mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> length_;
 
-  // A list of structures representing tasks waiting on some
-  // location within this buffer.
-  FutexWaiter* waiters_ = nullptr;
+  // The header node of a circular doubly-linked list of structures
+  // representing tasks waiting on some location within this buffer.
+  FutexWaiterListHead waiters_;
 
  protected:
   SharedArrayRawBuffer(bool isGrowableJS, uint8_t* buffer, size_t length)
@@ -92,11 +92,7 @@ class SharedArrayRawBuffer {
 
   // This may be called from multiple threads.  The caller must take
   // care of mutual exclusion.
-  FutexWaiter* waiters() const { return waiters_; }
-
-  // This may be called from multiple threads.  The caller must take
-  // care of mutual exclusion.
-  void setWaiters(FutexWaiter* waiters) { waiters_ = waiters; }
+  FutexWaiterListNode* waiters() { return &waiters_; }
 
   inline SharedMem<uint8_t*> dataPointerShared() const;
 
@@ -255,6 +251,7 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static bool maxByteLengthGetterImpl(JSContext* cx, const CallArgs& args);
   static bool growableGetterImpl(JSContext* cx, const CallArgs& args);
   static bool growImpl(JSContext* cx, const CallArgs& args);
+  static bool sliceImpl(JSContext* cx, const CallArgs& args);
 
  public:
   // RAWBUF_SLOT holds a pointer (as "private" data) to the
@@ -283,6 +280,8 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static bool class_constructor(JSContext* cx, unsigned argc, Value* vp);
 
   static bool grow(JSContext* cx, unsigned argc, Value* vp);
+
+  static bool slice(JSContext* cx, unsigned argc, Value* vp);
 
   static bool isOriginalByteLengthGetter(Native native) {
     return native == byteLengthGetter;
@@ -325,9 +324,8 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
                                      JS::ClassInfo* info,
                                      JS::RuntimeSizes* runtimeSizes);
 
-  static void copyData(Handle<ArrayBufferObjectMaybeShared*> toBuffer,
-                       size_t toIndex,
-                       Handle<ArrayBufferObjectMaybeShared*> fromBuffer,
+  static void copyData(ArrayBufferObjectMaybeShared* toBuffer, size_t toIndex,
+                       ArrayBufferObjectMaybeShared* fromBuffer,
                        size_t fromIndex, size_t count);
 
   SharedArrayRawBuffer* rawBufferObject() const;

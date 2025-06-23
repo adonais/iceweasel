@@ -25,7 +25,8 @@ const REMOTE_SETTINGS_RECORDS = [
       score: 0.5,
     },
   },
-  QuickSuggestTestUtils.geonamesRecord(),
+  ...QuickSuggestTestUtils.geonamesRecords(),
+  ...QuickSuggestTestUtils.geonamesAlternatesRecords(),
 ];
 
 const WATERLOO_RESULT = {
@@ -56,6 +57,7 @@ add_setup(async function init() {
       ["suggest.quicksuggest.nonsponsored", true],
       ["suggest.quicksuggest.sponsored", true],
       ["yelp.mlEnabled", true],
+      ["yelp.serviceResultDistinction", false],
     ],
     remoteSettingsRecords: REMOTE_SETTINGS_RECORDS,
   });
@@ -382,7 +384,8 @@ add_task(async function cache_fromRust() {
 // Rust suggestion is not present in remote settings.
 add_task(async function cache_defaultValues() {
   await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    QuickSuggestTestUtils.geonamesRecord(),
+    ...QuickSuggestTestUtils.geonamesRecords(),
+    ...QuickSuggestTestUtils.geonamesAlternatesRecords(),
   ]);
   await doCacheTest({
     // This value is hardcoded in `YelpSuggestions` as the default.

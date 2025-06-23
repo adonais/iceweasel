@@ -264,6 +264,13 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CloseEvent", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  {
+    name: "CloseWatcher",
+    insecureContext: true,
+    nightly: true,
+    android: false,
+  },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Comment", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CompositionEvent", insecureContext: true },
@@ -278,9 +285,11 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CountQueuingStrategy", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "CookieChangeEvent", nightly: true },
+  "CookieChangeEvent",
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "CookieStore", nightly: true },
+  "CookieStore",
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  "CookieStoreManager",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Credential" },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -590,9 +599,9 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "History", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "Highlight", insecureContext: true, nightly: true },
+  { name: "Highlight", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "HighlightRegistry", insecureContext: true, nightly: true },
+  { name: "HighlightRegistry", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "HTMLAllCollection", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -908,8 +917,6 @@ let interfaceNamesInGlobalScope = [
   { name: "MouseEvent", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "MouseScrollEvent", insecureContext: true },
-  // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "MutationEvent", insecureContext: true, nightly: false },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "MutationObserver", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -1611,7 +1618,7 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "console", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "cookieStore", nightly: true },
+  "cookieStore",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "createImageBitmap", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -1856,6 +1863,8 @@ let interfaceNamesInGlobalScope = [
   { name: "onpointerout", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "onpointerover", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "onpointerrawupdate" },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "onpointerup", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!

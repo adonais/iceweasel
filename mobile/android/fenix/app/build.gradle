@@ -1,5 +1,5 @@
 import com.android.build.api.variant.FilterConfiguration
-import org.apache.tools.ant.util.StringUtils
+import java.time.format.DateTimeFormatter
 
 buildscript {
     repositories {
@@ -44,6 +44,17 @@ apply from: 'benchmark.gradle'
 
 def isAppBundle = gradle.startParameter.taskNames.any { it.toLowerCase().contains("bundle") }
 
+// Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
+def getBuildId() {
+    if (System.env.MOZ_BUILD_DATE) {
+        if (System.env.MOZ_BUILD_DATE.length() == 14) {
+            return System.env.MOZ_BUILD_DATE
+        }
+        logger.warn("Ignoring invalid MOZ_BUILD_DATE: ${System.env.MOZ_BUILD_DATE}")
+    }
+    return file("${gradle.mozconfig.topobjdir}/buildid.h").getText('utf-8').split()[2]
+}
+
 android {
     project.maybeConfigForJetpackBenchmark(it)
     if (project.hasProperty("testBuildType")) {
@@ -65,7 +76,8 @@ android {
         testInstrumentationRunnerArguments "detect-leaks": 'true'
         resValue "bool", "IS_DEBUG", "false"
         buildConfigField "boolean", "USE_RELEASE_VERSIONING", "false"
-        buildConfigField "String", "VCS_HASH", "\"\"" // see override in release builds for why it's blank.
+        // Blank in debug builds so that tests are deterministic.
+        buildConfigField "String", "VCS_HASH", "\"\""
         // This should be the "public" base URL of AMO.
         buildConfigField "String", "AMO_BASE_URL", "\"https://addons.mozilla.org\""
         buildConfigField "String", "AMO_COLLECTION_NAME", "\"Extensions-for-Android\""
@@ -91,12 +103,9 @@ android {
         proguardFiles = [getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro']
         matchingFallbacks = ['release'] // Use on the "release" build type in dependencies (AARs)
 
-        // Changing the build config can cause files that depend on BuildConfig.java to recompile
-        // so we only set the vcs hash in release builds to avoid possible recompilation in debug builds.
-        if (gradle.ext.vcsHashFileContent) {
-            buildConfigField "String", "VCS_HASH", "\"hg-${gradle.ext.vcsHashFileContent}\""
-        } else {
-            buildConfigField "String", "VCS_HASH", "\"${Config.getVcsHash(project)}\""
+        // Present in release builds.
+        if (gradle.mozconfig.substs.MOZ_INCLUDE_SOURCE_INFO) {
+            buildConfigField("String", "VCS_HASH", "\"" + gradle.mozconfig.source_repo.MOZ_SOURCE_STAMP + "\"")
         }
 
         if (gradle.hasProperty("localProperties.autosignReleaseWithDebugKey") ||
@@ -248,6 +257,9 @@ android {
     lint {
         lintConfig = file("lint.xml")
         baseline = file("lint-baseline.xml")
+        sarifReport = true
+        sarifOutput = file("../build/reports/lint/lint-report.sarif.json")
+        abortOnError = false
     }
 
     // https://issuetracker.google.com/issues/379732901
@@ -359,12 +371,12 @@ android.applicationVariants.configureEach { variant ->
         buildConfigField 'boolean', 'TELEMETRY', 'false'
     }
 
-    def buildDate = Config.generateBuildDate()
-    // Setting buildDate with every build changes the generated BuildConfig, which slows down the
+    // Setting buildDate with every build ID changes the generated BuildConfig, which slows down the
     // build. Only do this for non-debug builds, to speed-up builds produced during local development.
     if (isDebug) {
         buildConfigField 'String', 'BUILD_DATE', '"debug build"'
     } else {
+        def buildDate = LocalDateTime.parse(getBuildId(), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         buildConfigField 'String', 'BUILD_DATE', '"' + buildDate + '"'
     }
 
@@ -673,6 +685,7 @@ dependencies {
     implementation libs.androidx.lifecycle.runtime
     implementation libs.androidx.lifecycle.service
     implementation libs.androidx.lifecycle.viewmodel
+    implementation libs.androidx.localbroadcastmanager
     implementation libs.androidx.navigation.compose
     implementation libs.androidx.navigation.fragment
     implementation libs.androidx.navigation.ui
@@ -699,7 +712,6 @@ dependencies {
     implementation libs.play.review.ktx
 
     implementation ComponentsDependencies.mozilla_appservices_init_rust_components
-    implementation ComponentsDependencies.mozilla_appservices_search
 
     androidTestImplementation(libs.androidx.espresso.contrib) {
         exclude module: 'protobuf-lite'

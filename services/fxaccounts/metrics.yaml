@@ -89,6 +89,37 @@ fxa:
     extra_keys: *fxa_connect_extra
     telemetry_mirror: Fxa_Disconnect_Account
 
+  sync_enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether the weave service is present and enabled.
+      Implies `fxa.account_enabled`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950399
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950399
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - sync-dev@mozilla.org
+    expires: never
+
+  account_enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether the user's logged in to an FxA account.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950399
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1950399
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - sync-dev@mozilla.org
+    expires: never
+
 sync_settings:
   open_choose_what_to_sync_menu:
     type: event
@@ -123,3 +154,12 @@ sync_settings:
     notification_emails:
       - sync-dev@mozilla.org
     expires: never
+    extra_keys:
+      enabled_engines:
+        description: |
+          A comma-delimited list of engines that were enabled by the user.
+        type: string
+      disabled_engines:
+        description: |
+          A comma-delimited list of engines that were disabled by the user.
+        type: string

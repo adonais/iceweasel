@@ -886,6 +886,36 @@ events:
     metadata:
       tags:
         - Search
+  custom_engine_settings_viewed:
+    type: event
+    description: |
+      A user viewed the custom search engine setting
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1967798
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D250487
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Search
+        - Settings
+  custom_engine_created:
+    type: event
+    description: |
+      A user created a new custom search engine to use
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1967798
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D250487
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Search
+        - Settings
   first_session_ping_cancelled:
     type: event
     description: |
@@ -1418,39 +1448,6 @@ onboarding:
     metadata:
       tags:
         - Onboarding
-  add_ons_card:
-    type: event
-    description: |
-      User viewed the add-on onboarding card.
-    extra_keys:
-      element_type:
-        type: string
-        description: |
-          Type of element that was viewed.
-      action:
-        type: string
-        description: |
-          Type of action taken by the user.
-      sequence_position:
-        type: string
-        description: |
-          Position of the onboarding card in the onboarding flow.
-      sequence_id:
-        type: string
-        description: |
-          Identifier for the sequence.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1915873
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D224615
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Onboarding
   terms_of_service_card:
     type: event
     description: |
@@ -1540,62 +1537,6 @@ onboarding:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1933253
     data_reviews:
       - https://phabricator.services.mozilla.com/D230140
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Onboarding
-  add_on_installed:
-    type: event
-    description: |
-      User installed an add-on from the onboarding card.
-    extra_keys:
-      add_on_id:
-        type: string
-        description: |
-          The id of add-on that was installed.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1925327
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D226033
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Onboarding
-  add_ons_card_button_pressed:
-    type: event
-    description:
-      The user pressed the "start browsing" button from the add-ons onboarding card.
-    extra_keys:
-      element_type:
-        type: string
-        description: |
-          Type of element that was viewed.
-      action:
-        type: string
-        description: |
-          Type of action taken by the user.
-      sequence_position:
-        type: string
-        description: |
-          Position of the onboarding card in the onboarding flow.
-      sequence_id:
-        type: string
-        description: |
-          Identifier for the sequence.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926243
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1926296
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D226469
-      - https://phabricator.services.mozilla.com/D226633
     data_sensitivity:
       - interaction
     notification_emails:
@@ -2305,6 +2246,34 @@ private_browsing_locked:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944178
     data_reviews:
       - https://phabricator.services.mozilla.com/D243351
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  banner_negative_clicked:
+    type: event
+    description: |
+      Logged when the user clicks the negative ("No thanks") button on the Private Browsing Mode Lock banner prompt.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1962614
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D247195
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  banner_positive_clicked:
+    type: event
+    description: |
+      Logged when the user clicks the positive ("Lock tabs") button on the Private Browsing Mode Lock banner prompt.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1962614
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D247195
     data_sensitivity:
       - interaction
     notification_emails:
@@ -4610,6 +4579,22 @@ bookmarks_management:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1953993
     data_reviews:
       - https://phabricator.services.mozilla.com/D243210
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Bookmarks
+  sort_by_custom:
+    type: event
+    description: |
+      A user sorted their bookmarks by the custom sort order.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956261
+    data_reviews:
+      - https://phabricator.services.mozilla.com/TODO
     data_sensitivity:
       - interaction
     notification_emails:
@@ -12002,6 +11987,24 @@ fx_suggest:
     notification_emails:
       - android-probes@mozilla.com
       - lina@mozilla.com
+      - ttran@mozilla.com
+      - najiang@mozilla.com
+    expires: never
+    send_in_pings:
+      - fx-suggest
+  country:
+    type: string
+    description: >
+      Records the home region of the user as determined by MLS, the same used for configuring
+      region specific search providers.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1969155
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D251690
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
       - ttran@mozilla.com
       - najiang@mozilla.com
     expires: never

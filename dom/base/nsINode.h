@@ -65,6 +65,7 @@ template <typename T>
 class Maybe;
 class PresShell;
 class TextEditor;
+class WidgetEvent;
 namespace dom {
 /**
  * @return true if aChar is what the WHATWG defines as a 'ascii whitespace'.
@@ -95,6 +96,7 @@ class Element;
 class EventHandlerNonNull;
 template <typename T>
 class FlatTreeAncestorsOfTypeIterator;
+class HTMLDialogElement;
 template <typename T>
 class InclusiveAncestorsOfTypeIterator;
 template <typename T>
@@ -380,7 +382,7 @@ class nsINode : public mozilla::dom::EventTarget {
   template <class T>
   using Sequence = mozilla::dom::Sequence<T>;
 
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_INODE_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_INODE_IID)
 
   // The |aNodeSize| outparam on this function is where the actual node size
   // value is put. It gets added to the appropriate value within |aSizes| by
@@ -564,6 +566,11 @@ class nsINode : public mozilla::dom::EventTarget {
    * https://html.spec.whatwg.org/multipage/popover.html#topmost-clicked-popover
    */
   mozilla::dom::Element* GetTopmostClickedPopover() const;
+
+  /**
+   * https://html.spec.whatwg.org/multipage/interactive-elements.html#nearest-clicked-dialog
+   */
+  mozilla::dom::HTMLDialogElement* NearestClickedDialog(mozilla::WidgetEvent*);
 
   bool IsNode() const final { return true; }
 
@@ -1183,7 +1190,7 @@ class nsINode : public mozilla::dom::EventTarget {
    *   2. For contents that are slotted into a UA shadow tree, use its
    *   parent rather than the slot element.
    */
-  inline nsIContent* GetFlattenedTreeParentNodeForSelection() const;
+  inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
 
   inline mozilla::dom::Element* GetFlattenedTreeParentElement() const;
   inline mozilla::dom::Element* GetFlattenedTreeParentElementForStyle() const;
@@ -2616,8 +2623,6 @@ inline nsINode* NODE_FROM(C& aContent, D& aDocument) {
   if (aContent) return static_cast<nsINode*>(aContent);
   return static_cast<nsINode*>(aDocument);
 }
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsINode, NS_INODE_IID)
 
 inline nsISupports* ToSupports(nsINode* aPointer) { return aPointer; }
 

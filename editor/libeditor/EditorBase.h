@@ -1729,6 +1729,22 @@ class EditorBase : public nsIEditor,
     CompositionEnd,
     CompositionStartAndEnd,
   };
+  friend inline std::ostream& operator<<(std::ostream& aStream,
+                                         const InsertTextFor& aPurpose) {
+    switch (aPurpose) {
+      case InsertTextFor::NormalText:
+        return aStream << "InsertTextFor::NormalText";
+      case InsertTextFor::CompositionStart:
+        return aStream << "InsertTextFor::CompositionStart";
+      case InsertTextFor::CompositionUpdate:
+        return aStream << "InsertTextFor::CompositionUpdate";
+      case InsertTextFor::CompositionEnd:
+        return aStream << "InsertTextFor::CompositionEnd";
+      case InsertTextFor::CompositionStartAndEnd:
+        return aStream << "InsertTextFor::CompositionStartAndEnd";
+    }
+    return aStream << "<illegal value>";
+  }
   [[nodiscard]] static bool InsertingTextForComposition(
       InsertTextFor aPurpose) {
     return aPurpose != InsertTextFor::NormalText;
@@ -1741,6 +1757,11 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] static bool InsertingTextForStartingComposition(
       InsertTextFor aPurpose) {
     return aPurpose == InsertTextFor::CompositionStart ||
+           aPurpose == InsertTextFor::CompositionStartAndEnd;
+  }
+  [[nodiscard]] static bool InsertingTextForCommittingComposition(
+      InsertTextFor aPurpose) {
+    return aPurpose == InsertTextFor::CompositionEnd ||
            aPurpose == InsertTextFor::CompositionStartAndEnd;
   }
   [[nodiscard]] static bool NothingToDoIfInsertingEmptyText(

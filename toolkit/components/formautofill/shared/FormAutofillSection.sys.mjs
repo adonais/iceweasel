@@ -247,7 +247,11 @@ export class FormAutofillSection {
         // email field, an invisible field that appears next to the user-visible field,
         // and simple cases where a page error where a field name is reused twice.
         let dupIndex = candidateSection.fieldDetails.findIndex(
-          f => f.fieldName == cur.fieldName && f.isVisible && cur.isVisible
+          f =>
+            f.fieldName == cur.fieldName &&
+            f.isVisible &&
+            cur.isVisible &&
+            !f.isLookup
         );
         let isDuplicate = dupIndex != -1;
 
@@ -346,6 +350,37 @@ export class FormAutofillSection {
       return !this.fieldDetails.some(
         field => field.fieldName == fieldDetail.fieldName && field.isVisible
       );
+    }
+
+    // Only fill a street address lookup field if it is the only street
+    // address related field in this section. Similarly, for postal code
+    // fields.
+    if (fieldDetail.isLookup) {
+      const STREET_FIELDS = [
+        "street-address",
+        "address-line1",
+        "address-line2",
+        "address-line3",
+      ];
+
+      let INTERESTED_FIELDS = [];
+      if (STREET_FIELDS.includes(fieldDetail.fieldName)) {
+        INTERESTED_FIELDS = STREET_FIELDS;
+      } else if (fieldDetail.fieldName == "postal-code") {
+        INTERESTED_FIELDS = ["postal-code"];
+      }
+
+      if (
+        INTERESTED_FIELDS.length &&
+        this.fieldDetails.some(
+          field =>
+            INTERESTED_FIELDS.includes(field.fieldName) &&
+            field.isVisible &&
+            !field.isLookup
+        )
+      ) {
+        return false;
+      }
     }
 
     return true;

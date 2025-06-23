@@ -60,11 +60,7 @@ internal fun normalModeAdapterItems(
 
     if (settings.showTopSitesFeature && topSites.isNotEmpty()) {
         shouldShowCustomizeHome = true
-        if (settings.enableComposeTopSites) {
-            items.add(AdapterItem.TopSites)
-        } else {
-            items.add(AdapterItem.TopSitePager(topSites))
-        }
+        items.add(AdapterItem.TopSitePager(topSites))
     }
 
     if (settings.showSetupChecklist) {
@@ -111,7 +107,6 @@ internal fun normalModeAdapterItems(
 
         if (!settings.showContentRecommendations) {
             items.add(AdapterItem.PocketCategoriesItem)
-            items.add(AdapterItem.PocketRecommendationsFooterItem)
         }
     }
 

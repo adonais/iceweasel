@@ -911,6 +911,8 @@ run-sequentially = "node server exceptions dont replay well"
 ["test_ip_space_glean.js"]
 skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
 
+["test_ip_address_space_lna_glean.js"]
+
 ["test_large_port.js"]
 
 ["test_loadgroup_cancel.js"]
@@ -1160,6 +1162,8 @@ skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && 
 
 ["test_schema_14_migration.js"]
 
+["test_schema_15_migration.js"]
+
 ["test_schema_2_migration.js"]
 
 ["test_schema_3_migration.js"]
@@ -1388,3 +1392,5 @@ skip-if = [
 
 ["test_xmlhttprequest.js"]
 prefs = ["network.xhr.block_sync_system_requests=false"] # Bug 721336
+
+["test_trr_flags.js"]

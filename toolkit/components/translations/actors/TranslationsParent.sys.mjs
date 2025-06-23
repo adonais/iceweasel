@@ -210,6 +210,7 @@ const VERIFY_SIGNATURES_FROM_FS = false;
  * @typedef {import("../translations").TranslationModelRecord} TranslationModelRecord
  * @typedef {import("../translations").RemoteSettingsClient} RemoteSettingsClient
  * @typedef {import("../translations").TranslationModelPayload} TranslationModelPayload
+ * @typedef {import("../translations").TranslationsEnginePayload} TranslationsEnginePayload
  * @typedef {import("../translations").LanguageTranslationModelFiles} LanguageTranslationModelFiles
  * @typedef {import("../translations").WasmRecord} WasmRecord
  * @typedef {import("../translations").LangTags} LangTags
@@ -217,6 +218,9 @@ const VERIFY_SIGNATURES_FROM_FS = false;
  * @typedef {import("../translations").ModelLanguages} ModelLanguages
  * @typedef {import("../translations").SupportedLanguages} SupportedLanguages
  * @typedef {import("../translations").TranslationErrors} TranslationErrors
+ *
+ * // Implementation exists at toolkit/content/widgets/findbar.js
+ * @typedef {any} MozFindbar
  */
 
 /**
@@ -442,6 +446,25 @@ export class TranslationsParent extends JSWindowActorParent {
   #isDestroyed = false;
 
   /**
+   * The findBar associated with this TranslationsParent actor instance.
+   * This will be null until the findBar is initialized in the current tab.
+   * If the find-in-page functionality is never used, this will never be initialized.
+   *
+   * @type {MozFindbar | null}
+   */
+  #findBar = null;
+
+  /**
+   * Returns the findBar associated with this TranslationsParent actor if one has been
+   * initialized for the current tab, otherwise null.
+   *
+   * @returns {MozFindbar | null}
+   */
+  get findBar() {
+    return this.#findBar;
+  }
+
+  /**
    * There is only one static TranslationsParent for all of the top ChromeWindows.
    * The top ChromeWindow maps to the user's conception of a window such as when you hit
    * cmd+n or ctrl+n.
@@ -483,6 +506,11 @@ export class TranslationsParent extends JSWindowActorParent {
         languagePair,
         false // reportAsAutoTranslate
       );
+    }
+
+    const browser = this.browsingContext.top.embedderElement;
+    if (browser) {
+      this.#registerFindBarEventListeners(browser);
     }
   }
 
@@ -843,6 +871,7 @@ export class TranslationsParent extends JSWindowActorParent {
         detectedLanguages
       );
 
+      /* eslint-disable-next-line no-shadow */
       const { CustomEvent } = browser.ownerGlobal;
       browser.dispatchEvent(
         new CustomEvent("TranslationsParent:OfferTranslation", {
@@ -1174,6 +1203,113 @@ export class TranslationsParent extends JSWindowActorParent {
   }
 
   /**
+   * @param {CustomEvent} event
+   */
+  handleEvent(event) {
+    if (this.#isDestroyed) {
+      return;
+    }
+
+    const { type } = event;
+
+    switch (type) {
+      case "TabFindInitialized": {
+        const browser = event.target.linkedBrowser;
+        this.#registerFindBarEventListeners(browser);
+        break;
+      }
+      case "SwapDocShells": {
+        const newBrowser = event.detail;
+        newBrowser.addEventListener(
+          "EndSwapDocShells",
+          () => {
+            this.#registerFindBarEventListeners(newBrowser);
+          },
+          { once: true }
+        );
+        break;
+      }
+      case "findbaropen": {
+        this.sendAsyncMessage("Translations:FindBarOpen");
+        break;
+      }
+      case "findbarclose": {
+        this.sendAsyncMessage("Translations:FindBarClose");
+        break;
+      }
+    }
+  }
+
+  /**
+   * Registers event listeners related to the FindBar associated with the current tab.
+   *
+   * If the FindBar has been initialized, we need to listen for it to open or close.
+   * If it hasn't been initialized, we need to listen for it to be initialized.
+   *
+   * We also ned to handle the SwapDocShells event, in which case we may need to
+   * associate with a new FindBar in the new DocShell.
+   *
+   * @param {any} browser
+   */
+  #registerFindBarEventListeners(browser) {
+    if (AppConstants.platform === "android") {
+      return;
+    }
+
+    const tabBrowser = browser.getTabBrowser();
+    const tab = tabBrowser.getTabForBrowser(browser);
+    const findBar = tabBrowser.getCachedFindBar(tab);
+
+    if (findBar) {
+      // This tab already has an initialized find bar, so
+      // so we can hook up event listeners directly.
+      this.#findBar = findBar;
+      findBar.addEventListener("findbaropen", this, { capture: true });
+      findBar.addEventListener("findbarclose", this, { capture: true });
+    } else {
+      // Otherwise we need to listen for a find bar to be
+      // initialized for this tab, and then we will hook
+      // up the event listeners above.
+      tab.addEventListener("TabFindInitialized", this, { once: true });
+    }
+
+    // Finally, if we swap doc shells, we will need to update
+    // which find bar the TranslationsParent actor is bound to.
+    browser.addEventListener("SwapDocShells", this, { capture: true });
+  }
+
+  /**
+   * Removes all event listeners associated with the FindBar in this tab.
+   */
+  #removeFindBarEventListeners() {
+    if (AppConstants.platform === "android") {
+      return;
+    }
+
+    if (this.#findBar) {
+      this.#findBar.removeEventListener("findbaropen", this);
+      this.#findBar.removeEventListener("findbarclose", this);
+      this.#findBar = null;
+      return;
+    }
+
+    // This tab has not initialized a find bar yet, so
+    // we need to remove our event listener that will
+    // register the other find-bar listeners when it does.
+    const browser = this.browsingContext?.top.embedderElement;
+
+    if (!browser) {
+      return;
+    }
+
+    const tabBrowser = browser.getTabBrowser();
+    const tab = tabBrowser.getTabForBrowser(browser);
+
+    tab.removeEventListener("TabFindInitialized", this);
+    browser.removeEventListener("SwapDocShells", this);
+  }
+
+  /**
    * Observes notifications from a given subject, handling them according to the topic.
    *
    * @param {nsISupports} subject
@@ -1347,6 +1483,10 @@ export class TranslationsParent extends JSWindowActorParent {
   }
 
   async receiveMessage({ name, data }) {
+    if (this.#isDestroyed) {
+      return undefined;
+    }
+
     switch (name) {
       case "Translations:ReportLangTags": {
         const { htmlLangAttribute, href } = data;
@@ -1361,6 +1501,10 @@ export class TranslationsParent extends JSWindowActorParent {
           lazy.console.log("Failed to get the detected languages.", error);
         });
 
+        if (this.#isDestroyed) {
+          return undefined;
+        }
+
         if (!detectedLanguages) {
           // The actor was already destroyed, and the detectedLanguages weren't reported
           // in time.
@@ -1370,6 +1514,10 @@ export class TranslationsParent extends JSWindowActorParent {
         this.languageState.detectedLanguages = detectedLanguages;
 
         if (await this.shouldAutoTranslate(detectedLanguages)) {
+          if (this.#isDestroyed) {
+            return undefined;
+          }
+
           this.translate(
             {
               sourceLanguage: detectedLanguages.docLangTag,
@@ -1378,6 +1526,10 @@ export class TranslationsParent extends JSWindowActorParent {
             true // reportAsAutoTranslate
           );
         } else {
+          if (this.#isDestroyed) {
+            return undefined;
+          }
+
           this.maybeOfferTranslations(detectedLanguages).catch(error =>
             lazy.console.error(error)
           );
@@ -1409,6 +1561,10 @@ export class TranslationsParent extends JSWindowActorParent {
           this
         );
 
+        if (this.#isDestroyed) {
+          return undefined;
+        }
+
         if (!port) {
           lazy.console.error(
             `Failed to create a translations port for language pair: ${lazy.TranslationsUtils.serializeLanguagePair(requestedLanguagePair)}`
@@ -1432,7 +1588,11 @@ export class TranslationsParent extends JSWindowActorParent {
   }
 
   /**
+   * Retrieves the payload required to construct the TranslationsEngine for the given language pair.
+   *
    * @param {LanguagePair} languagePair
+   *
+   * @returns {Promise<TranslationsEnginePayload>}
    */
   static async getTranslationsEnginePayload(languagePair) {
     const wasmStartTime = Cu.now();
@@ -3167,9 +3327,30 @@ export class TranslationsParent extends JSWindowActorParent {
 
       TranslationsParent.storeMostRecentTargetLanguage(targetLanguage);
 
+      let isFindBarOpen;
+
+      if (this.#findBar) {
+        isFindBarOpen = !this.#findBar.hidden;
+      }
+
+      if (isFindBarOpen === undefined && AppConstants.platform !== "android") {
+        const browser = this.browsingContext?.top.embedderElement;
+        if (browser) {
+          const tabBrowser = browser.getTabBrowser();
+          const findBar = tabBrowser.getCachedFindBar();
+
+          if (findBar) {
+            isFindBarOpen = findBar.hidden;
+          } else {
+            isFindBarOpen = false;
+          }
+        }
+      }
+
       this.sendAsyncMessage(
         "Translations:TranslatePage",
         {
+          isFindBarOpen,
           languagePair,
           port,
         },
@@ -3510,11 +3691,13 @@ export class TranslationsParent extends JSWindowActorParent {
       }
       langTags.identifiedLangTag = identifyResult.language;
       langTags.identifiedLangConfident = identifyResult.confident;
+
+      maybeNormalizeDocLangTag();
+      langTags.identifiedLangTag = langTags.docLangTag;
+
       if (this.#isDestroyed) {
         return null;
       }
-      maybeNormalizeDocLangTag();
-      langTags.identifiedLangTag = langTags.docLangTag;
     }
 
     if (!langTags.docLangTag) {
@@ -3942,6 +4125,7 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     this.#ensureTranslationsDiscarded();
+    this.#removeFindBarEventListeners();
 
     this.#isDestroyed = true;
   }
@@ -4024,6 +4208,8 @@ class TranslationsLanguageState {
     if (!browser) {
       return;
     }
+
+    /* eslint-disable-next-line no-shadow */
     const { CustomEvent } = browser.ownerGlobal;
     browser.dispatchEvent(
       new CustomEvent("TranslationsParent:LanguageState", {

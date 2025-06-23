@@ -8,10 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import mozilla.components.compose.browser.toolbar.BrowserToolbarDefaults
 import mozilla.components.compose.browser.toolbar.HomepageDisplayToolbar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -19,15 +17,17 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * Search bar.
  *
+ * @param modifier [Modifier] for the content.
  * @param onClick Invoked when the user clicks on the search bar text.
  */
 @Composable
 internal fun SearchBar(
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     HomepageDisplayToolbar(
+        modifier = modifier,
         url = stringResource(R.string.search_hint),
-        colors = BrowserToolbarDefaults.colors().displayToolbarColors.copy(background = Color.Transparent),
         onUrlClicked = onClick,
     )
 }

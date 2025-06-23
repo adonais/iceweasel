@@ -14,8 +14,12 @@
   <string name="content_description_private_browsing_button">निजी ब्राउज़िंग सक्षम करें</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_disable_private_browsing_button">निजी ब्राउज़िंग अक्षम करें</string>
+  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
+  <string name="content_description_private_browsing">निजी ब्राउज़िंग</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">खोजें या पता दर्ज करें</string>
+  <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
+  <string name="search_hint_general_engine">वेब पर खोजें</string>
   <!-- No Open Tabs Message Description -->
   <string name="no_open_tabs_description">आपके खुले टैब यहां दिखाए जाएंगे।</string>
   <!-- No Private Tabs Message Description -->
@@ -32,6 +36,14 @@
   <string name="tab_tray_close_multiselect_content_description">मल्टीसेलेक्ट मोड से बाहर निकलें</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">चुने गए टैब को संग्रह में सहेजें</string>
+  <!--
+    Home - Bookmarks
+
+    Title for the home screen section with bookmarks.
+  -->
+  <string name="home_bookmarks_title">बुकमार्क</string>
+  <!-- Content description for the button which navigates the user to show all of their bookmarks. -->
+  <string name="home_bookmarks_show_all_content_description">सभी बुकमार्क दिखाएं</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s को Mozilla द्वारा निर्मित किया गया है।</string>
   <!--
@@ -42,8 +54,6 @@
   -->
   <string name="private_browsing_placeholder_description_2">%1$s जब आप ऐप को बंद करते हैं तो निजी टैब से आपका खोज और ब्राउज़िंग इतिहास को मिटाता हैं। हालांकि यह आपको वेबसाइटों या आपके इंटरनेट सेवा प्रदाता के लिए अज्ञात नहीं बनाता है, लेकिन यह आसान बनाता है कि आप इस कंप्यूटर का उपयोग करने वाले किसी अन्य व्यक्ति से ऑनलाइन निजी काम करें।</string>
   <string name="private_browsing_common_myths">निजी ब्राउज़िंग के बारे में आम कथा</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">नहीं धन्यवाद</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">सेटिंग पर जाएं</string>
   <!-- Text for the negative action button -->
@@ -289,6 +299,12 @@
     a section where users see a list of tabs that they have visited in the past few days
   -->
   <string name="customize_toggle_recently_visited">हाल ही में देखे गए</string>
+  <!-- Title for the opening wallpaper settings screen -->
+  <string name="customize_wallpapers">वॉलपेपर</string>
+  <!-- Snackbar message for when wallpaper is selected -->
+  <string name="wallpaper_updated_snackbar_message">वॉलपेपर अपडेट किया गया!</string>
+  <!-- Snackbar label for action to view selected wallpaper -->
+  <string name="wallpaper_updated_snackbar_action">देखें</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">अब सिंक करें</string>
   <!-- Preference category for sync -->
@@ -360,7 +376,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">&lt;b&gt;firefox.com/pair&lt;/b&gt; पर दिखाए गए QR कोड को स्कैन करें</string>
+  <string name="pair_instructions_2"><![CDATA[<b>firefox.com/pair</b> पर दिखाए गए QR कोड को स्कैन करें]]></string>
   <!--
     Toolbar Preferences
 
@@ -559,22 +575,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">यहां कोई इतिहास नहीं</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">डाउनलोड हटा दिए गए</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s हटाया गया</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">कोई डाउनलोड की गई फ़ाइलें नहीं</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d चयनित</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">हटाएँ</string>
   <!--
     Crashes
 
@@ -925,7 +929,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">कोड को स्कैन करें</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">अपने कंप्यूटर पर Firefox खोलें और &lt;b&gt; https://firefox.com/pair &lt;/ b&gt; पर जाएं</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[अपने कंप्यूटर पर Firefox खोलें और <b> https://firefox.com/pair </ b> पर जाएं]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">स्कैन करने के लिए तैयार है</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1003,7 +1007,7 @@
   <!-- Category of trackers (cryptominers) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cryptominers_title">क्रिप्टोमाइनर</string>
   <!-- Description of cryptominers that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_cryptominers_description">डिजिटल मुद्रा का पता लगाने में  दुर्भावनापूर्ण लिपियों को आपके डिवाइस के ऐक्सेस से रोकता हैं</string>
+  <string name="etp_cryptominers_description">डिजिटल मुद्रा का पता लगाने में दुर्भावनापूर्ण लिपियों को आपके डिवाइस के ऐक्सेस से रोकता हैं</string>
   <!-- Category of trackers (tracking content) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_tracking_content_title">ट्रैकिंग सामग्री</string>
   <!-- Description of tracking content that can be blocked by Enhanced Tracking Protection -->
@@ -1157,7 +1161,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">जाँचें कि खोज स्ट्रिंग उदाहरण संरूप से मेल खाती है</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">"%s" से संपर्क में त्रुटि</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">\"%s\" से संपर्क में त्रुटि</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s बनाया गया</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -1169,9 +1173,9 @@
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. Android सेटिंग में जाएं</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;अनुमतियां&lt;/b&gt; दबाएं</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>अनुमतियां</b> दबाएं]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. चालू करने के लिए &lt;b&gt;%1$s&lt;/ b&gt; टॉगल करें</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. चालू करने के लिए <b>%1$s</ b> टॉगल करें]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">संपर्क सुरक्षित है</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -1208,7 +1212,7 @@
   <!-- This is the hint text that is shown inline on the hostname field of the create new login page. 'https://www.example.com' intentionally hardcoded here -->
   <string name="add_login_hostname_hint_text">https://www.example.com</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname does not contain http or https. -->
-  <string name="add_login_hostname_invalid_text_3">वेब पते में "https://" या "http://" होना चाहिए</string>
+  <string name="add_login_hostname_invalid_text_3">वेब पते में \"https://\" या \"http://\" होना चाहिए</string>
   <!--
     Synced Tabs
 
@@ -1258,8 +1262,8 @@
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description">बंद करें</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">और जानें</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">और जानें</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">अधिक जानें</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">अधिक जानें</string>
   <!-- Translations feature -->
 </resources>

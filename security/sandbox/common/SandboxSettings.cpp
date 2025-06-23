@@ -7,6 +7,7 @@
 #include "mozilla/SandboxSettings.h"
 #include "mozISandboxSettings.h"
 #include "nsServiceManagerUtils.h"
+#include "nsAppRunner.h"
 
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
@@ -20,7 +21,6 @@
 #ifdef XP_WIN
 #  include "mozilla/gfx/gfxVars.h"
 #  include "mozilla/WindowsVersion.h"
-#  include "nsAppRunner.h"
 #  include "nsExceptionHandler.h"
 #  include "PDMFactory.h"
 #endif  // XP_WIN
@@ -56,9 +56,6 @@ const char* ContentWin32kLockdownStateToString(
 
     case nsIXULRuntime::ContentWin32kLockdownState::DisabledByEnvVar:
       return "Win32k Lockdown disabled -- MOZ_ENABLE_WIN32K is set";
-
-    case nsIXULRuntime::ContentWin32kLockdownState::DisabledBySafeMode:
-      return "Win32k Lockdown disabled -- Running in Safe Mode";
 
     case nsIXULRuntime::ContentWin32kLockdownState::DisabledByE10S:
       return "Win32k Lockdown disabled -- E10S is disabled";
@@ -146,13 +143,18 @@ int GetEffectiveContentSandboxLevel() {
     return 0;
   }
   int level = StaticPrefs::security_sandbox_content_level_DoNotUseDirectly();
-// On Windows and macOS, enforce a minimum content sandbox level of 1 (except on
-// Nightly, where it can be set to 0).
 #if !defined(NIGHTLY_BUILD) && (defined(XP_WIN) || defined(XP_MACOSX))
-  if (level < 1) {
-    level = 1;
-  }
+  // On non-Nightly Windows and macOS, enforce a minimum sandbox level of 1.
+  static const int minimumLevel = 1;
+#elif defined(NIGHTLY_BUILD) && defined(XP_WIN)
+  // On Windows Nightly, enforce a minimum sandbox level of 6.
+  static const int minimumLevel = 6;
+#else
+  static const int minimumLevel = 0;
 #endif
+  if (level < minimumLevel) {
+    level = minimumLevel;
+  }
 #ifdef XP_LINUX
   // Level 1 was a configuration with default-deny seccomp-bpf but
   // which allowed direct filesystem access; that required additional
@@ -170,16 +172,24 @@ int GetEffectiveContentSandboxLevel() {
   if (level > 3 && !StaticPrefs::media_cubeb_sandbox()) {
     level = 3;
   }
+  // Turn off ioctl lockdown in safe mode, until it's gotten more testing.
+  if (level > 5 && gSafeMode) {
+    level = 5;
+  }
 #endif
 #if defined(XP_WIN)
   // Sandbox level 8, which uses a USER_RESTRICTED access token level, breaks if
   // prefs moving processing out of the content process are not the default.
-  // We are also disabling for safe mode initially.
   if (level >= 8 &&
-      (gSafeMode || !IsWebglOutOfProcessEnabled() ||
-       !PDMFactory::AllDecodersAreRemote() ||
-       !StaticPrefs::network_process_enabled() ||
-       !Preferences::GetBool("media.peerconnection.mtransport_process"))) {
+      (!IsWebglOutOfProcessEnabled() ||
+       !PDMFactory::AllDecodersAreRemote()
+#  if defined(MOZ_WEBRTC) && !defined(MOZ_THUNDERBIRD)
+       // These are only relevant if webrtc is present. Thunderbird currently
+       // compiles with webrtc, but doesn't use it.
+       || !StaticPrefs::network_process_enabled() ||
+       !Preferences::GetBool("media.peerconnection.mtransport_process")
+#  endif
+           )) {
     level = 7;
   }
 #endif
@@ -196,6 +206,13 @@ int GetEffectiveSocketProcessSandboxLevel() {
 
   int level =
       StaticPrefs::security_sandbox_socket_process_level_DoNotUseDirectly();
+
+#ifdef XP_LINUX
+  // Turn off ioctl lockdown in safe mode, until it's gotten more testing.
+  if (level > 1 && gSafeMode) {
+    level = 1;
+  }
+#endif
 
   return level;
 }

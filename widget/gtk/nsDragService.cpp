@@ -33,6 +33,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/WidgetUtilsGtk.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "GRefPtr.h"
 #include "nsAppShell.h"
 
@@ -60,9 +61,6 @@
 
 using namespace mozilla;
 using namespace mozilla::gfx;
-
-// The maximum time to wait for a "drag_received" arrived in microseconds.
-#define NS_DND_TIMEOUT (1000000)
 
 //  The maximum time to wait before temporary files resulting
 //  from drag'n'drop events will be removed in miliseconds.
@@ -1436,23 +1434,26 @@ RefPtr<DragData> nsDragSession::GetDragData(GdkAtom aRequestedFlavor) {
     }
   }
 
-  mWaitingForDragDataRequests++;
+  if (mWaitingForDragDataContext == mTargetDragContext) {
+    LOGDRAGSERVICE("  %s failed to get as we're already waiting to data",
+                   GUniquePtr<gchar>(gdk_atom_name(aRequestedFlavor)).get());
+    return nullptr;
+  }
+  mWaitingForDragDataContext = mTargetDragContext;
 
   // We'll get the data by nsDragSession::TargetDataReceived()
   gtk_drag_get_data(mTargetWidget, mTargetDragContext, aRequestedFlavor,
                     mTargetTime);
 
-  LOGDRAGSERVICE(
-      "  about to start inner iteration, mWaitingForDragDataRequests %d",
-      mWaitingForDragDataRequests);
+  LOGDRAGSERVICE("  about to start inner iteration");
   gtk_main_iteration();
 
   PRTime entryTime = PR_Now();
-  while (mWaitingForDragDataRequests && mDoingDrag) {
+  int32_t timeout = StaticPrefs::widget_gtk_clipboard_timeout_ms() * 1000;
+  while (mWaitingForDragDataContext && mDoingDrag) {
     // check the number of iterations
-    LOGDRAGSERVICE("  doing iteration, mWaitingForDragDataRequests %d ...",
-                   mWaitingForDragDataRequests);
-    if (PR_Now() - entryTime > NS_DND_TIMEOUT) {
+    LOGDRAGSERVICE("  doing iteration");
+    if (PR_Now() - entryTime > timeout) {
       LOGDRAGSERVICE("  failed to get D&D data in time!\n");
       break;
     }
@@ -1460,9 +1461,8 @@ RefPtr<DragData> nsDragSession::GetDragData(GdkAtom aRequestedFlavor) {
   }
 
   // We failed to get all data in time
-  if (mWaitingForDragDataRequests) {
-    LOGDRAGSERVICE("  failed to get all data, mWaitingForDragDataRequests %d",
-                   mWaitingForDragDataRequests);
+  if (mWaitingForDragDataContext) {
+    LOGDRAGSERVICE("  failed to get all data");
   }
 
   RefPtr<DragData> data =
@@ -1483,15 +1483,18 @@ void nsDragSession::TargetDataReceived(GtkWidget* aWidget,
                                        gint aY,
                                        GtkSelectionData* aSelectionData,
                                        guint aInfo, guint32 aTime) {
-  MOZ_ASSERT(mWaitingForDragDataRequests);
-  mWaitingForDragDataRequests--;
+  MOZ_ASSERT(mWaitingForDragDataContext);
 
   GdkAtom target = gtk_selection_data_get_target(aSelectionData);
-  LOGDRAGSERVICE(
-      "nsDragSession::TargetDataReceived(%p) MIME %s "
-      "mWaitingForDragDataRequests %d",
-      aContext, GUniquePtr<gchar>(gdk_atom_name(target)).get(),
-      mWaitingForDragDataRequests);
+  LOGDRAGSERVICE("nsDragSession::TargetDataReceived(%p) MIME %s ", aContext,
+                 GUniquePtr<gchar>(gdk_atom_name(target)).get());
+
+  if (mWaitingForDragDataContext != aContext) {
+    LOGDRAGSERVICE("  quit - wrong drag context!");
+    return;
+  }
+
+  mWaitingForDragDataContext = nullptr;
 
   RefPtr<DragData> dragData;
 

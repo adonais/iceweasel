@@ -85,17 +85,6 @@ struct LargeBuffer;
 class StoreBuffer;
 class TenuringTracer;
 
-// A set of cells that need to be swept at the end of a minor GC,
-// represented as a linked list of ArenaCellSet structs extracted from a
-// WholeCellBuffer.
-struct CellSweepSet {
-  UniquePtr<LifoAlloc> storage_;
-  ArenaCellSet* head_ = nullptr;
-
-  // Fixup the tenured dependent strings stored in the ArenaCellSet list.
-  void sweep();
-};
-
 }  // namespace gc
 
 class Nursery {
@@ -381,7 +370,7 @@ class Nursery {
 
   bool shouldTenureEverything(JS::GCReason reason);
 
-  inline bool inCollectedRegion(gc::Cell* cell) const;
+  inline bool inCollectedRegion(const gc::Cell* cell) const;
   inline bool inCollectedRegion(void* ptr) const;
 
   void trackMallocedBufferOnPromotion(void* buffer, gc::Cell* owner,
@@ -398,6 +387,8 @@ class Nursery {
   size_t sizeOfMallocedBlockCache(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocedBlockCache_.sizeOfExcludingThis(mallocSizeOf);
   }
+
+  inline void addMallocedBufferBytes(size_t nbytes);
 
   mozilla::TimeStamp lastCollectionEndTime() const;
 
@@ -446,8 +437,6 @@ class Nursery {
     return (currentEnd() - position()) +
            (maxChunkCount() - currentChunk() - 1) * gc::ChunkSize;
   }
-
-  inline void addMallocedBufferBytes(size_t nbytes);
 
   // Calculate the promotion rate of the most recent minor GC.
   // The valid_for_tenuring parameter is used to return whether this
@@ -531,8 +520,7 @@ class Nursery {
   bool checkForwardingPointerInsideNursery(void* ptr);
 #endif
 
-  // Updates pointers to nursery objects that have been tenured and discards
-  // pointers to objects that have been freed.
+  // Discard pointers to objects that have been freed.
   void sweep();
 
   // In a minor GC, resets the start and end positions, the current chunk and
@@ -565,6 +553,9 @@ class Nursery {
   // vector. Shrinks the vector but does not update maxChunkCount().
   void freeChunksFrom(Space& space, unsigned firstFreeChunk);
 
+  // During a semispace nursery collection, return whether a cell in fromspace
+  // was in the tospace of the previous collection, meaning that it should be
+  // tenured in this collection.
   inline bool shouldTenure(gc::Cell* cell);
 
   void sendTelemetry(JS::GCReason reason, mozilla::TimeDuration totalTime,
@@ -732,8 +723,6 @@ class Nursery {
   using ForwardedBufferMap =
       HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy>;
   ForwardedBufferMap forwardedBuffers;
-
-  gc::CellSweepSet cellsToSweep;
 
   // When we assign a unique id to cell in the nursery, that almost always
   // means that the cell will be in a hash table, and thus, held live,

@@ -5,6 +5,7 @@ support-files = [
   "../fixtures/autocomplete_basic.html",
   "../fixtures/autocomplete_iframe.html",
   "../fixtures/autocomplete_iframe_sandboxed.html",
+  "../fixtures/autocomplete_multiple_emails_checkout.html",
   "../fixtures/autocomplete_simple_basic.html",
   "../fixtures/dynamic_forms.html",
   "../fixtures/dynamic_formless_fields_updated_due_to_node_mutations.html",
@@ -83,6 +84,8 @@ skip-if = [
   "os == 'linux'" , # Bug 1788900
 ]
 
+["browser_email_dropdown.js"]
+
 ["browser_fathom_cc.js"]
 
 ["browser_fillclear_events.js"]
@@ -95,6 +98,7 @@ skip-if = [
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1916287
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1916287
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan && swgl", # Bug 1916287
 ]
 
 ["browser_iframe_capture.js"]

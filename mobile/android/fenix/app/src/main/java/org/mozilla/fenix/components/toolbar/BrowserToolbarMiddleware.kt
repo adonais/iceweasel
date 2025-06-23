@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.toolbar
 
 import android.content.Context
+import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.LifecycleOwner
@@ -24,9 +25,17 @@ import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
+import mozilla.components.compose.browser.toolbar.concept.PageOrigin
+import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.ContextualMenuOption
+import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.CopyToClipboardClicked
+import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.LoadFromClipboardClicked
+import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.PasteFromClipboardClicked
+import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsEndUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsStartUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.UpdateProgressBarConfig
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToggleEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton
@@ -35,11 +44,15 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
 import mozilla.components.compose.browser.toolbar.store.ProgressBarGravity
-import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.ext.flow
+import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.util.URLStringUtils
+import mozilla.components.support.utils.ClipboardHandler
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.BrowserAnimator
+import org.mozilla.fenix.browser.BrowserAnimator.Companion.getToolbarNavOptions
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Normal
@@ -48,14 +61,17 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.store.BrowserScreenAction
 import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.appstate.AppAction.CurrentTabClosed
+import org.mozilla.fenix.components.appstate.AppAction.URLCopiedToClipboard
 import org.mozilla.fenix.components.menu.MenuAccessPoint
+import org.mozilla.fenix.components.toolbar.DisplayActions.HomeClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.MenuClicked
+import org.mozilla.fenix.components.toolbar.PageOriginInteractions.OriginClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewPrivateTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.CloseCurrentTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
-import org.mozilla.fenix.components.toolbar.navbar.shouldAddNavigationBar
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.isActiveDownload
@@ -64,6 +80,7 @@ import mozilla.components.ui.icons.R as iconsR
 
 @VisibleForTesting
 internal sealed class DisplayActions : BrowserToolbarEvent {
+    data object HomeClicked : DisplayActions()
     data object MenuClicked : DisplayActions()
 }
 
@@ -75,16 +92,28 @@ internal sealed class TabCounterInteractions : BrowserToolbarEvent {
     data object CloseCurrentTab : TabCounterInteractions()
 }
 
+internal sealed class PageOriginInteractions : BrowserToolbarEvent {
+    data object OriginClicked : PageOriginInteractions()
+}
+
 /**
  * [Middleware] responsible for configuring and handling interactions with the composable toolbar.
  *
  * This is also a [ViewModel] allowing to be easily persisted between activity restarts.
+ *
+ * @param appStore [AppStore] allowing to integrate with other features of the applications.
+ * @param browserScreenStore [BrowserScreenStore] used for integration with other browser screen functionalities.
+ * @param browserStore [BrowserStore] to sync from.
+ * @param useCases [UseCases] helping this integrate with other features of the applications.
+ * @param clipboard [ClipboardHandler] to use for reading from device's clipboard.
+ * @param settings [Settings] for accessing user preferences.
  */
 class BrowserToolbarMiddleware(
     private val appStore: AppStore,
     private val browserScreenStore: BrowserScreenStore,
     private val browserStore: BrowserStore,
-    private val tabsUseCases: TabsUseCases,
+    private val useCases: UseCases,
+    private val clipboard: ClipboardHandler,
     private val settings: Settings,
 ) : Middleware<BrowserToolbarState, BrowserToolbarAction>, ViewModel() {
     private lateinit var dependencies: LifecycleDependencies
@@ -102,8 +131,10 @@ class BrowserToolbarMiddleware(
         updateToolbarActionsBasedOnOrientation()
         updateTabsCount()
         observeAcceptingCancellingPrivateDownloads()
+        updatePageOrigin()
     }
 
+    @Suppress("LongMethod")
     override fun invoke(
         context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
@@ -113,8 +144,19 @@ class BrowserToolbarMiddleware(
             is BrowserToolbarAction.Init -> {
                 store = context.store as BrowserToolbarStore
 
+                updateStartBrowserActions()
+                updateCurrentPageOrigin()
                 updateEndBrowserActions()
             }
+
+            is HomeClicked -> {
+                dependencies.browserAnimator.captureEngineViewAndDrawStatically {
+                    dependencies.navController.navigate(
+                        BrowserFragmentDirections.actionGlobalHome(),
+                    )
+                }
+            }
+
             is MenuClicked -> {
                 dependencies.navController.nav(
                     R.id.browserFragment,
@@ -148,7 +190,7 @@ class BrowserToolbarMiddleware(
                     val isLastTab = browserStore.state.getNormalOrPrivateTabs(selectedTab.content.private).size == 1
 
                     if (!isLastTab) {
-                        tabsUseCases.removeTab(selectedTab.id, selectParentIfExists = true)
+                        useCases.tabsUseCases.removeTab(selectedTab.id, selectParentIfExists = true)
                         appStore.dispatch(CurrentTabClosed(selectedTab.content.private))
                         return@let
                     }
@@ -182,6 +224,44 @@ class BrowserToolbarMiddleware(
                 }
             }
 
+            is OriginClicked -> {
+                store?.dispatch(ToggleEditMode(editMode = true))
+            }
+            is CopyToClipboardClicked -> {
+                val selectedTab = browserStore.state.selectedTab
+                val url = selectedTab?.readerState?.activeUrl ?: selectedTab?.content?.url
+                clipboard.text = url
+
+                // Android 13+ shows by default a popup for copied text.
+                // Avoid overlapping popups informing the user when the URL is copied to the clipboard.
+                // and only show our snackbar when Android will not show an indication by default.
+                // See https://developer.android.com/develop/ui/views/touch-and-input/copy-paste#duplicate-notifications).
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                    appStore.dispatch(URLCopiedToClipboard)
+                }
+            }
+            is PasteFromClipboardClicked -> {
+                dependencies.navController.nav(
+                    R.id.browserFragment,
+                    BrowserFragmentDirections.actionGlobalSearchDialog(
+                        sessionId = browserStore.state.selectedTabId,
+                        pastedText = clipboard.text,
+                    ),
+                    getToolbarNavOptions(dependencies.context),
+                )
+            }
+            is LoadFromClipboardClicked -> {
+                clipboard.extractURL()?.let {
+                    useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                        searchTermOrURL = it,
+                        newTab = false,
+                        private = dependencies.browsingModeManager.mode == Private,
+                    )
+                } ?: run {
+                    Logger("BrowserOriginContextMenu").error("Clipboard contains URL but unable to read text")
+                }
+            }
+
             else -> next(action)
         }
     }
@@ -191,35 +271,44 @@ class BrowserToolbarMiddleware(
         Private -> browserStore.state.privateTabs.size
     }
 
+    private fun updateStartBrowserActions() = store?.dispatch(
+        BrowserActionsStartUpdated(
+            buildStartBrowserActions(),
+        ),
+    )
+
     private fun updateEndBrowserActions() = store?.dispatch(
         BrowserActionsEndUpdated(
             buildEndBrowserActions(getCurrentNumberOfOpenedTabs()),
         ),
     )
 
-    private fun buildEndBrowserActions(tabsCount: Int): List<Action> =
-        when (!dependencies.context.shouldAddNavigationBar()) {
-            true -> listOf(
-                TabCounterAction(
-                    count = tabsCount,
-                    contentDescription = dependencies.context.getString(
-                        R.string.mozac_tab_counter_open_tab_tray,
-                        tabsCount.toString(),
-                    ),
-                    showPrivacyMask = dependencies.browsingModeManager.mode == Private,
-                    onClick = TabCounterClicked,
-                    onLongClick = buildTabCounterMenu(),
-                ),
-                ActionButton(
-                    icon = R.drawable.mozac_ic_ellipsis_vertical_24,
-                    contentDescription = R.string.content_description_menu,
-                    tint = R.attr.actionPrimary,
-                    onClick = MenuClicked,
-                ),
-            )
+    private fun buildStartBrowserActions(): List<Action> = listOf(
+        ActionButton(
+            icon = R.drawable.mozac_ic_home_24,
+            contentDescription = R.string.browser_toolbar_home,
+            onClick = HomeClicked,
+        ),
+    )
 
-            false -> emptyList()
-        }
+    private fun buildEndBrowserActions(tabsCount: Int): List<Action> =
+        listOf(
+            TabCounterAction(
+                count = tabsCount,
+                contentDescription = dependencies.context.getString(
+                    R.string.mozac_tab_counter_open_tab_tray,
+                    tabsCount.toString(),
+                ),
+                showPrivacyMask = dependencies.browsingModeManager.mode == Private,
+                onClick = TabCounterClicked,
+                onLongClick = buildTabCounterMenu(),
+            ),
+            ActionButton(
+                icon = R.drawable.mozac_ic_ellipsis_vertical_24,
+                contentDescription = R.string.content_description_menu,
+                onClick = MenuClicked,
+            ),
+        )
 
     private fun buildTabCounterMenu() = BrowserToolbarMenu {
         listOf(
@@ -309,6 +398,37 @@ class BrowserToolbarMiddleware(
         }
     }
 
+    private fun updatePageOrigin() {
+        with(dependencies.lifecycleOwner) {
+            this.lifecycleScope.launch {
+                repeatOnLifecycle(RESUMED) {
+                    browserStore.flow()
+                        .distinctUntilChangedBy { it.selectedTab?.content?.url }
+                        .collect {
+                            updateCurrentPageOrigin()
+                        }
+                }
+            }
+        }
+    }
+
+    private fun updateCurrentPageOrigin() {
+        val urlString = browserStore.state.selectedTab?.content?.url
+            ?.let { URLStringUtils.toDisplayUrl(it).toString() }
+
+        store?.dispatch(
+            BrowserDisplayToolbarAction.PageOriginUpdated(
+                PageOrigin(
+                    hint = R.string.search_hint,
+                    title = null,
+                    url = urlString,
+                    contextualMenuOptions = ContextualMenuOption.entries,
+                    onClick = OriginClicked,
+                ),
+            ),
+        )
+    }
+
     private fun observeAcceptingCancellingPrivateDownloads() {
         with(dependencies.lifecycleOwner) {
             lifecycleScope.launch {
@@ -332,6 +452,7 @@ class BrowserToolbarMiddleware(
      * @property lifecycleOwner [LifecycleOwner] depending on which lifecycle related operations will be scheduled.
      * @property navController [NavController] to use for navigating to other in-app destinations.
      * @property browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
+     * @property browserAnimator Helper for animating the browser content when navigating to other screens.
      * @property thumbnailsFeature [BrowserThumbnails] for requesting screenshots of the current tab.
      */
     data class LifecycleDependencies(
@@ -339,6 +460,7 @@ class BrowserToolbarMiddleware(
         val lifecycleOwner: LifecycleOwner,
         val navController: NavController,
         val browsingModeManager: BrowsingModeManager,
+        val browserAnimator: BrowserAnimator,
         val thumbnailsFeature: BrowserThumbnails?,
     )
 
@@ -349,18 +471,20 @@ class BrowserToolbarMiddleware(
         /**
          * [ViewModelProvider.Factory] for creating a [BrowserToolbarMiddleware].
          *
-         * @param appStore [AppStore] to sync from.
+         * @param appStore [AppStore] allowing to integrate with other features of the applications.
          * @param browserScreenStore [BrowserScreenStore] used for integration with other
          * browser screen functionalities.
          * @param browserStore [BrowserStore] to sync from.
-         * @param tabsUseCases [TabsUseCases] for managing tabs.
+         * @param useCases [UseCases] helping this integrate with other features of the applications.
+         * @param clipboard [ClipboardHandler] to use for reading from device's clipboard.
          * @param settings [Settings] for accessing user preferences.
          */
         fun viewModelFactory(
             appStore: AppStore,
             browserScreenStore: BrowserScreenStore,
             browserStore: BrowserStore,
-            tabsUseCases: TabsUseCases,
+            useCases: UseCases,
+            clipboard: ClipboardHandler,
             settings: Settings,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -370,7 +494,8 @@ class BrowserToolbarMiddleware(
                         appStore = appStore,
                         browserScreenStore = browserScreenStore,
                         browserStore = browserStore,
-                        tabsUseCases = tabsUseCases,
+                        useCases = useCases,
+                        clipboard = clipboard,
                         settings = settings,
                     ) as T
                 }

@@ -171,10 +171,7 @@ export const storybookTables = {
     {
       value: {
         default: "transparent",
-        brand: {
-          prefersContrast: "var(--button-background-color)",
-          forcedColors: "var(--button-background-color)",
-        },
+        brand: { forcedColors: "var(--button-background-color)" },
       },
       name: "--button-background-color-ghost",
     },
@@ -215,7 +212,20 @@ export const storybookTables = {
     },
   ],
   "border-color": [
-    { value: { prefersContrast: "var(--text-color)" }, name: "--border-color" },
+    {
+      value: {
+        comment: "TODO Bug 1946826 - Border colors need to be consolidated",
+        light: "#CFCFD8",
+        dark: "#3A3944",
+        prefersContrast: "CanvasText",
+        default: "light-dark(#CFCFD8, #3A3944)",
+      },
+      name: "--border-color",
+    },
+    {
+      value: { default: "transparent", prefersContrast: "CanvasText" },
+      name: "--border-color-transparent",
+    },
     {
       value: {
         default: "color-mix(in srgb, currentColor 10%, transparent)",
@@ -443,7 +453,7 @@ export const storybookTables = {
     },
     { value: "var(--size-item-small)", name: "--checkbox-size" },
     { value: "16px", name: "--size-item-small" },
-    { value: "28px", name: "--size-item-medium" },
+    { value: "24px", name: "--size-item-medium" },
     { value: "32px", name: "--size-item-large" },
   ],
   "text-color": [
@@ -806,37 +816,37 @@ export const storybookTables = {
     },
     {
       value: {
-        light: "var(--color-blue-70)",
+        light: "var(--color-blue-60)",
         dark: "var(--color-blue-20)",
         prefersContrast: "var(--icon-color)",
-        default: "light-dark(var(--color-blue-70), var(--color-blue-20))",
+        default: "light-dark(var(--color-blue-60), var(--color-blue-20))",
       },
       name: "--icon-color-information",
     },
     {
       value: {
-        light: "var(--color-green-70)",
+        light: "var(--color-green-60)",
         dark: "var(--color-green-20)",
         prefersContrast: "var(--icon-color)",
-        default: "light-dark(var(--color-green-70), var(--color-green-20))",
+        default: "light-dark(var(--color-green-60), var(--color-green-20))",
       },
       name: "--icon-color-success",
     },
     {
       value: {
-        light: "var(--color-yellow-70)",
+        light: "var(--color-yellow-60)",
         dark: "var(--color-yellow-20)",
         prefersContrast: "var(--icon-color)",
-        default: "light-dark(var(--color-yellow-70), var(--color-yellow-20))",
+        default: "light-dark(var(--color-yellow-60), var(--color-yellow-20))",
       },
       name: "--icon-color-warning",
     },
     {
       value: {
-        light: "var(--color-red-70)",
+        light: "var(--color-red-60)",
         dark: "var(--color-red-20)",
         prefersContrast: "var(--icon-color)",
-        default: "light-dark(var(--color-red-70), var(--color-red-20))",
+        default: "light-dark(var(--color-red-60), var(--color-red-20))",
       },
       name: "--icon-color-critical",
     },
@@ -1014,7 +1024,17 @@ export const variableLookupTable = {
     prefersContrast: "var(--background-color-canvas)",
     default: "light-dark(var(--color-yellow-0), var(--color-yellow-90))",
   },
-  "border-color": { prefersContrast: "var(--text-color)" },
+  "border-color": {
+    comment: "TODO Bug 1946826 - Border colors need to be consolidated",
+    light: "#CFCFD8",
+    dark: "#3A3944",
+    prefersContrast: "CanvasText",
+    default: "light-dark(#CFCFD8, #3A3944)",
+  },
+  "border-color-transparent": {
+    default: "transparent",
+    prefersContrast: "CanvasText",
+  },
   "border-color-card": {
     default: "color-mix(in srgb, currentColor 10%, transparent)",
     prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
@@ -1109,10 +1129,7 @@ export const variableLookupTable = {
   },
   "button-background-color-ghost": {
     default: "transparent",
-    brand: {
-      prefersContrast: "var(--button-background-color)",
-      forcedColors: "var(--button-background-color)",
-    },
+    brand: { forcedColors: "var(--button-background-color)" },
   },
   "button-background-color-ghost-active":
     "var(--button-background-color-active)",
@@ -1457,28 +1474,28 @@ export const variableLookupTable = {
     default: "light-dark(var(--color-gray-70), var(--color-gray-05))",
   },
   "icon-color-information": {
-    light: "var(--color-blue-70)",
+    light: "var(--color-blue-60)",
     dark: "var(--color-blue-20)",
     prefersContrast: "var(--icon-color)",
-    default: "light-dark(var(--color-blue-70), var(--color-blue-20))",
+    default: "light-dark(var(--color-blue-60), var(--color-blue-20))",
   },
   "icon-color-success": {
-    light: "var(--color-green-70)",
+    light: "var(--color-green-60)",
     dark: "var(--color-green-20)",
     prefersContrast: "var(--icon-color)",
-    default: "light-dark(var(--color-green-70), var(--color-green-20))",
+    default: "light-dark(var(--color-green-60), var(--color-green-20))",
   },
   "icon-color-warning": {
-    light: "var(--color-yellow-70)",
+    light: "var(--color-yellow-60)",
     dark: "var(--color-yellow-20)",
     prefersContrast: "var(--icon-color)",
-    default: "light-dark(var(--color-yellow-70), var(--color-yellow-20))",
+    default: "light-dark(var(--color-yellow-60), var(--color-yellow-20))",
   },
   "icon-color-critical": {
-    light: "var(--color-red-70)",
+    light: "var(--color-red-60)",
     dark: "var(--color-red-20)",
     prefersContrast: "var(--icon-color)",
-    default: "light-dark(var(--color-red-70), var(--color-red-20))",
+    default: "light-dark(var(--color-red-60), var(--color-red-20))",
   },
   "icon-size-default": "var(--icon-size-small)",
   "icon-size-small": "var(--size-item-small)",
@@ -1516,7 +1533,7 @@ export const variableLookupTable = {
   },
   "page-main-content-width": { brand: { default: "664px" } },
   "size-item-small": "16px",
-  "size-item-medium": "28px",
+  "size-item-medium": "24px",
   "size-item-large": "32px",
   "space-xxsmall": "calc(0.5 * var(--space-xsmall))",
   "space-xsmall": "0.267rem",

@@ -328,6 +328,7 @@
     #suggestionsLoadCancel;
     #suggestionsSeparator;
     #smartTabGroupingManager;
+    #smartTabGroupsInitiated = false;
     #suggestionsOptinContainer;
     #suggestionsOptin;
     #suggestionsRunToken;
@@ -494,6 +495,9 @@
     }
 
     #onSmartTabGroupsPrefChange(_preName, _prev, _latest) {
+      if (!this.#smartTabGroupsInitiated && this.smartTabGroupsEnabled) {
+        this.#initSuggestions();
+      }
       const icon = this.smartTabGroupsEnabled
         ? MozTabbrowserTabGroupMenu.AI_ICON
         : "";
@@ -583,6 +587,9 @@
     }
 
     #initSuggestions() {
+      if (!this.smartTabGroupsEnabled || this.#smartTabGroupsInitiated) {
+        return;
+      }
       const { SmartTabGroupingManager } = ChromeUtils.importESModule(
         "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs"
       );
@@ -668,6 +675,7 @@
         this.#suggestionsRunToken = null;
         this.#handleLoadSuggestionsCancel();
       });
+      this.#smartTabGroupsInitiated = true;
     }
 
     #populateSwatches() {
@@ -822,8 +830,15 @@
       this.#panel.openPopup(group.firstChild, {
         position: this.#panelPosition,
       });
+      if (!this.smartTabGroupsOptin) {
+        return;
+      }
       // If user has opted in kick off label generation
-      this.smartTabGroupsOptin && this.#initMlGroupLabel();
+      this.#initMlGroupLabel();
+      if (this.smartTabGroupsEnabled) {
+        // initialize the embedding engine in the background
+        this.#smartTabGroupingManager.initEmbeddingEngine();
+      }
     }
 
     /*
@@ -929,7 +944,7 @@
         Glean.tabgroup.groupInteractions.rename.add(1);
       }
       this.activeGroup = null;
-      this.#smartTabGroupingManager.terminateProcess();
+      this.#smartTabGroupingManager?.terminateProcess();
     }
 
     on_keypress(event) {
@@ -1207,6 +1222,9 @@
      * @param {boolean} shouldShow - Whether the element should be shown (true) or hidden (false).
      */
     #setElementVisibility(element, shouldShow) {
+      if (!element) {
+        return;
+      }
       element.hidden = !shouldShow;
     }
 
@@ -1260,9 +1278,13 @@
       this.#setSuggestModeSuggestionState(false);
       this.#suggestedTabs = [];
       this.#selectedSuggestedTabs = [];
-      this.#suggestions.innerHTML = "";
+      if (this.#suggestions) {
+        this.#suggestions.innerHTML = "";
+      }
       this.#showSmartSuggestionsContainer(false);
-      this.#suggestionsOptinContainer.innerHTML = "";
+      if (this.#suggestionsOptinContainer) {
+        this.#suggestionsOptinContainer.innerHTML = "";
+      }
     }
 
     #renderSuggestionState() {

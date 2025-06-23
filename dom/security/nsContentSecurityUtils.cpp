@@ -1315,6 +1315,7 @@ static nsLiteralCString sStyleSrcUnsafeInlineAllowList[] = {
 };
 // img-src data: blob:
 static nsLiteralCString sImgSrcDataBlobAllowList[] = {
+    "about:addons"_ns,
     "about:debugging"_ns,
     "about:devtools-toolbox"_ns,
     "about:firefoxview"_ns,
@@ -1329,7 +1330,6 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "about:reader"_ns,
     "about:sessionrestore"_ns,
     "about:settings"_ns,
-    "about:shoppingsidebar"_ns,
     "about:test-about-content-search-ui"_ns,
     "about:welcome"_ns,
     "chrome://browser/content/aboutDialog.xhtml"_ns,
@@ -1341,7 +1341,6 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "chrome://browser/content/preferences/dialogs/permissions.xhtml"_ns,
     "chrome://browser/content/preferences/fxaPairDevice.xhtml"_ns,
     "chrome://browser/content/screenshots/screenshots-preview.html"_ns,
-    "chrome://browser/content/shopping/shopping.html"_ns,
     "chrome://browser/content/sidebar/sidebar-customize.html"_ns,
     "chrome://browser/content/sidebar/sidebar-history.html"_ns,
     "chrome://browser/content/sidebar/sidebar-syncedtabs.html"_ns,
@@ -2219,10 +2218,14 @@ long nsContentSecurityUtils::ClassifyDownload(
     loadingPrincipal = loadInfo->TriggeringPrincipal();
   }
   // Creating a fake Loadinfo that is just used for the MCB check.
-  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
+  Result<RefPtr<net::LoadInfo>, nsresult> maybeLoadInfo = net::LoadInfo::Create(
       loadingPrincipal, loadInfo->TriggeringPrincipal(), nullptr,
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
       nsIContentPolicy::TYPE_FETCH);
+  if (maybeLoadInfo.isErr()) {
+    return nsITransfer::DOWNLOAD_FORBIDDEN;
+  }
+  RefPtr<net::LoadInfo> secCheckLoadInfo = maybeLoadInfo.unwrap();
   // Disable HTTPS-Only checks for that loadinfo. This is required because
   // otherwise nsMixedContentBlocker::ShouldLoad would assume that the request
   // is safe, because HTTPS-Only is handling it.

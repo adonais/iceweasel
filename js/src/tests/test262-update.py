@@ -18,7 +18,6 @@ UNSUPPORTED_FEATURES = set(
     [
         "tail-call-optimization",
         "Intl.Locale-info",  # Bug 1693576
-        "Atomics.waitAsync",  # Bug 1467846
         "legacy-regexp",  # Bug 1306461
         "source-phase-imports",
         "source-phase-imports-module-source",
@@ -44,6 +43,7 @@ FEATURE_CHECK_NEEDED = {
     "Error.isError": "!Error.isError",
     "iterator-sequencing": "!Iterator.concat",
     "Math.sumPrecise": "!Math.sumPrecise",  # Bug 1918708
+    "upsert": "!Map.prototype.getOrInsertComputed",
 }
 RELEASE_OR_BETA = set(
     [
@@ -68,6 +68,8 @@ SHELL_OPTIONS = {
     "Error.isError": "--enable-error-iserror",
     "iterator-sequencing": "--enable-iterator-sequencing",
     "Math.sumPrecise": "--enable-math-sumprecise",
+    "Atomics.waitAsync": "--setpref=atomics_wait_async",
+    "upsert": "--enable-upsert",
 }
 
 INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {}

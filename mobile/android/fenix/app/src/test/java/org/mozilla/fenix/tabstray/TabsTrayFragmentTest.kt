@@ -17,22 +17,30 @@ import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.NavGraphDirections
+import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
+import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationNeededInfo
 import org.mozilla.fenix.databinding.FragmentTabTrayDialogBinding
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.FenixRobolectricTestRunner
 import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.home.HomeScreenViewModel
+import org.mozilla.fenix.settings.biometric.BiometricUtils
 
 @RunWith(FenixRobolectricTestRunner::class)
 class TabsTrayFragmentTest {
@@ -48,6 +56,7 @@ class TabsTrayFragmentTest {
 
     @Before
     fun setup() {
+        mockkStatic("mozilla.components.browser.state.selector.SelectorsKt")
         context = mockk(relaxed = true)
         val inflater = LayoutInflater.from(testContext)
         tabsTrayDialogBinding = FragmentTabTrayDialogBinding.inflate(inflater)
@@ -55,8 +64,12 @@ class TabsTrayFragmentTest {
         fragment = spyk(TabsTrayFragment())
         fragment._tabsTrayDialogBinding = tabsTrayDialogBinding
         every { fragment.context } returns context
-        every { fragment.context } returns context
         every { fragment.viewLifecycleOwner } returns mockk(relaxed = true)
+    }
+
+    @After
+    fun teardown() {
+        unmockkStatic("mozilla.components.browser.state.selector.SelectorsKt")
     }
 
     @Test
@@ -148,5 +161,174 @@ class TabsTrayFragmentTest {
         )
         val position = fragment.getTabPositionFromId(tabsList, "tab2")
         assertEquals(1, position)
+    }
+
+    // tests for onTabPageClick
+    @Test
+    fun `WHEN shouldShowPrompt is true THEN onTabPageClick sets the authentication status to authentication in progress and calls show prompt`() {
+        every { fragment.view } returns mockk()
+        every { fragment.requireComponents.core.store.state.privateTabs } returns listOf(
+            mockk(),
+            mockk(),
+        )
+        every { fragment.requireContext().settings().privateBrowsingLockedEnabled } returns true
+        every { fragment.tabsTrayStore.state.selectedPage } returns Page.NormalTabs
+        every { fragment.verificationResultLauncher } returns mockk()
+
+        val biometricAuthenticationNeededInfo = BiometricAuthenticationNeededInfo()
+        val biometricUtils = mockk<BiometricUtils>(relaxed = true)
+        val tabsTrayInteractor = mockk<TabsTrayInteractor>(relaxed = true)
+        val page = Page.PrivateTabs
+        fragment.onTabPageClick(
+            biometricAuthenticationNeededInfo = biometricAuthenticationNeededInfo,
+            biometricUtils = biometricUtils,
+            tabsTrayInteractor = tabsTrayInteractor,
+            page = page,
+            isPrivateScreenLocked = true,
+        )
+
+        assertEquals(
+            AuthenticationStatus.AUTHENTICATION_IN_PROGRESS,
+            biometricAuthenticationNeededInfo.authenticationStatus,
+        )
+        verify {
+            biometricUtils.bindBiometricsCredentialsPromptOrShowWarning(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN shouldShowPrompt is false and tab page is private THEN onTabPageClick calls tabs tray interactor only`() {
+        every { fragment.view } returns mockk()
+        every { fragment.requireComponents.core.store.state.privateTabs } returns listOf(
+            mockk(),
+            mockk(),
+        )
+        every { fragment.requireContext().settings().privateBrowsingLockedEnabled } returns false
+        every { fragment.tabsTrayStore.state.selectedPage } returns Page.PrivateTabs
+
+        val biometricAuthenticationNeededInfo =
+            BiometricAuthenticationNeededInfo(authenticationStatus = AuthenticationStatus.AUTHENTICATED)
+        val biometricUtils = mockk<BiometricUtils>(relaxed = true)
+        val tabsTrayInteractor = mockk<TabsTrayInteractor>(relaxed = true)
+        val page = Page.PrivateTabs
+        fragment.onTabPageClick(
+            biometricAuthenticationNeededInfo = biometricAuthenticationNeededInfo,
+            biometricUtils = biometricUtils,
+            tabsTrayInteractor = tabsTrayInteractor,
+            page = page,
+            isPrivateScreenLocked = false,
+        )
+
+        assertEquals(
+            AuthenticationStatus.AUTHENTICATED, // unchanged
+            biometricAuthenticationNeededInfo.authenticationStatus,
+        )
+        verify { tabsTrayInteractor.onTrayPositionSelected(page.ordinal, false) }
+        verify(inverse = true) {
+            biometricUtils.bindBiometricsCredentialsPromptOrShowWarning(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN shouldShowPrompt is false and not a private tab page THEN onTabPageClick sets the authentication status to not authenticated and calls tabs tray interactor`() {
+        every { fragment.view } returns mockk()
+        every { fragment.requireComponents.core.store.state.privateTabs } returns listOf(
+            mockk(),
+            mockk(),
+        )
+        every { fragment.requireContext().settings().privateBrowsingLockedEnabled } returns false
+        every { fragment.tabsTrayStore.state.selectedPage } returns Page.NormalTabs
+
+        val biometricAuthenticationNeededInfo =
+            BiometricAuthenticationNeededInfo(authenticationStatus = AuthenticationStatus.AUTHENTICATED)
+        val biometricUtils = mockk<BiometricUtils>(relaxed = true)
+        val tabsTrayInteractor = mockk<TabsTrayInteractor>(relaxed = true)
+        val page = Page.NormalTabs
+        fragment.onTabPageClick(
+            biometricAuthenticationNeededInfo = biometricAuthenticationNeededInfo,
+            biometricUtils = biometricUtils,
+            tabsTrayInteractor = tabsTrayInteractor,
+            page = page,
+            isPrivateScreenLocked = false,
+        )
+
+        assertEquals(
+            AuthenticationStatus.NOT_AUTHENTICATED,
+            biometricAuthenticationNeededInfo.authenticationStatus,
+        )
+        verify { tabsTrayInteractor.onTrayPositionSelected(0, false) }
+        verify(inverse = true) {
+            biometricUtils.bindBiometricsCredentialsPromptOrShowWarning(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN all conditions are met THEN shouldShowLockPbmBanner returns true`() {
+        val result = testShouldShowLockPbmBanner()
+        assertTrue(result)
+    }
+
+    @Test
+    fun `WHEN isPrivateMode is false THEN shouldShowLockPbmBanner returns false`() {
+        val result = testShouldShowLockPbmBanner(isPrivateMode = false)
+        assertFalse(result)
+    }
+
+    @Test
+    fun `WHEN hasPrivateTabs is false THEN shouldShowLockPbmBanner returns false`() {
+        val result = testShouldShowLockPbmBanner(hasPrivateTabs = false)
+        assertFalse(result)
+    }
+
+    @Test
+    fun `WHEN biometricAvailable is false THEN shouldShowLockPbmBanner returns false`() {
+        val result = testShouldShowLockPbmBanner(biometricAvailable = false)
+        assertFalse(result)
+    }
+
+    @Test
+    fun `WHEN privateLockEnabled is true THEN shouldShowLockPbmBanner returns false`() {
+        val result = testShouldShowLockPbmBanner(privateLockEnabled = true)
+        assertFalse(result)
+    }
+
+    @Test
+    fun `WHEN shouldShowBanner is false THEN shouldShowLockPbmBanner returns false`() {
+        val result = testShouldShowLockPbmBanner(shouldShowBanner = false)
+        assertFalse(result)
+    }
+
+    private fun testShouldShowLockPbmBanner(
+        isPrivateMode: Boolean = true,
+        hasPrivateTabs: Boolean = true,
+        biometricAvailable: Boolean = true,
+        privateLockEnabled: Boolean = false,
+        shouldShowBanner: Boolean = true,
+    ): Boolean {
+        return fragment.shouldShowLockPbmBanner(
+            isPrivateMode = isPrivateMode,
+            hasPrivateTabs = hasPrivateTabs,
+            biometricAvailable = biometricAvailable,
+            privateLockEnabled = privateLockEnabled,
+            shouldShowBanner = shouldShowBanner,
+        )
     }
 }

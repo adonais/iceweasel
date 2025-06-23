@@ -75,8 +75,14 @@ class RecordingButton extends PureComponent {
   _onCaptureButtonClick = async () => {
     const { getProfileAndStopProfiler, onProfileReceived, perfFront } =
       this.props;
-    const profile = await getProfileAndStopProfiler(perfFront);
-    onProfileReceived(profile);
+    try {
+      const profileAndAdditionalInformation =
+        await getProfileAndStopProfiler(perfFront);
+      onProfileReceived(profileAndAdditionalInformation);
+    } catch (e) {
+      const assertedError = /** @type {Error | string} */ (e);
+      onProfileReceived(null, assertedError);
+    }
   };
 
   _onStopButtonClick = () => {

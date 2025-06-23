@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Web Compatibility Interventions",
   "description": "Urgent post-release fixes for web compatibility.",
-  "version": "139.13.0",
+  "version": "140.8.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "webcompat@mozilla.org",
@@ -54,14 +54,6 @@
         "scopes": ["addon_child"],
         "script": "experiment-apis/systemManufacturer.js",
         "paths": [["systemManufacturer"]]
-      }
-    },
-    "testUtils": {
-      "schema": "experiment-apis/testUtils.json",
-      "parent": {
-        "scopes": ["addon_parent"],
-        "script": "experiment-apis/testUtils.js",
-        "paths": [["testUtils"]]
       }
     },
     "trackingProtection": {

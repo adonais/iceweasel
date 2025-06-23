@@ -13,6 +13,7 @@ use crate::values::generics::box_::{
 use crate::values::specified::length::{LengthPercentage, NonNegativeLength};
 use crate::values::specified::{AllowQuirks, Integer, NonNegativeNumberOrPercentage};
 use crate::values::CustomIdent;
+pub use crate::logical_geometry::WritingModeProperty;
 use cssparser::Parser;
 use num_traits::FromPrimitive;
 use std::fmt::{self, Write};
@@ -20,18 +21,10 @@ use style_traits::{CssWriter, KeywordsCollectFn, ParseError};
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 
 #[cfg(not(feature = "servo"))]
-fn flexbox_enabled() -> bool {
-    true
-}
-#[cfg(not(feature = "servo"))]
 fn grid_enabled() -> bool {
     true
 }
 
-#[cfg(feature = "servo")]
-fn flexbox_enabled() -> bool {
-    style_config::get_bool("layout.flexbox.enabled")
-}
 #[cfg(feature = "servo")]
 fn grid_enabled() -> bool {
     style_config::get_bool("layout.grid.enabled")
@@ -411,8 +404,8 @@ impl DisplayKeyword {
             "contents" => Full(Display::Contents),
             "inline-block" => Full(Display::InlineBlock),
             "inline-table" => Full(Display::InlineTable),
-            "-webkit-flex" if flexbox_enabled() => Full(Display::Flex),
-            "inline-flex" | "-webkit-inline-flex" if flexbox_enabled() => Full(Display::InlineFlex),
+            "-webkit-flex" => Full(Display::Flex),
+            "inline-flex" | "-webkit-inline-flex" => Full(Display::InlineFlex),
             "inline-grid" if grid_enabled() => Full(Display::InlineGrid),
             "table-caption" => Full(Display::TableCaption),
             "table-row-group" => Full(Display::TableRowGroup),
@@ -445,7 +438,7 @@ impl DisplayKeyword {
             /// <display-inside> = flow | flow-root | table | flex | grid | ruby
             /// https://drafts.csswg.org/css-display/#typedef-display-inside
             "flow" => Inside(DisplayInside::Flow),
-            "flex" if flexbox_enabled() => Inside(DisplayInside::Flex),
+            "flex" => Inside(DisplayInside::Flex),
             "flow-root" => Inside(DisplayInside::FlowRoot),
             "table" => Inside(DisplayInside::Table),
             "grid" if grid_enabled() => Inside(DisplayInside::Grid),
@@ -1498,18 +1491,6 @@ pub enum Appearance {
     Textfield,
     /// The dropdown button(s) that open up a dropdown list.
     MenulistButton,
-    /// Various arrows that go in buttons
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ButtonArrowDown,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ButtonArrowNext,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ButtonArrowPrevious,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ButtonArrowUp,
-    /// A dual toolbar button (e.g., a Back button with a dropdown)
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Dualbutton,
     /// Menu Popup background.
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Menupopup,
@@ -1566,27 +1547,12 @@ pub enum Appearance {
     /// The down button of a spin control.
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     SpinnerDownbutton,
-    /// A splitter.  Can be horizontal or vertical.
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Splitter,
     /// A status bar in a main application window.
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Statusbar,
-    /// A single tab in a tab widget.
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Tab,
-    /// A single pane (inside the tabpanels container).
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Tabpanel,
-    /// The tab panels container.
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Tabpanels,
     /// A single toolbar button (with no associated dropdown).
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Toolbarbutton,
-    /// The dropdown portion of a toolbar button
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ToolbarbuttonDropdown,
     /// A tooltip.
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Tooltip,

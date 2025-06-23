@@ -774,6 +774,9 @@ class ContentChild final : public PContentChild,
       const MaybeDiscarded<BrowsingContext>& aContext, const uint32_t& aIndex,
       const uint32_t& aLength, const nsID& aChangeID);
 
+  mozilla::ipc::IPCResult RecvConsumeHistoryActivation(
+      const MaybeDiscarded<BrowsingContext>& aTop);
+
   mozilla::ipc::IPCResult RecvGetLayoutHistoryState(
       const MaybeDiscarded<BrowsingContext>& aContext,
       GetLayoutHistoryStateResolver&& aResolver);
@@ -813,6 +816,11 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvUpdateMediaCodecsSupported(
       RemoteDecodeIn aLocation, const media::MediaCodecsSupported& aSupported);
+
+#ifdef MOZ_WMF_CDM
+  mozilla::ipc::IPCResult RecvUpdateMFCDMOriginEntries(
+      const nsTArray<IPCOriginStatusEntry>& aEntries);
+#endif
 
 #ifdef NIGHTLY_BUILD
   virtual void OnChannelReceivedMessage(const Message& aMsg) override;

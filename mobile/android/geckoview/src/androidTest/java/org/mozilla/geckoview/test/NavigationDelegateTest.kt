@@ -11,13 +11,25 @@ import android.util.Base64
 import android.view.KeyEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import org.hamcrest.Matchers.* // ktlint-disable no-wildcard-imports
+import org.hamcrest.Matchers.closeTo
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.endsWith
+import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.greaterThan
+import org.hamcrest.Matchers.isEmptyOrNullString
+import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.notNullValue
+import org.hamcrest.Matchers.nullValue
+import org.hamcrest.Matchers.startsWith
 import org.json.JSONObject
 import org.junit.Assume.assumeThat
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.geckoview.* // ktlint-disable no-wildcard-imports
+import org.mozilla.geckoview.AllowOrDeny
+import org.mozilla.geckoview.ContentBlocking
+import org.mozilla.geckoview.GeckoResult
+import org.mozilla.geckoview.GeckoRuntimeSettings
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.ContentDelegate
 import org.mozilla.geckoview.GeckoSession.HistoryDelegate
@@ -27,8 +39,16 @@ import org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate
 import org.mozilla.geckoview.GeckoSession.ProgressDelegate
 import org.mozilla.geckoview.GeckoSession.TextInputDelegate
+import org.mozilla.geckoview.GeckoSessionSettings
+import org.mozilla.geckoview.WebExtension
+import org.mozilla.geckoview.WebExtensionController
+import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
-import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.* // ktlint-disable no-wildcard-imports
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.NullDelegate
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.RejectedPromiseException
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.Setting
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 import org.mozilla.geckoview.test.util.UiThreadUtils
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.ThreadLocalRandom
@@ -1266,6 +1286,57 @@ class NavigationDelegateTest : BaseSessionTest() {
             userAgent,
             containsString(vrSubStr),
         )
+    }
+
+    @Test fun desktopModeRFP() {
+        mainSession.loadUri("https://example.com")
+        sessionRule.waitForPageStop()
+
+        val majorVersion = BuildConfig.MOZILLA_VERSION.split(".")[0]
+
+        val rfpUADesktopString = "Mozilla/5.0 (X11; Linux x86_64; rv:$majorVersion.0) Gecko/20100101 Firefox/$majorVersion.0"
+
+        sessionRule.runtime.settings.setFingerprintingProtection(true)
+        sessionRule.runtime.settings.setFingerprintingProtectionOverrides("-AllTargets,+HttpUserAgent")
+
+        mainSession.settings.userAgentMode = GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+        mainSession.reload()
+        mainSession.waitForPageStop()
+
+        assertThat(
+            "User agent should be set to $rfpUADesktopString",
+            getUserAgent(),
+            equalTo(rfpUADesktopString),
+        )
+
+        var userAgent = sessionRule.waitForResult(mainSession.userAgent)
+        assertThat(
+            "User agent should be reported as $rfpUADesktopString",
+            userAgent,
+            containsString(rfpUADesktopString),
+        )
+
+        val rfpUAMobileString = "Mozilla/5.0 (Android 10; Mobile; rv:$majorVersion.0) Gecko/$majorVersion.0 Firefox/$majorVersion.0"
+
+        mainSession.settings.userAgentMode = GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+        mainSession.reload()
+        mainSession.waitForPageStop()
+
+        assertThat(
+            "User agent should be set to $rfpUAMobileString",
+            getUserAgent(),
+            equalTo(rfpUAMobileString),
+        )
+
+        userAgent = sessionRule.waitForResult(mainSession.userAgent)
+        assertThat(
+            "User agent should be reported as $rfpUAMobileString",
+            userAgent,
+            containsString(rfpUAMobileString),
+        )
+
+        sessionRule.runtime.settings.setFingerprintingProtection(false)
+        sessionRule.runtime.settings.setFingerprintingProtectionOverrides("")
     }
 
     private fun getUserAgent(session: GeckoSession = mainSession): String {

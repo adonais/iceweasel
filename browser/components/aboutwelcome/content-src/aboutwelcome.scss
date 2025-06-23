@@ -9,7 +9,6 @@
 // aboutwelcome.html or spotlight.html. Ideally, there should be no `@import`
 // statements in the built aboutwelcome.css file.
 @import '../../asrouter/content-src/styles/feature-callout';
-@import '../../asrouter/content-src/styles/shopping';
 
 /* stylelint-disable max-nesting-depth */
 
@@ -1604,6 +1603,7 @@ html {
     margin-block: 60px 10px;
     transition: var(--transition);
     height: 80px;
+    user-select: none;
 
     &.cta-top {
       margin-top: 25px;
@@ -1808,8 +1808,8 @@ html {
       outline: 2px solid var(--in-content-primary-button-background);
     }
 
-    // single select only specific styles
-    &.single-select:not(.theme) {
+    // single select and theme specific styles
+    &.single-select, &.theme {
       flex-direction: row;
       padding-top: 5px;
       gap: 10px;
@@ -1870,15 +1870,11 @@ html {
       }
 
     }
-    // theme specific styles
-    &.theme {
-      .select-item {
-        width: 180px;
-      }
-    }
 
-    // single select specific styles
-    &.single-select {
+
+
+    // single select and theme specific styles
+    &.single-select, &.theme {
       &:hover, &:focus-within {
         outline: none;
       }
@@ -1916,25 +1912,13 @@ html {
         background-size: cover;
         width: 40px;
         height: 40px;
-        border-radius: 40px;
-        outline: 1px solid var(--in-content-border-color);
-        outline-offset: -0.5px;
+        border-radius: 5px;
         z-index: -1;
 
         &:dir(rtl) {
           transform: scaleX(-1);
         }
 
-        &:focus-visible,
-        &:active,
-        &.selected {
-          outline: 2px solid var(--in-content-primary-button-background);
-          outline-offset: 2px;
-        }
-
-        &.selected {
-          outline-color: var(--color-accent-primary-active);
-        }
 
         &.light {
           background-image: url('resource://builtin-themes/light/icon.svg');
@@ -2225,7 +2209,7 @@ html {
           flex-direction: column;
 
           .header-title {
-            font-weight: 590;
+            font-weight: var(--font-weight-bold);
             line-height: 1.5;
           }
 

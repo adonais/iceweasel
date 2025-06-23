@@ -43,7 +43,7 @@ add_task(async function test_unsupported_language_settings_menu_checkboxes() {
     checked: true,
   });
 
-  await FullPageTranslationsTestUtils.assertPageIsTranslated({
+  await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated({
     fromLanguage: "es",
     toLanguage: "en",
     runInPage,

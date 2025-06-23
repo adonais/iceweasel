@@ -102,10 +102,10 @@ class SentryService(
     }
 
     private fun addDefaultTags() {
-        Sentry.setTag("ac.version", Build.version)
-        Sentry.setTag("ac.git", Build.gitHash)
-        Sentry.setTag("ac.as.build_version", Build.applicationServicesVersion)
-        Sentry.setTag("ac.glean.build_version", Build.gleanSdkVersion)
+        Sentry.setTag("ac.version", Build.VERSION)
+        Sentry.setTag("ac.git", Build.GIT_HASH)
+        Sentry.setTag("ac.as.build_version", Build.APPLICATION_SERVICES_VERSION)
+        Sentry.setTag("ac.glean.build_version", Build.GLEAN_SDK_VERSION)
         Sentry.setTag("user.locale", Locale.getDefault().toString())
         tags.forEach { entry ->
             Sentry.setTag(entry.key, entry.value)
@@ -178,9 +178,9 @@ class SentryService(
     @VisibleForTesting
     internal fun createMessage(crash: Crash.NativeCodeCrash): String {
         val fatal = crash.isFatal.toString()
-        val processType = crash.processType
+        val processVisibility = crash.processVisibility
 
-        return "NativeCodeCrash(fatal=$fatal, processType=$processType)"
+        return "NativeCodeCrash(fatal=$fatal, processVisibility=$processVisibility)"
     }
 }
 

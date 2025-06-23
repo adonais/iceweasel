@@ -123,16 +123,10 @@ skip-if = [
 ]
 
 ["test_ext_contentscript_context.js"]
-skip-if = [
-  "tsan", # Bug 1683730
-  "sessionHistoryInParent", # Bug 1762638
-]
+skip-if = ["tsan"] # Bug 1683730
 
 ["test_ext_contentscript_context_isolation.js"]
-skip-if = [
-  "tsan", # Bug 1683730
-  "sessionHistoryInParent", # Bug 1762638
-]
+skip-if = ["tsan"] # Bug 1683730
 
 ["test_ext_contentscript_create_iframe.js"]
 
@@ -163,6 +157,8 @@ run-sequentially = "very high failure rate in parallel"
 
 ["test_ext_contentscript_teardown.js"]
 skip-if = ["tsan"] # Bug 1683730
+
+["test_ext_contentscript_trustedtypes.js"]
 
 ["test_ext_contentscript_unregister_during_loadContentScript.js"]
 
@@ -233,6 +229,10 @@ skip-if = ["os == 'android'"] # Android: downloads.download goes through the emb
 ["test_ext_dnr_modifyHeaders.js"]
 
 ["test_ext_dnr_private_browsing.js"]
+prefs = [
+  "dom.security.https_first=false", # Bug 1897075
+  "dom.security.https_first_pbm=false", # Bug 1897075
+]
 
 ["test_ext_dnr_redirect_main_frame.js"]
 
@@ -718,3 +718,7 @@ skip-if = ["appname == 'thunderbird'"]
 ["test_webRequest_cookies.js"]
 
 ["test_webRequest_filtering.js"]
+
+["test_wpt_test_onMessage.js"]
+prefs = ["extensions.wpt.enabled=true"]
+skip-if = ["!nightly_build"]

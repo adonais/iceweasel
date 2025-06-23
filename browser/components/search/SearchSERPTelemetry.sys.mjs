@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SERPCategorization:
     "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
   SERPCategorizationRecorder:
@@ -86,6 +86,87 @@ const AD_COMPONENTS = [
   SearchSERPTelemetryUtils.COMPONENTS.AD_SITELINK,
   SearchSERPTelemetryUtils.COMPONENTS.AD_UNCATEGORIZED,
 ];
+
+/**
+ * @typedef {object} FollowOnCookies
+ *
+ * @property {string} codeParamName
+ *   The parameter name within the cookie.
+ * @property {string} extraCodeParamName
+ *   The query parameter name in the URL that indicates this might be a
+ *   follow-on search.
+ * @property {string[]} extraCodePrefixes
+ *   Possible values for the query parameter in the URL that indicates this
+ *   might be a follow-on search.
+ * @property {string} host
+ *   The hostname on which the cookie is stored.
+ * @property {string} name
+ *   The name of the cookie to check.
+ */
+
+/**
+ * @typedef {object} SignedInCookies
+ *
+ * @property {string} host
+ *   The host associated with a given cookie.
+ * @property {string} name
+ *   The name associated with a given cookie.
+ */
+
+/**
+ * @typedef {object} ShoppingTab
+ *
+ * @property {boolean} inspectRegexpInSERP
+ *   Whether the regexp should be used against hrefs the selector matches
+ *   against.
+ * @property {RegExp} regexp
+ *   The regular expression to match against a possible shopping tab. Must be
+ *   provided if using this feature.
+ * @property {string} selector
+ *   The elements on the page to inspect for the shopping tab. Should be anchor
+ *   elements.
+ */
+
+/**
+ * @typedef {object} ProviderInfo
+ *
+ * @property {string} codeParamName
+ *   The name of the query parameter for the partner code.
+ * @property {object[]} components
+ *   An array of components that could be on the SERP.
+ * @property {{key:string, value: string}} defaultPageQueryParam
+ *   Default page query parameter.
+ * @property {string[]} expectedOrganicCodes
+ *   An array of partner codes to match against the parameters in the url.
+ *   Matching these codes will report the SERP as organic:none which means the
+ *   user has done a search through the search engine's website rather than
+ *   through a SAP.
+ * @property {RegExp[]} extraAdServersRegexps
+ *   An array of regular expressions that match URLs of potential ad servers.
+ * @property {FollowOnCookies[]} followOnCookies
+ *   An array of cookie details that are used to identify follow-on searches.
+ * @property {string[]} followOnParamNames
+ *   An array of query parameter names that are used when a follow-on search
+ *   occurs.
+ * @property {boolean} isSPA
+ *   Whether the provider is a single page app.
+ * @property {string[]} organicCodes
+ *   An array of partner codes to match against the parameters in the url.
+ *   Matching these codes will report the SERP as organic:<partner code>, which
+ *   means the search was performed organically rather than through a SAP.
+ * @property {string[]} queryParamNames
+ *   An array of query parameters that may be used for the user's search string.
+ * @property {SignedInCookies[]} signedInCookies
+ *   An array of cookie details that are used to determine whether a client is
+ *   signed in to a provider's account.
+ * @property {ShoppingTab} shoppingTab
+ *   Shopping page parameter.
+ * @property {string[]} taggedCodes
+ *   An array of partner codes to match against the parameters in the url.
+ *   Matching one of these codes will report the SERP as tagged.
+ * @property {string} telemetryId
+ *   The telemetry identifier for the provider.
+ */
 
 /**
  * TelemetryHandler is the main class handling Search Engine Result Page (SERP)
@@ -170,10 +251,10 @@ class TelemetryHandler {
   constructor() {
     this._contentHandler = new ContentHandler({
       browserInfoByURL: this._browserInfoByURL,
-      findBrowserItemForURL: (...args) => this._findBrowserItemForURL(...args),
-      checkURLForSerpMatch: (...args) => this._checkURLForSerpMatch(...args),
-      findItemForBrowser: (...args) => this.findItemForBrowser(...args),
-      urlIsKnownSERPSubframe: (...args) => this.urlIsKnownSERPSubframe(...args),
+      findBrowserItemForURL: this._findBrowserItemForURL.bind(this),
+      checkURLForSerpMatch: this._checkURLForSerpMatch.bind(this),
+      findItemForBrowser: this.findItemForBrowser.bind(this),
+      urlIsKnownSERPSubframe: this.urlIsKnownSERPSubframe.bind(this),
     });
   }
 
@@ -558,7 +639,7 @@ class TelemetryHandler {
     let searchTerm = this.urlSearchTerms(url, providerInfo);
     let searchTermChanged = previousSearchTerm !== searchTerm;
 
-    let isSerp = !!this._checkURLForSerpMatch(url, providerInfo);
+    let isSerp = !!this._checkURLForSerpMatch(url);
     let browserIsTracked = !!telemetryState;
     let isTabHistory = loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY;
 
@@ -621,7 +702,7 @@ class TelemetryHandler {
    *
    * @param {object} browser The browser associated with the tab to stop being
    *   tracked.
-   * @param {string} abandonmentReason
+   * @param {string} [abandonmentReason]
    *   An optional parameter that specifies why the browser is deemed abandoned.
    *   The reason will be recorded as part of Glean abandonment telemetry.
    *   One of SearchSERPTelemetryUtils.ABANDONMENTS.
@@ -741,6 +822,12 @@ class TelemetryHandler {
     return "";
   }
 
+  /**
+   * Finds any SERP data associated with the given browser.
+   *
+   * @param {object} browser
+   * @returns {object}
+   */
   findItemForBrowser(browser) {
     return this.#browserToItemMap.get(browser);
   }
@@ -752,7 +839,7 @@ class TelemetryHandler {
    * set, we do optional fuzzy matching of URLs to fetch the most relevant item
    * that contains tracking information.
    *
-   * @param {string} url URL to fetch the tracking data for.
+   * @param {string} urlString URL to fetch the tracking data for.
    * @returns {object} Map containing the following members:
    *   - {WeakMap} browsers
    *     Map of browser elements that belong to `url` and their ad report state.
@@ -762,8 +849,8 @@ class TelemetryHandler {
    *     The number of browser element we can most accurately tell we're
    *     tracking, since they're inside a WeakMap.
    */
-  _findBrowserItemForURL(url) {
-    url = URL.parse(url);
+  _findBrowserItemForURL(urlString) {
+    let url = URL.parse(urlString);
     if (!url) {
       return null;
     }
@@ -837,6 +924,11 @@ class TelemetryHandler {
     this._unregisterWindow(win);
   }
 
+  /**
+   * Determines if a URL to be in this SERP's subframes.
+   *
+   * @param {string} url
+   */
   urlIsKnownSERPSubframe(url) {
     if (url) {
       for (let regexp of this.#subframeRegexps) {
@@ -877,8 +969,10 @@ class TelemetryHandler {
   /**
    * Searches for provider information for a given url.
    *
-   * @param {string} url The url to match for a provider.
-   * @returns {Array | null} Returns an array of provider name and the provider information.
+   * @param {string} url
+   *   The url to match for a provider.
+   * @returns {?ProviderInfo}
+   *   Returns a provider or undefined if no provider was found for the url.
    */
   _getProviderInfoForURL(url) {
     return this._searchProviderInfo.find(info =>
@@ -1129,6 +1223,9 @@ class TelemetryHandler {
  * when ads detected and when they are selected.
  */
 class ContentHandler {
+  /** @type {ProviderInfo[]} */
+  _searchProviderInfo = null;
+
   /**
    * Constructor.
    *
@@ -1136,8 +1233,14 @@ class ContentHandler {
    *   The options for the handler.
    * @param {Map} options.browserInfoByURL
    *   The map of urls from TelemetryHandler.
-   * @param {Function} options.getProviderInfoForURL
-   *   A function that obtains the provider information for a url.
+   * @param {(urlString: string) => object} options.findBrowserItemForURL
+   *   The function for finding a browser item for the URL.
+   * @param {(url: string) => null|object} options.checkURLForSerpMatch
+   *   The function for checking a URL for a SERP match.
+   * @param {(browser: object) => object} options.findItemForBrowser
+   *   The function for finding an item for the browser.
+   * @param {(url: string) => boolean} options.urlIsKnownSERPSubframe
+   *   The function for determining if a URL is a known SERP sub frame.
    */
   constructor(options) {
     this._browserInfoByURL = options.browserInfoByURL;
@@ -1735,9 +1838,7 @@ class ContentHandler {
       lazy.logConsole.warn(
         "Expected to report a",
         info.action,
-        "engagement for",
-        info.url,
-        "but couldn't find an impression id."
+        "engagement but couldn't find an impression id."
       );
     }
   }
@@ -1797,8 +1898,7 @@ class ContentHandler {
       lazy.logConsole.debug("Non ad domains:", Array.from(info.nonAdDomains));
       let result = await lazy.SERPCategorization.maybeCategorizeSERP(
         info.nonAdDomains,
-        info.adDomains,
-        item.info.provider
+        info.adDomains
       );
       if (result) {
         telemetryState.categorizationInfo = result;

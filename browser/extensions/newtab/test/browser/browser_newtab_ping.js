@@ -8,10 +8,6 @@ const { ASRouter } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouter.sys.mjs"
 );
 
-const { ExperimentFakes } = ChromeUtils.importESModule(
-  "resource://testing-common/NimbusTestUtils.sys.mjs"
-);
-
 let sendTriggerMessageSpy;
 
 add_setup(function () {
@@ -143,15 +139,14 @@ add_task(async function test_newtab_tab_nav_sends_ping() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function test_newtab_doesnt_send_nimbus() {
+add_task(async function test_newtab_doesnt_send_pref() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.newtabpage.activity-stream.telemetry", true]],
+    set: [
+      ["browser.newtabpage.activity-stream.telemetry", true],
+      ["browser.newtabpage.ping.enabled", false],
+    ],
   });
 
-  let doEnrollmentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
-    featureId: "glean",
-    value: { newtabPingEnabled: false },
-  });
   Services.fog.testResetFOG();
   let TelemetryFeed =
     AboutNewTab.activityStream.store.feeds.get("feeds.telemetry");
@@ -191,7 +186,6 @@ add_task(async function test_newtab_doesnt_send_nimbus() {
     ).length;
   }, "Waiting for sessions to clean up.");
   // Session ended without a ping being sent. Success!
-  doEnrollmentCleanup();
   await SpecialPowers.popPrefEnv();
 });
 

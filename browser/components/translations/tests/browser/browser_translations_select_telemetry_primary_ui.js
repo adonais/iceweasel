@@ -289,11 +289,13 @@ add_task(
       }
     );
 
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
-      fromLanguage: "es",
-      toLanguage: "fa",
-      runInPage,
-    });
+    await FullPageTranslationsTestUtils.assertOnlyIntersectingNodesAreTranslated(
+      {
+        fromLanguage: "es",
+        toLanguage: "fa",
+        runInPage,
+      }
+    );
 
     await TestTranslationsTelemetry.assertTranslationsEnginePerformance({
       expectedEventCount: 3,

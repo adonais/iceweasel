@@ -92,14 +92,13 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
                 binary,
                 os.path.join(module_path, "node_modules", "eslint", "bin", "eslint.js"),
                 # This keeps ext as a single argument.
-                "--ext",
-                "[{}]".format(",".join(config["extensions"])),
                 "--format",
                 "json",
                 "--no-error-on-unmatched-pattern",
             ]
             + rules
-            + extra_args
+            # Flat configuration doesn't understand --ignore-path, though Prettier does.
+            + list(filter(lambda x: not x.startswith("--ignore-path"), extra_args))
             + exclude_args
             + paths
         )
@@ -124,7 +123,9 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
             "--list-different",
             "--no-error-on-unmatched-pattern",
         ]
-        + extra_args
+        # Don't pass the configuration to Prettier as well, as it doesn't understand
+        # the ESLint configuration.
+        + list(filter(lambda x: not x.startswith("--config"), extra_args))
         # Prettier does not support exclude arguments.
         # + exclude_args
         + paths

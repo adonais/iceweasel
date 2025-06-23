@@ -205,8 +205,10 @@ NativeLayerRootWayland::NativeLayerRootWayland(
       "%d",
       mLoggingWidget, mSurface->IsMapped());
 #endif
-  MOZ_DIAGNOSTIC_ASSERT(WaylandSurface::IsOpaqueRegionEnabled(),
-                        "Can't work without opaque region!");
+  if (!WaylandSurface::IsOpaqueRegionEnabled()) {
+    NS_WARNING(
+        "Wayland opaque region disabled, expect poor rendering performance!");
+  }
 }
 
 NativeLayerRootWayland::~NativeLayerRootWayland() {
@@ -314,7 +316,7 @@ void NativeLayerRootWayland::SetLayers(
         if (!layer->Map(&surfaceLock)) {
           continue;
         }
-        if (layer->IsOpaque()) {
+        if (layer->IsOpaque() && WaylandSurface::IsOpaqueRegionEnabled()) {
           LOG("  adding new opaque layer [%p]", layer.get());
           mMainThreadUpdateSublayers.AppendElement(layer);
         }
@@ -456,8 +458,10 @@ bool NativeLayerRootWayland::CommitToScreenLocked(
 
   // Try to map all missing surfaces
   for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
-    if (!layer->IsMapped() && layer->Map(&surfaceLock) && layer->IsOpaque()) {
-      mMainThreadUpdateSublayers.AppendElement(layer);
+    if (!layer->IsMapped() && layer->Map(&surfaceLock)) {
+      if (layer->IsOpaque() && WaylandSurface::IsOpaqueRegionEnabled()) {
+        mMainThreadUpdateSublayers.AppendElement(layer);
+      }
       mNeedsLayerUpdate = true;
     }
   }
@@ -507,6 +511,32 @@ void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
 GdkWindow* NativeLayerRootWayland::GetGdkWindow() const {
   AssertIsOnMainThread();
   return mSurface->GetGdkWindow();
+}
+
+// Try to match stored wl_buffer with provided DMABufSurface or create
+// a new one.
+RefPtr<WaylandBuffer> NativeLayerRootWayland::BorrowExternalBuffer(
+    RefPtr<DMABufSurface> aDMABufSurface) {
+  LOG("NativeLayerRootWayland::BorrowExternalBuffer() WaylandSurface [%p] UID "
+      "%d PID %d",
+      aDMABufSurface.get(), aDMABufSurface->GetUID(), aDMABufSurface->GetPID());
+
+  RefPtr waylandBuffer =
+      widget::WaylandBufferDMABUF::CreateExternal(aDMABufSurface);
+  for (auto& b : mExternalBuffers) {
+    if (b.Matches(aDMABufSurface)) {
+      waylandBuffer->SetExternalWLBuffer(b.GetWLBuffer());
+      return waylandBuffer.forget();
+    }
+  }
+
+  wl_buffer* wlbuffer = waylandBuffer->CreateAndTakeWLBuffer();
+  if (!wlbuffer) {
+    return nullptr;
+  }
+
+  mExternalBuffers.EmplaceBack(aDMABufSurface, wlbuffer);
+  return waylandBuffer.forget();
 }
 
 NativeLayerWayland::NativeLayerWayland(NativeLayerRootWayland* aRootLayer,
@@ -654,13 +684,29 @@ void NativeLayerWayland::UpdateLayer(double aScale) {
 
     mSurface->SetTransformFlippedLocked(surfaceLock, transform2D._11 < 0.0,
                                         transform2D._22 < 0.0);
-    gfx::IntPoint pos((int)floor(surfaceRectClipped.x / aScale),
-                      (int)floor(surfaceRectClipped.y / aScale));
-    mSurface->MoveLocked(surfaceLock, pos);
+    gfx::IntPoint pos((int)roundf(surfaceRectClipped.x),
+                      (int)roundf(surfaceRectClipped.y));
 
-    gfx::IntSize size((int)ceil(surfaceRectClipped.width / aScale),
-                      (int)ceil(surfaceRectClipped.height / aScale));
-    mSurface->SetViewPortDestLocked(surfaceLock, size);
+    // Only integer scale is supported right now
+    int scale = (int)roundf(aScale);
+    if (pos.x % scale || pos.y % scale) {
+      NS_WARNING(
+          "NativeLayerWayland: Tile position doesn't match scale, rendering "
+          "glitches ahead!");
+    }
+
+    mSurface->MoveLocked(surfaceLock,
+                         gfx::IntPoint(pos.x / scale, pos.y / scale));
+
+    gfx::IntSize size((int)roundf(surfaceRectClipped.width),
+                      (int)roundf(surfaceRectClipped.height));
+    if (size.width % scale || size.height % scale) {
+      NS_WARNING(
+          "NativeLayerWayland: Tile size doesn't match scale, rendering "
+          "glitches ahead!");
+    }
+    mSurface->SetViewPortDestLocked(
+        surfaceLock, gfx::IntSize(size.width / scale, size.height / scale));
 
     auto transform2DInversed = transform2D.Inverse();
     Rect bufferClip = transform2DInversed.TransformBounds(surfaceRectClipped);
@@ -941,6 +987,9 @@ void NativeLayerWaylandRender::NotifySurfaceReady() {
   MOZ_DIAGNOSTIC_ASSERT(!mFrontBuffer);
   MOZ_DIAGNOSTIC_ASSERT(mInProgressBuffer);
   mFrontBuffer = std::move(mInProgressBuffer);
+  if (mSurfacePoolHandle->gl()) {
+    mSurfacePoolHandle->gl()->FlushIfHeavyGLCallsSinceLastFlush();
+  }
 }
 
 void NativeLayerWaylandRender::DiscardBackbuffersLocked(
@@ -988,9 +1037,12 @@ void NativeLayerWaylandExternal::AttachExternalImage(
   mSize = texture->GetSize(0);
   mDisplayRect = IntRect(IntPoint{}, mSize);
   mBufferInvalided = true;
-  mFrontBuffer =
-      widget::WaylandBufferDMABUF::CreateExternal(mTextureHost->GetSurface());
-  mIsHDR = mTextureHost->GetSurface()->IsHDRSurface();
+
+  auto surface = mTextureHost->GetSurface();
+  mFrontBuffer = surface->CanRecycle()
+                     ? mRootLayer->BorrowExternalBuffer(surface)
+                     : widget::WaylandBufferDMABUF::CreateExternal(surface);
+  mIsHDR = surface->IsHDRSurface();
 
   LOG("NativeLayerWaylandExternal::AttachExternalImage() host [%p] "
       "DMABufSurface [%p] DMABuf UID %d [%d x %d] HDR %d Opaque %d",

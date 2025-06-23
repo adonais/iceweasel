@@ -149,6 +149,7 @@ const char* const ApplicationReputationService::kNonBinaryExecutables[] = {
     ".air",
     ".atloc",
     ".ftploc",
+    ".terminal",
     // clang-format on
 };
 
@@ -849,6 +850,9 @@ nsresult PendingDBLookup::LookupSpecInternal(const nsACString& aSpec) {
       tables.Append(',');
     }
     tables.Append(blocklist);
+  }
+  if (principal->IsSystemPrincipal()) {
+    return mPendingLookup->LookupNext();
   }
   return dbService->Lookup(principal, tables, this);
 }

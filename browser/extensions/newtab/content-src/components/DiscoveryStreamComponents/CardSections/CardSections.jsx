@@ -12,6 +12,7 @@ import { SectionContextMenu } from "../SectionContextMenu/SectionContextMenu";
 import { InterestPicker } from "../InterestPicker/InterestPicker";
 import { AdBanner } from "../AdBanner/AdBanner.jsx";
 import { PersonalizedCard } from "../PersonalizedCard/PersonalizedCard";
+import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 
 // Prefs
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
@@ -27,21 +28,15 @@ const PREF_INTEREST_PICKER_ENABLED =
   "discoverystream.sections.interestPicker.enabled";
 const PREF_VISIBLE_SECTIONS =
   "discoverystream.sections.interestPicker.visibleSections";
-const PREF_MEDIUM_RECTANGLE_ENABLED = "newtabAdSize.mediumRectangle";
 const PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
 const PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
 const PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
 const PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
-const PREF_INFERRED_PERSONALIZATION_ENABLED =
-  "discoverystream.sections.personalization.inferred.enabled";
-const PREF_INFERRED_PERSONALIZATION_USER_ENABLED =
+const PREF_REFINED_CARDS_ENABLED = "discoverystream.refinedCardsLayout.enabled";
+const PREF_INFERRED_PERSONALIZATION_USER =
   "discoverystream.sections.personalization.inferred.user.enabled";
-const PREF_INFERRED_PERSONALIZATION_POSITION =
-  "discoverystream.sections.personalization.inferred.position";
-const PREF_INFERRED_PERSONALIZATION_BLOCKED =
-  "discoverystream.sections.personalization.inferred.blocked";
 
-function getLayoutData(responsiveLayouts, index) {
+function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
   let layoutData = {
     classNames: [],
     imageSizes: {},
@@ -59,7 +54,15 @@ function getLayoutData(responsiveLayouts, index) {
         // The API tells us whether the tile should show the excerpt or not.
         // Apply extra styles accordingly.
         if (tile.hasExcerpt) {
-          layoutData.classNames.push(`col-${layout.columnCount}-show-excerpt`);
+          if (tile.size === "medium" && refinedCardsLayout) {
+            layoutData.classNames.push(
+              `col-${layout.columnCount}-hide-excerpt`
+            );
+          } else {
+            layoutData.classNames.push(
+              `col-${layout.columnCount}-show-excerpt`
+            );
+          }
         } else {
           layoutData.classNames.push(`col-${layout.columnCount}-hide-excerpt`);
         }
@@ -122,6 +125,7 @@ function CardSection({
   const mayHaveThumbsUpDown = prefs[PREF_THUMBS_UP_DOWN_ENABLED];
   const selectedTopics = prefs[PREF_TOPICS_SELECTED];
   const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
+  const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
 
   const { saveToPocketCard } = useSelector(state => state.DiscoveryStream);
   const mayHaveSectionsPersonalization =
@@ -163,7 +167,7 @@ function CardSection({
     };
     dispatch(
       ac.AlsoToMain({
-        type: at.SECTION_PERSONALIZATION_UPDATE,
+        type: at.SECTION_PERSONALIZATION_SET,
         data: updatedSectionData,
       })
     );
@@ -185,7 +189,7 @@ function CardSection({
     delete updatedSectionData[sectionKey];
     dispatch(
       ac.AlsoToMain({
-        type: at.SECTION_PERSONALIZATION_UPDATE,
+        type: at.SECTION_PERSONALIZATION_SET,
         data: updatedSectionData,
       })
     );
@@ -250,14 +254,6 @@ function CardSection({
     </div>
   );
 
-  // Determine to display first medium-sized in MREC IAB format
-  const mediumRectangleEnabled = prefs[PREF_MEDIUM_RECTANGLE_ENABLED];
-
-  let adSizingVariantClassName = "";
-  if (mediumRectangleEnabled) {
-    adSizingVariantClassName = "ad-sizing-variant-a";
-  }
-
   return (
     <section
       className="ds-section"
@@ -272,13 +268,12 @@ function CardSection({
         </div>
         {mayHaveSectionsPersonalization ? sectionContextWrapper : null}
       </div>
-      <div
-        className={`ds-section-grid ds-card-grid ${adSizingVariantClassName}`}
-      >
+      <div className={`ds-section-grid ds-card-grid`}>
         {section.data.slice(0, maxTile).map((rec, index) => {
           const { classNames, imageSizes } = getLayoutData(
             responsiveLayouts,
-            index
+            index,
+            refinedCardsLayout
           );
 
           if (!rec || rec.placeholder) {
@@ -297,6 +292,7 @@ function CardSection({
               time_to_read={rec.time_to_read}
               title={rec.title}
               topic={rec.topic}
+              features={rec.features}
               excerpt={rec.excerpt}
               url={rec.url}
               id={rec.id}
@@ -359,6 +355,7 @@ function CardSections({
   const { spocs, sectionPersonalization } = useSelector(
     state => state.DiscoveryStream
   );
+  const { messageData } = useSelector(state => state.Messages);
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
 
@@ -461,22 +458,25 @@ function CardSections({
     );
   }
 
-  const handleDismissP13nCard = () => {
-    dispatch(ac.SetPref(PREF_INFERRED_PERSONALIZATION_BLOCKED, true));
-  };
-
   function displayP13nCard() {
-    const row = prefs[PREF_INFERRED_PERSONALIZATION_POSITION];
-    const cardBlocked = prefs[PREF_INFERRED_PERSONALIZATION_BLOCKED];
-    const cardEnabled = prefs[PREF_INFERRED_PERSONALIZATION_ENABLED];
-    const userEnabled = prefs[PREF_INFERRED_PERSONALIZATION_USER_ENABLED];
-
-    if (!cardBlocked && cardEnabled && userEnabled) {
-      sectionsToRender.splice(
-        row,
-        0,
-        <PersonalizedCard row={row} onDismiss={handleDismissP13nCard} />
-      );
+    if (messageData && Object.keys(messageData).length >= 1) {
+      if (
+        messageData?.content?.messageType === "PersonalizedCard" &&
+        prefs[PREF_INFERRED_PERSONALIZATION_USER]
+      ) {
+        const row = messageData.content.position;
+        sectionsToRender.splice(
+          row,
+          0,
+          <MessageWrapper dispatch={dispatch} onDismiss={() => {}}>
+            <PersonalizedCard
+              position={row}
+              dispatch={dispatch}
+              messageData={messageData}
+            />
+          </MessageWrapper>
+        );
+      }
     }
   }
 

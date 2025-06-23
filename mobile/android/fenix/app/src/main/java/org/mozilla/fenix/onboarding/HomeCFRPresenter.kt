@@ -73,6 +73,7 @@ class HomeCFRPresenter(
                         Onboarding.syncCfrExplicitDismissal.record(NoExtras())
                         // Turn off the synced tab CFR after the CFR is shown.
                         context.settings().showSyncCFR = false
+                        context.settings().lastCfrShownTimeInMillis = System.currentTimeMillis()
                     }
                     false -> Onboarding.syncCfrImplicitDismissal.record(NoExtras())
                 }
@@ -103,10 +104,6 @@ class HomeCFRPresenter(
     private fun getCFRToShow(): Result {
         var result: Result = Result.None
         val count = recyclerView.adapter?.itemCount ?: return result
-
-        if (context.settings().navigationToolbarEnabled && context.settings().shouldShowNavigationBarCFR) {
-            return result
-        }
 
         for (index in count downTo 0) {
             val viewHolder = recyclerView.findViewHolderForAdapterPosition(index)

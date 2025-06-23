@@ -8,18 +8,18 @@ import {
   kAllTextureFormats,
   kCompressedTextureFormats,
   kDepthStencilFormats,
-  textureDimensionAndFormatCompatible,
+  textureFormatAndDimensionPossiblyCompatible,
   getBlockInfoForTextureFormat,
   getBaseFormatForTextureFormat,
   canCopyFromAllAspectsOfTextureFormat,
   canCopyToAllAspectsOfTextureFormat } from
 
 '../../../../format_info.js';
-import { kResourceStates } from '../../../../gpu_test.js';
+import { kResourceStates, AllFeaturesMaxLimitsGPUTest } from '../../../../gpu_test.js';
 import { align, lcm } from '../../../../util/math.js';
-import { AllFeaturesMaxLimitsValidationTest } from '../../validation_test.js';
+import * as vtu from '../../validation_test_utils.js';
 
-class F extends AllFeaturesMaxLimitsValidationTest {
+class F extends AllFeaturesMaxLimitsGPUTest {
   TestCopyTextureToTexture(
   source,
   destination,
@@ -90,8 +90,8 @@ fn((t) => {
     usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST
   };
 
-  const srcTexture = t.createTextureWithState(srcState, textureDesc);
-  const dstTexture = t.createTextureWithState(dstState, textureDesc);
+  const srcTexture = vtu.createTextureWithState(t, srcState, textureDesc);
+  const dstTexture = vtu.createTextureWithState(t, dstState, textureDesc);
 
   const isSubmitSuccess = srcState === 'valid' && dstState === 'valid';
   const isFinishSuccess = srcState !== 'invalid' && dstState !== 'invalid';
@@ -757,7 +757,9 @@ params((u) =>
 u.
 combine('format', kCompressedTextureFormats).
 combine('dimension', kTextureDimensions).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combine('copyBoxOffsets', [
 { x: 0, y: 0, z: 0, width: 0, height: 0, depthOrArrayLayers: -2 },
@@ -779,6 +781,7 @@ fn((t) => {
   const { format, dimension, copyBoxOffsets, srcCopyLevel, dstCopyLevel } = t.params;
 
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
   t.skipIfCopyTextureToTextureNotSupportedForFormat(format);
 
   const { blockWidth, blockHeight } = getBlockInfoForTextureFormat(format);
@@ -828,8 +831,12 @@ fn((t) => {
     Math.min(srcSizeAtLevel.height, dstSizeAtLevel.height) + copyBoxOffsets.height - copyOrigin.y,
     0
   );
-  const copyDepth =
-  kTextureSize.depthOrArrayLayers + copyBoxOffsets.depthOrArrayLayers - copyOrigin.z;
+  const copyDepth = Math.max(
+    Math.min(srcSizeAtLevel.depthOrArrayLayers, dstSizeAtLevel.depthOrArrayLayers) +
+    copyBoxOffsets.depthOrArrayLayers -
+    copyOrigin.z,
+    0
+  );
 
   const isSuccessForCompressedFormats =
   copyOrigin.x % blockWidth === 0 &&

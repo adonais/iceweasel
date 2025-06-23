@@ -782,9 +782,9 @@ nsresult NS_NewInputStreamChannelInternal(
     const nsACString& aContentCharset, nsINode* aLoadingNode,
     nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
     nsSecurityFlags aSecurityFlags, nsContentPolicyType aContentPolicyType) {
-  nsCOMPtr<nsILoadInfo> loadInfo = new mozilla::net::LoadInfo(
-      aLoadingPrincipal, aTriggeringPrincipal, aLoadingNode, aSecurityFlags,
-      aContentPolicyType);
+  nsCOMPtr<nsILoadInfo> loadInfo = MOZ_TRY(
+      LoadInfo::Create(aLoadingPrincipal, aTriggeringPrincipal, aLoadingNode,
+                       aSecurityFlags, aContentPolicyType));
   if (!loadInfo) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -847,9 +847,9 @@ nsresult NS_NewInputStreamChannelInternal(
     nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
     nsSecurityFlags aSecurityFlags, nsContentPolicyType aContentPolicyType,
     bool aIsSrcdocChannel /* = false */) {
-  nsCOMPtr<nsILoadInfo> loadInfo = new mozilla::net::LoadInfo(
-      aLoadingPrincipal, aTriggeringPrincipal, aLoadingNode, aSecurityFlags,
-      aContentPolicyType);
+  nsCOMPtr<nsILoadInfo> loadInfo = MOZ_TRY(
+      net::LoadInfo::Create(aLoadingPrincipal, aTriggeringPrincipal,
+                            aLoadingNode, aSecurityFlags, aContentPolicyType));
   return NS_NewInputStreamChannelInternal(outChannel, aUri, aData, aContentType,
                                           loadInfo, aIsSrcdocChannel);
 }
@@ -2840,6 +2840,24 @@ bool NS_IsAboutSrcdoc(nsIURI* uri) {
   return spec.EqualsLiteral("about:srcdoc");
 }
 
+// https://fetch.spec.whatwg.org/#fetch-scheme
+bool NS_IsFetchScheme(nsIURI* uri) {
+  for (const auto& scheme : {
+           "http",
+           "https",
+           "about",
+           "blob",
+           "data",
+           "file",
+       }) {
+    if (uri->SchemeIs(scheme)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 nsresult NS_GenerateHostPort(const nsCString& host, int32_t port,
                              nsACString& hostLine) {
   if (strchr(host.get(), ':')) {
@@ -3872,18 +3890,13 @@ bool IsFontMimeType(const nsAString& aType) {
   return false;
 }
 
-static const nsAttrValue::EnumTable kAsAttributeTable[] = {
-    {"", DESTINATION_INVALID},
-    {"audio", DESTINATION_AUDIO},
-    {"font", DESTINATION_FONT},
-    {"image", DESTINATION_IMAGE},
-    {"script", DESTINATION_SCRIPT},
-    {"style", DESTINATION_STYLE},
-    {"track", DESTINATION_TRACK},
-    {"video", DESTINATION_VIDEO},
-    {"fetch", DESTINATION_FETCH},
-    {"json", DESTINATION_JSON},
-    {nullptr, 0}};
+static constexpr nsAttrValue::EnumTableEntry kAsAttributeTable[] = {
+    {"", DESTINATION_INVALID},      {"audio", DESTINATION_AUDIO},
+    {"font", DESTINATION_FONT},     {"image", DESTINATION_IMAGE},
+    {"script", DESTINATION_SCRIPT}, {"style", DESTINATION_STYLE},
+    {"track", DESTINATION_TRACK},   {"video", DESTINATION_VIDEO},
+    {"fetch", DESTINATION_FETCH},   {"json", DESTINATION_JSON},
+};
 
 void ParseAsValue(const nsAString& aValue, nsAttrValue& aResult) {
   DebugOnly<bool> success =
@@ -4153,5 +4166,36 @@ nsresult AddExtraHeaders(nsIHttpChannel* aHttpChannel,
   return NS_OK;
 }
 
+bool IsLocalNetworkAccess(nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
+                          nsILoadInfo::IPAddressSpace aTargetIPAddressSpace) {
+  // Determine if the request is moving to a more private address space
+  // i.e. Public -> Private or Local
+  // Private -> Local
+  // Refer
+  // https://wicg.github.io/private-network-access/#private-network-request-heading
+  // for private network access
+  // XXX (sunil) add link to LNA spec once it is published
+
+  if (aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Public ||
+      aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Unknown) {
+    return false;
+  }
+  // Check if this is an access to a local resource from Public or Private
+  // network
+  if ((aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Local) &&
+      (aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Public ||
+       aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Private)) {
+    return true;
+  }
+
+  // Check if this is an access to a Private Network resource from a Public
+  // network
+  if ((aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Private) &&
+      (aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Public)) {
+    return true;
+  }
+
+  return false;
+}
 }  // namespace net
 }  // namespace mozilla

@@ -62,7 +62,9 @@ skip-if = [
 
 ["browser_fullscreen_warning.js"]
 support-files = ["fullscreen.html"]
-skip-if = ["os == 'mac'"] # Bug 1848423
+skip-if = [
+  "os == 'mac'", # Bug 1848423
+]
 
 ["browser_fullscreen_window_focus.js"]
 skip-if = ["os == 'mac' && debug"] # Bug 1568570

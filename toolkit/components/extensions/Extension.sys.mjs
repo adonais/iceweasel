@@ -391,6 +391,8 @@ const LOGGER_ID_BASE = "addons.webextension.";
 const UUID_MAP_PREF = "extensions.webextensions.uuids";
 const LEAVE_STORAGE_PREF = "extensions.webextensions.keepStorageOnUninstall";
 const LEAVE_UUID_PREF = "extensions.webextensions.keepUuidOnUninstall";
+const WEBCOMPAT_ADDON_ID = "webcompat@mozilla.org";
+const WEBCOMPAT_UUID = "9a310967-e580-48bf-b3e8-4eafebbc122d";
 
 // All moz-extension URIs use a machine-specific UUID rather than the
 // extension's own ID in the host component. This makes it more
@@ -415,6 +417,23 @@ var UUIDMap = {
 
   get(id, create = true) {
     let map = this._read();
+
+    // In general, the UUID should not change once assigned because it may be
+    // stored elsewhere within the profile directory, when the extension URL is
+    // exposed (e.g. history, bookmarks, site permissions, web or extension
+    // APIs that associate data with the extension principal or origin).
+    // The webcompat add-on does not rely on the persisted uuid, so we can
+    // simply migrate the uuid below, see bug 1717672.
+    if (id === WEBCOMPAT_ADDON_ID) {
+      if (!create && !(id in map)) {
+        return null;
+      }
+      if (map[id] !== WEBCOMPAT_UUID) {
+        map[id] = WEBCOMPAT_UUID;
+        this._write(map);
+      }
+      return WEBCOMPAT_UUID;
+    }
 
     if (id in map) {
       return map[id];
@@ -441,6 +460,14 @@ var UUIDMap = {
 function clearCacheForExtensionPrincipal(principal, clearAll = false) {
   if (!principal.schemeIs("moz-extension")) {
     return Promise.reject(new Error("Unexpected non extension principal"));
+  }
+
+  if (Services.startup.shuttingDown) {
+    return Promise.reject(
+      new Error(
+        `clearCacheForExtensionPrincipal called after shutdown was initiated`
+      )
+    );
   }
 
   // TODO(Bug 1750053): replace the two specific flags with a "clear all caches one"
@@ -1439,7 +1466,8 @@ export class ExtensionData {
         perm => !oldPermissions.permissions.includes(perm)
       ),
       data_collection: newPermissions.data_collection.filter(
-        perm => newPermissions.data_collection.includes(perm) && perm !== "none"
+        perm =>
+          !oldPermissions.data_collection.includes(perm) && perm !== "none"
       ),
     };
   }
@@ -1459,9 +1487,11 @@ export class ExtensionData {
       permissions: oldPermissions.permissions.filter(perm =>
         newPermissions.permissions.includes(perm)
       ),
-      data_collection: oldPermissions.data_collection.filter(
-        perm => newPermissions.data_collection.includes(perm) && perm !== "none"
-      ),
+      data_collection:
+        oldPermissions.data_collection?.filter(
+          perm =>
+            newPermissions.data_collection?.includes(perm) && perm !== "none"
+        ) ?? [],
     };
   }
 
@@ -1510,9 +1540,27 @@ export class ExtensionData {
       removed
     );
 
+    // Compute removed data collection permissions and account for addons
+    // installed before support for data collection permissions was introduced.
+    let dataCollectionSet = new Set(
+      [].concat(
+        newPermissions.data_collection ?? [],
+        newOptionalPermissions.data_collection ?? []
+      )
+    );
+    let oldDataCollectionSet = new Set(
+      [].concat(
+        oldPermissions.data_collection ?? [],
+        oldOptionalPermissions.data_collection ?? []
+      )
+    );
+
     // Remove any optional permissions that have been removed from the manifest.
     await lazy.ExtensionPermissions.remove(id, {
       permissions: removed,
+      data_collection: Array.from(
+        oldDataCollectionSet.difference(dataCollectionSet)
+      ),
       origins: [],
     });
   }
@@ -2702,13 +2750,14 @@ export class ExtensionData {
    * property name "msgIdIndex"). This property is expected to be set only if
    * "options.fullDomainsList" is passed as true and the extension doesn't
    * include allUrls origin permissions
+   * @property {string=} header the notification header text, which has the
+   * string "<>" as a placeholder for the addon name.
+   * @property {{ required: string, dataCollection: string, optional: string }=} sectionHeaders
+   * the localized strings for each section in the notificaation.
    *
    * @returns {PermissionStrings} An object with properties containing
    *                             localized strings for various elements of a
-   *                             permission dialog. The "header" property on
-   *                             this object is the notification header text
-   *                             and it has the string "<>" as a placeholder
-   *                             for the addon name.
+   *                             permission dialog.
    */
   static formatPermissionStrings(
     {
@@ -3002,84 +3051,111 @@ export class ExtensionData {
         break;
       case "update": {
         acceptId = "webext-perms-update-accept";
+        if (lazy.dataCollectionPermissionsEnabled) {
+          result.listIntro = l10n.formatValueSync(
+            "webext-perms-update-list-intro-with-data-collection"
+          );
+        }
         break;
       }
       case "optional": {
         acceptId = "webext-perms-optional-perms-allow";
         cancelId = "webext-perms-optional-perms-deny";
-        if (!hasDataCollectionOnly) {
-          result.listIntro = l10n.formatValueSync(
-            "webext-perms-optional-perms-list-intro"
-          );
-        }
         break;
       }
       default:
+        if (unsigned) {
+          result.listIntro = l10n.formatValueSync(
+            "webext-perms-list-intro-unsigned"
+          );
+        }
     }
 
     result.header = l10n.formatValueSync(
-      this._getHeaderFluentId({
-        type,
-        hasDataCollectionOnly,
-        hasPermissions: msgIds.length,
-        unsigned,
-      }),
+      this._getHeaderFluentId({ type, hasDataCollectionOnly }),
       headerArgs
     );
+    const { hasNone } = result.dataCollectionPermissions;
+    result.sectionHeaders = this._getSectionHeaders({
+      type,
+      dataCollectionIsNone: !!hasNone,
+    });
     result.msgs = l10n.formatValuesSync(msgIds);
     setAcceptCancel(acceptId, cancelId);
     return result;
   }
 
   /**
-   * Helper function to return the right header fluent ID for a permission
-   * prompt, depending on the type, whether it has permissions and/or data
-   * collection only, and also whether the add-on is signed or not.
+   * Helper function that returns localized strings for each section in the
+   * permissions prompt, depending on the type and/or whether the extension has
+   * explicit no data collection.
    */
-  static _getHeaderFluentId({
-    type,
-    hasDataCollectionOnly,
-    hasPermissions,
-    unsigned,
-  }) {
+  static _getSectionHeaders({ type, dataCollectionIsNone }) {
+    let requiredId;
+    let dataCollectionId;
+    switch (type) {
+      case "update":
+        requiredId = `webext-perms-header-update-required-perms`;
+        dataCollectionId = `webext-perms-header-update-data-collection-perms`;
+        break;
+      case "optional":
+        requiredId = `webext-perms-header-optional-required-perms`;
+        dataCollectionId = `webext-perms-header-optional-data-collection-perms`;
+        break;
+      default:
+        requiredId = `webext-perms-header-required-perms`;
+        dataCollectionId = dataCollectionIsNone
+          ? "webext-perms-header-data-collection-is-none"
+          : `webext-perms-header-data-collection-perms`;
+    }
+
+    let [required, dataCollection, optional] =
+      lazy.PERMISSION_L10N.formatValuesSync([
+        requiredId,
+        dataCollectionId,
+        // This one never changes, and in fact, it won't be displayed when type
+        // is set.
+        `webext-perms-header-optional-settings`,
+      ]);
+
+    return { required, dataCollection, optional };
+  }
+
+  /**
+   * Helper function to return the right header fluent ID for a permission
+   * prompt, depending on the type and whether it has data collection only.
+   */
+  static _getHeaderFluentId({ type, hasDataCollectionOnly }) {
     switch (type) {
       case "sideload":
         return "webext-perms-sideload-header";
 
       case "update":
         if (!lazy.dataCollectionPermissionsEnabled) {
-          return "webext-perms-update-text";
+          return "webext-perms-update-text2";
         }
-        return hasDataCollectionOnly
-          ? "webext-perms-update-data-collection-only-text"
-          : "webext-perms-update-data-collection-text";
+        return "webext-perms-update-text-with-data-collection";
 
       case "optional":
         if (!lazy.dataCollectionPermissionsEnabled) {
-          return "webext-perms-optional-perms-header";
+          return "webext-perms-optional-perms-header2";
         }
         return hasDataCollectionOnly
-          ? "webext-perms-optional-data-collection-only-text"
-          : "webext-perms-optional-data-collection-text";
+          ? "webext-perms-optional-text-with-data-collection-only"
+          : "webext-perms-optional-text-with-data-collection";
     }
 
-    if (hasPermissions && !hasDataCollectionOnly) {
-      return unsigned
-        ? "webext-perms-header-unsigned-with-perms"
-        : "webext-perms-header-with-perms";
-    }
-
-    return unsigned ? "webext-perms-header-unsigned" : "webext-perms-header";
+    return "webext-perms-header2";
   }
 
   /**
    * @param {Array<string>} dataPermissions An array of data collection permissions.
    *
-   * @returns {{msg: string, collectsTechnicalAndInteractionData: boolean}} An
+   * @returns {{msg?: string, collectsTechnicalAndInteractionData?: boolean, hasNone: boolean}} An
    * object with information about data collection permissions for the UI.
    */
   static _formatDataCollectionPermissions(dataPermissions, type) {
-    const dataCollectionPermissions = {};
+    const dataCollectionPermissions = { hasNone: false };
     const permissions = new Set(dataPermissions);
 
     // This data permission is opt-in by default, but users can opt-out, making
@@ -3093,6 +3169,7 @@ export class ExtensionData {
         "webext-perms-description-data-none",
       ]);
       dataCollectionPermissions.msg = localizedMsg;
+      dataCollectionPermissions.hasNone = true;
     } else if (permissions.size) {
       // When we have data collection permissions and it isn't the "no data
       // collected" one, we build a list of localized permission strings that
@@ -3141,10 +3218,11 @@ export class ExtensionData {
    * @param {Array<string>} permissions A list of optional data collection
    * permissions.
    *
-   * @returns {Record<string, string>} A map of permission names to localized
+   * Returns an object mapping permission names to localized
    * strings representing the optional data collection permissions.
    */
   static _formatOptionalDataCollectionPermissions(permissions) {
+    /** @type {Record<string, string>} */
     const optionalDataCollectionPermissions = {};
 
     const odcKeys = [];
@@ -3203,7 +3281,11 @@ class BootstrapScope {
     if (data.oldPermissions) {
       // New permissions may be null, ensure we have an empty
       // permission set in that case.
-      let emptyPermissions = { permissions: [], origins: [] };
+      let emptyPermissions = {
+        permissions: [],
+        origins: [],
+        data_collection: [],
+      };
       await ExtensionData.migratePermissions(
         data.id,
         data.oldPermissions,

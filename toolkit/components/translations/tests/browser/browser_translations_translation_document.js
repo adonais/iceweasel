@@ -3,6 +3,13 @@
 
 "use strict";
 
+/**
+ * Request 2x longer timeout for this test.
+ * There are lot of test cases in this file, but they are all of the same nature,
+ * and it makes the most sense to have them all in this single test file.
+ */
+requestLongerTimeout(2);
+
 add_task(async function test_translated_div_element_and_visible_change() {
   let hasVisibleChangeOccurred = false;
   const { translate, htmlMatches, cleanup } = await createTranslationsDoc(
@@ -367,15 +374,15 @@ add_task(async function test_translation_batching() {
     "Batching",
     /* html */ `
     <div>
-      aaaa aa a aaaaaa aaaaaaa.
+      bbbb bb b bbbbbb bbbbbbb.
     </div>
     <div>
       <span>
-        bbbb bbbbbb
+        aaaa aaaaaa
       </span>
-      bbbbbbb bbbbbbbbb bb b
+      aaaaaaa aaaaaaaaa aa a
       <b>
-        bbbbb
+        aaaaa
       </b>
       .
     </div>
@@ -413,7 +420,7 @@ add_task(async function test_translation_inline_styling() {
   await htmlMatches(
     "Span as a display: block",
     /* html */ `
-      aaaa aaaa aa aaaa aa a aaaaa.
+      cccc cccc cc cccc cc c ccccc.
       <span>
         bbbbbb bbbb bb bbbb bb b
         <b>
@@ -422,7 +429,7 @@ add_task(async function test_translation_inline_styling() {
         .
       </span>
       <span id="spanAsBlock" style="display: block;">
-        ccccccc "ccccc" ccccccccc ccc cccccc ccccccccccc.
+        aaaaaaa "aaaaa" aaaaaaaaa aaa aaaaaa aaaaaaaaaaa.
       </span>
     `
   );
@@ -528,22 +535,22 @@ add_task(async function test_many_inlines() {
     /* html */ `
     <div>
       <div>
-        aaaa aa a
+        ffff ff f
       </div>
       <div>
-        bbbb bbbbbb
+        eeee eeeeee
       </div>
       <div>
-        ccccccc cccc cccccccc
+        ddddddd dddd dddddddd
       </div>
       <div>
-        dddd ddd dddddddd
+        cccc ccc cccccccc
       </div>
       <div>
-        ee eeee eeee eeeeeee
+        bb bbbb bbbb bbbbbbb
       </div>
       <div>
-        ff fffff ffff ffff.
+        aa aaaaa aaaa aaaa.
       </div>
     </div>
     `
@@ -572,9 +579,9 @@ add_task(async function test_presumed_inlines1() {
     "Mixing a text node with block elements will send in two batches.",
     /* html */ `
     <div>
-      aaaa aaaa
+      bbbb bbbb
       <div>
-        bbbbb bbbbbbb
+        aaaaa aaaaaaa
       </div>
     </div>
     `
@@ -604,12 +611,12 @@ add_task(async function test_presumed_inlines2() {
     "A mix of inline and blocks will be sent in separately.",
     /* html */ `
     <div>
-      aaaa aaaa
+      cccc cccc
       <span>
         bbbbbb
       </span>
       <div>
-        ccccc ccccccc
+        aaaaa aaaaaaa
       </div>
     </div>
     `
@@ -624,9 +631,9 @@ add_task(async function test_presumed_inlines3() {
       <div>
         Text node
         <span>Inline</span>
-        <div>Block Element</div>
-        <div>Block Element</div>
-        <div>Block Element</div>
+        <div>Block Element 1</div>
+        <div>Block Element 2</div>
+        <div>Block Element 3</div>
       </span>
     `,
     { mockedTranslatorPort: createBatchedMockedTranslatorPort() }
@@ -638,18 +645,18 @@ add_task(async function test_presumed_inlines3() {
     "Conflicting inlines will be sent in as separate blocks if there are more block elements",
     /* html */ `
     <div>
-      aaaa aaaa
+      eeee eeee
       <span>
-        bbbbbb
+        dddddd
       </span>
       <div>
-        ccccc ccccccc
+        ccccc ccccccc c
       </div>
       <div>
-        ddddd ddddddd
+        bbbbb bbbbbbb b
       </div>
       <div>
-        eeeee eeeeeee
+        aaaaa aaaaaaa a
       </div>
     </div>
     `
@@ -741,13 +748,13 @@ add_task(async function test_display_none_div() {
   const currentResults = /* html */ `
     <div>
       <span>
-        aaaaa aa aaaaaa aaaa
+        ccccc cc cccccc cccc
       </span>
       <div style="display: none;">
         bbbbbb bbbbbbb bb
       </div>
       <span>
-        cccc cc cccccc cccc.
+        aaaa aa aaaaaa aaaa.
       </span>
     </div>
   `;
@@ -929,7 +936,7 @@ add_task(async function test_svgs() {
         <rect x="10" y="10" width="80" height="60" class="myRect" />
         <circle cx="150" cy="50" r="30" class="myCircle" />
         <text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" class="myText">
-          Text inside of the SVG is untranslated.
+          Text inside of the SVG is translated.
         </text>
       </svg>
       <div>Text after is translated</div>
@@ -954,7 +961,7 @@ add_task(async function test_svgs() {
         <circle cx="150" cy="50" r="30" class="myCircle">
         </circle>
         <text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" class="myText">
-          TEXT INSIDE OF THE SVG IS UNTRANSLATED.
+          TEXT INSIDE OF THE SVG IS TRANSLATED.
         </text>
       </svg>
       <div>
@@ -1424,6 +1431,7 @@ add_task(
         Enter information:
         <input type="text" placeholder="I cannot participate in translations because my parent said no">
       </label>
+      <textarea placeholder="I cannot participate in translations because my parent said no">The content of the textarea is not translatable</textarea>
     </div>
     <input type="text" placeholder="Translate me">
     <input type="text" placeholder="Do not translate me" translate="no">
@@ -1440,6 +1448,7 @@ add_task(
         Enter information:
         <input type="text" placeholder="I cannot participate in translations because my parent said no">
       </label>
+      <textarea placeholder="I cannot participate in translations because my parent said no">The content of the textarea is not translatable</textarea>
     </div>
     <input type="text" placeholder="TRANSLATE ME">
     <input type="text" placeholder="Do not translate me" translate="no">
@@ -1542,6 +1551,110 @@ add_task(async function test_attribute_translation_for_area_elements() {
     <map>
       <area alt="AREA_ALT" href="#" target="_blank" shape="area_shape" coords="area_coords" download="AREA.PNG" rel="area_rel">
     </map>
+    `
+  );
+
+  cleanup();
+});
+
+add_task(
+  async function test_textarea_placeholder_translation_and_content_exclusion() {
+    const { translate, htmlMatches, cleanup } =
+      await createTranslationsDoc(/* html */ `
+    <textarea placeholder="This is a placeholder">
+      This is the content of the textarea.
+    </textarea>
+  `);
+
+    translate();
+
+    await htmlMatches(
+      "Only the placeholder is translated, not the content.",
+      /* html */ `
+    <textarea placeholder="THIS IS A PLACEHOLDER">
+      This is the content of the textarea.
+    </textarea>
+    `
+    );
+
+    cleanup();
+  }
+);
+
+add_task(async function test_textarea_other_attributes_exclusion() {
+  const { translate, htmlMatches, cleanup } =
+    await createTranslationsDoc(/* html */ `
+    <textarea placeholder="Translate this placeholder" title="Translate this title" rows="rows" cols="cols">
+      Do not translate this content.
+    </textarea>
+  `);
+
+  translate();
+
+  await htmlMatches(
+    "Only the placeholder is translated, not other attributes or content.",
+    /* html */ `
+    <textarea placeholder="TRANSLATE THIS PLACEHOLDER" title="TRANSLATE THIS TITLE" rows="rows" cols="cols">
+      Do not translate this content.
+    </textarea>
+    `
+  );
+
+  cleanup();
+});
+
+add_task(async function test_textarea_with_translate_no() {
+  const { translate, htmlMatches, cleanup } =
+    await createTranslationsDoc(/* html */ `
+    <textarea placeholder="Do not translate this placeholder" translate="no">
+      Do not translate this content.
+    </textarea>
+  `);
+
+  translate();
+
+  await htmlMatches(
+    "Neither the placeholder nor the content is translated when translate='no'.",
+    /* html */ `
+    <textarea placeholder="Do not translate this placeholder" translate="no">
+      Do not translate this content.
+    </textarea>
+    `
+  );
+
+  cleanup();
+});
+
+add_task(async function test_textarea_placeholder_mutation() {
+  const { translate, htmlMatches, cleanup, document } =
+    await createTranslationsDoc(/* html */ `
+    <textarea placeholder="Initial placeholder">
+      This is the content of the textarea.
+    </textarea>
+  `);
+
+  translate();
+
+  await htmlMatches(
+    "Initial placeholder is translated.",
+    /* html */ `
+    <textarea placeholder="INITIAL PLACEHOLDER">
+      This is the content of the textarea.
+    </textarea>
+    `
+  );
+
+  info("Mutate the placeholder attribute.");
+  document
+    .querySelector("textarea")
+    .setAttribute("placeholder", "New placeholder");
+
+  await htmlMatches(
+    "The mutated placeholder is translated.",
+    /* html */ `
+    <textarea placeholder="NEW PLACEHOLDER">
+      This is the content of the textarea.
+    </textarea>
     `
   );
 

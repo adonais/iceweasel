@@ -11122,45 +11122,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength(
-    bool isPossiblyWrapped) {
-  // Self-hosted code calls this with a single, possibly wrapped,
-  // ArrayBufferObject argument.
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
-
-  // Only optimize when the object isn't a wrapper.
-  if (isPossiblyWrapped && IsWrapper(&args_[0].toObject())) {
-    return AttachDecision::NoAction;
-  }
-
-  MOZ_ASSERT(args_[0].toObject().is<ArrayBufferObject>());
-
-  auto* buffer = &args_[0].toObject().as<ArrayBufferObject>();
-
-  // Initialize the input operand.
-  initializeInputOperand();
-
-  // Note: we don't need to call emitNativeCalleeGuard for intrinsics.
-
-  ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId objArgId = writer.guardToObject(argId);
-
-  if (isPossiblyWrapped) {
-    writer.guardIsNotProxy(objArgId);
-  }
-
-  if (buffer->byteLength() <= INT32_MAX) {
-    writer.loadArrayBufferByteLengthInt32Result(objArgId);
-  } else {
-    writer.loadArrayBufferByteLengthDoubleResult(objArgId);
-  }
-  writer.returnFromIC();
-
-  trackAttached("ArrayBufferByteLength");
-  return AttachDecision::Attach;
-}
-
 AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructing() {
   // Self-hosted code calls this with no arguments in function scripts.
   MOZ_ASSERT(args_.length() == 0);
@@ -12506,10 +12467,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     // ArrayBuffer intrinsics.
     case InlinableNative::IntrinsicGuardToArrayBuffer:
       return tryAttachGuardToArrayBuffer();
-    case InlinableNative::IntrinsicArrayBufferByteLength:
-      return tryAttachArrayBufferByteLength(/* isPossiblyWrapped = */ false);
-    case InlinableNative::IntrinsicPossiblyWrappedArrayBufferByteLength:
-      return tryAttachArrayBufferByteLength(/* isPossiblyWrapped = */ true);
 
     // SharedArrayBuffer intrinsics.
     case InlinableNative::IntrinsicGuardToSharedArrayBuffer:
@@ -15837,13 +15794,18 @@ AttachDecision LambdaIRGenerator::tryAttachFunctionClone() {
     return AttachDecision::NoAction;
   }
 
+  gc::AllocSite* site = maybeCreateAllocSite();
+  if (!site) {
+    return AttachDecision::NoAction;
+  }
+
   writer.guardNoAllocationMetadataBuilder(
       cx_->realm()->addressOfMetadataBuilder());
 
   gc::AllocKind allocKind = canonicalFunction_->getAllocKind();
   MOZ_ASSERT(allocKind == gc::AllocKind::FUNCTION ||
              allocKind == gc::AllocKind::FUNCTION_EXTENDED);
-  writer.newFunctionCloneResult(canonicalFunction_, allocKind);
+  writer.newFunctionCloneResult(canonicalFunction_, allocKind, site);
   writer.returnFromIC();
 
   trackAttached("Lambda.FunctionClone");

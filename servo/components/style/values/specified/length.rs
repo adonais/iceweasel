@@ -9,7 +9,6 @@
 use super::{AllowQuirks, Number, Percentage, ToComputedValue};
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::font_metrics::{FontMetrics, FontMetricsOrientation};
-use crate::gecko::media_queries::QueryFontMetricsFlags;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::GeckoFontMetrics;
 use crate::parser::{Parse, ParserContext};
@@ -21,6 +20,7 @@ use crate::values::generics::length::{
 };
 use crate::values::generics::NonNegative;
 use crate::values::specified::calc::{self, AllowAnchorPositioningFunctions, CalcNode};
+use crate::values::specified::font::QueryFontMetricsFlags;
 use crate::values::specified::NonNegativeNumber;
 use crate::values::CSSFloat;
 use crate::{Zero, ZeroNoPercent};
@@ -422,7 +422,15 @@ impl FontRelativeLength {
                 //     When specified on the root element, the rlh units refer
                 //     to the initial values of font and line-height properties.
                 //
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                let reference_size = if context.builder.is_root_element {
+                    context.builder
+                        .calc_line_height(
+                            context.device(),
+                            line_height_base,
+                            context.style().writing_mode,
+                        )
+                        .0
+                } else if context.in_media_query {
                     context
                         .device()
                         .calc_line_height(

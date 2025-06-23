@@ -44,9 +44,11 @@ class AppleVTEncoder final : public MediaDataEncoder {
   RefPtr<EncodePromise> Drain() override;
   RefPtr<ShutdownPromise> Shutdown() override;
   RefPtr<GenericPromise> SetBitrate(uint32_t aBitsPerSec) override;
+  bool IsHardwareAccelerated(nsACString& aFailureReason) const override {
+    return mIsHardwareAccelerated;
+  }
 
   nsCString GetDescriptionName() const override {
-    MOZ_ASSERT(mSession);
     return mIsHardwareAccelerated ? "apple hardware VT encoder"_ns
                                   : "apple software VT encoder"_ns;
   }
@@ -81,6 +83,8 @@ class AppleVTEncoder final : public MediaDataEncoder {
   bool SetFrameRate(int64_t aFPS);
   bool SetRealtime(bool aEnabled);
   bool SetProfileLevel(H264_PROFILE aValue);
+  bool IsSettingColorSpaceSupported() const;
+  MediaResult SetColorSpace(const EncoderConfig::SampleFormat& aFormat);
 
   void AssertOnTaskQueue() { MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn()); }
 

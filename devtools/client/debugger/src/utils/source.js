@@ -18,9 +18,7 @@ import { getRelativePath } from "../utils/sources-tree/utils";
 import { endTruncateStr } from "./utils";
 import { truncateMiddleText } from "../utils/text";
 import { memoizeLast } from "../utils/memoizeLast";
-import { renderWasmText } from "./wasm";
 import { toWasmSourceLine, getEditor } from "./editor/index";
-import { features } from "./prefs";
 export { isMinified } from "./isMinified";
 
 import { isFulfilled } from "./async-value";
@@ -298,27 +296,6 @@ export function getFileURL(source, truncate = true) {
   return resolveFileURL(url, getUnicodeUrl, truncate);
 }
 
-/**
- * Returns amount of lines in the source. If source is a WebAssembly binary,
- * the function returns amount of bytes.
- */
-export function getSourceLineCount(content) {
-  if (content.type === "wasm") {
-    const { binary } = content.value;
-    return binary.length;
-  }
-
-  let count = 0;
-
-  for (let i = 0; i < content.value.length; ++i) {
-    if (content.value[i] === "\n") {
-      ++count;
-    }
-  }
-
-  return count + 1;
-}
-
 function getNthLine(str, lineNum) {
   let startIndex = -1;
 
@@ -348,10 +325,8 @@ export const getLineText = memoizeLast((sourceId, asyncContent, line) => {
 
   if (content.type === "wasm") {
     const editor = getEditor();
-    const lines = features.codemirrorNext
-      ? editor.renderWasmText(content)
-      : renderWasmText(sourceId, content);
-    return lines[toWasmSourceLine(sourceId, line)] || "";
+    const lines = editor.renderWasmText(content);
+    return lines[toWasmSourceLine(line)] || "";
   }
 
   const lineText = getNthLine(content.value, line - 1);

@@ -23,6 +23,7 @@
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/UnbindContext.h"
+#include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/IdentifierMapEntry.h"
 #include "mozilla/PresShell.h"
@@ -548,6 +549,15 @@ void ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet) {
   }
 }
 
+void ShadowRoot::AppendBuiltInStyleSheet(BuiltInStyleSheet aSheet) {
+  auto* cache = GlobalStyleSheetCache::Singleton();
+  // NOTE(emilio): It's important to Clone() the stylesheet to avoid leaking,
+  // since the built-in sheet is kept alive forever, and AppendStyleSheet will
+  // set the associated global of the stylesheet.
+  RefPtr sheet = cache->BuiltInSheet(aSheet)->Clone(nullptr, nullptr);
+  AppendStyleSheet(*sheet);
+}
+
 void ShadowRoot::RemoveSheetFromStyles(StyleSheet& aSheet) {
   MOZ_ASSERT(aSheet.IsApplicable());
   MOZ_ASSERT(mServoStyles);
@@ -884,10 +894,19 @@ nsresult ShadowRoot::Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const {
   return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
 }
 
+void ShadowRoot::SetHTML(const nsAString& aHTML, const SetHTMLOptions& aOptions,
+                         ErrorResult& aError) {
+  RefPtr<Element> host = GetHost();
+  nsContentUtils::SetHTML(this, host, aHTML, aOptions, aError);
+}
+
 void ShadowRoot::SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
+                               const SetHTMLUnsafeOptions& aOptions,
+                               nsIPrincipal* aSubjectPrincipal,
                                ErrorResult& aError) {
   RefPtr<Element> host = GetHost();
-  nsContentUtils::SetHTMLUnsafe(this, host, aHTML, true /*aIsShadowRoot*/,
+  nsContentUtils::SetHTMLUnsafe(this, host, aHTML, aOptions,
+                                true /*aIsShadowRoot*/, aSubjectPrincipal,
                                 aError);
 }
 
@@ -897,14 +916,15 @@ void ShadowRoot::GetInnerHTML(
 }
 
 MOZ_CAN_RUN_SCRIPT void ShadowRoot::SetInnerHTML(
-    const TrustedHTMLOrNullIsEmptyString& aInnerHTML, ErrorResult& aError) {
+    const TrustedHTMLOrNullIsEmptyString& aInnerHTML,
+    nsIPrincipal* aSubjectPrincipal, ErrorResult& aError) {
   constexpr nsLiteralString sink = u"ShadowRoot innerHTML"_ns;
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
       TrustedTypeUtils::GetTrustedTypesCompliantString(
           aInnerHTML, sink, kTrustedTypesOnlySinkGroup, *this,
-          compliantStringHolder, aError);
+          aSubjectPrincipal, compliantStringHolder, aError);
   if (aError.Failed()) {
     return;
   }

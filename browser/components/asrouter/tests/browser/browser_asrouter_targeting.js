@@ -10,12 +10,12 @@ ChromeUtils.defineESModuleGetters(this, {
   CFRMessageProvider: "resource:///modules/asrouter/CFRMessageProvider.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
-  ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   InfoBar: "resource:///modules/asrouter/InfoBar.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
@@ -1570,6 +1570,64 @@ add_task(async function check_isMSIX() {
   );
 });
 
+add_task(async function check_packageFamilyName() {
+  if (AppConstants.platform !== "win") {
+    is(
+      ASRouterTargeting.Environment.packageFamilyName,
+      null,
+      "Should always be null on non-Windows"
+    );
+    return;
+  }
+
+  let winPackageFamilyName = Services.sysinfo.getProperty(
+    "winPackageFamilyName"
+  );
+  if (winPackageFamilyName === "") {
+    is(
+      ASRouterTargeting.Environment.packageFamilyName,
+      null,
+      "Should be null if sysinfo is empty"
+    );
+  } else {
+    is(
+      ASRouterTargeting.Environment.packageFamilyName,
+      winPackageFamilyName,
+      "Should match non-empty sysinfo"
+    );
+  }
+});
+
+add_task(async function check_msixConsistency() {
+  if (ASRouterTargeting.Environment.isMSIX) {
+    Assert.greater(
+      ASRouterTargeting.Environment.packageFamilyName.length,
+      0,
+      "packageFamilyName should be non-empty if installed by MSIX"
+    );
+  } else {
+    is(
+      ASRouterTargeting.Environment.packageFamilyName,
+      null,
+      "packageFamilyName should be empty if not installed by MSIX"
+    );
+  }
+
+  if (ASRouterTargeting.Environment.packageFamilyName === null) {
+    is(
+      ASRouterTargeting.Environment.isMSIX,
+      false,
+      "isMSIX should be false if packageFamilyName is not present"
+    );
+  } else {
+    is(
+      ASRouterTargeting.Environment.isMSIX,
+      true,
+      "isMSIX should be true if packageFamilyName is present"
+    );
+  }
+});
+
 add_task(async function check_isRTAMO() {
   is(
     typeof ASRouterTargeting.Environment.isRTAMO,
@@ -2029,5 +2087,24 @@ add_task(async function check_profileGroupIdTargeting() {
     await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
     message,
     "should select correct item by profile group id"
+  );
+});
+
+add_task(async function test_buildId() {
+  is(
+    typeof ASRouterTargeting.Environment.buildId,
+    "number",
+    "Should return a number"
+  );
+
+  const message = {
+    id: "foo",
+    // Later than January 2025
+    targeting: `buildId >= 20251010000`,
+  };
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "should select correct item when filtering by build ID"
   );
 });

@@ -9,8 +9,6 @@ ChromeUtils.defineESModuleGetters(this, {
   FirefoxLabs: "resource://nimbus/FirefoxLabs.sys.mjs",
 });
 
-const STUDIES_ENABLED_CHANGED = "nimbus:studies-enabled-changed";
-
 const gExperimentalPane = {
   inited: false,
   _featureGatesContainer: null,
@@ -39,7 +37,7 @@ const gExperimentalPane = {
 
     Services.obs.addObserver(
       this._onStudiesEnabledChanged,
-      STUDIES_ENABLED_CHANGED
+      ExperimentAPI.STUDIES_ENABLED_CHANGED
     );
     window.addEventListener("unload", () => this._removeObservers());
 
@@ -102,7 +100,7 @@ const gExperimentalPane = {
         document.l10n.setAttributes(checkbox, optIn.firefoxLabsTitle);
 
         checkbox.checked =
-          ExperimentAPI._manager.store.get(optIn.slug)?.active ?? false;
+          ExperimentAPI.manager.store.get(optIn.slug)?.active ?? false;
         checkbox.addEventListener("change", this._onCheckboxChanged);
 
         checkbox.append(description);
@@ -114,13 +112,13 @@ const gExperimentalPane = {
 
     this._featureGatesContainer.appendChild(frag);
 
-    ExperimentAPI._manager.store.on("update", this._onNimbusUpdate);
+    ExperimentAPI.manager.store.on("update", this._onNimbusUpdate);
 
     Services.obs.notifyObservers(window, "experimental-pane-loaded");
   },
 
   _removeLabsRecipes() {
-    ExperimentAPI._manager.store.off("update", this._onNimbusUpdate);
+    ExperimentAPI.manager.store.off("update", this._onNimbusUpdate);
 
     this._featureGatesContainer
       .querySelectorAll(".featureGate")
@@ -133,9 +131,7 @@ const gExperimentalPane = {
     const slug = target.dataset.nimbusSlug;
     const branchSlug = target.dataset.nimbusBranchSlug;
 
-    const enrolling = !(
-      ExperimentAPI._manager.store.get(slug)?.active ?? false
-    );
+    const enrolling = !(ExperimentAPI.manager.store.get(slug)?.active ?? false);
 
     let shouldRestart = false;
     if (this._firefoxLabs.get(slug).requiresRestart) {
@@ -155,7 +151,7 @@ const gExperimentalPane = {
     if (enrolling) {
       await this._firefoxLabs.enroll(slug, branchSlug);
     } else {
-      this._firefoxLabs.unenroll(slug);
+      await this._firefoxLabs.unenroll(slug);
     }
 
     target.disabled = false;
@@ -174,7 +170,7 @@ const gExperimentalPane = {
   },
 
   async _onStudiesEnabledChanged() {
-    const studiesEnabled = ExperimentAPI._manager.studiesEnabled;
+    const studiesEnabled = ExperimentAPI.studiesEnabled;
 
     if (studiesEnabled) {
       await this._maybeRenderLabsRecipes();
@@ -186,10 +182,10 @@ const gExperimentalPane = {
   },
 
   _removeObservers() {
-    ExperimentAPI._manager.store.off("update", this._onNimbusUpdate);
+    ExperimentAPI.manager.store.off("update", this._onNimbusUpdate);
     Services.obs.removeObserver(
       this._onStudiesEnabledChanged,
-      STUDIES_ENABLED_CHANGED
+      ExperimentAPI.STUDIES_ENABLED_CHANGED
     );
   },
 
@@ -197,9 +193,9 @@ const gExperimentalPane = {
   async _resetAllFeatures() {
     for (const optIn of this._firefoxLabs.all()) {
       const enrolled =
-        (await ExperimentAPI._manager.store.get(optIn.slug)?.active) ?? false;
+        (await ExperimentAPI.manager.store.get(optIn.slug)?.active) ?? false;
       if (enrolled) {
-        this._firefoxLabs.unenroll(optIn.slug);
+        await this._firefoxLabs.unenroll(optIn.slug);
       }
     }
   },

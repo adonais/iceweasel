@@ -25,9 +25,13 @@ https_first_disabled = true
 ["browser_aria_current.js"]
 skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] # Bug 1802555
 
+["browser_aria_errormessage.js"]
+
 ["browser_aria_expanded.js"]
 
 ["browser_aria_haspopup.js"]
+
+["browser_aria_keyshortcuts.js"]
 
 ["browser_aria_placeholder.js"]
 
@@ -48,6 +52,8 @@ skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] #
 ["browser_hierarchy.js"]
 
 ["browser_input.js"]
+
+["browser_invalid.js"]
 
 ["browser_label_title.js"]
 

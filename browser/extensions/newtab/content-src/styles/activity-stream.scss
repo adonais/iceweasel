@@ -9,6 +9,7 @@
 @import './mixins';
 
 :root {
+  font-size: var(--font-size-root);
   height: 100%;
 
   &[lwt-newtab-brighttext] {
@@ -28,7 +29,7 @@ body,
 body {
   background-color: var(--newtab-background-color);
   font-family: system-ui;
-  font-size: 16px;
+  font-size: var(--font-size-root);
 
   // rules for HNT wallpapers
   background-repeat: no-repeat;
@@ -51,7 +52,7 @@ h2 {
 
 .inner-border {
   border: $border-secondary;
-  border-radius: $border-radius;
+  border-radius: var(--border-radius-small);
   height: 100%;
   left: 0;
   pointer-events: none;
@@ -96,7 +97,7 @@ h2 {
 .actions button {
   background-color: var(--newtab-button-secondary-color);
   border: $border-primary;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   color: inherit;
   cursor: pointer;
   margin-bottom: 15px;
@@ -129,7 +130,7 @@ h2 {
 input {
   &[type='text'],
   &[type='search'] {
-    border-radius: $border-radius;
+    border-radius: var(--border-radius-small);
   }
 }
 
@@ -154,7 +155,7 @@ input {
 @import '../components/ContextMenu/ContextMenu';
 @import '../components/ConfirmDialog/ConfirmDialog';
 @import '../components/CustomizeMenu/CustomizeMenu';
-@import '../components/WallpapersSection/WallpapersSection';
+@import '../components/WallpaperCategories/WallpaperCategories';
 @import '../components/Weather/Weather';
 @import '../components/DownloadModalToggle/DownloadModalToggle';
 @import '../components/Card/Card';

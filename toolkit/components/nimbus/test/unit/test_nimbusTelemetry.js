@@ -40,53 +40,19 @@ add_task(
       "Testing the interaction of gleanMetricConfiguration with submission of enrollment status and targeting context telemetry"
     );
 
-    const experiment = ExperimentFakes.recipe("experiment", {
-      bucketConfig: {
-        ...ExperimentFakes.recipe.bucketConfig,
-        count: 1000,
-      },
-      branches: [
-        {
-          slug: "control",
-          ratio: 1,
-          features: [
-            {
-              featureId: "nimbusTelemetry",
-              value: {
-                gleanMetricConfiguration: {
-                  metrics_enabled: {
-                    "nimbus_targeting_environment.targeting_context_value": true,
-                  },
-                },
-              },
+    const experiment = NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "experiment",
+      {
+        featureId: "nimbusTelemetry",
+        value: {
+          gleanMetricConfiguration: {
+            metrics_enabled: {
+              "nimbus_targeting_environment.targeting_context_value": true,
             },
-          ],
+          },
         },
-      ],
-    });
-
-    const rollout = ExperimentFakes.recipe("rollout", {
-      bucketConfig: experiment.bucketConfig,
-      isRollout: true,
-      branches: [
-        {
-          slug: "control",
-          ratio: 1,
-          features: [
-            {
-              featureId: "nimbusTelemetry",
-              value: {
-                gleanMetricConfiguration: {
-                  metrics_enabled: {
-                    "nimbus_events.enrollment_status": true,
-                  },
-                },
-              },
-            },
-          ],
-        },
-      ],
-    });
+      }
+    );
 
     const { manager, cleanup } = await setupTest();
 
@@ -105,16 +71,6 @@ add_task(
       null,
       "targetingContextValue not recorded by default"
     );
-    Assert.equal(
-      Glean.nimbusEvents.enrollmentStatus.testGetValue("events"),
-      null,
-      "enrollmentStatus not recorded by default"
-    );
-
-    // Because the feature listener gets triggered before we submit telemetry,
-    // this will actually cause it to submit its own enrollment status telemetry
-    // for enrollment.
-    await manager.enroll(rollout, "rs-loader");
 
     Glean.nimbusTargetingEnvironment.targetingContextValue.set(
       "rollout-active-1"
@@ -126,24 +82,6 @@ add_task(
       "targetingContextValue not recorded by default"
     );
 
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        ?.map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-      ],
-      "Should have recorded enrollmentStatus (rollout enabled metric)"
-    );
-
-    // Likewise, because the feature listener gets triggered before we submit
-    // telemetry, this will disable the metric before we submit it, so we
-    // shouldn't see another event.
     await manager.enroll(experiment, "rs-loader");
     Assert.ok(
       manager.store.get(experiment.slug)?.active,
@@ -158,21 +96,6 @@ add_task(
       Glean.nimbusTargetingEnvironment.targetingContextValue.testGetValue(),
       "experiment-active-2",
       "Targeting context metric was recorded"
-    );
-
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        ?.map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-      ],
-      "Should not have recorded enrollmentStatus again (experiment disabled metric)"
     );
 
     // Now the listener triggers again and the metric re-enables. We should see
@@ -190,29 +113,6 @@ add_task(
       "targetingContextValue was not recorded again"
     );
 
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        .map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-        {
-          slug: experiment.slug,
-          branch: experiment.branches[0].slug,
-          status: "WasEnrolled",
-        },
-      ]
-    );
-
-    // Finally, this disables the enrollment status metric in the onUpdate
-    // handler. We don't see its unenrollment.
-    await manager.unenroll(rollout.slug, { reason: "recipe-not-seen" });
-
     Glean.nimbusTargetingEnvironment.targetingContextValue.set(
       "nothing-active-0"
     );
@@ -223,28 +123,9 @@ add_task(
       "targetingContextValue was not recorded again"
     );
 
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        .map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-        {
-          slug: experiment.slug,
-          branch: experiment.branches[0].slug,
-          status: "WasEnrolled",
-        },
-      ]
-    );
-
     Services.fog.testResetFOG();
 
-    cleanup();
+    await cleanup();
   }
 );
 
@@ -322,7 +203,7 @@ add_task(
   async function test_nimbusTargetingEnvironment_recordAttrs() {
     const { manager, cleanup } = await setupTest();
 
-    const cleanupExperiment = await ExperimentFakes.enrollWithFeatureConfig(
+    const cleanupExperiment = await NimbusTestUtils.enrollWithFeatureConfig(
       {
         featureId: "nimbusTelemetry",
         value: {
@@ -353,7 +234,7 @@ add_task(
       "The targetingContextValue metric has not been recorded yet."
     );
 
-    GleanPings.nimbusTargetingContext.testBeforeNextSubmit(() => {
+    await GleanPings.nimbusTargetingContext.testSubmission(() => {
       Assert.deepEqual(
         JSON.parse(
           Glean.nimbusTargetingEnvironment.targetingContextValue.testGetValue()
@@ -369,10 +250,9 @@ add_task(
           ],
         }
       );
-    });
-    await recordTargetingContext();
+    }, recordTargetingContext);
 
-    cleanupExperiment();
-    cleanup();
+    await cleanupExperiment();
+    await cleanup();
   }
 );

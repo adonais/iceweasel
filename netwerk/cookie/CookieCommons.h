@@ -115,15 +115,16 @@ class CookieCommons final {
   static already_AddRefed<nsICookieJarSettings> GetCookieJarSettings(
       nsIChannel* aChannel);
 
-  static bool ShouldIncludeCrossSiteCookie(Cookie* aCookie,
+  static bool ShouldIncludeCrossSiteCookie(Cookie* aCookie, nsIURI* aHostURI,
                                            bool aPartitionForeign,
                                            bool aInPrivateBrowsing,
                                            bool aUsingStorageAccess,
                                            bool aOn3pcbException);
 
   static bool ShouldIncludeCrossSiteCookie(
-      int32_t aSameSiteAttr, bool aCookiePartitioned, bool aPartitionForeign,
-      bool aInPrivateBrowsing, bool aUsingStorageAccess, bool aOn3pcbException);
+      nsIURI* aHostURI, int32_t aSameSiteAttr, bool aCookiePartitioned,
+      bool aPartitionForeign, bool aInPrivateBrowsing, bool aUsingStorageAccess,
+      bool aOn3pcbException);
 
   static bool IsFirstPartyPartitionedCookieWithoutCHIPS(
       Cookie* aCookie, const nsACString& aBaseDomain,
@@ -182,6 +183,10 @@ class CookieCommons final {
   static SecurityChecksResult CheckGlobalAndRetrieveCookiePrincipals(
       mozilla::dom::Document* aDocument, nsIPrincipal** aCookiePrincipal,
       nsIPrincipal** aCookiePartitionedPrincipal);
+
+  // Return a reduced expiry attribute value if needed.
+  static int64_t MaybeReduceExpiry(int64_t aCurrentTimeInSec,
+                                   int64_t aExpiryInSec);
 };
 
 }  // namespace net

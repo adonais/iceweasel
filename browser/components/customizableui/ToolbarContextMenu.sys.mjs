@@ -26,6 +26,15 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+// Whether the Extensions button can be hidden via UI. The button can be hidden
+// even with this pref set to false. TODO bug 1967773: Remove this pref.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gEnableCustomizableExtensionsButton",
+  "extensions.unifiedExtensions.button.customizable",
+  true
+);
+
 /**
  * Various events handlers to set the state of the toolbar-context-menu popup,
  * as well as to handle some commands from that popup.
@@ -404,18 +413,68 @@ export var ToolbarContextMenu = {
   },
 
   /**
+   * Updates the toolbar context menu items unique to gUnifiedExtensions.button.
+   *
+   * @param {Element} popup
+   *   The toolbar-context-menu element for a window.
+   */
+  updateExtensionsButtonContextMenu(popup) {
+    const isExtsButton = popup.triggerNode?.id === "unified-extensions-button";
+    const isCustomizingExtsButton =
+      popup.triggerNode?.id === "wrapper-unified-extensions-button";
+    const { gUnifiedExtensions } = popup.ownerGlobal;
+
+    const checkbox = popup.querySelector(
+      "#toolbar-context-always-show-extensions-button"
+    );
+    if (isCustomizingExtsButton && lazy.gEnableCustomizableExtensionsButton) {
+      checkbox.hidden = false;
+      if (gUnifiedExtensions.buttonAlwaysVisible) {
+        checkbox.setAttribute("checked", "true");
+      } else {
+        checkbox.removeAttribute("checked");
+      }
+    } else if (
+      isExtsButton &&
+      !gUnifiedExtensions.buttonAlwaysVisible &&
+      lazy.gEnableCustomizableExtensionsButton
+    ) {
+      // The button may be visible despite the user's preference, which could
+      // remind the user of the button's existence. Offer an option to unhide
+      // the button, in case the user is looking for a way to do so.
+      checkbox.hidden = false;
+      checkbox.removeAttribute("checked");
+    } else {
+      checkbox.hidden = true;
+    }
+
+    // removeFromToolbar is shown but disabled by default, via an earlier call
+    // to ToolbarContextMenu.onViewToolbarsPopupShowing. Enable/hide if needed.
+    if (isExtsButton && lazy.gEnableCustomizableExtensionsButton) {
+      const removeFromToolbar = popup.querySelector(
+        ".customize-context-removeFromToolbar"
+      );
+      if (gUnifiedExtensions.buttonAlwaysVisible) {
+        removeFromToolbar.removeAttribute("disabled");
+      } else {
+        // No need to show "Remove from Toolbar" even if disabled, because the
+        // "Always Show in Toolbar" checkbox is already shown above.
+        removeFromToolbar.hidden = true;
+      }
+    }
+  },
+
+  /**
    * Updates the toolbar context menu to show the right state if an
    * extension-provided widget acted as the triggerNode. This will, for example,
    * show or hide items for managing the underlying addon.
    *
    * @param {DOMNode} popup
    *   The menupopup for the toolbar context menu.
-   * @param {Event} event
-   *   The popupshowing event for the menupopup.
    * @returns {Promise<undefined>}
    *   Resolves once the menupopup state has been set.
    */
-  async updateExtension(popup, event) {
+  async updateExtension(popup) {
     let removeExtension = popup.querySelector(
       ".customize-context-removeExtension"
     );
@@ -457,7 +516,7 @@ export var ToolbarContextMenu = {
         addon.permissions & lazy.AddonManager.PERM_CAN_UNINSTALL
       );
 
-      if (event?.target?.id === "toolbar-context-menu") {
+      if (popup.id === "toolbar-context-menu") {
         lazy.ExtensionsUI.originControlsMenu(popup, id);
       }
     }

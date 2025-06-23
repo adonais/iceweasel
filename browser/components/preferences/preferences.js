@@ -204,7 +204,7 @@ function init_all() {
     // Set hidden based on previous load's hidden value or if Nimbus is
     // disabled.
     document.getElementById("category-experimental").hidden =
-      !ExperimentAPI._manager.studiesEnabled ||
+      !ExperimentAPI.studiesEnabled ||
       Services.prefs.getBoolPref(
         "browser.preferences.experimental.hidden",
         false
@@ -311,14 +311,18 @@ async function gotoPref(
   }
 
   let item;
+  let unknownCategory = false;
   if (category != "paneSearchResults") {
     // Hide second level headers in normal view
     for (let element of document.querySelectorAll(".search-header")) {
       element.hidden = true;
     }
 
-    item = categories.querySelector(".category[value=" + category + "]");
+    item = categories.querySelector(
+      ".category[value=" + CSS.escape(category) + "]"
+    );
     if (!item || item.hidden) {
+      unknownCategory = true;
       category = kDefaultCategoryInternalName;
       item = categories.querySelector(".category[value=" + category + "]");
     }
@@ -326,6 +330,7 @@ async function gotoPref(
 
   if (
     gLastCategory.category ||
+    unknownCategory ||
     category != kDefaultCategoryInternalName ||
     subcategory
   ) {

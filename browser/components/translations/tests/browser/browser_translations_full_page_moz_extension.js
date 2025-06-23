@@ -14,10 +14,12 @@ add_task(async function test_translations_moz_extension() {
     files: {
       "test_page.html": `<!DOCTYPE html>
         <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+          </head>
           <body>
-            <div>
-              <h1>Don Quijote de La Mancha</h1>
-            </div>
+            <h1 title="Este es el título del encabezado de página">Don Quijote de La Mancha</h1>
+            <p title="Este es el título del último párrafo">— Pues, aunque mováis más brazos que los del gigante Briareo, me lo habéis de pagar.</p>
           </body>
         </html>`,
     },
@@ -38,7 +40,7 @@ add_task(async function test_translations_moz_extension() {
 
   is(button.getAttribute("data-l10n-id"), "urlbar-translations-button-intro");
 
-  await FullPageTranslationsTestUtils.assertPageIsUntranslated(runInPage);
+  await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
   await FullPageTranslationsTestUtils.openPanel({
     expectedFromLanguage: "es",
@@ -50,11 +52,27 @@ add_task(async function test_translations_moz_extension() {
     downloadHandler: resolveDownloads,
   });
 
-  await FullPageTranslationsTestUtils.assertPageIsTranslated({
+  await FullPageTranslationsTestUtils.assertAllPageContentIsTranslated({
     fromLanguage: "es",
     toLanguage: "en",
     runInPage,
   });
+  await FullPageTranslationsTestUtils.assertPageH1TitleIsTranslated({
+    fromLanguage: "es",
+    toLanguage: "en",
+    runInPage,
+    message:
+      "The page's H1's title should be translated because it intersects with the viewport.",
+  });
+  await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsTranslated(
+    {
+      fromLanguage: "es",
+      toLanguage: "en",
+      runInPage,
+      message:
+        "The page's final paragraph's title should be translated because it intersects with the viewport.",
+    }
+  );
 
   await cleanup();
   await extension.unload();

@@ -38,7 +38,7 @@ import java.util.zip.GZIPOutputStream
 import kotlin.random.Random
 import mozilla.components.Build as AcBuild
 
-/* This ID is used for all Mozilla products.  Setting as default if no ID is passed in */
+// This ID is used for all Mozilla products.  Setting as default if no ID is passed in
 private const val MOZILLA_PRODUCT_ID = "{eeb82917-e434-4870-8148-5c03d4caa81b}"
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -156,7 +156,7 @@ class MozillaSocorroService(
     }
 
     override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>): String? {
-        /* Not sending caught exceptions to Socorro */
+        // Not sending caught exceptions to Socorro
         return null
     }
 
@@ -251,9 +251,9 @@ class MozillaSocorroService(
         sendPart(gzipOs, boundary, "ProductID", appId, nameSet)
         sendPart(gzipOs, boundary, "Version", versionName, nameSet)
         sendPart(gzipOs, boundary, "ApplicationBuildID", versionCode, nameSet)
-        sendPart(gzipOs, boundary, "AndroidComponentVersion", AcBuild.version, nameSet)
-        sendPart(gzipOs, boundary, "GleanVersion", AcBuild.gleanSdkVersion, nameSet)
-        sendPart(gzipOs, boundary, "ApplicationServicesVersion", AcBuild.applicationServicesVersion, nameSet)
+        sendPart(gzipOs, boundary, "AndroidComponentVersion", AcBuild.VERSION, nameSet)
+        sendPart(gzipOs, boundary, "GleanVersion", AcBuild.GLEAN_SDK_VERSION, nameSet)
+        sendPart(gzipOs, boundary, "ApplicationServicesVersion", AcBuild.APPLICATION_SERVICES_VERSION, nameSet)
         sendPart(gzipOs, boundary, "GeckoViewVersion", version, nameSet)
         sendPart(gzipOs, boundary, "BuildID", buildId, nameSet)
         sendPart(gzipOs, boundary, "Vendor", vendor, nameSet)
@@ -560,6 +560,6 @@ class MozillaSocorroService(
             .buildUpon()
             .appendQueryParameter("id", appId)
             .appendQueryParameter("version", versionName)
-            .appendQueryParameter("android_component_version", AcBuild.version)
+            .appendQueryParameter("android_component_version", AcBuild.VERSION)
             .build().toString()
 }

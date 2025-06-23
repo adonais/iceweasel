@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   GenAI: "resource:///modules/GenAI.sys.mjs",
+  LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   LoginManagerContextMenu:
     "resource://gre/modules/LoginManagerContextMenu.sys.mjs",
@@ -21,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
+  ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
@@ -563,6 +565,10 @@ export class nsContextMenu {
       shouldShow && !isWindowPrivate && showContainers
     );
     this.showItem("context-openlinkincurrent", this.onPlainTextLink);
+    this.showItem(
+      "context-previewlink",
+      lazy.LinkPreview.shouldShowContextMenu(this)
+    );
   }
 
   initNavigationItems() {
@@ -1426,7 +1432,7 @@ export class nsContextMenu {
 
   shouldShowTakeScreenshot() {
     let shouldShow =
-      !this.window.gScreenshots.shouldScreenshotsButtonBeDisabled() &&
+      lazy.ScreenshotsUtils.screenshotsEnabled &&
       this.inTabBrowser &&
       !this.onTextInput &&
       !this.onLink &&
@@ -2327,6 +2333,12 @@ export class nsContextMenu {
     );
   }
 
+  previewLink(url = this.linkURL) {
+    // If we're in a view-source tab, remove the view-source: prefix
+    url = url.replace(/^view-source:/, "");
+    lazy.LinkPreview.handleContextMenuClick(url, this);
+  }
+
   /**
    * Copies a stripped version of a URI to the clipboard.
    * 'Stripped' means that query parameters for tracking/ link decoration
@@ -2370,6 +2382,12 @@ export class nsContextMenu {
     let { url, formData, charset, method } =
       await this.actor.getSearchFieldEngineData(this.targetIdentifier);
 
+    for (let value of formData.values()) {
+      if (typeof value != "string") {
+        throw new Error("Non-string values are not supported.");
+      }
+    }
+
     let { engineInfo } = await this.window.gDialogBox.open(
       "chrome://browser/content/search/addEngine.xhtml",
       {
@@ -2386,10 +2404,9 @@ export class nsContextMenu {
         name: engineInfo.name,
         alias: engineInfo.alias,
         url,
-        formData,
+        params: new URLSearchParams(formData),
         charset,
         method,
-        icon: this.browser.mIconURL,
       });
 
       this.window.gURLBar.search("", { searchEngine });
@@ -2552,10 +2569,13 @@ export class nsContextMenu {
   }
 
   shouldShowAddEngine() {
+    let uri = this.browser.currentURI;
+
     return (
       this.onTextInput &&
       this.onSearchField &&
       !this.isLoginForm() &&
+      (uri.schemeIs("http") || uri.schemeIs("https")) &&
       Services.prefs.getBoolPref(
         "browser.urlbar.update2.engineAliasRefresh",
         false

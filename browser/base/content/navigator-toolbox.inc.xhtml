@@ -51,13 +51,12 @@
               orient="horizontal"
               stopwatchid="tabClick">
           <hbox class="tab-drop-indicator" hidden="true"/>
-          <html:span id="tab-drag-empty-feedback" role="presentation"/>
 # If the name (tabbrowser-arrowscrollbox) or structure of this changes
 # significantly, there is an optimization in
 # DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered based
 # the current structure that we may want to revisit.
           <arrowscrollbox id="vertical-pinned-tabs-container" orient="vertical" tabindex="-1"></arrowscrollbox>
-          <html:div id="vertical-pinned-tabs-container-separator"></html:div>
+          <splitter orient="vertical" id="vertical-pinned-tabs-splitter" resizebefore="sibling" resizeafter="none" hidden="true"/>
           <arrowscrollbox id="tabbrowser-arrowscrollbox" orient="horizontal" flex="1" clicktoscroll="" scrolledtostart="" scrolledtoend="">
             <tab is="tabbrowser-tab" class="tabbrowser-tab" selected="true" visuallyselected="" fadein=""/>
             <hbox id="tabbrowser-arrowscrollbox-periphery">
@@ -157,7 +156,11 @@
         </toolbarbutton>
       </toolbaritem>
       <toolbarspring cui-areatype="toolbar" class="chromeclass-toolbar-additional"/>
-      <toolbarspring cui-areatype="toolbar" class="chromeclass-toolbar-additional titlebar-spacer" id="vertical-spacer" />
+      <toolbarspring cui-areatype="toolbar"
+                   class="chromeclass-toolbar-additional titlebar-spacer"
+                   id="vertical-spacer"
+                   removable="false"
+                   overflows="false"/>
       <toolbaritem id="urlbar-container"
                    removable="false"
                    overflows="false">
@@ -397,14 +400,6 @@
                 <image class="urlbar-icon" id="translations-button-circle-arrows" />
                 <html:span id="translations-button-locale" aria-hidden="true" />
               </hbox>
-              <hbox id="shopping-sidebar-button"
-                  class="urlbar-page-action"
-                  role="button"
-                  data-l10n-id="shopping-sidebar-open-button2"
-                  hidden="true">
-                <image id="shopping-sidebar-button-icon"
-                       class="urlbar-icon"/>
-              </hbox>
               <toolbarbutton id="urlbar-zoom-button"
                      tooltip="dynamic-shortcut-tooltip"
                      hidden="true"/>
@@ -463,10 +458,12 @@
                      data-l10n-id="toolbar-button-account"
                      cui-areatype="toolbar"
                      removable="true">
-                     <hbox>
-                      <image id="fxa-avatar-image"/>
+                    <hbox align="center">
+                      <div class="avatar-container">
+                        <image id="fxa-avatar-image"/>
+                      </div>
                       <label id="fxa-avatar-label" hidden="true"/>
-                     </hbox>
+                  </hbox>
       </toolbarbutton>
 
       <toolbarbutton id="unified-extensions-button"

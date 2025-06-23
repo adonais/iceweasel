@@ -41,27 +41,23 @@ add_task(
 
     Services.prefs.clearUserPref(TEST_FALLBACK_PREF);
 
-    cleanup();
+    await cleanup();
   }
 );
 
 add_task(
   async function test_ExperimentFeature_getAllVariables_experimentOverPref() {
     const { manager, cleanup } = await NimbusTestUtils.setupTest();
-    const recipe = ExperimentFakes.experiment("awexperiment", {
-      branch: {
-        slug: "treatment",
-        ratio: 1,
-        features: [
-          {
-            featureId: "aboutwelcome",
-            value: { screens: ["test-value"] },
-          },
-        ],
-      },
-    });
+    const recipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "awexperiment",
+      {
+        branchSlug: "treatment",
+        featureId: "aboutwelcome",
+        value: { screens: ["test-value"] },
+      }
+    );
 
-    await manager.store.addEnrollment(recipe);
+    await manager.enroll(recipe, "test");
 
     const featureInstance = new ExperimentFeature(
       FEATURE_ID,
@@ -88,7 +84,7 @@ add_task(
       "should return the AW experiment value"
     );
 
-    ExperimentFakes.cleanupAll([recipe.slug], { manager });
+    await NimbusTestUtils.cleanupManager([recipe.slug], { manager });
     Assert.deepEqual(
       featureInstance.getAllVariables().screens.length,
       0,
@@ -97,7 +93,7 @@ add_task(
 
     Services.prefs.clearUserPref(TEST_FALLBACK_PREF);
 
-    cleanup();
+    await cleanup();
   }
 );
 
@@ -109,41 +105,40 @@ add_task(
       FEATURE_ID,
       FAKE_FEATURE_MANIFEST
     );
-    const recipe = ExperimentFakes.experiment("aw-experiment", {
-      branch: {
-        slug: "treatment",
-        ratio: 1,
-        features: [
-          {
-            featureId: FEATURE_ID,
-            value: { screens: ["test-value"] },
-          },
-        ],
+
+    const recipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "aw-experiment",
+      {
+        branchSlug: "treatment",
+        featureId: FEATURE_ID,
+        value: { screens: ["test-value"] },
+      }
+    );
+    const rollout = NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "aw-rollout",
+      {
+        branchSlug: "treatment",
+        featureId: FEATURE_ID,
+        value: { screens: [], source: "rollout" },
       },
-    });
-    const rollout = ExperimentFakes.rollout("aw-rollout", {
-      branch: {
-        slug: "treatment",
-        ratio: 1,
-        features: [
-          { featureId: FEATURE_ID, value: { screens: [], source: "rollout" } },
-        ],
-      },
-    });
+      { isRollout: true }
+    );
     // We're using the store in this test we need to wait for it to load
     await manager.store.ready();
 
-    manager.store.addEnrollment(recipe);
-    manager.store.addEnrollment(rollout);
+    await manager.enroll(recipe, "test");
+    await manager.enroll(rollout, "test");
 
     const allVariables = featureInstance.getAllVariables();
 
     Assert.equal(allVariables.screens.length, 1, "Returns experiment value");
     Assert.ok(!allVariables.source, "Does not include rollout value");
 
-    ExperimentFakes.cleanupAll([recipe.slug, rollout.slug], { manager });
+    await NimbusTestUtils.cleanupManager([recipe.slug, rollout.slug], {
+      manager,
+    });
 
-    cleanup();
+    await cleanup();
   }
 );
 
@@ -154,13 +149,15 @@ add_task(
       FEATURE_ID,
       FAKE_FEATURE_MANIFEST
     );
-    const rollout = ExperimentFakes.rollout("foo-aw", {
-      branch: {
-        slug: "getAllVariables",
-        ratio: 1,
-        features: [{ featureId: FEATURE_ID, value: { screens: [] } }],
+    const rollout = NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "foo-aw",
+      {
+        branchSlug: "getAllVariables",
+        featureId: FEATURE_ID,
+        value: { screens: [] },
       },
-    });
+      { isRollout: true }
+    );
 
     Services.prefs.clearUserPref(TEST_FALLBACK_PREF);
 
@@ -170,7 +167,7 @@ add_task(
       "Pref is not set"
     );
 
-    manager.store.addEnrollment(rollout);
+    await manager.enroll(rollout, "test");
 
     Assert.deepEqual(
       featureInstance.getAllVariables().screens?.length,
@@ -188,8 +185,8 @@ add_task(
 
     Services.prefs.clearUserPref(TEST_FALLBACK_PREF);
 
-    manager.unenroll(rollout.slug);
-    cleanup();
+    await manager.unenroll(rollout.slug);
+    await cleanup();
   }
 );
 
@@ -210,7 +207,7 @@ add_task(
       "should return defaultValues param over default pref settings"
     );
 
-    cleanup();
+    await cleanup();
   }
 );
 

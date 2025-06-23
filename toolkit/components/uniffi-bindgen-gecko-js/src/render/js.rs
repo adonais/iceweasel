@@ -4,9 +4,10 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 
 use super::shared::*;
 use crate::{CallbackIds, Config, FunctionIds, ObjectIds};
+use askama::Template;
+use camino::Utf8PathBuf;
 use extend::ext;
 use heck::{ToLowerCamelCase, ToShoutySnakeCase, ToUpperCamelCase};
-use rinja::Template;
 use uniffi_bindgen::interface::{
     Argument, AsType, Callable, CallbackInterface, ComponentInterface, Constructor, Enum, Field,
     Function, Literal, Method, Object, Radix, Record, Type, Variant,
@@ -28,11 +29,11 @@ fn js_arg_names(args: &[&Argument]) -> String {
 fn render_enum_literal(typ: &Type, variant_name: &str) -> String {
     if let Type::Enum { name, .. } = typ {
         // TODO: This does not support complex enum literals yet.
-        return format!(
+        format!(
             "{}.{}",
             name.to_upper_camel_case(),
             variant_name.to_shouty_snake_case()
-        );
+        )
     } else {
         panic!("Rendering an enum literal on a type that is not an enum")
     }
@@ -46,16 +47,18 @@ pub struct JSBindingsTemplate<'a> {
     pub function_ids: &'a FunctionIds<'a>,
     pub object_ids: &'a ObjectIds<'a>,
     pub callback_ids: &'a CallbackIds<'a>,
+    pub js_dir: &'a Utf8PathBuf,
 }
 
-impl<'a> JSBindingsTemplate<'a> {
+impl JSBindingsTemplate<'_> {
     pub fn js_module_name(&self) -> String {
         js_module_name(self.ci.namespace())
     }
 
     fn external_type_module(&self, crate_name: &str) -> String {
         format!(
-            "resource://gre/modules/{}",
+            "moz-src:///{}/{}",
+            self.js_dir,
             self.js_module_name_for_crate_name(crate_name),
         )
     }
@@ -73,8 +76,8 @@ pub impl Literal {
         match self {
             Literal::Boolean(inner) => inner.to_string(),
             Literal::String(inner) => format!("\"{}\"", inner),
-            Literal::UInt(num, radix, _) => format!("{}", radix.render_num(num)),
-            Literal::Int(num, radix, _) => format!("{}", radix.render_num(num)),
+            Literal::UInt(num, radix, _) => radix.render_num(num).to_string(),
+            Literal::Int(num, radix, _) => radix.render_num(num).to_string(),
             Literal::Float(num, _) => num.clone(),
             Literal::Enum(name, typ) => render_enum_literal(typ, name),
             Literal::EmptyMap => "{}".to_string(),
@@ -174,7 +177,7 @@ pub impl Field {
         let type_docstring = format!("@type {{{}}}", self.as_type().type_name());
         let full_docstring = match self.docstring() {
             Some(docstring) => format!("{docstring}\n{type_docstring}"),
-            None => format!("{type_docstring}"),
+            None => type_docstring.to_string(),
         };
         format_docstring(&full_docstring, spaces)
     }
@@ -325,6 +328,20 @@ pub impl Enum {
             None => format_docstring(&self.js_name(), spaces),
         }
     }
+
+    // Get the discriminant value for a variant at the given index
+    fn variant_discriminant(&self, idx: &usize) -> Result<u64, String> {
+        // We need to return the actual discriminant values from the Rust enum
+        match self.variant_discr(*idx) {
+            Ok(Literal::UInt(v, _, _)) => Ok(v),
+            Ok(Literal::Int(v, _, _)) if v >= 0 => Ok(v as u64),
+            Ok(other) => Err(format!(
+                "Unexpected literal type for enum discriminant: {:?}",
+                other
+            )),
+            Err(e) => Err(format!("Failed to get discriminant: {}", e)),
+        }
+    }
 }
 
 #[ext(name=VariantJSExt)]
@@ -388,7 +405,7 @@ pub impl Constructor {
     }
 
     fn js_arg_names(&self) -> String {
-        js_arg_names(&self.arguments().as_slice())
+        js_arg_names(self.arguments().as_slice())
     }
 
     fn js_docstring(&self, spaces: usize) -> String {

@@ -250,6 +250,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 navController = findNavController(),
                                 browsingModeManager = browsingModeManager,
                                 openToBrowser = ::openToBrowser,
+                                sessionUseCases = components.useCases.sessionUseCases,
                                 fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
                                 webAppUseCases = webAppUseCases,
                                 settings = settings,
@@ -472,9 +473,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                             )
                                         }
                                     },
-                                    onHelpButtonClick = {
-                                        store.dispatch(MenuAction.Navigate.Help)
-                                    },
                                     onSettingsButtonClick = {
                                         view?.slideDown {
                                             store.dispatch(MenuAction.Navigate.Settings)
@@ -544,6 +542,20 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     },
                                     onQuitMenuClick = {
                                         store.dispatch(MenuAction.DeleteBrowsingDataAndQuit)
+                                    },
+                                    onBackButtonClick = { viewHistory: Boolean ->
+                                        store.dispatch(MenuAction.Navigate.Back(viewHistory))
+                                    },
+                                    onForwardButtonClick = { viewHistory: Boolean ->
+                                        store.dispatch(MenuAction.Navigate.Forward(viewHistory))
+                                    },
+                                    onRefreshButtonClick = { bypassCache: Boolean ->
+                                        store.dispatch(MenuAction.Navigate.Reload(bypassCache))
+                                    },
+                                    onShareButtonClick = {
+                                        selectedTab?.let {
+                                            store.dispatch(MenuAction.Navigate.Share)
+                                        }
                                     },
                                 )
                             }

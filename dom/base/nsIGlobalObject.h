@@ -79,7 +79,6 @@ class nsIGlobalObject : public nsISupports {
   mozilla::LinkedList<mozilla::GlobalFreezeObserver> mGlobalFreezeObservers;
 
   bool mIsDying;
-  bool mIsScriptForbidden;
 
  protected:
   bool mIsInnerWindow;
@@ -89,7 +88,7 @@ class nsIGlobalObject : public nsISupports {
  public:
   using RTPCallerType = mozilla::RTPCallerType;
   using RFPTarget = mozilla::RFPTarget;
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IGLOBALOBJECT_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_IGLOBALOBJECT_IID)
 
   /**
    * This check is added to deal with Promise microtask queues. On the main
@@ -396,9 +395,6 @@ class nsIGlobalObject : public nsISupports {
 
   void StartDying() { mIsDying = true; }
 
-  void StartForbiddingScript() { mIsScriptForbidden = true; }
-  void StopForbiddingScript() { mIsScriptForbidden = false; }
-
   void DisconnectGlobalTeardownObservers();
   void DisconnectGlobalFreezeObservers();
   void NotifyGlobalFrozen();
@@ -417,7 +413,5 @@ class nsIGlobalObject : public nsISupports {
   // https://streams.spec.whatwg.org/#byte-length-queuing-strategy-size-function
   RefPtr<mozilla::dom::Function> mByteLengthQueuingStrategySizeFunction;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIGlobalObject, NS_IGLOBALOBJECT_IID)
 
 #endif  // nsIGlobalObject_h__

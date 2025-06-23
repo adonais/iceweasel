@@ -412,6 +412,9 @@ radio {
 
 .typeIcon {
   margin-inline: 10px 9px !important;
+  &:not([srcset]) {
+    visibility: hidden;
+  }
 }
 
 #handlersView .actionsMenu::part(icon),
@@ -1532,4 +1535,13 @@ richlistitem .text-link:hover {
 
 .search-header:has(.section-heading) {
   margin: 0;
+}
+
+/* Styles for the "sponsors support our mission" message and link on the Home tab */
+.mission-message {
+  margin-block-start: var(--space-large);
+}
+
+.mission-message-link {
+  font-size: var(--font-size-small);
 }

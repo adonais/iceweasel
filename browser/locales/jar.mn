@@ -11,16 +11,14 @@
   preview/protections.ftl                          (../components/protections/content/protections.ftl)
   preview/interventions.ftl                        (../components/urlbar/content/interventions.ftl)
   preview/enUS-searchFeatures.ftl                  (../components/urlbar/content/enUS-searchFeatures.ftl)
-  preview/shopping.ftl                             (../components/shopping/content/shopping.ftl)
   preview/onboarding.ftl                           (../components/aboutwelcome/content/onboarding.ftl)
   preview/translations.ftl                         (../locales-preview/translations.ftl)
   preview/credentialChooser.ftl                    (../../toolkit/components/credentialmanagement/credentialChooser.ftl)
   browser                                          (%browser/**/*.ftl)
   preview/backupSettings.ftl                       (../locales-preview/backupSettings.ftl)
+  preview/linkPreview.ftl                          (../locales-preview/linkPreview.ftl)
   preview/smartTabGroups.ftl                       (../locales-preview/smartTabGroups.ftl)
-  preview/tabUnload.ftl                            (../locales-preview/tabUnload.ftl)
   preview/taskbartabs.ftl                          (../locales-preview/taskbartabs.ftl)
-  preview/migrationWizardChromeWindows.ftl         (../locales-preview/migrationWizardChromeWindows.ftl)
   preview/termsOfUse.ftl                           (../locales-preview/termsOfUse.ftl)
 
 @AB_CD@.jar:

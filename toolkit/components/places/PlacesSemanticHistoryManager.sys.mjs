@@ -25,6 +25,13 @@ ChromeUtils.defineLazyGetter(lazy, "logger", function () {
   return lazy.PlacesUtils.getLogger({ prefix: "PlacesSemanticHistoryManager" });
 });
 
+// Constants to support an alternative frecency algorithm.
+ChromeUtils.defineLazyGetter(lazy, "PAGES_FRECENCY_FIELD", () => {
+  return lazy.PlacesUtils.history.isAlternativeFrecencyEnabled
+    ? "alt_frecency"
+    : "frecency";
+});
+
 // Time between deferred task executions.
 const DEFERRED_TASK_INTERVAL_MS = 1000;
 // Maximum time to wait for an idle before the task is executed anyway.
@@ -34,7 +41,7 @@ const DEFAULT_CHUNK_SIZE = 50;
 const ONE_MiB = 1024 * 1024;
 
 export class PlacesSemanticHistoryManager {
-  #conn;
+  #promiseConn;
   #engine = undefined;
   #embeddingSize;
   #rowLimit;
@@ -50,6 +57,8 @@ export class PlacesSemanticHistoryManager {
   #updateTaskLatency = [];
   embedder;
   qualifiedForSemanticSearch = false;
+  #promiseRemoved = null;
+  enoughEntries = false;
 
   /**
    * Constructor for PlacesSemanticHistoryManager.
@@ -85,21 +94,17 @@ export class PlacesSemanticHistoryManager {
       return;
     }
     this.embedder = new lazy.EmbeddingsGenerator(embeddingSize);
-    this.semanticDB = new lazy.PlacesSemanticHistoryDatabase(
+    this.semanticDB = new lazy.PlacesSemanticHistoryDatabase({
       embeddingSize,
-      PathUtils.join(PathUtils.profileDir, "places_semantic.sqlite")
-    );
+      fileName: "places_semantic.sqlite",
+    });
     this.qualifiedForSemanticSearch =
       this.embedder.isEnoughPhysicalMemoryAvailable() &&
       this.embedder.isEnoughCpuCoresAvailable();
 
-    if (this.qualifiedForSemanticSearch) {
-      this.#createOrUpdateTask();
-    }
-
     lazy.AsyncShutdown.appShutdownConfirmed.addBlocker(
       "SemanticManager: shutdown",
-      () => this.#finalize()
+      () => this.shutdown()
     );
 
     // Add the observer for pages-rank-changed and history-cleared topics
@@ -116,9 +121,35 @@ export class PlacesSemanticHistoryManager {
     this.#distanceThreshold = distanceThreshold;
     this.testFlag = testFlag;
     this.#updateTaskLatency = [];
-    lazy.logger.info("Inside PlaceSemanticManager constructor");
-    if (this.qualifiedForSemanticSearch) {
-      this.onPagesRankChanged();
+    lazy.logger.trace("PlaceSemanticManager constructor");
+
+    // When semantic history is disabled or not available anymore due to system
+    // requirements, we want to remove the database files, though we don't want
+    // to check on disk on every startup, thus we use a pref. The removal is
+    // done on startup anyway, as it's less likely to fail.
+    // We check UserValue because users may set it to false to try to disable
+    // the feature, then if we'd check the value the files would not be removed.
+    let wasInitialized = Services.prefs.prefHasUserValue(
+      "places.semanticHistory.initialized"
+    );
+    let isAvailable = this.canUseSemanticSearch;
+    let removeFiles =
+      (wasInitialized && !isAvailable) ||
+      Services.prefs.getBoolPref(
+        "places.semanticHistory.removeOnStartup",
+        false
+      );
+    if (removeFiles) {
+      lazy.logger.info("Removing database files on startup");
+      Services.prefs.clearUserPref("places.semanticHistory.removeOnStartup");
+      this.#promiseRemoved = this.semanticDB
+        .removeDatabaseFiles()
+        .catch(console.error);
+    }
+    if (!isAvailable) {
+      Services.prefs.clearUserPref("places.semanticHistory.initialized");
+    } else if (!wasInitialized) {
+      Services.prefs.setBoolPref("places.semanticHistory.initialized", true);
     }
   }
 
@@ -129,11 +160,108 @@ export class PlacesSemanticHistoryManager {
    *   A promise resolving to the database connection.
    */
   async getConnection() {
-    if (!this.#conn) {
-      this.#conn = await this.semanticDB.getConnection();
-      await this.semanticDB.initVectorDatabase();
+    if (
+      Services.startup.isInOrBeyondShutdownPhase(
+        Ci.nsIAppStartup.SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED
+      ) ||
+      !this.canUseSemanticSearch
+    ) {
+      return null;
     }
-    return this.#conn;
+    // We must eventually wait for removal to finish.
+    await this.#promiseRemoved;
+
+    // Avoid re-entrance using a cached promise rather than handing off a conn.
+    if (!this.#promiseConn) {
+      this.#promiseConn = this.semanticDB.getConnection().then(conn => {
+        // Kick off updates.
+        this.#createOrUpdateTask();
+        this.onPagesRankChanged();
+        return conn;
+      });
+    }
+    return this.#promiseConn;
+  }
+
+  /**
+   * Checks whether the semantic-history vector DB is *sufficiently populated*.
+   *
+   * We look at the **top N** Places entries (N = `#rowLimit`, ordered by
+   * `#samplingAttrib`) and count how many of them already have an embedding in
+   * `vec_history_mapping`.  If **more than completionThreshold %** are *missing* we consider the
+   * DB **not ready** and set to true when the completionThreshold reaches
+   *
+   * The boolean result is memoised in `this.enoughEntries`; subsequent
+   * calls return that cached value to avoid repeating the query.
+   *
+   * @returns {Promise<boolean>}
+   *   `true`  – **not enough** entries yet (pending / total ≥ completionThreshold)
+   *   `false` – DB is sufficiently populated (pending / total < completionThreshold)
+   */
+  async hasSufficientEntriesForSearching() {
+    if (this.enoughEntries) {
+      // Return cached answer if we already ran once.
+      return true;
+    }
+    let conn = await this.getConnection();
+
+    // Compute total candidates and how many of them updated with vectors.
+    const [row] = await conn.execute(
+      `
+        WITH top_places AS (
+          SELECT url_hash
+            FROM places.moz_places
+          WHERE title NOTNULL
+            AND length(title) > 2
+            AND last_visit_date NOTNULL
+          ORDER BY :samplingAttrib DESC
+          LIMIT  :rowLimit
+        )
+        SELECT
+          (SELECT COUNT(*) FROM top_places) AS total,
+          (SELECT COUNT(*) FROM top_places tp
+            JOIN vec_history_mapping map ON tp.url_hash = map.url_hash) AS completed
+        `,
+      { samplingAttrib: this.#samplingAttrib, rowLimit: this.#rowLimit }
+    );
+
+    const total = row.getResultByName("total");
+    const completed = row.getResultByName("completed");
+    const ratio = total ? completed / total : 0;
+
+    const completionThreshold = Services.prefs.getFloatPref(
+      "places.semanticHistory.completionThreshold",
+      0.5
+    );
+    // Ready once ≥ completionThreshold % completed.
+    this.enoughEntries = ratio >= completionThreshold;
+
+    if (this.enoughEntries) {
+      lazy.logger.debug(
+        `Semantic-DB status — completed: ${completed}/${total} ` +
+          `(${(ratio * 100).toFixed(1)} %). ` +
+          (this.enoughEntries
+            ? "Threshold met; update task can run at normal cadence."
+            : "Below threshold; updater remains armed for frequent updates.")
+      );
+    }
+
+    return this.enoughEntries;
+  }
+
+  /**
+   * Determines if semantic search can be used based on preferences
+   * and hardware qualification criteria
+   *
+   * @returns {boolean} - Returns `true` if semantic search can be used,
+   *   else false
+   */
+  get canUseSemanticSearch() {
+    return (
+      this.qualifiedForSemanticSearch &&
+      Services.prefs.getBoolPref("browser.ml.enable", true) &&
+      Services.prefs.getBoolPref("places.semanticHistory.featureGate", false)
+    );
   }
 
   /**
@@ -178,7 +306,7 @@ export class PlacesSemanticHistoryManager {
    * @returns Promise<void>
    */
   async onPagesRankChanged() {
-    if (!this.#updateTask.isFinalized) {
+    if (this.#updateTask && !this.#updateTask.isFinalized) {
       lazy.logger.trace("Arm update task");
       this.#updateTask.arm();
     }
@@ -204,20 +332,16 @@ export class PlacesSemanticHistoryManager {
 
     this.#updateTask = new lazy.DeferredTask(
       async () => {
+        if (this.#finalized) {
+          return;
+        }
+
         //capture updateTask startTime
         const updateStartTime = Cu.now();
 
         try {
           lazy.logger.info("Running vector DB update task...");
-          if (!this.#conn) {
-            try {
-              this.#conn = await this.getConnection();
-            } catch (ex) {
-              lazy.logger.error("Unable to initialize database");
-              console.error(ex.message);
-              throw new Error("Unable to initialize database", { cause: ex });
-            }
-          }
+          let conn = await this.getConnection();
           let pagesRankChangedCount =
             PlacesObservers.counts.get("pages-rank-changed") +
             PlacesObservers.counts.get("history-cleared");
@@ -232,8 +356,8 @@ export class PlacesSemanticHistoryManager {
             lazy.logger.info(
               `Changes exceed threshold (${this.#changeThresholdCount}). Scheduling update task.`
             );
-            let addedRows = await this.findAdds();
-            let deletedRows = await this.findDeletes();
+            let addedRows = await this.findAdds(conn);
+            let deletedRows = await this.findDeletes(conn);
 
             let totalAdds = addedRows.length;
             let totalDeletes = deletedRows.length;
@@ -245,7 +369,7 @@ export class PlacesSemanticHistoryManager {
             if (totalAdds > 0) {
               this.#pendingUpdates = true;
               const chunk = addedRows.slice(0, DEFAULT_CHUNK_SIZE);
-              await this.updateVectorDB(chunk, []);
+              await this.updateVectorDB(conn, chunk, []);
               ChromeUtils.addProfilerMarker(
                 "updateVectorDB",
                 startTime,
@@ -256,7 +380,7 @@ export class PlacesSemanticHistoryManager {
             if (totalDeletes > 0) {
               this.#pendingUpdates = true;
               const chunk = deletedRows.slice(0, DEFAULT_CHUNK_SIZE);
-              await this.updateVectorDB([], chunk);
+              await this.updateVectorDB(conn, [], chunk);
               ChromeUtils.addProfilerMarker(
                 "updateVectorDB",
                 startTime,
@@ -293,7 +417,6 @@ export class PlacesSemanticHistoryManager {
       DEFERRED_TASK_INTERVAL_MS,
       DEFERRED_TASK_MAX_IDLE_WAIT_MS
     );
-    this.#updateTask.arm();
     lazy.logger.info("Update task armed.");
   }
 
@@ -303,21 +426,19 @@ export class PlacesSemanticHistoryManager {
    * This ensures any tasks are finalized and the manager is properly
    * cleaned up during shutdown.
    *
-   * @private
-   * @returns {void}
    */
   #finalize() {
     lazy.logger.trace("Finalizing SemanticManager");
     // We don't mind about tasks completiion, since we can execute them in the
     // next session.
-    this.#updateTask.disarm();
-    this.#updateTask.finalize().catch(console.error);
+    this.#updateTask?.disarm();
+    this.#updateTask?.finalize().catch(console.error);
     this.#finalized = true;
   }
 
-  async findAdds() {
+  async findAdds(conn) {
     // find any adds after successful checkForChanges
-    const addedRows = await this.#conn.execute(
+    const addedRows = await conn.execute(
       `
       SELECT top_places.url_hash, title, COALESCE(description, '') AS description
       FROM (
@@ -339,9 +460,9 @@ export class PlacesSemanticHistoryManager {
     return addedRows;
   }
 
-  async findDeletes() {
+  async findDeletes(conn) {
     // find any deletes after successful checkForChanges
-    const deletedRows = await this.#conn.execute(
+    const deletedRows = await conn.execute(
       `
       SELECT url_hash
       FROM vec_history_mapping
@@ -363,7 +484,7 @@ export class PlacesSemanticHistoryManager {
     return deletedRows;
   }
 
-  async updateVectorDB(addedRows, deletedRows) {
+  async updateVectorDB(conn, addedRows, deletedRows) {
     await this.embedder.createEngineIfNotPresent();
     // Instead of calling engineRun in a loop for each row,
     // you prepare an array of requests.
@@ -376,7 +497,7 @@ export class PlacesSemanticHistoryManager {
 
       let batchTensors = await this.embedder.embedMany(texts);
 
-      await this.#conn.executeTransaction(async () => {
+      await conn.executeTransaction(async () => {
         // Process each row and corresponding tensor.
         for (let i = 0; i < addedRows.length; i++) {
           const row = addedRows[i];
@@ -389,14 +510,14 @@ export class PlacesSemanticHistoryManager {
           }
           const url_hash = row.getResultByName("url_hash");
           const vectorBindable = this.tensorToBindable(tensor);
-          const result = await this.#conn.execute(
+          const result = await conn.execute(
             `INSERT INTO vec_history(embedding, embedding_coarse)
              VALUES (:vector, vec_quantize_binary(:vector))
              RETURNING rowid`,
             { vector: vectorBindable }
           );
           const rowid = result[0].getResultByName("rowid");
-          await this.#conn.execute(
+          await conn.execute(
             `INSERT INTO vec_history_mapping (rowid, url_hash)
              VALUES (:rowid, :url_hash)`,
             { rowid, url_hash }
@@ -415,7 +536,7 @@ export class PlacesSemanticHistoryManager {
 
       try {
         // Delete the mapping from vec_history_mapping table
-        const mappingResult = await this.#conn.execute(
+        const mappingResult = await conn.execute(
           `DELETE FROM vec_history_mapping 
            WHERE url_hash = :url_hash 
            RETURNING rowid`,
@@ -430,7 +551,7 @@ export class PlacesSemanticHistoryManager {
         const rowid = mappingResult[0].getResultByName("rowid");
 
         // Delete the embedding from vec_history table
-        await this.#conn.execute(
+        await conn.execute(
           `DELETE FROM vec_history 
            WHERE rowid = :rowid`,
           { rowid }
@@ -451,13 +572,8 @@ export class PlacesSemanticHistoryManager {
    * Shuts down the manager, ensuring cleanup of tasks and connections.
    */
   async shutdown() {
-    if (this.#updateTask) {
-      await this.#updateTask.finalize();
-    }
-
-    if (this.#conn) {
-      await this.#conn.close();
-    }
+    await this.#updateTask?.finalize();
+    await this.semanticDB.closeConnection();
 
     lazy.PlacesUtils.observers.removeListener(
       ["pages-rank-changed", "history-cleared"],
@@ -480,11 +596,17 @@ export class PlacesSemanticHistoryManager {
    * This runs the engine's inference pipeline on the provided request and
    * checks if changes to the rank warrant triggering an update.
    *
-   * @param {object} request - The request to run through the engine.
-   * @returns {Promise<object>} - The result of the engine's inference pipeline.
+   * @param {object} queryContext
+   *   The request to run through the engine.
+   * @param {string} queryContext.searchString
+   *   The search string used for the request.
+   * @returns {Promise<object>}
+   *   The result of the engine's inference pipeline.
    */
   async infer(queryContext) {
+    const inferStartTime = Cu.now();
     let results = [];
+    await this.embedder.ensureEngine();
     let tensor = await this.embedder.embed(queryContext.searchString);
 
     if (!tensor) {
@@ -506,11 +628,9 @@ export class PlacesSemanticHistoryManager {
       lazy.logger.info(`Got tensor with length ${tensor.length}`);
       return results;
     }
-    if (!this.#conn) {
-      await this.getConnection();
-    }
+    let conn = await this.getConnection();
 
-    let rows = await this.#conn.execute(
+    let rows = await conn.execute(
       `
        WITH coarse_matches AS (
         SELECT rowid,
@@ -540,6 +660,7 @@ export class PlacesSemanticHistoryManager {
         ) AS vec_res
         JOIN places.moz_places p
           ON vec_res.url_hash = p.url_hash
+        WHERE ${lazy.PAGES_FRECENCY_FIELD} <> 0
       `,
       {
         vector: this.tensorToBindable(tensor),
@@ -557,10 +678,18 @@ export class PlacesSemanticHistoryManager {
     }
 
     results.sort((a, b) => a.distance - b.distance);
+
+    // Add a duration marker, representing a span of time, with some additional text
+    ChromeUtils.addProfilerMarker(
+      "semanticHistorySearch",
+      inferStartTime,
+      "semanticHistorySearch details"
+    );
+
     return { results, metrics };
   }
 
-  // for easier testing purpose
+  // for easier testing purpose.
   async engineRun(request) {
     return await this.#engine.run(request);
   }
@@ -573,25 +702,23 @@ export class PlacesSemanticHistoryManager {
    * @returns {Promise<number>} - The size of `semantic.sqlite` in bytes after checkpointing.
    */
   async checkpointAndMeasureDbSize() {
-    if (!this.#conn) {
-      await this.getConnection();
-    }
+    let conn = await this.getConnection();
 
     try {
       lazy.logger.info("Starting WAL checkpoint on semantic.sqlite");
 
       // Perform a full checkpoint to move WAL data into the main database file
-      await this.#conn.execute(`PRAGMA wal_checkpoint(FULL);`);
-      await this.#conn.execute(`PRAGMA wal_checkpoint(TRUNCATE);`);
+      await conn.execute(`PRAGMA wal_checkpoint(FULL);`);
+      await conn.execute(`PRAGMA wal_checkpoint(TRUNCATE);`);
 
       // Ensure database is in WAL mode
-      let journalMode = await this.#conn.execute(`PRAGMA journal_mode;`);
+      let journalMode = await conn.execute(`PRAGMA journal_mode;`);
       lazy.logger.info(
         `Journal Mode after checkpoint: ${journalMode[0].getResultByName("journal_mode")}`
       );
 
       // Measure the size of `semantic.sqlite` after checkpoint
-      const semanticDbPath = this.semanticDB.getDatabasePath();
+      const semanticDbPath = this.semanticDB.databaseFilePath;
       let { size } = await IOUtils.stat(semanticDbPath);
       const sizeInMB = size / ONE_MiB;
 
@@ -623,11 +750,6 @@ export class PlacesSemanticHistoryManager {
 
   getPendingUpdatesStatus() {
     return this.#pendingUpdates;
-  }
-
-  //setters for mocking from tests
-  setConnection(mockConnection) {
-    this.#conn = mockConnection;
   }
 
   //for test purposes

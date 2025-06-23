@@ -18,6 +18,7 @@
 #include "base/process_util.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ipc/IOThread.h"
 #include "nsITimer.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -96,6 +97,7 @@ struct PendingChild {
 static mozilla::StaticDataMutex<mozilla::StaticAutoPtr<nsTArray<PendingChild>>>
     gPendingChildren("ProcessWatcher::gPendingChildren");
 static int gSignalPipe[2] = {-1, -1};
+static mozilla::Atomic<bool> gProcessWatcherShutdown;
 
 // A wrapper around WaitForProcess to simplify the result (true if the
 // process exited and the pid is now freed for reuse, false if it's
@@ -155,6 +157,18 @@ already_AddRefed<nsITimer> DelayedKill(pid_t aPid) {
   nsresult rv = NS_NewTimerWithCallback(
       getter_AddRefs(timer),
       [aPid](nsITimer*) {
+        // If the process already exited, normally it would remain as
+        // a zombie and the `SIGKILL` would be ignored.  But if the
+        // fork server crashed, then the child would be reparented to
+        // pid 1 and cleaned up immediately, so in that case we should
+        // not try to signal.
+        if (IsProcessDead(aPid, BlockingWait::No)) {
+          return;
+        }
+        // In theory it's possible for the fork server to crash and
+        // the child process to exit and have its pid reused by a new
+        // process all between these two statements, but that is
+        // *extremely* unlikely.
         if (kill(aPid, SIGKILL) != 0) {
           const int err = errno;
       // Bug 1944669: suppress logging if it's a forkserver child
@@ -171,6 +185,8 @@ already_AddRefed<nsITimer> DelayedKill(pid_t aPid) {
                                 << strerror(err);
           }
         }
+        // If the process was still running, it will exit and the
+        // SIGCHLD handler will waitpid it.
       },
       kMaxWaitMs, nsITimer::TYPE_ONE_SHOT, "ProcessWatcher::DelayedKill",
       XRE_GetAsyncIOEventTarget());
@@ -270,6 +286,7 @@ class ProcessCleaner final : public MessageLoopForIO::Watcher,
   }
 
   void WillDestroyCurrentMessageLoop() override {
+    gProcessWatcherShutdown = true;
     mWatcher.StopWatchingFileDescriptor();
     auto lock = gPendingChildren.Lock();
     auto& children = lock.ref();
@@ -301,6 +318,9 @@ class ProcessCleaner final : public MessageLoopForIO::Watcher,
       }
       children = nullptr;
     }
+#ifdef MOZ_ENABLE_FORKSERVER
+    mozilla::ipc::ForkServiceChild::StopForkServer();
+#endif
     delete this;
   }
 
@@ -382,7 +402,21 @@ static void ProcessWatcherInit() {
       }));
 }
 
+static void EnsureProcessWatcher() {
+  static std::once_flag sInited;
+  std::call_once(sInited, ProcessWatcherInit);
+}
+
 }  // namespace
+
+mozilla::UniqueFileHandle ProcessWatcher::GetSignalPipe() {
+  EnsureProcessWatcher();
+  int fd = gSignalPipe[1];
+  MOZ_ASSERT(fd >= 0);
+  fd = dup(fd);
+  MOZ_ASSERT(fd >= 0);
+  return mozilla::UniqueFileHandle(fd);
+}
 
 /**
  * Do everything possible to ensure that |process| has been reaped
@@ -406,8 +440,31 @@ void ProcessWatcher::EnsureProcessTerminated(base::ProcessHandle process,
   DCHECK(process != base::GetCurrentProcId());
   DCHECK(process > 0);
 
-  static std::once_flag sInited;
-  std::call_once(sInited, ProcessWatcherInit);
+  if (gProcessWatcherShutdown) {
+    // This late in shutdown, should only come from the I/O thread;
+    // see further comments below.
+    mozilla::ipc::AssertIOThread();
+    // This should always be true given that gProcessWatcherShutdown
+    // is set, but just in case something changes with MessageLoop
+    // shutdown:
+    DCHECK(!MessageLoop::current()->IsAcceptingTasks());
+
+    // This is for the fork server itself, being torn down late
+    // in shutdown.  Generally won't be reached with force=true,
+    // because build types that default to it will QuickExit first.
+    // It's not strictly necessary to wait for child processes when
+    // the parent process is about to exit (pid 1 should clean them
+    // up).
+    //
+    // However, if called in "wait forever" mode, let's wait for it
+    // and log the exit status if it was abnormal:
+    if (!force) {
+      (void)IsProcessDead(process, BlockingWait::Yes);
+    }
+    return;
+  }
+
+  EnsureProcessWatcher();
 
   auto lock = gPendingChildren.Lock();
   auto& children = lock.ref();
@@ -438,23 +495,25 @@ void ProcessWatcher::EnsureProcessTerminated(base::ProcessHandle process,
     if (child.mPid == process) {
 #ifdef MOZ_ENABLE_FORKSERVER
       if (mozilla::ipc::ForkServiceChild::WasUsed()) {
-        // In theory we can end up here if an earlier child process
-        // with the same pid was launched via the fork server, and
-        // exited, and had its pid reused for a new process before we
-        // noticed that it exited.
+        // Ideally, this would never be reached.  But, in theory it's
+        // possible if the fork server crashes and is restarted: the
+        // process will be reparented to pid 1 which will clean it up
+        // immediately, at which point the pid could be reused (but
+        // it's very unlikely for that to happen so soon).  So, if
+        // this is reached without any mistakes by the calling code,
+        // in that case the old process has already terminated and
+        // ProcessWatcher has no more responsibility for it.
 
         CHROMIUM_LOG(WARNING) << "EnsureProcessTerminated: duplicate process"
                                  " ID "
-                              << process
-                              << "; assuming this is because of the fork"
-                                 " server.";
+                              << process;
 
         // So, we want to end up with a PendingChild for the new
         // process; we can just use the old one.  Ideally we'd fix the
         // `mForce` value, but that would involve needing to cancel a
         // timer when we aren't necessarily on the right thread, and
         // in practice the `force` parameter depends only on the build
-        // type.  (Again, see bug 1752638 for the correct solution.)
+        // type.
         return;
       }
 #endif

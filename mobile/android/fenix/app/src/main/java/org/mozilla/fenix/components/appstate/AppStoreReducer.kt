@@ -7,11 +7,11 @@ package org.mozilla.fenix.components.appstate
 import androidx.annotation.VisibleForTesting
 import mozilla.components.lib.crash.store.crashReducer
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.appstate.privatebrowsinglock.PrivateBrowsingLockReducer
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewStateReducer
 import org.mozilla.fenix.components.appstate.recommendations.ContentRecommendationsReducer
 import org.mozilla.fenix.components.appstate.reducer.FindInPageStateReducer
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistReducer
-import org.mozilla.fenix.components.appstate.shopping.ShoppingStateReducer
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarStateReducer
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatReducer
@@ -181,6 +181,10 @@ internal object AppStoreReducer {
             snackbarState = SnackbarState.CurrentTabClosed(action.isPrivate),
         )
 
+        is AppAction.URLCopiedToClipboard -> state.copy(
+            snackbarState = SnackbarState.URLCopiedToClipboard,
+        )
+
         is AppAction.OpenInFirefoxStarted -> {
             state.copy(openInFirefoxRequested = true)
         }
@@ -197,7 +201,6 @@ internal object AppStoreReducer {
         is AppAction.FindInPageAction -> FindInPageStateReducer.reduce(state, action)
         is AppAction.ReaderViewAction -> ReaderViewStateReducer.reduce(state, action)
         is AppAction.ShortcutAction -> ShortcutStateReducer.reduce(state, action)
-        is AppAction.ShoppingAction -> ShoppingStateReducer.reduce(state, action)
         is AppAction.CrashActionWrapper -> state.copy(
             crashState = crashReducer(state.crashState, action.inner),
         )
@@ -217,6 +220,8 @@ internal object AppStoreReducer {
             state = state,
             action = action,
         )
+
+        is AppAction.PrivateBrowsingLockAction -> PrivateBrowsingLockReducer.reduce(state, action)
     }
 }
 

@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* globals quit */
+
 "use strict";
 
 const {
@@ -20,7 +22,7 @@ function toGleanMetricsYamlName(attr) {
     case "isFxAEnabled":
       // Would transform to `is_fx_aenabled`.
       return "is_fx_a_enabled";
-    
+
     case "isFxASignedIn":
       // Would transform to `is_fx_asigned_in`.
       return "is_fx_a_signed_in";
@@ -36,7 +38,6 @@ function toGleanMetricsYamlName(attr) {
       });
   }
 }
-
 
 function prefTypeToObjectMetricType(pref, type) {
   switch (type) {

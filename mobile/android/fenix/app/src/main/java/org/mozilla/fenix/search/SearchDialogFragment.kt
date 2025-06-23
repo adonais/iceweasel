@@ -40,9 +40,7 @@ import androidx.constraintlayout.widget.ConstraintProperties.TOP
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
-import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
-import androidx.fragment.app.setFragmentResult
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph
@@ -86,6 +84,7 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.VoiceSearch
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
@@ -99,6 +98,7 @@ import org.mozilla.fenix.ext.getRectWithScreenLocation
 import org.mozilla.fenix.ext.increaseTapArea
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -251,6 +251,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
                 searchEngine = requireComponents.core.store.state.search.searchEngines.firstOrNull {
                     it.id == args.searchEngine
                 },
+                isAndroidAutomotiveAvailable = requireContext().isAndroidAutomotiveAvailable(),
             ),
         )
 
@@ -516,7 +517,9 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
             awesomeBarView.update(it)
 
             addSearchSelector()
-            updateQrButton(it)
+            if (it.showQrButton) {
+                updateQrButton(it)
+            }
             updateVoiceSearchButton()
         }
     }
@@ -607,11 +610,6 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
     override fun onResume() {
         super.onResume()
 
-        setFragmentResult(
-            SEARCH_VISIBILITY_RESPONSE_KEY,
-            bundleOf(SEARCH_VISIBILITY_RESPONSE_BUNDLE_KEY to SEARCH_IS_VISIBLE),
-        )
-
         qrFeature.get()?.let {
             if (it.isScanInProgress) {
                 it.scan(binding.searchWrapper.id)
@@ -648,11 +646,6 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
         controller = null
         _toolbarView = null
         _binding = null
-
-        setFragmentResult(
-            SEARCH_VISIBILITY_RESPONSE_KEY,
-            bundleOf(SEARCH_VISIBILITY_RESPONSE_BUNDLE_KEY to SEARCH_IS_HIDDEN),
-        )
     }
 
     /*
@@ -694,20 +687,22 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
     }
 
     private fun dismissDialogAndGoBack() {
-        // In case we're displaying search results, we wouldn't have navigated to home, and
-        // so we don't need to navigate "back to" browser fragment.
-        // See mirror of this logic in BrowserToolbarController#handleToolbarClick.
-        if (store.state.searchTerms.isBlank()) {
-            val args by navArgs<SearchDialogFragmentArgs>()
-            args.sessionId?.let {
-                findNavController().navigate(
-                    SearchDialogFragmentDirections.actionGlobalBrowser(null),
-                )
+        runIfFragmentIsAttached {
+            // In case we're displaying search results, we wouldn't have navigated to home, and
+            // so we don't need to navigate "back to" browser fragment.
+            // See mirror of this logic in BrowserToolbarController#handleToolbarClick.
+            if (store.state.searchTerms.isBlank()) {
+                val args by navArgs<SearchDialogFragmentArgs>()
+                args.sessionId?.let {
+                    findNavController().navigate(
+                        SearchDialogFragmentDirections.actionGlobalBrowser(null),
+                    )
+                }
             }
-        }
 
-        view?.hideKeyboard()
-        dismissAllowingStateLoss()
+            view?.hideKeyboard()
+            dismissAllowingStateLoss()
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -1068,10 +1063,5 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
         private const val TAP_INCREASE_DPS_4 = 4
         private const val QR_FRAGMENT_TAG = "MOZAC_QR_FRAGMENT"
         private const val REQUEST_CODE_CAMERA_PERMISSIONS = 1
-
-        const val SEARCH_VISIBILITY_RESPONSE_KEY = "SEARCH_VISIBILITY_RESPONSE_KEY"
-        const val SEARCH_VISIBILITY_RESPONSE_BUNDLE_KEY = "SEARCH_VISIBILITY_RESPONSE_BUNDLE_KEY"
-        const val SEARCH_IS_VISIBLE = "SEARCH_IS_VISIBLE"
-        const val SEARCH_IS_HIDDEN = "SEARCH_IS_HIDDEN"
     }
 }

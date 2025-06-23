@@ -5,7 +5,9 @@
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.kotlin.dsl.extra
 import org.gradle.process.ExecOutput
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.Date
@@ -16,8 +18,6 @@ class ConfigPlugin : Plugin<Project> {
 }
 
 object Config {
-
-    var vcsHash: String? = null
 
     @JvmStatic
     private fun generateDebugVersionName(): String {
@@ -46,26 +46,15 @@ object Config {
 
     @JvmStatic
     fun readVersionFromFile(project: Project): String {
-        var versionPath = "../version.txt"
-
-        if (project.findProject(":geckoview") != null) {
-            versionPath = "./mobile/android/version.txt"
-        }
-
-        return project.rootProject.file(versionPath).useLines { it.firstOrNull() ?: "" }
+        var mozconfig = project.gradle.extensions.extraProperties.get("mozconfig") as Map<*, *>;
+        var topsrcdir = mozconfig.get("topsrcdir") as String;
+        var versionPath = Paths.get(topsrcdir, "mobile/android/version.txt");
+        return project.file(versionPath).useLines { it.firstOrNull() ?: "" }
     }
 
     @JvmStatic
     fun majorVersion(project: Project): String {
         return readVersionFromFile(project).split(".")[0]
-    }
-
-    /**
-     * Generate a build date that follows the ISO-8601 format
-     */
-    @JvmStatic
-    fun generateBuildDate(): String {
-        return LocalDateTime.now().toString()
     }
 
     private val fennecBaseVersionCode by lazy {
@@ -166,35 +155,5 @@ object Config {
         }
 
         return version
-    }
-
-    /**
-     * Returns the git or hg hash of the currently checked out revision. If there are uncommitted changes,
-     * a "+" will be appended to the hash, e.g. "c8ba05ad0+".
-     */
-    @JvmStatic
-    fun getVcsHash(project: Project): String {
-        return vcsHash ?: readVcsHash(project).also { vcsHash = it }
-    }
-
-    private fun readVcsHash(project: Project): String {
-        val proc = project.providers.execute("git", "rev-parse", "--short", "HEAD")
-        if (proc.result.get().exitValue != 0) {
-            // hg id already appends "+" if the working directory isn't clean
-            val hgRevision = project.providers.execute("hg", "id", "--id")
-                .standardOutput.asText.get().trim()
-            return "hg-${hgRevision}"
-        }
-        // Append "+" if there are uncommitted changes in the working directory.
-        val status = project.providers.execute("git", "status", "--porcelain=v2")
-            .standardOutput.asText.get().trim()
-        val hasUnstagedChanges = status.isNotBlank()
-        val statusSuffix = if (hasUnstagedChanges) "+" else ""
-        return "git-${proc.standardOutput.asText.get().trim()}$statusSuffix"
-    }
-
-    private fun ProviderFactory.execute(vararg args: String): ExecOutput = exec {
-        commandLine(*args)
-        isIgnoreExitValue = true
     }
 }

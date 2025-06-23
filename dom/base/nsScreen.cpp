@@ -7,6 +7,7 @@
 #include "nsContentUtils.h"
 #include "nsScreen.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIDocShell.h"
@@ -15,6 +16,7 @@
 #include "nsIDocShellTreeItem.h"
 #include "nsLayoutUtils.h"
 #include "nsDeviceContext.h"
+#include "mozilla/GeckoBindings.h"
 #include "mozilla/widget/ScreenManager.h"
 
 using namespace mozilla;
@@ -91,6 +93,15 @@ CSSIntRect nsScreen::GetAvailRect() {
     return GetTopWindowInnerRectForRFP();
   }
 
+  if (ShouldResistFingerprinting(RFPTarget::ScreenAvailToResolution)) {
+    nsDeviceContext* context = GetDeviceContext();
+    if (NS_WARN_IF(!context)) {
+      return {};
+    }
+    return nsRFPService::GetSpoofedScreenAvailSize(
+        context->GetRect(), context->GetFullZoom(), IsFullscreen());
+  }
+
   // Here we manipulate the value of aRect to represent the screen size,
   // if in RDM.
   if (nsPIDOMWindowInner* owner = GetOwnerWindow()) {
@@ -109,6 +120,16 @@ CSSIntRect nsScreen::GetAvailRect() {
     return {};
   }
   return CSSIntRect::FromAppUnitsRounded(context->GetClientRect());
+}
+
+bool nsScreen::IsFullscreen() const {
+  if (nsPIDOMWindowInner* owner = GetOwnerWindow()) {
+    if (Document* doc = owner->GetExtantDoc()) {
+      return StyleDisplayMode::Fullscreen ==
+             Gecko_MediaFeatures_GetDisplayMode(doc);
+    }
+  }
+  return false;
 }
 
 uint16_t nsScreen::GetOrientationAngle() const {

@@ -138,13 +138,14 @@ class FxaWebChannelFeature(
             }
 
             val payload: JSONObject
-            val command: WebChannelCommand
+            val command: WebChannelCommand?
+            val rawCommand: String?
             val messageId: String
 
             try {
                 payload = json.getJSONObject("message")
-                command = payload.getString("command").toWebChannelCommand() ?: throw
-                    JSONException("Couldn't get WebChannel command")
+                rawCommand = payload.getString("command")
+                command = rawCommand.toWebChannelCommand()
                 messageId = payload.optString("messageId", "")
             } catch (e: JSONException) {
                 // We don't have control over what messages we will get from the webchannel.
@@ -156,19 +157,25 @@ class FxaWebChannelFeature(
                 return
             }
 
-            logger.debug("Processing WebChannel command: $command")
+            logger.debug("Processing WebChannel command: $rawCommand")
 
             val response = when (command) {
                 WebChannelCommand.CAN_LINK_ACCOUNT -> processCanLinkAccountCommand(messageId)
                 WebChannelCommand.FXA_STATUS -> processFxaStatusCommand(accountManager, messageId, fxaCapabilities)
                 WebChannelCommand.OAUTH_LOGIN -> processOauthLoginCommand(accountManager, payload)
                 WebChannelCommand.LOGIN -> processLoginCommand(accountManager, payload)
+                WebChannelCommand.SYNC_PREFERENCES -> processSyncPreferencesCommand(accountManager)
                 WebChannelCommand.LOGOUT, WebChannelCommand.DELETE_ACCOUNT -> processLogoutCommand(accountManager)
+                else -> processUnknownCommand(rawCommand)
             }
             response?.let { port.postMessage(it) }
 
-            // Finally, let any consumer be aware of the action to update any UI affordances.
-            onCommandExecuted(command)
+            // Finally, let any consumer be aware of the action to update any UI affordances
+            // for ONLY processed messages since we can receive unsupported ones too and we
+            // shouldn't forward that onwards.
+            command?.let {
+                onCommandExecuted(command)
+            }
         }
     }
 
@@ -218,6 +225,7 @@ class FxaWebChannelFeature(
             CAN_LINK_ACCOUNT,
             LOGIN,
             OAUTH_LOGIN,
+            SYNC_PREFERENCES,
             FXA_STATUS,
             LOGOUT,
             DELETE_ACCOUNT,
@@ -250,6 +258,12 @@ class FxaWebChannelFeature(
          * it passes in its payload the session token the web content is holding on to
          */
         private const val COMMAND_LOGIN = "fxaccounts:login"
+
+        /**
+         * Gets triggered when the web content signals to open sync preferences,
+         * typically right after a sign-in/sign-up.
+         */
+        private const val COMMAND_SYNC_PREFERENCES = "fxaccounts:sync_preferences"
 
         /**
          * Triggered when web content logs out of the account.
@@ -430,6 +444,50 @@ class FxaWebChannelFeature(
         }
 
         /**
+         * Handles unknown message types by responding with a `data` json that only contains an
+         * `error` error message.
+         */
+        private fun processUnknownCommand(command: String): JSONObject {
+            return JSONObject().apply {
+                put("id", CHANNEL_ID)
+                put(
+                    "message",
+                    JSONObject().apply {
+                        put(
+                            "data",
+                            JSONObject().put(
+                                "error",
+                                "Unrecognized FxAccountsWebChannel command: $command",
+                            ),
+                        )
+                    },
+                )
+            }
+        }
+
+        /**
+         * Handles the [COMMAND_SYNC_PREFERENCES] event from the web-channel. The UI affordances
+         * will be handled by [FxaWebChannelFeature.onCommandExecuted].
+         */
+        private fun processSyncPreferencesCommand(accountManager: FxaAccountManager): JSONObject {
+            // If we don't have an authenticated account, we should let FxA know that we couldn't
+            // handle the message.
+            val canHandle = accountManager.authenticatedAccount() != null
+            return JSONObject().apply {
+                put("id", CHANNEL_ID)
+                put(
+                    "message",
+                    JSONObject().apply {
+                        put(
+                            "data",
+                            JSONObject().put("ok", canHandle),
+                        )
+                    },
+                )
+            }
+        }
+
+        /**
          * Handles the [COMMAND_LOGOUT] and [COMMAND_DELETE_ACCOUNT] event from the web-channel.
          */
         private fun processLogoutCommand(accountManager: FxaAccountManager): JSONObject? {
@@ -445,10 +503,11 @@ class FxaWebChannelFeature(
                 COMMAND_OAUTH_LOGIN -> WebChannelCommand.OAUTH_LOGIN
                 COMMAND_STATUS -> WebChannelCommand.FXA_STATUS
                 COMMAND_LOGIN -> WebChannelCommand.LOGIN
+                COMMAND_SYNC_PREFERENCES -> WebChannelCommand.SYNC_PREFERENCES
                 COMMAND_LOGOUT -> WebChannelCommand.LOGOUT
                 COMMAND_DELETE_ACCOUNT -> WebChannelCommand.DELETE_ACCOUNT
                 else -> {
-                    logger.warn("Unrecognized WebChannel command: $this")
+                    logger.warn("Unrecognized FxAccountsWebChannel command: $this")
                     null
                 }
             }

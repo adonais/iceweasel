@@ -22,6 +22,8 @@
 
 namespace mozilla::widget {
 
+class WaylandBufferDMABUF;
+
 // Allocates and owns shared memory for Wayland drawing surface
 class WaylandShmPool {
  public:
@@ -51,6 +53,7 @@ class WaylandBuffer {
   virtual GLuint GetTexture() { return 0; }
   virtual void DestroyGLResources() {};
   virtual gfx::SurfaceFormat GetSurfaceFormat() = 0;
+  virtual WaylandBufferDMABUF* AsWaylandBufferDMABUF() { return nullptr; };
 
   LayoutDeviceIntSize GetSize() const { return mSize; };
   bool IsMatchingSize(const LayoutDeviceIntSize& aSize) const {
@@ -78,6 +81,17 @@ class WaylandBuffer {
 
   void ClearSyncHandler();
 
+#ifdef MOZ_LOGGING
+  virtual void DumpToFile(const char* aHint) = 0;
+#endif
+
+  // Create and move away wl_buffer and mark is as not managed.
+  // From this point wl_buffer is not owned by WaylandBuffer.
+  wl_buffer* CreateAndTakeWLBuffer();
+
+  // Set wl_buffer from external source (WaylandBufferDMABUFHolder).
+  void SetExternalWLBuffer(wl_buffer* aWLBuffer);
+
  protected:
   explicit WaylandBuffer(const LayoutDeviceIntSize& aSize);
   virtual ~WaylandBuffer() = default;
@@ -98,6 +112,11 @@ class WaylandBuffer {
   wl_buffer* mWLBuffer = nullptr;
   uintptr_t mWLBufferID = 0;
 
+  // Owns and manages WL buffer. If set to false, wl_buffer is managed by
+  // someone else (for instance WaylandBufferDMABUFHolder)
+  // and WaylandBuffer can't destroy it.
+  bool mManagingWLBuffer = true;
+
   // Wayland buffer is tied to WaylandSurface.
   // We keep reference to WaylandSurface until WaylandSurface returns the
   // buffer.
@@ -110,6 +129,11 @@ class WaylandBuffer {
   LayoutDeviceIntSize mSize;
 
   static gfx::SurfaceFormat sFormat;
+
+#ifdef MOZ_LOGGING
+  static int mDumpSerial;
+  static char* mDumpDir;
+#endif
 };
 
 // Holds actual graphics data for wl_surface
@@ -133,7 +157,7 @@ class WaylandBufferSHM final : public WaylandBuffer {
   void ResetBufferAge() { mBufferAge = 0; };
 
 #ifdef MOZ_LOGGING
-  void DumpToFile(const char* aHint);
+  void DumpToFile(const char* aHint) override;
 #endif
 
  protected:
@@ -147,11 +171,6 @@ class WaylandBufferSHM final : public WaylandBuffer {
   RefPtr<WaylandShmPool> mShmPool;
 
   size_t mBufferAge = 0;
-
-#ifdef MOZ_LOGGING
-  static int mDumpSerial;
-  static char* mDumpDir;
-#endif
 };
 
 class WaylandBufferDMABUF final : public WaylandBuffer {
@@ -162,11 +181,18 @@ class WaylandBufferDMABUF final : public WaylandBuffer {
   static already_AddRefed<WaylandBufferDMABUF> CreateExternal(
       RefPtr<DMABufSurface> aSurface);
 
+  WaylandBufferDMABUF* AsWaylandBufferDMABUF() override { return this; };
+
   GLuint GetTexture() override { return mDMABufSurface->GetTexture(); };
   void DestroyGLResources() override { mDMABufSurface->ReleaseTextures(); };
   gfx::SurfaceFormat GetSurfaceFormat() override {
     return mDMABufSurface->GetFormat();
   }
+  DMABufSurface* GetSurface() { return mDMABufSurface; }
+
+#ifdef MOZ_LOGGING
+  void DumpToFile(const char* aHint) override;
+#endif
 
  protected:
   bool CreateWlBuffer() override;
@@ -176,6 +202,21 @@ class WaylandBufferDMABUF final : public WaylandBuffer {
   ~WaylandBufferDMABUF();
 
   RefPtr<DMABufSurface> mDMABufSurface;
+};
+
+class WaylandBufferDMABUFHolder final {
+ public:
+  bool Matches(DMABufSurface* aSurface) const;
+
+  wl_buffer* GetWLBuffer() { return mWLBuffer; }
+
+  WaylandBufferDMABUFHolder(DMABufSurface* aSurface, wl_buffer* aWLBuffer);
+  ~WaylandBufferDMABUFHolder();
+
+ private:
+  wl_buffer* mWLBuffer = nullptr;
+  uint32_t mUID = 0;
+  uint32_t mPID = 0;
 };
 
 }  // namespace mozilla::widget

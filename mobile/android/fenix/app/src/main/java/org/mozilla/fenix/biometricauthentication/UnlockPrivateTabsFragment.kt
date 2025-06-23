@@ -13,17 +13,23 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import mozilla.components.browser.state.selector.normalTabs
+import mozilla.components.support.base.feature.UserInteractionHandler
+import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.ext.registerForActivityResult
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.HomeFragmentDirections
-import org.mozilla.fenix.settings.biometric.bindBiometricsCredentialsPromptOrShowWarning
+import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
  * Fragment used to display biometric authentication when the app is locked.
  */
-class UnlockPrivateTabsFragment : Fragment() {
+class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler {
     private lateinit var startForResult: ActivityResultLauncher<Intent>
 
     override fun onCreateView(
@@ -31,6 +37,11 @@ class UnlockPrivateTabsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
+        startForResult = registerForActivityResult(
+            onSuccess = { onAuthSuccess() },
+            onFailure = { onAuthFailure() },
+        )
+
         return ComposeView(requireContext()).apply {
             isTransitionGroup = true
         }
@@ -38,48 +49,62 @@ class UnlockPrivateTabsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        PrivateBrowsingLocked.promptShown.record()
+
         (view as ComposeView).setContent {
             FirefoxTheme {
                 UnlockPrivateTabsScreen(
-                    onUnlockClicked = { showAuthPrompt() },
-                    onLeaveClicked = { leavePrivateMode() },
+                    onUnlockClicked = { requestPrompt() },
+                    onLeaveClicked = {
+                        PrivateBrowsingLocked.seeOtherTabsClicked.record()
+                        closeFragment()
+                    },
                 )
+
+                requestPrompt()
             }
         }
     }
 
-    private fun showAuthPrompt() {
-        BiometricAuthenticationManager.biometricAuthenticationNeededInfo.authenticationStatus =
-            AuthenticationStatus.AUTHENTICATION_IN_PROGRESS
+    override fun onBackPressed(): Boolean {
+        closeFragment()
+        return true
+    }
 
-        bindBiometricsCredentialsPromptOrShowWarning(
+    private fun requestPrompt() {
+        DefaultBiometricUtils.bindBiometricsCredentialsPromptOrShowWarning(
+            titleRes = R.string.pbm_authentication_unlock_private_tabs,
             view = requireView(),
             onShowPinVerification = { intent -> startForResult.launch(intent) },
-            onAuthSuccess = { onAuthSuccess() },
-            onAuthFailure = { onAuthFailure() },
-            titleRes = R.string.pbm_authentication_unlock_private_tabs,
+            onAuthSuccess = ::onAuthSuccess,
+            onAuthFailure = ::onAuthFailure,
         )
     }
 
-    private fun leavePrivateMode() {
-        findNavController().popBackStack(R.id.homeFragment, true)
+    /**
+     * If the users decides to leave the fragment, we want to navigate them to normal tabs page.
+     * If they don't have regular opened tabs, we navigate back to homepage as a fallback.
+     */
+    private fun closeFragment() {
+        (activity as HomeActivity).browsingModeManager.mode = BrowsingMode.Normal
 
-        findNavController().navigate(HomeFragmentDirections.actionGlobalTabsTrayFragment(page = Page.NormalTabs))
+        findNavController().navigate(UnlockPrivateTabsFragmentDirections.actionGlobalHome())
+
+        val hasNormalTabs = requireComponents.core.store.state.normalTabs.isNotEmpty()
+        if (hasNormalTabs) {
+            findNavController().navigate(HomeFragmentDirections.actionGlobalTabsTrayFragment(page = Page.NormalTabs))
+        }
     }
 
     private fun onAuthSuccess() {
-        requireContext().settings().isPrivateScreenBlocked = false
+        PrivateBrowsingLocked.authSuccess.record()
 
-        BiometricAuthenticationManager.biometricAuthenticationNeededInfo.apply {
-            authenticationStatus = AuthenticationStatus.AUTHENTICATED
-        }
+        requireComponents.privateBrowsingLockFeature.onSuccessfulAuthentication()
 
         findNavController().popBackStack()
     }
 
     private fun onAuthFailure() {
-        BiometricAuthenticationManager.biometricAuthenticationNeededInfo.apply {
-            authenticationStatus = AuthenticationStatus.NOT_AUTHENTICATED
-        }
+        PrivateBrowsingLocked.authFailure.record()
     }
 }

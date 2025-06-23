@@ -610,6 +610,7 @@ const char gc::ZealModeHelpText[] =
 "    1:  (RootsChange) Collect when roots are added or removed\n"
 "    2:  (Alloc) Collect when every N allocations (default: 100)\n"
 "    4:  (VerifierPre) Verify pre write barriers between instructions\n"
+"    5:  (VerifierPost) Verify post write barriers after minor GC\n"
 "    6:  (YieldBeforeRootMarking) Incremental GC in two slices that yields\n"
 "        before root marking\n"
 "    7:  (GenerationalGC) Collect the nursery every N nursery allocations\n"
@@ -639,7 +640,9 @@ const char gc::ZealModeHelpText[] =
 "    24: (CheckWeakMapMarking) Check weak map marking invariants after every\n"
 "        GC\n"
 "    25: (YieldWhileGrayMarking) Incremental GC in two slices that yields\n"
-"        during gray marking\n";
+"        during gray marking\n"
+"    26: (CheckHeapBeforeMinorGC) Check for invariant violations before every\n"
+"        minor GC\n";
 // clang-format on
 
 // The set of zeal modes that yield at specific points in collection.
@@ -661,9 +664,9 @@ static constexpr EnumSet<ZealMode> IncrementalSliceZealModes =
 
 // The set of zeal modes that trigger GC periodically.
 static constexpr EnumSet<ZealMode> PeriodicGCZealModes =
-    IncrementalSliceZealModes + EnumSet<ZealMode>{ZealMode::Alloc,
-                                                  ZealMode::GenerationalGC,
-                                                  ZealMode::Compact};
+    IncrementalSliceZealModes +
+    EnumSet<ZealMode>{ZealMode::Alloc, ZealMode::VerifierPost,
+                      ZealMode::GenerationalGC, ZealMode::Compact};
 
 // The set of zeal modes that are mutually exclusive. All of these trigger GC
 // except VerifierPre.
@@ -788,12 +791,15 @@ static bool PrintZealHelpAndFail() {
   return false;
 }
 
-bool GCRuntime::parseAndSetZeal(const char* str) {
-  // Set the zeal mode from a string consisting of one or more mode specifiers
-  // separated by ';', optionally followed by a ',' and the trigger frequency.
-  // The mode specifiers can by a mode name or its number.
+bool GCRuntime::parseZeal(const char* str, size_t len, ZealSettings* zeal,
+                          bool* invalid) {
+  CharRange text(str, len);
 
-  auto text = CharRange(str, strlen(str));
+  // The zeal mode setting is a string consisting of one or more mode
+  // specifiers separated by ';', optionally followed by a ',' and the trigger
+  // frequency. The mode specifiers can by a mode name or its number.
+
+  *invalid = false;
 
   CharRangeVector parts;
   if (!SplitStringBy(text, ',', &parts)) {
@@ -801,12 +807,14 @@ bool GCRuntime::parseAndSetZeal(const char* str) {
   }
 
   if (parts.length() == 0 || parts.length() > 2) {
-    return PrintZealHelpAndFail();
+    *invalid = true;
+    return true;
   }
 
   uint32_t frequency = JS::ShellDefaultGCZealFrequency;
   if (parts.length() == 2 && !ParseZealModeNumericParam(parts[1], &frequency)) {
-    return PrintZealHelpAndFail();
+    *invalid = true;
+    return true;
   }
 
   CharRangeVector modes;
@@ -819,9 +827,30 @@ bool GCRuntime::parseAndSetZeal(const char* str) {
     if (!ParseZealModeName(descr, &mode) &&
         !(ParseZealModeNumericParam(descr, &mode) &&
           mode <= unsigned(ZealMode::Limit))) {
-      return PrintZealHelpAndFail();
+      *invalid = true;
+      return true;
     }
 
+    if (!zeal->append(ZealSetting{uint8_t(mode), frequency})) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool GCRuntime::parseAndSetZeal(const char* str) {
+  ZealSettings zeal;
+  bool invalid = false;
+  if (!parseZeal(str, strlen(str), &zeal, &invalid)) {
+    return false;
+  }
+
+  if (invalid) {
+    return PrintZealHelpAndFail();
+  }
+
+  for (auto [mode, frequency] : zeal) {
     setZeal(mode, frequency);
   }
 
@@ -2404,6 +2433,10 @@ void GCRuntime::sweepZones(JS::GCContext* gcx, bool destroyingRuntime) {
 
   assertBackgroundSweepingFinished();
 
+  // Host destroy callbacks can access the store buffer, e.g. when resizing hash
+  // tables containing nursery pointers.
+  AutoLockStoreBuffer lock(rt);
+
   // Sweep zones following the atoms zone.
   MOZ_ASSERT(zones()[0]->isAtomsZone());
   Zone** read = zones().begin() + 1;
@@ -3301,6 +3334,11 @@ void GCRuntime::clearTestMarkQueue() {
 
 size_t GCRuntime::testMarkQueuePos() const { return queuePos; }
 
+size_t GCRuntime::testMarkQueueRemaining() const {
+  MOZ_ASSERT(queuePos <= testMarkQueue.length());
+  return testMarkQueue.length() - queuePos;
+}
+
 #endif
 
 GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
@@ -3426,6 +3464,10 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
       }
     }
   }
+
+  // Once the queue is complete, do not force a mark color (since the next time
+  // the queue is processed, it should not be forcing one.)
+  queueMarkColor.reset();
 #endif
 
   return QueueComplete;
@@ -5190,7 +5232,8 @@ void GCRuntime::runDebugGC() {
     return;
   }
 
-  if (hasZealMode(ZealMode::GenerationalGC)) {
+  if (hasZealMode(ZealMode::VerifierPost) ||
+      hasZealMode(ZealMode::GenerationalGC)) {
     return minorGC(JS::GCReason::DEBUG_GC);
   }
 

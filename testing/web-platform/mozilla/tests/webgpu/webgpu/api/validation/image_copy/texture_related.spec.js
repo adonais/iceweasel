@@ -11,12 +11,13 @@ import {
   isDepthOrStencilTextureFormat,
   kColorTextureFormats,
   kSizedTextureFormats,
-  textureDimensionAndFormatCompatible } from
+  textureFormatAndDimensionPossiblyCompatible } from
 '../../../format_info.js';
 import { kResourceStates } from '../../../gpu_test.js';
 import { align } from '../../../util/math.js';
 import { virtualMipSize } from '../../../util/texture/base.js';
 import { kImageCopyTypes } from '../../../util/texture/layout.js';
+import * as vtu from '../validation_test_utils.js';
 
 import {
   ImageCopyTest,
@@ -50,7 +51,7 @@ combineWithParams([
 fn((t) => {
   const { method, textureState, size, dimension } = t.params;
 
-  const texture = t.createTextureWithState(textureState, {
+  const texture = vtu.createTextureWithState(t, textureState, {
     size,
     dimension,
     format: 'rgba8unorm',
@@ -253,7 +254,9 @@ combineWithParams([
 { depthOrArrayLayers: 32, dimension: '3d' }]
 ).
 combine('format', kSizedTextureFormats).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 filter(formatCopyableWithMethod).
 beginSubcases().
 combine('mipLevel', [0, 2]).
@@ -279,6 +282,7 @@ fn((t) => {
     copyDepthModifier
   } = t.params;
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
   const info = getBlockInfoForSizedTextureFormat(format);
 
   const size = { width: 32 * info.blockWidth, height: 32 * info.blockHeight, depthOrArrayLayers };
@@ -344,7 +348,9 @@ combineWithParams([
 { depthOrArrayLayers: 3, dimension: '2d' },
 { depthOrArrayLayers: 3, dimension: '3d' }]
 ).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combine('coordinateToTest', ['x', 'y', 'z']).
 unless((p) => p.dimension === '1d' && p.coordinateToTest !== 'x').
@@ -354,6 +360,7 @@ fn((t) => {
   const { valueToCoordinate, coordinateToTest, format, method, depthOrArrayLayers, dimension } =
   t.params;
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
   const info = getBlockInfoForTextureFormat(format);
   const size = { width: 0, height: 0, depthOrArrayLayers };
   const origin = { x: 0, y: 0, z: 0 };
@@ -398,7 +405,9 @@ combine('method', kImageCopyTypes)
 .combine('format', kColorTextureFormats).
 filter(formatCopyableWithMethod).
 combine('dimension', kTextureDimensions).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combine('coordinateToTest', ['width', 'height', 'depthOrArrayLayers']).
 unless((p) => p.dimension === '1d' && p.coordinateToTest !== 'width').
@@ -407,6 +416,7 @@ expand('valueToCoordinate', texelBlockAlignmentTestExpanderForValueToCoordinate)
 fn((t) => {
   const { valueToCoordinate, coordinateToTest, dimension, format, method } = t.params;
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
   const info = getBlockInfoForColorTextureFormat(format);
   const size = { width: 0, height: 0, depthOrArrayLayers: 0 };
   const origin = { x: 0, y: 0, z: 0 };

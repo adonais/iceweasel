@@ -322,7 +322,7 @@ TimeDuration TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
   TimeDuration result = aTimeout->mInterval;
 
   if (aTimeout->mNestingLevel >=
-      StaticPrefs::dom_clamp_timeout_nesting_level_AtStartup()) {
+      StaticPrefs::dom_clamp_timeout_nesting_level()) {
     uint32_t minTimeoutValue = StaticPrefs::dom_min_timeout_value();
     result = TimeDuration::Max(result,
                                TimeDuration::FromMilliseconds(minTimeoutValue));
@@ -468,6 +468,7 @@ int32_t TimeoutManager::GetTimeoutId(Timeout::Reason aReason) {
         }
         break;
       case Timeout::Reason::eDelayedWebTaskTimeout:
+      case Timeout::Reason::eJSTimeout:
       default:
         return -1;  // no cancellation support
     }
@@ -528,7 +529,7 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
     const uint32_t nestingLevel{mIsWindow ? GetNestingLevelForWindow()
                                           : GetNestingLevelForWorker()};
     timeout->mNestingLevel =
-        nestingLevel < StaticPrefs::dom_clamp_timeout_nesting_level_AtStartup()
+        nestingLevel < StaticPrefs::dom_clamp_timeout_nesting_level()
             ? nestingLevel + 1
             : nestingLevel;
   }
@@ -1038,7 +1039,7 @@ bool TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
   // Automatically increase the nesting level when a setInterval()
   // is rescheduled just as if it was using a chained setTimeout().
   if (aTimeout->mNestingLevel <
-      StaticPrefs::dom_clamp_timeout_nesting_level_AtStartup()) {
+      StaticPrefs::dom_clamp_timeout_nesting_level()) {
     aTimeout->mNestingLevel += 1;
   }
 

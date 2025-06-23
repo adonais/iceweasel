@@ -3,8 +3,8 @@
 /* stylelint-disable max-nesting-depth */
 
 $top-sites-size: $grid-unit-small;
-$top-sites-border-radius: 8px;
-$top-sites-icon-border-radius: 4px;
+$top-sites-border-radius: var(--border-radius-medium);
+$top-sites-icon-border-radius: var(--border-radius-small);
 $rich-icon-size: 96px;
 $default-icon-wrapper-size: 32px;
 $default-icon-size: 32px;
@@ -151,7 +151,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 // container for drop zone
 .top-site-outer {
   width: 120px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
   display: inline-block;
   margin-block-end: 16px;
 
@@ -208,7 +208,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     background-image: url('chrome://global/skin/icons/more.svg');
     background-color: var(--newtab-button-background);
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--border-radius-small);
     cursor: pointer;
     fill: var(--newtab-button-text);
     -moz-context-properties: fill;
@@ -238,7 +238,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   }
 
   .tile {
-    border-radius: $top-sites-border-radius;
+    border-radius: var(--border-radius-medium);
     box-shadow: $shadow-card;
     background-color: var(--newtab-background-color-secondary);
     justify-content: center;
@@ -252,12 +252,11 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     align-items: center;
     color: var(--newtab-contextual-text-secondary-color);
     display: flex;
-    font-size: 32px;
-    font-weight: 200;
+    font-size: var(--font-size-xxlarge);
     text-transform: uppercase;
 
     .icon-wrapper {
-      border-radius: 4px;
+      border-radius: var(--border-radius-small);
       width: 48px;
       height: 48px;
       overflow: hidden;
@@ -272,8 +271,8 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 64px;
-        font-weight: 800;
+        font-size: 64px; // stylelint-disable-line declaration-property-value-disallowed-list
+        font-weight: var(--font-weight-bold);
         transform: rotate(-10deg);
         top: 6px;
         position: relative;
@@ -287,7 +286,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     background-color: var(--newtab-background-color-secondary);
     background-position: center center;
     background-repeat: no-repeat;
-    border-radius: $top-sites-icon-border-radius;
+    border-radius: var(--border-radius-small);
     position: absolute;
   }
 
@@ -308,7 +307,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     // for corner letter fallback
     align-items: center;
     display: flex;
-    font-size: 20px;
+    font-size: var(--font-size-xlarge);
     justify-content: center;
 
     &[data-fallback]::before {
@@ -320,7 +319,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     background-image: url('chrome://global/skin/icons/search-glass.svg');
     background-size: 16px;
     background-color: var(--newtab-primary-action-background);
-    border-radius: $default-icon-wrapper-size;
+    border-radius: var(--border-radius-circle);
     -moz-context-properties: fill;
     fill: var(--newtab-primary-element-text-color);
     box-shadow: $shadow-card;
@@ -369,7 +368,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     .sponsored-label {
       color: var(--newtab-contextual-text-secondary-color);
-      font-size: 0.9em;
+      font-size: var(--font-size-xsmall);
     }
 
     &:not(.sponsored) .sponsored-label {
@@ -570,7 +569,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   $form-spacing: 32px;
 
   .section-title {
-    font-size: 16px;
+    font-size: inherit;
     margin: 0 0 16px;
   }
 
@@ -644,7 +643,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     .enable-custom-image-input {
       display: inline-block;
-      font-size: 13px;
+      font-size: var(--font-size-small);
       margin-top: 4px;
       cursor: pointer;
     }
@@ -694,7 +693,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
         padding: 0 8px;
         height: 32px;
         width: 100%;
-        font-size: 15px;
+        font-size: inherit;
 
         &[disabled] {
           border: $input-border;
@@ -716,7 +715,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     .error-tooltip {
       animation: fade-up-tt 450ms;
       background: var(--newtab-status-error);
-      border-radius: 2px;
+      border-radius: var(--border-radius-small);
       color: $white;
       inset-inline-start: 3px;
       padding: 5px 12px;
@@ -786,7 +785,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   [type='checkbox']:checked + label::before {
     background: var(--newtab-background-color);
     border: $input-border;
-    border-radius: $border-radius;
+    border-radius: var(--border-radius-small);
     content: '';
     height: 21px;
     left: $checkbox-offset;
@@ -862,7 +861,6 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
         -webkit-line-clamp: 2;
         white-space: wrap;
         word-break: break-word;
-        line-height: 1.3;
         min-height: 2lh;
         width: 100px;
         padding: 0 var(--space-xsmall);

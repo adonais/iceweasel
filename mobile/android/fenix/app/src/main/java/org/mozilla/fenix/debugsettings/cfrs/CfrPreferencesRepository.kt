@@ -31,9 +31,7 @@ interface CfrPreferencesRepository {
         @StringRes val preferenceKey: Int,
     ) {
         HomepageSync(preferenceKey = R.string.pref_key_should_show_sync_cfr),
-        HomepageNavToolbar(preferenceKey = R.string.pref_key_should_navbar_cfr),
         HomepageSearchBar(preferenceKey = R.string.pref_key_should_searchbar_cfr),
-        NavButtons(preferenceKey = R.string.pref_key_toolbar_navigation_cfr),
         TabAutoCloseBanner(preferenceKey = R.string.pref_key_should_show_auto_close_tabs_banner),
         InactiveTabs(preferenceKey = R.string.pref_key_should_show_inactive_tabs_popup),
         OpenInApp(preferenceKey = R.string.pref_key_should_show_open_in_app_banner),
@@ -69,11 +67,11 @@ interface CfrPreferencesRepository {
 }
 
 /**
- * The default implementation of [DefaultCfrPreferencesRepository].
+ * The default implementation of [CfrPreferencesRepository].
  *
- * @param context the Android context.
- * @param lifecycleOwner the lifecycle owner used for the SharedPreferences API.
- * @param coroutineScope the coroutine scope used for emitting flows.
+ * @param context The Android context.
+ * @param lifecycleOwner The lifecycle owner used for the SharedPreferences API.
+ * @param coroutineScope The coroutine scope used for emitting flows.
  */
 class DefaultCfrPreferencesRepository(
     private val context: Context,
@@ -98,12 +96,8 @@ class DefaultCfrPreferencesRepository(
             val initialPreferenceValue = when (preference) {
                 CfrPreferencesRepository.CfrPreference.HomepageSync ->
                     settings.showSyncCFR
-                CfrPreferencesRepository.CfrPreference.HomepageNavToolbar ->
-                    settings.shouldShowNavigationBarCFR
                 CfrPreferencesRepository.CfrPreference.HomepageSearchBar ->
                     settings.shouldShowSearchBarCFR
-                CfrPreferencesRepository.CfrPreference.NavButtons ->
-                    settings.shouldShowNavigationButtonsCFR
                 CfrPreferencesRepository.CfrPreference.TabAutoCloseBanner ->
                     settings.shouldShowAutoCloseTabsBanner
                 CfrPreferencesRepository.CfrPreference.InactiveTabs ->
@@ -159,12 +153,8 @@ class DefaultCfrPreferencesRepository(
         when (preferenceUpdate.preferenceType) {
             CfrPreferencesRepository.CfrPreference.HomepageSync ->
                 settings.showSyncCFR = !preferenceUpdate.value
-            CfrPreferencesRepository.CfrPreference.HomepageNavToolbar ->
-                settings.shouldShowNavigationBarCFR = !preferenceUpdate.value
             CfrPreferencesRepository.CfrPreference.HomepageSearchBar ->
                 settings.shouldShowSearchBarCFR = !preferenceUpdate.value
-            CfrPreferencesRepository.CfrPreference.NavButtons ->
-                settings.shouldShowNavigationButtonsCFR = !preferenceUpdate.value
             CfrPreferencesRepository.CfrPreference.TabAutoCloseBanner ->
                 settings.shouldShowAutoCloseTabsBanner = !preferenceUpdate.value
             CfrPreferencesRepository.CfrPreference.InactiveTabs ->

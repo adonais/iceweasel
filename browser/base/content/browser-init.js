@@ -466,7 +466,6 @@ var gBrowserInit = {
     }
 
     FullScreen.init();
-    MenuTouchModeObserver.init();
 
     if (AppConstants.MOZ_DATA_REPORTING) {
       gDataNotificationInfoBar.init();
@@ -619,15 +618,6 @@ var gBrowserInit = {
     }
 
     CaptivePortalWatcher.delayedStartup();
-
-    if (
-      !Services.prefs.getBoolPref(
-        "browser.shopping.experience2023.integratedSidebar",
-        false
-      )
-    ) {
-      ShoppingSidebarManager.ensureInitialized();
-    }
 
     SessionStore.promiseAllWindowsRestored.then(() => {
       this._schedulePerWindowIdleTasks();
@@ -1112,7 +1102,6 @@ var gBrowserInit = {
         "intl:app-locales-changed"
       );
 
-      MenuTouchModeObserver.uninit();
       BrowserOffline.uninit();
       CanvasPermissionPromptHelper.uninit();
       WebAuthnPromptHelper.uninit();

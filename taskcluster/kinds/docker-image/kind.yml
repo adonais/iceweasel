@@ -272,6 +272,12 @@ tasks:
         symbol: I(deb12-toolchain)
         parent: debian12-base
         definition: toolchain-build
+    debian12-rpm-repackage:
+        symbol: I(deb12-rpm-rpk)
+        parent: debian12-base
+        definition: rpm-repackage
+        packages:
+            - deb12-mercurial
     android-build:
         symbol: I(agb)
         parent: debian12-base
@@ -335,7 +341,7 @@ tasks:
         parent: debian12-base
     decision:
         symbol: I(decision)
-        parent: ubuntu2004-base
+        parent: debian12-base
     snap-build-core22:
         symbol: I(snap22-build)
         parent: ubuntu2204-base

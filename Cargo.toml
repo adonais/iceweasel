@@ -63,8 +63,8 @@ rust-version = "1.82.0"
 
 [workspace.dependencies]
 # Shared across multiple UniFFI consumers.
-uniffi = "0.29.1"
-uniffi_bindgen = "0.29.1"
+uniffi = "0.29.2"
+uniffi_bindgen = "0.29.2"
 # Shared across multiple application-services consumers.
 rusqlite = "0.33.0"
 # Shared across multiple glean consumers.
@@ -131,6 +131,9 @@ terminal_size = { path = "build/rust/terminal_size" }
 # Patch bitflags 1.0 to 2.0
 bitflags = { path = "build/rust/bitflags" }
 
+# Patch r-efi to an empty crate
+r-efi = { path = "build/rust/r-efi" }
+
 # Patch redox_users to an empty crate
 redox_users = { path = "build/rust/redox_users" }
 
@@ -146,10 +149,10 @@ base64_13 = { package = "base64", path = "build/rust/base64_13" }
 # Patch base64 0.21 to 0.22
 base64_21 = { package = "base64", path = "build/rust/base64" }
 
-# Patch wasi 0.10 to 0.13
+# Patch wasi 0.10 to 0.14
 wasi_0_10 = { package = "wasi", path = "build/rust/wasi-0.10" }
 
-# Patch wasi 0.11 to 0.13
+# Patch wasi 0.11 to 0.14
 wasi_0_11 = { package = "wasi", path = "build/rust/wasi" }
 
 # tokio 0.29.0 includes an experimental "tracing" feature which requires
@@ -214,9 +217,6 @@ half = { path = "build/rust/half" }
 # Upgrade `rusqlite` 0.31 to 0.33.
 rusqlite = { path = "build/rust/rusqlite" }
 
-# Patch `strum` 0.26.* to 0.27.
-strum = { path = "build/rust/strum" }
-
 # Patch `itertools` 0.10.* to 0.14.
 itertools = { path = "build/rust/itertools" }
 
@@ -262,14 +262,15 @@ wr_malloc_size_of = { path = "gfx/wr/wr_malloc_size_of" }
 objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca4d40e7ac1e2759410c04324" }
 
 # application-services overrides to make updating them all simpler.
-interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-relevancy = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-search = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-sql-support = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-suggest = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-sync15 = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-tabs = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-viaduct = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
-webext-storage = { git = "https://github.com/mozilla/application-services", rev = "280db3a3a06a8f517151ff0b84b5ce67fcc7afd6" }
+context_id = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+relevancy = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+search = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+sql-support = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+suggest = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+sync15 = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+tabs = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+viaduct = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
+webext-storage = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
 
 allocator-api2 = { path = "third_party/rust/allocator-api2" }

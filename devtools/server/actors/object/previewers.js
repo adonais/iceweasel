@@ -4,7 +4,8 @@
 
 "use strict";
 
-const { DevToolsServer } = require("resource://devtools/server/devtools-server.js");
+/* global Temporal, TrustedHTML, TrustedScript, TrustedScriptURL */
+
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 loader.lazyRequireGetter(
   this,
@@ -229,63 +230,56 @@ const previewers = {
   ],
 
   "Temporal.Instant": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.Instant, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainDate": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainDate, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainDateTime": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainDateTime, objectActor, grip);
       return true;
     },
   ],
 
-  "Temporal.PlainDate": [
-    function(objectActor, grip, depth) {
-      temporalPreviewer(Temporal.PlainDate, objectActor, grip);
-      return true;
-    },
-  ],
-
   "Temporal.PlainMonthDay": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainMonthDay, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainTime": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainTime, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainYearMonth": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainYearMonth, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.ZonedDateTime": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.ZonedDateTime, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.Duration": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.Duration, objectActor, grip);
       return true;
     },
@@ -342,7 +336,7 @@ const previewers = {
 
       grip.preview = {
         kind: "ArrayLike",
-        length: length,
+        length,
       };
 
       if (depth > 1) {
@@ -462,7 +456,7 @@ const previewers = {
 
       grip.preview = {
         kind: "MapLike",
-        size: size,
+        size,
       };
 
       if (depth > 1) {
@@ -858,6 +852,7 @@ function temporalPreviewer(cls, objectActor, grip) {
  *        when we are inspecting nested attributes.
  * @returns
  */
+// eslint-disable-next-line complexity
 function GenericObject(objectActor, grip, depth) {
   const { obj, safeRawObj } = objectActor;
   if (grip.preview || grip.displayString || depth > 1) {
@@ -908,7 +903,7 @@ function GenericObject(objectActor, grip, depth) {
   const privatePropertiesSymbols = ObjectUtils.getSafePrivatePropertiesSymbols(
     obj
   );
-  if (privatePropertiesSymbols.length > 0) {
+  if (privatePropertiesSymbols.length) {
     preview.privatePropertiesLength = privatePropertiesSymbols.length;
     preview.privateProperties = [];
 
@@ -945,7 +940,7 @@ function GenericObject(objectActor, grip, depth) {
   }
 
   const symbols = ObjectUtils.getSafeOwnPropertySymbols(obj);
-  if (symbols.length > 0) {
+  if (symbols.length) {
     preview.ownSymbolsLength = symbols.length;
     preview.ownSymbols = [];
 
@@ -1244,7 +1239,7 @@ previewers.Object = [
       const privatePropertiesSymbols = ObjectUtils.getSafePrivatePropertiesSymbols(
         obj
       );
-      if (privatePropertiesSymbols.length > 0) {
+      if (privatePropertiesSymbols.length) {
         preview.privatePropertiesLength = privatePropertiesSymbols.length;
       }
     } else if (className == "Attr") {

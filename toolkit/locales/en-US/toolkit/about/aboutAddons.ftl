@@ -588,3 +588,47 @@ plugins-openh264-description = This plugin is automatically installed by Mozilla
 
 plugins-widevine-name = Widevine Content Decryption Module provided by Google Inc.
 plugins-widevine-description = This plugin enables playback of encrypted media in compliance with the Encrypted Media Extensions specification. Encrypted media is typically used by sites to protect against copying of premium media content. Visit https://www.w3.org/TR/encrypted-media/ for more information on Encrypted Media Extensions.
+
+## Headings for the Permissions tab in `about:addons` when the data collection
+## feature is enabled.
+
+addon-permissions-required-data-collection = Required data collection:
+addon-permissions-optional-data-collection = Optional data collection:
+
+# Name of the Permissions tab in `about:addons` when the data collection feature is enabled.
+permissions-data-addon-button = Permissions and data
+
+# This is a description for extension that use this AI model
+# Variables:
+#   $extensionName (String) - Name of the extension
+mlmodel-extension-label = Used by the extension { $extensionName }
+
+## Mapping Engine IDs from AI models to how that feature represented by the engine Id is described in the used by section in local model management
+
+mlmodel-about-inference = { -brand-short-name } uses this on about:inference
+mlmodel-link-preview = { -brand-short-name } uses this to generate key points when you preview links
+mlmodel-pdfjs = { -brand-short-name } uses this to create alt text for images you add to PDFs
+mlmodel-smart-tab-topic-engine = { -brand-short-name } uses this to suggest names for your tab groups
+mlmodel-smart-tab-embedding-engine = { -brand-short-name } uses this to suggest tabs for your tab groups
+
+# AI Model will be downloaded on the users device and used locally
+addon-category-mlmodel = On-device AI
+addon-category-mlmodel-title =
+  .title = On-device AI
+
+mlmodel-heading = Manage On-Device AI Models
+mlmodel-description =
+  Some features and extensions in { -brand-short-name } are powered by AI models that work locally on your device. This approach protects your privacy and, in many cases, speeds up performance. <a data-l10n-name="learn-more">Learn more</a>
+
+# Label for button that when clicked removed local model
+mlmodel-remove-addon-button =
+  .aria-label = Remove
+# Label for the aggregated value of all files for a model
+mlmodel-addon-detail-totalsize-label = File size
+mlmodel-addon-detail-last-used-label = Last used
+# This is a section label to describe what extensions or features use a specific local AI model
+mlmodel-addon-detail-used-by-label = Used by
+# This is a section label to describe the link to the model card on the Hugging Face website
+mlmodel-addon-detail-model-card = Model card
+# This is a label for the Model Card link to Hugging face
+mlmodel-addon-detail-model-card-link-label = View on Hugging Face

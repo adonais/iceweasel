@@ -12,7 +12,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 
 const l10nMap = new Map([
   ["viewGenaiChatSidebar", "sidebar-menu-genai-chat-label"],
-  ["viewReviewCheckerSidebar", "sidebar-menu-review-checker-label"],
   ["viewHistorySidebar", "sidebar-menu-history-label"],
   ["viewTabsSidebar", "sidebar-menu-synced-tabs-label"],
   ["viewBookmarksSidebar", "sidebar-menu-bookmarks-label"],
@@ -148,11 +147,6 @@ export class SidebarCustomize extends SidebarPage {
           checked: e.target.checked,
         });
         break;
-      case "viewReviewCheckerSidebar":
-        Glean.sidebarCustomize.shoppingReviewCheckerEnabled.record({
-          checked: e.target.checked,
-        });
-        break;
       case "viewCPMSidebar":
         Glean.contextualManager.passwordsEnabled.record({
           checked: e.target.checked,
@@ -187,7 +181,7 @@ export class SidebarCustomize extends SidebarPage {
         data-l10n-id=${this.getInputL10nId(tool.view)}
         @change=${this.onToggleToolInput}
         ?checked=${!tool.disabled}
-      />
+      ></moz-checkbox>
     `;
   }
 
@@ -288,7 +282,7 @@ export class SidebarCustomize extends SidebarPage {
                     ?checked=${this.getWindow().SidebarController._state
                       .revampVisibility === "expand-on-hover"}
                     ?disabled=${this.visibility == "hide-sidebar"}
-                  />
+                  ></moz-checkbox>
                 `
               )}
               <moz-checkbox

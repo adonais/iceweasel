@@ -332,7 +332,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: 777190497c241e41829587626411db68649264cc
+        revision: 2ca6f1348cab58b5b994fd5916ff57445ade22f8
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -383,11 +383,11 @@ clang-19:
         revision: cd708029e0b2869e80abe31ddb175f7c35361f90
 
 clang-20:
-    description: clang 20.1.0 source code
+    description: clang 20.1.5 source code
     fetch:
         type: git
         repo: https://github.com/llvm/llvm-project
-        revision: 24a30daaa559829ad079f2ff7f73eb4e18095f88
+        revision: 7b09d7b446383b71b63d429b21ee45ba389c5134
 
 clang-trunk:
     description: clang main branch source code
@@ -565,68 +565,68 @@ nodejs-12-linux64:
         strip-components: 1
         add-prefix: node/
 
-nodejs-18-linux64-arm64:
-    description: nodejs 18 for arm64 linux
+nodejs-22-linux64-arm64:
+    description: nodejs 22 for arm64 linux
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v18.19.0/node-v18.19.0-linux-arm64.tar.xz
-        sha256: cf94ab72e45b855257545fec1c017bdf30a9e23611561382eaf64576b999e72d
-        size: 23403368
+        url: https://nodejs.org/dist/v22.15.1/node-v22.15.1-linux-arm64.tar.xz
+        sha256: f4ae8ddf7487dfaf7da92fef463ee55cc29d8772d62891361dc3fc8b8e469205
+        size: 28770908
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
 
-nodejs-18-macosx64:
-    description: nodejs 18 for x64 macOS
+nodejs-22-macosx64:
+    description: nodejs 22 for x64 macOS
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v18.19.0/node-v18.19.0-darwin-x64.tar.xz
-        sha256: 4f60b40071c6a67482b99d22a5265839177b8706a2b13b493396f368f0b42b00
-        size: 22496376
+        url: https://nodejs.org/dist/v22.15.1/node-v22.15.1-darwin-x64.tar.xz
+        sha256: 4f7f6dd674ffa4935dba358fe503a396347d918603e3c9657ce586280c702f61
+        size: 26577956
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
 
-nodejs-18-macosx64-arm64:
-    description: nodejs 18 for arm64 macOS
+nodejs-22-macosx64-arm64:
+    description: nodejs 22 for arm64 macOS
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v18.19.0/node-v18.19.0-darwin-arm64.tar.xz
-        sha256: 857885257c586fb13c93d33d326ca82056ba8b7445ce27cf34dd406add04158e
-        size: 20768464
+        url: https://nodejs.org/dist/v22.15.1/node-v22.15.1-darwin-arm64.tar.xz
+        sha256: da2ce4f4616f5adae82de433481e00af86c7e6624a07e5a3c3fdaa1d8a6028fa
+        size: 24580512
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
 
-nodejs-18-win32:
-    description: nodejs 18 for x86 Windows
+nodejs-22-win32:
+    description: nodejs 22 for x86 Windows
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v18.19.0/node-v18.19.0-win-x86.zip
-        sha256: 3171148f735954bdca8adccb2200379e61142e0f5a2bdb4ca6432afb0d9951df
-        size: 27504941
+        url: https://nodejs.org/dist/v22.15.1/node-v22.15.1-win-x86.zip
+        sha256: dd432043e8c90b7f221bd3ba8e6443fb69e7b8273049fad0669a3a7d66939985
+        size: 32541587
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
 
-nodejs-18-win64:
-    description: nodejs 18 for x64 Windows
+nodejs-22-win64:
+    description: nodejs 22 for x64 Windows
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v18.19.0/node-v18.19.0-win-x64.zip
-        sha256: 5311913d45e1fcc3643c58d1e3926eb85437b180f025fe5857413c9f02403645
-        size: 29332158
+        url: https://nodejs.org/dist/v22.15.1/node-v22.15.1-win-x64.zip
+        sha256: 7c7997d6ef2efd9525a54b033fc0be6f22549a5905f5da6573a41e61a436a1b5
+        size: 35136406
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
 
-nodejs-18-source:
-    description: nodejs 18 source
+nodejs-22-source:
+    description: nodejs 22 source
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v18.19.0/node-v18.19.0.tar.xz
-        sha256: f52b41af20596a9abd8ed75241837ec43945468221448bbf841361e2091819b6
-        size: 41248748
+        url: https://nodejs.org/dist/v22.11.0/node-v22.11.0.tar.gz
+        sha256: 24e5130fa7bc1eaab218a0c9cb05e03168fa381bb9e3babddc6a11f655799222
+        size: 96927828
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
@@ -679,7 +679,7 @@ symbol-scrapers:
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: d820461a3f542bb9383b8d90983d4e99c9ef7591
+        revision: c43ef4e27d54f1d548dacea1bc2fbcb16c2fb288
 
 xz-5.4.4:
     description: xz 5.4.4 source code
@@ -791,4 +791,4 @@ dxc-src:
     fetch:
         type: git
         repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler
-        revision: c75bb05c0e040bc09ec012ccf9767b1ec622477f
+        revision: 81378be83a1690cac0e727941e1a963518d67c26

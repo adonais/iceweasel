@@ -46,7 +46,6 @@ enum class AllocKind : uint8_t;
 struct BufferChunk;
 struct Cell;
 class GCRuntime;
-struct MediumBuffer;
 struct LargeBuffer;
 
 // BufferAllocator allocates dynamically sized blocks of memory which can be
@@ -182,8 +181,15 @@ struct LargeBuffer;
 //
 // These are implemented using the OS page allocator. Allocations of this size
 // are relatively rare and not much attempt is made to optimize them. They are
-// stored with a chunk header at the front to allow them to be distinguished
-// from the other allocation kinds easily.
+// chunk aligned which allows them to be distinguished from the other allocation
+// kinds by checking the low bits the pointer.
+//
+// Naming conventions
+// ------------------
+//
+// The following conventions are used in the code:
+//  - alloc:  client pointer to allocated memory
+//  - buffer: pointer to per-allocation metadata
 //
 
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
@@ -344,10 +350,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   void* alloc(size_t bytes, bool nurseryOwned);
   void* allocInGC(size_t bytes, bool nurseryOwned);
-  void* realloc(void* ptr, size_t bytes, bool nurseryOwned);
-  void free(void* ptr);
-  size_t getAllocSize(void* ptr);
-  bool isNurseryOwned(void* ptr);
+  void* realloc(void* alloc, size_t bytes, bool nurseryOwned);
+  void free(void* alloc);
+  size_t getAllocSize(void* alloc);
+  bool isNurseryOwned(void* alloc);
 
   void startMinorCollection(MaybeLock& lock);
   bool startMinorSweeping();
@@ -408,6 +414,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   static inline bool IsSmallAllocSize(size_t bytes);
   static bool IsSmallAlloc(void* alloc);
 
+  static SmallBuffer* GetSmallBuffer(void* alloc);
+  friend struct LargeBuffer;
+
   void* allocSmall(size_t bytes, bool nurseryOwned);
   void* allocSmallInGC(size_t bytes, bool nurseryOwned);
   void traceSmallAlloc(JSTracer* trc, Cell* owner, void** allocp,
@@ -436,8 +445,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
                       uintptr_t freeEnd, bool shouldDecommit,
                       bool expectUnchanged, FreeLists& freeLists);
   void freeMedium(void* alloc);
-  bool growMedium(MediumBuffer* header, size_t newBytes);
-  bool shrinkMedium(MediumBuffer* header, size_t newBytes);
+  bool growMedium(void* alloc, size_t newBytes);
+  bool shrinkMedium(void* alloc, size_t newBytes);
   FreeRegion* findFollowingFreeRegion(uintptr_t start);
   FreeRegion* findPrecedingFreeRegion(uintptr_t start);
   enum class ListPosition { Front, Back };
@@ -451,7 +460,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool isSweepingChunk(BufferChunk* chunk);
   void traceMediumAlloc(JSTracer* trc, Cell* owner, void** allocp,
                         const char* name);
-  void markMediumNurseryOwnedBuffer(MediumBuffer* buffer, bool ownerWasTenured);
+  bool isMediumBufferNurseryOwned(void* alloc) const;
+  void markMediumNurseryOwnedBuffer(void* alloc, bool ownerWasTenured);
   bool markMediumTenuredAlloc(void* alloc);
 
   // Get the size class for an allocation. This rounds up to a class that is
@@ -463,7 +473,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   static size_t SizeClassForFreeRegion(size_t bytes);
 
   static size_t SizeClassBytes(size_t sizeClass);
-  friend struct MediumBuffer;
+  friend struct BufferChunk;
 
   // Large allocation methods:
 
@@ -471,10 +481,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   static bool IsLargeAlloc(void* alloc);
 
   void* allocLarge(size_t bytes, bool nurseryOwned, bool inGC);
-  bool sweepLargeTenured(LargeBuffer* header);
+  bool sweepLargeTenured(LargeBuffer* buffer);
   void freeLarge(void* alloc);
-  bool shrinkLarge(LargeBuffer* header, size_t newBytes);
-  void unmapLarge(LargeBuffer* header, bool isSweeping, MaybeLock& lock);
+  bool shrinkLarge(LargeBuffer* buffer, size_t newBytes);
+  void unmapLarge(LargeBuffer* buffer, bool isSweeping, MaybeLock& lock);
   void traceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
                        const char* name);
   void markLargeNurseryOwnedBuffer(LargeBuffer* buffer, bool ownerWasTenured);
@@ -506,26 +516,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
 #ifdef DEBUG
 // Magic check values used debug builds.
-static constexpr uint16_t MediumBufferCheckValue = 0xBFA1;
 static constexpr uint32_t LargeBufferCheckValue = 0xBFA110C2;
 static constexpr uint32_t FreeRegionCheckValue = 0xBFA110C3;
 #endif
-
-struct alignas(CellAlignBytes) MediumBuffer {
-  uint8_t sizeClass;
-  bool isNurseryOwned = false;
-
-#ifdef DEBUG
-  uint16_t checkValue = MediumBufferCheckValue;
-#endif
-
-  MediumBuffer(uint8_t sizeClass, bool nurseryOwned);
-  static MediumBuffer* from(BufferChunk* chunk, uintptr_t offset);
-  void check() const;
-  size_t bytesIncludingHeader() const;
-  size_t allocBytes() const;
-  void* data();
-};
 
 }  // namespace gc
 }  // namespace js

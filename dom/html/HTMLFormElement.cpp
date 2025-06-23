@@ -95,12 +95,12 @@ namespace mozilla::dom {
 static const uint8_t NS_FORM_AUTOCOMPLETE_ON = 1;
 static const uint8_t NS_FORM_AUTOCOMPLETE_OFF = 0;
 
-static const nsAttrValue::EnumTable kFormAutocompleteTable[] = {
+static constexpr nsAttrValue::EnumTableEntry kFormAutocompleteTable[] = {
     {"on", NS_FORM_AUTOCOMPLETE_ON},
     {"off", NS_FORM_AUTOCOMPLETE_OFF},
-    {nullptr, 0}};
+};
 // Default autocomplete value is 'on'.
-static const nsAttrValue::EnumTable* kFormDefaultAutocomplete =
+static constexpr const nsAttrValue::EnumTableEntry* kFormDefaultAutocomplete =
     &kFormAutocompleteTable[0];
 
 HTMLFormElement::HTMLFormElement(
@@ -784,7 +784,7 @@ nsresult HTMLFormElement::BuildSubmission(HTMLFormSubmission** aFormSubmission,
   //
   // Get the submission object
   //
-  rv = HTMLFormSubmission::GetFromForm(this, submitter, encoding,
+  rv = HTMLFormSubmission::GetFromForm(this, submitter, encoding, formData,
                                        aFormSubmission);
   NS_ENSURE_SUBMIT_SUCCESS(rv);
 
@@ -889,6 +889,7 @@ nsresult HTMLFormElement::SubmitSubmission(
     loadState->SetTextDirectiveUserActivation(
         doc->ConsumeTextDirectiveUserActivation() ||
         hasValidUserGestureActivation);
+    loadState->SetFormDataEntryList(aFormSubmission->GetFormData());
 
     nsCOMPtr<nsIPrincipal> nodePrincipal = NodePrincipal();
     rv = container->OnLinkClickSync(this, loadState, false, nodePrincipal);

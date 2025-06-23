@@ -13,15 +13,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.Divider
-import mozilla.components.compose.base.annotation.LightDarkPreview
 import mozilla.components.service.fxa.manager.AccountState
+import mozilla.components.service.fxa.manager.AccountState.Authenticated
+import mozilla.components.service.fxa.manager.AccountState.Authenticating
+import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.service.fxa.store.Account
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.menu.MenuDialogTestTag
-import org.mozilla.fenix.components.menu.compose.header.MenuHeader
+import org.mozilla.fenix.components.menu.compose.header.MenuNavHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 
@@ -42,7 +45,6 @@ import org.mozilla.fenix.theme.Theme
  * @param extensionsMenuItemDescription The label of extensions menu item description.
  * @param scrollState The [ScrollState] used for vertical scrolling.
  * @param onMozillaAccountButtonClick Invoked when the user clicks on Mozilla account button.
- * @param onHelpButtonClick Invoked when the user clicks on the help button.
  * @param onSettingsButtonClick Invoked when the user clicks on the settings button.
  * @param onNewTabMenuClick Invoked when the user clicks on the new tab menu item.
  * @param onNewPrivateTabMenuClick Invoked when the user clicks on the new private tab menu item.
@@ -60,6 +62,10 @@ import org.mozilla.fenix.theme.Theme
  * homepage menu item.
  * @param onNewInFirefoxMenuClick Invoked when the user clicks on the release note menu item.
  * @param onQuitMenuClick Invoked when the user clicks on the quit menu item.
+ * @param onBackButtonClick Invoked when the user clicks on the back button.
+ * @param onForwardButtonClick Invoked when the user clicks on the forward button.
+ * @param onRefreshButtonClick Invoked when the user clicks on the refresh button.
+ * @param onShareButtonClick Invoked when the user clicks on the share button.
  */
 @Suppress("LongParameterList")
 @Composable
@@ -77,7 +83,6 @@ fun MainMenu(
     extensionsMenuItemDescription: String,
     scrollState: ScrollState,
     onMozillaAccountButtonClick: () -> Unit,
-    onHelpButtonClick: () -> Unit,
     onSettingsButtonClick: () -> Unit,
     onNewTabMenuClick: () -> Unit,
     onNewPrivateTabMenuClick: () -> Unit,
@@ -93,15 +98,18 @@ fun MainMenu(
     onCustomizeHomepageMenuClick: () -> Unit,
     onNewInFirefoxMenuClick: () -> Unit,
     onQuitMenuClick: () -> Unit,
+    onBackButtonClick: (longPress: Boolean) -> Unit,
+    onForwardButtonClick: (longPress: Boolean) -> Unit,
+    onRefreshButtonClick: (longPress: Boolean) -> Unit,
+    onShareButtonClick: () -> Unit,
 ) {
     MenuScaffold(
         header = {
-            MenuHeader(
-                account = account,
-                accountState = accountState,
-                onMozillaAccountButtonClick = onMozillaAccountButtonClick,
-                onHelpButtonClick = onHelpButtonClick,
-                onSettingsButtonClick = onSettingsButtonClick,
+            MenuNavHeader(
+                onBackButtonClick = onBackButtonClick,
+                onForwardButtonClick = onForwardButtonClick,
+                onRefreshButtonClick = onRefreshButtonClick,
+                onShareButtonClick = onShareButtonClick,
             )
         },
         scrollState = scrollState,
@@ -139,6 +147,22 @@ fun MainMenu(
             HomepageMenuGroup(
                 onCustomizeHomepageMenuClick = onCustomizeHomepageMenuClick,
                 onNewInFirefoxMenuClick = onNewInFirefoxMenuClick,
+            )
+        }
+
+        MenuGroup {
+            MozillaAccountMenuItem(
+                account = account,
+                accountState = accountState,
+                onClick = onMozillaAccountButtonClick,
+            )
+
+            Divider(color = FirefoxTheme.colors.borderSecondary)
+
+            MenuItem(
+                label = stringResource(id = R.string.browser_menu_settings),
+                beforeIconPainter = painterResource(id = R.drawable.mozac_ic_settings_24),
+                onClick = onSettingsButtonClick,
             )
         }
 
@@ -380,7 +404,57 @@ private fun HomepageMenuGroup(
     }
 }
 
-@LightDarkPreview
+@Composable
+internal fun MozillaAccountMenuItem(
+    account: Account?,
+    accountState: AccountState,
+    onClick: () -> Unit,
+) {
+    val label: String
+    val description: String?
+
+    when (accountState) {
+        NotAuthenticated -> {
+            label = stringResource(id = R.string.browser_menu_sign_in)
+            description = stringResource(id = R.string.browser_menu_sign_in_caption)
+        }
+
+        AuthenticationProblem -> {
+            label = stringResource(id = R.string.browser_menu_sign_back_in_to_sync)
+            description = stringResource(id = R.string.browser_menu_syncing_paused_caption)
+        }
+
+        Authenticated -> {
+            label = account?.displayName ?: account?.email
+                ?: stringResource(id = R.string.browser_menu_account_settings)
+            description = null
+        }
+
+        is Authenticating -> {
+            label = ""
+            description = null
+        }
+    }
+
+    MenuItem(
+        label = label,
+        beforeIconPainter = painterResource(id = R.drawable.mozac_ic_avatar_circle_24),
+        description = description,
+        descriptionState = if (accountState is AuthenticationProblem) {
+            MenuItemState.WARNING
+        } else {
+            MenuItemState.ENABLED
+        },
+        afterIconPainter = if (accountState is AuthenticationProblem) {
+            painterResource(R.drawable.mozac_ic_warning_fill_24)
+        } else {
+            null
+        },
+        onClick = onClick,
+    )
+}
+
+@PreviewLightDark
 @Composable
 private fun MenuDialogPreview() {
     FirefoxTheme {
@@ -402,7 +476,6 @@ private fun MenuDialogPreview() {
                 extensionsMenuItemDescription = "No extensions enabled",
                 scrollState = ScrollState(0),
                 onMozillaAccountButtonClick = {},
-                onHelpButtonClick = {},
                 onSettingsButtonClick = {},
                 onNewTabMenuClick = {},
                 onNewPrivateTabMenuClick = {},
@@ -418,6 +491,10 @@ private fun MenuDialogPreview() {
                 onCustomizeHomepageMenuClick = {},
                 onNewInFirefoxMenuClick = {},
                 onQuitMenuClick = {},
+                onBackButtonClick = {},
+                onForwardButtonClick = {},
+                onRefreshButtonClick = {},
+                onShareButtonClick = {},
             )
         }
     }
@@ -445,7 +522,6 @@ private fun MenuDialogPrivatePreview() {
                 extensionsMenuItemDescription = "No extensions enabled",
                 scrollState = ScrollState(0),
                 onMozillaAccountButtonClick = {},
-                onHelpButtonClick = {},
                 onSettingsButtonClick = {},
                 onNewTabMenuClick = {},
                 onNewPrivateTabMenuClick = {},
@@ -461,6 +537,10 @@ private fun MenuDialogPrivatePreview() {
                 onCustomizeHomepageMenuClick = {},
                 onNewInFirefoxMenuClick = {},
                 onQuitMenuClick = {},
+                onBackButtonClick = {},
+                onForwardButtonClick = {},
+                onRefreshButtonClick = {},
+                onShareButtonClick = {},
             )
         }
     }

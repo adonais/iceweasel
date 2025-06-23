@@ -654,6 +654,21 @@ FOG::TestGetDistribution(JSContext* aCx, JS::MutableHandleValue aResult) {
 void FOG::InitMemoryReporter() { RegisterWeakMemoryReporter(this); }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(FOGMallocSizeOf)
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(FOGMallocEnclosingSizeOf)
+
+// Rust doesn't support weak-linking, so MFBT_API functions like
+// moz_malloc_size_of need a C++ wrapper that uses the regular ABI
+//
+// We're re-using the previously MOZ_DEFINE_MALLOC(_ENCLOSING)_SIZE_OF-defined
+// functions here to create symbol visible outside this file (the define creates
+// a static function).
+extern "C" size_t fog_malloc_size_of(const void* aPtr) {
+  return FOGMallocSizeOf(aPtr);
+}
+
+extern "C" size_t fog_malloc_enclosing_size_of(const void* aPtr) {
+  return FOGMallocEnclosingSizeOf(aPtr);
+}
 
 NS_IMETHODIMP
 FOG::CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
@@ -663,6 +678,7 @@ FOG::CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
   MOZ_COLLECT_REPORT("explicit/fog/impl", KIND_HEAP, UNITS_BYTES,
                      aMallocSizeOf(this),
                      "Memory used by the FOG core implementation");
+  glean::impl::fog_collect_reports(aHandleReport, aData, aAnonymize);
 
   return NS_OK;
 }

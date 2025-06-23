@@ -5,6 +5,7 @@ import {
   GlobalOverrider,
   FakeConsoleAPI,
   FakeLogger,
+  FakeNimbusFeatures,
 } from "test/unit/utils";
 import Adapter from "enzyme-adapter-react-16";
 import { chaiAssertions } from "test/schemas/pings";
@@ -68,6 +69,12 @@ class JSWindowActorChild {
       Promise,
     };
   }
+}
+
+class NewTabContentPing {
+  recordEvent() {}
+  scheduleSubmission() {}
+  uninit() {}
 }
 
 // Detect plain object passed to lazy getter APIs, and set its prototype to
@@ -488,30 +495,13 @@ const TEST_GLOBAL = {
     },
   },
   FX_MONITOR_OAUTH_CLIENT_ID: "fake_client_id",
-  ExperimentAPI: {
-    getExperimentMetaData() {},
-    getRolloutMetaData() {},
-  },
-  NimbusFeatures: {
-    glean: {
-      getVariable() {},
-    },
-    newtab: {
-      getVariable() {},
-      getAllVariables() {},
-      onUpdate() {},
-      offUpdate() {},
-    },
-    pocketNewtab: {
-      getVariable() {},
-      getAllVariables() {},
-      onUpdate() {},
-      offUpdate() {},
-    },
-    cookieBannerHandling: {
-      getVariable() {},
-    },
-  },
+  ExperimentAPI: {},
+  NimbusFeatures: FakeNimbusFeatures([
+    "glean",
+    "newtab",
+    "pocketNewtab",
+    "cookieBannerHandling",
+  ]),
   TelemetryEnvironment: {
     setExperimentActive() {},
     currentEnvironment: {
@@ -687,6 +677,7 @@ const TEST_GLOBAL = {
   Utils: {
     SERVER_URL: "bogus://foo",
   },
+  NewTabContentPing,
 };
 overrider.set(TEST_GLOBAL);
 

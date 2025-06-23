@@ -9,7 +9,8 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.sys.mjs",
+  SearchEngineSelector:
+    "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs",
 });
 
 const ENGINE_ORDERS_CONFIG = [
@@ -108,8 +109,15 @@ const STARTS_WITH_WIKI_CONFIG = [
 ];
 
 const DEFAULTS_CONFIG = [
-  { identifier: "b-engine" },
-  { identifier: "a-engine" },
+  // The identifiers are intentionally in a different order to the names, so
+  // that we can test that ordering by the name works correctly.
+  { identifier: "alpha-engine-3", base: { name: "Golf" } },
+  { identifier: "alpha-engine-2", base: { name: "November" } },
+  { identifier: "alpha-engine-1", base: { name: "Sierra" } },
+  // These two will be ordered by the `orders` record.
+  { identifier: "b-engine", base: { name: "Tango" } },
+  { identifier: "a-engine", base: { name: "Uniform" } },
+  // These two are the default engines, and so will be listed first.
   { identifier: "default-engine" },
   { identifier: "default-private-engine" },
   {
@@ -123,7 +131,7 @@ const DEFAULTS_CONFIG = [
           locales: ["en-CA"],
           regions: ["CA"],
         },
-        order: ["a-engine", "b-engine"],
+        order: ["b-engine", "a-engine"],
       },
     ],
   },
@@ -234,7 +242,15 @@ add_task(async function test_selector_match_engine_orders_with_defaults() {
       locale: "en-CA",
       region: "CA",
     },
-    ["default-engine", "default-private-engine", "a-engine", "b-engine"],
-    "Should order the default engine first, default private engine second, and the rest of the engines in the correct order."
+    [
+      "default-engine",
+      "default-private-engine",
+      "b-engine",
+      "a-engine",
+      "alpha-engine-3",
+      "alpha-engine-2",
+      "alpha-engine-1",
+    ],
+    "Should order the default engine first, default private engine second, ordered engines and then the rest in alphabetical order by name."
   );
 });

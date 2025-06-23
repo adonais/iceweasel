@@ -100,6 +100,7 @@
 #include "mozilla/dom/ServiceWorkerEvents.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "WorkerCSPEventListener.h"
 #include "WorkerDebugger.h"
 #include "WorkerDebuggerManager.h"
@@ -534,6 +535,23 @@ class ChangeBackgroundStateRunnable final : public WorkerControlRunnable {
                          WorkerPrivate* aWorkerPrivate) override {
     return aWorkerPrivate->ChangeBackgroundStateInternal(mIsBackground);
   }
+};
+
+class ChangePlaybackStateRunnable final : public WorkerControlRunnable {
+ public:
+  ChangePlaybackStateRunnable() = delete;
+  explicit ChangePlaybackStateRunnable(WorkerPrivate* aWorkerPrivate) = delete;
+  ChangePlaybackStateRunnable(WorkerPrivate* aWorkerPrivate,
+                              bool aIsPlayingAudio)
+      : WorkerControlRunnable("ChangePlaybackStateRunnable"),
+        mIsPlayingAudio(aIsPlayingAudio) {}
+
+ private:
+  virtual bool WorkerRun(JSContext* aCx,
+                         WorkerPrivate* aWorkerPrivate) override {
+    return aWorkerPrivate->ChangePlaybackStateInternal(mIsPlayingAudio);
+  }
+  bool mIsPlayingAudio = false;
 };
 
 class PropagateStorageAccessPermissionGrantedRunnable final
@@ -1076,18 +1094,17 @@ struct WorkerPrivate::TimeoutInfo {
   }
 
   void AccumulateNestingLevel(const uint32_t& aBaseLevel) {
-    if (aBaseLevel < StaticPrefs::dom_clamp_timeout_nesting_level_AtStartup()) {
+    if (aBaseLevel < StaticPrefs::dom_clamp_timeout_nesting_level()) {
       mNestingLevel = aBaseLevel + 1;
       return;
     }
-    mNestingLevel = StaticPrefs::dom_clamp_timeout_nesting_level_AtStartup();
+    mNestingLevel = StaticPrefs::dom_clamp_timeout_nesting_level();
   }
 
   void CalculateTargetTime() {
     auto target = mInterval;
     // Don't clamp timeout for chrome workers
-    if (mNestingLevel >=
-            StaticPrefs::dom_clamp_timeout_nesting_level_AtStartup() &&
+    if (mNestingLevel >= StaticPrefs::dom_clamp_timeout_nesting_level() &&
         !mOnChromeWorker) {
       target = TimeDuration::Max(
           mInterval,
@@ -1521,33 +1538,6 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
   }
 
   mLoadInfo.mCSP = csp;
-
-  // Set evalAllowed, default value is set in GetAllowsEval
-  bool evalAllowed = false;
-  bool reportEvalViolations = false;
-  rv = csp->GetAllowsEval(&reportEvalViolations, &evalAllowed);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mLoadInfo.mEvalAllowed = evalAllowed;
-  mLoadInfo.mReportEvalCSPViolations = reportEvalViolations;
-
-  // Set wasmEvalAllowed
-  bool wasmEvalAllowed = false;
-  bool reportWasmEvalViolations = false;
-  rv = csp->GetAllowsWasmEval(&reportWasmEvalViolations, &wasmEvalAllowed);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  // As for nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction,
-  // for MV2 extensions we have to allow wasm by default and report violations
-  // for historical reasons.
-  // TODO bug 1770909: remove this exception.
-  if (!wasmEvalAllowed && addonPolicy && addonPolicy->ManifestVersion() == 2) {
-    wasmEvalAllowed = true;
-    reportWasmEvalViolations = true;
-  }
-
-  mLoadInfo.mWasmEvalAllowed = wasmEvalAllowed;
-  mLoadInfo.mReportWasmEvalCSPViolations = reportWasmEvalViolations;
 
   auto ctx = WorkerCSPContext::CreateFromCSP(csp);
   if (NS_WARN_IF(ctx.isErr())) {
@@ -2909,6 +2899,9 @@ WorkerPrivate::WorkerPrivate(
     if (aParent->IsRunningInBackground()) {
       mIsInBackground = true;
     }
+    if (aParent->IsPlayingAudio()) {
+      mIsPlayingAudio = true;
+    }
 
     mIsPrivilegedAddonGlobal = aParent->mIsPrivilegedAddonGlobal;
   } else {
@@ -2986,6 +2979,11 @@ WorkerPrivate::WorkerPrivate(
     if (mLoadInfo.mWindow && mLoadInfo.mWindow->GetOuterWindow() &&
         mLoadInfo.mWindow->GetOuterWindow()->IsBackground()) {
       mIsInBackground = true;
+    }
+
+    if (mLoadInfo.mWindow &&
+        nsGlobalWindowInner::Cast(mLoadInfo.mWindow)->IsPlayingAudio()) {
+      SetIsPlayingAudio(true);
     }
   }
 
@@ -3254,6 +3252,17 @@ void WorkerPrivate::SetIsRunningInForeground() {
   runnable->Dispatch(this);
 
   LOG(WorkerLog(), ("SetIsRunningInForeground [%p]", this));
+}
+
+void WorkerPrivate::SetIsPlayingAudio(bool aIsPlayingAudio) {
+  AssertIsOnParentThread();
+
+  RefPtr<ChangePlaybackStateRunnable> runnable =
+      new ChangePlaybackStateRunnable(this, aIsPlayingAudio);
+  runnable->Dispatch(this);
+
+  AUTO_PROFILER_MARKER_UNTYPED("WorkerPrivate::SetIsPlayingAudio", DOM, {});
+  LOG(WorkerLog(), ("SetIsPlayingAudio [%p]", this));
 }
 
 nsresult WorkerPrivate::SetIsDebuggerReady(bool aReady) {
@@ -4833,6 +4842,17 @@ bool WorkerPrivate::ChangeBackgroundStateInternal(bool aIsBackground) {
   return true;
 }
 
+bool WorkerPrivate::ChangePlaybackStateInternal(bool aIsPlayingAudio) {
+  AssertIsOnWorkerThread();
+  mIsPlayingAudio = aIsPlayingAudio;
+  auto data = mWorkerThreadAccessible.Access();
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->SetIsPlayingAudio(aIsPlayingAudio);
+  }
+  return true;
+}
+
 void WorkerPrivate::PropagateStorageAccessPermissionGrantedInternal() {
   auto data = mWorkerThreadAccessible.Access();
 
@@ -6190,6 +6210,9 @@ bool WorkerPrivate::RunExpiredTimeouts(JSContext* aCx) {
         break;
       case Timeout::Reason::eDelayedWebTaskTimeout:
         reason = "delayedWebTask handler";
+        break;
+      case Timeout::Reason::eJSTimeout:
+        reason = "JS timeout handler";
         break;
       default:
         MOZ_ASSERT(info->mReason == Timeout::Reason::eAbortSignalTimeout);

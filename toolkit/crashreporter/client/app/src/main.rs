@@ -109,7 +109,7 @@ fn report_main() {
             log::error!("exiting with error: {message:#}");
             if !config.auto_submit {
                 // Only show a dialog if auto_submit is disabled.
-                ui::error_dialog(&config, message);
+                ui::error_dialog(config, message);
             }
             std::process::exit(1);
         }
@@ -218,6 +218,13 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         } else {
             Ok(false)
         }
+    } else if !config.dump_file().exists() {
+        // Bug 1959875: If the minidump file doesn't exist, it indicates that an error occurred
+        // when generating the minidump, and we should return a specific error message to make
+        // things clear to the user.
+        Err(anyhow::anyhow!(
+            config.string("crashreporter-error-failed-to-generate-minidump")
+        ))
     } else {
         // Use minidump-analyzer to gather stack traces.
         #[cfg(not(mock))]
@@ -256,5 +263,5 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
 // `std` uses `raw-dylib` to link this dll, but that doesn't work properly on x86 MinGW, so we explicitly
 // have to link it.
 #[cfg(all(target_os = "windows", target_env = "gnu"))]
-#[link(name="bcryptprimitives")]
+#[link(name = "bcryptprimitives")]
 extern "C" {}

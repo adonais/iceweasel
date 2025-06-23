@@ -952,6 +952,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             // Used by SandboxReporter, among other things.
             .ElseIf(clk_id == CLOCK_MONOTONIC_COARSE, Allow())
 #endif
+#ifdef CLOCK_MONOTONIC_RAW
+            .ElseIf(clk_id == CLOCK_MONOTONIC_RAW, Allow())
+#endif
             .ElseIf(clk_id == CLOCK_PROCESS_CPUTIME_ID, Allow())
             .ElseIf(clk_id == CLOCK_REALTIME, Allow())
 #ifdef CLOCK_REALTIME_COARSE
@@ -1482,9 +1485,10 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
         return If(request == FIOCLEX, Allow())
             // Rust's stdlib also uses FIONBIO instead of equivalent fcntls.
             .ElseIf(request == FIONBIO, Allow())
-            // Allow anything that isn't a tty ioctl, for now; bug 1302711
-            // will cover changing this to a default-deny policy.
-            .ElseIf(shifted_type != kTtyIoctls, Allow())
+            // Allow anything that isn't a tty ioctl, if level < 6
+            .ElseIf(
+                BelowLevel(6) ? shifted_type != kTtyIoctls : BoolConst(false),
+                Allow())
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 
@@ -2052,8 +2056,15 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetDecoderSandboxPolicy(
 // Basically a clone of RDDSandboxPolicy until we know exactly what
 // the SocketProcess sandbox looks like.
 class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
+ private:
+  SocketProcessSandboxParams mParams;
+
+  bool BelowLevel(int aLevel) const { return mParams.mLevel < aLevel; }
+
  public:
-  explicit SocketProcessSandboxPolicy(SandboxBrokerClient* aBroker) {
+  explicit SocketProcessSandboxPolicy(SandboxBrokerClient* aBroker,
+                                      SocketProcessSandboxParams&& aParams)
+      : mParams(std::move(aParams)) {
     mBroker = aBroker;
     mMayCreateShmem = true;
   }
@@ -2135,9 +2146,10 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             .ElseIf(request == FIONBIO, Allow())
             // This is used by PR_Available in nsSocketInputStream::Available.
             .ElseIf(request == FIONREAD, Allow())
-            // Allow anything that isn't a tty ioctl, for now; bug 1302711
-            // will cover changing this to a default-deny policy.
-            .ElseIf(shifted_type != kTtyIoctls, Allow())
+            // Allow anything that isn't a tty ioctl (if level < 2)
+            .ElseIf(
+                BelowLevel(2) ? shifted_type != kTtyIoctls : BoolConst(false),
+                Allow())
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 
@@ -2189,9 +2201,9 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
 };
 
 UniquePtr<sandbox::bpf_dsl::Policy> GetSocketProcessSandboxPolicy(
-    SandboxBrokerClient* aMaybeBroker) {
+    SandboxBrokerClient* aMaybeBroker, SocketProcessSandboxParams&& aParams) {
   return UniquePtr<sandbox::bpf_dsl::Policy>(
-      new SocketProcessSandboxPolicy(aMaybeBroker));
+      new SocketProcessSandboxPolicy(aMaybeBroker, std::move(aParams)));
 }
 
 class UtilitySandboxPolicy : public SandboxPolicyCommon {

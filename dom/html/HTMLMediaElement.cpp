@@ -2766,10 +2766,9 @@ void HTMLMediaElement::SelectResource() {
       LOG(LogLevel::Debug, ("%p Trying load from src=%s", this,
                             NS_ConvertUTF16toUTF8(src).get()));
       if (profiler_is_collecting_markers()) {
-        nsPrintfCString markerName{"%p:mozloadresource", this};
-        profiler_add_marker(markerName, geckoprofiler::category::MEDIA_PLAYBACK,
+        profiler_add_marker("loadresource", geckoprofiler::category::MEDIA_PLAYBACK,
                             {}, LoadSourceMarker{}, nsString{src}, nsString{},
-                            nsString{});
+                            nsString{}, Flow::FromPointer(this));
       }
 
       NS_ASSERTION(
@@ -2827,9 +2826,10 @@ void HTMLMediaElement::NotifyLoadError(const nsACString& aErrorDetails) {
     NS_WARNING("Should know the source we were loading from!");
   }
   if (profiler_is_collecting_markers()) {
-    profiler_add_marker(nsPrintfCString("%p:mozloaderror", this),
+    profiler_add_marker("loaderror",
                         geckoprofiler::category::MEDIA_PLAYBACK, {},
-                        LoadErrorMarker{}, aErrorDetails);
+                        LoadErrorMarker{}, aErrorDetails,
+                        Flow::FromPointer(this));
   }
 }
 
@@ -3048,10 +3048,9 @@ void HTMLMediaElement::LoadFromSourceChildren() {
          NS_ConvertUTF16toUTF8(media).get()));
 
     if (profiler_is_collecting_markers()) {
-      nsPrintfCString markerName{"%p:mozloadresource", this};
-      profiler_add_marker(markerName, geckoprofiler::category::MEDIA_PLAYBACK,
+      profiler_add_marker("loadresource", geckoprofiler::category::MEDIA_PLAYBACK,
                           {}, LoadSourceMarker{}, nsString{src}, nsString{type},
-                          nsString{media});
+                          nsString{media}, Flow::FromPointer(this));
     }
 
     nsCOMPtr<nsIURI> uri;
@@ -3129,20 +3128,20 @@ bool HTMLMediaElement::AllowedToPlay() const {
 
 uint32_t HTMLMediaElement::GetPreloadDefault() const {
   if (mMediaSource) {
-    return HTMLMediaElement::PRELOAD_ATTR_METADATA;
+    return HTMLMediaElement::PRELOAD_METADATA;
   }
   if (OnCellularConnection()) {
     return Preferences::GetInt("media.preload.default.cellular",
-                               HTMLMediaElement::PRELOAD_ATTR_NONE);
+                               HTMLMediaElement::PRELOAD_NONE);
   }
   return Preferences::GetInt("media.preload.default",
-                             HTMLMediaElement::PRELOAD_ATTR_METADATA);
+                             HTMLMediaElement::PRELOAD_METADATA);
 }
 
 uint32_t HTMLMediaElement::GetPreloadDefaultAuto() const {
   if (OnCellularConnection()) {
     return Preferences::GetInt("media.preload.auto.cellular",
-                               HTMLMediaElement::PRELOAD_ATTR_METADATA);
+                               HTMLMediaElement::PRELOAD_METADATA);
   }
   return Preferences::GetInt("media.preload.auto",
                              HTMLMediaElement::PRELOAD_ENOUGH);
@@ -3167,14 +3166,13 @@ void HTMLMediaElement::UpdatePreloadAction() {
       // media.preload.default pref, or just preload metadata if not present.
       nextAction = static_cast<PreloadAction>(preloadDefault);
     } else if (val->Type() == nsAttrValue::eEnum) {
-      PreloadAttrValue attr =
-          static_cast<PreloadAttrValue>(val->GetEnumValue());
-      if (attr == HTMLMediaElement::PRELOAD_ATTR_EMPTY ||
-          attr == HTMLMediaElement::PRELOAD_ATTR_AUTO) {
+      MediaPreloadAttrValue attr =
+          static_cast<MediaPreloadAttrValue>(val->GetEnumValue());
+      if (attr == MediaPreloadAttrValue::PRELOAD_ATTR_AUTO) {
         nextAction = static_cast<PreloadAction>(preloadAuto);
-      } else if (attr == HTMLMediaElement::PRELOAD_ATTR_METADATA) {
+      } else if (attr == MediaPreloadAttrValue::PRELOAD_ATTR_METADATA) {
         nextAction = HTMLMediaElement::PRELOAD_METADATA;
-      } else if (attr == HTMLMediaElement::PRELOAD_ATTR_NONE) {
+      } else if (attr == MediaPreloadAttrValue::PRELOAD_ATTR_NONE) {
         nextAction = HTMLMediaElement::PRELOAD_NONE;
       }
     } else {
@@ -4493,6 +4491,9 @@ HTMLMediaElement::~HTMLMediaElement() {
       !mHasSelfReference,
       "How can we be destroyed if we're still holding a self reference?");
 
+  PROFILER_MARKER("~HTMLMediaElement", MEDIA_PLAYBACK, {}, TerminatingFlowMarker,
+                  Flow::FromPointer(this));
+
   mWatchManager.Shutdown();
 
   mShutdownObserver->Unsubscribe();
@@ -4895,13 +4896,16 @@ void HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   // element, allowing media control exclusive consumption on these events,
   // and preventing the content from handling them.
   switch (aVisitor.mEvent->mMessage) {
-    case ePointerDown:
-    case ePointerUp:
-    case eTouchEnd:
+    case eTouchRawUpdate:
+      MOZ_FALLTHROUGH_ASSERT(
+          "eTouchRawUpdate event shouldn't be dispatched into the DOM");
     // Always prevent touchmove captured in video element from being handled by
     // content, since we always do that for touchstart.
     case eTouchMove:
+    case eTouchEnd:
     case eTouchStart:
+    case ePointerDown:
+    case ePointerUp:
     case ePointerClick:
     case eMouseDoubleClick:
     case eMouseDown:
@@ -4909,9 +4913,13 @@ void HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
       aVisitor.mCanHandle = false;
       return;
 
-    // The *move events however are only comsumed when the range input is being
+    // The *move events however are only consumed when the range input is being
     // dragged.
+    case eMouseRawUpdate:
+      MOZ_FALLTHROUGH_ASSERT(
+          "eMouseRawUpdate event shouldn't be dispatched into the DOM");
     case ePointerMove:
+    case ePointerRawUpdate:
     case eMouseMove: {
       nsINode* node =
           nsINode::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
@@ -4946,21 +4954,16 @@ bool HTMLMediaElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                       const nsAString& aValue,
                                       nsIPrincipal* aMaybeScriptedPrincipal,
                                       nsAttrValue& aResult) {
-  // Mappings from 'preload' attribute strings to an enumeration.
-  static const nsAttrValue::EnumTable kPreloadTable[] = {
-      {"", HTMLMediaElement::PRELOAD_ATTR_EMPTY},
-      {"none", HTMLMediaElement::PRELOAD_ATTR_NONE},
-      {"metadata", HTMLMediaElement::PRELOAD_ATTR_METADATA},
-      {"auto", HTMLMediaElement::PRELOAD_ATTR_AUTO},
-      {nullptr, 0}};
-
   if (aNamespaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::crossorigin) {
       ParseCORSValue(aValue, aResult);
       return true;
     }
     if (aAttribute == nsGkAtoms::preload) {
-      return aResult.ParseEnumValue(aValue, kPreloadTable, false);
+      return aResult.ParseEnumValue(aValue, kPreloadTable, false,
+                                    // The default value is "auto" if aValue is
+                                    // not a recognised value.
+                                    kPreloadDefaultType);
     }
   }
 
@@ -7209,13 +7212,13 @@ void HTMLMediaElement::MakeAssociationWithCDMResolved() {
     if (mMediaKeys) {
       nsString keySystem;
       mMediaKeys->GetKeySystem(keySystem);
-      profiler_add_marker(nsPrintfCString("%p:mozcdmresolved", this),
+      profiler_add_marker("cdmresolved",
                           geckoprofiler::category::MEDIA_PLAYBACK, {},
                           CDMResolvedMarker{}, keySystem,
-                          mMediaKeys->GetMediaKeySystemConfigurationString());
+                          mMediaKeys->GetMediaKeySystemConfigurationString(),
+                          Flow::FromPointer(this));
     } else {
-      nsPrintfCString markerName{"%p:mozremovemediakey", this};
-      PROFILER_MARKER_UNTYPED(markerName, MEDIA_PLAYBACK);
+      PROFILER_MARKER("removemediakey", MEDIA_PLAYBACK, {}, FlowMarker, Flow::FromPointer(this));
     }
   }
 }

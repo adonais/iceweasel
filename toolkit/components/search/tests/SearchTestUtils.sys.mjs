@@ -5,11 +5,11 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
   AppProvidedSearchEngine:
-    "resource://gre/modules/AppProvidedSearchEngine.sys.mjs",
+    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
   ExtensionTestUtils:
     "resource://testing-common/ExtensionXPCShellUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
@@ -238,6 +238,7 @@ class _SearchTestUtils {
     let numEngines = 0;
     let defaultEngines;
     let engineOrders;
+    let availableLocales;
 
     for (let obj of fullConfig) {
       obj.recordType = this.#detectRecordType(obj);
@@ -274,6 +275,8 @@ class _SearchTestUtils {
         case "engineOrders":
           engineOrders = obj;
           break;
+        case "availableLocales":
+          availableLocales = obj;
       }
     }
 
@@ -302,7 +305,56 @@ class _SearchTestUtils {
       defaultEngines.specificDefaults = [];
     }
 
+    if (!availableLocales) {
+      availableLocales = {
+        recordType: "availableLocales",
+        locales: Array.from(this.extractAvailableLocales(fullConfig)),
+      };
+      fullConfig.push(availableLocales);
+    }
+
     return fullConfig;
+  }
+
+  /**
+   * Extracts the list of available locales from a search configuration.
+   *
+   * @param {object[]} config
+   */
+  extractAvailableLocales(config) {
+    let result = new Set();
+
+    function addLocalesFromEnvironment(environment) {
+      environment.locales?.forEach(locale => result.add(locale));
+      environment.excludedLocales?.forEach(locale => result.add(locale));
+    }
+
+    for (let entry of config) {
+      switch (entry.recordType) {
+        case "engine": {
+          for (let variant of entry.variants) {
+            addLocalesFromEnvironment(variant.environment);
+            for (let subVariant of variant.subVariants ?? []) {
+              addLocalesFromEnvironment(subVariant.environment);
+            }
+          }
+          break;
+        }
+        case "defaultEngines": {
+          for (let specificDefault of entry.specificDefaults) {
+            addLocalesFromEnvironment(specificDefault.environment);
+          }
+          break;
+        }
+        case "engineOrders": {
+          for (let order of entry.orders) {
+            addLocalesFromEnvironment(order.environment);
+          }
+          break;
+        }
+      }
+    }
+    return result;
   }
 
   /**
@@ -708,6 +760,26 @@ class _SearchTestUtils {
       };
       reader.readAsDataURL(blob);
     });
+  }
+
+  /**
+   * Extracts post data string from an nsISearchSubmission.
+   * If there is no post data, returns null.
+   *
+   * @param {?nsISearchSubmission} submission
+   * @returns {?string}
+   */
+  getPostDataString(submission) {
+    if (!submission.postData) {
+      return null;
+    }
+
+    let binaryStream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+      Ci.nsIBinaryInputStream
+    );
+    binaryStream.setInputStream(submission.postData.data);
+
+    return binaryStream.readBytes(binaryStream.available());
   }
 }
 

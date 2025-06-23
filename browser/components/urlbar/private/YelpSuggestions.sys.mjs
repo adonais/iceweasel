@@ -9,12 +9,14 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   GeolocationUtils:
     "resource:///modules/urlbar/private/GeolocationUtils.sys.mjs",
-  GeonameMatchType: "resource://gre/modules/RustSuggest.sys.mjs",
-  GeonameType: "resource://gre/modules/RustSuggest.sys.mjs",
+  GeonameMatchType:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
   UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  YelpSubjectType:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
 });
 
 const RESULT_MENU_COMMAND = {
@@ -187,17 +189,43 @@ export class YelpSuggestions extends SuggestProvider {
       }
     }
 
+    let titleHighlights = lazy.UrlbarUtils.getTokenMatches(
+      queryContext.tokens,
+      title,
+      lazy.UrlbarUtils.HIGHLIGHT.TYPED
+    );
+    let payload = {
+      url: url.toString(),
+      originalUrl: suggestion.url,
+      bottomTextL10n: { id: "firefox-suggest-yelp-bottom-text" },
+      iconBlob: suggestion.icon_blob,
+    };
+    let highlights = {};
+
+    if (
+      lazy.UrlbarPrefs.get("yelpServiceResultDistinction") &&
+      suggestion.subjectType === lazy.YelpSubjectType.SERVICE
+    ) {
+      payload.titleL10n = {
+        id: "firefox-suggest-yelp-service-title",
+        args: {
+          service: title,
+        },
+        argsHighlights: {
+          service: titleHighlights,
+        },
+      };
+    } else {
+      payload.title = title;
+      highlights.title = titleHighlights;
+    }
+
     return Object.assign(
       new lazy.UrlbarResult(
         lazy.UrlbarUtils.RESULT_TYPE.URL,
         lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-        ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-          url: url.toString(),
-          originalUrl: suggestion.url,
-          title: [title, lazy.UrlbarUtils.HIGHLIGHT.TYPED],
-          bottomTextL10n: { id: "firefox-suggest-yelp-bottom-text" },
-          iconBlob: suggestion.icon_blob,
-        })
+        payload,
+        highlights
       ),
       resultProperties
     );
@@ -465,8 +493,7 @@ export class YelpSuggestions extends SuggestProvider {
       regionMatches = await lazy.QuickSuggest.rustBackend.fetchGeonames(
         region,
         false, // prefix matching
-        lazy.GeonameType.REGION,
-        null
+        null // geonames filter array
       );
       if (!regionMatches.length) {
         // The user typed something we thought was a region but isn't, so assume
@@ -479,7 +506,6 @@ export class YelpSuggestions extends SuggestProvider {
       let cityMatches = await lazy.QuickSuggest.rustBackend.fetchGeonames(
         city,
         true, // prefix matching
-        lazy.GeonameType.CITY,
         regionMatches?.map(m => m.geoname)
       );
       // Discard prefix matches on any names that aren't full names, i.e., on
@@ -500,7 +526,10 @@ export class YelpSuggestions extends SuggestProvider {
         cityMatches,
         locationFromGeonameMatch
       );
-      return { city: best.geoname.name, region: best.geoname.admin1Code };
+      return {
+        city: best.geoname.name,
+        region: best.geoname.adminDivisionCodes.get(1),
+      };
     }
 
     // We didn't detect a city in the query but we detected a region, so try to
@@ -544,7 +573,7 @@ function locationFromGeonameMatch(match) {
     latitude: match.geoname.latitude,
     longitude: match.geoname.longitude,
     country: match.geoname.countryCode,
-    region: match.geoname.admin1Code,
+    region: match.geoname.adminDivisionCodes.get(1),
     population: match.geoname.population,
   };
 }

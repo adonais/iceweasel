@@ -4,10 +4,9 @@
 
 package org.mozilla.fenix.downloads.listscreen
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,30 +14,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ChipDefaults
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.FilterChip
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,8 +34,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -55,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
@@ -64,12 +53,12 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.button.FloatingActionButton
-import org.mozilla.fenix.compose.ext.isItemPartiallyVisible
+import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.list.ExpandableListHeader
-import org.mozilla.fenix.compose.list.SelectableListItem
 import org.mozilla.fenix.compose.snackbar.AcornSnackbarHostState
 import org.mozilla.fenix.compose.snackbar.SnackbarHost
 import org.mozilla.fenix.compose.snackbar.SnackbarState
+import org.mozilla.fenix.downloads.listscreen.middleware.UndoDelayProvider
 import org.mozilla.fenix.downloads.listscreen.store.CreatedTime
 import org.mozilla.fenix.downloads.listscreen.store.DownloadListItem
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
@@ -79,39 +68,64 @@ import org.mozilla.fenix.downloads.listscreen.store.DownloadUIStore
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.downloads.listscreen.store.HeaderItem
 import org.mozilla.fenix.downloads.listscreen.ui.DownloadSearchField
+import org.mozilla.fenix.downloads.listscreen.ui.FileListItem
+import org.mozilla.fenix.downloads.listscreen.ui.Filters
+import org.mozilla.fenix.downloads.listscreen.ui.ToolbarConfig
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
  * Downloads screen that displays the list of downloads.
  *
  * @param downloadsStore The [DownloadUIStore] used to manage and access the state of download items.
+ * @param undoDelayProvider Provider for the undo delay duration when deleting items.
+ *   This determines how long the undo snackbar will be visible.
  * @param onItemClick Callback invoked when a download item is clicked.
- * @param onItemDeleteClick Callback invoked when the delete action is triggered for a single download item.
- * @param onMultipleItemsDeleteClick Callback invoked when the delete action
- * is triggered for multiple selected download items.
  * @param onNavigationIconClick Callback for the back button click in the toolbar.
  */
-@Composable
 @Suppress("LongMethod")
+@Composable
 fun DownloadsScreen(
     downloadsStore: DownloadUIStore,
+    undoDelayProvider: UndoDelayProvider,
     onItemClick: (FileItem) -> Unit,
-    onItemDeleteClick: (FileItem) -> Unit,
-    onMultipleItemsDeleteClick: () -> Unit,
     onNavigationIconClick: () -> Unit,
 ) {
     val uiState by downloadsStore.observeAsState(initialValue = downloadsStore.state) { it }
+    val snackbarHostState = remember { AcornSnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     val toolbarConfig = getToolbarConfig(mode = uiState.mode)
 
-    BackHandler(uiState.isSearchFieldVisible) {
-        downloadsStore.dispatch(DownloadUIAction.SearchBarDismissRequest)
+    BackHandler(uiState.isBackHandlerEnabled) {
+        if (uiState.mode is Mode.Editing) {
+            downloadsStore.dispatch(DownloadUIAction.ExitEditMode)
+        } else if (uiState.isSearchFieldVisible) {
+            downloadsStore.dispatch(DownloadUIAction.SearchBarDismissRequest)
+        }
     }
 
     if (uiState.isDeleteDialogVisible) {
         DeleteDownloadFileDialog(
             onConfirmDelete = {
                 downloadsStore.dispatch(DownloadUIAction.UpdateDeleteDialogVisibility(false))
-                onMultipleItemsDeleteClick()
+                downloadsStore.dispatch(
+                    DownloadUIAction.AddPendingDeletionSet(
+                        downloadsStore.state.mode.selectedItems.map { it.id }.toSet(),
+                    ),
+                )
+                showDeleteSnackbar(
+                    selectedItems = (downloadsStore.state.mode.selectedItems.toSet()),
+                    undoDelayProvider = undoDelayProvider,
+                    coroutineScope = coroutineScope,
+                    snackbarHostState = snackbarHostState,
+                    context = context,
+                    undoAction = {
+                        downloadsStore.dispatch(
+                            DownloadUIAction.UndoPendingDeletionSet(it),
+                        )
+                    },
+                )
+                downloadsStore.dispatch(DownloadUIAction.ExitEditMode)
             },
             onCancel = {
                 downloadsStore.dispatch(DownloadUIAction.UpdateDeleteDialogVisibility(false))
@@ -145,11 +159,13 @@ fun DownloadsScreen(
                 },
                 navigationIcon = {
                     if (!uiState.isSearchFieldVisible) {
-                        NavigationIcon(
-                            iconColorTint = toolbarConfig.iconColor,
-                            showBackIcon = uiState.mode !is Mode.Editing,
-                            onNavigationIconClick = onNavigationIconClick,
-                        )
+                        IconButton(onClick = onNavigationIconClick) {
+                            Icon(
+                                painter = painterResource(R.drawable.mozac_ic_back_24),
+                                contentDescription = stringResource(R.string.download_navigate_back_description),
+                                tint = toolbarConfig.iconColor,
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -157,7 +173,25 @@ fun DownloadsScreen(
                         ToolbarEditActions(
                             downloadsStore = downloadsStore,
                             toolbarConfig = toolbarConfig,
-                            onItemDeleteClick = onItemDeleteClick,
+                            onItemDeleteClick = { item ->
+                                downloadsStore.dispatch(
+                                    DownloadUIAction.AddPendingDeletionSet(
+                                        setOf(item.id),
+                                    ),
+                                )
+                                showDeleteSnackbar(
+                                    selectedItems = setOf(item),
+                                    undoDelayProvider = undoDelayProvider,
+                                    coroutineScope = coroutineScope,
+                                    snackbarHostState = snackbarHostState,
+                                    context = context,
+                                    undoAction = {
+                                        downloadsStore.dispatch(
+                                            DownloadUIAction.UndoPendingDeletion,
+                                        )
+                                    },
+                                )
+                            },
                         )
                     }
                 },
@@ -173,6 +207,12 @@ fun DownloadsScreen(
             }
         },
         backgroundColor = FirefoxTheme.colors.layer1,
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState = snackbarHostState,
+                modifier = Modifier.imePadding(),
+            )
+        },
     ) { paddingValues ->
         DownloadsScreenContent(
             uiState = uiState,
@@ -188,7 +228,25 @@ fun DownloadsScreen(
                     downloadsStore.dispatch(DownloadUIAction.RemoveItemForRemoval(item))
                 }
             },
-            onDeleteClick = { onItemDeleteClick(it) },
+            onDeleteClick = { item ->
+                downloadsStore.dispatch(
+                    DownloadUIAction.AddPendingDeletionSet(
+                        setOf(item.id),
+                    ),
+                )
+                showDeleteSnackbar(
+                    selectedItems = setOf(item),
+                    undoDelayProvider = undoDelayProvider,
+                    coroutineScope = coroutineScope,
+                    snackbarHostState = snackbarHostState,
+                    context = context,
+                    undoAction = {
+                        downloadsStore.dispatch(
+                            DownloadUIAction.UndoPendingDeletion,
+                        )
+                    },
+                )
+            },
             onShareUrlClick = { downloadsStore.dispatch(DownloadUIAction.ShareUrlClicked(it.url)) },
             onShareFileClick = {
                 downloadsStore.dispatch(
@@ -277,10 +335,8 @@ private fun DownloadsScreenContent(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(FirefoxTheme.colors.layer1)
-            .widthIn(max = FirefoxTheme.layout.size.containerMaxWidth)
-            .padding(paddingValues),
+            .padding(paddingValues)
+            .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (uiState.filtersToDisplay.isNotEmpty()) {
@@ -288,7 +344,7 @@ private fun DownloadsScreenContent(
                 selectedContentTypeFilter = uiState.selectedContentTypeFilter,
                 contentTypeFilters = uiState.filtersToDisplay,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .width(FirefoxTheme.layout.size.containerMaxWidth)
                     .padding(vertical = FirefoxTheme.layout.space.static200),
                 onContentTypeSelected = onContentTypeSelected,
             )
@@ -297,9 +353,7 @@ private fun DownloadsScreenContent(
         when (uiState.itemsState) {
             is DownloadUIState.ItemsState.NoItems -> EmptyState(modifier = Modifier.fillMaxSize())
             is DownloadUIState.ItemsState.NoSearchResults -> NoSearchResults(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding(),
+                modifier = Modifier.fillMaxSize(),
             )
 
             is DownloadUIState.ItemsState.Items -> DownloadsContent(
@@ -310,32 +364,9 @@ private fun DownloadsScreenContent(
                 onDeleteClick = onDeleteClick,
                 onShareUrlClick = onShareUrlClick,
                 onShareFileClick = onShareFileClick,
-                modifier = Modifier.fillMaxHeight(),
+                modifier = Modifier.fillMaxSize(),
             )
         }
-    }
-}
-
-@Composable
-private fun NavigationIcon(
-    iconColorTint: Color,
-    showBackIcon: Boolean = false,
-    onNavigationIconClick: () -> Unit,
-) {
-    IconButton(onClick = onNavigationIconClick) {
-        Icon(
-            painter = if (showBackIcon) {
-                painterResource(R.drawable.mozac_ic_back_24)
-            } else {
-                painterResource(R.drawable.mozac_ic_cross_24)
-            },
-            contentDescription = if (showBackIcon) {
-                stringResource(R.string.download_navigate_back_description)
-            } else {
-                stringResource(R.string.download_navigate_up_description)
-            },
-            tint = iconColorTint,
-        )
     }
 }
 
@@ -355,6 +386,7 @@ private fun DownloadsContent(
 
     LazyColumn(
         modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         itemsIndexed(
             items = items,
@@ -370,7 +402,9 @@ private fun DownloadsContent(
                 is HeaderItem -> {
                     HeaderListItem(
                         headerItem = listItem,
-                        modifier = Modifier.animateItem(),
+                        modifier = Modifier
+                            .animateItem()
+                            .width(FirefoxTheme.layout.size.containerMaxWidth),
                     )
                 }
 
@@ -382,8 +416,9 @@ private fun DownloadsContent(
                         onDeleteClick = onDeleteClick,
                         onShareUrlClick = onShareUrlClick,
                         onShareFileClick = onShareFileClick,
-                        modifier = modifier
+                        modifier = Modifier
                             .animateItem()
+                            .width(FirefoxTheme.layout.size.containerMaxWidth)
                             .combinedClickable(
                                 onClick = {
                                     if (mode is Mode.Normal) {
@@ -415,67 +450,6 @@ private fun DownloadsContent(
 }
 
 @Composable
-private fun FileListItem(
-    fileItem: FileItem,
-    isSelected: Boolean,
-    isMenuIconVisible: Boolean,
-    modifier: Modifier = Modifier,
-    onDeleteClick: (FileItem) -> Unit,
-    onShareUrlClick: (FileItem) -> Unit,
-    onShareFileClick: (FileItem) -> Unit,
-) {
-    SelectableListItem(
-        label = fileItem.fileName ?: fileItem.url,
-        description = fileItem.description,
-        isSelected = isSelected,
-        icon = fileItem.icon,
-        afterListAction = {
-            if (isMenuIconVisible) {
-                var menuExpanded by remember { mutableStateOf(false) }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                IconButton(
-                    onClick = { menuExpanded = true },
-                    modifier = Modifier
-                        .size(24.dp)
-                        .testTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM_MENU}.${fileItem.fileName}"),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.mozac_ic_ellipsis_vertical_24),
-                        contentDescription = stringResource(id = R.string.content_description_menu),
-                        tint = FirefoxTheme.colors.iconPrimary,
-                    )
-
-                    DropdownMenu(
-                        menuItems = listOf(
-                            MenuItem.TextItem(
-                                text = Text.Resource(R.string.download_share_url),
-                                onClick = { onShareUrlClick(fileItem) },
-                                level = MenuItem.FixedItem.Level.Default,
-                            ),
-                            MenuItem.TextItem(
-                                text = Text.Resource(R.string.download_share_file),
-                                onClick = { onShareFileClick(fileItem) },
-                                level = MenuItem.FixedItem.Level.Default,
-                            ),
-                            MenuItem.TextItem(
-                                text = Text.Resource(R.string.download_delete_item),
-                                onClick = { onDeleteClick(fileItem) },
-                                level = MenuItem.FixedItem.Level.Critical,
-                            ),
-                        ),
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                    )
-                }
-            }
-        },
-        modifier = modifier,
-    )
-}
-
-@Composable
 private fun HeaderListItem(
     headerItem: HeaderItem,
     modifier: Modifier = Modifier,
@@ -484,93 +458,6 @@ private fun HeaderListItem(
         ExpandableListHeader(
             headerText = stringResource(id = headerItem.createdTime.stringRes),
         )
-    }
-}
-
-@Composable
-private fun Filters(
-    selectedContentTypeFilter: FileItem.ContentTypeFilter,
-    contentTypeFilters: List<FileItem.ContentTypeFilter>,
-    modifier: Modifier = Modifier,
-    onContentTypeSelected: (FileItem.ContentTypeFilter) -> Unit,
-) {
-    val listState = rememberLazyListState()
-    LazyRow(
-        modifier = modifier,
-        state = listState,
-        horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
-        contentPadding = PaddingValues(horizontal = FirefoxTheme.layout.space.static200),
-    ) {
-        items(
-            items = contentTypeFilters,
-            key = { it },
-        ) { contentTypeParam ->
-            DownloadChip(
-                selected = selectedContentTypeFilter == contentTypeParam,
-                contentTypeFilter = contentTypeParam,
-                onContentTypeSelected = onContentTypeSelected,
-            )
-        }
-    }
-
-    LaunchedEffect(selectedContentTypeFilter) {
-        val selectedItemInfo =
-            listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == selectedContentTypeFilter }
-
-        if (selectedItemInfo == null || listState.isItemPartiallyVisible(selectedItemInfo)) {
-            listState.animateScrollToItem(contentTypeFilters.indexOf(selectedContentTypeFilter))
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-private fun DownloadChip(
-    selected: Boolean,
-    contentTypeFilter: FileItem.ContentTypeFilter,
-    modifier: Modifier = Modifier,
-    onContentTypeSelected: (FileItem.ContentTypeFilter) -> Unit,
-) {
-    FilterChip(
-        selected = selected,
-        onClick = { onContentTypeSelected(contentTypeFilter) },
-        shape = RoundedCornerShape(16.dp),
-        border = if (selected) {
-            null
-        } else {
-            BorderStroke(1.dp, FirefoxTheme.colors.borderPrimary)
-        },
-        colors = ChipDefaults.filterChipColors(
-            selectedBackgroundColor = FirefoxTheme.colors.layerAccentNonOpaque,
-            selectedContentColor = FirefoxTheme.colors.textPrimary,
-            backgroundColor = FirefoxTheme.colors.layer1,
-            contentColor = FirefoxTheme.colors.textPrimary,
-        ),
-        modifier = modifier.height(36.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            if (selected) {
-                // Custom content is used instead of using the `leadingIcon` parameter as the paddings
-                // are different and spec requires a specific padding between the icon and text.
-                Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_checkmark_24),
-                    contentDescription = null,
-                    tint = FirefoxTheme.colors.iconPrimary,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-            Text(
-                text = stringResource(id = contentTypeFilter.stringRes),
-                style = if (selected) {
-                    FirefoxTheme.typography.headline8
-                } else {
-                    FirefoxTheme.typography.body2
-                },
-            )
-        }
     }
 }
 
@@ -633,6 +520,42 @@ private fun getToolbarConfig(mode: Mode): ToolbarConfig {
     }
 }
 
+private fun showDeleteSnackbar(
+    selectedItems: Set<FileItem>,
+    undoDelayProvider: UndoDelayProvider,
+    coroutineScope: CoroutineScope,
+    snackbarHostState: AcornSnackbarHostState,
+    context: Context,
+    undoAction: (Set<String>) -> Unit,
+) {
+    coroutineScope.launch {
+        snackbarHostState.showSnackbar(
+            snackbarState = SnackbarState(
+                message = getDeleteSnackBarMessage(selectedItems, context),
+                duration = SnackbarState.Duration.Custom(undoDelayProvider.undoDelay.toInt()),
+                action = Action(
+                    label = context.getString(R.string.download_undo_delete_snackbar_action),
+                    onClick = {
+                        val itemIds = selectedItems.mapTo(mutableSetOf()) { it.id }
+                        undoAction.invoke(itemIds)
+                    },
+                ),
+            ),
+        )
+    }
+}
+
+private fun getDeleteSnackBarMessage(fileItems: Set<FileItem>, context: Context): String {
+    return if (fileItems.size > 1) {
+        context.getString(R.string.download_delete_multiple_items_snackbar_2, fileItems.size)
+    } else {
+        context.getString(
+            R.string.download_delete_single_item_snackbar_2,
+            fileItems.first().fileName,
+        )
+    }
+}
+
 private class DownloadsScreenPreviewModelParameterProvider :
     PreviewParameterProvider<DownloadUIState> {
     override val values: Sequence<DownloadUIState>
@@ -678,6 +601,24 @@ private class DownloadsScreenPreviewModelParameterProvider :
                 pendingDeletionIds = emptySet(),
                 userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
             ),
+            DownloadUIState(
+                items = List(size = 20) { index ->
+                    FileItem(
+                        id = "$index",
+                        fileName = "File $index",
+                        url = "https://example.com/file$index",
+                        formattedSize = "1.2 MB",
+                        displayedShortUrl = "example.com",
+                        contentType = "application/zip",
+                        status = DownloadState.Status.COMPLETED,
+                        filePath = "/path/to/file1",
+                        createdTime = CreatedTime.TODAY,
+                    )
+                },
+                mode = Mode.Normal,
+                pendingDeletionIds = emptySet(),
+                userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
+            ),
         )
 }
 
@@ -686,13 +627,17 @@ private class DownloadsScreenPreviewModelParameterProvider :
 private fun DownloadsScreenPreviews(
     @PreviewParameter(DownloadsScreenPreviewModelParameterProvider::class) state: DownloadUIState,
 ) {
-    val store = remember { DownloadUIStore(initialState = state) }
+    val downloadsStore = remember { DownloadUIStore(initialState = state) }
+    val undoDelayProvider = object : UndoDelayProvider {
+        override val undoDelay: Long = 3000L
+    }
     val snackbarHostState = remember { AcornSnackbarHostState() }
     val scope = rememberCoroutineScope()
     FirefoxTheme {
         Box {
             DownloadsScreen(
-                downloadsStore = store,
+                downloadsStore = downloadsStore,
+                undoDelayProvider = undoDelayProvider,
                 onItemClick = {
                     scope.launch {
                         snackbarHostState.showSnackbar(
@@ -700,19 +645,13 @@ private fun DownloadsScreenPreviews(
                         )
                     }
                 },
-                onMultipleItemsDeleteClick = {},
-                onItemDeleteClick = {
-                    store.dispatch(DownloadUIAction.UpdateFileItems(store.state.items - it))
+                onNavigationIconClick = {
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            SnackbarState(
-                                message = "Item ${it.fileName} deleted",
-                                type = SnackbarState.Type.Warning,
-                            ),
+                            SnackbarState(message = "Navigation Icon clicked"),
                         )
                     }
                 },
-                onNavigationIconClick = {},
             )
             SnackbarHost(
                 snackbarHostState = snackbarHostState,

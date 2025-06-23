@@ -3,9 +3,6 @@
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
-const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
-);
 
 let rsClient;
 
@@ -22,7 +19,7 @@ add_setup(async function () {
   });
 
   await ExperimentAPI.ready();
-  await RemoteSettingsExperimentLoader.finishedUpdating();
+  await ExperimentAPI._rsLoader.finishedUpdating();
 
   registerCleanupFunction(async () => {
     await SpecialPowers.popPrefEnv();
@@ -33,37 +30,22 @@ add_setup(async function () {
 add_task(async function test_experimentEnrollment() {
   // Need to randomize the slug so subsequent test runs don't skip enrollment
   // due to a conflicting slug
-  const recipe = ExperimentFakes.recipe("foo" + Math.random(), {
-    bucketConfig: {
-      start: 0,
-      // Make sure the experiment enrolls
-      count: 10000,
-      total: 10000,
-      namespace: "mochitest",
-      randomizationUnit: "normandy_id",
-    },
-  });
+  const recipe = NimbusTestUtils.factories.recipe("foo" + Math.random());
   await rsClient.db.importChanges({}, Date.now(), [recipe], {
     clear: true,
   });
 
-  await RemoteSettingsExperimentLoader.updateRecipes("mochitest");
+  await ExperimentAPI._rsLoader.updateRecipes("mochitest");
 
-  let experiment = ExperimentAPI.getExperimentMetaData({
-    slug: recipe.slug,
-  });
+  let meta = NimbusFeatures.testFeature.getEnrollmentMetadata();
+  Assert.equal(meta.slug, recipe.slug, "Enrollment active");
 
-  Assert.ok(experiment.active, "Should be enrolled in the experiment");
+  await ExperimentAPI.manager.unenroll(recipe.slug);
 
-  ExperimentManager.unenroll(recipe.slug);
+  meta = NimbusFeatures.testFeature.getEnrollmentMetadata();
+  Assert.ok(!meta, "Experiment is no longer active");
 
-  experiment = ExperimentAPI.getExperimentMetaData({
-    slug: recipe.slug,
-  });
-
-  Assert.ok(!experiment.active, "Experiment is no longer active");
-
-  assertEmptyStore(ExperimentManager.store);
+  await NimbusTestUtils.removeStore(ExperimentAPI.manager.store);
 });
 
 add_task(async function test_experimentEnrollment_startup() {
@@ -73,11 +55,11 @@ add_task(async function test_experimentEnrollment_startup() {
     set: [["app.shield.optoutstudies.enabled", false]],
   });
 
-  Assert.ok(!RemoteSettingsExperimentLoader._enabled, "Should be disabled");
+  Assert.ok(!ExperimentAPI._rsLoader._enabled, "Should be disabled");
 
   await SpecialPowers.pushPrefEnv({
     set: [["app.shield.optoutstudies.enabled", true]],
   });
 
-  Assert.ok(RemoteSettingsExperimentLoader._enabled, "Should be enabled");
+  Assert.ok(ExperimentAPI._rsLoader._enabled, "Should be enabled");
 });

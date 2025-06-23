@@ -497,6 +497,13 @@ features:
           set to true.
         type: Boolean
         default: true
+    defaults:
+      - channel: nightly
+        value:
+          disabled: false
+      - channel: developer
+        value:
+          disabled: false
 
   fission:
     description: The feature that controls whether fission is enabled or not in Gecko.
@@ -698,6 +705,15 @@ features:
         type: Boolean
         default: false
 
+  homepage-as-new-tab:
+    description: Enables homepage as a a new tab.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable homepage as a new tab
+        type: Boolean
+        default: false
+
   homepage-search-bar:
     description: Enables the homepage search bar.
     variables:
@@ -774,8 +790,8 @@ features:
       postQuantumKeyExchangeEnabled:
         description: >
           Toggles the security.tls.enable_kyber and network.http.http3.enable_kyber preferences.
-        type: Boolean
-        default: false
+        type: Option<Boolean>
+        default: null
 
   javascript:
     description: Enables Javascript Engine (Spidermonkey) features
@@ -804,7 +820,61 @@ features:
         description: >
           Uses search configuration from remote servers .
         type: Boolean
+        default: true
+  same-document-navigation-overrides-load-type:
+    description: Control whether the same document navigation overrides the load type.
+    variables:
+      enabled:
+        description: >
+          Overrides the loadType when it is a same document navigation
+        type: Boolean
+        default: true
+      force-disable-uri:
+        description: >
+          Disable overriding the loadType during same document navigation on the domain specified by this URI.
+        type: String
+        default: ""
+    defaults:
+      - channel: nightly
+        value:
+          enabled: false
+          force-disable-uri: ""
+      - channel: developer
+        value:
+          enabled: false
+          force-disable-uri: ""
+  doh:
+    description: Feature controlling DNS over HTTPS (DoH).
+    variables:
+      show-ui:
+        description: >
+          When `true`, include DoH settings in the settings UI.
+        type: Boolean
         default: false
+      autoselect-enabled:
+        description: >
+          Controls the network.android_doh.autoselect_enabled pref and automatically chooses a DoH provider when Default Protection mode is selected.
+        type: Boolean
+        default: false
+
+  private-browsing-lock:
+    description: Allows enabling and disabling the private browsing mode lock via an authentication screen.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable private browsing mode lock.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: nightly
+        value:
+          enabled: true
+      - channel: beta
+        value:
+          enabled: true
+      - channel: developer
+        value:
+          enabled: true
 
 types:
   objects: {}

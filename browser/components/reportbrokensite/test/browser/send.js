@@ -300,9 +300,9 @@ async function testSend(tab, menu, expectedOverrides = {}) {
     rbs.chooseReason(breakageCategory);
   }
 
-  const pingCheck = new Promise(resolve => {
-    Services.fog.testResetFOG();
-    GleanPings.brokenSiteReport.testBeforeNextSubmit(() => {
+  Services.fog.testResetFOG();
+  await GleanPings.brokenSiteReport.testSubmission(
+    () => {
       const ping = extractBrokenSiteReportFromGleanPing(Glean);
 
       // sanity checks
@@ -321,12 +321,10 @@ async function testSend(tab, menu, expectedOverrides = {}) {
       filterFrameworkDetectorFails(ping.tabInfo, expected.tabInfo);
 
       ok(areObjectsEqual(ping, expected), "ping matches expectations");
-      resolve();
-    });
-  });
+    },
+    () => rbs.clickSend()
+  );
 
-  await rbs.clickSend();
-  await pingCheck;
   await rbs.clickOkay();
 
   // re-opening the panel, the url and description should be reset

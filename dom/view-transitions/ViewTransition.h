@@ -58,6 +58,7 @@ class ViewTransitionUpdateCallback;
 enum class SkipTransitionReason : uint8_t {
   JS,
   DocumentHidden,
+  RootRemoved,
   ClobberedActiveTransition,
   Timeout,
   UpdateCallbackRejected,
@@ -91,7 +92,15 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   void SkipTransition(SkipTransitionReason = SkipTransitionReason::JS);
   MOZ_CAN_RUN_SCRIPT void PerformPendingOperations();
 
-  Element* GetRoot() const { return mViewTransitionRoot; }
+  // Get the snapshot containing block, which is the top-layer for rendering the
+  // view transition tree.
+  Element* GetSnapshotContainingBlock() const {
+    return mSnapshotContainingBlock;
+  }
+  // Get ::view-transition pseudo element, which is the view transition tree
+  // root. We find the pseudo element of this tree from this node.
+  Element* GetViewTransitionTreeRoot() const;
+
   Maybe<nsSize> GetOldSize(nsAtom* aName) const;
   Maybe<nsSize> GetNewSize(nsAtom* aName) const;
   const wr::ImageKey* GetOldImageKey(nsAtom* aName,
@@ -110,7 +119,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
       u"-ua-view-transition-group-anim-"_ns;
 
   [[nodiscard]] bool GetGroupKeyframes(nsAtom* aAnimationName,
-                                       nsTArray<Keyframe>&) const;
+                                       const StyleComputedTimingFunction&,
+                                       nsTArray<Keyframe>&);
 
   nsIGlobalObject* GetParentObject() const;
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
@@ -127,8 +137,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   void ClearActiveTransition(bool aIsDocumentHidden);
   void Timeout();
   MOZ_CAN_RUN_SCRIPT void Setup();
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT
-  Maybe<SkipTransitionReason> CaptureOldState();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Maybe<SkipTransitionReason>
+  CaptureOldState();
   [[nodiscard]] Maybe<SkipTransitionReason> CaptureNewState();
   void SetupTransitionPseudoElements();
   [[nodiscard]] bool UpdatePseudoElementStyles(bool aNeedsInvalidation);
@@ -164,7 +174,11 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   RefPtr<nsITimer> mTimeoutTimer;
 
   Phase mPhase = Phase::PendingCapture;
-  RefPtr<Element> mViewTransitionRoot;
+  // The wrapper of the pseudo-elements tree, to make sure it is always
+  // out-of-flow. This is the top-layer for rendering the view transition tree.
+  // So in general, its child (and only one) is the transition root
+  // pseudo-element.
+  RefPtr<Element> mSnapshotContainingBlock;
 };
 
 }  // namespace dom

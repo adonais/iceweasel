@@ -40,8 +40,8 @@ You can see a list of the available linters by running:
     ./mach lint --list
 
 Finally, ``mozlint`` can lint the files touched by outgoing revisions or the working directory using
-the ``-o/--outgoing`` and ``-w/--workdir`` arguments respectively. These work both with mercurial and
-git. In the case of ``--outgoing``, the default remote repository the changes would be pushed to is
+the ``-o/--outgoing`` and ``-w/--workdir`` arguments respectively.
+In the case of ``--outgoing``, the default remote repository the changes would be pushed to is
 used as the comparison. If desired, a remote can be specified manually. In git, you may only want to
 lint staged commits from the working directory, this can be accomplished with ``--workdir=staged``.
 Examples:
@@ -85,25 +85,11 @@ VCS Integrations
 
 .. _lint-vcs-hook:
 
-Using a Git or Mercurial Hook
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using a Git Hook
+~~~~~~~~~~~~~~~~
 
 There are also both pre-commit and pre-push version control hooks that work in
-either hg or git. To enable a pre-push hg hook, add the following to hgrc:
-
-.. code-block:: ini
-
-    [hooks]
-    pre-push.lint = python:./tools/lint/hooks.py:hg
-
-
-To enable a pre-commit hg hook, add the following to hgrc:
-
-.. code-block:: ini
-
-    [hooks]
-    pretxncommit.lint = python:./tools/lint/hooks.py:hg
-
+git.
 
 To enable a pre-push git hook, run the following command:
 

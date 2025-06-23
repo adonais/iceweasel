@@ -34,9 +34,7 @@ class ProviderHistoryUrlHeuristic extends UrlbarProvider {
   }
 
   /**
-   * Returns the type of this provider.
-   *
-   * @returns {integer} one of the types from UrlbarUtils.PROVIDER_TYPE.*
+   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
    */
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
@@ -48,9 +46,8 @@ class ProviderHistoryUrlHeuristic extends UrlbarProvider {
    * with this provider, to save on resources.
    *
    * @param {UrlbarQueryContext} queryContext The query context object
-   * @returns {boolean} Whether this provider should be invoked for the search.
    */
-  isActive(queryContext) {
+  async isActive(queryContext) {
     // For better performance, this provider tries to return a result only when
     // the input value can become a URL of the http(s) protocol and its length
     // is less than `MAX_TEXT_LENGTH`. That way its SQL query avoids calling

@@ -207,6 +207,7 @@ mobile/android/focus-android/gradle/wrapper/
 mobile/android/focus-android/quality/detekt-baseline.xml
 mobile/locales/l10n-changesets.json
 mobile/locales/l10n-onchange-changesets.json
+docs/mots/index.rst
 node_modules/
 python/mozperftest/mozperftest/tests/data/
 security/manager/tools/KnownRootHashes.json
@@ -219,9 +220,11 @@ toolkit/components/pdfjs/PdfJsDefaultPrefs.js
 toolkit/components/pdfjs/PdfJsOverridePrefs.js
 toolkit/components/uniffi-js/GeneratedScaffolding.cpp
 toolkit/components/uniffi-bindgen-gecko-js/fixtures/generated
-tools/@types/tspaths.json
+tools/@types/generated/
+tools/@types/subs/
 tools/browsertime/package.json
 tools/browsertime/package-lock.json
 tools/ts/error_list.json
+tools/ts/test/baselines/
 try_task_config.json
 xpcom/idl-parser/xpidl/fixtures/xpctest.d.json

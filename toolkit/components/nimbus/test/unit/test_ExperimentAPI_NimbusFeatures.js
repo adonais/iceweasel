@@ -5,13 +5,16 @@ const { JsonSchema } = ChromeUtils.importESModule(
 );
 
 ChromeUtils.defineLazyGetter(this, "fetchSchema", () => {
-  return fetch("resource://nimbus/schemas/NimbusEnrollment.schema.json", {
-    credentials: "omit",
-  }).then(rsp => rsp.json());
+  return fetch(
+    "resource://testing-common/nimbus/schemas/NimbusEnrollment.schema.json",
+    {
+      credentials: "omit",
+    }
+  ).then(rsp => rsp.json());
 });
 
-const NON_MATCHING_ROLLOUT = Object.freeze(
-  ExperimentFakes.rollout("non-matching-rollout", {
+const MATCHING_ROLLOUT = Object.freeze(
+  NimbusTestUtils.factories.rollout("matching-rollout", {
     branch: {
       slug: "slug",
       ratio: 1,
@@ -24,18 +27,10 @@ const NON_MATCHING_ROLLOUT = Object.freeze(
     },
   })
 );
-const MATCHING_ROLLOUT = Object.freeze(
-  ExperimentFakes.rollout("matching-rollout", {
-    branch: {
-      slug: "slug",
-      ratio: 1,
-      features: [
-        {
-          featureId: "aboutwelcome",
-          value: { enabled: false },
-        },
-      ],
-    },
+const MATCHING_ROLLOUT_RECIPE = Object.freeze(
+  NimbusTestUtils.factories.recipe(MATCHING_ROLLOUT.slug, {
+    branches: [MATCHING_ROLLOUT.branch],
+    isRollout: true,
   })
 );
 
@@ -78,10 +73,6 @@ add_task(async function validSchema() {
   });
 
   {
-    const result = validator.validate(NON_MATCHING_ROLLOUT);
-    Assert.ok(result.valid, JSON.stringify(result.errors, undefined, 2));
-  }
-  {
     const result = validator.validate(MATCHING_ROLLOUT);
     Assert.ok(result.valid, JSON.stringify(result.errors, undefined, 2));
   }
@@ -93,13 +84,13 @@ add_task(async function readyCallAfterStore_with_remote_value() {
 
   Assert.ok(feature.getVariable("enabled"), "Feature is true by default");
 
-  await manager.store.addEnrollment(MATCHING_ROLLOUT);
+  await manager.enroll(MATCHING_ROLLOUT_RECIPE, "test");
 
   Assert.ok(!feature.getVariable("enabled"), "Loads value from store");
 
-  manager.unenroll(MATCHING_ROLLOUT.slug);
+  await manager.unenroll(MATCHING_ROLLOUT.slug);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function has_sync_value_before_ready() {
@@ -133,7 +124,7 @@ add_task(async function has_sync_value_before_ready() {
     "nimbus.syncdefaultsstore.aboutwelcome.remoteValue"
   );
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function update_remote_defaults_onUpdate() {
@@ -143,15 +134,15 @@ add_task(async function update_remote_defaults_onUpdate() {
 
   feature.onUpdate(stub);
 
-  await manager.store.addEnrollment(MATCHING_ROLLOUT);
+  await manager.enroll(MATCHING_ROLLOUT_RECIPE, "test");
 
   Assert.ok(stub.called, "update event called");
   Assert.equal(stub.callCount, 1, "Called once for remote configs");
   Assert.equal(stub.firstCall.args[1], "rollout-updated", "Correct reason");
 
-  manager.unenroll(MATCHING_ROLLOUT.slug);
+  await manager.unenroll(MATCHING_ROLLOUT.slug);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function update_remote_defaults_readyPromise() {
@@ -161,7 +152,7 @@ add_task(async function update_remote_defaults_readyPromise() {
 
   feature.onUpdate(stub);
 
-  await manager.store.addEnrollment(MATCHING_ROLLOUT);
+  await manager.enroll(MATCHING_ROLLOUT_RECIPE, "test");
 
   Assert.ok(stub.calledOnce, "Update called after enrollment processed.");
   Assert.ok(
@@ -169,9 +160,9 @@ add_task(async function update_remote_defaults_readyPromise() {
     "Update called after enrollment processed."
   );
 
-  manager.unenroll(MATCHING_ROLLOUT.slug);
+  await manager.unenroll(MATCHING_ROLLOUT.slug);
 
-  cleanup();
+  await cleanup();
 });
 
 add_task(async function update_remote_defaults_enabled() {
@@ -184,15 +175,15 @@ add_task(async function update_remote_defaults_enabled() {
     "Feature is enabled by manifest.variables.enabled"
   );
 
-  await manager.store.addEnrollment(NON_MATCHING_ROLLOUT);
+  await manager.enroll(MATCHING_ROLLOUT_RECIPE, "test");
 
   Assert.ok(
     !feature.getVariable("enabled"),
     "Feature is disabled by remote configuration"
   );
 
-  manager.unenroll(NON_MATCHING_ROLLOUT.slug);
-  cleanup();
+  await manager.unenroll(MATCHING_ROLLOUT.slug);
+  await cleanup();
 });
 
 // If the branch data returned from the store is not modified
@@ -214,5 +205,5 @@ add_task(async function test_getVariable_no_mutation() {
 
   Assert.ok(feature.getVariable("mochitest"), "Got back the expected feature");
 
-  cleanup();
+  await cleanup();
 });

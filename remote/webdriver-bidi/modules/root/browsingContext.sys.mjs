@@ -198,6 +198,10 @@ class BrowsingContextModule extends RootBiDiModule {
       "fragment-navigated",
       this.#onFragmentNavigated
     );
+    this.#navigationListener.on(
+      "navigation-committed",
+      this.#onNavigationCommitted
+    );
     this.#navigationListener.on("navigation-failed", this.#onNavigationFailed);
     this.#navigationListener.on(
       "navigation-started",
@@ -224,6 +228,10 @@ class BrowsingContextModule extends RootBiDiModule {
     this.#navigationListener.off(
       "fragment-navigated",
       this.#onFragmentNavigated
+    );
+    this.#navigationListener.off(
+      "navigation-committed",
+      this.#onNavigationCommitted
     );
     this.#navigationListener.off("navigation-failed", this.#onNavigationFailed);
     this.#navigationListener.off(
@@ -732,6 +740,8 @@ class BrowsingContextModule extends RootBiDiModule {
    * @property {Array<BrowsingContextInfo>=} children
    *     List of child browsing contexts. Only set if maxDepth hasn't been
    *     reached yet.
+   * @property {string} clientWindow
+   *     The id of the window the browsing context belongs to.
    */
 
   /**
@@ -1110,6 +1120,7 @@ class BrowsingContextModule extends RootBiDiModule {
    *     Url for the navigation.
    * @param {WaitCondition=} options.wait
    *     Wait condition for the navigation, one of "none", "interactive", "complete".
+   *     Defaults to "none".
    *
    * @returns {BrowsingContextNavigateResult}
    *     Navigation result.
@@ -1348,6 +1359,7 @@ class BrowsingContextModule extends RootBiDiModule {
    *     If true ignore the browser cache. [Not yet supported]
    * @param {WaitCondition=} options.wait
    *     Wait condition for the navigation, one of "none", "interactive", "complete".
+   *     Defaults to "none".
    *
    * @returns {BrowsingContextNavigateResult}
    *     Navigation result.
@@ -1426,13 +1438,6 @@ class BrowsingContextModule extends RootBiDiModule {
       viewport,
       userContexts: userContextIds = null,
     } = options;
-
-    if (lazy.AppInfo.isAndroid) {
-      // Bug 1840084: Add Android support for modifying the viewport.
-      throw new lazy.error.UnsupportedOperationError(
-        `Command not yet supported for ${lazy.AppInfo.name}`
-      );
-    }
 
     const userContexts = new Set();
 
@@ -1519,6 +1524,13 @@ class BrowsingContextModule extends RootBiDiModule {
       );
 
       navigables.add(navigable);
+    }
+
+    if (lazy.AppInfo.isAndroid) {
+      // Bug 1840084: Add Android support for modifying the viewport.
+      throw new lazy.error.UnsupportedOperationError(
+        `Command not yet supported for ${lazy.AppInfo.name}`
+      );
     }
 
     const viewportOverride = {
@@ -1749,6 +1761,48 @@ class BrowsingContextModule extends RootBiDiModule {
   }
 
   /**
+   * Wrapper around RootBiDiModule._emitEventForBrowsingContext to additionally
+   * check that the payload of the event contains a valid `context` id.
+   *
+   * All browsingContext module events should have such a property set, and a
+   * missing id usually indicates that the browsing context which triggered the
+   * event is out of scope for the current WebDriver BiDi session (eg. chrome or
+   * webextension).
+   *
+   * @param {string} browsingContextId
+   *     The ID of the browsing context to which the event should be emitted.
+   * @param {string} eventName
+   *     The name of the event to be emitted.
+   * @param {object} eventPayload
+   *     The payload to be sent with the event.
+   * @param {number|string} eventPayload.context
+   *     A unique context id computed by the TabManager.
+   */
+  #emitContextEventForBrowsingContext(
+    browsingContextId,
+    eventName,
+    eventPayload
+  ) {
+    // All browsingContext events should include a context id in the payload.
+    const { context = null } = eventPayload;
+    if (context === null) {
+      // If the context could not be found by the TabManager, the event is most
+      // likely related to an unsupported context: eg chrome (bug 1722679) or
+      // webextension (bug 1755014).
+      lazy.logger.trace(
+        `[${browsingContextId}] Skipping event ${eventName} because of a missing unique context id`
+      );
+      return;
+    }
+
+    this._emitEventForBrowsingContext(
+      browsingContextId,
+      eventName,
+      eventPayload
+    );
+  }
+
+  /**
    * Retrieves a browsing context based on its id.
    *
    * @param {number} contextId
@@ -1818,14 +1872,9 @@ class BrowsingContextModule extends RootBiDiModule {
       originalOpener: originalOpener === undefined ? null : originalOpener,
       url: context.currentURI.spec,
       userContext,
+      clientWindow: lazy.windowManager.getIdForBrowsingContext(context),
     };
 
-    const window = context.top.embedderElement?.ownerGlobal;
-    // TODO: Bug 1953743. Remove the check when "clientWindow" property can
-    // be set in all the cases.
-    if (window) {
-      contextInfo.clientWindow = lazy.windowManager.getIdForWindow(window);
-    }
     if (includeParentId) {
       // Only emit the parent id for the top-most browsing context.
       const parentId = lazy.TabManager.getIdForBrowsingContext(context.parent);
@@ -1854,6 +1903,12 @@ class BrowsingContextModule extends RootBiDiModule {
         return;
       }
 
+      // Filter out notifications for webextension contexts until support gets
+      // added (bug 1755014).
+      if (browsingContext.currentRemoteType === "extension") {
+        return;
+      }
+
       const browsingContextInfo = this.#getBrowsingContextInfo(
         browsingContext,
         {
@@ -1861,7 +1916,7 @@ class BrowsingContextModule extends RootBiDiModule {
         }
       );
 
-      this._emitEventForBrowsingContext(
+      this.#emitContextEventForBrowsingContext(
         browsingContext.id,
         "browsingContext.contextCreated",
         browsingContextInfo
@@ -1888,6 +1943,12 @@ class BrowsingContextModule extends RootBiDiModule {
         return;
       }
 
+      // Filter out notifications for webextension contexts until support gets
+      // added (bug 1755014).
+      if (browsingContext.currentRemoteType === "extension") {
+        return;
+      }
+
       // If this event is for a child context whose top or parent context is also destroyed,
       // we don't need to send it, in this case the event for the top/parent context is enough.
       if (
@@ -1899,7 +1960,7 @@ class BrowsingContextModule extends RootBiDiModule {
 
       const browsingContextInfo = this.#getBrowsingContextInfo(browsingContext);
 
-      this._emitEventForBrowsingContext(
+      this.#emitContextEventForBrowsingContext(
         browsingContext.id,
         "browsingContext.contextDestroyed",
         browsingContextInfo
@@ -1918,7 +1979,7 @@ class BrowsingContextModule extends RootBiDiModule {
         timestamp: Date.now(),
         url,
       };
-      this._emitEventForBrowsingContext(
+      this.#emitContextEventForBrowsingContext(
         context.id,
         "browsingContext.fragmentNavigated",
         browsingContextInfo
@@ -1941,7 +2002,7 @@ class BrowsingContextModule extends RootBiDiModule {
         type: detail.promptType,
         userText: detail.userText,
       };
-      this._emitEventForBrowsingContext(
+      this.#emitContextEventForBrowsingContext(
         contentBrowser.browsingContext.id,
         "browsingContext.userPromptClosed",
         params
@@ -1978,9 +2039,27 @@ class BrowsingContextModule extends RootBiDiModule {
         eventPayload.defaultValue = await prompt.getInputText();
       }
 
-      this._emitEventForBrowsingContext(
+      this.#emitContextEventForBrowsingContext(
         contentBrowser.browsingContext.id,
         "browsingContext.userPromptOpened",
+        eventPayload
+      );
+    }
+  };
+
+  #onNavigationCommitted = async (eventName, data) => {
+    const { navigableId, navigationId, url, contextId } = data;
+
+    if (this.#subscribedEvents.has("browsingContext.navigationCommitted")) {
+      const eventPayload = {
+        context: navigableId,
+        navigation: navigationId,
+        timestamp: Date.now(),
+        url,
+      };
+      this.#emitContextEventForBrowsingContext(
+        contextId,
+        "browsingContext.navigationCommitted",
         eventPayload
       );
     }
@@ -1996,7 +2075,7 @@ class BrowsingContextModule extends RootBiDiModule {
         timestamp: Date.now(),
         url,
       };
-      this._emitEventForBrowsingContext(
+      this.#emitContextEventForBrowsingContext(
         contextId,
         "browsingContext.navigationFailed",
         eventPayload
@@ -2015,7 +2094,7 @@ class BrowsingContextModule extends RootBiDiModule {
         timestamp: Date.now(),
         url,
       };
-      this._emitEventForBrowsingContext(
+      this.#emitContextEventForBrowsingContext(
         context.id,
         "browsingContext.navigationStarted",
         eventPayload
@@ -2078,6 +2157,7 @@ class BrowsingContextModule extends RootBiDiModule {
         break;
       }
       case "browsingContext.fragmentNavigated":
+      case "browsingContext.navigationCommitted":
       case "browsingContext.navigationFailed":
       case "browsingContext.navigationStarted": {
         this.#navigationListener.startListening();
@@ -2101,6 +2181,7 @@ class BrowsingContextModule extends RootBiDiModule {
         break;
       }
       case "browsingContext.fragmentNavigated":
+      case "browsingContext.navigationCommitted":
       case "browsingContext.navigationFailed":
       case "browsingContext.navigationStarted": {
         this.#stopListeningToNavigationEvent(event);
@@ -2229,6 +2310,7 @@ class BrowsingContextModule extends RootBiDiModule {
       "browsingContext.domContentLoaded",
       "browsingContext.fragmentNavigated",
       "browsingContext.load",
+      "browsingContext.navigationCommitted",
       "browsingContext.navigationFailed",
       "browsingContext.navigationStarted",
       "browsingContext.userPromptClosed",

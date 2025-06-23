@@ -17,6 +17,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
+ * @typedef {import("../translations").LanguagePair} LanguagePair
+ * @typedef {import("../translations").TranslationsEnginePayload} TranslationsEnginePayload
+ */
+
+/**
  * The engine child is responsible for exposing privileged code to the un-privileged
  * space the engine runs in.
  */
@@ -29,8 +34,14 @@ export class TranslationsEngineChild extends JSProcessActorChild {
    */
   #resolveForceShutdown = null;
 
+  #isDestroyed = false;
+
   // eslint-disable-next-line consistent-return
   async receiveMessage({ name, data }) {
+    if (this.#isDestroyed) {
+      return undefined;
+    }
+
     switch (name) {
       case "TranslationsEngine:StartTranslation": {
         const { languagePair, innerWindowId, port } = data;
@@ -59,20 +70,22 @@ export class TranslationsEngineChild extends JSProcessActorChild {
           this.#resolveForceShutdown = resolve;
         });
       }
-      default:
+      default: {
         console.error("Unknown message received", name);
+      }
     }
   }
 
   /**
    * @param {object} options
    * @param {number?} options.startTime
+   * @param {string?} options.type
    * @param {string} options.message
    * @param {number} options.innerWindowId
    */
-  TE_addProfilerMarker({ startTime, message, innerWindowId }) {
+  TE_addProfilerMarker({ startTime, type, message, innerWindowId }) {
     ChromeUtils.addProfilerMarker(
-      "TranslationsEngine",
+      type ? `TranslationsEngine ${type}` : "TranslationsEngine",
       { startTime, innerWindowId },
       message
     );
@@ -128,6 +141,10 @@ export class TranslationsEngineChild extends JSProcessActorChild {
     totalTranslatedWords,
     totalCompletedRequests,
   }) {
+    if (this.#isDestroyed) {
+      return;
+    }
+
     this.sendAsyncMessage("TranslationsEngine:ReportEnginePerformance", {
       sourceLanguage,
       targetLanguage,
@@ -139,8 +156,14 @@ export class TranslationsEngineChild extends JSProcessActorChild {
 
   /**
    * @param {LanguagePair} languagePair
+   *
+   * @returns {Promise<TranslationsEnginePayload> | undefined}
    */
   TE_requestEnginePayload(languagePair) {
+    if (this.#isDestroyed) {
+      return undefined;
+    }
+
     return this.sendQuery("TranslationsEngine:RequestEnginePayload", {
       languagePair,
     });
@@ -151,6 +174,10 @@ export class TranslationsEngineChild extends JSProcessActorChild {
    * @param {"ready" | "error"} status
    */
   TE_reportEngineStatus(innerWindowId, status) {
+    if (this.#isDestroyed) {
+      return;
+    }
+
     this.sendAsyncMessage("TranslationsEngine:ReportEngineStatus", {
       innerWindowId,
       status,
@@ -161,6 +188,14 @@ export class TranslationsEngineChild extends JSProcessActorChild {
    * No engines are still alive, signal that the process can be destroyed.
    */
   TE_destroyEngineProcess() {
+    if (this.#isDestroyed) {
+      return;
+    }
+
     this.sendAsyncMessage("TranslationsEngine:DestroyEngineProcess");
+  }
+
+  didDestroy() {
+    this.#isDestroyed = true;
   }
 }

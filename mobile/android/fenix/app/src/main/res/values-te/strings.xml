@@ -48,10 +48,8 @@
     Explanation for private browsing displayed to users on home view when they first enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="private_browsing_placeholder_description_2">మీరు  అంతరంగిక ట్యాబులను మూసివేసినప్పుడు లేదా అనువర్తనం నుండి నిష్క్రమించినప్పుడు  మీ వెతుకుడు, విహరణ చరిత్రను %1$s తుడిచివేస్తుంది. ఇది మిమ్మల్ని వెబ్‌సైట్లకు లేదా మీ ఇంటర్నెట్ సర్వీస్ ప్రొవైడర్‌కు అనామకంగా చేయనప్పటికీ, ఈ పరికరాన్ని వాడే ఇతరుల నుండి మీ  ఆన్‌లైన్ కార్యకలాపాన్ని అంతరంగికంగా ఉంచుకోవడంలో తోడ్పడుతుంది.</string>
+  <string name="private_browsing_placeholder_description_2">మీరు అంతరంగిక ట్యాబులను మూసివేసినప్పుడు లేదా అనువర్తనం నుండి నిష్క్రమించినప్పుడు మీ వెతుకుడు, విహరణ చరిత్రను %1$s తుడిచివేస్తుంది. ఇది మిమ్మల్ని వెబ్‌సైట్లకు లేదా మీ ఇంటర్నెట్ సర్వీస్ ప్రొవైడర్‌కు అనామకంగా చేయనప్పటికీ, ఈ పరికరాన్ని వాడే ఇతరుల నుండి మీ ఆన్‌లైన్ కార్యకలాపాన్ని అంతరంగికంగా ఉంచుకోవడంలో తోడ్పడుతుంది.</string>
   <string name="private_browsing_common_myths">అంతరంగిక విహారణ గురించి సామాన్య అపోహలు</string>
-  <!-- Text for the negative button to decline adding a Private Browsing shortcut to the Home screen -->
-  <string name="cfr_neg_button_text" moz:removedIn="138" tools:ignore="UnusedResources">ఫరవాలేదు వద్దు</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">అమరికలకు వెళ్లు</string>
   <!-- Text for the negative action button -->
@@ -114,7 +112,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">పొడగింతలు</string>
   <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more">ఇంకా తెలుసుకోండి</string>
+  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">ఇంకా తెలుసుకోండి</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">ఖాతా సమాచారం</string>
   <!-- Browser menu button that sends a user to help articles -->
@@ -172,7 +170,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site">డెస్క్‌టాప్ సైటుకి మారండి</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools">పనిముట్లు</string>
+  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">పనిముట్లు</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
   <string name="browser_main_menu_content_description_help_button">సహాయం</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
@@ -181,7 +179,7 @@
     Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
     bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
   -->
-  <string name="browser_menu_save">భద్రపరుచు</string>
+  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">భద్రపరుచు</string>
   <!--
     Browser Toolbar
 
@@ -215,9 +213,9 @@
   <!-- Menu option in the search selector menu to open the search settings -->
   <string name="search_settings_menu_item">వెతుకుడు అమరికలు</string>
   <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button">మొదలుపెట్టండి</string>
+  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">మొదలుపెట్టండి</string>
   <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button">దాటవేయి</string>
+  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">దాటవేయి</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">మూసివేయి</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -463,7 +461,7 @@
 
     Instructions on how to access pairing
   -->
-  <string name="pair_instructions_2">&lt;b&gt;firefox.com/pair&lt;/b&gt; వద్దం చూపించే QR కోడునును స్కాన్ చేయండి</string>
+  <string name="pair_instructions_2"><![CDATA[<b>firefox.com/pair</b> వద్దం చూపించే QR కోడునును స్కాన్ చేయండి]]></string>
   <!--
     Toolbar Preferences
 
@@ -671,22 +669,10 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ఇక్కడ చరిత్రేమీ లేదు</string>
   <!--
-    Downloads
-
-    Text for the snackbar to confirm that multiple downloads items have been removed
-  -->
-  <string name="download_delete_multiple_items_snackbar_1" moz:removedIn="138" tools:ignore="UnusedResources">దింపుకోళ్ళు తొలగించబడ్డాయి</string>
-  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
-  <string name="download_delete_single_item_snackbar" moz:removedIn="138" tools:ignore="UnusedResources">%1$s తొలగించబడింది</string>
-  <!-- Text shown when no download exists -->
-  <string name="download_empty_message_1" moz:removedIn="138" tools:ignore="UnusedResources">దించుకున్న ఫైళ్ళేమీ లేవు</string>
-  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
   <string name="download_multi_select_title">%1$d ఎంచుకున్నారు</string>
-  <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">తొలగించు</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">రద్దుచేయి</string>
   <!-- The button text for the send button to submit the provided form data. -->
@@ -1079,7 +1065,7 @@
   <!-- Title of QR Pairing Fragment -->
   <string name="sync_scan_code">కోడును స్కాను చేయండి</string>
   <!-- Instructions on how to access pairing -->
-  <string name="sign_in_instructions" tools:ignore="BrandUsage">మీ కంప్యూటర్‌లో Firefox తెరిచి &lt;b&gt;https://firefox.com/pair&lt;/b&gt;కు వెళ్లండి</string>
+  <string name="sign_in_instructions" tools:ignore="BrandUsage"><![CDATA[మీ కంప్యూటర్‌లో Firefox తెరిచి <b>https://firefox.com/pair</b>కు వెళ్లండి]]></string>
   <!-- Text shown for sign in pairing when ready -->
   <string name="sign_in_ready_for_scan">స్కాన్ చేయడానికి సిద్ధంగా ఉంది</string>
   <!-- Text shown for settings option for sign with pairing -->
@@ -1087,7 +1073,7 @@
   <!-- Text shown for settings option for sign with email -->
   <string name="sign_in_with_email">లేదా ఈమెయిలు వాడండి</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
-  <string name="sign_in_create_account_text" tools:ignore="BrandUsage">ఖాతా లేదా? Firefoxను పరికరాల మధ్య సమకాలీకరించడానికి &lt;u&gt;ఒక ఖాతాను సృష్టించుకోండి&lt;/u&gt;.</string>
+  <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[ఖాతా లేదా? Firefoxను పరికరాల మధ్య సమకాలీకరించడానికి <u>ఒక ఖాతాను సృష్టించుకోండి</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s మీ ఖాతాను సింక్రనించడం ఆపివేస్తుంది, కానీ ఈ పరికరంలోని మీ విహరణ డేటాను తొలగించదు.</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
@@ -1367,7 +1353,7 @@
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">శోధన పదం ఉదహరించిన ఆకృతిలో ఉండేలా సరిచూడండి</string>
   <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach">“%s”కి అనుసంధానించడంలో తప్పిదం</string>
+  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s”కి అనుసంధానించడంలో తప్పిదం</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
   <string name="search_add_custom_engine_success_message">%s సృష్టించబడింది</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
@@ -1377,11 +1363,11 @@
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">దీనిని అనుమతించడానికి:</string>
   <!-- First step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_settings">1. ఆండ్రాయిడ్  అమరికలకు వెళ్లండి</string>
+  <string name="phone_feature_blocked_step_settings">1. ఆండ్రాయిడ్ అమరికలకు వెళ్లండి</string>
   <!-- Second step for the allowing a permission -->
-  <string name="phone_feature_blocked_step_permissions">2. &lt;b&gt;అనుమతులు&lt;/b&gt;ను తాకండి</string>
+  <string name="phone_feature_blocked_step_permissions"><![CDATA[2. <b>అనుమతులు</b>ను తాకండి]]></string>
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
-  <string name="phone_feature_blocked_step_feature">3. చేతనించడానికి &lt;b&gt;%1$s&lt;/b&gt;ను ఎంచుకోండి</string>
+  <string name="phone_feature_blocked_step_feature"><![CDATA[3. చేతనించడానికి <b>%1$s</b>ను ఎంచుకోండి]]></string>
   <!-- Label that indicates a site is using a secure connection -->
   <string name="quick_settings_sheet_secure_connection_2">అనుసంధానం సురక్షితం</string>
   <!-- Label that indicates a site is using a insecure connection -->
@@ -1389,7 +1375,7 @@
   <!-- Label to clear site data -->
   <string name="clear_site_data">కుకీలను, సైటు దత్తాంశాన్ని తుడిచివేయి</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data">మీరు నిజంగానే &lt;b&gt;%s&lt;/b&gt; సైటు సంబంధింత కుకీలను, డేబాను తుడిచివేయాలనుకుంటున్నారా?</string>
+  <string name="confirm_clear_site_data"><![CDATA[మీరు నిజంగానే <b>%s</b> సైటు సంబంధింత కుకీలను, డేబాను తుడిచివేయాలనుకుంటున్నారా?]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">నిజంగానే సైట్లన్నిటిలోనూ అనుమతులన్నింటినీ తుడిచివేయాలనుకుంటున్నారా?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -1468,13 +1454,13 @@
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1">ఆలోచింపజేసే కథనాలు</string>
+  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">ఆలోచింపజేసే కథనాలు</string>
   <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header">అంశంవారీగా కథనాలు</string>
+  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">అంశంవారీగా కథనాలు</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text">ఇంకా కనుగొనండి</string>
+  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">ఇంకా కనుగొనండి</string>
   <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more">ఇంకా తెలుసుకోండి</string>
+  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">ఇంకా తెలుసుకోండి</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">అమరికలకు వెళ్ళు</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->

@@ -42,6 +42,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/HTMLDetailsElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
@@ -309,17 +310,26 @@ static const nsINode* GetClosestCommonInclusiveAncestorForRangeInSelection(
     const nsINode* aNode) {
   while (aNode &&
          !aNode->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
-    const bool isNodeInShadowTree =
+    const bool isNodeInFlattenedShadowTree =
         StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-        aNode->IsInShadowTree();
+        (aNode->IsInShadowTree() ||
+         (aNode->IsContent() && aNode->AsContent()->GetAssignedSlot()));
+
     if (!aNode
              ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection() &&
-        !isNodeInShadowTree) {
+        !isNodeInFlattenedShadowTree) {
       return nullptr;
     }
-    aNode = StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-                ? aNode->GetParentOrShadowHostNode()
-                : aNode->GetParentNode();
+
+    if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
+      if (aNode->IsContent() && aNode->AsContent()->GetAssignedSlot()) {
+        aNode = aNode->AsContent()->GetAssignedSlot();
+      } else {
+        aNode = aNode->GetParentOrShadowHostNode();
+      }
+      continue;
+    }
+    aNode = aNode->GetParentNode();
   }
   return aNode;
 }
@@ -342,15 +352,29 @@ class IsItemInRangeComparator {
   }
 
   int operator()(const AbstractRange* const aRange) const {
-    Maybe<int32_t> cmp = nsContentUtils::ComparePoints(
-        ConstRawRangeBoundary(&mNode, mEndOffset,
-                              RangeBoundaryIsMutationObserved::No),
-        aRange->MayCrossShadowBoundaryStartRef(), mCache);
+    auto ComparePoints = [](const nsINode* aNode1, const uint32_t aOffset1,
+                            const nsINode* aNode2, const uint32_t aOffset2,
+                            nsContentUtils::NodeIndexCache* aCache) {
+      if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
+        return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
+            aNode1, aOffset1, aNode2, aOffset2, aCache);
+      }
+      return nsContentUtils::ComparePointsWithIndices<
+          TreeKind::ShadowIncludingDOM>(aNode1, aOffset1, aNode2, aOffset2,
+                                        aCache);
+    };
+
+    Maybe<int32_t> cmp = ComparePoints(
+        &mNode, mEndOffset, aRange->GetMayCrossShadowBoundaryStartContainer(),
+        aRange->MayCrossShadowBoundaryStartOffset(), mCache);
+    // nsContentUtils::ComparePoints would return Nothing when nodes
+    // are disconnected, ComparePoints_Deprecated used to return 1
+    // for that case. Hence valueOr(1) to keep the legacy result.
     if (cmp.valueOr(1) == 1) {
-      cmp = nsContentUtils::ComparePoints(
-          ConstRawRangeBoundary(&mNode, mStartOffset,
-                                RangeBoundaryIsMutationObserved::No),
-          aRange->MayCrossShadowBoundaryEndRef(), mCache);
+      cmp = ComparePoints(&mNode, mStartOffset,
+                          aRange->GetMayCrossShadowBoundaryEndContainer(),
+                          aRange->MayCrossShadowBoundaryEndOffset(), mCache);
+      // Same reason as above.
       if (cmp.valueOr(1) == -1) {
         return 0;
       }
@@ -431,12 +455,23 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
           }
         }
 
+        auto ComparePoints = [](const ConstRawRangeBoundary& aBoundary1,
+                                const RangeBoundary& aBoundary2,
+                                nsContentUtils::NodeIndexCache* aCache) {
+          if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
+            return nsContentUtils::ComparePoints<TreeKind::Flat>(
+                aBoundary1, aBoundary2, aCache);
+          }
+          return nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+              aBoundary1, aBoundary2, aCache);
+        };
+
         const AbstractRange* middlePlus1;
         const AbstractRange* middleMinus1;
         // if node end > start of middle+1, result = 1
         if (middle + 1 < high &&
             (middlePlus1 = selection->GetAbstractRangeAt(middle + 1)) &&
-            nsContentUtils::ComparePoints(
+            ComparePoints(
                 ConstRawRangeBoundary(this, aEndOffset,
                                       RangeBoundaryIsMutationObserved::No),
                 middlePlus1->StartRef(), &cache)
@@ -445,11 +480,10 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
           // if node start < end of middle - 1, result = -1
         } else if (middle >= 1 &&
                    (middleMinus1 = selection->GetAbstractRangeAt(middle - 1)) &&
-                   nsContentUtils::ComparePoints(
-                       ConstRawRangeBoundary(
-                           this, aStartOffset,
-                           RangeBoundaryIsMutationObserved::No),
-                       middleMinus1->EndRef(), &cache)
+                   ComparePoints(ConstRawRangeBoundary(
+                                     this, aStartOffset,
+                                     RangeBoundaryIsMutationObserved::No),
+                                 middleMinus1->EndRef(), &cache)
                            .valueOr(1) < 0) {
           result = -1;
         } else {
@@ -3438,6 +3472,50 @@ Element* nsINode::GetTopmostClickedPopover() const {
   return nullptr;
 }
 
+// https://html.spec.whatwg.org/multipage/interactive-elements.html#nearest-clicked-dialog
+HTMLDialogElement* nsINode::NearestClickedDialog(mozilla::WidgetEvent* aEvent) {
+  // 1. Let target be event's target.
+  // (Skipped - `this`).
+
+  WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+  if (!pointerEvent) {
+    return nullptr;
+  }
+
+  // 2. If target is a dialog element, target has an open attribute, target's is
+  // modal is true...
+  RefPtr dialogElement = HTMLDialogElement::FromNode(this);
+  if (dialogElement && dialogElement->IsInTopLayer()) {
+    // ... , and event's clientX and clientY are outside the bounds of target,
+    // then return null.
+    auto* frame = dialogElement->GetPrimaryFrame();
+    if (!frame) {
+      return nullptr;
+    }
+    nsPoint point = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+        aEvent, pointerEvent->mRefPoint, RelativeTo{frame});
+    nsRect frameRect = frame->GetRectRelativeToSelf();
+    if (!frameRect.Contains(point)) {
+      return nullptr;
+    }
+  }
+
+  // 3. Let currentNode be target.
+  // 4. While currentNode is not null:
+  // 4.2 Set currentNode to currentNode's parent in the flat tree.
+  for (auto* currentNode :
+       InclusiveFlatTreeAncestorsOfType<HTMLDialogElement>()) {
+    // 4.1 If currentNode is a dialog element and currentNode has an open
+    // attribute, then return currentNode.
+    if (currentNode->Open()) {
+      return currentNode;
+    }
+  }
+
+  // 5. Return null.
+  return nullptr;
+}
+
 void nsINode::AddAnimationObserver(nsIAnimationObserver* aAnimationObserver) {
   AddMutationObserver(aAnimationObserver);
   OwnerDoc()->SetMayHaveAnimationObservers();
@@ -3589,6 +3667,9 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         }
         if (elm->MayHavePointerEnterLeaveEventListener()) {
           window->SetHasPointerEnterLeaveEventListeners();
+        }
+        if (elm->MayHavePointerRawUpdateEventListener()) {
+          window->MaybeSetHasPointerRawUpdateEventListeners();
         }
         if (elm->MayHaveSelectionChangeEventListener()) {
           window->SetHasSelectionChangeEventListeners();

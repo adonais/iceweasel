@@ -186,10 +186,6 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
 
   ClientSource& MutableClientSourceRef() const { return *mClientSource; }
 
-  // WorkerPrivate wants to be able to forbid script when its state machine
-  // demands it.
-  void WorkerPrivateSaysForbidScript() { StartForbiddingScript(); }
-  void WorkerPrivateSaysAllowScript() { StopForbiddingScript(); }
   bool IsBackgroundInternal() const override {
     MOZ_ASSERT(mWorkerPrivate);
     return mWorkerPrivate->IsRunningInBackground();
@@ -230,6 +226,11 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
   bool HasActiveIndexedDBDatabases() const override {
     AssertIsOnWorkerThread();
     return mNumOfIndexedDBDatabases;
+  }
+
+  bool IsPlayingAudio() override {
+    AssertIsOnWorkerThread();
+    return mWorkerPrivate && mWorkerPrivate->IsPlayingAudio();
   }
 
   void TriggerUpdateCCFlag() override {
@@ -373,7 +374,7 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
   int32_t SetTimeout(JSContext* aCx,
                      const FunctionOrTrustedScriptOrString& aHandler,
                      int32_t aTimeout, const Sequence<JS::Value>& aArguments,
-                     ErrorResult& aRv);
+                     nsIPrincipal* aSubjectPrincipal, ErrorResult& aRv);
 
   MOZ_CAN_RUN_SCRIPT
   void ClearTimeout(int32_t aHandle);
@@ -382,7 +383,7 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
   int32_t SetInterval(JSContext* aCx,
                       const FunctionOrTrustedScriptOrString& aHandler,
                       int32_t aTimeout, const Sequence<JS::Value>& aArguments,
-                      ErrorResult& aRv);
+                      nsIPrincipal* aSubjectPrincipal, ErrorResult& aRv);
 
   MOZ_CAN_RUN_SCRIPT
   void ClearInterval(int32_t aHandle);
@@ -440,11 +441,10 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
 
  private:
   MOZ_CAN_RUN_SCRIPT
-  int32_t SetTimeoutOrInterval(JSContext* aCx,
-                               const FunctionOrTrustedScriptOrString& aHandler,
-                               int32_t aTimeout,
-                               const Sequence<JS::Value>& aArguments,
-                               bool aIsInterval, ErrorResult& aRv);
+  int32_t SetTimeoutOrInterval(
+      JSContext* aCx, const FunctionOrTrustedScriptOrString& aHandler,
+      int32_t aTimeout, const Sequence<JS::Value>& aArguments, bool aIsInterval,
+      nsIPrincipal* aSubjectPrincipal, ErrorResult& aRv);
 
   RefPtr<Crypto> mCrypto;
   RefPtr<WorkerLocation> mLocation;

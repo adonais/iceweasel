@@ -8,6 +8,11 @@ import { UniFFITypeError } from "resource://gre/modules/UniFFI.sys.mjs";
 // Objects intended to be used in the unit tests
 export var UnitTestObjs = {};
 
+let lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "decoder", () => new TextDecoder());
+ChromeUtils.defineLazyGetter(lazy, "encoder", () => new TextEncoder());
+
 // Write/Read data to/from an ArrayBuffer
 class ArrayBufferDataStream {
     constructor(arrayBuffer) {
@@ -128,11 +133,10 @@ class ArrayBufferDataStream {
 
 
     writeString(value) {
-      const encoder = new TextEncoder();
       // Note: in order to efficiently write this data, we first write the
       // string data, reserving 4 bytes for the size.
       const dest = new Uint8Array(this.dataView.buffer, this.pos + 4);
-      const encodeResult = encoder.encodeInto(value, dest);
+      const encodeResult = lazy.encoder.encodeInto(value, dest);
       if (encodeResult.read != value.length) {
         throw new UniFFIError(
             "writeString: out of space when writing to ArrayBuffer.  Did the computeSize() method returned the wrong result?"
@@ -146,10 +150,9 @@ class ArrayBufferDataStream {
     }
 
     readString() {
-      const decoder = new TextDecoder();
       const size = this.readUint32();
       const source = new Uint8Array(this.dataView.buffer, this.pos, size)
-      const value = decoder.decode(source);
+      const value = lazy.decoder.decode(source);
       this.pos += size;
       return value;
     }
@@ -294,13 +297,11 @@ export class FfiConverterString extends FfiConverter {
     }
 
     static lift(buf) {
-        const decoder = new TextDecoder();
         const utf8Arr = new Uint8Array(buf);
-        return decoder.decode(utf8Arr);
+        return lazy.decoder.decode(utf8Arr);
     }
     static lower(value) {
-        const encoder = new TextEncoder();
-        return encoder.encode(value).buffer;
+        return lazy.encoder.encode(value).buffer;
     }
 
     static write(dataStream, value) {
@@ -312,8 +313,7 @@ export class FfiConverterString extends FfiConverter {
     }
 
     static computeSize(value) {
-        const encoder = new TextEncoder();
-        return 4 + encoder.encode(value).length
+        return 4 + lazy.encoder.encode(value).length
     }
 }
 
@@ -394,19 +394,19 @@ export class FfiConverterOptionalTypePoint extends FfiConverterArrayBuffer {
 import {
   FfiConverterTypeSprite,
   Sprite,
-} from "resource://gre/modules/RustSprites.sys.mjs";
+} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSprites.sys.mjs";
 
 // Export the FFIConverter object to make external types work.
 export { FfiConverterTypeSprite, Sprite };import {
   FfiConverterTypeLine,
   Line,
-} from "resource://gre/modules/RustGeometry.sys.mjs";
+} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustGeometry.sys.mjs";
 
 // Export the FFIConverter object to make external types work.
 export { FfiConverterTypeLine, Line };import {
   FfiConverterTypePoint,
   Point,
-} from "resource://gre/modules/RustGeometry.sys.mjs";
+} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustGeometry.sys.mjs";
 
 // Export the FFIConverter object to make external types work.
 export { FfiConverterTypePoint, Point };
@@ -431,7 +431,7 @@ export function gradient(value) {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                110, // external_types:uniffi_uniffi_fixture_external_types_fn_func_gradient
+                123, // external_types:uniffi_uniffi_fixture_external_types_fn_func_gradient
                 FfiConverterOptionalTypeLine.lower(value),
             )
         }
@@ -468,7 +468,7 @@ export function intersection(ln1,ln2) {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                111, // external_types:uniffi_uniffi_fixture_external_types_fn_func_intersection
+                124, // external_types:uniffi_uniffi_fixture_external_types_fn_func_intersection
                 FfiConverterTypeLine.lower(ln1),
                 FfiConverterTypeLine.lower(ln2),
             )
@@ -497,7 +497,7 @@ export function moveSpriteToOrigin(sprite) {
                 throw e;
             }
             return UniFFIScaffolding.callAsyncWrapper(
-                112, // external_types:uniffi_uniffi_fixture_external_types_fn_func_move_sprite_to_origin
+                125, // external_types:uniffi_uniffi_fixture_external_types_fn_func_move_sprite_to_origin
                 FfiConverterTypeSprite.lower(sprite),
             )
         }

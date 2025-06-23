@@ -10,6 +10,15 @@ const { Region } = ChromeUtils.importESModule(
 const { LinkPreviewModel } = ChromeUtils.importESModule(
   "moz-src:///browser/components/genai/LinkPreviewModel.sys.mjs"
 );
+
+const { LinkPreviewChild } = ChromeUtils.importESModule(
+  "resource:///actors/LinkPreviewChild.sys.mjs"
+);
+
+const { Readerable } = ChromeUtils.importESModule(
+  "resource://gre/modules/Readerable.sys.mjs"
+);
+
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -44,8 +53,9 @@ add_task(async function test_skip_generate_if_non_eng() {
   );
   XULBrowserWindow.setOverLink(TEST_LINK_URL_FR);
 
-  let panel = await TestUtils.waitForCondition(() =>
-    document.getElementById("link-preview-panel")
+  let panel = await TestUtils.waitForCondition(
+    () => document.getElementById("link-preview-panel"),
+    "On first attempt, timed out waiting for link-preview-panel to be created for French link"
   );
   ok(panel, "Panel created for link preview");
 
@@ -68,8 +78,9 @@ add_task(async function test_skip_generate_if_non_eng() {
     set: [["browser.ml.linkPreview.allowedLanguages", ""]],
   });
   XULBrowserWindow.setOverLink(TEST_LINK_URL_FR);
-  panel = await TestUtils.waitForCondition(() =>
-    document.getElementById("link-preview-panel")
+  panel = await TestUtils.waitForCondition(
+    () => document.getElementById("link-preview-panel"),
+    "On second attempt, timed out waiting for link-preview-panel to be created with French allowed"
   );
   await BrowserTestUtils.waitForEvent(panel, "popupshown");
 
@@ -117,7 +128,7 @@ add_task(async function test_link_preview_with_shift_alt_key_event() {
     })
   );
 
-  ok(!LinkPreview.keyboardComboActive, "just shift insufficient");
+  ok(LinkPreview.keyboardComboActive, "just shift is sufficient");
 
   window.dispatchEvent(
     new KeyboardEvent("keydown", {
@@ -151,6 +162,161 @@ add_task(async function test_link_preview_with_shift_alt_key_event() {
   stub.restore();
   Services.prefs.clearUserPref("browser.ml.linkPreview.enabled");
   LinkPreview.keyboardComboActive = false;
+});
+
+/**
+ * Tests long press of mouse to trigger link preview.
+ */
+add_task(async function test_link_preview_with_long_press() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.linkPreview.enabled", true],
+      ["browser.ml.linkPreview.longPressMs", 0],
+    ],
+  });
+
+  const stub = sinon.stub(LinkPreview, "renderLinkPreviewPanel");
+
+  XULBrowserWindow.setOverLink(TEST_LINK_URL, {});
+
+  is(LinkPreview.cancelLongPress, null, "long press not started");
+
+  window.dispatchEvent(new MouseEvent("mousedown", { button: 1 }));
+
+  is(LinkPreview.cancelLongPress, null, "long press ignore non-primary button");
+
+  window.dispatchEvent(new MouseEvent("mousedown", { ctrlKey: true }));
+
+  is(LinkPreview.cancelLongPress, null, "long press ignore modifier keys");
+
+  window.dispatchEvent(new MouseEvent("mousedown"));
+
+  ok(LinkPreview.cancelLongPress, "long press timer started");
+
+  window.dispatchEvent(new MouseEvent("mouseup"));
+
+  is(LinkPreview.cancelLongPress, null, "long press cancelled");
+  is(stub.callCount, 0, "no link preview shown");
+
+  window.dispatchEvent(new MouseEvent("mousedown"));
+
+  await TestUtils.waitForCondition(
+    () => stub.callCount,
+    "waiting for long press timer"
+  );
+
+  is(LinkPreview.cancelLongPress, null, "long press completed");
+  is(stub.callCount, 1, "preview shown");
+  is(stub.firstCall.args[0], window, "link preview shown for correct window");
+  is(stub.firstCall.args[1], TEST_LINK_URL, "preview test link");
+  is(stub.firstCall.args[2], "long_press", "source set for long press");
+
+  stub.restore();
+});
+
+/**
+ * Tests that regular typing prevents link preview.
+ */
+add_task(async function test_link_preview_with_typing() {
+  const stub = sinon.stub(LinkPreview, "renderLinkPreviewPanel");
+
+  XULBrowserWindow.setOverLink(TEST_LINK_URL, {});
+
+  is(LinkPreview.recentTyping, 0, "recent typing unset");
+
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: ":",
+    })
+  );
+
+  ok(LinkPreview.recentTyping, "recent typing set");
+  ok(!LinkPreview.keyboardComboActive, "typing isn't combo");
+  is(stub.callCount, 0, "no link preview shown");
+
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      shiftKey: true,
+    })
+  );
+
+  ok(LinkPreview.keyboardComboActive, "shift is combo");
+  is(stub.callCount, 0, "no link preview shown");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.recentTypingMs", 0]],
+  });
+
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      shiftKey: true,
+    })
+  );
+
+  is(stub.callCount, 1, "preview shown without typing delay");
+
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: "Tab",
+      shiftKey: true,
+    })
+  );
+
+  ok(LinkPreview.recentTyping, "recent typing set for shift-tab");
+
+  stub.restore();
+  LinkPreview.recentTyping = 0;
+});
+
+/**
+ * Tests that certain behaviors do not trigger unexpectedly.
+ */
+add_task(async function test_link_preview_no_trigger() {
+  const stub = sinon.stub(LinkPreview, "renderLinkPreviewPanel");
+
+  LinkPreview.keyboardComboActive = true;
+  XULBrowserWindow.setOverLink(TEST_LINK_URL, {});
+
+  ok(LinkPreview.overLinkTime, "have some time");
+  is(stub.callCount, 1, "preview shown");
+
+  LinkPreview.overLinkTime -= 10000;
+
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      shiftKey: true,
+    })
+  );
+
+  is(stub.callCount, 1, "ignored for stale link");
+
+  XULBrowserWindow.setOverLink(TEST_LINK_URL, {});
+
+  is(stub.callCount, 2, "shown again");
+
+  XULBrowserWindow.setOverLink(TEST_LINK_URL, {});
+
+  is(stub.callCount, 3, "and again");
+
+  XULBrowserWindow.setOverLink(TEST_LINK_URL + "#", {});
+
+  is(stub.callCount, 3, "ignored single page #");
+
+  XULBrowserWindow.setOverLink("javascript:void(0)", {});
+
+  is(stub.callCount, 3, "ignored single page javascript:");
+
+  stub.restore();
 });
 
 /**
@@ -296,7 +462,7 @@ add_task(async function test_link_preview_panel_shown() {
   const READABLE_PAGE_URL =
     "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
 
-  LinkPreview.keyboardComboActive = true;
+  LinkPreview.keyboardComboActive = "shift";
   XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
 
   const panel = await TestUtils.waitForCondition(() =>
@@ -305,7 +471,8 @@ add_task(async function test_link_preview_panel_shown() {
   ok(panel, "Panel created for link preview");
   let events = Glean.genaiLinkpreview.start.testGetValue();
   is(events[0].extra.cached, "false", "not cached");
-  is(events[0].extra.source, "shortcut", "source is shortcut");
+  is(events[0].extra.source, "shift", "source is keyboard combo");
+  is(events[0].extra.tab, "blank", "tab context is blank");
 
   await BrowserTestUtils.waitForEvent(panel, "popupshown");
 
@@ -319,6 +486,7 @@ add_task(async function test_link_preview_panel_shown() {
   is(events[0].extra.skipped, "false", "not skipped");
   ok(events[0].extra.time, "got time");
   is(events[0].extra.title, "true", "got title");
+  is(events[0].extra.tab, "blank", "tab context is blank");
 
   const card = panel.querySelector("link-preview-card");
   ok(card, "card created for link preview");
@@ -357,10 +525,69 @@ add_task(async function test_link_preview_panel_shown() {
 
   events = Glean.genaiLinkpreview.cardClose.testGetValue();
   ok(events[0].extra.duration, "got duration");
+  is(events[0].extra.tab, "blank", "tab context is blank");
 
   panel.remove();
   stub.restore();
   LinkPreview.keyboardComboActive = false;
+});
+
+/**
+ * Test that LinkPreview blocks pages on domains that don't support Reader Mode
+ */
+add_task(async function test_reader_mode_blocked_domains() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.enabled", true]],
+  });
+
+  const fetchHTML = async url => {
+    const response = await fetch(url, { method: "GET" });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return await response.text(); // returns raw HTML as string
+  };
+
+  const stub = sinon
+    .stub(LinkPreviewChild.prototype, "fetchHTML")
+    .callsFake(async _ => {
+      return fetchHTML(
+        "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html"
+      );
+    });
+
+  const actor =
+    window.browsingContext.currentWindowContext.getActor("LinkPreview");
+
+  let result;
+
+  Assert.greaterOrEqual(
+    Readerable._blockedHosts.length,
+    2,
+    "we have enough in blockedHosts"
+  );
+
+  for (const url of Readerable._blockedHosts) {
+    if (url === "github.com") {
+      continue;
+    }
+    result = await actor.fetchPageData(url);
+    Assert.deepEqual(
+      result.article,
+      {},
+      `article should be empty for url ${url}`
+    );
+    ok(result.meta, "meta should be populated");
+
+    is(
+      result.rawMetaInfo["html:title"],
+      "Article title",
+      "title from raw metainfo should be correct"
+    );
+  }
+
+  stub.restore();
+  Services.prefs.clearUserPref("browser.ml.linkPreview.enabled");
 });
 
 /**
@@ -448,10 +675,171 @@ add_task(async function test_no_key_points_in_disallowed_region() {
     0,
     "generateTextAI should not be called when region is disallowed"
   );
+  ok(!LinkPreview.canShowKeyPoints, "should not show key points");
 
   panel.remove();
   LinkPreview.keyboardComboActive = false;
   generateStub.restore();
 
   Services.prefs.clearUserPref("browser.ml.linkPreview.noKeyPointsRegions");
+
+  ok(LinkPreview.canShowKeyPoints, "could show key points");
+});
+
+/**
+ * Test that .og-error-message element is rendered with correct error messages
+ * given different props set on the card
+ */
+add_task(async function test_link_preview_error_rendered() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.enabled", true]],
+  });
+
+  const READABLE_PAGE_URL =
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
+
+  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
+
+  LinkPreview.keyboardComboActive = true;
+  XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
+
+  const panel = await TestUtils.waitForCondition(() =>
+    document.getElementById("link-preview-panel")
+  );
+  await BrowserTestUtils.waitForEvent(panel, "popupshown");
+
+  const card = panel.querySelector("link-preview-card");
+  ok(card, "Found link-preview-card in panel");
+
+  // Check that errors are off by default.
+  ok(
+    !card.isMissingDataErrorState,
+    "Should not be missing data error initially"
+  );
+
+  ok(!card.generationError, "Should not have generation error initially");
+
+  // Force a "missing data" error and confirm the card updates.
+  card.isMissingDataErrorState = true;
+  await TestUtils.waitForCondition(() =>
+    card.shadowRoot.querySelector(".og-error-message")
+  );
+  let ogErrorEl1 = card.shadowRoot.querySelector(".og-error-message");
+  ok(ogErrorEl1, "og-error-message shown with isMissingDataErrorState = true");
+  is(
+    ogErrorEl1.getAttribute("data-l10n-id"),
+    "link-preview-generation-error-missing-data",
+    "Correct fluent ID for missing data error"
+  );
+  is(
+    ogErrorEl1.textContent.trim(),
+    "We can’t generate key points for this webpage.",
+    "Correct localized message for missing data error"
+  );
+
+  // Switch to a "generation error"
+  card.isMissingDataErrorState = false;
+  card.generationError = { name: "UnexpectedError" };
+  await TestUtils.waitForCondition(() =>
+    card.shadowRoot.querySelector(".og-error-message")
+  );
+  let ogErrorEl2 = card.shadowRoot.querySelector(".og-error-message");
+  ok(ogErrorEl2, "og-error-message shown with generationError set");
+
+  is(
+    ogErrorEl2.getAttribute("data-l10n-id"),
+    "link-preview-generation-error-unexpected",
+    "Correct fluent ID for generation error"
+  );
+  is(
+    ogErrorEl2.textContent.trim(),
+    "Something went wrong.",
+    "Correct localized message for generation error"
+  );
+
+  card.generationError = { name: "NotEnoughMemoryError" };
+  await TestUtils.waitForCondition(() =>
+    card.shadowRoot.querySelector(".og-error-message")
+  );
+  ok(
+    !card.shadowRoot.querySelector(".retry-link"),
+    "Retry link should not show with NotEnoughMemoryError"
+  );
+  // Cleanup
+  panel.remove();
+  generateStub.restore();
+  LinkPreview.keyboardComboActive = false;
+});
+
+/**
+ * Test that clicking on the keypoints header properly toggles the expanded/collapsed state
+ * and updates the preference.
+ */
+add_task(async function test_toggle_expand_collapse() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.linkPreview.enabled", true],
+      ["browser.ml.linkPreview.optin", true],
+      ["browser.ml.linkPreview.collapsed", false],
+    ],
+  });
+
+  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
+
+  const READABLE_PAGE_URL =
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
+
+  LinkPreview.keyboardComboActive = true;
+  XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
+
+  const panel = await TestUtils.waitForCondition(() =>
+    document.getElementById("link-preview-panel")
+  );
+  await BrowserTestUtils.waitForEvent(panel, "popupshown");
+
+  const card = panel.querySelector("link-preview-card");
+  ok(card, "Card created for link preview");
+
+  is(card.collapsed, false, "Card should start expanded");
+  is(
+    generateStub.callCount,
+    1,
+    "generateTextAI should be called initially when collapsed is false"
+  );
+
+  const keypointsHeader = card.shadowRoot.querySelector(".keypoints-header");
+  ok(keypointsHeader, "Found keypoints header");
+
+  keypointsHeader.click();
+
+  is(
+    card.collapsed,
+    true,
+    "Card should now be collapsed after clicking header"
+  );
+
+  is(
+    Services.prefs.getBoolPref("browser.ml.linkPreview.collapsed"),
+    true,
+    "Preference should be updated to collapsed=true"
+  );
+
+  keypointsHeader.click();
+
+  is(
+    card.collapsed,
+    false,
+    "Card should now be expanded after clicking header again"
+  );
+
+  is(
+    Services.prefs.getBoolPref("browser.ml.linkPreview.collapsed"),
+    false,
+    "Preference should be updated to collapsed=false"
+  );
+
+  // Clean up
+  panel.remove();
+  generateStub.restore();
+  LinkPreview.keyboardComboActive = false;
 });

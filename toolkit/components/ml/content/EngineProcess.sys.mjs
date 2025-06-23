@@ -20,7 +20,14 @@ export const DEFAULT_ENGINE_ID = "default-engine";
  * @type {Array<string>}
  * @description Supported backends.
  */
-export const BACKENDS = ["onnx", "wllama"];
+export const BACKENDS = ["onnx", "wllama", "onnx-native"];
+
+/**
+ * @constant
+ * @type {Array<string>}
+ * @description Backends using WASM.
+ */
+export const WASM_BACKENDS = ["onnx", "wllama"];
 
 /**
  * @constant
@@ -121,7 +128,7 @@ export const DEFAULT_MODELS = Object.freeze({
  *
  * The only exception is web extension, as the engine id is dynamically created with the extension id.
  */
-const FEATURES = {
+export const FEATURES = {
   // see toolkit/components/formautofill/MLAutofill.sys.mjs
   "autofill-classification": {
     engineId: "autofill-ml",
@@ -129,6 +136,7 @@ const FEATURES = {
   // see toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
   "pdfjs-alt-text": {
     engineId: "pdfjs",
+    fluentId: "mlmodel-pdfjs",
   },
   // see browser/components/urlbar/private/MLSuggest.sys.mjs
   "suggest-intent-classification": {
@@ -141,18 +149,26 @@ const FEATURES = {
   // see toolkit/components/aboutinference/content/aboutInference.js
   "about-inference": {
     engineId: "about-inference",
+    fluentId: "mlmodel-about-inference",
   },
   // see browser/components/tabbrowser/SmartTabGrouping.sys.mjs,
   "smart-tab-embedding": {
     engineId: "smart-tab-embedding-engine",
+    fluentId: "mlmodel-smart-tab-embedding-engine",
   },
   // see browser/components/tabbrowser/SmartTabGrouping.sys.mjs
   "smart-tab-topic": {
     engineId: "smart-tab-topic-engine",
+    fluentId: "mlmodel-smart-tab-topic-engine",
   },
   // see toolkit/components/ml/content/nlp/EmbeddingsGenerator.sys.mjs
   "simple-text-embedder": {
     engineId: "simple-text-embedder-engine",
+  },
+  // see browser/components/genai/LinkPreviewModel.sys.mjs
+  "link-preview": {
+    engineId: "wllamapreview",
+    fluentId: "mlmodel-link-preview",
   },
 };
 
@@ -290,6 +306,7 @@ export const KVCacheQuantizationLevel = {
 export const InferenceDevice = {
   GPU: "gpu",
   WASM: "wasm",
+  CPU: "cpu",
 };
 
 /**
@@ -629,7 +646,7 @@ export class PipelineOptions {
    *
    * Throws an exception if the name or ID is invalid.
    *
-   * @param {string} field - The name of the field being validated (e.g., taskName, engineId).
+   * @param {string} field - The name of the field being validated.
    * @param {string} value - The value of the field to validate.
    * @throws {PipelineOptionsValidationError} Throws a validation error if the ID is invalid.
    * @private
@@ -786,7 +803,7 @@ export class PipelineOptions {
         }
       }
       // Validating values.
-      if (["taskName", "engineId"].includes(key)) {
+      if (key === "taskName") {
         this.#validateTaskName(key, options[key]);
       }
 

@@ -25,7 +25,6 @@ import org.mozilla.focus.nimbus.FocusNimbus
 import org.mozilla.focus.settings.BaseSettingsFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
-import org.mozilla.focus.telemetry.GleanMetricsService
 import org.mozilla.focus.widget.CookiesPreference
 
 class PrivacySecuritySettingsFragment :
@@ -41,8 +40,7 @@ class PrivacySecuritySettingsFragment :
             getString(R.string.preference_security_biometric_summary2, appName)
 
         // Remove the biometric toggle if the software or hardware do not support it
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !requireContext().canUseBiometricFeature()
-        ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !requireContext().canUseBiometricFeature()) {
             biometricPreference?.let { preferenceScreen.removePreference(it) }
         }
         if (!FocusNimbus.features.onboarding.value().isCfrEnabled ||
@@ -88,8 +86,6 @@ class PrivacySecuritySettingsFragment :
         updateStealthToggleAvailability()
         updateExceptionSettingAvailability()
 
-        updateStudiesLabel()
-
         preferenceManager.sharedPreferences?.registerOnSharedPreferenceChangeListener(this)
 
         // Update title and icons when returning to fragments.
@@ -106,15 +102,6 @@ class PrivacySecuritySettingsFragment :
             recordTelemetry(it, sharedPreferences.all[key])
         }
         updateStealthToggleAvailability()
-        if (key == getString(R.string.pref_key_telemetry)) {
-            updateStudiesLabel()
-        }
-    }
-
-    private fun updateStudiesLabel() {
-        val experimentPreference =
-            findPreference<Preference>(getString(R.string.pref_key_studies_v2))
-        experimentPreference?.isEnabled = GleanMetricsService.isTelemetryEnabled(requireContext())
     }
 
     private fun recordTelemetry(key: String, newValue: Any?) {
@@ -167,7 +154,6 @@ class PrivacySecuritySettingsFragment :
     }
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
-        val settings = requireContext().settings
         val engineSharedPreferencesListener = EngineSharedPreferencesListener(requireContext())
         when (preference.key) {
             resources.getString(R.string.pref_key_screen_exceptions) -> {
@@ -188,28 +174,24 @@ class PrivacySecuritySettingsFragment :
                 engineSharedPreferencesListener.updateTrackingProtectionPolicy(
                     EngineSharedPreferencesListener.ChangeSource.SETTINGS.source,
                     EngineSharedPreferencesListener.TrackerChanged.SOCIAL.tracker,
-                    settings.shouldBlockSocialTrackers(),
                 )
 
             resources.getString(R.string.pref_key_privacy_block_ads) ->
                 engineSharedPreferencesListener.updateTrackingProtectionPolicy(
                     EngineSharedPreferencesListener.ChangeSource.SETTINGS.source,
                     EngineSharedPreferencesListener.TrackerChanged.ADVERTISING.tracker,
-                    settings.shouldBlockAdTrackers(),
                 )
 
             resources.getString(R.string.pref_key_privacy_block_analytics) ->
                 engineSharedPreferencesListener.updateTrackingProtectionPolicy(
                     EngineSharedPreferencesListener.ChangeSource.SETTINGS.source,
                     EngineSharedPreferencesListener.TrackerChanged.ANALYTICS.tracker,
-                    settings.shouldBlockAnalyticTrackers(),
                 )
 
             resources.getString(R.string.pref_key_privacy_block_other3) ->
                 engineSharedPreferencesListener.updateTrackingProtectionPolicy(
                     EngineSharedPreferencesListener.ChangeSource.SETTINGS.source,
                     EngineSharedPreferencesListener.TrackerChanged.CONTENT.tracker,
-                    settings.shouldBlockOtherTrackers(),
                 )
             resources.getString(R.string.pref_key_cookie_banner_settings) -> {
                 CookieBanner.visitedSetting.record(NoExtras())
@@ -222,10 +204,6 @@ class PrivacySecuritySettingsFragment :
             resources.getString(R.string.pref_key_site_permissions) ->
                 requireComponents.appStore.dispatch(
                     AppAction.OpenSettings(page = Screen.Settings.Page.SitePermissions),
-                )
-            resources.getString(R.string.pref_key_studies_v2) ->
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(page = Screen.Settings.Page.Studies),
                 )
         }
         return super.onPreferenceTreeClick(preference)

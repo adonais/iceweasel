@@ -92,7 +92,8 @@ class GleanCrashReporterServiceTest {
                 0,
                 "",
                 "",
-                Crash.NativeCodeCrash.PROCESS_TYPE_MAIN,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                processType = "main",
                 breadcrumbs = arrayListOf(),
                 remoteType = null,
             ),
@@ -100,7 +101,8 @@ class GleanCrashReporterServiceTest {
                 0,
                 "",
                 "",
-                Crash.NativeCodeCrash.PROCESS_TYPE_FOREGROUND_CHILD,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
+                processType = "content",
                 breadcrumbs = arrayListOf(),
                 remoteType = "web",
             ),
@@ -108,7 +110,8 @@ class GleanCrashReporterServiceTest {
                 0,
                 "",
                 "",
-                Crash.NativeCodeCrash.PROCESS_TYPE_BACKGROUND_CHILD,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                processType = "utility",
                 breadcrumbs = arrayListOf(),
                 remoteType = null,
             ),
@@ -199,7 +202,8 @@ class GleanCrashReporterServiceTest {
                 0,
                 "",
                 "",
-                Crash.NativeCodeCrash.PROCESS_TYPE_MAIN,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                processType = "main",
                 breadcrumbs = arrayListOf(),
                 remoteType = null,
             )
@@ -207,7 +211,8 @@ class GleanCrashReporterServiceTest {
                 0,
                 "",
                 "",
-                Crash.NativeCodeCrash.PROCESS_TYPE_FOREGROUND_CHILD,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
+                processType = "content",
                 breadcrumbs = arrayListOf(),
                 remoteType = "web",
             )
@@ -215,7 +220,8 @@ class GleanCrashReporterServiceTest {
                 0,
                 "",
                 "",
-                Crash.NativeCodeCrash.PROCESS_TYPE_BACKGROUND_CHILD,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                processType = "utility",
                 breadcrumbs = arrayListOf(),
                 remoteType = null,
             )
@@ -223,7 +229,8 @@ class GleanCrashReporterServiceTest {
                 0,
                 "",
                 "",
-                Crash.NativeCodeCrash.PROCESS_TYPE_BACKGROUND_CHILD,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                processType = "content",
                 breadcrumbs = arrayListOf(),
                 remoteType = "extension",
             )
@@ -406,7 +413,8 @@ class GleanCrashReporterServiceTest {
             12340000,
             "",
             "",
-            Crash.NativeCodeCrash.PROCESS_TYPE_MAIN,
+            Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+            processType = "main",
             breadcrumbs = arrayListOf(),
             remoteType = null,
         )
@@ -457,7 +465,8 @@ class GleanCrashReporterServiceTest {
             12340000,
             null,
             null,
-            Crash.NativeCodeCrash.PROCESS_TYPE_MAIN,
+            Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+            processType = "main",
             breadcrumbs = arrayListOf(
                 Breadcrumb(
                     message = "Breadcrumb-1",
@@ -642,7 +651,9 @@ class GleanCrashReporterServiceTest {
                 "TotalPhysicalMemory": 100,
                 "AsyncShutdownTimeout": "{\"phase\":\"abcd\",\"conditions\":[{\"foo\":\"bar\"}],\"brokenAddBlockers\":[\"foo\"]}",
                 "QuotaManagerShutdownTimeout": "line1\nline2\nline3",
-                "StackTraces": $stackTracesAnnotation
+                "StackTraces": $stackTracesAnnotation,
+                "JSLargeAllocationFailure": "reporting",
+                "JSOutOfMemory": "recovered"
             }
             """.trimIndent(),
         )
@@ -651,7 +662,8 @@ class GleanCrashReporterServiceTest {
             12340000,
             "",
             extrasFile.path,
-            Crash.NativeCodeCrash.PROCESS_TYPE_MAIN,
+            Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+            processType = "main",
             breadcrumbs = arrayListOf(),
             remoteType = null,
         )
@@ -677,6 +689,8 @@ class GleanCrashReporterServiceTest {
                 assertEquals("beta", GleanCrash.appChannel.testGetValue())
                 assertEquals("123.0.0", GleanCrash.appDisplayVersion.testGetValue())
                 assertEquals(100L, GleanMemory.totalPhysical.testGetValue())
+                assertEquals("reporting", GleanMemory.jsLargeAllocationFailure.testGetValue())
+                assertEquals("recovered", GleanMemory.jsOutOfMemory.testGetValue())
                 assertEquals(
                     JsonObject(
                         mapOf(

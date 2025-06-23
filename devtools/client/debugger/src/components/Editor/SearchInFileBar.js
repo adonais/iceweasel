@@ -10,8 +10,10 @@ import actions from "../../actions/index";
 import {
   getActiveSearch,
   getSelectedSource,
+  getIsCurrentThreadPaused,
   getSelectedSourceTextContent,
   getSearchOptions,
+  getSelectedFrame,
 } from "../../selectors/index";
 
 import { searchKeys } from "../../constants";
@@ -22,16 +24,13 @@ import SearchInput from "../shared/SearchInput";
 
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");
 const { debounce } = require("resource://devtools/shared/debounce.js");
-import { renderWasmText } from "../../utils/wasm";
 import {
   clearSearch,
   find,
   findNext,
   findPrev,
-  removeOverlay,
 } from "../../utils/editor/index";
 import { isFulfilled } from "../../utils/async-value";
-import { features } from "../../utils/prefs";
 
 function getSearchShortcut() {
   return L10N.getStr("sourceSearch.search.key2");
@@ -61,9 +60,11 @@ class SearchInFileBar extends Component {
       searchInFileEnabled: PropTypes.bool.isRequired,
       selectedSourceTextContent: PropTypes.object,
       selectedSource: PropTypes.object.isRequired,
+      selectedFrame: PropTypes.object.isRequired,
       setActiveSearch: PropTypes.func.isRequired,
       querySearchWorker: PropTypes.func.isRequired,
       selectLocation: PropTypes.func.isRequired,
+      isPaused: PropTypes.bool.isRequired,
     };
   }
 
@@ -79,14 +80,18 @@ class SearchInFileBar extends Component {
   // FIXME: https://bugzilla.mozilla.org/show_bug.cgi?id=1774507
   UNSAFE_componentWillReceiveProps(nextProps) {
     const { query } = this.state;
-    // If a new source is selected update the file search results
+
     if (
+      query &&
       this.props.selectedSource &&
-      nextProps.selectedSource !== this.props.selectedSource &&
       this.props.searchInFileEnabled &&
-      query
+      nextProps.selectedFrame &&
+      // If a new source is selected update the file search results
+      nextProps.selectedFrame.location.source.id !== nextProps.selectedSource.id
     ) {
-      this.doSearch(query, false);
+      // Do not scroll to the search location, if we just switched a new source
+      // and debugger is already paused on a selelcted line.
+      this.doSearch(query, !nextProps.isPaused);
     }
   }
 
@@ -115,13 +120,8 @@ class SearchInFileBar extends Component {
     if (!editor) {
       return;
     }
-    if (features.codemirrorNext) {
-      editor.clearSearchMatches();
-      editor.removePositionContentMarker("active-selection-marker");
-      return;
-    }
-    const ctx = { editor, cm: editor.codeMirror };
-    removeOverlay(ctx);
+    editor.clearSearchMatches();
+    editor.removePositionContentMarker("active-selection-marker");
   };
 
   closeSearch = e => {
@@ -160,7 +160,7 @@ class SearchInFileBar extends Component {
     }
   };
 
-  doSearch = async (query, focusFirstResult = true) => {
+  doSearch = async (query, shouldScroll = true) => {
     const { editor, modifiers, selectedSourceTextContent } = this.props;
     if (
       !editor ||
@@ -181,15 +181,15 @@ class SearchInFileBar extends Component {
 
     let text;
     if (selectedContent.type === "wasm") {
-      text = renderWasmText(this.props.selectedSource.id, selectedContent).join(
-        "\n"
-      );
+      text = editor.renderWasmText(selectedContent).join("\n");
     } else {
       text = selectedContent.value;
     }
 
     const matches = await this.props.querySearchWorker(query, text, modifiers);
-    const results = find(ctx, query, true, modifiers, focusFirstResult);
+    const results = find(ctx, query, true, modifiers, {
+      shouldScroll,
+    });
     this.setSearchResults(results, matches);
   };
 
@@ -248,11 +248,7 @@ class SearchInFileBar extends Component {
       return false;
     });
 
-    // The cursor location is set differently for CM5
-    if (features.codemirrorNext) {
-      this.setCursorLocation(line, ch, matchContent);
-    }
-
+    this.setCursorLocation(line, ch, matchContent);
     this.setState({
       results: {
         matches,
@@ -284,12 +280,15 @@ class SearchInFileBar extends Component {
 
         // Avoid highlighting the selected line
         highlight: false,
+
+        // This is mostly for displaying the correct location
+        // in the footer, so this should not scroll.
+        scroll: false,
       }
     );
   };
 
   // Handlers
-
   onChange = e => {
     this.setState({ query: e.target.value });
 
@@ -396,12 +395,12 @@ SearchInFileBar.contextTypes = {
 };
 
 const mapStateToProps = state => {
-  const selectedSource = getSelectedSource(state);
-
   return {
     searchInFileEnabled: getActiveSearch(state) === "file",
-    selectedSource,
+    selectedSource: getSelectedSource(state),
+    isPaused: getIsCurrentThreadPaused(state),
     selectedSourceTextContent: getSelectedSourceTextContent(state),
+    selectedFrame: getSelectedFrame(state),
     modifiers: getSearchOptions(state, "file-search"),
   };
 };

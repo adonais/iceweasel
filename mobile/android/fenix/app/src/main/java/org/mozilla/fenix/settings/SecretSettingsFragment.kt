@@ -14,8 +14,9 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import mozilla.appservices.remotesettings.RemoteSettingsConfig2
-import mozilla.appservices.remotesettings.RemoteSettingsServer
+import mozilla.components.support.remotesettings.RemoteSettingsServer
+import mozilla.components.support.remotesettings.RemoteSettingsServerConfig
+import mozilla.components.support.remotesettings.into
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
@@ -62,21 +63,9 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_toolbar_show_navigation_toolbar).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = context.settings().navigationToolbarEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_enable_composable_toolbar).apply {
             isVisible = Config.channel.isDebug
             isChecked = context.settings().shouldUseComposableToolbar
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_compose_top_sites).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = context.settings().enableComposeTopSites
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -221,13 +210,13 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                     val service =
                         context.components.remoteSettingsService.value.remoteSettingsService
                     service.updateConfig(
-                        RemoteSettingsConfig2(
+                        RemoteSettingsServerConfig(
                             server = if (newValue as? Boolean == true) {
-                                RemoteSettingsServer.Prod
+                                RemoteSettingsServer.Prod.into()
                             } else {
-                                RemoteSettingsServer.Stage
+                                RemoteSettingsServer.Stage.into()
                             },
-                        ),
+                        ).into(),
                     )
                     service.sync()
                     return super.onPreferenceChange(preference, newValue)
