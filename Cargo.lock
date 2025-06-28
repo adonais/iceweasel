@@ -5660,6 +5660,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "remove_dir_all"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "629af41d19eca2791285af048b61d8422995c0b16d2758981f45643121521f0e"
+dependencies = [
+ "winapi",
+]
+
+[[package]]
 name = "replace_with"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7560,6 +7569,7 @@ dependencies = [
  "num_cpus",
  "objc",
  "rayon",
+ "remove_dir_all",
  "static_prefs",
  "swgl",
  "thin-vec",
