@@ -1383,7 +1383,7 @@ newtabPrivatePing:
       type: boolean
       setPref:
         branch: user
-        pref: browser.newtabpage.activity-stream.telemetry.privatePing.inferred.enabled
+        pref: browser.newtabpage.activity-stream.telemetry.privatePing.inferredInterests.enabled
       description: >-
         Includes a differentially private intrest vector of general topical interests based on New Tab clicks. Only sent when user has enabled personalization.
     maxSubmissionDelayMs:
@@ -1416,7 +1416,7 @@ newtabMerinoOhttp:
       type: boolean
       setPref:
         branch: user
-        pref: browser.newtabpage.activity-stream.discoverystrean.merino-provider.ohttp.enabled
+        pref: browser.newtabpage.activity-stream.discoverystream.merino-provider.ohttp.enabled
       description: >-
         Enables using OHTTP for merino content requests
 
@@ -1445,6 +1445,18 @@ newtabRefinedCardsLayout:
         pref: browser.newtabpage.activity-stream.discoverystream.refinedCardsLayout.enabled
       description: Enables the refined cards layout for newtab
 
+
+newtabPublisherFavicons:
+  description: Enabled publihser favicons on cards in newtab
+  owner: nbarrett@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled
+      description: Enables publisher favicons on cards in newtab
 
 pocketNewtab:
   description: The Pocket section in newtab
