@@ -40,6 +40,26 @@ pixman_sample_ceil_y (pixman_fixed_t y, int n)
     pixman_fixed_t f = pixman_fixed_frac (y);
     pixman_fixed_t i = pixman_fixed_floor (y);
 
+if (8 == n)
+{
+    f = DIV (f - Y_FRAC_FIRST (8) + (STEP_Y_SMALL (8) - pixman_fixed_e), STEP_Y_SMALL (8)) * STEP_Y_SMALL (8) +
+	Y_FRAC_FIRST (8);
+    
+    if (f > Y_FRAC_LAST (8))
+    {
+	if (pixman_fixed_to_int (i) == 0x7fff)
+	{
+	    f = 0xffff; /* saturate */
+	}
+	else
+	{
+	    f = Y_FRAC_FIRST (8);
+	    i += pixman_fixed_1;
+	}
+    }
+}
+else
+{
     f = DIV (f - Y_FRAC_FIRST (n) + (STEP_Y_SMALL (n) - pixman_fixed_e), STEP_Y_SMALL (n)) * STEP_Y_SMALL (n) +
 	Y_FRAC_FIRST (n);
     
@@ -55,6 +75,7 @@ pixman_sample_ceil_y (pixman_fixed_t y, int n)
 	    i += pixman_fixed_1;
 	}
     }
+}
     return (i | f);
 }
 
@@ -69,6 +90,26 @@ pixman_sample_floor_y (pixman_fixed_t y,
     pixman_fixed_t f = pixman_fixed_frac (y);
     pixman_fixed_t i = pixman_fixed_floor (y);
 
+if (8 == n)
+{
+    f = DIV (f - pixman_fixed_e - Y_FRAC_FIRST (8), STEP_Y_SMALL (8)) * STEP_Y_SMALL (8) +
+	Y_FRAC_FIRST (8);
+
+    if (f < Y_FRAC_FIRST (8))
+    {
+	if (pixman_fixed_to_int (i) == 0x8000)
+	{
+	    f = 0; /* saturate */
+	}
+	else
+	{
+	    f = Y_FRAC_LAST (8);
+	    i -= pixman_fixed_1;
+	}
+    }
+}
+else
+{
     f = DIV (f - pixman_fixed_e - Y_FRAC_FIRST (n), STEP_Y_SMALL (n)) * STEP_Y_SMALL (n) +
 	Y_FRAC_FIRST (n);
 
@@ -84,6 +125,8 @@ pixman_sample_floor_y (pixman_fixed_t y,
 	    i -= pixman_fixed_1;
 	}
     }
+}
+
     return (i | f);
 }
 
@@ -186,11 +229,22 @@ pixman_edge_init (pixman_edge_t *e,
 	    e->e = 0;
 	}
 
+if (8 == n)
+{
+	_pixman_edge_multi_init (e, STEP_Y_SMALL (8),
+				 &e->stepx_small, &e->dx_small);
+
+	_pixman_edge_multi_init (e, STEP_Y_BIG (8),
+				 &e->stepx_big, &e->dx_big);
+}
+else
+{
 	_pixman_edge_multi_init (e, STEP_Y_SMALL (n),
 				 &e->stepx_small, &e->dx_small);
 
 	_pixman_edge_multi_init (e, STEP_Y_BIG (n),
 				 &e->stepx_big, &e->dx_big);
+    }
     }
     pixman_edge_step (e, y_start - y_top);
 }

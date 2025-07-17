@@ -3325,9 +3325,9 @@ pref("extensions.webextensions.enablePerformanceCounters", true);
 pref("extensions.webextensions.performanceCountersMaxAge", 5000);
 
 // Whether to allow the inline options browser in HTML about:addons page.
-pref("extensions.htmlaboutaddons.inline-options.enabled", true);
+pref("extensions.htmlaboutaddons.inline-options.enabled", false);
 // Show recommendations on the extension and theme list views.
-pref("extensions.htmlaboutaddons.recommendations.enabled", true);
+pref("extensions.htmlaboutaddons.recommendations.enabled", false);
 
 // The URL for the privacy policy related to recommended add-ons.
 pref("extensions.recommendations.privacyPolicyUrl", "");
@@ -3338,12 +3338,12 @@ pref("extensions.recommendations.themeRecommendationUrl", "");
 // Note that on enabling the button in other release channels, make sure to
 // disable it in problematic tests, see disableNonReleaseActions() inside
 // browser/modules/test/browser/head.js
-pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
-#if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
-  pref("extensions.webcompat-reporter.enabled", true);
-#else
-  pref("extensions.webcompat-reporter.enabled", false);
-#endif
+// pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
+// #if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
+// pref("extensions.webcompat-reporter.enabled", true);
+// #else
+// pref("extensions.webcompat-reporter.enabled", false);
+// #endif
 
 // Add-on content security policies.
 pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* http://localhost:* http://127.0.0.1:* moz-extension: blob: filesystem: 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline';");
@@ -3542,6 +3542,8 @@ pref("urlclassifier.gethash.timeout_ms", 5000);
 pref("urlclassifier.alternate_error_page", "blocked");
 
 // Enable safe-browsing debugging
+pref("browser.safebrowsing.phishing.enabled", false);
+pref("browser.safebrowsing.malware.enabled", false);
 pref("browser.safebrowsing.debug", false);
 
 // Allow users to ignore Safe Browsing warnings.
@@ -3556,14 +3558,14 @@ pref("browser.safebrowsing.allowOverride", true);
 #endif
 
 // Download protection
-pref("browser.safebrowsing.downloads.enabled", true);
-pref("browser.safebrowsing.downloads.remote.enabled", true);
+pref("browser.safebrowsing.downloads.enabled", false);
+pref("browser.safebrowsing.downloads.remote.enabled", false);
 pref("browser.safebrowsing.downloads.remote.timeout_ms", 15000);
 pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_SAFEBROWSING_API_KEY%");
-pref("browser.safebrowsing.downloads.remote.block_dangerous",            true);
-pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       true);
-pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", true);
-pref("browser.safebrowsing.downloads.remote.block_uncommon",             true);
+pref("browser.safebrowsing.downloads.remote.block_dangerous",            false);
+pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       false);
+pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", false);
+pref("browser.safebrowsing.downloads.remote.block_uncommon",             false);
 
 // Android SafeBrowsing's configuration is in ContentBlocking.java, keep in sync.
 #ifndef MOZ_WIDGET_ANDROID

@@ -11,7 +11,9 @@
 
 #include <utility>
 
+#ifdef MOZ_CRASHREPORTER
 #include "CrashAnnotations.h"
+#endif
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
@@ -473,9 +475,11 @@ MessageChannel::~MessageChannel() {
   // would be unsafe to invoke our listener's callbacks, and we may be being
   // destroyed on a thread other than `mWorkerThread`.
   if (!IsClosedLocked()) {
+  #ifdef MOZ_CRASHREPORTER
     CrashReporter::AnnotateCrashReport(
         CrashReporter::Annotation::IPCFatalErrorProtocol,
         nsDependentCString(mName));
+  #endif
     switch (mChannelState) {
       case ChannelConnected:
         MOZ_CRASH(

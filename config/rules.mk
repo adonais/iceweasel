@@ -221,6 +221,33 @@ HOST_PROGRAM :=
 HOST_SIMPLE_PROGRAMS :=
 endif
 
+ALL_TRASH = \
+	$(GARBAGE) $(TARGETS) $(OBJS) $(PROGOBJS) LOGS TAGS a.out \
+	$(filter-out $(ASFILES),$(OBJS:.$(OBJ_SUFFIX)=.s)) $(OBJS:.$(OBJ_SUFFIX)=.ii) \
+	$(OBJS:.$(OBJ_SUFFIX)=.i) \
+	$(HOST_PROGOBJS) $(HOST_OBJS) $(IMPORT_LIBRARY) \
+	so_locations _gen _stubs $(wildcard *.res) $(wildcard *.RES) \
+	$(wildcard *.pdb) $(CODFILE) $(IMPORT_LIBRARY) \
+	$(SHARED_LIBRARY:$(DLL_SUFFIX)=.exp) $(wildcard *.ilk) \
+	$(PROGRAM:$(BIN_SUFFIX)=.exp) $(SIMPLE_PROGRAMS:$(BIN_SUFFIX)=.exp) \
+	$(PROGRAM:$(BIN_SUFFIX)=.lib) $(SIMPLE_PROGRAMS:$(BIN_SUFFIX)=.lib) \
+	$(SIMPLE_PROGRAMS:$(BIN_SUFFIX)=.$(OBJ_SUFFIX)) \
+	$(WASM_ARCHIVE) $(wildcard gts_tmp_*) $(LIBRARY:%.a=.%.timestamp)
+ALL_TRASH_DIRS = \
+	$(GARBAGE_DIRS) /no-such-file
+
+ifdef QTDIR
+GARBAGE                 += $(MOCSRCS)
+endif
+
+ifdef SIMPLE_PROGRAMS
+GARBAGE			+= $(SIMPLE_PROGRAMS:%=%.$(OBJ_SUFFIX))
+endif
+
+ifdef HOST_SIMPLE_PROGRAMS
+GARBAGE			+= $(HOST_SIMPLE_PROGRAMS:%=%.$(OBJ_SUFFIX))
+endif
+
 ifdef MACH
 ifndef NO_BUILDSTATUS_MESSAGES
 define BUILDSTATUS
@@ -256,6 +283,8 @@ endif
 ifndef HOST_PROGOBJS
 HOST_PROGOBJS		= $(HOST_OBJS)
 endif
+
+GARBAGE_DIRS    += $(wildcard $(CURDIR)/$(MDDEPDIR))
 
 #
 # Tags: emacs (etags), vi (ctags)
@@ -368,6 +397,11 @@ ECHO := true
 QUIET := -q
 endif
 
+# Do everything from scratch
+everything::
+	$(MAKE) clean
+	$(MAKE) all
+
 # Dependencies which, if modified, should cause everything to rebuild
 GLOBAL_DEPS += Makefile $(addprefix $(DEPTH)/config/,$(INCLUDED_AUTOCONF_MK)) $(MOZILLA_DIR)/config/config.mk
 
@@ -403,6 +437,21 @@ syms::
 
 include $(MOZILLA_DIR)/config/makefiles/target_binaries.mk
 endif
+
+clean clobber realclean clobber_all::
+	-$(RM) $(ALL_TRASH)
+	-$(RM) -r $(ALL_TRASH_DIRS)
+
+clean clobber realclean clobber_all distclean::
+	$(foreach dir,$(DIRS),-$(call SUBMAKE,$@,$(dir)))
+
+distclean::
+	-$(RM) -r $(ALL_TRASH_DIRS)
+	-$(RM) $(ALL_TRASH)  \
+	Makefile .HSancillary \
+	$(wildcard *.$(OBJ_SUFFIX)) $(wildcard *.ho) $(wildcard host_*.o*) \
+	$(wildcard *.$(LIB_SUFFIX)) $(wildcard *$(DLL_SUFFIX)) \
+	$(wildcard *.$(IMPORT_LIB_SUFFIX))
 
 alltags:
 	$(RM) TAGS
@@ -653,9 +702,7 @@ else ifdef MOZ_CRASHREPORTER
 $(foreach file,$(DUMP_SYMS_TARGETS),$(eval $(call syms_template,$(file),$(notdir $(file))_syms.track)))
 endif
 
-ifneq (,$(RUST_TESTS)$(RUST_LIBRARY_FILE)$(HOST_RUST_LIBRARY_FILE)$(RUST_PROGRAMS)$(HOST_RUST_PROGRAMS))
 include $(MOZILLA_DIR)/config/makefiles/rust.mk
-endif
 
 $(SOBJS):
 	$(REPORT_BUILD)
@@ -1091,7 +1138,7 @@ endif
 # Fake targets.  Always run these rules, even if a file/directory with that
 # name already exists.
 #
-.PHONY: all alltags boot chrome realchrome export install libs makefiles run_apprunner tools $(DIRS) FORCE
+.PHONY: all alltags boot chrome realchrome clean clobber clobber_all export install libs makefiles realclean run_apprunner tools $(DIRS) FORCE
 
 # Used as a dependency to force targets to rebuild
 FORCE:

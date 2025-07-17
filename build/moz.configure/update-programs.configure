@@ -134,7 +134,7 @@ def check_update_agent(update_agent, backgroundtasks, updater):
 
 @depends(target, build_project)
 def default_browser_agent_default(target, build_project):
-    return target.os == "WINNT" and build_project == "browser"
+    return False
 
 
 option(

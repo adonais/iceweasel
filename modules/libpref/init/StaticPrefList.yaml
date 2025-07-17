@@ -4621,6 +4621,12 @@
   value: true
   mirror: always
 
+# Is support for Navigator.webdriver enabled?
+- name: dom.webdriver.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # In case Touch API is enabled, this pref controls whether to support
 # ontouch* event handlers, document.createTouch, document.createTouchList and
 # document.createEvent("TouchEvent").

@@ -865,6 +865,7 @@ nsWindowsShellService::CreateShortcut(
     const nsAString& aDescription, nsIFile* aIconFile, uint16_t aIconIndex,
     const nsAString& aAppUserModelId, const nsAString& aShortcutFolder,
     const nsAString& aShortcutName, JSContext* aCx, dom::Promise** aPromise) {
+#ifndef TT_MEMUTIL
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -952,6 +953,7 @@ nsWindowsShellService::CreateShortcut(
       NS_DISPATCH_EVENT_MAY_BLOCK);
 
   promise.forget(aPromise);
+#endif
   return NS_OK;
 }
 
@@ -1153,6 +1155,7 @@ static bool HasMatchingShortcutImpl(const nsAString& aAppUserModelId,
 NS_IMETHODIMP nsWindowsShellService::HasMatchingShortcut(
     const nsAString& aAppUserModelId, const bool aPrivateBrowsing,
     JSContext* aCx, dom::Promise** aPromise) {
+#ifndef TT_MEMUTIL
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -1195,6 +1198,7 @@ NS_IMETHODIMP nsWindowsShellService::HasMatchingShortcut(
       NS_DISPATCH_EVENT_MAY_BLOCK);
 
   promise.forget(aPromise);
+#endif
   return NS_OK;
 }
 

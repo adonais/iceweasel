@@ -292,6 +292,9 @@ SOURCES += [
     "../../checkout/src/compiler/translator/VersionGLSL.cpp",
 ]
 
+# hack by adonais
+SOURCES['../../checkout/src/compiler/translator/tree_util/IntermTraverse.cpp'].no_pgo = True
+
 USE_LIBS += [
     "angle_common",
     "preprocessor",

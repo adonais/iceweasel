@@ -464,12 +464,14 @@ GeckoChildProcessHost::~GeckoChildProcessHost()
 #endif
 
     if (mChildProcessHandle != 0) {
+#ifdef MOZ_CRASHREPORTER
 #if defined(XP_WIN)
       CrashReporter::DeregisterChildCrashAnnotationFileDescriptor(
           base::GetProcId(mChildProcessHandle));
 #else
       CrashReporter::DeregisterChildCrashAnnotationFileDescriptor(
           mChildProcessHandle);
+#endif
 #endif
 
       ProcessWatcher::EnsureProcessTerminated(

@@ -43,6 +43,8 @@ pref("extensions.getAddons.link.url", "https://addons.mozilla.org/%LOCALE%/firef
 pref("extensions.getAddons.langpacks.url", "https://services.addons.mozilla.org/api/v4/addons/language-tools/?app=firefox&type=language&appversion=%VERSION%");
 pref("extensions.getAddons.discovery.api_url", "https://services.addons.mozilla.org/api/v4/discovery/?lang=%LOCALE%&edition=%DISTRIBUTION%");
 
+// Enable the HTML-based discovery panel at about:addons.
+pref("extensions.htmlaboutaddons.discover.enabled", false);
 // The URL for the privacy policy related to recommended extensions.
 pref("extensions.recommendations.privacyPolicyUrl", "https://www.mozilla.org/privacy/firefox/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_content=privacy-policy-link#addons");
 // The URL for Firefox Color, recommended on the theme page in about:addons.
@@ -66,8 +68,8 @@ pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com
 pref("extensions.webextensions.remote", true);
 
 // Require signed add-ons by default
-pref("extensions.langpacks.signatures.required", true);
-pref("xpinstall.signatures.required", true);
+pref("extensions.langpacks.signatures.required", false);
+pref("xpinstall.signatures.required", false);
 pref("xpinstall.signatures.devInfoURL", "https://wiki.mozilla.org/Addons/Extension_Signing");
 
 // Dictionary download preference
@@ -170,7 +172,7 @@ pref("app.update.staging.enabled", true);
   pref("app.update.BITS.enabled", true);
 #endif
 
-pref("app.update.langpack.enabled", true);
+pref("app.update.langpack.enabled", false);
 
 #if defined(MOZ_UPDATE_AGENT)
   pref("app.update.background.loglevel", "error");
@@ -262,7 +264,7 @@ pref("browser.touchmode.auto", true);
 pref("browser.compactmode.show", false);
 
 // At startup, check if we're the default browser and prompt user if not.
-pref("browser.shell.checkDefaultBrowser", true);
+pref("browser.shell.checkDefaultBrowser", false);
 pref("browser.shell.shortcutFavicons",true);
 pref("browser.shell.mostRecentDateSetAsDefault", "");
 pref("browser.shell.skipDefaultBrowserCheckOnFirstRun", true);
@@ -321,6 +323,9 @@ pref("browser.startup.upgradeDialog.enabled", true);
 // platforms that don't always need it (Win/Linux).
 pref("toolkit.lazyHiddenWindow", true);
 
+pref("browser.slowStartup.notificationDisabled", true);
+pref("browser.slowStartup.timeThreshold", 20000);
+pref("browser.slowStartup.maxSamples", 5);
 pref("browser.chrome.site_icons", true);
 // browser.warnOnQuit == false will override all other possible prompts when quitting or restarting
 pref("browser.warnOnQuit", true);
@@ -824,7 +829,7 @@ pref("browser.tabs.tooltipsShowPidAndActiveness", true);
 pref("browser.tabs.tooltipsShowPidAndActiveness", false);
 #endif
 
-pref("browser.tabs.firefox-view", true);
+pref("browser.tabs.firefox-view", false);
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 pref("browser.tabs.firefox-view.notify-for-tabs", false);
 
@@ -1087,7 +1092,7 @@ pref("browser.preferences.experimental", true);
 #else
 pref("browser.preferences.experimental", false);
 #endif
-pref("browser.preferences.moreFromMozilla", true);
+pref("browser.preferences.moreFromMozilla", false);
 pref("browser.preferences.experimental.hidden", false);
 pref("browser.preferences.defaultPerformanceSettings.enabled", true);
 
@@ -1862,7 +1867,7 @@ pref("browser.translations.enable", true);
 
 // Telemetry settings.
 // Determines if Telemetry pings can be archived locally.
-pref("toolkit.telemetry.archive.enabled", true);
+pref("toolkit.telemetry.archive.enabled", false);
 // Enables sending the shutdown ping when Firefox shuts down.
 pref("toolkit.telemetry.shutdownPingSender.enabled", true);
 // Enables using the `pingsender` background task.
@@ -1870,16 +1875,16 @@ pref("toolkit.telemetry.shutdownPingSender.backgroundtask.enabled", false);
 // Enables sending the shutdown ping using the pingsender from the first session.
 pref("toolkit.telemetry.shutdownPingSender.enabledFirstSession", false);
 // Enables sending a duplicate of the first shutdown ping from the first session.
-pref("toolkit.telemetry.firstShutdownPing.enabled", true);
+pref("toolkit.telemetry.firstShutdownPing.enabled", false);
 // Enables sending the 'new-profile' ping on new profiles.
-pref("toolkit.telemetry.newProfilePing.enabled", true);
+pref("toolkit.telemetry.newProfilePing.enabled", false);
 // Enables sending 'update' pings on Firefox updates.
-pref("toolkit.telemetry.updatePing.enabled", true);
+pref("toolkit.telemetry.updatePing.enabled", false);
 // Enables sending 'bhr' pings when the browser hangs.
-pref("toolkit.telemetry.bhrPing.enabled", true);
+pref("toolkit.telemetry.bhrPing.enabled", false);
 
 // Ping Centre Telemetry settings.
-pref("browser.ping-centre.telemetry", true);
+pref("browser.ping-centre.telemetry", false);
 pref("browser.ping-centre.log", false);
 
 // Enable GMP support in the addon manager.
@@ -2134,7 +2139,7 @@ pref("extensions.experiments.enabled", false);
 #endif
 
 #if defined(XP_WIN)
-  pref("dom.ipc.processPriorityManager.backgroundUsesEcoQoS", true);
+  pref("dom.ipc.processPriorityManager.backgroundUsesEcoQoS", false);
 #endif
 
 // Don't limit how many nodes we care about on desktop:
@@ -2323,10 +2328,18 @@ pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%
 pref("app.normandy.last_seen_buildid", "");
 pref("app.normandy.onsync_skew_sec", 600);
 #ifdef MOZ_DATA_REPORTING
-  pref("app.shield.optoutstudies.enabled", true);
+  pref("app.shield.optoutstudies.enabled", false);
 #else
   pref("app.shield.optoutstudies.enabled", false);
 #endif
+// by adonais
+pref("browser.newtabpage.activity-stream.feeds.snippets", false);
+pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
+pref("browser.newtabpage.enhanced", false);
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr", false);
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false);
+pref("datareporting.healthreport.uploadEnabled", false);
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?
@@ -2359,8 +2372,8 @@ pref("toolkit.coverage.enabled", false);
 pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
 
 // Discovery prefs
-pref("browser.discovery.enabled", true);
-pref("browser.discovery.containers.enabled", true);
+pref("browser.discovery.enabled", false);
+pref("browser.discovery.containers.enabled", false);
 pref("browser.discovery.sites", "addons.mozilla.org");
 
 pref("browser.engagement.recent_visited_origins.expiry", 86400); // 24 * 60 * 60 (24 hours in seconds)
@@ -2785,7 +2798,7 @@ pref("first-startup.timeout", 30000);
 // The agent still runs as scheduled if this pref is disabled,
 // but it exits immediately before taking any action.
 #ifdef XP_WIN
-  pref("default-browser-agent.enabled", true);
+  pref("default-browser-agent.enabled", false);
 #endif
 
 // Test Prefs that do nothing for testing

@@ -65,12 +65,16 @@ struct EnumSerializer {
   static bool Read(MessageReader* aReader, paramType* aResult) {
     uintParamType value;
     if (!ReadParam(aReader, &value)) {
+    #ifdef MOZ_CRASHREPORTER
       CrashReporter::AnnotateCrashReport(
           CrashReporter::Annotation::IPCReadErrorReason, "Bad iter"_ns);
+    #endif
       return false;
     } else if (!EnumValidator::IsLegalValue(value)) {
+    #ifdef MOZ_CRASHREPORTER
       CrashReporter::AnnotateCrashReport(
           CrashReporter::Annotation::IPCReadErrorReason, "Illegal value"_ns);
+    #endif
       return false;
     }
     *aResult = paramType(value);
