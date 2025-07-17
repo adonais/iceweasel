@@ -614,7 +614,9 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
 #endif
 
   if (aInitFlags & eDllBlocklistInitFlagWasBootstrapped) {
+  #ifdef MOZ_CRASHREPORTER
     GetNativeNtBlockSetWriter();
+  #endif
     return;
   }
 
@@ -671,7 +673,9 @@ MFBT_API void DllBlocklist_Shutdown() {}
 #endif  // DEBUG
 
 static void InternalWriteNotes(WritableBuffer& aBuffer) {
+#ifdef MOZ_CRASHREPORTER
   DllBlockSet::Write(aBuffer);
+#endif
 }
 
 using WriterFn = void (*)(WritableBuffer& aBuffer);
@@ -685,7 +689,11 @@ static void GetNativeNtBlockSetWriter() {
   }
 }
 
-MFBT_API void DllBlocklist_WriteNotes() { gWriterFn(sBlocklistWriter); }
+MFBT_API void DllBlocklist_WriteNotes() {
+#ifdef MOZ_CRASHREPORTER
+  gWriterFn(sBlocklistWriter);
+#endif
+}
 
 MFBT_API bool DllBlocklist_CheckStatus() {
   if (sBlocklistInitFailed || sUser32BeforeBlocklist) return false;

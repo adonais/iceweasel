@@ -7,6 +7,7 @@
 *~
 *.pyc
 *.pyo
+__pycache__/
 TAGS
 tags
 .DS_Store

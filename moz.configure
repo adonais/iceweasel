@@ -716,11 +716,31 @@ def extra_programs(target):
 check_prog("MKFSHFS", extra_programs.MKFSHFS, allow_missing=True)
 check_prog("HFS_TOOL", extra_programs.HFS_TOOL, allow_missing=True)
 
+@depends(target)
+@imports("os")
+def makensis_progs(target):
+    if target.kernel != "WINNT":
+        return
+
+    candidates = [
+        "makensis-3.01",
+        "makensis-3.0b3",
+        "makensis-3.0b1",
+        "makensis",
+    ]
+
+    # Look for nsis installed by msys environment. But only the 32-bit version.
+    # We use an absolute path and insert as the first entry so it is preferred
+    # over a 64-bit exe that may be in PATH.
+    if "MSYSTEM_PREFIX" in os.environ:
+        prefix = os.path.dirname(os.environ["MSYSTEM_PREFIX"])
+        candidates.insert(0, os.path.join(prefix, "mingw32", "bin", "makensis.exe"))
+
+    return tuple(candidates)
 
 nsis = check_prog(
     "MAKENSISU",
-    ("makensis",),
-    bootstrap="nsis/bin",
+    makensis_progs,
     allow_missing=True,
     when=target_is_windows,
 )

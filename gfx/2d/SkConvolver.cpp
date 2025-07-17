@@ -157,6 +157,9 @@ void convolve_horizontally_sse2(const unsigned char* srcData,
 void convolve_vertically_sse2(const int16_t* filter, int filterLen,
                               uint8_t* const* srcRows, int width, uint8_t* out,
                               bool hasAlpha);
+void convolve_horizontally_ssse3(const unsigned char* srcData,
+                                 const SkConvolutionFilter1D& filter,
+                                 unsigned char* outRow, bool hasAlpha);
 #elif defined(USE_NEON)
 void convolve_horizontally_neon(const unsigned char* srcData,
                                 const SkConvolutionFilter1D& filter,
@@ -170,6 +173,10 @@ void convolve_horizontally(const unsigned char* srcData,
                            const SkConvolutionFilter1D& filter,
                            unsigned char* outRow, bool hasAlpha) {
 #ifdef USE_SSE2
+  if (mozilla::supports_ssse3()) {
+    convolve_horizontally_ssse3(srcData, filter, outRow, hasAlpha);
+    return;
+  }
   if (mozilla::supports_sse2()) {
     convolve_horizontally_sse2(srcData, filter, outRow, hasAlpha);
     return;

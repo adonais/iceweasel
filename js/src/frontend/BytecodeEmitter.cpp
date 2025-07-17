@@ -8,6 +8,10 @@
  * JS bytecode generation.
  */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "frontend/BytecodeEmitter.h"
 
 #include "mozilla/Casting.h"    // mozilla::AssertedCast
@@ -4336,6 +4340,9 @@ static inline JSOp CompoundAssignmentParseNodeKindToJSOp(ParseNodeKind pnk) {
 
 bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
                                            ParseNode* rhs) {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+  _mm_prefetch((char *)lhs, _MM_HINT_T0);
+#endif
   JSOp compoundOp = CompoundAssignmentParseNodeKindToJSOp(kind);
   bool isCompound = compoundOp != JSOp::Nop;
   bool isInit = kind == ParseNodeKind::InitExpr;

@@ -97,6 +97,7 @@ void PortLink::SendMessage(UniquePtr<Message> aMessage) {
   mChan->mMonitor->AssertCurrentThreadOwns();
 
   if (aMessage->size() > IPC::Channel::kMaximumMessageSize) {
+  #ifdef MOZ_CRASHREPORTER
     CrashReporter::RecordAnnotationCString(
         CrashReporter::Annotation::IPCMessageName, aMessage->name());
     CrashReporter::RecordAnnotationU32(
@@ -104,6 +105,7 @@ void PortLink::SendMessage(UniquePtr<Message> aMessage) {
     CrashReporter::RecordAnnotationU32(
         CrashReporter::Annotation::IPCMessageLargeBufferShmemFailureSize,
         aMessage->LargeBufferShmemFailureSize());
+  #endif
     MOZ_CRASH("IPC message size is too large");
   }
   aMessage->AssertAsLargeAsHeader();

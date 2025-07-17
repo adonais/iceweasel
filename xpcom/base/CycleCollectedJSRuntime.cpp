@@ -53,6 +53,10 @@
 // To improve debugging, if WantAllTraces() is true all JS objects are
 // traversed.
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "mozilla/CycleCollectedJSRuntime.h"
 
 #include <algorithm>
@@ -1601,11 +1605,17 @@ bool CycleCollectedJSRuntime::TraceJSHolders(JSTracer* aTracer, IterT& aIter,
     Unused << checkSingleZoneHolders;
 #endif
 
+    aIter.Next();
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (!aIter.Done()) {
+      _mm_prefetch((char *)aIter->mHolder, _MM_HINT_NTA);
+      _mm_prefetch((char *)aIter->mHolder + 64, _MM_HINT_NTA);
+    }
+#endif
     functor.SetHolder(holder);
     tracer->Trace(holder, JsGcTracer(), aTracer);
     functor.SetHolder(nullptr);
 
-    aIter.Next();
     aBudget.step();
   }
 

@@ -4,6 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "DOMIntersectionObserver.h"
 #include "nsCSSPropertyID.h"
 #include "nsIFrame.h"
@@ -849,9 +853,18 @@ void DOMIntersectionObserver::Update(Document& aDocument,
 
   // 2. For each target in observer’s internal [[ObservationTargets]] slot,
   // processed in the same order that observe() was called on each target:
-  for (Element* target : mObservationTargets) {
+  for (auto it = mObservationTargets.begin(); it != mObservationTargets.end();) {
+    Element* target = *it;
+    ++it;
+
     // 2.1 - 2.4.
     IntersectionOutput output = Intersect(input, *target);
+
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it != mObservationTargets.end()) {
+      _mm_prefetch((char *)*it, _MM_HINT_T0);
+    }
+#endif
 
     // 2.5. Let targetArea be targetRect’s area.
     int64_t targetArea = (int64_t)output.mTargetRect.Width() *

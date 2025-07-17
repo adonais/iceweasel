@@ -138,7 +138,7 @@ if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_ARCH"] == "WINNT":
         "usp10.dll",
     ]
 
-if CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
+if CONFIG["MOZ_CRASHREPORTER"] and CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
     DIRS += ["nmhproxy"]
 
 # Control the default heap size.

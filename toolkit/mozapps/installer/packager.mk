@@ -128,8 +128,10 @@ prepare-package: stage-package
 
 make-package-internal: prepare-package make-sourcestamp-file
 	@echo 'Compressing...'
+ifndef MOZ_PROFILE_GENERATE
 	$(call MAKE_PACKAGE,$(DIST))
 	echo $(PACKAGE) > $(ABS_DIST)/package_name.txt
+endif
 
 make-package: FORCE
 	$(MAKE) make-package-internal

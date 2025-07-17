@@ -6,6 +6,10 @@
 
 /* rendering object that goes directly inside the document's scrollbars */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "nsCanvasFrame.h"
 
 #include "gfxContext.h"
@@ -438,8 +442,17 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   aLists.BorderBackground()->AppendToTop(&list);
 
-  for (nsIFrame* kid : PrincipalChildList()) {
+  const auto& childList = PrincipalChildList();
+  for (auto it = childList.begin(); it != childList.end();) {
     // Put our child into its own pseudo-stack.
+    auto kid = *it;
+    ++it;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it != childList.end()) {
+      _mm_prefetch((char *)*it, _MM_HINT_T0);
+      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
+    }
+#endif
     BuildDisplayListForChild(aBuilder, kid, aLists);
   }
 

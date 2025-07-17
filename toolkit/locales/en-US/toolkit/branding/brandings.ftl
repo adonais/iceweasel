@@ -15,17 +15,17 @@
 ## https://mozilla-l10n.github.io/styleguides/mozilla_general/#brands-copyright-and-trademark
 
 -facebook-container-brand-name = Facebook Container
--monitor-brand-name = Firefox Monitor
+-monitor-brand-name = Mozilla Monitor
 -monitor-brand-short-name = Monitor
 -mozmonitor-brand-name = Mozilla Monitor
 -pocket-brand-name = Pocket
--send-brand-name = Firefox Send
--screenshots-brand-name = Firefox Screenshots
+-send-brand-name = Mozilla Send
+-screenshots-brand-name = Iceweasel Screenshots
 -mozilla-vpn-brand-name = Mozilla VPN
--profiler-brand-name = Firefox Profiler
--translations-brand-name = Firefox Translations
--focus-brand-name = Firefox Focus
--relay-brand-name = Firefox Relay
+-profiler-brand-name = Iceweasel Profiler
+-translations-brand-name = Iceweasel Translations
+-focus-brand-name = Mozilla Focus
+-relay-brand-name = Mozilla Relay
 -relay-brand-short-name = Relay
 -fakespot-brand-name = Fakespot
 -solo-ai-brand-name = Solo
@@ -38,18 +38,18 @@
 
 # “Suggest” can be localized, “Firefox” must be treated as a brand
 # and kept in English.
--firefox-suggest-brand-name = Firefox Suggest
+-firefox-suggest-brand-name = Iceweasel Suggest
 
 # ”Home" can be localized, “Firefox” must be treated as a brand
 # and kept in English.
--firefox-home-brand-name = Firefox Home
+-firefox-home-brand-name = Iceweasel Home
 
 # View" can be localized, “Firefox” must be treated as a brand
 # and kept in English.
--firefoxview-brand-name = Firefox View
+-firefoxview-brand-name = Iceweasel View
 
 # Firefox Labs is the name for a page in Settings to allow users to learn about
 # experimental and in-development features, and turn those features on and off.
 # The "Labs" portion can be localized, “Firefox” must be treated as a brand
 # and kept in English.
--firefoxlabs-brand-name = Firefox Labs
+-firefoxlabs-brand-name = Mozilla Labs

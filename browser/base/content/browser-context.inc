@@ -109,6 +109,9 @@
       <menuitem id="context-savelink"
                 data-l10n-id="main-context-menu-save-link"
                 />
+      <menuitem id="context-downloadlink"
+                data-l10n-id="main-context-menu-download-link"
+                />
       <menuitem id="context-copyemail"
                 data-l10n-id="main-context-menu-copy-email"
                 />

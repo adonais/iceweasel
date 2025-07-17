@@ -4,6 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "gc/Marking-inl.h"
 
 #include "mozilla/DebugOnly.h"
@@ -1339,6 +1343,9 @@ bool GCMarker::doMarking(SliceBudget& budget, ShouldReportMarkTime reportTime) {
 
 template <uint32_t opts, MarkColor color>
 bool GCMarker::markOneColor(SliceBudget& budget) {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+  _mm_prefetch((char *)&markColor_, _MM_HINT_T0);
+#endif
   AutoSetMarkColor setColor(*this, color);
   AutoUpdateMarkStackRanges updateRanges(*this);
 
@@ -1353,6 +1360,10 @@ bool GCMarker::markOneColor(SliceBudget& budget) {
 
 bool GCMarker::markCurrentColorInParallel(SliceBudget& budget) {
   MOZ_ASSERT(stack.elementsRangesAreValid);
+
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+  _mm_prefetch((char *)&markColor_, _MM_HINT_T0);
+#endif
 
   ParallelMarker::AtomicCount& waitingTaskCount =
       parallelMarker_->waitingTaskCountRef();
@@ -1490,6 +1501,10 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
   size_t index;              // Index of the next slot to mark.
   size_t end;                // End of slot range to mark.
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+  constexpr size_t prefetch_distance = 6;
+#endif
+
   if (stack.peekTag() == MarkStack::SlotsOrElementsRangeTag) {
     auto range = stack.popSlotsOrElementsRange();
     obj = range.ptr().asRangeObject();
@@ -1570,7 +1585,7 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
       }
 
       default:
-        MOZ_CRASH("Invalid tag in mark stack");
+        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Invalid tag in mark stack");
     }
   }
 
@@ -1592,6 +1607,11 @@ scan_value_range:
     if (!v.isGCThing()) {
       continue;
     }
+
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    size_t future = std::min(index + prefetch_distance, end - 1);
+    _mm_prefetch((char*)&base[future], _MM_HINT_NTA);
+#endif
 
     if (v.isString()) {
       markAndTraverseEdge<opts>(obj, v.toString());
@@ -1674,6 +1694,10 @@ scan_obj: {
 
     if (!nslots) {
       // No slots at all. Scan elements immediately.
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+      size_t future = std::min(index + prefetch_distance, end - 1);
+      _mm_prefetch((char*)&base[future], _MM_HINT_NTA);
+#endif
       goto scan_value_range;
     }
 
@@ -1692,6 +1716,11 @@ scan_obj: {
   } else {
     end = nslots;
   }
+
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+  size_t future = std::min(index + prefetch_distance, end - 1);
+  _mm_prefetch((char*)&base[future], _MM_HINT_NTA);
+#endif
 
   // Scan any fixed slots.
   goto scan_value_range;
@@ -2515,6 +2544,10 @@ void GCRuntime::processDelayedMarkingList(MarkColor color) {
   // clearing a flag on each arena before marking its children. This flag will
   // be set again if the arena is re-added. Iterate the list until no new arenas
   // were added.
+
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+  _mm_prefetch((char *)&marker().markColor_, _MM_HINT_T0);
+#endif
 
   AutoSetMarkColor setColor(marker(), color);
   AutoUpdateMarkStackRanges updateRanges(marker());

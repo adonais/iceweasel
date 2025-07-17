@@ -4,6 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "mozilla/RestyleManager.h"
 
 #include "mozilla/AnimationUtils.h"
@@ -3067,7 +3071,14 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     TextPostTraversalState textState(*aElement, upToDateStyle,
                                      isDisplayContents && wasRestyled,
                                      childrenRestyleState);
-    for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
+    for (nsIContent* n = it.GetNextChild(); n;) {
+      nsIContent* nNext = it.GetNextChild();
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+      if (nNext) {
+        _mm_prefetch((char *)nNext, _MM_HINT_NTA);
+        _mm_prefetch((char *)nNext + 64, _MM_HINT_NTA);
+      }
+#endif
       if (traverseElementChildren && n->IsElement()) {
         recreatedAnyContext |= ProcessPostTraversal(
             n->AsElement(), childrenRestyleState, childrenFlags);
@@ -3075,6 +3086,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
         recreatedAnyContext |= ProcessPostTraversalForText(
             n, textState, childrenRestyleState, childrenFlags);
       }
+      n = nNext;
     }
   }
 

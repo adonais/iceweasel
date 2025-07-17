@@ -310,7 +310,7 @@ partial interface Navigator {
 
 // https://w3c.github.io/webdriver/webdriver-spec.html#interface
 interface mixin NavigatorAutomationInformation {
-  [Constant, Cached]
+  [Pref="dom.webdriver.enabled"]
   readonly attribute boolean webdriver;
 };
 

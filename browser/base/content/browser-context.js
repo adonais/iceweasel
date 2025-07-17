@@ -57,6 +57,9 @@ document.addEventListener(
         case "context-savelink":
           gContextMenu.saveLink();
           break;
+        case "context-downloadlink":
+          gContextMenu.downloadLink();
+          break;
         case "context-copyemail":
           gContextMenu.copyEmail();
           break;

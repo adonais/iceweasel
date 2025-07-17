@@ -6,7 +6,7 @@
 
 #include "SkConvolver.h"
 #include "mozilla/Attributes.h"
-#include <immintrin.h>
+#include <tmmintrin.h>
 
 namespace skia {
 
@@ -118,6 +118,106 @@ void convolve_horizontally_sse2(const unsigned char* srcData,
     outRow += 4;
   }
 }
+
+#ifdef __clang__
+#pragma clang attribute push (__attribute__((target("ssse3"))), apply_to=function)
+#endif
+
+// Convolves horizontally along a single row. The row data is given in
+// |srcData| and continues for the numValues() of the filter.
+void convolve_horizontally_ssse3(const unsigned char* srcData,
+                                 const SkConvolutionFilter1D& filter,
+                                 unsigned char* outRow, bool /*hasAlpha*/) {
+  const __m128i mask_c01 = _mm_set_epi8(
+    3, 2, 1, 0,
+    3, 2, 1, 0,
+    3, 2, 1, 0,
+    3, 2, 1, 0);
+  const __m128i mask_c23 = _mm_set_epi8(
+    7, 6, 5, 4,
+    7, 6, 5, 4,
+    7, 6, 5, 4,
+    7, 6, 5, 4);
+  const __m128i mask_src01 = _mm_set_epi8(
+    0x80, 7, 0x80, 3,
+    0x80, 6, 0x80, 2,
+    0x80, 5, 0x80, 1,
+    0x80, 4, 0x80, 0);
+  const __m128i mask_src23 = _mm_set_epi8(
+    0x80, 15, 0x80, 11,
+    0x80, 14, 0x80, 10,
+    0x80, 13, 0x80, 9,
+    0x80, 12, 0x80, 8);
+
+  // Output one pixel each iteration, calculating all channels (RGBA) together.
+  int numValues = filter.numValues();
+  for (int outX = 0; outX < numValues; outX++) {
+    // Get the filter that determines the current output pixel.
+    int filterOffset, filterLength;
+    const SkConvolutionFilter1D::ConvolutionFixed* filterValues =
+        filter.FilterForValue(outX, &filterOffset, &filterLength);
+
+    // Compute the first pixel in this row that the filter affects. It will
+    // touch |filterLength| pixels (4 bytes each) after this.
+    const unsigned char* rowToFilter = &srcData[filterOffset * 4];
+
+    __m128i zero = _mm_setzero_si128();
+    __m128i accum = _mm_setzero_si128();
+
+    // We will load and accumulate with four coefficients per iteration.
+    for (int filterX = 0; filterX < filterLength >> 2; filterX++) {
+      // Load 4 coefficients => duplicate 1st and 2nd of them for all channels.
+      // [16] xx xx xx xx c3 c2 c1 c0
+      __m128i coeff = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(filterValues));
+      // [16] c1 c0 c1 c0 c1 c0 c1 c0
+      __m128i coeff_c01 = _mm_shuffle_epi8(coeff, mask_c01);
+      // [16] c3 c2 c3 c2 c3 c2 c3 c2
+      __m128i coeff_c23 = _mm_shuffle_epi8(coeff, mask_c23);
+
+      // [8] a3 b3 g3 r3 a2 b2 g2 r2 a1 b1 g1 r1 a0 b0 g0 r0
+      __m128i src8 = _mm_lddqu_si128(reinterpret_cast<const __m128i*>(rowToFilter));
+      // [16] a1 a0 b1 b0 g1 g0 r1 r0
+      __m128i src_01 = _mm_shuffle_epi8(src8, mask_src01);
+      // [16] a3 a2 b3 b2 g3 g2 r3 r2
+      __m128i src_23 = _mm_shuffle_epi8(src8, mask_src23);
+
+      // [32] a0*c0+a1*c1 b0*c0+b1*c1 g0*c0+g1*c1 r0*c0+r1*c1
+      __m128i t0 = _mm_madd_epi16(src_01, coeff_c01);
+      accum = _mm_add_epi32(accum, t0);
+      // [32] a2*c2+a3*c3 b2*c2+b3*c3 g2*c2+g3*c3 r2*c2+r3*c3
+      __m128i t1 = _mm_madd_epi16(src_23, coeff_c23);
+      accum = _mm_add_epi32(accum, t1);
+
+      // Advance the pixel and coefficients pointers.
+      rowToFilter += 16;
+      filterValues += 4;
+    }
+
+    // When |filterLength| is not divisible by 4, we accumulate the last 1 - 3
+    // coefficients one at a time.
+    int r = filterLength & 3;
+    if (r) {
+      int remainderOffset = (filterOffset + filterLength - r) * 4;
+      AccumRemainder(srcData + remainderOffset, filterValues, accum, r);
+    }
+
+    // Shift right for fixed point implementation.
+    accum = _mm_srai_epi32(accum, SkConvolutionFilter1D::kShiftBits);
+
+    // Packing 32 bits |accum| to 16 bits per channel (signed saturation).
+    accum = _mm_packs_epi32(accum, zero);
+    // Packing 16 bits |accum| to 8 bits per channel (unsigned saturation).
+    accum = _mm_packus_epi16(accum, zero);
+
+    // Store the pixel value of 32 bits.
+    *(reinterpret_cast<int*>(outRow)) = _mm_cvtsi128_si32(accum);
+    outRow += 4;
+  }
+}
+
+#ifdef __clang__
+#pragma clang attribute pop
+#endif
 
 // Does vertical convolution to produce one output row. The filter values and
 // length are given in the first two parameters. These are applied to each

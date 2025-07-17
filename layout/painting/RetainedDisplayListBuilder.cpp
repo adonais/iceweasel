@@ -609,6 +609,12 @@ class MergeState {
         continue;
       }
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+      if (i + 1 < mOldDAG.Length() && !mOldItems[i + 1].IsUsed()) {
+        _mm_prefetch((char *)mOldItems[OldListIndex(i + 1).val].mItem, _MM_HINT_NTA);
+      }
+#endif
+
       AutoTArray<MergedListIndex, 2> directPredecessors =
           ResolveNodeIndexesOldToMerged(
               mOldDAG.GetDirectPredecessors(OldListIndex(i)));
@@ -1146,7 +1152,16 @@ bool RetainedDisplayListBuilder::ProcessFrame(
 static void AddFramesForContainingBlock(nsIFrame* aBlock,
                                         const nsFrameList& aFrames,
                                         nsTArray<nsIFrame*>& aExtraFrames) {
-  for (nsIFrame* f : aFrames) {
+  const auto& frames = aFrames;
+  for (auto it = frames.begin(); it != frames.end();) {
+    const auto& f = *it;
+    ++it;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it != frames.end()) {
+      _mm_prefetch((char *)*it, _MM_HINT_NTA);
+      _mm_prefetch((char *)*it + 64, _MM_HINT_NTA);
+    }
+#endif
     if (!f->IsFrameModified() && AnyContentAncestorModified(f, aBlock)) {
       CRR_LOG("Adding invalid OOF %p\n", f);
       aExtraFrames.AppendElement(f);

@@ -165,6 +165,9 @@ main-context-menu-save-link =
 ## should be the same if possible; the two context menu items
 ## are mutually exclusive.
 
+main-context-menu-download-link =
+    .label = Download Link With Upcheck
+    
 main-context-menu-copy-email =
     .label = Copy Email Address
     .accesskey = l

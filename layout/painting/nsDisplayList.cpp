@@ -10,6 +10,10 @@
  * used during painting and hit testing
  */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "nsDisplayList.h"
 
 #include <stdint.h>
@@ -2098,7 +2102,15 @@ nsRect nsDisplayList::GetClippedBoundsWithRespectToASR(
     nsDisplayListBuilder* aBuilder, const ActiveScrolledRoot* aASR,
     nsRect* aBuildingRect) const {
   nsRect bounds;
-  for (nsDisplayItem* i : *this) {
+  const nsDisplayList& thisItems = *this;
+  for (auto it = thisItems.begin(); it != thisItems.end();) {
+    const auto& i = *it;
+    ++it;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it != thisItems.end()) {
+      _mm_prefetch((char *)*it, _MM_HINT_NTA);
+    }
+#endif
     nsRect r = i->GetClippedBounds(aBuilder);
     if (aASR != i->GetActiveScrolledRoot() && !r.IsEmpty()) {
       if (Maybe<nsRect> clip = i->GetClipWithRespectToASR(aBuilder, aASR)) {
@@ -2331,7 +2343,15 @@ void nsDisplayList::PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
 }
 
 void nsDisplayList::DeleteAll(nsDisplayListBuilder* aBuilder) {
-  for (auto* item : TakeItems()) {
+  const nsDisplayList& takeItems = TakeItems();
+  for (auto it = takeItems.begin(); it != takeItems.end(); ++it) {
+    const auto& item = *it;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it.mNode->mNext) {
+      _mm_prefetch((char *)it.mNode->mNext->mValue, _MM_HINT_NTA);
+      _mm_prefetch((char *)it.mNode->mNext->mValue + 64, _MM_HINT_NTA);
+    }
+#endif
     item->Destroy(aBuilder);
   }
 }

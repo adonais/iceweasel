@@ -137,7 +137,7 @@
 ; [Base Browser Files]
 #ifndef XP_UNIX
 @BINPATH@/@MOZ_APP_NAME@.exe
-@BINPATH@/firefox.VisualElementsManifest.xml
+@BINPATH@/@MOZ_APP_NAME@.VisualElementsManifest.xml
 @BINPATH@/browser/VisualElements/VisualElements_150.png
 @BINPATH@/browser/VisualElements/VisualElements_70.png
 @BINPATH@/private_browsing.exe
@@ -386,12 +386,16 @@ bin/libfreebl_64int_3.so
 
 ; [ Ping Sender ]
 ;
+#ifdef MOZ_CRASHREPORTER
 @BINPATH@/pingsender@BIN_SUFFIX@
+#endif
 
 ; [ Native Messaging Host Proxy ]
 ;
 #if defined(XP_WIN) || defined(XP_MACOSX)
+#ifdef MOZ_CRASHREPORTER
 @BINPATH@/nmhproxy@BIN_SUFFIX@
+#endif
 #endif
 
 ; [ Notification COM Server ]

@@ -343,7 +343,7 @@
  # and can relaunch the application after it has been closed.
 - name: alerts.useSystemBackend.windows.notificationserver.enabled
   type: bool
-  value: true
+  value: false
   mirror: never
 #endif
 
@@ -3714,7 +3714,7 @@
 # information should be collected / submitted.
 - name: dom.private-attribution.submission.enabled
   type: bool
-  value: @IS_NOT_ANDROID@
+  value: false
   mirror: always
 
 # Is support for Window.paintWorklet enabled?
@@ -5348,6 +5348,12 @@
 - name: dom.w3c_pointer_events.implicit_capture
   type: bool
   value: true
+  mirror: always
+
+# Is support for Navigator.webdriver enabled?
+- name: dom.webdriver.enabled
+  type: bool
+  value: @IS_NOT_ANDROID@
   mirror: always
 
 - name: dom.w3c_pointer_events.getcoalescedevents_only_in_securecontext

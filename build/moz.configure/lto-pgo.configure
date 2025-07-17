@@ -389,8 +389,11 @@ def lto(
         # recommends this as the "generic 64-bit specific x86 processor model":
         #
         # https://github.com/llvm/llvm-project/blob/e7694f34ab6a12b8bb480cbfcb396d0a64fe965f/llvm/lib/Target/X86/X86.td#L1165-L1187
+        # https://github.com/llvm/llvm-project/blob/e7694f34ab6a12b8bb480cbfcb396d0a64fe965f/llvm/lib/Target/X86/X86.td#L1008-L1022
         if target.cpu == "x86_64":
-            ldflags.append("-mllvm:-mcpu=x86-64")
+            ldflags.append("-mllvm:-mcpu=nocona")
+            ldflags.append("-mllvm:-enable-ext-tsp-block-placement=1")
+            ldflags.append("-mllvm:-disable-auto-upgrade-debug-info")
         # We do not need special flags for arm64.  Hooray for fixed-length
         # instruction sets.
     else:

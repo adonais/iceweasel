@@ -4,6 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "nsTableFrame.h"
 
 #include "mozilla/gfx/2D.h"
@@ -1203,7 +1207,16 @@ void nsTableFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  for (nsIFrame* kid : PrincipalChildList()) {
+  const auto& childList = PrincipalChildList();
+  for (auto it = childList.begin(); it != childList.end();) {
+    auto kid = *it;
+    ++it;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it != childList.end()) {
+      _mm_prefetch((char *)*it, _MM_HINT_T0);
+      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
+    }
+#endif
     BuildDisplayListForChild(aBuilder, kid, lists);
   }
 

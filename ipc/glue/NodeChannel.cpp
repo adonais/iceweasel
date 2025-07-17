@@ -166,6 +166,7 @@ void NodeChannel::AcceptInvite(const NodeName& aRealName,
 
 void NodeChannel::SendMessage(UniquePtr<IPC::Message> aMessage) {
   if (aMessage->size() > IPC::Channel::kMaximumMessageSize) {
+  #ifdef MOZ_CRASHREPORTER
     CrashReporter::RecordAnnotationCString(
         CrashReporter::Annotation::IPCMessageName, aMessage->name());
     CrashReporter::RecordAnnotationU32(
@@ -173,6 +174,7 @@ void NodeChannel::SendMessage(UniquePtr<IPC::Message> aMessage) {
     CrashReporter::RecordAnnotationU32(
         CrashReporter::Annotation::IPCMessageLargeBufferShmemFailureSize,
         aMessage->LargeBufferShmemFailureSize());
+  #endif
     MOZ_CRASH("IPC message size is too large");
   }
   aMessage->AssertAsLargeAsHeader();

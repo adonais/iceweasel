@@ -9,6 +9,10 @@
  * boxes, also used for various anonymous boxes
  */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "nsBlockFrame.h"
 
 #include "gfxContext.h"
@@ -3119,6 +3123,12 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
 
   // Reflow the lines that are already ours
   for (; line != line_end; ++line, aState.AdvanceToNextLine()) {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (line.next() != line_end) {
+      _mm_prefetch((char *)line.peekNext()->mFirstChild, _MM_HINT_T0);
+    }
+#endif
+
     DumpLine(aState, line, deltaBCoord, 0);
 #ifdef DEBUG
     AutoNoisyIndenter indent2(gNoisyReflow);
@@ -7849,6 +7859,9 @@ static void DisplayLine(nsDisplayListBuilder* aBuilder,
   nsIFrame* kid = aLine->mFirstChild;
   int32_t n = aLine->GetChildCount();
   while (--n >= 0) {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    _mm_prefetch((char *)kid->GetNextSibling(), _MM_HINT_T0);
+#endif
     aFrame->BuildDisplayListForChild(aBuilder, kid, childLists, flags);
     kid = kid->GetNextSibling();
   }
@@ -7902,6 +7915,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayOverflowContainers(aBuilder, aLists);
     for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
       if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+        _mm_prefetch((char *)f->GetNextSibling(), _MM_HINT_T0);
+#endif
         BuildDisplayListForChild(aBuilder, f, aLists);
       }
     }
@@ -8034,6 +8050,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     };
 
     for (LineIterator line = LinesBegin(); line != line_end; ++line) {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+      _mm_prefetch((char *)line.peekNext(), _MM_HINT_T0);
+#endif
       const nsRect lineArea = line->InkOverflowRect();
       const bool lineInLine = line->IsInline();
 

@@ -3284,6 +3284,11 @@ class nsDisplayList {
     nsDisplayItem* bottom = mBottom->mValue;
 
     auto next = mBottom->mNext;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (next) {
+      _mm_prefetch((char *)next, _MM_HINT_NTA);
+    }
+#endif
     Deallocate(mBottom);
     mBottom = next;
 
@@ -3291,6 +3296,12 @@ class nsDisplayList {
       // No bottom item means no items at all.
       mTop = nullptr;
     }
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    else {
+      _mm_prefetch((char *)mBottom->mValue, _MM_HINT_NTA);
+      _mm_prefetch((char *)mBottom->mNext, _MM_HINT_NTA);
+    }
+#endif
 
     MOZ_ASSERT(mLength > 0);
     mLength--;
@@ -3412,6 +3423,11 @@ class nsDisplayList {
 
     while (current) {
       next = current->mNext;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+      if (next) {
+        _mm_prefetch((char *)next, _MM_HINT_NTA);
+      }
+#endif
       Deallocate(current);
       current = next;
     }

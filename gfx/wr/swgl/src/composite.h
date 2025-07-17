@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 // Converts a pixel from a source format to a destination format. By default,
 // just return the value unchanged as for a simple copy.
 template <typename P, typename U>
@@ -239,6 +243,9 @@ static NO_INLINE void scale_blit(Texture& srctex, const IntRect& srcReq,
   fracX %= dstWidth;
   fracY %= dstHeight;
   char* src = srctex.sample_ptr(srcReq, srcBounds, invertY);
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+  _mm_prefetch(src, _MM_HINT_T0);
+#endif
   // Inverted Y must step downward along source rows
   if (invertY) {
     srcStride = -srcStride;
@@ -312,6 +319,9 @@ static NO_INLINE void scale_blit(Texture& srctex, const IntRect& srcReq,
     for (fracY += srcHeight; fracY >= dstHeight; fracY -= dstHeight) {
       src += srcStride;
     }
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    _mm_prefetch(src, _MM_HINT_T0);
+#endif
   }
 }
 

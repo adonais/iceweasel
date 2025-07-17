@@ -1,0 +1,2674 @@
+diff --git a/.gitignore b/.gitignore
+index 54128923383b7..0a1d1708aadb7 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -7,6 +7,7 @@
+ *~
+ *.pyc
+ *.pyo
++__pycache__/
+ TAGS
+ tags
+ .DS_Store
+diff --git a/browser/app/Iceweasel.exe.manifest b/browser/app/Iceweasel.exe.manifest
+new file mode 100644
+index 0000000000000..4dd4a171a2bd4
+--- /dev/null
++++ b/browser/app/Iceweasel.exe.manifest
+@@ -0,0 +1,47 @@
++<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
++<assemblyIdentity
++        version="1.0.0.0"
++        processorArchitecture="*"
++        name="Iceweasel"
++        type="win32"
++/>
++<description>Iceweasel</description>
++<dependency>
++        <dependentAssembly>
++                <assemblyIdentity
++                        type="win32"
++                        name="Microsoft.Windows.Common-Controls"
++                        version="6.0.0.0"
++                        processorArchitecture="*"
++                        publicKeyToken="6595b64144ccf1df"
++                        language="*"
++                />
++        </dependentAssembly>
++</dependency>
++<dependency>
++        <dependentAssembly>
++                <assemblyIdentity
++                        type="win32"
++                        name="mozglue"
++                        version="1.0.0.0"
++                        language="*"
++                />
++        </dependentAssembly>
++</dependency>
++<ms_asmv3:trustInfo xmlns:ms_asmv3="urn:schemas-microsoft-com:asm.v3">
++  <ms_asmv3:security>
++    <ms_asmv3:requestedPrivileges>
++      <ms_asmv3:requestedExecutionLevel level="asInvoker" uiAccess="false" />
++    </ms_asmv3:requestedPrivileges>
++  </ms_asmv3:security>
++</ms_asmv3:trustInfo>
++  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
++    <application>
++      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
++      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"/>
++      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"/>
++      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
++    </application>
++  </compatibility>
++</assembly>
+diff --git a/browser/app/module.ver b/browser/app/module.ver
+index 5ef8d2a02aefd..e7d6bb39e9060 100644
+--- a/browser/app/module.ver
++++ b/browser/app/module.ver
+@@ -1,8 +1,8 @@
+ WIN32_MODULE_COMPANYNAME=Mozilla Corporation
+-WIN32_MODULE_COPYRIGHT=�Firefox and Mozilla Developers; available under the MPL 2 license.
++WIN32_MODULE_COPYRIGHT=@MOZ_APP_DISPLAYNAME@ and developers; available under the MPL 2 license.
+ WIN32_MODULE_PRODUCTVERSION=@MOZ_APP_WINVERSION@
+ WIN32_MODULE_PRODUCTVERSION_STRING=@MOZ_APP_VERSION@
+-WIN32_MODULE_TRADEMARKS=Firefox is a Trademark of The Mozilla Foundation.
++WIN32_MODULE_TRADEMARKS=@MOZ_APP_DISPLAYNAME@ is a fork [from Mozilla Firefox Quantum].
+ WIN32_MODULE_DESCRIPTION=@MOZ_APP_DISPLAYNAME@
+ WIN32_MODULE_PRODUCTNAME=@MOZ_APP_DISPLAYNAME@
+ WIN32_MODULE_NAME=@MOZ_APP_DISPLAYNAME@
+diff --git a/browser/app/moz.build b/browser/app/moz.build
+index f41ce92556bb1..176e964b50eb7 100644
+--- a/browser/app/moz.build
++++ b/browser/app/moz.build
+@@ -137,7 +137,7 @@ if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_ARCH"] == "WINNT":
+         "usp10.dll",
+     ]
+ 
+-if CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
++if CONFIG["MOZ_CRASHREPORTER"] and CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
+     DIRS += ["nmhproxy"]
+ 
+ # Control the default heap size.
+diff --git a/browser/app/profile/firefox.js b/browser/app/profile/firefox.js
+index 6361007b6ee13..f8577757f1f90 100644
+--- a/browser/app/profile/firefox.js
++++ b/browser/app/profile/firefox.js
+@@ -68,8 +68,8 @@ pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com
+ pref("extensions.webextensions.remote", true);
+ 
+ // Require signed add-ons by default
+-pref("extensions.langpacks.signatures.required", true);
+-pref("xpinstall.signatures.required", true);
++pref("extensions.langpacks.signatures.required", false);
++pref("xpinstall.signatures.required", false);
+ 
+ // Enable data collection permissions.
+ pref("extensions.dataCollectionPermissions.enabled", true);
+@@ -167,10 +167,10 @@ pref("app.update.staging.enabled", true);
+ #ifdef MOZ_BITS_DOWNLOAD
+   // If set to true, the Update Service will attempt to use Windows BITS to
+   // download updates and will fallback to downloading internally if that fails.
+-  pref("app.update.BITS.enabled", true);
++  pref("app.update.BITS.enabled", false);
+ #endif
+ 
+-pref("app.update.langpack.enabled", true);
++pref("app.update.langpack.enabled", false);
+ 
+ #if defined(MOZ_UPDATE_AGENT)
+   pref("app.update.background.loglevel", "error");
+@@ -280,7 +280,7 @@ pref("browser.touchmode.auto", true);
+ pref("browser.compactmode.show", false);
+ 
+ // At startup, check if we're the default browser and prompt user if not.
+-pref("browser.shell.checkDefaultBrowser", true);
++pref("browser.shell.checkDefaultBrowser", false);
+ pref("browser.shell.shortcutFavicons",true);
+ pref("browser.shell.mostRecentDateSetAsDefault", "");
+ pref("browser.shell.skipDefaultBrowserCheckOnFirstRun", true);
+@@ -1245,7 +1245,7 @@ pref("browser.xul.error_pages.expert_bad_cert", false);
+ pref("browser.xul.error_pages.show_safe_browsing_details_on_load", false);
+ 
+ // Enable captive portal detection.
+-pref("network.captive-portal-service.enabled", true);
++pref("network.captive-portal-service.enabled", false);
+ 
+ // If true, network link events will change the value of navigator.onLine
+ pref("network.manage-offline-status", true);
+@@ -2259,21 +2259,21 @@ pref("browser.translations.select.enable", true);
+ 
+ // Telemetry settings.
+ // Determines if Telemetry pings can be archived locally.
+-pref("toolkit.telemetry.archive.enabled", true);
++pref("toolkit.telemetry.archive.enabled", false);
+ // Enables sending the shutdown ping when Firefox shuts down.
+-pref("toolkit.telemetry.shutdownPingSender.enabled", true);
++pref("toolkit.telemetry.shutdownPingSender.enabled", false);
+ // Enables using the `pingsender` background task.
+ pref("toolkit.telemetry.shutdownPingSender.backgroundtask.enabled", false);
+ // Enables sending the shutdown ping using the pingsender from the first session.
+ pref("toolkit.telemetry.shutdownPingSender.enabledFirstSession", false);
+ // Enables sending a duplicate of the first shutdown ping from the first session.
+-pref("toolkit.telemetry.firstShutdownPing.enabled", true);
++pref("toolkit.telemetry.firstShutdownPing.enabled", false);
+ // Enables sending the 'new-profile' ping on new profiles.
+-pref("toolkit.telemetry.newProfilePing.enabled", true);
++pref("toolkit.telemetry.newProfilePing.enabled", false);
+ // Enables sending 'update' pings on Firefox updates.
+-pref("toolkit.telemetry.updatePing.enabled", true);
++pref("toolkit.telemetry.updatePing.enabled", false);
+ // Enables sending 'bhr' pings when the browser hangs.
+-pref("toolkit.telemetry.bhrPing.enabled", true);
++pref("toolkit.telemetry.bhrPing.enabled", false);
+ 
+ // Enable GMP support in the addon manager.
+ pref("media.gmp-provider.enabled", true);
+@@ -2546,7 +2546,7 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
+ pref("extensions.experiments.enabled", false);
+ 
+ #if defined(XP_WIN)
+-  pref("dom.ipc.processPriorityManager.backgroundUsesEcoQoS", true);
++  pref("dom.ipc.processPriorityManager.backgroundUsesEcoQoS", false);
+ #endif
+ 
+ // Don't limit how many nodes we care about on desktop:
+@@ -2702,17 +2702,25 @@ pref("doh-rollout.clearModeOnShutdown", false);
+ pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
+ pref("app.normandy.dev_mode", false);
+ pref("app.normandy.enabled", true);
+-pref("app.normandy.first_run", true);
++pref("app.normandy.first_run", false);
+ pref("app.normandy.logging.level", 50); // Warn
+ pref("app.normandy.run_interval_seconds", 21600); // 6 hours
+ pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
+ pref("app.normandy.last_seen_buildid", "");
+ pref("app.normandy.onsync_skew_sec", 600);
+ #ifdef MOZ_DATA_REPORTING
+-  pref("app.shield.optoutstudies.enabled", true);
++  pref("app.shield.optoutstudies.enabled", false);
+ #else
+   pref("app.shield.optoutstudies.enabled", false);
+ #endif
++// by adonais
++pref("extensions.htmlaboutaddons.discover.enabled", false);
++pref("browser.newtabpage.activity-stream.feeds.snippets", false);
++pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
++pref("browser.newtabpage.enhanced", false);
++pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr", false);
++pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
++pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false);
+ 
+ // Multi-lingual preferences:
+ //  *.enabled - Are langpacks available for the build of Firefox?
+@@ -2745,8 +2753,8 @@ pref("toolkit.coverage.enabled", false);
+ pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
+ 
+ // Discovery prefs
+-pref("browser.discovery.enabled", true);
+-pref("browser.discovery.containers.enabled", true);
++pref("browser.discovery.enabled", false);
++pref("browser.discovery.containers.enabled", false);
+ pref("browser.discovery.sites", "addons.mozilla.org");
+ 
+ pref("browser.engagement.recent_visited_origins.expiry", 86400); // 24 * 60 * 60 (24 hours in seconds)
+@@ -3181,7 +3189,7 @@ pref("first-startup.timeout", 30000);
+ // The agent still runs as scheduled if this pref is disabled,
+ // but it exits immediately before taking any action.
+ #ifdef XP_WIN
+-  pref("default-browser-agent.enabled", true);
++  pref("default-browser-agent.enabled", false);
+ #endif
+ 
+ // Test Prefs that do nothing for testing
+diff --git a/browser/app/winlauncher/freestanding/DllBlocklist.cpp b/browser/app/winlauncher/freestanding/DllBlocklist.cpp
+index f6f8f1540bee9..89e0c192c9370 100644
+--- a/browser/app/winlauncher/freestanding/DllBlocklist.cpp
++++ b/browser/app/winlauncher/freestanding/DllBlocklist.cpp
+@@ -136,7 +136,9 @@ void NativeNtBlockSet::Write(WritableBuffer& aBuffer) {
+ static NativeNtBlockSet gBlockSet;
+ 
+ extern "C" void MOZ_EXPORT NativeNtBlockSet_Write(WritableBuffer& aBuffer) {
++#ifdef MOZ_CRASHREPORTER
+   gBlockSet.Write(aBuffer);
++#endif
+ }
+ 
+ enum class BlockAction {
+diff --git a/browser/base/content/aboutDialog.css b/browser/base/content/aboutDialog.css
+index aeeedf82e4a26..2b06f96eeb06b 100644
+--- a/browser/base/content/aboutDialog.css
++++ b/browser/base/content/aboutDialog.css
+@@ -32,7 +32,6 @@
+ #rightBox {
+   background-image: url("chrome://branding/content/about-wordmark.svg");
+   background-repeat: no-repeat;
+-  background-size: 288px auto;
+   /* padding-top creates room for the wordmark */
+   padding-top: 38px;
+   margin-top: 20px;
+diff --git a/browser/base/content/browser-context.inc b/browser/base/content/browser-context.inc
+index 5448c59a49f0f..ce61edda2478f 100644
+--- a/browser/base/content/browser-context.inc
++++ b/browser/base/content/browser-context.inc
+@@ -109,6 +109,9 @@
+       <menuitem id="context-savelink"
+                 data-l10n-id="main-context-menu-save-link"
+                 />
++      <menuitem id="context-downloadlink"
++                data-l10n-id="main-context-menu-download-link"
++                />
+       <menuitem id="context-savelinktopocket"
+                 data-l10n-id="main-context-menu-save-link-to-pocket"
+                 />
+diff --git a/browser/base/content/browser-context.js b/browser/base/content/browser-context.js
+index 1adc2a17af002..30c07c3aae6cd 100644
+--- a/browser/base/content/browser-context.js
++++ b/browser/base/content/browser-context.js
+@@ -57,6 +57,9 @@ document.addEventListener(
+         case "context-savelink":
+           gContextMenu.saveLink();
+           break;
++        case "context-downloadlink":
++          gContextMenu.downloadLink();
++          break;
+         case "context-savelinktopocket":
+           Pocket.savePage(gContextMenu.browser, gContextMenu.linkURL);
+           break;
+diff --git a/browser/base/content/nsContextMenu.sys.mjs b/browser/base/content/nsContextMenu.sys.mjs
+index 162f6cdfc79a4..f1019045e25ee 100644
+--- a/browser/base/content/nsContextMenu.sys.mjs
++++ b/browser/base/content/nsContextMenu.sys.mjs
+@@ -664,6 +664,11 @@ export class nsContextMenu {
+       "context-savelink",
+       this.onSaveableLink || this.onPlainTextLink
+     );
++    // hack by adonais
++    this.showItem(
++      "context-downloadlink",
++      this.onSaveableLink || this.onPlainTextLink
++    );
+     if (
+       (this.onSaveableLink || this.onPlainTextLink) &&
+       Services.policies.status === Services.policies.ACTIVE
+@@ -2166,6 +2171,21 @@ export class nsContextMenu {
+     );
+   }
+ 
++  downloadLink() {
++    if (AppConstants.platform === "win") {
++	  const exeName = "upcheck.exe";
++	  let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
++	  let cfile = Services.dirsvc.get("ProfD", Ci.nsIFile);
++	  exe.append(exeName);
++	  cfile.append("cookies.sqlite");
++	  let process = Cc["@mozilla.org/process/util;1"]
++                    .createInstance(Ci.nsIProcess);
++	  process.init(exe);
++	  process.startHidden = true;
++	  process.noShell = true;
++	  process.run(false, ["-i", this.linkURL, "-b", encodeURIComponent(cfile.path), "-m", "1"], 6);
++    }
++  }
+   // Backwards-compatibility wrapper
+   saveImage() {
+     if (this.onCanvas || this.onImage) {
+diff --git a/browser/branding/branding-common.mozbuild b/browser/branding/branding-common.mozbuild
+index a38663a3dc1eb..8e9e99d039458 100644
+--- a/browser/branding/branding-common.mozbuild
++++ b/browser/branding/branding-common.mozbuild
+@@ -15,8 +15,18 @@ def FirefoxBranding():
+         JS_PREFERENCE_FILES += [
+             "pref/firefox-branding.js",
+         ]
+-
+-    if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
++    if CONFIG['MOZ_BRANDING_DIRECTORY'] == 'browser/branding/iceweasel':
++        FINAL_TARGET_FILES['..'] += [
++            'Iceweasel.VisualElementsManifest.xml',
++            'private_browsing.VisualElementsManifest.xml',
++        ]
++        FINAL_TARGET_FILES.VisualElements += [
++            'PrivateBrowsing_150.png',
++            'PrivateBrowsing_70.png',
++            'VisualElements_150.png',
++            'VisualElements_70.png',
++        ]
++    elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
+         FINAL_TARGET_FILES[".."] += [
+             "firefox.VisualElementsManifest.xml",
+             "private_browsing.VisualElementsManifest.xml",
+diff --git a/browser/components/migration/ChromeMigrationUtils.sys.mjs b/browser/components/migration/ChromeMigrationUtils.sys.mjs
+index 8815f8324648b..be7e9fbcf4f9a 100644
+--- a/browser/components/migration/ChromeMigrationUtils.sys.mjs
++++ b/browser/components/migration/ChromeMigrationUtils.sys.mjs
+@@ -272,18 +272,18 @@ export var ChromeMigrationUtils = {
+     const SUB_DIRECTORIES = {
+       win: {
+         Brave: [
+-          ["LocalAppData", "BraveSoftware", "Brave-Browser", "User Data"],
++          ["Home", "AppData", "Local", "BraveSoftware", "Brave-Browser", "User Data"],
+         ],
+-        Chrome: [["LocalAppData", "Google", "Chrome", "User Data"]],
+-        "Chrome Beta": [["LocalAppData", "Google", "Chrome Beta", "User Data"]],
+-        Chromium: [["LocalAppData", "Chromium", "User Data"]],
+-        Canary: [["LocalAppData", "Google", "Chrome SxS", "User Data"]],
+-        Edge: [["LocalAppData", "Microsoft", "Edge", "User Data"]],
+-        "Edge Beta": [["LocalAppData", "Microsoft", "Edge Beta", "User Data"]],
+-        "360 SE": [["AppData", "360se6", "User Data"]],
+-        Opera: [["AppData", "Opera Software", "Opera Stable"]],
+-        "Opera GX": [["AppData", "Opera Software", "Opera GX Stable"]],
+-        Vivaldi: [["LocalAppData", "Vivaldi", "User Data"]],
++        Chrome: [["Home", "AppData", "Local", "Google", "Chrome", "User Data"]],
++        "Chrome Beta": [["Home", "AppData", "Local", "Google", "Chrome Beta", "User Data"]],
++        Chromium: [["Home", "AppData", "Local", "Chromium", "User Data"]],
++        Canary: [["Home", "AppData", "Local", "Google", "Chrome SxS", "User Data"]],
++        Edge: [["Home", "AppData", "Local", "Microsoft", "Edge", "User Data"]],
++        "Edge Beta": [["Home", "AppData", "Local", "Microsoft", "Edge Beta", "User Data"]],
++        "360 SE": [["Home", "AppData", "Roaming", "360se6", "User Data"]],
++        Opera: [["Home", "AppData", "Roaming", "Opera Software", "Opera Stable"]],
++        "Opera GX": [["Home", "AppData", "Roaming", "Opera Software", "Opera GX Stable"]],
++        Vivaldi: [["Home", "AppData", "Local", "Vivaldi", "User Data"]],
+       },
+       macosx: {
+         Brave: [
+diff --git a/browser/components/migration/MSMigrationUtils.sys.mjs b/browser/components/migration/MSMigrationUtils.sys.mjs
+index 70cab30f1362e..34f4ae0cee7c8 100644
+--- a/browser/components/migration/MSMigrationUtils.sys.mjs
++++ b/browser/components/migration/MSMigrationUtils.sys.mjs
+@@ -264,7 +264,9 @@ function getEdgeLocalDataFolder() {
+   if (gEdgeDir) {
+     return gEdgeDir.clone();
+   }
+-  let packages = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
++  let packages = Services.dirsvc.get("Home", Ci.nsIFile);
++  packages.append("AppData");
++  packages.append("Local");
+   packages.append("Packages");
+   let edgeDir = packages.clone();
+   edgeDir.append("Microsoft.MicrosoftEdge_8wekyb3d8bbwe");
+diff --git a/browser/components/shell/nsWindowsShellService.cpp b/browser/components/shell/nsWindowsShellService.cpp
+index 82ac52d14381f..ccebfdb2a4180 100644
+--- a/browser/components/shell/nsWindowsShellService.cpp
++++ b/browser/components/shell/nsWindowsShellService.cpp
+@@ -1015,6 +1015,7 @@ nsWindowsShellService::CreateShortcut(
+     const nsAString& aDescription, nsIFile* aIconFile, uint16_t aIconIndex,
+     const nsAString& aAppUserModelId, const nsAString& aShortcutFolder,
+     const nsAString& aShortcutName, JSContext* aCx, dom::Promise** aPromise) {
++#ifndef TT_MEMUTIL
+   if (!NS_IsMainThread()) {
+     return NS_ERROR_NOT_SAME_THREAD;
+   }
+@@ -1096,6 +1097,7 @@ nsWindowsShellService::CreateShortcut(
+       NS_DISPATCH_EVENT_MAY_BLOCK);
+ 
+   promise.forget(aPromise);
++#endif
+   return NS_OK;
+ }
+ 
+@@ -1388,6 +1390,7 @@ static bool HasPinnableShortcutImpl(const nsAString& aAppUserModelId,
+ NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
+     const nsAString& aAppUserModelId, const bool aPrivateBrowsing,
+     JSContext* aCx, dom::Promise** aPromise) {
++#ifndef TT_MEMUTIL
+   if (!NS_IsMainThread()) {
+     return NS_ERROR_NOT_SAME_THREAD;
+   }
+@@ -1430,6 +1433,7 @@ NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
+       NS_DISPATCH_EVENT_MAY_BLOCK);
+ 
+   promise.forget(aPromise);
++#endif
+   return NS_OK;
+ }
+ 
+diff --git a/browser/components/tabbrowser/content/tab-hover-preview.mjs b/browser/components/tabbrowser/content/tab-hover-preview.mjs
+index 3280a391bd801..3d555125a7458 100644
+--- a/browser/components/tabbrowser/content/tab-hover-preview.mjs
++++ b/browser/components/tabbrowser/content/tab-hover-preview.mjs
+@@ -314,7 +314,8 @@ export default class TabHoverPreviewPanel {
+       // TODO (bug 1899556): for now disable in background windows, as there are
+       // issues with windows ordering on Linux (bug 1897475), plus intermittent
+       // persistence of previews after session restore (bug 1888148).
+-      this._win != Services.focus.activeWindow
++      this._win != Services.focus.activeWindow ||
++      !this._prefDisplayThumbnail
+     );
+   }
+ 
+diff --git a/browser/installer/package-manifest.in b/browser/installer/package-manifest.in
+index 6ebf2f62c4775..b373b947cb4b5 100644
+--- a/browser/installer/package-manifest.in
++++ b/browser/installer/package-manifest.in
+@@ -131,7 +131,7 @@
+ ; [Base Browser Files]
+ #ifndef XP_UNIX
+ @BINPATH@/@MOZ_APP_NAME@.exe
+-@BINPATH@/firefox.VisualElementsManifest.xml
++@BINPATH@/@MOZ_APP_NAME@.VisualElementsManifest.xml
+ @BINPATH@/browser/VisualElements/VisualElements_150.png
+ @BINPATH@/browser/VisualElements/VisualElements_70.png
+ @BINPATH@/private_browsing.exe
+@@ -398,13 +398,17 @@ bin/libfreebl_64int_3.so
+ 
+ ; [ Ping Sender ]
+ ;
++#ifdef MOZ_CRASHREPORTER
+ @BINPATH@/pingsender@BIN_SUFFIX@
++#endif
+ 
+ ; [ Native Messaging Host Proxy ]
+ ;
+ #if defined(XP_WIN) || defined(XP_MACOSX)
++#ifdef MOZ_CRASHREPORTER
+ @BINPATH@/nmhproxy@BIN_SUFFIX@
+ #endif
++#endif
+ 
+ ; [ Notification COM Server ]
+ ;
+diff --git a/browser/locales/en-US/browser/browserContext.ftl b/browser/locales/en-US/browser/browserContext.ftl
+index 9e96dd06bd799..6dbbeb5402c46 100644
+--- a/browser/locales/en-US/browser/browserContext.ftl
++++ b/browser/locales/en-US/browser/browserContext.ftl
+@@ -169,6 +169,9 @@ main-context-menu-save-link-to-pocket =
+ ## should be the same if possible; the two context menu items
+ ## are mutually exclusive.
+ 
++main-context-menu-download-link =
++    .label = Download Link With Upcheck
++    
+ main-context-menu-copy-email =
+     .label = Copy Email Address
+     .accesskey = l
+diff --git a/browser/locales/en-US/browser/preferences/preferences.ftl b/browser/locales/en-US/browser/preferences/preferences.ftl
+index 27196efa266dd..4238174b71577 100644
+--- a/browser/locales/en-US/browser/preferences/preferences.ftl
++++ b/browser/locales/en-US/browser/preferences/preferences.ftl
+@@ -877,7 +877,7 @@ sync-signedout-account-signin3 =
+ #
+ # They can be moved within the sentence as needed to adapt
+ # to your language, but should not be changed or translated.
+-sync-mobile-promo = Download Firefox for <img data-l10n-name="android-icon"/> <a data-l10n-name="android-link">Android</a> or <img data-l10n-name="ios-icon"/> <a data-l10n-name="ios-link">iOS</a> to sync with your mobile device.
++sync-mobile-promo = Download { -brand-short-name } for <img data-l10n-name="android-icon"/> <a data-l10n-name="android-link">Android</a> or <img data-l10n-name="ios-icon"/> <a data-l10n-name="ios-link">iOS</a> to sync with your mobile device.
+ 
+ ## Firefox account - Signed in
+ 
+@@ -994,7 +994,7 @@ sync-engine-payment-methods2 =
+ 
+ sync-engine-addons =
+     .label = Add-ons
+-    .tooltiptext = Extensions and themes for Firefox desktop
++    .tooltiptext = Extensions and themes for { -brand-short-name } desktop
+     .accesskey = A
+ 
+ sync-engine-settings =
+diff --git a/build/moz.configure/init.configure b/build/moz.configure/init.configure
+index 6162d68699dd3..75b2bc2c7a70a 100644
+--- a/build/moz.configure/init.configure
++++ b/build/moz.configure/init.configure
+@@ -131,11 +131,6 @@ def shell(value, mozillabuild):
+     if value:
+         return find_program(value[0])
+     shell = "sh"
+-    if mozillabuild:
+-        if (Path(mozillabuild[0]) / "msys2").exists():
+-            shell = mozillabuild[0] + "/msys2/usr/bin/sh"
+-        else:
+-            shell = mozillabuild[0] + "/msys/bin/sh"
+     if sys.platform == "win32":
+         shell = shell + ".exe"
+     return find_program(shell)
+diff --git a/build/moz.configure/lto-pgo.configure b/build/moz.configure/lto-pgo.configure
+index eb0f874008855..2e4301e952d0e 100644
+--- a/build/moz.configure/lto-pgo.configure
++++ b/build/moz.configure/lto-pgo.configure
+@@ -389,8 +389,11 @@ def lto(
+         # recommends this as the "generic 64-bit specific x86 processor model":
+         #
+         # https://github.com/llvm/llvm-project/blob/e7694f34ab6a12b8bb480cbfcb396d0a64fe965f/llvm/lib/Target/X86/X86.td#L1165-L1187
++        # https://github.com/llvm/llvm-project/blob/e7694f34ab6a12b8bb480cbfcb396d0a64fe965f/llvm/lib/Target/X86/X86.td#L1008-L1022
+         if target.cpu == "x86_64":
+-            ldflags.append("-mllvm:-mcpu=x86-64")
++            ldflags.append("-mllvm:-mcpu=nocona")
++            ldflags.append("-mllvm:-enable-ext-tsp-block-placement=1")
++            ldflags.append("-mllvm:-disable-auto-upgrade-debug-info")
+         # We do not need special flags for arm64.  Hooray for fixed-length
+         # instruction sets.
+     else:
+diff --git a/build/moz.configure/update-programs.configure b/build/moz.configure/update-programs.configure
+index de5ac39d568fc..15122f25cf634 100644
+--- a/build/moz.configure/update-programs.configure
++++ b/build/moz.configure/update-programs.configure
+@@ -226,7 +226,7 @@ def check_update_agent(update_agent, backgroundtasks, updater):
+ 
+ @depends(target, build_project)
+ def default_browser_agent_default(target, build_project):
+-    return target.os == "WINNT" and build_project == "browser"
++    return False
+ 
+ 
+ option(
+diff --git a/build/pgo/index.html b/build/pgo/index.html
+index 752ec1916c13a..d191595e6adca 100644
+--- a/build/pgo/index.html
++++ b/build/pgo/index.html
+@@ -76,8 +76,27 @@
+     "webkit/PerformanceTests/Speedometer/index.html",
+     "http://localhost:8000/index.html?startAutomatically=true",
+     "webkit/PerformanceTests/webaudio/index.html?raptor&rendering-buffer-length=30",
++    "add/index-webp.html",
++    "add/index-webgl-demo3.html",
++    "add/html5test.html",
++    "add/index-youku.html",
++    "add/index-iqiyi.html",
++    "add/index-migu.html",
++    "add/index-qq.html",
++    "add/index-sohu.html",
++    "add/index-sina.html",
++    "add/index-163.html",
++    "add/index-donews.html",
++    "add/index-pinduoduo.html",
++    "add/index-douyin.html",
++    "add/index-hupu.html",
++    "add/index-jd.html",
++    "add/index-oschina.html",
++    "add/index-baidu.html",
++    "add/index-kafan.html",
++    "add/index-bing.html"
+   ];
+-  var defaultInterval = 2000;
++  var defaultInterval = 4000;
+   var idx = 0;
+   var w;
+ 
+@@ -88,11 +107,24 @@
+   function loadURL() {
+     var interval = defaultInterval;
+     var testURL = list[idx++];
+-    if (testURL.includes("webkit") || testURL.includes("localhost")) {
+-      interval = 120000;
++    if (testURL.includes("Speedometer")) {
++      interval = 180000;
++    }
++    else if (testURL.includes("localhost")) {
++      interval = 240000;
++    }
++    else if (testURL.includes("webaudio")) {
++      interval = 30000;
++    }
++    else if (testURL.includes("3d-thingy")) {
++      interval = 16000;
++    }
++    else if (testURL.includes("add")) {
++      interval = 20000;
+     }
+     w.close();
+     w = window.open(testURL);
++
+     // Prevent the perf-reftest-singletons from calling alert()
+     w.tpRecordTime = function () {};
+ 
+diff --git a/build/pure_virtual/moz.build b/build/pure_virtual/moz.build
+index 70707ea7ce640..d84aa2ffbdbb4 100644
+--- a/build/pure_virtual/moz.build
++++ b/build/pure_virtual/moz.build
+@@ -6,18 +6,19 @@
+ 
+ Library("pure_virtual")
+ 
+-SOURCES += ["pure_virtual.c"]
++if CONFIG["OS_TARGET"] != "WINNT":
++    SOURCES += ["pure_virtual.c"]
+ 
+-FORCE_STATIC_LIB = True
++    FORCE_STATIC_LIB = True
+ 
+-USE_STATIC_MSVCRT = True
++    USE_STATIC_MSVCRT = True
+ 
+-# Build a real library so that the linker can remove it if the symbol
+-# is never used.
+-NO_EXPAND_LIBS = True
++    # Build a real library so that the linker can remove it if the symbol
++    # is never used.
++    NO_EXPAND_LIBS = True
+ 
+-# LTO can mess things up.
+-if CONFIG["CC_TYPE"] == "clang-cl":
+-    CFLAGS += ["-clang:-fno-lto"]
+-else:
+-    CFLAGS += ["-fno-lto"]
++    # LTO can mess things up.
++    if CONFIG["CC_TYPE"] == "clang-cl":
++        CFLAGS += ["-clang:-fno-lto"]
++    else:
++        CFLAGS += ["-fno-lto"]
+diff --git a/config/config.mk b/config/config.mk
+index b270dd9849a12..e2c8cb23c588e 100644
+--- a/config/config.mk
++++ b/config/config.mk
+@@ -176,6 +176,11 @@ MOZ_LTO_CFLAGS :=
+ MOZ_LTO_LDFLAGS :=
+ endif
+ 
++ifdef MOZ_PROFILE_GENERATE
++MOZ_LTO_CFLAGS :=
++MOZ_LTO_LDFLAGS :=
++endif
++
+ LDFLAGS		= $(MOZ_LTO_LDFLAGS) $(COMPUTED_LDFLAGS) $(PGO_LDFLAGS)
+ 
+ COMPILE_CFLAGS	= $(MOZ_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
+diff --git a/config/create_rc.py b/config/create_rc.py
+index ea290637ba885..348e71972f972 100644
+--- a/config/create_rc.py
++++ b/config/create_rc.py
+@@ -16,7 +16,7 @@ TEMPLATE = """
+ // License, v. 2.0. If a copy of the MPL was not distributed with this
+ // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ 
+-#include<winuser.h>
++#include<windows.h>
+ #include<winver.h>
+ 
+ // Note: if you contain versioning information in an included
+diff --git a/config/makefiles/rust.mk b/config/makefiles/rust.mk
+index ba024e8763d9f..51d574c591b07 100644
+--- a/config/makefiles/rust.mk
++++ b/config/makefiles/rust.mk
+@@ -99,7 +99,7 @@ ifndef MOZ_LTO_RUST_CROSS
+ # Never enable when sancov is enabled to work around https://github.com/rust-lang/rust/issues/90300.
+ ifndef rustflags_sancov
+ # Never enable when coverage is enabled to work around https://github.com/rust-lang/rust/issues/90045.
+-ifndef MOZ_CODE_COVERAGE
++ifndef MOZ_PGO
+ ifeq (,$(findstring gkrust_gtest,$(RUST_LIBRARY_FILE)))
+ cargo_rustc_flags += -Clto$(if $(filter full,$(MOZ_LTO_RUST_CROSS)),=fat)
+ endif
+diff --git a/config/rules.mk b/config/rules.mk
+index e1504bbd16df1..2efea6f546b75 100644
+--- a/config/rules.mk
++++ b/config/rules.mk
+@@ -662,9 +662,7 @@ $(foreach file,$(DUMP_SYMS_TARGETS),$(eval $(call syms_template,$(file),$(notdir
+ syms:: $(foreach file,$(DUMP_SYMS_TARGETS),$(notdir $(file))_syms.track)
+ endif
+ 
+-ifneq (,$(RUST_TESTS)$(RUST_LIBRARY_FILE)$(HOST_RUST_LIBRARY_FILE)$(RUST_PROGRAMS)$(HOST_RUST_PROGRAMS))
+ include $(MOZILLA_DIR)/config/makefiles/rust.mk
+-endif
+ 
+ $(SOBJS):
+ 	$(REPORT_BUILD)
+diff --git a/dom/base/AttrArray.h b/dom/base/AttrArray.h
+index 8d0d27df2029e..1774b1f45f4c8 100644
+--- a/dom/base/AttrArray.h
++++ b/dom/base/AttrArray.h
+@@ -11,6 +11,10 @@
+ #ifndef AttrArray_h___
+ #define AttrArray_h___
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "mozilla/Attributes.h"
+ #include "mozilla/MemoryReporting.h"
+ #include "mozilla/UniquePtr.h"
+@@ -184,6 +188,13 @@ class AttrArray {
+     nsAttrValue mValue;
+   };
+ 
++  void PrefetchImpl()
++  {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    _mm_prefetch((char *)&mImpl, _MM_HINT_NTA);
++#endif
++  }
++
+   AttrArray(const AttrArray& aOther) = delete;
+   AttrArray& operator=(const AttrArray& aOther) = delete;
+ 
+diff --git a/dom/base/DOMIntersectionObserver.cpp b/dom/base/DOMIntersectionObserver.cpp
+index 2838a8e58e09c..2f5408d567ff2 100644
+--- a/dom/base/DOMIntersectionObserver.cpp
++++ b/dom/base/DOMIntersectionObserver.cpp
+@@ -4,6 +4,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "DOMIntersectionObserver.h"
+ #include "nsCSSPropertyID.h"
+ #include "nsIFrame.h"
+@@ -815,10 +819,19 @@ void DOMIntersectionObserver::Update(Document& aDocument,
+ 
+   // 2. For each target in observer’s internal [[ObservationTargets]] slot,
+   // processed in the same order that observe() was called on each target:
+-  for (Element* target : mObservationTargets) {
++  for (auto it = mObservationTargets.begin(); it != mObservationTargets.end();) {
++    Element* target = *it;
++    ++it;
++
+     // 2.1 - 2.4.
+     IntersectionOutput output = Intersect(input, *target);
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != mObservationTargets.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_T0);
++    }
++#endif
++
+     // 2.5. Let targetArea be targetRect’s area.
+     int64_t targetArea = (int64_t)output.mTargetRect.Width() *
+                          (int64_t)output.mTargetRect.Height();
+diff --git a/dom/base/Element.h b/dom/base/Element.h
+index f5ce91010d112..de706c8f82919 100644
+--- a/dom/base/Element.h
++++ b/dom/base/Element.h
+@@ -756,6 +756,18 @@ class Element : public FragmentOrElement {
+   REFLECT_NULLABLE_DOMSTRING_ATTR(AriaValueNow, aria_valuenow)
+   REFLECT_NULLABLE_DOMSTRING_ATTR(AriaValueText, aria_valuetext)
+ 
++  void PrefetchAttrs()
++  {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    _mm_prefetch((char *)&mAttrs, _MM_HINT_NTA);
++#endif
++  }
++
++  void PrefetchAttrsImpl()
++  {
++    mAttrs.PrefetchImpl();
++  }
++
+  protected:
+   already_AddRefed<ShadowRoot> AttachShadowInternal(ShadowRootMode,
+                                                     ErrorResult& aError);
+diff --git a/dom/base/Navigator.cpp b/dom/base/Navigator.cpp
+index fac2759535733..9da515de32fcf 100644
+--- a/dom/base/Navigator.cpp
++++ b/dom/base/Navigator.cpp
+@@ -2290,6 +2290,9 @@ dom::PrivateAttribution* Navigator::PrivateAttribution() {
+ /* static */
+ bool Navigator::Webdriver() {
+ #ifdef ENABLE_WEBDRIVER
++  if (!Preferences::GetBool("dom.webdriver.enabled", true)) {
++    return false;
++  }
+   nsCOMPtr<nsIMarionette> marionette = do_GetService(NS_MARIONETTE_CONTRACTID);
+   if (marionette) {
+     bool marionetteRunning = false;
+diff --git a/dom/media/gmp/moz.build b/dom/media/gmp/moz.build
+index 679c97fb249e7..7293f63507e31 100644
+--- a/dom/media/gmp/moz.build
++++ b/dom/media/gmp/moz.build
+@@ -124,6 +124,9 @@ PREPROCESSED_IPDL_SOURCES += [
+ 
+ if CONFIG["TARGET_OS"] in ["WINNT", "OSX"]:
+     DEFINES["SUPPORT_STORAGE_ID"] = 1
++    
++if CONFIG["MOZ_BRANDING_DIRECTORY"] == "browser/branding/iceweasel":
++    DEFINES["ICEWEASEL_BUILDING"] = 1
+ 
+ DEFINES["MOZ_APP_NAME"] = '"%s"' % CONFIG["MOZ_APP_NAME"]
+ 
+diff --git a/dom/webidl/Navigator.webidl b/dom/webidl/Navigator.webidl
+index 1fd32ac0681df..45f910db38035 100644
+--- a/dom/webidl/Navigator.webidl
++++ b/dom/webidl/Navigator.webidl
+@@ -310,7 +310,7 @@ partial interface Navigator {
+ 
+ // https://w3c.github.io/webdriver/webdriver-spec.html#interface
+ interface mixin NavigatorAutomationInformation {
+-  [Constant, Cached]
++  [Pref="dom.webdriver.enabled"]
+   readonly attribute boolean webdriver;
+ };
+ 
+diff --git a/gfx/2d/2D.h b/gfx/2d/2D.h
+index c4161836607d0..9ec4359b2aad6 100644
+--- a/gfx/2d/2D.h
++++ b/gfx/2d/2D.h
+@@ -38,6 +38,9 @@
+ 
+ #include "nsRegionFwd.h"
+ 
++#include "mozilla/SSE.h"
++#include <string.h>
++
+ #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
+ #  ifndef MOZ_ENABLE_FREETYPE
+ #    define MOZ_ENABLE_FREETYPE
+@@ -2016,9 +2019,11 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
+    * argument's x/y offset.
+    */
+   virtual void SetTransform(const Matrix& aTransform) {
++    if (memcmp(&mTransform, &aTransform, sizeof(Matrix)) != 0) {
+     mTransform = aTransform;
+     mTransformDirty = true;
+   }
++  }
+ 
+   inline void ConcatTransform(const Matrix& aTransform) {
+     SetTransform(aTransform * Matrix(GetTransform()));
+@@ -2135,8 +2140,16 @@ class GFX2D_API Factory {
+   static void Init(const Config& aConfig);
+   static void ShutDown();
+ 
++#ifdef MOZILLA_MAY_SUPPORT_SSE2
++  static bool HasSSE2() { return supports_sse2(); }
++#else
+   static bool HasSSE2();
++#endif
++#ifdef MOZILLA_MAY_SUPPORT_SSE4_1
++  static bool HasSSE4() { return supports_sse4_1(); }
++#else
+   static bool HasSSE4();
++#endif
+ 
+   /**
+    * Returns false if any of the following are true:
+diff --git a/gfx/2d/ConvolutionFilterSSE2.cpp b/gfx/2d/ConvolutionFilterSSE2.cpp
+index c0aadb224549a..06f7d5b681f35 100644
+--- a/gfx/2d/ConvolutionFilterSSE2.cpp
++++ b/gfx/2d/ConvolutionFilterSSE2.cpp
+@@ -6,7 +6,7 @@
+ 
+ #include "SkConvolver.h"
+ #include "mozilla/Attributes.h"
+-#include <immintrin.h>
++#include <tmmintrin.h>
+ 
+ namespace skia {
+ 
+@@ -119,6 +119,106 @@ void convolve_horizontally_sse2(const unsigned char* srcData,
+   }
+ }
+ 
++#ifdef __clang__
++#pragma clang attribute push (__attribute__((target("ssse3"))), apply_to=function)
++#endif
++
++// Convolves horizontally along a single row. The row data is given in
++// |srcData| and continues for the numValues() of the filter.
++void convolve_horizontally_ssse3(const unsigned char* srcData,
++                                 const SkConvolutionFilter1D& filter,
++                                 unsigned char* outRow, bool /*hasAlpha*/) {
++  const __m128i mask_c01 = _mm_set_epi8(
++    3, 2, 1, 0,
++    3, 2, 1, 0,
++    3, 2, 1, 0,
++    3, 2, 1, 0);
++  const __m128i mask_c23 = _mm_set_epi8(
++    7, 6, 5, 4,
++    7, 6, 5, 4,
++    7, 6, 5, 4,
++    7, 6, 5, 4);
++  const __m128i mask_src01 = _mm_set_epi8(
++    0x80, 7, 0x80, 3,
++    0x80, 6, 0x80, 2,
++    0x80, 5, 0x80, 1,
++    0x80, 4, 0x80, 0);
++  const __m128i mask_src23 = _mm_set_epi8(
++    0x80, 15, 0x80, 11,
++    0x80, 14, 0x80, 10,
++    0x80, 13, 0x80, 9,
++    0x80, 12, 0x80, 8);
++
++  // Output one pixel each iteration, calculating all channels (RGBA) together.
++  int numValues = filter.numValues();
++  for (int outX = 0; outX < numValues; outX++) {
++    // Get the filter that determines the current output pixel.
++    int filterOffset, filterLength;
++    const SkConvolutionFilter1D::ConvolutionFixed* filterValues =
++        filter.FilterForValue(outX, &filterOffset, &filterLength);
++
++    // Compute the first pixel in this row that the filter affects. It will
++    // touch |filterLength| pixels (4 bytes each) after this.
++    const unsigned char* rowToFilter = &srcData[filterOffset * 4];
++
++    __m128i zero = _mm_setzero_si128();
++    __m128i accum = _mm_setzero_si128();
++
++    // We will load and accumulate with four coefficients per iteration.
++    for (int filterX = 0; filterX < filterLength >> 2; filterX++) {
++      // Load 4 coefficients => duplicate 1st and 2nd of them for all channels.
++      // [16] xx xx xx xx c3 c2 c1 c0
++      __m128i coeff = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(filterValues));
++      // [16] c1 c0 c1 c0 c1 c0 c1 c0
++      __m128i coeff_c01 = _mm_shuffle_epi8(coeff, mask_c01);
++      // [16] c3 c2 c3 c2 c3 c2 c3 c2
++      __m128i coeff_c23 = _mm_shuffle_epi8(coeff, mask_c23);
++
++      // [8] a3 b3 g3 r3 a2 b2 g2 r2 a1 b1 g1 r1 a0 b0 g0 r0
++      __m128i src8 = _mm_lddqu_si128(reinterpret_cast<const __m128i*>(rowToFilter));
++      // [16] a1 a0 b1 b0 g1 g0 r1 r0
++      __m128i src_01 = _mm_shuffle_epi8(src8, mask_src01);
++      // [16] a3 a2 b3 b2 g3 g2 r3 r2
++      __m128i src_23 = _mm_shuffle_epi8(src8, mask_src23);
++
++      // [32] a0*c0+a1*c1 b0*c0+b1*c1 g0*c0+g1*c1 r0*c0+r1*c1
++      __m128i t0 = _mm_madd_epi16(src_01, coeff_c01);
++      accum = _mm_add_epi32(accum, t0);
++      // [32] a2*c2+a3*c3 b2*c2+b3*c3 g2*c2+g3*c3 r2*c2+r3*c3
++      __m128i t1 = _mm_madd_epi16(src_23, coeff_c23);
++      accum = _mm_add_epi32(accum, t1);
++
++      // Advance the pixel and coefficients pointers.
++      rowToFilter += 16;
++      filterValues += 4;
++    }
++
++    // When |filterLength| is not divisible by 4, we accumulate the last 1 - 3
++    // coefficients one at a time.
++    int r = filterLength & 3;
++    if (r) {
++      int remainderOffset = (filterOffset + filterLength - r) * 4;
++      AccumRemainder(srcData + remainderOffset, filterValues, accum, r);
++    }
++
++    // Shift right for fixed point implementation.
++    accum = _mm_srai_epi32(accum, SkConvolutionFilter1D::kShiftBits);
++
++    // Packing 32 bits |accum| to 16 bits per channel (signed saturation).
++    accum = _mm_packs_epi32(accum, zero);
++    // Packing 16 bits |accum| to 8 bits per channel (unsigned saturation).
++    accum = _mm_packus_epi16(accum, zero);
++
++    // Store the pixel value of 32 bits.
++    *(reinterpret_cast<int*>(outRow)) = _mm_cvtsi128_si32(accum);
++    outRow += 4;
++  }
++}
++
++#ifdef __clang__
++#pragma clang attribute pop
++#endif
++
+ // Does vertical convolution to produce one output row. The filter values and
+ // length are given in the first two parameters. These are applied to each
+ // of the rows pointed to in the |sourceDataRows| array, with each row
+diff --git a/gfx/2d/Factory.cpp b/gfx/2d/Factory.cpp
+index d960024188336..976ca9f784742 100644
+--- a/gfx/2d/Factory.cpp
++++ b/gfx/2d/Factory.cpp
+@@ -269,7 +269,10 @@ void Factory::ShutDown() {
+ #endif
+ }
+ 
+-bool Factory::HasSSE2() {
++#if !defined(MOZILLA_MAY_SUPPORT_SSE2)
++bool
++Factory::HasSSE2()
++{
+ #if defined(__SSE2__) || defined(_M_X64) || \
+     (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+   // gcc with -msse2 (default on OSX and x86-64)
+@@ -290,8 +293,11 @@ bool Factory::HasSSE2() {
+   return false;
+ #endif
+ }
++#endif
+ 
+-bool Factory::HasSSE4() {
++#if !defined(MOZILLA_MAY_SUPPORT_SSE4_1)
++bool
++Factory::HasSSE4()
+ #if defined(__SSE4__)
+   // gcc with -msse2 (default on OSX and x86-64)
+   // cl.exe with -arch:SSE2 (default on x64 compiler)
+@@ -311,6 +317,7 @@ bool Factory::HasSSE4() {
+   return false;
+ #endif
+ }
++#endif
+ 
+ // If the size is "reasonable", we want gfxCriticalError to assert, so
+ // this is the option set up for it.
+diff --git a/gfx/2d/SkConvolver.cpp b/gfx/2d/SkConvolver.cpp
+index b89a486d48550..56bb1738b2b9d 100644
+--- a/gfx/2d/SkConvolver.cpp
++++ b/gfx/2d/SkConvolver.cpp
+@@ -157,6 +157,9 @@ void convolve_horizontally_sse2(const unsigned char* srcData,
+ void convolve_vertically_sse2(const int16_t* filter, int filterLen,
+                               uint8_t* const* srcRows, int width, uint8_t* out,
+                               bool hasAlpha);
++void convolve_horizontally_ssse3(const unsigned char* srcData,
++                                 const SkConvolutionFilter1D& filter,
++                                 unsigned char* outRow, bool hasAlpha);
+ #elif defined(USE_NEON)
+ void convolve_horizontally_neon(const unsigned char* srcData,
+                                 const SkConvolutionFilter1D& filter,
+@@ -170,6 +173,10 @@ void convolve_horizontally(const unsigned char* srcData,
+                            const SkConvolutionFilter1D& filter,
+                            unsigned char* outRow, bool hasAlpha) {
+ #ifdef USE_SSE2
++  if (mozilla::supports_ssse3()) {
++    convolve_horizontally_ssse3(srcData, filter, outRow, hasAlpha);
++    return;
++  }
+   if (mozilla::supports_sse2()) {
+     convolve_horizontally_sse2(srcData, filter, outRow, hasAlpha);
+     return;
+diff --git a/gfx/angle/targets/translator/moz.build b/gfx/angle/targets/translator/moz.build
+index 4b59b82403b69..960fecc855eaa 100644
+--- a/gfx/angle/targets/translator/moz.build
++++ b/gfx/angle/targets/translator/moz.build
+@@ -292,6 +292,9 @@ SOURCES += [
+     "../../checkout/src/compiler/translator/VersionGLSL.cpp",
+ ]
+ 
++# hack by adonais
++SOURCES['../../checkout/src/compiler/translator/tree_util/IntermTraverse.cpp'].no_pgo = True
++
+ USE_LIBS += [
+     "angle_common",
+     "preprocessor",
+diff --git a/gfx/skia/skia/src/base/SkRectMemcpy.h b/gfx/skia/skia/src/base/SkRectMemcpy.h
+index 07ba0f0c652de..66a3fc913332c 100644
+--- a/gfx/skia/skia/src/base/SkRectMemcpy.h
++++ b/gfx/skia/skia/src/base/SkRectMemcpy.h
+@@ -8,6 +8,10 @@
+ #ifndef SkRectMemcpy_DEFINED
+ #define SkRectMemcpy_DEFINED
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "include/private/base/SkAssert.h"
+ #include "include/private/base/SkTemplates.h"
+ 
+@@ -23,9 +27,16 @@ static inline void SkRectMemcpy(void* dst, size_t dstRB, const void* src, size_t
+     }
+ 
+     for (int i = 0; i < rowCount; ++i) {
++        auto srcNext = SkTAddOffset<const void>(src, srcRB);
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++        if (i + 1 < rowCount) {
++            _mm_prefetch((char *)srcNext, _MM_HINT_T0);
++            _mm_prefetch((char *)srcNext + 64, _MM_HINT_T0);
++        }
++#endif
+         memcpy(dst, src, trimRowBytes);
+         dst = SkTAddOffset<void>(dst, dstRB);
+-        src = SkTAddOffset<const void>(src, srcRB);
++        src = srcNext;
+     }
+ }
+ 
+diff --git a/gfx/wr/swgl/src/composite.h b/gfx/wr/swgl/src/composite.h
+index e86ddd3606828..270718d488fee 100644
+--- a/gfx/wr/swgl/src/composite.h
++++ b/gfx/wr/swgl/src/composite.h
+@@ -2,6 +2,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ // Converts a pixel from a source format to a destination format. By default,
+ // just return the value unchanged as for a simple copy.
+ template <typename P, typename U>
+@@ -239,6 +243,9 @@ static NO_INLINE void scale_blit(Texture& srctex, const IntRect& srcReq,
+   fracX %= dstWidth;
+   fracY %= dstHeight;
+   char* src = srctex.sample_ptr(srcReq, srcBounds, invertY);
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  _mm_prefetch(src, _MM_HINT_T0);
++#endif
+   // Inverted Y must step downward along source rows
+   if (invertY) {
+     srcStride = -srcStride;
+@@ -312,6 +319,9 @@ static NO_INLINE void scale_blit(Texture& srctex, const IntRect& srcReq,
+     for (fracY += srcHeight; fracY >= dstHeight; fracY -= dstHeight) {
+       src += srcStride;
+     }
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    _mm_prefetch(src, _MM_HINT_T0);
++#endif
+   }
+ }
+ 
+diff --git a/image/imgLoader.cpp b/image/imgLoader.cpp
+index f470077fdb399..cb726e6e68646 100644
+--- a/image/imgLoader.cpp
++++ b/image/imgLoader.cpp
+@@ -1756,12 +1756,14 @@ void imgLoader::CheckCacheLimits() {
+     NS_ASSERTION(entry, "imgLoader::CheckCacheLimits -- NULL entry pointer");
+ 
+     if (MOZ_LOG_TEST(gImgLog, LogLevel::Debug)) {
++      if (entry) {
+       RefPtr<imgRequest> req = entry->GetRequest();
+       if (req) {
+         LOG_STATIC_FUNC_WITH_PARAM(gImgLog, "imgLoader::CheckCacheLimits",
+                                    "entry", req->CacheKey().URI());
+       }
+     }
++    }
+ 
+     if (entry) {
+       // We just popped this entry from the queue, so pass AlreadyRemoved
+diff --git a/ipc/glue/EnumSerializer.h b/ipc/glue/EnumSerializer.h
+index e892cf07a01bb..3341f80807859 100644
+--- a/ipc/glue/EnumSerializer.h
++++ b/ipc/glue/EnumSerializer.h
+@@ -65,13 +65,17 @@ struct EnumSerializer {
+   static bool Read(MessageReader* aReader, paramType* aResult) {
+     uintParamType value;
+     if (!ReadParam(aReader, &value)) {
++    #ifdef MOZ_CRASHREPORTER
+       CrashReporter::RecordAnnotationCString(
+           CrashReporter::Annotation::IPCReadErrorReason, "Bad iter");
++    #endif
+       return false;
+     }
+     if (!EnumValidator::IsLegalValue(value)) {
++    #ifdef MOZ_CRASHREPORTER
+       CrashReporter::RecordAnnotationCString(
+           CrashReporter::Annotation::IPCReadErrorReason, "Illegal value");
++    #endif
+       return false;
+     }
+     *aResult = paramType(value);
+diff --git a/ipc/glue/MessageChannel.cpp b/ipc/glue/MessageChannel.cpp
+index 4dae1dcd6eca3..de94739671bd2 100644
+--- a/ipc/glue/MessageChannel.cpp
++++ b/ipc/glue/MessageChannel.cpp
+@@ -11,7 +11,9 @@
+ 
+ #include <utility>
+ 
++#ifdef MOZ_CRASHREPORTER
+ #include "CrashAnnotations.h"
++#endif
+ #include "base/waitable_event.h"
+ #include "mozilla/Assertions.h"
+ #include "mozilla/CycleCollectedJSContext.h"
+@@ -446,8 +448,10 @@ MessageChannel::~MessageChannel() {
+   // would be unsafe to invoke our listener's callbacks, and we may be being
+   // destroyed on a thread other than `mWorkerThread`.
+   if (!IsClosedLocked()) {
++  #ifdef MOZ_CRASHREPORTER
+     CrashReporter::RecordAnnotationCString(
+         CrashReporter::Annotation::IPCFatalErrorProtocol, mName);
++  #endif
+     switch (mChannelState) {
+       case ChannelConnected:
+         MOZ_CRASH(
+diff --git a/ipc/glue/MessageLink.cpp b/ipc/glue/MessageLink.cpp
+index f0fc5ac2f3767..84a3af289db69 100644
+--- a/ipc/glue/MessageLink.cpp
++++ b/ipc/glue/MessageLink.cpp
+@@ -97,6 +97,7 @@ void PortLink::SendMessage(UniquePtr<Message> aMessage) {
+   mChan->mMonitor->AssertCurrentThreadOwns();
+ 
+   if (aMessage->size() > IPC::Channel::kMaximumMessageSize) {
++  #ifdef MOZ_CRASHREPORTER
+     CrashReporter::RecordAnnotationCString(
+         CrashReporter::Annotation::IPCMessageName, aMessage->name());
+     CrashReporter::RecordAnnotationU32(
+@@ -104,6 +105,7 @@ void PortLink::SendMessage(UniquePtr<Message> aMessage) {
+     CrashReporter::RecordAnnotationU32(
+         CrashReporter::Annotation::IPCMessageLargeBufferShmemFailureSize,
+         aMessage->LargeBufferShmemFailureSize());
++  #endif
+     MOZ_CRASH("IPC message size is too large");
+   }
+   aMessage->AssertAsLargeAsHeader();
+diff --git a/ipc/glue/NodeChannel.cpp b/ipc/glue/NodeChannel.cpp
+index 240b80fc35c3f..7a8c5e0d9b524 100644
+--- a/ipc/glue/NodeChannel.cpp
++++ b/ipc/glue/NodeChannel.cpp
+@@ -166,6 +166,7 @@ void NodeChannel::AcceptInvite(const NodeName& aRealName,
+ 
+ void NodeChannel::SendMessage(UniquePtr<IPC::Message> aMessage) {
+   if (aMessage->size() > IPC::Channel::kMaximumMessageSize) {
++  #ifdef MOZ_CRASHREPORTER
+     CrashReporter::RecordAnnotationCString(
+         CrashReporter::Annotation::IPCMessageName, aMessage->name());
+     CrashReporter::RecordAnnotationU32(
+@@ -173,6 +174,7 @@ void NodeChannel::SendMessage(UniquePtr<IPC::Message> aMessage) {
+     CrashReporter::RecordAnnotationU32(
+         CrashReporter::Annotation::IPCMessageLargeBufferShmemFailureSize,
+         aMessage->LargeBufferShmemFailureSize());
++  #endif
+     MOZ_CRASH("IPC message size is too large");
+   }
+   aMessage->AssertAsLargeAsHeader();
+diff --git a/ipc/glue/ProcessChild.cpp b/ipc/glue/ProcessChild.cpp
+index f218dbb35361d..7edf901a254e1 100644
+--- a/ipc/glue/ProcessChild.cpp
++++ b/ipc/glue/ProcessChild.cpp
+@@ -104,8 +104,10 @@ ProcessChild::~ProcessChild() {
+ /* static */
+ void ProcessChild::NotifiedImpendingShutdown() {
+   AppShutdown::SetImpendingShutdown();
++#ifdef MOZ_CRASHREPORTER
+   ProcessChild::AppendToIPCShutdownStateAnnotation(
+       "NotifiedImpendingShutdown"_ns);
++#endif
+ }
+ 
+ /* static */
+diff --git a/ipc/glue/ProtocolUtils.cpp b/ipc/glue/ProtocolUtils.cpp
+index 97bae5a5a3619..451d07e897637 100644
+--- a/ipc/glue/ProtocolUtils.cpp
++++ b/ipc/glue/ProtocolUtils.cpp
+@@ -94,8 +94,10 @@ void AnnotateSystemError() {
+   error = errno;
+ #endif
+   if (error) {
++  #ifdef MOZ_CRASHREPORTER
+     CrashReporter::RecordAnnotationU32(
+         CrashReporter::Annotation::IPCSystemError, error);
++  #endif
+   }
+ }
+ 
+@@ -203,8 +205,10 @@ void FatalError(const char* aMsg, bool aIsParent) {
+     // this process if we're off the main thread.
+     formattedMessage.AppendLiteral("\". Intentionally crashing.");
+     NS_ERROR(formattedMessage.get());
++  #ifdef MOZ_CRASHREPORTER
+     CrashReporter::RecordAnnotationCString(
+         CrashReporter::Annotation::IPCFatalErrorMsg, aMsg);
++  #endif
+     AnnotateSystemError();
+ #ifndef FUZZING
+     MOZ_CRASH("IPC FatalError in the parent process!");
+diff --git a/ipc/glue/UtilityProcessManager.cpp b/ipc/glue/UtilityProcessManager.cpp
+index b8c28cbfcc294..8dc6defc0cccf 100644
+--- a/ipc/glue/UtilityProcessManager.cpp
++++ b/ipc/glue/UtilityProcessManager.cpp
+@@ -217,10 +217,10 @@ UtilityProcessManager::LaunchProcess(SandboxingKind aSandbox) {
+           Unused << NS_WARN_IF(!p->mProcessParent->SendPreferenceUpdate(pref));
+         }
+         p->mQueuedPrefs.Clear();
+-
++      #ifdef MOZ_CRASHREPORTER
+         CrashReporter::RecordAnnotationCString(
+             CrashReporter::Annotation::UtilityProcessStatus, "Running");
+-
++      #endif
+         return RetPromise::CreateAndResolve(Ok{}, __func__);
+       },
+       [self, p, aSandbox](LaunchError error) {
+@@ -612,10 +612,10 @@ void UtilityProcessManager::DestroyProcess(SandboxingKind aSandbox) {
+   p->mProcess = nullptr;
+ 
+   mProcesses[aSandbox] = nullptr;
+-
++#ifdef MOZ_CRASHREPORTER
+   CrashReporter::RecordAnnotationCString(
+       CrashReporter::Annotation::UtilityProcessStatus, "Destroyed");
+-
++#endif
+   if (NoMoreProcesses()) {
+     sSingleton = nullptr;
+   }
+diff --git a/ipc/glue/UtilityProcessParent.cpp b/ipc/glue/UtilityProcessParent.cpp
+index 723fee08c872f..2833a2ed5c58e 100644
+--- a/ipc/glue/UtilityProcessParent.cpp
++++ b/ipc/glue/UtilityProcessParent.cpp
+@@ -135,6 +135,7 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
+   if (aWhy == AbnormalShutdown) {
+     nsAutoString dumpID;
+ 
++#ifdef MOZ_CRASHREPORTER
+     if (mCrashReporter) {
+ #if defined(MOZ_SANDBOX)
+       RefPtr<mozilla::ipc::UtilityProcessManager> upm =
+@@ -156,6 +157,7 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
+ 
+     GenerateCrashReport(&dumpID);
+ 
++#endif
+     // It's okay for dumpID to be empty if there was no minidump generated
+     // tests like ipc/glue/test/browser/browser_utility_crashReporter.js are
+     // there to verify this
+diff --git a/js/src/frontend/BytecodeEmitter.cpp b/js/src/frontend/BytecodeEmitter.cpp
+index 3515892214630..6ad6ddb3f5d6d 100644
+--- a/js/src/frontend/BytecodeEmitter.cpp
++++ b/js/src/frontend/BytecodeEmitter.cpp
+@@ -8,6 +8,10 @@
+  * JS bytecode generation.
+  */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "frontend/BytecodeEmitter.h"
+ 
+ #include "mozilla/Casting.h"    // mozilla::AssertedCast
+@@ -4332,6 +4336,9 @@ static inline JSOp CompoundAssignmentParseNodeKindToJSOp(ParseNodeKind pnk) {
+ 
+ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
+                                            ParseNode* rhs) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  _mm_prefetch((char *)lhs, _MM_HINT_T0);
++#endif
+   JSOp compoundOp = CompoundAssignmentParseNodeKindToJSOp(kind);
+   bool isCompound = compoundOp != JSOp::Nop;
+   bool isInit = kind == ParseNodeKind::InitExpr;
+diff --git a/js/src/gc/Marking.cpp b/js/src/gc/Marking.cpp
+index 223468d5074d9..0492f4d4f4a22 100644
+--- a/js/src/gc/Marking.cpp
++++ b/js/src/gc/Marking.cpp
+@@ -4,6 +4,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "gc/Marking-inl.h"
+ 
+ #include "mozilla/DebugOnly.h"
+@@ -1339,6 +1343,9 @@ bool GCMarker::doMarking(SliceBudget& budget, ShouldReportMarkTime reportTime) {
+ 
+ template <uint32_t opts, MarkColor color>
+ bool GCMarker::markOneColor(SliceBudget& budget) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  _mm_prefetch((char *)&markColor_, _MM_HINT_T0);
++#endif
+   AutoSetMarkColor setColor(*this, color);
+   AutoUpdateMarkStackRanges updateRanges(*this);
+ 
+@@ -1354,6 +1361,10 @@ bool GCMarker::markOneColor(SliceBudget& budget) {
+ bool GCMarker::markCurrentColorInParallel(SliceBudget& budget) {
+   MOZ_ASSERT(stack.elementsRangesAreValid);
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  _mm_prefetch((char *)&markColor_, _MM_HINT_T0);
++#endif
++
+   ParallelMarker::AtomicCount& waitingTaskCount =
+       parallelMarker_->waitingTaskCountRef();
+ 
+@@ -1490,6 +1501,10 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
+   size_t index;              // Index of the next slot to mark.
+   size_t end;                // End of slot range to mark.
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  constexpr size_t prefetch_distance = 6;
++#endif
++
+   if (stack.peekTag() == MarkStack::SlotsOrElementsRangeTag) {
+     auto range = stack.popSlotsOrElementsRange();
+     obj = range.ptr().asRangeObject();
+@@ -1570,7 +1585,7 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
+       }
+ 
+       default:
+-        MOZ_CRASH("Invalid tag in mark stack");
++        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Invalid tag in mark stack");
+     }
+   }
+ 
+@@ -1593,6 +1608,11 @@ scan_value_range:
+       continue;
+     }
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    size_t future = std::min(index + prefetch_distance, end - 1);
++    _mm_prefetch((char*)&base[future], _MM_HINT_NTA);
++#endif
++
+     if (v.isString()) {
+       markAndTraverseEdge<opts>(obj, v.toString());
+     } else if (v.isObject()) {
+@@ -1674,6 +1694,10 @@ scan_obj: {
+ 
+     if (!nslots) {
+       // No slots at all. Scan elements immediately.
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++      size_t future = std::min(index + prefetch_distance, end - 1);
++      _mm_prefetch((char*)&base[future], _MM_HINT_NTA);
++#endif
+       goto scan_value_range;
+     }
+ 
+@@ -1693,6 +1717,11 @@ scan_obj: {
+     end = nslots;
+   }
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  size_t future = std::min(index + prefetch_distance, end - 1);
++  _mm_prefetch((char*)&base[future], _MM_HINT_NTA);
++#endif
++
+   // Scan any fixed slots.
+   goto scan_value_range;
+ }
+@@ -2516,6 +2545,10 @@ void GCRuntime::processDelayedMarkingList(MarkColor color) {
+   // be set again if the arena is re-added. Iterate the list until no new arenas
+   // were added.
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  _mm_prefetch((char *)&marker().markColor_, _MM_HINT_T0);
++#endif
++
+   AutoSetMarkColor setColor(marker(), color);
+   AutoUpdateMarkStackRanges updateRanges(marker());
+ 
+diff --git a/layout/base/RestyleManager.cpp b/layout/base/RestyleManager.cpp
+index e7a4042a44abf..8c7e57ecfb34a 100644
+--- a/layout/base/RestyleManager.cpp
++++ b/layout/base/RestyleManager.cpp
+@@ -4,6 +4,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "mozilla/RestyleManager.h"
+ 
+ #include "mozilla/AnimationUtils.h"
+@@ -3066,7 +3070,14 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
+     TextPostTraversalState textState(*aElement, upToDateStyle,
+                                      isDisplayContents && wasRestyled,
+                                      childrenRestyleState);
+-    for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
++    for (nsIContent* n = it.GetNextChild(); n;) {
++      nsIContent* nNext = it.GetNextChild();
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++      if (nNext) {
++        _mm_prefetch((char *)nNext, _MM_HINT_NTA);
++        _mm_prefetch((char *)nNext + 64, _MM_HINT_NTA);
++      }
++#endif
+       if (traverseElementChildren && n->IsElement()) {
+         recreatedAnyContext |= ProcessPostTraversal(
+             n->AsElement(), childrenRestyleState, childrenFlags);
+@@ -3074,6 +3085,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
+         recreatedAnyContext |= ProcessPostTraversalForText(
+             n, textState, childrenRestyleState, childrenFlags);
+       }
++      n = nNext;
+     }
+   }
+ 
+diff --git a/layout/forms/nsTextControlFrame.cpp b/layout/forms/nsTextControlFrame.cpp
+index 4b3721d5e5d7f..e98076afa7b1c 100644
+--- a/layout/forms/nsTextControlFrame.cpp
++++ b/layout/forms/nsTextControlFrame.cpp
+@@ -4,6 +4,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "mozilla/DebugOnly.h"
+ 
+ #include "gfxContext.h"
+@@ -1137,7 +1141,16 @@ void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+   nsDisplayList* content = aLists.Content();
+   nsDisplayListSet set(content, content, content, content, content, content);
+ 
+-  for (auto* kid : mFrames) {
++  const auto& frames = mFrames;
++  for (auto it = frames.begin(); it != frames.end();) {
++    auto kid = *it;
++    ++it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != frames.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_T0);
++      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
++    }
++#endif
+     BuildDisplayListForChild(aBuilder, kid, set);
+   }
+ }
+diff --git a/layout/generic/ViewportFrame.cpp b/layout/generic/ViewportFrame.cpp
+index b137cac95a20e..d7c015722b031 100644
+--- a/layout/generic/ViewportFrame.cpp
++++ b/layout/generic/ViewportFrame.cpp
+@@ -9,6 +9,10 @@
+  * the document's scrollbars and contains fixed-positioned elements
+  */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "mozilla/ViewportFrame.h"
+ 
+ #include "mozilla/ComputedStyleInlines.h"
+@@ -352,6 +356,10 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
+         mFrames.FirstChild()->IsSubtreeDirty()) {
+       // Reflow our one-and-only principal child frame
+       nsIFrame* kidFrame = mFrames.FirstChild();
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++      _mm_prefetch((char *)kidFrame, _MM_HINT_NTA);
++      _mm_prefetch((char *)kidFrame + 64, _MM_HINT_NTA);
++#endif
+       ReflowOutput kidDesiredSize(aReflowInput);
+       const WritingMode kidWM = kidFrame->GetWritingMode();
+       LogicalSize availableSpace = aReflowInput.AvailableSize(kidWM);
+diff --git a/layout/generic/nsBlockFrame.cpp b/layout/generic/nsBlockFrame.cpp
+index da9935c1bd877..704c02b40a5ff 100644
+--- a/layout/generic/nsBlockFrame.cpp
++++ b/layout/generic/nsBlockFrame.cpp
+@@ -9,6 +9,10 @@
+  * boxes, also used for various anonymous boxes
+  */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "nsBlockFrame.h"
+ 
+ #include "gfxContext.h"
+@@ -3119,6 +3123,12 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
+ 
+   // Reflow the lines that are already ours
+   for (; line != line_end; ++line, aState.AdvanceToNextLine()) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (line.next() != line_end) {
++      _mm_prefetch((char *)line.peekNext()->mFirstChild, _MM_HINT_T0);
++    }
++#endif
++
+     DumpLine(aState, line, deltaBCoord, 0);
+ #ifdef DEBUG
+     AutoNoisyIndenter indent2(gNoisyReflow);
+@@ -7848,6 +7858,9 @@ static void DisplayLine(nsDisplayListBuilder* aBuilder,
+   nsIFrame* kid = aLine->mFirstChild;
+   int32_t n = aLine->GetChildCount();
+   while (--n >= 0) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    _mm_prefetch((char *)kid->GetNextSibling(), _MM_HINT_T0);
++#endif
+     aFrame->BuildDisplayListForChild(aBuilder, kid, childLists, flags);
+     kid = kid->GetNextSibling();
+   }
+@@ -7901,6 +7914,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+     DisplayOverflowContainers(aBuilder, aLists);
+     for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
+       if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++        _mm_prefetch((char *)f->GetNextSibling(), _MM_HINT_T0);
++#endif
+         BuildDisplayListForChild(aBuilder, f, aLists);
+       }
+     }
+@@ -8033,6 +8049,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+     };
+ 
+     for (LineIterator line = LinesBegin(); line != line_end; ++line) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++      _mm_prefetch((char *)line.peekNext(), _MM_HINT_T0);
++#endif
+       const nsRect lineArea = line->InkOverflowRect();
+       const bool lineInLine = line->IsInline();
+ 
+diff --git a/layout/generic/nsCanvasFrame.cpp b/layout/generic/nsCanvasFrame.cpp
+index f7df8d832699f..d9ce12ea98edb 100644
+--- a/layout/generic/nsCanvasFrame.cpp
++++ b/layout/generic/nsCanvasFrame.cpp
+@@ -6,6 +6,10 @@
+ 
+ /* rendering object that goes directly inside the document's scrollbars */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "nsCanvasFrame.h"
+ 
+ #include "gfxContext.h"
+@@ -438,8 +442,17 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+ 
+   aLists.BorderBackground()->AppendToTop(&list);
+ 
+-  for (nsIFrame* kid : PrincipalChildList()) {
++  const auto& childList = PrincipalChildList();
++  for (auto it = childList.begin(); it != childList.end();) {
+     // Put our child into its own pseudo-stack.
++    auto kid = *it;
++    ++it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != childList.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_T0);
++      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
++    }
++#endif
+     BuildDisplayListForChild(aBuilder, kid, aLists);
+   }
+ 
+diff --git a/layout/generic/nsColumnSetFrame.cpp b/layout/generic/nsColumnSetFrame.cpp
+index a3da13773fc41..74dd7dc5169bd 100644
+--- a/layout/generic/nsColumnSetFrame.cpp
++++ b/layout/generic/nsColumnSetFrame.cpp
+@@ -6,6 +6,10 @@
+ 
+ /* rendering object for css3 multi-column layout */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "nsColumnSetFrame.h"
+ 
+ #include "mozilla/ColumnUtils.h"
+@@ -1290,7 +1294,16 @@ void nsColumnSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+   }
+ 
+   // Our children won't have backgrounds so it doesn't matter where we put them.
+-  for (nsIFrame* f : mFrames) {
++  const auto& frames = mFrames;
++  for (auto it = frames.begin(); it != frames.end();) {
++    auto f = *it;
++    ++it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != frames.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_T0);
++      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
++    }
++#endif
+     BuildDisplayListForChild(aBuilder, f, aLists);
+   }
+ }
+diff --git a/layout/generic/nsContainerFrame.cpp b/layout/generic/nsContainerFrame.cpp
+index 670e5209584e7..0b54fb0684eb2 100644
+--- a/layout/generic/nsContainerFrame.cpp
++++ b/layout/generic/nsContainerFrame.cpp
+@@ -6,6 +6,9 @@
+ 
+ /* base class #1 for rendering objects that have child lists */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
+ #include "nsContainerFrame.h"
+ #include "mozilla/widget/InitData.h"
+ #include "nsContainerFrameInlines.h"
+@@ -379,6 +382,9 @@ void nsContainerFrame::BuildDisplayListForNonBlockChildren(
+   nsDisplayListSet set(aLists, aLists.Content());
+   // The children should be in content order
+   while (kid) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    _mm_prefetch((char *)kid->GetNextSibling(), _MM_HINT_T0);
++#endif
+     BuildDisplayListForChild(aBuilder, kid, set, aFlags);
+     kid = kid->GetNextSibling();
+   }
+@@ -1239,6 +1245,9 @@ void nsContainerFrame::DisplayOverflowContainers(
+   nsFrameList* overflowconts = GetOverflowContainers();
+   if (overflowconts) {
+     for (nsIFrame* frame : *overflowconts) {
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++      _mm_prefetch((char *)frame->GetNextSibling(), _MM_HINT_T0);
++#endif
+       BuildDisplayListForChild(aBuilder, frame, aLists);
+     }
+   }
+diff --git a/layout/generic/nsIFrame.cpp b/layout/generic/nsIFrame.cpp
+index 44c32bd164138..3d948fc62f4f0 100644
+--- a/layout/generic/nsIFrame.cpp
++++ b/layout/generic/nsIFrame.cpp
+@@ -6,6 +6,10 @@
+ 
+ /* base class of all rendering objects */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "nsIFrame.h"
+ 
+ #include <stdarg.h>
+@@ -7485,7 +7489,11 @@ nsIFrame* nsIFrame::GetClosestContentVisibilityAncestor(
+   auto* parent = GetInFlowParent();
+   bool isAnonymousBlock = Style()->IsAnonBox() && parent &&
+                           parent->HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES);
+-  for (nsIFrame* cur = parent; cur; cur = cur->GetInFlowParent()) {
++  for (nsIFrame* cur = parent; cur;) {
++    nsIFrame* curNext = cur->GetInFlowParent();
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    _mm_prefetch((char*)curNext, _MM_HINT_NTA);
++#endif
+     if (!isAnonymousBlock && cur->HidesContent(aInclude)) {
+       return cur;
+     }
+@@ -7494,6 +7502,8 @@ nsIFrame* nsIFrame::GetClosestContentVisibilityAncestor(
+     // non-anonymous ancestor, but can be hidden by ancestors further up the
+     // tree.
+     isAnonymousBlock = false;
++
++    cur = curNext;
+   }
+ 
+   return nullptr;
+diff --git a/layout/generic/nsLineBox.h b/layout/generic/nsLineBox.h
+index f62cda9835ed2..341ff51127810 100644
+--- a/layout/generic/nsLineBox.h
++++ b/layout/generic/nsLineBox.h
+@@ -659,6 +659,10 @@ class GenericLineListIterator {
+     return rv;
+   }
+ 
++  pointer peekNext(){
++    return static_cast<pointer>(mCurrent->_mNext);
++  }
++
+   pointer get() {
+     MOZ_ASSERT(mListLink);
+     MOZ_ASSERT(mCurrent != mListLink, "running past end");
+diff --git a/layout/painting/RetainedDisplayListBuilder.cpp b/layout/painting/RetainedDisplayListBuilder.cpp
+index d1aa72aacc209..300ea5a117648 100644
+--- a/layout/painting/RetainedDisplayListBuilder.cpp
++++ b/layout/painting/RetainedDisplayListBuilder.cpp
+@@ -609,6 +609,12 @@ class MergeState {
+         continue;
+       }
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++      if (i + 1 < mOldDAG.Length() && !mOldItems[i + 1].IsUsed()) {
++        _mm_prefetch((char *)mOldItems[OldListIndex(i + 1).val].mItem, _MM_HINT_NTA);
++      }
++#endif
++
+       AutoTArray<MergedListIndex, 2> directPredecessors =
+           ResolveNodeIndexesOldToMerged(
+               mOldDAG.GetDirectPredecessors(OldListIndex(i)));
+@@ -1144,7 +1150,16 @@ bool RetainedDisplayListBuilder::ProcessFrame(
+ static void AddFramesForContainingBlock(nsIFrame* aBlock,
+                                         const nsFrameList& aFrames,
+                                         nsTArray<nsIFrame*>& aExtraFrames) {
+-  for (nsIFrame* f : aFrames) {
++  const auto& frames = aFrames;
++  for (auto it = frames.begin(); it != frames.end();) {
++    const auto& f = *it;
++    ++it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != frames.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_NTA);
++      _mm_prefetch((char *)*it + 64, _MM_HINT_NTA);
++    }
++#endif
+     if (!f->IsFrameModified() && AnyContentAncestorModified(f, aBlock)) {
+       CRR_LOG("Adding invalid OOF %p\n", f);
+       aExtraFrames.AppendElement(f);
+diff --git a/layout/painting/nsDisplayList.cpp b/layout/painting/nsDisplayList.cpp
+index e2da8c5c42197..028fc405c536e 100644
+--- a/layout/painting/nsDisplayList.cpp
++++ b/layout/painting/nsDisplayList.cpp
+@@ -10,6 +10,10 @@
+  * used during painting and hit testing
+  */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "nsDisplayList.h"
+ 
+ #include <stdint.h>
+@@ -2095,7 +2099,15 @@ nsRect nsDisplayList::GetClippedBoundsWithRespectToASR(
+     nsDisplayListBuilder* aBuilder, const ActiveScrolledRoot* aASR,
+     nsRect* aBuildingRect) const {
+   nsRect bounds;
+-  for (nsDisplayItem* i : *this) {
++  const nsDisplayList& thisItems = *this;
++  for (auto it = thisItems.begin(); it != thisItems.end();) {
++    const auto& i = *it;
++    ++it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != thisItems.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_NTA);
++    }
++#endif
+     nsRect r = i->GetClippedBounds(aBuilder);
+     if (aASR != i->GetActiveScrolledRoot() && !r.IsEmpty()) {
+       if (Maybe<nsRect> clip = i->GetClipWithRespectToASR(aBuilder, aASR)) {
+@@ -2328,7 +2340,15 @@ void nsDisplayList::PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
+ }
+ 
+ void nsDisplayList::DeleteAll(nsDisplayListBuilder* aBuilder) {
+-  for (auto* item : TakeItems()) {
++  const nsDisplayList& takeItems = TakeItems();
++  for (auto it = takeItems.begin(); it != takeItems.end(); ++it) {
++    const auto& item = *it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it.mNode->mNext) {
++      _mm_prefetch((char *)it.mNode->mNext->mValue, _MM_HINT_NTA);
++      _mm_prefetch((char *)it.mNode->mNext->mValue + 64, _MM_HINT_NTA);
++    }
++#endif
+     item->Destroy(aBuilder);
+   }
+ }
+diff --git a/layout/painting/nsDisplayList.h b/layout/painting/nsDisplayList.h
+index 4456a966b7e13..8df0606bb375c 100644
+--- a/layout/painting/nsDisplayList.h
++++ b/layout/painting/nsDisplayList.h
+@@ -3240,6 +3240,11 @@ class nsDisplayList {
+     nsDisplayItem* bottom = mBottom->mValue;
+ 
+     auto next = mBottom->mNext;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (next) {
++      _mm_prefetch((char *)next, _MM_HINT_NTA);
++    }
++#endif
+     Deallocate(mBottom);
+     mBottom = next;
+ 
+@@ -3247,6 +3252,12 @@ class nsDisplayList {
+       // No bottom item means no items at all.
+       mTop = nullptr;
+     }
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    else {
++      _mm_prefetch((char *)mBottom->mValue, _MM_HINT_NTA);
++      _mm_prefetch((char *)mBottom->mNext, _MM_HINT_NTA);
++    }
++#endif
+ 
+     MOZ_ASSERT(mLength > 0);
+     mLength--;
+@@ -3368,6 +3379,11 @@ class nsDisplayList {
+ 
+     while (current) {
+       next = current->mNext;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++      if (next) {
++        _mm_prefetch((char *)next, _MM_HINT_NTA);
++      }
++#endif
+       Deallocate(current);
+       current = next;
+     }
+diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
+index d5c4a10d4b595..6b588d5b0b42d 100644
+--- a/layout/tables/nsTableFrame.cpp
++++ b/layout/tables/nsTableFrame.cpp
+@@ -4,6 +4,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "nsTableFrame.h"
+ 
+ #include "mozilla/gfx/2D.h"
+@@ -1203,7 +1207,16 @@ void nsTableFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+     }
+   }
+ 
+-  for (nsIFrame* kid : PrincipalChildList()) {
++  const auto& childList = PrincipalChildList();
++  for (auto it = childList.begin(); it != childList.end();) {
++    auto kid = *it;
++    ++it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != childList.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_T0);
++      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
++    }
++#endif
+     BuildDisplayListForChild(aBuilder, kid, lists);
+   }
+ 
+diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.cpp
+index a04901d0f2311..4847eafdbc793 100644
+--- a/layout/tables/nsTableRowFrame.cpp
++++ b/layout/tables/nsTableRowFrame.cpp
+@@ -3,6 +3,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "nsTableRowFrame.h"
+ 
+ #include "mozilla/Baseline.h"
+@@ -527,7 +531,16 @@ void nsTableRowFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+ 
+   DisplayOutline(aBuilder, aLists);
+ 
+-  for (nsIFrame* kid : PrincipalChildList()) {
++  const auto& childList = PrincipalChildList();
++  for (auto it = childList.begin(); it != childList.end();) {
++    auto kid = *it;
++    ++it;
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (it != childList.end()) {
++      _mm_prefetch((char *)*it, _MM_HINT_T0);
++      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
++    }
++#endif
+     BuildDisplayListForChild(aBuilder, kid, aLists);
+   }
+ }
+diff --git a/memory/build/mozjemalloc.cpp b/memory/build/mozjemalloc.cpp
+index ecd203a23d6c1..c05c41998d8ce 100644
+--- a/memory/build/mozjemalloc.cpp
++++ b/memory/build/mozjemalloc.cpp
+@@ -121,6 +121,10 @@
+ //
+ // *****************************************************************************
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "mozmemory_wrap.h"
+ #include "mozjemalloc.h"
+ #include "mozjemalloc_types.h"
+@@ -3405,6 +3409,11 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
+     run = (arena_run_t*)(uintptr_t(chunk) +
+                          (gChunkHeaderNumPages << gPageSize2Pow));
+   }
++
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++  _mm_prefetch((char *)run, _MM_HINT_NTA);
++#endif
++
+   // Update page map.
+   return SplitRun(run, aSize, aLarge, aZero) ? run : nullptr;
+ }
+@@ -4261,6 +4270,10 @@ void* arena_t::MallocLarge(size_t aSize, bool aZero) {
+     if (!ret) {
+       return nullptr;
+     }
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    _mm_prefetch((char *)ret, _MM_HINT_NTA);
++    _mm_prefetch((char *)ret + 64, _MM_HINT_NTA);
++#endif
+     mStats.allocated_large += aSize;
+     mStats.operations++;
+   }
+diff --git a/mfbt/Attributes.h b/mfbt/Attributes.h
+index 2f50601b0306e..e1dc01f22f003 100644
+--- a/mfbt/Attributes.h
++++ b/mfbt/Attributes.h
+@@ -11,6 +11,12 @@
+ 
+ #include "mozilla/Compiler.h"
+ 
++#if defined(WIN32) || defined(__SYMBIAN32__)
++#  define TT_RESTRICTED_PTR     __restrict
++#else
++#  define TT_RESTRICTED_PTR     __restrict__
++#endif
++
+ /*
+  * MOZ_ALWAYS_INLINE is a macro which expands to tell the compiler that the
+  * method decorated with it must be inlined, even if the compiler thinks
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+index acadd3a2cca17..b7bdf29547460 100644
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -343,7 +343,7 @@
+  # and can relaunch the application after it has been closed.
+ - name: alerts.useSystemBackend.windows.notificationserver.enabled
+   type: bool
+-  value: true
++  value: false
+   mirror: never
+ #endif
+ 
+@@ -3665,7 +3665,7 @@
+ # information should be collected / submitted.
+ - name: dom.private-attribution.submission.enabled
+   type: bool
+-  value: @IS_NOT_ANDROID@
++  value: false
+   mirror: always
+ 
+ # Is support for Window.paintWorklet enabled?
+@@ -5296,6 +5296,12 @@
+   value: true
+   mirror: always
+ 
++# Is support for Navigator.webdriver enabled?
++- name: dom.webdriver.enabled
++  type: bool
++  value: @IS_NOT_ANDROID@
++  mirror: always
++
+ - name: dom.w3c_pointer_events.getcoalescedevents_only_in_securecontext
+   type: bool
+   value: @IS_NIGHTLY_BUILD@
+diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
+index 95bcd71793098..d4e60d9cbd99d 100644
+--- a/modules/libpref/init/all.js
++++ b/modules/libpref/init/all.js
+@@ -3139,9 +3139,9 @@ pref("extensions.userScripts.mv3.enabled", true);
+ pref("extensions.webextensions.ExtensionStorageIDB.enabled", true);
+ 
+ // Whether to allow the inline options browser in HTML about:addons page.
+-pref("extensions.htmlaboutaddons.inline-options.enabled", true);
++pref("extensions.htmlaboutaddons.inline-options.enabled", false);
+ // Show recommendations on the extension and theme list views.
+-pref("extensions.htmlaboutaddons.recommendations.enabled", true);
++pref("extensions.htmlaboutaddons.recommendations.enabled", false);
+ 
+ // The URL for the privacy policy related to recommended add-ons.
+ pref("extensions.recommendations.privacyPolicyUrl", "");
+@@ -3152,12 +3152,12 @@ pref("extensions.recommendations.themeRecommendationUrl", "");
+ // Note that on enabling the button in other release channels, make sure to
+ // disable it in problematic tests, see disableNonReleaseActions() inside
+ // browser/modules/test/browser/head.js
+-pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
+-#if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
+-  pref("extensions.webcompat-reporter.enabled", true);
+-#else
+-  pref("extensions.webcompat-reporter.enabled", false);
+-#endif
++// pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
++// #if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
++// pref("extensions.webcompat-reporter.enabled", true);
++// #else
++// pref("extensions.webcompat-reporter.enabled", false);
++// #endif
+ 
+ // Add-on content security policies.
+ pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* http://localhost:* http://127.0.0.1:* moz-extension: blob: filesystem: 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline';");
+@@ -3343,6 +3343,8 @@ pref("urlclassifier.gethash.timeout_ms", 5000);
+ pref("urlclassifier.alternate_error_page", "blocked");
+ 
+ // Enable safe-browsing debugging
++pref("browser.safebrowsing.phishing.enabled", false);
++pref("browser.safebrowsing.malware.enabled", false);
+ pref("browser.safebrowsing.debug", false);
+ 
+ // Allow users to ignore Safe Browsing warnings.
+@@ -3357,14 +3359,14 @@ pref("browser.safebrowsing.allowOverride", true);
+ #endif
+ 
+ // Download protection
+-pref("browser.safebrowsing.downloads.enabled", true);
+-pref("browser.safebrowsing.downloads.remote.enabled", true);
++pref("browser.safebrowsing.downloads.enabled", false);
++pref("browser.safebrowsing.downloads.remote.enabled", false);
+ pref("browser.safebrowsing.downloads.remote.timeout_ms", 15000);
+ pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_SAFEBROWSING_API_KEY%");
+-pref("browser.safebrowsing.downloads.remote.block_dangerous",            true);
+-pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       true);
+-pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", true);
+-pref("browser.safebrowsing.downloads.remote.block_uncommon",             true);
++pref("browser.safebrowsing.downloads.remote.block_dangerous",            false);
++pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       false);
++pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", false);
++pref("browser.safebrowsing.downloads.remote.block_uncommon",             false);
+ 
+ // Android SafeBrowsing's configuration is in ContentBlocking.java, keep in sync.
+ #ifndef MOZ_WIDGET_ANDROID
+@@ -3635,7 +3637,7 @@ pref("browser.translations.neverTranslateLanguages", "");
+ // translation behavior on about:translations. Requires a page refresh.
+ pref("browser.translations.useHTML", false);
+ // Automatically popup an offer to translate on sites.
+-pref("browser.translations.automaticallyPopup", true);
++pref("browser.translations.automaticallyPopup", false);
+ // Simulate the behavior of using a device that does not support the translations engine.
+ // Requires restart.
+ // Enables or disables the usage of lexical shortlisting for the translation models.
+@@ -3750,8 +3752,8 @@ pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
+ 
+     // Health Report is enabled by default on all channels.
+     // Do note that the toggle on Fenix and Focus does NOT reflect to this pref.
+-    pref("datareporting.healthreport.uploadEnabled", true);
+-    pref("datareporting.usage.uploadEnabled", true);
++    pref("datareporting.healthreport.uploadEnabled", false);
++    pref("datareporting.usage.uploadEnabled", false);
+   #endif
+ #endif
+ 
+diff --git a/moz.configure b/moz.configure
+index dd419e1cc0b63..9fd3ffea1fa53 100755
+--- a/moz.configure
++++ b/moz.configure
+@@ -714,11 +714,31 @@ check_prog("MKFSHFS", extra_programs.MKFSHFS, allow_missing=True)
+ check_prog("HFS_TOOL", extra_programs.HFS_TOOL, allow_missing=True)
+ check_prog("RPMBUILD", extra_programs.RPMBUILD, allow_missing=True)
+ 
++@depends(target)
++@imports("os")
++def makensis_progs(target):
++    if target.kernel != "WINNT":
++        return
++
++    candidates = [
++        "makensis-3.01",
++        "makensis-3.0b3",
++        "makensis-3.0b1",
++        "makensis",
++    ]
++
++    # Look for nsis installed by msys environment. But only the 32-bit version.
++    # We use an absolute path and insert as the first entry so it is preferred
++    # over a 64-bit exe that may be in PATH.
++    if "MSYSTEM_PREFIX" in os.environ:
++        prefix = os.path.dirname(os.environ["MSYSTEM_PREFIX"])
++        candidates.insert(0, os.path.join(prefix, "mingw32", "bin", "makensis.exe"))
++
++    return tuple(candidates)
+ 
+ nsis = check_prog(
+     "MAKENSISU",
+-    ("makensis",),
+-    bootstrap="nsis/bin",
++    makensis_progs,
+     allow_missing=True,
+     when=target_is_windows,
+ )
+diff --git a/python/mozbuild/mozbuild/action/make_7z.py b/python/mozbuild/mozbuild/action/make_7z.py
+new file mode 100644
+index 0000000000000..64004a15b257b
+--- /dev/null
++++ b/python/mozbuild/mozbuild/action/make_7z.py
+@@ -0,0 +1,62 @@
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++from __future__ import absolute_import, print_function
++
++import os
++import sys
++import shutil
++import subprocess
++
++def handle_remove_read_only(func, path, exc):
++    excvalue = exc[1]
++    if func in (os.rmdir, os.remove, os.unlink) and excvalue.errno == errno.EACCES:
++      os.chmod(path, stat.S_IRWXU| stat.S_IRWXG| stat.S_IRWXO) # 0777
++      func(path)
++    else:
++        sys.exit(1)
++
++def make_7z(source, suffix, package):
++    ice_source = os.environ.get('PWD') + '/dist/' + source
++    ice_package = os.environ.get('PWD') + '/dist/' + package
++    dist_source = ice_source + suffix
++    if os.path.exists(dist_source):
++        shutil.rmtree(dist_source, onerror=handle_remove_read_only)
++    if os.path.exists(ice_package):
++        os.remove(ice_package)
++    os.mkdir(dist_source)
++    path = shutil.copytree(ice_source, dist_source + '/App')
++    user = os.environ.get('LIBPORTABLE_PATH')
++    vc_crt = os.environ.get('VC_REDISTDIR')
++    if vc_crt:
++        if (suffix == '_x64'):
++            if os.path.exists(vc_crt + 'x64/Microsoft.VC142.CRT/vcruntime140_1.dll'):
++                path = shutil.copy(vc_crt + 'x64/Microsoft.VC142.CRT/vcruntime140_1.dll', dist_source + '/App')
++    if user:
++        if (suffix == '_x64'):
++            if os.path.exists(user + '/bin/portable64.dll'):
++                path = shutil.copy(user + '/bin/portable64.dll', dist_source + '/App')
++            if os.path.exists(user + '/bin/upcheck64.exe'):
++                path = shutil.copy(user + '/bin/upcheck64.exe', dist_source + '/App/upcheck.exe')
++        else:
++            if os.path.exists(user + '/bin/portable32.dll'):
++                path = shutil.copy(user + '/bin/portable32.dll', dist_source + '/App')
++            if os.path.exists(user + '/bin/upcheck32.exe'):
++                path = shutil.copy(user + '/bin/upcheck32.exe', dist_source + '/App/upcheck.exe')
++        if os.path.exists(user + '/bin/portable(example).ini'):
++            path = shutil.copy(user + '/bin/portable(example).ini', dist_source + '/App')
++    subprocess.check_call(['7z', 'a', '-t7z', ice_package, dist_source, '-mx9', '-r', '-y', '-x!.mkdir.done'])
++
++def main(args):
++    if len(args) != 3:
++        print('Usage: make_7z.py <source> <suffix> <package>',
++              file=sys.stderr)
++        return 1
++    else:
++        make_7z(args[0], args[1], args[2])
++        return 0
++
++
++if __name__ == '__main__':
++    sys.exit(main(sys.argv[1:]))
+diff --git a/security/nss/lib/util/secport.c b/security/nss/lib/util/secport.c
+index c764cb1af2c89..3e925f1913366 100644
+--- a/security/nss/lib/util/secport.c
++++ b/security/nss/lib/util/secport.c
+@@ -776,7 +776,7 @@ NSS_PutEnv(const char *envVarName, const char *envValue)
+         SET_ERROR_CODE
+         return SECFailure;
+     }
+-#elif defined(__GNUC__) && __GNUC__ >= 7
++#elif defined(__GNUC__) && (__GNUC__ >= 7 || defined(__clang__))
+     int setEnvFailed;
+     setEnvFailed = setenv(envVarName, envValue, 1);
+     if (setEnvFailed) {
+diff --git a/toolkit/components/telemetry/app/TelemetrySend.sys.mjs b/toolkit/components/telemetry/app/TelemetrySend.sys.mjs
+index 730f0571aafad..75179db02910e 100644
+--- a/toolkit/components/telemetry/app/TelemetrySend.sys.mjs
++++ b/toolkit/components/telemetry/app/TelemetrySend.sys.mjs
+@@ -1692,43 +1692,5 @@ export var TelemetrySendImpl = {
+     if (AppConstants.platform === "android") {
+       throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+     }
+-
+-    let suppressPingsender = Services.prefs.getBoolPref(
+-      "toolkit.telemetry.testing.suppressPingsender",
+-      false
+-    );
+-    if (suppressPingsender) {
+-      this._log.trace("Silently skipping pingsender call in automation");
+-      return;
+-    }
+-
+-    // By default, invoke `pingsender[.exe] URL path ...`.
+-    let exeName =
+-      AppConstants.platform === "win" ? "pingsender.exe" : "pingsender";
+-    let params = [];
+-
+-    if (lazy.NimbusFeatures.pingsender.getVariable("backgroundTaskEnabled")) {
+-      // If using pingsender background task, invoke `firefox[.exe] --backgroundtask pingsender URL path ...`.
+-      exeName =
+-        AppConstants.MOZ_APP_NAME +
+-        (AppConstants.platform === "win" ? ".exe" : "");
+-      params = ["--backgroundtask", "pingsender"];
+-    }
+-
+-    this._log.info(
+-      `Invoking '${exeName}${params.length ? " " + params.join(" ") : ""} ...'`
+-    );
+-
+-    let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+-    exe.append(exeName);
+-
+-    params.push(...pings.flatMap(ping => [ping.url, ping.path]));
+-    let process = Cc["@mozilla.org/process/util;1"].createInstance(
+-      Ci.nsIProcess
+-    );
+-    process.init(exe);
+-    process.startHidden = true;
+-    process.noShell = true;
+-    process.runAsync(params, params.length, observer);
+   },
+ };
+diff --git a/toolkit/components/telemetry/moz.build b/toolkit/components/telemetry/moz.build
+index a133831d2c26b..0c2008eb15d10 100644
+--- a/toolkit/components/telemetry/moz.build
++++ b/toolkit/components/telemetry/moz.build
+@@ -8,9 +8,11 @@ include("/ipc/chromium/chromium-config.mozbuild")
+ 
+ FINAL_LIBRARY = "xul"
+ 
+-DIRS = [
+-    "pingsender",
+-]
++if CONFIG["MOZ_CRASHREPORTER"]:
++    DIRS = [
++        "pingsender",
++    ]
++
+ 
+ if CONFIG["COMPILE_ENVIRONMENT"]:
+     EXPORTS.mozilla += ["!dap_ffi_generated.h"]
+diff --git a/toolkit/content/buildconfig.html b/toolkit/content/buildconfig.html
+index 15d1e9b173d43..715dc61c984c8 100644
+--- a/toolkit/content/buildconfig.html
++++ b/toolkit/content/buildconfig.html
+@@ -19,9 +19,11 @@
+     <div class="container">
+       <h1>Build Configuration</h1>
+       <p>Please be aware that this page doesn't reflect all the options used to build @MOZ_APP_DISPLAYNAME@.</p>
+-      #ifdef MOZ_SOURCE_URL
+       <h2>Source</h2>
++      #ifdef MOZ_SOURCE_URL
+       <p>Built from <a href="@MOZ_SOURCE_URL@">@MOZ_SOURCE_URL@</a></p>
++      #else
++      <p>Built from <a href="https://github.com/adonais">https://github.com/adonais</a></p>
+       #endif
+       <h2>Build platform</h2>
+       <table class="build-platform-table">
+diff --git a/toolkit/content/moz.build b/toolkit/content/moz.build
+index 52529bac7b3f3..0169ae391837f 100644
+--- a/toolkit/content/moz.build
++++ b/toolkit/content/moz.build
+@@ -13,6 +13,9 @@ for var in ("CC", "CC_VERSION", "CXX", "RUSTC", "RUSTC_VERSION"):
+ for var in ("MOZ_CONFIGURE_OPTIONS", "MOZ_APP_DISPLAYNAME"):
+     DEFINES[var] = CONFIG[var]
+ 
++if CONFIG["MOZ_BRANDING_DIRECTORY"] == "browser/branding/iceweasel":
++    DEFINES["ICEWEASEL_BUILDING"] = 1
++
+ if CONFIG["MOZ_ANDROID_FAT_AAR_ARCHITECTURES"]:
+     DEFINES["target"] = "</td><td>".join(
+         sorted(CONFIG["MOZ_ANDROID_FAT_AAR_ARCHITECTURES"])
+diff --git a/toolkit/crashreporter/nsExceptionHandler.cpp b/toolkit/crashreporter/nsExceptionHandler.cpp
+index b17f0ac51e059..f0f7c1d223960 100644
+--- a/toolkit/crashreporter/nsExceptionHandler.cpp
++++ b/toolkit/crashreporter/nsExceptionHandler.cpp
+@@ -1406,7 +1406,7 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
+     writer.Write(Annotation::SecondsSinceLastCrash, timeSinceLastCrash);
+   }
+ 
+-#if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)
++#if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST) && defined(MOZ_CRASHREPORTER)
+   // HACK: The DLL blocklist code will manually write its annotations as JSON
+   DllBlocklist_WriteNotes();
+ #endif  // defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)
+diff --git a/toolkit/library/moz.build b/toolkit/library/moz.build
+index 161ad33eb7fe6..1c8a28167fc52 100644
+--- a/toolkit/library/moz.build
++++ b/toolkit/library/moz.build
+@@ -348,6 +348,12 @@ if CONFIG["OS_ARCH"] == "Darwin":
+     ]
+ 
+ 
++if CONFIG["OS_ARCH"] == "WINNT":
++    if CONFIG["TARGET_CPU"] == "x86_64":
++        OS_LIBS += ["portable64"]
++    else:
++        OS_LIBS += ["portable32"]
++
+ if CONFIG["OS_ARCH"] == "WINNT":
+     OS_LIBS += [
+         "shell32",
+diff --git a/toolkit/library/rust/moz.build b/toolkit/library/rust/moz.build
+index 34c94a19d86b9..3b3ead6e58cea 100644
+--- a/toolkit/library/rust/moz.build
++++ b/toolkit/library/rust/moz.build
+@@ -33,7 +33,7 @@ RUST_TESTS = [
+     "gkrust",
+ ]
+ 
+-if CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
++if CONFIG["MOZ_CRASHREPORTER"] and CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
+     RUST_TESTS += ["nmhproxy"]
+ 
+ RUST_TEST_FEATURES.append("crashreporter/mock")
+diff --git a/toolkit/locales/en-US/toolkit/branding/brandings.ftl b/toolkit/locales/en-US/toolkit/branding/brandings.ftl
+index d9766a9e7968f..4e326c256f14a 100644
+--- a/toolkit/locales/en-US/toolkit/branding/brandings.ftl
++++ b/toolkit/locales/en-US/toolkit/branding/brandings.ftl
+@@ -15,17 +15,17 @@
+ ## https://mozilla-l10n.github.io/styleguides/mozilla_general/#brands-copyright-and-trademark
+ 
+ -facebook-container-brand-name = Facebook Container
+--monitor-brand-name = Firefox Monitor
++-monitor-brand-name = Mozilla Monitor
+ -monitor-brand-short-name = Monitor
+ -mozmonitor-brand-name = Mozilla Monitor
+ -pocket-brand-name = Pocket
+--send-brand-name = Firefox Send
+--screenshots-brand-name = Firefox Screenshots
++-send-brand-name = Mozilla Send
++-screenshots-brand-name = Iceweasel Screenshots
+ -mozilla-vpn-brand-name = Mozilla VPN
+--profiler-brand-name = Firefox Profiler
+--translations-brand-name = Firefox Translations
+--focus-brand-name = Firefox Focus
+--relay-brand-name = Firefox Relay
++-profiler-brand-name = Iceweasel Profiler
++-translations-brand-name = Iceweasel Translations
++-focus-brand-name = Mozilla Focus
++-relay-brand-name = Mozilla Relay
+ -relay-brand-short-name = Relay
+ -fakespot-brand-name = Fakespot
+ -solo-ai-brand-name = Solo
+@@ -38,18 +38,18 @@
+ 
+ # “Suggest” can be localized, “Firefox” must be treated as a brand
+ # and kept in English.
+--firefox-suggest-brand-name = Firefox Suggest
++-firefox-suggest-brand-name = Iceweasel Suggest
+ 
+ # ”Home" can be localized, “Firefox” must be treated as a brand
+ # and kept in English.
+--firefox-home-brand-name = Firefox Home
++-firefox-home-brand-name = Iceweasel Home
+ 
+ # View" can be localized, “Firefox” must be treated as a brand
+ # and kept in English.
+--firefoxview-brand-name = Firefox View
++-firefoxview-brand-name = Iceweasel View
+ 
+ # Firefox Labs is the name for a page in Settings to allow users to learn about
+ # experimental and in-development features, and turn those features on and off.
+ # The "Labs" portion can be localized, “Firefox” must be treated as a brand
+ # and kept in English.
+--firefoxlabs-brand-name = Firefox Labs
++-firefoxlabs-brand-name = Mozilla Labs
+diff --git a/toolkit/mozapps/installer/packager.mk b/toolkit/mozapps/installer/packager.mk
+index 188ce9875ae8e..4ac1aa160b256 100644
+--- a/toolkit/mozapps/installer/packager.mk
++++ b/toolkit/mozapps/installer/packager.mk
+@@ -128,8 +128,10 @@ prepare-package: stage-package
+ 
+ make-package-internal: prepare-package make-sourcestamp-file
+ 	@echo 'Compressing...'
++ifndef MOZ_PROFILE_GENERATE
+ 	$(call MAKE_PACKAGE,$(DIST))
+ 	echo $(PACKAGE) > $(ABS_DIST)/package_name.txt
++endif
+ 
+ make-package: FORCE
+ 	$(MAKE) make-package-internal
+diff --git a/toolkit/mozapps/installer/upload-files.mk b/toolkit/mozapps/installer/upload-files.mk
+index 648b030b48f43..c5ee7cad671ad 100644
+--- a/toolkit/mozapps/installer/upload-files.mk
++++ b/toolkit/mozapps/installer/upload-files.mk
+@@ -6,7 +6,7 @@ ifndef MOZ_PKG_FORMAT
+     ifeq ($(MOZ_WIDGET_TOOLKIT),cocoa)
+         MOZ_PKG_FORMAT = DMG
+     else ifeq ($(OS_ARCH),WINNT)
+-        MOZ_PKG_FORMAT = ZIP
++        MOZ_PKG_FORMAT = 7Z
+     else ifeq ($(OS_ARCH),SunOS)
+         MOZ_PKG_FORMAT = XZ
+     else ifeq ($(MOZ_WIDGET_TOOLKIT),gtk)
+@@ -18,6 +18,12 @@ ifndef MOZ_PKG_FORMAT
+     endif
+ endif # MOZ_PKG_FORMAT
+ 
++ifneq (x86_64, $(TARGET_CPU))
++DIR_SUFFIX = _x86
++else
++DIR_SUFFIX = _x64
++endif
++
+ ifeq ($(OS_ARCH),WINNT)
+ INSTALLER_DIR   = windows
+ endif
+@@ -123,6 +129,11 @@ ifeq ($(MOZ_PKG_FORMAT),ZIP)
+   INNER_MAKE_PACKAGE = $(call py_action,zip,'$(PACKAGE)' '$(MOZ_PKG_DIR)' -x '**/.mkdir.done',$(1))
+ endif
+ 
++ifeq ($(MOZ_PKG_FORMAT),7Z)
++  PKG_SUFFIX	= .7z
++  INNER_MAKE_PACKAGE = $(call py_action,make_7z,'$(MOZ_PKG_DIR)' '$(DIR_SUFFIX)' '$(PACKAGE)')
++  INNER_UNMAKE_PACKAGE = $(shell echo un7z.)
++endif
+ #Create an RPM file
+ ifeq ($(MOZ_PKG_FORMAT),RPM)
+   PKG_SUFFIX  = .rpm
+diff --git a/toolkit/xre/dllservices/mozglue/WindowsDllBlocklist.cpp b/toolkit/xre/dllservices/mozglue/WindowsDllBlocklist.cpp
+index 40f35dd2171e4..f20c3513106ce 100644
+--- a/toolkit/xre/dllservices/mozglue/WindowsDllBlocklist.cpp
++++ b/toolkit/xre/dllservices/mozglue/WindowsDllBlocklist.cpp
+@@ -614,7 +614,9 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
+ #endif
+ 
+   if (aInitFlags & eDllBlocklistInitFlagWasBootstrapped) {
++  #ifdef MOZ_CRASHREPORTER
+     GetNativeNtBlockSetWriter();
++  #endif
+     return;
+   }
+ 
+@@ -671,7 +673,9 @@ MFBT_API void DllBlocklist_Shutdown() {}
+ #endif  // DEBUG
+ 
+ static void InternalWriteNotes(WritableBuffer& aBuffer) {
++#ifdef MOZ_CRASHREPORTER
+   DllBlockSet::Write(aBuffer);
++#endif
+ }
+ 
+ using WriterFn = void (*)(WritableBuffer& aBuffer);
+@@ -685,7 +689,11 @@ static void GetNativeNtBlockSetWriter() {
+   }
+ }
+ 
+-MFBT_API void DllBlocklist_WriteNotes() { gWriterFn(sBlocklistWriter); }
++MFBT_API void DllBlocklist_WriteNotes() {
++#ifdef MOZ_CRASHREPORTER
++  gWriterFn(sBlocklistWriter);
++#endif
++}
+ 
+ MFBT_API bool DllBlocklist_CheckStatus() {
+   if (sBlocklistInitFailed || sUser32BeforeBlocklist) return false;
+diff --git a/toolkit/xre/nsAppRunner.cpp b/toolkit/xre/nsAppRunner.cpp
+index 396efb78753b2..c3e7ac205abdf 100644
+--- a/toolkit/xre/nsAppRunner.cpp
++++ b/toolkit/xre/nsAppRunner.cpp
+@@ -3,6 +3,10 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#if defined(TT_MEMUTIL)
++#include <portable.h>
++#endif /* TT_MEMUTIL */
++
+ #include "mozilla/dom/ContentParent.h"
+ #include "mozilla/dom/ContentChild.h"
+ #include "mozilla/ipc/GeckoChildProcessHost.h"
+@@ -6159,6 +6163,13 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
+   XRE_CleanupX11ErrorHandler();
+ #endif
+ 
++#ifdef TT_MEMUTIL
++  if (mozilla::AppShutdown::IsRestarting()) {
++    SetEnvironmentVariableW(L"LIBPORTABLE_UPCHECK_LAUNCHER_PROCESS", L"1");
++  }
++  undo_it();
++#endif
++
+   gAbsoluteArgv0Path.Truncate();
+ 
+ #if defined(MOZ_HAS_REMOTE)
+diff --git a/widget/windows/components.conf b/widget/windows/components.conf
+index 2d59a2f89d88e..c86b24d07416f 100644
+--- a/widget/windows/components.conf
++++ b/widget/windows/components.conf
+@@ -137,7 +137,7 @@ Classes = [
+     },
+ ]
+ 
+-if buildconfig.substs['CC_TYPE'] == 'clang-cl':
++if defined('MOZ_NOTIFICATION_SERVER'):
+     Classes += [
+         {
+             'cid': '{84e11f80-ca55-11dd-ad8b-0800200c9a66}',
+diff --git a/widget/windows/moz.build b/widget/windows/moz.build
+index 1d3cd4e94697e..8748709dcc898 100644
+--- a/widget/windows/moz.build
++++ b/widget/windows/moz.build
+@@ -208,9 +208,10 @@ OS_LIBS += [
+ 
+ # mingw is missing Windows toast notification definitions.
+ if CONFIG["CC_TYPE"] == "clang-cl":
+-    SOURCES += [
+-        "ToastNotification.cpp",
+-        "ToastNotificationHandler.cpp",
+-    ]
++    if CONFIG["MOZ_NOTIFICATION_SERVER"]:
++        SOURCES += [
++            "ToastNotification.cpp",
++            "ToastNotificationHandler.cpp",
++        ]
+ 
+ SPHINX_TREES["/widget/windows"] = "docs"
+diff --git a/xpcom/base/CycleCollectedJSRuntime.cpp b/xpcom/base/CycleCollectedJSRuntime.cpp
+index 1dfcd6b61c15c..4d3201ec23547 100644
+--- a/xpcom/base/CycleCollectedJSRuntime.cpp
++++ b/xpcom/base/CycleCollectedJSRuntime.cpp
+@@ -53,6 +53,10 @@
+ // To improve debugging, if WantAllTraces() is true all JS objects are
+ // traversed.
+ 
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++#include <xmmintrin.h>
++#endif
++
+ #include "mozilla/CycleCollectedJSRuntime.h"
+ 
+ #include <algorithm>
+@@ -1601,11 +1605,17 @@ bool CycleCollectedJSRuntime::TraceJSHolders(JSTracer* aTracer, IterT& aIter,
+     Unused << checkSingleZoneHolders;
+ #endif
+ 
++    aIter.Next();
++#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
++    if (!aIter.Done()) {
++      _mm_prefetch((char *)aIter->mHolder, _MM_HINT_NTA);
++      _mm_prefetch((char *)aIter->mHolder + 64, _MM_HINT_NTA);
++    }
++#endif
+     functor.SetHolder(holder);
+     tracer->Trace(holder, JsGcTracer(), aTracer);
+     functor.SetHolder(nullptr);
+ 
+-    aIter.Next();
+     aBudget.step();
+   }
+ 
+diff --git a/xpcom/ds/nsDeque.cpp b/xpcom/ds/nsDeque.cpp
+index 07f61fa471d6a..640bd6251adf9 100644
+--- a/xpcom/ds/nsDeque.cpp
++++ b/xpcom/ds/nsDeque.cpp
+@@ -8,6 +8,10 @@
+ #include "nsISupportsImpl.h"
+ #include <string.h>
+ 
++#ifdef TT_MEMUTIL
++#include <portable.h>
++#endif
++
+ #include "mozilla/CheckedInt.h"
+ 
+ #define modulus(x, y) ((x) % (y))
+@@ -54,7 +58,22 @@ size_t nsDequeBase::SizeOfExcludingThis(
+  */
+ void nsDequeBase::Empty() {
+   if (mSize && mData) {
++#ifdef TT_MEMUTIL
++    static const uint32_t dwNonTemporalDataSizeMin = GetNonTemporalDataSizeMin_tt();
++    const uint32_t dwDataSize = mCapacity * sizeof(*mData);
++
++    if (dwDataSize < dwNonTemporalDataSizeMin ||
++        NON_TEMPORAL_STORES_NOT_SUPPORTED == dwNonTemporalDataSizeMin)
++    {
++    memset(mData, 0, mCapacity * sizeof(*mData));
++  }
++    else
++    {
++        memset_nontemporal_tt(mData, 0, mCapacity * sizeof(*mData));
++    }
++#else
+     memset(mData, 0, mCapacity * sizeof(*mData));
++#endif
+   }
+   mSize = 0;
+   mOrigin = 0;

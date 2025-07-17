@@ -136,7 +136,9 @@ void NativeNtBlockSet::Write(WritableBuffer& aBuffer) {
 static NativeNtBlockSet gBlockSet;
 
 extern "C" void MOZ_EXPORT NativeNtBlockSet_Write(WritableBuffer& aBuffer) {
+#ifdef MOZ_CRASHREPORTER
   gBlockSet.Write(aBuffer);
+#endif
 }
 
 enum class BlockAction {

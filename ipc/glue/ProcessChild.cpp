@@ -104,8 +104,10 @@ ProcessChild::~ProcessChild() {
 /* static */
 void ProcessChild::NotifiedImpendingShutdown() {
   AppShutdown::SetImpendingShutdown();
+#ifdef MOZ_CRASHREPORTER
   ProcessChild::AppendToIPCShutdownStateAnnotation(
       "NotifiedImpendingShutdown"_ns);
+#endif
 }
 
 /* static */

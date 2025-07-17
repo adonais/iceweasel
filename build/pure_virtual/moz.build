@@ -6,18 +6,19 @@
 
 Library("pure_virtual")
 
-SOURCES += ["pure_virtual.c"]
+if CONFIG["OS_TARGET"] != "WINNT":
+    SOURCES += ["pure_virtual.c"]
 
-FORCE_STATIC_LIB = True
+    FORCE_STATIC_LIB = True
 
-USE_STATIC_MSVCRT = True
+    USE_STATIC_MSVCRT = True
 
-# Build a real library so that the linker can remove it if the symbol
-# is never used.
-NO_EXPAND_LIBS = True
+    # Build a real library so that the linker can remove it if the symbol
+    # is never used.
+    NO_EXPAND_LIBS = True
 
-# LTO can mess things up.
-if CONFIG["CC_TYPE"] == "clang-cl":
-    CFLAGS += ["-clang:-fno-lto"]
-else:
-    CFLAGS += ["-fno-lto"]
+    # LTO can mess things up.
+    if CONFIG["CC_TYPE"] == "clang-cl":
+        CFLAGS += ["-clang:-fno-lto"]
+    else:
+        CFLAGS += ["-fno-lto"]

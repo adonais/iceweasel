@@ -217,10 +217,10 @@ UtilityProcessManager::LaunchProcess(SandboxingKind aSandbox) {
           Unused << NS_WARN_IF(!p->mProcessParent->SendPreferenceUpdate(pref));
         }
         p->mQueuedPrefs.Clear();
-
+      #ifdef MOZ_CRASHREPORTER
         CrashReporter::RecordAnnotationCString(
             CrashReporter::Annotation::UtilityProcessStatus, "Running");
-
+      #endif
         return RetPromise::CreateAndResolve(Ok{}, __func__);
       },
       [self, p, aSandbox](LaunchError error) {
@@ -612,10 +612,10 @@ void UtilityProcessManager::DestroyProcess(SandboxingKind aSandbox) {
   p->mProcess = nullptr;
 
   mProcesses[aSandbox] = nullptr;
-
+#ifdef MOZ_CRASHREPORTER
   CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::UtilityProcessStatus, "Destroyed");
-
+#endif
   if (NoMoreProcesses()) {
     sSingleton = nullptr;
   }

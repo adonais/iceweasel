@@ -38,6 +38,9 @@
 
 #include "nsRegionFwd.h"
 
+#include "mozilla/SSE.h"
+#include <string.h>
+
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
 #  ifndef MOZ_ENABLE_FREETYPE
 #    define MOZ_ENABLE_FREETYPE
@@ -2016,8 +2019,10 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
    * argument's x/y offset.
    */
   virtual void SetTransform(const Matrix& aTransform) {
+    if (memcmp(&mTransform, &aTransform, sizeof(Matrix)) != 0) {
     mTransform = aTransform;
     mTransformDirty = true;
+  }
   }
 
   inline void ConcatTransform(const Matrix& aTransform) {
@@ -2135,8 +2140,16 @@ class GFX2D_API Factory {
   static void Init(const Config& aConfig);
   static void ShutDown();
 
+#ifdef MOZILLA_MAY_SUPPORT_SSE2
+  static bool HasSSE2() { return supports_sse2(); }
+#else
   static bool HasSSE2();
+#endif
+#ifdef MOZILLA_MAY_SUPPORT_SSE4_1
+  static bool HasSSE4() { return supports_sse4_1(); }
+#else
   static bool HasSSE4();
+#endif
 
   /**
    * Returns false if any of the following are true:

@@ -272,18 +272,18 @@ export var ChromeMigrationUtils = {
     const SUB_DIRECTORIES = {
       win: {
         Brave: [
-          ["LocalAppData", "BraveSoftware", "Brave-Browser", "User Data"],
+          ["Home", "AppData", "Local", "BraveSoftware", "Brave-Browser", "User Data"],
         ],
-        Chrome: [["LocalAppData", "Google", "Chrome", "User Data"]],
-        "Chrome Beta": [["LocalAppData", "Google", "Chrome Beta", "User Data"]],
-        Chromium: [["LocalAppData", "Chromium", "User Data"]],
-        Canary: [["LocalAppData", "Google", "Chrome SxS", "User Data"]],
-        Edge: [["LocalAppData", "Microsoft", "Edge", "User Data"]],
-        "Edge Beta": [["LocalAppData", "Microsoft", "Edge Beta", "User Data"]],
-        "360 SE": [["AppData", "360se6", "User Data"]],
-        Opera: [["AppData", "Opera Software", "Opera Stable"]],
-        "Opera GX": [["AppData", "Opera Software", "Opera GX Stable"]],
-        Vivaldi: [["LocalAppData", "Vivaldi", "User Data"]],
+        Chrome: [["Home", "AppData", "Local", "Google", "Chrome", "User Data"]],
+        "Chrome Beta": [["Home", "AppData", "Local", "Google", "Chrome Beta", "User Data"]],
+        Chromium: [["Home", "AppData", "Local", "Chromium", "User Data"]],
+        Canary: [["Home", "AppData", "Local", "Google", "Chrome SxS", "User Data"]],
+        Edge: [["Home", "AppData", "Local", "Microsoft", "Edge", "User Data"]],
+        "Edge Beta": [["Home", "AppData", "Local", "Microsoft", "Edge Beta", "User Data"]],
+        "360 SE": [["Home", "AppData", "Roaming", "360se6", "User Data"]],
+        Opera: [["Home", "AppData", "Roaming", "Opera Software", "Opera Stable"]],
+        "Opera GX": [["Home", "AppData", "Roaming", "Opera Software", "Opera GX Stable"]],
+        Vivaldi: [["Home", "AppData", "Local", "Vivaldi", "User Data"]],
       },
       macosx: {
         Brave: [

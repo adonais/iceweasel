@@ -1406,7 +1406,7 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
     writer.Write(Annotation::SecondsSinceLastCrash, timeSinceLastCrash);
   }
 
-#if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)
+#if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST) && defined(MOZ_CRASHREPORTER)
   // HACK: The DLL blocklist code will manually write its annotations as JSON
   DllBlocklist_WriteNotes();
 #endif  // defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)

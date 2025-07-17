@@ -264,7 +264,9 @@ function getEdgeLocalDataFolder() {
   if (gEdgeDir) {
     return gEdgeDir.clone();
   }
-  let packages = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
+  let packages = Services.dirsvc.get("Home", Ci.nsIFile);
+  packages.append("AppData");
+  packages.append("Local");
   packages.append("Packages");
   let edgeDir = packages.clone();
   edgeDir.append("Microsoft.MicrosoftEdge_8wekyb3d8bbwe");

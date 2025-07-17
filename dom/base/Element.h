@@ -741,6 +741,18 @@ class Element : public FragmentOrElement {
   REFLECT_NULLABLE_DOMSTRING_ATTR(AriaValueNow, aria_valuenow)
   REFLECT_NULLABLE_DOMSTRING_ATTR(AriaValueText, aria_valuetext)
 
+  void PrefetchAttrs()
+  {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    _mm_prefetch((char *)&mAttrs, _MM_HINT_NTA);
+#endif
+  }
+
+  void PrefetchAttrsImpl()
+  {
+    mAttrs.PrefetchImpl();
+  }
+
  protected:
   already_AddRefed<ShadowRoot> AttachShadowInternal(ShadowRootMode,
                                                     ErrorResult& aError);
