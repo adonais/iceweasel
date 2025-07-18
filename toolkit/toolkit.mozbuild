@@ -169,7 +169,7 @@ DIRS += [
     "/media/gmp-clearkey/0.1",
 ]
 
-if CONFIG["MOZ_WMF_CDM"] and CONFIG["ENABLE_TESTS"]:
+if CONFIG["MOZ_WMF_CDM"]:
     DIRS += [
         "/media/wmf-clearkey",
     ]
