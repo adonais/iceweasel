@@ -2746,7 +2746,9 @@ with only_when(target_is_windows):
         when=dxc_supports_target,
     )
     @checking("for dxcompiler.dll and dxil.dll")
+
     @imports("os.path")
+
     def dxcompiler(target, artifact, windows_sdk_dir, dxc_path):
         if not windows_sdk_dir and not artifact:
             return namespace(enabled=False)
@@ -2757,11 +2759,13 @@ with only_when(target_is_windows):
 
         if not artifact:
             if not dxc_path:
-                log.warning(
-                    "Missing dxcompiler.dll dependency. WebGPU will be disabled"
-                )
-                return namespace(enabled=False)
-
+                dxc_path = os.environ["DXC_PATH"]
+                if not dxc_path:
+                    log.warning(
+                        "Missing dxcompiler.dll dependency. WebGPU will be disabled"
+                    )
+                    return namespace(enabled=False)
+        
             if not os.path.exists(dxc_path):
                 die("Could not find dxcompiler.dll at {}", dxc_path)
 
