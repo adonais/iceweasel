@@ -7,6 +7,7 @@ package org.mozilla.focus.searchsuggestions.ui
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material.ContentAlpha
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
@@ -118,6 +119,12 @@ private fun SearchSuggestions(
             text = text,
             colors = AwesomeBarDefaults.colors(
                 background = focusColors.surface,
+                title = focusColors.onBackground,
+                description = focusColors.onBackground.copy(
+                    alpha = ContentAlpha.medium,
+                ),
+                autocompleteIcon = focusColors.onSurface,
+                groupTitle = focusColors.onBackground,
             ),
             providers = listOf(provider),
             onSuggestionClicked = onSuggestionClicked,

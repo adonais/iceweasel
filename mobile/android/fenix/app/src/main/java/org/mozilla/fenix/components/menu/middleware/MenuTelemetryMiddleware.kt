@@ -138,10 +138,46 @@ class MenuTelemetryMiddleware(
                 ),
             )
 
+            is MenuAction.Navigate.Back -> Events.browserMenuAction.record(
+                Events.BrowserMenuActionExtra(
+                    item = when {
+                        action.viewHistory && accessPoint == MenuAccessPoint.External ->
+                            "custom_back_long_press"
+                        action.viewHistory -> "back_long_press"
+                        accessPoint == MenuAccessPoint.External -> "custom_back"
+                        else -> "back"
+                    },
+                ),
+            )
+
+            is MenuAction.Navigate.Forward -> Events.browserMenuAction.record(
+                Events.BrowserMenuActionExtra(
+                    item = when {
+                        action.viewHistory && accessPoint == MenuAccessPoint.External ->
+                            "custom_forward_long_press"
+                        action.viewHistory -> "forward_long_press"
+                        accessPoint == MenuAccessPoint.External -> "custom_forward"
+                        else -> "forward"
+                    },
+                ),
+            )
+
+            is MenuAction.Navigate.Reload -> Events.browserMenuAction.record(
+                Events.BrowserMenuActionExtra(
+                    item = "reload",
+                ),
+            )
+
+            is MenuAction.Navigate.Stop -> Events.browserMenuAction.record(
+                Events.BrowserMenuActionExtra(
+                    item = "stop",
+                ),
+            )
+
             MenuAction.Navigate.Share -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = when (accessPoint) {
-                        MenuAccessPoint.External -> "share_custom_tab"
+                        MenuAccessPoint.External -> "custom_share"
                         else -> "share"
                     },
                 ),
@@ -166,7 +202,7 @@ class MenuTelemetryMiddleware(
             MenuAction.FindInPage -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = when (accessPoint) {
-                        MenuAccessPoint.External -> "find_in_page_custom_tab"
+                        MenuAccessPoint.External -> "custom_find_in_page"
                         else -> "find_in_page"
                     },
                 ),
@@ -199,7 +235,7 @@ class MenuTelemetryMiddleware(
             is MenuAction.RequestDesktopSite -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = when (accessPoint) {
-                        MenuAccessPoint.External -> "desktop_view_on_custom_tab"
+                        MenuAccessPoint.External -> "custom_desktop_view_on"
                         else -> "desktop_view_on"
                     },
                 ),
@@ -208,7 +244,7 @@ class MenuTelemetryMiddleware(
             is MenuAction.RequestMobileSite -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = when (accessPoint) {
-                        MenuAccessPoint.External -> "desktop_view_off_custom_tab"
+                        MenuAccessPoint.External -> "custom_desktop_view_off"
                         else -> "desktop_view_off"
                     },
                 ),
@@ -252,6 +288,14 @@ class MenuTelemetryMiddleware(
                 )
             }
 
+            is MenuAction.Navigate.InstalledAddonDetails -> {
+                Events.browserMenuAction.record(
+                    Events.BrowserMenuActionExtra(
+                        item = "installed_addon_details",
+                    ),
+                )
+            }
+
             is MenuAction.Navigate.WebCompatReporter -> {
                 Events.browserMenuAction.record(
                     Events.BrowserMenuActionExtra(
@@ -285,11 +329,6 @@ class MenuTelemetryMiddleware(
             is MenuAction.UpdateShowDisabledExtensionsOnboarding,
             is MenuAction.UpdateManageExtensionsMenuItemVisibility,
             is MenuAction.UpdateAvailableAddons,
-            is MenuAction.Navigate.Back,
-            is MenuAction.Navigate.Forward,
-            is MenuAction.Navigate.Reload,
-            is MenuAction.Navigate.Stop,
-            is MenuAction.Navigate.InstalledAddonDetails,
             -> Unit
         }
     }

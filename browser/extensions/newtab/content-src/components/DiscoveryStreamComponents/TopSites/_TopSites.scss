@@ -8,8 +8,14 @@
 
     .top-sites {
       .top-site-outer {
-        .top-site-inner > a:is(.active, :focus) .tile {
-          @include ds-focus;
+        .top-site-inner > a:is(.active, :focus) {
+          .tile {
+            @include ds-focus;
+          }
+
+          .icon-pin-small {
+            opacity: 1;
+          }
         }
 
         .top-site-inner > a:is(:hover) .top-site-inner {

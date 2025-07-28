@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -22,6 +23,7 @@ class HTTPSFirstModeTest {
     @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=1950289")
     @Test
     fun httpsFirstModeImplicitSchemeTest() {
         navigationToolbar {
@@ -32,6 +34,7 @@ class HTTPSFirstModeTest {
         }
     }
 
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=1947969")
     @Test
     fun httpsFirstModeExplicitSchemeTest() {
         navigationToolbar {

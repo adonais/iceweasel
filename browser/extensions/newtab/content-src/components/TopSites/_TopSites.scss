@@ -375,7 +375,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     margin-block-end: 0;
     border-radius: var(--border-radius-large);
 
-    &:hover {
+    &:hover, &:focus {
       .context-menu-button {
         @include wallpaper-contrast-fix;
       }
@@ -490,6 +490,10 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
         .tile {
           box-shadow: 0 2px 8px 0 var(--newtab-section-card-box-shadow-color);
+        }
+
+        .icon-pin-small {
+          opacity: 1;
         }
 
         .lightWallpaper &,

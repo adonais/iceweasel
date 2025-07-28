@@ -173,31 +173,34 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     }
 
     private fun initTranslationsAction(context: Context, view: View) {
-        // Do not add translation page action if device doesn't have large window
-        if (!isLargeWindow()) {
-            return
-        }
-
         if (
             !FxNimbus.features.translations.value().mainFlowToolbarEnabled
         ) {
             return
         }
 
-        val translationsAction = Toolbar.ActionButton(
-            AppCompatResources.getDrawable(
-                context,
-                R.drawable.mozac_ic_translate_24,
-            ),
-            contentDescription = context.getString(R.string.browser_toolbar_translate),
-            iconTintColorResource = ThemeManager.resolveAttribute(R.attr.textPrimary, context),
-            visible = { translationsAvailable },
-            weight = { TRANSLATIONS_WEIGHT },
-            listener = {
-                browserToolbarInteractor.onTranslationsButtonClicked()
-            },
-        )
-        (browserToolbarView as BrowserToolbarView).toolbar.addPageAction(translationsAction)
+        // Do not add translation page action if device doesn't have large window
+        val translationsAction = if (isLargeWindow()) {
+            Toolbar.ActionButton(
+                AppCompatResources.getDrawable(
+                    context,
+                    R.drawable.mozac_ic_translate_24,
+                ),
+                contentDescription = context.getString(R.string.browser_toolbar_translate),
+                iconTintColorResource = ThemeManager.resolveAttribute(R.attr.textPrimary, context),
+                visible = { translationsAvailable },
+                weight = { TRANSLATIONS_WEIGHT },
+                listener = {
+                    browserToolbarInteractor.onTranslationsButtonClicked()
+                },
+            )
+        } else {
+            null
+        }
+
+        translationsAction?.let {
+            (browserToolbarView as BrowserToolbarView).toolbar.addPageAction(it)
+        }
 
         translationsBinding.set(
             feature = TranslationsBinding(
@@ -205,24 +208,26 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 onTranslationStatusUpdate = {
                     translationsAvailable = it.isTranslationPossible
 
-                    translationsAction.updateView(
-                        tintColorResource = if (it.isTranslated) {
-                            R.color.fx_mobile_icon_color_accent_violet
-                        } else {
-                            ThemeManager.resolveAttribute(R.attr.textPrimary, context)
-                        },
-                        contentDescription = if (it.isTranslated) {
-                            context.getString(
-                                R.string.browser_toolbar_translated_successfully,
-                                it.fromSelectedLanguage?.localizedDisplayName,
-                                it.toSelectedLanguage?.localizedDisplayName,
-                            )
-                        } else {
-                            context.getString(R.string.browser_toolbar_translate)
-                        },
-                    )
+                    translationsAction?.let { action ->
+                        action.updateView(
+                            tintColorResource = if (it.isTranslated) {
+                                R.color.fx_mobile_icon_color_accent_violet
+                            } else {
+                                ThemeManager.resolveAttribute(R.attr.textPrimary, context)
+                            },
+                            contentDescription = if (it.isTranslated) {
+                                context.getString(
+                                    R.string.browser_toolbar_translated_successfully,
+                                    it.fromSelectedLanguage?.localizedDisplayName,
+                                    it.toSelectedLanguage?.localizedDisplayName,
+                                )
+                            } else {
+                                context.getString(R.string.browser_toolbar_translate)
+                            },
+                        )
 
-                    safeInvalidateBrowserToolbarView()
+                        safeInvalidateBrowserToolbarView()
+                    }
 
                     if (!it.isTranslateProcessing) {
                         requireComponents.appStore.dispatch(SnackbarAction.SnackbarDismissed)
