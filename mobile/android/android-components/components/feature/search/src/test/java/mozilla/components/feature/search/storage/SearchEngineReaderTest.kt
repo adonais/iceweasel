@@ -214,8 +214,13 @@ class SearchEngineReaderTest {
         )
 
         val searchEngine = reader.loadStreamAPI(searchEngineDefinition, emptyByteArray, validMimeType, mock())
+        val identifier = if (searchEngineDefinition.telemetrySuffix.isNotEmpty()) {
+            "${searchEngineDefinition.identifier}-${searchEngineDefinition.telemetrySuffix}"
+        } else {
+            searchEngineDefinition.identifier
+        }
 
-        assertEquals(searchEngineDefinition.identifier, searchEngine.id)
+        assertEquals(identifier, searchEngine.id)
         assertEquals(searchEngineDefinition.name, searchEngine.name)
         assertEquals(searchEngineDefinition.charset, searchEngine.inputEncoding)
 

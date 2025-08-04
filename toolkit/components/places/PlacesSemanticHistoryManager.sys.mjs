@@ -73,7 +73,7 @@ class PlacesSemanticHistoryManager {
    *
    * @param {Object} options - Configuration options.
    * @param {number} [options.embeddingSize=384] - Size of embeddings used for vector operations.
-   * @param {number} [options.rowLimit=600] - Maximum number of rows to process from the database.
+   * @param {number} [options.rowLimit=10000] - Maximum number of rows to process from the database.
    * @param {string} [options.samplingAttrib="frecency"] - Attribute used for sampling rows.
    * @param {number} [options.changeThresholdCount=3] - Threshold of changed rows to trigger updates.
    * @param {number} [options.distanceThreshold=0.6] - Cosine distance threshold to determine similarity.
@@ -81,7 +81,7 @@ class PlacesSemanticHistoryManager {
    */
   constructor({
     embeddingSize = 384,
-    rowLimit = 600,
+    rowLimit = 10000,
     samplingAttrib = "frecency",
     changeThresholdCount = 3,
     distanceThreshold = 0.6,

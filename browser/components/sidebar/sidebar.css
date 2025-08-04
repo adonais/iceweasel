@@ -77,6 +77,10 @@ moz-card {
   box-sizing: border-box;
   border-radius: var(--border-radius-medium);
   width: 100%;
+
+  > moz-input-search {
+    display: block;
+  }
 }
 
 fxview-empty-state {

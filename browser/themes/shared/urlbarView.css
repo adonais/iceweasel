@@ -1109,7 +1109,7 @@
 .urlbarView-results[actionmode] {
   white-space: wrap;
 
-  > .urlbarView-row {
+  > .urlbarView-row[dynamicType="actions"] {
     display: inline-flex;
   }
 }

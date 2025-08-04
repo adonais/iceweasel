@@ -433,18 +433,6 @@
         display: inline-block;
       }
     }
-
-  }
-
-  // Note this breakpoint doesn't use set the same default width (746px).
-  // The sections layout uses a different $break-point-layout-variant
-  // but not $break-point-large. This rule below maintains
-  // the topsites layout to stack two rows x four tiles
-  // when the sections grid changes to a two column layout
-  @media (min-width: $break-point-large) {
-    .ds-layout-topsites .hide-for-narrow {
-      display: inline-block;
-    }
   }
 }
 
@@ -590,7 +578,7 @@
   grid-template-columns: repeat(1, 300px);
 
   @media (min-width: $break-point-medium) {
-    @for $i from 0 through 6 {
+    @for $i from 0 through 16 {
       .col-1-position-#{$i} {
         order: $i;
       }
@@ -624,7 +612,7 @@
   @media (min-width: $break-point-layout-variant) {
     grid-template-columns: repeat(2, 300px);
 
-    @for $i from 0 through 6 {
+    @for $i from 0 through 16 {
       .col-2-position-#{$i} {
         order: $i;
       }
@@ -659,7 +647,7 @@
     grid-template-columns: repeat(3, 300px);
     gap: var(--space-large);
 
-    @for $i from 0 through 6 {
+    @for $i from 0 through 16 {
       .col-3-position-#{$i} {
         order: $i;
       }
@@ -693,7 +681,7 @@
   @media (min-width: $break-point-sections-variant) {
     grid-template-columns: repeat(4, 300px);
 
-    @for $i from 0 through 6 {
+    @for $i from 0 through 16 {
       .col-4-position-#{$i} {
         order: $i;
       }

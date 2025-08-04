@@ -270,7 +270,13 @@ internal class SearchEngineReader(
         require(engineDefinition.name.isNotBlank()) { "Search engine name cannot be empty" }
         require(engineDefinition.charset.isNotBlank()) { "Search engine charset cannot be empty" }
         require(engineDefinition.identifier.isNotBlank()) { "Search engine identifier cannot be empty" }
-        val builder = SearchEngineBuilder(type, engineDefinition.identifier)
+
+        val identifier = engineDefinition.identifier
+        val telemetrySuffix = engineDefinition.telemetrySuffix
+        val builder = SearchEngineBuilder(
+            type,
+            if (telemetrySuffix.isNotEmpty()) "$identifier-$telemetrySuffix" else identifier,
+        )
         builder.name = engineDefinition.name
         builder.inputEncoding = engineDefinition.charset
         builder.isGeneral = engineDefinition.classification == SearchEngineClassification.GENERAL

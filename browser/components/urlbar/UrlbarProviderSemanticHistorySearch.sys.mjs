@@ -22,12 +22,31 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  getPlacesSemanticHistoryManager:
-    "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", function () {
   return UrlbarUtils.getLogger({ prefix: "SemanticHistorySearch" });
+});
+
+/**
+ * Lazily creates (on first call) and returns the
+ * {@link PlacesSemanticHistoryManager} instance backing this provider.
+ */
+ChromeUtils.defineLazyGetter(lazy, "semanticManager", function () {
+  let { getPlacesSemanticHistoryManager } = ChromeUtils.importESModule(
+    "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs"
+  );
+  const distanceThreshold = Services.prefs.getFloatPref(
+    "places.semanticHistory.distanceThreshold",
+    0.6
+  );
+  return getPlacesSemanticHistoryManager({
+    embeddingSize: 384,
+    rowLimit: 10000,
+    samplingAttrib: "frecency",
+    changeThresholdCount: 3,
+    distanceThreshold,
+  });
 });
 
 /**
@@ -44,43 +63,19 @@ ChromeUtils.defineLazyGetter(lazy, "logger", function () {
  *
  * @class
  */
-class ProviderSemanticHistorySearch extends UrlbarProvider {
-  /** @type {PlacesSemanticHistoryManager} */
-  #semanticManager;
+export class ProviderSemanticHistorySearch extends UrlbarProvider {
   /** @type {boolean} */
   #exposureRecorded;
 
   /**
-   * Lazily creates (on first call) and returns the
-   * {@link PlacesSemanticHistoryManager} instance backing this provider.
-   *
-   * The manager is instantiated only once and cached in the private
-   * `#semanticManager` field.  It is configured with sensible defaults for
-   * semantic history search:
-   *   • `embeddingSize`: 384 – dimensionality of vector embeddings
-   *   • `rowLimit`: 10000 – maximum rows pulled from Places
-   *   • `samplingAttrib`: "frecency" – column used when down-sampling
-   *   • `changeThresholdCount`: 3 – restart inference after this many DB changes
-   *   • `distanceThreshold`: 0.75 – cosine-distance cut-off for matches
+   * Provides a shared instance of the semantic manager, so that other consumers
+   * won't wrongly initialize it with different parameters.
    *
    * @returns {PlacesSemanticHistoryManager}
-   *   The shared, initialized semantic-history manager instance.
+   *   The semantic manager instance used by this provider.
    */
-  ensureSemanticManagerInitialized() {
-    if (!this.#semanticManager) {
-      const distanceThreshold = Services.prefs.getFloatPref(
-        "places.semanticHistory.distanceThreshold",
-        0.6
-      );
-      this.#semanticManager = lazy.getPlacesSemanticHistoryManager({
-        embeddingSize: 384,
-        rowLimit: 10000,
-        samplingAttrib: "frecency",
-        changeThresholdCount: 3,
-        distanceThreshold,
-      });
-    }
-    return this.#semanticManager;
+  static get semanticManager() {
+    return lazy.semanticManager;
   }
 
   get name() {
@@ -110,11 +105,10 @@ class ProviderSemanticHistorySearch extends UrlbarProvider {
       (!queryContext.searchMode ||
         queryContext.searchMode.source == UrlbarUtils.RESULT_SOURCE.HISTORY)
     ) {
-      const semanticManager = this.ensureSemanticManagerInitialized();
-      if (semanticManager.canUseSemanticSearch) {
+      if (lazy.semanticManager.canUseSemanticSearch) {
         // Proceed only if a sufficient number of history entries have
         // embeddings calculated.
-        return semanticManager.hasSufficientEntriesForSearching();
+        return lazy.semanticManager.hasSufficientEntriesForSearching();
       }
     }
     return false;
@@ -130,13 +124,7 @@ class ProviderSemanticHistorySearch extends UrlbarProvider {
    */
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
-    if (!this.#semanticManager) {
-      throw new Error(
-        "SemanticManager must be initialized via isActive() before calling startQuery()"
-      );
-    }
-
-    let resultObject = await this.#semanticManager.infer(queryContext);
+    let resultObject = await lazy.semanticManager.infer(queryContext);
     this.#maybeRecordExposure();
     let results = resultObject.results;
     if (!results || instance != this.queryInstance) {

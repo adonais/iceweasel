@@ -226,10 +226,18 @@ MOZ_EXPORT struct wl_surface* gdk_wayland_window_get_wl_surface(
   return NULL;
 }
 
+MOZ_EXPORT void gdk_wayland_window_set_use_custom_surface(
+    GdkWaylandWindow* window) {}
+
 MOZ_EXPORT struct wl_pointer* gdk_wayland_device_get_wl_pointer(
     GdkDevice* device) {
   return NULL;
 }
+
+MOZ_EXPORT struct wl_seat* gdk_wayland_device_get_wl_seat(GdkDevice* device) {
+  return NULL;
+}
+
 MOZ_EXPORT struct wl_display* gdk_wayland_display_get_wl_display(
     GdkDisplay* display) {
   return NULL;
