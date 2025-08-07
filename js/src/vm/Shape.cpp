@@ -1332,8 +1332,8 @@ void ForEachObjectFlag(ObjectFlags flags, KnownF known, UnknownF unknown) {
       case ObjectFlag::HasFuseProperty:
         known("HasFuseProperty");
         break;
-      case ObjectFlag::HasPreservedWrapper:
-        known("HasPreservedWrapper");
+      case ObjectFlag::HasPreservedWrapperDummy:
+        known("HasPreservedWrapperDummy");
         break;
       case ObjectFlag::HasNonFunctionAccessor:
         known("HasNonFunctionAccessor");
