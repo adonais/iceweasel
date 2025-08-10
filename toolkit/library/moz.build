@@ -349,12 +349,6 @@ if CONFIG["OS_ARCH"] == "Darwin":
 
 
 if CONFIG["OS_ARCH"] == "WINNT":
-    if CONFIG["TARGET_CPU"] == "x86_64":
-        OS_LIBS += ["portable64"]
-    else:
-        OS_LIBS += ["portable32"]
-
-if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
         "shell32",
         "ole32",
